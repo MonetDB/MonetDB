@@ -128,8 +128,9 @@ top N (
 % .explain # table_name
 % mal # name
 % clob # type
-% 63 # length
+% 80 # length
 function user.s4_1{autoCommit=true}():void;
+    X_23:void  := querylog.define("explain select * from oblo;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -141,14 +142,14 @@ function user.s4_1{autoCommit=true}():void;
     sql.rsColumn(X_16,"sys.oblo","a","int",32,0,X_15);
     X_21 := io.stdout();
     sql.exportResult(X_21,X_16);
-end s4_1;
-# querylog.define("explain select * from oblo;","minimal_pipe")
+end user.s4_1;
 #EXPLAIN select * from oblo OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 72 # length
+% 89 # length
 function user.s5_1{autoCommit=true}():void;
+    X_31:void  := querylog.define("explain select * from oblo offset 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -166,14 +167,14 @@ function user.s5_1{autoCommit=true}():void;
     sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_24);
-end s5_1;
-# querylog.define("explain select * from oblo offset 2;","minimal_pipe")
+end user.s5_1;
 #EXPLAIN select * from oblo LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 71 # length
+% 88 # length
 function user.s6_1{autoCommit=true}():void;
+    X_31:void  := querylog.define("explain select * from oblo limit 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -191,14 +192,14 @@ function user.s6_1{autoCommit=true}():void;
     sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_24);
-end s6_1;
-# querylog.define("explain select * from oblo limit 2;","minimal_pipe")
+end user.s6_1;
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 80 # length
+% 97 # length
 function user.s7_1{autoCommit=true}():void;
+    X_31:void  := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -216,14 +217,14 @@ function user.s7_1{autoCommit=true}():void;
     sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_24);
-end s7_1;
-# querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe")
+end user.s7_1;
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 80 # length
+% 97 # length
 function user.s8_1{autoCommit=true}():void;
+    X_31:void  := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -241,14 +242,14 @@ function user.s8_1{autoCommit=true}():void;
     sql.rsColumn(X_24,"sys.oblo","a","int",32,0,X_23);
     X_29 := io.stdout();
     sql.exportResult(X_29,X_24);
-end s8_1;
-# querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe")
+end user.s8_1;
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
 % mal # name
 % clob # type
-% 74 # length
+% 91 # length
 function user.s9_1{autoCommit=true}():void;
+    X_28:void  := querylog.define("explain select * from oblo order by a;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -262,14 +263,14 @@ function user.s9_1{autoCommit=true}():void;
     sql.rsColumn(X_21,"sys.oblo","a","int",32,0,X_20);
     X_26 := io.stdout();
     sql.exportResult(X_26,X_21);
-end s9_1;
-# querylog.define("explain select * from oblo order by a;","minimal_pipe")
+end user.s9_1;
 #EXPLAIN select * from oblo ORDER BY a OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 100 # length
 function user.s10_1{autoCommit=true}():void;
+    X_36:void  := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -289,14 +290,14 @@ function user.s10_1{autoCommit=true}():void;
     sql.rsColumn(X_29,"sys.oblo","a","int",32,0,X_28);
     X_34 := io.stdout();
     sql.exportResult(X_34,X_29);
-end s10_1;
-# querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe")
+end user.s10_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 82 # length
+% 99 # length
 function user.s11_1{autoCommit=true}():void;
+    X_41:void  := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -321,14 +322,14 @@ function user.s11_1{autoCommit=true}():void;
     sql.rsColumn(X_34,"sys.oblo","a","int",32,0,X_33);
     X_39 := io.stdout();
     sql.exportResult(X_39,X_34);
-end s11_1;
-# querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe")
+end user.s11_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
+% 108 # length
 function user.s12_1{autoCommit=true}():void;
+    X_46:void  := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -355,14 +356,14 @@ function user.s12_1{autoCommit=true}():void;
     sql.rsColumn(X_37,"sys.oblo","a","int",32,0,X_36);
     X_44 := io.stdout();
     sql.exportResult(X_44,X_37);
-end s12_1;
-# querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe")
+end user.s12_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
+% 108 # length
 function user.s13_1{autoCommit=true}():void;
+    X_46:void  := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","oblo");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
@@ -389,8 +390,7 @@ function user.s13_1{autoCommit=true}():void;
     sql.rsColumn(X_37,"sys.oblo","a","int",32,0,X_36);
     X_44 := io.stdout();
     sql.exportResult(X_44,X_37);
-end s13_1;
-# querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe")
+end user.s13_1;
 #select * from oblo;
 % sys.oblo # table_name
 % a # name

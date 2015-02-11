@@ -34,20 +34,7 @@ barrier go := true;
     redo go := true;
 exit go;
     return step1 := 0;
-end step1;
-#
-#factory step2():int;
-#	io.printf("start step 2\n");
-#	cnt := 0;
-#
-#barrier go:= true;
-#	cnt:= cnt+1;
-#	io.printf("step2 %d\n",cnt);
-#	yield step2:= cnt;
-#	redo go:= true;
-#exit go;
-#	return step2:= 0;
-#end step2;
+end user.step1;
 factory user.step2():int;
     io.printf("start step 2\n");
     cnt := 0;
@@ -58,13 +45,7 @@ barrier go := true;
     redo go := true;
 exit go;
     return step2 := 0;
-end step2;
-#
-#i:= user.step1();
-#j:= user.step2();
-#k:= user.step1();
-#m:= user.step2();
-#
+end user.step2;
 function user.main():void;
 #basic interaction of factories and restart 
     i := user.step1();
@@ -72,7 +53,7 @@ function user.main():void;
     k := user.step1();
     m := user.step2();
     factories.shutdown("user","step1");
-end main;
+end user.main;
 start step 1
 step1 1
 start step 2

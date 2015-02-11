@@ -20,24 +20,24 @@ stdout of test 'callfunction` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 function user.f1():void;
     io.print("hello");
-end f1;
+end user.f1;
 function user.f2():void;
     io.print("world");
-end f2;
+end user.f2;
 function user.q():void;
     language.call("user","f1");
     language.call("user","f2");
-end q;
+end user.q;
 function user.main():void;
     user.q();
-end main;
+end user.main;
 function user.main():void;
     user.f1();
-end main;
+end user.main;
 [ "hello" ]
 function user.main():void;
     user.f2();
-end main;
+end user.main;
 [ "world" ]
 
 # 09:25:34 >  

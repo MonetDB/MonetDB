@@ -84,7 +84,7 @@ function user.main():void;
     io.print(s);
     xs := mosaic.thetasubselect(x,c,"2014-08-14 12:01:00.000":timestamp,"!=");
     io.print(xs);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type

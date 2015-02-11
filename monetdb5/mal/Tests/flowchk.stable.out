@@ -19,7 +19,7 @@ barrier go := true;
     io.print(a);
 exit go;
     c := a;
-end tst;
+end user.tst;
 
 # 20:45:09 >  
 # 20:45:09 >  Done.

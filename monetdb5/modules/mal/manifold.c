@@ -74,7 +74,7 @@ typedef struct{
 			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
 			if (msg) break;												\
 			for( i = mut->fvar; i<= mut->lvar; i++) {					\
-				if(ATOMstorage(mut->args[i].type == TYPE_void) ){		\
+				if(ATOMstorage(mut->args[i].type) == TYPE_void ){		\
 					args[i] = (void*)  &mut->args[i].o;					\
 					mut->args[i].o++;									\
 				} else if(mut->args[i].size == 0) {						\
@@ -111,6 +111,7 @@ typedef struct{
 		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
 		Manifoldbody_hge(__VA_ARGS__);									\
 		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
+		case TYPE_wrd: ManifoldLoop(wrd,__VA_ARGS__); break;			\
 		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
 		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
 		case TYPE_str:													\
@@ -122,7 +123,7 @@ typedef struct{
 					break;												\
 				bunfastapp(mut->args[0].b, (void*) y);					\
 				for( i = mut->fvar; i<= mut->lvar; i++) {				\
-					if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+					if(ATOMstorage(mut->args[i].type) == TYPE_void ){ 	\
 						args[i] = (void*)  &mut->args[i].o;				\
 						mut->args[i].o++;								\
 					} else if(mut->args[i].size == 0) {					\
@@ -241,7 +242,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
-		varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL)
+		(q->blk && varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL) )
 		fcn = NULL;
 	else {
 		fcn = q->fcn;
@@ -306,7 +307,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			if (ATOMstorage(tpe) == TYPE_str) 
 				mat[i].size = Tsize(mat[i].b);
 			else
-				mat[i].size = BATatoms[ATOMstorage(tpe)].size;
+				mat[i].size = BATatoms[tpe].size;
 			mat[i].cnt = cnt;
 			if ( mat[i].b->ttype == TYPE_void){
 				o = mat[i].b->tseqbase;

@@ -38,7 +38,7 @@ function user.main():void;
     io.print(l);
     j:int  := nil:int;
     io.print(j);
-end main;
+end user.main;
 [ nil ]
 [ nil ]
 [ nil ]

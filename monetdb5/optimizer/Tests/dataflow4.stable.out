@@ -32,11 +32,11 @@ function user.tst():void;
     d := bat.new(:oid,:int);
     io.print(a);
     io.print(d);
-end tst;
+end user.tst;
 function user.main():void;
     mdb.list("user","tst");
     mdb.list("user","tst");
-end main;
+end user.main;
 function user.tst():void;
 barrier X_19 := language.dataflow();
     i := 1;
@@ -56,7 +56,7 @@ barrier X_25 := language.dataflow();
 exit X_25;
     io.print(a);
     io.print(d);
-end tst;
+end user.tst;
 function user.tst():void;
 barrier X_19 := language.dataflow();
     i := 1;
@@ -76,7 +76,7 @@ barrier X_25 := language.dataflow();
 exit X_25;
     io.print(a);
     io.print(d);
-end tst;
+end user.tst;
 
 # 16:07:31 >  
 # 16:07:31 >  "Done."

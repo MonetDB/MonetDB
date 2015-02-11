@@ -78,6 +78,7 @@ opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
 opt_export  str decompressRef;
+opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str differenceRef;
@@ -121,6 +122,7 @@ opt_export  str thetajoinRef;
 opt_export  str subjoinRef;
 opt_export  str subantijoinRef;
 opt_export  str subbandjoinRef;
+opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
 opt_export  str kdifferenceRef;
 opt_export  str kunionRef;
@@ -277,4 +279,5 @@ opt_export int tlbProp;			/* any (tail lower bound) */
 opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
+opt_export int mtProp;			/* enclosing merge table (id) */
 #endif

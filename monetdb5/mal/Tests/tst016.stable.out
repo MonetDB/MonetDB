@@ -33,7 +33,7 @@ function user.main():void;
     io.print(a);
     io.print(b);
     io.print(c);
-end main;
+end user.main;
 [ "Dit is een test\n" ]
 [ (17: 44 69 74 20 69 73 20 65 65 6E 20 74 65 73 74 0A 00) ]
 [ "Dit is een test\n" ]

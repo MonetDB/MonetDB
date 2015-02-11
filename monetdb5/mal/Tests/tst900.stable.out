@@ -33,7 +33,7 @@ function user.main():void;
     d;
 # parser bug 
     a := b;
-end main;
+end user.main;
 
 # 12:41:59 >  
 # 12:41:59 >  Done.

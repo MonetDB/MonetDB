@@ -31,11 +31,10 @@ barrier m := 3;
     leave m;
 exit m := 4;
     io.print(m);
-end foo;
-#
+end user.foo;
 function user.main():void;
 # minimal barrier 
-end main;
+end user.main;
 
 # 07:58:33 >  
 # 07:58:33 >  Done.

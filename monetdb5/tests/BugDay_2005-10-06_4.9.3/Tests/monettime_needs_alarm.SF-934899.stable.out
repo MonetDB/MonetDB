@@ -14,7 +14,7 @@ stdout of test 'monettime_needs_alarm.SF-934899` in directory 'monetdb5/tests/Bu
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
     t := mtime.current_timestamp();
-end main;
+end user.main;
 
 # 16:24:27 >  
 # 16:24:27 >  Done.

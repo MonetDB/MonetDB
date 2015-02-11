@@ -283,7 +283,7 @@ comment "Create a hash structure on the column";
 
 command setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints
-comment "Create n imprints structure on the column";
+comment "Create an imprints structure on the column";
 
 command isSynced (b1:bat[:oid,:any_1], b2:bat[:oid,:any_2]) :bit 
 address BKCisSynced

@@ -622,7 +622,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, seqbase);
+	BATseqbase(bn, seqbase);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -640,8 +640,8 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, BATcalcop_name);
-	BATcheck(b2, BATcalcop_name);
+	BATcheck(b1, BATcalcop_name, NULL);
+	BATcheck(b2, BATcalcop_name, NULL);
 
 	if (checkbats(b1, b2, BATcalcop_name) == GDK_FAIL)
 		return NULL;
@@ -681,7 +681,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalcopcst_name);
+	BATcheck(b, BATcalcopcst_name, NULL);
 
 	if (checkbats(b, NULL, BATcalcopcst_name) == GDK_FAIL)
 		return NULL;
@@ -707,7 +707,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalccstop_name);
+	BATcheck(b, BATcalccstop_name, NULL);
 
 	if (checkbats(b, NULL, BATcalccstop_name) == GDK_FAIL)
 		return NULL;

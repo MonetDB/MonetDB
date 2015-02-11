@@ -33,7 +33,6 @@ stdout of test 'tst901a` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
 # what is the overhead of MAL in multiplex situations 
-    profiler.setFilter("*","*");
     b := bat.new(:oid,:lng);
     INT_MAX := 2147483647;
     dbgmsk_restore := mdb.getDebug();
@@ -59,7 +58,7 @@ exit i;
     io.printf("#count %d\n",xc);
     io.printf("#make %d \n",d1);
     io.printf("#multiplex %d\n",d2);
-end main;
+end user.main;
 #count 1000000
 #make 788950 
 #multiplex 18410

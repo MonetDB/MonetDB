@@ -28,8 +28,8 @@ function user.main():void;
     io.print(b);
     s := algebra.fetch(b,2@0);
     io.printf("%s\n",s);
-end main;
-#-----------------------------------------#
+end user.main;
+#--------------------------#
 # h	t				  # name
 # int	str				  # type
 #-----------------------------------------#

@@ -16,18 +16,18 @@ function user.foo{inline}(a:int,b:int):int;
     c := calc.+(a,b);
     c := calc.*(c,base);
     return foo := c;
-end foo;
+end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
@@ -39,7 +39,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_20 := batcalc.+(b,2);             #  8 _20:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _10:int) {G}
     X_20 := batcalc.*(X_20,X_19);       #  9 _20:bat[:oid,:int] := CMDbatMULsignal(_20:bat[:oid,:int], _19:int) {G}
     z:bat[:oid,:int] {inline} := X_20;  # 10 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
-end qry;                                # 11  
+end user.qry;                           # 11  
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

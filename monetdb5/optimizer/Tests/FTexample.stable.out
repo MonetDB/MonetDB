@@ -17,11 +17,11 @@ function user.test(s:str):wrd;
     z := algebra.select(b,s,s);
     i := aggr.count(z);
     return test := i;
-end test;
+end user.test;
 function user.main():void;
 #Code factorization 
     mdb.List("user","test");
-end main;
+end user.main;
 factory user.test(s:str):wrd;           #  0 test:wrd := user.test(s:str) {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     bat.append(b,"hello");              #  2 _5:bat[:oid,:str] := BKCappend_val_wrap(b:bat[:oid,:str], _6:str) {G}
@@ -32,7 +32,7 @@ barrier always := true;                 #  3 always:bit := _10:bit {J8}
     redo always;                        #  7 always:bit {J4}
 exit always;                            #  8 always:bit 
     return test := test;                #  9 test:wrd := test:wrd 
-end test;                               # 10  
+end user.test;                          # 10  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

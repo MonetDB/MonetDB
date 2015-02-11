@@ -29,7 +29,7 @@ function user.main():void;
 #io.print(z); 
     t := calc.==(z,b);
     io.print(t);
-end main;
+end user.main;
 [ true ]
 [ true ]
 

@@ -20,7 +20,7 @@ function user.main():void;
     K;
     io.print(1);
     io.print(2);
-end main;
+end user.main;
 
 # 09:50:19 >  
 # 09:50:19 >  Done.

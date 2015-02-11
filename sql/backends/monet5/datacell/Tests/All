@@ -5,23 +5,23 @@
 #
 #  beware, the scenario testing calls for manual interaction to start/stop
 #  sensors and actuators. The test web merely shows basic functionality.
-ENABLE_DATACELL?scenario00
-ENABLE_DATACELL?scenario01
-ENABLE_DATACELL?scenario02
-ENABLE_DATACELL?scenario03
-ENABLE_DATACELL?scenario04
-ENABLE_DATACELL?scenario05
-ENABLE_DATACELL?scenario06
-ENABLE_DATACELL?dctemper00
-#ENABLE_DATACELL?dcload
-#ENABLE_DATACELL?linearroad
+HAVE_DATACELL?scenario00
+HAVE_DATACELL?scenario01
+HAVE_DATACELL?scenario02
+HAVE_DATACELL?scenario03
+HAVE_DATACELL?scenario04
+HAVE_DATACELL?scenario05
+HAVE_DATACELL?scenario06
+HAVE_DATACELL?dctemper00
+#HAVE_DATACELL?dcload
+#HAVE_DATACELL?linearroad
 # MAL
-ENABLE_DATACELL?datacell00
-ENABLE_DATACELL?basket00
-ENABLE_DATACELL?receptor00
-ENABLE_DATACELL?emitter00
-ENABLE_DATACELL?datacell99
+HAVE_DATACELL?datacell00
+HAVE_DATACELL?basket00
+HAVE_DATACELL?receptor00
+HAVE_DATACELL?emitter00
+HAVE_DATACELL?datacell99
 
-ENABLE_DATACELL?emilistart
-ENABLE_DATACELL?emilifinish
+HAVE_DATACELL?emilistart
+HAVE_DATACELL?emilifinish
 

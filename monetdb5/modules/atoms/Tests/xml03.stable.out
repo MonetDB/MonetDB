@@ -34,8 +34,8 @@ function user.main():void;
     aa := batxml.element("victim",hh);
     as := batxml.str(aa);
     io.print(as);
-end main;
-#---------------------------------#
+end user.main;
+#--------------------------#
 # h	t			  # name
 # void	str			  # type
 #---------------------------------#

@@ -50,6 +50,7 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 mal_export Lifespan setLifespan(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
+mal_export void dumpFunction(MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 
 #include "mal_exception.h"

@@ -22,7 +22,7 @@ function user.main():void;
     s:str  := mapi.rpc(mid,"io.print(123456);");
     io.print(s);
     mapi.disconnect(mid);
-end main;
+end user.main;
 [ "123456" ]
 
 # 09:12:08 >  

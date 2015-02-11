@@ -45,6 +45,10 @@ command bat.new(nme:str):bat[:oid,:any_1]
 address CMDBATderivedByName
 comment "Localize a BAT by name and produce a clone.";
 
+pattern bat.single(val:any_1):bat[:oid,:any_1]
+address CMDBATsingle
+comment "Create a BAT with a single elemenet";
+
 pattern bat.partition(b:bat[:oid,:any_1]):bat[:oid,:any_1]...
 address CMDBATpartition
 comment "Create a serie of slices over the BAT argument. The BUNs are distributed evenly.";

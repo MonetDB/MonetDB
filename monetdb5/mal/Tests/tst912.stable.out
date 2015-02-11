@@ -42,27 +42,7 @@ exit allways;
     mdb.setDebug(dbgmsk_restore);
     io.print("#factory done\n");
     return (bb,c) := (false,c);
-end getChunk;
-#
-#function choptest(b:bat[:void,:lng], size:lng, base:lng);
-#    t0:= alarm.usec();
-#    barrier (tst,c):= getChunk(b,size);
-#        t:= select(c, 256000:lng,266000:lng);
-#        redo (tst,c):= getChunk(b,size);
-#    exit (tst,c);
-#
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    printf("#chopped at %d",size);
-#    printf(" %d",d0);
-#    d0:= d0-base;
-#    printf(" %d ",d0);
-#    i:= 1000000:lng/size;
-#    if:= flt(i);
-#    df:= flt(d0);
-#    f:= df/if;
-#    printf(" at %f usec\n",f);
-#end choptest;
+end user.getChunk;
 function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;
     t0 := alarm.usec();
     INT_MAX := 2147483647;
@@ -84,34 +64,7 @@ exit (tst,c);
     f := calc./(df,if);
     io.printf("#chopped at %d",size);
     io.printf(" at %f usec\n",f);
-end choptest;
-#
-#b:= bat.new(:void,:lng);
-#barrier (go,i):= mal.newRange(0:lng);
-#	k:= mmath.rand();
-#	l:= calc.lng(k);
-#	bat.insert(b,nil,l);
-#	redo (go,i):= mal.nextElement(1:lng,1000000:lng);
-#exit (go,i);
-#
-#t0:= alarm.usec();
-#barrier doit:= true;
-#    t:= select(b, 256000:lng,266000:lng);
-#exit doit;
-#t1:= alarm.usec();
-#base:= t1-t0;
-#printf("#select direct %d usec\n",base);
-#
-#choptest(b,100000:lng,base);
-#choptest(b,10000:lng,base);
-#choptest(b,1000:lng,base);
-#choptest(b,100:lng,base);
-#
-#user.choptest(b,100000:lng,base);
-#user.choptest(b,10000:lng,base);
-#user.choptest(b,1000:lng,base);
-#user.choptest(b,100:lng,base);
-#
+end user.choptest;
 function user.main():void;
 # analyse the overhead of chopping a table 
 # the multiplex code blocks. 
@@ -142,8 +95,8 @@ exit doit;
     user.choptest(b,1000:lng,base);
     user.choptest(b,100:lng,base);
     factories.shutdown("user","getChunk");
-end main;
-#select direct 9152 usec
+end user.main;
+#select direct 13701 usec
 [ "#factory done\n" ]
 #chopped at 100000 at 850.000000 usec
 [ "#factory done\n" ]

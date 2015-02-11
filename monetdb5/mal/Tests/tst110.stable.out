@@ -33,7 +33,7 @@ barrier v := v;
     j := 2;
 exit v;
     k := 3;
-end main;
+end user.main;
 
 # 07:58:59 >  
 # 07:58:59 >  Done.

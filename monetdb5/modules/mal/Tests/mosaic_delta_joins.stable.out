@@ -51,11 +51,15 @@ function user.main():void;
     io.print(jl,jr);
     (ml,mr) := mosaic.join(x,d);
     io.print(ml,mr);
-    (jl,jr) := algebra.join(d,base);
-    io.print(jl,jr);
-    (ml,mr) := mosaic.join(d,x);
-    io.print(ml,mr);
-end main;
+    (kl,kr) := algebra.join(d,base);
+    io.print(kl);
+    io.print(kr);
+    io.print(kl,kr);
+    (nl,nr) := mosaic.join(d,x);
+    io.print(nl);
+    io.print(nr);
+    io.print(nl,nr);
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -113,8 +117,21 @@ end main;
 # h	t	t  # name
 # void	void	void  # type
 #--------------------------#
-[ 0@0,	2@0,	0@0  ]
-[ 1@0,	3@0,	1@0  ]
+[ 0@0,	0@0,	7@0  ]
+[ 1@0,	2@0,	0@0  ]
+[ 2@0,	3@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	3@0  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
@@ -122,11 +139,26 @@ end main;
 [ 0@0,	0@0,	2@0  ]
 [ 1@0,	1@0,	3@0  ]
 #--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	7@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	2@0  ]
+[ 2@0,	3@0  ]
+#--------------------------#
 # h	t	t  # name
 # void	void	void  # type
 #--------------------------#
-[ 0@0,	0@0,	2@0  ]
-[ 1@0,	1@0,	3@0  ]
+[ 0@0,	7@0,	0@0  ]
+[ 1@0,	0@0,	2@0  ]
+[ 2@0,	1@0,	3@0  ]
 
 # 19:38:40 >  
 # 19:38:40 >  "Done."

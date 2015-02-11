@@ -170,37 +170,37 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	times(&newst);
 	/* store counters, ignore errors */
 	i = (int) (time(0) - clk);
-	bn = BUNappend(bn, "elapsed", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapsed", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = newst.tms_utime * 1000 / HZ;
-	bn = BUNappend(bn, "user", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "user", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (newst.tms_utime - state.tms_utime) * 1000 / HZ;
-	bn = BUNappend(bn, "elapuser", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapuser", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = newst.tms_stime * 1000 / HZ;
-	bn = BUNappend(bn, "system", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "system", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (newst.tms_stime - state.tms_stime) * 1000 / HZ;
-	bn = BUNappend(bn, "elapsystem", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapsystem", FALSE);
+	BUNappend(b, &i, FALSE);
 
 	state = newst;
 #else
 	i = int_nil;
-	bn = BUNappend(bn, "elapsed", FALSE);
-	b = BUNappend(b, &i, FALSE);
-	bn = BUNappend(bn, "user", FALSE);
-	b = BUNappend(b, &i, FALSE);
-	bn = BUNappend(bn, "elapuser", FALSE);
-	b = BUNappend(b, &i, FALSE);
-	bn = BUNappend(bn, "system", FALSE);
-	b = BUNappend(b, &i, FALSE);
-	bn = BUNappend(bn, "elapsystem", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapsed", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "user", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapuser", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "system", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "elapsystem", FALSE);
+	BUNappend(b, &i, FALSE);
 #endif
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -228,37 +228,37 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	/* store counters, ignore errors */
 	i = (wrd) (GDKmem_cursize() - memincr);
 	memincr = GDKmem_cursize();
-	bn = BUNappend(bn, "memincr", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "memincr", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.arena;
-	bn = BUNappend(bn, "arena", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "arena", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.ordblks;
-	bn = BUNappend(bn, "ordblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "ordblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.smblks;
-	bn = BUNappend(bn, "smblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "smblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.hblkhd;
-	bn = BUNappend(bn, "hblkhd", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "hblkhd", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.hblks;
-	bn = BUNappend(bn, "hblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "hblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.usmblks;
-	bn = BUNappend(bn, "usmblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "usmblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.fsmblks;
-	bn = BUNappend(bn, "fsmblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "fsmblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.uordblks;
-	bn = BUNappend(bn, "uordblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
+	BUNappend(bn, "uordblks", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = (wrd) m.fordblks;
-	bn = BUNappend(bn, "fordblks", FALSE);
-	b = BUNappend(b, &i, FALSE);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	BUNappend(bn, "fordblks", FALSE);
+	BUNappend(b, &i, FALSE);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -393,10 +393,10 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	BUNappend(b, &tot, FALSE);
 
 	BBPunlock("SYSmem_usage");
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret2 = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 
@@ -475,10 +475,10 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	BUNappend(b, &sz, FALSE);
 
 	BBPunlock("SYSvm_usage");
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret2 = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -585,8 +585,8 @@ SYSioStatistics(bat *ret, bat *ret2)
 	BUNappend(b, &i, FALSE);
 #endif
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -625,20 +625,20 @@ SYSgdkEnv(bat *ret, bat *ret2)
 			}
 		}
 	}
-	bn = BUNappend(bn, "bats", FALSE);
-	b = BUNappend(b, &pbat, FALSE);
-	bn = BUNappend(bn, "tmpbats", FALSE);
-	b = BUNappend(b, &tmp, FALSE);
-	bn = BUNappend(bn, "perbats", FALSE);
-	b = BUNappend(b, &per, FALSE);
-	bn = BUNappend(bn, "ondisk", FALSE);
-	b = BUNappend(b, &pdisk, FALSE);
-	bn = BUNappend(bn, "todisk", FALSE);
-	b = BUNappend(b, &BBPout, FALSE);
-	bn = BUNappend(bn, "fromdisk", FALSE);
-	b = BUNappend(b, &BBPin, FALSE);
-	if (!(b->batDirty & 2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	BUNappend(bn, "bats", FALSE);
+	BUNappend(b, &pbat, FALSE);
+	BUNappend(bn, "tmpbats", FALSE);
+	BUNappend(b, &tmp, FALSE);
+	BUNappend(bn, "perbats", FALSE);
+	BUNappend(b, &per, FALSE);
+	BUNappend(bn, "ondisk", FALSE);
+	BUNappend(b, &pdisk, FALSE);
+	BUNappend(bn, "todisk", FALSE);
+	BUNappend(b, &BBPout, FALSE);
+	BUNappend(bn, "fromdisk", FALSE);
+	BUNappend(b, &BBPin, FALSE);
+	if (!(b->batDirty & 2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2, bn,b);
 	return MAL_SUCCEED;
 }
@@ -665,8 +665,8 @@ SYSgdkThread(bat *ret, bat *ret2)
 			BUNappend(b, GDKthreads[i].name? GDKthreads[i].name:"", FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }

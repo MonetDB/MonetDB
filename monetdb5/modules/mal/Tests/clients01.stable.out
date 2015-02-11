@@ -20,9 +20,9 @@ function user.main():void;
 #io.print(i); 
 #u:= clients.getUsers(); 
 #io.print(u); 
-#l:= clients.getLogins(); 
-#io.print(l); 
-end main;
+#(u,l):= clients.getLogins(); 
+#io.print(u,l); 
+end user.main;
 [ 0 ]
 
 # 00:03:53 >  

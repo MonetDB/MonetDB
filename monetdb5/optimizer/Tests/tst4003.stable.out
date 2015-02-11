@@ -20,8 +20,9 @@ function user.main():void;
 # identical until insert takes place 
     d := algebra.select(b,"hello","world");
 # mapped onto one instruction 
-end main;
-#optimizer.commonTerms actions= 1 time=11 usec 
+end user.main;
+#commonTerms          actions= 1 time=14 usec 
+#aliases              actions= 1 time=12 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

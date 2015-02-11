@@ -17,6 +17,16 @@
  * All Rights Reserved.
  */
 
+/* (c) M Kersten, S Manegold
+ * The easiest calling method is something like:
+ * tomograph -d demo --atlast=10
+ * which connects to the demo database server and
+ * will collect the tomograph pages for at most 10 SQL queries
+ * For each page a gnuplot file, a data file, and the event trace
+ * are collected for more focussed analysis.
+ * 
+*/
+
 #include "monetdb_config.h"
 #include "monet_options.h"
 #include <mapi.h>
@@ -28,6 +38,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
@@ -39,150 +50,98 @@
 # endif
 #endif
 
-#define COUNTERSDEFAULT "ISTestn"
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
-/* #define _DEBUG_STETHOSCOPE_*/
+#define die(dbh, hdl)						\
+	do {							\
+		(hdl ? mapi_explain_query(hdl, stderr) :	\
+		 dbh ? mapi_explain(dbh, stderr) :		\
+		 fprintf(stderr, "!! command failed\n"));	\
+		goto stop_disconnect;				\
+	} while (0)
 
-static struct {
-	char tag;
-	char *ptag;     /* which profiler group counter is needed */
-	char *name;     /* which logical counter is needed */
-	int status;     /* trace it or not */
-} profileCounter[] = {
-	/*  0  */ { 'a', "aggregate", "total count", 0 },
-	/*  1  */ { 'a', "aggregate", "total ticks", 0 },
-	/*  2  */ { 'e', "event", "event id", 0 },
-	/*  3  */ { 'f', "function", "function", 0 },
-	/*  4  */ { 'i', "pc", "pc", 0 },
-	/*  5  */ { 'T', "time", "time stamp", 0 },
-	/*  6  */ { 't', "ticks", "usec ticks", 1 },
-	/*  7  */ { 'c', "cpu", "utime", 0 },
-	/*  8  */ { 'c', "cpu", "cutime", 0 },
-	/*  9  */ { 'c', "cpu", "stime", 0 },
-	/*  0  */ { 'c', "cpu", "cstime", 0 },
-	/*  1  */ { 'm', "memory", "arena", 0 },/* memory details are ignored*/
-	/*  2  */ { 'm', "memory", "ordblks", 0 },
-	/*  3  */ { 'm', "memory", "smblks", 0 },
-	/*  4  */ { 'm', "memory", "hblkhd", 0 },
-	/*  5  */ { 'm', "memory", "hblks", 0 },
-	/*  6  */ { 'm', "memory", "fsmblks", 0 },
-	/*  7  */ { 'm', "memory", "uordblks", 0 },
-	/*  8  */ { 'r', "reads", "blk reads", 0 },
-	/*  9  */ { 'w', "writes", "blk writes", 0 },
-	/*  0  */ { 'b', "rbytes", "rbytes", 0 },
-	/*  1  */ { 'b', "wbytes", "wbytes", 0 },
-	/*  2  */ { 's', "stmt", "stmt", 2 },
-	/*  3  */ { 'p', "process", "pg reclaim", 0 },
-	/*  4  */ { 'p', "process", "pg faults", 0 },
-	/*  5  */ { 'p', "process", "swaps", 0 },
-	/*  6  */ { 'p', "process", "ctxt switch", 0 },
-	/*  7  */ { 'p', "process", "inv switch", 0 },
-	/*  8  */ { 'I', "thread", "thread", 0 },
-	/*  9  */ { 'u', "user", "user", 0 },
-	/*  0  */ { 'S', "start", "start", 0 },
-	/*  1  */ { 'y', "type", "type", 0 },
-	/*  2  */ { 'D', "dot", "dot", 0 },
-	/*  3  */ { 'F', "flow", "flow", 0 },
-	/*  4  */ { 'M', "footprint", "footprint", 0 },
-	/*  5  */ { 'n', "numa","numa",0},
-	/*  6  */ { 0, 0, 0, 0 }
-};
+#define doQ(X)								\
+	do {								\
+		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
+		    mapi_error(dbh) != MOK)			\
+			die(dbh, hdl);			\
+	} while (0)
 
 static stream *conn = NULL;
 static char hostname[128];
+static char *basefilename = "stethoscope";
+static int debug = 0;
+static int beat = 50;
+static Mapi dbh;
+static MapiHdl hdl = NULL;
+
+/*
+ * Parsing the argument list of a MAL call to obtain un-quoted string values
+ */
 
 static void
-usage(void)
+usageStethoscope(void)
 {
-	fprintf(stderr, "stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}\n");
-	fprintf(stderr, "  -d | --dbname=<database_name>\n");
-	fprintf(stderr, "  -u | --user=<user>\n");
-	fprintf(stderr, "  -p | --port=<portnr>\n");
-	fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -? | --help\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "The trace options (default '%s'):\n",COUNTERSDEFAULT);
-	fprintf(stderr, "  S = monitor start of instruction profiling\n");
-	fprintf(stderr, "  a = aggregate clock ticks per instruction\n");
-	fprintf(stderr, "  e = event counter\n");
-	fprintf(stderr, "  f = enclosing module.function name\n");
-	fprintf(stderr, "  i = instruction counter\n");
-	fprintf(stderr, "  I = interpreter thread number\n");
-	fprintf(stderr, "  T = wall clock time\n");
-	fprintf(stderr, "  t = ticks in microseconds\n");
-	fprintf(stderr, "  c = cpu statistics (utime,ctime,stime,cstime)\n");
-	fprintf(stderr, "  m = rss memory as provided by OS (in MB)\n");
-	fprintf(stderr, "  M = memory footprint of non-persistent objects\n");
-	fprintf(stderr, "  n = numa intra socket data flow\n");
-	fprintf(stderr, "  r = block reads\n");
-	fprintf(stderr, "  w = block writes\n");
-	fprintf(stderr, "  b = bytes read/written\n");
-	fprintf(stderr, "  s = MAL statement\n");
-	fprintf(stderr, "  y = MAL argument types\n");
-	fprintf(stderr, "  p = process statistics, e.g. page faults, context switches\n");
-	fprintf(stderr, "  u = user id\n");
-	fprintf(stderr, "  D = Generate dot file upon query start\n");
-	fprintf(stderr, "  F = dataflow memory claims (in MB)\n");
+    fprintf(stderr, "stethoscope [options] \n");
+    fprintf(stderr, "  -d | --dbname=<database_name>\n");
+    fprintf(stderr, "  -u | --user=<user>\n");
+    fprintf(stderr, "  -p | --port=<portnr>\n");
+    fprintf(stderr, "  -h | --host=<hostname>\n");
+    fprintf(stderr, "  -o | --output=<file>\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+    fprintf(stderr, "  -? | --help\n");
+	exit(-1);
 }
 
 /* Any signal should be captured and turned into a graceful
  * termination of the profiling session. */
+
 static void
 stopListening(int i)
 {
-	(void)i;
-	if (conn != NULL)
-		mnstr_close(conn);
+	fprintf(stderr,"signal %d received\n",i);
+	if( dbh)
+		doQ("profiler.stop();");
+stop_disconnect:
+	// show follow up action only once
+	if(dbh)
+		mapi_disconnect(dbh);
+	exit(0);
 }
-
-static int
-setCounter(char *nme)
-{
-	int i, k = 1;
-
-	for (i = 0; profileCounter[i].tag; i++)
-		profileCounter[i].status = 0;
-
-	for (; *nme; nme++)
-		for (i = 0; profileCounter[i].tag; i++)
-			if (profileCounter[i].tag == *nme)
-				profileCounter[i].status = k++;
-	return k;
-}
-
-#define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
-					   dbh ? mapi_explain(dbh, stderr) :        \
-					   fprintf(stderr, "!! command failed\n")); \
-					   goto stop_disconnect;}
-#define doQ(X) \
-	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-			 die(dbh, hdl);
 
 int
 main(int argc, char **argv)
 {
-	int i, k;
-	ssize_t n;
-	char *e;
+	int  n, len;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	struct stat statb;
-	char *response, *x;
-	char buf[BUFSIZ + 1];
-	char *mod, *fcn;
-	Mapi dbh;
-	MapiHdl hdl = NULL;
+	char buf[BUFSIZ], *e, *response;
+	int line = 0;
+	FILE *trace = NULL;
 
-	static struct option long_options[6] = {
+	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
+		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "output", 1, 0, 'o' },
+		{ "debug", 0, 0, 'D' },
+		{ "beat", 1, 0, 'b' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -191,11 +150,17 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:h:?",
-			long_options, &option_index);
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:D:b",
+					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'D':
+			debug = 1;
+			break;
+		case 'b':
+			beat = atoi(optarg ? optarg : "100");
+			break;
 		case 'd':
 			dbname = optarg;
 			break;
@@ -208,62 +173,43 @@ main(int argc, char **argv)
 				free(password);
 			password = NULL;
 			break;
+		case 'P':
+			if (password)
+				free(password);
+			password = strdup(optarg);
+			break;
 		case 'p':
-			portnr = atol(optarg);
+			if (optarg)
+				portnr = atoi(optarg);
 			break;
 		case 'h':
 			host = optarg;
 			break;
+		case 'o':
+			basefilename = strdup(optarg);
+			if( strstr(basefilename,".trace"))
+				*strstr(basefilename,".trace") = 0;
+			printf("-- Output directed towards %s\n", basefilename);
+			break;
 		case '?':
-			usage();
+			usageStethoscope();
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
 			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-			usage();
+				usageStethoscope();
 			exit(-1);
 		}
 	}
 
-	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
-	{
-		dbname = argv[optind];
-		optind++;
-	}
+	if(debug)
+		printf("stethoscope -d %s -o %s\n",dbname,basefilename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
 		dbname = NULL;
 	}
-
-	i = optind;
-	if (argc > 1 && i < argc && argv[i][0] == '+') {
-		k = setCounter(argv[i] + 1);
-		i++;
-	} else
-		k = setCounter(COUNTERSDEFAULT);
-
-	/* DOT needs function id and PC to correlate */
-	if (profileCounter[32].status) {
-		profileCounter[3].status = k++;
-		profileCounter[4].status = k;
-	}
-
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (password == NULL)
-		password = simple_prompt("password", BUFSIZ, 0, NULL);
-
-	close(0); /* get rid of stdin */
-
-	/* our hostname, how remote servers have to contact us */
-	gethostname(hostname, sizeof(hostname));
-
-	/* forget about the options we've parsed */
-	argc = argc - i;
-	argv = &argv[i];
 
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
@@ -276,6 +222,15 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
+	close(0);
+
+	if (user == NULL)
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+	if (password == NULL)
+		password = simple_prompt("password", BUFSIZ, 0, NULL);
+
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
 
 	/* set up the profiler */
 	if (uri)
@@ -288,121 +243,64 @@ main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	host = strdup(mapi_get_host(dbh));
-#ifdef _DEBUG_STETHOSCOPE_
-	printf("-- connection with server %s\n", uri ? uri : host);
-#endif
+	if(debug)
+		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	/* set counters */
-	x = NULL;
-	for (i = 0; profileCounter[i].tag; i++) {
-		/* skip duplicates */
-		if (x == profileCounter[i].ptag)
-			continue;
-		/* deactivate any left over counter first */
-		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-				profileCounter[i].ptag);
-		doQ(buf);
-		if (profileCounter[i].status) {
-			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-					profileCounter[i].ptag);
-			doQ(buf);
-#ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s\n", buf);
-#endif
-		}
-		x = profileCounter[i].ptag;
-	}
-
-	for (portnr = 50010; portnr < 62010; portnr++) {
+	for (portnr = 50010; portnr < 62010; portnr++) 
 		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
 			break;
-	}
-	if (conn == NULL) {
+	
+	if ( conn == NULL) {
 		fprintf(stderr, "!! opening stream failed: no free ports available\n");
-		goto stop_cleanup;
+		fflush(stderr);
+		goto stop_disconnect;
 	}
 
-	printf("-- opened UDP profile stream %s:%d for %s\n",
-			hostname, portnr, host);
+	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
 
-	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			hostname, portnr);
+	snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+	if( debug)
+		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
-	/* Set Filters */
-	doQ("profiler.setNone();");
+	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
+	if( debug)
+		fprintf(stderr,"-- %s\n",buf);
+	doQ(buf);
 
-	if (argc == 0) {
-#ifdef _DEBUG_STETHOSCOPE_
-		printf("-- profiler.setAll();\n");
-#endif
-		doQ("profiler.setAll();");
-	} else {
-		for (i = 0; i < argc; i++) {
-			char *c;
-			char *arg = strdup(argv[i]);
-			c = strchr(arg, '.');
-			if (c) {
-				mod = arg;
-				if (mod == c)
-					mod = "*";
-				fcn = c + 1;
-				if (*fcn == 0)
-					fcn = "*";
-				*c = 0;
-			} else {
-				fcn = arg;
-				mod = "*";
-			}
-			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
-#ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s\n", buf);
-#endif
-			doQ(buf);
-			free(arg);
-		}
-	}
-#ifdef _DEBUG_STETHOSCOPE_
-	printf("-- profiler.start();\n");
-#endif
-	doQ("profiler.start();");
-	fflush(NULL);
+	snprintf(buf,BUFSIZ,"%s.trace",basefilename);
+	trace = fopen(buf,"w");
+	if( trace == NULL)
+		fprintf(stderr,"Could not create trace file\n");
 
-	i = 0;
-	while ((n = mnstr_read(conn, buf, 1, BUFSIZ)) > 0) {
-		buf[n] = 0;
+	len = 0;
+	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
+		buf[len + n] = 0;
+		if( trace) 
+			fprintf(trace,"%s",buf);
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			printf("%s\n", response);
+			if (++line % 200) {
+				line = 0;
+			}
 			response = e + 1;
 		}
 		/* handle last line in buffer */
-		if (*response)
-			printf("%s\n", response);
-		if (++i % 200) {
-			i = 0;
-			fflush(NULL);
-		}
+		if (*response) {
+			if (debug)
+				printf("LASTLINE:%s", response);
+			len = strlen(response);
+			strncpy(buf, response, len + 1);
+		} else
+			len = 0;
 	}
-	fflush(NULL);
 
-stop_cleanup:
-	doQ("profiler.setNone();");
 	doQ("profiler.stop();");
-	doQ("profiler.closeStream();");
 stop_disconnect:
-	if (dbh) {
+	if(dbh)
 		mapi_disconnect(dbh);
-		mapi_destroy(dbh);
-	}
-
-	if (host != NULL) {
-		printf("-- connection with server %s closed\n", uri ? uri : host);
-
-		free(host);
-	}
-	free(user);
-	free(password);
+	printf("-- connection with server %s closed\n", uri ? uri : host);
 	return 0;
 }

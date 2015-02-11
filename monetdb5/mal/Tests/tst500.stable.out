@@ -35,14 +35,11 @@ barrier v := calc.<(i,lim);
 exit v;
     r := 3.1400001:flt;
     return simple := r;
-end simple;
-#
-#r:= simple(0,2,"hello");
-#
+end user.simple;
 function user.main():void;
 # recursive MAL calls  
     r := user.simple(0,2,"hello");
-end main;
+end user.main;
 i=0 lim=2 str=hello
 i=1 lim=2 str=hello
 

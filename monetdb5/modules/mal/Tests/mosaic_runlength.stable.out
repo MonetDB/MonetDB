@@ -221,7 +221,7 @@ function user.main():void;
     cs := mosaic.compress(s);
     cc := mosaic.decompress(s);
     io.print(cc);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

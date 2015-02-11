@@ -42,7 +42,7 @@ exit ParseException:str ;
     io.print(e);
     e := inet.>>=(i6,i7);
     io.print(e);
-end main;
+end user.main;
 [ 127.0.0.1 ]
 [ 192.168.0.0/24 ]
 [ 192.168.0.0/16 ]

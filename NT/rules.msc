@@ -312,15 +312,15 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF ENABLE_DATACELL
-	$(ECHO) ENABLE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_DATACELL
+	$(ECHO) HAVE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) ENABLE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_CFITSIO
-	$(ECHO) HAVE_CFITSIO_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_FITS
+	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_CFITSIO_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_CURL
 	$(ECHO) HAVE_CURL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

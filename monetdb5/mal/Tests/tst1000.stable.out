@@ -29,11 +29,11 @@ function user.main():void;
     bat.setName(b,"mybat");
     c:bat[:oid,:int]  := bbp.bind("mybat");
     io.print(c);
-end main;
-#-----------------#
-# h	mybat	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  2	  ]
 
 # 07:58:52 >  

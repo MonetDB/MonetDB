@@ -66,7 +66,6 @@ geom_export str wkbFromText(wkb **w, const str *wkt, const int *tpe);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
 geom_export wkb *wkbNULL(void);
-geom_export str wkbIsnil(bit *r, wkb **v);
 geom_export str wkbAsText(str *r, wkb **w);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
@@ -140,15 +139,12 @@ mbr_isnil(mbr *m)
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
 
+static mbr mbrNIL = {GDK_flt_min, GDK_flt_min, GDK_flt_min, GDK_flt_min};
+
 mbr *
 mbrNULL(void)
 {
-	static mbr mbrNIL;
-	mbrNIL.xmin = flt_nil;
-	mbrNIL.ymin = flt_nil;
-	mbrNIL.xmax = flt_nil;
-	mbrNIL.ymax = flt_nil;
-	return (&mbrNIL);
+	return &mbrNIL;
 }
 
 /* FROMSTR: parse string to mbr. */
@@ -219,14 +215,16 @@ mbrFROMSTR(const char *src, int *len, mbr **atom)
 int
 mbrTOSTR(char **dst, int *len, mbr *atom)
 {
-	static char tempWkt[MBR_WKTLEN];
-	size_t dstStrLen = 3;
+	char tempWkt[MBR_WKTLEN];
+	size_t dstStrLen;
 
 	if (!mbr_isnil(atom)) {
-		snprintf(tempWkt, MBR_WKTLEN, "BOX (%f %f, %f %f)",
+		snprintf(tempWkt, MBR_WKTLEN, "\"BOX (%f %f, %f %f)\"",
 			 atom->xmin, atom->ymin, atom->xmax, atom->ymax);
-		dstStrLen = strlen(tempWkt) + 2;
-		assert(dstStrLen < GDK_int_max);
+		dstStrLen = strlen(tempWkt);
+	} else {
+		strcpy(tempWkt, "nil");
+		dstStrLen = 3;
 	}
 
 	if (*len < (int) dstStrLen + 1) {
@@ -236,7 +234,7 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 	}
 
 	if (dstStrLen > 3)
-		snprintf(*dst, *len, "\"%s\"", tempWkt);
+		snprintf(*dst, *len, "%s", tempWkt);
 	else
 		strcpy(*dst, "nil");
 	return (int) dstStrLen;
@@ -354,8 +352,8 @@ wkb_size(size_t len)
 {
 	if (len == ~(size_t) 0)
 		len = 0;
-	assert(sizeof(wkb) + len <= VAR_MAX);
-	return (var_t) (sizeof(wkb) + len);
+	assert(offsetof(wkb, data) + len <= VAR_MAX);
+	return (var_t) (offsetof(wkb, data) + len);
 }
 
 /* TOSTR: print atom in a string. */
@@ -545,20 +543,12 @@ wkbCOMP(wkb *l, wkb *r)
 	return memcmp(l->data, r->data, len);
 }
 
+static wkb wkb_nil = {~0};
+
 wkb *
 wkbNULL(void)
 {
-	static wkb nullval;
-
-	nullval.len = ~0;
-	return (&nullval);
-}
-
-str
-wkbIsnil(bit *r, wkb **v)
-{
-	*r = wkb_isnil(*v);
-	return MAL_SUCCEED;
+	return &wkb_nil;
 }
 
 str

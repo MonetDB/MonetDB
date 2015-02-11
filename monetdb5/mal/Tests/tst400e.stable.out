@@ -20,15 +20,7 @@ stdout of test 'tst400e` in directory 'monetdb5/mal` itself:
 function user.simple(z:lng):lng;
     z := calc.+(z,1:lng);
     return simple := z;
-end simple;
-#
-#	k:= 0:lng;
-#barrier	v:= k<1000000:lng;
-#	k:= user.simple(k);
-#	redo v:= k<1000000:lng;
-#exit	v;
-#io.print(k);
-#
+end user.simple;
 function user.main():void;
 # simple test of a function call  
 # performance evaluation, how expensive are 100k calls? 
@@ -38,7 +30,7 @@ barrier v := calc.<(k,1000000:lng);
     redo v := calc.<(k,1000000:lng);
 exit v;
     io.print(k);
-end main;
+end user.main;
 [ 1000000 ]
 
 # 07:48:33 >  

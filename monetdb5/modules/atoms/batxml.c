@@ -90,7 +90,7 @@ batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const 
 
 #define finalizeResult(X,Y,Z)					\
     if (!((Y)->batDirty & 2))					\
-		(Y) = BATsetaccess((Y), BAT_READ);		\
+		BATsetaccess((Y), BAT_READ);			\
     *(X) = (Y)->batCacheid;						\
     BBPkeepref(*(X));							\
     BBPunfix((Z)->batCacheid);

@@ -21,9 +21,9 @@ function user.main():void;
 # in this case D should be left alone 
     d := bat.new(:oid,:int);
     bat.append(d,2);
-end main;
-#optimizer.commonTerms actions= 0 time=12 usec 
-#optimizer.aliases    actions= 0 time=4 usec 
+end user.main;
+#commonTerms          actions= 0 time=12 usec 
+#aliases              actions= 0 time=10 usec 
 
 # 23:52:52 >  
 # 23:52:52 >  Done.

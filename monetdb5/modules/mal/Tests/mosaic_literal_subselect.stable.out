@@ -107,7 +107,7 @@ function user.main():void;
     io.print(tstr);
     tstr := mosaic.subselect(ystr,"big","fox",true,true,false);
     io.print(tstr);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -338,9 +338,6 @@ end main;
 # h	t  # name
 # void	void  # type
 #--------------------------#
-[ 0@0,	1@0  ]
-[ 1@0,	2@0  ]
-[ 2@0,	3@0  ]
 
 # 17:19:36 >  
 # 17:19:36 >  "Done."

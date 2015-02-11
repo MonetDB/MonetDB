@@ -63,7 +63,7 @@ function user.main():void;
     io.print(s);
     xs := mosaic.subselect(x,"2014-08-14 12:00:00.000":timestamp,"2014-08-14 12:02:00.000":timestamp,true,true,true);
     io.print(xs);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type

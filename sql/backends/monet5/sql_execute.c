@@ -370,11 +370,11 @@ SQLengineIntern(Client c, backend *be)
 
 	if (m->emod & mod_explain) {
 		if (be->q && be->q->code)
-			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_MAPI);
 		else if (be->q)
 			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
 		else if (c->curprg->def)
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_MAPI);
 		goto cleanup_engine;
 	}
 	if (m->emod & mod_dot) {

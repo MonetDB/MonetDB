@@ -22,13 +22,14 @@ create function sys.tracelog()
 		clk varchar(20), 	-- wallclock, no mtime in kernel
 		pc varchar(50), 	-- module.function[nr]
 		thread int, 		-- thread identifier
-		"user" int, 		-- user identifier
 		ticks bigint, 		-- time in microseconds
+		rrsMB bigint, 		-- resident memory in MB
+		vmMB bigint, 		-- virtual size in MB
 		reads bigint, 		-- number of blocks read
-		writes bigint, 	-- number of blocks written
-		rbytes bigint,		-- amount of bytes touched
-		wbytes bigint,		-- amount of bytes written
-		type string,		-- return types
+		writes bigint, 		-- number of blocks written
+		minflt bigint, 		-- minor page faults
+		majflt bigint, 		-- major page faults
+		nvcsw bigint, 		-- non-volantary conext switch
 		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;

@@ -81,6 +81,7 @@ str datacyclotronRef;
 str dblRef;
 str decompressRef;
 str deleteRef;
+str defineRef;
 str depositRef;
 str differenceRef;
 str tdifferenceRef;
@@ -123,6 +124,7 @@ str thetajoinRef;
 str subjoinRef;
 str subantijoinRef;
 str subbandjoinRef;
+str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
 str kunionRef;
@@ -279,6 +281,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
+int mtProp;
 
 void optimizerInit(void)
 {
@@ -337,6 +340,7 @@ void optimizerInit(void)
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);
 	deleteRef = putName("delete",6);
+	defineRef = putName("define",6);
 	depositRef = putName("deposit",7);
 	differenceRef= putName("difference",10);
 	tdifferenceRef= putName("tdifference",11);
@@ -378,6 +382,7 @@ void optimizerInit(void)
 	subjoinRef = putName("subjoin",7);
 	subantijoinRef = putName("subantijoin",11);
 	subbandjoinRef = putName("subbandjoin",11);
+	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);
@@ -536,6 +541,7 @@ void optimizerInit(void)
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
+	mtProp = PropertyIndex("mergetable");
 	/*
 	 * @-
 	 * Set the optimizer debugging flag

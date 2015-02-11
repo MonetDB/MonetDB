@@ -24,7 +24,7 @@ function user.main():void;
 # can be checked after bat module has been added 
     b := bat.new(:oid,:str);
     a := user.f(1@0,b,"hello");
-end main;
+end user.main;
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

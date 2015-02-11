@@ -27,14 +27,6 @@ address CMDbatISZERO
 comment "Unary check for zero over the tail of the bat with candidates list";
 
 
-pattern isnil(b:bat[:oid,:hge]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat";
-pattern isnil(b:bat[:oid,:hge],s:bat[:oid,:oid]) :bat[:oid,:bit]
-address CMDbatISNIL
-comment "Unary check for nil over the tail of the bat with candidates list";
-
-
 pattern not(b:bat[:oid,:hge]) :bat[:oid,:hge]
 address CMDbatNOT
 comment "Unary bitwise not over the tail of the bat";

@@ -64,7 +64,7 @@ function user.main():void;
     bat.append(i,2@0);
     jsn := json.fold(i,n,b);
     io.print(jsn);
-end main;
+end user.main;
 #--------------------------#
 # h	t		t				  # name
 # void	str		json				  # type

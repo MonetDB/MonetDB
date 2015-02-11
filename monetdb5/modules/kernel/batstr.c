@@ -145,7 +145,7 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 	X->tsorted=0;									\
 	X->trevsorted=0;
 #define finalizeResult(X,Y,Z)									\
-	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ);	\
+	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);		\
 	*X = (Y)->batCacheid;										\
 	BBPkeepref(*(X));											\
 	BBPunfix(Z->batCacheid);
@@ -1262,7 +1262,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 
 	bn->T->nonil = 0;
   bunins_failed:
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);

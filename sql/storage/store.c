@@ -177,7 +177,7 @@ trans_drop_tmp(sql_trans *tr)
 			sql_table *t = n->data;
 
 			if (t->persistence == SQL_LOCAL_TEMP)
-				list_remove_node(tmp->tables.set, n);
+				cs_remove_node(&tmp->tables, n);
 			n = nxt;
 		}
 	}
@@ -902,7 +902,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	    	cs_add(&s->types, load_type(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	/* second tables (and complex types) */
+	/* second tables */
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
 	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &id, NULL, NULL);
@@ -1938,6 +1938,76 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	return c;
 }
 
+static int
+sql_trans_cname_conflict( sql_trans *tr, sql_table *t, const char *extra, const char *cname)
+{
+	const char *tmp;
+
+	if (extra) {
+		tmp = sa_message(tr->sa, "%s_%s", extra, cname);
+	} else {
+       		tmp = cname;
+	}
+	if (find_sql_column(t, tmp))
+		return 1;
+	return 0;
+}
+
+static int
+sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, const char *extra, const char *tname, const char *cname)
+{
+	char *tp;
+	char *tmp;
+	sql_table *t = NULL;
+
+	if (extra) {
+		tmp = sa_message(tr->sa, "%s_%s", extra, tname);
+	} else {
+       		tmp = sa_strdup(tr->sa, tname);
+	}
+	tp = tmp;
+	while ((tp = strchr(tp, '_')) != NULL) {
+		*tp = 0;
+		t = find_sql_table(s, tmp);
+		if (t && sql_trans_cname_conflict(tr, t, tp+1, cname))
+			return 1;
+		*tp++ = '_';
+	}
+	t = find_sql_table(s, tname);
+	if (t && sql_trans_cname_conflict(tr, t, NULL, cname))
+		return 1;
+	return 0;
+}
+
+static int
+sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, const char *cname)
+{
+	char *sp;
+	sql_schema *s = NULL;
+
+	sp = strchr(sname, '_');
+	if (!sp && strchr(tname, '_') == 0 && strchr(cname, '_') == 0)
+		return 0;
+
+	if (sp) {
+		char *tmp = sa_strdup(tr->sa, sname);
+		sp = tmp;
+		while ((sp = strchr(sp, '_')) != NULL) {
+			*sp = 0;
+			s = find_sql_schema(tr, tmp);
+			if (s && sql_trans_tname_conflict(tr, s, sp+1, tname, cname))
+				return 1;
+			*sp++ = '_';
+		}
+	} else {
+		s = find_sql_schema(tr, sname);
+		if (s)
+			return sql_trans_tname_conflict(tr, s, NULL, tname, cname);
+	}
+	return 0;
+
+}
+
 sql_column *
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
@@ -1945,6 +2015,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
+		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
@@ -1962,7 +2034,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	if (isDeclaredTable(c->t)) 
 	if (isTable(t))
-		store_funcs.create_col(tr, col);
+		if (store_funcs.create_col(tr, col) == LOG_ERR)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
@@ -2319,7 +2392,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ts->dset = list_new(tr->sa, ts->destroy);
 						list_move_data(ts->set, ts->dset, tb);
 					//} else {
-						//list_remove_node(ts->set, tbn);
+						//cs_remove_node(ts, tbn);
 					//}
 				}
 			}
@@ -2909,7 +2982,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		for (n = fs->nelm; n; ) {
 			node *nxt = n->next;
 
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = nxt;
 		}
 		fs->nelm = NULL;
@@ -2942,7 +3015,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 					sql_base *b = n->data;
 					fprintf(stderr, "#reset_cs free %s\n", (b->name)?b->name:"help");
 				}
-				list_remove_node(fs->set, n);
+				cs_remove_node(fs, n);
 				n = t;
 			} else { /* a new id */
 				sql_base *r = fd(tr, TR_OLD, pfb,  b);
@@ -2973,7 +3046,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				fprintf(stderr, "#reset_cs free %s\n",
 					(b->name)?b->name:"help");
 			}
-			list_remove_node(fs->set, n);
+			cs_remove_node(fs, n);
 			n = t;
 		}
 	}
@@ -3048,6 +3121,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			store_funcs.destroy_del(NULL, ft);
 
 		ft->base.wtime = ft->base.rtime = 0;
+		ft->cleared = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->tables, &pft->tables, &ft->base, (resetf) NULL, (dupfunc) &table_find);
@@ -3090,7 +3164,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			for (n = fs->tables.nelm; n; ) {
 				node *nxt = n->next;
 
-				list_remove_node(fs->tables.set, n);
+				cs_remove_node(&fs->tables, n);
 				n = nxt;
 			}
 			fs->tables.nelm = NULL;
@@ -3919,6 +3993,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	cs_del(&mt->tables, n, pt->base.flag);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);
+	pt->p = NULL;
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, pt->s, pt->base.id, drop_action);
 	return mt;
@@ -4160,10 +4235,13 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	if (!tpe)
 		return NULL;
 
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
+		return NULL;
  	col = create_sql_column(tr->sa, t, name, tpe );
 
 	if (isTable(col->t))
-		store_funcs.create_col(tr, col);
+		if (store_funcs.create_col(tr, col) == LOG_ERR)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
@@ -4200,8 +4278,6 @@ drop_sql_key(sql_table *t, int id, int drop_action)
 	k->drop_action = drop_action; 
 	cs_del(&t->keys, n, TR_OLD);
 }
-
-
 
 void
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)

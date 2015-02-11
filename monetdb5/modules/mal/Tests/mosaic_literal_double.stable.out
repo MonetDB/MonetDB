@@ -33,7 +33,7 @@ function user.main():void;
     mosaic.dump(z);
     zd := mosaic.decompress(z);
     io.print(zd);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

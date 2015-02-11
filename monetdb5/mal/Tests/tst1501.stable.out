@@ -99,8 +99,8 @@ function user.main():void;
     io.table(o,x,y);
     io.print(x,y,z);
     io.table(o,x,y,z);
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t	t	  # name
 # oid	chr	dbl	  # type
 #-------------------------#

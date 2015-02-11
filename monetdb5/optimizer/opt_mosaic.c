@@ -130,8 +130,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb,q,getArg(q,0));
 			getArg(q,0) = j;
 			p= 0;
-		} else
-		// preferrably use compressed version
+		} 
+		else
         if ( getModuleId(p) == algebraRef && (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef) && check[getArg(p,1)] != 0)
                 setModuleId(p, mosaicRef);
 		else

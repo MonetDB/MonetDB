@@ -69,7 +69,7 @@ function user.main():void;
     err := bat.append(b,81);
     io.print(b);
     io.print(b,b,b);
-end main;
+end user.main;
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#

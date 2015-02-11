@@ -70,7 +70,7 @@ function user.main():void;
     io.print(s);
     xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
     io.print(xs);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

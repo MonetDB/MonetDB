@@ -22,7 +22,7 @@ function user.main():void;
     (c,d) := ("hello","world");
     io.print(c);
     io.print(d);
-end main;
+end user.main;
 [ "hello" ]
 [ "world" ]
 

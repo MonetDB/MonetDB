@@ -44,8 +44,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 67 # length
+% 83 # length
 function user.s6_1{autoCommit=true}():void;
+    X_36:void  := querylog.define("explain select * from tmp3;","sequential_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
@@ -63,8 +64,7 @@ function user.s6_1{autoCommit=true}():void;
     sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
     X_34 := io.stdout();
     sql.exportResult(X_34,X_19);
-end s6_1;
-# querylog.define("explain select * from tmp3;","sequential_pipe")
+end user.s6_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -163,8 +163,9 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 67 # length
+% 83 # length
 function user.s10_1{autoCommit=true}():void;
+    X_36:void  := querylog.define("explain select * from tmp3;","sequential_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
@@ -182,8 +183,7 @@ function user.s10_1{autoCommit=true}():void;
     sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
     X_34 := io.stdout();
     sql.exportResult(X_34,X_19);
-end s10_1;
-# querylog.define("explain select * from tmp3;","sequential_pipe")
+end user.s10_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -297,8 +297,9 @@ end s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 67 # length
+% 83 # length
 function user.s16_1{autoCommit=true}():void;
+    X_36:void  := querylog.define("explain select * from tmp3;","sequential_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
@@ -316,8 +317,7 @@ function user.s16_1{autoCommit=true}():void;
     sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
     X_34 := io.stdout();
     sql.exportResult(X_34,X_19);
-end s16_1;
-# querylog.define("explain select * from tmp3;","sequential_pipe")
+end user.s16_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name

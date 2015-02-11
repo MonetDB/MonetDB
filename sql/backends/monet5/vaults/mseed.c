@@ -112,7 +112,7 @@
 #include "vault.h"
 #include "mtime.h"
 
-str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+#include "sql_scenario.h"
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, sampleindex, samplecnt, sampletype, minval,maxval) \
@@ -162,13 +162,13 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			if( strcmp(network,msr->network))
 				msg = createException(MAL,"mseed.import","network name is not stable");
-			if( strcmp(station,msr->station))
+			else if( strcmp(station,msr->station))
 				msg = createException(MAL,"mseed.import","station name is not stable");
-			if( strcmp(location,msr->location))
+			else if( strcmp(location,msr->location))
 				msg = createException(MAL,"mseed.import","location name is not stable");
-			if( strcmp(channel,msr->channel))
+			else if( strcmp(channel,msr->channel))
 				msg = createException(MAL,"mseed.import","channel name is not stable");
-			if ( sampletype != msr->sampletype)
+			else if ( sampletype != msr->sampletype)
 				msg = createException(MAL,"mseed.import","sample type is not stable");
 			if (msg) goto wrapup;
 		}
@@ -192,7 +192,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL,"mseed.import","data type not yet implemented");
 			goto wrapup;
 		}
-		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE)) != MAL_SUCCEED)
+		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 				break;
 
 		sampleindex += msr->samplecnt;

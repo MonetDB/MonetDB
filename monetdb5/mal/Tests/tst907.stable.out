@@ -19,45 +19,21 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 function user.one(base:int):int;
     io.print(base);
     return one := base;
-end one;
-#
-#function three(base:int,x:int,y:int):int;
-#	print(base);
-#	return base;
-#end three;
+end user.one;
 function user.three(base:int,x:int,y:int):int;
     io.print(base);
     return three := base;
-end three;
-#function pow(base:int,raise:int):int;
-#        mg_a := calc.dbl(base);
-#        ng_a := calc.dbl(raise);
-#        og_a := *(mg_a,ng_a);
-#        pg_a := calc.int(og_a);
-#        return pg_a;
-#end pow;
+end user.three;
 function user.pow(base:int,raise:int):int;
     mg_a := calc.dbl(base);
     ng_a := calc.dbl(raise);
     og_a := calc.*(mg_a,ng_a);
     pg_a := calc.int(og_a);
     return pow := pg_a;
-end pow;
-#k:= user.one(1);
-#l:= user.three(1,2,3);
-#p:= user.pow(1,2);
-#
-#b:=new(:int,:int);
-#insert(b,1,1);
-#
-#print("do multiplex three test");
-#z:=multiplex.tactics("three",b,2,3);
-#print("do multiplex one test");
-#z:=multiplex.tactics("one",b);
-#print("do multiplex pow test");
-#z:=multiplex.tactics("pow",b,2);
-#print(z);
-#
+end user.pow;
+#WARNING To speedup user.three a bulk operator implementation is needed
+#WARNING To speedup user.one a bulk operator implementation is needed
+#WARNING To speedup user.pow a bulk operator implementation is needed
 function user.main():void;
     k := user.one(1);
     l := user.three(1,2,3);
@@ -65,37 +41,31 @@ function user.main():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
     io.print("do multiplex three test");
-    X_23 := bat.reverse(b);
-    X_25 := bat.new(nil:oid,nil:int);
-barrier (X_29,X_30) := iterator.new(b);
-    X_32 := user.three(X_30,2,3);
-    X_33 := algebra.fetch(X_23,X_29);
-    bat.insert(X_25,X_33,X_32);
-    redo (X_29,X_30) := iterator.next(b);
-exit (X_29,X_30);
-    z:bat[:oid,:int]  := X_25;
+    X_23 := bat.new(nil:oid,nil:int);
+barrier (X_27,X_28) := iterator.new(b);
+    X_30 := user.three(X_28,2,3);
+    bat.append(X_23,X_30);
+    redo (X_27,X_28) := iterator.next(b);
+exit (X_27,X_28);
+    z:bat[:oid,:int]  := X_23;
     io.print("do multiplex one test");
-    X_39 := bat.reverse(b);
-    X_41 := bat.new(nil:oid,nil:int);
-barrier (X_43,X_44) := iterator.new(b);
-    X_46 := user.one(X_44);
-    X_47 := algebra.fetch(X_39,X_43);
-    bat.insert(X_41,X_47,X_46);
-    redo (X_43,X_44) := iterator.next(b);
-exit (X_43,X_44);
-    z:bat[:oid,:int]  := X_41;
+    X_35 := bat.new(nil:oid,nil:int);
+barrier (X_37,X_38) := iterator.new(b);
+    X_40 := user.one(X_38);
+    bat.append(X_35,X_40);
+    redo (X_37,X_38) := iterator.next(b);
+exit (X_37,X_38);
+    z:bat[:oid,:int]  := X_35;
     io.print("do multiplex pow test");
-    X_53 := bat.reverse(b);
-    X_55 := bat.new(nil:oid,nil:int);
-barrier (X_57,X_58) := iterator.new(b);
-    X_60 := user.pow(X_58,2);
-    X_61 := algebra.fetch(X_53,X_57);
-    bat.insert(X_55,X_61,X_60);
-    redo (X_57,X_58) := iterator.next(b);
-exit (X_57,X_58);
-    z:bat[:oid,:int]  := X_55;
+    X_45 := bat.new(nil:oid,nil:int);
+barrier (X_47,X_48) := iterator.new(b);
+    X_50 := user.pow(X_48,2);
+    bat.append(X_45,X_50);
+    redo (X_47,X_48) := iterator.next(b);
+exit (X_47,X_48);
+    z:bat[:oid,:int]  := X_45;
     io.print(z);
-end main;
+end user.main;
 [ 1 ]
 [ 1 ]
 [ "do multiplex three test" ]

@@ -214,18 +214,18 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		break;
 	default:
 		// don't compress them
-		BBPfix(*ret = bcompress->batCacheid);
+		BBPkeepref(*ret = bcompress->batCacheid);
 		return msg;
 	}
 
 	if (bcompress->T->heap.compressed) {
-		BBPfix(*ret = bcompress->batCacheid);
+		BBPkeepref(*ret = bcompress->batCacheid);
 		return msg;	// don't compress twice
 	}
 
 	if ( isVIEWCOMBINE(bcompress) || BATcount(bcompress) < MIN_INPUT_COUNT ){
 		/* no need to compress */
-		BBPfix(*ret = bcompress->batCacheid);
+		BBPkeepref(*ret = bcompress->batCacheid);
 		return msg;
 	}
 
@@ -244,13 +244,12 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// It should always take less space than the orginal column.
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
-		if (BATsetaccess(bcompress, BAT_WRITE) == NULL) {
+		if (BATsetaccess(bcompress, BAT_WRITE) == GDK_FAIL) {
 			BBPunfix(bsrc->batCacheid);
 			BBPunfix(bcompress->batCacheid);
 			throw(MAL, "mosaic.compress", GDK_EXCEPTION);
 		}
-		bcompress = BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize);
-		if( bcompress == NULL){
+		if(  BATextend(bcompress, BATgrows(bcompress)+MosaicHdrSize) == GDK_FAIL){
 			BBPunfix(bsrc->batCacheid);
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 		}
@@ -278,8 +277,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// But be prepared that a header and last block header may  be stored
 		// use a size overshoot. Also be aware of possible dictionary headers
 		// Initialize local compressed copy
-		bsrc = BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize);
-		if( bsrc == NULL){
+		if(  BATextend(bsrc, BATgrows(bsrc)+MosaicHdrSize) == GDK_FAIL){
 			BBPunfix(bcompress->batCacheid);
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 		}
@@ -451,7 +449,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		bcompress->T->heap.compressed= 1;
 		MCexitMaintenance(cntxt);
 		BATsetaccess(bcompress, BAT_READ);
-		BBPfix(*ret = bcompress->batCacheid);
+		BBPkeepref(*ret = bcompress->batCacheid);
 		BBPunfix(bsrc->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(bcompress));
@@ -461,7 +459,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		bsrc->T->heap.dirty = 1;
 		bsrc->T->heap.free = (size_t) (task->dst - Tloc(bsrc,BUNfirst(bsrc)) );
 		bsrc->T->heap.compressed= 1;
-		BBPfix(*ret = bsrc->batCacheid);
+		BBPkeepref(*ret = bsrc->batCacheid);
 		BBPunfix(bcompress->batCacheid);
 	}
 	task->factor = task->hdr->factor = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
@@ -518,7 +516,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
 	if (!b->T->heap.compressed) {
-		BBPfix(*ret = b->batCacheid);
+		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (isVIEWCOMBINE(b)) {
@@ -642,7 +640,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 
 		MCexitMaintenance(cntxt);
 		BBPunfix(bsrc->batCacheid);
-		BBPfix( *ret = b->batCacheid);
+		BBPkeepref( *ret = b->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(b));
 		bsrc->batDirty = 1;
@@ -656,7 +654,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
         BATderiveProps(bsrc,0);
 
 		BBPunfix(b->batCacheid);
-		BBPfix( *ret = bsrc->batCacheid);
+		BBPkeepref( *ret = bsrc->batCacheid);
 	}
 	if( task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
@@ -804,7 +802,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
 			*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-			BBPfix(bn->batCacheid);
+			BBPkeepref(bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -858,7 +856,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tkey = 1;
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	GDKfree(task);
-	BBPfix(bn->batCacheid);
+	BBPkeepref(bn->batCacheid);
 	return msg;
 }
 
@@ -935,7 +933,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( nrofparts > task->hdr->top)
 			nrofparts = task->hdr->top;
 		if( part > nrofparts){
-			BBPfix(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+			BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -990,7 +988,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn->tsorted = 1;
 		bn->trevsorted = BATcount(bn) <= 1;
 		bn->tkey = 1;
-		BBPfix(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	GDKfree(task);
 	return msg;
@@ -1067,7 +1065,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( part >= nrofparts){
 			BBPunfix(*lid);
 			BBPunfix(*rid);
-			BBPfix(*ret = bn->batCacheid);
+			BBPkeepref(*ret = bn->batCacheid);
 			GDKfree(task);
 			return MAL_SUCCEED;
 		}
@@ -1126,7 +1124,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
 	BATderiveProps(bn,0);
-	BBPfix(*ret = bn->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	GDKfree(task);
 	return msg;
 }
@@ -1251,11 +1249,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     brn->trevsorted = cnt <= 1;
     BATderiveProps(brn,0);
     if( swapped){
-        BBPfix(*ret= brn->batCacheid);
-        BBPfix(*ret2= bln->batCacheid);
+        BBPkeepref(*ret= brn->batCacheid);
+        BBPkeepref(*ret2= bln->batCacheid);
     } else {
-        BBPfix(*ret= bln->batCacheid);
-        BBPfix(*ret2= brn->batCacheid);
+        BBPkeepref(*ret= bln->batCacheid);
+        BBPkeepref(*ret2= brn->batCacheid);
     }
 	GDKfree(task);
     return msg;

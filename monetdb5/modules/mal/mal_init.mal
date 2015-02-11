@@ -104,7 +104,7 @@ include zorder;
 
 include mosaic;
 # include logger;
-include transaction;
+# include transaction; no direct access anymore to avoid SQL interference
 
 # scheduler components
 include run_isolate;

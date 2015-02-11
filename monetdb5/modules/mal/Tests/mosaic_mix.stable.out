@@ -117,7 +117,7 @@ function user.main():void;
     mosaic.dump(x);
     z := mosaic.decompress(x);
     io.print(z);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -1253,10 +1253,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				k = getDestVar(q);
 			} else {
-				char *cmd = "subselect";
+				char *cmd = subselectRef;
 
 				if (s->flag != cmp_equal && s->flag != cmp_notequal)
-					cmd = "thetasubselect";
+					cmd = thetasubselectRef;
 
 				if (get_cmp(s) == cmp_filter) {
 					node *n;
@@ -1304,7 +1304,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				switch (s->flag) {
 				case cmp_equal:{
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1318,7 +1318,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_notequal:{
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1332,7 +1332,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_lt:
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1342,7 +1342,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_lte:
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1352,7 +1352,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_gt:
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1362,7 +1362,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_gte:
-					q = newStmt1(mb, algebraRef, cmd);
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1389,7 +1389,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r1 = -1, r2 = -1, rs = 0;
 			bit anti = (s->flag & ANTI) ? TRUE : FALSE;
 			bit swapped = (s->flag & SWAPPED) ? TRUE : FALSE;
-			char *cmd = (s->type == st_uselect2) ? "subselect" : "join";
+			char *cmd = (s->type == st_uselect2) ? subselectRef : subrangejoinRef;
 			int sub = -1;
 
 			if (l < 0)
@@ -1467,7 +1467,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 				} else
 					r2 = argumentZero(mb, tt);
-				cmd = bandjoinRef;
+				cmd = subbandjoinRef;
 			}
 
 			if (!rs) {
@@ -1476,16 +1476,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if ((r2 = _dumpstmt(sql, mb, s->op3)) < 0)
 					return -1;
 			}
-			q = newStmt1(mb, algebraRef, cmd);
+			q = newStmt2(mb, algebraRef, cmd);
 			if (s->type == st_join2)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, l);
-			if (sub > 0)
+			if (sub > 0) /* only for uselect2 */
 				q = pushArgument(mb, q, sub);
-			if (rs)
+			if (rs) {
 				q = pushArgument(mb, q, rs);
-			q = pushArgument(mb, q, r1);
-			q = pushArgument(mb, q, r2);
+			} else {
+				q = pushArgument(mb, q, r1);
+				q = pushArgument(mb, q, r2);
+			}
+			if (s->type == st_join2) {
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushNil(mb, q, TYPE_bat);
+			}
 
 			switch (s->flag & 3) {
 			case 0:
@@ -1505,6 +1511,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushBit(mb, q, TRUE);
 				break;
 			}
+			if (s->type == st_join2)
+				q = pushNil(mb, q, TYPE_lng); /* estimate */
 			if (s->type == st_uselect2) {
 				q = pushBit(mb, q, anti);
 				if (q == NULL)
@@ -1559,16 +1567,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_tinter:{
 			if (dump_2_(sql, mb, s, algebraRef, tinterRef) < 0)
-				return -1;
-		}
-			break;
-		case st_diff:{
-			if (dump_2(sql, mb, s, algebraRef, kdifferenceRef) < 0)
-				return -1;
-		}
-			break;
-		case st_union:{
-			if (dump_2(sql, mb, s, algebraRef, kunionRef) < 0)
 				return -1;
 		}
 			break;
@@ -1633,7 +1631,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				q = pushNil(mb, q, TYPE_bat);
 				q = pushNil(mb, q, TYPE_bat);
-				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, FALSE);
 				q = pushNil(mb, q, TYPE_lng);
 				if (q == NULL)
 					return -1;
@@ -1645,16 +1643,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				q = pushNil(mb, q, TYPE_bat);
 				q = pushNil(mb, q, TYPE_bat);
-				q = pushBit(mb, q, FALSE);
+				q = pushBit(mb, q, TRUE);
 				q = pushNil(mb, q, TYPE_lng);
 				if (q == NULL)
 					return -1;
 				break;
 			case cmp_notequal:
-				q = newStmt1(mb, algebraRef, antijoinRef);
+				q = newStmt1(mb, algebraRef, subantijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushBit(mb, q, FALSE);
+				q = pushNil(mb, q, TYPE_lng);
 				if (q == NULL)
 					return -1;
 				break;
@@ -2702,7 +2704,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			return NULL;
 		}
 		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_oid);
+		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
 		q = pushStr(mb, q, t);
 		GDKfree(tt);

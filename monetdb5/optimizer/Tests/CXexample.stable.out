@@ -21,7 +21,7 @@ function user.main():void;
     l := calc.+(24,27);
     l3 := calc.+(l,24);
     mdb.List();
-end main;
+end user.main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
@@ -31,7 +31,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     l := calc.+(24,27);                 #  6 l:int := CMDvarADDsignal(_14:int, _16:int) 
     l3 := calc.+(l,24);                 #  7 l3:int := CMDvarADDsignal(l:int, _14:int) 
     mdb.List();                         #  8 _20:void := MDBlistDetail() 
-end main;                               #  9  
+end user.main;                          #  9  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

@@ -18,7 +18,7 @@ stdout of test 'gettype_in_function` in directory 'monetdb5/tests/BugReports` it
 function user.typetest(o:any):void;
     t := inspect.getType(o);
     io.print(t);
-end typetest;
+end user.typetest;
 function user.main():void;
 # observed 13-08-2008: inspect.getType works fine local, but not in a 
 # function on an argument with type :any 
@@ -47,7 +47,7 @@ function user.main():void;
     io.print(z1);
     z1 := inspect.equalType(d,:int);
     io.print(z1);
-end main;
+end user.main;
 [ "str" ]
 [ "str" ]
 [ "bat[:oid,:int]" ]

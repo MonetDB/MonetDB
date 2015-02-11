@@ -106,7 +106,7 @@ libgeom_export const char *geom_type2str(int t);
 
 typedef struct wkb {
 	int len;
-	char data[];
+	char data[FLEXIBLE_ARRAY_MEMBER];
 } wkb;
 
 typedef struct {

@@ -62,8 +62,8 @@ exit i;
     io.print(y);
     z := batcalc.not(y);
     io.print(z);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # lng	lng	  # type
 #-----------------#

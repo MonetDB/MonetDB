@@ -24,11 +24,11 @@ function user.tst():void;
     io.print(d);
     e := mmath.sin(d);
     io.print(e);
-end tst;
+end user.tst;
 function user.main():void;
 # testing simple constant expression optimizations 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() 
     a := 2:int;                         #  1 a:int := _5:int 
     io.print(2:int);                    #  2 _3:void := IOprint_val(_5:int) 
@@ -40,7 +40,7 @@ function user.tst():void;               #  0 tst:void := user.tst()
     io.print(6:flt);                    #  8 _11:void := IOprint_val(_15:flt) 
     e := -0.279415488:flt;              #  9 e:flt := _16:flt 
     io.print(-0.279415488:flt);         # 10 _13:void := IOprint_val(_16:flt) 
-end tst;                                # 11  
+end user.tst;                           # 11  
 
 # 08:40:57 >  
 # 08:40:57 >  Done.

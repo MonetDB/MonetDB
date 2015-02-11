@@ -21,7 +21,7 @@ barrier go := true;
     redo go := calc.<(i,2);
 exit go;
     io.print("done");
-end main;
+end user.main;
 [ "step" ]
 [ "step" ]
 [ "done" ]

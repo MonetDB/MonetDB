@@ -25,11 +25,11 @@ function user.main():void;
     bat.setColumn(t,"first");
     u := bat.new(:oid,:str);
     io.print(t,u);
-end main;
-#-------------------------#
-# h	first	tmp_5	  # name
-# int	str	str	  # type
-#-------------------------#
+end user.main;
+#--------------------------#
+# h	first	t  # name
+# void	str	str  # type
+#--------------------------#
 
 # 07:59:13 >  
 # 07:59:13 >  Done.

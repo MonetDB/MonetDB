@@ -27,15 +27,7 @@ function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;
     io.print(div);
     reduce := batcalc./(b,div);
     io.print(reduce);
-end perftst;
-#
-#
-#b:= new(:lng,:lng);
-#barrier (v,i):= newRange(0:lng);
-#        insert(b,i,i);
-#        redo (v,i):= nextElement(1:lng,10:lng);
-#exit (v,i);
-#
+end user.perftst;
 function user.main():void;
 # the multiplex code blocks. 
     b := bat.new(:oid,:lng);
@@ -44,7 +36,7 @@ barrier i := 0:lng;
     redo i := iterator.next(1:lng,10:lng);
 exit i;
     user.perftst(b,1:lng);
-end main;
+end user.main;
 [ "perftst" ]
 [ 1 ]
 #-----------------#

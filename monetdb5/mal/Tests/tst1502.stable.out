@@ -100,7 +100,7 @@ function user.main():void;
     io.print("hsort xrev");
     xrev := algebra.subsort(x,true:bit,false:bit);
     io.print(xrev);
-end main;
+end user.main;
 [ "sort x" ]
 #-----------------#
 # h	tmp_7	  # name

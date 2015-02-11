@@ -55,8 +55,8 @@ exit GDKerror:str ;
 #get rid of it again 
 #destroy(b); 
 #destroy(c); 
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # first	second	  # name
 # int	int	  # type
 #-----------------#

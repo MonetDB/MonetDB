@@ -18,7 +18,7 @@ command bbp.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;
 function user.main():void;
 # check classification of functions in the proper module 
     b := bbp.new(:str,:int);
-end main;
+end user.main;
 
 # 07:58:57 >  
 # 07:58:57 >  Done.

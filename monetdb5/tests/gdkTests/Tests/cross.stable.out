@@ -26,7 +26,7 @@ function user.main():void;
     io.print(b);
     (bl,br) := algebra.crossproduct(b,b);
     io.print(bl,br);
-end main;
+end user.main;
 #--------------------------#
 # h	t	t  # name
 # void	void	void  # type

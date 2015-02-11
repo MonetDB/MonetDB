@@ -18,12 +18,12 @@ function user.qry(version:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.append(b,23);
     return qry := b;
-end qry;
+end user.qry;
 function user.main():void;
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
     remote.register(conn,"user","qry");
-end main;
+end user.main;
 
 
 

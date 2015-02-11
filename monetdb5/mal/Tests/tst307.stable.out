@@ -24,13 +24,14 @@ stdout of test 'tst307` in directory 'monetdb5/mal` itself:
 function user.main():void;
 #testing exceptions raised in the kernel 
     b := bat.new(:oid,:int);
-    z := algebra.find(b,0@0);
-    io.print("should not come here anymore");
-catch MALException:str ;
-    io.print("caught the exception");
-exit MALException:str ;
-end main;
-[ "caught the exception" ]
+    bat.append(b,0);
+    z := algebra.find(b,0);
+    io.print(z);
+    zz := algebra.find(b,nil:int);
+    io.print(zz);
+end user.main;
+[ 0@0 ]
+[ nil ]
 
 # 08:01:18 >  
 # 08:01:18 >  Done.

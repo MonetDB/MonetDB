@@ -3601,9 +3601,22 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		return NULL;
 
 	t = exp_subtype(e);
-	f = bind_func(sql, s, fname, t, NULL, type);
-	if (!f)
-		f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	if (!t) {
+		f = find_func(sql, s, fname, 1, type);
+		if (!f)
+			f = find_func(sql, s, fname, 1, F_AGGR);
+		if (f) {
+			sql_arg *a = f->func->ops->h->data;
+
+			t = &a->type;
+			if (rel_set_type_param(sql, t, e, 1) < 0)
+				return NULL;
+		}
+	} else {
+		f = bind_func(sql, s, fname, t, NULL, type);
+		if (!f)
+			f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	}
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
 
@@ -5590,19 +5603,20 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 		rel_destroy(t2);
 		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
-	if (t1 && dist)
-		t1 = rel_distinct(t1);
 	if ( q->token == SQL_UNION) {
+		/* For EXCEPT/INTERSECT the group by is always done within the implementation */
+		if (t1 && dist)
+			t1 = rel_distinct(t1);
 		if (t2 && dist)
 			t2 = rel_distinct(t2);
 		res = rel_setquery_(sql, t1, t2, corresponding, op_union );
-		if (res && dist)
-			res = rel_distinct(res);
 	}
 	if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(sql, t1, t2, corresponding, op_except );
 	if ( q->token == SQL_INTERSECT)
 		res = rel_setquery_(sql, t1, t2, corresponding, op_inter );
+	if (res && dist)
+		res = rel_distinct(res);
 	return res;
 }
 

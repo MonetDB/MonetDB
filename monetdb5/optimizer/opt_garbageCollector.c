@@ -27,6 +27,7 @@
 /*
  * Keeping variables around beyond their end-of-life-span
  * can be marked with the proper 'keep'.
+ * Set the program counter to ease profiling
  */
 int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -42,14 +43,30 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
-	span = setLifespan(mb);
-	if ( span == NULL)
-		return 0;
 
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	vlimit = mb->vtop;
+
+	// move SQL query to front
+	p = NULL;
+	for(i = 2; i< limit; i++){
+		if( getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
+			p= mb->stmt[i];
+			break;
+		}
+	}
+	if( p != NULL){
+		for(  ; i > 1; i--)
+			mb->stmt[i] = mb->stmt[i-1];
+		mb->stmt[1] = p;
+		mb->stmt[1]->token = ASSIGNsymbol;
+	}
+	span = setLifespan(mb);
+	if ( span == NULL)
+		return 0;
+
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) {
 		GDKfree(span);
 		return 0;
@@ -59,6 +76,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
+		p->pc = i;
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -114,6 +132,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginLifespan(span,k), getLastUpdate(span,k), getEndLifespan(span,k));
+		chkFlow(cntxt->fdout,mb);
+		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 	GDKfree(span);

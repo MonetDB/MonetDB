@@ -16,7 +16,7 @@ function user.dummy(i:int):void;
     b := mdb.getDefinition();
     io.print(b);
     mdb.list();
-end dummy;
+end user.dummy;
 function user.main():void;
 #self inspection of the code base 
     user.dummy(1);
@@ -24,7 +24,7 @@ function user.main():void;
     l := inspect.getSignature("user","dummy");
     io.print(l);
     mdb.list("user","dummy");
-end main;
+end user.main;
 [ 1 ]
 #-------------------------------------------------#
 # view	fcn					  # name
@@ -35,13 +35,13 @@ end main;
 [ 2@0,	  "     := mdb.getDefinition();"	  ]
 [ 3@0,	  "    io.print(b);"			  ]
 [ 4@0,	  "    mdb.list();"			  ]
-[ 5@0,	  "end dummy;"				  ]
+[ 5@0,	"end user.dummy;"  ]
 function user.dummy(i:int):void;
     io.print(i);
     b := mdb.getDefinition();
     io.print(b);
     mdb.list();
-end dummy;
+end user.dummy;
 get function properties
 #-----------------------------------------#
 # view		input			  # name
@@ -53,7 +53,7 @@ function user.dummy(i:int):void;
     b := mdb.getDefinition();
     io.print(b);
     mdb.list();
-end dummy;
+end user.dummy;
 
 # 00:03:56 >  
 # 00:03:56 >  Done.

@@ -1,0 +1,40 @@
+stdout of test 'prepare_unop_crash.Bug-3653` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 08:58:48 >  
+# 08:58:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32270" "--set" "mapi_usock=/var/tmp/mtest-32037/.s.monetdb.32270" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:58:48 >  
+
+# MonetDB 5 server v11.19.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32270/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32037/.s.monetdb.32270
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 08:58:49 >  
+# 08:58:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32037" "--port=32270"
+# 08:58:49 >  
+
+#PREPARE SELECT id FROM tables WHERE name = LOWER(?);
+#PREPARE SELECT id FROM tables WHERE name = LOWER(?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	6,	2 # length
+[ "int",	32,	0,	"",	"tables",	"id"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+
+# 08:58:49 >  
+# 08:58:49 >  "Done."
+# 08:58:49 >  
+

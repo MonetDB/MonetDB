@@ -57,6 +57,12 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
+typedef struct CURRENT_INSTR{
+	MalBlkPtr	mb;
+	MalStkPtr	stk;
+	InstrPtr	pci;
+} Workset;
+
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
@@ -85,7 +91,6 @@ typedef struct CLIENT {
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	bit			active;		/* processing a query or not */
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
@@ -169,6 +174,12 @@ typedef struct CLIENT {
 	 * contexts at the same time are in use.
 	 */
 	void *sqlcontext;
+
+	/*
+	 * keep track of which instructions are currently being executed
+	 */
+	bit		active;		/* processing a query or not */
+	Workset inprogress[THREADS];
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

@@ -25,14 +25,14 @@ function user.tst():void;
     X16 := mmath.pi();
     X17 := calc./(X15,X16);
     io.print(X17);
-end tst;
+end user.tst;
 function user.main():void;
 # test constant expressions 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() 
     io.print(57.295779513082323:dbl);   #  1 _8:void := IOprint_val(_12:dbl) 
-end tst;                                #  2  
+end user.tst;                           #  2  
 
 # 21:32:15 >  
 # 21:32:15 >  Done.

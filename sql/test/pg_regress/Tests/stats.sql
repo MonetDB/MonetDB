@@ -26,8 +26,8 @@ CREATE FUNCTION sleep(interval) RETURNS integer AS '
 DECLARE
   endtime timestamp;
 BEGIN
-  endtime := timeofday()::timestamp + $1;
-  WHILE timeofday()::timestamp < endtime LOOP
+  endtime := current_timestamp + $1;
+  WHILE current_timestamp < endtime LOOP
   END LOOP;
   RETURN 0;
 COMMIT;

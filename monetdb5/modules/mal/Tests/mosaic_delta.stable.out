@@ -62,7 +62,7 @@ function user.main():void;
 #mosaic.dump(xd); 
     zd := mosaic.decompress(xd);
     io.print(zd);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

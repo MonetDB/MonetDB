@@ -20,33 +20,15 @@ stdout of test 'tst620` in directory 'monetdb5/mal` itself:
 function user.tst():void;
     z := inspect.getSize();
     io.printf("#size %d\n",z);
-end tst;
-#
-#user.tst();
-#
-#f:= inspect.getSize("algebra");
-#fs:= aggr.sum(f);
-#fs2:= fs/2;
-#io.printf("#algebra size %d\n",fs2);
-#
-#z:= inspect.getSize("inspect");
-#zs:= aggr.sum(z);
-#zs2:= zs/2;
-#io.printf("#inspect size %d\n",zs2);
-#
-#l:= inspect.getSize();
-#io.printf("#size %d\n",l);
-#
+end user.tst;
 function user.main():void;
 #check the storage size 
     user.tst();
     l := inspect.getSize();
     io.printf("#size %d\n",l);
-end main;
-#size 516
-#algebra size 29908
-#inspect size 4564
-#size 2124
+end user.main;
+#size 820
+#size 1228
 
 # 21:04:56 >  
 # 21:04:56 >  Done.

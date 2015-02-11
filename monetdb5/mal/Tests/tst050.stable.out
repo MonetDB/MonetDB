@@ -41,7 +41,7 @@ function user.main():void;
     k:lng  := 1:sht;
     y:bat[:oid,:str]  := bat.new(:oid,:int);
     f:flt  := "wrong";
-end main;
+end user.main;
 
 # 19:43:03 >  
 # 19:43:03 >  Done.

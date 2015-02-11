@@ -40,11 +40,11 @@ function user.main():void;
     io.print(br);
     l0 := algebra.copy(b);
     io.print(l0);
-end main;
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  9	  ]

@@ -24,16 +24,6 @@ address CMDvarISZERO
 comment "Unary check for zero of V";
 
 
-pattern isnil(v:hge) :bit
-address CMDvarISNIL
-comment "Unary check for nil of V";
-
-
-pattern isnotnil(v:hge) :bit
-address CMDvarISNOTNIL
-comment "Unary check for notnil of V";
-
-
 pattern not(v:hge) :hge
 address CMDvarNOT
 comment "Unary bitwise not of V";
@@ -1586,22 +1576,6 @@ pattern str(v:hge) :str
 address CMDvarCONVERT
 comment "Cast VALUE to str";
 
-
-pattern min(v1:hge, v2:hge) :hge
-address CALCmin
-comment "Return min of V1 and V2";
-
-pattern min_no_nil(v1:hge, v2:hge) :hge
-address CALCmin_no_nil
-comment "Return min of V1 and V2, ignoring nil values";
-
-pattern max(v1:hge, v2:hge) :hge
-address CALCmax
-comment "Return max of V1 and V2";
-
-pattern max_no_nil(v1:hge, v2:hge) :hge
-address CALCmax_no_nil
-comment "Return max of V1 and V2, ignoring nil values";
 
 module aggr;
 

@@ -198,6 +198,7 @@ extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
+extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
@@ -493,7 +494,7 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;
+	struct sql_table *p;	/* The table is part of this merge table */
 } sql_table;
 
 typedef struct res_col {

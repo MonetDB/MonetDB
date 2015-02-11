@@ -30,7 +30,7 @@ stderr of test 'compression` in directory 'sql/test/mosaic` itself:
 # 14:00:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19726" "--port=38313"
 # 14:00:27 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28059/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-26624/.s.monetdb.39280
 QUERY = drop table tmp3;
 ERROR = !DROP TABLE: no such table 'tmp3'
 

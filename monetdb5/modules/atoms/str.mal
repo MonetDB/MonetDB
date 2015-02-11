@@ -115,21 +115,6 @@ command rpad( s:str, len:int, s2:str ) :str
 address STRRpad2
 comment "Fill up the first string to the given length appending characters of the second string.";
 
-command calc.max(s:str, t:str):str
-address STRmax
-comment "Select the maximum string in lexicographic order";
-command calc.max_no_nil(s:str, t:str):str
-address STRmax_no_nil
-comment "Select the maximum string in lexicographic order, ignoring nils";
-command calc.min(s:str, t:str):str
-address STRmin
-comment "Select the minimum string in lexicographic order";
-command calc.min_no_nil(s:str, t:str):str
-address STRmin_no_nil
-comment "Select the minimum string in lexicographic order, ignoring nils";
-
-module str;
-
 command substitute(s:str,src:str,dst:str,rep:bit) :str
 address STRSubstitute
 comment "Substitute first occurrence of 'src' by

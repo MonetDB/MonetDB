@@ -669,7 +669,7 @@ exit lf_a;
     bat.setAccess(kh_a,"w");
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE); 
 ## KILL 
-end main;
+end user.main;
 [ "date_seq,sf_a,vf_a,ag_a,cg_a" ]
 #---------------------------------------------------------------------------------#
 # лллл;	date		weekofyear	dayofweek	num	dayofyear	  # name

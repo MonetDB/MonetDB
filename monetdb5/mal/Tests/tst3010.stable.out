@@ -18,28 +18,18 @@ stdout of test 'tst3010` in directory 'monetdb5/mal` itself:
 function user.add{writeable, safe}(i:int,j:int):int;
     j := calc.+(j,i);
     return add := j;
-end add;
-#
-#function add2(i:int,j:int):int{safe};
-#	k:= j+i;
-#	return k;
-#end ;
+end user.add;
 function user.add2{safe}(i:int,j:int):int;
     k := calc.+(j,i);
     return add2 := k;
-end add2;
-#
-#i{cost=23}:= 23;
-#z:= user.add(i,i); #violates properties
-#kk:= user.add2(i,i);
-#
+end user.add2;
 function user.main():void;
 #Parsing properties and keeping them around 
     i := 23;
     z := user.add(i,i);
 #violates properties 
     kk := user.add2(i,i);
-end main;
+end user.main;
 
 # 07:49:49 >  
 # 07:49:49 >  Done.

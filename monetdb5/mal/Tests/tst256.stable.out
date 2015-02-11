@@ -51,11 +51,11 @@ function user.main():void;
     io.print(mi);
     cr := aggr.cardinality(b);
     io.print(cr);
-end main;
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  15	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  16	  ]

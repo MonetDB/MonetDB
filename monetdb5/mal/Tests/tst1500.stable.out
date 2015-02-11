@@ -46,7 +46,7 @@ function user.main():void;
     io.print(e1);
     io.print("h1 becomes");
     io.print(h1);
-end main;
+end user.main;
 [ "group x" ]
 #-----------------#
 # h	tmp_4	  # name

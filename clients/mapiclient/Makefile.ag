@@ -42,7 +42,7 @@ bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
-		$(curl_LIBS) $(MALLOC_LIBS) $(SOCKET_LIBS)
+		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
 }
 
 bin_tomograph = {
