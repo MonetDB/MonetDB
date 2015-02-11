@@ -910,7 +910,7 @@ TESTrenderer(MapiHdl hdl)
 			mnstr_printf(toConsole, "%s", sep);
 			sep = ",\t";
 			if (s == NULL)
-				mnstr_printf(toConsole, mode == SQL ? "NULL" : "nil");
+				mnstr_printf(toConsole, "%s", mode == SQL ? "NULL" : "nil");
 			else if (strcmp(tp, "varchar") == 0 ||
 				 strcmp(tp, "char") == 0 ||
 				 strcmp(tp, "clob") == 0 ||
