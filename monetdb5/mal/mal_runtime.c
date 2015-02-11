@@ -59,10 +59,8 @@ static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
-	for ( i = mb->stop-1 ; i > 0; i--){
+	for ( i = 0; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
-		if ( p->token == ENDsymbol)
-			break;
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
 	}
