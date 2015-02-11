@@ -1409,7 +1409,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k,limit, cand=1;
 	bat bid;
-	int threshold= 1000;
+	int threshold= 5;
 	str properties[32] ={0};
 	float xf[32];
 	int top=0,x=0,mx;

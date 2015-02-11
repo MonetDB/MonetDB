@@ -31,17 +31,17 @@ Ready.
 #alter table x set read only;
 #select readonly from sys.tables where name='x';
 % .tables # table_name
-% readonly # name
-% boolean # type
-% 5 # length
-[ true	]
+% access # name
+% smallint # type
+% 1 # length
+[ 1	]
 #alter table x add primary key (a);
 #select readonly from sys.tables where name='x';
 % .tables # table_name
-% readonly # name
-% boolean # type
-% 5 # length
-[ true	]
+% access # name
+% smallint # type
+% 1 # length
+[ 1	]
 #drop table x;
 
 # 15:44:28 >  

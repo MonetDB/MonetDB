@@ -1027,14 +1027,6 @@ pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 
-pattern compress(sch:str, tbl:str)
-address SQLcompress
-comment "Compress all columns of a readonly table";
-
-pattern decompress(sch:str, tbl:str)
-address SQLdecompress
-comment "Decompress all columns of a readonly table";
-
 pattern cluster1(sch:str, tbl:str)
 address SQLcluster1
 comment "Cluster the columns of a table on the (first) primary key";
