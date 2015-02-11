@@ -305,7 +305,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for( --top; top>=0; top--)
 				BBPunfix(joins[top]->batCacheid);
 			GDKfree(joins);
-			throw(MAL, "algebra.joinPath", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
+			throw(MAL, "algebra.joinPath", "%s", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}
 		joins[top++] = b;
 	}
