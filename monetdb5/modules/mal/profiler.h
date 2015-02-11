@@ -58,6 +58,7 @@ profiler_export str CMDnoopProfiler(void *res);
 profiler_export str CMDclearTrace(void *res);
 profiler_export str CMDdumpTrace(void *res);
 profiler_export str CMDgetTrace(bat *res, str *ev);
+profiler_export str CMDsetHeartbeat(void *res, int *ev);
 profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDcloseProfilerStream(void *res);
 profiler_export str CMDcleanup(void *ret);

@@ -3800,12 +3800,12 @@ str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[7];
+	BAT *t[8];
 
 	(void) cntxt;
 	(void) mb;
 	QLOGcatalog(t);
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < 8; i++) {
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;

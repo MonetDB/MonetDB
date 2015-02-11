@@ -29,8 +29,8 @@ pattern stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
 
-pattern setHeartbeat(b:int):void
-address setHeartbeat
+command setHeartbeat(b:int):void
+address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
 pattern openStream():void

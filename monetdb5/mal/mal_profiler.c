@@ -889,6 +889,8 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 			s++;
 	}
 
+	if( cpuload == 0)
+		return 0;
 	s= cpuload;
 	len = BUFSIZ;
 	// identify core processing

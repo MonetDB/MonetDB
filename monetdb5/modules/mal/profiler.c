@@ -131,6 +131,14 @@ CMDgetTrace(bat *res, str *ev)
 }
 
 str
+CMDsetHeartbeat(void *res, int *ev)
+{
+	(void) res;
+	setHeartbeat(*ev);
+	return MAL_SUCCEED;
+}
+
+str
 CMDcleanup(void *ret){
 	(void) ret;
 	return cleanupProfiler();
