@@ -84,7 +84,7 @@ function user.main():void;
     bat.append(is,17922987);
     res3:bat[:oid,:str]  := mal.manifold("bam","seq_char",is,sc_seqs,sc_poss,sc_cgrs);
     io.print(res3);
-end main;
+end user.main;
 [ false ]
 #--------------------------#
 # h	t  # name
