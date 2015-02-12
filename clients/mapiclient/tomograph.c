@@ -38,7 +38,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#include <pthread.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
@@ -530,7 +529,7 @@ char *currentquery= 0;
 int object = 1;
 
 static void resetTomograph(void){
-	static char buf[128];
+	static char buf[BUFSIZ];
 	int i;
 	snprintf(buf,BUFSIZ,"%s_%02d.trace",basefilename,atlaspage);
 	if( inputfile == 0 || strcmp(inputfile,buf) ){
