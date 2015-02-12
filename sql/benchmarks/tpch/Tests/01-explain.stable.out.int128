@@ -11,7 +11,7 @@ stdout of test '01-explain` in directory 'sql/benchmarks/tpch` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
@@ -50,8 +50,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 602 # length
+% 620 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
+    X_170:void  := querylog.define("explain select\n\tl_returnflag,\n\tl_linestatus,\n\tsum(l_quantity) as sum_qty,\n\tsum(l_extendedprice) as sum_base_price,\n\tsum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n\tsum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n\tavg(l_quantity) as avg_qty,\n\tavg(l_extendedprice) as avg_price,\n\tavg(l_discount) as avg_disc,\n\tcount(*) as count_order\nfrom\n\tlineitem\nwhere\n\tl_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n\tl_returnflag,\n\tl_linestatus\norder by\n\tl_returnflag,\n\tl_linestatus;","sequential_pipe");
     X_7 := sql.mvc();
     X_11:bat[:oid,:date]  := sql.bind(X_7,"sys","lineitem","l_shipdate",0);
     X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","lineitem");
@@ -136,8 +137,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     sql.rsColumn(X_121,"sys.L10","count_order","wrd",64,0,X_120);
     X_168 := io.stdout();
     sql.exportResult(X_168,X_121);
-end s2_1;
-# querylog.define("explain select\n\tl_returnflag,\n\tl_linestatus,\n\tsum(l_quantity) as sum_qty,\n\tsum(l_extendedprice) as sum_base_price,\n\tsum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n\tsum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n\tavg(l_quantity) as avg_qty,\n\tavg(l_extendedprice) as avg_price,\n\tavg(l_discount) as avg_disc,\n\tcount(*) as count_order\nfrom\n\tlineitem\nwhere\n\tl_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n\tl_returnflag,\n\tl_linestatus\norder by\n\tl_returnflag,\n\tl_linestatus;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

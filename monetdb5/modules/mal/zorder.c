@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -183,7 +183,7 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	BBPunfix(by->batCacheid);
 
 	if (!(bz->batDirty&2)) 
-		bz = BATsetaccess(bz, BAT_READ);
+		BATsetaccess(bz, BAT_READ);
 	BATsetcount(bz, BATcount(bx));
 	BATseqbase(bz, bx->hseqbase);
 	bz->hsorted = 1;
@@ -195,7 +195,7 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 
 	if (bx->htype != bz->htype) {
         BAT *r = VIEWcreate(bx,bz);
-        BBPreleaseref(bz->batCacheid);
+        BBPunfix(bz->batCacheid);
         bz = r;
     }
 
@@ -241,7 +241,7 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	} 
 
 	if (!(bx->batDirty&2)) 
-		bx = BATsetaccess(bx, BAT_READ);
+		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
 	BATseqbase(bx, bz->hseqbase);
 	bx->hsorted = 1;
@@ -253,12 +253,12 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 
 	if (bx->htype != bz->htype) {
         BAT *r = VIEWcreate(bz,bx);
-        BBPreleaseref(bx->batCacheid);
+        BBPunfix(bx->batCacheid);
         bx = r;
     }
 
 	if (!(by->batDirty&2)) 
-		by = BATsetaccess(by, BAT_READ);
+		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
 	BATseqbase(by, bz->hseqbase);
 	by->hsorted = 1;
@@ -270,7 +270,7 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 
 	if (by->htype != bz->htype) {
         BAT *r = VIEWcreate(bz,by);
-        BBPreleaseref(by->batCacheid);
+        BBPunfix(by->batCacheid);
         by = r;
     }
 
@@ -313,7 +313,7 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	} 
 
 	if (!(bx->batDirty&2)) 
-		bx = BATsetaccess(bx, BAT_READ);
+		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
 	BATseqbase(bx, bz->hseqbase);
 	bx->hsorted = 1;
@@ -325,7 +325,7 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 
 	if (bx->htype != bz->htype) {
         BAT *r = VIEWcreate(bz,bx);
-        BBPreleaseref(bx->batCacheid);
+        BBPunfix(bx->batCacheid);
         bx = r;
     }
 
@@ -367,7 +367,7 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	} 
 
 	if (!(by->batDirty&2)) 
-		by = BATsetaccess(by, BAT_READ);
+		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
 	BATseqbase(by, bz->hseqbase);
 	by->hsorted = 1;
@@ -379,7 +379,7 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 
 	if (by->htype != bz->htype) {
         BAT *r = VIEWcreate(bz,by);
-        BBPreleaseref(by->batCacheid);
+        BBPunfix(by->batCacheid);
         by = r;
     }
 
@@ -408,7 +408,7 @@ str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt)
 	}
 
 	if (!(bn->batDirty&2)) 
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }

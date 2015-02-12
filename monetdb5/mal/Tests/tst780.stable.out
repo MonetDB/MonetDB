@@ -19,28 +19,17 @@ stdout of test 'tst780` in directory 'monetdb5/mal` itself:
 #end hello;
 function dummy.hello():void;
     io.print("hello world\n");
-end hello;
-#
-#macro user.doit(i:int, j:str):int;
-#	io.print(i);
-#	io.print(j);
-#	doit:= 3;
-#end doit;
+end dummy.hello;
 function dummy.doit(i:int,j:str):int;
     io.print(i);
     io.print(j);
     return doit := 3;
-end doit;
-#
-#user.hello();
-#z:=user.doit(1,"help");
-#
-#
+end dummy.doit;
 function user.main():void;
 #some tests to illustrate function inlining for a module 
     io.print("hello world\n");
     z := dummy.doit(1,"help");
-end main;
+end user.main;
 [ "hello world\n" ]
 [ 1 ]
 [ "help" ]

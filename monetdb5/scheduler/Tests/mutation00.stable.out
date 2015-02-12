@@ -11,7 +11,7 @@ stdout of test 'mutation00` in directory 'monetdb5/scheduler` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36461/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32243/.s.monetdb.36461
@@ -22,7 +22,7 @@ function scheduler.mutation(m:str,f:str) (mn:str,fn:str);
     mn := m;
     fn := f;
     return (mn,fn) := (mn,fn);
-end mutation;
+end scheduler.mutation;
 function user.initialize():bat[:oid,:lng];
     b := bat.new(:oid,:lng);
     INT_MAX := 2147483647;
@@ -40,7 +40,7 @@ barrier i := 0:lng;
 exit i;
     mdb.setDebug(dbgmsk_restore);
     return initialize := b;
-end initialize;
+end user.initialize;
 function user.query():void;
     t0 := alarm.usec();
     b := user.initialize();
@@ -55,20 +55,23 @@ function user.query():void;
     t1 := alarm.usec();
     t := calc.-(t1,t0);
     io.printf("#%d\n",t);
-end query;
+end user.query;
 function user.evolution(mod:str,fcn:str):void;
     (m,f) := scheduler.mutation(mod,fcn);
     language.call(m,f);
-end evolution;
+end user.evolution;
 function user.main():void;
 # example framework for a mutation based execution stack 
 # The mutation scheduler picks a plan from a specific pool 
 # possibly after performing introspection and plan mutation 
     user.evolution("user","query");
-end main;
+end user.main;
 function user.main():void;
     user.query();
-end main;
+end user.main;
+#2006524
+#6533
+#11
 
 # 09:42:41 >  
 # 09:42:41 >  "Done."

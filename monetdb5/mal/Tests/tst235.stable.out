@@ -11,7 +11,7 @@ stdout of test 'tst235` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33727/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9822/.s.monetdb.33727
@@ -25,20 +25,14 @@ function user.dir():void;
     dn := bbp.getNames();
     ds := algebra.subsort(dn,false,false);
     io.table(ds,d,dl);
-end dir;
+end user.dir;
 function user.createBAT(name:str):bat[:oid,:int];
     res := bat.new(:oid,:int);
     bat.setName(res,name);
     z := bbp.getLRefCount(res);
     io.print(z);
     return createBAT := res;
-end createBAT;
-#
-#dir();
-#d:= user.createBAT("one");
-#io.print(d); # bat d should have 1 lref
-#dir();
-#
+end user.createBAT;
 function user.main():void;
 # BAT references are seens as BAT's and should be subject to the 
 # same reference scheme. 
@@ -46,7 +40,7 @@ function user.main():void;
     i := bbp.getLRefCount(d);
     io.print(i);
 # bat d should have 1 lref 
-end main;
+end user.main;
 [ 1 ]
 [ 1 ]
 

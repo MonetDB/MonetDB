@@ -10,7 +10,7 @@ stdout of test 'recycle11` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35049/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25339/.s.monetdb.35049
@@ -19,7 +19,7 @@ stdout of test 'recycle11` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function sql.mvc():int;
     return mvc := 1;
-end mvc;
+end sql.mvc;
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
     b := bat.new(:oid,:oid);
 barrier i := 0@0:oid;
@@ -27,7 +27,7 @@ barrier i := 0@0:oid;
     redo i := iterator.next(1@0:oid,11@0:oid);
 exit i;
     return tid := b;
-end tid;
+end sql.tid;
 function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,0);
@@ -43,7 +43,7 @@ function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     bat.insert(b,10@0,10);
     bat.insert(b,11@0,11);
     return bind := b;
-end bind;
+end sql.bind;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
@@ -61,38 +61,28 @@ function sql.qry(low:int,hgh:int):void;
     io.print(s2);
     io.print(s3);
     io.print(s4);
-end qry;
-#
-#
-#recycle.setRetainPolicy(1);
-#recycle.setReusePolicy(1);
-#optimizer.recycle("user","qry");
-#
-#qry(1,9);
-#
-#recycle.dump();
-#
+end sql.qry;
 function user.main():void;
 #test the basics of the recycler 
 # testing reuse-cover with different selection instructions 
     user.qry(1,9);
     recycle.dump();
-end main;
-#RECYCLE [  0]     X_0 := sql.mvc();
-#RECYCLE [  1]     X_1 := sql.tid(X_0=1,X_2="sys",X_3="tbl");
-#RECYCLE [  2]     X_4 := sql.bind(X_0=1,X_2="sys",X_3="tbl",X_5="col",X_6=0);
-#RECYCLE [  3]     X_7 := algebra.subselect(X_4=<tmp_1034>,X_1=<tmp_1033>,X_0=1,X_8=9,X_9=true,X_9=true,X_10=false);
-#RECYCLE [  4]     X_11 := calc.+(X_0=1,X_8=9);
-#RECYCLE [  5]     X_12 := calc./(X_11=10,X_13=2);
-#RECYCLE [  6]     X_12 := calc.int(X_12=5);
-#RECYCLE [  7]     X_14 := calc.+(X_0=1,X_13=2);
-#RECYCLE [  8]     X_15 := calc.-(X_8=9,X_13=2);
-#RECYCLE [  9]     X_16 := algebra.subselect(X_4=<tmp_1034>,X_7=<tmpr_1036>,X_12=5,X_12=5,X_9=true,X_9=true,X_10=false);
-#REUSED  [  3]       s2 := algebra.subselect(b,x,v2,v2,true,true,false);
-#RECYCLE [ 10]     X_17 := algebra.subselect(X_4=<tmp_1034>,X_7=<tmpr_1036>,X_14=3,X_15=7,X_9=true,X_9=true,X_10=false);
-#REUSED  [  3]       s3 := algebra.subselect(b,x,l2,h2,true,true,false);
-#RECYCLE [ 11]     X_18 := algebra.subselect(X_4=<tmp_1034>,X_7=<tmpr_1036>,X_14=3,X_8=9,X_9=true,X_10=false,X_10=false);
-#REUSED  [  3]       s4 := algebra.subselect(b,x,l2,hgh,true,false,false);
+end user.main;
+#RECYCLE [  0] cost 8 mem 0 srch  -nan     X_0:int  := sql.mvc();
+#RECYCLE [  1] cost 108 mem 88 srch 42.00     X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
+#RECYCLE [  2] cost 78 mem 48 srch 45.50     X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
+#RECYCLE [  3] cost 20 mem 0 srch 46.33     X_10:BAT  := algebra.subselect(X_6=<tmp_1045>,X_3=<tmp_1032>,X_0=1,X_9=9,X_8=true,X_8=true,X_7=false);
+#RECYCLE [  4] cost 19 mem 0 srch 46.75     X_11:int  := calc.+(X_0=1,X_9=9);
+#RECYCLE [  5] cost 17 mem 0 srch 45.80     X_13:int  := calc./(X_11=10,X_12=2);
+#RECYCLE [  6] cost 4 mem 0 srch 43.67     X_14:int  := calc.int(X_13=5);
+#RECYCLE [  7] cost 4 mem 0 srch 50.14     X_15:int  := calc.+(X_0=1,X_12=2);
+#RECYCLE [  8] cost 18 mem 0 srch 47.88     X_16:int  := calc.-(X_9=9,X_12=2);
+#RECYCLE [  9] cost 17 mem 0 srch 45.89     X_17:BAT  := algebra.subselect(X_6=<tmp_1045>,X_10=<tmp_1044>,X_14=5,X_14=5,X_8=true,X_8=true,X_7=false);
+#REUSED  [  3]  20 (usec)     X_10:BAT  := algebra.subselect(X_6=<tmp_1045>,X_3=<tmp_1032>,X_0=1,X_9=9,X_8=true,X_8=true,X_7=false);
+#RECYCLE [ 10] cost 15 mem 0 srch 45.60     X_18:BAT  := algebra.subselect(X_6=<tmp_1045>,X_10=<tmp_1044>,X_15=3,X_16=7,X_8=true,X_8=true,X_7=false);
+#REUSED  [  3]  20 (usec)     X_10:BAT  := algebra.subselect(X_6=<tmp_1045>,X_3=<tmp_1032>,X_0=1,X_9=9,X_8=true,X_8=true,X_7=false);
+#RECYCLE [ 11] cost 29 mem 0 srch 45.36     X_19:BAT  := algebra.subselect(X_6=<tmp_1045>,X_10=<tmp_1044>,X_15=3,X_9=9,X_8=true,X_7=false,X_7=false);
+#REUSED  [  3]  20 (usec)     X_10:BAT  := algebra.subselect(X_6=<tmp_1045>,X_3=<tmp_1032>,X_0=1,X_9=9,X_8=true,X_8=true,X_7=false);
 #--------------------------#
 # t	h  # name
 # void	oid  # type

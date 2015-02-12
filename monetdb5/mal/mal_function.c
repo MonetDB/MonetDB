@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -488,7 +488,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	}
 	first = first<0?0:first;
 	size = size < 0?-size:size;
-	if (flg & LIST_MAPI) {
+	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */

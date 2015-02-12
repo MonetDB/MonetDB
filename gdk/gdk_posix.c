@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -586,19 +586,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t len)
 {
-	int ret = msync(p, len,
-			(mode & MMAP_SYNC) ? MS_SYNC :
-			((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
+	int ret = msync(p, len, MS_SYNC);
 
 #ifdef MMAP_DEBUG
 	fprintf(stderr,
-		     "#msync(" PTRFMT "," SZFMT ",%s) = %d\n",
-		     PTRFMTCAST p, len,
-		     (mode & MMAP_SYNC) ? "MS_SYNC" :
-		     ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
-		     ret);
+		     "#msync(" PTRFMT "," SZFMT ",MS_SYNC) = %d\n",
+		     PTRFMTCAST p, len, ret);
 #endif
 	return ret;
 }
@@ -811,11 +806,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 int
-MT_msync(void *p, size_t len, int mode)
+MT_msync(void *p, size_t len)
 {
 	int ret;
 
-	(void) mode;
 	/*       Windows' FlushViewOfFile returns success!=0, error== 0,
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = FlushViewOfFile(p, len);
@@ -994,7 +988,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "retry rmdir %s\n", pathname);
+		IODEBUG fprintf(stderr, "retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1019,7 +1013,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "retry unlink %s\n", pathname);
+		IODEBUG fprintf(stderr, "retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}
@@ -1044,7 +1038,7 @@ win_rename(const char *old, const char *dst)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, dst);
+		IODEBUG fprintf(stderr, "#retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = rename(old, dst);
 	}

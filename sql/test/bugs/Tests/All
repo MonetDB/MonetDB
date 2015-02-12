@@ -9,8 +9,8 @@ bug-sf-938733
 union_all-bug-sf-941788
 subselect_single_value-bug-sf-941791
 subselect_union-bug-sf-941826
-!HAVE_SAMTOOLS?groupby_having_charlength-bug-sf-943566
-HAVE_SAMTOOLS?groupby_having_charlength-bug-sf-943566_bam
+!HAVE_SAMTOOLS&!HAVE_DATACELL?groupby_having_charlength-bug-sf-943566
+HAVE_SAMTOOLS&!HAVE_DATACELL?groupby_having_charlength-bug-sf-943566_bam
 innerjoin_multiple-bug-sf-943661
 groupby_having-bug-sf-947600
 subselect_ambigious_columns-bug-sf-949071
@@ -79,7 +79,6 @@ not_in_null_bug
 copy_into_quote
 alter_add_column-bug
 alter_drop_column_insert_crash
-temporal
 seconds2timestamp
 select_not_equal
 case_substring

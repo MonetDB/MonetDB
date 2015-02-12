@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -41,7 +41,8 @@ qlog_export str QLOGdisable(void *ret);
 qlog_export int QLOGisset(void);
 qlog_export str QLOGissetFcn(int *ret);
 qlog_export str QLOGempty(void *ret);
-qlog_export str QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+qlog_export str QLOGinsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+qlog_export str QLOGdefineNaive(void *ret, str *qry, str *opt);
 qlog_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _QLOG_H */

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -38,6 +38,7 @@
 QueryQueue QRYqueue;
 static int qtop, qsize;
 static int qtag= 1;
+static int calltag =0; // to identify each invocation
 
 
 static void 
@@ -58,10 +59,8 @@ static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
-	for ( i = mb->stop-1 ; i > 0; i--){
+	for ( i = 0; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
-		if ( p->token == ENDsymbol)
-			break;
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
 	}
@@ -76,9 +75,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int i;
 	str q;
-
-	if ( malProfileMode || mb->recycle )
-		setFilterOnBlock(mb, 0, 0);
 
 	MT_lock_set(&mal_delayLock, "sysmon");
 	if ( QRYqueue == 0)
@@ -95,8 +91,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if ( QRYqueue[i].mb == mb)
 			break;
 
-	if ( mb->tag == 0)
-		mb->tag = OIDnew(1);
+	if ( stk->tag == 0)
+		stk->tag = calltag++;
 	if ( i == qtop ) {
 		QRYqueue[i].mb = mb;	// for detecting duplicates
 		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
@@ -172,45 +168,57 @@ finishSessionProfiler(Client cntxt)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
+	int tid = THRgettid();
+
+	/* keep track on the instructions taken in progress */
+	cntxt->active = TRUE;
+	if( tid < THREADS){
+		cntxt->inprogress[tid].mb = mb;
+		cntxt->inprogress[tid].stk = stk;
+		cntxt->inprogress[tid].pci = pci;
+	}
+
 	/* always collect the MAL instruction execution time */
 	prof->ticks = GDKusec();
 	/* emit the instruction upon start as well */
-	if(malProfileMode)
+	
+	if(malProfileMode > 0)
 		profilerEvent(cntxt->idx, mb, stk, pci, TRUE);
 }
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
-	int i,j,fnd;
+	int tid = THRgettid();
+
+	/* keep track on the instructions in progress*/
+	if ( tid < THREADS) {
+		cntxt->inprogress[tid].mb = 0;
+		cntxt->inprogress[tid].stk =0;
+		cntxt->inprogress[tid].pci = 0;
+	}
 
 	assert(pci);
 	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = GDKusec() - prof->ticks;
+	pci->totticks += pci->ticks;
 	pci->calls++;
 
-	if (getProfileCounter(PROFfootprint) ){
-		for (i = 0; i < pci->retc; i++)
-			if ( isaBatType(getArgType(mb,pci,i)) && stk->stk[getArg(pci,i)].val.bval != bat_nil){
-				/* avoid simple alias operations */
-				fnd= 0;
-				for ( j= pci->retc; j< pci->argc; j++)
-					if ( isaBatType(getArgType(mb,pci,j)))
-						fnd+= stk->stk[getArg(pci,i)].val.bval == stk->stk[getArg(pci,j)].val.bval;
-				if (fnd == 0 )
-					updateFootPrint(mb,stk,getArg(pci,i));
-			}
-	}
-
 	// it is a potential expensive operation
-	if (getProfileCounter(PROFrbytes) || pci->recycle)
+	if (pci->recycle){
 		pci->rbytes += getVolume(stk, pci, 0);
-	if (getProfileCounter(PROFwbytes) || pci->recycle)
 		pci->wbytes += getVolume(stk, pci, 1);
+	}
 	
-	if(malProfileMode)
+	if(malProfileMode > 0)
 			profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
+	if( malProfileMode < 0){
+		/* delay profiling until you encounter start of MAL function */
+		if( getInstrPtr(mb,0) == pci)
+			malProfileMode = 1;
+	}
+	cntxt->active = FALSE;
 }
 
 /*
@@ -288,7 +296,7 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
 		total += heapinfo(b->T->vheap);
 		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)
 		stk->tmpspace += total/1024/1024; // keep it in MBs
     }

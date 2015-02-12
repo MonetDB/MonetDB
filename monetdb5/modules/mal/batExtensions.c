@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -171,6 +171,28 @@ CMDBATderivedByName(bat *ret, str *nme)
 	BBPunfix(bid);
 	return MAL_SUCCEED;
 }
+str
+CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	int * ret= getArgReference_bat(stk,pci,0);
+	void *u =(void*) getArgReference(stk,pci,1);
+
+	(void)cntxt;
+
+	b = BATnew(TYPE_oid,getArgType(mb,pci,1),0, TRANSIENT);
+	if( b == 0)
+		throw(MAL,"bat.single","Could not create it");
+    if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+        if (u == 0 || *(str*)u == 0)
+            u = (ptr) str_nil;
+        else
+            u = (ptr) *(str *)u;
+    }
+	BUNappend(b,u, FALSE);
+	BBPincref(*ret = b->batCacheid, TRUE);
+	return MAL_SUCCEED;
+}
 
 /* If the optimizer has not determined the partition bounds we derive one here.  */
 str
@@ -256,7 +278,7 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret= getArgReference_bat(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -270,7 +292,7 @@ CMDBATimprints(void *ret, bat *bid)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	BATimprints(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str
@@ -282,6 +304,6 @@ CMDBATimprintsize(lng *ret, bat *bid)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	*ret = IMPSimprintsize(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -73,27 +73,27 @@ batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, co
 batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
 
-#define prepareResult(X,Y,tpe,Z,free)				\
-	(X) = BATnew((Y)->htype, (tpe), BATcount(Y), TRANSIENT);			\
-    if ((X) == NULL) {								\
-        BBPreleaseref((Y)->batCacheid);				\
-		free;										\
-        throw(MAL, "xml." Z, MAL_MALLOC_FAIL);		\
-    }												\
-	BATseqbase((X), (Y)->hseqbase);					\
-    (X)->hsorted = (Y)->hsorted;					\
-    (X)->hrevsorted = (Y)->hrevsorted;				\
-    (X)->tsorted =  0;								\
-    (X)->trevsorted =  0;							\
-    (X)->H->nonil = (Y)->H->nonil;					\
+#define prepareResult(X,Y,tpe,Z,free)							\
+	(X) = BATnew((Y)->htype, (tpe), BATcount(Y), TRANSIENT);	\
+    if ((X) == NULL) {											\
+        BBPunfix((Y)->batCacheid);								\
+		free;													\
+        throw(MAL, "xml." Z, MAL_MALLOC_FAIL);					\
+    }															\
+	BATseqbase((X), (Y)->hseqbase);								\
+    (X)->hsorted = (Y)->hsorted;								\
+    (X)->hrevsorted = (Y)->hrevsorted;							\
+    (X)->tsorted =  0;											\
+    (X)->trevsorted =  0;										\
+    (X)->H->nonil = (Y)->H->nonil;								\
 	(X)->T->nonil = 1;
 
 #define finalizeResult(X,Y,Z)					\
     if (!((Y)->batDirty & 2))					\
-		(Y) = BATsetaccess((Y), BAT_READ);		\
+		BATsetaccess((Y), BAT_READ);			\
     *(X) = (Y)->batCacheid;						\
     BBPkeepref(*(X));							\
-    BBPreleaseref((Z)->batCacheid);
+    BBPunfix((Z)->batCacheid);
 
 str
 BATXMLxml2str(bat *ret, const bat *bid)
@@ -121,7 +121,7 @@ BATXMLxml2str(bat *ret, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.str", OPERATION_FAILED " During bulk coercion");
 }
@@ -212,7 +212,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -282,7 +282,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -345,7 +345,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 	return MAL_SUCCEED;
   bunins_failed:
 	GDKfree(buf);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
 }
@@ -421,7 +421,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 	xmlFreeDoc(doc);
 	if (buf != NULL)
 		GDKfree(buf);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
 }
@@ -460,7 +460,7 @@ BATXMLisdocument(bat *ret, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.isdocument", OPERATION_FAILED " During bulk processing");
 }
@@ -542,7 +542,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -602,7 +602,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -676,7 +676,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -759,7 +759,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -824,7 +824,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -913,7 +913,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -1034,7 +1034,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bunins_failed:
 	for (i = pci->retc; i < pci->argc; i++)
 		if (bi[i].b)
-			BBPreleaseref(bi[i].b->batCacheid);
+			BBPunfix(bi[i].b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -1120,8 +1120,8 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(r->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -1171,9 +1171,9 @@ BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *ext)
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
-	BBPreleaseref(e->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
 	r = BATsort(j);
 	BBPunfix(j->batCacheid);
 
@@ -1287,8 +1287,8 @@ BATXMLagg(bat *ret, const bat *bid, const bat *grp)
 	BATseqbase(bn,0);
 
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
 	r = BATsort(j);
 	BBPunfix(j->batCacheid);
 
@@ -1421,11 +1421,11 @@ BATXMLgroup(xml *ret, const bat *bid)
 		}
 		offset += n;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
   failed:
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
 	throw(MAL, "xml.agg", "%s", err);
@@ -1668,34 +1668,34 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	e = eid ? BATdescriptor(*eid) : NULL;
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
 		if (b)
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 		if (g)
-			BBPreleaseref(g->batCacheid);
+			BBPunfix(g->batCacheid);
 		if (e)
-			BBPreleaseref(e->batCacheid);
+			BBPunfix(e->batCacheid);
 		throw(MAL, "aggr.subxml", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			if (g)
-				BBPreleaseref(g->batCacheid);
+				BBPunfix(g->batCacheid);
 			if (e)
-				BBPreleaseref(e->batCacheid);
+				BBPunfix(e->batCacheid);
 			throw(MAL, "aggr.subxml", RUNTIME_OBJECT_MISSING);
 		}
 	} else {
 		s = NULL;
 	}
 	err = BATxmlaggr(&bn, b, g, e, s, *skip_nils);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (e)
-		BBPreleaseref(e->batCacheid);
+		BBPunfix(e->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (err != NULL)
 		throw(MAL, "aggr.subxml", "%s", err);
 

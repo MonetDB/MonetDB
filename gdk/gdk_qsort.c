@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -343,10 +343,7 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
-	if (tpe != ATOMstorage(tpe) &&
-	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
-	    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp)
-		tpe = ATOMstorage(tpe);
+	tpe = ATOMbasetype(tpe);
 
 	switch (tpe) {
 	case TYPE_bte:
@@ -400,10 +397,7 @@ GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int t
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
-	if (tpe != ATOMstorage(tpe) &&
-	    ATOMnilptr(ATOMstorage(tpe)) == ATOMnilptr(tpe) &&
-	    BATatoms[ATOMstorage(tpe)].atomCmp == BATatoms[tpe].atomCmp)
-		tpe = ATOMstorage(tpe);
+	tpe = ATOMbasetype(tpe);
 
 	switch (tpe) {
 	case TYPE_bte:

@@ -92,8 +92,8 @@ function user.main():void;
 #	io.print("print(t);"); 
     ja_a := io.print(t);
 #	io.print("# alles zover is goed\n"); 
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

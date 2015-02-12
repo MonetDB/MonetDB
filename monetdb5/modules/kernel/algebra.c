@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -81,23 +81,6 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *
 }
 
 static int
-CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *h_in)
-{
-	int tt = b->ttype;
-	ptr nil = ATOMnilptr(tt);
-
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
-		return GDK_FAIL;
-	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
-		return GDK_FAIL;
-	}
-	return (*result = BATuselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
@@ -112,7 +95,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		for(j = 0; j < gcnt; j++) {
 			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNappend(r, &id, FALSE) == NULL) {
+				if (BUNappend(r, &id, FALSE) == GDK_FAIL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
@@ -125,7 +108,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		for(j = 0; j < gcnt; j++) {
 			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNappend(r, id, FALSE) == NULL) {
+				if (BUNappend(r, id, FALSE) == GDK_FAIL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
@@ -188,22 +171,14 @@ CMDlike(BAT **ret, BAT *b, const char *s)
 	for (p = t; *p; p++, yy++)
 		*p = tolower(*p);
 
-	if (b->hvarsized) {
-		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy) &&
-				BUNfastins(c, BUNhvar(bi, u), BUNtvar(bi, u)) == NULL) {
-				BBPreclaim(c);
-				GDKfree(t);
-				return GDK_FAIL;
-			}
-	} else {
-		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy) &&
-				BUNfastins(c, BUNhloc(bi, u), BUNtvar(bi, u)) == NULL) {
-				BBPreclaim(c);
-				GDKfree(t);
-				return GDK_FAIL;
-			}
+	BATloop(b, u, v) {
+		p = BUNtvar(bi, u);
+		if (like(p, t, yy) &&
+			BUNfastins(c, BUNhead(bi, u), p) == GDK_FAIL) {
+			BBPreclaim(c);
+			GDKfree(t);
+			return GDK_FAIL;
+		}
 	}
 	c->hsorted = BAThordered(b);
 	c->hrevsorted = BAThrevordered(b);
@@ -269,7 +244,7 @@ ALGminany(ptr result, const bat *bid)
 		if (p == NULL)
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -297,7 +272,7 @@ ALGmaxany(ptr result, const bat *bid)
 		if (p == NULL)
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -312,21 +287,21 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 	}
 	c = BATdescriptor(*cnts);
 	if (c == NULL) {
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDgen_group(&bn, g, c) == GDK_FAIL){
-		BBPreleaseref(g->batCacheid);
-		BBPreleaseref(c->batCacheid);
+		BBPunfix(g->batCacheid);
+		BBPunfix(c->batCacheid);
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
 	if( bn){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
-	BBPreleaseref(g->batCacheid);
-	BBPreleaseref(c->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(c->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -343,7 +318,7 @@ ALGcard(lng *result, const bat *bid)
 	}
 	*result = BATcount(en);
 	BBPunfix(en->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -362,7 +337,7 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, t, low);
@@ -375,9 +350,9 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		high = NULL;
 	}
 	bn = BATsubselect(b, s, low, high, *li, *hi, *anti);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -400,14 +375,14 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, t, val);
 	bn = BATthetasubselect(b, s, val, *op);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -431,9 +406,9 @@ ALGselect1(bat *result, const bat *bid, ptr value)
 	}
 	derefStr(b, t, value);
 	bn = BATselect(b, value, 0);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -441,26 +416,6 @@ ALGselect1(bat *result, const bat *bid, ptr value)
 	throw(MAL, "algebra.select", GDK_EXCEPTION);
 }
 
-str
-ALGuselect1(bat *result, const bat *bid, ptr value)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, value);
-	bn = BATuselect(b, value, NULL);
-	BBPreleaseref(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2))
-			bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
-}
 
 str
 ALGselect(bat *result, const bat *bid, ptr low, ptr high)
@@ -473,9 +428,9 @@ ALGselect(bat *result, const bat *bid, ptr low, ptr high)
 	derefStr(b, t, low);
 	derefStr(b, t, high);
 	bn = BATselect(b, low, high);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -497,41 +452,19 @@ ALGselectNotNil(bat *result, const bat *bid)
 		low=high= ATOMnilptr(b->ttype);
 		CMDselect_(&bn, b, low, high, &bound, &bound);
 		if (bn) {
-			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+			if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 			*result = bn->batCacheid;
 			BBPkeepref(*result);
-			BBPreleaseref(b->batCacheid);
+			BBPunfix(b->batCacheid);
 			return MAL_SUCCEED;
 		}
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.selectNotNil", GDK_EXCEPTION);
 	}
 	/* just pass on the result */
 	*result = b->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
-}
-
-str
-ALGuselect(bat *result, const bat *bid, ptr low, ptr high)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	bn = BATuselect(b, low, high);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
 }
 
 str
@@ -546,36 +479,14 @@ ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *li
 	derefStr(b, t, high);
 	CMDselect_(&bn, b, low, high, lin, rin);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
-ALGuselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	CMDuselect_(&bn, b, low, high, lin, rin);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.uselect", GDK_EXCEPTION);
 }
 
 str
@@ -587,26 +498,26 @@ ALGthetajoinEstimate(bat *result, const bat *lid, const bat *rid, const int *opc
 		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
 	}
 	if( *opc == -3 ){
 		/* The NE case is not supported in the kernel */
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "algebra.thetajoin", ILLEGAL_ARGUMENT " Theta comparison <> not yet supported");
 	}
 	bn = BATthetajoin(left, right, *opc, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate));
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
 }
 
@@ -625,20 +536,20 @@ ALGbandjoin(bat *result, const bat *lid, const bat *rid, const void *minus, cons
 		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATbandjoin(left, right, minus, plus, *li, *hi);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
 }
 
@@ -659,27 +570,27 @@ ALGrangejoin(bat *result, const bat *lid, const bat *rlid, const bat *rhid, cons
 		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
 	}
 	if ((rightl = BATdescriptor(*rlid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
 	}
 	if ((righth = BATdescriptor(*rhid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(rightl->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(rightl->batCacheid);
 		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATrangejoin(left, rightl, righth, *li, *hi);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(rightl->batCacheid);
-		BBPreleaseref(righth->batCacheid);
+		BBPunfix(left->batCacheid);
+		BBPunfix(rightl->batCacheid);
+		BBPunfix(righth->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(rightl->batCacheid);
-	BBPreleaseref(righth->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(rightl->batCacheid);
+	BBPunfix(righth->batCacheid);
 	throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
 }
 
@@ -737,18 +648,18 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 			goto fail;
 		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) == GDK_FAIL)
 			goto fail;
-		BBPreleaseref(right2->batCacheid);
+		BBPunfix(right2->batCacheid);
 	}
 	*r1 = result1->batCacheid;
 	*r2 = result2->batCacheid;
 	BBPkeepref(*r1);
 	BBPkeepref(*r2);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	if (candleft)
-		BBPreleaseref(candleft->batCacheid);
+		BBPunfix(candleft->batCacheid);
 	if (candright)
-		BBPreleaseref(candright->batCacheid);
+		BBPunfix(candright->batCacheid);
 	return MAL_SUCCEED;
 
   fail:
@@ -856,14 +767,14 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc - pci->retc > 4) {
 		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
 		if ((s = BATdescriptor(sid)) == NULL) {
-			BBPreleaseref(bid);
+			BBPunfix(bid);
 			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
 		}
 		if (pci->argc - pci->retc > 5) {
 			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 			if ((g = BATdescriptor(gid)) == NULL) {
-				BBPreleaseref(bid);
-				BBPreleaseref(sid);
+				BBPunfix(bid);
+				BBPunfix(sid);
 				throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
 			}
 		}
@@ -871,11 +782,11 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	asc = * getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = * getArgReference_bit(stk, pci, pci->argc - 1);
 	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, distinct);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (rc == GDK_FAIL)
 		throw(MAL, "algebra.firstn", MAL_MALLOC_FAIL);
 	BBPkeepref(*ret1 = bn->batCacheid);
@@ -893,11 +804,11 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
 	if (!(bn->batDirty&2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -912,16 +823,16 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(left, right);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
 	if (!(bn->batDirty&2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -936,11 +847,11 @@ ALGbinaryint(bat *result, const bat *bid, const int *param, BAT *(*func)(BAT *, 
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(b, *param);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
 	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -956,16 +867,16 @@ ALGbinaryestimate(bat *result, const bat *lid, const bat *rid, const lng *estima
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(left, right, estimate ? (BUN) *estimate : BUN_NONE);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
 	if (!(bn->batDirty&2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -992,17 +903,17 @@ ALGsubunique2(bat *result, const bat *bid, const bat *sid)
 		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATsubunique(b, s);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subunique", GDK_EXCEPTION);
 	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -1274,22 +1185,22 @@ ALGtunion(bat *result, const bat *bid, const bat *bid2)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPreleaseref(*bid2);
+		BBPunfix(*bid2);
 		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATkunion(BATmirror(b),BATmirror(b2));
 	if (bn) {
 		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(b2->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	throw(MAL, "algebra.tunion", GDK_EXCEPTION);
 }
 
@@ -1301,22 +1212,22 @@ ALGtdifference(bat *result, const bat *bid, const bat *bid2)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPreleaseref(*bid2);
+		BBPunfix(*bid2);
 		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATkdiff(BATmirror(b),BATmirror(b2));
 	if (bn) {
 		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(b2->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	throw(MAL, "algebra.tdifference", GDK_EXCEPTION);
 }
 
@@ -1328,19 +1239,19 @@ ALGtdiff(bat *result, const bat *bid, const bat *bid2)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPreleaseref(*bid2);
+		BBPunfix(*bid2);
 		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATkdiff(BATmirror(b),BATmirror(b2));
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	if (bn) {
 		BAT *r = BATmirror(BATmark(bn,0));
 
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = r;
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -1356,16 +1267,16 @@ ALGtintersect(bat *result, const bat *bid, const bat *bid2)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPreleaseref(*bid2);
+		BBPunfix(*bid2);
 		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	if (bn) {
 		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -1381,19 +1292,19 @@ ALGtinter(bat *result, const bat *bid, const bat *bid2)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
 	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPreleaseref(*bid2);
+		BBPunfix(*bid2);
 		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(b2->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(b2->batCacheid);
 	if (bn) {
 		BAT *r = BATmirror(BATmark(bn,0));
 
-		BBPreleaseref(bn->batCacheid);
+		BBPunfix(bn->batCacheid);
 		bn = r;
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -1412,13 +1323,13 @@ ALGtsort(bat *result, const bat *bid)
 	bn = BATsort(BATmirror(b));
 	if (bn) {
 		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.tsort", GDK_EXCEPTION);
 }
 
@@ -1433,148 +1344,14 @@ ALGtsort_rev(bat *result, const bat *bid)
 	bn = BATsort_rev(BATmirror(b));
 	if (bn) {
 		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.tsort", GDK_EXCEPTION);
-}
-
-str
-ALGhsort(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.hsort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATsort(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.hsort", GDK_EXCEPTION);
-}
-
-str
-ALGhsort_rev(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.tsort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATsort_rev(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.tsort", GDK_EXCEPTION);
-}
-str
-ALGhtsort(bat *result, const bat *lid)
-{
-	BAT *b, *bm = NULL, *bn = NULL;
-
-	if ((b = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.htsort", RUNTIME_OBJECT_MISSING);
-	}
-	bm = BATmirror(BATsort(BATmirror(b)));
-	if (bm) {
-		bn = BATssort(bm);
-		if (bn) {
-			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-			*result = bn->batCacheid;
-			BBPkeepref(*result);
-			BBPunfix(bm->batCacheid);
-			BBPreleaseref(b->batCacheid);
-			return MAL_SUCCEED;
-		}
-		BBPunfix(bm->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.htsort", GDK_EXCEPTION);
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.htsort", GDK_EXCEPTION);
-}
-
-str
-ALGthsort(bat *result, const bat *lid)
-{
-	BAT *b, *bm = NULL, *bn = NULL;
-
-	if ((b = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.thsort", RUNTIME_OBJECT_MISSING);
-	}
-	bm = BATmirror(BATsort(b));
-	if (bm) {
-		bn = BATssort(bm);
-		if (bn) {
-			bn = BATmirror(bn);
-			if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-			*result = bn->batCacheid;
-			BBPkeepref(*result);
-			BBPunfix(bm->batCacheid);
-			BBPreleaseref(b->batCacheid);
-			return MAL_SUCCEED;
-		}
-		BBPunfix(bm->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.thsort", GDK_EXCEPTION);
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.thsort", GDK_EXCEPTION);
-}
-
-str
-ALGssort(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.ssort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATssort(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.ssort", GDK_EXCEPTION);
-}
-
-str
-ALGssort_rev(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.ssort_rev", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATssort_rev(b);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.ssort_rev", GDK_EXCEPTION);
 }
 
 str
@@ -1586,13 +1363,13 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
 	if (order && *order != bat_nil && (o = BATdescriptor(*order)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
 	}
 	if (group && *group != bat_nil && (g = BATdescriptor(*group)) == NULL) {
 		if (o)
-			BBPreleaseref(o->batCacheid);
-		BBPreleaseref(b->batCacheid);
+			BBPunfix(o->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
 	}
 	if (BATsubsort(result ? &bn : NULL,
@@ -1600,17 +1377,17 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 				   ngroup ? &gn : NULL,
 				   b, o, g, *reverse, *stable) == GDK_FAIL) {
 		if (o)
-			BBPreleaseref(o->batCacheid);
+			BBPunfix(o->batCacheid);
 		if (g)
-			BBPreleaseref(g->batCacheid);
-		BBPreleaseref(b->batCacheid);
+			BBPunfix(g->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subsort", OPERATION_FAILED);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (o)
-		BBPreleaseref(o->batCacheid);
+		BBPunfix(o->batCacheid);
 	if (g)
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(g->batCacheid);
 	if (result)
 		BBPkeepref(*result = bn->batCacheid);
 	if (norder)
@@ -1680,7 +1457,7 @@ ALGrevert(bat *result, const bat *bid)
 	BATrevert(bn);
 	*result= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1693,7 +1470,7 @@ ALGcount_bat(wrd *result, const bat *bid)
 		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
 	}
 	*result = (wrd) BATcount(b);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1711,7 +1488,7 @@ ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils)
 	else
 		cnt = BATcount(b);
 	*result = (wrd) cnt;
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1733,13 +1510,13 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	}
 	bn = BATmark(b, *base);
 	if (bn != NULL) {
-		BBPreleaseref(b->batCacheid);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		BBPunfix(b->batCacheid);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.mark", GDK_EXCEPTION);
 }
 
@@ -1777,20 +1554,20 @@ ALGmark_grp_1(bat *result, const bat *bid, const bat *gid)
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
 	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATmark_grp(b, g, NULL);
 	if (bn != NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(g->batCacheid);
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
 	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
 }
 
@@ -1803,20 +1580,20 @@ ALGmark_grp_2(bat *result, const bat *bid, const bat *gid, const oid *base)
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
 	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATmark_grp(b, g, base);
 	if (bn != NULL) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(g->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
 	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
 }
 
@@ -1830,13 +1607,13 @@ ALGlike(bat *ret, const bat *bid, const str *k)
 	}
 	CMDlike(&bn, b, *k);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.like", GDK_EXCEPTION);
 }
 
@@ -1850,13 +1627,13 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	}
 	slice(&bn, b, *start, *end);
 	if (bn != NULL) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	throw(MAL, "algebra.slice", GDK_EXCEPTION);
 }
 
@@ -1900,7 +1677,7 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 
 	*ret = bv->batCacheid;
 	BBPkeepref(*ret);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1977,7 +1754,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	if ((*pos < (lng) BUNfirst(b)) || (*pos >= (lng) BUNlast(b)))
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
 	msg = doALGfetch(ret, b, (BUN) *pos);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -2001,58 +1778,29 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 	derefStr(b, h, val);
 	q = BUNfnd(b, val);
 	*ret = (q != BUN_NONE);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGfind(ptr ret, const bat *bid, ptr val)
+ALGfind(oid *ret, const bat *bid, ptr val)
 {
 	BAT *b;
 	BUN q;
-	str msg;
+	str msg= MAL_SUCCEED;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, h, val);
-	q = BUNfnd(BATmirror(b), val);
+	derefStr(b, t, val);
+	q = BUNfnd(b, val);
 
 	if (q == BUN_NONE){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.find", GDK_EXCEPTION "can not find element");
-	}
-	msg = doALGfetch(ret, b, q);
-	BBPreleaseref(b->batCacheid);
+		*ret = oid_nil;
+	} else
+		*ret = (oid) q;
+	BBPunfix(b->batCacheid);
 	return msg;
-}
-
-
-str
-ALGindexjoin(bat *result, const bat *lid, const bat *rid)
-{
-	BAT *left, *right, *bn;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.indexjoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
-		throw(MAL, "algebra.indexjoin", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATthetajoin(left, right, JOIN_EQ, BUN_NONE);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(left->batCacheid);
-		BBPreleaseref(right->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	throw(MAL, "algebra.indexjoin", MAL_MALLOC_FAIL);
 }
 
 str
@@ -2098,10 +1846,10 @@ ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bn = BATmirror(bn);
 	if (!(bn->batDirty&2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2123,10 +1871,10 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
 	}
 	if (!(bn->batDirty&2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2141,13 +1889,13 @@ str ALGreuse(bat *ret, const bat *bid)
 		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
 			bn= BATwcopy(b);
 			if (bn == NULL) {
-				BBPreleaseref(b->batCacheid);
+				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 		} else {
 			bn = BATnew(b->htype,b->ttype,BATcount(b), TRANSIENT);
 			if (bn == NULL) {
-				BBPreleaseref(b->batCacheid);
+				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 			BATsetcount(bn,BATcount(b));
@@ -2158,7 +1906,7 @@ str ALGreuse(bat *ret, const bat *bid)
 			BATseqbase(bn, b->hseqbase);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	} else
 		BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
@@ -2176,8 +1924,8 @@ ALGstdev(dbl *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
-	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	BBPunfix(b->batCacheid);
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2192,8 +1940,8 @@ ALGstdevp(dbl *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
-	BBPreleaseref(b->batCacheid);
-	if (stdev == dbl_nil)
+	BBPunfix(b->batCacheid);
+	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -2211,8 +1959,8 @@ ALGvariance(dbl *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_sample(NULL, b);
-	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	BBPunfix(b->batCacheid);
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
@@ -2227,8 +1975,8 @@ ALGvariancep(dbl *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_population(NULL, b);
-	BBPreleaseref(b->batCacheid);
-	if (variance == dbl_nil)
+	BBPunfix(b->batCacheid);
+	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;

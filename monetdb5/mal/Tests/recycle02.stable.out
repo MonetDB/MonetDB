@@ -10,7 +10,7 @@ stdout of test 'recycle02` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30811/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24776/.s.monetdb.30811
@@ -19,7 +19,7 @@ stdout of test 'recycle02` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function sql.mvc():int;
     return mvc := 1;
-end mvc;
+end sql.mvc;
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
     b := bat.new(:oid,:oid);
 barrier i := 0@0:oid;
@@ -27,7 +27,7 @@ barrier i := 0@0:oid;
     redo i := iterator.next(1@0:oid,12@0:oid);
 exit i;
     return tid := b;
-end tid;
+end sql.tid;
 function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,0);
@@ -43,28 +43,14 @@ function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     bat.insert(b,10@0,10);
     bat.insert(b,11@0,11);
     return bind := b;
-end bind;
+end sql.bind;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s := algebra.subselect(b,x,low,hgh,true,true,false);
     io.print(s);
-end qry;
-#
-#recycle.setRetainPolicy(1);
-#recycle.setReusePolicy(1);
-#optimizer.recycle("user","qry");
-#io.print("start");
-#qry(1,10);
-#io.print("zoom in");
-#qry(1,5);
-#io.print("next step");
-#qry(2,3);
-#io.print("last");
-#qry(1,11);
-#recycle.dump();
-#
+end sql.qry;
 function user.main():void;
 #test the basics of the recycler 
 #reusing select results 
@@ -78,14 +64,14 @@ function user.main():void;
     io.print("last");
     user.qry(1,11);
     recycle.dump();
-end main;
+end user.main;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s := algebra.subselect(b,x,low,hgh,true,true,false);
     io.print(s);
-end qry;
+end sql.qry;
 [ "start" ]
 #RECYCLE [  0]     X_0 := sql.mvc();
 #RECYCLE [  1]     X_1 := sql.tid(1,"sys","tbl");

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -87,7 +87,7 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);

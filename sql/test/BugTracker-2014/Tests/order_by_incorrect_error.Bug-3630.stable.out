@@ -1,0 +1,46 @@
+stdout of test 'order_by_incorrect_error.Bug-3630` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 15:51:45 >  
+# 15:51:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30753" "--set" "mapi_usock=/var/tmp/mtest-25544/.s.monetdb.30753" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:51:45 >  
+
+# MonetDB 5 server v11.19.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30753/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25544/.s.monetdb.30753
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:51:46 >  
+# 15:51:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25544" "--port=30753"
+# 15:51:46 >  
+
+#CREATE TABLE "sys"."sirivm" (
+#"vehiclenumber"          INTEGER,
+#"recordedattime"         TIMESTAMP,
+#"linkdistance"           INTEGER,
+#"percentage"             DECIMAL(5,2),
+#"lineref"                CHARACTER LARGE OBJECT,
+#"dataframeref"           CHARACTER LARGE OBJECT,
+#"datedvehiclejourneyref" CHARACTER LARGE OBJECT,
+#"monitored"              BOOLEAN,
+#"mon_error"              CHARACTER LARGE OBJECT,
+#"blockref"               CHARACTER LARGE OBJECT,
+#"delay"                  INTEGER,
+#"lon"                    DOUBLE,
+#drop TABLE "sys"."sirivm";
+
+# 15:51:46 >  
+# 15:51:46 >  "Done."
+# 15:51:46 >  
+

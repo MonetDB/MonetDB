@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -36,10 +36,10 @@
 bat5_export char *BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export char *BKCgetAlpha(bat *r, const bat *bid);
 bat5_export char *BKCgetDelta(bat *r, const bat *bid);
-bat5_export char *BKCinsert_bun(bat *r, const bat *bid, const void *h, const void *t);
-bat5_export char *BKCinsert_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force);
-bat5_export char *BKCdelete(bat *r, const bat *bid, const void *h);
-bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const void *h, const void *t);
+bat5_export char *BKCinsert_bun(bat *r, const bat *bid, const oid *h, const void *t);
+bat5_export char *BKCinsert_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force);
+bat5_export char *BKCdelete(bat *r, const bat *bid, const oid *h);
+bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t);
 bat5_export str BKCnewBAT(bat *res, const int *ht, const int *tt, const BUN *cap, int role);
 bat5_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 bat5_export str BKCdensebat(bat *ret, const wrd *size);
@@ -50,9 +50,9 @@ bat5_export str BKCorder(bat *ret, const bat *bid);
 bat5_export str BKCorder_rev(bat *ret, const bat *bid);
 bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
-bat5_export str BKCreplace_bun(bat *r, const bat *bid, const void *h, const void *t);
+bat5_export str BKCreplace_bun(bat *r, const bat *bid, const oid *h, const void *t);
 bat5_export str BKCreplace_bat(bat *r, const bat *bid, const bat *sid);
-bat5_export str BKCreplace_bun_force(bat *r, const bat *bid, const void *h, const void *t, const bit *force);
+bat5_export str BKCreplace_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force);
 bat5_export str BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);
 bat5_export str BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid);
@@ -81,23 +81,16 @@ bat5_export str BKCisTransient(bit *res, const bat *bid);
 bat5_export str BKCsetAccess(bat *res, const bat *bid, const char * const *param);
 bat5_export str BKCgetAccess(str *res, const bat *bid);
 bat5_export str BKCinfo(bat *ret1, bat *ret2, const bat *bid);
-bat5_export str BKCbatsize(lng *tot, const bat *bid);
-bat5_export str BKCbatvmsize(lng *tot, const bat *bid);
-bat5_export str BKCbatdisksize(lng *tot, const bat *bid);
-bat5_export str BKCgetStorageSize(lng *tot, const bat *bid);
-bat5_export str BKCgetSpaceUsed(lng *tot, const bat *bid);
-bat5_export str BKCgetStorageSize_str(lng *tot, str batname);
+bat5_export str BKCgetSize(lng *tot, const bat *bid);
 bat5_export str BKCisSynced(bit *ret, const bat *bid1, const bat *bid2);
 bat5_export str BKCsetColumn(void *r, const bat *bid, const char * const *tname);
 bat5_export str BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export str BKCsetName(void *r, const bat *bid, const char * const *s);
 bat5_export str BKCgetBBPname(str *ret, const bat *bid);
 bat5_export str BKCunload(bit *res, const char * const *input);
-bat5_export str BKCisCached(bit *res, const bat *bid);
 bat5_export str BKCload(bat *res, const char * const *input);
-bat5_export str BKCcoldBAT(void *res, const bat *bid);
-bat5_export str BKCheat(lng *res, const bat *bid);
-bat5_export str BKChotBAT(void *res, const bat *bid);
+bat5_export str BKCsetColdBAT(void *res, const bat *bid);
+bat5_export str BKCsetHotBAT(void *res, const bat *bid);
 bat5_export str BKCsave(bit *res, const char * const *input);
 bat5_export str BKCsave2(void *r, const bat *bid);
 bat5_export str BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *hhp, const int *thp);
@@ -109,14 +102,6 @@ bat5_export str BKCshrinkBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did);
 bat5_export str BKCreuseBATmap(bat *ret, const bat *bid, const bat *did);
-
-bat5_export str BKCsetWriteMode(bat *res, const bat *bid) ;
-bat5_export str BKChasWriteMode(bit *res, const bat *bid);
-bat5_export str BKCsetReadMode(bat *res, const bat *bid) ;
-bat5_export str BKChasReadMode(bit *res, const bat *bid);
-bat5_export str BKCsetAppendMode(bat *res, const bat *bid) ;
-bat5_export str BKChasAppendMode(bit *res, const bat *bid);
-
 bat5_export str BKCmergecand(bat *ret, const bat *aid, const bat *bid);
 bat5_export str BKCintersectcand(bat *ret, const bat *aid, const bat *bid);
 #endif /*_BAT_H_*/

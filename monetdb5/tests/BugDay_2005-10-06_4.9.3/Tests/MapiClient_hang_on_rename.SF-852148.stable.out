@@ -17,7 +17,7 @@ function user.main():void;
     bat.setName(a,"a");
     b := bat.new(:oid,:int);
     bat.setName(b,"a");
-end main;
+end user.main;
 
 # 10:05:56 >  
 # 10:05:56 >  Done.

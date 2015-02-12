@@ -21,7 +21,7 @@ function user.main():void;
     io.print(l);
     e := nil:lng;
     io.print(e);
-end main;
+end user.main;
 
 # 00:05:16 >  
 # 00:05:16 >  Done.

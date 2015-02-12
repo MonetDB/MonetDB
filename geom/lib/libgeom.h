@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -106,7 +106,7 @@ libgeom_export const char *geom_type2str(int t);
 
 typedef struct wkb {
 	int len;
-	char data[];
+	char data[FLEXIBLE_ARRAY_MEMBER];
 } wkb;
 
 typedef struct {

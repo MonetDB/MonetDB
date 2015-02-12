@@ -22,7 +22,7 @@ function user.main():void;
     mapi.query(mid,"io.print(1);");
     io.print("done");
     mapi.disconnect(mid);
-end main;
+end user.main;
 [ "done" ]
 
 # 09:12:08 >  

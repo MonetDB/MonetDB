@@ -11,7 +11,7 @@ stdout of test '15-explain` in directory 'sql/benchmarks/tpch` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
@@ -59,8 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 304 # length
+% 322 # length
 function user.s3_1{autoCommit=true}():void;
+    X_143:void  := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","supplier");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","supplier","s_suppkey",0);
@@ -84,60 +85,59 @@ function user.s3_1{autoCommit=true}():void;
     X_38 := algebra.leftfetchjoin(X_28,X_37);
     (X_39,r1_42,r2_42) := group.subgroupdone(X_38);
     X_42 := algebra.leftfetchjoin(r1_42,X_38);
-    X_50:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_extendedprice",0);
-    (X_54,r1_57) := sql.bind(X_2,"sys","lineitem","l_extendedprice",2);
-    X_57:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_extendedprice",1);
-    X_59 := sql.delta(X_50,X_54,r1_57,X_57);
-    X_60 := algebra.leftfetchjoin(X_16,X_59);
-    X_61 := algebra.leftfetchjoin(X_28,X_60);
-    X_62:bat[:oid,:hge]  := batcalc.hge(2,X_61,33,2);
-    X_64:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_discount",0);
-    (X_67,r1_76) := sql.bind(X_2,"sys","lineitem","l_discount",2);
-    X_69:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_discount",1);
-    X_70 := sql.delta(X_64,X_67,r1_76,X_69);
-    X_71 := algebra.leftfetchjoin(X_16,X_70);
-    X_72 := algebra.leftfetchjoin(X_28,X_71);
-    X_73:bat[:oid,:lng]  := batcalc.-(100:lng,X_72);
-    X_74:bat[:oid,:hge]  := batcalc.*(X_62,X_73);
-    X_75:bat[:oid,:hge]  := aggr.subsum(X_74,X_39,r1_42,true,true);
-    (X_43,r1_46) := algebra.subjoin(X_15,X_42,nil:BAT,nil:BAT,true,nil:lng);
-    X_48 := algebra.leftfetchjoin(X_43,X_15);
-    X_49 := bat.mirror(X_48);
-    X_77 := algebra.leftfetchjoin(r1_46,X_75);
-    X_80 := aggr.max(X_75);
-    X_81 := sql.single(X_80);
-    (X_82,r1_158) := algebra.subjoin(X_77,X_81,nil:BAT,nil:BAT,true,nil:lng);
-    X_86 := algebra.tinter(X_49,X_82);
-    X_87 := algebra.leftfetchjoin(X_86,X_48);
-    (X_88,r1_164,r2_164) := algebra.subsort(X_87,false,false);
-    X_92 := algebra.leftfetchjoin(r1_164,X_87);
-    X_169 := algebra.leftfetchjoin(r1_164,X_86);
-    X_119:bat[:oid,:hge]  := algebra.leftfetchjoin(X_169,X_77);
-    X_112:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_phone",0);
-    (X_114,r1_196) := sql.bind(X_2,"sys","supplier","s_phone",2);
-    X_116:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_phone",1);
-    X_117 := sql.delta(X_112,X_114,r1_196,X_116);
-    X_118:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_169,X_43,X_3,X_117);
-    X_105:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_address",0);
-    (X_107,r1_186) := sql.bind(X_2,"sys","supplier","s_address",2);
-    X_109:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_address",1);
-    X_110 := sql.delta(X_105,X_107,r1_186,X_109);
-    X_111:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_169,X_43,X_3,X_110);
-    X_93:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_name",0);
-    (X_97,r1_173) := sql.bind(X_2,"sys","supplier","s_name",2);
-    X_100:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_name",1);
-    X_103 := sql.delta(X_93,X_97,r1_173,X_100);
-    X_104:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_169,X_43,X_3,X_103);
-    X_120 := sql.resultSet(5,1,X_92);
-    sql.rsColumn(X_120,"sys.supplier","s_suppkey","int",32,0,X_92);
-    sql.rsColumn(X_120,"sys.supplier","s_name","varchar",25,0,X_104);
-    sql.rsColumn(X_120,"sys.supplier","s_address","varchar",40,0,X_111);
-    sql.rsColumn(X_120,"sys.supplier","s_phone","varchar",15,0,X_118);
-    sql.rsColumn(X_120,"sys.revenue0","total_revenue","decimal",33,4,X_119);
-    X_143 := io.stdout();
-    sql.exportResult(X_143,X_120);
-end s3_1;
-# querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe")
+    X_49:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_extendedprice",0);
+    (X_53,r1_56) := sql.bind(X_2,"sys","lineitem","l_extendedprice",2);
+    X_56:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_extendedprice",1);
+    X_58 := sql.delta(X_49,X_53,r1_56,X_56);
+    X_59 := algebra.leftfetchjoin(X_16,X_58);
+    X_60 := algebra.leftfetchjoin(X_28,X_59);
+    X_61:bat[:oid,:hge]  := batcalc.hge(2,X_60,33,2);
+    X_63:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_discount",0);
+    (X_66,r1_75) := sql.bind(X_2,"sys","lineitem","l_discount",2);
+    X_68:bat[:oid,:lng]  := sql.bind(X_2,"sys","lineitem","l_discount",1);
+    X_69 := sql.delta(X_63,X_66,r1_75,X_68);
+    X_70 := algebra.leftfetchjoin(X_16,X_69);
+    X_71 := algebra.leftfetchjoin(X_28,X_70);
+    X_72:bat[:oid,:lng]  := batcalc.-(100:lng,X_71);
+    X_73:bat[:oid,:hge]  := batcalc.*(X_61,X_72);
+    X_74:bat[:oid,:hge]  := aggr.subsum(X_73,X_39,r1_42,true,true);
+    (X_43,r1_46) := algebra.subjoin(X_15,X_42,nil:BAT,nil:BAT,false,nil:lng);
+    X_47 := algebra.leftfetchjoin(X_43,X_15);
+    X_48 := bat.mirror(X_47);
+    X_76 := algebra.leftfetchjoin(r1_46,X_74);
+    X_78 := aggr.max(X_74);
+    X_79 := sql.single(X_78);
+    (X_80,r1_157) := algebra.subjoin(X_76,X_79,nil:BAT,nil:BAT,false,nil:lng);
+    X_85 := algebra.tinter(X_48,X_80);
+    X_86 := algebra.leftfetchjoin(X_85,X_47);
+    (X_87,r1_164,r2_164) := algebra.subsort(X_86,false,false);
+    X_90 := algebra.leftfetchjoin(r1_164,X_86);
+    X_167 := algebra.leftfetchjoin(r1_164,X_85);
+    X_117:bat[:oid,:hge]  := algebra.leftfetchjoin(X_167,X_76);
+    X_110:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_phone",0);
+    (X_112,r1_195) := sql.bind(X_2,"sys","supplier","s_phone",2);
+    X_114:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_phone",1);
+    X_115 := sql.delta(X_110,X_112,r1_195,X_114);
+    X_116:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_167,X_43,X_3,X_115);
+    X_103:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_address",0);
+    (X_105,r1_185) := sql.bind(X_2,"sys","supplier","s_address",2);
+    X_107:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_address",1);
+    X_108 := sql.delta(X_103,X_105,r1_185,X_107);
+    X_109:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_167,X_43,X_3,X_108);
+    X_91:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_name",0);
+    (X_95,r1_172) := sql.bind(X_2,"sys","supplier","s_name",2);
+    X_98:bat[:oid,:str]  := sql.bind(X_2,"sys","supplier","s_name",1);
+    X_101 := sql.delta(X_91,X_95,r1_172,X_98);
+    X_102:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_167,X_43,X_3,X_101);
+    X_118 := sql.resultSet(5,1,X_90);
+    sql.rsColumn(X_118,"sys.supplier","s_suppkey","int",32,0,X_90);
+    sql.rsColumn(X_118,"sys.supplier","s_name","varchar",25,0,X_102);
+    sql.rsColumn(X_118,"sys.supplier","s_address","varchar",40,0,X_109);
+    sql.rsColumn(X_118,"sys.supplier","s_phone","varchar",15,0,X_116);
+    sql.rsColumn(X_118,"sys.revenue0","total_revenue","decimal",33,4,X_117);
+    X_141 := io.stdout();
+    sql.exportResult(X_141,X_118);
+end user.s3_1;
 #drop view revenue0;
 
 # 22:53:29 >  

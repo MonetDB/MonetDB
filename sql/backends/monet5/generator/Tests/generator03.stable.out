@@ -11,7 +11,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33175/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9611/.s.monetdb.33175
@@ -30,9 +30,9 @@ Ready.
 % timestamp # type
 % 26 # length
 [ 2008-03-01 00:00:00.000000	]
-#select cast( '10' as interval second);
-% .L # table_name
-% single_value # name
+#select cast( '10' as interval hour);
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 0 # length
 [ 36000.000	]

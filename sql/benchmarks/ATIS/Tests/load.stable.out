@@ -20,7 +20,7 @@ function user.main():void;
     keep := calc.xor(INT_MAX,unset);
     set := calc.and(dbgmsk,keep);
     mdb.setDebug(set);
-end main;
+end user.main;
 
 Ready.
 #function user.main():void;

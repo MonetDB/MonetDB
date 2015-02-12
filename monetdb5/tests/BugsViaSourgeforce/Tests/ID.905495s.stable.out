@@ -29,7 +29,7 @@ function user.main():void;
 #- upon advice of M2m to remap identifiers, change it in your program directly 
 #print("hello"); 
     aa_a := io.print("hello");
-end main;
+end user.main;
 [ "hello" ]
 
 # 07:27:17 >  

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,7 +26,12 @@ gdk_export BAT *BATcalcdecr(BAT *b, BAT *s, int abort_on_error);
 gdk_export BAT *BATcalciszero(BAT *b, BAT *s);
 gdk_export BAT *BATcalcsign(BAT *b, BAT *s);
 gdk_export BAT *BATcalcisnil(BAT *b, BAT *s);
+gdk_export BAT *BATcalcisnotnil(BAT *b, BAT *s);
 gdk_export BAT *BATcalcnot(BAT *b, BAT *s);
+gdk_export BAT *BATcalcmin(BAT *b1, BAT *b2, BAT *s);
+gdk_export BAT *BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s);
+gdk_export BAT *BATcalcmax(BAT *b1, BAT *b2, BAT *s);
+gdk_export BAT *BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error);
 gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
 gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error);

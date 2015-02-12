@@ -11,7 +11,7 @@ stdout of test 'json04` in directory 'monetdb5/modules/atoms` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37577/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19132/.s.monetdb.37577
@@ -37,7 +37,7 @@ exit (i,j);
     io.print(l2);
     (l0,l1,l2) := json.unfold(js);
     io.print(l0,l2);
-end main;
+end user.main;
 [ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, { \"color\": \"red\", \"price\": 19.95 }]" ]
 #---------------------------------------------------------#
 # h	t		t				  # name

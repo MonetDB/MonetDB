@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -31,35 +31,6 @@
  * but the events are only sent to the client initiated
  * the profiler thread.
  *
- * @- Monet Event Logger
- * The Monet Event Logger generates records of each event of
- * interest indicated by a log filter, i.e. a pattern over
- * module and function names.
- *
- * The log record contents is derived from counters being
- * (de-)activated.
- * A complete list of recognized counters is shown below.
- *
- * @- Execution tracing
- * Tracing is a special kind of profiling, where the information
- * gathered is not sent to a remote system, but stored in the database
- * itself. Each profile event is given a separate BAT
- *
- * @verbatim
- * # thread and time since start
- * profiler.activate("tick");
- * # cpu time in nano-seconds
- * profiler.activate("cpu");
- * # memory allocation information
- * profiler.activate("memory");
- * # IO activity
- * profiler.activate("io");
- * # Module,function,program counter
- * profiler.activate("pc");
- * # actual MAL instruction executed
- * profiler.activate("statement");
- * @end verbatim
- * @-
  * The profiler event can be handled in several ways.
  * The default strategy is to ship the event record immediately over a stream
  * to a performance monitor.
@@ -76,61 +47,6 @@
 #include "profiler.h"
 
 str
-CMDactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i;
-	str msg= MAL_SUCCEED;
-
-	(void) cntxt;		/* fool compiler */
-	(void) mb;		/* fool compiler */
-	for ( i= pci->retc; i < pci->argc && msg == MAL_SUCCEED; i++)
-			msg =activateCounter(*getArgReference_str(stk,pci,i));
-	return msg;
-}
-
-str
-CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i;
-	str msg= MAL_SUCCEED;
-
-	(void) cntxt;		/* fool compiler */
-	(void) mb;		/* fool compiler */
-	for ( i= pci->retc; i < pci->argc && msg == MAL_SUCCEED; i++)
-			msg =deactivateCounter(*getArgReference_str(stk,pci,i));
-	return msg;
-}
-
-str
-CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	(void) mb;		/* fool compiler */
-	setFilter(cntxt->nspace, *mod, *fcn);
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;		/* fool compiler */
-	(void) stk;
-	(void) pc;
-	setFilter(cntxt->nspace, "*", "*");
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) cntxt;
-	(void) stk;
-	setFilterVariable(mb,getArg(pc,1));
-	return MAL_SUCCEED;
-}
-
-str
 CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	(void) cntxt;
@@ -145,26 +61,6 @@ CMDcloseProfilerStream(void *res)
 {
 	(void) res;
 	return closeProfilerStream();
-}
-
-str
-CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	(void) mb;		/* fool compiler */
-	clrFilter(cntxt->nspace, *mod, *fcn);
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;		/* fool compiler */
-	(void) stk;
-	(void) pci;
-	clrFilter(cntxt->nspace, "", "");
-	return MAL_SUCCEED;
 }
 
 str
@@ -185,24 +81,6 @@ CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	(void) mb;		/* fool compiler */
-	return setStartPoint(cntxt->nspace, *mod, *fcn);
-}
-
-str
-CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	(void) mb;		/* fool compiler */
-	return setStartPoint(cntxt->nspace, *mod, *fcn);
-}
-
-str
 CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -210,19 +88,9 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	return stopProfiling();
+	return stopProfiler();
 }
 
-str
-CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return startProfiling();
-}
 str
 CMDnoopProfiler(void *res)
 {
@@ -231,7 +99,6 @@ CMDnoopProfiler(void *res)
 }
 
 /*
- * @-
  * Tracing an active system.
  */
 str
@@ -264,26 +131,19 @@ CMDgetTrace(bat *res, str *ev)
 }
 
 str
+CMDsetHeartbeat(void *res, int *ev)
+{
+	(void) res;
+	setHeartbeat(*ev);
+	return MAL_SUCCEED;
+}
+
+str
 CMDcleanup(void *ret){
 	(void) ret;
 	return cleanupProfiler();
 }
 
-str
-CMDgetEvent( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	lng *clk, *reads, *writes, pc;
-	clk = getArgReference_lng(stk,pci,0);
-	reads = getArgReference_lng(stk,pci,1);
-	writes = getArgReference_lng(stk,pci,2);
-
-	(void) cntxt;
-
-	pc= getPC(mb,pci)-1; /* take previous instruction */
-	*clk = 0;
-	*reads = mb->stmt[pc]->rbytes;
-	*writes = mb->stmt[pc]->wbytes;
-	return MAL_SUCCEED;
-}
 str
 CMDgetDiskReads(lng *ret)
 {
@@ -310,9 +170,22 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
-CMDtomograph(void *ret)
+CMDtomograph(void *ret, int *beat)
 {
 	(void) ret;
+	if( *beat < 0)
+		throw(MAL,"profiler.tomograph","negative heart beat not allowed");
+	startProfiler(-1, *beat);
+	return MAL_SUCCEED;
+}
+
+str
+CMDstethoscope(void *ret,int *beat)
+{
+	(void) ret;
+	if( *beat < 0)
+		throw(MAL,"profiler.stethoscope","negative heart beat not allowed");
+	startProfiler(1, *beat);
 	return MAL_SUCCEED;
 }
 
@@ -335,17 +208,5 @@ CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *
 		*cycles = (int) ( ((double) N) / (N + idleN - *idle + iowaitN - *iowait) *100);
 		*io = (int) ( ((double) iowaitN- *iowait) / (N + idleN - *idle + iowaitN - *iowait) *100);
 	}
-	return MAL_SUCCEED;
-}
-
-str
-CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	lng *l= getArgReference_lng(stk,pci,0);
-
-	(void) cntxt;
-	(void) mb;
-	(void) pci;
-	*l = stk->tmpspace;
-	stk->tmpspace = 0;
 	return MAL_SUCCEED;
 }

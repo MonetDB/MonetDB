@@ -6,7 +6,5 @@ empty_line_crash.SF-1806638
 parser.SF-2051309
 mal_var_persistent_over_sessions.SF-2581675
 joinpath-loop.Bug-2965
-thetajoin-properties.Bug-2974
 algebra_project.Bug-3045
 stdev.Bug-3178
-kunion-and-nil.Bug-1667

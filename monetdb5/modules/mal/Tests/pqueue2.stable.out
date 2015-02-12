@@ -11,7 +11,7 @@ stdout of test 'pqueue2` in directory 'monetdb5/modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.590 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36947/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9503/.s.monetdb.36947
@@ -117,7 +117,7 @@ function user.main():void;
     (cp,cg) := algebra.firstn(a,bp,bg,8:wrd,false,false);
     io.print(cp);
     io.print(cg);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	int  # type

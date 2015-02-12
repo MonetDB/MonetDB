@@ -10,7 +10,7 @@ stdout of test 'tst662` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39370/
 pattern user.makeSchedule(i:int,l:lng...):bte... address MDBdummy;
@@ -26,11 +26,11 @@ function user.tst():void;
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleB(2,X100,X103,X102,X104);
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleC(2,X100,X103,X102,X104);
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleD(2,X100,X103,X102,X104);
-end tst;
+end user.tst;
 function user.main():void;
 #Testing variable return lists 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() 
     X100 := -1:lng;                     #  1 X100:lng := _2:lng 
     X102 := -1:lng;                     #  2 X102:lng := _2:lng 
@@ -40,7 +40,7 @@ function user.tst():void;               #  0 tst:void := user.tst()
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleB(2,X100,X103,X102,X104);#  6 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleC(2,X100,X103,X102,X104);#  7 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
     (X118:int ,X113,X114,X115,X116) := user.makeScheduleD(2,X100,X103,X102,X104);#  8 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
-end tst;                                #  9  
+end user.tst;                           #  9  
 
 # 16:39:29 >  
 # 16:39:29 >  Done.

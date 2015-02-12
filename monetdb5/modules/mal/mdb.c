@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -348,7 +348,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	n = *getArgReference_int(s, p, 2);
 	if (n < 0 || n >= getStkDepth(s)){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
 	}
 	pseudo(ret,b,"view","stk","frame");
@@ -401,8 +401,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			buf = (char*) GDKmalloc(len +1024);
 			if ( buf == NULL){
 				GDKfree(msg);
-				BBPreleaseref(b->batCacheid);
-				BBPreleaseref(bn->batCacheid);
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
 			}
 		}
@@ -414,8 +414,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,b,"view","stk","trace");
 	pseudo(ret2,bn,"view","stk","traceB");
 	return MAL_SUCCEED;
@@ -469,7 +469,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
 	return MAL_SUCCEED;
 }
 
@@ -558,7 +558,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNappend(b, ps, FALSE);
 		GDKfree(ps);
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -241,7 +241,7 @@ HASHcollisions(BAT *b, Hash *h)
  * Its argument is the element type and the maximum number of BUNs be
  * stored under the hash function.
  */
-BAT *
+gdk_return
 BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
@@ -262,7 +262,7 @@ BAThash(BAT *b, BUN masksize)
 	}
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (b->T->hash == NULL) {
-		unsigned int tpe = ATOMstorage(b->ttype);
+		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
 		BUN mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
@@ -281,7 +281,7 @@ BAThash(BAT *b, BUN masksize)
 			if (b->tseqbase == oid_nil) {
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
-				return NULL;
+				return GDK_FAIL;
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
 
@@ -291,9 +291,9 @@ BAThash(BAT *b, BUN masksize)
 		 * scheme */
 		if (masksize > 0) {
 			mask = HASHmask(masksize);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 1) {
+		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 2) {
+		} else if (ATOMsize(tpe) == 2) {
 			mask = (1 << 12);
 		} else if (b->tkey) {
 			mask = HASHmask(cnt);
@@ -339,7 +339,7 @@ BAThash(BAT *b, BUN masksize)
 					GDKfree(hp->filename);
 					GDKfree(hp);
 				}
-				return NULL;
+				return GDK_FAIL;
 			}
 
 			switch (tpe) {
@@ -442,9 +442,8 @@ BAThash(BAT *b, BUN masksize)
 	if (o != NULL) {
 		o->T->hash = b->T->hash;
 		BBPunfix(b->batCacheid);
-		b = o;
 	}
-	return b;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -454,7 +453,7 @@ BAThash(BAT *b, BUN masksize)
 BUN
 HASHprobe(Hash *h, const void *v)
 {
-	switch (ATOMstorage(h->type)) {
+	switch (ATOMbasetype(h->type)) {
 	case TYPE_bte:
 		return hash_bte(h, v);
 	case TYPE_sht:
@@ -603,14 +602,25 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		cur = (BUN) (*(const oid *) v - b->tseqbase) + lo;
 		return cur + (which == FIND_LAST);
 	}
-
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		switch (which) {
+		case FIND_FIRST:
+			if (*(const oid *) v == oid_nil)
+				return lo;
+		case FIND_LAST:
+			return hi;
+		default:
+			if (lo < hi && *(const oid *) v == oid_nil)
+				return lo;
+			return BUN_NONE;
+		}
+	}
 	cmp = 1;
 	cur = BUN_NONE;
 	bi = bat_iterator(b);
-	tp = b->ttype;
 	/* only use storage type if comparison functions are equal */
-	if (BATatoms[tp].atomCmp == BATatoms[ATOMstorage(tp)].atomCmp)
-		tp = ATOMstorage(tp);
+	tp = ATOMbasetype(b->ttype);
 
 	switch (which) {
 	case FIND_FIRST:

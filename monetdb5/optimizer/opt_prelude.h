@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -76,6 +76,7 @@ opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
+opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str differenceRef;
@@ -119,6 +120,7 @@ opt_export  str thetajoinRef;
 opt_export  str subjoinRef;
 opt_export  str subantijoinRef;
 opt_export  str subbandjoinRef;
+opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
 opt_export  str kdifferenceRef;
 opt_export  str kunionRef;
@@ -218,12 +220,8 @@ opt_export  str sinkRef;
 opt_export  str sliceRef;
 opt_export  str subsliceRef;
 opt_export  str singleRef;
-opt_export  str sortHRef;
-opt_export  str sortHTRef;
 opt_export  str sortRef;
-opt_export  str sortReverseTailRef;
-opt_export  str sortTailRef;
-opt_export  str sortTHRef;
+opt_export  str sortReverseRef;
 opt_export  str sqlRef;
 opt_export  str srvpoolRef;
 opt_export  str streamsRef;
@@ -278,4 +276,5 @@ opt_export int tlbProp;			/* any (tail lower bound) */
 opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
+opt_export int mtProp;			/* enclosing merge table (id) */
 #endif

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -22,12 +22,12 @@
 static BUN
 op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		  TPE *dst, BUN cnt, BUN start, BUN end, const oid *cand,
+		  TPE *restrict dst, BUN cnt, BUN start, BUN end, const oid *restrict cand,
 		  const oid *candend, oid candoff, int nonil, const char *func)
 {
 	BUN nils = 0;
 	BUN i, j, k, loff = 0, roff = 0;
-	const void *nil;
+	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
 
 	switch (tp1) {
@@ -597,13 +597,13 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 static BAT *
 BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		 BUN cnt, BUN start, BUN end, const oid *cand,
+		 BUN cnt, BUN start, BUN end, const oid *restrict cand,
 		 const oid *candend, oid candoff, int nonil, oid seqbase,
 		 const char *func)
 {
 	BAT *bn;
 	BUN nils = 0;
-	TPE *dst;
+	TPE *restrict dst;
 
 	bn = BATnew(TYPE_void, TYPE_TPE, cnt, TRANSIENT);
 	if (bn == NULL)
@@ -622,7 +622,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	}
 
 	BATsetcount(bn, cnt);
-	bn = BATseqbase(bn, seqbase);
+	BATseqbase(bn, seqbase);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;
@@ -638,10 +638,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, BATcalcop_name);
-	BATcheck(b2, BATcalcop_name);
+	BATcheck(b1, BATcalcop_name, NULL);
+	BATcheck(b2, BATcalcop_name, NULL);
 
 	if (checkbats(b1, b2, BATcalcop_name) == GDK_FAIL)
 		return NULL;
@@ -679,9 +679,9 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalcopcst_name);
+	BATcheck(b, BATcalcopcst_name, NULL);
 
 	if (checkbats(b, NULL, BATcalcopcst_name) == GDK_FAIL)
 		return NULL;
@@ -705,9 +705,9 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 {
 	BAT *bn;
 	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalccstop_name);
+	BATcheck(b, BATcalccstop_name, NULL);
 
 	if (checkbats(b, NULL, BATcalccstop_name) == GDK_FAIL)
 		return NULL;

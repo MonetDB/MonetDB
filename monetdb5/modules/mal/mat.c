@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -171,7 +171,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(!bn->H->nil || !bn->H->nonil);
 		assert(!bn->T->nil || !bn->T->nonil);
 		BBPkeepref(*ret = bn->batCacheid);
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	} else {
 		/* remaining steps */
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
@@ -186,7 +186,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
 		if( bb) 
-			BBPreleaseref(bb->batCacheid);
+			BBPunfix(bb->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -306,7 +306,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = i1; i <= i2; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if (b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
 		}
 		c = BATcount(b);
@@ -348,19 +348,20 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	for(i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
-	bn = BATextend(bn, cap);
-	if( bn == NULL)
+	if (BATextend(bn, cap) == GDK_FAIL) {
+		BBPunfix(bn->batCacheid);
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+	}
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		BATappend(bn,b,FALSE);
@@ -509,8 +510,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
 	}
-    BATsettrivprop(bn);
-    BATderiveProps(bn,FALSE);
+	BATseqbase(bn, 0);
 	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1756,7 +1756,7 @@ MATsort_bte( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 }
 
 static str
-MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
+MATsortInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 {
 	bat *res_id = getArgReference_bat(stk,pci,0); /* result sorted */
 	bat *map_id = getArgReference_bat(stk,pci,1); /* result map */
@@ -1768,7 +1768,7 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 
 	(void) cntxt; (void) mb; (void) stk; 
 	if( bats == NULL)
-		throw(SQL, "mat.sortTail",MAL_MALLOC_FAIL);
+		throw(SQL, "mat.sort",MAL_MALLOC_FAIL);
 	for (i=2; i<pci->argc; i++) {
 		bat id = *getArgReference_bat(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
@@ -1818,18 +1818,18 @@ error:
 		return MAL_SUCCEED;
 	}
 	if (map) BBPunfix(map->batCacheid);
-	throw(SQL, "mat.sortTail","Cannot access descriptor");
+	throw(SQL, "mat.sort","Cannot access descriptor");
 }
 
 str
-MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return MATsort( cntxt, mb, stk, pci, 0);
+	return MATsortInternal( cntxt, mb, stk, pci, 0);
 }
 
 str
-MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MATsortReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return MATsort( cntxt, mb, stk, pci, 1);
+	return MATsortInternal( cntxt, mb, stk, pci, 1);
 }
 

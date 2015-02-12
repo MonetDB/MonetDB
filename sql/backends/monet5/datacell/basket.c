@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -390,14 +390,14 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			/* clean out basket */
 			bn = BATjoin(BATmirror(bs), b, BUN_NONE);
-			b = BATsetaccess(b, BAT_WRITE);
+			BATsetaccess(b, BAT_WRITE);
 			BATclear(b, TRUE);
 			BATins(b, bn, FALSE);
 			cnt = (int) BATcount(bn);
-			BBPreleaseref(bn->batCacheid);
+			BBPunfix(bn->batCacheid);
 		}
-		BBPreleaseref(bo->batCacheid);
-		BBPreleaseref(bs->batCacheid);
+		BBPunfix(bo->batCacheid);
+		BBPunfix(bs->batCacheid);
 
 		MT_lock_unset(&baskets[bskt].lock, "unlock basket");
 	} else if (baskets[bskt].winsize) {
@@ -415,7 +415,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			v = BATslice(bn, baskets[bskt].winstride, BATcount(bn));
-			b = BATsetaccess(b, BAT_WRITE);
+			BATsetaccess(b, BAT_WRITE);
 			BATclear(b, TRUE);
 			BATins(b, v, FALSE);
 			BATsetcount(bn, baskets[bskt].winsize);
@@ -469,7 +469,7 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = baskets[bskt].primary[i];
 		bn = BATdescriptor(ret);
 		BATappend(b, bn, TRUE);
-		BBPreleaseref(ret);
+		BBPunfix(ret);
 	}
 	MT_lock_unset(&baskets[bskt].lock, "unlock basket");
 	return MAL_SUCCEED;
@@ -677,23 +677,23 @@ BSKTtable(bat *nameId, bat *thresholdId, bat * winsizeId, bat *winstrideId, bat 
 	return MAL_SUCCEED;
 wrapup:
 	if (name)
-		BBPreleaseref(name->batCacheid);
+		BBPunfix(name->batCacheid);
 	if (threshold)
-		BBPreleaseref(threshold->batCacheid);
+		BBPunfix(threshold->batCacheid);
 	if (winsize)
-		BBPreleaseref(winsize->batCacheid);
+		BBPunfix(winsize->batCacheid);
 	if (winstride)
-		BBPreleaseref(winstride->batCacheid);
+		BBPunfix(winstride->batCacheid);
 	if (timeslice)
-		BBPreleaseref(timeslice->batCacheid);
+		BBPunfix(timeslice->batCacheid);
 	if (timestride)
-		BBPreleaseref(timestride->batCacheid);
+		BBPunfix(timestride->batCacheid);
 	if (beat)
-		BBPreleaseref(beat->batCacheid);
+		BBPunfix(beat->batCacheid);
 	if (seen)
-		BBPreleaseref(seen->batCacheid);
+		BBPunfix(seen->batCacheid);
 	if (events)
-		BBPreleaseref(events->batCacheid);
+		BBPunfix(events->batCacheid);
 	throw(MAL, "datacell.baskets", MAL_MALLOC_FAIL);
 }
 
@@ -709,7 +709,7 @@ BSKTtableerrors(bat *nameId, bat *errorId)
 		throw(SQL, "baskets.errors", MAL_MALLOC_FAIL);
 	error = BATnew(TYPE_void, TYPE_str, BATTINY, TRANSIENT);
 	if (error == 0) {
-		BBPreleaseref(name->batCacheid);
+		BBPunfix(name->batCacheid);
 		throw(SQL, "baskets.errors", MAL_MALLOC_FAIL);
 	}
 

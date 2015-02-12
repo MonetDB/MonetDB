@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -34,19 +34,19 @@ RDFleftfetchjoin_sorted(bat *result, const bat *lid, const bat *rid)
 		throw(MAL, "rdf.leftfetchjoin_sorted", RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
+		BBPunfix(left->batCacheid);
 		throw(MAL, "rdf.leftfetchjoin_sorted", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATleftfetchjoin(left, right, BUN_NONE);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "rdf.leftfetchjoin_sorted", GDK_EXCEPTION);
 
 	bn->tsorted = TRUE;
 
 	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;

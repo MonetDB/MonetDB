@@ -10,7 +10,7 @@ stdout of test 'group-by_ordered_column.Bug-2564` in directory 'sql/test/BugTrac
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30272/
 # MonetDB/SQL module v2.38.3 loaded
@@ -38,8 +38,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 94 # length
+% 111 # length
 function user.s5_1{autoCommit=true}():void;
+    X_50:void  := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe");
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","t2564");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c3",0);
@@ -65,8 +66,7 @@ function user.s5_1{autoCommit=true}():void;
     sql.rsColumn(X_41,"sys.L1","L1","wrd",64,0,X_39);
     X_48 := io.stdout();
     sql.exportResult(X_48,X_41);
-end s5_1;
-# querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe")
+end user.s5_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.L1 # table_name
 % L1 # name

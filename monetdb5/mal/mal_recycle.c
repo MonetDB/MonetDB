@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -895,6 +895,10 @@ RECYCLEdrop(Client cntxt){
 		return ;
 
 	MT_lock_set(&recycleLock, "recycle");
+	if( recycleBlk == NULL){
+		MT_lock_unset(&recycleLock, "recycle");
+		return ;
+	}
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
 	if ( used == NULL){
 		GDKerror("RECYCLEdrop" MAL_MALLOC_FAIL);

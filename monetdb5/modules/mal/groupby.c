@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -97,7 +97,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		b = a->cols[a->last]= BATdescriptor(a->bid[a->last]);
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
-				BBPreleaseref(a->cols[a->last]->batCacheid);
+				BBPunfix(a->cols[a->last]->batCacheid);
 			GDKfree(a);
 			return NULL;
 		}
@@ -107,9 +107,9 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			bh = BATsubunique(b, bs);
 			if (bh) {
 				a->unique[a->last] = BATcount(bh);
-				BBPreleaseref(bh->batCacheid);
+				BBPunfix(bh->batCacheid);
 			}
-			BBPreleaseref(bs->batCacheid);
+			BBPunfix(bs->batCacheid);
 		}
 		if ( b->tsorted)
 			a->unique[a->last] = 1000; /* sorting helps grouping */
@@ -151,7 +151,7 @@ GROUPcollectSort(AGGRtask *a, int start, int finish)
 static void
 GROUPdelete(AGGRtask *a){
 	for(a->last--; a->last>=0; a->last--){
-		BBPreleaseref(a->cols[a->last]->batCacheid);
+		BBPunfix(a->cols[a->last]->batCacheid);
 	}
 	GDKfree(a->cols);
 	GDKfree(a->unique);
@@ -195,7 +195,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b = BATdescriptor(*hist);
 			if (b) {
 				j = BATcount(b) == count;
-				BBPreleaseref(*hist);
+				BBPunfix(*hist);
 				if (j)
 					break;
 			}

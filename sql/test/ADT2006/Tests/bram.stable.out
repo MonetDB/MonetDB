@@ -11,7 +11,7 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33320/
 # MonetDB/GIS module loaded
@@ -472,9 +472,9 @@ Ready.
 #    length is not NULL and length like '%\'' and hair like '%blonde%')
 #UNION ALL
 #(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
-#    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) + 1)) AS integer)) as height from victim v
-% .L6,	.L6 # table_name
-% L1,	average_height # name
+#    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
+% .L24,	.L24 # table_name
+% L4,	average_height # name
 % char,	char # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]

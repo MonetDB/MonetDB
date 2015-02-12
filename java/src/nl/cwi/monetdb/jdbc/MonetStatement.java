@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -693,7 +693,9 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		types = new String[1];
 
 		columns[0] = "GENERATED_KEY";
-		types[0] = "varchar";
+		/* the generated key should be an integer, because (wait for it) other 
+		 * frameworks such as spring expect this. */
+		types[0] = "BIGINT";
 
 		if (header instanceof MonetConnection.UpdateResponse) {
 			String lastid = ((MonetConnection.UpdateResponse)header).lastid;

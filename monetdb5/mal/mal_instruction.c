@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -474,7 +474,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + sizeof(InstrRecord));
+		p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 		if (p == NULL)
 			return NULL;
 		p->maxarg = MAXARG;
@@ -518,7 +518,7 @@ InstrPtr
 copyInstruction(InstrPtr p)
 {
 	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + p->maxarg * sizeof(p->maxarg));
+	new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
 	if( new == NULL) {
 		GDKerror("copyInstruction:failed to allocated space");
 		return new;
@@ -542,7 +542,7 @@ void
 clrInstruction(InstrPtr p)
 {
 	clrFunction(p);
-	memset((char *) p, 0, sizeof(InstrRecord) + p->maxarg * sizeof(p->argv[0]));
+	memset((char *) p, 0, offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
 }
 
 void
@@ -559,7 +559,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 {
 	int space;
 
-	space = sizeof(InstrRecord) + p->maxarg * sizeof(p->argv[0]);
+	space = offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]);
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
@@ -942,7 +942,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	}
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL){
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + MAXARG * sizeof(int));
 		if ( getVar(mb,n) == NULL) {
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
 			GDKfree(name);
@@ -1022,7 +1022,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
 		return -1;
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL) {
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + MAXARG * sizeof(int));
 		if (getVar(mb,n) == NULL){
 			GDKerror("newTmpVariable" MAL_MALLOC_FAIL);
 			return -1;
@@ -1081,7 +1081,7 @@ copyProperties(MalBlkPtr mb, int src, int dst)
     v = mb->var[src];
     w = mb->var[dst];
     if ( w->maxprop < v->maxprop){
-        w = (VarPtr) GDKrealloc(w, sizeof(VarRecord) + v->maxprop * sizeof(int));
+        w = (VarPtr) GDKrealloc(w, offsetof(VarRecord, prps) + v->maxprop * sizeof(int));
 		if ( w == NULL){
 			GDKerror("copyProperties" MAL_MALLOC_FAIL);
 			return;
@@ -1101,7 +1101,7 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	VarPtr w;
 
 	assert(v->propc <= v->maxprop);
-	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(int));
+	w = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + v->maxprop * sizeof(int));
 	if( w == NULL)
 		return -1;
 	w->name = v->name ? GDKstrdup(v->name) : 0;
@@ -1583,7 +1583,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0, pclimit;
-		int space = p->maxarg * sizeof(p->argv[0]) + sizeof(InstrRecord);
+		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
 
 		/* instructions are either created in isolation or are stored
 		 * on the program instruction stack already. In the latter
@@ -1892,7 +1892,7 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 	assert(v->propc <= v->maxprop);
 	if (!reset) {
 		if (v->propc == v->maxprop) {
-			size = sizeof(VarRecord) + v->maxprop * sizeof(int);
+			size = offsetof(VarRecord, prps) + v->maxprop * sizeof(int);
 			vnew = (VarPtr) GDKzalloc(size + MAXARG * sizeof(int));
 			if( vnew == NULL){
 				GDKerror("varSetProp"MAL_MALLOC_FAIL);

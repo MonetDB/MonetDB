@@ -11,22 +11,25 @@ stdout of test 'gsl00` in directory 'sql/backends/monet5/gsl` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.592 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rotterdam.ins.cwi.nl:36073/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19131/.s.monetdb.36073
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    a := 20:dbl;
-    b := 5:dbl;
-    c := gsl.chi2prob(a,b);
-    io.print(c);
-end main;
-[ 0.0012497305630313768 ]
+# MonetDB/R   module loaded
 
-# 15:55:26 >  
-# 15:55:26 >  "Done."
-# 15:55:26 >  
+Ready.
+
+# 17:18:32 >  
+# 17:18:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13823" "--port=38735"
+# 17:18:32 >  
+
+#io.print(c);
+[ 0.001249730563	]
+
+# 17:18:32 >  
+# 17:18:32 >  "Done."
+# 17:18:32 >  
 

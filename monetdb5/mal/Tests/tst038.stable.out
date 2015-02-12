@@ -11,7 +11,7 @@ stdout of test 'tst038` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32160/
 # MonetDB/GIS module loaded
@@ -20,7 +20,7 @@ stdout of test 'tst038` in directory 'monetdb5/mal` itself:
 # MonetDB/DataCell loaded
 function user.tst2(b:bat[:oid,:any_1]):void;
     bat.append(b,"hello");
-end tst2;
+end user.tst2;
 !TypeException:user.tst2[1]:'bat.append' undefined in: _2:bat[:oid,:str] := bat.append(b:bat[:oid,:int], _3:str)
 !MALException:user.tst2[0]:Error in cloned function
 !TypeException:user.main[4]:'user.tst2' undefined in: _6:void := user.tst2(b:bat[:oid,:int])
@@ -30,7 +30,7 @@ function user.main():void;
 #The call to tst2 fails at runtime 
     user.tst2(b);
     io.print("shouldn't come here\n");
-end main;
+end user.main;
 
 # 07:58:43 >  
 # 07:58:43 >  Done.

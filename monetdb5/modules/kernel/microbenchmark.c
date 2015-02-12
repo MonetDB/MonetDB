@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -369,7 +369,7 @@ MBMrandom_seed(bat *ret, oid *base, wrd *size, int *domain, const int *seed){
 
 	BATrandom(&bn, base, size, domain, *seed);
 	if( bn ){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.random", OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -382,7 +382,7 @@ MBMuniform(bat *ret, oid *base, wrd *size, int *domain){
 
 	BATuniform(&bn, base, size, domain);
 	if( bn ){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -393,7 +393,7 @@ MBMnormal(bat *ret, oid *base, wrd *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -436,7 +436,7 @@ MBMskewed(bat *ret, oid *base, wrd *size, int *domain, int *skew){
 
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark,uniform", OPERATION_FAILED);
 	return MAL_SUCCEED;

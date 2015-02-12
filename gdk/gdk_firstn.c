@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -113,7 +113,7 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		heapify(OP##fix, SWAP1);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -136,9 +136,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	oid *oids;
+	oid *restrict oids;
 	BUN i, cnt, start, end;
-	const oid *cand, *candend;
+	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	/* variables used in heapify/siftup macros */
@@ -204,14 +204,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	BATsetcount(bn, n);
 	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	/* if the input happens to be almost sorted in ascending order
 	 * (likely a common use case), it is more efficient to start
 	 * off with the first n elements when doing a firstn-ascending
@@ -357,7 +353,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 
 #define shuffle_unique_with_groups(TYPE, OP)				\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
 		heapify(OP##fixgrp, SWAP2);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -378,10 +374,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
-	oid *oids, *goids;
-	const oid *gv;
+	oid *restrict oids, *restrict goids;
+	const oid *restrict gv;
 	BUN i, cnt, start, end, ci;
-	const oid *cand, *candend;
+	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	/* variables used in heapify/siftup macros */
@@ -425,14 +421,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		return NULL;
 	}
 
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	ci = 0;
 	if (cand) {
 		for (i = 0; i < n; i++) {
@@ -601,14 +593,14 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 
 #define shuffle_grouped1(TYPE, OPER)					\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		shuffle_grouped1_body(OPER(v[i], v[groups[j].bun]),	\
 				      v[i] == v[groups[j].bun]);	\
 	} while (0)
 
 #define shuffle_grouped2(TYPE)						\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		TYPE lastval = v[groups[top - 1].bun];			\
 		for (i = cand ? *cand++ - b->hseqbase : start;		\
 		     i < end;						\
@@ -631,9 +623,9 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
-	oid *bp, *gp;
+	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end;
-	const oid *cand, *candend, *oldcand;
+	const oid *restrict cand, *candend, *oldcand;
 	int tpe = b->ttype;
 	int c;
 	int (*cmp)(const void *, const void *);
@@ -641,7 +633,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	struct group {
 		BUN bun;
 		BUN cnt;
-	} *groups;
+	} *restrict groups;
 
 	assert(topn);
 
@@ -675,14 +667,10 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	}
 
 	top = 0;
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	oldcand = cand;
 	if (asc) {
@@ -898,14 +886,14 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 
 #define shuffle_grouped_with_groups1(TYPE, OPER)			\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		shuffle_grouped_with_groups1_body(OPER(v[i], v[groups[j].bun]),	\
 						  v[i] == v[groups[j].bun]); \
 	} while (0)
 
 #define shuffle_grouped_with_groups2(TYPE)				\
 	do {								\
-		const TYPE *v = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;	\
 		     i < end;						\
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
@@ -926,9 +914,9 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 {
 	BAT *bn, *gn;
 	BATiter bi = bat_iterator(b);
-	oid *bp, *gp;
+	oid *restrict bp, *restrict gp;
 	BUN top, i, j, k, cnt, start, end, ci;
-	const oid *cand, *candend, *oldcand, *gv;
+	const oid *restrict cand, *candend, *oldcand, *restrict gv;
 	int tpe = b->ttype;
 	int c;
 	int (*cmp)(const void *, const void *);
@@ -937,7 +925,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		BUN bun;
 		BUN cnt;
 		oid grp;
-	} *groups;
+	} *restrict groups;
 
 	assert(topn);
 
@@ -987,14 +975,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 
 	top = 0;
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	if (tpe != ATOMstorage(tpe) &&
-	    cmp == BATatoms[ATOMstorage(b->ttype)].atomCmp) {
-		/* note, this takes care of types oid and wrd */
-		tpe = ATOMstorage(tpe);
-	}
+	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	oldcand = cand;

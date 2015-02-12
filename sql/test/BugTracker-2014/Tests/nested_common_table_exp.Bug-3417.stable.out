@@ -11,7 +11,7 @@ stdout of test 'nested_common_table_exp.Bug-3417` in directory 'sql/test/BugTrac
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 3.777 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:38407/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-696/.s.monetdb.38407

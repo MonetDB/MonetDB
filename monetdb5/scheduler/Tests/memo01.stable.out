@@ -18,13 +18,13 @@ function user.main():void;
     A := bat.new(:oid,:oid);
     bat.append(A,1@0);
     B := algebra.copy(A);
-    bat.setWriteMode(B);
+    bat.setAccess(B,"w");
     bat.append(B,2@0);
     C := algebra.copy(B);
-    bat.setWriteMode(C);
+    bat.setAccess(C,"w");
     bat.append(C,3@0);
     D := algebra.copy(C);
-    bat.setWriteMode(D);
+    bat.setAccess(D,"w");
     bat.append(D,3@0);
     Acost := aggr.count(A);
     Bcost := aggr.count(B);
@@ -74,7 +74,7 @@ function user.main():void;
     scheduler.choice(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);
     answer := scheduler.pick(T9,T10,T11,T12,T13);
     io.print(answer);
-end main;
+end user.main;
 choicepoint 1
 choicepoint 2
 choicepoint 3

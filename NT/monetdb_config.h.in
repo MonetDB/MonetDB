@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,7 +26,11 @@
  * _MSC_VER = 1400: Visual Studio 8
  * _MSC_VER = 1500: Visual Studio 9.0
  * _MSC_VER = 1600: Visual Studio 10.0
+ * _MSC_VER = 1800: Visual Studio 12.0
  */
+
+#ifndef _SEEN_MONETDB_CONFIG_H
+#define _SEEN_MONETDB_CONFIG_H 1
 
 /* Prevent pollution through excessive inclusion of include files by
  * Windows.h. */
@@ -39,7 +43,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include <malloc.h>		/* we need malloc.h for alloca() */
+#include <malloc.h>
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
@@ -67,14 +71,6 @@
 /* location where binaries are installed */
 /* #undef BINDIR */
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-/* #undef CRAY_STACKSEG_END */
-
-/* Define to 1 if using `alloca.c'. */
-/* #undef C_ALLOCA */
-
 /* Directory separator */
 #define DIR_SEP '\\'
 
@@ -84,13 +80,6 @@
 /* architecture-dependent files */
 #define EXEC_PREFIX PREFIX
 
-/* Define to 1 if you have `alloca', as a function or macro. */
-#define HAVE_ALLOCA 1
-
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
-/* #undef HAVE_ALLOCA_H */
-
 /* Define to 1 if you have the `asctime_r' function. */
 #define HAVE_ASCTIME_R 1
 
@@ -99,8 +88,14 @@
 /* there is something very similar to asctime_r on Windows: */
 #define asctime_r(t,b,s)	asctime_s(b,s,t)
 
-/* Define if you have the cfitsio library */
-/* #undef HAVE_CFITSIO */
+/* Define to nothing if C supports flexible array members, and to 1 if it does
+   not. That way, with a declaration like `struct s { int n; double
+   d[FLEXIBLE_ARRAY_MEMBER]; };', the struct hack can be used with pre-C99
+   compilers. When computing the size of such an object, don't use 'sizeof
+   (struct s)' as it overestimates the size. Use 'offsetof (struct s, d)'
+   instead. Don't use 'offsetof (struct s, d[0])', as this doesn't work with
+   MSVC and with C++ compilers. */
+#define FLEXIBLE_ARRAY_MEMBER
 
 /* If the console should be used */
 #define HAVE_CONSOLE 1
@@ -145,13 +140,20 @@
 /* #undef HAVE_FDATASYNC */
 
 /* Define to 1 if you have the <fenv.h> header file. */
-/* #undef HAVE_FENV_H */
+#if _MSC_VER > 1600
+#define HAVE_FENV_H 1
+#endif
+
+/* Define if the fits module is to be enabled */
+/* #undef HAVE_FITS */
 
 /* Define to 1 if you have the `fpclass' function. */
-#define HAVE_FPCLASS 1
+#define HAVE_FPCLASS 1		/* uses _fpclass, see mmath.c */
 
 /* Define to 1 if you have the `fpclassify' function. */
-/* #undef HAVE_FPCLASSIFY */
+#if _MSC_VER > 1600
+#define HAVE_FPCLASSIFY 1
+#endif
 
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 /* #undef HAVE_FSEEKO */
@@ -165,9 +167,6 @@
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
 #define ftruncate(fd, sz)	(-(_chsize_s((fd), (__int64) (sz)) != 0))
-
-/* Does your compiler support function attributes (__attribute__)? */
-/* #undef HAVE_FUNCTION_ATTRIBUTES */
 
 /* Define if you use garbage collection */
 /* #undef HAVE_GC */
@@ -226,7 +225,9 @@
 #define HAVE_IO_H 1
 
 /* Define to 1 if you have the `isinf' function. */
-/* #undef HAVE_ISINF */
+#if _MSC_VER > 1600
+#define HAVE_ISINF 1
+#endif
 
 /* Define that you want to build the jsonstore library */
 /* #undef HAVE_JSONSTORE */
@@ -296,7 +297,9 @@
 
 /* Define to 1 if you have the `llabs' function. */
 #define HAVE_LLABS 1
+#if _MSC_VER <= 1500
 #define llabs _abs64
+#endif
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
@@ -310,7 +313,7 @@
 /* #undef HAVE_LOCKF */
 
 /* Define to 1 if the system has the type `long long'. */
-#if defined(__ICL) && __ICL >= 1010
+#if _MSC_VER > 1600 || (defined(__ICL) && __ICL >= 1010)
 #define HAVE_LONG_LONG 1
 #else
 #if _MSC_VER >= 1300
@@ -318,8 +321,6 @@
  * format is interpreted the same as %ld, i.e. useless
  */
 /* #define HAVE_LONG_LONG 1 */
-#else
-/* #undef HAVE_LONG_LONG */
 #endif
 #endif
 
@@ -344,11 +345,11 @@
 /* Define to 1 if you have the `MD5' function. */
 #define HAVE_MD5 1
 
-/* Define if you have the LibMicroHTTPD library */
-/* #undef HAVE_MICROHTTPD */
-
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define if the microhttpd server is to be enabled */
+/* #undef HAVE_MICROHTTPD */
 
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
@@ -367,6 +368,11 @@
 
 /* Define to 1 if you have the `nl_langinfo' function. */
 /* #undef HAVE_NL_LANGINFO */
+
+/* Define to 1 if you have the `nextafterf' function. */
+#if _MSC_VER > 1600
+#define HAVE_NEXTAFTERF 1
+#endif
 
 /* Define to 1 if you have the `_NSGetExecutablePath' function. */
 /* #undef HAVE__NSGETEXECUTABLEPATH */
@@ -442,7 +448,9 @@
 /* #undef HAVE_RLIMIT_H */
 
 /* Define to 1 if you have the `round' function. */
-/* #undef HAVE_ROUND */
+#if _MSC_VER > 1600
+#define HAVE_ROUND 1
+#endif
 
 /* Define if you have the samtools (providing the bam library) */
 /* #undef HAVE_SAMTOOLS */
@@ -511,7 +519,9 @@
 #define HAVE_STDDEF_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-/* #undef HAVE_STDINT_H */
+#if _MSC_VER > 1600
+#define HAVE_STDINT_H 1
+#endif
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -526,7 +536,9 @@
 /* #undef HAVE_STRCASESTR */
 
 /* Define to 1 if you have the `strftime' function. */
-/* #undef HAVE_STRFTIME */
+#if _MSC_VER >= 1500
+#define HAVE_STRFTIME 1
+#endif
 
 /* Define to 1 if you have the <strings.h> header file. */
 /* #undef HAVE_STRINGS_H */
@@ -553,28 +565,26 @@
 #define HAVE_STRTOD 1
 
 /* Define to 1 if you have the `strtof' function. */
-/* #undef HAVE_STRTOF */
+#if _MSC_VER > 1600
+#define HAVE_STRTOF 1
+#endif
 
 #define strtok_r(t,d,c) strtok_s(t,d,c)
 
 /* Define to 1 if you have the `strtoll' function. */
 #if _MSC_VER >= 1300
 #define HAVE_STRTOLL 1
-#ifndef strtoll
+#if _MSC_VER <= 1600 && !defined(strtoll)
 #define strtoll _strtoi64
 #endif
-#else
-/* #undef HAVE_STRTOLL */
 #endif
 
 /* Define to 1 if you have the `strtoull' function. */
 #if _MSC_VER >= 1300
 #define HAVE_STRTOULL 1
-#ifndef strtoull
+#if _MSC_VER <= 1600 && !defined(strtoull)
 #define strtoull _strtoui64
 #endif
-#else
-/* #undef HAVE_STRTOULL */
 #endif
 
 /* Define if you have struct mallinfo */
@@ -649,7 +659,9 @@
 #define HAVE_TIME_H 1
 
 /* Define to 1 if you have the `trunc' function. */
-/* #undef HAVE_TRUNC */
+#if _MSC_VER > 1600
+#define HAVE_TRUNC 1
+#endif
 
 /* Define to 1 if you have the `uname' function. */
 /* #undef HAVE_UNAME */
@@ -682,7 +694,9 @@
 #define HAVE_WINSOCK_H 1
 
 /* Define to 1 if you have the <xmmintrin.h> header file. */
-/* #undef HAVE_XMMINTRIN_H */
+#if _MSC_VER > 1600
+#define HAVE_XMMINTRIN_H 1
+#endif
 
 /* Define to 1 if the system has the type `_Bool'. */
 /* #undef HAVE__BOOL */
@@ -954,10 +968,10 @@
 
 /* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
-#ifndef HAVE_FUNCTION_ATTRIBUTES
 #define __attribute__(a)
-#endif
 
+/* Does your compiler support the `__hidden' specifier? */
+#define __hidden
 
 /* function to close a socket */
 /* #undef closesocket */
@@ -970,6 +984,14 @@
 #ifndef __cplusplus
 #ifndef inline
 #define inline __inline
+#endif
+#endif
+
+/* Define to `__restrict__' or `__restrict' if that's what the C compiler
+   calls it, or to nothing if 'restrict' is not supported under any name.  */
+#ifndef __cplusplus
+#ifndef restrict
+#define restrict __restrict
 #endif
 #endif
 
@@ -996,8 +1018,10 @@
 #define ssize_t int
 #endif
 
+#if _MSC_VER <= 1600
 /* no va_copy in win32 */
 #define va_copy(x,y) ((x) = (y))
+#endif
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -1009,9 +1033,6 @@ typedef unsigned __int64 uint64_t;
 #define vsnprintf _vsnprintf
 #endif
 #endif
-
-#ifndef _SEEN_MONETDB_CONFIG_H
-#define _SEEN_MONETDB_CONFIG_H 1
 
 #include <sys/types.h>
 #include <stdio.h>		/* NULL, printf etc. */

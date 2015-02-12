@@ -1,0 +1,70 @@
+stdout of test 'typecast_error.Bug-3622` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 16:59:10 >  
+# 16:59:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32779" "--set" "mapi_usock=/var/tmp/mtest-28435/.s.monetdb.32779" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:59:10 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32779/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28435/.s.monetdb.32779
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:59:10 >  
+# 16:59:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28435" "--port=32779"
+# 16:59:10 >  
+
+#CREATE FUNCTION seq_char(val integer, seq string, pos integer, cigar string)
+#RETURNS INTEGER
+#BEGIN
+#	RETURN 1;
+#END;
+#CREATE TABLE "bam"."alignments_2" (
+#    "virtual_offset" BIGINT        NOT NULL,
+#    "qname"          CHARACTER LARGE OBJECT NOT NULL,
+#    "flag"           SMALLINT      NOT NULL,
+#    "rname"          CHARACTER LARGE OBJECT NOT NULL,
+#    "pos"            INTEGER       NOT NULL,
+#    "epos"            INTEGER       NOT NULL,
+#    "mapq"           SMALLINT      NOT NULL,
+#    "cigar"          CHARACTER LARGE OBJECT NOT NULL,
+#    "rnext"          CHARACTER LARGE OBJECT NOT NULL,
+#    "pnext"          INTEGER       NOT NULL,
+#ALTER TABLE bam.alignments_2 SET READ ONLY;
+#SELECT s.value AS refpos, COUNT(*) AS cnt
+#FROM 
+#    generate_series(128, 18960) AS s
+#    JOIN (
+#        SELECT epos, pos, seq, cigar
+#        FROM bam.alignments_2
+#        WHERE pos > 0 
+#    ) AS al
+#    ON (
+#          s.value >= al.pos AND s.value <= al."epos"
+#      AND seq_char(s.value, al.seq, al.pos, al.cigar) IS NOT NULL
+#   )
+#GROUP BY refpos
+#ORDER BY cnt DESC
+#LIMIT 10;
+% .s,	.L3 # table_name
+% refpos,	cnt # name
+% smallint,	wrd # type
+% 1,	1 # length
+#DROP TABLE bam.alignments_2;
+#DROP FUNCTION seq_char;
+
+# 16:59:10 >  
+# 16:59:10 >  "Done."
+# 16:59:10 >  
+

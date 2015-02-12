@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -40,7 +40,7 @@
 	do {													\
 		bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);	\
 		if (bn == NULL) {									\
-			BBPreleaseref(b->batCacheid);					\
+			BBPunfix(b->batCacheid);						\
 			throw(MAL, X2, MAL_MALLOC_FAIL);				\
 		}													\
 		BATseqbase(bn, b->hseqbase);						\
@@ -79,7 +79,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 		fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
 					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {			\
 		int e = errno;												\
-		BBPreleaseref(bn->batCacheid);								\
+		BBPunfix(bn->batCacheid);									\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s",			\
 			  strerror(e));											\
 	}																\
@@ -90,15 +90,15 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	bn->T->nonil = b->T->nonil;										\
 	BATkey(BATmirror(bn), 0);										\
 	if (!(bn->batDirty&2))											\
-		bn = BATsetaccess(bn, BAT_READ);							\
+		BATsetaccess(bn, BAT_READ);									\
 	if (b->htype != bn->htype) {									\
 		BAT *r = VIEWcreate(b,bn);									\
 																	\
-		BBPreleaseref(bn->batCacheid);								\
+		BBPunfix(bn->batCacheid);									\
 		bn = r;														\
 	}																\
 	BBPkeepref(*ret = bn->batCacheid);								\
-	BBPreleaseref(b->batCacheid);									\
+	BBPunfix(b->batCacheid);										\
 	return MAL_SUCCEED;												\
 }
 
@@ -130,7 +130,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
 					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
 		int e = errno;													\
-		BBPreleaseref(bn->batCacheid);									\
+		BBPunfix(bn->batCacheid);										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s",				\
 			  strerror(e));												\
 	}																	\
@@ -141,15 +141,15 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	bn->T->nonil = b->T->nonil;											\
 	BATkey(BATmirror(bn),0);											\
 	if (!(bn->batDirty&2))												\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	if (b->htype != bn->htype) {										\
 		BAT *r = VIEWcreate(b,bn);										\
 																		\
-		BBPreleaseref(bn->batCacheid);									\
+		BBPunfix(bn->batCacheid);										\
 		bn = r;															\
 	}																	\
 	BBPkeepref(*ret = bn->batCacheid);									\
-	BBPreleaseref(b->batCacheid);										\
+	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
 }
 

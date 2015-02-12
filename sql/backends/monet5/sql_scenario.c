@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -858,10 +858,8 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	if (onoff) {
 		if (strstr(def, "keep") == 0)
 			(void) newStmt(mb, "profiler", "reset");
-		q = newStmt(mb, "profiler", "setFilter");
-		q = pushStr(mb, q, "*");
-		q = pushStr(mb, q, "*");
-		(void) newStmt(mb, "profiler", "start");
+		q= newStmt(mb, "profiler", "stethoscope");
+		(void) pushInt(mb,q,1);
 	} else if (def && strstr(def, "show")) {
 		(void) newStmt(mb, "profiler", "stop");
 
@@ -881,7 +879,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 				 * supplied values */
 				if (strcmp(s, "time") == 0 || strcmp(s, "pc") == 0 || strcmp(s, "stmt") == 0) {
 					coltype[i] = TYPE_str;
-				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rbytes") == 0 || strcmp(s, "wbytes") == 0 || strcmp(s, "reads") == 0 || strcmp(s, "writes") == 0) {
+				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "vmMB") == 0 || strcmp(s, "reads") == 0 || strcmp(s, "writes") == 0) {
 					coltype[i] = TYPE_lng;
 				} else if (strcmp(s, "thread") == 0) {
 					coltype[i] = TYPE_int;
@@ -931,9 +929,15 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 #define MAX_QUERY 	(64*1024*1024)
 
 static int
+caching(mvc *m)
+{
+	return m->caching;
+}
+
+static int
 cachable(mvc *m, stmt *s)
 {
-	if (m->emode == m_plan || !m->caching || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
+	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
@@ -1111,7 +1115,7 @@ SQLparser(Client c)
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
-	} else if (cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
@@ -1137,7 +1141,7 @@ SQLparser(Client c)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if (!cachable(m, s)) {
+		if (!caching(m) || !cachable(m, s)) {
 			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
@@ -1145,7 +1149,10 @@ SQLparser(Client c)
 				trimMalBlk(c->curprg->def);
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
-				addOptimizerPipe(c, mb, "minimal_pipe");
+				if (!cachable(m, s))
+					addOptimizerPipe(c, mb, "minimal_pipe");
+				else
+					addOptimizerPipe(c, mb, "default_pipe");
 				msg = optimizeMALBlock(c, mb);
 				if (msg != MAL_SUCCEED) {
 					sqlcleanup(m, err);

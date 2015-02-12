@@ -25,16 +25,16 @@ exit c;
 barrier d := calc.not(true);
     io.print("never executed");
 exit d;
-end tst;
+end user.tst;
 function user.main():void;
 # some frontend generates the following code 
     mdb.list("user","tst");
     user.tst();
-end main;
+end user.main;
 function user.tst():void;
     io.print("always executed");
     io.print("always executed");
-end tst;
+end user.tst;
 [ "always executed" ]
 [ "always executed" ]
 

@@ -26,17 +26,14 @@ function user.main():void;
     b := bat.new(:oid,:str);
     bat.append(b,"hello");
     bat.append(b,"goodbye");
-    o := bat.new(:oid,:oid);
-    p := bat.new(:oid,:str);
-    bat.append(p,"%hel%");
-    (z0,z1) := algebra.likesubselect(b,p,"");
-    io.print(z0,z1);
-end main;
+    z0 := algebra.likesubselect(b,nil:BAT,"%hel%",false);
+    io.print(z0);
+end user.main;
 #--------------------------#
 # t	h	h  # name
 # void	oid	oid  # type
 #--------------------------#
-[ 0@0,	0@0,	0@0  ]
+[ 0@0,	0@0  ]
 
 # 08:01:12 >  
 # 08:01:12 >  Done.

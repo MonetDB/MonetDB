@@ -11,7 +11,7 @@ stdout of test 'joinpath-loop.Bug-2965` in directory 'monetdb5/tests/BugTracker`
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.662 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:39263/
 # MonetDB/GIS module loaded
@@ -30,7 +30,7 @@ function user.main():void;
     bat.append(c,3);
     bat.append(c,1);
     algebra.joinPath(a,b,c);
-end main;
+end user.main;
 !MALException:algebra.joinPath:Type mismatch
 
 # 16:23:27 >  

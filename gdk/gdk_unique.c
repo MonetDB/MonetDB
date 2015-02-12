@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -53,7 +53,7 @@ BATsubunique(BAT *b, BAT *s)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b, "BATsubunique");
+	BATcheck(b, "BATsubunique", NULL);
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		if (s) {
@@ -156,7 +156,7 @@ BATsubunique(BAT *b, BAT *s)
 			}
 			prev = v;
 		}
-	} else if (ATOMstorage(b->ttype) == TYPE_bte) {
+	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
 		assert(vars == NULL);
@@ -184,7 +184,7 @@ BATsubunique(BAT *b, BAT *s)
 		}
 		GDKfree(seen);
 		seen = NULL;
-	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
 		assert(vars == NULL);

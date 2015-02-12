@@ -11,7 +11,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
@@ -62,7 +62,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('');
 [ 1	]
 #SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % text(char) # name
 % clob # type
 % 1 # length
@@ -86,7 +86,7 @@ Ready.
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('');
 [ 1	]
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % text(varchar) # name
 % clob # type
 % 1 # length
@@ -97,7 +97,7 @@ Ready.
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS text) AS "text(name)";
-% .L # table_name
+% .L1 # table_name
 % text(name) # name
 % clob # type
 % 9 # length
@@ -108,21 +108,21 @@ Ready.
 #INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
 [ 1	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % char(text) # name
 % char # type
 % 10 # length
 [ "doh!"	]
 [ "hi de ho n"	]
 #SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % char(text) # name
 % char # type
 % 20 # length
 [ "doh!"	]
 [ "hi de ho neighbor"	]
 #SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % char(varchar) # name
 % char # type
 % 10 # length
@@ -133,20 +133,20 @@ Ready.
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS char(10)) AS "char(name)";
-% .L # table_name
+% .L1 # table_name
 % char(name) # name
 % char # type
 % 10 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS varchar(1)) AS "varchar(text)" FROM TEXT_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % varchar(text) # name
 % varchar # type
 % 1 # length
 [ "d"	]
 [ "h"	]
 #SELECT CAST(f1 AS varchar(1)) AS "varchar(char)" FROM CHAR_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % varchar(char) # name
 % varchar # type
 % 1 # length
@@ -157,7 +157,7 @@ Ready.
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS string) AS "varchar(name)";
-% .L # table_name
+% .L1 # table_name
 % varchar(name) # name
 % clob # type
 % 9 # length
@@ -532,25 +532,25 @@ Ready.
 % 19 # length
 [ "unknown and unknown" ]
 #SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
-% .L # table_name
+% .L1 # table_name
 % Concat text to unknown type # name
 % varchar # type
 % 16 # length
 [ "text and unknown" ]
 #SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
-% .L # table_name
+% .L1 # table_name
 % Concat char to unknown type # name
 % char # type
 % 29 # length
 [ "characters and text" ]
 #SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
-% .L # table_name
+% .L2 # table_name
 % Concat text to char # name
 % varchar # type
 % 19 # length
 [ "text and characters" ]
 #SELECT cast('text' as text) || cast(' and varchar' as varchar(20)) AS "Concat text to varchar";
-% .L # table_name
+% .L2 # table_name
 % Concat text to varchar # name
 % varchar # type
 % 16 # length

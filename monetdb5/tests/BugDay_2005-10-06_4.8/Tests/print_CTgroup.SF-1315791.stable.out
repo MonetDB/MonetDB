@@ -20,8 +20,8 @@ function user.main():void;
     io.print(b);
     io.print(histo);
     io.print(grp);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#

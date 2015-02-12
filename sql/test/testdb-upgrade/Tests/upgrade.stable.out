@@ -11,15 +11,115 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+drop filter function sys."like";
+create filter function sys."like"(val string, pat string, esc string) external name algebra."like";
+create filter function sys."like"(val string, pat string) external name algebra."like";
+drop filter function sys."ilike";
+create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
+create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
+drop view sys.storagemodel;
+drop view sys.tablestoragemodel;
+drop function sys.storagemodel;
+drop function sys.imprintsize;
+drop function sys.columnsize;
+create function sys.columnsize(nme string, i bigint, d bigint)
+returns bigint
+begin
+	case
+	when nme = 'boolean' then return i;
+	when nme = 'char' then return 2*i;
+	when nme = 'smallint' then return 2 * i;
+	when nme = 'int' then return 4 * i;
+	when nme = 'bigint' then return 8 * i;
+	when nme = 'hugeint' then return 16 * i;
+	when nme = 'timestamp' then return 8 * i;
+	when  nme = 'varchar' then
+		case
+		when cast(d as bigint) << 8 then return i;
+		when cast(d as bigint) << 16 then return 2 * i;
+		when cast(d as bigint) << 32 then return 4 * i;
+		else return 8 * i;
+		end case;
+	else return 8 * i;
+	end case;
+end;
+create function sys.imprintsize(i bigint, nme string)
+returns bigint
+begin
+	if nme = 'boolean'
+		or nme = 'tinyint'
+		or nme = 'smallint'
+		or nme = 'int'
+		or nme = 'bigint'
+		or nme = 'hugeint'
+		or nme = 'decimal'
+		or nme = 'date'
+		or nme = 'timestamp'
+		or nme = 'real'
+		or nme = 'double'
+	then
+		return cast( i * 0.12 as bigint);
+	end if;
+	return 0;
+end;
+create function sys.storagemodel()
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"count" bigint,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	imprints bigint,
+	sorted boolean)
+begin
+	return select I."schema", I."table", I."column", I."type", I."count",
+	columnsize(I."type", I.count, I."distinct"),
+	heapsize(I."type", I."distinct", I."atomwidth"),
+	hashsize(I."reference", I."count"),
+	imprintsize(I."count",I."type"),
+	I.sorted
+	from sys.storagemodelinput I;
+end;
+create view sys.storagemodel as select * from sys.storagemodel();
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+drop table sys.statistics;
+create table sys.statistics(
+	"column_id" integer,
+	"type" string,
+	width integer,
+	stamp timestamp,
+	"sample" bigint,
+	"count" bigint,
+	"unique" bigint,
+	"nils" bigint,
+	minval string,
+	maxval string,
+	sorted boolean);
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "testschema";
 
-# 15:08:13 >  
-# 15:08:13 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 15:08:13 >  
+
+# 17:14:41 >  
+# 17:14:41 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 17:14:41 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

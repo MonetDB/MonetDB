@@ -12,7 +12,7 @@
 @REM
 @REM The Initial Developer of the Original Code is CWI.
 @REM Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@REM Copyright August 2008-2014 MonetDB B.V.
+@REM Copyright August 2008-2015 MonetDB B.V.
 @REM All Rights Reserved.
 
 @rem figure out the folder name

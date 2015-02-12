@@ -11,7 +11,7 @@ stdout of test '12-explain` in directory 'sql/benchmarks/tpch` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
@@ -53,8 +53,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 711 # length
+% 729 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:str,A9:str,A10:date,A11:date,A12:int):void;
+    X_132:void  := querylog.define("explain select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = \\'1-URGENT\\'\n\t\t\tor o_orderpriority = \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> \\'1-URGENT\\'\n\t\t\tand o_orderpriority <> \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date \\'1994-01-01\\'\n\tand l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;","sequential_pipe");
     X_15 := sql.mvc();
     X_19:bat[:oid,:str]  := sql.bind(X_15,"sys","lineitem","l_shipmode",0);
     X_27:bat[:oid,:date]  := sql.bind(X_15,"sys","lineitem","l_receiptdate",0);
@@ -98,7 +99,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6
     X_67:bat[:oid,:oid]  := sql.bind_idxbat(X_15,"sys","lineitem","lineitem_l_orderkey_fkey",1);
     X_69 := sql.projectdelta(X_60,X_61,X_64,r1_74,X_67);
     X_70:bat[:oid,:oid]  := sql.tid(X_15,"sys","orders");
-    (X_72,r1_84) := algebra.subjoin(X_69,X_70,nil:BAT,nil:BAT,true,nil:lng);
+    (X_72,r1_84) := algebra.subjoin(X_69,X_70,nil:BAT,nil:BAT,false,nil:lng);
     X_76 := sql.projectdelta(X_60,X_19,X_22,r1_22,X_25);
     X_77 := algebra.leftfetchjoin(X_72,X_76);
     (X_78,r1_90,r2_90) := group.subgroupdone(X_77);
@@ -132,8 +133,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6
     sql.rsColumn(X_113,"sys.L2","low_line_count","hugeint",8,0,X_112);
     X_130 := io.stdout();
     sql.exportResult(X_130,X_113);
-end s2_1;
-# querylog.define("explain select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = \\'1-URGENT\\'\n\t\t\tor o_orderpriority = \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> \\'1-URGENT\\'\n\t\t\tand o_orderpriority <> \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date \\'1994-01-01\\'\n\tand l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

@@ -13,9 +13,19 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
+
+/* (c) M Kersten, S Manegold
+ * The easiest calling method is something like:
+ * tomograph -d demo --atlast=10
+ * which connects to the demo database server and
+ * will collect the tomograph pages for at most 10 SQL queries
+ * For each page a gnuplot file, a data file, and the event trace
+ * are collected for more focussed analysis.
+ * 
+*/
 
 #include "monetdb_config.h"
 #include "monet_options.h"
@@ -28,12 +38,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
@@ -56,103 +60,56 @@
 # endif
 #endif
 
-/* #define FOOTPRINT */
-#ifdef FOOTPRINT
-#define COUNTERSDEFAULT "ISTestMmrwn"
-#else
-#define COUNTERSDEFAULT "ISTestmrwn"
-#endif
+#define TME_US  1
+#define TME_MS  2
+#define TME_SS  4
+#define TME_MM  8
+#define TME_HH 16
+#define TME_DD 32
 
-static struct {
-	char tag;
-	char *ptag;     /* which profiler group counter is needed */
-	char *name;     /* which logical counter is needed */
-	int status;     /* trace it or not */
-}
-profileCounter[] = {
-	/*  0  */ { 'a', "aggregate", "total count", 0 },
-	/*  1  */ { 'a', "aggregate", "total ticks", 0 },
-	/*  2  */ { 'e', "event", "event id", 0 },
-	/*  3  */ { 'f', "function", "function", 0 },
-	/*  4  */ { 'i', "pc", "pc", 0 },
-	/*  5  */ { 'T', "time", "time stamp", 0 },
-	/*  6  */ { 't', "ticks", "usec ticks", 1 },
-	/*  7  */ { 'c', "cpu", "utime", 0 },
-	/*  8  */ { 'c', "cpu", "cutime", 0 },
-	/*  9  */ { 'c', "cpu", "stime", 0 },
-	/*  0  */ { 'c', "cpu", "cstime", 0 },
-	/*  1  */ { 'm', "memory", "arena", 0 }, /* memory details are ignored*/
-	/*  2  */ { 'm', "memory", "ordblks", 0 },
-	/*  3  */ { 'm', "memory", "smblks", 0 },
-	/*  4  */ { 'm', "memory", "hblkhd", 0 },
-	/*  5  */ { 'm', "memory", "hblks", 0 },
-	/*  6  */ { 'm', "memory", "fsmblks", 0 },
-	/*  7  */ { 'm', "memory", "uordblks", 0 },
-	/*  8  */ { 'r', "reads", "blk reads", 0 },
-	/*  9  */ { 'w', "writes", "blk writes", 0 },
-	/*  0  */ { 'b', "rbytes", "rbytes", 0 },
-	/*  1  */ { 'b', "wbytes", "wbytes", 0 },
-	/*  2  */ { 's', "stmt", "stmt", 2 },
-	/*  3  */ { 'p', "process", "pg reclaim", 0 },
-	/*  4  */ { 'p', "process", "pg faults", 0 },
-	/*  5  */ { 'p', "process", "swaps", 0 },
-	/*  6  */ { 'p', "process", "ctxt switch", 0 },
-	/*  7  */ { 'p', "process", "inv switch", 0 },
-	/*  8  */ { 'I', "thread", "thread", 0 },
-	/*  9  */ { 'u', "user", "user", 0 },
-	/*  0  */ { 'S', "start", "start", 0 },
-	/*  1  */ { 'y', "type", "type", 0 },
-	/*  2  */ { 'D', "dot", "dot", 0 },
-	/*  3  */ { 'F', "flow", "flow", 0 },
-	/*  4  */ { 'x', "ping50", "ping", 0 },
-#ifdef FOOTPRINT
-	/*  5  */ { 'M', "footprint", "footprint", 0 },
-#endif
-	/*  6  */ { 'n', "numa", "numa", 0 },
-	/*  7  */ { 0, 0, 0, 0 }
-};
+#define US_MS ((lng) 1000)
+#define US_SS (US_MS * 1000)
+#define US_MM (US_SS * 60)
+#define US_HH (US_MM * 60)
+#define US_DD (US_HH * 24)
 
-typedef struct _wthread {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	HANDLE id;
-#else
-	pthread_t id;
-#endif
-	int tid;
-	char *uri;
-	char *host;
-	char *dbname;
-	int port;
-	char *user;
-	char *pass;
-	stream *s;
-	size_t argc;
-	char **argv;
-	struct _wthread *next;
-	Mapi dbh;
-	MapiHdl hdl;
-} wthread;
+#define die(dbh, hdl)						\
+	do {							\
+		(hdl ? mapi_explain_query(hdl, stderr) :	\
+		 dbh ? mapi_explain(dbh, stderr) :		\
+		 fprintf(stderr, "!! command failed\n"));	\
+		goto stop_disconnect;				\
+	} while (0)
 
-static wthread *thds = NULL;
+#define doQ(X)								\
+	do {								\
+		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
+		    mapi_error(dbh) != MOK)			\
+			die(dbh, hdl);			\
+	} while (0)
+
+static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tomograph";
-static char *filename = "tomograph";
-static char *tracefile = 0;
+static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
 static int debug = 0;
-static int colormap = 0;
-static int fixedmap=1;
 static int beat = 50;
-static char *sqlstatement = NULL;
-static int batchsize = 1; /* number of queries to combine in one tomogram */
-static int batch = 1; /* number of queries to combine in one tomogram */
-static lng maxio = 0;
 static int cpus = 0;
-static int atlas= 0;
+static int atlas= 1;
 static int atlaspage = 0;
 static FILE *gnudata;
+static Mapi dbh;
+static MapiHdl hdl = NULL;
+
+/*
+ * Parsing the argument list of a MAL call to obtain un-quoted string values
+ */
+#define MAXMALARGS 1024
+char *malarguments[MAXMALARGS];
+int malargtop;
 
 static int capturing=0;
 
@@ -163,426 +120,8 @@ static int crossings[MAXTHREADS][MAXTHREADS];
 static int target[MAXTHREADS];
 static int source[MAXTHREADS];
 
-static void
-showNumaHeatmap(void){
-	int i,j =0;
-	int max= 0;
-	FILE *f;
-
-	
-	f= fopen("tomograph_heatmap.csv","a");
-	if( f == NULL){
-		fprintf(stderr,"Can not create tomograph_heatmap.csv\n");
-		return;
-	}
-	for( i=0; i< MAXTHREADS; i++){
-		if( target[i])
-		for(j=MAXTHREADS-1; j>0 && crossings[i][j]; j--)
-			;
-		if (j > max) max =j;
-	}
-	for( i=0; i< max; i++)
-	if( target[i] && source[i] ){
-		for(j=0; j< max; j++)
-		if( target[j] && source[j])
-			fprintf(stderr,"%d\t", crossings[i][j]);
-		fprintf(stderr,"\n");
-	}
-/*
-	for( i=0; i< max; i++)
-	if( target[i] || source[i])
-		fprintf(stderr,"%d\t",target[i]);
-	fprintf(stderr,"\n");
-	for( i=0; i< max; i++)
-	if( target[i] || source[i])
-		fprintf(stderr,"%d\t",source[i]);
-	fprintf(stderr,"\n");
-*/
-
-	for( i=0; i< MAXTHREADS; i++){
-		for(j=0; j< MAXTHREADS; j++)
-			crossings[i][j]=0;
-		target[i]=0;
-		source[i]=0;
-	}
-}
-
-static void
-usage(void)
-{
-	fprintf(stderr, "tomograph [options]\n");
-	fprintf(stderr, "  -d | --dbname=<database_name>\n");
-	fprintf(stderr, "  -u | --user=<user>\n");
-	fprintf(stderr, "  -P | --password=<password>\n");
-	fprintf(stderr, "  -p | --port=<portnr>\n");
-	fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -T | --title=<plot title>\n");
-	fprintf(stderr, "  -s | --sql=<single sql expression>\n");
-	fprintf(stderr, "  -t | --trace=<tomograph trace filename>\n");
-	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
-	fprintf(stderr, "  -i | --input=<profiler event file > \n");
-	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
-	fprintf(stderr, "  -A | --atlas=<number> of pages\n");
-	fprintf(stderr, "  -B | --batch=<number> of queries per page\n");
-	fprintf(stderr, "  -a | --adaptive colormap \n");
-	fprintf(stderr, "  -m | --colormap=<userdefined colormap>\n");
-	fprintf(stderr, "  -D | --debug\n");
-	fprintf(stderr, "  -? | --help\n");
-}
-
-
-#define die(dbh, hdl)						\
-	do {							\
-		(hdl ? mapi_explain_query(hdl, stderr) :	\
-		 dbh ? mapi_explain(dbh, stderr) :		\
-		 fprintf(stderr, "!! %scommand failed\n", id));	\
-		goto stop_disconnect;				\
-	} while (0)
-#define doQ(X)								\
-	do {								\
-		if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL ||	\
-		    mapi_error(wthr->dbh) != MOK)			\
-			die(wthr->dbh, wthr->hdl);			\
-	} while (0)
-#define doQsql(X)						\
-	do {							\
-		if ((hdlsql = mapi_query(dbhsql, X)) == NULL ||	\
-		    mapi_error(dbhsql) != MOK)			\
-			die(dbhsql, hdlsql);			\
-	} while (0)
-
-
-/* Any signal should be captured and turned into a graceful
- * termination of the profiling session. */
-static void createTomogram(void);
-
-static int activated = 0;
-static void
-deactivateBeat(void)
-{
-	wthread *wthr;
-	char *id = "deactivateBeat";
-	if (activated == 0)
-		return;
-	if ( atlas && atlas > atlaspage + 1)
-		return;
-	/* deactivate all connections */
-	for (wthr = thds; wthr != NULL; wthr = wthr->next)
-		if (wthr->dbh) {
-			doQ("profiler.deactivate(\"ping\");\n");
-			doQ("profiler.stop();");
-		}
-	activated = 0;
-	return;
-stop_disconnect:
-	;
-}
-
-static void
-stopListening(int i)
-{
-	wthread *walk;
-	(void) i;
-	if (debug)
-		fprintf(stderr, "Interrupt received\n");
-	batch = 0;
-	deactivateBeat();
-	/* kill all connections */
-	for (walk = thds; walk != NULL; walk = walk->next) {
-		if (walk->s != NULL) {
-			mnstr_close(walk->s);
-		}
-	}
-	atlaspage= atlas-1;
-	batch = 0;
-	createTomogram();
-	exit(0);
-}
-
-static int
-setCounter(char *nme)
-{
-	int i, k = 1;
-
-	for (i = 0; profileCounter[i].tag; i++)
-		profileCounter[i].status = 0;
-
-	for (; *nme; nme++)
-		for (i = 0; profileCounter[i].tag; i++)
-			if (profileCounter[i].tag == *nme)
-				profileCounter[i].status = k++;
-	return k;
-}
-
-static void
-activateBeat(void)
-{
-	char buf[BUFSIZ];
-	char *id = "activateBeat";
-	wthread *wthr;
-
-	if (debug)
-		fprintf(stderr, "Activate beat %s\n", filename);
-	if (activated == 1)
-		return;
-	activated = 1;
-	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n", beat);
-	/* activate all connections */
-	for (wthr = thds; wthr != NULL; wthr = wthr->next)
-		if (wthr->dbh) {
-			doQ(buf);
-		}
-
-	return;
-stop_disconnect:
-	if (wthr) {
-		mapi_disconnect(wthr->dbh);
-		mapi_destroy(wthr->dbh);
-		wthr->dbh = 0;
-	}
-}
-
-
-#define START 1
-#define DONE 2
-#define ACTION 3
-#define PING 4
-#define WAIT 5
-#define GCOLLECT 6
-
-static char *statenames[]= {"","start","done","action","ping","wait","gccollect"};
-
-typedef struct BOX {
-	int row;
-	int color;
-	int thread;
-	lng clkstart, clkend;
-	lng ticks;
-	lng memstart, memend;
-	lng footstart, footend;
-	lng reads, writes;
-	char *stmt;
-	char *fcn;
-	char *numa;
-	int state;
-} Box;
-
-int threads[MAXTHREADS];
-lng lastclk[MAXTHREADS];
-Box box[MAXBOX];
-int topbox = 0;
-
-lng totalclkticks = 0; /* number of clock ticks reported */
-lng totalexecticks = 0; /* number of ticks reported for processing */
-lng lastclktick = 0;
-lng totalticks = 0;
-lng starttime = 0;
-int figures = 0;
-char *currentfunction= 0;
-int object = 1;
-
-static void resetTomograph(void){
-	static char buf[128];
-	int i;
-	if(atlas) {
-		snprintf(buf,128,"%s_%02d",basefilename,++atlaspage);
-		filename = buf;
-	} 
-	if (debug)
-		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
-	for(i=0; i< MAXTHREADS; i++)
-		lastclk[i]=0;
-	topbox =0;
-	for (i = 0; i < MAXTHREADS; i++)
-		threads[i] = topbox++;
-
-	startrange = 0, endrange = 0;
-	maxio = 0;
-	cpus = 0;
-	batch = batchsize;
-	totalclkticks = 0; 
-	totalexecticks = 0;
-	lastclktick = 0;
-	figures = 0;
-	currentfunction = 0;
-	object = 1;
-}
-
-static void dumpbox(int i)
-{
-	printf("[%d] row %d color %d ", i, box[i].row, box[i].color);
-	if (box[i].fcn)
-		printf("%s ", box[i].fcn);
-	printf("thread %d ", box[i].thread);
-	printf("clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
-	printf("mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
-	printf("foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].footend);
-	printf("ticks "LLFMT" ", box[i].ticks);
-	if (box[i].stmt)
-		printf("%s ", box[i].stmt);
-	printf("\n");
-}
-
 /* color map management, fixed */
 /* see http://www.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm */
-typedef struct {
-	char *name;
-	char *hsv;
-	int red, green, blue;
-} RGB;
-
-RGB
-dictionary[] = {
-/* arbitrarily ordered by ascending R+G+B */
-/*   0 */	{ "black", "#000000", 0, 0, 0 },
-/* 100 */	{ "darkgreen", "#006400", 0, 100, 0 },
-/* 128 */	{ "green", "#008000", 0, 128, 0 },
-/* 128 */	{ "maroon", "#800000", 128, 0, 0 },
-/* 128 */	{ "navy", "#000080", 0, 0, 128 },
-/* 139 */	{ "darkblue", "#00008B", 0, 0, 139 },
-/* 139 */	{ "darkred", "#8B0000", 139, 0, 0 },
-/* 162 */	{ "midnightblue", "#191970", 25, 25, 112 },
-/* 205 */	{ "darkslategray", "#2F4F4F", 47, 79, 79 },
-/* 205 */	{ "indigo", "#4B0082", 75, 0, 130 },
-/* 205 */	{ "mediumblue", "#0000CD", 0, 0, 205 },
-/* 207 */	{ "forestgreen", "#228B22", 34, 139, 34 },
-/* 227 */	{ "saddlebrown", "#8B4513", 139, 69, 19 },
-/* 239 */	{ "darkolivegreen", "#556B2F", 85, 107, 47 },
-/* 246 */	{ "firebrick", "#B22222", 178, 34, 34 },
-/* 249 */	{ "brown", "#A52A2A", 165, 42, 42 },
-/* 255 */	{ "blue", "#0000FF", 0, 0, 255 },
-/* 255 */	{ "lime", "#00FF00", 0, 255, 0 },
-/* 255 */	{ "red", "#FF0000", 255, 0, 0 },
-/* 256 */	{ "olive", "#808000", 128, 128, 0 },
-/* 256 */	{ "purple", "#800080", 128, 0, 128 },
-/* 256 */	{ "teal", "#008080", 0, 128, 128 },
-/* 272 */	{ "darkslateblue", "#483D8B", 72, 61, 139 },
-/* 272 */	{ "seagreen", "#2E8B57", 46, 139, 87 },
-/* 278 */	{ "darkcyan", "#008B8B", 0, 139, 139 },
-/* 278 */	{ "darkmagenta", "#8B008B", 139, 0, 139 },
-/* 284 */	{ "olivedrab", "#6B8E23", 107, 142, 35 },
-/* 287 */	{ "sienna", "#A0522D", 160, 82, 45 },
-/* 300 */	{ "crimson", "#DC143C", 220, 20, 60 },
-/* 305 */	{ "limegreen", "#32CD32", 50, 205, 50 },
-/* 315 */	{ "dimgray", "#696969", 105, 105, 105 },
-/* 324 */	{ "orangered", "#FF4500", 255, 69, 0 },
-/* 329 */	{ "darkgoldenrod", "#B8860B", 184, 134, 11 },
-/* 345 */	{ "chocolate", "#D2691E", 210, 105, 30 },
-/* 352 */	{ "mediumseagreen", "#3CB371", 60, 179, 113 },
-/* 353 */	{ "mediumvioletred", "#C71585", 199, 21, 133 },
-/* 359 */	{ "darkviolet", "#9400D3", 148, 0, 211 },
-/* 376 */	{ "lawngreen", "#7CFC00", 124, 252, 0 },
-/* 380 */	{ "lightseagreen", "#20B2AA", 32, 178, 170 },
-/* 380 */	{ "steelblue", "#4682B4", 70, 130, 180 },
-/* 381 */	{ "gray", "#7F7F7F", 127, 127, 127 },
-/* 382 */	{ "chartreuse", "#7FFF00", 127, 255, 0 },
-/* 382 */	{ "springgreen", "#00FF7F", 0, 255, 127 },
-/* 384 */	{ "slategray", "#708090", 112, 128, 144 },
-/* 389 */	{ "indianred", "#CD5C5C", 205, 92, 92 },
-/* 394 */	{ "yellowgreen", "#9ACD32", 139, 205, 50 },
-/* 395 */	{ "darkorange", "#FF8C00", 255, 140, 0 },
-/* 395 */	{ "royalblue", "#4169E1", 65, 105, 225 },
-/* 401 */	{ "peru", "#CD853F", 205, 133, 63 },
-/* 401 */	{ "slateblue", "#6A5ACD", 106, 90, 205 },
-/* 404 */	{ "mediumspringgreen", "#00FA9A", 0, 250, 154 },
-/* 407 */	{ "blueviolet", "#8A2BE2", 138, 43, 226 },
-/* 407 */	{ "darkorchid", "#9932CC", 153, 50, 204 },
-/* 408 */	{ "lightslategray", "#778899", 119, 136, 153 },
-/* 413 */	{ "cadetblue", "#5F9EA0", 95, 158, 160 },
-/* 415 */	{ "darkturquoise", "#00CED1", 0, 206, 209 },
-/* 415 */	{ "goldenrod", "#DAA520", 218, 165, 32 },
-/* 420 */	{ "orange", "#FFA500", 255, 165, 0 },
-/* 422 */	{ "deeppink", "#FF1493", 255, 20, 147 },
-/* 425 */	{ "tomato", "#FF6347", 255, 99, 71 },
-/* 429 */	{ "dodgerblue", "#1E90FF", 30, 144, 255 },
-/* 446 */	{ "deepskyblue", "#00BFFF", 0, 191, 255 },
-/* 462 */	{ "coral", "#FF7F50", 255, 127, 80 },
-/* 465 */	{ "mediumslateblue", "#7B68EE", 123, 104, 238 },
-/* 470 */	{ "gold", "#FFD700", 255, 215, 0 },
-/* 474 */	{ "darkseagreen", "#8FBC8F", 143, 188, 143 },
-/* 474 */	{ "rosybrown", "#BC8F8F", 188, 143, 143 },
-/* 475 */	{ "greenyellow", "#ADFF2F", 173, 255, 47 },
-/* 477 */	{ "mediumaquamarine", "#66CDAA", 102, 205, 170 },
-/* 478 */	{ "mediumpurple", "#9370DB", 147, 112, 219 },
-/* 478 */	{ "palevioletred", "#DB7093", 219, 112, 147 },
-/* 479 */	{ "darkkhaki", "#BDB76B", 189, 183, 107 },
-/* 482 */	{ "mediumorchid", "#BA55D3", 186, 85, 211 },
-/* 485 */	{ "mediumturquoise", "#48D1CC", 72, 209, 204 },
-/* 486 */	{ "cornflowerblue", "#6495ED", 100, 149, 237 },
-/* 492 */	{ "salmon", "#FA8072", 250, 128, 114 },
-/* 496 */	{ "lightcoral", "#F08080", 240, 128, 128 },
-/* 496 */	{ "turquoise", "#40E0D0", 64, 224, 208 },
-/* 504 */	{ "sandybrown", "#F4A460", 244, 164, 96 },
-/* 505 */	{ "darksalmon", "#E9967A", 233, 150, 122 },
-/* 507 */	{ "darkgray", "#A9A9A9", 169, 169, 169 },
-/* 510 */	{ "aqua", "#00FFFF", 0, 255, 255 },
-/* 510 */	{ "cyan", "#00FFFF", 0, 255, 255 },
-/* 510 */	{ "fuchsia", "#FF00FF", 255, 0, 255 },
-/* 510 */	{ "magenta", "#FF00FF", 255, 0, 255 },
-/* 510 */	{ "yellow", "#FFFF00", 255, 255, 0 },
-/* 526 */	{ "lightgreen", "#90EE90", 144, 238, 144 },
-/* 530 */	{ "tan", "#D2B48C", 210, 180, 140 },
-/* 537 */	{ "lightsalmon", "#FFA07A", 255, 160, 122 },
-/* 540 */	{ "hotpink", "#FF69B4", 255, 105, 180 },
-/* 541 */	{ "burlywood", "#DEB887", 222, 184, 135 },
-/* 544 */	{ "orchid", "#DA70D6", 218, 112, 214 },
-/* 555 */	{ "palegreen", "#98FB98", 152, 251, 152 },
-/* 557 */	{ "navyblue", "#9FAFDF", 159, 175, 223 },
-/* 576 */	{ "silver", "#C0C0C0", 192, 192, 192 },
-/* 576 */	{ "skyblue", "#87CEEB", 135, 206, 235 },
-/* 591 */	{ "lightskyblue", "#87CEFA", 135, 206, 250 },
-/* 594 */	{ "aquamarine", "#7FFFD4", 127, 255, 212 },
-/* 594 */	{ "lightsteelblue", "#B0C4DE", 176, 196, 222 },
-/* 602 */	{ "plum", "#DDA0DD", 221, 160, 221 },
-/* 606 */	{ "violet", "#EE82EE", 238, 130, 238 },
-/* 610 */	{ "khaki", "#F0E68C", 240, 230, 140 },
-/* 619 */	{ "lightblue", "#ADD8E6", 173, 216, 230 },
-/* 623 */	{ "thistle", "#D8BFD8", 216, 191, 216 },
-/* 630 */	{ "lightpink", "#FFB6C1", 255, 182, 193 },
-/* 630 */	{ "powderblue", "#B0E0E6", 176, 224, 230 },
-/* 633 */	{ "lightgrey", "#D3D3D3", 211, 211, 211 },
-/* 640 */	{ "palegoldenrod", "#EEE8AA", 238, 232, 170 },
-/* 646 */	{ "wheat", "#F5DEB3", 245, 222, 179 },
-/* 650 */	{ "navajowhite", "#FFDEAD", 255, 222, 173 },
-/* 650 */	{ "pink", "#FFC0CB", 255, 192, 203 },
-/* 651 */	{ "paleturquoise", "#AFEEEE", 175, 238, 238 },
-/* 658 */	{ "peachpuff", "#FFDAB9", 255, 218, 185 },
-/* 660 */	{ "gainsboro", "#DCDCDC", 220, 220, 220 },
-/* 664 */	{ "moccasin", "#FFE4B5", 255, 228, 181 },
-/* 679 */	{ "bisque", "#FFE4C4", 255, 228, 196 },
-/* 695 */	{ "blanchedalmond", "#FFEBCD", 255, 235, 205 },
-/* 700 */	{ "antiquewhite", "#FAEBD7", 250, 235, 215 },
-/* 707 */	{ "papayawhip", "#FFEFD5", 255, 239, 213 },
-/* 708 */	{ "mistyrose", "#FFE4E1", 255, 228, 225 },
-/* 710 */	{ "beige", "#F5F5DC", 245, 245, 220 },
-/* 710 */	{ "lavender", "#E6E6FA", 230, 230, 250 },
-/* 710 */	{ "lemonchiffon", "#FFFACD", 255, 250, 205 },
-/* 710 */	{ "lightgoldenrodyellow", "#FAFAD2", 250, 250, 210 },
-/* 720 */	{ "linen", "#FAF0E6", 250, 240, 230 },
-/* 723 */	{ "cornsilk", "#FFF8DC", 255, 248, 220 },
-/* 728 */	{ "oldlace", "#FDF5E6", 253, 245, 230 },
-/* 734 */	{ "lightcyan", "#E0FFFF", 224, 255, 255 },
-/* 734 */	{ "lightyellow", "#FFFFE0", 255, 255, 224 },
-/* 735 */	{ "honeydew", "#F0FFF0", 240, 255, 240 },
-/* 735 */	{ "whitesmoke", "#F5F5F5", 245, 245, 245 },
-/* 738 */	{ "seashell", "#FFF5EE", 255, 245, 238 },
-/* 740 */	{ "lavenderblush", "#FFF0F5", 255, 240, 245 },
-/* 743 */	{ "aliceblue", "#F0F8FF", 240, 248, 255 },
-/* 745 */	{ "floralwhite", "#FFFAF0", 255, 250, 240 },
-/* 750 */	{ "azure", "#F0FFFF", 240, 255, 255 },
-/* 750 */	{ "ivory", "#FFFFF0", 255, 255, 240 },
-/* 750 */	{ "mintcream", "#F5FFFA", 245, 255, 250 },
-/* 751 */	{ "ghostwhite", "#F8F8FF", 248, 248, 255 },
-/* 755 */	{ "snow", "#FFFAFA", 255, 250, 250 },
-/* 765 */	{ "white", "#FFFFFF", 255, 255, 255 },
-};
-
-#define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
-#define MAX_LEGEND_SHORT 27 /* max. size of colormap / legend */
-#define PERCENTAGE 0.01 /* threshold for time filter */
-
-
 /* The initial dictionary is geared towars TPCH-use */
 typedef struct COLOR {
 	int freq;
@@ -590,101 +129,181 @@ typedef struct COLOR {
 	char *mod, *fcn, *col;
 } Color;
 
-Color
-colors[NUM_COLORS] = {{0,0,0,0,0}};
+#define NUM_COLORS ((int) (sizeof(dictionary) / sizeof(RGB)))
+#define MAX_LEGEND_SHORT 30 /* max. size of colormap / legend */
+#define PERCENTAGE 0.01 /* threshold for time filter */
 
-/*
- * The fixed color scheme is designed to keep the legend
- * consistent over multiple tomograms. Furthermore, groups
- * of instructions are kept within the same color group.
- * For less frequent or important operations, we re-use the color.
- *
- * The map design is initially based on the relative frequency
- * of MAL instructions encountered in TPCH and those that
- * take significant time.
- *
- * The built-in fixed color map can be over-ruled using a color
- * map file, which consists of mod\tfcn\tcol lines using
- * the color dictionary as a frame of reference.
- *
- * Use the adaptive scheme if you want distinct colors
- * targeted for a single tomogram.
- */
-Color
-fixed_colors[] = {
-	{ 0, 0, "aggr", "count", "darkgreen" },
-	{ 0, 0, "aggr", "max", "lawngreen" },
-	{ 0, 0, "aggr", "min", "lawngreen" },
-	{ 0, 0, "aggr", "subcount", "darkgreen" },
-	{ 0, 0, "aggr", "submin", "lawngreen" },
-	{ 0, 0, "aggr", "submax", "lawngreen" },
-	{ 0, 0, "aggr", "subsum", "lawngreen" },
-	{ 0, 0, "aggr", "*", "limegreen" },
-	{ 0, 0, "algebra", "join", "navy" },
-	{ 0, 0, "algebra", "leftfetchjoin", "lightblue" },
-	{ 0, 0, "algebra", "leftfetchjoinPath", "lightcyan" },
-	{ 0, 0, "algebra", "leftjoin", "blue" },
-	{ 0, 0, "algebra", "likesubselect", "greenyellow" },
-	{ 0, 0, "algebra", "selectNotNil", "lime" },
-	{ 0, 0, "algebra", "subselect", "forestgreen" },
-	{ 0, 0, "algebra", "subslice", "lightgreen" },
-	{ 0, 0, "algebra", "subsort", "springgreen" },
-	{ 0, 0, "algebra", "tdiff", "cyan" },
-	{ 0, 0, "algebra", "thetajoin", "darkblue" },
-	{ 0, 0, "algebra", "thetasubselect", "lightgreen" },
-	{ 0, 0, "algebra", "tinter", "seagreen" },
-	{ 0, 0, "algebra", "*", "green" },
-	{ 0, 0, "batcalc", "dbl", "deeppink" },
-	{ 0, 0, "batcalc", "lng", "deeppink" },
-	{ 0, 0, "batcalc", "hash", "coral" },
-	{ 0, 0, "batcalc", "ifthenelse", "plum" },
-	{ 0, 0, "batcalc", "*", "yellow" },
-	{ 0, 0, "bat", "append", "salmon" },
-	{ 0, 0, "bat", "insert", "salmon" },
-	{ 0, 0, "bat", "mergecand", "orange" },
-	{ 0, 0, "bat", "mirror", "lightsalmon" },
-	{ 0, 0, "bat", "*", "sandybrown" },
-	{ 0, 0, "batmtime", "*", "lightpink" },
-	{ 0, 0, "batstr", "*", "yellowgreen" },
-	{ 0, 0, "group", "subgroup", "linen" },
-	{ 0, 0, "group", "subgroupdone", "violet" },
-	{ 0, 0, "group", "*", "orchid" },
-	{ 0, 0, "io", "stdout", "gray" },
-	{ 0, 0, "language", "dataflow", "lightgrey" },
-	{ 0, 0, "language", "*", "lightslategray" },
-	{ 0, 0, "mat", "pack", "darkred" },
-	{ 0, 0, "mat", "packIncrement", "red" },
-	{ 0, 0, "mat", "*", "indianred" },
-	{ 0, 0, "mkey", "bulk_rotate_xor_hash", "sienna" },
-	{ 0, 0, "pqueue", "*", "khaki" },
-	{ 0, 0, "sql", "bind", "lavender" },
-	{ 0, 0, "sql", "bind_idxbat", "lavenderblush" },
-	{ 0, 0, "sql", "delta", "tan" },
-	{ 0, 0, "sql", "projectdelta", "gold" },
-	{ 0, 0, "sql", "subdelta", "goldenrod" },
-	{ 0, 0, "sql", "tid", "thistle" },
-	{ 0, 0, "sql", "*", "mistyrose" },
-	{ 0, 0, "*", "*", "peachpuff" },
-	{ 0, 0, 0, 0, 0 }
+typedef struct {
+	char *name;
+	char *hsv;
+	int red, green, blue;
+} RGB;
+
+/* the color table is randomized */
+RGB
+dictionary[] = {
+/* 227 */	{ "saddlebrown", "#8B4513", 139, 69, 19 },
+/* 557 */	{ "navyblue", "#9FAFDF", 159, 175, 223 },
+/* 734 */	{ "lightyellow", "#FFFFE0", 255, 255, 224 },
+/* 750 */	{ "azure", "#F0FFFF", 240, 255, 255 },
+/* 496 */	{ "turquoise", "#40E0D0", 64, 224, 208 },
+/* 750 */	{ "mintcream", "#F5FFFA", 245, 255, 250 },
+/* 278 */	{ "darkcyan", "#008B8B", 0, 139, 139 },
+/* 239 */	{ "darkolivegreen", "#556B2F", 85, 107, 47 },
+/* 128 */	{ "maroon", "#800000", 128, 0, 0 },
+/* 735 */	{ "whitesmoke", "#F5F5F5", 245, 245, 245 },
+/* 315 */	{ "dimgray", "#696969", 105, 105, 105 },
+/* 492 */	{ "salmon", "#FA8072", 250, 128, 114 },
+/* 353 */	{ "mediumvioletred", "#C71585", 199, 21, 133 },
+/* 477 */	{ "mediumaquamarine", "#66CDAA", 102, 205, 170 },
+/* 139 */	{ "darkblue", "#00008B", 0, 0, 139 },
+/* 710 */	{ "beige", "#F5F5DC", 245, 245, 220 },
+/* 352 */	{ "mediumseagreen", "#3CB371", 60, 179, 113 },
+/* 413 */	{ "cadetblue", "#5F9EA0", 95, 158, 160 },
+/* 660 */	{ "gainsboro", "#DCDCDC", 220, 220, 220 },
+/* 465 */	{ "mediumslateblue", "#7B68EE", 123, 104, 238 },
+/* 623 */	{ "thistle", "#D8BFD8", 216, 191, 216 },
+/* 745 */	{ "floralwhite", "#FFFAF0", 255, 250, 240 },
+/* 710 */	{ "lemonchiffon", "#FFFACD", 255, 250, 205 },
+/* 765 x 	{ "white", "#FFFFFF", 255, 255, 255 }, */
+/* 256 */	{ "olive", "#808000", 128, 128, 0 },
+/* 255 */	{ "red", "#FF0000", 255, 0, 0 },
+/* 380 */	{ "steelblue", "#4682B4", 70, 130, 180 },
+/* 664 */	{ "moccasin", "#FFE4B5", 255, 228, 181 },
+/* 395 */	{ "darkorange", "#FF8C00", 255, 140, 0 },
+/* 507 */	{ "darkgray", "#A9A9A9", 169, 169, 169 },
+/* 272 */	{ "seagreen", "#2E8B57", 46, 139, 87 },
+/* 755 */	{ "snow", "#FFFAFA", 255, 250, 250 },
+/* 284 */	{ "olivedrab", "#6B8E23", 107, 142, 35 },
+/* 382 */	{ "chartreuse", "#7FFF00", 127, 255, 0 },
+/* 478 */	{ "palevioletred", "#DB7093", 219, 112, 147 },
+/* 710 */	{ "lavender", "#E6E6FA", 230, 230, 250 },
+/* 162 */	{ "midnightblue", "#191970", 25, 25, 112 },
+/* 708 */	{ "mistyrose", "#FFE4E1", 255, 228, 225 },
+/* 425 */	{ "tomato", "#FF6347", 255, 99, 71 },
+/* 576 */	{ "skyblue", "#87CEEB", 135, 206, 235 },
+/* 420 */	{ "orange", "#FFA500", 255, 165, 0 },
+/* 128 */	{ "green", "#008000", 0, 128, 0 },
+/* 740 */	{ "lavenderblush", "#FFF0F5", 255, 240, 245 },
+/* 380 */	{ "lightseagreen", "#20B2AA", 32, 178, 170 },
+/* 415 */	{ "darkturquoise", "#00CED1", 0, 206, 209 },
+/* 526 */	{ "lightgreen", "#90EE90", 144, 238, 144 },
+/* 395 */	{ "royalblue", "#4169E1", 65, 105, 225 },
+/* 205 */	{ "darkslategray", "#2F4F4F", 47, 79, 79 },
+/* 415 */	{ "goldenrod", "#DAA520", 218, 165, 32 },
+/* 735 */	{ "honeydew", "#F0FFF0", 240, 255, 240 },
+/* 246 */	{ "firebrick", "#B22222", 178, 34, 34 },
+/* 255 */	{ "lime", "#00FF00", 0, 255, 0 },
+/* 381 */	{ "gray", "#7F7F7F", 127, 127, 127 },
+/* 128 */	{ "navy", "#000080", 0, 0, 128 },
+/* 479 */	{ "darkkhaki", "#BDB76B", 189, 183, 107 },
+/* 345 */	{ "chocolate", "#D2691E", 210, 105, 30 },
+/* 474 */	{ "rosybrown", "#BC8F8F", 188, 143, 143 },
+/* 255 */	{ "blue", "#0000FF", 0, 0, 255 },
+/* 408 */	{ "lightslategray", "#778899", 119, 136, 153 },
+/* 504 */	{ "sandybrown", "#F4A460", 244, 164, 96 },
+/* 728 */	{ "oldlace", "#FDF5E6", 253, 245, 230 },
+/* 249 */	{ "brown", "#A52A2A", 165, 42, 42 },
+/* 743 */	{ "aliceblue", "#F0F8FF", 240, 248, 255 },
+/* 630 */	{ "lightpink", "#FFB6C1", 255, 182, 193 },
+/*   0  x	{ "black", "#000000", 0, 0, 0 }, */
+/* 404 */	{ "mediumspringgreen", "#00FA9A", 0, 250, 154 },
+/* 486 */	{ "cornflowerblue", "#6495ED", 100, 149, 237 },
+/* 723 */	{ "cornsilk", "#FFF8DC", 255, 248, 220 },
+/* 710 */	{ "lightgoldenrodyellow", "#FAFAD2", 250, 250, 210 },
+/* 207 */	{ "forestgreen", "#228B22", 34, 139, 34 },
+/* 707 */	{ "papayawhip", "#FFEFD5", 255, 239, 213 },
+/* 640 */	{ "palegoldenrod", "#EEE8AA", 238, 232, 170 },
+/* 278 */	{ "darkmagenta", "#8B008B", 139, 0, 139 },
+/* 576 */	{ "silver", "#C0C0C0", 192, 192, 192 },
+/* 305 */	{ "limegreen", "#32CD32", 50, 205, 50 },
+/* 429 */	{ "dodgerblue", "#1E90FF", 30, 144, 255 },
+/* 324 */	{ "orangered", "#FF4500", 255, 69, 0 },
+/* 540 */	{ "hotpink", "#FF69B4", 255, 105, 180 },
+/* 205 */	{ "mediumblue", "#0000CD", 0, 0, 205 },
+/* 734 */	{ "lightcyan", "#E0FFFF", 224, 255, 255 },
+/* 407 */	{ "blueviolet", "#8A2BE2", 138, 43, 226 },
+/* 256 */	{ "purple", "#800080", 128, 0, 128 },
+/* 389 */	{ "indianred", "#CD5C5C", 205, 92, 92 },
+/* 384 */	{ "slategray", "#708090", 112, 128, 144 },
+/* 750 */	{ "ivory", "#FFFFF0", 255, 255, 240 },
+/* 650 */	{ "navajowhite", "#FFDEAD", 255, 222, 173 },
+/* 382 */	{ "springgreen", "#00FF7F", 0, 255, 127 },
+/* 606 */	{ "violet", "#EE82EE", 238, 130, 238 },
+/* 510 */	{ "aqua", "#00FFFF", 0, 255, 255 },
+/* 510 */	{ "cyan", "#00FFFF", 0, 255, 255 },
+/* 359 */	{ "darkviolet", "#9400D3", 148, 0, 211 },
+/* 602 */	{ "plum", "#DDA0DD", 221, 160, 221 },
+/* 591 */	{ "lightskyblue", "#87CEFA", 135, 206, 250 },
+/* 720 */	{ "linen", "#FAF0E6", 250, 240, 230 },
+/* 555 */	{ "palegreen", "#98FB98", 152, 251, 152 },
+/* 272 */	{ "darkslateblue", "#483D8B", 72, 61, 139 },
+/* 462 */	{ "coral", "#FF7F50", 255, 127, 80 },
+/* 544 */	{ "orchid", "#DA70D6", 218, 112, 214 },
+/* 505 */	{ "darksalmon", "#E9967A", 233, 150, 122 },
+/* 650 */	{ "pink", "#FFC0CB", 255, 192, 203 },
+/* 300 */	{ "crimson", "#DC143C", 220, 20, 60 },
+/* 394 */	{ "yellowgreen", "#9ACD32", 139, 205, 50 },
+/* 700 */	{ "antiquewhite", "#FAEBD7", 250, 235, 215 },
+/* 407 */	{ "darkorchid", "#9932CC", 153, 50, 204 },
+/* 651 */	{ "paleturquoise", "#AFEEEE", 175, 238, 238 },
+/* 633 */	{ "lightgrey", "#D3D3D3", 211, 211, 211 },
+/* 679 */	{ "bisque", "#FFE4C4", 255, 228, 196 },
+/* 422 */	{ "deeppink", "#FF1493", 255, 20, 147 },
+/* 139 */	{ "darkred", "#8B0000", 139, 0, 0 },
+/* 475 */	{ "greenyellow", "#ADFF2F", 173, 255, 47 },
+/* 205 */	{ "indigo", "#4B0082", 75, 0, 130 },
+/* 446 */	{ "deepskyblue", "#00BFFF", 0, 191, 255 },
+/* 329 */	{ "darkgoldenrod", "#B8860B", 184, 134, 11 },
+/* 470 */	{ "gold", "#FFD700", 255, 215, 0 },
+/* 610 */	{ "khaki", "#F0E68C", 240, 230, 140 },
+/* 485 */	{ "mediumturquoise", "#48D1CC", 72, 209, 204 },
+/* 100 */	{ "darkgreen", "#006400", 0, 100, 0 },
+/* 510 */	{ "fuchsia", "#FF00FF", 255, 0, 255 },
+/* 510 */	{ "magenta", "#FF00FF", 255, 0, 255 },
+/* 751 */	{ "ghostwhite", "#F8F8FF", 248, 248, 255 },
+/* 658 */	{ "peachpuff", "#FFDAB9", 255, 218, 185 },
+/* 478 */	{ "mediumpurple", "#9370DB", 147, 112, 219 },
+/* 376 */	{ "lawngreen", "#7CFC00", 124, 252, 0 },
+/* 401 */	{ "peru", "#CD853F", 205, 133, 63 },
+/* 695 */	{ "blanchedalmond", "#FFEBCD", 255, 235, 205 },
+/* 256 */	{ "teal", "#008080", 0, 128, 128 },
+/* 594 */	{ "lightsteelblue", "#B0C4DE", 176, 196, 222 },
+/* 474 */	{ "darkseagreen", "#8FBC8F", 143, 188, 143 },
+/* 287 */	{ "sienna", "#A0522D", 160, 82, 45 },
+/* 401 */	{ "slateblue", "#6A5ACD", 106, 90, 205 },
+/* 646 */	{ "wheat", "#F5DEB3", 245, 222, 179 },
+/* 738 */	{ "seashell", "#FFF5EE", 255, 245, 238 },
+/* 530 */	{ "tan", "#D2B48C", 210, 180, 140 },
+/* 510 */	{ "yellow", "#FFFF00", 255, 255, 0 },
+/* 496 */	{ "lightcoral", "#F08080", 240, 128, 128 },
+/* 630 */	{ "powderblue", "#B0E0E6", 176, 224, 230 },
+/* 541 */	{ "burlywood", "#DEB887", 222, 184, 135 },
+/* 594 */	{ "aquamarine", "#7FFFD4", 127, 255, 212 },
+/* 619 */	{ "lightblue", "#ADD8E6", 173, 216, 230 },
+/* 537 */	{ "lightsalmon", "#FFA07A", 255, 160, 122 },
+/* 482 */	{ "mediumorchid", "#BA55D3", 186, 85, 211 },
 };
-/* initial mod.fcn list for adaptive colormap */
+
+/* initial mod.fcn list for adaptive colormap, this ensures ease of comparison */
 Color
 base_colors[NUM_COLORS] = {
 	/* reserve (base_)colors[0] for generic "*.*" */
-/* 99999 */	{ 0, 0, "*", "*", 0 },
+/* 99999 	{ 0, 0, "*", "*", 0 },*/
 /* arbitrarily ordered by descending frequency in TPCH SF-100 with 32 threads */
-/* 18169 */	{ 0, 0, "profiler", "ping", 0 },
 /* 11054 */	{ 0, 0, "algebra", "leftfetchjoin", 0 },
 /* 10355 */	{ 0, 0, "language", "pass", 0 },
 /*  5941 */	{ 0, 0, "sql", "bind", 0 },
 /*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
 /*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
 /*  4789 */	{ 0, 0, "algebra", "join", 0 },
-/*  4281 */	{ 0, 0, "profiler", "wait", 0 },
+/*  4789 */	{ 0, 0, "algebra", "subjoin", 0 },
 /*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
 /*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
 /*  1886 */	{ 0, 0, "sql", "bind_idxbat", 0 },
 /*  1881 */	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+/* 		 */	{ 0, 0, "algebra", "tinter", 0 },
+/*  	 */	{ 0, 0, "algebra", "tdiff", 0 },
 /*  1013 */	{ 0, 0, "sql", "tid", 0 },
 /*   832 */	{ 0, 0, "bat", "mergecand", 0 },
 /*   813 */	{ 0, 0, "sql", "delta", 0 },
@@ -692,11 +311,13 @@ base_colors[NUM_COLORS] = {
 /*   610 */	{ 0, 0, "batcalc", "*", 0 },
 /*   577 */	{ 0, 0, "group", "subgroupdone", 0 },
 /*   481 */	{ 0, 0, "sql", "subdelta", 0 },
+/*   481 */	{ 0, 0, "sql", "subsort", 0 },
 /*   448 */	{ 0, 0, "batcalc", "-", 0 },
 /*   334 */	{ 0, 0, "bat", "mirror", 0 },
 /*   300 */	{ 0, 0, "group", "subgroup", 0 },
 /*   264 */	{ 0, 0, "batcalc", "==", 0 },
 /*   260 */	{ 0, 0, "batcalc", "ifthenelse", 0 },
+/*   209 */	{ 0, 0, "batcalc", "hge", 0 },
 /*   209 */	{ 0, 0, "calc", "str", 0 },
 /*   207 */	{ 0, 0, "aggr", "sum", 0 },
 /*   200 */	{ 0, 0, "algebra", "thetasubselect", 0 },
@@ -708,6 +329,7 @@ base_colors[NUM_COLORS] = {
 /*   128 */	{ 0, 0, "batcalc", "isnil", 0 },
 /*    98 */	{ 0, 0, "aggr", "count", 0 },
 /*    97 */	{ 0, 0, "batcalc", ">", 0 },
+/*    	 */	{ 0, 0, "bat", "mergecand", 0 },
 /*    96 */	{ 0, 0, "batmtime", "year", 0 },
 /*    96 */	{ 0, 0, "batcalc", "<", 0 },
 /*    79 */	{ 0, 0, "sql", "assert", 0 },
@@ -725,7 +347,7 @@ base_colors[NUM_COLORS] = {
 /*    36 */	{ 0, 0, "pqueue", "utopn_min", 0 },
 /*    36 */	{ 0, 0, "pqueue", "topn_max", 0 },
 /*    33 */	{ 0, 0, "aggr", "submin", 0 },
-/*    32 */	{ 0, 0, "batstr", "like", 0 },
+/*    32 */	{ 0, 0, "batalgebra", "like", 0 },
 /*    32 */	{ 0, 0, "batcalc", "or", 0 },
 /*    32 */	{ 0, 0, "batcalc", "and", 0 },
 /*    32 */	{ 0, 0, "batcalc", "+", 0 },
@@ -778,14 +400,244 @@ base_colors[NUM_COLORS] = {
 /*     0 */	{ 0, 0, 0, 0, 0 }
 };
 
-static char *
-getRGB(char *name)
+
+Color
+colors[NUM_COLORS] = {{0,0,0,0,0}};
+
+#ifdef NUMAprofiling
+static void
+showNumaHeatmap(void){
+	int i,j =0;
+	int max= 0;
+	FILE *f;
+
+	
+	f= fopen("tomograph_heatmap.csv","a");
+	if( f == NULL){
+		fprintf(stderr,"Can not create tomograph_heatmap.csv\n");
+		return;
+	}
+	for( i=0; i< MAXTHREADS; i++){
+		if( target[i])
+		for(j=MAXTHREADS-1; j>0 && crossings[i][j]; j--)
+			;
+		if (j > max) max =j;
+	}
+	for( i=0; i< max; i++)
+	if( target[i] && source[i] ){
+		for(j=0; j< max; j++)
+		if( target[j] && source[j])
+			fprintf(stderr,"%d\t", crossings[i][j]);
+		fprintf(stderr,"\n");
+	}
+
+	for( i=0; i< MAXTHREADS; i++){
+		for(j=0; j< MAXTHREADS; j++)
+			crossings[i][j]=0;
+		target[i]=0;
+		source[i]=0;
+	}
+}
+#endif
+
+static void
+usageTomograph(void)
 {
+	fprintf(stderr, "tomograph [options]\n");
+	fprintf(stderr, "  -d | --dbname=<database_name>\n");
+	fprintf(stderr, "  -u | --user=<user>\n");
+	fprintf(stderr, "  -P | --password=<password>\n");
+	fprintf(stderr, "  -p | --port=<portnr>\n");
+	fprintf(stderr, "  -h | --host=<hostname>\n");
+	fprintf(stderr, "  -T | --title=<plot title>\n");
+	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
+	fprintf(stderr, "  -i | --input=<profiler event file > \n");
+	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+	fprintf(stderr, "  -A | --atlas=<number> maximum number of pages\n");
+	fprintf(stderr, "  -D | --debug\n");
+	fprintf(stderr, "  -? | --help\n");
+	exit(-1);
+}
+
+/* Any signal should be captured and turned into a graceful
+ * termination of the profiling session. */
+static void createTomogram(void);
+
+static void
+stopListening(int i)
+{
+	fprintf(stderr,"signal %d received\n",i);
+	if( dbh)
+		doQ("profiler.stop();");
+stop_disconnect:
+	if (atlas != atlaspage  )
+		createTomogram();
+	// show follow up action only once
+	if(atlaspage >= 1){
+		fprintf(stderr, "To create the atlas run:\n");
+		for (i = 0; i< atlaspage;  i++)
+			fprintf(stderr, "gnuplot %s_%02d.gpl;",basefilename,i);
+		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
+	}
+
+	if(dbh)
+		mapi_disconnect(dbh);
+	exit(0);
+}
+
+#define START 1
+#define DONE 2
+#define ACTION 3
+#define PING 4
+#define WAIT 5
+#define IOSTAT 6
+#define GCOLLECT 7
+
+static char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollect"};
+
+typedef struct BOX {
+	int row;
+	int color;
+	int thread;
+	lng clkstart, clkend;
+	lng ticks;
+	lng memstart, memend;
+	lng footstart, vmmemory;
+	lng inblock, oublock;
+	lng majflt, nswap, csw;
+	char *stmt;
+	char *fcn;
+	char *numa;
+	int state;
+} Box;
+
+int threads[MAXTHREADS];
+lng lastclk[MAXTHREADS];
+Box box[MAXBOX];
+int topbox = 0;
+int events = 0;
+
+lng totalclkticks = 0; /* number of clock ticks reported */
+lng totalexecticks = 0; /* number of ticks reported for processing */
+lng lastclktick = 0;
+lng totalticks = 0;
+lng starttime = 0;
+int figures = 0;
+char *currentfunction= 0;
+char *currentquery= 0;
+int object = 1;
+
+static void resetTomograph(void){
+	static char buf[BUFSIZ];
 	int i;
-	for (i = 0; dictionary[i].name; i++)
-		if (strcmp(dictionary[i].name, name) == 0)
-			return dictionary[i].hsv;
-	return 0;
+	snprintf(buf,BUFSIZ,"%s_%02d.trace",basefilename,atlaspage);
+	if( inputfile == 0 || strcmp(inputfile,buf) ){
+		tracefd = fopen(buf,"w");
+		if( tracefd == NULL)
+			fprintf(stderr,"Could not create trace file\n");
+	}
+	if (debug)
+		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
+	for( i =0; i < NUM_COLORS; i++){
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
+	}
+	for(i=0; i< MAXTHREADS; i++)
+		lastclk[i]=0;
+	topbox =0;
+	events = 0;
+	malargtop =0;
+	for (i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
+	memset((char*) box, 0, sizeof(Box) * MAXBOX);
+
+	totalclkticks = 0; 
+	totalexecticks = 0;
+	lastclktick = 0;
+	figures = 0;
+	currentfunction = 0;
+	currentquery = 0;
+	object = 1;
+}
+
+static lng
+gnuXtics(int withlabels)
+{
+	double scale = 1.0;
+	const char * scalename = "MB";
+	int digits;
+	lng tw, w = lastclktick - starttime;
+	int i;
+
+	if (w >= 10 * US_DD) {
+		scale = US_DD;
+		scalename = "d\0\0days";
+	} else if (w >= 10 * US_HH) {
+		scale = US_HH;
+		scalename = "h\0\0hours";
+	} else if (w >= 10 * US_MM) {
+		scale = US_MM;
+		scalename = "m\0\0minutes";
+	} else if (w >= US_SS) {
+		scale = US_SS;
+		scalename = "s\0\0seconds";
+	} else if (w >= US_MS) {
+		scale = US_MS;
+		scalename = "ms\0milliseconds";
+	} else {
+		scale = 1;
+		scalename = "us\0microseconds";
+	}
+	for (tw = (scale / 10 > 1)? scale/10:1; 15 * tw < w; tw *= 10)
+		;
+	if (3 * tw > w)
+		tw /= 4;
+	else if (6 * tw > w)
+		tw /= 2;
+	if (w / scale >= 1000)
+		digits = 0;
+	else if (w / scale >= 100)
+		digits = 1;
+	else if (w / scale >= 10)
+		digits = 2;
+	else
+		digits = 3;
+
+	if(withlabels)
+		fprintf(gnudata, "set xtics (\"0\" 0.0,");
+	else
+		fprintf(gnudata, "set xtics ( \"\" 0.0,");
+	for (i = 1; i * tw < w - 2 * tw / 3; i++){
+		if( withlabels)
+		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
+		else
+		fprintf(gnudata, "\"\" "LLFMT".0,", i * tw);
+	}
+	if( withlabels)
+		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
+	else
+		fprintf(gnudata, "\"\" "LLFMT".0",   w);
+	fprintf(gnudata, ")\n");
+	w /= 10;
+	fprintf(gnudata, "set grid xtics\n");
+	return w;
+}
+
+static void dumpbox(int i)
+{
+	fprintf(stderr,"object %d thread %d[%4d] row %d color %d ", object, box[i].thread,i, box[i].row, box[i].color);
+	if (box[i].fcn)
+		fprintf(stderr,"%s ", box[i].fcn);
+	fprintf(stderr,"clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
+	fprintf(stderr,"mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
+	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].vmmemory);
+	fprintf(stderr,"ticks "LLFMT" ", box[i].ticks);
+	if (box[i].stmt)
+		fprintf(stderr,"\"%s\"", box[i].stmt);
+	else
+		fprintf(stderr,"MISSING");
+	fprintf(stderr,"\n");
 }
 
 static int
@@ -812,54 +664,23 @@ cmp_clr(const void * _one , const void * _two)
 }
 
 static void
-initcolors(FILE *map)
+initcolors(void)
 {
 	int i = 0;
-	char *c;
-	char buf[3][128];
 
-	if (map) {
-		/* read the color map */
-		while (fscanf(map,"%127s\t%127s\t%127s\n", buf[0],buf[1],buf[2])== 3 && i< NUM_COLORS) {
-			colors[i].mod = strdup(buf[0]);
-			colors[i].fcn = strdup(buf[1]);
-			colors[i].freq = 0;
-			colors[i].timeused = 0;
-			c = getRGB(buf[2]);
-			if (c)
-				colors[i].col = c;
-			else
-				fprintf(stderr, " %s.%s color '%s' not found\n", buf[0],buf[1],buf[2]);
-			i++;
-		}
-	} else
-	if (fixedmap) {
-		for ( i = 0; fixed_colors[i].mod; i++){
-			colors[i].mod = fixed_colors[i].mod;
-			colors[i].fcn = fixed_colors[i].fcn;
-			colors[i].freq = 0;
-			colors[i].timeused = 0;
-			c = getRGB(fixed_colors[i].col);
-			if (c)
-				colors[i].col = c;
-			else
-				fprintf(stderr, "color '%s' not found\n", fixed_colors[i].col);
-		}
-	} else {
-		for (i = 0; i < NUM_COLORS && base_colors[i].mod; i++) {
-			colors[i].mod = base_colors[i].mod;
-			colors[i].fcn = base_colors[i].fcn;
-			colors[i].freq = 0;
-			colors[i].timeused = 0;
-			colors[i].col = dictionary[i].hsv;
-		}
-		for (; i < NUM_COLORS; i++) {
-			colors[i].mod = 0;
-			colors[i].fcn = 0;
-			colors[i].freq = 0;
-			colors[i].timeused = 0;
-			colors[i].col = dictionary[i].hsv;
-		}
+	for (i = 0; i < NUM_COLORS && base_colors[i].mod; i++) {
+		colors[i].mod = base_colors[i].mod;
+		colors[i].fcn = base_colors[i].fcn;
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
+		colors[i].col = dictionary[i].hsv;
+	}
+	for (; i < NUM_COLORS; i++) {
+		colors[i].mod = 0;
+		colors[i].fcn = 0;
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
+		colors[i].col = dictionary[i].hsv;
 	}
 }
 
@@ -867,63 +688,29 @@ static void
 dumpboxes(void)
 {
 	FILE *f = 0;
-	FILE *fcpu = 0;
 	char buf[BUFSIZ];
 	int i;
-	lng e=0;
+	int written = 0;
 
-	if (tracefile) {
-		snprintf(buf, BUFSIZ, "scratch.dat");
-		f = fopen(buf, "w");
-		snprintf(buf, BUFSIZ, "scratch_cpu.dat");
-		fcpu = fopen(buf, "w");
-	} else {
-		snprintf(buf, BUFSIZ, "%s.dat", filename);
-		f = fopen(buf, "w");
-		snprintf(buf, BUFSIZ, "%s_cpu.dat", filename);
-		fcpu = fopen(buf, "w");
-	}
-	if( fcpu == NULL){
-		fprintf(stderr,"Can not create/open the trace file\n");
-		return;
+	snprintf(buf, BUFSIZ, "%s_%02d.dat", basefilename, atlaspage);
+	f = fopen(buf, "w");
+	if(f == NULL){
+		fprintf(stderr,"Could not create %s\n",buf);
+		exit(0);
 	}
 
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].fcn) {
-			if (box[i].state < PING) {
-				//io counters are zero at start of instruction !
-				//fprintf(f,""LLFMT" %f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-				fprintf(f, ""LLFMT" %f %f 0 0\n", box[i].clkend, (box[i].memend / 1024.0), box[i].footend/1024.0);
-			} else 
-			if (box[i].state >= PING) {
-				/* cpu stat events may arrive out of order, drop those */
-				if (box[i].clkstart <= e)
-					continue;
-				e = box[i].clkstart;
-				fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].footend/1024.0, box[i].reads, box[i].writes);
-				if (cpus == 0) {
-					char *s = box[i].stmt;
-					while (s && isspace((int) *s))
-						s++;
-					fprintf(fcpu, "0 ");
-					while (s) {
-						s = strchr(s + 1, ' ');
-						while (s && isspace((int) *s))
-							s++;
-						if (s)
-							cpus++;
-						fprintf(fcpu, "0 ");
-					}
-					fprintf(fcpu, "\n");
-				}
-				fprintf(fcpu, ""LLFMT" %s\n", box[i].clkend, box[i].stmt);
-			}
+	if (box[i].clkend && box[i].fcn) {
+			fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT " " LLFMT " " LLFMT " " LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].vmmemory/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
+			written++;
 		}
+	if( written == 0){
+		topbox = 0;
+		fprintf(stderr,"Insufficient data for %s\n",buf);
+	}
 
 	if (f)
 		(void) fclose(f);
-	if (fcpu)
-		(void) fclose(fcpu);
 }
 
 /* produce memory thread trace */
@@ -947,17 +734,6 @@ showmemory(void)
 				min = box[i].memstart;
 			if (box[i].memend < min)
 				min = box[i].memend;
-
-#ifdef FOOTPRINT
-			if (box[i].footstart > max)
-				max = box[i].footstart;
-			if (box[i].footend > max)
-				max = box[i].footend;
-			if (box[i].footstart < min && box[i].footstart > 0)
-				min = box[i].footstart;
-			if (box[i].footend < min && box[i].footend > 0)
-				min = box[i].footend;
-#endif
 		}
 	if (min == max) {
 		min -= 1;
@@ -985,66 +761,102 @@ showmemory(void)
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
+	gnuXtics(0);
 	mn = min / 1024.0;
 	mx = max / 1024.0;
 	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
 	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
 	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
-#ifdef FOOTPRINT
-	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\", \\\n", (tracefile ? "scratch" : filename));
-	fprintf(gnudata, " \"%s.dat\" using 1:3 notitle with dots linecolor rgb \"black\"\n", (tracefile ? "scratch" : filename));
-#else
-	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
-#endif
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", basefilename,atlaspage);
 	fprintf(gnudata, "unset yrange\n");
+}
+
+static char *
+getHeatColor(double load)
+{
+	if ( load > 0.75 ) return "yellow";
+	if ( load > 0.5 ) return "orange";
+	if ( load > 0.25 ) return "red";
+	if ( load > 0.02 ) return "blue";
+	return "white";
 }
 
 /* produce memory thread trace */
 static void
 showcpu(void)
 {
-	int i;
+	int prev= -1, i, j = 0;
+	double cpuload[MAXTHREADS];
+	char *s;
 
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,%s\n", "0.16");
-	fprintf(gnudata, "set origin 0.0,%s\n", "0.72");
+	fprintf(gnudata, "set size 1,0.%02d\n", cpus?cpus:1);
+	fprintf(gnudata, "set origin 0.0, 0.%d\n", 89 - cpus);
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
+	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
-	fprintf(gnudata, "set ytics 0, 1.1\n");
+	fprintf(gnudata, "set ytics 0, %d\n",4);
 	fprintf(gnudata, "set grid ytics\n");
-	fprintf(gnudata, "set format y ''\n");
-	fprintf(gnudata, "unset border\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:%d*1.1]\n", cpus);
-	if (cpus)
-		fprintf(gnudata, "plot ");
-	for (i = 0; i < cpus; i++)
-		fprintf(gnudata, "\"%s_cpu.dat\" using 1:($%d+(%d*1.1)) notitle with lines linecolor rgb \"%s\"%s",
-			(tracefile ? "scratch" : filename), i + 2, i, (i % 2 == 0 ? "blue" : "red"), (i < cpus - 1 ? ",\\\n" : "\n"));
+	fprintf(gnudata, "set border\n");
+	gnuXtics(0);
+
+	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, (endrange? endrange:lastclktick - starttime));
+	fprintf(gnudata, "set yrange [0:%d]\n", cpus);
+	for (i = 0; i < topbox; i++)
+		j+=(box[i].state == PING);
+	if( debug)
+		fprintf(stderr,"Pings for cpu heat:%d\n",j);
+	for (i = 0; i < topbox; i++)
+		if (box[i].state == PING) {
+			// decode the cpu heat
+			j = 0;
+			s = box[i].stmt +1;
+			while (s) {
+				s = strchr(s + 1, ' ');
+				while (s && isspace((int) *s))
+					s++;
+				if( s){
+					cpuload[j++] = atof(s);
+				}
+			}
+			// paint the heatmap, the load refers the previous time slot
+			if( prev >= 0)
+				for(j=0; j < cpus; j++)
+				fprintf(gnudata,"set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 noborder\n",
+						object++, box[prev].clkend, j , box[i].clkstart, (j+1) , getHeatColor(cpuload[j]) );
+			prev = i;
+		}
+	if( cpus)
+		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset grid\n");
 }
 
 /* produce memory thread trace */
+/* The IO statistics are not provided anymore in LINUX unless you have root permissions */
 static void
 showio(void)
 {
-	int i;
+	int i,b = (beat? beat:1);
 	lng max = 0;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].state >= PING) {
-			if (box[i].reads > max)
-				max = box[i].reads;
-			if (box[i].writes > max)
-				max = box[i].writes;
+			if (box[i].inblock > max)
+				max = box[i].inblock;
+			if (box[i].oublock > max)
+				max = box[i].oublock;
+			if (box[i].majflt > max)
+				max = box[i].majflt;
+			if (box[i].nswap > max)
+				max = box[i].nswap;
 		}
-	max += beat;
+	max += b;
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -1054,23 +866,28 @@ showio(void)
 	fprintf(gnudata, "set size 1,%s\n", "0.1");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / beat);
+	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / b);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / beat);
-	fprintf(gnudata, "set y2label \"IO per ms\"\n");
+	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / b);
+	fprintf(gnudata, "set key font \",8\"\n");
+	fprintf(gnudata, "set key spacing 0.5\n");
 #ifdef GNUPLOT_463_BUG_ON_FEDORA_20
 /* this is the original version, but on Fedora 20 with
  * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
  * the page */
-	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
-	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" dots fs solid linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots solid linecolor rgb \"red\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", basefilename, atlaspage, beat);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
-	fprintf(gnudata, "plot \"%s.dat\" using 1:(($4+$5)/%d.0) title \"reads\" with impulses linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
-	fprintf(gnudata, "\"%s.dat\" using 1:($5/%d.0) title \"writes\" with impulses linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" with dots linecolor rgb \"gray\" ,\\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots linecolor rgb \"red\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", basefilename, atlaspage, beat);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", basefilename, atlaspage, beat);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
@@ -1078,18 +895,6 @@ showio(void)
 	fprintf(gnudata, "unset title\n");
 }
 
-#define TME_US  1
-#define TME_MS  2
-#define TME_SS  4
-#define TME_MM  8
-#define TME_HH 16
-#define TME_DD 32
-
-#define US_MS ((lng) 1000)
-#define US_SS (US_MS * 1000)
-#define US_MM (US_SS * 60)
-#define US_HH (US_MM * 60)
-#define US_DD (US_HH * 24)
 
 /* print time (given in microseconds) in human-readable form
  * showing the highest two relevant units */
@@ -1142,20 +947,21 @@ fprintf_time(FILE *f, lng time)
 }
 
 /* produce a legenda image for the color map */
+#define COLUMNS 5
+
 static void
 showcolormap(char *filename, int all)
 {
 	FILE *f = 0;
 	char buf[BUFSIZ];
 	int i, k = 0;
-	int w = 600;
+	int w = 380; // 600 for 3 columns
 	int h = 590;
 	lng totfreq = 0, tottime = 0;
 	Color *clrs = colors, *_clrs_ = NULL;
-	lng duration = lastclktick - starttime;
 
 	if (all) {
-		snprintf(buf, BUFSIZ, "%s.gpl", filename);
+		snprintf(buf, BUFSIZ, "%s_%02d.gpl", basefilename, atlaspage);
 		f = fopen(buf, "w");
 		if (f == NULL) {
 			fprintf(stderr, "Creating file %s.gpl failed\n", filename);
@@ -1191,96 +997,44 @@ showcolormap(char *filename, int all)
 		fprintf(f, "unset title\n");
 		fprintf(f, "unset ylabel\n");
 	}
-	if (!fixedmap){
-		/* create copy of colormap and sort in ascending order of timeused;
-		 * "*.*" stays first (colors[0]) */
-		_clrs_ = (Color*) malloc(sizeof(colors));
-		if (_clrs_) {
-			memcpy(_clrs_, colors, sizeof(colors));
-			qsort(_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
-			clrs = _clrs_;
-		}
-		/* show colormap / legend in descending order of timeused;
-		 * show max. the MAX_LEGEND_SHORT-1 most expensive function calls;
-		 * show all remaining aggregated as "*.*" */
-		for (i = NUM_COLORS - 1; i >= 0; i--)
-			if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
-				if (all || k < MAX_LEGEND_SHORT - 1 || i == 0) {
-					tottime += clrs[i].timeused;
-					totfreq += clrs[i].freq;
+	/* create copy of colormap and sort in ascending order of timeused;
+	 * "*.*" stays first (colors[0]) */
+	_clrs_ = (Color*) malloc(sizeof(colors));
+	if (_clrs_) {
+		memcpy(_clrs_, colors, sizeof(colors));
+		qsort(_clrs_, NUM_COLORS, sizeof(Color), cmp_clr);
+		clrs = _clrs_;
+	}
+	/* show colormap / legend in descending order of timeused;
+	 * show max. the MAX_LEGEND_SHORT-1 most expensive function calls;
+	 * show all remaining aggregated as "*.*" */
+	for (i = NUM_COLORS - 1; i >= 0; i--)
+		if (clrs[i].mod && (clrs[i].freq > 0 || all)) {
+			if (all || k < MAX_LEGEND_SHORT - 1 || i == 0) {
+				tottime += clrs[i].timeused;
+				totfreq += clrs[i].freq;
 
-					if (k % 3 == 0)
-						h -= 45;
-					fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-						object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[i].col);
-					fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-						object++, clrs[i].mod, clrs[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-					fprintf(f, "set label %d \"%d calls: ",
-						object++, clrs[i].freq);
-					fprintf_time(f, clrs[i].timeused);
-					fprintf(f, "\" at %f,%f\n",
-						(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
-					k++;
-				} else {
-					clrs[0].timeused += clrs[i].timeused;
-					clrs[0].freq += clrs[i].freq;
-				}
-			}
-		if (_clrs_) {
-			clrs = colors;
-			free(_clrs_);
-			_clrs_ = NULL;
-		}
-	} else {
-		/* use a heuristic fixed map to highlight the important operations */
-		/* limit the legend to the most important ones <MAX_LEGEND_SHORT and > 1% */
-		int	map[MAX_LEGEND_SHORT], n, m=0, j;
-		for (i = 0; i < MAX_LEGEND_SHORT; i++)
-			map[i] = -1;
-		for (i = 0; i < NUM_COLORS - 1; i++) {
-			tottime += clrs[i].timeused;
-			totfreq += clrs[i].freq;
-		}
-		/* filter out the top N interesting elements */
-		for (i = 0; i < NUM_COLORS - 1; i++)
-			if (clrs[i].col &&
-			    clrs[i].mod &&
-			    (clrs[i].freq > 0 || all) &&
-			    (clrs[i].timeused > PERCENTAGE * duration ||
-			     clrs[i].freq > PERCENTAGE * totfreq)) {
-				for (j = 0; j < m && clrs[map[j]].timeused > clrs[i].timeused; j++)
-					;
-				if (m < MAX_LEGEND_SHORT) {
-					for (n = m; n > j; n--)
-						map[n] = map[n-1];
-					map[j] = i;
-					m++;
-				}
-			}
-		/* sort them back into the color map order */
-		for (i = 0; i < m; i++)
-			for (j = i+1; j< m; j++)
-				if (map[i] > map[j]) {
-					n = map[i];
-					map[i]= map[j];
-					map[j] = n;
-				}
-
-		for (i = 0; i < m; i++)
-			if (clrs[map[i]].col) {
-				if (k % 3 == 0)
+				if (k % COLUMNS == 0)
 					h -= 45;
-				fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, clrs[map[i]].col);
+				fprintf(f, "set object %d rectangle from %.2f, %.2f to %.2f, %.2f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+					object++, (double) (k % COLUMNS) * w, (double) h - 40, (double) ((k % COLUMNS) * w + 0.05 * w), (double) h - 5, clrs[i].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, clrs[map[i]].mod, clrs[map[i]].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-				fprintf(f, "set label %d \"%d calls: ",
-					object++, clrs[map[i]].freq);
-				fprintf_time(f, clrs[map[i]].timeused);
+					object++, (clrs[i].mod?clrs[i].mod:""), clrs[i].fcn, (int) ((k % COLUMNS) * w + 0.07 * w), h - 15);
+				fprintf(f, "set label %d \"%d call%s: ",
+					object++, clrs[i].freq, clrs[i].freq>1?"s":"");
+				fprintf_time(f, clrs[i].timeused);
 				fprintf(f, "\" at %f,%f\n",
-					(double) ((k % 3) * w + 0.2 * w), (double) h - 35);
+					(double) ((k % COLUMNS) * w + 0.07 * w), (double) h - 35);
 				k++;
+			} else {
+				clrs[0].timeused += clrs[i].timeused;
+				clrs[0].freq += clrs[i].freq;
 			}
+		}
+	if (_clrs_) {
+		clrs = colors;
+		free(_clrs_);
+		_clrs_ = NULL;
 	}
 
 	h -= 45;
@@ -1292,7 +1046,6 @@ showcolormap(char *filename, int all)
 		(int) (0.2 * w), h - 35);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
-		assert(f != gnudata);
 		fclose(f);
 	}
 }
@@ -1303,6 +1056,8 @@ updmap(int idx)
 	char *mod, *fcn, buf[BUFSIZ], *call = buf;
 	int i, fnd = 0;
 
+	if( box[idx].fcn == 0)
+		return;
 	snprintf(buf, sizeof(buf), "%s", box[idx].fcn);
 	mod = call;
 	fcn = strchr(call, '.');
@@ -1311,30 +1066,20 @@ updmap(int idx)
 		fcn++;
 	} else
 		fcn = "*";
-	if (fixedmap) {
-		/* find first match for "mod.fcn", "*.fcn", "mod.*", "*.*" */
-		for (i = 0; i < NUM_COLORS && colors[i].mod; i++)
-			if (strcmp(mod, colors[i].mod) == 0 || colors[i].mod[0] == '*') {
-				if (strcmp(fcn, colors[i].fcn) == 0 || colors[i].fcn[0] == '*') {
-					fnd = i;
-					break;
-				}
-			}
-	} else {
-		/* find "mod.fcn" */
-		for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
-			if (strcmp(mod, colors[i].mod) == 0 &&
-			    strcmp(fcn, colors[i].fcn) == 0) {
-				fnd = i;
-				break;
-			}
-		if (fnd == 0 && i < NUM_COLORS) {
-			/* not found, but still free slot: add new one */
+	/* find "mod.fcn" */
+	for (i = 1; i < NUM_COLORS && colors[i].mod; i++)
+		if (strcmp(mod, colors[i].mod) == 0 &&
+			strcmp(fcn, colors[i].fcn) == 0) {
 			fnd = i;
-			colors[fnd].mod = strdup(mod);
-			colors[fnd].fcn = strdup(fcn);
-			printf("added function #%d: %s.%s\n", fnd, mod, fcn);
+			break;
 		}
+	if (fnd == 0 && i < NUM_COLORS) {
+		/* not found, but still free slot: add new one */
+		fnd = i;
+		colors[fnd].mod = mod?strdup(mod): 0;
+		colors[fnd].fcn = strdup(fcn);
+		if( debug)
+			printf("added function #%d: %s.%s\n", fnd, (mod?mod:""), fcn);
 	}
 
 	colors[fnd].freq++;
@@ -1342,99 +1087,6 @@ updmap(int idx)
 	box[idx].color = fnd;
 }
 
-/* keep the data around for re-painting with range filters*/
-static void
-keepdata(char *filename)
-{
-	int i;
-	FILE *f;
-	char buf[BUFSIZ];
-
-	if (tracefile)
-		return;
-	snprintf(buf, BUFSIZ, "%s.trace", filename);
-	f = fopen(buf, "w");
-	if (f == NULL) {
-		fprintf(stderr, "Creating file %s.trace failed\n", filename);
-		exit(1);
-	}
-
-	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].fcn) {
-			//if (debug)
-			//fprintf(stderr,"%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
-
-			fprintf(f, "%d\t"LLFMT"\t"LLFMT"\t", box[i].thread, box[i].clkstart, box[i].clkend);
-			fprintf(f, ""LLFMT"\t"LLFMT"\t"LLFMT"\t", box[i].ticks, box[i].memstart, box[i].memend);
-			fprintf(f, "%d\t"LLFMT"\t"LLFMT"\t", box[i].state, box[i].reads, box[i].writes);
-			fprintf(f, "%s\t", box[i].fcn);
-			fprintf(f, "%s\n", box[i].stmt ? box[i].stmt : box[i].fcn);
-		}
-
-	(void) fclose(f);
-}
-
-static void
-scandata(char *filename)
-{
-	FILE *f;
-	char line[2*BUFSIZ], buf[BUFSIZ], buf2[BUFSIZ];
-	int i = 0;
-
-	f = fopen(filename, "r");
-	if (f == 0) {
-		snprintf(buf, BUFSIZ, "%s.trace", filename);
-		f = fopen(buf, "r");
-		if (f == NULL) {
-			fprintf(stderr, "Could not open file '%s'\n", buf);
-			exit(-1);
-		}
-	}
-	starttime = 0;
-
-	while (!feof(f)) {
-		int x;
-		if (fgets(line,2 * BUFSIZ,f) == NULL) {
-			fprintf(stderr, "scandata read error\n");
-		}
-		x = sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n",
-			   &box[i].thread, &box[i].clkstart, &box[i].clkend,
-			   &box[i].ticks, &box[i].memstart, &box[i].memend,
-			   &box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
-		if (x != 11) {
-			fprintf(stderr, "scandata: sscanf() matched %d instead of 11 items in\n'%s'\n", x, line);
-		}
-		if (box[i].thread < 0 || box[i].clkstart < 0 || box[i].clkend < 0 || box[i].ticks < 0 || box[i].memstart < 0 || box[i].memend < 0 || box[i].state < 0 || box[i].reads < 0 || box[i].writes < 0) {
-			fprintf(stderr, "scandata: sscanf() read negative value(s) from\n'%s'\n", line);
-			continue; /* don't trust values */
-		}
-		if (box[i].thread >= MAXTHREADS) {
-			fprintf(stderr, "scandata: sscanf() read too large value(s) from\n'%s'\n", line);
-			continue; /* don't trust values */
-		}
-		box[i].fcn = strdup(buf);
-		box[i].stmt = strdup(buf);
-		/* focus on part of the time frame */
-		if (endrange) {
-			if (box[i].clkend < startrange || box[i].clkstart >endrange)
-				continue;
-			if (box[i].clkstart < startrange)
-				box[i].clkstart = startrange;
-			if (box[i].clkend > endrange)
-				box[i].clkend = endrange;
-		}
-		if (box[i].clkend > lastclktick)
-			lastclktick = box[i].clkend;
-		if (lastclk[box[i].thread] < box[i].clkend)
-			lastclk[box[i].thread] = box[i].clkend;
-		totalclkticks += box[i].clkend - box[i].clkstart;
-		totalexecticks += box[i].ticks - box[i].ticks;
-		i++;
-		assert(i < MAXBOX);
-	}
-	fclose(f);
-	topbox = i;
-}
 /* gnuplot defaults */
 static int height = 160;
 
@@ -1443,6 +1095,7 @@ gnuplotheader(char *filename)
 {
 	time_t tm;
 	char *date, *c;
+
 	fprintf(gnudata, "set terminal pdfcairo noenhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata, "set output \"%s.pdf\"\n", filename);
 	fprintf(gnudata, "set size 1,1\n");
@@ -1451,14 +1104,21 @@ gnuplotheader(char *filename)
 	date = ctime(&tm);
 	if (strchr(date, '\n'))
 		*strchr(date, '\n') = 0;
-	for (c = title; c && *c; c++)
-		if (*c == '_')
-			*c = '-';
-	fprintf(gnudata, "set title \"%s\t\t%s\"\n", (title ? title : "Tomogram"), date);
+	if( title){
+		for (c = title; c && *c; c++)
+			if (*c == '_')
+				*c = '-';
+		fprintf(gnudata, "set title \"%s\t%s\"\n", date, title);
+	} else 
+	if( currentquery )
+		fprintf(gnudata, "set title \"%s\t%s\"\n", date, currentquery);
+	else
+		fprintf(gnudata, "set title \"%s\tTomogram\"\n", date);
 	fprintf(gnudata, "set multiplot\n");
 }
 
-static void createTomogram(void)
+static void
+createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
@@ -1466,14 +1126,14 @@ static void createTomogram(void)
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
-	lng tw;
-	lng scale;
-	char *scalename = "\0\0\0\0";
-	int digits;
 
 	if( debug)
 		fprintf(stderr,"create tomogram\n");
-	snprintf(buf, BUFSIZ, "%s.gpl", filename);
+	if( events == 0){
+		fprintf(stderr,"No events found\n");
+		return;
+	}
+	snprintf(buf, BUFSIZ, "%s_%02d.gpl", basefilename,atlaspage);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
 		printf("ERROR in creation of %s\n", buf);
@@ -1483,7 +1143,7 @@ static void createTomogram(void)
 		*strchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	dumpboxes();
-	showio();
+	showio(); //DISABLED due to access permissions
 	showmemory();
 	showcpu();
 
@@ -1491,21 +1151,26 @@ static void createTomogram(void)
 	fprintf(gnudata, "set bmarg 3\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,0.4\n");
+	fprintf(gnudata, "set size 1,0.48\n");
 	fprintf(gnudata, "set origin 0.0,%s\n", "0.32");
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
-	for (i = 0; i < topbox; i++)
+	for (i = 0; i < topbox; i++){
 		if (box[i].clkend && box[i].state != PING) {
 			for (j = 0; j < top; j++)
 				if (rows[j] == box[i].thread)
 					break;
 			box[i].row = j;
-			if (j == top)
+			if (j == top){
+				if( debug)
+					fprintf(stderr,"Assign thread %d to %d\n", box[i].thread, top);
 				rows[top++] = box[i].thread;
-			updmap(i);
+			}
+			if( box[i].state != WAIT)
+				updmap(i);
 		}
+	}
 
 
 	height = top * 20;
@@ -1515,50 +1180,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
-	if (w >= 10 * US_DD) {
-		scale = US_DD;
-		scalename = "d\0\0days";
-	} else if (w >= 10 * US_HH) {
-		scale = US_HH;
-		scalename = "h\0\0hours";
-	} else if (w >= 10 * US_MM) {
-		scale = US_MM;
-		scalename = "m\0\0minutes";
-	} else if (w >= US_SS) {
-		scale = US_SS;
-		scalename = "s\0\0seconds";
-	} else if (w >= US_MS) {
-		scale = US_MS;
-		scalename = "ms\0milliseconds";
-	} else {
-		scale = 1;
-		scalename = "us\0microseconds";
-	}
-	for (tw = (scale / 10 > 0)? scale/10:1; 15 * tw < w; tw *= 10)
-		;
-	if (3 * tw > w)
-		tw /= 4;
-	else if (6 * tw > w)
-		tw /= 2;
-	if (w / scale >= 1000)
-		digits = 0;
-	else if (w / scale >= 100)
-		digits = 1;
-	else if (w / scale >= 10)
-		digits = 2;
-	else
-		digits = 3;
-	fprintf(gnudata, "set xtics (\"0\" 0,");
-	for (i = 1; i * tw < w - 2 * tw / 3; i++)
-		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
-	fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
-	fprintf(gnudata, ")\n");
-	w /= 10;
-
-	fprintf(gnudata, "set grid xtics\n");
-
-	if (endrange > lastclktick)
-		endrange = lastclktick;
+	w = gnuXtics(1);
 
 	/* calculate the effective use of parallelism */
 	totalticks = 0;
@@ -1583,17 +1205,22 @@ static void createTomogram(void)
 			default:
 				if (debug)
 					dumpbox(i);
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
+				// always show a start line
+				if ( box[i].clkend - box[i].clkstart < w/200.0)
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkstart+(w/200.0>1?w/200.0:1), box[i].row * 2 * h + h, colors[box[i].color].col);
+				else
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 				break;
 			case PING:
 				break;
 			case WAIT:
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to %f,%f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h-h/3, box[i].clkstart + w /50.0, box[i].row *2 *h + 1.3 * h);
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %.2f,%.2f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h/3, box[i].clkstart+ w /25.0, box[i].row *2 *h + h - 0.3 * h);
 				break;
 			case GCOLLECT:
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d to "LLFMT".0, %d fillcolor rgb \"green\" fillstyle solid 1.0\n",
+				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"green\" fillstyle solid 1.0 \n",
 					object++, box[i].clkstart, box[i].row * 2 * h +h/3, box[i].clkend, box[i].row * 2 * h + h-h/3);
 				break;
 			}
@@ -1605,28 +1232,15 @@ static void createTomogram(void)
 	prevobject = object - 1;
 	showcolormap(0, 0);
 	fprintf(gnudata, "unset multiplot\n");
-	keepdata(filename);
 	(void) fclose(gnudata);
 	gnudata = 0;
-	showNumaHeatmap();
-
-	// show follow up action only once
-	if (atlas && atlaspage == atlas-1) {
-		fprintf(stderr, "Created tomogram atlas\n");
-		for (i = 0; i<= atlas-1;  i++)
-			fprintf(stderr, "gnuplot atlas_%02d.gpl\n",i);
-		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=atlas.pdf -dBATCH %s_??.pdf\n",filename);
-		exit(0);
-	} else
-	if (!atlas && figures++ == 0) {
-		fprintf(stderr, "Created tomogram '%s'\n", buf);
-		fprintf(stderr, "Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n", buf, filename);
-		if (tracefile == 0) {
-			fprintf(stderr, "The memory map is stored in '%s.dat'\n", filename);
-			fprintf(stderr, "The trace is saved in '%s.trace' for use with --trace option\n", filename);
-		}
-		exit(0);
+	atlaspage++;
+	if (atlas == atlaspage ) {
+		stopListening(0);
 	}
+#ifdef NUMAprofiling
+	showNumaHeatmap();
+#endif
 }
 
 /* The intra-thread flow is collected for later presentation */
@@ -1646,91 +1260,98 @@ updateNumaHeatmap(int thread, char *numa){
 	}
 }
 
+
 /* the main issue to deal with in the analysis is
  * that the tomograph start can appear while the
- * system is already processing. This leads to
+ * system is already processing. 
  * receiving 'done' events without matching 'start'
  *
  * A secondary issue is to properly count the functions
  * being monitored.
  */
 
+static int ping = -1;
+
 static void
-update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng footprint, lng reads, lng writes, char *fcn, char *stmt)
+update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng vmmemory, lng inblock, lng oublock, lng majflt, lng nswap, lng csw, char *fcn, char *stmt, char *line)
 {
-	int idx;
+	int idx, i;
 	Box b;
 	char *s;
+	char *qry, *q, *c;
+	int uid = 0,qid = 0;
+ 
+	if (topbox == MAXBOX) {
+		fprintf(stderr, "Out of space for trace");
+		createTomogram();
+		exit(0);
+	}
+	/* handle a ping event, keep the current instruction in focus */
+	if (state >= PING ) {
+		if (cpus == 0 && state == PING) {
+			char *s;
+			if( (s= stmt,'[')) 
+				s++;
+			else s = stmt;
+			while (s && isspace((int) *s))
+				s++;
+			while (s) {
+				s = strchr(s + 1, ' ');
+				while (s && isspace((int) *s))
+					s++;
+				if (s)
+					cpus++;
+			}
+		}
+		if( startrange && starttime && clkticks-starttime < startrange)
+			return;
+		if( endrange && starttime && clkticks-starttime > endrange)
+			return;
+		idx = threads[thread];
+		b = box[idx];
+		box[idx].state = state;
+		box[idx].thread = thread;
+		//lastclk[thread] = clkticks-starttime;
+		box[idx].clkend = box[idx].clkstart = clkticks-starttime;
+		if (state == GCOLLECT)
+			box[idx].clkstart -= ticks;
+		box[idx].memend = box[idx].memstart = memory;
+		box[idx].footstart = box[idx].vmmemory = vmmemory;
+		box[idx].inblock = inblock;
+		box[idx].oublock = oublock;
+		box[idx].majflt = majflt;
+		box[idx].nswap = nswap;
+		box[idx].csw = csw;
+		s = strchr(stmt, ']');
+		if (s)
+			*s = 0;
+		box[idx].stmt = stmt;
+
+		if ( !capturing){
+			ping = idx;
+			return;
+		}
+		box[idx].fcn = state == PING? strdup("profiler.ping"):strdup("profiler.wait");
+		threads[thread] = ++topbox;
+		idx = threads[thread];
+		box[idx] = b;
+		if( tracefd)
+			fprintf(tracefd,"%s\n",line);
+		return;
+	}
 
 	if (debug)
-		fprintf(stderr, "Update %s batch %d input %s %s" LLFMT" %s\n",(state>=0?statenames[state]:"unknown"),batch, (fcn?fcn:"(null)"),currentfunction,starttime,numa);
-	/* ignore the flow of control statements 'function' and 'end' */
-	if (fcn && strncmp(fcn, "end ", 4) == 0)
-		return;
+		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT" %s\n",(state>=0?statenames[state]:"unknown"),(fcn?fcn:"(null)"),(currentfunction?currentfunction:""),clkticks -starttime,(numa?numa:""));
 
 	if (starttime == 0) {
-		/* ignore all instructions up to the first function call, unless input comes from a file */
-		if (inputfile == NULL && (state >= PING || fcn == 0 )) {
+		if (fcn == 0 ) {
 			if (debug)
 				fprintf(stderr, "Skip %s input %s\n",(state>=0?statenames[state]:"unknown"),fcn);
 			return;
 		}
 		if (debug)
-			fprintf(stderr, "Start capturing updates \n");
-		assert(clkticks >= 0);
-		starttime = clkticks;
+			fprintf(stderr, "Start capturing updates %s\n",fcn);
 	}
-
-	/* monitor top level function brackets */
-	if (state == START && fcn && strncmp(fcn, "function", 8) == 0) {
-		if (capturing++ == 0)
-			starttime = clkticks;
-		if (currentfunction == 0)
-			currentfunction = strdup(fcn+9);
-		if (debug)
-			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
-		return;
-	}
-	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
-		if(debug)
-			fprintf(stderr, "Leave function \"%s\" capture \"%s\"?\n", (currentfunction?currentfunction:""), fcn+9);
-		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
-			capturing--;
-			if(debug)
-				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
-			free(currentfunction);
-			currentfunction = 0;
-		} else
-			return;
-
-		if (batch-- > 1)
-			return;
-
-		deactivateBeat();
-		createTomogram();
-		totalclkticks = 0; /* number of clock ticks reported */
-		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn)
-			title = strdup(fcn + 9);
-		resetTomograph();
-		return;
-	}
-
-	if (state == DONE && fcn && strncmp(fcn, "profiler.tomograph", 18) == 0) {
-		if( debug)
-			fprintf(stderr, "Profiler.tomograph ends %d\n", batch);
-		deactivateBeat();
-		createTomogram();
-		totalclkticks = 0; /* number of clock ticks reported */
-		totalexecticks = 0; /* number of ticks reported for processing */
-		if (fcn)
-			title = strdup(fcn + 9);
-		resetTomograph();
-		return;
-	}
-
-	assert(clkticks >= 0);
-	clkticks -= starttime;
 	if (clkticks < 0) {
 		/* HACK: *TRY TO* compensate for the fact that the MAL
 		 * profiler chops-off day information, and assume that
@@ -1743,65 +1364,137 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		clkticks += US_DD;
 	}
 
-	/* handle a ping event, keep the current instruction in focus */
-	if (state >= PING && capturing) {
-		idx = threads[thread];
-		b = box[idx];
-		box[idx].state = state;
-		box[idx].thread = thread;
-		lastclk[thread] = clkticks;
-		box[idx].clkend = box[idx].clkstart = clkticks;
-		if (state == GCOLLECT)
-			box[idx].clkstart -= ticks;
-		box[idx].memend = box[idx].memstart = memory;
-		box[idx].footstart = box[idx].footend = footprint;
-		box[idx].reads = reads;
-		box[idx].writes = writes;
-		s = strchr(stmt, ']');
-		if (s)
-			*s = 0;
-		box[idx].stmt = stmt;
-		box[idx].fcn = state == PING? "profiler.ping":"profiler.wait";
-		threads[thread] = ++topbox;
-		idx = threads[thread];
-		box[idx] = b;
-		if (reads > maxio)
-			maxio = reads;
-		if (writes > maxio)
-			maxio = writes;
+	/* monitor top level function brackets, we restrict ourselves to SQL queries */
+	if (!capturing && state == START && fcn && strncmp(fcn, "function", 8) == 0) {
+		if( (i = sscanf(fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
+			if( debug)
+				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
+			return;
+		}
+		if (capturing++ == 0)
+			starttime = clkticks;
+		if( ping >= 0){
+			box[ping].clkend = box[ping].clkstart = 0;
+			ping = -1;
+		}
+		if (currentfunction == 0)
+			currentfunction = strdup(fcn+9);
+		if (debug)
+			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
+		if( tracefd)
+			fprintf(tracefd,"%s\n",line);
 		return;
 	}
+	clkticks -= starttime;
+
+	if ( !capturing || thread >= MAXTHREADS)
+		return;
 	idx = threads[thread];
+	lastclk[thread] = endrange? endrange: clkticks;
+
+	/* track the input in the trace file */
+	if( tracefd)
+		fprintf(tracefd,"%s\n",line);
 	/* start of instruction box */
-	if (state == START && thread < MAXTHREADS) {
+	if (state == START ) {
 		if(debug)
-			fprintf(stderr, "Start box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
+			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (fcn?fcn:""), clkticks,currentfunction, thread,idx,topbox);
 		box[idx].state = state;
 		box[idx].thread = thread;
-		box[idx].clkstart = clkticks;
+		box[idx].clkstart = clkticks? clkticks:1;
+		box[idx].clkend = clkticks;
 		box[idx].memstart = memory;
+		box[idx].memend = memory;
 		box[idx].numa = numa;
-		updateNumaHeatmap(thread, numa);
-		box[idx].footstart = footprint;
+		if(numa) updateNumaHeatmap(thread, numa);
+		box[idx].footstart = vmmemory;
 		box[idx].stmt = stmt;
-		box[idx].fcn = fcn ? strdup(fcn) : "";
+		box[idx].fcn = fcn ? fcn : strdup("");
+		if(fcn && strstr(fcn,"querylog.define") ){
+			// extract a string argument
+			currentquery = malarguments[0];
+			// use the truncated query text, beware the the \ is already escaped in the call argument.
+			q = qry = (char *) malloc(strlen(currentquery) * 2);
+			for (c= currentquery; *c; )
+				switch(*c){
+				case '\\':
+					c++;
+					switch(*c){
+					case 'n': *q++=' '; c++; break;
+					case 't': *q++=' '; c++; break;
+					case '\\': break;
+					default:
+						*q++ = *c++;
+					}
+					break;
+				default:
+					*q++ = *c++;
+				}
+			*q =0;
+			
+			if( strlen(qry) > 93){
+				qry[90]= '.';
+				qry[91]= '.';
+				qry[92]= '.';
+				qry[93]= 0;
+			}
+			currentquery = qry;
+			fprintf(stderr,"-- page %d %s:%s\n",atlaspage, (title?title:""), currentquery);
+		}
+		return;
 	}
 	/* end the instruction box */
-	if (state == DONE && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
+	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
+		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
+			if( capturing == 0){
+				free(currentfunction);
+				currentfunction = 0;
+			}
+			capturing--;
+			if(debug)
+				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
+		} 
+		if( capturing == 0){
+			if( tracefd){
+				fflush(tracefd);
+				fclose(tracefd);
+				tracefd = NULL;
+			}
+
+			createTomogram();
+			resetTomograph();
+			return;
+		}
+	}
+	if (state == DONE ){
+		if( box[idx].clkstart == 0){
+			// ignore incorrect pairs
+			if(debug) fprintf(stderr, "INCORRECT START\n");
+			return;
+		}
 		if( debug)
-			fprintf(stderr, "End box %s thread %d idx %d box %d\n", currentfunction, thread,idx,topbox);
-		lastclk[thread] = clkticks;
+			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (fcn?fcn:""), clkticks, (currentfunction?currentfunction:""), thread,idx,topbox);
+		events++;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
-		box[idx].footend = footprint;
+		box[idx].vmmemory = vmmemory;
 		box[idx].ticks = ticks;
 		box[idx].state = ACTION;
-		box[idx].reads = reads;
-		box[idx].writes = writes;
+		box[idx].inblock = inblock;
+		box[idx].oublock = oublock;
+		box[idx].majflt = majflt;
+		box[idx].nswap = nswap;
+		box[idx].csw = csw;
 		/* focus on part of the time frame */
 		if (endrange) {
-			if (box[idx].clkend < startrange || box[idx].clkstart >endrange)
+			if( debug){
+				fprintf(stderr,"range filter "LLFMT" " LLFMT"\n",startrange,endrange);
+				fprintf(stderr,"expression  "LLFMT" " LLFMT"\n", box[idx].clkstart,  box[idx].clkend);
+			}
+			if (box[idx].clkend < startrange || box[idx].clkstart >endrange){
+				fprintf(stderr,"reject "LLFMT":"LLFMT" out "LLFMT":"LLFMT"\n",box[idx].clkstart , box[idx].clkend, startrange, endrange);
 				return;
+			}
 			if (box[idx].clkstart < startrange)
 				box[idx].clkstart = startrange;
 			if (box[idx].clkend > endrange)
@@ -1812,72 +1505,114 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		totalclkticks += box[idx].clkend - box[idx].clkstart;
 		totalexecticks += box[idx].ticks - box[idx].ticks;
 	}
-	if (topbox == MAXBOX) {
-		fprintf(stderr, "Out of space for trace");
-		deactivateBeat();
-		createTomogram();
-		exit(0);
-	}
 }
 
 /*
  * Beware the UDP protocol may cause some loss
  * Incomplete records from previous runs may also appear
  */
+
+static void
+parseArguments(char *call)
+{
+	int i;
+	char  *c = call, *l, ch;
+	
+	malargtop = 0;
+	if( debug)
+		fprintf(stderr,"call:%s\n",call);
+	for( i=0; c && *c && i < MAXMALARGS; i++, c++){
+		if (*c ==')')
+			break;
+		if (*c == 'X'){
+			// skip variable
+			c= strchr(c,'=');
+			if( c == 0)
+				break;
+			c++;
+			if( debug)
+				fprintf(stderr,"arg:%s\n",c);
+		}
+		if (*c== '\\' && *(c+1) =='"'){
+			c++; c++;
+			// parse string
+			l= strstr(c,"\\\",");
+			if ( l == 0)
+				l= strstr(c,"\\\")");
+			if ( l ==0)
+				break;
+			*l= 0;
+			malarguments[malargtop++] = strdup(c);
+			*l = '\\';
+			c= l+1;
+			if (l[2] ==')')
+				break;
+		} else {
+			// all the rest
+			l = strchr(c, ch = ',');
+			if( l == 0){
+				l = strchr(c, ch = ')');
+				break;
+				}
+			*l=0;
+			malarguments[malargtop++] = strdup(c);
+			*l=ch;
+			c= l;
+			l = strchr(malarguments[malargtop-1],')');
+			if(l)
+				*l =0;
+		}
+	}
+	if( debug)
+	for(i=0; i < malargtop; i++)
+		fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+}
+
 static int
 parser(char *row)
 {
 #ifdef HAVE_STRPTIME
-	char *c, *cc, *v;
+	char *c, *cc, *v =0, *line = row;
 	struct tm stm;
 	lng clkticks = 0;
 	int thread = 0;
 	lng ticks = 0;
 	lng memory = 0; /* in MB*/
-	lng footprint = 0; /* in MB*/
-	char *fcn = 0, *stmt = 0, *numa=0;
+	lng vmmemory = 0; /* in MB*/
+	char *fcn = 0, *stmt = 0;
+	char *numa =0;
 	int state = 0;
-	lng reads= 0, writes= 0;
+	int eventnr = 0;
+	lng inblock= 0, oublock= 0;
+	lng majflt= 0, swaps=0, csw= 0;
+	lng userid= 0;
 
+	(void) eventnr;
+	(void) userid;
 	/* check basic validaty first */
+	if (row[0] =='#')
+		return 0;
 	if (row[0] != '[')
 		return -1;
 	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
 		return -1;
 
-	c = strchr(row, '"');
+	/* scan event record number */
+	c = row+1;
 	if (c == 0)
 		return -2;
-	if (strncmp(c + 1, "start", 5) == 0) {
-		state = START;
-		c += 6;
-	} else if (strncmp(c + 1, "done", 4) == 0) {
-		state = DONE;
-		c += 5;
-	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		state = PING;
-		c += 5;
-	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		state = WAIT;
-		c += 5;
-	} else if (strncmp(c + 1, "gcollect", 8) == 0) {
-		state = GCOLLECT;
-		c += 9;
-	} else {
-		state = 0;
-		c = strchr(c + 1, '"');
-		if (c == 0)
-			return -2;
-	}
+	eventnr = atoi(c + 1);
 
+	/* scan event time" */
 	c = strchr(c + 1, '"');
 	if (c) {
 		/* convert time to epoch in seconds*/
+		cc =c;
 		memset(&stm, 0, sizeof(struct tm));
 		c = strptime(c + 1, "%H:%M:%S", &stm);
 		clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
 		if (c == 0)
-			return -11;
+			return -3;
 		if (*c == '.') {
 			lng usec;
 			/* microseconds */
@@ -1887,29 +1622,66 @@ parser(char *row)
 		}
 		c = strchr(c + 1, '"');
 		if (clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, row);
+			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, cc);
 		}
+		c++;
 	} else
 		return -3;
 
-	c = strchr(c + 1, ',');
+	/* skip pc tag */
+	c = strchr(c+1, ',');
 	if (c == 0)
 		return -4;
-	thread = atoi(c + 1);
 
-	c = strchr(c + 1, ',');
+	/* scan thread */
+	thread = atoi(c+1);
+
+	/* scan status */
+	c = strchr(c, '"');
 	if (c == 0)
 		return -5;
-	ticks = strtoll(c + 1, NULL, 10);
+	if (strncmp(c + 1, "start", 5) == 0) {
+		state = START;
+		c += 6;
+	} else if (strncmp(c + 1, "done", 4) == 0) {
+		state = DONE;
+		c += 5;
+	} else if (strncmp(c + 1, "ping", 4) == 0) {
+		state = PING;
+		c += 5;
+	} else if (strncmp(c + 1, "stat", 4) == 0) {
+		state = IOSTAT;
+		c += 6;
+	} else if (strncmp(c + 1, "wait", 4) == 0) {
+		state = WAIT;
+		c += 5;
+	} else {
+		state = 0;
+		c = strchr(c + 1, '"');
+		if (c == 0)
+			return -5;
+	}
 
+
+	/* scan usec */
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -6;
+	ticks = strtoll(c + 1, NULL, 10);
+
+	/* scan rssMB */
+	c = strchr(c + 1, ',');
+	if (c == 0)
+		return -7;
 	memory = strtoll(c + 1, NULL, 10);
+
+	/* scan vmMB */
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
+	vmmemory = strtoll(c + 1, NULL, 10);
 
+#ifdef NUMAPROFILING
 	for(; *c && *c !='"'; c++) ;
 	numa = c+1;
 	for(c++; *c && *c !='"'; c++)
@@ -1919,413 +1691,126 @@ parser(char *row)
 	*c = 0;
 	numa= strdup(numa);
 	*c = '"';
-	c = strchr(c + 1, ',');
-
-#ifdef FOOTPRINT
-	footprint = strtoll(c + 1, NULL, 10);
-	if (debug && state < PING)
-		fprintf(stderr, "%s\n", row);
-	c = strchr(c + 1, ',');
-	if (c == 0 && state >= PING)
-		goto wrapup;
 #endif
 
-	reads = strtoll(c + 1, NULL, 10);
+	/* scan inblock */
 	c = strchr(c + 1, ',');
-	if (c == 0) {
-		free(numa);
-		return -8;
-	}
-	writes = strtoll(c + 1, NULL, 10);
-
-	/* check basic validity */
-	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0) {
-		free(numa);
-		return -1;
-	}
-	c = strchr(c + 1, ',');
-	if (c == 0) {
-		free(numa);
+	if (c == 0) 
 		return -9;
-	}
-	c++;
-	fcn = c;
-	stmt = strdup(fcn);
+	inblock = strtoll(c + 1, NULL, 10);
 
-	c = strstr(c + 1, ":=");
-	if (c) {
-		fcn = c + 2;
-		/* find genuine function calls */
-		while (isspace((int) *fcn) && *fcn)
-			fcn++;
-		if (strchr(fcn, '.') == 0) {
-			free(stmt);
-			free(numa);
-			return -10;
-		}
-	} else {
-		fcn = strchr(fcn, '"');
-		if (fcn) {
-			fcn++;
-			v=  strchr(fcn+1,'"');
+	/* scan oublock */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -10;
+	oublock = strtoll(c + 1, NULL, 10);
+
+	/* scan majflt */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -11;
+	majflt = strtoll(c + 1, NULL, 10);
+
+	/* scan swaps */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -12;
+	swaps = strtoll(c + 1, NULL, 10);
+
+	/* scan context switches */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -13;
+	csw = strtoll(c + 1, NULL, 10);
+
+	/* parse the MAL call, check basic validity */
+	c = strchr(c, '"');
+	if (c == 0)
+		return -15;
+	c++;
+	fcn = strdup(c);
+	stmt = strdup(fcn);
+	c=fcn;
+	if( *c != '[')
+	{
+		c = strstr(c + 1, ":=");
+		if (c) {
+			fcn = c + 2;
+			/* find genuine function calls */
+			while (isspace((int) *fcn) && *fcn)
+				fcn++;
+			if (strchr(fcn, '.') == 0) 
+				fcn = 0;
+		} else {
+			v=  strchr(fcn+1,';');
 			if ( v ) *v = 0;
 		}
 	}
 
 	if (fcn && (v=strchr(fcn, '(')))
 		*v = 0;
+	if( v)
+		parseArguments(v+1);
 
-#ifdef FOOTPRINT
-wrapup:
-#endif
-	update(state, thread, clkticks, ticks, memory, numa, footprint, reads, writes, fcn, stmt);
-	free(numa);
+	update(state, thread, clkticks, ticks, memory, numa, vmmemory, inblock, oublock, majflt,swaps,csw, fcn, stmt,line);
+	if(numa) free(numa);
 #else
 	(void) row;
 #endif
 	return 0;
 }
 
-static void
-processFile(char *fname)
-{
-	size_t len;
-	ssize_t n;
-	int i;
-	char buf[BUFSIZ + 1];
-	char *e, *response;
-	stream *s;
-
-//FIX to rstream?
-	s = open_rastream(fname);
-	if (s == NULL || mnstr_errnr(s)) {
-		fprintf(stderr,"ERROR Can not access '%s'\n",fname);
-		if (s)
-			mnstr_destroy(s);
-		return;
-	}
-	len = 0;
-	while (s && (n = mnstr_read(s, buf, 1, BUFSIZ - len)) > 0) {
-		buf[n] = 0;
-		response = buf;
-		while ((e = strchr(response, '\n')) != NULL) {
-			*e = 0;
-			i = parser(response);
-			if (debug && i >= 0 )
-				fprintf(stderr, "ERROR %d:%s\n", i, response);
-			response = e + 1;
-		}
-		/* handle last line in buffer */
-		if (*response) {
-			if (debug)
-				printf("LASTLINE:%s", response);
-			len = strlen(response);
-			strncpy(buf, response, len + 1);
-		} else
-			len = 0;
-	}
-	close_stream(s);
-}
-
-static void
-format_result(Mapi mid, MapiHdl hdl)
-{
-	char *line;
-	(void) mid;
-
-	do {
-		/* handle errors first */
-		if (mapi_result_error(hdl) != NULL) {
-			mapi_explain_result(hdl, stderr);
-			/* don't need to print something like '0
-			 * tuples' if we got an error */
-			break;
-		}
-		switch (mapi_get_querytype(hdl)) {
-		case Q_BLOCK:
-		case Q_PARSE:
-			/* should never see these */
-			continue;
-		case Q_UPDATE:
-			fprintf(stderr, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-			continue;
-		case Q_SCHEMA:
-		case Q_TRANS:
-		case Q_PREPARE:
-		case Q_TABLE:
-			break;
-		default:
-			while ((line = mapi_fetch_line(hdl)) != 0) {
-				if (*line == '=')
-					line++;
-				fprintf(stderr, "%s\n", line);
-			}
-		}
-	} while (mapi_next_result(hdl) == 1);
-}
-
-static int
-doRequest(Mapi mid, const char *buf)
-{
-	MapiHdl hdl;
-
-	if (debug)
-		fprintf(stderr, "Sent:%s\n", buf);
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		mapi_explain(mid, stderr);
-		return 1;
-	}
-
-	format_result(mid, hdl);
-
-	return 0;
-}
-
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-static DWORD WINAPI
-#else
-static void *
-#endif
-doProfile(void *d)
-{
-	wthread *wthr = (wthread *) d;
-	int i;
-	size_t len;
-	size_t a;
-	ssize_t n;
-	char *response, *x;
-	char buf[BUFSIZ + 1];
-	char *e;
-	char *mod, *fcn;
-	char *host = NULL;
-	int portnr;
-	char id[10];
-	Mapi dbhsql = NULL;
-	MapiHdl hdlsql = NULL;
-
-	/* set up the SQL session */
-	if (sqlstatement) {
-		id[0] = '\0';
-		if (wthr->uri)
-			dbhsql = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "sql");
-		else
-			dbhsql = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "sql", wthr->dbname);
-		if (dbhsql == NULL || mapi_error(dbhsql))
-			die(dbhsql, hdlsql);
-		mapi_reconnect(dbhsql);
-		if (mapi_error(dbhsql))
-			die(dbhsql, hdlsql);
-	}
-
-	/* set up the profiler */
-	id[0] = '\0';
-	if (wthr->uri)
-		wthr->dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
-	else
-		wthr->dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
-	if (wthr->dbh == NULL || mapi_error(wthr->dbh))
-		die(wthr->dbh, wthr->hdl);
-	mapi_reconnect(wthr->dbh);
-	if (mapi_error(wthr->dbh))
-		die(wthr->dbh, wthr->hdl);
-	host = strdup(mapi_get_host(wthr->dbh));
-	if (*host == '/') {
-		fprintf(stderr, "!! UNIX domain socket not supported\n");
-		goto stop_disconnect;
-	}
-	if (wthr->tid > 0) {
-		snprintf(id, 10, "[%d] ", wthr->tid);
-		if( debug)
-			fprintf(stderr,"-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
-	} else {
-		if(debug)
-			fprintf(stderr,"-- connection with server %s\n", wthr->uri ? wthr->uri : host);
-	}
-
-	/* set counters */
-	x = NULL;
-	for (i = 0; profileCounter[i].tag; i++) {
-		/* skip duplicates */
-		if (x == profileCounter[i].ptag)
-			continue;
-		/* deactivate any left over counter first */
-		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-			profileCounter[i].ptag);
-		doQ(buf);
-		if (profileCounter[i].status) {
-			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-				profileCounter[i].ptag);
-			doQ(buf);
-			if( debug)
-				printf("-- %s%s\n", id, buf);
-		}
-		x = profileCounter[i].ptag;
-	}
-
-	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
-			break;
-	}
-	if (wthr->s == NULL) {
-		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-			id);
-		goto stop_cleanup;
-	}
-
-	printf("-- %sopened UDP profile stream %s:%d for %s\n",
-			id, hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-		hostname, portnr);
-	doQ(buf);
-
-	/* Set Filters */
-	doQ("profiler.setNone();");
-
-	if (wthr->argc == 0) {
-		if( debug)
-			fprintf(stderr,"-- %sprofiler.setAll();\n", id);
-		doQ("profiler.setAll();");
-	} else {
-		for (a = 0; a < wthr->argc; a++) {
-			char *c;
-			char *arg = strdup(wthr->argv[a]);
-			c = strchr(arg, '.');
-			if (c) {
-				mod = arg;
-				if (mod == c)
-					mod = "*";
-				fcn = c + 1;
-				if (*fcn == 0)
-					fcn = "*";
-				*c = 0;
-			} else {
-				fcn = arg;
-				mod = "*";
-			}
-			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
-			if( debug)
-				fprintf(stderr,"-- %s%s\n", id, buf);
-			doQ(buf);
-			free(arg);
-		}
-	}
-	if( debug)
-		fprintf(stderr,"-- %sprofiler.start();\n", id);
-	activateBeat();
-	doQ("profiler.start();");
-	fflush(NULL);
-
-	for (i = 0; i < MAXTHREADS; i++)
-		threads[i] = topbox++;
-
-	/* send single query */
-	if (sqlstatement) {
-		doRequest(dbhsql, sqlstatement);
-	}
-	len = 0;
-	while (wthr->s && (n = mnstr_read(wthr->s, buf, 1, BUFSIZ - len)) > 0) {
-		buf[n] = 0;
-		response = buf;
-		while ((e = strchr(response, '\n')) != NULL) {
-			*e = 0;
-			/* TOMOGRAPH EXTENSIONS */
-			i = parser(response);
-			if (debug && i >= 0)
-				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			response = e + 1;
-		}
-		/* handle last line in buffer */
-		if (*response) {
-			if (debug)
-				printf("LASTLINE:%s", response);
-			len = strlen(response);
-			strncpy(buf, response, len + 1);
-		} else
-			len = 0;
-	}
-	fflush(NULL);
-
-stop_cleanup:
-	doQ("profiler.setNone();");
-	doQ("profiler.stop();");
-	doQ("profiler.closeStream();");
-stop_disconnect:
-	if (dbhsql) {
-		mapi_disconnect(dbhsql);
-		mapi_destroy(dbhsql);
-	}
-	if (wthr->dbh) {
-		mapi_disconnect(wthr->dbh);
-		mapi_destroy(wthr->dbh);
-	}
-
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host);
-
-	free(host);
-
-	return 0;
-}
-
 int
 main(int argc, char **argv)
 {
-	int a = 1;
-	int k = 0;
-	char *host = "localhost";
+	int i, n, len;
+	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	struct stat statb;
-	char *othermap= NULL;
+	char buf[BUFSIZ], *e, *response;
+	FILE *trace = NULL;
+	FILE *inpfd;
+	int colormap=0;
 
-	wthread *walk;
-
-	static struct option long_options[18] = {
+	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
+		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
 		{ "input", 1, 0, 'i' },
-		{ "trace", 1, 0, 't' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
-		{ "batch", 1, 0, 'B' },
 		{ "atlas", 1, 0, 'A' },
-		{ "sql", 1, 0, 's' },
-		{ "colormap", 1, 0, 'm' },
-		{ "adaptive", 0, 0, 'a' },
+		{ "map", 1, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
 
-
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:t:r:o:Db:B:A:s:m:a",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:o:Db:A:m",
 					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
-		case 'a':
-			fixedmap = 0;
+		case 'm':
+			colormap =1;
 			break;
 		case 'A':
 			atlas = atoi(optarg ? optarg : "1");
 			break;
-		case 'B':
-			batchsize = batch = atoi(optarg ? optarg : "1");
-			break;
 		case 'b':
-			beat = atoi(optarg ? optarg : "50");
+			beat = atoi(optarg ? optarg : "100");
 			break;
 		case 'D':
 			debug = 1;
@@ -2345,12 +1830,6 @@ main(int argc, char **argv)
 				free(password);
 			password = NULL;
 			break;
-		case 'm':
-			if (optarg) {
-				othermap = optarg;
-				colormap = 0;
-			} else colormap =1;
-			break;
 		case 'P':
 			if (password)
 				free(password);
@@ -2366,141 +1845,67 @@ main(int argc, char **argv)
 		case 'T':
 			title = optarg;
 			break;
-		case 't':
-			if (optarg == 0)
-				tracefile = strdup(filename);
-			else
-				tracefile = optarg;
-			break;
 		case 'o':
-			basefilename = filename= optarg;
+			basefilename = strdup(optarg);
+			if( strstr(basefilename,".trace"))
+				*strstr(basefilename,".trace") = 0;
 			printf("-- Output directed towards %s\n", basefilename);
 			break;
 		case 'r':
 		{
-			char *s;
+			int cnt;
 			if (optarg == 0)
 				break;
-			startrange = strtoll(optarg, &s, 10);
-			if (*s == '-')
-				endrange = strtoll(s + 1, &s, 10);
-			else
-				endrange = startrange + 1000;
-			if (s[0] == 'm' && s[1] == 's') {
+			if( *optarg == '=')
+				optarg++;
+			cnt = sscanf(optarg,""LLFMT"-"LLFMT, &startrange,&endrange); 
+			if( cnt != 2)
+				usageTomograph();
+				
+			if( strstr(optarg,"ms") ){
 				startrange *= 1000;
 				endrange *= 1000;
-			} else if (s[0] == 's') {
+			} else if( strchr(optarg,'s')){
 				startrange *= 1000000;
 				endrange *= 1000000;
-			} else {
-				usage();
-				exit(-1);
-			}
+			} else 
+				usageTomograph();
+			if( debug )
+				fprintf(stderr,"Cut out slice "LLFMT" -"LLFMT"\n",startrange,endrange);
 			break;
 		}
-		case 's':
-			sqlstatement = optarg;
-			break;
 		case '?':
-			usage();
+			usageTomograph();
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
 			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-			usage();
+			usageTomograph();
 			exit(-1);
 		}
 	}
-	if( atlas)
-	{ char buf[128];
-		snprintf(buf,128,"%s_00",basefilename);
-		filename = buf;
-	}
-	if ( othermap){
-		FILE *map ;
-		map = fopen(othermap,"r");
-		if (map == NULL) {
-			printf("Could not open color map %s\n",othermap);
-			exit(-1);
-		}
-		fixedmap =1;
-		initcolors(map);
-		(void) fclose(map);
-	} else
-		initcolors(0);
+	initcolors();
+	resetTomograph();
 
-	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
-	{
-		dbname = argv[optind];
-		optind++;
+	if(debug){
+		if( dbname)
+			printf("tomograph -d %s --output=%s\n",dbname,basefilename);
+		if(inputfile)
+			printf("tomograph --input=%s --output=%s\n",inputfile,basefilename);
 	}
-
-	if(debug)
-		printf("Tomograph: db %s filename %s\n",dbname,filename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
 		dbname = NULL;
 	}
 
-	a = optind;
-	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		k = setCounter(argv[a] + 1);
-		a++;
-	} else
-		k = setCounter(COUNTERSDEFAULT);
-
-	if (inputfile) {
-		processFile(inputfile);
-		createTomogram();
-		exit(0);
-	}
-	if (tracefile) {
-		/* reload existing tomogram */
-		scandata(tracefile);
-		createTomogram();
-		exit(0);
-	}
 	if (colormap) {
-		fixedmap = 0;
-		showcolormap(filename, 1);
-		printf("Color map file '%s.gpl' generated\n", filename);
+		showcolormap(basefilename, 1);
+		printf("Color map file '%s.gpl' generated\n", basefilename);
 		exit(0);
 	}
 
-	/* DOT needs function id and PC to correlate */
-	if (profileCounter[32].status) {
-		profileCounter[3].status = k++;
-		profileCounter[4].status = k;
-	}
-
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (password == NULL)
-		password = simple_prompt("password", BUFSIZ, 0, NULL);
-
-#ifdef HAVE_SIGACTION
-	{
-		struct sigaction action;
-
-		action.sa_handler = stopListening;
-		sigemptyset(&action.sa_mask);
-		action.sa_flags = 0;
-#ifdef SIGPIPE
-		sigaction(SIGPIPE, &action, NULL);
-#endif
-#ifdef SIGHUP
-		sigaction(SIGHUP, &action, NULL);
-#endif
-#ifdef SIGQUIT
-		sigaction(SIGQUIT, &action, NULL);
-#endif
-		sigaction(SIGINT, &action, NULL);
-		sigaction(SIGTERM, &action, NULL);
-	}
-#else
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
 #endif
@@ -2512,49 +1917,125 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
-#endif
+	close(0);
 
-	close(0); /* get rid of stdin */
+	/* reprocess an existing profiler trace, possibly producing the trace split   */
+	snprintf(buf,BUFSIZ,"%s_%02d.trace",basefilename,atlaspage);
+	if (inputfile==0 || strcmp(buf, inputfile) ){
+		// avoid overwriting yourself
+		tracefd = fopen(buf,"w");
+		if( tracefd == NULL)
+			fprintf(stderr,"Could not create trace file\n");
+	}
+	if (inputfile) {
+		inpfd = fopen(inputfile,"r");
+		if (inpfd == NULL ){
+			fprintf(stderr,"ERROR Can not access '%s'\n",inputfile);
+			exit(0);
+		}
+		len = 0;
+		while ((n = fread(buf + len, 1, BUFSIZ - len, inpfd)) > 0) {
+			buf[len + n] = 0;
+			response = buf;
+			while ((e = strchr(response, '\n')) != NULL) {
+				*e = 0;
+				i = parser(response);
+				if (debug  )
+					fprintf(stderr, "PARSE %d:%s\n", i, response);
+				response = e + 1;
+			}
+			/* handle last line in buffer */
+			if (*response) {
+				if (debug)
+					fprintf(stderr,"LASTLINE:%s", response);
+				len = strlen(response);
+				strncpy(buf, response, len + 1);
+			} else
+				len = 0;
+		}
+	} else {
+		if (user == NULL)
+			user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		if (password == NULL)
+			password = simple_prompt("password", BUFSIZ, 0, NULL);
 
+		/* our hostname, how remote servers have to contact us */
+		gethostname(hostname, sizeof(hostname));
 
-	/* our hostname, how remote servers have to contact us */
-	gethostname(hostname, sizeof(hostname));
+		/* set up the profiler */
+		if (uri)
+			dbh = mapi_mapiuri(uri, user, password, "mal");
+		else
+			dbh = mapi_mapi(host, portnr, user, password, "mal", dbname);
+		if (dbh == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		mapi_reconnect(dbh);
+		if (mapi_error(dbh))
+			die(dbh, hdl);
+		host = strdup(mapi_get_host(dbh));
+		if(debug)
+			fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	/* nothing to redirect, so a single db to try */
-	walk = thds = malloc(sizeof(wthread));
-	walk->uri = uri;
-	walk->host = host;
-	walk->port = portnr;
-	walk->dbname = dbname;
-	walk->user = user;
-	walk->pass = password;
-	walk->argc = argc - a;
-	walk->argv = &argv[a];
-	walk->tid = 0;
-	walk->s = NULL;
-	walk->next = NULL;
-	walk->dbh = NULL;
-	walk->hdl = NULL;
-#ifndef HAVE_SIGACTION
-	/* In principle we could do this without a thread, but it seems
-	 * that if we do it that way, ctrl-c (or any other signal)
-	 * doesn't interrupt the read inside this function, and hence
-	 * the function never terminates... at least on Linux */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-	WaitForSingleObject(walk->id, INFINITE);
-	CloseHandle(walk->id);
-#else
-	pthread_create(&walk->id, NULL, &doProfile, walk);
-	pthread_join(walk->id, NULL);
-#endif
-#else
-	/* when using sigaction, we can (and do) just interrupt the
-	 * system call */
-	doProfile(walk);
-#endif
-	free(walk);
-	free(user);
-	free(password);
+		for (portnr = 50010; portnr < 62010; portnr++) 
+			if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
+				break;
+		
+		if ( conn == NULL) {
+			fprintf(stderr, "!! opening stream failed: no free ports available\n");
+			fflush(stderr);
+			goto stop_disconnect;
+		}
+
+		printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
+
+		snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+		if( debug)
+			fprintf(stderr,"--%s\n",buf);
+		doQ(buf);
+
+		snprintf(buf,BUFSIZ-1,"profiler.tomograph(%d);", beat);
+
+		if( debug)
+			fprintf(stderr,"-- %s\n",buf);
+		doQ(buf);
+	
+		snprintf(buf,BUFSIZ,"%s_%02d.trace",basefilename,atlaspage);
+		tracefd = fopen(buf,"w");
+		if( tracefd == NULL)
+			fprintf(stderr,"Could not create trace file\n");
+
+		len = 0;
+		while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
+			buf[len + n] = 0;
+			if( trace) 
+				fprintf(trace,"%s",buf);
+			response = buf;
+			while ((e = strchr(response, '\n')) != NULL) {
+				*e = 0;
+				i = parser(response);
+				if (debug  )
+					fprintf(stderr, "PARSE %d:%s\n", i, response);
+				response = e + 1;
+			}
+			/* handle last line in buffer */
+			if (*response) {
+				if (debug)
+					fprintf(stderr,"LASTLINE:%s", response);
+				len = strlen(response);
+				strncpy(buf, response, len + 1);
+			} else
+				len = 0;
+		}
+	}
+	if( inputfile && atlas >= atlaspage)
+		createTomogram();
+
+	if( !inputfile) 
+		doQ("profiler.stop();");
+stop_disconnect:
+	if( !inputfile) {
+		mapi_disconnect(dbh);
+		printf("-- connection with server %s closed\n", uri ? uri : host);
+	}
 	return 0;
 }

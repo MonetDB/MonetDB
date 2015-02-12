@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -215,10 +215,11 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 {
 	if (!elseif)
 		return NULL;
-	if (elseif->next && elseif->type == type_symbol) { /* if or elseif */
+	assert(elseif->type == type_symbol); 
+	if (elseif->data.sym && elseif->data.sym->token == SQL_IF) {
 		sql_exp *cond;
 		list *ifstmts, *elsestmts;
-		dnode *n = elseif;
+		dnode *n = elseif->data.sym->data.lval->h;
 		sql_rel *rel = NULL;
 
 		cond = rel_logical_value_exp(sql, &rel, n->data.sym, sql_sel); 

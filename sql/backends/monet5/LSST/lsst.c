@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -451,7 +451,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	lng lhtm, rhtm;
 	lng *lend, *rend;
 	int shift;
-	oid lo = 0, ro=0;
+	oid lo, ro;
 
 	if( *delta < 0 || *delta >31)
          	throw(MAL, "algebra.xmatch", "delta not in 0--31");
@@ -460,29 +460,28 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	if( !bl->tsorted){
-		BBPreleaseref(*lid);
+		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
 	}
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
-		BBPreleaseref(*lid);
+		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	}
 	if( !br->tsorted){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
 	}
 
 	l= (lng*) Tloc(bl, BUNfirst(bl));
 	lend= (lng*) Tloc(bl, BUNlast(bl));
-	r= (lng*) Tloc(br, BUNfirst(br));
 	rend= (lng*) Tloc(br, BUNlast(br));
 
 	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xl == NULL){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(xl,0);
@@ -494,9 +493,9 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 
 	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xr == NULL){
-		BBPreleaseref(*lid);
-		BBPreleaseref(*rid);
-		BBPreleaseref(xl->batCacheid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(xr,0);
@@ -506,31 +505,39 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	xr->T->nonil = 1;
 	xr->H->nonil = 1;
 
-	for(; l < lend; lo++, l++) 
-		if ( *l != lng_nil) {
+	for (lo = xl->hseqbase; l < lend; lo++, l++) {
+		if (*l != lng_nil) {
 			lhtm = *l >> shift;
-        for(; r < rend; ro++, r++)
-		if ( *r != lng_nil) {
-			rhtm = *r >> shift;
-			if ( lhtm == rhtm){
-				/* match */
-				BUNappend(xl,&lo, FALSE);
-				BUNappend(xr,&ro, FALSE);
-			} else if ( lhtm < rhtm ) {
-				lhtm = lhtm << shift;
-				for ( ; *l < lhtm && l < lend; lo++, l++)
-						;
-				lhtm = lhtm >> shift;
-			} else {
-				rhtm = rhtm << shift;
-				for ( ; *r < rhtm && r < rend; ro++, r++)
-					;
-				rhtm = rhtm >> shift;
+			r= (lng*) Tloc(br, BUNfirst(br));
+			ro = br->hseqbase;
+			for(; r < rend; ro++, r++) {
+				if (*r != lng_nil) {
+					rhtm = *r >> shift;
+					if (lhtm == rhtm){
+						/* match */
+						BUNappend(xl, &lo, FALSE);
+						BUNappend(xr, &ro, FALSE);
+					} else if (lhtm < rhtm) {
+						lhtm = lhtm << shift;
+						while (*l < lhtm && l < lend) {
+							lo++;
+							l++;
+						}
+						lhtm = lhtm >> shift;
+					} else {
+						rhtm = rhtm << shift;
+						while (*r < rhtm && r < rend) {
+							ro++;
+							r++;
+						}
+						rhtm = rhtm >> shift;
+					}
+				}
 			}
 		}
 	}
-	BBPreleaseref(*lid);
-	BBPreleaseref(*rid);
+	BBPunfix(*lid);
+	BBPunfix(*rid);
 	BBPkeepref(*lres = xl->batCacheid);
 	BBPkeepref(*rres = xr->batCacheid);
 	return MAL_SUCCEED;
@@ -544,4 +551,94 @@ LSSTxmatchsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, int *delta, bat *sl,
 	(void)nil_matches;
 	(void)estimate;
 	return LSSTxmatch_intern(lres, rres, lid, rid, delta);
+}
+
+str
+LSSTxmatch(bit *res, lng *l, lng *r, int *delta)
+{
+	int shift;
+
+	if (*delta < 0 || *delta > 31)
+         	throw(MAL, "lsst.xmatch", "delta not in 0--31");
+	shift = 2 * *delta;
+
+	*res = *l != lng_nil && *r != lng_nil && (*l >> shift) == (*r >> shift);
+	return MAL_SUCCEED;
+}
+
+str
+LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
+{
+	int shift;
+	BAT *b, *s = NULL, *bn;
+	const lng *l;
+	lng lhtm, rhtm;
+
+	if (*delta < 0 || *delta > 31)
+         	throw(MAL, "lsst.xmatch", "delta not in 0--31");
+	shift = 2 * *delta;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	assert(b->ttype == TYPE_lng);
+	assert(BAThdense(b));
+	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	}
+	if ((bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bn, 0);
+	if (*r == lng_nil) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		BBPkeepref(*res = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	rhtm = *r >> shift;
+	l = (const lng *) Tloc(b, BUNfirst(b));
+	if (s && !BATtdense(s)) {
+		const oid *sval = (const oid *) Tloc(s, BUNfirst(s));
+		oid o;
+		BUN i, scnt = BATcount(s);
+
+		for (i = 0; i < scnt && sval[i] < b->hseqbase; i++)
+			;
+		for (; i < scnt; i++) {
+			o = sval[i];
+			if (o >= b->hseqbase + BATcount(b))
+				break;
+			lhtm = l[o - b->hseqbase];
+			if (lhtm != lng_nil)
+				if (((lhtm >> shift) == rhtm) != *anti)
+					BUNappend(bn, &o, FALSE);
+		}
+	} else {
+		oid o = b->hseqbase;
+		oid e = o + BATcount(b);
+
+		if (s) {
+			if (s->tseqbase > o)
+				o = s->tseqbase;
+			if (s->tseqbase + BATcount(s) < e)
+				e = s->tseqbase + BATcount(s);
+		}
+		while (o < e) {
+			lhtm = l[o - b->hseqbase];
+			if (lhtm != lng_nil)
+				if (((lhtm >> shift) == rhtm) != *anti)
+					BUNappend(bn, &o, FALSE);
+			o++;
+		}
+	}
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	BBPkeepref(*res = bn->batCacheid);
+	return MAL_SUCCEED;
 }

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -112,7 +112,7 @@
 #include "vault.h"
 #include "mtime.h"
 
-str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+#include "sql_scenario.h"
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, sampleindex, samplecnt, sampletype, minval,maxval) \
@@ -162,13 +162,13 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			if( strcmp(network,msr->network))
 				msg = createException(MAL,"mseed.import","network name is not stable");
-			if( strcmp(station,msr->station))
+			else if( strcmp(station,msr->station))
 				msg = createException(MAL,"mseed.import","station name is not stable");
-			if( strcmp(location,msr->location))
+			else if( strcmp(location,msr->location))
 				msg = createException(MAL,"mseed.import","location name is not stable");
-			if( strcmp(channel,msr->channel))
+			else if( strcmp(channel,msr->channel))
 				msg = createException(MAL,"mseed.import","channel name is not stable");
-			if ( sampletype != msr->sampletype)
+			else if ( sampletype != msr->sampletype)
 				msg = createException(MAL,"mseed.import","sample type is not stable");
 			if (msg) goto wrapup;
 		}
@@ -192,7 +192,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL,"mseed.import","data type not yet implemented");
 			goto wrapup;
 		}
-		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE)) != MAL_SUCCEED)
+		if ( ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 				break;
 
 		sampleindex += msr->samplecnt;
@@ -244,13 +244,13 @@ MseedLoadIntern(BAT **bbtime, BAT **bbdata, str targetfile)
 	BATseqbase(btime,0);
 	bdata = BATnew(TYPE_void,TYPE_int,0, TRANSIENT);
 	if ( bdata == NULL){
-		BBPreleaseref(btime->batCacheid);
+		BBPunfix(btime->batCacheid);
 		throw(MAL,"mseed.load",MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bdata,0);
 	if ( btime == NULL || bdata == NULL ){
-		if ( btime) BBPreleaseref(btime->batCacheid);
-		if ( bdata) BBPreleaseref(bdata->batCacheid);
+		if ( btime) BBPunfix(btime->batCacheid);
+		if ( bdata) BBPunfix(bdata->batCacheid);
 		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);
 	}
 	*bbtime = btime;

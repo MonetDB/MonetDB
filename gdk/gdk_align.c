@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -86,33 +86,26 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-int
+void
 ALIGNcommit(BAT *b)
 {
-	BATcheck(b, "ALIGNcommit");
+	if (b == NULL)
+		return;
 	if (!b->halign) {
 		b->halign = OIDnew(1);
 	}
 	if (!b->talign) {
 		b->talign = OIDnew(1);
 	}
-	return 0;
 }
 
-int
-ALIGNundo(BAT *b)
-{
-	BATcheck(b, "ALIGNundo");
-	return 0;
-}
-
-int
+void
 ALIGNsetH(BAT *b1, BAT *b2)
 {
 	ssize_t diff;
 
-	BATcheck(b1, "ALIGNsetH: bat 1 required");
-	BATcheck(b2, "ALIGNsetH: bat 2 required");
+	if (b1 == NULL || b2 == NULL)
+		return;
 
 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
 	if (b2->halign == 0) {
@@ -142,8 +135,6 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
 	b1->H->nosorted = (BUN) (b2->H->nosorted + diff);
 	b1->H->nodense = (BUN) (b2->H->nodense + diff);
-
-	return 0;
 }
 
 /*
@@ -154,8 +145,8 @@ ALIGNsetH(BAT *b1, BAT *b2)
 int
 ALIGNsynced(BAT *b1, BAT *b2)
 {
-	BATcheck(b1, "ALIGNsynced: bat 1 required");
-	BATcheck(b2, "ALIGNsynced: bat 2 required");
+	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
+	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
 	/* first try to prove head columns are not in sync */
 	if (BATcount(b1) != BATcount(b2))
@@ -203,7 +194,7 @@ VIEWhcreate(BAT *h)
 	BAT *bn;
 	bat hp;
 
-	BATcheck(h, "VIEWhcreate");
+	BATcheck(h, "VIEWhcreate", NULL);
 	bs = BATcreatedesc(h->htype, TYPE_void, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
@@ -255,8 +246,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BAT *bn;
 	bat hp = 0, tp = 0, vc = 0;
 
-	BATcheck(h, "VIEWcreate_");
-	BATcheck(t, "VIEWcreate_");
+	BATcheck(h, "VIEWcreate_", NULL);
+	BATcheck(t, "VIEWcreate_", NULL);
 
 	if (BATcount(h) != BATcount(t))
 		slice_view = 1;
@@ -430,7 +421,7 @@ VIEWcombine(BAT *b)
  * add the code for VIEWs).
  */
 
-BAT *
+gdk_return
 BATmaterializeh(BAT *b)
 {
 	int ht;
@@ -440,7 +431,7 @@ BATmaterializeh(BAT *b)
 	oid h, *x;
 	bte tshift;
 
-	BATcheck(b, "BATmaterialize");
+	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
 	ht = b->htype;
 	cnt = BATcapacity(b);
@@ -452,7 +443,7 @@ BATmaterializeh(BAT *b)
 
 	if (!BAThdense(b) || ht != TYPE_void) {
 		/* no voids */
-		return b;
+		return GDK_SUCCEED;
 	}
 	ht = TYPE_oid;
 
@@ -463,7 +454,7 @@ BATmaterializeh(BAT *b)
 	b->H->heap.filename = NULL;
 	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
 		b->H->heap = head;
-		return NULL;
+		return GDK_FAIL;
 	}
 
 	/* point of no return */
@@ -491,20 +482,22 @@ BATmaterializeh(BAT *b)
 
 	/* cleanup the old heaps */
 	HEAPfree(&head, 0);
-	return b;
+	return GDK_SUCCEED;
 }
 
 /* only materialize the tail */
-BAT *
+gdk_return
 BATmaterializet(BAT *b)
 {
-	return BATmirror(BATmaterializeh(BATmirror(b)));
+	return BATmaterializeh(BATmirror(b));
 }
 
-BAT *
+gdk_return
 BATmaterialize(BAT *b)
 {
-	return BATmaterializet(BATmaterializeh(b));
+	if (BATmaterializeh(b) == GDK_FAIL)
+		return GDK_FAIL;
+	return BATmaterializet(b);
 }
 
 
@@ -569,7 +562,7 @@ VIEWunlink(BAT *b)
  * Materialize a view into a normal BAT. If it is a slice, we really
  * want to reduce storage of the new BAT.
  */
-BAT *
+gdk_return
 VIEWreset(BAT *b)
 {
 	bat hp, tp, hvp, tvp;
@@ -577,7 +570,7 @@ VIEWreset(BAT *b)
 	BAT *n = NULL, *v = NULL;
 
 	if (b == NULL)
-		return NULL;
+		return GDK_FAIL;
 	hp = VIEWhparent(b);
 	tp = VIEWtparent(b);
 	hvp = VIEWvhparent(b);
@@ -740,7 +733,7 @@ VIEWreset(BAT *b)
 		BBPreclaim(v);
 		BBPunfix(n->batCacheid);
 	}
-	return b;
+	return GDK_SUCCEED;
       bailout:
 	if (v != NULL)
 		BBPreclaim(v);
@@ -750,7 +743,7 @@ VIEWreset(BAT *b)
 	HEAPfree(&tail, 0);
 	HEAPfree(&hh, 0);
 	HEAPfree(&th, 0);
-	return NULL;
+	return GDK_FAIL;
 }
 
 /*

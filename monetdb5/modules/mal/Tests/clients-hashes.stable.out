@@ -27,7 +27,7 @@ function user.main():void;
     io.print(p);
     p := clients.sha2sum("monetdb",512);
     io.print(p);
-end main;
+end user.main;
 [ "4fe67471e97aae17f10bf200ccadc4e4" ]
 [ "4751fc28d9a64a043865922548ee7d623743bcad" ]
 [ "930f000ce6242c20ed0211cc5d3612edebf33820" ]

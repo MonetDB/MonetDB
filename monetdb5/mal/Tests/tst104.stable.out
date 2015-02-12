@@ -9,7 +9,7 @@ stdout of test 'tst104` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36368/
 # MonetDB/GIS module loaded
@@ -24,7 +24,7 @@ function user.main():void;
 # can be checked after bat module has been added 
     b := bat.new(:oid,:str);
     a := user.f(1@0,b,"hello");
-end main;
+end user.main;
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

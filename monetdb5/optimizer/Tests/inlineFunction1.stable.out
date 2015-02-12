@@ -11,7 +11,7 @@ stdout of test 'inlineFunction1` in directory 'monetdb5/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30933/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21677/.s.monetdb.30933
@@ -28,19 +28,19 @@ barrier X7 := calc.not(X3);
     X9 := calc.==(Av,2);
 exit X7;
     return my_case:int  := 0;
-end my_case;
+end user.my_case;
 function user.tst():void;
     z := user.my_case(1);
-end tst;
+end user.tst;
 function user.main():void;
     io.printf("#result of inline\n");
     mdb.list("user","tst");
-end main;
+end user.main;
 #result of inline
 function user.tst():void;
     X_5 := true:bit;
     z := 0:int;
-end tst;
+end user.tst;
 
 # 05:26:58 >  
 # 05:26:58 >  "Done."

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -126,9 +126,9 @@ BATsample(BAT *b, BUN n)
 	BUN rescnt;
 	struct oidtreenode *tree = NULL;
 
-	BATcheck(b, "BATsample");
+	BATcheck(b, "BATsample", NULL);
 	assert(BAThdense(b));
-	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n");
+	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
 	ALGODEBUG
 		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
 

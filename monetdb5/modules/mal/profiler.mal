@@ -12,18 +12,26 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 module profiler;
 
-pattern activate(name:str...):void
-address CMDactivateProfiler
-comment "A list of counters to be activated.";
+command tomograph(b:int)
+address CMDtomograph
+comment "Start tomograph profiler with heart beat";
 
-pattern deactivate(name:str...):void
-address CMDdeactivateProfiler
-comment "A list of counters to be deactivated.";
+command stethoscope(b:int)
+address CMDstethoscope
+comment "Start stethoscope profiling with heart beat";
+
+pattern stop():void
+address CMDstopProfiler
+comment "Stop performance tracing";
+
+command setHeartbeat(b:int):void
+address CMDsetHeartbeat
+comment "Set heart beat performance tracing";
 
 pattern openStream():void
 address CMDopenProfilerStream
@@ -34,56 +42,14 @@ comment "Send the log events to a file, stdout or console";
 pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
+
 command closeStream():void
 address CMDcloseProfilerStream
 comment "Stop sending the event records";
 
-pattern setAll():void
-address CMDsetAllProfiler
-comment "Short cut for setFilter(*,*).";
-pattern setNone():void
-address CMDsetNoneProfiler
-comment "Short cut for clrFilter(*,*).";
-
-pattern setFilter(mod:str,fcn:str):void
-address CMDsetFilterProfiler
-comment "Generate an event record for all
-	function calls that satisfy the regular
-	expression mod.fcn. A wildcard (*) can
-	be used as name to identify all";
-
-pattern setFilter(v:any):void
-address CMDsetFilterVariable
-comment "Generate an event record for
-	every instruction where v is used.";
-
-pattern clrFilter(mod:str,fcn:str):void
-address CMDclrFilterProfiler
-comment "Clear the performance trace bit
-	of the selected functions.";
-
-pattern clrFilter(v:any):void
-address CMDsetFilterVariable
-comment "Stop tracing the variable" ;
-
-pattern setStartPoint(mod:str,fcn:str):void
-address CMDstartPointProfiler
-comment "Start performance tracing at mod.fcn";
-pattern setEndPoint(mod:str,fcn:str)
-address CMDendPointProfiler
-comment "End performance tracing after mod.fcn";
-
-pattern start():void
-address CMDstartProfiler
-comment "Start performance tracing";
-
 command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
-
-pattern stop():void
-address CMDstopProfiler
-comment "Stop performance tracing";
 
 command reset():void
 address CMDclearTrace
@@ -96,10 +62,6 @@ comment "List the events collected";
 command getTrace(e:str):bat[:oid,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
-
-pattern getEvent()(:lng,:lng,:lng)
-address CMDgetEvent
-comment "Retrieve the performance indicators of the previous instruction";
 
 command cleanup():void
 address CMDcleanup
@@ -119,10 +81,6 @@ command getSystemTime():lng
 address CMDgetSystemTime
 comment "Obtain the user timing information.";
 
-command tomograph()
-address CMDtomograph
-comment "No-op operation, merely a signal to the tomograph package";
-
 command cpustats()(user:lng, nice:lng, sys:lng,idle:lng,iowait:lng)
 address CMDcpustats
 comment "Extract cpu statistics from the kernel";
@@ -130,7 +88,3 @@ comment "Extract cpu statistics from the kernel";
 command cpuload(user:lng, nice:lng, sys:lng,idle:lng,iowait:lng)(cycles:int,io:int)
 address CMDcpuloadPercentage
 comment "Calculate the average cpu load percentage and io waiting times";
-
-pattern getFootprint():lng
-address CMDgetFootprint
-comment "Get the amount of memory claimed and reset the flag";

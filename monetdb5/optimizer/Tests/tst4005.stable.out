@@ -32,7 +32,7 @@ barrier V27 := calc.not(V11);
 exit V27;
     V30 := x;
     return V31 := V30;
-end getz;
+end user.getz;
 function user.main():void;
 # bug discovered in SQL, alias removal does not handle arguments properly 
 #optimizer.costModel("user","getz"); 
@@ -46,7 +46,7 @@ function user.main():void;
 #optimizer.reduce("user","getz"); 
 #optimizer.garbageCollector("user","getz"); 
     mdb.List("user","getz");
-end main;
+end user.main;
 function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
     x := nil:int;                       #  1 x:int := _3:int 
     V6 := calc.sht(10);                 #  2 V6:sht := CMDvarCONVERT(_6:int) 
@@ -62,7 +62,7 @@ barrier V27 := calc.not(V11);           # 11 V27:bit := CMDvarNOT(V11:bit) {J13}
     x := p;                             # 12 x:int := p:int 
 exit V27;                               # 13 V27:bit 
     return V31 := x;                    # 14 V31:int := x:int 
-end getz;                               # 15  
+end user.getz;                          # 15  
 
 # 19:53:37 >  
 # 19:53:37 >  Done.

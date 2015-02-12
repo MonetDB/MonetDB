@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -23,18 +23,6 @@
 #include "rel_select.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
-
-static sql_exp *
-nth( list *l, int n)
-{
-	int i;
-	node *m;
-
-	for (i=0, m = l->h; i<n && m; i++, m = m->next) ; 
-	if (m)
-		return m->data;
-	return NULL;
-}
 
 static sql_exp *
 insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
@@ -129,7 +117,7 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	wrd = sql_bind_localtype("wrd");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
-		sql_exp *e = nth(get_inserts(inserts), c->c->colnr);
+		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
 
 		if (h && i->type == hash_idx)  { 
 			list *exps = new_exp_list(sql->sa);
@@ -189,7 +177,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *_is = nth(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 		char *ename = exp_name(_is);
 
@@ -540,7 +528,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			sql_kc *c = m->data;
 			sql_exp *e;
 
-	       		e = nth(get_inserts(updates), c->c->colnr+1);
+	       		e = list_fetch(get_inserts(updates), c->c->colnr+1);
 			
 			if (h && i->type == hash_idx)  { 
 				list *exps = new_exp_list(sql->sa);
@@ -632,7 +620,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 
@@ -835,6 +823,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		sql_rel *r = NULL;
 		list *exps;
 		dnode *n;
+		char *rname = NULL;
 
 		if (t && !isTempTable(t) && STORE_READONLY)
 			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
@@ -863,7 +852,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 	
 		/* first create the project */
-		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		exps = new_exp_list(sql->sa);
 		append(exps, e);
 		updates = table_update_array(sql, t);
@@ -890,12 +879,15 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql->session->status = status;
 					if (single) {
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
-					} else {
-						list *val_exps;
+					} else if (!rel_val && r) {
 						r = rel_subquery(sql, r, a, ek, APPLY_JOIN);
-					       	val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						list_merge(r->exps, val_exps, (fdup)NULL);
+						if (r) {
+							list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
+
+							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+							if (r)
+								list_merge(r->exps, val_exps, (fdup)NULL);
+						}
 					}
 				}
 				if ((single && !v) || (!single && !r)) {
@@ -903,9 +895,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					return NULL;
 				}
 				if (rel_val) {
-					if (!exp_name(v))
-						exp_label(sql->sa, v, ++sql->label);
 					if (single) {
+						if (!exp_name(v))
+							exp_label(sql->sa, v, ++sql->label);
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 						rel_project_add_exp(sql, rel_val, v);
 					}
@@ -923,9 +915,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				if (!rel_val)
 					rel_val = r;
 				if (!rel_val || !is_project(rel_val->op) ||
-				    dlist_length(cols) >= list_length(rel_val->exps)) {
+				    dlist_length(cols) > list_length(rel_val->exps)) {
 					rel_destroy(r);
-					return NULL;
+					return sql_error(sql, 02, "UPDATE: too many columns specified");
 				}
 				nr = (list_length(rel_val->exps)-dlist_length(cols));
 				for(n=rel_val->exps->h; nr; nr--, n = n->next)
@@ -935,6 +927,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql_column *c = mvc_bind_column(sql, t, cname);
 					sql_exp *v = n->data;
 
+					if (!exp_name(v))
+						exp_label(sql->sa, v, ++sql->label);
 					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 					if (!v) { /* check for NULL */
 						v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
@@ -961,7 +955,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				updates[c->colnr] = v;
 			}
 		}
-		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
 		r = rel_update(sql, bt, r, updates, exps);
 		return r;

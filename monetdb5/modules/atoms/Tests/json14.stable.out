@@ -11,7 +11,7 @@ stdout of test 'json14` in directory 'monetdb5/modules/atoms` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36189/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4345/.s.monetdb.36189
@@ -25,7 +25,7 @@ function user.main():void;
     j := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
     b := json.text(j);
     io.print(b);
-end main;
+end user.main;
 [ "1 2 3" ]
 [ "3 2 3 4" ]
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -978,24 +978,24 @@ RCtable(bat *nameId, bat *hostId, bat *portId, bat *protocolId, bat *modeId, bat
 	return MAL_SUCCEED;
 wrapup:
 	if (name)
-		BBPreleaseref(name->batCacheid);
+		BBPunfix(name->batCacheid);
 	if (host)
-		BBPreleaseref(host->batCacheid);
+		BBPunfix(host->batCacheid);
 	if (port)
-		BBPreleaseref(port->batCacheid);
+		BBPunfix(port->batCacheid);
 	if (protocol)
-		BBPreleaseref(protocol->batCacheid);
+		BBPunfix(protocol->batCacheid);
 	if (mode)
-		BBPreleaseref(mode->batCacheid);
+		BBPunfix(mode->batCacheid);
 	if (status)
-		BBPreleaseref(status->batCacheid);
+		BBPunfix(status->batCacheid);
 	if (seen)
-		BBPreleaseref(seen->batCacheid);
+		BBPunfix(seen->batCacheid);
 	if (cycles)
-		BBPreleaseref(cycles->batCacheid);
+		BBPunfix(cycles->batCacheid);
 	if (pending)
-		BBPreleaseref(pending->batCacheid);
+		BBPunfix(pending->batCacheid);
 	if (received)
-		BBPreleaseref(received->batCacheid);
+		BBPunfix(received->batCacheid);
 	throw(MAL, "datacell.baskets", MAL_MALLOC_FAIL);
 }

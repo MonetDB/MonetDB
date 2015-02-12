@@ -46,12 +46,10 @@ exit d;
     id := calc.oid(cnt);
     io.print(f);
     io.print(g);
-end foo;
-#foo();
-#
+end user.foo;
 function user.main():void;
     user.foo();
-end main;
+end user.main;
 [ 1 ]
 [ 1 ]
 [ 1 ]

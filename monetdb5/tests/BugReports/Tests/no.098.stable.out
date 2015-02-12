@@ -75,8 +75,8 @@ function user.main():void;
     ka_a := io.print(ja_a);
 #	io.print("quit();"); 
     la_a := clients.quit();
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#

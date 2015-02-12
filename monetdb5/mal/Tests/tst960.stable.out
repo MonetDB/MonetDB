@@ -65,7 +65,7 @@ function user.main():void;
     io.print(L);
     B := batcalc.==(S,"hello");
     io.print(B);
-    C := batstr.like(S,"hello");
+    C := batalgebra.like(S,"hello");
     io.print(C);
     U := batstr.toUpper(S);
     io.print(U);
@@ -84,9 +84,9 @@ function user.main():void;
     io.print(srch);
     plus := batcalc.+(S,S);
     io.print(plus);
-end main;
-#-------------------------#
-# h	tmp_13		  # name
+end user.main;
+#--------------------------#
+# h	t  # name
 # void	str		  # type
 #-------------------------#
 [ 0@0,	  "hello"	  ]

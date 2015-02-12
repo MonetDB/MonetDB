@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -40,6 +40,8 @@ lsst_export str qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, d
 lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius);
 lsst_export str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+lsst_export str LSSTxmatch(bit *res, lng *l, lng *r, int *delta);
+lsst_export str LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *depth, bit *anti);
 lsst_export str LSSTxmatchsubjoin(bat *l, bat *r, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 
 #endif /* _SQL_LSST_H_ */

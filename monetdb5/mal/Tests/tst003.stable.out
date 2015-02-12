@@ -24,11 +24,10 @@ function user.foo():void;
 #b not yet defined 
     b := c;
 #c undefined 
-end foo;
-#
+end user.foo;
 function user.main():void;
 # test illegal variable use 
-end main;
+end user.main;
 
 # 07:58:33 >  
 # 07:58:33 >  Done.

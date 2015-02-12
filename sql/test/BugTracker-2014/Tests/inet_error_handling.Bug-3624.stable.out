@@ -1,0 +1,48 @@
+stdout of test 'inet_error_handling.Bug-3624` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 10:46:21 >  
+# 10:46:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30088" "--set" "mapi_usock=/var/tmp/mtest-29407/.s.monetdb.30088" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:46:21 >  
+
+# MonetDB 5 server v11.19.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30088/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29407/.s.monetdb.30088
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:46:21 >  
+# 10:46:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29407" "--port=30088"
+# 10:46:21 >  
+
+#CREATE TABLE INET_TBL (ip inet);
+#INSERT INTO INET_TBL VALUES ('193.169.13.4');
+[ 1	]
+#INSERT INTO INET_TBL VALUES ('193.169.13.4/32');
+[ 1	]
+#INSERT INTO INET_TBL VALUES ('193.169.13.8/24');
+[ 1	]
+#SELECT * FROM INET_TBL;
+% sys.inet_tbl # table_name
+% ip # name
+% inet # type
+% 0 # length
+[ 193.169.13.4	]
+[ 193.169.13.4	]
+[ 193.169.13.8/24	]
+#DROP TABLE INET_TBL;
+
+# 10:46:21 >  
+# 10:46:21 >  "Done."
+# 10:46:21 >  
+

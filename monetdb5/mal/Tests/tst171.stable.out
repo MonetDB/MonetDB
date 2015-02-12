@@ -82,7 +82,7 @@ function user.main():void;
     io.print(x);
     x := calc.isnotnil(g);
     io.print(x);
-end main;
+end user.main;
 [ true ]
 [ false ]
 [ "strings" ]

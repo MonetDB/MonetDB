@@ -1,0 +1,60 @@
+stdout of test 'too_general_errmsg.Bug-3605` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 09:47:06 >  
+# 09:47:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39443" "--set" "mapi_usock=/var/tmp/mtest-8689/.s.monetdb.39443" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:47:06 >  
+
+# MonetDB 5 server v11.19.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2014', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39443/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8689/.s.monetdb.39443
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:47:07 >  
+# 09:47:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8689" "--port=39443"
+# 09:47:07 >  
+
+#start transaction;
+#CREATE TABLE "sys"."tt_20141016" (
+#"operatingday"          DATE,
+#"trip_id"               VARCHAR(16),
+#"pointorder"            SMALLINT,
+#"passagesequencenumber" SMALLINT,
+#"userstopcode"          VARCHAR(10),
+#"targetarrivaltime"     VARCHAR(8),
+#"targetdeparturetime"   VARCHAR(8),
+#"trip_hash"             BIGINT
+#);
+#create view tt as select * from tt_20141016;
+#CREATE TABLE "sys"."kv17_canceled" (
+#"server"                TIMESTAMP,
+#"messagetype"           VARCHAR(17),
+#"dataownercode"         VARCHAR(10),
+#"operatingday"          DATE,
+#"lineplanningnumber"    VARCHAR(10),
+#"journeynumber"         DECIMAL(6),
+#"reinforcementnumber"   DECIMAL(2),
+#"reasontype"            DECIMAL(3),
+#"subreasontype"         VARCHAR(10),
+#"reasoncontent"         VARCHAR(255),
+#"subreasoncontent"      VARCHAR(255),
+#"userstopcode"          VARCHAR(10),
+#"passagesequencenumber" DECIMAL(4),
+#"lagtime"               DECIMAL(4),
+#create view kv6 as select * from kv17_canceled; 
+
+# 09:47:07 >  
+# 09:47:07 >  "Done."
+# 09:47:07 >  
+

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -306,7 +306,7 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	msg= optimizerCheck(cntxt, mb, "optimizer.sql_append", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTDEBUGsql_append {
 		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT );
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);

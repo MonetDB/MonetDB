@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,5 +25,5 @@
 
 __declspec(noreturn) void MT_exit_thread(int status)
 	__attribute__((__noreturn__));
-int MT_kill_thread(MT_Id t)
+__hidden int MT_kill_thread(MT_Id t)
 	__attribute__((__visibility__("hidden")));

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -172,10 +172,10 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 
 	for ( i=0; codes[i].nme; i++)
-	if ( strcmp(codes[i].nme, optimizer)== 0 ){
-		actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
-		break;	
-	}
+		if ( strcmp(codes[i].nme, optimizer)== 0 ){
+			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
+			break;	
+		}
 	if ( codes[i].nme == 0){
 		freeInstruction(q);
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
@@ -184,11 +184,11 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTIMIZERDEBUG {
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
-		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
+		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* offsetof(VarRecord, prps) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		t);
 	QOTupdateStatistics(getModuleId(q),actions,t);
 	addtoMalBlkHistory(mb,getModuleId(q));

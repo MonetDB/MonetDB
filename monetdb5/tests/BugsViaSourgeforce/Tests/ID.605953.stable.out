@@ -46,8 +46,8 @@ function user.main():void;
     xa_a := bat.append(t2,"b");
     mb_a := io.print(xa_a);
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase' 
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	str	  # type
 #-----------------#

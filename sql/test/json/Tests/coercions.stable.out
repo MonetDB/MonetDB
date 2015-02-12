@@ -11,7 +11,7 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31474/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11121/.s.monetdb.31474
@@ -68,8 +68,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as string) from nosql;
-% sys.nosql # table_name
-% j # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 37 # length
 [ "\"{}\""	]
@@ -99,8 +99,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as json) from nosql;
-% sys.nosql # table_name
-% j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 29 # length
 [ "{}"	]

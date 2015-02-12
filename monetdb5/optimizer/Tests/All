@@ -14,10 +14,8 @@ tst4602
 #tst4611 ,,
 #tst4620 ,,
 tst4630
-# tst4631 -- uses group.refine
 tst4700
 tst4701
-# tst4730 -- uses group.refine
 tst4820
 
 #qep00 deprecated optimizer
@@ -36,15 +34,13 @@ inlineFunction3
 inlineFunction4
 
 reorder00
-# reorder01 -- uses group.new/group.derive
 
-#mapreduce00   has no output, won't run this way
 
 #rangePush00 optimizer out of date
 #rangePush01
 
 #emptyset00 Optimizer does not deal with subselects
-emptyset01
+#emptyset01 no more kdifference
 
 inline00
 inline01
@@ -63,12 +59,14 @@ inlineCst
 
 mitosis00
 
-joinpath
+manifold2
+
+#joinpath calls for new joinpath optimizer
 leftjoinpath
 groups00
 
 ifthencst
-CXerror1
+#CXerror1 transaction primitives removed
 #the remainder are snippets used in the reference manual
 CMexample
 #CRexample push range optimizer is out of date
@@ -87,6 +85,4 @@ dataflow
 dataflow3
 dataflow4
 dataflow5
-# common -- uses group.new/group.derive
-common01
 garbage

@@ -15,14 +15,14 @@ Ready.
 
 
 #select cast(0 as integer);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #select cast(0 as integer);
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]

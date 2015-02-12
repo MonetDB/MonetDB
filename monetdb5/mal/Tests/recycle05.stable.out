@@ -10,7 +10,7 @@ stdout of test 'recycle05` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35178/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13875/.s.monetdb.35178
@@ -19,7 +19,7 @@ stdout of test 'recycle05` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function sql.mvc():int;
     return mvc := 1;
-end mvc;
+end sql.mvc;
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
     b := bat.new(:oid,:oid);
 barrier i := 0@0:oid;
@@ -27,7 +27,7 @@ barrier i := 0@0:oid;
     redo i := iterator.next(1@0:oid,1000@0:oid);
 exit i;
     return tid := b;
-end tid;
+end sql.tid;
 function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
 barrier i := 0:int;
@@ -35,29 +35,13 @@ barrier i := 0:int;
     redo i := iterator.next(1:int,1000:int);
 exit i;
     return bind := b;
-end bind;
+end sql.bind;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-end qry;
-#
-#recycle.setRetainPolicy(1);
-#recycle.setReusePolicy(1);
-#recycle.setCachePolicy(1,10,12);
-#optimizer.recycle("user","qry");
-#
-#io.print("start");
-#qry(100,120);
-#qry(700,710);
-#recycle.dump();
-## The next query should evict the oldest leaves (#3 mark an #4 reverse)
-#qry(400,700);
-#recycle.dump();
-#
-#
-#
+end sql.qry;
 function user.main():void;
 # Test of LRU cache policy in limited memory (12 RU) 
     recycle.setCache(4);
@@ -68,7 +52,7 @@ function user.main():void;
 # The next query should evict the oldest leaves (#2 mark an #3 reverse) 
     user.qry(400,700);
     recycle.dump();
-end main;
+end user.main;
 [ "start" ]
 #RECYCLE [  0]     X_0 := sql.mvc();
 #RECYCLE [  1]     X_1 := sql.tid(1,"sys","tbl");

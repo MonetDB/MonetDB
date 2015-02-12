@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -6330,10 +6330,44 @@ rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+find_col_exp( list *exps, sql_exp *e)
+{
+	node *n;
+	int nr = 0; 
+
+	for (n=exps->h; n; n=n->next, nr++){
+		if (n->data == e)
+			return nr;
+	}
+	return -1;
+}
+
+static int
+exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom *emax)
+{
+	sql_subtype *t = exp_subtype(e);
+
+	if (t->type->localtype == TYPE_dbl) {
+		atom *cmin = atom_general(sql->sa, t, min);
+		atom *cmax = atom_general(sql->sa, t, max);
+
+		if (emax->d < cmin->data.val.dval || emin->d > cmax->data.val.dval)
+			return 0;
+	}
+	return 1;
+}
+
 /* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 {
+	sql_rel *sel = NULL;
+
+	if (is_select(rel->op) && rel->l) {
+		sel = rel;
+		rel = rel->l;
+	}
 	if (is_basetable(rel->op) && rel->l) {
 		sql_table *t = rel->l;
 
@@ -6341,35 +6375,107 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			/* instantiate merge tabel */
 			sql_rel *nrel = NULL;
 			char *tname = exp_find_rel_name(rel->exps->h->data);
-
-			node *n;
+			list *cols = NULL, *low = NULL, *high = NULL;
 
 			if (list_empty(t->tables.set)) 
 				return rel;
+			if (sel) {
+				node *n;
+
+				/* no need to reduce the tables list */
+				if (list_length(t->tables.set) < 100) 
+					return sel;
+
+				cols = sa_list(sql->sa);
+				low = sa_list(sql->sa);
+				high = sa_list(sql->sa);
+				for(n = sel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;	
+					atom *lval = NULL, *hval = NULL;
+
+					/* only ranges */
+					if (e->type == e_cmp && e->f) {
+						sql_exp *l = e->r;
+						sql_exp *h = e->f;
+						sql_exp *c = e->l;
+
+						c = rel_find_exp(rel, c);
+						if (l->type == e_atom && !l->l)
+							lval = sql->args[l->flag];
+						if (h->type == e_atom && !h->l)
+							hval = sql->args[h->flag];
+						if (c && lval && hval) {
+							append(cols, c);
+							append(low, lval);
+							append(high, hval);
+						}
+					}
+				}
+			}
 			assert(!rel_is_ref(rel));
 			(*changes)++;
 			if (t->tables.set) {
-				for (n = t->tables.set->h; n; n = n->next) {
-					sql_table *pt = n->data;
+				list *tables = sa_list(sql->sa);
+				node *nt;
+
+				for (nt = t->tables.set->h; nt; nt = nt->next) {
+					sql_table *pt = nt->data;
 					sql_rel *prel = rel_basetable(sql, pt, tname);
 					node *n, *m;
+					int skip = 0;
+
+					/* do not include empty partitions */
+					if ((nrel || nt->next) && 
+					   pt && isTable(pt) && pt->readonly && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
+						continue;
+					}
 
 					/* rename (mostly the idxs) */
 					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
 					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
-					for (n = rel->exps->h, m = prel->exps->h; n && m; n = n->next, m = m->next ) {
+					for (n = rel->exps->h, m = prel->exps->h; n && m && !skip; n = n->next, m = m->next ) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;
+						int i;
 
+						if (pt && isTable(pt) && pt->readonly && sel && (nrel || nt->next) && (i=find_col_exp(cols, e)) != -1) {
+							/* check if incase of an expression if the part falls within the bounds else skip this (keep at least on part-table) */
+							void *min, *max;
+							sql_column *col = NULL;
+							sql_rel *bt = NULL;
+
+							col = name_find_column(prel, e->l, e->r, -2, &bt);
+							assert(col);
+							if (sql_trans_ranges(sql->session->tr, col, &min, &max)) {
+								atom *lval = list_fetch(low,i);
+								atom *hval = list_fetch(high,i);
+
+								if (!exp_range_overlap(sql, e, min, max, lval, hval))
+									skip = 1;
+							}
+						}
 						exp_setname(sql->sa, ne, e->rname, e->name);
 					}
-					if (nrel) { 
-						nrel = rel_setop(sql->sa, nrel, prel, op_union);
-						nrel->exps = rel_projections(sql, rel, NULL, 1, 1);
-					} else {
+					if (!skip) {
+						append(tables, prel);
 						nrel = prel;
 					}
+				}
+				while (list_length(tables) > 1) {
+					list *ntables = sa_list(sql->sa);
+					node *n;
+
+					for(n=tables->h; n && n->next; n = n->next->next) {
+						sql_rel *l = n->data;
+						sql_rel *r = n->next->data;
+						nrel = rel_setop(sql->sa, l, r, op_union);
+						nrel->exps = rel_projections(sql, rel, NULL, 1, 1);
+						append(ntables, nrel);
+					}
+					if (n)
+						append(ntables, n->data);
+					tables = ntables;
 				}
 			}
 			if (nrel && list_length(t->tables.set) == 1) {
@@ -6377,9 +6483,15 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			} else if (nrel)
 				nrel->exps = rel->exps;
 			rel_destroy(rel);
+			if (sel) {
+				sel->l = nrel;
+				return sel;
+			}
 			return nrel;
 		}
 	}
+	if (sel)
+		return sel;
 	return rel;
 }
 
@@ -6491,12 +6603,13 @@ exps_rename_up(mvc *sql, list *l, list *aliases)
 	if (!l || !l->h)
 		return nl;
 	for(n=l->h; n; n=n->next) {
-		sql_exp *arg = n->data;
+		sql_exp *arg = n->data, *narg;
 
-		arg = exp_rename_up(sql, arg, aliases);
-		if (!arg) 
+		narg = exp_rename_up(sql, arg, aliases);
+		if (!narg) 
 			return NULL;
-		append(nl, arg);
+		narg->flag = arg->flag;
+		append(nl, narg);
 	}
 	return nl;
 }
@@ -6549,7 +6662,7 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 		break;
 	case e_aggr:
 	case e_func: {
-		list *l = e->l, *nl = NULL;
+		list *l = e->l, *nl = NULL, *r = e->r, *nr = NULL;
 
 		if (!l) {
 			return e;
@@ -6558,10 +6671,19 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 			if (!nl)
 				return NULL;
 		}
+		if (e->r) {
+			nr = exps_rename_up(sql, r, aliases);
+			if (!nr)
+				return NULL;
+		}
 		if (e->type == e_func)
 			ne = exp_op(sql->sa, nl, e->f);
 		else 
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+		if (ne && nr) {
+			ne->card = CARD_AGGR;
+			ne->r = nr;
+		}
 		break;
 	}	
 	case e_atom:
@@ -7220,8 +7342,11 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
 	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
-	    gp.cnt[op_select]) 
+	    gp.cnt[op_select]) {
 		rel = rewrite(sql, rel, &rel_push_func_down, &changes);
+		rel = rewrite_topdown(sql, rel, &rel_push_select_down, &changes); 
+		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
+	}
 
 	if (!changes && gp.cnt[op_topn]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_topn_down, &changes); 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -68,10 +68,10 @@ void_bat_create(int adt, BUN nr)
 	if (BATmirror(b))
 		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
-	if (nr > BATTINY && adt)
-		b = BATextend(b, nr);
-	if (b == NULL)
-		return b;
+	if (nr > BATTINY && adt && BATextend(b, nr) == GDK_FAIL) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 
 	b->hsorted = TRUE;
 	b->hrevsorted = FALSE;
@@ -237,9 +237,9 @@ TABLETcollect(Tablet *as)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
 		bats[i] = fmt[i].c;
-		BBPincref(bats[i]->batCacheid, FALSE);
+		BBPfix(bats[i]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
-		BATderiveProps(fmt[i].c, 1);
+		BATderiveProps(fmt[i].c, 0);
 
 		if (cnt != BATcount(fmt[i].c)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c), cnt);
@@ -272,7 +272,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset>0)?offset-1:0, BATcount(b));
 		bats[i] = bv;
-		BATderiveProps(bv, 1);
+		BATderiveProps(bv, 0);
 
 		b->tkey = (offset>0)?FALSE:bv->tkey; 
 		b->T->nonil &= bv->T->nonil;
@@ -834,7 +834,7 @@ SQLworker_column(READERtask *task, int col)
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
-		if ((fmt[col].c = BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit)) == NULL) {
+		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) == GDK_FAIL) {
 			MT_lock_set(&errorlock, "SQLworker_column");
 			if (task->as->error == NULL)
 				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full\n");

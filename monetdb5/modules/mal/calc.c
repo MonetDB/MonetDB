@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -695,11 +695,15 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -717,10 +721,14 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -738,11 +746,15 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -760,10 +772,14 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
+	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+		p1 = *(ptr *)p1;
+		p2 = *(ptr *)p2;
+	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
-	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
+	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
 	return MAL_SUCCEED;
 }
 
@@ -788,7 +804,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			bat sid = * getArgReference_bat(stk, pci, 2);
 			if ((s = BATdescriptor(sid)) == NULL) {
-				BBPreleaseref(b->batCacheid);
+				BBPunfix(b->batCacheid);
 				throw(MAL, func, RUNTIME_OBJECT_MISSING);
 			}
 			if (pci->argc >= 4) {
@@ -802,14 +818,14 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		/* XXX backward compatibility code: ignore non-dense head, but
 		 * only if no candidate list */
 		s = BATmirror(BATmark(BATmirror(b), 0));
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		b = s;
 		s = NULL;
 	}
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, 1, 1, nil_if_empty);
-	BBPreleaseref(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (s)
-		BBPreleaseref(s->batCacheid);
+		BBPunfix(s->batCacheid);
 	if (r == GDK_FAIL)
 		return mythrow(MAL, func, OPERATION_FAILED);
 	return MAL_SUCCEED;

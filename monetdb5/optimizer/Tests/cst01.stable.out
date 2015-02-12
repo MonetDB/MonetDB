@@ -11,7 +11,7 @@ stdout of test 'cst01` in directory 'monetdb5/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33947/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26757/.s.monetdb.33947
@@ -25,14 +25,14 @@ function user.tst():void;
     X16 := mmath.pi();
     X17 := calc./(X15,X16);
     io.print(X17);
-end tst;
+end user.tst;
 function user.main():void;
 # test constant expressions 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() 
     io.print(57.295779513082323:dbl);   #  1 _8:void := IOprint_val(_12:dbl) 
-end tst;                                #  2  
+end user.tst;                           #  2  
 
 # 21:32:15 >  
 # 21:32:15 >  Done.

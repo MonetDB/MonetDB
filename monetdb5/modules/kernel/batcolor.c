@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -47,7 +47,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	bn= BATnew(b->htype,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
-		BBPreleaseref(b->batCacheid);									\
+		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
 	if( b->htype== TYPE_void)											\
@@ -75,14 +75,14 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bn->H->nonil = b->H->nonil;											\
 	bn->H->nil = b->H->nil;												\
 	if (!(bn->batDirty & 2))											\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
-	BBPreleaseref(b->batCacheid);										\
+	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
-	BBPreleaseref(b->batCacheid);										\
-	BBPreleaseref(bn->batCacheid);										\
+	BBPunfix(b->batCacheid);											\
+	BBPunfix(bn->batCacheid);											\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
@@ -119,18 +119,18 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	b3= BATdescriptor(*bid3);											\
 	if (b == NULL || b2 == NULL || b3 == NULL) {						\
 		if (b)															\
-			BBPreleaseref(b->batCacheid);								\
+			BBPunfix(b->batCacheid);									\
 		if (b2)															\
-			BBPreleaseref(b2->batCacheid);								\
+			BBPunfix(b2->batCacheid);									\
 		if (b3)															\
-			BBPreleaseref(b3->batCacheid);								\
+			BBPunfix(b3->batCacheid);									\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	}																	\
 	bn= BATnew(b->htype,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
-		BBPreleaseref(b->batCacheid);									\
-		BBPreleaseref(b2->batCacheid);									\
-		BBPreleaseref(b3->batCacheid);									\
+		BBPunfix(b->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		BBPunfix(b3->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
 	if( b->htype== TYPE_void)											\
@@ -168,18 +168,18 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	bn->H->nonil = b->H->nonil;											\
 	bn->H->nil = b->H->nil;												\
 	if (!(bn->batDirty & 2))											\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
-	BBPreleaseref(b->batCacheid);										\
-	BBPreleaseref(b2->batCacheid);										\
-	BBPreleaseref(b3->batCacheid);										\
+	BBPunfix(b->batCacheid);											\
+	BBPunfix(b2->batCacheid);											\
+	BBPunfix(b3->batCacheid);											\
 	return MAL_SUCCEED;													\
 bunins_failed:															\
-	BBPreleaseref(b->batCacheid);										\
-	BBPreleaseref(b2->batCacheid);										\
-	BBPreleaseref(b3->batCacheid);										\
-	BBPreleaseref(bn->batCacheid);										\
+	BBPunfix(b->batCacheid);											\
+	BBPunfix(b2->batCacheid);											\
+	BBPunfix(b3->batCacheid);											\
+	BBPunfix(bn->batCacheid);											\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 

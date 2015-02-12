@@ -36,7 +36,7 @@ function user.main():void;
     ps := calc.str(1);
 #	io.print("quit();"); 
     ha_a := clients.quit();
-end main;
+end user.main;
 [ 21 ]
 #var pf:= flt(\"23\");
 #pf.io.print();

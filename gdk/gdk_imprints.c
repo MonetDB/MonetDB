@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -411,9 +411,9 @@
 #define IMPS_CREATE(TYPE,B)						\
 do {									\
 	uint##B##_t mask, prvmask;					\
-	uint##B##_t *im = (uint##B##_t *) imps;				\
-	TYPE *col = (TYPE *) Tloc(b, b->batFirst);			\
-	TYPE *bins = (TYPE *) inbins;					\
+	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
+	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);	\
+	const TYPE *restrict bins = (TYPE *) inbins;			\
 	TYPE nil = TYPE##_nil;						\
 	prvmask = mask = 0;						\
 	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
@@ -500,15 +500,15 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 {
 	BUN i;
 	BUN dcnt, icnt, new;
-	BUN *min_bins = stats;
-	BUN *max_bins = min_bins + 64;
-	BUN *cnt_bins = max_bins + 64;
+	BUN *restrict min_bins = stats;
+	BUN *restrict max_bins = min_bins + 64;
+	BUN *restrict cnt_bins = max_bins + 64;
 	bte bin = 0;
 	dcnt = icnt = 0;
 	for (i = 0; i < 64; i++)
 		cnt_bins[i] = 0;
 
-	switch (ATOMstorage(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 		BINSIZE(bits, IMPS_CREATE, bte);
 		break;
@@ -546,8 +546,8 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #define FILL_HISTOGRAM(TYPE)						\
 do {									\
 	BUN k;								\
-	TYPE *s = (TYPE *) Tloc(smp, smp->batFirst);			\
-	TYPE *h = imprints->bins;					\
+	TYPE *restrict s = (TYPE *) Tloc(smp, smp->batFirst);		\
+	TYPE *restrict h = imprints->bins;				\
 	if (cnt < 64-1) {						\
 		TYPE max = GDK_##TYPE##_max;				\
 		for (k = 0; k < cnt; k++)				\
@@ -563,7 +563,7 @@ do {									\
 	}								\
 } while (0)
 
-BAT *
+gdk_return
 BATimprints(BAT *b)
 {
 	BAT *o = NULL;
@@ -573,12 +573,7 @@ BATimprints(BAT *b)
 	assert(BAThdense(b));	/* assert void head */
 
 	/* we only create imprints for types that look like types we know */
-	if (b->ttype != ATOMstorage(b->ttype) &&
-	    (ATOMnilptr(b->ttype) != ATOMnilptr(ATOMstorage(b->ttype)) ||
-	     BATatoms[b->ttype].atomCmp != BATatoms[ATOMstorage(b->ttype)].atomCmp))
-		return NULL;	/* doesn't look enough like base type */
-
-	switch (ATOMstorage(b->T->type)) {
+	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -590,10 +585,11 @@ BATimprints(BAT *b)
 	case TYPE_dbl:
 		break;
 	default:		/* type not supported */
-		return NULL;	/* do nothing */
+		/* doesn't look enough like base type: do nothing */
+		return GDK_FAIL;
 	}
 
-	BATcheck(b, "BATimprints");
+	BATcheck(b, "BATimprints", GDK_FAIL);
 
 	if (VIEWtparent(b)) {
 		bat p = VIEWtparent(b);
@@ -605,7 +601,7 @@ BATimprints(BAT *b)
 		 * this shouldn't really happen */
 		if (o)
 			BBPunfix(b->batCacheid);
-		return NULL;
+		return GDK_FAIL;
 	}
 
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -626,7 +622,7 @@ BATimprints(BAT *b)
 			GDKerror("#BATimprints: memory allocation error.\n");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
-			return NULL;
+			return GDK_FAIL;
 		}
 		imprints->imprints = GDKzalloc(sizeof(Heap));
 		if (imprints->imprints == NULL ||
@@ -637,12 +633,12 @@ BATimprints(BAT *b)
 			GDKerror("#BATimprints: memory allocation error.\n");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
-			return NULL;
+			return GDK_FAIL;
 		}
 		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
 			b->batCacheid > 0 ? 't' : 'h');
 		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
-		imprints->imprints->farmid = BBPselectfarm(PERSISTENT, b->ttype,
+		imprints->imprints->farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
 		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
@@ -687,7 +683,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			GDKfree(imprints);
-			return NULL;
+			return GDK_FAIL;
 		}
 		smp = BATsubunique(b, s);
 		BBPunfix(s->batCacheid);
@@ -695,7 +691,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			GDKfree(imprints);
-			return NULL;
+			return GDK_FAIL;
 		}
 		s = BATproject(smp, b);
 		BBPunfix(smp->batCacheid);
@@ -703,7 +699,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			GDKfree(imprints);
-			return NULL;
+			return GDK_FAIL;
 		}
 		s->tkey = 1;	/* we know is unique on tail now */
 		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) == GDK_FAIL) {
@@ -711,7 +707,7 @@ BATimprints(BAT *b)
 				      "BATimprints");
 			BBPunfix(s->batCacheid);
 			GDKfree(imprints);
-			return NULL;
+			return GDK_FAIL;
 		}
 		BBPunfix(s->batCacheid);
 		/* smp now is ordered and unique on tail */
@@ -748,14 +744,14 @@ BATimprints(BAT *b)
 			GDKerror("#BATimprints: memory allocation error");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
-			return NULL;
+			return GDK_FAIL;
 		}
 		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
 		imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
-		switch (ATOMstorage(b->T->type)) {
+		switch (ATOMbasetype(b->T->type)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
 			break;
@@ -800,7 +796,7 @@ BATimprints(BAT *b)
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
-			return NULL;
+			return GDK_FAIL;
 		}
 		assert(imprints->impcnt <= pages);
 		assert(imprints->dictcnt <= pages);
@@ -810,7 +806,8 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
-		if (HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
+		if (b->batRole == PERSISTENT &&
+		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			/* add version number */
@@ -845,38 +842,38 @@ BATimprints(BAT *b)
 		b = o;
 	}
 	assert(b->batCapacity >= BATcount(b));
-	return b;
+	return GDK_SUCCEED;
 }
 
 #define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
 
 int
-IMPSgetbin(int tpe, bte bits, const char *inbins, const void *v)
+IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict v)
 {
 	int ret = -1;
 
 	switch (tpe) {
 	case TYPE_bte:
 	{
-		const bte *bins = (bte *) inbins;
+		const bte *restrict bins = (bte *) inbins;
 		BINSIZE(bits, getbin, bte);
 	}
 		break;
 	case TYPE_sht:
 	{
-		const sht *bins = (sht *) inbins;
+		const sht *restrict bins = (sht *) inbins;
 		BINSIZE(bits, getbin, sht);
 	}
 		break;
 	case TYPE_int:
 	{
-		const int *bins = (int *) inbins;
+		const int *restrict bins = (int *) inbins;
 		BINSIZE(bits, getbin, int);
 	}
 		break;
 	case TYPE_lng:
 	{
-		const lng *bins = (lng *) inbins;
+		const lng *restrict bins = (lng *) inbins;
 		BINSIZE(bits, getbin, lng);
 	}
 		break;
@@ -890,13 +887,13 @@ IMPSgetbin(int tpe, bte bits, const char *inbins, const void *v)
 #endif
 	case TYPE_flt:
 	{
-		const flt *bins = (flt *) inbins;
+		const flt *restrict bins = (flt *) inbins;
 		BINSIZE(bits, getbin, flt);
 	}
 		break;
 	case TYPE_dbl:
 	{
-		const dbl *bins = (dbl *) inbins;
+		const dbl *restrict bins = (dbl *) inbins;
 		BINSIZE(bits, getbin, dbl);
 	}
 		break;
@@ -934,7 +931,7 @@ IMPSremove(BAT *b)
 
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
 			       b->batCacheid > 0 ? "timprints" : "himprints"))
-			IODEBUG THRprintf(GDKstdout, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
+			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
 
 		GDKfree(imprints->imprints);
 		GDKfree(imprints);
@@ -966,7 +963,7 @@ IMPSdestroy(BAT *b)
 
 #define IMPSPRNTMASK(T, B)						\
 	do {								\
-		uint##B##_t *im = (uint##B##_t *) imprints->imps;	\
+		uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		for (j = 0; j < imprints->bits; j++)			\
 			s[j] = IMPSisSet(B, im[icnt], j) ? 'x' : '.';	\
 		s[j] = '\0';						\
@@ -976,15 +973,15 @@ void
 IMPSprint(BAT *b)
 {
 	Imprints *imprints;
-	cchdc_t *d;
+	cchdc_t *restrict d;
 	char s[65];		/* max number of bits + 1 */
 	BUN icnt, dcnt, l, pages;
-	BUN *min_bins, *max_bins;
-	BUN *cnt_bins;
+	BUN *restrict min_bins, *restrict max_bins;
+	BUN *restrict cnt_bins;
 	bte j;
 	int i;
 
-	if (!BATimprints(b))
+	if (BATimprints(b) == GDK_FAIL)
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;

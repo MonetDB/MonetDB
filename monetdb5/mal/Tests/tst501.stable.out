@@ -22,17 +22,13 @@ stdout of test 'tst501` in directory 'monetdb5/mal` itself:
 function user.simple(i:int):int;
     i := calc.+(i,1);
     return simple := i;
-end simple;
-#
-#k:= 0;
-#r:= simple(k);
-#
+end user.simple;
 function user.main():void;
 # simple test of a function call  
 # performance variation, how expensive are 10K calls? 
     k := 0;
     r := user.simple(k);
-end main;
+end user.main;
 
 # 08:01:22 >  
 # 08:01:22 >  Done.

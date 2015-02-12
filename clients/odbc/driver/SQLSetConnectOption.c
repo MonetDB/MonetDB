@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -40,6 +40,15 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+
+#ifdef _MSC_VER
+/* can't call them by their real name with Visual Studio 12.0 since we
+ * would then get a warning which we translate to an error during
+ * compilation (also see ODBC.syms) */
+#define SQLSetConnectOption	SQLSetConnectOption_deprecated
+#define SQLSetConnectOptionA	SQLSetConnectOptionA_deprecated
+#define SQLSetConnectOptionW	SQLSetConnectOptionW_deprecated
+#endif
 
 static SQLRETURN
 SQLSetConnectOption_(ODBCDbc *dbc,

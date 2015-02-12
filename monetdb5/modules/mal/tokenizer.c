@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -354,8 +354,7 @@ TKNZRappend(oid *pos, str *s)
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " no more free oid's");
 		}
-		tokenBAT[i].val = BUNappend(tokenBAT[i].val, parts[i], TRUE);
-		if (tokenBAT[i].val == NULL) {
+		if (BUNappend(tokenBAT[i].val, parts[i], TRUE) == GDK_FAIL) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
@@ -366,8 +365,7 @@ TKNZRappend(oid *pos, str *s)
 			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
 		}
 
-		tokenBAT[i].idx = BUNappend(tokenBAT[i].idx, (ptr) & prv, TRUE);
-		if (tokenBAT[i].idx == NULL) {
+		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, TRUE) == GDK_FAIL) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");

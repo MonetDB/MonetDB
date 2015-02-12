@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -438,7 +438,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
-	if (!bat->ibase && BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->S->role == PERSISTENT){
+	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->S->role == PERSISTENT){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
@@ -1401,9 +1401,30 @@ empty_col(sql_column *c)
 	assert(c->data && c->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
-	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->ibase = 0;
+	bat->cnt = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->ucnt = 0;
+
 	if (bat->bid == bat->ibid)
 		bat->bid = copyBat(bat->ibid, type, 0);
+
+	/* make new bat persistent */
+	{
+		BAT *b = temp_descriptor(bat->bid);
+
+		assert(b->batRole == PERSISTENT);
+		if (b->batRole != PERSISTENT) {
+			bat->bid = copyBat(b->batCacheid, type, 0);
+			temp_destroy(b->batCacheid);
+			bat_destroy(b);
+			b = temp_descriptor(bat->bid);
+		}
+		bat_set_access(b, BAT_READ);
+		BATmode(b, PERSISTENT);
+		logger_add_bat(bat_logger, b, bat->name);
+		bat_destroy(b);
+
+	}
 }
 
 static void 
@@ -1415,9 +1436,28 @@ empty_idx(sql_idx *i)
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
-	bat->ibase = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->ibase = 0;
+	bat->cnt = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->ucnt = 0;
+
 	if (bat->bid == bat->ibid) 
 		bat->bid = copyBat(bat->ibid, type, 0);
+
+	/* make new bat persistent */
+	{
+		BAT *b = temp_descriptor(bat->bid);
+
+		if (b->batRole != PERSISTENT) {
+			bat->bid = copyBat(b->batCacheid, type, 0);
+			temp_destroy(b->batCacheid);
+			bat_destroy(b);
+			b = temp_descriptor(bat->bid);
+		}
+		bat_set_access(b, BAT_READ);
+		BATmode(b, PERSISTENT);
+		logger_add_bat(bat_logger, b, bat->name);
+		bat_destroy(b);
+	}
 }
 
 static BUN
@@ -1907,14 +1947,15 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 
 	(void)tr;
 	assert(tr->parent == gtrans);
+	ins = temp_descriptor(cbat->ibid);
+
 	if (cleared) 
 		log_bat_clear(bat_logger, cbat->name);
 
-	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
 		assert(store_nr_active>0);
-		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
+		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE)) 
 			ok = log_bat(bat_logger, ins, cbat->name);
 		if (store_nr_active == 1 &&
 		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {

@@ -38,7 +38,7 @@ function user.main():void;
     io.print(b1);
     c := batcalc.==(b2,b1);
     io.print(c);
-end main;
+end user.main;
 #--------------------------#
 # h	t		  # name
 # void	daytime	  # type

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -190,6 +190,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	
 					if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
 						tid = getArg(q, 1);
+					if (s->argc == 2 && s->retc == 1) {
+						int i1 = getArg(s, 1);
+						InstrPtr s = old[vars[i1]];
+						if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
+							tid = getArg(q, 1);
+					}
 					break;
 				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
 					int i1 = getArg(q, 1);
@@ -268,7 +274,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
+	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
 		GDKfree(vars);
 		return 0;
 	}
@@ -442,7 +448,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slimit= mb->ssize;
 	old = mb->stmt;
 
-	if (newMalBlkStmt(mb, mb->ssize+(5*push_down_delta)) <0 ) {
+	if (newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
 		return actions;

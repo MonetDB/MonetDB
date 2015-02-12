@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -282,7 +282,7 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 			lng t = *(lng *) BUNtail(li, p);
 			max_file_id = MAX(max_file_id, t);
 		}
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 	}
 
 	*next_file_id = max_file_id + 1;
@@ -527,12 +527,12 @@ drop_file(Client cntxt, str descr, lng file_id, sht dbschema)
 	 * if(t == file_id) { */
 	/* We found the right file id, store oid */
 	/*tuple_oid = *(oid *)BUNhead(iter_file_id, q);
-	 * BBPreleaseref(b->batCacheid);
+	 * BBPunfix(b->batCacheid);
 	 * break;
 	 * }
 	 * max_file_id = MAX(max_file_id, t);
 	 * }
-	 * BBPreleaseref(b->batCacheid);
+	 * BBPunfix(b->batCacheid);
 	 * }
 	 * if(oid != NULL) { */
 	/* oid of record with right file_id is found; we can quit this loop */

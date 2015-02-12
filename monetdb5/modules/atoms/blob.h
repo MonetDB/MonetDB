@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -27,7 +27,7 @@
 
 typedef struct blob {
 	size_t nitems;
-	/*unsigned */ char data[];
+	/*unsigned */ char data[FLEXIBLE_ARRAY_MEMBER];
 } blob;
 
 #define sqlblob blob

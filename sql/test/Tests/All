@@ -1,7 +1,7 @@
-HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions
-HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_gsl
-HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions_bam
-!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_nogeom
+HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions
+HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_gsl
+HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_bam
+!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_nogeom
 example
 example-queries
 example-drop
@@ -89,7 +89,7 @@ procedure_syntax
 order_by_simple_exp
 order_by_complex_exp
 
-setoptimizer
+!HAVE_DATACELL?setoptimizer
 string
 #NOT_WIN32?crashme   bug #1825
 50ways

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -113,32 +113,8 @@ int mal_init(void){
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
 	if ( mal_trace && *mal_trace) {
-		char *s;
-		setFilterAll();
 		openProfilerStream(mal_clients[0].fdout);
-		for ( s= mal_trace; *s; s++)
-		switch(*s){
-		case 'a': activateCounter("aggregate");break;
-		case 'b': activateCounter("rbytes");
-				activateCounter("wbytes");break;
-		case 'c': activateCounter("cpu");break;
-		case 'e': activateCounter("event");break;
-		case 'f': activateCounter("function");break;
-		case 'i': activateCounter("pc");break;
-		case 'm': activateCounter("memory");break;
-		case 'p': activateCounter("process");break;
-		case 'r': activateCounter("reads");break;
-		case 's': activateCounter("stmt");break;
-		case 't': activateCounter("ticks");break;
-		case 'u': activateCounter("user");break;
-		case 'w': activateCounter("writes");break;
-		case 'y': activateCounter("type");break;
-		case 'D': activateCounter("dot");break;
-		case 'I': activateCounter("thread");break; 
-		case 'T': activateCounter("time");break;
-		case 'S': activateCounter("start");
-		}
-		startProfiling();
+		startProfiler(1,0);
 	} else mal_trace =0;
 	return 0;
 }
@@ -176,12 +152,12 @@ void mal_exit(void){
 	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);
 }
 #endif
-	stopHeartbeat();
+	setHeartbeat(0);
 #ifdef HAVE_JSONSTORE
 	stopHttpdaemon();
 #endif
 	stopMALdataflow();
-	stopProfiling();
+	stopProfiler();
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	unloadLibraries();
 #if 0

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -185,8 +185,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		ov = getVar(mc, n);
 		v = getVar(mb, nv[n]);
 		if (ov->propc > v->maxprop) {
-			int size = sizeof(VarRecord);
-        		VarPtr vnew = (VarPtr) GDKzalloc(size + ov->propc * sizeof(int));
+			int size = offsetof(VarRecord, prps);
+			VarPtr vnew = (VarPtr) GDKzalloc(size + ov->propc * sizeof(int));
 			memcpy((char*) vnew, (char*) v, size);
 			vnew->maxprop = ov->propc;
 			mb->var[nv[n]] = vnew;

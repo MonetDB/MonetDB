@@ -37,21 +37,19 @@ barrier i := 0:lng;
 exit i;
     io.print(b);
     c := 1;
-    X_20 := bat.reverse(b);
-    X_22 := bat.new(nil:oid,nil:lng);
-barrier (X_26,X_27) := iterator.new(b);
-    X_29 := calc.+(X_27,c);
-    X_30 := algebra.fetch(X_20,X_26);
-    bat.insert(X_22,X_30,X_29);
-    redo (X_26,X_27) := iterator.next(b);
-exit (X_26,X_27);
-    xz:bat[:oid,:lng]  := X_22;
+    X_20 := bat.new(nil:oid,nil:lng);
+barrier (X_24,X_25) := iterator.new(b);
+    X_27 := calc.+(X_25,c);
+    bat.append(X_20,X_27);
+    redo (X_24,X_25) := iterator.next(b);
+exit (X_24,X_25);
+    xz:bat[:oid,:lng]  := X_20;
     io.print(xz);
-end main;
-#-----------------#
-# h	tmp_4	  # name
-# lng	lng	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	lng  # type
+#--------------------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]

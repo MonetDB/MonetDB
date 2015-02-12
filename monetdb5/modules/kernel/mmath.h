@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -27,7 +27,6 @@
 #include <math.h>
 
 extern double sqrt(double x);
-extern double cbrt(double x);
 extern double sin(double x);
 extern double cos(double x);
 extern double fabs(double x);

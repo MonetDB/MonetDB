@@ -11,14 +11,14 @@ stdout of test 'dataflow3` in directory 'monetdb5/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32629/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.mvc():int;
     return mvc := 1;
-end mvc;
+end user.mvc;
 function user.s1_0{autoCommit=true}():void;
     X17 := bat.new(nil:oid,nil:wrd);
     X54 := bat.new(nil:oid,nil:wrd);
@@ -65,11 +65,11 @@ function user.s1_0{autoCommit=true}():void;
 #COUNT/SUM 
     X19 := aggr.sum(X17);
     io.print(X19);
-end s1_0;
+end user.s1_0;
 function user.main():void;
 #map reduce development test. 
     mdb.list("user","s1_0");
-end main;
+end user.main;
 function user.s1_0{autoCommit=true}():void;
 barrier X_40 := language.dataflow();
     X17 := bat.new(nil:oid,nil:wrd);
@@ -109,7 +109,7 @@ exit X_40;
     io.print(X17);
     X19 := aggr.sum(X17);
     io.print(X19);
-end s1_0;
+end user.s1_0;
 
 # 15:05:21 >  
 # 15:05:21 >  Done.

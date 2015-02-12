@@ -29,7 +29,7 @@ exit ca_a;
 exit (aa_aH,aa_aT);
 #	io.print("        return a;"); 
     return ea_a := a;
-end create;
+end user.create;
 function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
@@ -92,12 +92,12 @@ function user.main():void;
 #	io.print("c.print();"); 
     ka_a := io.print(c);
 #	io.print("b.semijoin(c).print();"); 
-    la_a := algebra.semijoin(b,c);
+    la_a := aggr.count(c);
     ma_a := io.print(la_a);
 #	io.print("quit();"); 
     na_a := clients.quit();
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	flt	  # type
 #-----------------#
@@ -109,12 +109,9 @@ end main;
 [ 1@0,	  2	  ]
 #-----------------#
 # h	t	  # name
-# oid	flt	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# oid	flt	  # type
-#-----------------#
+# void	flt  # type
+#--------------------------#
+[ 0 ]
 
 # 07:27:15 >  
 # 07:27:15 >  Done.

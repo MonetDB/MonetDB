@@ -11,7 +11,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36250/
 # MonetDB/GIS module loaded
@@ -19,62 +19,110 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # MonetDB/SQL module loaded
 
 Ready.
+
 Running database upgrade commands:
 set schema "sys";
-
-	create table upgradeOct2014_views as (select s.name, t.query from tables t, schemas s where s.id = t.schema_id and t.id in (select d.depend_id from dependencies d where d.id in (select f.id from functions f where f.func ilike '%returns table%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0) and d.depend_type = 5)) with data;
-	create table upgradeOct2014 as select s.name, f.func, f.id from functions f, schemas s where s.id = f.schema_id and f.func ilike '%returns table%' and f.name not in ('env', 'var', 'db_users') and f.language <> 0 order by f.id with data;
-	create table upgradeOct2014_changes (c bigint);
-	
-	create function drop_func_upgrade_oct2014( id integer ) returns int external name sql.drop_func_upgrade_oct2014;
-	insert into upgradeOct2014_changes select drop_func_upgrade_oct2014(id) from upgradeOct2014;
-	drop function drop_func_upgrade_oct2014;
-	
-	create function create_func_upgrade_oct2014( sname string, f string ) returns int external name sql.create_func_upgrade_oct2014;
-	insert into upgradeOct2014_changes select create_func_upgrade_oct2014(name, func) from upgradeOct2014;
-	drop function create_func_upgrade_oct2014;
-	
-	create function create_view_upgrade_oct2014( sname string, f string ) returns int external name sql.create_view_upgrade_oct2014;
-	insert into upgradeOct2014_changes select create_view_upgrade_oct2014(name, query) from upgradeOct2014_views;
-	update _tables set system = true where name in ('tables', 'columns', 'users', 'querylog_catalog', 'querylog_calls', 'querylog_history', 'tracelog', 'sessions', 'optimizers', 'environment', 'queue', 'storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from schemas where name = 'sys');
-	insert into systemfunctions (select id from functions where name in ('bbp', 'db_users', 'dependencies_columns_on_functions', 'dependencies_columns_on_indexes', 'dependencies_columns_on_keys', 'dependencies_columns_on_triggers', 'dependencies_columns_on_views', 'dependencies_functions_on_functions', 'dependencies_functions_os_triggers', 'dependencies_keys_on_foreignkeys', 'dependencies_owners_on_schemas', 'dependencies_schemas_on_users', 'dependencies_tables_on_foreignkeys', 'dependencies_tables_on_functions', 'dependencies_tables_on_indexes', 'dependencies_tables_on_triggers', 'dependencies_tables_on_views', 'dependencies_views_on_functions', 'dependencies_views_on_triggers', 'env', 'environment', 'generate_series', 'optimizers', 'optimizer_stats', 'querycache', 'querylog_calls', 'querylog_catalog', 'queue', 'sessions', 'storage', 'storagemodel', 'tojsonarray', 'tracelog', 'var') and schema_id = (select id from schemas where name = 'sys') and id not in (select function_id from systemfunctions));
-	delete from systemfunctions where function_id not in (select id from functions);
-	drop function create_view_upgrade_oct2014;
-						
-	drop table upgradeOct2014_views;
-	drop table upgradeOct2014_changes;
-	drop table upgradeOct2014;
+drop filter function sys."like";
+create filter function sys."like"(val string, pat string, esc string) external name algebra."like";
+create filter function sys."like"(val string, pat string) external name algebra."like";
+drop filter function sys."ilike";
+create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
+create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
+drop view sys.storagemodel;
+drop view sys.tablestoragemodel;
+drop function sys.storagemodel;
+drop function sys.imprintsize;
+drop function sys.columnsize;
+create function sys.columnsize(nme string, i bigint, d bigint)
+returns bigint
+begin
+	case
+	when nme = 'boolean' then return i;
+	when nme = 'char' then return 2*i;
+	when nme = 'smallint' then return 2 * i;
+	when nme = 'int' then return 4 * i;
+	when nme = 'bigint' then return 8 * i;
+	when nme = 'hugeint' then return 16 * i;
+	when nme = 'timestamp' then return 8 * i;
+	when  nme = 'varchar' then
+		case
+		when cast(d as bigint) << 8 then return i;
+		when cast(d as bigint) << 16 then return 2 * i;
+		when cast(d as bigint) << 32 then return 4 * i;
+		else return 8 * i;
+		end case;
+	else return 8 * i;
+	end case;
+end;
+create function sys.imprintsize(i bigint, nme string)
+returns bigint
+begin
+	if nme = 'boolean'
+		or nme = 'tinyint'
+		or nme = 'smallint'
+		or nme = 'int'
+		or nme = 'bigint'
+		or nme = 'hugeint'
+		or nme = 'decimal'
+		or nme = 'date'
+		or nme = 'timestamp'
+		or nme = 'real'
+		or nme = 'double'
+	then
+		return cast( i * 0.12 as bigint);
+	end if;
+	return 0;
+end;
+create function sys.storagemodel()
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"count" bigint,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	imprints bigint,
+	sorted boolean)
+begin
+	return select I."schema", I."table", I."column", I."type", I."count",
+	columnsize(I."type", I.count, I."distinct"),
+	heapsize(I."type", I."distinct", I."atomwidth"),
+	hashsize(I."reference", I."count"),
+	imprintsize(I."count",I."type"),
+	I.sorted
+	from sys.storagemodelinput I;
+end;
+create view sys.storagemodel as select * from sys.storagemodel();
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+	sum(columnsize) as columnsize,
+	sum(heapsize) as heapsize,
+	sum(hashes) as hashes,
+	sum(imprints) as imprints,
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+drop table sys.statistics;
+create table sys.statistics(
+	"column_id" integer,
+	"type" string,
+	width integer,
+	stamp timestamp,
+	"sample" bigint,
+	"count" bigint,
+	"unique" bigint,
+	"nils" bigint,
+	minval string,
+	maxval string,
+	sorted boolean);
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "testschema";
 
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.drop_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_func_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#WARNING To speedup sql.create_view_upgrade_oct2014 a bulk operator implementation is needed
-#Interpreting bte as bit.
-
-# 09:48:08 >  
-# 09:48:08 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 09:48:08 >  
+# 09:43:35 >  
+# 09:43:35 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 09:43:35 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1355,7 +1355,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 		BUNappend(b,fld, FALSE);
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -1608,7 +1608,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNins(b,VALptr(&hval),VALptr(&tval), FALSE);
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 

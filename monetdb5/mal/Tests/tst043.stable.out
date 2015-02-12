@@ -44,7 +44,7 @@ function user.main():void;
     io.printf("formatted str %+4s\n",e);
     l := calc.lng(nil);
     io.printf("formatted lng %d\n",l);
-end main;
+end user.main;
 formatted int nil
 formatted bit nil
 formatted bte nil

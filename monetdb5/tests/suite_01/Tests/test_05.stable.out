@@ -76,7 +76,7 @@ function user.main():void;
     ua_a := io.printf("problem signalled before \\\"\n");
 #	io.print("quit();"); 
     va_a := clients.quit();
-end main;
+end user.main;
 [ "got single quote ' ." ]
 ## remove superfluous escapes
 

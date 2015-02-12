@@ -24,7 +24,7 @@ function user.main():void;
     X_13 := algebra.leftfetchjoin(b,b);
     j4:bat[:oid,:oid]  := algebra.leftfetchjoin(X_13,b);
     mdb.List();
-end main;
+end user.main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # test the joinpath expander 
     a := bat.new(:oid,:oid);            #  2 a:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
@@ -36,7 +36,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     X_13 := algebra.leftfetchjoin(b,b); #  8 _13:bat[:oid,:oid] := ALGleftfetchjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     j4:bat[:oid,:oid]  := algebra.leftfetchjoin(X_13,b);#  9 j4:bat[:oid,:oid] := ALGleftfetchjoin(_13:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     mdb.List();                         # 10 _12:void := MDBlistDetail() 
-end main;                               # 11  
+end user.main;                          # 11  
 
 # 20:30:05 >  
 # 20:30:05 >  Done.

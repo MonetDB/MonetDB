@@ -12,7 +12,7 @@
 --
 -- The Initial Developer of the Original Code is CWI.
 -- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2014 MonetDB B.V.
+-- Copyright August 2008-2015 MonetDB B.V.
 -- All Rights Reserved.
 
 -- Author M.Kersten
@@ -169,7 +169,7 @@ end;
 
 create view sys.storagemodel as select * from sys.storagemodel();
 -- A summary of the table storage requirement is is available as a table view.
--- The auxillary column denotes the maximum space if all non-sorted columns
+-- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
 create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
@@ -177,5 +177,5 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";

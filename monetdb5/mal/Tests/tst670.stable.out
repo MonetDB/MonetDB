@@ -20,7 +20,7 @@ function user.main():void;
     io.print("go");
     clients.quit();
     io.print("gone");
-end main;
+end user.main;
 [ "go" ]
 
 # 23:53:05 >  

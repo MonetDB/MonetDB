@@ -215,36 +215,26 @@ function user.main():void;
     v18 := bat.append(b,v16);
 #b.append(str(nil),int(nil)); 
     v19 := io.print(b);
-#b.print; 
-## Testing simple retrievals 
-    br := bat.reverse(b);
-    v20 := algebra.find(br,"the");
+    v20 := algebra.find(b,"the");
     v21 := io.print(v20);
-#b.find("the").print; 
-    v22 := algebra.find(br,"fox");
+    v22 := algebra.find(b,"fox");
     v23 := io.print(v22);
 #b.find("fox").print; 
     v24 := calc.str(nil);
-    v25 := algebra.find(br,v24);
+    v25 := algebra.find(b,v24);
     v26 := io.print(v25);
-#b.find(str(nil)).print; 
-## This should cause an error 
-    v27 := algebra.find(br,"cat");
+    v27 := algebra.find(b,"cat");
     v28 := io.print(v27);
 catch MALException:str ;
     io.print(MALException);
 exit MALException:str ;
-#b.find("cat").print; 
-## Can we bat.delete them and re-append them later on 
-    v29 := bat.delete(br,"fox");
-#b.delete("fox",4); 
-    v30 := bat.delete(br,"the");
-#b.delete("the",1); 
-    v31 := bat.delete(br,".");
-#b.delete(".",10); 
-    v32 := io.print(br);
-#b.print; 
-    b := bat.reverse(br);
+    o := algebra.find(b,"fox");
+    v29 := bat.delete(b,o);
+    o := algebra.find(b,"the");
+    v30 := bat.delete(b,o);
+    o := algebra.find(b,".");
+    v31 := bat.delete(b,o);
+    v32 := io.print(b);
     v33 := bat.append(b,"fox");
 #b.append("fox",4); 
     v34 := bat.append(b,"the");
@@ -253,9 +243,6 @@ exit MALException:str ;
 #b.append(".",10); 
     v36 := aggr.count(b);
     v37 := io.print(v36);
-#b.count.print; 
-## Lets cut out a few sections 
-    br := bat.reverse(b);
     v38 := algebra.slice(b,2@0,4@0);
     v39 := io.print(v38);
 #b.select(2,4).print; 
@@ -280,10 +267,8 @@ exit MALException:str ;
 #b.reverse.like("fox").print; 
     v84 := algebra.like(b," fox");
     v85 := io.print(v84);
-#b.reverse.like(" fox").print; 
-#quit; 
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h		t	  # name
 # str		oid	  # type
 #-------------------------#
@@ -302,20 +287,20 @@ end main;
 [ 0@0 ]
 [ 3@0 ]
 [ 11@0 ]
-[ "MALException:algebra.find:GDK reported error.can not find element" ]
-#-------------------------#
-# h		tmp_4	  # name
-# str		int	  # type
-#-------------------------#
-[ "",		  10@0	  ]
-[ "quick",	  1@0	  ]
-[ "brown",	  2@0	  ]
-[ nil,		  11@0	  ]
-[ "jumps",	  4@0	  ]
-[ "over",	  5@0	  ]
-[ "lazy",	  6@0	  ]
-[ "dog",	  7@0	  ]
-[ nil,		  8@0	  ]
+[ nil ]
+#--------------------------#
+# h	t  # name
+# oid	str  # type
+#--------------------------#
+[ 10@0,	""  ]
+[ 1@0,	"quick"  ]
+[ 2@0,	"brown"  ]
+[ 11@0,	nil  ]
+[ 4@0,	"jumps"  ]
+[ 5@0,	"over"  ]
+[ 6@0,	"lazy"  ]
+[ 7@0,	"dog"  ]
+[ 8@0,	nil  ]
 [ 12 ]
 #-------------------------#
 # h		tmp_5	  # name

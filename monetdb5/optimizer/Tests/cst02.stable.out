@@ -10,7 +10,7 @@ stdout of test 'cst02` in directory 'monetdb5/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35032/
 # MonetDB/SQL module v2.39.0 loaded
@@ -21,7 +21,7 @@ function user.main():void;
     X14 := nil:dbl;
     io.print(nil:dbl);
     mdb.List();
-end main;
+end user.main;
 [ nil ]
 function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions with strong types 
@@ -29,7 +29,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     X14 := nil:dbl;                     #  3 X14:dbl := _9:dbl 
     io.print(nil:dbl);                  #  4 _6:void := IOprint_val(_9:dbl) 
     mdb.List();                         #  5 _8:void := MDBlistDetail() 
-end main;                               #  6  
+end user.main;                          #  6  
 
 # 13:54:00 >  
 # 13:54:00 >  Done.

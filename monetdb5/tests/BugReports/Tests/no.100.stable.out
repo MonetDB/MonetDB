@@ -91,8 +91,8 @@ function user.main():void;
     wa_a := io.print(va_a);
 #	io.print("quit();"); 
     xa_a := clients.quit();
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#

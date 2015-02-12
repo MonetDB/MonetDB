@@ -9,7 +9,7 @@ stdout of test 'tst2504` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34673/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21340/.s.monetdb.34673
@@ -27,7 +27,7 @@ factory user.random(seed:int):int;
     i := calc.%(i,32767);
     yield random := i;
     return random := 0;
-end random;
+end user.random;
 function user.main():void;
 # The prototypical factory construct 
 # test factory return and restart 
@@ -39,7 +39,7 @@ function user.main():void;
     io.print(r2);
     r2 := user.random(1);
     io.print(r2);
-end main;
+end user.main;
 [ 125 ]
 [ 15625 ]
 [ 0 ]

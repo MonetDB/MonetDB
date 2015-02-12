@@ -11,7 +11,7 @@ stdout of test 'Dependencies_bam` in directory 'sql/test/Dependencies` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.333 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://robin-xps13:38541/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6347/.s.monetdb.38541
@@ -341,7 +341,9 @@ Dependencies between database objects
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
+[ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
+[ "or",	"f1",	"DEP_FUNC"	]
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
@@ -355,8 +357,10 @@ Dependencies between database objects
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -456,7 +460,9 @@ Dependencies between functions with same name
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
+[ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
+[ "or",	"f1",	"DEP_FUNC"	]
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
@@ -473,8 +479,10 @@ Dependencies between functions with same name
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -525,8 +533,10 @@ Dependencies between functions with same name
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -804,11 +814,13 @@ Cleanup
 [ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
 [ "or",	"imprintsize",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "or",	"ms_stuff",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "pi",	"radians",	"DEP_FUNC"	]

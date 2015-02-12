@@ -15,7 +15,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2014 MonetDB B.V.
+Copyright August 2008-2015 MonetDB B.V.
 All Rights Reserved.
 -->
 
@@ -26,7 +26,7 @@ All Rights Reserved.
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>monetdb</groupId>
 	<artifactId>monetdb-jdbc</artifactId>
-	<version>2.13</version>
+	<version>2.14</version>
 	<name>monetdb-jdbc</name>
 	<description>MonetDB JDBC driver</description>
 	<repositories>

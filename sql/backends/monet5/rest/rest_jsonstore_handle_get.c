@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -69,7 +69,7 @@ RESTsqlQuery(char **result, char * query)
 	be = (backend*)c->sqlcontext;
 	be->output_format = OFMT_JSON;
 
-	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE);
+	qmsg = SQLstatementIntern(c, &query, "rest", TRUE, TRUE, NULL);
 	if (qmsg == MAL_SUCCEED) {
 		resultstring = buffer_get_buf(resultbuffer);
 		*result = GDKstrdup(resultstring);

@@ -10,7 +10,7 @@ stdout of test 'recycle07` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39183/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18172/.s.monetdb.39183
@@ -19,7 +19,7 @@ stdout of test 'recycle07` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function sql.mvc():int;
     return mvc := 1;
-end mvc;
+end sql.mvc;
 function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
     b := bat.new(:oid,:oid);
 barrier i := 0@0:oid;
@@ -27,7 +27,7 @@ barrier i := 0@0:oid;
     redo i := iterator.next(1@0:oid,1000@0:oid);
 exit i;
     return tid := b;
-end tid;
+end sql.tid;
 function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
 barrier i := 0:int;
@@ -35,29 +35,13 @@ barrier i := 0:int;
     redo i := iterator.next(1:int,1000:int);
 exit i;
     return bind := b;
-end bind;
+end sql.bind;
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
     b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
     s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-end qry;
-#
-#recycle.setRetainPolicy(1);
-#recycle.setReusePolicy(1);
-#recycle.setCachePolicy(2,7);
-#optimizer.recycle("user","qry");
-#
-#io.print("start");
-#qry(100,250);
-#qry(700,710);
-#qry(100,250);
-#qry(700,710);
-#recycle.dump();
-## The next query should evict the cheapest, although more recently used mark leaf ( #5)
-#qry(400,700);
-#recycle.dump();
-#
+end sql.qry;
 function user.main():void;
 # Test of CREDIT cache policy in limited cache (6 lines) 
 # Evicts the leaf instruction with smallest credit= cnt * cost 
@@ -71,7 +55,7 @@ function user.main():void;
 # The next query should evict the cheapest, although more recently used mark leaf ( #4) 
     user.qry(400,700);
     recycle.dump();
-end main;
+end user.main;
 [ "start" ]
 #Recycler  catalog
 #retain= 1 time =0 sze= 0 alpha= 0.500

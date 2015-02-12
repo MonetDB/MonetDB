@@ -11,7 +11,7 @@ stdout of test 'reltime` in directory 'sql/test/pg_regress` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
@@ -24,97 +24,10 @@ Ready.
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- RELTIME
-#--
-#CREATE TABLE RELTIME_TBL (f1 reltime);
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 1 minute');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 5 hour');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 10 day');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 34 year');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 3 months');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 14 seconds ago');
-[ 1 ]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('badly formatted reltime');
-[ 1	]
-#INSERT INTO RELTIME_TBL (f1) VALUES ('@ 30 eons ago');
-[ 1	]
+#CREATE TABLE RELTIME_TBL (f1 interval second);
 #SELECT '' AS six, RELTIME_TBL.* FROM RELTIME_TBL;
 % .L,	sys.reltime_tbl # table_name
 % six,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 <> cast('@ 10 days' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% five,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-#SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 <= cast('@ 5 hours' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% three,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 < cast('@ 1 day' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% three,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-#SELECT '' AS one, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 = cast('@ 34 years' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% one,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS two, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 >= cast('@ 1 month' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% two,	f1 # name
-% char,	sec_interval # type
-% 0,	0 # length
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-[ "",	0.000	]
-#SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
-#   WHERE RELTIME_TBL.f1 > cast('@ 3 seconds ago' as interval second);
-% .L,	sys.reltime_tbl # table_name
-% five,	f1 # name
 % char,	sec_interval # type
 % 0,	0 # length
 #SELECT '' AS fifteen, r1.*, r2.*

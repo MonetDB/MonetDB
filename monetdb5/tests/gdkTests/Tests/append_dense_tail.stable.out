@@ -36,8 +36,8 @@ function user.main():void;
 #i:= bat.info(a); 
 #j:= algebra.join(fm,i); 
 #io.print(j); 
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#

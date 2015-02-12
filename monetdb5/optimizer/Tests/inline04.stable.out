@@ -20,20 +20,20 @@ barrier loop := true;
     redo loop := calc.<(base,3);
 exit loop;
     return foo := c;
-end foo;
+end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
 # the crucial part is to recognize valid inlines 
 # here the inlined function contains more then 
 # just multiplex callable functions. 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
@@ -53,7 +53,7 @@ barrier X_24 := true;                   # 13 _24:bit := _17:bit {J17}
     redo X_24 := calc.<(X_23,3);        # 16 _24:bit := CMDvarLT(_23:int, _18:int) {J14}
 exit X_24;                              # 17 _24:bit 
     z:bat[:oid,:int] {inline} := X_22;  # 18 z:bat[:oid,:int] := _22:bat[:oid,:int] {G}
-end qry;                                # 19  
+end user.qry;                           # 19  
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

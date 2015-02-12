@@ -16,7 +16,7 @@ stdout of test 'tst000` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
 #empty test file, used to check startup problems 
-end main;
+end user.main;
 
 # 10:56:51 >  
 # 10:56:51 >  Done.

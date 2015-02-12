@@ -10,7 +10,7 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:31436/
 # MonetDB/GIS module loaded
@@ -44,8 +44,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s4_1(A0:hge,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
@@ -66,8 +67,7 @@ function user.s4_1(A0:hge,A1:bte):void;
     sql.rsColumn(X_25,".L3","f","hugeint",128,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
-end s4_1;
-# querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s4_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % sys.dbg,	sys.L1,	.L3 # table_name
@@ -97,8 +97,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 145 # length
 function user.s10_1(A0:hge,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
@@ -119,8 +120,7 @@ function user.s10_1(A0:hge,A1:bte):void;
     sql.rsColumn(X_25,".L3","f","hugeint",128,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
-end s10_1;
-# querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s10_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
 #BY d;

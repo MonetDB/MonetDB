@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -66,7 +66,6 @@ geom_export str wkbFromText(wkb **w, const str *wkt, const int *tpe);
 geom_export BUN wkbHASH(wkb *w);
 geom_export int wkbCOMP(wkb *l, wkb *r);
 geom_export wkb *wkbNULL(void);
-geom_export str wkbIsnil(bit *r, wkb **v);
 geom_export str wkbAsText(str *r, wkb **w);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
@@ -140,15 +139,12 @@ mbr_isnil(mbr *m)
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
 
+static mbr mbrNIL = {GDK_flt_min, GDK_flt_min, GDK_flt_min, GDK_flt_min};
+
 mbr *
 mbrNULL(void)
 {
-	static mbr mbrNIL;
-	mbrNIL.xmin = flt_nil;
-	mbrNIL.ymin = flt_nil;
-	mbrNIL.xmax = flt_nil;
-	mbrNIL.ymax = flt_nil;
-	return (&mbrNIL);
+	return &mbrNIL;
 }
 
 /* FROMSTR: parse string to mbr. */
@@ -219,14 +215,16 @@ mbrFROMSTR(const char *src, int *len, mbr **atom)
 int
 mbrTOSTR(char **dst, int *len, mbr *atom)
 {
-	static char tempWkt[MBR_WKTLEN];
-	size_t dstStrLen = 3;
+	char tempWkt[MBR_WKTLEN];
+	size_t dstStrLen;
 
 	if (!mbr_isnil(atom)) {
-		snprintf(tempWkt, MBR_WKTLEN, "BOX (%f %f, %f %f)",
+		snprintf(tempWkt, MBR_WKTLEN, "\"BOX (%f %f, %f %f)\"",
 			 atom->xmin, atom->ymin, atom->xmax, atom->ymax);
-		dstStrLen = strlen(tempWkt) + 2;
-		assert(dstStrLen < GDK_int_max);
+		dstStrLen = strlen(tempWkt);
+	} else {
+		strcpy(tempWkt, "nil");
+		dstStrLen = 3;
 	}
 
 	if (*len < (int) dstStrLen + 1) {
@@ -236,7 +234,7 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 	}
 
 	if (dstStrLen > 3)
-		snprintf(*dst, *len, "\"%s\"", tempWkt);
+		snprintf(*dst, *len, "%s", tempWkt);
 	else
 		strcpy(*dst, "nil");
 	return (int) dstStrLen;
@@ -354,8 +352,8 @@ wkb_size(size_t len)
 {
 	if (len == ~(size_t) 0)
 		len = 0;
-	assert(sizeof(wkb) + len <= VAR_MAX);
-	return (var_t) (sizeof(wkb) + len);
+	assert(offsetof(wkb, data) + len <= VAR_MAX);
+	return (var_t) (offsetof(wkb, data) + len);
 }
 
 /* TOSTR: print atom in a string. */
@@ -545,20 +543,12 @@ wkbCOMP(wkb *l, wkb *r)
 	return memcmp(l->data, r->data, len);
 }
 
+static wkb wkb_nil = {~0};
+
 wkb *
 wkbNULL(void)
 {
-	static wkb nullval;
-
-	nullval.len = ~0;
-	return (&nullval);
-}
-
-str
-wkbIsnil(bit *r, wkb **v)
-{
-	*r = wkb_isnil(*v);
-	return MAL_SUCCEED;
+	return &wkb_nil;
 }
 
 str
@@ -782,21 +772,21 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
 	}
 	if ((by = BATdescriptor(*iy)) == NULL) {
-		BBPreleaseref(bx->batCacheid);
+		BBPunfix(bx->batCacheid);
 		throw(MAL, "geom.point", RUNTIME_OBJECT_MISSING);
 	}
 	if ( bx->htype != TYPE_void ||
 		 by->htype != TYPE_void ||
 	    bx->hseqbase != by->hseqbase ||
 	    BATcount(bx) != BATcount(by)) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
+		BBPunfix(bx->batCacheid);
+		BBPunfix(by->batCacheid);
 		throw(MAL, "geom.point", "both arguments must have dense and aligned heads");
 	}
 
 	if ((bo = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bx), TRANSIENT)) == NULL) {
-		BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(by->batCacheid);
+		BBPunfix(bx->batCacheid);
+		BBPunfix(by->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bo, bx->hseqbase);
@@ -807,9 +797,9 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 		str err = NULL;
 		if ((err = wkbcreatepoint(&p, &x[i], &y[i])) != MAL_SUCCEED) {
 			str msg;
-			BBPreleaseref(bx->batCacheid);
-			BBPreleaseref(by->batCacheid);
-			BBPreleaseref(bo->batCacheid);
+			BBPunfix(bx->batCacheid);
+			BBPunfix(by->batCacheid);
+			BBPunfix(bo->batCacheid);
 			msg = createException(MAL, "geom.point", "%s", err);
 			GDKfree(err);
 			return msg;
@@ -822,8 +812,8 @@ wkbcreatepoint_bat(bat *out, const bat *ix, const bat *iy)
 	BATsetcount(bo, BATcount(bx));
     BATsettrivprop(bo);
     BATderiveProps(bo,FALSE);
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(by->batCacheid);
+	BBPunfix(bx->batCacheid);
+	BBPunfix(by->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
 	return MAL_SUCCEED;
 }

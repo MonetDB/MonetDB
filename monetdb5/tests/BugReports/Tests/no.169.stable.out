@@ -58,7 +58,7 @@ function user.main():void;
     da_a := io.print(ca_a);
 #	io.print("quit();"); 
     ea_a := clients.quit();
-end main;
+end user.main;
 [ nil ]
 
 # 07:27:16 >  

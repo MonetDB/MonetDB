@@ -43,11 +43,11 @@ function user.main():void;
     c := batcalc.+(b,7);
     c := batcalc.+(b,8);
     io.print(c);
-end main;
-#-----------------#
-# h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 1@0,	  9	  ]
 
 # 08:01:32 >  

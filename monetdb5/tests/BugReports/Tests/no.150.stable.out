@@ -54,7 +54,7 @@ function user.main():void;
     ba_a := calc.setoid(aa_a);
 #	io.print("quit();"); 
     ca_a := clients.quit();
-end main;
+end user.main;
 
 # 07:27:15 >  
 # 07:27:15 >  Done.

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -28,7 +28,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i, limit, slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
-	int xtime=0, rtime = 0, space =0, tuples=0;
+	int xtime=0, rtime = 0, tuples=0;
 	InstrPtr defineQuery = NULL;
 
 
@@ -52,12 +52,14 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	limit= mb->stop;
 	slimit= mb->ssize;
-	if ( newMalBlkStmt(mb, 2 * mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0; 
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
+	setFunctionId(defineQuery, insertRef);
+	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;
 	setModuleId(defineQuery,querylogRef);
 
@@ -140,8 +142,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 */
 			q = newStmt(mb, "mtime", "current_timestamp");
 			finish= getArg(q,0)= newVariable(mb,GDKstrdup("finish"),TYPE_any);
-			q = newStmt(mb, "profiler", "getFootprint");
-			space= getArg(q,0)= newVariable(mb,GDKstrdup("space"),TYPE_lng);
 
 			q = newStmt(mb, "profiler", "cpuload");
 			load = newVariable(mb,GDKstrdup("load"),TYPE_int);
@@ -163,7 +163,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = pushArgument(mb, q, rtime); 
 			q = pushArgument(mb, q, load); 
 			q = pushArgument(mb, q, io); 
-			(void) pushArgument(mb, q, space); 
 			pushInstruction(mb,p);
 			continue;
 		}

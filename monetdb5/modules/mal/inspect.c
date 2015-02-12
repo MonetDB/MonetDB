@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -79,7 +79,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		s = s->outer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","function");
 
 	return MAL_SUCCEED;
@@ -110,7 +110,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		s = s->outer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","module");
 
 	return MAL_SUCCEED;
@@ -141,7 +141,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		s = s->outer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","kind");
 
 	return MAL_SUCCEED;
@@ -175,7 +175,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		s = s->outer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -210,7 +210,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		s = s->outer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -246,7 +246,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		s = s->peer;
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
@@ -290,7 +290,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -335,7 +335,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -364,7 +364,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -435,7 +435,7 @@ INSPECTatom_names(bat *ret)
 	for (i = 0; i < GDKatomcnt; i++)
 		BUNappend(b, ATOMname(i), FALSE);
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","name");
 
 	return MAL_SUCCEED;
@@ -450,7 +450,7 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
 	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
  	}
 	BATseqbase(b,0);
@@ -492,7 +492,7 @@ INSPECTatom_sup_names(bat *ret)
 		BUNappend(b, ATOMname(k), FALSE);
 	}
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","sup_name");
 
 	return MAL_SUCCEED;
@@ -514,7 +514,7 @@ INSPECTatom_sizes(bat *ret)
 		BUNappend(b, &s, FALSE);
 	}
 
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","size");
 
 	return MAL_SUCCEED;
@@ -530,8 +530,8 @@ INSPECTcalcSize(MalBlkPtr mb){
 		p= getInstrPtr(mb,i);
 		args += (p->argc-1)* sizeof(*p->argv);
 	}
-	size = (sizeof(InstrRecord) +sizeof(InstrPtr)) * mb->stop;
-	size += (sizeof(VarRecord)+ sizeof(InstrPtr)) * mb->vtop;
+	size = (offsetof(InstrRecord, argv) +sizeof(InstrPtr)) * mb->stop;
+	size += (offsetof(VarRecord, prps)+ sizeof(InstrPtr)) * mb->vtop;
 	size += args;
 	return size;
 }

@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 CP=cp
@@ -47,7 +47,7 @@ MV=mv
 	$(RM) waiting
 
 %.def: %.syms
-	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) grep -v DllMain $<;; esac > $@
+	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) sed '/DllMain/d;s/=.*//' $<;; esac > $@
 
 SUFFIXES-local: $(BUILT_SOURCES)
 

@@ -11,17 +11,17 @@ stdout of test 'dataflow03` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36857/
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
 function user.f(b:int):int;
     return f := b;
-end f;
+end user.f;
 function user.f(a:int,b:int):int;
     return f := calc.+(a,b);
-end f;
+end user.f;
 function user.sequential():void;
     A0 := 1;
     z := -1;
@@ -36,7 +36,7 @@ function user.sequential():void;
     z := user.f(y);
     z := user.f(z);
     io.print(z);
-end sequential;
+end user.sequential;
 function user.qry():void;
     A0 := 1;
     z := -1;
@@ -52,12 +52,12 @@ barrier x := language.dataflow();
     z := user.f(z);
 exit x;
     io.print(z);
-end qry;
+end user.qry;
 function user.main():void;
 # simple test for graph admin 
     user.sequential();
     user.qry();
-end main;
+end user.main;
 [ 3 ]
 [ 3 ]
 

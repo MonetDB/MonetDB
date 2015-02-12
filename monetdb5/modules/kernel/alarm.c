@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -47,7 +47,7 @@ alarm_export str ALARMepilogue(void *ret);
 alarm_export str ALARMusec(lng *ret);
 alarm_export str ALARMsleep(void *res, int *secs);
 alarm_export str ALARMsetalarm(void *res, int *secs, str *action);
-alarm_export str ALARMtimers(bat *res);
+alarm_export str ALARMtimers(bat *res, bat *actions);
 alarm_export str ALARMctime(str *res);
 alarm_export str ALARMepoch(int *res);
 alarm_export str ALARMtime(int *res);
@@ -82,9 +82,8 @@ CLKsignal(int nr)
 
 	(void) nr;
 
-	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
+	if (signal(SIGALRM, CLKsignal) == SIG_ERR) 
 		GDKsyserror("CLKsignal: call failed\n");
-	}
 
 	if (timerTop == 0) {
 		return;
@@ -178,9 +177,10 @@ ALARMsetalarm(void *res, int *secs, str *action)
 }
 
 str
-ALARMtimers(bat *res)
+ALARMtimers(bat *res, bat *actions)
 {
 	(void) res;		/* fool compiler */
+	(void) actions;		/* fool compiler */
 	throw(MAL, "alarm.timers", PROGRAM_NYI);
 }
 

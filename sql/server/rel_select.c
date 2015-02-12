@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -1542,9 +1542,9 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 			node *n, *m;
 			list *nexps;
 
-			if (sf->func->vararg) 
+			if (sf->func->vararg) {
 				e = exp_op(sql->sa, exps, sf);
-			else {
+			} else {
 	       			nexps = new_exp_list(sql->sa);
 				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
@@ -2417,7 +2417,6 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 	sql_exp *L = ls, *R = rs, *e = NULL;
 
 	if (!rs2) {
-		sql_exp *ors = NULL;
 
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
@@ -2433,17 +2432,8 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		}
 		if (!exp_subtype(ls) && !exp_subtype(rs)) 
 			return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
-		ors = rs;
-		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL) { 
-			/* reset error */
-			sql->session->status = 0;
-			sql->errstr[0] = '\0';
-
-			rs = ors;
-			/* handle NULL left-columns */
-			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)
-				return NULL;
-		}
+		if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) 
+			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
 		if ((rs = rel_check_type(sql, exp_subtype(ls), rs, type_equal)) == NULL ||
@@ -3594,21 +3584,39 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
 
-	if (!e) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+
+	if (!s)
+		return NULL;
+	if (!e)
+		f = find_func(sql, s, fname, 1, F_AGGR);
+	if (!e && f) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		return rel_aggr(sql, rel, se, fs);
 	}
+	if (!e)
+		return NULL;
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	if (!s)
-		s = sql->session->schema;
 	t = exp_subtype(e);
-	f = bind_func(sql, s, fname, t, NULL, type);
-	if (!f)
-		f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	if (!t) {
+		f = find_func(sql, s, fname, 1, type);
+		if (!f)
+			f = find_func(sql, s, fname, 1, F_AGGR);
+		if (f) {
+			sql_arg *a = f->func->ops->h->data;
+
+			t = &a->type;
+			if (rel_set_type_param(sql, t, e, 1) < 0)
+				return NULL;
+		}
+	} else {
+		f = bind_func(sql, s, fname, t, NULL, type);
+		if (!f)
+			f = bind_func(sql, s, fname, t, NULL, F_AGGR);
+	}
 	if (f && IS_AGGR(f->func))
 		return _rel_aggr(sql, rel, 0, s, fname, l->next, fs);
 
@@ -3836,22 +3844,27 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
+	sql_subfunc *sf = NULL;
+
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (!s)
+		return NULL;
 
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
-	if (!l && !r) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
+	if (!l && !r)
+		sf = find_func(sql, s, fname, 2, F_AGGR);
+	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		return rel_aggr(sql, rel, se, f);
 	}
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-
 	if (type == F_FUNC) {
-		sql_subfunc *func = find_func(sql, s, fname, 2, F_AGGR);
-		if (func) {
+		sf = find_func(sql, s, fname, 2, F_AGGR);
+		if (sf) {
 			if (!l || !r) { /* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -4324,9 +4337,11 @@ rel_cast(mvc *sql, sql_rel **rel, symbol *se, int f)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
+	if (e) 
+		e = rel_check_type(sql, tpe, e, type_cast);
 	if (e)
-		return rel_check_type(sql, tpe, e, type_cast);
-	return NULL;
+		exp_label(sql->sa, e, ++sql->label);
+	return e;
 }
 
 static sql_exp *
@@ -4640,12 +4655,12 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 		if (r && or != r)
 			(*R)->l = r;
 		/* add to internal project */
-		if (is_processed(r) && e) {
+		if (e && is_processed(r)) {
 			rel_project_add_exp(sql, r, e);
 			e = rel_lastexp(sql, r);
 		}
 		/* try with reverted aliases */
-		if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+		if (!e && r && sql->session->status != -ERR_AMBIGUOUS) {
 			sql_rel *nr = rel_project(sql->sa, r, rel_projections_(sql, r));
 
 			/* reset error */
@@ -5588,19 +5603,20 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 		rel_destroy(t2);
 		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
-	if (t1 && dist)
-		t1 = rel_distinct(t1);
 	if ( q->token == SQL_UNION) {
+		/* For EXCEPT/INTERSECT the group by is always done within the implementation */
+		if (t1 && dist)
+			t1 = rel_distinct(t1);
 		if (t2 && dist)
 			t2 = rel_distinct(t2);
 		res = rel_setquery_(sql, t1, t2, corresponding, op_union );
-		if (res && dist)
-			res = rel_distinct(res);
 	}
 	if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(sql, t1, t2, corresponding, op_except );
 	if ( q->token == SQL_INTERSECT)
 		res = rel_setquery_(sql, t1, t2, corresponding, op_inter );
+	if (res && dist)
+		res = rel_distinct(res);
 	return res;
 }
 

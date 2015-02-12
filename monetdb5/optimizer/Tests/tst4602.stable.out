@@ -22,7 +22,7 @@ barrier j := calc.<(i,lim);
     return welcome := i;
 exit j;
     return welcome := i;
-end welcome;
+end user.welcome;
 
 
 # 20:03:29 >  

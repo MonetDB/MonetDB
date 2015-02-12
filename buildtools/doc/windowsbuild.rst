@@ -12,7 +12,7 @@
 ..
 .. The Initial Developer of the Original Code is CWI.
 .. Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-.. Copyright August 2008-2014 MonetDB B.V.
+.. Copyright August 2008-2015 MonetDB B.V.
 .. All Rights Reserved.
 
 .. This document is written in reStructuredText (see
@@ -295,26 +295,26 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.1j).  Follow the instructions in the file
+stable version (1.0.1k).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.1b.win32
+   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.1k.win32
    ms\do_ms.bat
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    and::
-   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.1b.win64
+   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.1k.win64
    ms\do_win64a
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
-   For the debug versions, use debug-VC-WIN32 and debug-VC-WIN64A and
-   edit the file ``ms/ntdll.mak`` to add a ``d`` to the definitions of
-   ``O_SSL``, ``O_CRYPTO``, ``L_SSL``, and ``L_CRYPTO`` before
-   building.
+   For the debug versions, use ``debug-VC-WIN32`` and
+   ``debug-VC-WIN64A`` and edit the file ``ms/ntdll.mak`` to add a
+   ``d`` to the definitions of ``O_SSL``, ``O_CRYPTO``, ``L_SSL``, and
+   ``L_CRYPTO`` before building.
 
-Fix the ``LIBOPENSSL`` definition in ``NT\winrules.msc`` so that it
+Fix the ``LIBOPENSSL`` definition in ``NT\rules.msc`` so that it
 refers to the location where you installed the library and call
 ``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
 
@@ -328,7 +328,7 @@ Libxml2__ is the XML C parser and toolkit of Gnome.
 The home of the library is http://xmlsoft.org/.  But Windows binaries
 can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
 Win32 Binaries on the right, and download libxml2, iconv, and zlib.
-Install these in e.g. ``C:\``.
+Install these in e.g. ``C:\Libraries``.
 
 Note that we hit a bug in version 2.6.31 of libxml2.  See the
 bugreport__.  Use version 2.6.30 or 2.6.32 or later.
@@ -339,10 +339,10 @@ optional prerequisites iconv_ and zlib_, for which see below).
 Run the following commands in the ``win32`` subfolder, substituting
 the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\libxml2-2.7.8.win64 ^
-  include=C:\iconv-1.11.win64\include;C:\zlib-1.2.5.win64\include ^
-  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.5.win64\lib iconv=yes zlib=yes ^
-  vcmanifest=yes
+ cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.2.win64 ^
+  include=C:\Libraries\iconv-1.11.1.win64\include;C:\Libraries\zlib-1.2.8.win64\include ^
+  lib=C:\Libraries\iconv-1.11.1.win64\lib;C:\Libraries\zlib-1.2.8.win64\lib ^
+  iconv=yes zlib=yes vcmanifest=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
@@ -352,6 +352,9 @@ start of the three lines that contain one.  Also, unless you use an
 older compiler, remove the line that contains ``/OPT:NOWIN98``.
 Visual Studio 2010 will give an error with this option, and Visual
 Studio 2008 a warning.
+
+In the 2.9.2 there is another problem.  In the ``win32\configure.js``
+file near the top, change ``configure.in`` to ``configure.ac``.
 
 .. For a debug version, add ``debug=yes cruntime=/MDd`` to the
    ``cscript`` command and edit the file ``Makefile.msvc`` to add a
@@ -407,7 +410,7 @@ in the instructions.
    autogen.bat
    nmake /f makefile.vc MSVC_VER=1600
 
-.. On Windows64, add WIN64=YES to the nmake command line.
+.. On Windows64, add ``WIN64=YES`` to the nmake command line.
 
 .. For a debug build, add ``BUILD_DEBUG=YES`` to the ``nmake`` command
    line.
@@ -436,18 +439,18 @@ of the ``OBJ`` macro and to the list of dependencies of and the
 command for ``$(CDLLNAME)`` in ``src\Makefile.vc``.
 
 After this, install the library somewhere, e.g. in
-``C:\geos-3.4.2.win32``::
+``C:\Libraries\geos-3.4.2.win32``::
 
- mkdir C:\geos-3.4.2.win32
- mkdir C:\geos-3.4.2.win32\lib
- mkdir C:\geos-3.4.2.win32\bin
- mkdir C:\geos-3.4.2.win32\include
- mkdir C:\geos-3.4.2.win32\include\geos
- copy src\geos_c_i.lib C:\geos-3.4.2.win32\lib
- copy src\geos_c.dll C:\geos-3.4.2.win32\bin
- copy include C:\geos-3.4.2.win32\include
- copy include\geos C:\geos-3.4.2.win32\include\geos
- copy capi\geos_c.h C:\geos-3.4.2.win32\include
+ mkdir C:\Libraries\geos-3.4.2.win32
+ mkdir C:\Libraries\geos-3.4.2.win32\lib
+ mkdir C:\Libraries\geos-3.4.2.win32\bin
+ mkdir C:\Libraries\geos-3.4.2.win32\include
+ mkdir C:\Libraries\geos-3.4.2.win32\include\geos
+ copy src\geos_c_i.lib C:\Libraries\geos-3.4.2.win32\lib
+ copy src\geos_c.dll C:\Libraries\geos-3.4.2.win32\bin
+ copy include C:\Libraries\geos-3.4.2.win32\include
+ copy include\geos C:\Libraries\geos-3.4.2.win32\include\geos
+ copy capi\geos_c.h C:\Libraries\geos-3.4.2.win32\include
 
 __ http://geos.refractions.net/
 __ http://trac.osgeo.org/geos/wiki/BuildingOnWindowsWithNMake
@@ -467,7 +470,7 @@ The home of the program and library is
 http://www.gnu.org/software/libiconv/, but Windows binaries can be
 gotten from the same site as the libxml2 library:
 http://www.zlatkovic.com/libxml.en.html.  Click on Win32 Binaries on
-the right, and download iconv.  Install in e.g. ``C:\``.  Note that
+the right, and download iconv.  Install in e.g. ``C:\Libraries\``.  Note that
 these binaries are quite old (libiconv-1.9.2, last I looked).
 
 On Windows64 you will have to compile iconv yourself.  Get the source
@@ -477,10 +480,14 @@ with Visual Studio but require MinGW instead, which means that there
 is no support for Windows64.  In other words, get the latest 1.11
 release.
 
+When compiling with Visual Studio 12.0, delete the file
+``windows\stdbool.h`` since this version of VS includes its own copy
+(older versions didn't).
+
 Build using the commands::
 
- nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
- nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
+ nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\Libraries\iconv-1.11.1.win64 IIPREFIX=C:\\Libraries\\iconv-1.11.1.win64
+ nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\Libraries\iconv-1.11.1.win64 IIPREFIX=C:\\Libraries\\iconv-1.11.1.win64 install
 
 .. Before the install, run the commands::
    cd lib
@@ -489,9 +496,12 @@ Build using the commands::
    mt /nologo /manifest charset.dll.manifest /outputresource:charset.dll;2
    cd ..\..
 
-Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so
-that they refer to the location where you installed the library and
-call ``nmake`` with the extra parameter ``HAVE_ICONV=1``.
+.. For the debug version, use options ``MFLAGS=-MDd DEBUG=1`` and
+   change the ``Makefile.msvc`` files to include a ``d`` for the DLLs.
+
+Fix the ``ICONV`` definitions in ``NT\rules.msc`` so that they refer
+to the location where you installed the library and call ``nmake``
+with the extra parameter ``HAVE_ICONV=1``.
 
 __ http://www.gnu.org/software/libiconv/
 __ http://www.gnu.org/software/libiconv/#downloading
@@ -506,29 +516,24 @@ MonetDB and the iconv library.  The home of zlib is
 http://www.zlib.net/, but Windows binaries can be gotten from the same
 site as the libxml2 library: http://www.zlatkovic.com/libxml.en.html.
 Click on Win32 Binaries on the right, and download zlib.  Install in
-e.g. ``C:\``.  Note that the at the time of writing, the precompiled
-version lags behind: it is version 1.2.3, whereas 1.2.5 is current.
+e.g. ``C:\Libraries\``.  Note that the at the time of writing, the precompiled
+version lags behind: it is version 1.2.3, whereas 1.2.8 is current.
 
 On Windows64 you will have to compile zlib yourself.  Get the source
-from the `zlib website`__ and extract somewhere.  Then compile using
-(skip the first line if you have already set up your 64 bit build
-environment for Visual Studio)
+from the `zlib website`__ and extract somewhere.  Then compile using::
 
-::
-
- call "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin\amd64\vcvarsamd64.bat"
  nmake /f win32\Makefile.msc OBJA=inffast.obj
 
 Create the folder where you want to install the binaries,
-e.g. ``C:\zlib-1.2.5.win64``, and the subfolders ``bin``, ``include``,
-and ``lib``.  Copy the files ``zconf.h`` and ``zlib.h`` to the newly
-created ``include`` folder.  Copy the file ``zdll.lib`` to the new
-``lib`` folder, and copy the file ``zlib1.dll`` to the new ``bin``
-folder.
+e.g. ``C:\Libraries\zlib-1.2.8.win64``, and the subfolders ``bin``,
+``include``, and ``lib``.  Copy the files ``zconf.h`` and ``zlib.h``
+to the newly created ``include`` folder.  Copy the file ``zdll.lib``
+to the new ``lib`` folder, and copy the file ``zlib1.dll`` to the new
+``bin`` folder.
 
-Fix the ``LIBZ`` definitions in ``buildtools\conf\winrules.msc`` so
-that they refer to the location where you installed the library and
-call ``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
+Fix the ``LIBZ`` definitions in ``NT\rules.msc`` so that they refer to
+the location where you installed the library and call ``nmake`` with
+the extra parameter ``HAVE_LIBZ=1``.
 
 __ http://www.zlib.net/
 __ http://www.zlib.net/
@@ -618,7 +623,7 @@ command for ``lib`` in ``makefile.msc``.
 After this, compile using ``nmake /f makefile.msc`` and copy the files
 ``bzlib.h``, ``libbz2.dll``, and ``libbz2.lib`` to a location where
 the MonetDB build process can find them,
-e.g. ``C:\bzip2-1.0.5.win32``.
+e.g. ``C:\Libraries\bzip2-1.0.5.win32``.
 
 .. Before copying the files, run the command::
    mt /nologo /manifest libbz2.dll.manifest /Outputresource:libbz2.dll;2
@@ -628,11 +633,29 @@ e.g. ``C:\bzip2-1.0.5.win32``.
    occurences of ``libbz2.dll`` and ``libbz2.lib`` to ``libbz2d.dll``
    and ``libbz2d.lib``.
 
-Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
-that they refer to the location where you installed the library and
-call ``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
+Fix the ``LIBBZ2`` definitions in ``NT\rules.msc`` so that they refer
+to the location where you installed the library and call ``nmake``
+with the extra parameter ``HAVE_LIBBZ2=1``.
 
 __ http://www.bzip.org/
+
+Libatomic_ops
+-------------
+
+`Atomic Ops`__ is a library that provides semi-portable access to
+hardware-provided atomic memory update operations on a number of
+architectures.  We optionally uses this to implement thread-safe
+access to a number of variables and for the implementation of locks.
+
+To install, it suffices to copy the file ``src\atomic_ops.h`` and the
+folder ``src\atomic_ops`` to the installation location in
+e.g. ``C:\Libraries``.
+
+Fix the ``LIBATOMIC_OPS`` definition in ``NT\rules.msc`` so that it
+refers to the location where you installed the header files and call
+``nmake`` with the extra parameter ``HAVE_ATOMIC_OPS=1``.
+
+__ https://github.com/ivmai/libatomic_ops
 
 Perl
 ----
@@ -856,9 +879,9 @@ parameter may contain something like::
  bits=32
  LIBPERL=C:\Perl
  LIBPCRE=C:\Program Files\PCRE
- LIBICONV=C:\iconv-1.11.win32
- LIBZLIB=C:\zlib-1.2.5.win32
- LIBXML2=C:\libxml2-2.7.8.win32
+ LIBICONV=C:\Libraries\iconv-1.11.win32
+ LIBZLIB=C:\Libraries\zlib-1.2.8.win32
+ LIBXML2=C:\Libraries\libxml2-2.9.2.win32
 
 Building Installers
 ~~~~~~~~~~~~~~~~~~~

@@ -1,9 +1,9 @@
 stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 
 
-# 15:05:24 >  
-# 15:05:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31254" "--set" "mapi_usock=/var/tmp/mtest-9537/.s.monetdb.31254" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 15:05:24 >  
+# 12:56:24 >  
+# 12:56:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31190" "--set" "mapi_usock=/var/tmp/mtest-27974/.s.monetdb.31190" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:56:24 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -11,51 +11,19 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:31254/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9537/.s.monetdb.31254
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:31190/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27974/.s.monetdb.31190
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_jsonstore.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 89_generator_hge.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 99_system.sql
 
-# 15:05:25 >  
-# 15:05:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9537" "--port=31254"
-# 15:05:25 >  
+# 12:56:25 >  
+# 12:56:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27974" "--port=31190"
+# 12:56:25 >  
 
 #CREATE TABLE num_data (id integer, val numeric(38,20));
 #CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,20));
@@ -939,14 +907,6 @@ Ready.
 #INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 20)
 #    FROM num_data t1, num_data t2;
 [ 100	]
-#SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 20) as expected
-#    FROM num_result t1, num_exp_add t2
-#    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-#    AND t1.result <> round(t2.expected, 20);
-% sys.t1,	sys.t1,	sys.t1,	sys.L # table_name
-% id1,	id2,	result,	expected # name
-% int,	int,	decimal,	decimal # type
-% 1,	1,	40,	10 # length
 #DELETE FROM num_result;
 [ 100	]
 #INSERT INTO num_result SELECT t1.id, t2.id, t1.val - t2.val
@@ -965,14 +925,6 @@ Ready.
 #INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
 #    FROM num_data t1, num_data t2;
 [ 100	]
-#SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40)
-#    FROM num_result t1, num_exp_sub t2
-#    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-#    AND t1.result <> round(t2.expected, 40);
-% sys.t1,	sys.t1,	sys.t1,	sys.L # table_name
-% id1,	id2,	result,	round_expected # name
-% int,	int,	decimal,	decimal # type
-% 1,	1,	40,	10 # length
 #DELETE FROM num_result;
 [ 100	]
 #SELECT t1.id1, t1.id2, t1.result, t2.expected
@@ -985,14 +937,6 @@ Ready.
 % 1,	1,	40,	40 # length
 #DELETE FROM num_result;
 [ 0	]
-#SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
-#    FROM num_result t1, num_exp_mul t2
-#    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-#    AND t1.result <> round(t2.expected, 30);
-% sys.t1,	sys.t1,	sys.t1,	sys.L # table_name
-% id1,	id2,	result,	expected # name
-% int,	int,	decimal,	decimal # type
-% 1,	1,	40,	10 # length
 #DELETE FROM num_result;
 [ 0	]
 #SELECT t1.id1, t1.id2, t1.result, t2.expected
@@ -1005,14 +949,6 @@ Ready.
 % 1,	1,	40,	40 # length
 #DELETE FROM num_result;
 [ 0	]
-#SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
-#    FROM num_result t1, num_exp_div t2
-#    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-#    AND t1.result <> round(t2.expected, 80);
-% sys.t1,	sys.t1,	sys.t1,	sys.L # table_name
-% id1,	id2,	result,	expected # name
-% int,	int,	decimal,	decimal # type
-% 1,	1,	40,	10 # length
 #DELETE FROM num_result;
 [ 0	]
 #INSERT INTO num_result SELECT id, 0, SQRT(ABS(val))
@@ -1211,7 +1147,7 @@ Ready.
 #DROP TABLE num_exp_power_10_ln;
 #DROP TABLE num_result;
 
-# 15:05:27 >  
-# 15:05:27 >  "Done."
-# 15:05:27 >  
+# 12:56:27 >  
+# 12:56:27 >  "Done."
+# 12:56:27 >  
 

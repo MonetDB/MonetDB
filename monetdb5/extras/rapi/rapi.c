@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -549,7 +549,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
 			goto wrapup;
 		}
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 
 		// install vector into R environment
 		Rf_defineVar(varname, varvalue, env);

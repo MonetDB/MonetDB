@@ -12,11 +12,15 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2014 MonetDB B.V.
+# Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
 atom inet:lng;
 
+command null() :inet
+address INETnull;
+command cmp() :int
+address INETcompare;
 command fromstr()
 address INETfromString
 comment "Convert a string to an inet";
@@ -86,6 +90,7 @@ comment "Extract IP address and netmask length as text";
 command abbrev(:inet):str
 address INETabbrev
 comment "Abbreviated display format as text";
+
 module calc;
 
 command inet(s:inet):inet
@@ -95,9 +100,6 @@ comment "Convert a inet to an inet";
 command inet(s:str):inet
 address INET_fromstr
 comment "Convert a string to an inet";
-command isnil(v:inet):bit
-address INET_isnil
-comment "Nil test for inet value";
 
 command ==(v:inet,w:inet):bit
 address INET_comp_EQ

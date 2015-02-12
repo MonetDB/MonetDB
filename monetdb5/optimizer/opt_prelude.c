@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -78,6 +78,7 @@ str datacellRef;
 str dataflowRef;
 str datacyclotronRef;
 str dblRef;
+str defineRef;
 str deleteRef;
 str depositRef;
 str differenceRef;
@@ -121,6 +122,7 @@ str thetajoinRef;
 str subjoinRef;
 str subantijoinRef;
 str subbandjoinRef;
+str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
 str kunionRef;
@@ -220,12 +222,8 @@ str setWriteModeRef;
 str sinkRef;
 str sliceRef;
 str subsliceRef;
-str sortHRef;
-str sortHTRef;
 str sortRef;
-str sortReverseTailRef;
-str sortTailRef;
-str sortTHRef;
+str sortReverseRef;
 str sqlRef;
 str srvpoolRef;
 str streamsRef;
@@ -280,6 +278,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
+int mtProp;			
 
 void optimizerInit(void)
 {
@@ -335,6 +334,7 @@ void optimizerInit(void)
 	dataflowRef = putName("dataflow",8);
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);
+	defineRef = putName("define",6);
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
 	differenceRef= putName("difference",10);
@@ -377,6 +377,7 @@ void optimizerInit(void)
 	subjoinRef = putName("subjoin",7);
 	subantijoinRef = putName("subantijoin",11);
 	subbandjoinRef = putName("subbandjoin",11);
+	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);
@@ -477,12 +478,8 @@ void optimizerInit(void)
 	sliceRef = putName("slice",5);
 	subsliceRef = putName("subslice",8);
 	singleRef = putName("single",6);
-	sortHRef = putName("sortH",5);
-	sortHTRef = putName("sortHT",6);
 	sortRef = putName("sort",4);
-	sortReverseTailRef = putName("sortReverseTail",15);
-	sortTailRef = putName("sortTail",8);
-	sortTHRef = putName("sortTH",6);
+	sortReverseRef = putName("sortReverse",15);
 	sqlRef = putName("sql",3);
 	srvpoolRef = putName("srvpool",7);
 	streamsRef = putName("streams",7);
@@ -538,6 +535,7 @@ void optimizerInit(void)
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
+	mtProp = PropertyIndex("mergetable");
 	/*
 	 * @-
 	 * Set the optimizer debugging flag

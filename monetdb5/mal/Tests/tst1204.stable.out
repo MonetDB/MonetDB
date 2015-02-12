@@ -46,8 +46,7 @@ barrier mf_a := of_a;
     redo lf_a;
 exit mf_a;
 exit lf_a;
-#} 
-end main;
+end user.main;
 
 # 23:39:01 >  
 # 23:39:01 >  Done.

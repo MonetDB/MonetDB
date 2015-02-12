@@ -94,7 +94,7 @@ function user.main():void;
     io.print(t);
     t := str.replace("hello world","world","brave new world");
     io.print(t);
-end main;
+end user.main;
 [ "he" ]
 [ "or" ]
 [ "hello world" ]

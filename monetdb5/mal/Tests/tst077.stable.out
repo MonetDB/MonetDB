@@ -11,7 +11,7 @@ stdout of test 'tst077` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.629 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38596/
 # MonetDB/GIS module loaded
@@ -21,17 +21,7 @@ stdout of test 'tst077` in directory 'monetdb5/mal` itself:
 function user.swap(x:bat[:any_1,:int],y:bat[:any_1,:int]) (a:str,b:bat[:any_1,:int]);
     a := "done";
     return (a,b) := (a,x);
-end swap;
-#
-#X:= new(:int,:int);
-#insert(X,1,1);
-#Y:= new(:int,:int);
-#insert(Y,2,2);
-#(x,y):= swap(X,Y);
-#print(x);
-#print(y);
-#
-#
+end user.swap;
 function user.main():void;
 # parsing operations with multi-assignments 
     X := bat.new(:oid,:int);
@@ -41,7 +31,7 @@ function user.main():void;
     (x,y) := user.swap(X,Y);
     io.print(x);
     io.print(y);
-end main;
+end user.main;
 [ "done" ]
 #-----------------#
 # h	t	  # name

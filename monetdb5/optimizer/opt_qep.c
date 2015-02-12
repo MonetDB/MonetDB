@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -167,7 +167,7 @@ QEPdump(stream *f, QEP qep, int indent){
 	str s;
 	if( qep->p){
 		for(i=0;i<indent; i++) mnstr_printf(f," ");
-		s= instruction2str(qep->mb, 0,qep->p, LIST_MAL_STMT | LIST_MAPI);
+		s= instruction2str(qep->mb, 0,qep->p, LIST_MAL_DEBUG );
 		mnstr_printf(f,"%s\n",s);
 		GDKfree(s);
 		inc = 4;

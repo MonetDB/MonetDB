@@ -11,7 +11,7 @@ stdout of test 'check3_bam` in directory 'sql/test/leaks` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.591 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:30577/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27819/.s.monetdb.30577
@@ -40,11 +40,12 @@ Ready.
 [ "oid",	"bit",	4	]
 [ "oid",	"bit",	46	]
 [ "oid",	"bit",	46	]
-[ "oid",	"bit",	331	]
-[ "oid",	"bit",	1497	]
-[ "oid",	"bit",	1497	]
-[ "oid",	"bit",	1497	]
-[ "oid",	"bte",	4206	]
+[ "oid",	"bit",	330	]
+[ "oid",	"bit",	1511	]
+[ "oid",	"bit",	1511	]
+[ "oid",	"bit",	1511	]
+[ "oid",	"bte",	4234	]
+[ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
 [ "oid",	"int",	0	]
@@ -96,24 +97,24 @@ Ready.
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
 [ "oid",	"int",	46	]
-[ "oid",	"int",	208	]
-[ "oid",	"int",	229	]
-[ "oid",	"int",	229	]
-[ "oid",	"int",	331	]
-[ "oid",	"int",	331	]
-[ "oid",	"int",	331	]
-[ "oid",	"int",	331	]
-[ "oid",	"int",	331	]
-[ "oid",	"int",	1497	]
-[ "oid",	"int",	1497	]
-[ "oid",	"int",	1497	]
-[ "oid",	"int",	1497	]
-[ "oid",	"int",	1497	]
-[ "oid",	"int",	4206	]
-[ "oid",	"int",	4206	]
-[ "oid",	"int",	4206	]
-[ "oid",	"int",	4206	]
-[ "oid",	"int",	4206	]
+[ "oid",	"int",	206	]
+[ "oid",	"int",	231	]
+[ "oid",	"int",	231	]
+[ "oid",	"int",	330	]
+[ "oid",	"int",	330	]
+[ "oid",	"int",	330	]
+[ "oid",	"int",	330	]
+[ "oid",	"int",	330	]
+[ "oid",	"int",	1511	]
+[ "oid",	"int",	1511	]
+[ "oid",	"int",	1511	]
+[ "oid",	"int",	1511	]
+[ "oid",	"int",	1511	]
+[ "oid",	"int",	4234	]
+[ "oid",	"int",	4234	]
+[ "oid",	"int",	4234	]
+[ "oid",	"int",	4234	]
+[ "oid",	"int",	4234	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
 [ "oid",	"lng",	0	]
@@ -167,10 +168,7 @@ Ready.
 [ "oid",	"sht",	0	]
 [ "oid",	"sht",	46	]
 [ "oid",	"sht",	46	]
-[ "oid",	"sht",	229	]
-[ "oid",	"str",	0	]
-[ "oid",	"str",	0	]
-[ "oid",	"str",	0	]
+[ "oid",	"sht",	231	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
@@ -233,16 +231,16 @@ Ready.
 [ "oid",	"str",	46	]
 [ "oid",	"str",	46	]
 [ "oid",	"str",	46	]
-[ "oid",	"str",	208	]
-[ "oid",	"str",	331	]
-[ "oid",	"str",	331	]
-[ "oid",	"str",	331	]
-[ "oid",	"str",	331	]
-[ "oid",	"str",	1497	]
-[ "oid",	"str",	1497	]
-[ "oid",	"str",	1497	]
-[ "oid",	"str",	4206	]
-[ "oid",	"str",	4206	]
+[ "oid",	"str",	206	]
+[ "oid",	"str",	330	]
+[ "oid",	"str",	330	]
+[ "oid",	"str",	330	]
+[ "oid",	"str",	330	]
+[ "oid",	"str",	1511	]
+[ "oid",	"str",	1511	]
+[ "oid",	"str",	1511	]
+[ "oid",	"str",	4234	]
+[ "oid",	"str",	4234	]
 [ "oid",	"timestamp",	0	]
 [ "oid",	"timestamp",	0	]
 [ "oid",	"wrd",	0	]
@@ -254,13 +252,13 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	193	]
+[ "transient",	186	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 10,	3 # length
-[ "persistent",	216	]
+[ "persistent",	214	]
 
 # 16:21:17 >  
 # 16:21:17 >  "Done."

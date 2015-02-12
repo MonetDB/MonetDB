@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -86,11 +86,11 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* more sanity checks */
 	if (!BAThdense(v)) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a dense head");
 	}
 	if (v->ttype != TPE(TYPE)) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
@@ -98,7 +98,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* allocate result BAT */
 	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
 	}
 
@@ -134,7 +134,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
-	BBPreleaseref(v->batCacheid);
+	BBPunfix(v->batCacheid);
 
 	/* keep result */
 	BBPkeepref(*_res = res->batCacheid);
@@ -219,11 +219,11 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* more sanity checks */
 	if (!BAThdense(v)) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a dense head");
 	}
 	if (v->ttype != TPE(TYPE)) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
@@ -231,7 +231,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	/* allocate result BAT */
 	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
-		BBPreleaseref(v->batCacheid);
+		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
 	}
 
@@ -267,7 +267,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	BATkey(BATmirror(res), FALSE);
 
 	/* release argument BAT descriptors */
-	BBPreleaseref(v->batCacheid);
+	BBPunfix(v->batCacheid);
 
 	/* keep result */
 	BBPkeepref(*_res = res->batCacheid);
@@ -371,7 +371,7 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -398,7 +398,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
@@ -436,7 +436,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);

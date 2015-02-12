@@ -24,8 +24,8 @@ function user.main():void;
     bat.insert(b,nil:oid,true:bit);
     bat.insert(b,nil:oid,false:bit);
     io.print(b);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	bit	  # type
 #-----------------#

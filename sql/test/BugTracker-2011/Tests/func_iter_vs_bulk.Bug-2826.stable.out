@@ -11,7 +11,7 @@ stdout of test 'func_iter_vs_bulk.Bug-2826` in directory 'sql/test/BugTracker-20
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.749 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:36720/
 # MonetDB/GIS module loaded
@@ -33,8 +33,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
+% 110 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
+    X_28:void  := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe");
     X_3 := sql.mvc();
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
     (X_10,r1_10) := sql.bind(X_3,"sys","tab_2826","d",2);
@@ -50,8 +51,7 @@ function user.s5_1{autoCommit=true}(A0:flt):void;
     sql.rsColumn(X_21,"sys.tab_2826","d","double",53,0,X_20);
     X_26 := io.stdout();
     sql.exportResult(X_26,X_21);
-end s5_1;
-# querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","default_pipe")
+end user.s5_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

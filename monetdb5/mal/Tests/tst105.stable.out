@@ -21,7 +21,7 @@ function user.main():void;
     a := bat2.new(:oid,:int);
     b := bat2.new(:oid,:int);
     c := bat.new(:oid,:int);
-end main;
+end user.main;
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

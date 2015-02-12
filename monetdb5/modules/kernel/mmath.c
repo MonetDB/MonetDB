@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -39,8 +39,10 @@
 
 #ifdef _MSC_VER
 # include <float.h>
+#if _MSC_VER <= 1600
 /* Windows spells these differently */
 # define isnan(x)	_isnan(x)
+#endif
 # define finite(x)	_finite(x)
 /* NOTE: HAVE_FPCLASS assumed... */
 # define fpclass(x)	_fpclass(x)

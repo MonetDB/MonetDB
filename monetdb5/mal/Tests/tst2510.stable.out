@@ -27,7 +27,7 @@ stdout of test 'tst2510` in directory 'monetdb5/mal` itself:
 #end tryme;
 factory user.tryme():bit;
     b := bat.new(:oid,:int);
-    bat.setWriteMode(b);
+    bat.setAccess(b,"w");
 barrier always := true;
     yield tryme := always;
     redo always;
@@ -36,14 +36,12 @@ exit always;
 #print("exception"); 
 #exit MALException; 
     return tryme := false;
-end tryme;
-#user.tryme();    # shouldn't hang when you forget the exception
-#
+end user.tryme;
 function user.main():void;
 # A exception in a factory should terminate it  
     user.tryme();
 # shouldn't hang when you forget the exception 
-end main;
+end user.main;
 
 # 08:58:58 >  
 # 08:58:58 >  Done.

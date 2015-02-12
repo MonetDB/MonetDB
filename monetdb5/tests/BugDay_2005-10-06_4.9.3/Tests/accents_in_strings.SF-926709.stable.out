@@ -15,7 +15,7 @@ stdout of test 'accents_in_strings.SF-926709` in directory 'monetdb5/tests/BugDa
 function user.main():void;
     t := str.str("André");
     io.print(t);
-end main;
+end user.main;
 [ "André" ]
 
 # 18:43:20 >  

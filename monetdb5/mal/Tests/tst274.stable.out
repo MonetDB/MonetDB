@@ -10,7 +10,7 @@ stdout of test 'tst274` in directory 'monetdb5/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38637/
 # MonetDB/SQL module v2.39.0 loaded
@@ -24,15 +24,10 @@ function user.main():void;
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,10000:lng);
 exit i;
-    profiler.activate("ticks");
-    profiler.activate("stmt");
-    profiler.activate("rbytes");
-    profiler.activate("wbytes");
-    profiler.setAll();
-    profiler.start();
+    profiler.stethoscope(0);
     io.printf("#monitor \n");
     mx := aggr.max(b);
     mx := calc.+(mx,1);
@@ -49,48 +44,48 @@ exit i;
 #io.print(ticks); 
     c := aggr.count(ticks);
     io.print(c);
-    rdbytes := profiler.getTrace("rbytes");
+    rdbytes := profiler.getTrace("rssMB");
     io.print(rdbytes);
-    wrbytes := profiler.getTrace("wbytes");
+    wrbytes := profiler.getTrace("vmMB");
     io.print(wrbytes);
     io.print(rdbytes,wrbytes);
-end main;
+end user.main;
 #monitor 
 [ 7 ]
 [ 7 ]
 #-----------------#
 # h	t	  # name
 # void	lng	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  0	  ]
-[ 2@0,	  0	  ]
-[ 3@0,	  0	  ]
-[ 4@0,	  0	  ]
-[ 5@0,	  0	  ]
-[ 6@0,	  0	  ]
-#-----------------#
+#--------------------------#
+[ 0@0,	47  ]
+[ 1@0,	47  ]
+[ 2@0,	47  ]
+[ 3@0,	47  ]
+[ 4@0,	47  ]
+[ 5@0,	47  ]
+[ 6@0,	47  ]
+#--------------------------#
 # h	t	  # name
 # void	lng	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  120000  ]
-[ 2@0,	  0	  ]
-[ 3@0,	  0	  ]
-[ 4@0,	  120000  ]
-[ 5@0,	  120000  ]
-[ 6@0,	  0	  ]
-#-------------------------#
+#--------------------------#
+[ 0@0,	30  ]
+[ 1@0,	30  ]
+[ 2@0,	30  ]
+[ 3@0,	30  ]
+[ 4@0,	30  ]
+[ 5@0,	30  ]
+[ 6@0,	30  ]
+#--------------------------#
 # h	t	t	  # name
 # void	lng	lng	  # type
-#-------------------------#
-[ 0@0,	  0,	  0	  ]
-[ 1@0,	  0,	  120000  ]
-[ 2@0,	  0,	  0	  ]
-[ 3@0,	  0,	  0	  ]
-[ 4@0,	  0,	  120000  ]
-[ 5@0,	  0,	  120000  ]
-[ 6@0,	  0,	  0	  ]
+#--------------------------#
+[ 0@0,	47,	30  ]
+[ 1@0,	47,	30  ]
+[ 2@0,	47,	30  ]
+[ 3@0,	47,	30  ]
+[ 4@0,	47,	30  ]
+[ 5@0,	47,	30  ]
+[ 6@0,	47,	30  ]
 
 # 17:57:29 >  
 # 17:57:29 >  Done.

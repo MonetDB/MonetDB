@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -126,7 +126,7 @@ void removeDataflow(MalBlkPtr mb)
 		}
 	}
 	/* remove the superflous variable initializations */
-	/* when there are no auxillary barrier blocks */
+	/* when there are no auxiliary barrier blocks */
 	for (i = 0; i<limit; i++) 
 		if ( delete[i] == 0 )
 			pushInstruction(mb,old[i]);
@@ -225,7 +225,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	OPTDEBUGdataflow{
 		mnstr_printf(cntxt->fdout,"#dataflow input\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 	}
 
 	vlimit = mb->vsize;
@@ -247,8 +247,14 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (j = 0; j < p->argc; j++)
 			eolife[getArg(p,j)]= i;
 	}
+	//OPTDEBUGdataflow{
+		//for(i= 0;  i < mb->vtop; i++)
+			//mnstr_printf(cntxt->fdout,"#eolife %d -> %d\n",i, eolife[i]);
+	//}
 
-	if ( newMalBlkStmt(mb, mb->ssize+mb->vtop) <0 )
+	// make sure we have space for the language.pass operation
+	// for all variables within the barrier
+	if ( newMalBlkStmt(mb, mb->ssize) <0 )
 		goto wrapup;
 	
 	pushInstruction(mb,old[0]);
@@ -260,6 +266,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		conflict = 0;
 
 		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
+			OPTDEBUGdataflow{
+				mnstr_printf(cntxt->fdout,"#conflict %d dataflow %d dflowAssignConflict %d\n",i, dataflowConflict(cntxt,mb,p),dflowAssignConflict(p,i,assigned,eolife));
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_STMT);
+			}
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){

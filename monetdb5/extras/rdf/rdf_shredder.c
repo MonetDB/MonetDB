@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2014 MonetDB B.V.
+ * Copyright August 2008-2015 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -166,15 +166,13 @@ if (bun == BUN_NONE) {\
 		BAThash((X), 2*BATcount(X));\
 	}\
 	bun = (BUN) X->batCount;\
-	X = BUNappend(X, (ptr)Y, TRUE);\
-	if (X == NULL) {\
+	if (BUNappend(X, (ptr)Y, TRUE) == GDK_FAIL) {\
 		raptor_exception(pdata, "could not append");\
 	}\
 }
 
 #define rdf_BUNappend(X,Y) \
-{X = BUNappend(X, Y, TRUE);}\
-if (X  == NULL) {\
+if (BUNappend(X, Y, TRUE) == GDK_FAIL) {\
 	raptor_exception(pdata, "could not append");\
 }
 
@@ -236,8 +234,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 				BAThash(graph[MAP_LEX], 2*BATcount(graph[MAP_LEX]));
 			}
 			bun = (BUN) ((graph[MAP_LEX])->hseqbase + (graph[MAP_LEX])->batCount);
-			graph[MAP_LEX] = BUNappend(graph[MAP_LEX], (ptr)triple->object, TRUE);
-			if (graph[MAP_LEX] == NULL) {
+			if (BUNappend(graph[MAP_LEX], (ptr)triple->object, TRUE) == GDK_FAIL) {
 				raptor_exception(pdata, "could not append ingraph[MAP_LEX]");
 			}
 		} else {
