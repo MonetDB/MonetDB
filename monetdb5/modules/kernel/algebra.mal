@@ -27,50 +27,15 @@ command fetch(b:bat[:oid,:any_1], x:oid) :any_1
 address ALGfetchoid
 comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
-command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
-address ALGsemijoin
-comment "Returns the intersection taken over only the *head* columns of two BATs.
-	Results in all BUNs of 'left' that are also in 'right'.
-		Does *not* do double- elimination over the 'left' BUNs.
-		If you want this, use: 'kintersect(kunique(left),kunique(right))'
-	or: 'kunique(kintersect(left,right))'.";
 command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGtintersect;
 
-# Head-differing elements
-command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
-address ALGkdiff
-comment "Returns the difference taken over only the *head* columns of two BATs.
-		Results in all BUNs of 'left' that are *not* in 'right'.
-		It does *not* do double-elimination over the 'left' BUNs.
-		If you want this, use:
-	 'kdifference(left.kunique,right.kunique)'
-	or: 'kdifference(left,right).kunique'.";
 command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
 address ALGtdifference;
-#
-# Union on head
-command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGkunion
-comment "Returns the union of two BATs; looking at head-columns only.
-		Results in all BUNs of 'left' that are  not in 'right', plus
-	all BUNs of 'right'.  *no* double-elimination is done.";
 
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
-
-#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-#address ALGjoin
-#comment "Returns all BUNs, consisting of a head-value from 'left' and
-#		a tail-value from 'right' for which there are BUNs in 'left'
-#		and 'right' with equal tail- resp. head-value (i.e. the join
-#	columns are projected out).";
-#
-#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
-#address ALGjoin;
-#command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
-#address ALGjoinestimate;
 
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3]
 address ALGrangejoin;

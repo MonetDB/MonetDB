@@ -29,10 +29,6 @@ command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1]
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
-#command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-#address BKCrevert
-#comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the BAT sequence module)";
-
 command insert(b:bat[:oid,:any_1], h:oid, t:any_1) :bat[:oid,:any_1]
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
