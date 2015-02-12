@@ -13,8 +13,7 @@ mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
 barrier i:= 0:lng;
-	o:= calc.oid(i);
-	bat.insert(b,o,i);
+	bat.append(b,i);
 	redo i:= iterator.next(1:lng,1000000:lng);
 exit i;
 t1:= alarm.usec();
@@ -31,7 +30,7 @@ barrier (h,t):= iterator.new(b);
         zz:= algebra.fetch(b,h);
         z:= algebra.fetch(c,h);
 	cr:= zz+z;
-	bat.insert(d,h,cr);
+	bat.append(d,cr);
 catch GDKerror:str;
 	leave h;
 exit GDKerror;

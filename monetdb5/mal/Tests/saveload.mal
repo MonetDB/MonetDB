@@ -7,8 +7,8 @@ bat.setName(a,"aaa");
 io.print(a);
 
 b:= bat.new(:oid,:str);
-bat.insert(b,0@0,"hello");
-bat.insert(b,1@0,"world");
+bat.append(b,"hello");
+bat.append(b,"world");
 bat.setName(b,"bbb");
 io.print(b);
 

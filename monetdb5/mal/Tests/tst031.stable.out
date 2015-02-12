@@ -80,9 +80,9 @@ function user.main():void;
 # The oid cases, they should start as a vid column, both replace and delete work 
     io.print("oid as a vid column");
     c := bat.new(:oid,:int);
-    bat.insert(c,0@0,0);
-    bat.insert(c,1@0,1);
-    bat.insert(c,2@0,2);
+    bat.append(c,0);
+    bat.append(c,1);
+    bat.append(c,2);
     io.print(c);
     k := 1@0;
     bat.replace(c,k,3);
@@ -90,11 +90,11 @@ function user.main():void;
     bat.delete(c,2@0);
     io.print(c);
 # The oid cases using nils should fail on replace /delete 
-    io.print("inserting nil's in a oid column");
+    io.print("appending nil's in a oid column");
     d := bat.new(:oid,:int);
-    bat.insert(d,nil:oid,0);
-    bat.insert(d,nil:oid,1);
-    bat.insert(d,nil:oid,2);
+    bat.append(d,0);
+    bat.append(d,1);
+    bat.append(d,2);
     io.print(d);
     k := 1@0;
     bat.replace(d,k,3);
@@ -104,15 +104,15 @@ function user.main():void;
 # can we handle a vid column starting differently 
     io.print("double oid as a vid column starting at 3,5");
     e := bat.new(:oid,:oid);
-    bat.insert(e,3@0,5@0);
+    bat.append(e,5@0);
     bat.append(e,6@0);
     io.print(e);
 # the void,void bat they still consume space 
 # shouldn't that be avoided or limited to at most 1 pair? 
     io.print("void,void bat");
     f := bat.new(:oid,:oid);
-    bat.insert(f,nil:oid,nil:oid);
-    bat.insert(f,nil:oid,nil:oid);
+    bat.append(f,nil:oid);
+    bat.append(f,nil:oid);
     io.print(f);
 end user.main;
 #--------------------------#
@@ -130,12 +130,26 @@ end user.main;
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
-#-----------------#
-# h	tmp_4	  # name
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	3  ]
+[ 2@0,	2  ]
+#--------------------------#
+# h	t  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  3	  ]
+[ "appending nil's in a oid column" ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	1  ]
 [ 2@0,	  2	  ]
 #-----------------#
 # h	tmp_4	  # name
@@ -143,42 +157,27 @@ end user.main;
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  3	  ]
-[ "inserting nil's in a oid column" ]
-#-----------------#
+[ 2@0,	2  ]
+#--------------------------#
 # h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	3  ]
 [ "double oid as a vid column starting at 3,5" ]
 #-----------------#
 # h	t	  # name
-# oid	oid	  # type
-#-----------------#
-[ 3@0,	  5@0	  ]
-[ 4@0,	  6@0	  ]
+# void	oid  # type
+#--------------------------#
+[ 0@0,	5@0  ]
+[ 1@0,	6@0  ]
 [ "void,void bat" ]
 #-----------------#
 # h	t	  # name
-# void	void	  # type
-#-----------------#
-[ nil,	  nil	  ]
-[ nil,	  nil	  ]
+# void	oid  # type
+#--------------------------#
+[ 0@0,	nil  ]
+[ 1@0,	nil  ]
 
 # 07:58:41 >  
 # 07:58:41 >  Done.
