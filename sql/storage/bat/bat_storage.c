@@ -1557,7 +1557,7 @@ gtr_update_dbat(sql_dbat *d, int *changes)
 	if (BUNlast(idb) > idb->batInserted) {
 		BAT *cdb = temp_descriptor(dbid);
 
-		*changes += BUNlast(idb)-idb->batInserted;
+		(*changes)++;
 		append_inserted(cdb, idb);
 		bat_destroy(cdb);
 	}
