@@ -312,7 +312,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	/* allocate result BAT */
 	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
-		BBPreleaseref(input->batCacheid);
+		BBPunfix(input->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
 	
@@ -328,7 +328,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	finish_props();
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(input->batCacheid);
+	BBPunfix(input->batCacheid);
 
 	BBPkeepref((*ret = output->batCacheid));
 
@@ -348,7 +348,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	/* allocate result BAT */ \
 	output = BATnew(TYPE_void, TYPE_str, BATcount(input), TRANSIENT); \
 	if (output == NULL) { \
-		BBPreleaseref(input->batCacheid); \
+		BBPunfix(input->batCacheid); \
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL); \
 	} \
 	BATseqbase(output, input->hseqbase); \
@@ -360,8 +360,8 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		str r, msg; \
  \
 		if ((msg = transform_fn(&r, &t)) != MAL_SUCCEED) { \
-			BBPreleaseref(input->batCacheid); \
-			BBPreleaseref(output->batCacheid); \
+			BBPunfix(input->batCacheid); \
+			BBPunfix(output->batCacheid); \
 			return msg; \
 		} \
 		BUNappend(output, (ptr) r, FALSE); \
@@ -369,7 +369,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	} \
  \
 	/* release input BAT-descriptor */ \
-	BBPreleaseref(input->batCacheid); \
+	BBPunfix(input->batCacheid); \
  \
 	BBPkeepref((*ret = output->batCacheid)); \
  \
@@ -416,7 +416,7 @@ seq_length_bat(bat * ret, bat * bid)
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
-			BBPreleaseref(output->batCacheid);
+			BBPunfix(output->batCacheid);
 			return msg;
 		}
 		update_props(int);
@@ -426,7 +426,7 @@ seq_length_bat(bat * ret, bat * bid)
 	finish_props();
 
 	/* release input BAT-descriptor */
-	BBPreleaseref(input->batCacheid);
+	BBPunfix(input->batCacheid);
 
 	BBPkeepref((*ret = output->batCacheid));
 
@@ -493,9 +493,9 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	
 cleanup:
 	/* release input BAT-descriptors */
-	if(seqs) BBPreleaseref(seqs->batCacheid);
-	if(poss) BBPreleaseref(poss->batCacheid);
-	if(cigars) BBPreleaseref(cigars->batCacheid);
+	if(seqs) BBPunfix(seqs->batCacheid);
+	if(poss) BBPunfix(poss->batCacheid);
+	if(cigars) BBPunfix(cigars->batCacheid);
 
 	if(result) BBPkeepref((*ret = result->batCacheid));
 
