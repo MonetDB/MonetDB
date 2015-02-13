@@ -38,7 +38,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#include <pthread.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
