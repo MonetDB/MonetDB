@@ -290,7 +290,7 @@ main(int argc, char **argv)
 		if (*response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
-			len = strlen(response);
+			len = (int) strlen(response);
 			strncpy(buf, response, len + 1);
 		} else
 			len = 0;
