@@ -52,17 +52,17 @@ Ready.
 % clob # type
 % 620 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
-    X_170:void  := querylog.define("explain select\n\tl_returnflag,\n\tl_linestatus,\n\tsum(l_quantity) as sum_qty,\n\tsum(l_extendedprice) as sum_base_price,\n\tsum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n\tsum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n\tavg(l_quantity) as avg_qty,\n\tavg(l_extendedprice) as avg_price,\n\tavg(l_discount) as avg_disc,\n\tcount(*) as count_order\nfrom\n\tlineitem\nwhere\n\tl_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n\tl_returnflag,\n\tl_linestatus\norder by\n\tl_returnflag,\n\tl_linestatus;","sequential_pipe");
+    X_165:void  := querylog.define("explain select\n\tl_returnflag,\n\tl_linestatus,\n\tsum(l_quantity) as sum_qty,\n\tsum(l_extendedprice) as sum_base_price,\n\tsum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n\tsum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n\tavg(l_quantity) as avg_qty,\n\tavg(l_extendedprice) as avg_price,\n\tavg(l_discount) as avg_disc,\n\tcount(*) as count_order\nfrom\n\tlineitem\nwhere\n\tl_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n\tl_returnflag,\n\tl_linestatus\norder by\n\tl_returnflag,\n\tl_linestatus;","sequential_pipe");
     X_7 := sql.mvc();
     X_11:bat[:oid,:date]  := sql.bind(X_7,"sys","lineitem","l_shipdate",0);
     X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","lineitem");
     X_19 := mtime.date_sub_msec_interval(A3,A4);
     X_184 := algebra.thetasubselect(X_11,X_8,X_19,"<=");
     (X_14,r1_14) := sql.bind(X_7,"sys","lineitem","l_shipdate",2);
-    X_185 := algebra.thetasubselect(r1_14,X_19,"<=");
+    X_185 := algebra.thetasubselect(r1_14,nil:bat[:oid,:oid],X_19,"<=");
     X_17:bat[:oid,:date]  := sql.bind(X_7,"sys","lineitem","l_shipdate",1);
-    X_186 := algebra.thetasubselect(X_17,X_8,X_19,"<=");
-    X_20 := sql.subdelta(X_184,X_8,X_14,X_185,X_186);
+    X_187 := algebra.thetasubselect(X_17,X_8,X_19,"<=");
+    X_20 := sql.subdelta(X_184,X_8,X_14,X_185,X_187);
     X_22:bat[:oid,:str]  := sql.bind(X_7,"sys","lineitem","l_linestatus",0);
     (X_24,r1_28) := sql.bind(X_7,"sys","lineitem","l_linestatus",2);
     X_26:bat[:oid,:str]  := sql.bind(X_7,"sys","lineitem","l_linestatus",1);
