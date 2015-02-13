@@ -2164,15 +2164,13 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 #ifdef HAVE_HGE
 		if (ares->type.type->radix == 10 && res->digits > 39)
 			res->digits = 39;
+		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->digits = 128;
 #else
 		if (ares->type.type->radix == 10 && res->digits > 19)
 			res->digits = 19;
-#endif
-		if (ares->type.type->radix == 2 && res->digits > 53)
-#ifdef HAVE_HGE
-			res->digits = 128;
-#else
-			res->digits = 53;
+		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->digits = 64;
 #endif
 
 		/* sum of digits may mean we need a bigger result type
@@ -2224,15 +2222,13 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 #ifdef HAVE_HGE
 		if (res->type->radix == 10 && digits > 39)
 			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
 #else
 		if (res->type->radix == 10 && digits > 19)
 			digits = 19;
-#endif
-		if (res->type->radix == 2 && digits > 53)
-#ifdef HAVE_HGE
-			digits = 128;
-#else
-			digits = 53;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
 #endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
