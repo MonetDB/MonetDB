@@ -67,7 +67,7 @@ exit MALException:str ;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
-end main;
+end user.main;
 [ "Received first error from the remote site" ]
 !SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
 SyntaxException:parseError:                       ^'(' expected

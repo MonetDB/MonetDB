@@ -19,7 +19,7 @@ function user.main():void;
     f := 5:flt;
     io.printf("%d\n",l);
     io.printf("%d\n",f);
-end main;
+end user.main;
 12
 5
 

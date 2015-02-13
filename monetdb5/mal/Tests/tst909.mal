@@ -1,19 +1,19 @@
 
-b:= bbp.new(:int,:bit);
-bat.insert(b,1,true);
-bat.insert(b,2,false);
-bat.insert(b,3,true);
+b:= bbp.new(:oid,:bit);
+bat.append(b,true);
+bat.append(b,false);
+bat.append(b,true);
 io.print(b);
 
-v:= bbp.new(:int,:str);
-bat.insert(v,1,"ok");
-bat.insert(v,2,"wrong");
-bat.insert(v,3,"ok");
+v:= bbp.new(:oid,:str);
+bat.append(v,"ok");
+bat.append(v,"wrong");
+bat.append(v,"ok");
 io.print(v);
-ve:= bbp.new(:int,:str);
-bat.insert(ve,1,"wrong");
-bat.insert(ve,2,"ok");
-bat.insert(ve,3,"wrong");
+ve:= bbp.new(:oid,:str);
+bat.append(ve,"wrong");
+bat.append(ve,"ok");
+bat.append(ve,"wrong");
 io.print(ve);
 
 #z:= batcalc.ifthen(b,v);

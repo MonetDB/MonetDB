@@ -357,11 +357,8 @@ address mvc_import_table_stdin
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-function single(x:any_2):bat[:oid,:any_2];
-	b := bat.new(0:oid, x);
-	c := bat.append(b, x);
-	return c;
-end single;
+pattern single(x:any_2):bat[:oid,:any_2]
+address CMDBATsingle;
 
 pattern importTable{unsafe}( sname:str, tname:str, fname:str... )(:bat[:oid,:any]...)
 address mvc_bin_import_table_wrap
@@ -432,13 +429,14 @@ pattern dump_trace()(
 	clk:bat[:oid,:str],
 	pc:bat[:oid,:str],
 	thread:bat[:oid,:int],
-	user:bat[:oid,:int],
 	ticks:bat[:oid,:lng],
+	rssMB:bat[:oid,:lng],
+	vmMB:bat[:oid,:lng],
 	reads:bat[:oid,:lng],
 	writes:bat[:oid,:lng],
-	rbytes:bat[:oid,:lng],
-	wbytes:bat[:oid,:lng],
-	type:bat[:oid,:str],
+	minflt:bat[:oid,:lng],
+	majflt:bat[:oid,:lng],
+	nvcsw:bat[:oid,:lng],
 	stmt:bat[:oid,:str])
 address dump_trace
 comment "dump the trace statistics";
@@ -497,6 +495,7 @@ pattern querylog_catalog()(
 	defined:bat[:oid,:timestamp],
 	query:bat[:oid,:str],
 	pipe:bat[:oid,:str],
+	plan:bat[:oid,:str],
 	mal:bat[:oid,:int],
 	optimize:bat[:oid,:lng]
 )
@@ -512,8 +511,7 @@ pattern querylog_calls()(
 	exec:bat[:oid,:lng],
 	result:bat[:oid,:lng],
 	cpuload:bat[:oid,:int],
-	iowait:bat[:oid,:int],
-	space:bat[:oid,:lng]
+	iowait:bat[:oid,:int]
 )
 address sql_querylog_calls
 comment "Obtain the query log calls";

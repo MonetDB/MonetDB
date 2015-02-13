@@ -35,7 +35,7 @@ function user.main():void;
     ca_a := io.print(c);
 #	io.print("quit();"); 
     da_a := clients.quit();
-end main;
+end user.main;
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
 #quit();
 

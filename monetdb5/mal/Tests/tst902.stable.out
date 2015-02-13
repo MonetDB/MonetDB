@@ -49,17 +49,17 @@ barrier (h,t) := iterator.new(b);
     B1 := algebra.fetch(b,h);
     B2 := algebra.fetch(c,h);
     t := calc.+(B1,B2);
-    bat.insert(d,h,t);
+    bat.append(d,t);
     redo (h,t) := iterator.next(b);
 catch GDKerror:str ;
 exit GDKerror:str ;
 exit (h,t);
     io.print(d);
-end main;
-#-----------------#
-# h	tmp_6	  # name
-# lng	lng	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	lng  # type
+#--------------------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  2	  ]
 [ 2@0,	  4	  ]

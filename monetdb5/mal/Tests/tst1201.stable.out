@@ -285,7 +285,7 @@ function user.main():void;
     io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
     lc_a := io.print(rule_nme,rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);
 #      [dayname]([dayofweek]([compute](rule_bat, -2000))).bat.setColumn("-2000")); 
-end main;
+end user.main;
 [ "rule_bat,na_a,pa_a,ra_a,ta_a" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t	rule						month	weekday		day	minutes		  # name

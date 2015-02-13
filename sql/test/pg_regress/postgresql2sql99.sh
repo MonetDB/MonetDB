@@ -79,6 +79,7 @@ sed -r \
 	-e 's/\btimestamp without time zone 'tomorrow'/cast(sql_add((current_date, 24*60*60.0)as timestamp)/Ig' \
 	-e 's/\btimestamp without time zone ''*''/cast('\1' as timestamp)/Ig' \
 	-e 's/\btimestamp(2) without time zone/timestamp(2)/Ig' \
+	-e 's/\btimeofday()::timestamp/current_timestamp/Ig' \
 	-e 's/\b(f1 interval)/(f1 interval second)/Ig' \
 	-e 's/\binterval ''*''/cast('\1' as interval second)/Ig' \
 	-e 's/\b(f1 reltime)/(f1 interval second)/Ig' \

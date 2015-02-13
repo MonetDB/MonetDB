@@ -62,9 +62,9 @@ exit j;
 #t1:= alarm.usec(); 
 #d0:= t1-t0; 
 #io.printf("#str.toupper() %d\n",d0); 
-end main;
-#mal.manifold(str,toUpper) 72463
-#mal.multiplex(str,toUpper) 245545
+end user.main;
+#mal.manifold(str,toUpper) 67394
+#mal.multiplex(str,toUpper) 325867
 
 # 10:40:30 >  
 # 10:40:30 >  "Done."

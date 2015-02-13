@@ -27,6 +27,7 @@ returns table(
 	defined timestamp,
 	query string,
 	pipe string,
+	"plan" string,		-- Name of MAL plan
 	mal int,			-- size of MAL plan
 	optimize bigint 	-- time in usec
 )
@@ -56,8 +57,7 @@ returns table(
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
 	cpu int,  		-- average cpu load percentage during execution
-	io int,			-- percentage time waiting for IO to finish 
-	space bigint		-- total storage size of intermediates created (in MB)
+	io int			-- percentage time waiting for IO to finish 
 )
 external name sql.querylog_calls;
 
@@ -65,7 +65,7 @@ external name sql.querylog_calls;
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 

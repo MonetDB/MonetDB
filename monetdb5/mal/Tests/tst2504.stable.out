@@ -27,7 +27,7 @@ factory user.random(seed:int):int;
     i := calc.%(i,32767);
     yield random := i;
     return random := 0;
-end random;
+end user.random;
 function user.main():void;
 # The prototypical factory construct 
 # test factory return and restart 
@@ -39,7 +39,7 @@ function user.main():void;
     io.print(r2);
     r2 := user.random(1);
     io.print(r2);
-end main;
+end user.main;
 [ 125 ]
 [ 15625 ]
 [ 0 ]

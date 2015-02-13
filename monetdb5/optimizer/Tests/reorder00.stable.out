@@ -18,7 +18,7 @@ function user.tst903():void;
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     t1 := alarm.usec();
@@ -115,20 +115,20 @@ exit i;
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#tail sort %d",d0);
-end tst903;
+end user.tst903;
 function user.main():void;
 # The first MAL compiler test 
 # the result is retained in MCCtst903.c 
 # which can be compiled and linked with the system. 
     mdb.list("user","tst903");
-end main;
+end user.main;
 function user.tst903():void;
     t0 := alarm.usec();
     b := bat.new(:oid,:lng);
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     t1 := alarm.usec();
@@ -225,7 +225,7 @@ exit i;
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#tail sort %d",d0);
-end tst903;
+end user.tst903;
 
 # 22:42:02 >  
 # 22:42:02 >  Done.

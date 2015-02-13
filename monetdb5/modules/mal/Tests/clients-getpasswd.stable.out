@@ -15,7 +15,7 @@ stdout of test 'clients-getpasswd` in directory 'monetdb5/modules/mal` itself:
 function user.main():void;
     p := clients.getPasswordHash("monetdb");
     io.print(p);
-end main;
+end user.main;
 [ "a73f1d86383446438ac64f56e15ada38b41fbb18f029d2181723aeb2acac6a831f60e5fdbd64ac2c8c70e035dd44cbbe3b45565ef2d58feb2821a2078c7fad35" ]
 
 # 14:27:59 >  

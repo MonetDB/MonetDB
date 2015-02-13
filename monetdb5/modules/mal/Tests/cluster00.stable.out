@@ -40,8 +40,8 @@ exit i;
     map := cluster.table(c,d,b);
     io.print(c,d,b);
     io.print(map);
-end main;
-#---------------------------------#
+end user.main;
+#--------------------------#
 # h	t	t	t	  # name
 # void	int	int	int	  # type
 #---------------------------------#

@@ -54,25 +54,25 @@ Ready.
 # 21:52:29 >  
 
 #select * from sys.querylog_catalog;
-% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
-% id,	owner,	defined,	query,	pipe,	mal,	optimize # name
-% oid,	clob,	timestamp,	clob,	clob,	int,	bigint # type
-% 3,	0,	26,	0,	0,	1,	1 # length
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 #select * from sys.querylog_catalog;
-% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
-% id,	owner,	defined,	query,	pipe,	mal,	optimize # name
-% oid,	clob,	timestamp,	clob,	clob,	int,	bigint # type
-% 3,	0,	26,	0,	0,	1,	1 # length
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 #select * from sys.querylog_catalog;
-% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
-% id,	owner,	defined,	query,	pipe,	mal,	optimize # name
-% oid,	clob,	timestamp,	clob,	clob,	int,	bigint # type
-% 3,	0,	26,	0,	0,	1,	1 # length
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 #select * from sys.querylog_calls;
-% .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
-% id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io,	space # name
-% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int,	bigint # type
-% 3,	26,	26,	0,	1,	1,	1,	1,	1,	1 # length
+% .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
+% id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 
 # 21:52:29 >  
 # 21:52:29 >  "Done."

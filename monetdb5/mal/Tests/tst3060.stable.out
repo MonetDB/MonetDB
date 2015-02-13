@@ -20,16 +20,12 @@ stdout of test 'tst3060` in directory 'monetdb5/mal` itself:
 function user.tst(a:any_1):any_1;
     io.print(a);
     return tst := a;
-end tst;
-#
-#user.tst(1);
-#user.tst("wrong");
-#
+end user.tst;
 function user.main():void;
 # The direction for future expansion of the properties 
     user.tst(1);
     user.tst("wrong");
-end main;
+end user.main;
 [ 1 ]
 [ "wrong" ]
 

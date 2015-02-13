@@ -50,8 +50,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 440 # length
+% 458 # length
 function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
+    X_101:void  := querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe");
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","orders");
     X_9:bat[:oid,:date]  := sql.bind(X_5,"sys","orders","o_orderdate",0);
@@ -104,8 +105,7 @@ function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
     sql.rsColumn(X_83,"sys.L1","order_count","wrd",32,0,X_82);
     X_96 := io.stdout();
     sql.exportResult(X_96,X_83);
-end s2_1;
-# querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:26 >  
 # 22:53:26 >  "Done."

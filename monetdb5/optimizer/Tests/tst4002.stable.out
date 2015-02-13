@@ -15,7 +15,7 @@ stdout of test 'tst4002` in directory 'monetdb5/optimizer` itself:
 function user.main():void;
 #testing some optimizer constructions 
     d := mtime.date("nil");
-end main;
+end user.main;
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

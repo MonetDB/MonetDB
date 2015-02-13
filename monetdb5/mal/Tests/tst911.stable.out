@@ -58,34 +58,7 @@ exit (chk,c);
     df := calc.flt(d0);
     f := calc./(df,if);
     io.printf(" at %f usec\n",f);
-end choptest;
-#
-#b:= bat.new(:oid,:lng);
-#barrier (go,i):= language.newRange(0:lng);
-#	k:= mmath.rand();
-#	l:= calc.lng(k);
-#	bat.insert(b,nil:oid,l);
-#	redo (go,i):= language.nextElement(1:lng,1000000:lng);
-#exit (go,i);
-#
-#t0:= alarm.usec();
-#barrier doit:= true;
-#    t:= select(b, 256000:lng,266000:lng);
-#exit doit;
-#t1:= alarm.usec();
-#base:= t1-t0;
-#printf("#select direct %d usec\n",base);
-#
-#choptest(b,100000:lng,base);
-#choptest(b,10000:lng,base);
-#choptest(b,1000:lng,base);
-#choptest(b,100:lng,base);
-#
-#user.choptest(b,100000:lng,base);
-#user.choptest(b,10000:lng,base);
-#user.choptest(b,1000:lng,base);
-#user.choptest(b,100:lng,base);
-#
+end user.choptest;
 function user.main():void;
 # analyse the overhead of chopping a table 
 # the multiplex code blocks. 
@@ -100,7 +73,7 @@ function user.main():void;
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     mdb.setDebug(dbgmsk_restore);
@@ -115,16 +88,12 @@ exit doit;
     user.choptest(b,10000:lng,base);
     user.choptest(b,1000:lng,base);
     user.choptest(b,100:lng,base);
-end main;
-#select direct 9156 usec
-#BATdescriptor: range error 11
-#chopped at 100000 9220 64  at 6.400000 usec
-#BATdescriptor: range error 13
-#chopped at 10000 10632 1476  at 14.760000 usec
-#BATdescriptor: range error 12
-#chopped at 1000 18472 9316  at 9.316000 usec
-#BATdescriptor: range error 11
-#chopped at 100 49521 40365  at 4.036500 usec
+end user.main;
+#select direct 13917 usec
+#chopped at 100000 15504 1587  at 158.699997 usec
+#chopped at 10000 9703 -4214  at -42.139999 usec
+#chopped at 1000 31944 18027  at 18.027000 usec
+#chopped at 100 256750 242833  at 24.283300 usec
 
 # 08:01:41 >  
 # 08:01:41 >  Done.

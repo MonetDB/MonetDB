@@ -8,7 +8,7 @@ function MonetDBConnection(options, conncallback) {
 	this.read_leftover = 0;
 	this.read_final = false;
 	this.read_str = '';
-	this.read_callback = undefined;
+	this.cur_op = undefined; // object { message (str), callback (fn)}
 	this.conn_callback = conncallback;
 	this.mapi_blocksize = 8192;
 	this.do_close = false;
@@ -223,11 +223,14 @@ function handle_message(message) {
 	if (message.charAt(0) == '&') {
 		response = _parseresponse(message);
 	}
-
-	if (this.read_callback != undefined) {
-		this.read_callback(error, response);
-		this.read_callback = undefined;
+	if(typeof(this.log_callback) == "function") {
+		this.log_callback(this.cur_op.message, error, response);
 	}
+	if (this.cur_op.callback != undefined) {
+		this.cur_op.callback(error, response);
+		this.cur_op.callback = undefined;
+	}
+	this.cur_op.message = undefined;
 	next_op.call(this);
 }
 
@@ -243,7 +246,7 @@ function next_op() {
 
 	var op = this.queryqueue.shift();
 	send_message.call(this, op.message);
-	this.read_callback = op.callback;
+	this.cur_op = op;
 }
 
 function cleanup() {

@@ -65,10 +65,10 @@ function user.testcolor():void;
     io.print(bc);
     z := batcolor.red(bc);
     io.print(z);
-end testcolor;
+end user.testcolor;
 function user.main():void;
     user.testcolor();
-end main;
+end user.main;
 [ "0x00646566" ]
 [ 100 ]
 [ 101 ]

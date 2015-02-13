@@ -37,8 +37,8 @@ barrier (h,t) := iterator.new(b);
     io.print(t);
     redo (h,t) := iterator.next(b);
 exit (h,t);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	str	  # type
 #-----------------#

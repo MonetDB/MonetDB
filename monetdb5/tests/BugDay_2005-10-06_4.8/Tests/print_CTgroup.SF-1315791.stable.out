@@ -15,13 +15,13 @@ stdout of test 'print_CTgroup.SF-1315791` in directory 'monetdb5/tests/BugDay_20
 function user.main():void;
 #CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print(); 
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,0);
+    bat.append(b,0);
     (grp,ext,histo) := group.subgroup(b);
     io.print(b);
     io.print(histo);
     io.print(grp);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#

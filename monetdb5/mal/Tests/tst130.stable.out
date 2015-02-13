@@ -84,8 +84,8 @@ function user.main():void;
     bat.append(bc,nil:bte);
     fc := batcalc.isnil(bc);
     io.print(fc);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	bit	  # type
 #-----------------#

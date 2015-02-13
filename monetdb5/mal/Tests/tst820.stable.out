@@ -26,7 +26,7 @@ function user.main():void;
     person_key_age := bat.new(:oid,:int);
     address_str := bat.new(:oid,:str);
     address_city := bat.new(:oid,:str);
-end main;
+end user.main;
 
 # 08:01:31 >  
 # 08:01:31 >  Done.

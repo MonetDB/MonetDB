@@ -63,8 +63,7 @@ create table querylog.calls(
     exec bigint,        -- time spent (in usec)  until the result export
     result bigint,      -- time spent (in usec)  to ship the result set
     cpuload int,        -- average cpu load percentage during execution
-    iowait int,         -- time waiting for IO to finish in usec
-    space bigint        -- total storage size of intermediates created (in MB)
+    iowait int         -- time waiting for IO to finish in usec
 );
 */
 
@@ -77,6 +76,7 @@ static BAT *QLOG_cat_user = 0;
 static BAT *QLOG_cat_defined = 0;
 static BAT *QLOG_cat_query = 0;
 static BAT *QLOG_cat_pipe = 0;
+static BAT *QLOG_cat_plan = 0;
 static BAT *QLOG_cat_mal = 0;
 static BAT *QLOG_cat_optimize = 0;
 
@@ -89,13 +89,12 @@ static BAT *QLOG_calls_exec = 0;
 static BAT *QLOG_calls_result = 0;
 static BAT *QLOG_calls_cpuload = 0;
 static BAT *QLOG_calls_iowait = 0;
-static BAT *QLOG_calls_space = 0;
 
 void
 QLOGcatalog(BAT **r)
 {
 	int i;
-	for ( i=0;i < 7; i++)
+	for ( i=0;i < 8; i++)
 		r[i]=0;
 	if (initQlog())
 		return ;
@@ -105,8 +104,9 @@ QLOGcatalog(BAT **r)
 	r[2] = BATcopy(QLOG_cat_defined, TYPE_void, QLOG_cat_defined->ttype,0, TRANSIENT);
 	r[3] = BATcopy(QLOG_cat_query, TYPE_void, QLOG_cat_query->ttype,0, TRANSIENT);
 	r[4] = BATcopy(QLOG_cat_pipe, TYPE_void, QLOG_cat_pipe->ttype,0, TRANSIENT);
-	r[5] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0, TRANSIENT);
-	r[6] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0, TRANSIENT);
+	r[5] = BATcopy(QLOG_cat_plan, TYPE_void, QLOG_cat_plan->ttype,0, TRANSIENT);
+	r[6] = BATcopy(QLOG_cat_mal, TYPE_void, QLOG_cat_mal->ttype,0, TRANSIENT);
+	r[7] = BATcopy(QLOG_cat_optimize, TYPE_void, QLOG_cat_optimize->ttype,0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -128,7 +128,6 @@ QLOGcalls(BAT **r)
 	r[6] = BATcopy(QLOG_calls_result, TYPE_void, QLOG_calls_result->ttype,0, TRANSIENT);
 	r[7] = BATcopy(QLOG_calls_cpuload, TYPE_void, QLOG_calls_cpuload->ttype,0, TRANSIENT);
 	r[8] = BATcopy(QLOG_calls_iowait, TYPE_void, QLOG_calls_iowait->ttype,0, TRANSIENT);
-	r[9] = BATcopy(QLOG_calls_space, TYPE_void, QLOG_calls_space->ttype,0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "querylogLock");
 }
 
@@ -169,6 +168,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_defined);
 	cleanup(QLOG_cat_query);
 	cleanup(QLOG_cat_pipe);
+	cleanup(QLOG_cat_plan);
 	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
 	
@@ -181,7 +181,6 @@ _QLOGcleanup(void)
 	cleanup(QLOG_calls_result);
 	cleanup(QLOG_calls_cpuload);
 	cleanup(QLOG_calls_iowait);
-	cleanup(QLOG_calls_space);
 }
 
 static void
@@ -193,6 +192,7 @@ _initQlog(void)
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
 	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
+	QLOG_cat_plan = QLOGcreate("cat","size",TYPE_str);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
@@ -204,7 +204,6 @@ _initQlog(void)
 	QLOG_calls_result = QLOGcreate("calls","result",TYPE_lng);
 	QLOG_calls_cpuload = QLOGcreate("calls","cpuload",TYPE_int);
 	QLOG_calls_iowait = QLOGcreate("calls","iowait",TYPE_int);
-	QLOG_calls_space = QLOGcreate("calls","space",TYPE_lng);
 	if (QLOG_cat_id == NULL )
 		_QLOGcleanup();
 	else
@@ -273,6 +272,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_cat_defined,TRUE);
 	BATclear(QLOG_cat_query,TRUE);
 	BATclear(QLOG_cat_pipe,TRUE);
+	BATclear(QLOG_cat_plan,TRUE);
 	BATclear(QLOG_cat_mal,TRUE);
 	BATclear(QLOG_cat_optimize,TRUE);
 	
@@ -285,7 +285,6 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_result,TRUE);
 	BATclear(QLOG_calls_cpuload,TRUE);
 	BATclear(QLOG_calls_iowait,TRUE);
-	BATclear(QLOG_calls_space,TRUE);
 
 	TMsubcommit_list(commitlist, committop);
 	MT_lock_unset(&mal_profileLock, "querylog.reset");
@@ -293,7 +292,7 @@ QLOGempty(void *ret)
 }
 
 str
-QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+QLOGinsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid *ret = getArgReference_oid(stk,pci,0);
 	str *q = getArgReference_str(stk,pci,1);
@@ -301,16 +300,20 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str  *usr = getArgReference_str(stk,pci,3);
 	timestamp *tick = getArgReference_TYPE(stk,pci,4,timestamp);
 	oid o;
+	InstrPtr sig = getInstrPtr(mb,0);
+	char buf[128], *nme= buf;
 
 	(void) cntxt;
 	initQlog();
-	MT_lock_set(&mal_profileLock, "querylog.define");
+	snprintf(buf,128,"%s.%s", getModuleId(sig), getFunctionId(sig));
+	MT_lock_set(&mal_profileLock, "querylog.insert");
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
 		BUNappend(QLOG_cat_id,&mb->tag,FALSE);
 		BUNappend(QLOG_cat_query,*q,FALSE);
 		BUNappend(QLOG_cat_pipe,*pipe,FALSE);
+		BUNappend(QLOG_cat_plan,nme,FALSE);
 		BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
 		BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
 		BUNappend(QLOG_cat_user,*usr,FALSE);
@@ -318,6 +321,16 @@ QLOGdefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_unset(&mal_profileLock, "querylog.define");
 	TMsubcommit_list(commitlist, committop);
+	return MAL_SUCCEED;
+}
+
+str
+QLOGdefineNaive(void *ret, str *qry, str *opt)
+{
+	// Nothing else to be done.
+	(void) ret;
+	(void) qry;
+	(void) opt;
 	return MAL_SUCCEED;
 }
 
@@ -332,7 +345,6 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *rtime  = getArgReference_lng(stk,pci,6);
 	int *cpu	= getArgReference_int(stk,pci,7);
 	int *iowait = getArgReference_int(stk,pci,8);
-	lng *space  = getArgReference_lng(stk,pci,9);
 	(void) cntxt;
 
 	initQlog();
@@ -348,7 +360,6 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNappend(QLOG_calls_result,rtime,FALSE);
 	BUNappend(QLOG_calls_cpuload,cpu,FALSE);
 	BUNappend(QLOG_calls_iowait,iowait,FALSE);
-	BUNappend(QLOG_calls_space,space,FALSE);
 	MT_lock_unset(&mal_profileLock, "querylog.call");
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;

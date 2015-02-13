@@ -15,7 +15,7 @@ stdout of test 'negative_size.SF-915339` in directory 'monetdb5/tests/BugDay_200
 function user.main():void;
     c := bat.new(:oid,:int,-5000);
     io.print(c);
-end main;
+end user.main;
 !MALException:bat.new:Argument must be positive
 
 

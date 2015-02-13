@@ -93,6 +93,14 @@ Empty the query queue and then close the connection. Note that whenever queries 
 
 
 
+# <a name="log"></a>Query logging
+Every time a query result is returned from the database, the callback function *conn.log_callback*, which defaults to null, will be executed right before the query callback function is executed (conn refers to a connection object returned by the [connect function](#connect)). If you have some general behavior that you want to be executed every time a query finishes, you can set *conn.log_callback* to a function with the following signature:
+
+function(query, err, res)
+- query: the SQL query that lead to this result (note: if you pass a params array to the [query function](#query), multiple queries are fired to the database, hence the log callback will be called multiple times)
+- err, res: Same as in the callback for the [query function](#query)
+
+
 # <a name="q"></a>Q Integration
 Due to the huge popularity of the [Q module for NodeJS](https://www.npmjs.org/package/q), we decided to add native Q support, that wraps our API in a promise returning API that exists on top of the original API, so you can use both interchangeably. 
 

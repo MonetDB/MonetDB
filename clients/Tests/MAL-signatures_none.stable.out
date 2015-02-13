@@ -38610,11 +38610,7 @@ command lsst.xmatchsubselect(l:bat[:oid,:lng],cand:bat[:oid,:oid],r:lng,depth:in
 address LSSTxmatchsubselect;
 comment Return the HtmID's that lie within the same triangle as r at level depth
 
-command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,anti:bit):bit 
-address LSSTxmatch;
-comment Return the HtmID pairs that lie within the same triangle at level depth
-
-command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit 
+command lsst.xmatch(l:lng,r:lng,depth:int):bit 
 address LSSTxmatch;
 comment Return true when the HtmID pairs that lie within the same triangle at level depth
 

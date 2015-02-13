@@ -18,25 +18,16 @@ stdout of test 'tst3050` in directory 'monetdb5/mal` itself:
 #end dummy;
 function user.dummy{dense=true}(a:int,b:int):int;
     return dummy := 1;
-end dummy;
+end user.dummy;
 function user.myprint{unsafe, optimizer}():void;
-end myprint;
-#
-#a:= 0;
-#b:= 2;
-#t:= user.dummy(a{sorted=true},b{sequence=true});
-#
-#mdb.var("user","myprint");
-#
-#
+end user.myprint;
 function user.main():void;
 #Parsing properties and keeping them around 
     a := 0;
     b := 2;
     t := user.dummy(a,b);
     mdb.var("user","myprint");
-end main;
-#[0] myprint =  :void   not used {unsafe,optimizer}
+end user.main;
 
 # 07:49:50 >  
 # 07:49:50 >  Done.

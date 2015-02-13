@@ -44,15 +44,16 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s4_1(A0:lng,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
-    X_7 := sql.bind(X_3,"sys","dbg","a",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
     X_10 := algebra.leftfetchjoin(X_4,X_7);
     (X_11,r1_11,r2_11) := group.subgroupdone(X_10);
     X_14 := algebra.leftfetchjoin(r1_11,X_10);
-    X_15 := sql.bind(X_3,"sys","dbg","b",0);
+    X_15:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","b",0);
     X_17 := algebra.leftfetchjoin(X_4,X_15);
     X_18:bat[:oid,:lng]  := aggr.subsum(X_17,X_11,r1_11,true,true);
     X_20 := algebra.project(X_10,A1);
@@ -66,8 +67,7 @@ function user.s4_1(A0:lng,A1:bte):void;
     sql.rsColumn(X_25,".L3","f","bigint",53,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
-end s4_1;
-# querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s4_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % sys.dbg,	sys.L1,	.L3 # table_name
@@ -97,15 +97,16 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 145 # length
 function user.s10_1(A0:lng,A1:bte):void;
+    X_44:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
-    X_7 := sql.bind(X_3,"sys","dbg","a",0);
+    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
     X_10 := algebra.leftfetchjoin(X_4,X_7);
     (X_11,r1_11,r2_11) := group.subgroupdone(X_10);
     X_14 := algebra.leftfetchjoin(r1_11,X_10);
-    X_15 := sql.bind(X_3,"sys","dbg","b",0);
+    X_15:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","b",0);
     X_17 := algebra.leftfetchjoin(X_4,X_15);
     X_18:bat[:oid,:lng]  := aggr.subsum(X_17,X_11,r1_11,true,true);
     X_20 := algebra.project(X_10,A1);
@@ -119,8 +120,7 @@ function user.s10_1(A0:lng,A1:bte):void;
     sql.rsColumn(X_25,".L3","f","bigint",53,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
-end s10_1;
-# querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s10_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
 #BY d;

@@ -76,6 +76,7 @@ opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
+opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str differenceRef;
@@ -275,4 +276,5 @@ opt_export int tlbProp;			/* any (tail lower bound) */
 opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
+opt_export int mtProp;			/* enclosing merge table (id) */
 #endif

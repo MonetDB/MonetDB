@@ -46,7 +46,7 @@ function user.main():void;
     i := streams.readInt(fp);
     io.print(i);
     streams.close(fp);
-end main;
+end user.main;
 [ "Dit is een test\n" ]
 [ 1234 ]
 

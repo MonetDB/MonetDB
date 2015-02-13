@@ -488,7 +488,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	}
 	first = first<0?0:first;
 	size = size < 0?-size:size;
-	if (flg & LIST_MAPI) {
+	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */

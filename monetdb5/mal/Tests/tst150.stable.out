@@ -22,15 +22,12 @@ function user.sample(nme:str,val:any_1):bit;
     x := io.print(t);
     y := io.print(val);
     return sample := true;
-end sample;
-#user.sample("hello","world");
-#user.sample("hello",1);
-#
+end user.sample;
 !TypeException:user.main[1]:'user.sample' undefined in: _1:bit := user.sample(_2:str, _3:str)
 function user.main():void;
     user.sample("hello","world");
     user.sample("hello",1);
-end main;
+end user.main;
 
 # 07:59:05 >  
 # 07:59:05 >  Done.

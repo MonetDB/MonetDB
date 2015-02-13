@@ -30,7 +30,7 @@ function user.main():void;
 # error, overwriting non-temp 
     X5 := 23;
     io.print(X5);
-end main;
+end user.main;
 [ 23 ]
 
 # 11:44:09 >  

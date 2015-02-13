@@ -30,11 +30,11 @@ function user.tst():void;
     io.print(b3);
     e := bat.partition(b,2,-1);
     io.print(e);
-end tst;
+end user.tst;
 function user.main():void;
     mdb.List("user","tst");
     user.tst();
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
@@ -54,8 +54,8 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
 # an error should be produced 
     e := bat.partition(b,2,-1);         # 17 e:bat[:oid,:int] := CMDBATpartition2(b:bat[:oid,:int], _7:int, _27:int) {G}
     io.print(e);                        # 18 _28:void := IOprint_val(e:bat[:oid,:int]) {G}
-end tst;                                # 19  
-#-----------------#
+end user.tst;                           # 19  
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#

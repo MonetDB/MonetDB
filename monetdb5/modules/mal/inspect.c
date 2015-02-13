@@ -530,8 +530,8 @@ INSPECTcalcSize(MalBlkPtr mb){
 		p= getInstrPtr(mb,i);
 		args += (p->argc-1)* sizeof(*p->argv);
 	}
-	size = (sizeof(InstrRecord) +sizeof(InstrPtr)) * mb->stop;
-	size += (sizeof(VarRecord)+ sizeof(InstrPtr)) * mb->vtop;
+	size = (offsetof(InstrRecord, argv) +sizeof(InstrPtr)) * mb->stop;
+	size += (offsetof(VarRecord, prps)+ sizeof(InstrPtr)) * mb->vtop;
 	size += args;
 	return size;
 }

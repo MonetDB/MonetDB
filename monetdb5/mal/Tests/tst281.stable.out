@@ -28,7 +28,7 @@ function user.main():void;
     io.print(x);
     x := algebra.find(b,"its the end");
     io.print(x);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	str  # type

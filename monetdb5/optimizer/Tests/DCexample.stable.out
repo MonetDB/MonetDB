@@ -15,12 +15,12 @@ stdout of test 'DCexample` in directory 'monetdb5/optimizer` itself:
 function user.main():void;
     io.print("done");
     mdb.List();
-end main;
+end user.main;
 [ "done" ]
 function user.main():void;              #  0 main:void := user.main() {G}
     io.print("done");                   #  1 _15:void := IOprint_val(_16:str) {G}
     mdb.List();                         #  2 _18:void := MDBlistDetail() 
-end main;                               #  3  
+end user.main;                          #  3  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

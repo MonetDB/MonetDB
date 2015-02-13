@@ -25,11 +25,11 @@ barrier go := true;
     bat.setPersistent(a,true);
     redo go := calc.<(i,2);
 exit go;
-end f;
+end user.f;
 function user.main():void;
 #bug from Roberto to check carefull strength reduction 
     mdb.List("user","f");
-end main;
+end user.main;
 function user.f():void;                 #  0 f:void := user.f() {G}
 # remove from disk 
 # alter the values 
@@ -43,7 +43,7 @@ barrier go := true;                     #  4 go:bit := _4:bit {J12}
     bat.setPersistent(a,true);          # 10 _14:void := BKCpersists(a:bat[:oid,:dbl], _4:bit) {G}
     redo go := calc.<(i,2);             # 11 go:bit := CMDvarLT(i:int, _15:int) {J3}
 exit go;                                # 12 go:bit 
-end f;                                  # 13  
+end user.f;                             # 13  
 
 # 23:29:21 >  
 # 23:29:21 >  Done.

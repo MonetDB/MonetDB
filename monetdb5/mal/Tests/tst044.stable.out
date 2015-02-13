@@ -42,7 +42,7 @@ function user.main():void;
     io.print(b);
     b := 0.34150001406669617:dbl;
     io.print(b);
-end main;
+end user.main;
 [ 3.14499998 ]
 [ -3.14499998 ]
 [ 3.45000005 ]

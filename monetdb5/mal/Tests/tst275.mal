@@ -1,9 +1,5 @@
 #Same as tst200, but includes testing of the profiler
 
-#profiler.setAll();
-profiler.activate("sit");
-#profiler.setFilter("*","*");
-profiler.setFilter("*","append");
 profiler.openStream("/tmp/MonetEvents");
 
 o:= calc.oid(20000000);
@@ -18,7 +14,7 @@ io.printf("#~BeginVariableOutput~#\n");
 io.print(bk,bv); 
 io.printf("#~EndVariableOutput~#\n");
 
-profiler.start();
+profiler.stethoscope(0);
 err := bat.append(b,15);
 err := bat.append(b,4);
 n0  := calc.int(nil);
@@ -34,5 +30,4 @@ err := bat.append(b,81);
 io.print(b);
 io.print(b,b,b);
 profiler.stop();
-profiler.closeStream();
 profiler.cleanup();

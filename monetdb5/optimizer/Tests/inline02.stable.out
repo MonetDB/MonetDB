@@ -14,31 +14,31 @@ stdout of test 'inline02` in directory 'monetdb5/optimizer` itself:
 function user.foo{inline}(a:int,b:int):int;
     c := calc.+(a,b);
     return foo := c;
-end foo;
+end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
+    bat.append(b,1);
     zz := user.foo(1,2);
 # base line test for inlining 
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
 # inspired by SQL module 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    X_16 := calc.+(1,2);                #  3 _16:int := CMDvarADDsignal(_6:int, _8:int) 
-    zz := X_16;                         #  4 zz:int := _16:int 
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    X_15 := calc.+(1,2);                #  3 _15:int := CMDvarADDsignal(_5:int, _7:int) 
+    zz := X_15;                         #  4 zz:int := _15:int 
 # base line test for inlining 
-    X_20 := batcalc.+(b,b);             #  6 _20:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:int] {inline} := X_20;  #  7 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
-    X_24 := batcalc.+(b,2);             #  8 _24:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _8:int) {G}
-    z:bat[:oid,:int] {inline} := X_24;  #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
-end qry;                                # 10  
+    X_19 := batcalc.+(b,b);             #  6 _19:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    z:bat[:oid,:int] {inline} := X_19;  #  7 z:bat[:oid,:int] := _19:bat[:oid,:int] {G}
+    X_23 := batcalc.+(b,2);             #  8 _23:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _7:int) {G}
+    z:bat[:oid,:int] {inline} := X_23;  #  9 z:bat[:oid,:int] := _23:bat[:oid,:int] {G}
+end user.qry;                           # 10  
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

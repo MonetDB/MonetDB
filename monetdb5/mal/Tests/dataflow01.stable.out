@@ -24,19 +24,19 @@ function user.load():bat[:oid,:lng];
 barrier i := 0:lng;
     k := calc.+(k,1);
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     mdb.setDebug(dbgmsk_restore);
     return load := b;
-end load;
+end user.load;
 function user.qry(z:bat[:oid,:lng],low:int,hgh:int):wrd;
     l := calc.lng(low);
     h := calc.lng(hgh);
     s := algebra.select(z,l,h);
     c := aggr.count(s);
     return qry := c;
-end qry;
+end user.qry;
 function user.main():void;
 # a simple dataflow test to check call methods. 
     s := user.load();
@@ -59,7 +59,7 @@ exit go;
     io.print(t2);
     io.print(t3);
     io.print(t4);
-end main;
+end user.main;
 [ 100000 ]
 [ 100 ]
 [ 900 ]

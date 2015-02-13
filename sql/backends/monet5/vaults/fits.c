@@ -227,7 +227,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	colname = (str *) GDKmalloc(columns * sizeof(str));
 	tform = (str *) GDKmalloc(columns * sizeof(str));
 
-	/*	mnstr_printf(GDKout,"Number of columns: %d\n", columns);*/
+	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/
 
 	tables = mvc_bind_table(m, sch, "_tables");
 	col = mvc_bind_column(m, tables, "name");
@@ -274,7 +274,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nrows = store_funcs.count_col(tr, col, 1);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
-	mnstr_printf(GDKout, "Filename: %s\n", filename);
+	fprintf(stderr, "Filename: %s\n", filename);
 
 	remove(filename);
 
@@ -529,15 +529,15 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* print all the times that were needed to export each one of the columns
 		
-	mnstr_printf(GDKout, "\n\n");
-	if (texportboolean > 0)		mnstr_printf(GDKout, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols,   texportboolean);
-	if (texportchar > 0)		mnstr_printf(GDKout, "%d Char\t\tcolumn(s) exported in %d ms\n",    charcols,   texportchar);
-	if (texportstring > 0)		mnstr_printf(GDKout, "%d String\tcolumn(s) exported in %d ms\n",  strcols,    texportstring);
-	if (texportshort > 0)		mnstr_printf(GDKout, "%d Short\t\tcolumn(s) exported in %d ms\n",   shortcols,  texportshort);
-	if (texportint > 0)		mnstr_printf(GDKout, "%d Integer\tcolumn(s) exported in %d ms\n", intcols,    texportint);
-	if (texportlong > 0)		mnstr_printf(GDKout, "%d Long\t\tcolumn(s) exported in %d ms\n",    longcols,   texportlong);
-	if (texportfloat > 0)		mnstr_printf(GDKout, "%d Float\t\tcolumn(s) exported in %d ms\n",   floatcols,  texportfloat);
-	if (texportdouble > 0) 		mnstr_printf(GDKout, "%d Double\tcolumn(s) exported in %d ms\n",  doublecols, texportdouble);
+	fprintf(stderr, "\n\n");
+	if (texportboolean > 0)		fprintf(stderr, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols,   texportboolean);
+	if (texportchar > 0)		fprintf(stderr, "%d Char\t\tcolumn(s) exported in %d ms\n",    charcols,   texportchar);
+	if (texportstring > 0)		fprintf(stderr, "%d String\tcolumn(s) exported in %d ms\n",  strcols,    texportstring);
+	if (texportshort > 0)		fprintf(stderr, "%d Short\t\tcolumn(s) exported in %d ms\n",   shortcols,  texportshort);
+	if (texportint > 0)		fprintf(stderr, "%d Integer\tcolumn(s) exported in %d ms\n", intcols,    texportint);
+	if (texportlong > 0)		fprintf(stderr, "%d Long\t\tcolumn(s) exported in %d ms\n",    longcols,   texportlong);
+	if (texportfloat > 0)		fprintf(stderr, "%d Float\t\tcolumn(s) exported in %d ms\n",   floatcols,  texportfloat);
+	if (texportdouble > 0) 		fprintf(stderr, "%d Double\tcolumn(s) exported in %d ms\n",  doublecols, texportdouble);
 	*/
 
 	fits_close_file(fptr, &status);
@@ -597,7 +597,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
 
-	/*	mnstr_printf(GDKout,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
+	/*	fprintf(stderr,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
 		throw(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
@@ -902,14 +902,14 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_get_coltype(fptr, j, &tpcode[j - 1], &rep[j - 1], &wid[j - 1], &status);
 		fits2subtype(&tpe, tpcode[j - 1], rep[j - 1], wid[j - 1]);
 
-		/*		mnstr_printf(cntxt->fdout,"#%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
+		/*		fprintf(stderr,"#%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
 
 		mvc_create_column(m, tbl, cname[j - 1], &tpe);
 	}
 
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
-	mnstr_printf(cntxt->fdout,"#Loading %ld rows in table %s\n", rows, tname);
+	fprintf(stderr,"#Loading %ld rows in table %s\n", rows, tname);
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
@@ -952,7 +952,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(i = 0; i < bsize ; i++)
 				GDKfree(v[i]);
 			GDKfree(v);
-			mnstr_printf(cntxt->fdout,"#String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
+			fprintf(stderr,"#String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 
 		if (status) {
@@ -961,9 +961,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
-		mnstr_printf(cntxt->fdout,"#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
+		fprintf(stderr,"#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
-		mnstr_printf(cntxt->fdout,"#Total %d ms\n", GDKms() - time0);
+		fprintf(stderr,"#Total %d ms\n", GDKms() - time0);
 		BBPunfix(tmp->batCacheid);
 	}
 

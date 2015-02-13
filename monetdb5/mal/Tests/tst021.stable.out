@@ -25,7 +25,7 @@ function user.main():void;
     io.print(d1);
     d2 := "1998-12-01":date;
     io.print(d2);
-end main;
+end user.main;
 [ 1998-12-01 ]
 [ 1998-12-01 ]
 #

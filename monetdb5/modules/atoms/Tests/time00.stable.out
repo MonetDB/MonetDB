@@ -44,7 +44,7 @@ function user.main():void;
     io.print(zm);
     zd := batmtime.day(b);
     io.print(zd);
-end main;
+end user.main;
 [ 1968-02-29 ]
 [ 1968-02-29 ]
 [ nil ]

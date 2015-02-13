@@ -30,7 +30,7 @@ function user.main():void;
     io.print(o11);
     ox1 := 0@0;
     io.print(ox1);
-end main;
+end user.main;
 [ 0@0 ]
 [ 1@0 ]
 [ 1@0 ]

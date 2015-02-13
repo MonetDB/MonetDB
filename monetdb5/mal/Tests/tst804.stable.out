@@ -20,13 +20,13 @@ stdout of test 'tst804` in directory 'monetdb5/mal` itself:
 !SyntaxException:parseError:   ^non matching end label
 function user.main():void;
 # test definiton of a function in a unknown module 
-end main;
+end user.main;
 function user.main():void;
 # test definiton of a function in a unknown module 
-end main;
+end user.main;
     wrong.message();
     wrongTo.message();
-end main;
+end user.main;
 
 # 22:02:45 >  
 # 22:02:45 >  Done.

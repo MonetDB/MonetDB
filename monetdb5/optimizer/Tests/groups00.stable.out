@@ -45,11 +45,11 @@ function user.tst():void;
     io.print(xb);
     io.print(ext3);
     io.print(grp3);
-end tst;
+end user.tst;
 function user.main():void;
     mdb.list("user","tst");
     user.tst();
-end main;
+end user.main;
 function user.tst():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
@@ -79,8 +79,8 @@ function user.tst():void;
     io.print(xb);
     io.print(ext3);
     io.print(grp3);
-end tst;
-#-----------------#
+end user.tst;
+#--------------------------#
 # h	t	  # name
 # void	wrd	  # type
 #-----------------#

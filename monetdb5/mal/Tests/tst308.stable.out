@@ -25,12 +25,11 @@ catch NotDefinedException:str ;
     io.print("Shouldn't do this");
     io.print(NotDefinedException);
 exit NotDefinedException:str ;
-end foo;
-#
+end user.foo;
 function user.main():void;
 # exception variables are implicitly defined 
 # by the catch statement. 
-end main;
+end user.main;
 
 # 09:52:07 >  
 # 09:52:07 >  Done.

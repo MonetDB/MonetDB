@@ -50,17 +50,13 @@ stdout of test 'tst272` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
 #Same as tst270, but includes testing of the profiler trace 
-    profiler.activate("ticks");
-#profiler.activate("pc"); 
-    profiler.activate("stmt");
-    profiler.setFilter("*","append");
     o := calc.oid(20000000);
     calc.setoid(o);
     b := bat.new(:oid,:int);
 #test basic functionality of the BAT library. 
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
-    profiler.start();
+    profiler.stethoscope(0);
     err := bat.append(b,15);
     err := bat.append(b,4);
     n0 := calc.int(nil);
@@ -84,12 +80,11 @@ function user.main():void;
 #io.print(t,s); 
     io.printf("#~EndVariableOutput~#\n");
     profiler.cleanup();
-end main;
-# Start performance profiling
-#-----------------#
-# h	tmp_13	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  15	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  nil	  ]

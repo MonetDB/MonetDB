@@ -22,7 +22,7 @@ function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;
     c2 := aggr.count(b2);
     z:bat[:oid,:dbl]  := mal.multiplex("calc","max",b,b2);
     io.print(z,b,b2);
-end tst;
+end user.tst;
 #WARNING To speedup calc.max a bulk operator implementation is needed
 function user.main():void;
 # the manifold code blocks  
@@ -31,7 +31,7 @@ function user.main():void;
     mdb.List("user","tst");
     mdb.var("user","tst");
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;#  0 tst:void := user.tst(b:bat[:oid,:dbl], b2:bat[:oid,:dbl]) {G}
 barrier X_9{transparent} := language.dataflow();#  1 _9:bit := MALstartDataflow() {J4}
     c := aggr.count(b);                 #  2 c:wrd := ALGcount_bat(b:bat[:oid,:dbl]) {G}
@@ -46,7 +46,7 @@ barrier (X_16,X_17) := iterator.new(b); #  6 (_16:oid, _17:dbl) := ITRbunIterato
 exit (X_16,X_17);                       # 11 (_16:oid, _17:dbl) 
     z:bat[:oid,:dbl]  := X_12;          # 12 z:bat[:oid,:dbl] := _12:bat[:oid,:dbl] {G}
     io.print(z,b,b2);                   # 13 _8:void := IOtable(z:bat[:oid,:dbl], b:bat[:oid,:dbl], b2:bat[:oid,:dbl]) {G}
-end tst;                                # 14  
+end user.tst;                           # 14  
 #[1]     b =  :bat[:oid,:dbl]  
 #[2]    b2 =  :bat[:oid,:dbl]  
 #[5]     z =  :bat[:oid,:dbl]  
@@ -74,7 +74,7 @@ barrier (X_16,X_17) := iterator.new(b); #  6 (_16:oid, _17:dbl) := ITRbunIterato
 exit (X_16,X_17);                       # 11 (_16:oid, _17:dbl) 
     z:bat[:oid,:dbl]  := X_12;          # 12 z:bat[:oid,:dbl] := _12:bat[:oid,:dbl] {G}
     io.print(z,b,b2);                   # 13 _8:void := IOtable(z:bat[:oid,:dbl], b:bat[:oid,:dbl], b2:bat[:oid,:dbl]) {G}
-end tst;                                # 14  
+end user.tst;                           # 14  
 
 # 09:02:36 >  
 # 09:02:36 >  "Done."

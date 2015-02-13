@@ -41,7 +41,7 @@ function user.main():void;
     b := json.new("[1,\"hello\", 2]");
     f := json.text(b);
     io.print(f);
-end main;
+end user.main;
 [ "" ]
 [ "1" ]
 [ "true 2" ]
