@@ -53,8 +53,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 571 # length
+% 589 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date,A4:int):void;
+    X_182:void  := querylog.define("explain select\n\tn_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tsupplier,\n\tnation,\n\tregion\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand l_suppkey = s_suppkey\n\tand c_nationkey = s_nationkey\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = \\'ASIA\\'\n\tand o_orderdate >= date \\'1994-01-01\\'\n\tand o_orderdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tn_name\norder by\n\trevenue desc;","sequential_pipe");
     X_7 := sql.mvc();
     X_11:bat[:oid,:date]  := sql.bind(X_7,"sys","orders","o_orderdate",0);
     X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","orders");
@@ -151,8 +152,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date,A4:int):void;
     sql.rsColumn(X_166,"sys.L1","revenue","decimal",19,4,X_165);
     X_180 := io.stdout();
     sql.exportResult(X_180,X_166);
-end s2_1;
-# querylog.define("explain select\n\tn_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tsupplier,\n\tnation,\n\tregion\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand l_suppkey = s_suppkey\n\tand c_nationkey = s_nationkey\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = \\'ASIA\\'\n\tand o_orderdate >= date \\'1994-01-01\\'\n\tand o_orderdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tn_name\norder by\n\trevenue desc;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:26 >  
 # 22:53:26 >  "Done."
