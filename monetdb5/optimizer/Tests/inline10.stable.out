@@ -21,7 +21,7 @@ function user.bar{inline}(a:int,b:int):int;
 end user.bar;
 function user.qry():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
+    bat.append(b,1);
     zz := user.bar(1,2);
 # base line test for inlining 
     z:bat[:oid,:int]  := mal.multiplex("user","bar",b,b);
@@ -33,14 +33,14 @@ function user.main():void;
 end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    X_20 := calc.+(1,2);                #  3 _20:int := CMDvarADDsignal(_6:int, _8:int) 
-    X_16 := X_20;                       #  4 _16:int := _20:int 
-    zz := X_16;                         #  5 zz:int := _16:int 
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    X_19 := calc.+(1,2);                #  3 _19:int := CMDvarADDsignal(_5:int, _7:int) 
+    X_15 := X_19;                       #  4 _15:int := _19:int 
+    zz := X_15;                         #  5 zz:int := _15:int 
 # base line test for inlining 
-    X_28 := batcalc.+(b,b);             #  7 _28:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    X_24 := X_28;                       #  8 _24:bat[:oid,:int] := _28:bat[:oid,:int] {G}
-    z:bat[:oid,:int] {inline} := X_24;  #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
+    X_27 := batcalc.+(b,b);             #  7 _27:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    X_23 := X_27;                       #  8 _23:bat[:oid,:int] := _27:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := X_23;  #  9 z:bat[:oid,:int] := _23:bat[:oid,:int] {G}
 end user.qry;                           # 10  
 
 # 11:53:01 >  

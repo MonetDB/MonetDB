@@ -19,7 +19,7 @@ function user.main():void;
     s := "hello";
     st := inspect.getType(s);
     io.print(st);
-end main;
+end user.main;
 [ "bat[:oid,:int]" ]
 [ "str" ]
 

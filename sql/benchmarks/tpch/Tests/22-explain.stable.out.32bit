@@ -56,8 +56,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 868 # length
+% 886 # length
 function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:bte,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
+    X_162:void  := querylog.define("explain select\n\tcntrycode,\n\tcount(*) as numcust,\n\tsum(c_acctbal) as totacctbal\nfrom\n\t(\n\t\tselect\n\t\t\tsubstring(c_phone from 1 for 2) as cntrycode,\n\t\t\tc_acctbal\n\t\tfrom\n\t\t\tcustomer\n\t\twhere\n\t\t\tsubstring(c_phone from 1 for 2) in\n\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\tand c_acctbal > (\n\t\t\t\tselect\n\t\t\t\t\tavg(c_acctbal)\n\t\t\t\tfrom\n\t\t\t\t\tcustomer\n\t\t\t\twhere\n\t\t\t\t\tc_acctbal > 0.00\n\t\t\t\t\tand substring(c_phone from 1 for 2) in\n\t\t\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\t)\n\t\t\tand not exists (\n\t\t\t\tselect\n\t\t\t\t\t*\n\t\t\t\tfrom\n\t\t\t\t\torders\n\t\t\t\twhere\n\t\t\t\t\to_custkey = c_custkey\n\t\t\t)\n\t) as custsale\ngroup by\n\tcntrycode\norder by\n\tcntrycode;","sequential_pipe");
     X_23 := sql.mvc();
     X_24:bat[:oid,:oid]  := sql.tid(X_23,"sys","customer");
     X_27:bat[:oid,:str]  := sql.bind(X_23,"sys","customer","c_phone",0);
@@ -112,38 +113,37 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6
     X_98:bat[:oid,:dbl]  := batcalc.dbl(2,X_97);
     X_100:dbl  := aggr.avg(X_98);
     X_101 := sql.single(X_100);
-    (X_102,r1_147) := algebra.thetajoin(X_74,X_101,1);
-    X_105 := algebra.tinter(X_65,X_102);
-    X_106 := algebra.leftfetchjoin(X_105,X_64);
-    X_107 := bat.mirror(X_106);
-    X_108:bat[:oid,:oid]  := sql.tid(X_23,"sys","orders");
-    X_111:bat[:oid,:int]  := sql.bind(X_23,"sys","orders","o_custkey",0);
-    (X_114,r1_159) := sql.bind(X_23,"sys","orders","o_custkey",2);
-    X_116:bat[:oid,:int]  := sql.bind(X_23,"sys","orders","o_custkey",1);
-    X_117 := sql.delta(X_111,X_114,r1_159,X_116);
-    X_118 := algebra.leftfetchjoin(X_108,X_117);
-    (X_119,r1_164) := algebra.join(X_106,X_118);
-    X_121 := algebra.tdiff(X_107,X_119);
-    X_179 := algebra.leftfetchjoin(X_121,X_105);
-    X_122:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_179,X_52,X_36);
-    X_123:bat[:oid,:str]  := batstr.substring(X_122,A0,A1);
-    (X_124,r1_175,r2_175) := group.subgroupdone(X_123);
-    X_127 := algebra.leftfetchjoin(r1_175,X_123);
-    X_133:bat[:oid,:wrd]  := aggr.subcount(X_124,X_124,r1_175,false);
-    X_135:bat[:oid,:lng]  := algebra.leftfetchjoin(X_179,X_73);
-    X_136:bat[:oid,:lng]  := aggr.subsum(X_135,X_124,r1_175,true,true);
-    (X_128,r1_179,r2_179) := algebra.subsort(X_127,false,false);
-    X_132 := algebra.leftfetchjoin(r1_179,X_127);
-    X_138 := algebra.leftfetchjoin(r1_179,X_136);
-    X_134 := algebra.leftfetchjoin(r1_179,X_133);
-    X_139 := sql.resultSet(3,1,X_132);
-    sql.rsColumn(X_139,"sys.custsale","cntrycode","varchar",15,0,X_132);
-    sql.rsColumn(X_139,"sys.L2","numcust","wrd",32,0,X_134);
-    sql.rsColumn(X_139,"sys.L3","totacctbal","decimal",15,2,X_138);
-    X_158 := io.stdout();
-    sql.exportResult(X_158,X_139);
-end s2_1;
-# querylog.define("explain select\n\tcntrycode,\n\tcount(*) as numcust,\n\tsum(c_acctbal) as totacctbal\nfrom\n\t(\n\t\tselect\n\t\t\tsubstring(c_phone from 1 for 2) as cntrycode,\n\t\t\tc_acctbal\n\t\tfrom\n\t\t\tcustomer\n\t\twhere\n\t\t\tsubstring(c_phone from 1 for 2) in\n\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\tand c_acctbal > (\n\t\t\t\tselect\n\t\t\t\t\tavg(c_acctbal)\n\t\t\t\tfrom\n\t\t\t\t\tcustomer\n\t\t\t\twhere\n\t\t\t\t\tc_acctbal > 0.00\n\t\t\t\t\tand substring(c_phone from 1 for 2) in\n\t\t\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\t)\n\t\t\tand not exists (\n\t\t\t\tselect\n\t\t\t\t\t*\n\t\t\t\tfrom\n\t\t\t\t\torders\n\t\t\t\twhere\n\t\t\t\t\to_custkey = c_custkey\n\t\t\t)\n\t) as custsale\ngroup by\n\tcntrycode\norder by\n\tcntrycode;","sequential_pipe")
+    (X_102,r1_147) := algebra.subthetajoin(X_74,X_101,nil:BAT,nil:BAT,1,true,nil:lng);
+    X_107 := algebra.tinter(X_65,X_102);
+    X_108 := algebra.leftfetchjoin(X_107,X_64);
+    X_109 := bat.mirror(X_108);
+    X_110:bat[:oid,:oid]  := sql.tid(X_23,"sys","orders");
+    X_113:bat[:oid,:int]  := sql.bind(X_23,"sys","orders","o_custkey",0);
+    (X_116,r1_161) := sql.bind(X_23,"sys","orders","o_custkey",2);
+    X_118:bat[:oid,:int]  := sql.bind(X_23,"sys","orders","o_custkey",1);
+    X_119 := sql.delta(X_113,X_116,r1_161,X_118);
+    X_120 := algebra.leftfetchjoin(X_110,X_119);
+    (X_121,r1_166) := algebra.subjoin(X_108,X_120,nil:BAT,nil:BAT,false,nil:lng);
+    X_124 := algebra.tdiff(X_109,X_121);
+    X_181 := algebra.leftfetchjoin(X_124,X_107);
+    X_125:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_181,X_52,X_36);
+    X_126:bat[:oid,:str]  := batstr.substring(X_125,A0,A1);
+    (X_127,r1_178,r2_178) := group.subgroupdone(X_126);
+    X_130 := algebra.leftfetchjoin(r1_178,X_126);
+    X_135:bat[:oid,:wrd]  := aggr.subcount(X_127,X_127,r1_178,false);
+    X_137:bat[:oid,:lng]  := algebra.leftfetchjoin(X_181,X_73);
+    X_138:bat[:oid,:lng]  := aggr.subsum(X_137,X_127,r1_178,true,true);
+    (X_131,r1_182,r2_182) := algebra.subsort(X_130,false,false);
+    X_134 := algebra.leftfetchjoin(r1_182,X_130);
+    X_140 := algebra.leftfetchjoin(r1_182,X_138);
+    X_136 := algebra.leftfetchjoin(r1_182,X_135);
+    X_141 := sql.resultSet(3,1,X_134);
+    sql.rsColumn(X_141,"sys.custsale","cntrycode","varchar",15,0,X_134);
+    sql.rsColumn(X_141,"sys.L2","numcust","wrd",32,0,X_136);
+    sql.rsColumn(X_141,"sys.L3","totacctbal","decimal",15,2,X_140);
+    X_160 := io.stdout();
+    sql.exportResult(X_160,X_141);
+end user.s2_1;
 
 # 22:53:31 >  
 # 22:53:31 >  "Done."

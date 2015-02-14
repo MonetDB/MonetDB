@@ -32,8 +32,8 @@ io.printf("field 1 %s\n",s);
 
 mapi.query(mid,"r:= bat.new(:oid,:int);");
 io.printf("shipped first query\n");
-mapi.query(mid,"bat.insert(r, 1@0,311);");
-mapi.query(mid,"bat.insert(r,2@0,433);");
+mapi.query(mid,"bat.append(r,311);");
+mapi.query(mid,"bat.append(r,433);");
 b:bat[:oid,:int]:= mapi.rpc(mid,"io.print(r);");
 io.print(b);
 

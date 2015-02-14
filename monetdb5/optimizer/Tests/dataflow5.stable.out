@@ -21,9 +21,9 @@ stdout of test 'dataflow5` in directory 'monetdb5/optimizer` itself:
 # MonetDB/DataCell loaded
 function user.tst():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
-    bat.insert(b,1@0,2);
-    bat.insert(b,2@0,3);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
     io.print(b);
 end user.tst;
 function user.main():void;
@@ -33,16 +33,16 @@ function user.main():void;
 end user.main;
 function user.tst():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
-    bat.insert(b,1@0,2);
-    bat.insert(b,2@0,3);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
     io.print(b);
 end user.tst;
 function user.tst():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
-    bat.insert(b,1@0,2);
-    bat.insert(b,2@0,3);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
     io.print(b);
 end user.tst;
 

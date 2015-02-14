@@ -50,8 +50,8 @@ function user.main():void;
 # don't use 09@0 
     i9 := 9@0;
     io.print(i9);
-    bd_a := bat.insert(tzone_bat,8@0,tzone_08);
-    cd_a := bat.insert(tzone_bat,9@0,tzone_09);
+    bd_a := bat.append(tzone_bat,tzone_08);
+    cd_a := bat.append(tzone_bat,tzone_09);
     bat.setColumn(tzone_bat,"timezone");
     jd_a := io.print(tzone_bat);
 end user.main;
@@ -60,9 +60,9 @@ end user.main;
 #-------------------------#
 # h	timezone		  # name
 # void	timezone	  # type
-#-------------------------#
-[ 8@0,	  GMT-23:36	  ]
-[ 9@0,	  GMT		  ]
+#--------------------------#
+[ 0@0,	GMT-23:36  ]
+[ 1@0,	GMT  ]
 
 # 23:39:02 >  
 # 23:39:02 >  Done.

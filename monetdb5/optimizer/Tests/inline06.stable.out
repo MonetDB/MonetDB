@@ -20,7 +20,7 @@ function user.foo{inline}(a:int,b:int):int;
 end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
+    bat.append(b,1);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
 end user.qry;
@@ -31,17 +31,17 @@ function user.main():void;
 end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    X_14 := batcalc.+(b,b);             #  3 _14:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    X_15 := mmath.rand();               #  4 _15:int := MATHrandint() 
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    X_13 := batcalc.+(b,b);             #  3 _13:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    X_14 := mmath.rand();               #  4 _14:int := MATHrandint() 
 # 
-    X_14 := batcalc.*(X_14,X_15);       #  6 _14:bat[:oid,:int] := CMDbatMULsignal(_14:bat[:oid,:int], _15:int) {G}
-    z:bat[:oid,:int] {inline} := X_14;  #  7 z:bat[:oid,:int] := _14:bat[:oid,:int] {G}
-    X_20 := batcalc.+(b,2);             #  8 _20:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _10:int) {G}
-    X_21 := mmath.rand();               #  9 _21:int := MATHrandint() 
+    X_13 := batcalc.*(X_13,X_14);       #  6 _13:bat[:oid,:int] := CMDbatMULsignal(_13:bat[:oid,:int], _14:int) {G}
+    z:bat[:oid,:int] {inline} := X_13;  #  7 z:bat[:oid,:int] := _13:bat[:oid,:int] {G}
+    X_19 := batcalc.+(b,2);             #  8 _19:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _9:int) {G}
+    X_20 := mmath.rand();               #  9 _20:int := MATHrandint() 
 # 
-    X_20 := batcalc.*(X_20,X_21);       # 11 _20:bat[:oid,:int] := CMDbatMULsignal(_20:bat[:oid,:int], _21:int) {G}
-    z:bat[:oid,:int] {inline} := X_20;  # 12 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    X_19 := batcalc.*(X_19,X_20);       # 11 _19:bat[:oid,:int] := CMDbatMULsignal(_19:bat[:oid,:int], _20:int) {G}
+    z:bat[:oid,:int] {inline} := X_19;  # 12 z:bat[:oid,:int] := _19:bat[:oid,:int] {G}
 end user.qry;                           # 13  
 
 # 18:00:44 >  

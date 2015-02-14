@@ -14,13 +14,26 @@ stdout of test 'xml02` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/SQL module v2.39.0 loaded
 # MonetDB/GIS module v0.19.0 loaded
 
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39685/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5893/.s.monetdb.39685
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
 function user.main():void;
     b := bat.new(:oid,:str);
-    bat.insert(b,0@0,"Mary Ann Walker");
-    bat.insert(b,1@0,"Annie Chapman");
+    bat.append(b,"Mary Ann Walker");
+    bat.append(b,"Annie Chapman");
     h := bat.new(:oid,:str);
-    bat.insert(h,0@0,"brown");
-    bat.insert(h,1@0,"curly dark brown");
+    bat.append(h,"brown");
+    bat.append(h,"curly dark brown");
     io.print(b);
     bc := batxml.attribute("name",b);
     hc := batxml.attribute("hair",h);
@@ -33,29 +46,29 @@ function user.main():void;
     io.print(as);
 end user.main;
 #--------------------------#
-# h	t			  # name
-# void	str			  # type
-#---------------------------------#
-[ 0@0,	  "Mary Ann Walker"	  ]
-[ 1@0,	  "Annie Chapman"	  ]
-#-----------------------------------------#
-# h	t				  # name
-# void	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "name = \"Mary Ann Walker\""	  ]
-[ 1@0,	  "name = \"Annie Chapman\""	  ]
-#-----------------------------------------#
-# h	t				  # name
-# void	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "hair = \"brown\""		  ]
-[ 1@0,	  "hair = \"curly dark brown\""	  ]
-#-----------------------------------------------------------------#
-# h	t								  # name
-# void	str							  # type
-#-----------------------------------------------------------------#
-[ 0@0,	  "name = \"Mary Ann Walker\" hair = \"brown\""		  ]
-[ 1@0,	  "name = \"Annie Chapman\" hair = \"curly dark brown\""  ]
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"Mary Ann Walker"  ]
+[ 1@0,	"Annie Chapman"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"name = \"Mary Ann Walker\""  ]
+[ 1@0,	"name = \"Annie Chapman\""  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"hair = \"brown\""  ]
+[ 1@0,	"hair = \"curly dark brown\""  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"name = \"Mary Ann Walker\" hair = \"brown\""  ]
+[ 1@0,	"name = \"Annie Chapman\" hair = \"curly dark brown\""  ]
 
 # 22:46:59 >  
 # 22:46:59 >  Done.

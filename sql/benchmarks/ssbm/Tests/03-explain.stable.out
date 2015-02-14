@@ -36,8 +36,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 283 # length
+% 300 # length
 function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):void;
+    X_82:void  := querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe");
     X_8 := sql.mvc();
     X_12:bat[:oid,:int]  := sql.bind(X_8,"sys","lineorder","lo_quantity",0);
     X_20:bat[:oid,:int]  := sql.bind(X_8,"sys","lineorder","lo_discount",0);
@@ -85,9 +86,8 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):v
     X_70 := algebra.leftfetchjoin(X_55,X_69);
     X_71:bat[:oid,:lng]  := batcalc.*(X_68,X_70);
     X_72:lng  := aggr.sum(X_71);
-    sql.exportValue(1,"sys.L1","revenue","bigint",53,0,6,X_72,"");
-end s2_1;
-# querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n\tfrom lineorder, dwdate\n\twhere lo_orderdate = d_datekey\n\t\tand d_weeknuminyear = 6 and d_year = 1994\n\t\tand lo_discount between 5 and 7\n\t\tand lo_quantity between 36 and 40;","sequential_pipe")
+    sql.exportValue(1,"sys.L1","revenue","bigint",64,0,7,X_72,"");
+end user.s2_1;
 
 # 23:10:45 >  
 # 23:10:45 >  "Done."

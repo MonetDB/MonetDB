@@ -95,17 +95,17 @@ stdout of test 'tst049` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
     b := bat.new(:oid,:str);
-    bat.insert(b,1@0,"");
-    bat.insert(b,2@0,"t");
-    bat.insert(b,3@0,"ts");
-    bat.insert(b,4@0,"tsz");
-    bat.insert(b,5@0,"a math assignment");
-    bat.insert(b,6@0,"pathfined is fun!");
-    bat.insert(b,7@0,"123123123");
-    bat.insert(b,8@0,"123123456123");
-    bat.insert(b,9@0,"199993456123");
-    bat.insert(b,10@0,"123456123456");
-    bat.insert(b,11@0,"123454321");
+    bat.append(b,"");
+    bat.append(b,"t");
+    bat.append(b,"ts");
+    bat.append(b,"tsz");
+    bat.append(b,"a math assignment");
+    bat.append(b,"pathfined is fun!");
+    bat.append(b,"123123123");
+    bat.append(b,"123123456123");
+    bat.append(b,"199993456123");
+    bat.append(b,"123456123456");
+    bat.append(b,"123454321");
     io.print(b);
     i := str.like("hello","hello");
     io.print(i);
@@ -168,19 +168,19 @@ function user.main():void;
 end user.main;
 #--------------------------#
 # h	t			  # name
-# int	str			  # type
-#---------------------------------#
-[ 1@0,	  ""			  ]
-[ 2@0,	  "t"			  ]
-[ 3@0,	  "ts"			  ]
-[ 4@0,	  "tsz"			  ]
-[ 5@0,	  "a math assignment"	  ]
-[ 6@0,	  "pathfined is fun!"	  ]
-[ 7@0,	  "123123123"		  ]
-[ 8@0,	  "123123456123"	  ]
-[ 9@0,	  "199993456123"	  ]
-[ 10@0,	  "123456123456"	  ]
-[ 11@0,	  "123454321"		  ]
+# void	str  # type
+#--------------------------#
+[ 0@0,	""  ]
+[ 1@0,	"t"  ]
+[ 2@0,	"ts"  ]
+[ 3@0,	"tsz"  ]
+[ 4@0,	"a math assignment"  ]
+[ 5@0,	"pathfined is fun!"  ]
+[ 6@0,	"123123123"  ]
+[ 7@0,	"123123456123"  ]
+[ 8@0,	"199993456123"  ]
+[ 9@0,	"123456123456"  ]
+[ 10@0,	"123454321"  ]
 [ true ]
 [ false ]
 [ true ]
@@ -193,9 +193,10 @@ end user.main;
 # h	t	  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	true  ]
+[ 2@0,	true  ]
+[ 3@0,	false  ]
 [ 4@0,	false  ]
 [ 5@0,	false  ]
 [ 6@0,	false  ]
@@ -203,11 +204,41 @@ end user.main;
 [ 8@0,	false  ]
 [ 9@0,	false  ]
 [ 10@0,	false  ]
-[ 11@0,	false  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	true  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	true  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
@@ -218,56 +249,26 @@ end user.main;
 [ 8@0,	false  ]
 [ 9@0,	false  ]
 [ 10@0,	false  ]
-[ 11@0,	false  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	true  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
 [ 4@0,	false  ]
 [ 5@0,	false  ]
 [ 6@0,	true  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
 [ 7@0,	true  ]
 [ 8@0,	true  ]
 [ 9@0,	true  ]
 [ 10@0,	true  ]
-[ 11@0,	true  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
@@ -278,11 +279,11 @@ end user.main;
 [ 8@0,	false  ]
 [ 9@0,	false  ]
 [ 10@0,	false  ]
-[ 11@0,	false  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
@@ -292,177 +293,177 @@ end user.main;
 [ 7@0,	false  ]
 [ 8@0,	false  ]
 [ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	true  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	true  ]
-[ 8@0,	true  ]
-[ 9@0,	true  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	true  ]
-[ 8@0,	true  ]
-[ 9@0,	true  ]
 [ 10@0,	true  ]
-[ 11@0,	true  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
 [ 4@0,	false  ]
 [ 5@0,	false  ]
-[ 6@0,	false  ]
+[ 6@0,	true  ]
+[ 7@0,	true  ]
+[ 8@0,	true  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	true  ]
 [ 7@0,	true  ]
 [ 8@0,	true  ]
 [ 9@0,	true  ]
 [ 10@0,	true  ]
-[ 11@0,	true  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
 [ 4@0,	false  ]
 [ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	true  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	true  ]
-[ 8@0,	true  ]
-[ 9@0,	false  ]
-[ 10@0,	true  ]
-[ 11@0,	true  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	true  ]
-[ 9@0,	false  ]
-[ 10@0,	true  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
-[ 7@0,	false  ]
-[ 8@0,	false  ]
-[ 9@0,	false  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
-#--------------------------#
-# h	t  # name
-# void	bit  # type
-#--------------------------#
-[ 1@0,	false  ]
-[ 2@0,	false  ]
-[ 3@0,	false  ]
-[ 4@0,	false  ]
-[ 5@0,	false  ]
-[ 6@0,	false  ]
+[ 6@0,	true  ]
 [ 7@0,	true  ]
 [ 8@0,	true  ]
 [ 9@0,	true  ]
-[ 10@0,	false  ]
-[ 11@0,	false  ]
+[ 10@0,	true  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	true  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	true  ]
+[ 7@0,	true  ]
+[ 8@0,	false  ]
+[ 9@0,	true  ]
+[ 10@0,	true  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	true  ]
+[ 8@0,	false  ]
+[ 9@0,	true  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	false  ]
+[ 7@0,	false  ]
+[ 8@0,	false  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	false  ]
+[ 3@0,	false  ]
+[ 4@0,	false  ]
+[ 5@0,	false  ]
+[ 6@0,	true  ]
+[ 7@0,	true  ]
+[ 8@0,	true  ]
+[ 9@0,	false  ]
+[ 10@0,	false  ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	true  ]
 [ 1@0,	true  ]
 [ 2@0,	true  ]
 [ 3@0,	true  ]
@@ -473,11 +474,11 @@ end user.main;
 [ 8@0,	true  ]
 [ 9@0,	true  ]
 [ 10@0,	true  ]
-[ 11@0,	true  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
@@ -488,11 +489,11 @@ end user.main;
 [ 8@0,	false  ]
 [ 9@0,	false  ]
 [ 10@0,	false  ]
-[ 11@0,	false  ]
 #--------------------------#
 # h	t  # name
 # void	bit  # type
 #--------------------------#
+[ 0@0,	false  ]
 [ 1@0,	false  ]
 [ 2@0,	false  ]
 [ 3@0,	false  ]
@@ -503,7 +504,6 @@ end user.main;
 [ 8@0,	false  ]
 [ 9@0,	false  ]
 [ 10@0,	false  ]
-[ 11@0,	false  ]
 
 # 09:04:59 >  
 # 09:04:59 >  Done.

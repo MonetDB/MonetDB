@@ -130,7 +130,6 @@ tst253
 tst255
 tst2550
 tst256
-# tst260 -- algebra.topN removed
 tst2570
 # tst265 -- windowsum and slidingsum have been removed
 # opens /tmp/MonetEvents, i.e. not on Windows:
@@ -163,7 +162,6 @@ tst500
 tst501
 tst560
 tst611
-#tst612 transaction primitives dropped
 tst620
 tst660
 tst661
@@ -178,7 +176,6 @@ tst770
 tst780
 tst802
 tst804
-#tst805 invalid, no BAT columns
 tst810
 tst819
 tst820
@@ -188,7 +185,7 @@ tst850
 tst866
 tst867
 tst870
-#tst880 requested feature
+tst880
 tst890
 tst900
 tst901

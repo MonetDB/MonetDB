@@ -34,7 +34,7 @@ function user.main():void;
 #test reference counting of batcalc 
     b := bat.new(:oid,:int);
     bat.setName(b,"b");
-    bat.insert(b,1@0,1);
+    bat.append(b,1);
     c := batcalc.+(b,2);
     c := batcalc.+(b,3);
     c := batcalc.+(b,4);
@@ -48,7 +48,7 @@ end user.main;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 1@0,	  9	  ]
+[ 0@0,	9  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

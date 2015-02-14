@@ -19,8 +19,8 @@ stdout of test 'xml01` in directory 'monetdb5/modules/atoms` itself:
 
 function user.main():void;
     b := bat.new(:oid,:str);
-    bat.insert(b,0@0,"Mary Ann Walker");
-    bat.insert(b,1@0,"Annie Chapman");
+    bat.append(b,"Mary Ann Walker");
+    bat.append(b,"Annie Chapman");
     io.print(b);
     bc := batxml.attribute("name",b);
     bj := batxml.str(bc);

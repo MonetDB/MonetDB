@@ -1,0 +1,69 @@
+stdout of test 'tst880` in directory 'monetdb5/mal` itself:
+
+
+# 14:40:05 >  
+# 14:40:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39006" "--set" "mapi_usock=/var/tmp/mtest-7711/.s.monetdb.39006" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "tst880.mal"
+# 14:40:05 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39006/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7711/.s.monetdb.39006
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#min/max over two BATs 
+    b := bat.new(:oid,:int);
+    bat.append(b,-5);
+    bat.append(b,0);
+    bat.append(b,5);
+    bat.append(b,nil:int);
+    bat.append(b,nil:int);
+    bat.append(b,7);
+    bat.append(b,8);
+    c := bat.new(:oid,:int);
+    bat.append(c,-5);
+    bat.append(c,1);
+    bat.append(c,5);
+    bat.append(c,nil:int);
+    bat.append(c,4);
+    bat.append(c,9);
+    bat.append(c,nil:int);
+    z := batcalc.max(b,c);
+    io.print(b,c,z);
+    z := batcalc.min(b,c);
+    io.print(b,c,z);
+end user.main;
+#--------------------------#
+# h	t	t	t  # name
+# void	int	int	int  # type
+#--------------------------#
+[ 0@0,	-5,	-5,	-5  ]
+[ 1@0,	0,	1,	1  ]
+[ 2@0,	5,	5,	5  ]
+[ 3@0,	nil,	nil,	nil  ]
+[ 4@0,	nil,	4,	nil  ]
+[ 5@0,	7,	9,	9  ]
+[ 6@0,	8,	nil,	nil  ]
+#--------------------------#
+# h	t	t	t  # name
+# void	int	int	int  # type
+#--------------------------#
+[ 0@0,	-5,	-5,	-5  ]
+[ 1@0,	0,	1,	0  ]
+[ 2@0,	5,	5,	5  ]
+[ 3@0,	nil,	nil,	nil  ]
+[ 4@0,	nil,	4,	nil  ]
+[ 5@0,	7,	9,	7  ]
+[ 6@0,	8,	nil,	nil  ]
+
+# 14:40:05 >  
+# 14:40:05 >  "Done."
+# 14:40:05 >  
+
