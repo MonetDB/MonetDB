@@ -23,17 +23,17 @@ function user.tst():void;
     io.print(c0,c1);
 # next one is illegal 
     (d0,d1) := mdb.getStackFrame(2);
-end tst;
+end user.tst;
 function user.main():void;
 # test analysis of stack frames 
     user.tst();
-end main;
+end user.main;
 stack depth 2
 #-------------------------------------------------------------------------#
 # view	stk	stk							  # name
 # void	int	str							  # type
-#-------------------------------------------------------------------------#
-[ 0@0,	  0,	  "    (h,t) := mdb.getStackTrace(); at user.tst[3]"	  ]
+#--------------------------#
+[ 0@0,	0,	"    (h:bat[:oid,:str] ,t:bat[:oid,:str] ) := mdb.getStackTrace(); at user.tst[3]"  ]
 [ 1@0,	  1,	  "    user.tst(); at user.main[2]"			  ]
 #-------------------------------------------------#
 # view	stk	stk				  # name

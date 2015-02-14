@@ -77,6 +77,7 @@ opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
+opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str differenceRef;

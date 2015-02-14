@@ -44,7 +44,7 @@ function user.main():void;
     z := 1;
     z := 1;
     z := 1;
-end main;
+end user.main;
 
 # 11:42:10 >  
 # 11:42:10 >  Done.

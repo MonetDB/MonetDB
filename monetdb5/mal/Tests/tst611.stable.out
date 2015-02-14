@@ -30,7 +30,7 @@ function user.main():void;
     io.print(RKA);
 #the next one should fail 
     bat.setWriteMode(RKB);
-end main;
+end user.main;
 
 # 08:01:26 >  
 # 08:01:26 >  Done.

@@ -22,11 +22,7 @@ stdout of test 'tst755` in directory 'monetdb5/mal` itself:
 function user.test(b:bat[:any_1,:any_2],c:any_2):void;
     k := calc.+(1,"wrong");
     io.print(k);
-end test;
-#
-#c:= bat.new(:int,:str);
-#user.test(c,"hello");
-#
+end user.test;
 !TypeException:user.test[1]:'calc.+' undefined in: k:any := calc.+(_4:int, _5:str)
 !MALException:user.test[0]:Error in cloned function
 !TypeException:user.main[5]:'user.test' undefined in: _7:void := user.test(c:bat[:oid,:str], _8:str)
@@ -36,7 +32,7 @@ function user.main():void;
 # The function may not be cloned and a secondary error is generated 
     c := bat.new(:oid,:str);
     user.test(c,"hello");
-end main;
+end user.main;
 
 # 23:38:00 >  
 # 23:38:00 >  Done.

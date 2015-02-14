@@ -39,11 +39,11 @@ function user.main():void;
     io.print(z);
     z := algebra.select(b,0,2,false,false);
     io.print(z);
-end main;
-#-----------------#
-# h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]

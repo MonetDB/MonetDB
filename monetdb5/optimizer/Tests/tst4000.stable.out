@@ -24,9 +24,9 @@ function user.main():void;
 # mapped to l 
     l3 := calc.+(l,24);
 # replace the alias 
-end main;
-#optimizer.commonTerms actions= 2 time=13 usec 
-#optimizer.aliases    actions= 0 time=3 usec 
+end user.main;
+#commonTerms          actions= 2 time=23 usec 
+#aliases              actions= 4 time=13 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

@@ -42,7 +42,7 @@ function user.main():void;
     io.print(z);
     z := calc.<(d1,2:dbl);
     io.print(z);
-end main;
+end user.main;
 [ true ]
 [ false ]
 

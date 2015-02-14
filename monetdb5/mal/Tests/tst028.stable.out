@@ -20,31 +20,19 @@ stdout of test 'tst028` in directory 'monetdb5/mal` itself:
 # MonetDB/DataCell loaded
 function user.f(a:bat[:oid,:any]):void;
     io.print(a);
-end f;
+end user.f;
 function user.h(a:bat[:oid,:str]):void;
     io.print(a);
-end h;
-##function g(b:bat[:int,:any]):void;
-#	#f(b);
-##end g;
-#function g(b:any):void;
-#end g;
+end user.h;
 function user.g(b:any):void;
-end g;
-#
-#z:= bat.new(:int,:str);
-#f(z);
-#g(z);
-#zrev:= bat.reverse(z);
-#h(zrev);
-#
+end user.g;
 function user.main():void;
     z := bat.new(:oid,:str);
     user.f(z);
     user.g(z);
     user.h(z);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	str	  # type
 #-----------------#

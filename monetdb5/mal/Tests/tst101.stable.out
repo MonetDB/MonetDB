@@ -18,18 +18,14 @@ stdout of test 'tst101` in directory 'monetdb5/mal` itself:
 #function + (L:any_1, R:any_1):int ; return s:=1; end +;
 function user.+(L:any_1,R:any_1):int;
     return s := 1;
-end +;
-#a:=3+1;
-#b:=3.5+2.7;
-#c:= 7+8;
-#
+end user.+;
 function user.main():void;
 #define the generic addition operator 
 # this should be sufficient to determine outcome 
     a := calc.+(3,1);
     b := calc.+(3.5,2.70000005);
     c := calc.+(7,8);
-end main;
+end user.main;
 
 # 07:58:54 >  
 # 07:58:54 >  Done.

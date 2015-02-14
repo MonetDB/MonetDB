@@ -1,5 +1,4 @@
 # what is the overhead of MAL in multiplex situations
-profiler.setFilter("*","*");
 b:= bat.new(:oid,:lng);
 
 INT_MAX := 2147483647;
@@ -11,8 +10,7 @@ mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
 barrier i:= 0:lng;
-	o:= calc.oid(i);
-	bat.insert(b,o,i);
+	bat.append(b,i);
 	redo i:= iterator.next(1:lng,1000000:lng);
 exit i;
 t1:= alarm.usec();

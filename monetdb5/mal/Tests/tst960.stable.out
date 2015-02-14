@@ -84,9 +84,9 @@ function user.main():void;
     io.print(srch);
     plus := batcalc.+(S,S);
     io.print(plus);
-end main;
-#-------------------------#
-# h	tmp_13		  # name
+end user.main;
+#--------------------------#
+# h	t  # name
 # void	str		  # type
 #-------------------------#
 [ 0@0,	  "hello"	  ]

@@ -20,7 +20,7 @@ barrier v := 0:lng;
     remote.disconnect(conn);
     redo v := iterator.next(1:lng,200:lng);
 exit v;
-end main;
+end user.main;
 
 # 20:33:00 >  
 # 20:33:00 >  Done.

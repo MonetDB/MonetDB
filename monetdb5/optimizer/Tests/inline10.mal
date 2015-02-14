@@ -12,7 +12,7 @@ end bar;
 
 function qry();
 	b:= bat.new(:oid,:int);
-	bat.insert(b,0@0,1);
+	bat.append(b,1);
 	zz:= user.bar(1,2); # base line test for inlining
 
 	z:bat[:oid,:int]:= mal.multiplex("user","bar",b,b);

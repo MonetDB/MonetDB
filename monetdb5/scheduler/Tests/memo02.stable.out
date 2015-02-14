@@ -44,8 +44,8 @@ function user.main():void;
     scheduler.choice("getVolume",T9,T10,T11,T12,T13);
     answer := scheduler.pick(T9,T10,T11,T12,T13);
     io.print(answer);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#

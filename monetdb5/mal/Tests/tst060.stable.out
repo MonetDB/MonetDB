@@ -35,7 +35,7 @@ barrier b1;
     s1 := "bye";
 exit b1;
     io.print(s1);
-end main;
+end user.main;
 [ "bye" ]
 
 # 07:58:48 >  

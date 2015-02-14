@@ -10,35 +10,15 @@ stderr of test 'stethoscope--help` in directory 'clients/mapiclient` itself:
 # 10:36:09 >  Mtimeout -timeout 60 stethoscope --help
 # 10:36:09 >  
 
-stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}
+stethoscope [options] 
   -d | --dbname=<database_name>
   -u | --user=<user>
   -p | --port=<portnr>
   -h | --host=<hostname>
+  -o | --output=<file>
+  -b | --beat=<delay> in milliseconds (default 50)
   -? | --help
 
-The trace options (default 'ISTestn'):
-  S = monitor start of instruction profiling
-  a = aggregate clock ticks per instruction
-  e = event counter
-  f = enclosing module.function name
-  i = instruction counter
-  I = interpreter thread number
-  T = wall clock time
-  t = ticks in microseconds
-  c = cpu statistics (utime,ctime,stime,cstime)
-  m = rss memory as provided by OS (in MB)
-  M = memory footprint of non-persistent objects
-  n = numa intra socket data flow
-  r = block reads
-  w = block writes
-  b = bytes read/written
-  s = MAL statement
-  y = MAL argument types
-  p = process statistics, e.g. page faults, context switches
-  u = user id
-  D = Generate dot file upon query start
-  F = dataflow memory claims (in MB)
 
 # 19:24:05 >  
 # 19:24:05 >  "Done."

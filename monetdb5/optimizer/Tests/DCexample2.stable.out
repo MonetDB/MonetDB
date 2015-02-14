@@ -18,7 +18,7 @@ function user.main():void;
     bat.append(b,3);
     b := algebra.subsort(b,false,false);
     mdb.List();
-end main;
+end user.main;
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.append(b,2);                    #  2 _5:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _6:int) {G}
@@ -26,7 +26,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.append(b,3);                    #  4 _9:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _10:int) {G}
     b := algebra.subsort(b,false,false);#  5 b:bat[:oid,:int] := ALGsubsort11(b:bat[:oid,:int], _11:bit, _11:bit) {G}
     mdb.List();                         #  6 _14:void := MDBlistDetail() 
-end main;	# 7  
+end user.main;                          #  7  
 
 # 22:31:27 >  
 # 22:31:27 >  Done.

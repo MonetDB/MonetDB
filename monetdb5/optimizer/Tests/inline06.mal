@@ -9,7 +9,7 @@ end foo;
 
 function qry();
 	b:= bat.new(:oid,:int);
-	bat.insert(b,0@0,1);
+	bat.append(b,1);
 	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
 	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
 end qry;

@@ -28,7 +28,7 @@ function user.main():void;
     sql.eval("drop table simpleT;");
 #cause an error 
     sql.eval("select 1;",false);
-end main;
+end user.main;
 &1 0 1 1 1
 % .L # table_name
 % single_value # name

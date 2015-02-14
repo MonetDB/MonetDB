@@ -12,13 +12,13 @@
 
 # the intermediate tabular result produced by SQL
 a:= bat.new(:oid,:str);
-bat.insert(a,0@0,"john");
-bat.insert(a,1@0,"john");
-bat.insert(a,2@0,"marie");
+bat.append(a,"john");
+bat.append(a,"john");
+bat.append(a,"marie");
 t:= bat.new(:oid,:str);
-bat.insert(t,0@0,"spring");
-bat.insert(t,1@0,"summer");
-bat.insert(t,2@0,"autum");
+bat.append(t,"spring");
+bat.append(t,"summer");
+bat.append(t,"autum");
 
 # SQL rendering request
 #xmlelement('books',
@@ -31,9 +31,9 @@ ax:= batxml.xml(a);
 tx:= batxml.xml(t);
 te:= batxml.element("title",tx);
 g:= bat.new(:oid,:oid);
-bat.insert(g,0@0,0@0);
-bat.insert(g,1@0,0@0);
-bat.insert(g,2@0,1@0);
+bat.append(g,0@0);
+bat.append(g,0@0);
+bat.append(g,1@0);
 
 k:= algebra.leftfetchjoin(g,te);
 io.print(k);

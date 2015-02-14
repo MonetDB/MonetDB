@@ -74,7 +74,7 @@ function user.main():void;
     scheduler.choice(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);
     answer := scheduler.pick(T9,T10,T11,T12,T13);
     io.print(answer);
-end main;
+end user.main;
 choicepoint 1
 choicepoint 2
 choicepoint 3

@@ -16,7 +16,7 @@ stdout of test 'split_inf_loop.SF-1161583` in directory 'monetdb5/tests/BugDay_2
 function user.main():void;
     z := str.split("foo","");
     io.print(z);
-end main;
+end user.main;
 
 # 20:07:24 >  
 # 20:07:24 >  Done.

@@ -37,14 +37,14 @@ stdout of test 'tst048` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
     a := bat.new(:oid,:int);
-    bat.insert(a,0@0,0);
-    bat.insert(a,1@0,1);
-    bat.insert(a,2@0,2);
+    bat.append(a,0);
+    bat.append(a,1);
+    bat.append(a,2);
     io.print(a);
     b := bat.new(:oid,:flt);
-    bat.insert(b,0@0,0.300000012);
-    bat.insert(b,1@0,1.39999998);
-    bat.insert(b,2@0,2.5);
+    bat.append(b,0.300000012);
+    bat.append(b,1.39999998);
+    bat.append(b,2.5);
     io.print(b);
 ## c should be of type [:oid, :flt], but it was printed as [:oid, :int] 
     c := algebra.project(a,2.0999999);
@@ -53,8 +53,8 @@ function user.main():void;
     io.print(e);
     d := algebra.project(a,3);
     io.print(d);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # oid	int	  # type
 #-----------------#

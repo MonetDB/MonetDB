@@ -139,6 +139,8 @@ SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
+SYSTEM FUNCTION  sys.fitsattach
+SYSTEM FUNCTION  sys.fitsload
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext
@@ -171,6 +173,8 @@ SYSTEM FUNCTION  sys.issimple
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
+SYSTEM FUNCTION  sys.listdir
+SYSTEM FUNCTION  sys.listdirpat
 SYSTEM FUNCTION  sys.masklen
 SYSTEM FUNCTION  sys.mbr
 SYSTEM FUNCTION  sys.mbroverlaps
@@ -418,7 +422,7 @@ create view sys.querylog_calls as select * from sys.querylog_calls();
 -- create table views for convenience
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 create view sys.queue as select * from sys.queue();
@@ -427,7 +431,7 @@ create view sys.storage as select * from sys.storage();
 create view sys.storagemodel as select * from sys.storagemodel();
 SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
 -- A summary of the table storage requirement is is available as a table view.
--- The auxillary column denotes the maximum space if all non-sorted columns
+-- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
 create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
@@ -435,7 +439,7 @@ as select "schema","table",max(count) as "count",
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
 	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxillary
+	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 create view sys.tracelog as select * from sys.tracelog();
 SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;
@@ -1149,8 +1153,7 @@ returns table(
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
 	cpu int,  		-- average cpu load percentage during execution
-	io int,			-- percentage time waiting for IO to finish 
-	space bigint		-- total storage size of intermediates created (in MB)
+	io int			-- percentage time waiting for IO to finish 
 )
 external name sql.querylog_calls;
 -- The contents of this file are subject to the MonetDB Public License
@@ -1182,6 +1185,7 @@ returns table(
 	defined timestamp,
 	query string,
 	pipe string,
+	"plan" string,		-- Name of MAL plan
 	mal int,			-- size of MAL plan
 	optimize bigint 	-- time in usec
 )
@@ -1536,13 +1540,14 @@ create function sys.tracelog()
 		clk varchar(20), 	-- wallclock, no mtime in kernel
 		pc varchar(50), 	-- module.function[nr]
 		thread int, 		-- thread identifier
-		"user" int, 		-- user identifier
 		ticks bigint, 		-- time in microseconds
+		rrsmb bigint, 		-- resident memory in MB
+		vmmb bigint, 		-- virtual size in MB
 		reads bigint, 		-- number of blocks read
 		writes bigint, 	-- number of blocks written
-		rbytes bigint,		-- amount of bytes touched
-		wbytes bigint,		-- amount of bytes written
-		type string,		-- return types
+		minflt bigint, 		-- minor page faults
+		majflt bigint, 		-- major page faults
+		nvcsw bigint, 		-- non-volantary conext switch
 		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;
@@ -1911,7 +1916,7 @@ COPY 331 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6965	"heapsize"	"hugeint"	64	0	6969	NULL	true	4	NULL
 6966	"hashes"	"hugeint"	64	0	6969	NULL	true	5	NULL
 6967	"imprints"	"hugeint"	64	0	6969	NULL	true	6	NULL
-6968	"auxillary"	"hugeint"	128	0	6969	NULL	true	7	NULL
+6968	"auxiliary"	"hugeint"	128	0	6969	NULL	true	7	NULL
 6971	"column_id"	"int"	32	0	6982	NULL	true	0	NULL
 6972	"type"	"clob"	0	0	6982	NULL	true	1	NULL
 6973	"width"	"int"	32	0	6982	NULL	true	2	NULL
@@ -2018,7 +2023,7 @@ COPY 46 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 6899	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false
 6911	"storagemodelinput"	2000	NULL	0	true	0	false
 6959	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false
-6969	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
+6969	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false
 6982	"statistics"	2000	NULL	0	true	0	false
 7090	"files"	7039	NULL	0	true	0	false
 7103	"sq"	7039	NULL	0	true	0	false

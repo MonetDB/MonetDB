@@ -27,7 +27,7 @@ function user.main():void;
     xx := xml.forest(xp,xh);
     xs := xml.str(xx);
     io.print(xs);
-end main;
+end user.main;
 [ nil ]
 [ nil ]
 [ <person>Mary Ann Walker</person> ]

@@ -48,7 +48,7 @@ exit i;
     f := calc./(sz,100);
     f := calc./(lf,f);
     io.printf("#imprint percentage overhead %4.2f\n",f);
-end main;
+end user.main;
 #imprint tuples 1000000
 #imprint create 60295
 #imprint size 500004

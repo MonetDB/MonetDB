@@ -30,27 +30,27 @@ stderr of test 'rapi01` in directory 'monetdb5/extras/rapi` itself:
 # 16:45:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-95437" "--port=33997"
 # 16:45:15 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
 ERROR = !MALException:rapi.eval:Error running R expression. Error message: Error in fft(somevalue) : object 'somevalue' not found
         !Calls: as.data.frame -> <Anonymous> -> fft
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
 ERROR = !MALException:rapi.eval:Error running R expression. Error message: Error in fft(arg2) : object 'arg2' not found
         !Calls: as.data.frame -> <Anonymous> -> fft
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
 ERROR = !MALException:rapi.eval:Error running R expression. Error message: Error in fft(somevalue) : object 'somevalue' not found
         !Calls: as.data.frame -> <Anonymous> -> fft
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
 ERROR = !MALException:rapi.eval:Error running R expression. Error message: Error in fft(arg2) : object 'arg2' not found
         !Calls: as.data.frame -> <Anonymous> -> fft
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
 ERROR = !MALException:rapi.eval:Error running R expression. Error message: Error in fft(arg5) : object 'arg5' not found
         !Calls: as.data.frame -> <Anonymous> -> fft
-MAPI  = (monetdb) /var/tmp/mtest-95437/.s.monetdb.33997
+MAPI  = (monetdb) /var/tmp/mtest-28428/.s.monetdb.31099
 QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
 ERROR = !MALException:rapi.eval:Error parsing R expression 'ret0 <- Re(fft(arg2)  )  );'. 
 

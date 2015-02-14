@@ -27,7 +27,7 @@ function user.main():void;
     b := true;
     ib := nil:bit;
     io.printf("bit mix %d %d\n",b,ib);
-end main;
+end user.main;
 int 1 nil
 int 1 nil 1 nil
 float mix 3.140000 nil

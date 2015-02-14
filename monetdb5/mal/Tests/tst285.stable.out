@@ -28,7 +28,7 @@ function user.main():void;
     bat.append(b,"goodbye");
     z0 := algebra.likesubselect(b,nil:BAT,"%hel%",false);
     io.print(z0);
-end main;
+end user.main;
 #--------------------------#
 # t	h	h  # name
 # void	oid	oid  # type

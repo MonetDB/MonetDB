@@ -1,9 +1,9 @@
 # updates on BATs may not run in parallel
 function tst();
 	b:= bat.new(:oid,:int);
-	bat.insert(b,0@0,1);
-	bat.insert(b,1@0,2);
-	bat.insert(b,2@0, 3);
+	bat.append(b,1);
+	bat.append(b,2);
+	bat.append(b, 3);
 	io.print(b);
 end tst;
 mdb.list("user","tst");

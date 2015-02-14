@@ -52,7 +52,7 @@ function user.main():void;
     io.printf("after mirror assignment refcount =%d\n",i);
     j := bbp.getLRefCount(b);
     io.printf("lrefcount =%d\n",j);
-end main;
+end user.main;
 refcount =1
 lrefcount =1
 #-------------------------#

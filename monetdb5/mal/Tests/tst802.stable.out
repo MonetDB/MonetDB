@@ -18,15 +18,7 @@ stdout of test 'tst802` in directory 'monetdb5/mal` itself:
 #end tst;
 function user.tst(b:bat[:any_1,:any_2]):BAT;
     return tst := b;
-end tst;
-#
-#z:= bat.new(:int,:int);
-#b:= nil:bat;
-#b:= z;
-#io.print(b);
-#c:= tst(b);
-#io.print(c);
-#
+end user.tst;
 function user.main():void;
 #testing simple stuff around type BAT 
     z := bat.new(:oid,:int);
@@ -35,7 +27,7 @@ function user.main():void;
 #io.print(b); 
     c := user.tst(b);
 #io.print(c); 
-end main;
+end user.main;
 
 # 14:58:46 >  
 # 14:58:46 >  Done.

@@ -58,7 +58,7 @@ exit i;
     io.printf("#bat.reuse() %d\n",d0);
     cnt := aggr.count(y);
     io.print(cnt);
-end main;
+end user.main;
 [ 1000000 ]
 [ 1000 ]
 #bat.shrink() 7697

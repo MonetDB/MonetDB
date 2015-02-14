@@ -55,7 +55,7 @@ function user.main():void;
     io.print(i19);
     i20 := inet.abbrev(i3);
     io.print(i20);
-end main;
+end user.main;
 [ 192.168.1.5/24 ]
 [ 192.168.1.255/24 ]
 [ 192.168.0.1/25 ]

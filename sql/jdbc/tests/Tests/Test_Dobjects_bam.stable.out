@@ -106,7 +106,7 @@ mTests_sql_jdbc_tests	sys	querylog_calls	SYSTEM VIEW	create view sys.querylog_ca
 mTests_sql_jdbc_tests	sys	querylog_catalog	SYSTEM VIEW	-- create table views for convenience
 create view sys.querylog_catalog as select * from sys.querylog_catalog();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	querylog_history	SYSTEM VIEW	create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io 
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	queue	SYSTEM VIEW	create view sys.queue as select * from sys.queue();	null	null	null	rowid	SYSTEM	

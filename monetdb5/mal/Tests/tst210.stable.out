@@ -29,11 +29,11 @@ function user.main():void;
     bat.setName(b,"myhome");
     bat.setColumn(b,"first","last");
     io.print(b);
-end main;
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  1	  ]
 #-----------------#
 # first	last	  # name

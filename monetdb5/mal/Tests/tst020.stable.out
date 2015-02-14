@@ -31,16 +31,12 @@ barrier l := calc.==(r,0);
     leave l;
     redo l;
 exit l;
-end pl;
-#a:= "hello";
-#z:= pl(a);
-#print("done");
-#
+end user.pl;
 function user.main():void;
     a := "hello";
     z := user.pl(a);
     io.print("done");
-end main;
+end user.main;
 [ "done" ]
 
 # 07:58:39 >  

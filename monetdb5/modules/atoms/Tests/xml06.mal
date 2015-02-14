@@ -1,7 +1,7 @@
 b:= bat.new(:oid,:str);
-bat.insert(b,0@0,"Mary Ann Walker");
-bat.insert(b,1@0,nil:str);
-bat.insert(b,2@0,"Annie Chapman");
+bat.append(b,"Mary Ann Walker");
+bat.append(b,nil:str);
+bat.append(b,"Annie Chapman");
 
 io.print(b);
 bx:= xml.xml(b);

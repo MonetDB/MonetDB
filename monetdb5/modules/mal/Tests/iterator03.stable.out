@@ -37,7 +37,7 @@ barrier (mloop,chunk) := iterator.new(t,c);
     io.print(chunk);
     redo (mloop,chunk) := iterator.next(t,3:lng);
 exit mloop;
-end main;
+end user.main;
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name

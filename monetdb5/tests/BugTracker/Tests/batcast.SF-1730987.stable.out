@@ -30,8 +30,8 @@ function user.main():void;
     io.print(v);
     v2 := batcalc.int(v);
     io.print(v2);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	bit	  # type
 #-----------------#

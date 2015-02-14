@@ -50,7 +50,6 @@ mtime.timezone_local(lzone);
 	bat.append(rule_nme,"feb");
 	bat.append(rule_nme,"mar");
 	bat.append(rule_nme,"apr");
-#rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
 	bat.append(rule_bat,rule_may);
 	bat.append(rule_bat,rule_jun);
 	bat.append(rule_bat,rule_jul);
@@ -60,7 +59,6 @@ mtime.timezone_local(lzone);
 	bat.append(rule_nme,"jun");
 	bat.append(rule_nme,"jul");
 	bat.append(rule_nme,"aug");
-#rule_bat.bat.append("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
 	bat.append(rule_bat,rule_sep);
 	bat.append(rule_bat,rule_oct);
 	bat.append(rule_bat,rule_nov);
@@ -70,7 +68,6 @@ mtime.timezone_local(lzone);
 	bat.append(rule_nme,"oct");
 	bat.append(rule_nme,"nov");
 	bat.append(rule_nme,"dec");
-#rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
 #
 ## test the operations on rules
 	ma_a := bat.setColumn(rule_bat,"rule");

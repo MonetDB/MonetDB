@@ -18,16 +18,12 @@ stdout of test 'tst074` in directory 'monetdb5/mal` itself:
 #end swap;
 function user.swap(x:str):str;
     return swap := x;
-end swap;
-#
-#x:= swap("world hello");
-#print(x);
-#
+end user.swap;
 function user.main():void;
 # parsing operations with multi-assignments 
     x := user.swap("world hello");
     io.print(x);
-end main;
+end user.main;
 [ "world hello" ]
 
 # 07:58:50 >  

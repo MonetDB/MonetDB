@@ -22,26 +22,26 @@ function user.main():void;
     language.call("s:=\"goodbye\";io.print(s);");
 # tricky due to double unquoting  
     language.call("language.call(\"io.print(\\\\\"hello\\\\\");\");");
-end main;
+end user.main;
 function user.main():void;
     io.print(1);
-end main;
+end user.main;
 [ 1 ]
 function user.main():void;
     io.print("hello");
-end main;
+end user.main;
 [ "hello" ]
 function user.main():void;
     s := "goodbye";
     io.print(s);
-end main;
+end user.main;
 [ "goodbye" ]
 function user.main():void;
     language.call("io.print(\"hello\");");
-end main;
+end user.main;
 function user.main():void;
     io.print("hello");
-end main;
+end user.main;
 [ "hello" ]
 
 # 07:58:35 >  

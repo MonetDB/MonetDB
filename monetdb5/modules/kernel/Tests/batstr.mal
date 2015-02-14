@@ -1,5 +1,5 @@
 t := bat.new(:oid,:str);
-t := bat.insert(t, 0@0, "0123456789");
+t := bat.append(t, "0123456789");
 
 x1 := batstr.string(t, 0);
 x2 := batstr.string(t, 3);

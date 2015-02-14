@@ -15,11 +15,10 @@ stdout of test 'tst070` in directory 'monetdb5/mal` itself:
 function user.foo():void;
     (x,y) := user.point(1);
     (initial:str ,surname:str ) := user.getName();
-end foo;
-#
+end user.foo;
 function user.main():void;
 # parsing operations with multi-assignments 
-end main;
+end user.main;
 
 # 07:58:49 >  
 # 07:58:49 >  Done.

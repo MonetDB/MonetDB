@@ -36,7 +36,7 @@ exit i;
     mdb.setDebug(dbgmsk_restore);
     c := aggr.count(b);
     io.print(c);
-end main;
+end user.main;
 [ 1000000 ]
 
 # 07:48:32 >  

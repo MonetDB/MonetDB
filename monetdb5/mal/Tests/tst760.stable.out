@@ -21,11 +21,7 @@ stdout of test 'tst760` in directory 'monetdb5/mal` itself:
 function user.test(b:bat[:any,:any_2],c:any_2):void;
     k := calc.+(1,c);
     io.print(k);
-end test;
-#
-#c:=new(:int,:str);
-#test(c,"hello");
-#
+end user.test;
 !TypeException:user.test[1]:'calc.+' undefined in: k:any := calc.+(_4:int, c:str)
 
 !MALException:user.test[0]:Error in cloned function
@@ -35,7 +31,7 @@ function user.main():void;
 # Catching a dynamic error 
     c := bat.new(:oid,:str);
     user.test(c,"hello");
-end main;
+end user.main;
 
 # 08:01:30 >  
 # 08:01:30 >  Done.

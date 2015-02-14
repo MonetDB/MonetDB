@@ -167,7 +167,7 @@ QEPdump(stream *f, QEP qep, int indent){
 	str s;
 	if( qep->p){
 		for(i=0;i<indent; i++) mnstr_printf(f," ");
-		s= instruction2str(qep->mb, 0,qep->p, LIST_MAL_STMT | LIST_MAPI);
+		s= instruction2str(qep->mb, 0,qep->p, LIST_MAL_DEBUG );
 		mnstr_printf(f,"%s\n",s);
 		GDKfree(s);
 		inc = 4;

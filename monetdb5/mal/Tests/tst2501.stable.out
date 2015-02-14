@@ -30,13 +30,7 @@ barrier always := true;
     redo always;
 exit always;
     return random := 0;
-end random;
-#
-#r1:= random(1);
-#print(r1);
-#r2:= random(1);
-#print(r2);
-#
+end user.random;
 function user.main():void;
 # The prototypical factory construct 
     r1 := user.random(1);
@@ -44,7 +38,7 @@ function user.main():void;
     r2 := user.random(1);
     io.print(r2);
     factories.shutdown("user","random");
-end main;
+end user.main;
 [ 125 ]
 [ 15625 ]
 

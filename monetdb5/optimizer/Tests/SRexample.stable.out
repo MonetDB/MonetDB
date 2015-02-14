@@ -34,7 +34,7 @@ barrier go := true;
 exit go;
     z := r;
     mdb.List();
-end main;
+end user.main;
 [ 23 ]
 [ 23 ]
 function user.main():void;              #  0 main:void := user.main() {G}
@@ -59,7 +59,7 @@ barrier go := true;                     # 14 go:bit := _7:bit {J19}
 exit go;                                # 19 go:bit 
     z := r;                             # 20 z:str := r:str {G}
     mdb.List();                         # 21 _19:void := MDBlistDetail() 
-end main;                               # 22  
+end user.main;                          # 22  
 
 # 23:53:04 >  
 # 23:53:04 >  Done.
