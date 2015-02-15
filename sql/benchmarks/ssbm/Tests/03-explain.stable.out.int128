@@ -81,12 +81,12 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:int,A5:int):v
     X_65:bat[:oid,:int]  := sql.bind(X_8,"sys","lineorder","lo_extendedprice",1);
     X_66 := sql.projectdelta(X_27,X_59,X_62,r1_78,X_65);
     X_67 := algebra.leftfetchjoin(X_55,X_66);
-    X_68 := batcalc.hge(X_67);
+    X_68 := batcalc.lng(X_67);
     X_69 := sql.projectdelta(X_27,X_20,X_22,r1_26,X_24);
     X_70 := algebra.leftfetchjoin(X_55,X_69);
-    X_71:bat[:oid,:hge]  := batcalc.*(X_68,X_70);
+    X_71:bat[:oid,:lng]  := batcalc.*(X_68,X_70);
     X_72:hge  := aggr.sum(X_71);
-    sql.exportValue(1,"sys.L1","revenue","hugeint",128,0,7,X_72,"");
+    sql.exportValue(1,"sys.L1","revenue","hugeint",64,0,7,X_72,"");
 end user.s2_1;
 
 # 23:10:45 >  

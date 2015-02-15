@@ -6426,7 +6426,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 
 					/* do not include empty partitions */
 					if ((nrel || nt->next) && 
-					   pt && isTable(pt) && pt->readonly && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
+					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
 
@@ -6439,7 +6439,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						sql_exp *ne = m->data;
 						int i;
 
-						if (pt && isTable(pt) && pt->readonly && sel && (nrel || nt->next) && (i=find_col_exp(cols, e)) != -1) {
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && sel && (nrel || nt->next) && (i=find_col_exp(cols, e)) != -1) {
 							/* check if incase of an expression if the part falls within the bounds else skip this (keep at least on part-table) */
 							void *min, *max;
 							sql_column *col = NULL;

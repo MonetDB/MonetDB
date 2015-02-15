@@ -120,7 +120,8 @@ stop_disconnect:
 int
 main(int argc, char **argv)
 {
-	int  n, len;
+	ssize_t  n;
+	size_t len;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;

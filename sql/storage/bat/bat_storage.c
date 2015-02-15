@@ -1653,7 +1653,7 @@ gtr_minmax_table(sql_trans *tr, sql_table *t, int *changes)
 	node *n;
 
 	(void)changes;
-	if (t->readonly) {
+	if (t->access > TABLE_WRITABLE) {
 		for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 			sql_column *c = n->data;
 	
