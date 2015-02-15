@@ -564,10 +564,9 @@ static void resetTomograph(void){
 static lng
 gnuXtics(int withlabels)
 {
-	double scale = 1.0;
 	const char * scalename = "MB";
 	int digits;
-	lng tw, w = lastclktick - starttime;
+	lng scale =1, tw, w = lastclktick - starttime;
 	int i;
 
 	if (w >= 10 * US_DD) {
@@ -610,12 +609,12 @@ gnuXtics(int withlabels)
 		fprintf(gnudata, "set xtics ( \"\" 0.0,");
 	for (i = 1; i * tw < w - 2 * tw / 3; i++){
 		if( withlabels)
-		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
+		fprintf(gnudata, "\"%g\" "LLFMT".0,", ((double) i) * tw / scale, i * tw);
 		else
 		fprintf(gnudata, "\"\" "LLFMT".0,", i * tw);
 	}
 	if( withlabels)
-		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
+		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, ((double) w) / scale, scalename, w);
 	else
 		fprintf(gnudata, "\"\" "LLFMT".0",   w);
 	fprintf(gnudata, ")\n");
