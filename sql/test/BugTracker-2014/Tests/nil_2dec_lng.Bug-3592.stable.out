@@ -42,8 +42,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 187 # length
+% 204 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
+    X_66:void  := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe");
 barrier X_124 := language.dataflow();
     X_42 := bat.new(nil:oid,nil:str);
     X_49 := bat.append(X_42,".L5");
@@ -111,8 +112,7 @@ barrier X_124 := language.dataflow();
     language.pass(X_83);
 exit X_124;
     sql.resultSet(X_59,X_60,X_62,X_64,X_65,X_22,X_40);
-end s5_1;
-# querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe")
+end user.s5_1;
 
 # 23:28:04 >  
 # 23:28:04 >  "Done."

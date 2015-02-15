@@ -33,8 +33,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
+% 110 # length
 function user.s5_1{autoCommit=true}(A0:flt):void;
+    X_39:void  := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe");
     X_22 := bat.new(nil:oid,nil:str);
     X_30 := bat.append(X_22,"sys.tab_2826");
     X_25 := bat.new(nil:oid,nil:str);
@@ -57,8 +58,7 @@ function user.s5_1{autoCommit=true}(A0:flt):void;
     X_18 := algebra.thetasubselect(X_52,X_4,A0,">");
     X_20 := sql.projectdelta(X_18,X_7,X_10,r1_10,X_13);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_20);
-end s5_1;
-# querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","default_pipe")
+end user.s5_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

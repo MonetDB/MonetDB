@@ -59,8 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 304 # length
+% 322 # length
 function user.s3_1{autoCommit=true}():void;
+    X_169:void  := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe");
     X_119 := bat.new(nil:oid,nil:str);
     X_127 := bat.append(X_119,"sys.supplier");
     X_137 := bat.append(X_127,"sys.supplier");
@@ -159,8 +160,7 @@ function user.s3_1{autoCommit=true}():void;
     X_116:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_193,X_43,X_3,X_115);
     X_117:bat[:oid,:hge]  := algebra.leftfetchjoin(X_193,X_76);
     sql.resultSet(X_159,X_161,X_163,X_165,X_167,X_90,X_102,X_109,X_116,X_117);
-end s3_1;
-# querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe")
+end user.s3_1;
 #drop view revenue0;
 
 # 22:53:29 >  

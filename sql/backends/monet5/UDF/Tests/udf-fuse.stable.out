@@ -27,12 +27,12 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 64 # length
+% 81 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte):void;
+    X_11:void  := querylog.define("explain select fuse(1,2);","sequential_pipe");
     X_4 := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","smallint",16,0,X_4);
-end s2_1;
-# querylog.define("explain select fuse(1,2);","default_pipe")
+end user.s2_1;
 #select fuse(1,2);
 % .L # table_name
 % fuse_single_value # name
@@ -43,12 +43,12 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 70 # length
+% 87 # length
 function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
+    X_11:void  := querylog.define("explain select fuse(1000,2000);","sequential_pipe");
     X_4 := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","int",32,0,X_4);
-end s3_1;
-# querylog.define("explain select fuse(1000,2000);","default_pipe")
+end user.s3_1;
 #select fuse(1000,2000);
 % .L # table_name
 % fuse_single_value # name
@@ -59,12 +59,12 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 93 # length
 function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
+    X_11:void  := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe");
     X_4 := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","bigint",64,0,X_4);
-end s4_1;
-# querylog.define("explain select fuse(1000000,2000000);","default_pipe")
+end user.s4_1;
 #select fuse(1000000,2000000);
 % .L # table_name
 % fuse_single_value # name
@@ -93,8 +93,9 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 78 # length
+% 95 # length
 function user.s8_1{autoCommit=true}():void;
+    X_43:void  := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);
@@ -119,14 +120,14 @@ function user.s8_1{autoCommit=true}():void;
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:sht]  := batudf.fuse(X_15,X_22);
     sql.resultSet(X_33,X_35,X_37,X_39,X_41,X_23);
-end s8_1;
-# querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe")
+end user.s8_1;
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
-% 78 # length
+% 95 # length
 function user.s9_1{autoCommit=true}():void;
+    X_43:void  := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);
@@ -151,14 +152,14 @@ function user.s9_1{autoCommit=true}():void;
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:int]  := batudf.fuse(X_15,X_22);
     sql.resultSet(X_33,X_35,X_37,X_39,X_41,X_23);
-end s9_1;
-# querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe")
+end user.s9_1;
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
-% 78 # length
+% 95 # length
 function user.s10_1{autoCommit=true}():void;
+    X_43:void  := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);
@@ -183,8 +184,7 @@ function user.s10_1{autoCommit=true}():void;
     X_22 := algebra.leftfetchjoin(X_3,X_21);
     X_23:bat[:oid,:lng]  := batudf.fuse(X_15,X_22);
     sql.resultSet(X_33,X_35,X_37,X_39,X_41,X_23);
-end s10_1;
-# querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe")
+end user.s10_1;
 #select fuse(a,b) from udf_fuse;
 % sys.L # table_name
 % fuse_a # name

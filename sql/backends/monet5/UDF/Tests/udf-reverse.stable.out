@@ -48,12 +48,12 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 77 # length
+% 93 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
+    X_9:void  := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe");
     X_3 := udf.reverse(A0);
     sql.resultSet(".L","reverse_single_value","clob",0,0,X_3);
-end s2_1;
-# querylog.define("explain select reverse(\\'MonetDB\\');","default_pipe")
+end user.s2_1;
 #select reverse('MonetDB');
 % .L # table_name
 % reverse_single_value # name
@@ -82,8 +82,9 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 82 # length
+% 99 # length
 function user.s6_1{autoCommit=true}():void;
+    X_34:void  := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe");
     X_18 := bat.new(nil:oid,nil:str);
     X_26 := bat.append(X_18,"sys.L");
     X_21 := bat.new(nil:oid,nil:str);
@@ -103,8 +104,7 @@ function user.s6_1{autoCommit=true}():void;
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16:bat[:oid,:str]  := batudf.reverse(X_15);
     sql.resultSet(X_26,X_28,X_30,X_32,X_33,X_16);
-end s6_1;
-# querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe")
+end user.s6_1;
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name

@@ -44,8 +44,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s4_1(A0:hge,A1:bte):void;
+    X_60:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_26 := bat.new(nil:oid,nil:str);
     X_34 := bat.append(X_26,"sys.dbg");
     X_44 := bat.append(X_34,"sys.L1");
@@ -81,8 +82,7 @@ function user.s4_1(A0:hge,A1:bte):void;
     X_23:bat[:oid,:hge]  := batcalc./(X_18,X_22);
     X_24:bat[:oid,:hge]  := batcalc.*(A0,X_23);
     sql.resultSet(X_52,X_54,X_56,X_57,X_59,X_14,X_18,X_24);
-end s4_1;
-# querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s4_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % sys.dbg,	sys.L1,	.L3 # table_name
@@ -112,8 +112,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 145 # length
 function user.s10_1(A0:hge,A1:bte):void;
+    X_60:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
     X_26 := bat.new(nil:oid,nil:str);
     X_34 := bat.append(X_26,"sys.dbg");
     X_44 := bat.append(X_34,"sys.L1");
@@ -149,8 +150,7 @@ function user.s10_1(A0:hge,A1:bte):void;
     X_23:bat[:oid,:hge]  := batcalc./(X_18,X_22);
     X_24:bat[:oid,:hge]  := batcalc.*(A0,X_23);
     sql.resultSet(X_52,X_54,X_56,X_57,X_59,X_14,X_18,X_24);
-end s10_1;
-# querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+end user.s10_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
 #BY d;

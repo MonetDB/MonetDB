@@ -59,8 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 577 # length
+% 595 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
+    X_207:void  := querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe");
     X_165 := bat.new(nil:oid,nil:str);
     X_173 := bat.append(X_165,"sys.part");
     X_183 := bat.append(X_173,"sys.part");
@@ -177,8 +178,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6
     X_162 := algebra.leftfetchjoin(r1_176,X_141);
     X_163 := algebra.leftfetchjoin(r1_176,X_145);
     sql.resultSet(X_198,X_200,X_202,X_204,X_206,X_160,X_161,X_162,X_163);
-end s2_1;
-# querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:29 >  
 # 22:53:29 >  "Done."

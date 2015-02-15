@@ -29,8 +29,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 131 # length
 function user.s2_1(A0:str):void;
+    X_49:void  := querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -61,14 +62,14 @@ function user.s2_1(A0:str):void;
     X_22:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_23 := sql.projectdelta(X_15,X_18,X_20,r1_25,X_22);
     sql.resultSet(X_43,X_44,X_45,X_46,X_48,X_17,X_23);
-end s2_1;
-# querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe")
+end user.s2_1;
 #explain select name,func from functions where name not like '%optimizers%';
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 135 # length
 function user.s3_1(A0:str):void;
+    X_49:void  := querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -99,14 +100,14 @@ function user.s3_1(A0:str):void;
     X_22:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_23 := sql.projectdelta(X_15,X_18,X_20,r1_25,X_22);
     sql.resultSet(X_43,X_44,X_45,X_46,X_48,X_17,X_23);
-end s3_1;
-# querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe")
+end user.s3_1;
 #explain select name,func from functions where name ilike '%optimizers%';
 % .explain # table_name
 % mal # name
 % clob # type
-% 115 # length
+% 132 # length
 function user.s4_1(A0:str):void;
+    X_49:void  := querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -137,14 +138,14 @@ function user.s4_1(A0:str):void;
     X_22:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_23 := sql.projectdelta(X_15,X_18,X_20,r1_25,X_22);
     sql.resultSet(X_43,X_44,X_45,X_46,X_48,X_17,X_23);
-end s4_1;
-# querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe")
+end user.s4_1;
 #explain select name,func from functions where name not ilike '%optimizers%';
 % .explain # table_name
 % mal # name
 % clob # type
-% 119 # length
+% 136 # length
 function user.s5_1(A0:str):void;
+    X_49:void  := querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe");
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -175,8 +176,7 @@ function user.s5_1(A0:str):void;
     X_22:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_23 := sql.projectdelta(X_15,X_18,X_20,r1_25,X_22);
     sql.resultSet(X_43,X_44,X_45,X_46,X_48,X_17,X_23);
-end s5_1;
-# querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe")
+end user.s5_1;
 #create function contains(str string, substr string)
 #returns boolean
 #begin
@@ -201,8 +201,9 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 135 # length
 function user.s10_1(A0:str):void;
+    X_47:void  := querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe");
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -235,14 +236,14 @@ function user.s10_1(A0:str):void;
     X_20:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_21 := sql.projectdelta(X_14,X_16,X_18,r1_27,X_20);
     sql.resultSet(X_41,X_42,X_43,X_44,X_46,X_15,X_21);
-end s10_1;
-# querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe")
+end user.s10_1;
 #explain select name,func from functions where not_contains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
+% 139 # length
 function user.s11_1(A0:str):void;
+    X_47:void  := querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe");
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -275,14 +276,14 @@ function user.s11_1(A0:str):void;
     X_20:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_21 := sql.projectdelta(X_14,X_16,X_18,r1_27,X_20);
     sql.resultSet(X_41,X_42,X_43,X_44,X_46,X_15,X_21);
-end s11_1;
-# querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe")
+end user.s11_1;
 #explain select name,func from functions where icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
-% 119 # length
+% 136 # length
 function user.s12_1(A0:str):void;
+    X_47:void  := querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe");
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -315,14 +316,14 @@ function user.s12_1(A0:str):void;
     X_20:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_21 := sql.projectdelta(X_14,X_16,X_18,r1_27,X_20);
     sql.resultSet(X_41,X_42,X_43,X_44,X_46,X_15,X_21);
-end s12_1;
-# querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe")
+end user.s12_1;
 #explain select name,func from functions where not_icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 140 # length
 function user.s13_1(A0:str):void;
+    X_47:void  := querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe");
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -355,8 +356,7 @@ function user.s13_1(A0:str):void;
     X_20:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",1);
     X_21 := sql.projectdelta(X_14,X_16,X_18,r1_27,X_20);
     sql.resultSet(X_41,X_42,X_43,X_44,X_46,X_15,X_21);
-end s13_1;
-# querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe")
+end user.s13_1;
 #rollback;
 
 # 13:28:51 >  

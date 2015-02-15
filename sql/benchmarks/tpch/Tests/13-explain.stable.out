@@ -49,8 +49,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 430 # length
+% 448 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
+    X_114:void  := querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe");
     X_90 := bat.new(nil:oid,nil:str);
     X_97 := bat.append(X_90,".c_orders");
     X_107 := bat.append(X_97,".L2");
@@ -114,8 +115,7 @@ function user.s2_1{autoCommit=true}(A0:str):void;
     X_87 := algebra.leftfetchjoin(r1_90,X_78);
     X_88 := algebra.leftfetchjoin(r1_90,X_79);
     sql.resultSet(X_107,X_109,X_111,X_112,X_113,X_87,X_88);
-end s2_1;
-# querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

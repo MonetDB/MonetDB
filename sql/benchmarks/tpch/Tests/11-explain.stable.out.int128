@@ -56,8 +56,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 714 # length
+% 732 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
+    X_150:void  := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe");
     X_122 := bat.new(nil:oid,nil:str);
     X_130 := bat.append(X_122,"sys.partsupp");
     X_140 := bat.append(X_130,"sys.L1");
@@ -140,8 +141,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     X_119:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_174,X_113,X_61);
     X_120 := algebra.leftfetchjoin(r1_174,X_114);
     sql.resultSet(X_140,X_142,X_144,X_146,X_148,X_119,X_120);
-end s2_1;
-# querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."
