@@ -1763,7 +1763,9 @@ parser(char *row)
 int
 main(int argc, char **argv)
 {
-	int i, n, len;
+	int i;
+	ssize_t m;
+	size_t n, len;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
@@ -2005,8 +2007,8 @@ main(int argc, char **argv)
 			fprintf(stderr,"Could not create trace file\n");
 
 		len = 0;
-		while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-			buf[len + n] = 0;
+		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
+			buf[len + m] = 0;
 			if( trace) 
 				fprintf(trace,"%s",buf);
 			response = buf;
