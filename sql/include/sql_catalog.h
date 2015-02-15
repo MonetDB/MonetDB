@@ -28,6 +28,7 @@
 #define tr_readonly	1
 #define tr_writable	2
 #define tr_serializable 4
+#define tr_append 	8
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -467,13 +468,17 @@ typedef enum table_types {
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
+#define TABLE_WRITABLE	0
+#define TABLE_READONLY	1
+#define TABLE_APPENDONLY	2
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
+	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
-	bit readonly;	
 	char *query;		/* views may require some query */
 	int  sz;
 

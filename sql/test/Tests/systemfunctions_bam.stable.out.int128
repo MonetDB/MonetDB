@@ -58,7 +58,7 @@ Ready.
 % sys.L3,	sys.L3,	sys.L3,	sys.L3,	sys.L3 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 4,	35,	2,	15,	1662 # length
+% 4,	35,	2,	15,	1681 # length
 [ "bam",	"bam_drop_file",	0,	"bigint",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	]
 [ "bam",	"bam_drop_file",	1,	"smallint",	""	]
 [ "bam",	"bam_export",	0,	"clob",	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	]
@@ -696,18 +696,19 @@ Ready.
 [ "sys",	"stddev_samp",	1,	"hugeint",	""	]
 [ "sys",	"stop",	0,	"int",	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	]
 [ "sys",	"stop",	0,	"bigint",	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	]
-[ "sys",	"storage",	0,	"clob",	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2015 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.storage()\nreturns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\nexternal name sql.storage;"	]
+[ "sys",	"storage",	0,	"clob",	"-- The contents of this file are subject to the MonetDB Public License\n-- Version 1.1 (the \"License\"); you may not use this file except in\n-- compliance with the License. You may obtain a copy of the License at\n-- http://www.monetdb.org/Legal/MonetDBLicense\n--\n-- Software distributed under the License is distributed on an \"AS IS\"\n-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the\n-- License for the specific language governing rights and limitations\n-- under the License.\n--\n-- The Original Code is the MonetDB Database System.\n--\n-- The Initial Developer of the Original Code is CWI.\n-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.\n-- Copyright August 2008-2015 MonetDB B.V.\n-- All Rights Reserved.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.\"storage\"()\nreturns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\nexternal name sql.\"storage\";"	]
 [ "sys",	"storage",	1,	"clob",	""	]
 [ "sys",	"storage",	2,	"clob",	""	]
 [ "sys",	"storage",	3,	"clob",	""	]
 [ "sys",	"storage",	4,	"clob",	""	]
-[ "sys",	"storage",	5,	"bigint",	""	]
-[ "sys",	"storage",	6,	"int",	""	]
-[ "sys",	"storage",	7,	"bigint",	""	]
+[ "sys",	"storage",	5,	"clob",	""	]
+[ "sys",	"storage",	6,	"bigint",	""	]
+[ "sys",	"storage",	7,	"int",	""	]
 [ "sys",	"storage",	8,	"bigint",	""	]
 [ "sys",	"storage",	9,	"bigint",	""	]
 [ "sys",	"storage",	10,	"bigint",	""	]
-[ "sys",	"storage",	11,	"boolean",	""	]
+[ "sys",	"storage",	11,	"bigint",	""	]
+[ "sys",	"storage",	12,	"boolean",	""	]
 [ "sys",	"storagemodel",	0,	"clob",	"create function sys.storagemodel()\nreturns table (\n\t\"schema\" string,\n\t\"table\" string,\n\t\"column\" string,\n\t\"type\" string,\n\t\"count\"\tbigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.\"schema\", i.\"table\", i.\"column\", i.\"type\", i.\"count\",\n\tcolumnsize(i.\"type\", i.count, i.\"distinct\"),\n\theapsize(i.\"type\", i.\"distinct\", i.\"atomwidth\"),\n\thashsize(i.\"reference\", i.\"count\"),\n\timprintsize(i.\"count\",i.\"type\"),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	]
 [ "sys",	"storagemodel",	1,	"clob",	""	]
 [ "sys",	"storagemodel",	2,	"clob",	""	]

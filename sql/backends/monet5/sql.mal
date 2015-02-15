@@ -466,6 +466,7 @@ pattern storage()(
 	table:bat[:oid,:str],
 	column:bat[:oid,:str],
 	type:bat[:oid,:str],
+	mode:bat[:oid,:str],
 	location:bat[:oid,:str],
 	count:bat[:oid,:lng],
 	atomwidth:bat[:oid,:int],

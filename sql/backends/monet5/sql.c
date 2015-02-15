@@ -531,10 +531,10 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 	}
 
-	if (t->readonly != nt->readonly) {
-		if (t->readonly && table_has_updates(sql->session->tr, nt)) 
-			return sql_message("40000!ALTER TABLE: set READONLY not possible with outstanding updates (wait until updates are flushed)\n");
-		mvc_readonly(sql, nt, t->readonly);
+	if (t->access != nt->access) {
+		if (t->access && table_has_updates(sql->session->tr, nt)) 
+			return sql_message("40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
+		mvc_access(sql, nt, t->access);
 	}
 
 	/* check for changes */
@@ -584,6 +584,13 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		}
 		if (c->def != nc->def)
 			mvc_default(sql, nc, c->def);
+
+		if (c->storage_type != nc->storage_type) {
+			if (c->t->access == TABLE_WRITABLE)  
+				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
+			mvc_storage(sql, nc, c->storage_type);
+		}
 	}
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
@@ -2314,7 +2321,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(tr, c, 1);
 
-	if (isTable(t) && !t->readonly && (t->base.flag != TR_NEW /* alter */ ) &&
+	if (isTable(t) && t->access == TABLE_WRITABLE && (t->base.flag != TR_NEW /* alter */ ) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)
 		inr = store_funcs.count_col(tr, c, 0);
 	nr -= inr;
@@ -3001,6 +3008,9 @@ SQLname2eclass(const str *type)
 	else
 	if ( strcmp(*type,"varchar") == 0)
 		ec = EC_STRING;
+	else
+	if ( strcmp(*type,"real") == 0)
+		ec = EC_FLT;
 	else
 	if ( strcmp(*type,"double") == 0)
 		ec = EC_FLT;
@@ -4669,13 +4679,13 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Inspection of the actual storage footprint is a recurring question of users.
  * This is modelled as a generic SQL table producing function.
  * create function storage()
- * returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted int)
+ * returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted int)
  * external name sql.storage;
  */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints, *mode;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4685,14 +4695,15 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rtab = getArgReference_bat(stk, pci, 1);
 	bat *rcol = getArgReference_bat(stk, pci, 2);
 	bat *rtype = getArgReference_bat(stk, pci, 3);
-	bat *rloc = getArgReference_bat(stk, pci, 4);
-	bat *rcnt = getArgReference_bat(stk, pci, 5);
-	bat *ratom = getArgReference_bat(stk, pci, 6);
-	bat *rsize = getArgReference_bat(stk, pci, 7);
-	bat *rheap = getArgReference_bat(stk, pci, 8);
-	bat *rindices = getArgReference_bat(stk, pci, 9);
-	bat *rimprints = getArgReference_bat(stk, pci, 10);
-	bat *rsort = getArgReference_bat(stk, pci, 11);
+	bat *rmode = getArgReference_bat(stk, pci, 4);
+	bat *rloc = getArgReference_bat(stk, pci, 5);
+	bat *rcnt = getArgReference_bat(stk, pci, 6);
+	bat *ratom = getArgReference_bat(stk, pci, 7);
+	bat *rsize = getArgReference_bat(stk, pci, 8);
+	bat *rheap = getArgReference_bat(stk, pci, 9);
+	bat *rindices = getArgReference_bat(stk, pci, 10);
+	bat *rimprints = getArgReference_bat(stk, pci, 11);
+	bat *rsort = getArgReference_bat(stk, pci, 12);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4708,6 +4719,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(col, 0);
 	type = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 	BATseqbase(type, 0);
+	mode = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	BATseqbase(mode, 0);
 	loc = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
 	BATseqbase(loc, 0);
 	cnt = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
@@ -4724,13 +4737,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(sort, 0);
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || imprints == NULL || sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
+	
+
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
 			BBPunfix(tab->batCacheid);
 		if (col)
 			BBPunfix(col->batCacheid);
+		if (mode)
+			BBPunfix(mode->batCacheid);
 		if (loc)
 			BBPunfix(loc->batCacheid);
 		if (cnt)
@@ -4775,6 +4793,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNappend(sch, b->name, FALSE);
 								BUNappend(tab, bt->name, FALSE);
 								BUNappend(col, bc->name, FALSE);
+								if (c->t->access == TABLE_WRITABLE) 
+									BUNappend(mode, "writable", FALSE);
+								else
+								if (c->t->access == TABLE_APPENDONLY) 
+									BUNappend(mode, "appendonly", FALSE);
+								else
+								if (c->t->access == TABLE_READONLY) 
+									BUNappend(mode, "readonly", FALSE);
+								else
+									BUNappend(mode, 0, FALSE);
 								BUNappend(type, c->type.type->sqlname, FALSE);
 
 								/*printf(" cnt "BUNFMT, BATcount(bn)); */
@@ -4842,6 +4870,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(sch, b->name, FALSE);
 									BUNappend(tab, bt->name, FALSE);
 									BUNappend(col, bc->name, FALSE);
+									if (c->t->access == TABLE_WRITABLE) 
+										BUNappend(mode, "writable", FALSE);
+									else
+									if (c->t->access == TABLE_APPENDONLY) 
+										BUNappend(mode, "appendonly", FALSE);
+									else
+									if (c->t->access == TABLE_READONLY) 
+										BUNappend(mode, "readonly", FALSE);
+									else
+										BUNappend(mode, 0, FALSE);
 									BUNappend(type, "oid", FALSE);
 
 									/*printf(" cnt "BUNFMT, BATcount(bn)); */
@@ -4900,6 +4938,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsch = sch->batCacheid);
 	BBPkeepref(*rtab = tab->batCacheid);
 	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rmode = mode->batCacheid);
 	BBPkeepref(*rloc = loc->batCacheid);
 	BBPkeepref(*rtype = type->batCacheid);
 	BBPkeepref(*rcnt = cnt->batCacheid);

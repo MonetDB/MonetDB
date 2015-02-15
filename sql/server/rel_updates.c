@@ -321,7 +321,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
-	} else if (t->readonly) {
+	} else if (t->access == TABLE_READONLY) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
@@ -816,8 +816,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "UPDATE: cannot update read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "UPDATE: cannot update read or append only table '%s'", tname);
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
@@ -1000,8 +1000,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "DELETE FROM: cannot delete from read or append only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
@@ -1129,7 +1129,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
@@ -1239,7 +1239,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);

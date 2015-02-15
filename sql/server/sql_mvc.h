@@ -190,7 +190,8 @@ extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, co
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
-extern sql_table * mvc_readonly(mvc *m, sql_table *t, int readonly);
+extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
+extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);

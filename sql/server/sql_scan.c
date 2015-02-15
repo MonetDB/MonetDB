@@ -277,6 +277,7 @@ scanner_init_keywords(void)
 	keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
+	keywords_insert("STORAGE", STORAGE);
 
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
