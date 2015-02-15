@@ -623,6 +623,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_NULL:
 			msg = "set column options for"; 
 			break;
+		case SQL_STORAGE:
+			msg = "set column storage for"; 
+			break;
 		case SQL_DROP_DEFAULT:
 			msg = "drop default column option from"; 
 			break;
@@ -685,6 +688,20 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		mvc_default(sql, c, r);
 		_DELETE(r);
+	}
+	break;
+	case SQL_STORAGE:
+	{
+		dlist *l = s->data.lval;
+		char *cname = l->h->data.sval;
+		char *storage_type = l->h->next->data.sval;
+		sql_column *c = mvc_bind_column(sql, t, cname);
+
+		if (!c) {
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			return SQL_ERR;
+		}
+		mvc_storage(sql, c, storage_type);
 	}
 	break;
 	case SQL_NOT_NULL:
@@ -1139,9 +1156,11 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 				return sql_error(sql, 02, "42S02!ALTER TABLE: read only MERGE TABLES are not supported");
 
 			if (state == tr_readonly) {
-				nt = mvc_readonly(sql, nt, 1);
+				nt = mvc_access(sql, nt, TABLE_READONLY);
+			} else if (state == tr_append) {
+				nt = mvc_access(sql, nt, TABLE_APPENDONLY);
 			} else {
-				nt = mvc_readonly(sql, nt, 0);
+				nt = mvc_access(sql, nt, TABLE_WRITABLE);
 			}
 			return rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
 		}
