@@ -299,9 +299,7 @@ tablet_skip_string(char *s, char quote)
         s++;
     }
     assert(*s == quote || *s == '\0');
-    if (*s)
-        s++;
-    else
+    if (*s == 0)
         return NULL;
     return s;
 }
@@ -770,36 +768,17 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	Column *fmt = task->as->format+col;
 	const void *adt;
 	char buf[BUFSIZ];
-	char *e, *t;
 	char *s = task->fields[col][idx];
-	char quote = task->quote;
 	ptr key = 0;
 	char *err = NULL;
 	int ret  =0;
 
 	/* include testing on the terminating null byte !! */
-	if ( fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length + 1) == 0) {
+	if ( s == 0 ){  
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
-	} else if (quote && *s == quote) {
-		/* strip the quotes when present */
-		s++;
-		for (t = e = s; *t; t++)
-			if (*t == quote)
-				e = t;
-		*e = 0;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-		/* The user might have specified a null string escape
-		 * e.g. NULL as '', which should be tested */
-		if (adt == NULL && s == e && 
-			fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length + 1) == 0) {
-			adt = fmt->nildata;
-			fmt->c->T->nonil = 0;
-		}
-	} else {
-		for (e = s; *e; e++) ;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	}
+	} else
+		adt = fmt->frstr(fmt, fmt->adt, s);
 
 	if (adt == NULL) {
 		BUN row = task->cnt + idx+1;
@@ -863,7 +842,6 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock, "tablet insert value");
 
 	for (i = 0; i < task->top[task->cur]; i++){
-		if (task->fields[col][i]) 
 			if( SQLinsert_val(task, col, i) < 0)
 				return -1;
 	}
@@ -876,9 +854,10 @@ SQLworker_column(READERtask *task, int col)
  * setting the reference of the offending row fields to NULL.
  * This allows the loading to continue, skipping the minimal number of rows.
  * The details about the locations can be inspected from the error table.
+ * We also trim the quotes around strings.
  */
 static int
-SQLload_file_line(READERtask *task, int idx)
+SQLload_parse_line(READERtask *task, int idx)
 {
 	BUN i;
 	char errmsg[BUFSIZ];
@@ -902,15 +881,16 @@ SQLload_file_line(READERtask *task, int idx)
 			/* recognize fields starting with a quote, keep them */
 			if (*line == task->quote) {
 #ifdef _DEBUG_TABLET_
-	//MT_lock_set(&errorlock, "insert_val");
-	mnstr_printf(GDKout,"before #1 %s\n", s=line);
-	//MT_lock_unset(&errorlock, "insert_val");
+				//MT_lock_set(&errorlock, "insert_val");
+				mnstr_printf(GDKout,"before #1 %s\n", s=line);
+				//MT_lock_unset(&errorlock, "insert_val");
 #endif
+				task->fields[i][idx] = line +1;
 				line = tablet_skip_string(line + 1, task->quote);
 #ifdef _DEBUG_TABLET_
-	//MT_lock_set(&errorlock, "insert_val");
-	mnstr_printf(GDKout,"after #1 %s\n",s);
-	//MT_lock_unset(&errorlock, "insert_val");
+				//MT_lock_set(&errorlock, "insert_val");
+				mnstr_printf(GDKout,"after #1 %s\n",s);
+				//MT_lock_unset(&errorlock, "insert_val");
 #endif
 				if (!line) {
 					str errline = SQLload_error(task, task->top[task->cur]);
@@ -919,7 +899,7 @@ SQLload_file_line(READERtask *task, int idx)
 					GDKfree(errline);
 					error++;
 					goto errors1;
-				}
+				} else *line++ = 0;
 			}
 
 			/* eat away the column separator */
@@ -930,8 +910,9 @@ SQLload_file_line(READERtask *task, int idx)
 				} else if (*line == ch && (task->seplen == 1 || strncmp(line, task->csep, task->seplen) == 0)) {
 					*line = 0;
 					line += task->seplen;
-					goto endoffield1;
+					goto endoffieldcheck;
 				}
+
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task,task->top[task->cur]);
@@ -940,11 +921,16 @@ SQLload_file_line(READERtask *task, int idx)
 				GDKfree(errline);
 				error++;
 			  errors1:
-				/* we save all errors detected */
+				/* we save all errors detected  as NULL values*/
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
+				i--;
 			}
-		  endoffield1:;
+		  endoffieldcheck:;
+			/* check for user defined NULL string */
+			if( fmt->nullstr && task->fields[i][idx]  && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
+				task->fields[i][idx] = 0;
+			}
 		}
 #ifdef _DEBUG_TABLET_
 		if(error)
@@ -986,8 +972,13 @@ SQLload_file_line(READERtask *task, int idx)
 			/* we save all errors detected */
 			for (; i < as->nr_attrs; i++)
 				task->fields[i][idx] = NULL;
+			i--;
 		}
 	  endoffield2:;
+			/* check for user defined NULL string */
+			if( fmt->nullstr && task->fields[i][idx]  && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
+				task->fields[i][idx] = 0;
+			}
 	}
 #ifdef _DEBUG_TABLET_
 	if(error)
@@ -1028,7 +1019,7 @@ SQLworker(void *arg)
 #endif
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]){
-					if (SQLload_file_line(task, j) < 0) {
+					if (SQLload_parse_line(task, j) < 0) {
 						task->error++;
 						break;
 					}
@@ -1460,7 +1451,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	BUN i, attr;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS ? GDKnr_threads : MAXWORKERS) : 1;
+	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS ? GDKnr_threads-1 : MAXWORKERS-1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	int vmtrim = GDK_vm_trim;
 

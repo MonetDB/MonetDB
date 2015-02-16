@@ -66,7 +66,7 @@ typedef struct Column_t {
 	int fieldwidth;
 	int scale, precision;
 	int (*tostr)(void *extra, char **buf, int *len, int type, const void *a);
-	void *(*frstr)(struct Column_t *fmt, int type, const char *s, const char *e, char quote);
+	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
 	int len;
