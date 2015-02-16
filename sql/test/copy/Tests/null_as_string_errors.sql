@@ -6,12 +6,21 @@ create table null_as_string (i int, s string, d decimal(5,2));
 copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 NULL,NULL,NULL
 
+select * from sys.rejects;
+call sys.clearrejects();
+
 copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 NULL,zero,0
+
+select * from sys.rejects;
+call sys.clearrejects();
 
 -- shouldn't fail because NULL as string is just fine
 copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 1,NULL,1
+
+select * from sys.rejects;
+call sys.clearrejects();
 
 copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 2,two,NULL

@@ -30,20 +30,24 @@ stderr of test 'int_parse` in directory 'sql/test/copy` itself:
 # 11:23:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4649" "--port=31080"
 # 11:23:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-18609/.s.monetdb.32538
+QUERY = copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+        ""
+ERROR = !Failed to import table line 1 field 1 'int' expected in ''
+MAPI  = (monetdb) /var/tmp/mtest-18609/.s.monetdb.32538
 QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
         0
         5.1
         9
 ERROR = !Failed to import table line 2 field 1 'int' expected in '5.1'
-MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-18609/.s.monetdb.32538
 QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil
         
         null
         abc
-ERROR = !Failed to import table line 4 field 1 'int' expected in 'null'
+ERROR = !Failed to import table line 2 field 1 'int' expected in 'nil'
 
 # 11:23:33 >  
 # 11:23:33 >  "Done."

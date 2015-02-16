@@ -900,7 +900,12 @@ SQLload_parse_line(READERtask *task, int idx)
 					error++;
 					goto errors1;
 				} else *line++ = 0;
-			}
+			} else
+			/* check for user defined NULL string */
+			if( fmt->nullstr && task->fields[i][idx]  && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
+				task->fields[i][idx] = 0;
+				line +=fmt->null_length +1;
+			} 
 
 			/* eat away the column separator */
 			for (; *line; line++)
@@ -927,10 +932,6 @@ SQLload_parse_line(READERtask *task, int idx)
 				i--;
 			}
 		  endoffieldcheck:;
-			/* check for user defined NULL string */
-			if( fmt->nullstr && task->fields[i][idx]  && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
-				task->fields[i][idx] = 0;
-			}
 		}
 #ifdef _DEBUG_TABLET_
 		if(error)
@@ -943,9 +944,9 @@ SQLload_parse_line(READERtask *task, int idx)
 	for (i = 0; i < as->nr_attrs; i++) {
 		task->fields[i][idx] = line;
 #ifdef _DEBUG_TABLET_
-	MT_lock_set(&errorlock, "insert_val");
-	mnstr_printf(GDKout,"before #2 %s\n",line);
-	//MT_lock_unset(&errorlock, "insert_val");
+		MT_lock_set(&errorlock, "insert_val");
+		mnstr_printf(GDKout,"before #2 %s\n",line);
+		//MT_lock_unset(&errorlock, "insert_val");
 #endif
 		/* eat away the column separator */
 		for (; *line; line++)
@@ -958,9 +959,9 @@ SQLload_parse_line(READERtask *task, int idx)
 				goto endoffield2;
 			}
 #ifdef _DEBUG_TABLET_
-	//MT_lock_set(&errorlock, "insert_val");
-	mnstr_printf(GDKout,"#after #23 %s\n",line);
-	MT_lock_unset(&errorlock, "insert_val");
+		//MT_lock_set(&errorlock, "insert_val");
+		mnstr_printf(GDKout,"#after #23 %s\n",line);
+		MT_lock_unset(&errorlock, "insert_val");
 #endif
 		/* not enough fields */
 		if (i < as->nr_attrs - 1) {

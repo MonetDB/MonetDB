@@ -29,9 +29,27 @@ Ready.
 # 08:37:31 >  
 
 #create table null_as_string (i int, s string, d decimal(5,2));
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	23,	15 # length
+[ 1,	1,	"'int' expected",	"NULL,NULL,NULL\n"	]
+[ 1,	3,	"'decimal(5,2)' expected",	"NULL,NULL,NULL\n"	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	14,	12 # length
+[ 1,	1,	"'int' expected",	"NULL,zero,0\n"	]
 #copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 #1,NULL,1
 [ 1	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	0,	0 # length
 #select * from null_as_string;
 % sys.null_as_string,	sys.null_as_string,	sys.null_as_string # table_name
 % i,	s,	d # name
@@ -44,18 +62,20 @@ Ready.
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	23,	15 # length
-[ 1,	1,	"'int' expected",	"NULL,NULL,NULL\n"	]
-[ 1,	3,	"'decimal(5,2)' expected",	"NULL,NULL,NULL\n"	]
-[ 1,	1,	"'int' expected",	"NULL,zero,0\n"	]
+% 1,	1,	23,	11 # length
 [ 1,	3,	"'decimal(5,2)' expected",	"2,two,NULL\n"	]
+#copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
+#,,
+[ 0	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	23,	3 # length
+% 1,	1,	14,	3 # length
 [ 1,	1,	"'int' expected",	",,\n"	]
-[ 1,	3,	"'decimal(5,2)' expected",	",,\n"	]
+#copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
+#,zero,0
+[ 0	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
@@ -70,20 +90,23 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	0,	0 # length
+#copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
+#2,two,
+[ 1	]
 #select * from null_as_string;
 % sys.null_as_string,	sys.null_as_string,	sys.null_as_string # table_name
 % i,	s,	d # name
 % int,	clob,	decimal # type
-% 1,	0,	7 # length
+% 1,	3,	7 # length
 [ 1,	"",	1.00	]
+[ 2,	"two",	0.00	]
 #delete from null_as_string;
-[ 1	]
+[ 2	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	23,	7 # length
-[ 1,	3,	"'decimal(5,2)' expected",	"2,two,\n"	]
+% 1,	1,	0,	0 # length
 #drop table null_as_string;
 
 # 08:37:31 >  

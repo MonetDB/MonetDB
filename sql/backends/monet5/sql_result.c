@@ -564,8 +564,6 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	int len;
 	const char *e; 
 
-	if( strcmp(s,"nil")== 0)
-		return NULL;
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
 		int len;
@@ -586,8 +584,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 			}
 			c->data = p;
 		}
-
-		if (s == e) {
+		if (s == e || *s == 0) {
 			len = -1;
 			*(char *) c->data = 0;
 		} else if ((len = (int) GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
@@ -603,6 +600,9 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		}
 		return c->data;
 	}
+	// All other values are not allowed to the MonetDB nil value
+	if( strcmp(s,"nil")== 0)
+		return NULL;
 
 	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
 	if (len < 0)

@@ -62,15 +62,20 @@ Ready.
 #create table t_int(i int);
 #copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' best effort;
 #""
-[ 1	]
+[ 0	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
 % int # type
 % 1 # length
-[ NULL	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	14,	1 # length
+[ 1,	1,	"'int' expected",	"\n"	]
 #delete from t_int;
-[ 1	]
+[ 0	]
 #copy 2 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' best effort;
 #3.00
 #-4.0000
@@ -115,7 +120,7 @@ Ready.
 #
 #null
 #abc
-[ 3	]
+[ 2	]
 #select * from t_int;
 % sys.t_int # table_name
 % i # name
@@ -123,16 +128,16 @@ Ready.
 % 1 # length
 [ 1 ]
 [ NULL ]
-[ NULL	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	14,	5 # length
+[ 2,	1,	"'int' expected",	"nil\n"	]
 [ 4,	1,	"'int' expected",	"null\n"	]
 [ 5,	1,	"'int' expected",	"abc\n"	]
 #delete from t_int;
-[ 3	]
+[ 2	]
 #drop table t_int;
 
 # 20:58:16 >  
