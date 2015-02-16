@@ -174,9 +174,6 @@ gdk_return unshare_string_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
-void MT_global_exit(int status)
-	__attribute__((__noreturn__))
-	__attribute__((__visibility__("hidden")));
 void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
