@@ -7,6 +7,8 @@ copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' b
 ""
 
 select * from t_int;
+select * from sys.rejects;
+call sys.clearrejects();
 delete from t_int;
 
 -- A decimal value entered at a place where we expect an int

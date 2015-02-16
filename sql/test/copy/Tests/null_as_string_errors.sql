@@ -22,23 +22,23 @@ select * from sys.rejects;
 call sys.clearrejects();
 
 -- treat empty values as errors for the default NULL value 
-copy 1 records into null_as_string from stdin delimiters ',','\n';
+copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 ,,
 select * from sys.rejects;
 call sys.clearrejects();
 
-copy 1 records into null_as_string from stdin delimiters ',','\n';
+copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 ,zero,0
 select * from sys.rejects;
 call sys.clearrejects();
 
 -- shouldn't fail because empty strings are just fine
-copy 1 records into null_as_string from stdin delimiters ',','\n';
+copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 1,,1
 select * from sys.rejects;
 call sys.clearrejects();
 
-copy 1 records into null_as_string from stdin delimiters ',','\n';
+copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 2,two,
 
 select * from null_as_string;
