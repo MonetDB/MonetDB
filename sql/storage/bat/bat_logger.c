@@ -27,9 +27,14 @@ static int
 bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_FEB2013 52001
+#define CATALOG_OCT2014 52100
 
 	(void)newversion;
 	if (oldversion == CATALOG_FEB2013) {
+		catalog_version = oldversion;
+		return 0;
+	}
+	if (oldversion == CATALOG_OCT2014) {
 		catalog_version = oldversion;
 		return 0;
 	}
@@ -195,6 +200,43 @@ bl_postversion( void *lg)
 		bat_destroy(b1);
 		bat_destroy(b2);
 		bat_destroy(b3);
+	}
+	if (catalog_version == CATALOG_OCT2014) {
+		/* we need to replace tables.readonly by tables.access column */
+		BAT *b, *b1;
+		BATiter bi;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		while(s) {
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_readonly")));
+			if (!b)
+				return;
+			bi = bat_iterator(b);
+			b1 = BATnew(TYPE_void, TYPE_sht, BATcount(b), PERSISTENT);
+			if (!b1)
+				return;
+        		BATseqbase(b1, b->hseqbase);
+
+			bi = bat_iterator(b);
+			for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+				bit ro = *(bit*)BUNtail(bi, p);
+				sht access = 0;
+				if (ro)
+					access = TABLE_READONLY;
+				BUNappend(b1, &access, TRUE);
+			}
+			BATsetaccess(b1, BAT_READ);
+			logger_add_bat(lg, b1, N(n, NULL, s, "_tables_access"));
+			/* delete functions.sql */
+			logger_del_bat(lg, b->batCacheid);
+			bat_destroy(b);
+			bat_destroy(b1);
+			if (strcmp(s,"sys")==0)
+				s = "tmp";
+			else
+				s = NULL;
+		}
 	}
 }
 

@@ -29,19 +29,19 @@ Ready.
 #insert into x values (1),(2),(3);
 [ 3	]
 #alter table x set read only;
-#select readonly from sys.tables where name='x';
-% .tables # table_name
-% access # name
-% smallint # type
-% 1 # length
-[ 1	]
+#select (access = 1) from sys.tables where name='x';
+% .L1 # table_name
+% L1 # name
+% boolean # type
+% 5 # length
+[ true	]
 #alter table x add primary key (a);
-#select readonly from sys.tables where name='x';
-% .tables # table_name
-% access # name
-% smallint # type
-% 1 # length
-[ 1	]
+#select (access = 1) from sys.tables where name='x';
+% .L1 # table_name
+% L1 # name
+% boolean # type
+% 5 # length
+[ true	]
 #drop table x;
 
 # 15:44:28 >  
