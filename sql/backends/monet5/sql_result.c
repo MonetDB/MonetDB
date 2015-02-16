@@ -476,14 +476,12 @@ bat_max_hgelength(BAT *b)
 	} while (0)
 
 static void *
-dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+dec_frstr(Column *c, int type, const char *s)
 {
 	/* support dec map to bte, sht, int and lng */
-	(void) e;
-	(void) quote;
-	if (s == e) {
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-	} else if (type == TYPE_bte) {
+	if (type == TYPE_bte) {
 		DEC_FRSTR(bte);
 	} else if (type == TYPE_sht) {
 		DEC_FRSTR(sht);
@@ -500,7 +498,7 @@ dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 }
 
 static void *
-sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+sec_frstr(Column *c, int type, const char *s)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
@@ -510,12 +508,10 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 
 	(void) c;
 	(void) type;
-	(void) quote;
 	assert(type == TYPE_lng);
 
-	if (s == e)
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-
 	if (*s == '-') {
 		neg = 1;
 		s++;
@@ -561,14 +557,22 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	return (void *) r;
 }
 
+/* Literal parsing for SQL all pass through this routine */
 static void *
-_ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
+_ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	int len;
-	(void) quote;
+	const char *e; 
+
+	if( strcmp(s,"nil")== 0)
+		return NULL;
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
-		int len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+		int len;
+
+		for (e = s; *e; e++) ;
+		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+
 		/* or shouldn't len rather be ssize_t, here? */
 
 		if (c->len < len) {
@@ -603,7 +607,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
 	if (len < 0)
 		return NULL;
-	if (len == 0 || len != e - s) {
+	if (len == 0 || s[len]) {
 		/* decimals can be converted to integers when *.000 */
 		if (s[len++] == '.')
 			switch (type) {
