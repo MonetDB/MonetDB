@@ -2908,6 +2908,7 @@ AC_CHECK_FUNCS([\
 				backtrace \
 				ctime_r \
 				fabsf \
+				fallocate \
 				fcntl \
 				fpclass \
 				fpclassify \

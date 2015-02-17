@@ -136,6 +136,9 @@
 /* Define to 1 if you have the `fabsf' function. */
 #define HAVE_FABSF 1
 
+/* Define to 1 if you have the `fallocate' function. */
+/* #undef HAVE_FALLOCATE */
+
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
 
