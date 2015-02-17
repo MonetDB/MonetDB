@@ -95,8 +95,6 @@
 static int
 HASHwidth(BUN hashsize)
 {
-	if (hashsize <= (BUN) BUN1_NONE)
-		return BUN1;
 	if (hashsize <= (BUN) BUN2_NONE)
 		return BUN2;
 #if SIZEOF_BUN <= 4
@@ -148,9 +146,6 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	h->mask = mask - 1;
 	h->width = width;
 	switch (width) {
-	case BUN1:
-		h->nil = (BUN) BUN1_NONE;
-		break;
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
 		break;
