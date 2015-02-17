@@ -2306,13 +2306,16 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-function algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address ILIKEsubjoin1;
 command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ILIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
 
-function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
-function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect4;
+command algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect1;
 command algebra.ilike(s:str,pat:str):bit 
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
@@ -2327,20 +2330,6 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-command algebra.join(l:bat[:any_1,:any_2],rl:bat[:any_3,:any_2],rh:bat[:any_3,:any_2],li:bit,hi:bit):bat[:any_1,:any_3] 
-address ALGrangejoin;
-command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGkunion;
-comment Returns the union of two BATs; looking at head-columns only.		Results in all BUNs of 'left' that are  not in 'right', plus	all BUNs of 'right'.  *no* double-elimination is done.
-
-command algebra.kdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGkdiff;
-comment Returns the difference taken over only the *head* columns of two BATs.		Results in all BUNs of 'left' that are *not* in 'right'.		It does *not* do double-elimination over the 'left' BUNs.		If you want this, use:	 'kdifference(left.kunique,right.kunique)'	or: 'kdifference(left,right).kunique'.
-
-command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of two BATs.	Results in all BUNs of 'left' that are also in 'right'.		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))'	or: 'kunique(kintersect(left,right))'.
-
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -2349,13 +2338,16 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-function algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address LIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
-function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
-function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect5;
+command algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect3;
 command algebra.likesubselect(b:bat[:oid,:str],s:bat[:oid,:oid],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
 address PCRElikesubselect2;
 comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -31314,14 +31306,6 @@ command bat.insert(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BKCinsert_bat;
 comment Insert all BUNs of the second BAT into the first.
 
-command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
-address BKCinsert_bun_force;
-comment Insert one BUN[h,t] in a BAT.
-
-command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
-address BKCinsert_bun;
-comment Insert one BUN[h,t] in a BAT.
-
 command bat.load(name:str):bat[:oid,:any_1] 
 address BKCload;
 comment Load a particular BAT from disk
@@ -31407,6 +31391,10 @@ comment Replace the tail value of one BUN that has some head value.
 command bat.reverse(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] 
 address BKCreverse;
 comment Returns the reverse view of a BAT (head is tail and tail is head).        BEWARE  no copying is involved; input and output refer to the         same object!
+
+pattern bat.single(val:any_1):bat[:oid,:any_1] 
+address CMDBATsingle;
+comment Create a BAT with a single elemenet
 
 command bat.shrinkMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] 
 address BKCshrinkBATmap;
@@ -40287,10 +40275,6 @@ command pcre.sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
 
-pattern profiler.activate(name:str...):void 
-address CMDactivateProfiler;
-comment A list of counters to be activated.
-
 command profiler.cpuload(user:lng,nice:lng,sys:lng,idle:lng,iowait:lng) (cycles:int,io:int) 
 address CMDcpuloadPercentage;
 comment Calculate the average cpu load percentage and io waiting times
@@ -40303,14 +40287,6 @@ command profiler.cleanup():void
 address CMDcleanup;
 comment Remove the temporary tables for profiling
 
-pattern profiler.clrFilter(v:any):void 
-address CMDsetFilterVariable;
-comment Stop tracing the variable
-
-pattern profiler.clrFilter(mod:str,fcn:str):void 
-address CMDclrFilterProfiler;
-comment Clear the performance trace bit	of the selected functions.
-
 command profiler.closeStream():void 
 address CMDcloseProfilerStream;
 comment Stop sending the event records
@@ -40318,14 +40294,6 @@ comment Stop sending the event records
 command profiler.dumpTrace():void 
 address CMDdumpTrace;
 comment List the events collected
-
-pattern profiler.deactivate(name:str...):void 
-address CMDdeactivateProfiler;
-comment A list of counters to be deactivated.
-
-pattern profiler.getFootprint():lng 
-address CMDgetFootprint;
-comment Get the amount of memory claimed and reset the flag
 
 command profiler.getSystemTime():lng 
 address CMDgetSystemTime;
@@ -40342,10 +40310,6 @@ comment Obtain the number of physical reads
 command profiler.getDiskReads():lng 
 address CMDgetDiskReads;
 comment Obtain the number of physical reads
-
-pattern profiler.getEvent() (X_1:lng,X_2:lng,X_3:lng) 
-address CMDgetEvent;
-comment Retrieve the performance indicators of the previous instruction
 
 command profiler.getTrace(e:str):bat[:oid,:any_1] 
 address CMDgetTrace;
@@ -40371,49 +40335,29 @@ command profiler.reset():void
 address CMDclearTrace;
 comment Clear the profiler traces
 
+command profiler.setHeartbeat(b:int):void 
+address CMDsetHeartbeat;
+comment Set heart beat performance tracing
+
 pattern profiler.stop():void 
 address CMDstopProfiler;
 comment Stop performance tracing
 
-pattern profiler.start():void 
-address CMDstartProfiler;
-comment Start performance tracing
+command profiler.stethoscope(b:int):void 
+address CMDstethoscope;
+comment Start stethoscope profiling with heart beat
 
-pattern profiler.setEndPoint(mod:str,fcn:str):void 
-address CMDendPointProfiler;
-comment End performance tracing after mod.fcn
-
-pattern profiler.setStartPoint(mod:str,fcn:str):void 
-address CMDstartPointProfiler;
-comment Start performance tracing at mod.fcn
-
-pattern profiler.setFilter(v:any):void 
-address CMDsetFilterVariable;
-comment Generate an event record for	every instruction where v is used.
-
-pattern profiler.setFilter(mod:str,fcn:str):void 
-address CMDsetFilterProfiler;
-comment Generate an event record for all	function calls that satisfy the regular	expression mod.fcn. A wildcard (*) can	be used as name to identify all
-
-pattern profiler.setNone():void 
-address CMDsetNoneProfiler;
-comment Short cut for clrFilter(*,*).
-
-pattern profiler.setAll():void 
-address CMDsetAllProfiler;
-comment Short cut for setFilter(*,*).
-
-command profiler.tomograph():void 
+command profiler.tomograph(b:int):void 
 address CMDtomograph;
-comment No-op operation, merely a signal to the tomograph package
+comment Start tomograph profiler with heart beat
 
-pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int,space:lng):void 
+pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;
 comment Add a new query call to the query log
 
-pattern querylog.define(q:str,pipe:str,usr:str,tick:timestamp):oid 
-address QLOGdefine;
-comment Add a new query call to the query log
+command querylog.define(q:str,pipe:str):void 
+address QLOGdefineNaive;
+comment Noop operation, just marking the query
 
 command querylog.disable():void 
 address QLOGdisable;
@@ -40430,6 +40374,10 @@ comment Turn on the query logger
 command querylog.enable(threshold:int):void 
 address QLOGenableThreshold;
 comment Turn on the query logger
+
+pattern querylog.insert(q:str,pipe:str,usr:str,tick:timestamp):void 
+address QLOGinsert;
+comment Add a new query call to the query log
 
 command querylog.isset():int 
 address QLOGissetFcn;
@@ -40864,7 +40812,7 @@ command sql.dec_round(v:bte,r:bte):bte
 address bte_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
-pattern sql.dump_trace() (event:bat[:oid,:int],clk:bat[:oid,:str],pc:bat[:oid,:str],thread:bat[:oid,:int],user:bat[:oid,:int],ticks:bat[:oid,:lng],reads:bat[:oid,:lng],writes:bat[:oid,:lng],rbytes:bat[:oid,:lng],wbytes:bat[:oid,:lng],type:bat[:oid,:str],stmt:bat[:oid,:str]) 
+pattern sql.dump_trace() (event:bat[:oid,:int],clk:bat[:oid,:str],pc:bat[:oid,:str],thread:bat[:oid,:int],ticks:bat[:oid,:lng],rssMB:bat[:oid,:lng],vmMB:bat[:oid,:lng],reads:bat[:oid,:lng],writes:bat[:oid,:lng],minflt:bat[:oid,:lng],majflt:bat[:oid,:lng],nvcsw:bat[:oid,:lng],stmt:bat[:oid,:str]) 
 address dump_trace;
 comment dump the trace statistics
 
@@ -41028,11 +40976,11 @@ command sql.querylog_enable():void
 address QLOGenable;
 pattern sql.querylog_empty():void 
 address sql_querylog_empty;
-pattern sql.querylog_calls() (id:bat[:oid,:oid],start:bat[:oid,:timestamp],stop:bat[:oid,:timestamp],arguments:bat[:oid,:str],tuples:bat[:oid,:wrd],exec:bat[:oid,:lng],result:bat[:oid,:lng],cpuload:bat[:oid,:int],iowait:bat[:oid,:int],space:bat[:oid,:lng]) 
+pattern sql.querylog_calls() (id:bat[:oid,:oid],start:bat[:oid,:timestamp],stop:bat[:oid,:timestamp],arguments:bat[:oid,:str],tuples:bat[:oid,:wrd],exec:bat[:oid,:lng],result:bat[:oid,:lng],cpuload:bat[:oid,:int],iowait:bat[:oid,:int]) 
 address sql_querylog_calls;
 comment Obtain the query log calls
 
-pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:bat[:oid,:timestamp],query:bat[:oid,:str],pipe:bat[:oid,:str],mal:bat[:oid,:int],optimize:bat[:oid,:lng]) 
+pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:bat[:oid,:timestamp],query:bat[:oid,:str],pipe:bat[:oid,:str],plan:bat[:oid,:str],mal:bat[:oid,:int],optimize:bat[:oid,:lng]) 
 address sql_querylog_catalog;
 comment Obtain the query log catalog
 
@@ -41134,7 +41082,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
 
@@ -41154,7 +41102,8 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
-function sql.single(x:any_2):bat[:oid,:any_2];
+pattern sql.single(x:any_2):bat[:oid,:any_2] 
+address CMDBATsingle;
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 
 address DELTAsub2;
 comment Return a single bat of subselected delta.
