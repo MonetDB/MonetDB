@@ -15,7 +15,6 @@ stdout of test 'CXerror1` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 
 function user.f1():void;
 # create bat 

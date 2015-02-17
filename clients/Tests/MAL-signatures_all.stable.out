@@ -40009,12 +40009,6 @@ comment Dataflow bracket code injection
 
 pattern optimizer.dataflow():str 
 address OPTwrapper;
-pattern optimizer.datacell(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Datacell expression optimizer
-
-pattern optimizer.datacell():str 
-address OPTwrapper;
 pattern optimizer.evaluate(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Evaluate constant expressions once.

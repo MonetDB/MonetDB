@@ -74,7 +74,6 @@ str copy_fromRef;
 str count_no_nilRef;
 str crossRef;
 str createRef;
-str datacellRef;
 str dataflowRef;
 str datacyclotronRef;
 str dblRef;
@@ -330,7 +329,6 @@ void optimizerInit(void)
 	crossRef = putName("crossproduct",12);
 	createRef = putName("create",6);
 	dateRef = putName("date",4);
-	datacellRef = putName("datacell",8);
 	dataflowRef = putName("dataflow",8);
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);

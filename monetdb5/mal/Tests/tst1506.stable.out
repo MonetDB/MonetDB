@@ -17,7 +17,6 @@ stdout of test 'tst1506` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.main():void;
     x := bat.new(:oid,:bit);
     x := bat.append(x,true);

@@ -151,7 +151,6 @@ struct OPTcatalog {
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
 {"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
 {"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
-{"datacell",	0,	0,	0,	DEBUG_OPT_DATACELL},
 {"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
 {"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
 {"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},

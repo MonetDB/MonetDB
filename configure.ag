@@ -167,13 +167,6 @@ AC_ARG_ENABLE(rdf,
 	enable_rdf=$enableval,
 	enable_rdf=$dft_rdf)
 
-dft_datacell=no
-AC_ARG_ENABLE(datacell,
-	AS_HELP_STRING([--enable-datacell],
-		[enable datacell stream components [experimental/unsupported] (default=no)]),
-	enable_datacell=$enableval,
-	enable_datacell=$dft_datacell)
-
 dft_fits=auto
 AC_ARG_ENABLE(fits,
 	AS_HELP_STRING([--enable-fits],
@@ -2187,8 +2180,6 @@ if test "x$enable_rdf" != xno; then
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
-AM_CONDITIONAL(HAVE_DATACELL, test x"$enable_datacell" != xno)
-
 PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
 if test x"$have_curl" = x"yes" ; then
 	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
@@ -3360,7 +3351,6 @@ for comp in \
 	'microhttpd  ' \
 	'rdf         ' \
 	'rintegration' \
-	'datacell    ' \
 	'odbc        ' \
 	'jdbc        ' \
 	'control     ' \

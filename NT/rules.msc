@@ -312,11 +312,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_DATACELL
-	$(ECHO) HAVE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_FITS
 	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

@@ -95,14 +95,6 @@ pattern optimizer.crackers(mod:str, fcn:str):str
 address OPTwrapper
 comment "Replace algebra select with crackers select";
 
-#opt_datacell.mal
-
-pattern optimizer.datacell():str
-address OPTwrapper;
-pattern optimizer.datacell(mod:str, fcn:str):str
-address OPTwrapper
-comment "Datacell expression optimizer";
-
 #opt_dataflow.mal
 
 pattern optimizer.dataflow():str

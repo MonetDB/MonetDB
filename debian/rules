@@ -26,7 +26,6 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 	--enable-assert=no \
 	--enable-console=yes \
-	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-fits=no \

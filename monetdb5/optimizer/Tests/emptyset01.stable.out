@@ -17,7 +17,6 @@ stdout of test 'emptyset01` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.do{inline}(V1:bat[:oid,:oid]):void;
 barrier (x,z) := iterator.new(V1);
     io.print("loop");

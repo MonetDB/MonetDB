@@ -2190,7 +2190,6 @@ str createException(enum malexception, const char *, _In_z_ _Printf_format_strin
 str createRef;
 str crossRef;
 int cstToken(Client cntxt, ValPtr val);
-str datacellRef;
 str datacyclotronRef;
 str dataflowRef;
 str dateRef;

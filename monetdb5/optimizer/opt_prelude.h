@@ -72,7 +72,6 @@ opt_export  str copy_fromRef;
 opt_export  str count_no_nilRef;
 opt_export  str crossRef;
 opt_export  str createRef;
-opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
