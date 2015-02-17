@@ -25,8 +25,8 @@ function user.main():void;
     bat.append(b,4);
     bat.append(b,9);
     io.print(a,b);
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t	t	  # name
 # int	int	int	  # type
 #-------------------------#

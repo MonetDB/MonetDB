@@ -29,6 +29,9 @@
  * _MSC_VER = 1800: Visual Studio 12.0
  */
 
+#ifndef _SEEN_MONETDB_CONFIG_H
+#define _SEEN_MONETDB_CONFIG_H 1
+
 /* Prevent pollution through excessive inclusion of include files by
  * Windows.h. */
 #ifndef WIN32_LEAN_AND_MEAN
@@ -40,7 +43,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include <malloc.h>		/* we need malloc.h for alloca() */
+#include <malloc.h>
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
@@ -68,14 +71,6 @@
 /* location where binaries are installed */
 /* #undef BINDIR */
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-/* #undef CRAY_STACKSEG_END */
-
-/* Define to 1 if using `alloca.c'. */
-/* #undef C_ALLOCA */
-
 /* Directory separator */
 #define DIR_SEP '\\'
 
@@ -85,13 +80,6 @@
 /* architecture-dependent files */
 #define EXEC_PREFIX PREFIX
 
-/* Define to 1 if you have `alloca', as a function or macro. */
-#define HAVE_ALLOCA 1
-
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
-/* #undef HAVE_ALLOCA_H */
-
 /* Define to 1 if you have the `asctime_r' function. */
 #define HAVE_ASCTIME_R 1
 
@@ -100,8 +88,14 @@
 /* there is something very similar to asctime_r on Windows: */
 #define asctime_r(t,b,s)	asctime_s(b,s,t)
 
-/* Define if you have the cfitsio library */
-/* #undef HAVE_CFITSIO */
+/* Define to nothing if C supports flexible array members, and to 1 if it does
+   not. That way, with a declaration like `struct s { int n; double
+   d[FLEXIBLE_ARRAY_MEMBER]; };', the struct hack can be used with pre-C99
+   compilers. When computing the size of such an object, don't use 'sizeof
+   (struct s)' as it overestimates the size. Use 'offsetof (struct s, d)'
+   instead. Don't use 'offsetof (struct s, d[0])', as this doesn't work with
+   MSVC and with C++ compilers. */
+#define FLEXIBLE_ARRAY_MEMBER
 
 /* If the console should be used */
 #define HAVE_CONSOLE 1
@@ -136,6 +130,9 @@
 /* Define to 1 if you have the `fabsf' function. */
 #define HAVE_FABSF 1
 
+/* Define to 1 if you have the `fallocate' function. */
+/* #undef HAVE_FALLOCATE */
+
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
 
@@ -149,6 +146,9 @@
 #if _MSC_VER > 1600
 #define HAVE_FENV_H 1
 #endif
+
+/* Define if the fits module is to be enabled */
+/* #undef HAVE_FITS */
 
 /* Define to 1 if you have the `fpclass' function. */
 #define HAVE_FPCLASS 1		/* uses _fpclass, see mmath.c */
@@ -170,9 +170,6 @@
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
 #define ftruncate(fd, sz)	(-(_chsize_s((fd), (__int64) (sz)) != 0))
-
-/* Does your compiler support function attributes (__attribute__)? */
-/* #undef HAVE_FUNCTION_ATTRIBUTES */
 
 /* Define if you use garbage collection */
 /* #undef HAVE_GC */
@@ -351,11 +348,11 @@
 /* Define to 1 if you have the `MD5' function. */
 #define HAVE_MD5 1
 
-/* Define if you have the LibMicroHTTPD library */
-/* #undef HAVE_MICROHTTPD */
-
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define if the microhttpd server is to be enabled */
+/* #undef HAVE_MICROHTTPD */
 
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
@@ -977,10 +974,10 @@
 
 /* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
-#ifndef HAVE_FUNCTION_ATTRIBUTES
 #define __attribute__(a)
-#endif
 
+/* Does your compiler support the `__hidden' specifier? */
+#define __hidden
 
 /* function to close a socket */
 /* #undef closesocket */
@@ -1042,9 +1039,6 @@ typedef unsigned __int64 uint64_t;
 #define vsnprintf _vsnprintf
 #endif
 #endif
-
-#ifndef _SEEN_MONETDB_CONFIG_H
-#define _SEEN_MONETDB_CONFIG_H 1
 
 #include <sys/types.h>
 #include <stdio.h>		/* NULL, printf etc. */

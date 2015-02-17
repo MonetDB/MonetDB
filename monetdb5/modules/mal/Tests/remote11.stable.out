@@ -15028,8 +15028,8 @@ function user.main():void;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn1);
-end main;
-#-------------------------------------------------------------------------------------------------#
+end user.main;
+#--------------------------#
 # h	t											  # name
 # void	str											  # type
 #--------------------------#

@@ -25,7 +25,7 @@ barrier i := 0:flt;
     v := "do something";
     redo i := iterator.next(1.29999995:flt,2.5:flt);
 exit i;
-end main;
+end user.main;
 [ 0 ]
 [ 1.29999995 ]
 

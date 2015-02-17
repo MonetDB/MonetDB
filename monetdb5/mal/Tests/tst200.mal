@@ -5,7 +5,6 @@ o:=calc.oid(20000000);
 calc.setoid(o);
 #test basic functionality of the BAT library.
 #focussed on integers
-#it includes bat.insertions,deletions,selections, and joins.
 
 b:= bat.new(:oid,:int);
 io.printf("#~BeginVariableOutput~#\n"); 

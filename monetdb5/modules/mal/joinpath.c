@@ -244,7 +244,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			/* reset the postponed joins */
 			for( k=0; k<top; k++)
 				postpone[k]=FALSE;
-			if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+			if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 			postponed = 0;
 		}
 		ALGODEBUG{
@@ -271,7 +271,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	}
 	GDKfree(postpone);
 	b = joins[0];
-	if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (b && !(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	return b;
 }
 
@@ -305,7 +305,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for( --top; top>=0; top--)
 				BBPunfix(joins[top]->batCacheid);
 			GDKfree(joins);
-			throw(MAL, "algebra.joinPath", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
+			throw(MAL, "algebra.joinPath", "%s", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}
 		joins[top++] = b;
 	}

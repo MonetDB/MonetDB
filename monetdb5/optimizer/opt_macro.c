@@ -185,8 +185,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		ov = getVar(mc, n);
 		v = getVar(mb, nv[n]);
 		if (ov->propc > v->maxprop) {
-			int size = sizeof(VarRecord);
-        		VarPtr vnew = (VarPtr) GDKzalloc(size + ov->propc * sizeof(int));
+			int size = offsetof(VarRecord, prps);
+			VarPtr vnew = (VarPtr) GDKzalloc(size + ov->propc * sizeof(int));
 			memcpy((char*) vnew, (char*) v, size);
 			vnew->maxprop = ov->propc;
 			mb->var[nv[n]] = vnew;

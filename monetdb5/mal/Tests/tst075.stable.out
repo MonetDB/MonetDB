@@ -22,18 +22,13 @@ function user.swap(x:str,y:str) (a:str,b:str);
     a := y;
     b := x;
     return (a,b) := (a,b);
-end swap;
-#
-#(x,y):= swap("world","hello");
-#print(x);
-#print(y);
-#
+end user.swap;
 function user.main():void;
 # parsing operations with multi-assignments 
     (x,y) := user.swap("world","hello");
     io.print(x);
     io.print(y);
-end main;
+end user.main;
 [ "hello" ]
 [ "world" ]
 

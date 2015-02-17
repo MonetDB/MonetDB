@@ -40389,7 +40389,7 @@ comment Shrink the BAT based on a list of entries identified as to-be-deleted
 
 command bat.setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints;
-comment Create n imprints structure on the column
+comment Create an imprints structure on the column
 
 command bat.setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash;
@@ -49381,6 +49381,8 @@ command inet.new(s:str):inet
 address INETnew;
 comment Create an inet from a string literal
 
+command inet.#null():inet 
+address INETnull;
 command inet.setmasklen(X_1:inet,X_2:int):inet 
 address INETsetmasklen;
 comment Set netmask length for inet value
@@ -49731,11 +49733,7 @@ command lsst.xmatchsubselect(l:bat[:oid,:lng],cand:bat[:oid,:oid],r:lng,depth:in
 address LSSTxmatchsubselect;
 comment Return the HtmID's that lie within the same triangle as r at level depth
 
-command lsst.xmatch(l:bat[:oid,:lng],r:bat[:oid,:lng],depth:int,anti:bit):bit 
-address LSSTxmatch;
-comment Return the HtmID pairs that lie within the same triangle at level depth
-
-command lsst.xmatch(l:lng,r:lng,depth:int,anti:bit):bit 
+command lsst.xmatch(l:lng,r:lng,depth:int):bit 
 address LSSTxmatch;
 comment Return true when the HtmID pairs that lie within the same triangle at level depth
 

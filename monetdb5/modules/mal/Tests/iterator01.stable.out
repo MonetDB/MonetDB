@@ -35,7 +35,7 @@ barrier (h:oid ,B2:url ) := iterator.new(t);
     io.print(B2);
     redo (h:oid ,B2:url ) := iterator.next(t);
 exit h:oid ;
-end main;
+end user.main;
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name

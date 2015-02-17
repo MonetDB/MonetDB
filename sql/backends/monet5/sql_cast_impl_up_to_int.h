@@ -151,7 +151,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 	BATkey(BATmirror(bn), FALSE);
 
 	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+		BATsetaccess(bn, BAT_READ);
 
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b, bn);

@@ -21,16 +21,16 @@ stdout of test 'tst292` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # check coercion of bit coercions on big/little endian platforms 
     b := bat.new(:oid,:bit);
-    bat.insert(b,nil:oid,true:bit);
-    bat.insert(b,nil:oid,false:bit);
+    bat.append(b,true:bit);
+    bat.append(b,false:bit);
     io.print(b);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	bit	  # type
-#-----------------#
-[ nil,	  true	  ]
-[ nil,	  false	  ]
+#--------------------------#
+[ 0@0,	true  ]
+[ 1@0,	false  ]
 
 # 21:13:47 >  
 # 21:13:47 >  Done.

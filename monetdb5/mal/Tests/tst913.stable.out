@@ -40,8 +40,8 @@ function user.main():void;
     io.print(b);
     bc := batcalc.bit_noerror(b);
     io.print(bc);
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#

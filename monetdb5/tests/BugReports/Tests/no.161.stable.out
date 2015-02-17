@@ -17,14 +17,14 @@ function user.test_inner(in:str):void;
 #	io.print("   printf(\"test_inner.in: %s\\n\",str(in));"); 
     ca_a := calc.str(in);
     da_a := io.printf("test_inner.in: %s\n",ca_a);
-end test_inner;
+end user.test_inner;
 function user.test_outer(in:any_1):void;
 #	io.print("   printf(\"test_outer.in: %s\\n\",str(in));"); 
     ea_a := calc.str(in);
     fa_a := io.printf("test_outer.in: %s\n",ea_a);
 #	io.print("   test_inner(in);"); 
     ga_a := user.test_inner(in);
-end test_outer;
+end user.test_outer;
 function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
@@ -88,7 +88,7 @@ function user.main():void;
     ia_a := user.test_outer("chr");
 #	io.print("quit();"); 
     ja_a := clients.quit();
-end main;
+end user.main;
 test_outer.in: chr
 test_inner.in: chr
 test_outer.in: chr

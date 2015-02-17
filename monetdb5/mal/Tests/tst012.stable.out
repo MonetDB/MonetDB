@@ -45,7 +45,7 @@ barrier j := calc.<(i,3);
     redo j := calc.<(i,3);
 exit j;
     io.print("second loop done");
-end main;
+end user.main;
 [ 0 ]
 [ 1 ]
 [ 2 ]

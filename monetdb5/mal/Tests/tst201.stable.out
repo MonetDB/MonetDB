@@ -267,10 +267,8 @@ exit MALException:str ;
 #b.reverse.like("fox").print; 
     v84 := algebra.like(b," fox");
     v85 := io.print(v84);
-#b.reverse.like(" fox").print; 
-#quit; 
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h		t	  # name
 # str		oid	  # type
 #-------------------------#

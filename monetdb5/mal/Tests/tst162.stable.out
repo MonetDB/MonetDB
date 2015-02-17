@@ -17,18 +17,14 @@ stdout of test 'tst162` in directory 'monetdb5/mal` itself:
 function strtype.l():strtype;
     l := "1":strtype;
     return l := nil:strtype;
-end l;
-#
-#z:= strtype.l();
-#io.print(z);
-#
+end strtype.l;
 !TypeException:user.main[3]:'strtype.l' undefined in: z:strtype := strtype.l()
 function user.main():void;
 # testing definition of new atom type based on ptr 
 # this definition caused an error 
     z := strtype.l();
     io.print(z);
-end main;
+end user.main;
 
 # 19:09:44 >  
 # 19:09:44 >  Done.

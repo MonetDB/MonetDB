@@ -18,7 +18,7 @@ function user.tst903():void;
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     t1 := alarm.usec();
@@ -115,14 +115,14 @@ exit i;
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#tail sort %d",d0);
-end tst903;
+end user.tst903;
 !TypeException:user.main[4]:'Mcc.compile' undefined in: _4:any := Mcc.compile(_5:str, _6:str)
 function user.main():void;
 # The first MAL compiler test 
 # the result is retained in MCCtst903.c 
 # which can be compiled and linked with the system. 
     Mcc.compile("user","tst903");
-end main;
+end user.main;
 
 # 23:52:59 >  
 # 23:52:59 >  Done.

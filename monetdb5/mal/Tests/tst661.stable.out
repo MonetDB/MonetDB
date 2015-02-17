@@ -21,18 +21,18 @@ function user.tst():void;
     (a,b,c) := user.fi(1);
     z := user.fs(1);
     (y,z) := user.fs(1);
-end tst;
+end user.tst;
 function user.main():void;
 #Testing variable return lists 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     a := user.fi(1);                    #  1 a:int := MDBdummy(_2:int) 
     (a,b) := user.fi(1);                #  2 (a:int, b:int) := MDBdummy(_2:int) 
     (a,b,c) := user.fi(1);              #  3 (a:int, b:int, c:int) := MDBdummy(_2:int) 
     z := user.fs(1);                    #  4 z:str := MDBdummy(_2:int) {G}
     (y,z) := user.fs(1);                #  5 (y:str, z:str) := MDBdummy(_2:int) {G}
-end tst;                                #  6  
+end user.tst;                           #  6  
 
 # 16:47:50 >  
 # 16:47:50 >  Done.

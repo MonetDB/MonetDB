@@ -23,8 +23,8 @@ function user.main():void;
     io.print(b);
     b := txtsim.str2qgrams("hällö wørłð");
     io.print(b);
-end main;
-#-------------------------#
+end user.main;
+#--------------------------#
 # h	t		  # name
 # void	str		  # type
 #-----------------#

@@ -39,19 +39,19 @@ connections
 _tables
 _columns
 keys
-name	schema_id	query	type	system	commit_action	readonly	temporary 	
-schemas	2000		0	true	0	false	0	
-types	2000		0	true	0	false	0	
-functions	2000		0	true	0	false	0	
-args	2000		0	true	0	false	0	
-sequences	2000		0	true	0	false	0	
-dependencies	2000		0	true	0	false	0	
-connections	2000		0	true	0	false	0	
-_tables	2000		0	true	0	false	0	
-_columns	2000		0	true	0	false	0	
-keys	2000		0	true	0	false	0	
+name	schema_id	query	type	system	commit_action	access	temporary 	
+schemas	2000		0	true	0	0	0	
+types	2000		0	true	0	0	0	
+functions	2000		0	true	0	0	0	
+args	2000		0	true	0	0	0	
+sequences	2000		0	true	0	0	0	
+dependencies	2000		0	true	0	0	0	
+connections	2000		0	true	0	0	0	
+_tables	2000		0	true	0	0	0	
+_columns	2000		0	true	0	0	0	
+keys	2000		0	true	0	0	0	
 
-# 22:57:55 >  
-# 22:57:55 >  "Done."
-# 22:57:55 >  
+# 13:02:01 >  
+# 13:02:01 >  "Done."
+# 13:02:01 >  
 

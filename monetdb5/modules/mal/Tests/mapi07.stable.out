@@ -33,7 +33,7 @@ function user.main():void;
     d:bat[:oid,:int]  := mapi.rpc(mid,"io.print(i);");
     io.print(d);
     mapi.disconnect(mid);
-end main;
+end user.main;
  count 2
 #-----------------#
 # h	t	  # name

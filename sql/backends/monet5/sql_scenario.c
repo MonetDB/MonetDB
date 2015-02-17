@@ -858,10 +858,8 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	if (onoff) {
 		if (strstr(def, "keep") == 0)
 			(void) newStmt(mb, "profiler", "reset");
-		q = newStmt(mb, "profiler", "setFilter");
-		q = pushStr(mb, q, "*");
-		q = pushStr(mb, q, "*");
-		(void) newStmt(mb, "profiler", "start");
+		q= newStmt(mb, "profiler", "stethoscope");
+		(void) pushInt(mb,q,1);
 	} else if (def && strstr(def, "show")) {
 		(void) newStmt(mb, "profiler", "stop");
 
@@ -881,7 +879,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 				 * supplied values */
 				if (strcmp(s, "time") == 0 || strcmp(s, "pc") == 0 || strcmp(s, "stmt") == 0) {
 					coltype[i] = TYPE_str;
-				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rbytes") == 0 || strcmp(s, "wbytes") == 0 || strcmp(s, "reads") == 0 || strcmp(s, "writes") == 0) {
+				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "vmMB") == 0 || strcmp(s, "reads") == 0 || strcmp(s, "writes") == 0) {
 					coltype[i] = TYPE_lng;
 				} else if (strcmp(s, "thread") == 0) {
 					coltype[i] = TYPE_int;

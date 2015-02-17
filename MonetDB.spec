@@ -574,6 +574,7 @@ format.
 %defattr(-,root,root)
 %{_libdir}/monetdb5/fits.mal
 %{_libdir}/monetdb5/autoload/*_fits.mal
+%{_libdir}/monetdb5/createdb/*_fits.sql
 %{_libdir}/monetdb5/lib_fits.so
 %endif
 
@@ -624,6 +625,9 @@ fi
 %dir %{_libdir}/monetdb5/autoload
 %if %{?with_fits:1}%{!?with_fits:0}
 %exclude %{_libdir}/monetdb5/fits.mal
+%exclude %{_libdir}/monetdb5/autoload/*_fits.mal
+%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
+%exclude %{_libdir}/monetdb5/lib_fits.so
 %endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
@@ -635,9 +639,6 @@ fi
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
-%if %{?with_fits:1}%{!?with_fits:0}
-%exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
@@ -648,9 +649,6 @@ fi
 # %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
 %exclude %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{?with_fits:1}%{!?with_fits:0}
-%exclude %{_libdir}/monetdb5/lib_fits.so
-%endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif

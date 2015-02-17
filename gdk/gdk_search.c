@@ -123,28 +123,13 @@ HASHmask(BUN cnt)
 static void
 HASHclear(Hash *h)
 {
-	BUN i, j = h->mask, nil = HASHnil(h);
-
-	switch (h->width) {
-	case 1:
-		for (i = 0; i <= j; i++)
-			HASHput1(h, i, nil);
-		break;
-	case 2:
-		for (i = 0; i <= j; i++)
-			HASHput2(h, i, nil);
-		break;
-	case 4:
-		for (i = 0; i <= j; i++)
-			HASHput4(h, i, nil);
-		break;
-#if SIZEOF_BUN == 8
-	case 8:
-		for (i = 0; i <= j; i++)
-			HASHput8(h, i, nil);
-		break;
-#endif
-	}
+	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE
+	 * are all equal to -1 (~0), i.e., have all bits set,
+	 * we can use a simple memset() to clear the Hash,
+	 * rather than iteratively assigning individual
+	 * BUNi_NONE values in a for-loop
+	 */
+	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
 Hash *
@@ -241,7 +226,7 @@ HASHcollisions(BAT *b, Hash *h)
  * Its argument is the element type and the maximum number of BUNs be
  * stored under the hash function.
  */
-BAT *
+gdk_return
 BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
@@ -262,7 +247,7 @@ BAThash(BAT *b, BUN masksize)
 	}
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (b->T->hash == NULL) {
-		unsigned int tpe = ATOMstorage(b->ttype);
+		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
 		BUN mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
@@ -281,7 +266,7 @@ BAThash(BAT *b, BUN masksize)
 			if (b->tseqbase == oid_nil) {
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
-				return NULL;
+				return GDK_FAIL;
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
 
@@ -291,9 +276,9 @@ BAThash(BAT *b, BUN masksize)
 		 * scheme */
 		if (masksize > 0) {
 			mask = HASHmask(masksize);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 1) {
+		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
-		} else if (ATOMsize(ATOMstorage(tpe)) == 2) {
+		} else if (ATOMsize(tpe) == 2) {
 			mask = (1 << 12);
 		} else if (b->tkey) {
 			mask = HASHmask(cnt);
@@ -339,7 +324,7 @@ BAThash(BAT *b, BUN masksize)
 					GDKfree(hp->filename);
 					GDKfree(hp);
 				}
-				return NULL;
+				return GDK_FAIL;
 			}
 
 			switch (tpe) {
@@ -442,9 +427,8 @@ BAThash(BAT *b, BUN masksize)
 	if (o != NULL) {
 		o->T->hash = b->T->hash;
 		BBPunfix(b->batCacheid);
-		b = o;
 	}
-	return b;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -454,7 +438,7 @@ BAThash(BAT *b, BUN masksize)
 BUN
 HASHprobe(Hash *h, const void *v)
 {
-	switch (ATOMstorage(h->type)) {
+	switch (ATOMbasetype(h->type)) {
 	case TYPE_bte:
 		return hash_bte(h, v);
 	case TYPE_sht:
@@ -603,14 +587,25 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		cur = (BUN) (*(const oid *) v - b->tseqbase) + lo;
 		return cur + (which == FIND_LAST);
 	}
-
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		switch (which) {
+		case FIND_FIRST:
+			if (*(const oid *) v == oid_nil)
+				return lo;
+		case FIND_LAST:
+			return hi;
+		default:
+			if (lo < hi && *(const oid *) v == oid_nil)
+				return lo;
+			return BUN_NONE;
+		}
+	}
 	cmp = 1;
 	cur = BUN_NONE;
 	bi = bat_iterator(b);
-	tp = b->ttype;
 	/* only use storage type if comparison functions are equal */
-	if (BATatoms[tp].atomCmp == BATatoms[ATOMstorage(tp)].atomCmp)
-		tp = ATOMstorage(tp);
+	tp = ATOMbasetype(b->ttype);
 
 	switch (which) {
 	case FIND_FIRST:

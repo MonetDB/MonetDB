@@ -199,15 +199,15 @@ exit sj_b;
     x := alarm.time();
     zzz := calc.-(x,t);
     ah_b := io.printf("%d ms\n",zzz);
-end main;
-#count 1000000 = 188 ms
-#count 1000000 = 133 ms
-#count 1000000 = 125 ms
-#count 1000000 = 122 ms
-#count 1000000 = 258 ms
-#count 1000000 = 223 ms
-#count 1000000 = 200 ms
-#count 1000000 = 210 ms
+end user.main;
+#count 1000000 = 137 ms
+#count 1000000 = 138 ms
+#count 1000000 = 139 ms
+#count 1000000 = 140 ms
+#count 1000000 = 137 ms
+#count 1000000 = 139 ms
+#count 1000000 = 139 ms
+#count 1000000 = 139 ms
 
 # 07:59:13 >  
 # 07:59:13 >  Done.

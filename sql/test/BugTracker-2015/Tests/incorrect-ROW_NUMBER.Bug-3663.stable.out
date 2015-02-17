@@ -1,0 +1,109 @@
+stdout of test 'incorrect-ROW_NUMBER.Bug-3663` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 00:49:14 >  
+# 00:49:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39791" "--set" "mapi_usock=/var/tmp/mtest-15650/.s.monetdb.39791" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/Oct2014/debug/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 00:49:14 >  
+
+# MonetDB 5 server v11.19.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:39791/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15650/.s.monetdb.39791
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 00:49:15 >  
+# 00:49:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15650" "--port=39791"
+# 00:49:15 >  
+
+#CREATE TABLE t1 (id VARCHAR(48), col1 VARCHAR(32), col2 VARCHAR(8), excepted BOOLEAN);
+#INSERT INTO t1 (id, col1, col2, excepted) VALUES ('12', 'col1.A.99.code', '.03', 'false'), ('12', 'col1.A.99.code', '.02', 'false');
+[ 2	]
+#CREATE TABLE t2 (id  VARCHAR(48), col3 VARCHAR(32), col2 VARCHAR(8), row int);
+#INSERT INTO t2 (id, col3, col2, row) VALUES ('12',null,null,null);
+[ 1	]
+#UPDATE t2 SET (col3, col2, row) =
+#(SELECT col1, col2, row
+#FROM (
+#	SELECT id, col1, col2,
+#		   ROW_NUMBER() OVER (PARTITION BY id ORDER BY (col1 LIKE '%.%.99.%') ASC,
+#			                  col1 ASC, col2 ASC) AS row
+#	FROM t1
+#	WHERE excepted = false
+#  	  AND col1 LIKE '%.A.%'
+#)  AS t3
+#WHERE t3.row = 1
+#AND t2.id= t3.id
+#);
+[ 1	]
+#SELECT * FROM t2;
+% sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
+% id,	col3,	col2,	row # name
+% varchar,	varchar,	varchar,	int # type
+% 2,	14,	3,	1 # length
+[ "12",	"col1.A.99.code",	".02",	1	]
+#DROP TABLE t2;
+#CREATE TABLE t2 (id  VARCHAR(48), col3 VARCHAR(32), col2 VARCHAR(8), row int);
+#INSERT INTO t2 (id, col3, col2, row) VALUES ('12',null,null,null);
+[ 1	]
+#CREATE TABLE t3 AS (
+#	SELECT id, col1, col2,
+#	       ROW_NUMBER() OVER (PARTITION BY id ORDER BY (col1 LIKE '%.%.99.%') ASC,
+#			                  col1 ASC,col2 ASC) AS row
+#	FROM t1
+#	WHERE excepted = false AND col1 LIKE '%.A.%'
+#) WITH DATA;
+#UPDATE t2 SET (col3, col2, row) = (SELECT col1, col2, row FROM t3 WHERE t2.id= t3.id AND t3.row = 1);
+[ 1	]
+#SELECT * FROM t2;
+% sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
+% id,	col3,	col2,	row # name
+% varchar,	varchar,	varchar,	int # type
+% 2,	14,	3,	1 # length
+[ "12",	"col1.A.99.code",	".02",	1	]
+#DROP TABLE t1;
+#DROP TABLE t2;
+#DROP TABLE t3;
+
+# 00:49:15 >  
+# 00:49:15 >  "Done."
+# 00:49:15 >  
+

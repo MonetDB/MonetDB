@@ -33,7 +33,7 @@ function user.main():void;
     io.print(b);
     b := pcre.match("Hello world","[ABHW]");
     io.print(b);
-end main;
+end user.main;
 [ true ]
 [ true ]
 [ false ]

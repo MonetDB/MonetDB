@@ -41,10 +41,22 @@ eligible(MalBlkPtr mb)
 	return 1;
 }
 
+static int
+getVarMergeTableId(MalBlkPtr mb, int v)
+{
+	VarPtr p = varGetProp(mb, v, mtProp);
+
+	if (!p)
+		return -1;
+	if (p->value.vtype == TYPE_int)
+		return p->value.val.ival;
+	return -1;
+}
+
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0;
+	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
 	str schema = 0, table = 0;
 	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
@@ -175,6 +187,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
+	mt = getVarMergeTableId(mb, getArg(target, 0));
 	for (i = 0; i < limit; i++) {
 		int upd = 0, qtpe, rtpe = 0, qv, rv;
 		InstrPtr matq, matr = NULL;
@@ -200,8 +213,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
-		if (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
-			strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval)) {
+		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
+			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
+			pushInstruction(mb, p);
+			continue;
+		}
+		if (mt >= 0 && getVarMergeTableId(mb, getArg(p, 0)) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}

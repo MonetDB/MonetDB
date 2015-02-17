@@ -19,7 +19,7 @@ function user.qry(i:dbl):dbl;
     k := mmath.sin(j);
     l := calc.+(k,i);
     return qry := z;
-end qry;
+end user.qry;
 function user.main():void;
 #tesing the optimizers 
 #setDebug(); 
@@ -32,7 +32,7 @@ function user.main():void;
     io.print("done");
     mdb.List("user","qry");
     mdb.List();
-end main;
+end user.main;
 [ "execute" ]
 [ 0.8414709848078965 ]
 [ "done" ]
@@ -40,7 +40,7 @@ function user.qry(i:dbl):dbl;           #  0 qry:dbl := user.qry(i:dbl)
     z := mmath.sin(1:dbl);              #  1 z:dbl := MATHunary_SINdbl(_2:dbl) 
     l := calc.+(z,1:dbl);               #  2 l:dbl := CMDvarADDsignal(z:dbl, _2:dbl) 
     return qry := z;                    #  3 qry:dbl := z:dbl 
-end qry;                                #  4  
+end user.qry;                           #  4  
 function user.main():void;              #  0 main:void := user.main() {G}
 #tesing the optimizers 
 #setDebug(); 
@@ -53,7 +53,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("done");                   #  9 _16:void := IOprint_val(_17:str) {G}
     mdb.List("user","qry");             # 10 _18:void := MDBlist3Detail(_5:str, _6:str) {G}
     mdb.List();                         # 11 _19:void := MDBlistDetail() 
-end main;                               # 12  
+end user.main;                          # 12  
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

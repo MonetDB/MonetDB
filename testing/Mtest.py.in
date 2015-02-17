@@ -304,10 +304,10 @@ CONDITIONALS = {
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
-    'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
-    'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
+    'HAVE_DATACELL'        : "@HAVE_DATACELL_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
+    'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GSL'             : "@HAVE_GSL_FALSE@",
@@ -3505,7 +3505,7 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    if len(args) == 1:
+    if len(args) == 1 and not os.path.isdir(args[0]):
         head, tail = os.path.split(args[0])
         if os.path.isfile(args[0]):
             head, tst = os.path.split(head)
@@ -3516,8 +3516,12 @@ def main(argv) :
                 for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
                             '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
                             '.sql', '.py', '.R', ''):
+                    # extentions .in and .src are never combined
                     if tail.endswith(ext + '.in'):
                         args.append(tail[:-len(ext + '.in')])
+                        break
+                    if tail.endswith(ext + '.src'):
+                        args.append(tail[:-len(ext + '.src')])
                         break
                     if tail.endswith(ext):
                         args.append(tail[:-len(ext)])

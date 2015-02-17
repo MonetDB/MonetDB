@@ -20,7 +20,7 @@ function user.main():void;
 # if all is well, we can make a connection to ourself 
     c := remote.connect(u,"monetdb","monetdb");
     remote.disconnect(c);
-end main;
+end user.main;
 
 # 14:37:48 >  
 # 14:37:48 >  Done.

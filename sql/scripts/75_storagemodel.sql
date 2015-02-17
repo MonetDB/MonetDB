@@ -28,11 +28,11 @@
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
 
-create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
-external name sql.storage;
+create function sys."storage"()
+returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
+external name sql."storage";
 
-create view sys.storage as select * from sys.storage();
+create view sys."storage" as select * from sys."storage"();
 
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
@@ -57,7 +57,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys.storage() X;
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys."storage"() X;
 
 	update sys.storagemodelinput
 	set reference = true

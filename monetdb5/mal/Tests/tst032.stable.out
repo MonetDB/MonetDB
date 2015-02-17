@@ -28,37 +28,36 @@ stdout of test 'tst032` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # testing the void semantics 
     b := bat.new(:oid,:int);
-    bat.insert(b,nil:oid,0);
-    bat.insert(b,nil:oid,1);
-    bat.insert(b,nil:oid,2);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
     io.print(b);
     k := 1@0;
     bat.replace(b,k,3);
     io.print(b);
     bat.delete(b,k);
     io.print(b);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	1  ]
+[ 2@0,	2  ]
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-#-----------------#
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	3  ]
+[ 2@0,	2  ]
+#--------------------------#
 # h	t	  # name
-# void	int	  # type
-#-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
+# oid	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 2@0,	2  ]
 
 # 22:30:08 >  
 # 22:30:08 >  Done.

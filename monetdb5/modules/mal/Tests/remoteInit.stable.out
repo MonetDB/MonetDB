@@ -26,7 +26,7 @@ barrier ifpart := calc.!=(type,t);
     io.printf("!MALException:user.serveget:object type (%s) ",t);
     io.printf("does not match required type (%s)\n",type);
 exit ifpart;
-end remote_internal_servegetbat;
+end user.remote_internal_servegetbat;
 function user.remote_internal_serveget(type:str,o:any):void;
     t := inspect.getType(o);
 barrier ifpart := calc.==(type,t);
@@ -39,13 +39,13 @@ barrier ifpart := calc.!=(type,t);
     io.printf("!MALException:user.serveget:object type (%s) ",t);
     io.printf("does not match required type (%s)\n",type);
 exit ifpart;
-end remote_internal_serveget;
+end user.remote_internal_serveget;
 function user.main():void;
 #test basic interaction scheme 
     remote_test_id_0 := bat.new(:oid,:str,33);
     bat.append(remote_test_id_0,"oid":str);
     user.remote_internal_servegetbat("bat[:oid,:str]",remote_test_id_0);
-end main;
+end user.main;
 [ 1 ]
 #-----------------#
 # h	t	  # name

@@ -21,7 +21,7 @@
 #define _MAL_STACK_H_
 #include "mal.h"
 
-#define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
+#define stackSize(CNT) (sizeof(ValRecord)*(CNT) + offsetof(MalStack, stk))
 #define newStack(S,CNT) S= (MalStkPtr) GDKzalloc(stackSize(CNT));\
 		(S)->stksize=CNT;
 

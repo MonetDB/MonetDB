@@ -1064,6 +1064,36 @@ update _tables set system = true where name = 'tablestoragemodel' and schema_id 
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2014_sp3(Client c)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n\
+CREATE FUNCTION \"left_shift\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\"<<\";\n\
+CREATE FUNCTION \"right_shift\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\">>\";\n\
+CREATE FUNCTION \"left_shift_assign\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\"<<=\";\n\
+CREATE FUNCTION \"right_shift_assign\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\">>=\";\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 #ifdef HAVE_HGE
 static str
 sql_update_hugeint(Client c)
@@ -1288,8 +1318,44 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tmaxval string,\n\
 \tsorted boolean);\n");
 
+	/* 15_querylog update the querylog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.querylog_calls;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function sys.querylog_calls()\
+\treturns table(\
+\t    id oid,\n\
+\t    \"start\" timestamp,\n\
+\t    \"stop\" timestamp,\n\
+\t    arguments string,\n\
+\t    tuples wrd,\n\
+\t    run bigint,\n\
+\t    ship bigint,\n\
+\t    cpu int,\n\
+\t    io int \n\
+\t) external name sql.querylog_calls;\n");
+
+
+	/* 16_tracelog update the tracelog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.tracelog;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create function sys.tracelog()\n\
+\treturns table (\n\
+\tevent integer,      \n\
+\tclk varchar(20),    \n\
+\tpc varchar(50),     \n\
+\tthread int,         \n\
+\tticks bigint,       \n\
+\trrsMB bigint,       \n\
+\tvmMB bigint,        \n\
+\treads bigint,       \n\
+\twrites bigint,  \n\
+\tminflt bigint,  \n\
+\tmajflt bigint,  \n\
+\tnvcsw bigint,  \n\
+\tstmt string         \n\
+\t) external name sql.dump_trace;\n");
+
+
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls','tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1388,6 +1454,16 @@ SQLupgrades(Client c, mvc *m)
 	 * to update (note, the proper spelling is auxiliary) */
 	if (mvc_bind_column(m, mvc_bind_table(m, mvc_bind_schema(m, "sys"), "tablestoragemodel"), "auxillary")) {
 		if ((err = sql_update_oct2014_sp2(c)) !=NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+
+	/* if function sys.<<(inet,inet) does not exist, we need to
+	 * update */
+	sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "inet"), 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "left_shift", &tp, &tp, F_FUNC)) {
+		if ((err = sql_update_oct2014_sp3(c)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}

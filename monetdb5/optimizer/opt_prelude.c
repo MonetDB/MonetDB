@@ -78,6 +78,7 @@ str datacellRef;
 str dataflowRef;
 str datacyclotronRef;
 str dblRef;
+str defineRef;
 str deleteRef;
 str depositRef;
 str differenceRef;
@@ -277,6 +278,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
+int mtProp;			
 
 void optimizerInit(void)
 {
@@ -332,6 +334,7 @@ void optimizerInit(void)
 	dataflowRef = putName("dataflow",8);
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);
+	defineRef = putName("define",6);
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
 	differenceRef= putName("difference",10);
@@ -532,6 +535,7 @@ void optimizerInit(void)
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
+	mtProp = PropertyIndex("mergetable");
 	/*
 	 * @-
 	 * Set the optimizer debugging flag

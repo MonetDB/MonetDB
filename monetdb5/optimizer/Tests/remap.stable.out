@@ -21,11 +21,11 @@ function user.tst():void;
     a:bat[:oid,:bit]  := mal.multiplex("calc","isnil",d);
 # demonstrate an error 
     y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);
-end tst;
+end user.tst;
 function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
-end main;
+end user.main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
 # a correct call 
@@ -36,7 +36,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDbatISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
     y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);#  9 y:bat[:int,:int] := MANIFOLDremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
-end tst;                                # 10  
+end user.tst;                           # 10  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

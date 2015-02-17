@@ -384,7 +384,7 @@ function user.main():void;
     (y1,y2) := algebra.firstn(b,x1,x2,10:wrd,false,false);
     io.print(y1);
     io.print(y2);
-end main;
+end user.main;
 #--------------------------#
 # h	t  # name
 # void	void  # type

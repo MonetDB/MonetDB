@@ -65,7 +65,13 @@ exit j;
     io.printf("#mmath.sin() %d\n",d0);
     s := aggr.sum(x);
     io.printf("#sum %f\n",s);
-end main;
+end user.main;
+#mal.manifold(sin) 177972
+#sum 546.410417
+#mal.multiplex(sin) 2354385
+#sum 546.410417
+#mmath.sin() 50644
+#sum 546.410417
 
 
 # 23:08:16 >  

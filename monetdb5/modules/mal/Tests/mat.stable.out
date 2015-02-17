@@ -15,8 +15,8 @@ stdout of test 'mat` in directory 'monetdb5/modules/mal` itself:
 function user.main():void;
     i := mat.pack(1,2,3);
     io.print(i);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #--------------------------#

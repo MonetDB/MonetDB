@@ -414,8 +414,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,b,"view","stk","trace");
 	pseudo(ret2,bn,"view","stk","traceB");
 	return MAL_SUCCEED;
@@ -469,7 +469,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
 	return MAL_SUCCEED;
 }
 
@@ -558,7 +558,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNappend(b, ps, FALSE);
 		GDKfree(ps);
 	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;

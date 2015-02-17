@@ -62,8 +62,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 545 # length
+% 563 # length
 function user.s2_1{autoCommit=true}(A0:lng):void;
+    X_201:void  := querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe");
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","orders","o_orderkey",0);
@@ -165,8 +166,7 @@ function user.s2_1{autoCommit=true}(A0:lng):void;
     sql.rsColumn(X_172,"sys.L6","L6","bigint",32,0,X_171);
     X_199 := io.stdout();
     sql.exportResult(X_199,X_172);
-end s2_1;
-# querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:30 >  
 # 22:53:30 >  "Done."

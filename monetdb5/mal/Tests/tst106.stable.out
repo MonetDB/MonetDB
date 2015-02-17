@@ -22,7 +22,7 @@ function user.main():void;
 # check in-compatible polmorphic types 
     b := user.f(1,2,"help");
     a := user.f(1,2,1);
-end main;
+end user.main;
 
 # 07:58:57 >  
 # 07:58:57 >  Done.

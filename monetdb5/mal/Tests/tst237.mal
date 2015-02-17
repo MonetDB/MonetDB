@@ -1,16 +1,16 @@
 b:= bat.new(:oid,:oid);
-bat.insert(b,1@0,1@0);
-bat.insert(b,2@0,2@0);
-bat.insert(b,3@0,3@0);
+bat.append(b,1@0);
+bat.append(b,2@0);
+bat.append(b,3@0);
 
 io.print(b);
 bl:= batcalc.lng(b);
 io.print(bl);
 
 bb:= bat.new(:oid,:oid);
-bat.insert(bb,1@0,1@0);
-bat.insert(bb,2@0,2@0);
-bat.insert(bb,3@0,3@0);
+bat.append(bb,1@0);
+bat.append(bb,2@0);
+bat.append(bb,3@0);
 
 io.print(bb);
 bbl:= batcalc.lng(bb);

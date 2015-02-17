@@ -54,7 +54,7 @@ catch MALException:str ;
 exit MALException:str ;
     io.print("FIRST ROUND");
     io.print(c);
-end main;
+end user.main;
 [ "Start test" ]
 [ "FIRST ROUND" ]
 #--------------------------#

@@ -19,45 +19,21 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 function user.one(base:int):int;
     io.print(base);
     return one := base;
-end one;
-#
-#function three(base:int,x:int,y:int):int;
-#	print(base);
-#	return base;
-#end three;
+end user.one;
 function user.three(base:int,x:int,y:int):int;
     io.print(base);
     return three := base;
-end three;
-#function pow(base:int,raise:int):int;
-#        mg_a := calc.dbl(base);
-#        ng_a := calc.dbl(raise);
-#        og_a := *(mg_a,ng_a);
-#        pg_a := calc.int(og_a);
-#        return pg_a;
-#end pow;
+end user.three;
 function user.pow(base:int,raise:int):int;
     mg_a := calc.dbl(base);
     ng_a := calc.dbl(raise);
     og_a := calc.*(mg_a,ng_a);
     pg_a := calc.int(og_a);
     return pow := pg_a;
-end pow;
-#k:= user.one(1);
-#l:= user.three(1,2,3);
-#p:= user.pow(1,2);
-#
-#b:=new(:int,:int);
-#insert(b,1,1);
-#
-#print("do multiplex three test");
-#z:=multiplex.tactics("three",b,2,3);
-#print("do multiplex one test");
-#z:=multiplex.tactics("one",b);
-#print("do multiplex pow test");
-#z:=multiplex.tactics("pow",b,2);
-#print(z);
-#
+end user.pow;
+#WARNING To speedup user.three a bulk operator implementation is needed
+#WARNING To speedup user.one a bulk operator implementation is needed
+#WARNING To speedup user.pow a bulk operator implementation is needed
 function user.main():void;
     k := user.one(1);
     l := user.three(1,2,3);
@@ -89,7 +65,7 @@ barrier (X_47,X_48) := iterator.new(b);
 exit (X_47,X_48);
     z:bat[:oid,:int]  := X_45;
     io.print(z);
-end main;
+end user.main;
 [ 1 ]
 [ 1 ]
 [ "do multiplex three test" ]

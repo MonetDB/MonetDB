@@ -398,36 +398,37 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
  * The content of a BAT can be appended to (removed from) another
  * using BATins (BATdel).
  */
-#define bunins(b,h,t) if (BUNins(b,h,t,force) == NULL) return NULL;
-BAT *
+#define bunins(b,h,t) if (BUNins(b,h,t,force) == GDK_FAIL) return GDK_FAIL;
+gdk_return
 BATins(BAT *b, BAT *n, bit force)
 {
-	BAT *tmp = NULL, *res = NULL;
+	BAT *tmp = NULL;
+	gdk_return res = GDK_FAIL;
 	int fastpath = 0;
 	int countonly;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
-		return b;
+		return GDK_SUCCEED;
 	}
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BATins: input must be (V)OID headed\n");
-		return NULL;
+		return GDK_FAIL;
 	}
-	ALIGNins(b, "BATins", force);
-	BATcompatible(b, n);
+	ALIGNins(b, "BATins", force, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATins");
 
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
 		GDKerror("BATins: combined BATs too large\n");
-		return NULL;
+		return GDK_FAIL;
 	}
 
 	if (b->htype != TYPE_void &&
 	    (b->ttype == TYPE_void ||
 	     (!b->H->hash && b->T->hash &&
 	      ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
-		return BATmirror(BATins(BATmirror(b), BATmirror(n), force));
+		return BATins(BATmirror(b), BATmirror(n), force);
 	}
 
 	if (BUNlast(b) + BATcount(n) > BATcapacity(b)) {
@@ -438,7 +439,7 @@ BATins(BAT *b, BAT *n, bit force)
 
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(b, grows) == NULL)
+		if (BATextend(b, grows) == GDK_FAIL)
 			goto bunins_failed;
 	}
 
@@ -450,10 +451,9 @@ BATins(BAT *b, BAT *n, bit force)
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BAThdense(n))) {
 			b->hseqbase = h;
 		} else if (t + 1 != (BUN) h || !BAThdense(n)) {
-			b = BATmaterializeh(b);
+			if (BATmaterializeh(b) == GDK_FAIL)
+				return GDK_FAIL;
 			countonly = 0;
-			if (b == NULL)
-				return NULL;
 		}
 	}
 	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
@@ -464,10 +464,9 @@ BATins(BAT *b, BAT *n, bit force)
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BATtdense(n))) {
 			b->tseqbase = h;
 		} else if (t + 1 != (BUN) h || !BATtdense(n)) {
-			b = BATmaterializet(b);
+			if (BATmaterializet(b) == GDK_FAIL)
+				return GDK_FAIL;
 			countonly = 0;
-			if (b == NULL)
-				return NULL;
 		}
 	}
 	if (b->T->hash == NULL &&
@@ -477,7 +476,7 @@ BATins(BAT *b, BAT *n, bit force)
 		if (b->hkey & BOUND2BTRUE && b->batCount > 0) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
-				return NULL;
+				return GDK_FAIL;
 		}
 		fastpath = 1;
 	}
@@ -564,7 +563,7 @@ BATins(BAT *b, BAT *n, bit force)
 			   b->T->vheap->hashash == n->T->vheap->hashash &&
 			   VIEWtparent(n) == 0) {
 			if (insert_string_bat(b, n, 0, force) == GDK_FAIL)
-				return NULL;
+				return GDK_FAIL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -621,21 +620,21 @@ BATins(BAT *b, BAT *n, bit force)
 	} else {
 		updateloop(b, n, bunins);
 	}
-	res = b;
+	res = GDK_SUCCEED;
       bunins_failed:
 	if (tmp)
 		BBPreclaim(tmp);
 	return res;
 }
 
-BAT *
+gdk_return
 BATappend(BAT *b, BAT *n, bit force)
 {
 	BUN sz;
 	int fastpath = 1;
 
 	if (b == NULL || n == NULL || (sz = BATcount(n)) == 0) {
-		return b;
+		return GDK_SUCCEED;
 	}
 	/* almost: assert(!isVIEW(b)); */
 	assert(!(b->H->heap.parentid ||
@@ -645,14 +644,14 @@ BATappend(BAT *b, BAT *n, bit force)
 
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BATappend: input must be (V)OID headed\n");
-		return NULL;
+		return GDK_FAIL;
 	}
-	ALIGNapp(b, "BATappend", force);
-	BATcompatible(b, n);
+	ALIGNapp(b, "BATappend", force, GDK_FAIL);
+	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
 		GDKerror("BATappend: combined BATs too large\n");
-		return NULL;
+		return GDK_FAIL;
 	}
 
 	b->batDirty = 1;
@@ -665,7 +664,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(b, grows) == NULL)
+		if (BATextend(b, grows) == GDK_FAIL)
 			goto bunins_failed;
 	}
 
@@ -687,7 +686,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				f++;
 				if (f + sz >= GDK_oid_max) {
 					GDKerror("BATappend: overflow of head value\n");
-					return 0;
+					return GDK_FAIL;
 				}
 				m = (oid) (f + sz);
 				b = BATmirror(b); /* so we can use bunfastapp */
@@ -699,12 +698,11 @@ BATappend(BAT *b, BAT *n, bit force)
 				sz += BATcount(b);
 				BATsetcount(b, sz);
 			}
-			return b;
+			return GDK_SUCCEED;
 		}
 		/* we need to materialize the tail */
-		b = BATmaterializet(b);
-		if (b == NULL)
-			return NULL;
+		if (BATmaterializet(b) == GDK_FAIL)
+			return GDK_FAIL;
 	}
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
@@ -773,7 +771,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash) {
 			if (insert_string_bat(b, n, 1, force) == GDK_FAIL)
-				return NULL;
+				return GDK_FAIL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -850,7 +848,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 			if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
 				GDKerror("BATappend: overflow of head value\n");
-				return NULL;
+				return GDK_FAIL;
 			}
 			h = (oid) (b->hseqbase + BATcount(b));
 
@@ -887,41 +885,35 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	b->H->nonil &= n->H->nonil;
 	b->T->nonil &= n->T->nonil;
-	return b;
+	return GDK_SUCCEED;
       bunins_failed:
-	return NULL;
+	return GDK_FAIL;
 }
 
 
-#define bundel(b,h,t) do { if (BUNdel(b,h,t,force) == NULL) { GDKerror("BATdel: BUN does not occur.\n"); return NULL; } } while (0)
-BAT *
+#define TYPEcheck(t1,t2,func)						\
+	do {								\
+		if (TYPEerror(t1, t2)) {				\
+			GDKerror("%s: Incompatible types %s and %s.\n", \
+				 func, ATOMname(t2), ATOMname(t1));	\
+			return GDK_FAIL;				\
+		}							\
+	} while (0)
+
+#define bundel(b,h,t) do { if (BUNdel(b,h,t,force) == GDK_FAIL) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
+gdk_return
 BATdel(BAT *b, BAT *n, bit force)
 {
-	ERRORcheck(b == NULL, "set:BAT required\n");
-	ERRORcheck(n == NULL, "set:BAT required\n");
+	ERRORcheck(b == NULL, "set:BAT required\n", GDK_FAIL);
+	ERRORcheck(n == NULL, "set:BAT required\n", GDK_FAIL);
 	if (BATcount(n) == 0) {
-		return b;
+		return GDK_SUCCEED;
 	}
-	ALIGNdel(b, "BATdel", force);
-	TYPEcheck(b->htype, n->htype);
-	TYPEcheck(b->ttype, n->ttype);
+	ALIGNdel(b, "BATdel", force, GDK_FAIL);
+	TYPEcheck(b->htype, n->htype, "BATdel");
+	TYPEcheck(b->ttype, n->ttype, "BATdel");
 	updateloop(b, n, bundel);
-	return b;
-}
-
-#define bundelhead(b,h,t) do { if (BUNdelHead(b,h,force) == NULL) return NULL; } while (0)
-BAT *
-BATdelHead(BAT *b, BAT *n, bit force)
-{
-	ERRORcheck(b == NULL, "set:BAT required\n");
-	ERRORcheck(n == NULL, "set:BAT required\n");
-	if (BATcount(n) == 0) {
-		return b;
-	}
-	ALIGNdel(b, "BATdelHead", force);
-	TYPEcheck(b->htype, n->htype);
-	updateloop(b, n, bundelhead);
-	return b;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -929,16 +921,16 @@ BATdelHead(BAT *b, BAT *n, bit force)
  * buns mentioned.
  */
 #define BUNreplace_force(a,b,c) BUNreplace(a,b,c,force)
-BAT *
+gdk_return
 BATreplace(BAT *b, BAT *n, bit force)
 {
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
-		return b;
+		return GDK_SUCCEED;
 	}
-	BATcompatible(b, n);
+	BATcompatible(b, n, GDK_FAIL, "BATreplace");
 	updateloop(b, n, BUNreplace_force);
 
-	return b;
+	return GDK_SUCCEED;
 }
 
 
@@ -975,7 +967,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	BATiter bni, bi = bat_iterator(b);
 	oid foid;		/* first oid value if oid column */
 
-	BATcheck(b, "BATslice");
+	BATcheck(b, "BATslice", NULL);
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)
@@ -1154,7 +1146,7 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 static BAT *
 BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 {
-	BATcheck(b, func);
+	BATcheck(b, func, NULL);
 	/* set some trivial properties (probably not necessary, but
 	 * it's cheap) */
 	if (b->htype == TYPE_void) {
@@ -1179,8 +1171,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		 * if it is void, either we didn't get here (already
 		 * sorted correctly), or we will fall into BATrevert
 		 * below which does the materialization for us */
-		b = BATmaterializet(b);
-		if (b == NULL)
+		if (BATmaterializet(b) == GDK_FAIL)
 			return NULL;
 	}
 
@@ -1188,7 +1179,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		/* b is ordered in the opposite direction, hence we
 		 * revert b (note that if requesting stable sort, the
 		 * column needs to be key) */
-		return BATrevert(b);
+		return BATrevert(b) == GDK_SUCCEED ? b : NULL;
 	}
 	if (!(reverse ? b->hrevsorted : b->hsorted) &&
 	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
@@ -1209,7 +1200,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
 	IMPSdestroy(b);
-	ALIGNdel(b, func, FALSE);
+	ALIGNdel(b, func, FALSE, NULL);
 	b->hdense = 0;
 	b->tdense = 0;
 	b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = TRUE;
@@ -1224,16 +1215,16 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 #undef BATssort
 #undef BATssort_rev
 
-BAT *
+gdk_return
 BATorder(BAT *b)
 {
-	return BATorder_internal(b, 0, 0, 0, "BATorder");
+	return BATorder_internal(b, 0, 0, 0, "BATorder") ? GDK_SUCCEED : GDK_FAIL;
 }
 
-BAT *
+gdk_return
 BATorder_rev(BAT *b)
 {
-	return BATorder_internal(b, 0, 1, 0, "BATorder_rev");
+	return BATorder_internal(b, 0, 1, 0, "BATorder_rev") ? GDK_SUCCEED : GDK_FAIL;
 }
 
 BAT *
@@ -1536,7 +1527,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
  * Reverse a BAT
  * BATrevert rearranges a BAT in reverse order.
  */
-BAT *
+gdk_return
 BATrevert(BAT *b)
 {
 	char *h, *t;
@@ -1545,19 +1536,18 @@ BATrevert(BAT *b)
 	size_t s;
 	int x;
 
-	BATcheck(b, "BATrevert");
+	BATcheck(b, "BATrevert", GDK_FAIL);
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		/* materialize void columns in-place */
-		b = BATmaterialize(b);
-		if (b == NULL)
-			return NULL;
+		if (BATmaterialize(b) == GDK_FAIL)
+			return GDK_FAIL;
 	}
-	ALIGNdel(b, "BATrevert", FALSE);
+	ALIGNdel(b, "BATrevert", FALSE, GDK_FAIL);
 	s = Hsize(b);
 	if (s > 0) {
 		h = (char *) GDKmalloc(s);
 		if (!h) {
-			return NULL;
+			return GDK_FAIL;
 		}
 		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
 			char *ph = BUNhloc(bi, p);
@@ -1573,7 +1563,7 @@ BATrevert(BAT *b)
 	if (s > 0) {
 		t = (char *) GDKmalloc(s);
 		if (!t) {
-			return NULL;
+			return GDK_FAIL;
 		}
 		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
 			char *pt = BUNtloc(bi, p);
@@ -1596,7 +1586,7 @@ BATrevert(BAT *b)
 	b->tsorted = x;
 	b->hdense = FALSE;
 	b->tdense = FALSE;
-	return b;
+	return GDK_SUCCEED;
 }
 
 /*
@@ -1608,7 +1598,7 @@ BATmark(BAT *b, oid oid_base)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATmark");
+	BATcheck(b, "BATmark", NULL);
 	bn = VIEWhead(b);
 	if (bn) {
 		BATseqbase(BATmirror(bn), oid_base);
@@ -1634,20 +1624,20 @@ BATmark_grp(BAT *g, BAT *e, const oid *s)
 	const oid *gp;
 	BUN i;
 
-	BATcheck(g, "BATmark_grp");
-	BATcheck(e, "BATmark_grp");
+	BATcheck(g, "BATmark_grp", NULL);
+	BATcheck(e, "BATmark_grp", NULL);
 	ERRORcheck(g->ttype != TYPE_void && g->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT g must be oid.\n");
+		   "BATmark_grp: tail of BAT g must be oid.\n", NULL);
 	ERRORcheck(e->htype != TYPE_void && e->htype != TYPE_oid,
-		   "BATmark_grp: head of BAT e must be oid.\n");
+		   "BATmark_grp: head of BAT e must be oid.\n", NULL);
 	ERRORcheck(g->ttype == TYPE_void && g->tseqbase == oid_nil,
-		   "BATmark_grp: tail of BAT g must not be nil.\n");
+		   "BATmark_grp: tail of BAT g must not be nil.\n", NULL);
 	ERRORcheck(e->htype == TYPE_void && e->hseqbase == oid_nil,
-		   "BATmark_grp: head of BAT e must not be nil.\n");
+		   "BATmark_grp: head of BAT e must not be nil.\n", NULL);
 	ERRORcheck(s && *s == oid_nil,
-		   "BATmark_grp: base oid s must not be nil.\n");
-	ERRORcheck(!s && e->ttype != TYPE_oid,
-		   "BATmark_grp: tail of BAT e must be oid.\n");
+		   "BATmark_grp: base oid s must not be nil.\n", NULL);
+	ERRORcheck(s == NULL && e->ttype != TYPE_oid,
+		   "BATmark_grp: tail of BAT e must be oid.\n", NULL);
 
 	assert(BAThdense(g));
 	assert(BAThdense(e));
@@ -1789,7 +1779,7 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATconst");
+	BATcheck(b, "BATconst", NULL);
 	bn = BATconstant(tailtype, v, BATcount(b), role);
 	if (bn == NULL)
 		return NULL;
@@ -1893,16 +1883,12 @@ BATcount_no_nil(BAT *b)
 	int t;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b, "BATcnt");
+	BATcheck(b, "BATcnt", 0);
 	n = BATcount(b);
 	if (b->T->nonil)
 		return n;
 	p = Tloc(b, b->batFirst);
-	t = b->ttype;
-	if (t != ATOMstorage(t) &&
-	    ATOMnilptr(ATOMstorage(t)) == ATOMnilptr(t) &&
-	    BATatoms[ATOMstorage(t)].atomCmp == BATatoms[t].atomCmp)
-		t = ATOMstorage(t);
+	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
 		cnt = b->tseqbase == oid_nil ? 0 : n;
@@ -1962,7 +1948,7 @@ BATcount_no_nil(BAT *b)
 		break;
 	default:
 		nil = ATOMnilptr(t);
-		cmp = BATatoms[t].atomCmp;
+		cmp = ATOMcompare(t);
 		if (b->tvarsized) {
 			base = b->T->vheap->base;
 			for (i = 0; i < n; i++)
@@ -2012,8 +1998,8 @@ BATmergecand(BAT *a, BAT *b)
 	BATiter ai, bi;
 	bit ad, bd;
 
-	BATcheck(a, "BATmergecand");
-	BATcheck(b, "BATmergecand");
+	BATcheck(a, "BATmergecand", NULL);
+	BATcheck(b, "BATmergecand", NULL);
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);
@@ -2145,8 +2131,8 @@ BATintersectcand(BAT *a, BAT *b)
 	oid af, al, bf, bl;
 	BATiter ai, bi;
 
-	BATcheck(a, "BATintersectcand");
-	BATcheck(b, "BATintersectcand");
+	BATcheck(a, "BATintersectcand", NULL);
+	BATcheck(b, "BATintersectcand", NULL);
 	assert(a->htype == TYPE_void);
 	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);

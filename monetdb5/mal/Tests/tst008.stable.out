@@ -24,7 +24,7 @@ function user.main():void;
     i := 32;
     io.printi();
     io.print(i);
-end main;
+end user.main;
 
 # 07:58:34 >  
 # 07:58:34 >  Done.

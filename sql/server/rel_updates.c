@@ -321,7 +321,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
-	} else if (t->readonly) {
+	} else if (t->access == TABLE_READONLY) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
@@ -819,13 +819,14 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "UPDATE: cannot update read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "UPDATE: cannot update read or append only table '%s'", tname);
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
 		list *exps;
 		dnode *n;
+		char *rname = NULL;
 
 		if (t && !isTempTable(t) && STORE_READONLY)
 			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
@@ -854,7 +855,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 	
 		/* first create the project */
-		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		exps = new_exp_list(sql->sa);
 		append(exps, e);
 		updates = table_update_array(sql, t);
@@ -881,12 +882,15 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql->session->status = status;
 					if (single) {
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
-					} else {
-						list *val_exps;
+					} else if (!rel_val && r) {
 						r = rel_subquery(sql, r, a, ek, APPLY_JOIN);
-					       	val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						list_merge(r->exps, val_exps, (fdup)NULL);
+						if (r) {
+							list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
+
+							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+							if (r)
+								list_merge(r->exps, val_exps, (fdup)NULL);
+						}
 					}
 				}
 				if ((single && !v) || (!single && !r)) {
@@ -894,9 +898,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					return NULL;
 				}
 				if (rel_val) {
-					if (!exp_name(v))
-						exp_label(sql->sa, v, ++sql->label);
 					if (single) {
+						if (!exp_name(v))
+							exp_label(sql->sa, v, ++sql->label);
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 						rel_project_add_exp(sql, rel_val, v);
 					}
@@ -914,9 +918,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				if (!rel_val)
 					rel_val = r;
 				if (!rel_val || !is_project(rel_val->op) ||
-				    dlist_length(cols) >= list_length(rel_val->exps)) {
+				    dlist_length(cols) > list_length(rel_val->exps)) {
 					rel_destroy(r);
-					return NULL;
+					return sql_error(sql, 02, "UPDATE: too many columns specified");
 				}
 				nr = (list_length(rel_val->exps)-dlist_length(cols));
 				for(n=rel_val->exps->h; nr; nr--, n = n->next)
@@ -926,6 +930,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql_column *c = mvc_bind_column(sql, t, cname);
 					sql_exp *v = n->data;
 
+					if (!exp_name(v))
+						exp_label(sql->sa, v, ++sql->label);
 					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 					if (!v) { /* check for NULL */
 						v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
@@ -952,7 +958,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				updates[c->colnr] = v;
 			}
 		}
-		e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
 		r = rel_update(sql, bt, r, updates, exps);
 		return r;
@@ -997,8 +1003,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "DELETE FROM: cannot delete from read or append only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
@@ -1125,7 +1131,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
@@ -1235,7 +1241,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);

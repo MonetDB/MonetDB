@@ -21,17 +21,13 @@ stdout of test 'tst750` in directory 'monetdb5/mal` itself:
 function user.test(b:bat[:any_1,:any_2],c:any_2):void;
     k := calc.+(1,c);
     io.print(k);
-end test;
-#
-#b:=new(:int,:int);
-#test(b,2);
-#
+end user.test;
 function user.main():void;
 # Polymorphic function tests 
 # Cloning two versions of a single function 
     b := bat.new(:oid,:int);
     user.test(b,2);
-end main;
+end user.main;
 [ 3 ]
 
 # 08:01:29 >  

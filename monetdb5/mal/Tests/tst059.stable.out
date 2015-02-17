@@ -29,7 +29,7 @@ barrier X_6 := calc.not(B);
     return threevaluedlogic:int  := 0:int;
 exit X_6;
     return threevaluedlogic:int  := threevaluedlogic;
-end threevaluedlogic;
+end user.threevaluedlogic;
 function user.main():void;
 # three valued logic, using a sequential plan 
 # for use in parallel blocks check for the nil in both branches 
@@ -43,7 +43,7 @@ function user.main():void;
     io.print(z2);
     z3 := user.threevaluedlogic(nil:bit);
     io.print(z3);
-end main;
+end user.main;
 [ 1 ]
 [ 0 ]
 [ nil ]

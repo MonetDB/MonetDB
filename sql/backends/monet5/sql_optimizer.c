@@ -109,14 +109,33 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	for (i = 0; i < oldtop; i++) {
 		InstrPtr p = old[i];
 		char *f = getFunctionId(p);
+		ValRecord vr;
 
+		if (getModuleId(p) == sqlRef && f == tidRef) {
+			char *sname = getVarConstant(mb, getArg(p, 2)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 3)).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t;
+
+			if (!s || strcmp(s->base.name, dt_schema) == 0) {
+				pushInstruction(mb, p);
+				continue;
+			}
+
+		       	t = mvc_bind_table(m, s, tname);
+			/* skip alter on remote statements */
+			if (t && (!isRemote(t) && !isMergeTable(t)) && t->p) {
+				int k = getArg(p, 0), mt_member = t->p->base.id;
+
+				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
+			}
+		}
 		if (getModuleId(p) == sqlRef && (f == bindRef || f == bindidxRef)) {
-			ValRecord vr;
 			int upd = (p->argc == 7 || p->argc == 9);
 			char *sname = getVarConstant(mb, getArg(p, 2 + upd)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;
 			char *cname = NULL;
-			int not_null = 0;
+			int not_null = 0, mt_member = 0;
 			wrd rows = 1;	/* default to cope with delta bats */
 			int mode = 0;
 			int k = getArg(p, 0);
@@ -147,6 +166,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
+					if (i->t->p) 
+						mt_member = i->t->p->base.id;
 				}
 			} else if (s && f == bindRef && cname) {
 				size_t cnt;
@@ -167,12 +188,16 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						BBPunfix(b->batCacheid);
 					}
 					rows = (wrd) cnt;
+					if (c->t->p) 
+						mt_member = c->t->p->base.id;
 				}
 			}
 			if (rows > 1 && mode != RD_INS)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
+			if (mt_member && mode != RD_INS)
+				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
 
 			{
 				int lowprop = hlbProp, highprop = hubProp;
@@ -317,7 +342,7 @@ SQLoptimizer(Client c)
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "SQLoptimizer\n");
-	printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_DEBUG);
 	mnstr_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;

@@ -1,10 +1,5 @@
 #Same as tst270, but includes testing of the profiler trace
 
-profiler.activate("ticks");
-#profiler.activate("pc");
-profiler.activate("stmt");
-profiler.setFilter("*","append");
-
 o:= calc.oid(20000000);
 calc.setoid(o);
 b:= bat.new(:oid,:int);
@@ -12,7 +7,7 @@ b:= bat.new(:oid,:int);
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-profiler.start();
+profiler.stethoscope(0);
 err := bat.append(b,15);
 err := bat.append(b,4);
 n0  := calc.int(nil);

@@ -36,15 +36,16 @@
 #define EC_BLOB		5
 #define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
 
-#define EC_NUM 		6
-#define EC_INTERVAL 	7
-#define EC_DEC 		8
-#define EC_FLT 		9
-#define EC_NUMBER(e)	(e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||e==EC_FLT)
+#define EC_POS 		6
+#define EC_NUM 		7
+#define EC_INTERVAL 	8
+#define EC_DEC 		9
+#define EC_FLT 		10
+#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||e==EC_FLT)
 
-#define EC_TIME		10
-#define EC_DATE		11
-#define EC_TIMESTAMP	12
+#define EC_TIME		11
+#define EC_DATE		12
+#define EC_TIMESTAMP	13
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
 #define EC_GEOM		13
 #define EC_GEOMA	14
@@ -54,7 +55,7 @@
 #define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
 
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
-			 e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
+			 e==EC_POS||e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
 
 #define has_tz(e,n)	(EC_TEMP(e) && \
 			((e == EC_TIME && strcmp(n, "timetz") == 0) || \

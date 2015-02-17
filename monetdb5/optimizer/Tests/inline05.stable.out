@@ -16,24 +16,24 @@ function user.foo{inline}(a:int,b:int):int;
     io.print(c);
 # this has a memory-less side effect 
     return foo := 1;
-end foo;
+end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
+    bat.append(b,1);
     z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);
     z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,2);
-end qry;
+end user.qry;
 function user.main():void;
 # remapping inline functions 
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], _10:int) {G}
-end qry;                                #  5  
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_7:str, _8:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_7:str, _8:str, b:bat[:oid,:int], _9:int) {G}
+end user.qry;                           #  5  
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

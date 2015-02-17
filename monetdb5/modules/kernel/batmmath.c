@@ -90,7 +90,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	bn->T->nonil = b->T->nonil;										\
 	BATkey(BATmirror(bn), 0);										\
 	if (!(bn->batDirty&2))											\
-		bn = BATsetaccess(bn, BAT_READ);							\
+		BATsetaccess(bn, BAT_READ);									\
 	if (b->htype != bn->htype) {									\
 		BAT *r = VIEWcreate(b,bn);									\
 																	\
@@ -141,7 +141,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	bn->T->nonil = b->T->nonil;											\
 	BATkey(BATmirror(bn),0);											\
 	if (!(bn->batDirty&2))												\
-		bn = BATsetaccess(bn, BAT_READ);								\
+		BATsetaccess(bn, BAT_READ);										\
 	if (b->htype != bn->htype) {										\
 		BAT *r = VIEWcreate(b,bn);										\
 																		\

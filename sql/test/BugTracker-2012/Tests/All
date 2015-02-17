@@ -29,10 +29,10 @@ name_resolution_in_proc.Bug-3074
 segfault_incorrect_head.Bug-3028
 cast_varchar_to_double.Bug-3071
 table_returning_func_returns_too_many_columns.Bug-3077
-!HAVE_SAMTOOLS&!ENABLE_DATACELL?table_functions_fail_after_restart-0.Bug-3063
-HAVE_SAMTOOLS&!ENABLE_DATACELL?table_functions_fail_after_restart-0.Bug-3063_bam
-!HAVE_SAMTOOLS&!ENABLE_DATACELL?table_functions_fail_after_restart-1.Bug-3063
-HAVE_SAMTOOLS&!ENABLE_DATACELL?table_functions_fail_after_restart-1.Bug-3063_bam
+!HAVE_SAMTOOLS&!HAVE_DATACELL?table_functions_fail_after_restart-0.Bug-3063
+HAVE_SAMTOOLS&!HAVE_DATACELL?table_functions_fail_after_restart-0.Bug-3063_bam
+!HAVE_SAMTOOLS&!HAVE_DATACELL?table_functions_fail_after_restart-1.Bug-3063
+HAVE_SAMTOOLS&!HAVE_DATACELL?table_functions_fail_after_restart-1.Bug-3063_bam
 user_defined_decimal_function.Bug-2992
 non_keyword_no.Bug-3079
 round-type-inference.Bug-2987

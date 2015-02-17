@@ -28,14 +28,11 @@ function user.tst():void;
 catch myNewException:str ;
     io.printf("caught exception\n");
 exit myNewException:str ;
-end tst;
-#
-#tst();
-#
+end user.tst;
 function user.main():void;
 # Exception identifiers can be introduced at any place 
     user.tst();
-end main;
+end user.main;
 caught exception
 
 # 08:01:13 >  

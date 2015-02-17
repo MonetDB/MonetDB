@@ -758,7 +758,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && !c->t->readonly &&
+	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -776,7 +776,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 { 
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-	if (isTable(i->t) && !i->t->readonly &&
+	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);
@@ -1289,7 +1289,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		l = sa_list(sql->sa);
 		for (argc = 0; argc < sql->argc; argc++) {
 			atom *a = sql->args[argc];
-			stmt *s = stmt_atom(sql->sa, a);
+			stmt *s = stmt_varnr(sql->sa, argc, &a->tpe);
 			char nme[16];
 
 			snprintf(nme, 16, "A%d", argc);
@@ -3200,16 +3200,16 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				ext = stmt_result(sql->sa, g, 1);
 				Cnt = stmt_result(sql->sa, g, 2);
 
-				/* choose only groups with cnt > 1 */
+				/* continue only with groups with a cnt > 1 */
 				cand = stmt_uselect(sql->sa, Cnt, stmt_atom_wrd(sql->sa, 1), cmp_gt, NULL);
-				 /* project cand on ext and Cnt */
+				/* project cand on ext and Cnt */
 				Cnt = stmt_project(sql->sa, cand, Cnt);
 				ext = stmt_project(sql->sa, cand, ext);
 
-				/* join ext with group to retrieve all oid's of the original
+				/* join groups with extend to retrieve all oid's of the original
 				 * bat that belong to a group with Cnt >1 */
-				g = stmt_join(sql->sa, ext, grp, cmp_equal);
-				cand = stmt_result(sql->sa, g, 1);
+				g = stmt_join(sql->sa, grp, ext, cmp_equal);
+				cand = stmt_result(sql->sa, g, 0);
 				grp = stmt_project(sql->sa, cand, grp);
 			}
 
@@ -3223,7 +3223,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 					upd = updates[updcol]->op1;
 					upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, dels));
 				} else {
-					upd = stmt_col(sql, c->c, dels);
+					upd = stmt_project(sql->sa, tids, stmt_col(sql, c->c, dels));
 				}
 
 				/* apply cand list first */
@@ -3233,9 +3233,11 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				/* remove nulls */
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					stmt *nn = stmt_selectnonil(sql, upd, NULL);
-					upd = stmt_reorder_project(sql->sa, nn, upd);
+					upd = stmt_project(sql->sa, nn, upd);
 					if (grp)
-						grp = stmt_reorder_project(sql->sa, nn, grp);
+						grp = stmt_project(sql->sa, nn, grp);
+					if (cand)
+						cand = stmt_project(sql->sa, nn, cand);
 				}
 
 				/* apply group by on groups with Cnt > 1 */

@@ -29,8 +29,8 @@ lib_atoms = {
 		batxml.c \
 		blob.c blob.h \
 		color.c color.h \
-		identifier.c identifier.h \
-		inet.c inet.h \
+		identifier.c \
+		inet.c \
 		mtime.c mtime.h \
 		streams.c streams.h \
 		str.c str.h \

@@ -49,11 +49,11 @@ barrier (h,ts) := iterator.new(c);
     io.printf("%s]\n",ts);
     redo (h,ts) := iterator.next(c);
 exit (h,ts);
-end main;
-#-------------------------#
-# h	tmp_4		  # name
-# int	str		  # type
-#-------------------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
 [ 0@0,	  "hello"	  ]
 [ 1@0,	  "brave"	  ]
 [ 2@0,	  "world"	  ]

@@ -19,8 +19,8 @@ function user.main():void;
     c := bat.new(:oid,:oid);
     bat.setRole(c,"A","C");
     io.print(b,c);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # A	B	  # name
 # oid	oid	  # type
 #-----------------#

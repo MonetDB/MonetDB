@@ -36,8 +36,8 @@ function user.main():void;
     io.print(s);
     so := bat.shrinkMap(b,d);
     io.print(so);
-end main;
-#-----------------#
+end user.main;
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#

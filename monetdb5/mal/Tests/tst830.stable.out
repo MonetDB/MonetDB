@@ -66,7 +66,7 @@ catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
     InvalidCredentialsException:str  := nil:str;
 exit InvalidCredentialsException:str ;
-end main;
+end user.main;
 MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]

@@ -74,7 +74,7 @@ typedef struct{
 			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
 			if (msg) break;												\
 			for( i = mut->fvar; i<= mut->lvar; i++) {					\
-				if(ATOMstorage(mut->args[i].type == TYPE_void) ){		\
+				if(ATOMstorage(mut->args[i].type) == TYPE_void ){		\
 					args[i] = (void*)  &mut->args[i].o;					\
 					mut->args[i].o++;									\
 				} else if(mut->args[i].size == 0) {						\
@@ -123,7 +123,7 @@ typedef struct{
 					break;												\
 				bunfastapp(mut->args[0].b, (void*) y);					\
 				for( i = mut->fvar; i<= mut->lvar; i++) {				\
-					if(ATOMstorage(mut->args[i].type == TYPE_void) ){ 	\
+					if(ATOMstorage(mut->args[i].type) == TYPE_void ){ 	\
 						args[i] = (void*)  &mut->args[i].o;				\
 						mut->args[i].o++;								\
 					} else if(mut->args[i].size == 0) {					\
@@ -307,7 +307,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			if (ATOMstorage(tpe) == TYPE_str) 
 				mat[i].size = Tsize(mat[i].b);
 			else
-				mat[i].size = BATatoms[ATOMstorage(tpe)].size;
+				mat[i].size = BATatoms[tpe].size;
 			mat[i].cnt = cnt;
 			if ( mat[i].b->ttype == TYPE_void){
 				o = mat[i].b->tseqbase;

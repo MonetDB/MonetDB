@@ -64,7 +64,8 @@ override_dh_auto_configure:
 	--with-samtools=yes \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
-	--with-valgrind=no
+	--with-valgrind=no \
+	X_CFLAGS=-g
 
 # currently the test suite fails
 override_dh_auto_test:
@@ -79,3 +80,6 @@ override_dh_python2:
 
 override_dh_python3:
 	dh_python3 clients/python3
+
+override_dh_strip:
+	dh_strip --dbg-package=monetdb-dbg

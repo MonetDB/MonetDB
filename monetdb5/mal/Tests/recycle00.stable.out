@@ -22,18 +22,7 @@ function user.qry():void;
     i := 23;
     j := calc.*(i,i);
     io.print(j);
-end qry;
-#
-#recycle.setRetainPolicy(1);
-#optimizer.recycle("user","qry");
-#io.print("start");
-#qry();
-#io.print("next");
-#qry();
-#io.print("last");
-#qry();
-#recycle.dump();
-#
+end user.qry;
 function user.main():void;
 #test the basics of the replicator 
     mdb.List("user","qry");
@@ -44,12 +33,12 @@ function user.main():void;
     io.print("last");
     user.qry();
     recycle.dump();
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() 
     i := 23;                            #  1 i:int := _2:int 
     j := calc.*(i,i);                   #  2 j:int := CMDvarMULsignal(i:int, i:int) 
     io.print(j);                        #  3 _4:void := IOprint_val(j:int) 
-end qry;                                #  4  
+end user.qry;                           #  4  
 [ "start" ]
 [ 529 ]
 [ "next" ]

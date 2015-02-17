@@ -80,11 +80,11 @@ ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ':23::f1'
         !
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = INSERT INTO INET_TBL (c, i) VALUES ('10:23::8000/113', '10:23::ffff');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ':23::8000'
+ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ':23::8000/113'
         !
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = INSERT INTO INET_TBL (c, i) VALUES ('::ffff:1.2.3.4', '::4.3.2.1/24');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string '::ffff:1'
+ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string '::ffff:1.2.3.4'
         !
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = INSERT INTO INET_TBL (c, i) VALUES ('1234::1234::1234', '::1.2.3.4');
@@ -92,7 +92,7 @@ ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string '::1234::1234'
         !
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = INSERT INTO INET_TBL (c, i) VALUES (cast('ffff:ffff:ffff:ffff::/24' as inet), '::192.168.1.226');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string 'ffff:ffff:ffff:ffff::'
+ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string 'ffff:ffff:ffff:ffff::/24'
         !
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = SELECT '' AS ten, i AS inet, host(i), text(i), family(i) FROM INET_TBL;

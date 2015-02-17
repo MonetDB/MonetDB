@@ -28,7 +28,7 @@ barrier k := 12;
     io.print("not possible");
 exit k := 11;
     io.print(k);
-end main;
+end user.main;
 [ 12 ]
 [ 11 ]
 

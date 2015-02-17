@@ -27,16 +27,16 @@ barrier (x,z:int ) := iterator.new(c);
 catch MALException:str ;
 exit MALException:str ;
 exit (x,y,z:int );
-end help;
+end user.help;
 function user.qry1{inline}():void;
     user.help();
-end qry1;
+end user.qry1;
 function user.qry():void;
     user.qry1();
-end qry;
+end user.qry;
 function user.main():void;
     mdb.List("user","qry");
-end main;
+end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_5 := bat.new(:oid,:int);          #  1 _5:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
     X_8 := bat.new(:oid,:int);          #  2 _8:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
@@ -53,7 +53,7 @@ barrier (X_12,X_9:int ) := iterator.new(X_8);# 10 (_12:oid, _9:int) := ITRbunIte
 catch MALException:str ;                # 13 MALException:str {J14}
 exit MALException:str ;                 # 14 MALException:str 
 exit (X_12,X_16,X_9:int );              # 15 (_12:oid, _16:any, _9:int) 
-end qry;                                # 16  
+end user.qry;                           # 16  
 
 # 00:18:07 >  
 # 00:18:07 >  Done.

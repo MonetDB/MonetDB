@@ -58,7 +58,7 @@ function user.main():void;
     io.print(b);
     b := json.isvalid("[\"\\/\" , 2 ]");
     io.print(b);
-end main;
+end user.main;
 [ true ]
 [ true ]
 [ false ]

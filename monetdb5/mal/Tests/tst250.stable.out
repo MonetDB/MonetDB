@@ -57,11 +57,11 @@ barrier (h,t) := iterator.new(b);
     io.printf("%d\n",t);
     redo (h,t) := iterator.next(b);
 exit (h,t);
-end main;
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
+end user.main;
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  15	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  nil	  ]

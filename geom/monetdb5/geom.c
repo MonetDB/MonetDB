@@ -501,6 +501,7 @@ static str forceDimLineString(GEOSGeometry** outGeometry, const GEOSGeometry* ge
 	*outGeometry = GEOSGeom_createLineString(gcs_new);
 
 	return MAL_SUCCEED;
+
 }
 
 //Although linestring and linearRing are essentially the same we need to distinguish that when creting polygon from the rings
@@ -2241,7 +2242,6 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 
 	wkb **linestringsWKB;
 	double *linestringsArea;
-
 	bit ordered = 0;
 
 	//make wkb from wkt

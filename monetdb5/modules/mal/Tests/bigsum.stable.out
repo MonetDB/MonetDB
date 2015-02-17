@@ -25,16 +25,16 @@ function user.main():void;
     dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
     dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
     mdb.setDebug(dbgmsk_set);
-    bat.insert(b,nil:oid,10000000000000000:lng);
+    bat.append(b,10000000000000000:lng);
 barrier i := 0:lng;
-    bat.insert(b,nil:oid,1:lng);
+    bat.append(b,1:lng);
     redo i := iterator.next(1:lng,10000000:lng);
 exit i;
     mdb.setDebug(dbgmsk_restore);
     s:dbl  := aggr.sum(b);
 # should be 10000000010000000, not 10000000000000000 
     io.print(s);
-end main;
+end user.main;
 [ 10000000010000000 ]
 
 # 16:05:54 >  
