@@ -675,7 +675,10 @@ yes-*-*)
 	;;
 -*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
-	LDFLAGS="$LDFLAGS -i_dynamic"
+	case $icc_ver in
+	?.*)	LDFLAGS="$LDFLAGS -i_dynamic";;
+	??.*)	LDFLAGS="$LDFLAGS -shared-intel";;
+	esac
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
