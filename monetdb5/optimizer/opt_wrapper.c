@@ -54,7 +54,6 @@
 #include "opt_groups.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
-#include "opt_mapreduce.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_mergetable.h"
@@ -94,7 +93,6 @@ struct{
 	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
-	{"mapreduce", &OPTmapreduceImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},

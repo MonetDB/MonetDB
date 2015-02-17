@@ -48,7 +48,6 @@ lib_optimizer = {
 		opt_inline.c opt_inline.h \
 		opt_joinpath.c opt_joinpath.h \
 		opt_macro.c opt_macro.h \
-		opt_mapreduce.c opt_mapreduce.h \
 		opt_matpack.c opt_matpack.h \
 		opt_json.c opt_json.h \
 		opt_mergetable.c opt_mergetable.h \

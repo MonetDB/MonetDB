@@ -235,20 +235,6 @@ pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void
 address OPTorcam
 comment "Inverse macro, find pattern and replace with a function call.";
 
-#opt_mapreduce.mal
-
-pattern optimizer.mapreduce():str
-address OPTwrapper;
-pattern optimizer.mapreduce(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple systems using map-reduce";
-
-#module mapreduce;
-module mapreduce;
-command getCloud(nme:str):bat[:oid,:str]
-address MRgetCloud
-comment "Localize the elements of a named cloud";
-
 #opt_mergetable.mal
 
 pattern optimizer.mergetable():str
