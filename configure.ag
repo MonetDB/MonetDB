@@ -1064,7 +1064,7 @@ if test "x$enable_optimize" = xyes; then
 	      dnl  -mp does no longer exist with icc 15; using -mieee-fp, instead.
 	      dnl  adding -axSSE4.2 (or even -axCORE-AVX512) results in errors like
 	      dnl  "error: ODBCFetch has been targeted for automatic cpu dispatch" ...
-	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size";; 
+	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -xHost -xHOST";; 
 
 	      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 	      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
