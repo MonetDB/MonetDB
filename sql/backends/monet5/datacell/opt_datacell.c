@@ -361,7 +361,7 @@ OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	msg= optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
 	OPTDEBUGdatacell {
 		mnstr_printf(cntxt->fdout,"=FINISHED datacell %d\n",actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAL_MAPI);
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
