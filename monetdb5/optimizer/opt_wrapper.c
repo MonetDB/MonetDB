@@ -39,7 +39,6 @@
 */
 #include "opt_accumulators.h"
 #include "opt_aliases.h"
-#include "opt_centipede.h"
 #include "opt_cluster.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
@@ -80,7 +79,6 @@ struct{
 } codes[] = {
 	{"accumulators", &OPTaccumulatorsImplementation},
 	{"aliases", &OPTaliasesImplementation},
-	{"centipede", &OPTcentipedeImplementation},
 	{"cluster", &OPTclusterImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},

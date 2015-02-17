@@ -223,33 +223,6 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPToctopus", NULL, 1},
-/*
- * The centipede pipe line aims at a map-reduce style of query processing
- */
-	{"centipede_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.centipede();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.garbageCollector();",
-	 "experimental", NULL, NULL, 1},
 #endif
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
@@ -407,8 +380,6 @@ validatePipe(MalBlkPtr mb)
 
 #ifdef WIN32
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "octopus") == 0)
-				throw(MAL, "optimizer.validate", "'octopus' needs monetdbd\n");
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "centipede") == 0)
 				throw(MAL, "optimizer.validate", "'octopus' needs monetdbd\n");
 #endif
 		} else

@@ -31,23 +31,6 @@ pattern optimizer.aliases(mod:str, fcn:str):str
 address OPTwrapper
 comment "Alias removal optimizer";
 
-#opt_centipede.mal
-module centipede;
-pattern optimizer.centipede():str
-address OPTwrapper;
-pattern optimizer.centipede(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple cores";
-
-# command centipede.materialize(b:bat[:oid,:any_2], low:any_2, high:any_2) :bat[:oid,:any_2]
-# address OPTcentipedeMaterialize
-# comment "Implement the centipede partition operation. Throw an exception if the partition was empty,
-# because then the subquery should produce a NIL ";
-
-pattern centipede.vector(b:bat[:oid,:any_1]) (:oid,:oid...)
-address OPTvectorOid
-comment "Derive a series of slices values based on sampling";
-
 #opt_cluster
 
 pattern optimizer.cluster():str
