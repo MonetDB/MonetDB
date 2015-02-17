@@ -2164,7 +2164,7 @@ gdk_export BAT *BAThash(BAT *b, BUN masksize);
 
 /* low level functions */
 
-#define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
+#define BATprepareHash(X) (BAThash(X, 0) == NULL)
 
 /*
  * @- Column Imprints Functions
