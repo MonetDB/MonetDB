@@ -185,7 +185,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	seq = b->hseqbase;
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
-		l = ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+		l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 		h = l + BATcount(b);
 		b = b2;
 	} else {
