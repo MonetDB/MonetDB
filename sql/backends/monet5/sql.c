@@ -43,9 +43,6 @@
 #include <cluster.h>
 #include <opt_pipes.h>
 #include "clients.h"
-#ifdef HAVE_RAPTOR
-# include <rdf.h>
-#endif
 #include "mal_instruction.h"
 
 static int

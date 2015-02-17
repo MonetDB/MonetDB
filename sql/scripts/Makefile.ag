@@ -59,10 +59,3 @@ headers_moresql = {
 	SOURCES = \
 		cache.sql octopus.sql parts.sql 
 }
-
-headers_rdf = {
-	COND = HAVE_RAPTOR
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 30_rdf.sql
-}

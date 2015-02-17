@@ -13,7 +13,6 @@ Build-Depends: debhelper (>= 5), autotools-dev, bison, libbz2-dev,
  ruby, rubygems | libyaml-0-2, unixodbc-dev, uuid-dev, zlib1g-dev,
  python, python3,
  libbam-dev, pkg-config
-# Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0

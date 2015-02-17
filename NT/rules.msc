@@ -419,11 +419,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_RAPTOR
-	$(ECHO) HAVE_RAPTOR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_RAPTOR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_RUBYGEM
 	$(ECHO) HAVE_RUBYGEM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

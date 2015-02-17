@@ -40868,10 +40868,6 @@ pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:ba
 address sql_querylog_catalog;
 comment Obtain the query log catalog
 
-pattern sql.rdfshred(location:str,gname:str,schema:str):void 
-address SQLrdfShred;
-comment Procedure that wraps around the shredder of the rdf module in MAL. Shredding an RDF data file from location results in 7 new tables (6 permutations of SPO and a mapping) in the RDF schema and an entry to table rdf.graph We can then query with SQL queries the RDF triple storeby quering tables gid_spo, gid_pso etc., where gid is looked up in rdf.graph
-
 command sql.rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
 address sql_rank;
 comment return the rank bat

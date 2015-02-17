@@ -1102,7 +1102,6 @@ include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;
 include sql_inspect;
-include sql_rdf;
 include sql_octopus;
 
 sql.prelude();

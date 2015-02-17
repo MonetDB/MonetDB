@@ -435,9 +435,6 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
-/* Define if you have the raptor library */
-/* #undef HAVE_RAPTOR */
-
 /* Define to 1 if you have the <regex.h> header file. */
 /* #undef HAVE_REGEX_H */
 

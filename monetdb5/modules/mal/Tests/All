@@ -69,8 +69,6 @@ manifold
 manifoldstr
 #manifoldaggr
 
-#HAVE_RAPTOR?rdf
-
 # might show different output if openssl is compiled without full sha2
 # support
 clients-hashes
