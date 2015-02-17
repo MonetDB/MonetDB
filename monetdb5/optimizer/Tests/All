@@ -16,7 +16,6 @@ tst4602
 tst4630
 tst4700
 tst4701
-tst4820
 
 #qep00 deprecated optimizer
 #qep01 ,,
@@ -79,7 +78,6 @@ GCexample01
 CXexample
 JPexample
 Mexample
-SRexample
 
 dataflow
 dataflow3

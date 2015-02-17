@@ -71,7 +71,6 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_statistics.h"
-#include "opt_strengthReduction.h"
 
 struct{
 	str nme;
@@ -110,7 +109,6 @@ struct{
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
-	{"strengthReduction", &OPTstrengthReductionImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

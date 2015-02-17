@@ -397,14 +397,6 @@ address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
 
-#opt_strengthReduction.mal
-
-pattern optimizer.strengthReduction():str
-address OPTwrapper;
-pattern optimizer.strengthReduction(mod:str, fcn:str):str
-address OPTwrapper
-comment "Move constant expressions out of the loop";
-
 #opt_support.mal
 
 command mdb.traceOptimizer(flg:str)

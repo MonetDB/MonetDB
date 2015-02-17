@@ -65,7 +65,6 @@ lib_optimizer = {
 		opt_remoteQueries.c opt_remoteQueries.h \
 		opt_reorder.c opt_reorder.h \
 		opt_statistics.c opt_statistics.h \
-		opt_strengthReduction.c opt_strengthReduction.h \
 		opt_support.c opt_support.h \
 		opt_pushselect.c opt_pushselect.h \
 		opt_wrapper.c
