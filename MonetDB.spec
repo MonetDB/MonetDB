@@ -906,7 +906,6 @@ developer, but if you do want to test, this is the package you need.
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \

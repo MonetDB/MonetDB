@@ -2983,109 +2983,6 @@ if test $mn_cv_have__sys_siglist = yes; then
 	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
 fi
 
-dnl     checks for system services
-dnl hwcounters
-org_have_hwcounters=auto
-have_hwcounters=$org_have_hwcounters
-HWCOUNTERS_LIBS=""
-HWCOUNTERS_INCS=""
-AC_ARG_WITH(hwcounters,
-	AS_HELP_STRING([--with-hwcounters=DIR],
-		[hwcounters library is installed in DIR]),
-	have_hwcounters="$withval")
-case "$have_hwcounters" in
-yes|no|auto)
-	;;
-*)
-	HWCOUNTERS_LIBS="-L$withval/lib"
-	HWCOUNTERS_INCS="-I$withval/include"
-	;;
-esac
-if test "x$have_hwcounters" != xno; then
-	case "$host_os-$host" in
-	linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
-	esac
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $HWCOUNTERS_LIBS"
-	have_hwcounters=no
-	why_have_hwcounters="(no supported harwdware counters interface found)"
-	case "$host_os-$host" in
-	linux*-i?86*|linux*-x86_64*)
-		AC_CHECK_HEADERS( libperfctr.h ,
-		 AC_CHECK_LIB( perfctr, vperfctr_open ,
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr"
-			AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-				AC_CHECK_HEADERS( libpperf.h,
-			 AC_CHECK_LIB( pperf, start_counters,
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf"
-					AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
-					have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	 linux*-ia64*)
-		AC_CHECK_HEADERS( perfmon/pfmlib.h ,
-		 AC_CHECK_LIB( pfm, pfm_initialize ,
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm"
-			AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		;;
-	 solaris*)
-		AC_CHECK_HEADERS( libcpc.h ,
-		 AC_CHECK_TYPE( cpc_event_t,
-		  AC_CHECK_LIB( cpc, cpc_access ,
-		   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc"
-			 AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-			 have_hwcounters=yes
-		   ]
-		  )
-		  , , [#include <libcpc.h>]
-		 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-			AC_CHECK_HEADERS( perfmon.h ,
-			 AC_CHECK_LIB( perfmon, clr_pic ,
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon"
-				AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
-				have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	 irix*)
-		AC_CHECK_LIB( perfex, start_counters ,
-		 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex"
-		   have_hwcounters=yes
-		 ]
-		)
-		;;
-	esac
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-
-	if test "x$have_hwcounters" != xyes; then
-		HWCOUNTERS_LIBS=""
-		HWCOUNTERS_INCS=""
-	else
-		CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
-	fi
-fi
-AC_SUBST(HWCOUNTERS_LIBS)
-AC_SUBST(HWCOUNTERS_INCS)
-
 dnl check dependencies (might need more than just SQL)
 if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
 	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${disable_monetdb5:+ $disable_monetdb5}.])
@@ -3492,7 +3389,6 @@ for comp in \
 	'curl         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
-	'hwcounters   ' \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \

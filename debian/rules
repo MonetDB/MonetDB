@@ -50,7 +50,6 @@ override_dh_auto_configure:
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-geos=yes \
-	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
 	--with-perl=yes \
