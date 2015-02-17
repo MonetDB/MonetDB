@@ -163,22 +163,35 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	return virtualize(bn);
 }
 
+#define HASHloop_bound(bi, h, hb, v, lo, hi)			\
+	for (hb = HASHget(h, HASHprobe((h), v));		\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (hb >= (lo) && hb < (hi) &&			\
+		    ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
+
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
 	oid o, *restrict dst;
-	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
-	 * instead of wrd, we could also use ssize_t or int/lng with
-	 * 32/64-bit OIDs */
-	wrd off;
+	BUN l, h;
+	oid seq;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
-	off = b->hseqbase - b->batFirst;
+	seq = b->hseqbase;
+	if (VIEWtparent(b)) {
+		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
+		l = ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+		h = l + BATcount(b);
+		b = b2;
+	} else {
+		l = BUNfirst(b);
+		h = BUNlast(b);
+	}
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
@@ -189,8 +202,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) (i + off);
+		HASHloop_bound(bi, b->H->hash, i, tl, l, h) {
+			o = (oid) (i - l + seq);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
@@ -199,8 +212,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			}
 		}
 	} else {
-		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) (i + off);
+		HASHloop_bound(bi, b->H->hash, i, tl, l, h) {
+			o = (oid) (i - l + seq);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
 				  maximum, NULL);
@@ -1413,9 +1426,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
 	hash = equi &&
-	       b->batPersistence == PERSISTENT &&
-	       (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
-	       BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
+		(b->batPersistence == PERSISTENT ||
+		 ((parent = VIEWtparent(b)) != 0 &&
+		  BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
+		(size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
+		BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
 	if (hash && estimate == BUN_NONE && !b->T->hash) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select */
