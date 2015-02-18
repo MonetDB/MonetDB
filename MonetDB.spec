@@ -115,7 +115,6 @@ BuildRequires: python-devel
 %if %{?rhel:0}%{!?rhel:1}
 BuildRequires: python3-devel
 %endif
-# BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 # On RedHat Enterprise Linux and derivatives (CentOS, Scientific
 # Linux), the rubygem-activerecord package is not available (also not
@@ -636,7 +635,6 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
-# %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
@@ -646,7 +644,6 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
-# %exclude %{_libdir}/monetdb5/autoload/*_rdf.mal
 %exclude %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
@@ -661,7 +658,6 @@ fi
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
 %exclude %{_libdir}/monetdb5/lib_bam.so
 %endif
-# %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
@@ -686,26 +682,6 @@ used from the MAL level.
 %{_includedir}/monetdb/mal*.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
-
-# %package -n MonetDB5-server-rdf
-# Summary: MonetDB RDF interface
-# Group: Applications/Databases
-# Requires: MonetDB5-server = %{version}-%{release}
-
-# %description -n MonetDB5-server-rdf
-# MonetDB is a database management system that is developed from a
-# main-memory perspective with use of a fully decomposed storage model,
-# automatic index management, extensibility of data types and search
-# accelerators.  It also has an SQL frontend.
-
-# This package contains the MonetDB5 RDF module.
-
-# %files -n MonetDB5-server-rdf
-# %defattr(-,root,root)
-# %{_libdir}/monetdb5/autoload/*_rdf.mal
-# %{_libdir}/monetdb5/lib_rdf.so
-# %{_libdir}/monetdb5/rdf.mal
-# %{_libdir}/monetdb5/createdb/*_rdf.sql
 
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
@@ -757,7 +733,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-# %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
@@ -881,7 +856,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-assert=no \
 	--enable-bits=%{bits} \
 	--enable-console=yes \
-	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
@@ -898,7 +872,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
-	--enable-rdf=no \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sql=yes \
 	--enable-strict=no \
@@ -906,9 +879,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-hwcounters=no \
 	--with-java=no \
-	--with-mseed=no \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \

@@ -169,6 +169,8 @@ SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
 SYSTEM FUNCTION  sys.isempty
 SYSTEM FUNCTION  sys.issimple
+SYSTEM FUNCTION  sys.left_shift
+SYSTEM FUNCTION  sys.left_shift_assign
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
@@ -210,6 +212,8 @@ SYSTEM FUNCTION  sys.relate
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
+SYSTEM FUNCTION  sys.right_shift
+SYSTEM FUNCTION  sys.right_shift_assign
 SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession

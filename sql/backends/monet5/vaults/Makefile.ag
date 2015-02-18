@@ -30,7 +30,7 @@ INCLUDES = ../../../include \
 	   ../../../../common/stream \
 	   ../../../../common/utils \
 	   ../../../../gdk \
-	   $(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+	   $(READLINE_INCS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
 
 lib__vault = {
 	MODULE
@@ -56,37 +56,6 @@ headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 70_vault.mal
-}
-
-lib__mseed = {
-	MODULE
-	COND = HAVE_MSEED
-	DIR = libdir/monetdb5
-	SOURCES = mseed.c
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-	       ../../../../gdk/libbat \
-	       $(MSEED_LIBS)
-}
-
-headers_mseedmal = {
-	COND = HAVE_MSEED
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = mseed.mal
-}
-
-headers_mseedsql = {
-	COND = HAVE_MSEED
-	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = mseed.sql
-}
-
-headers_mseedautoload = {
-	COND = HAVE_MSEED
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 71_mseed.mal
 }
 
 lib__fits = {
@@ -120,7 +89,6 @@ headers_fitsautoload = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal 72_fits.mal \
+EXTRA_DIST = 70_vault.mal 72_fits.mal \
 	     fits.mal 72_fits.sql fits.h \
-	     mseed.mal mseed.sql mseed.h \
 	     vault.mal vault.sql vault.h

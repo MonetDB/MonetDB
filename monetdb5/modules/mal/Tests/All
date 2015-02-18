@@ -60,7 +60,6 @@ mapi06
 mapi07
 mapi01
 
-cluster00
 tokenizer00
 zorder
 
@@ -106,8 +105,6 @@ mosaic_delta_joins
 mosaic_linear_joins
 mosaic_prefix_joins
 mosaic_mix_joins
-
-#HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2
 # support

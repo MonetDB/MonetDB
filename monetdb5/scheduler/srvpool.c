@@ -19,7 +19,7 @@
 
 /*
  * @a M. Kersten
- * The octopus/centipede modules enable compute cloud based processing of SQL queries.
+ * The experimental octopus/centipede modules enabled compute cloud based processing of SQL queries.
  * Their scheduler takes over control of a MAL execution by
  * re-directing requests to multiple sites. If there are no sites known,
  * then the code is executed locally as is.

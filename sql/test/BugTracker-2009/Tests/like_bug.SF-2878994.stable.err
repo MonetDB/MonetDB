@@ -55,7 +55,6 @@ stderr of test 'like_bug.SF-2878994` in directory 'sql/test/BugTracker-2009` its
 # config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 # config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-# config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	mitosis_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # cmdline opt 	config = /ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf

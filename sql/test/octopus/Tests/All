@@ -1,4 +1,0 @@
-# Octopus disabled, a new tests set is needed
-#NOT_WIN32?squid
-#NOT_WIN32?squid00
-#NOT_WIN32?squid01

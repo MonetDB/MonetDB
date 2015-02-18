@@ -44,9 +44,6 @@
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mosaic.h"
-#ifdef HAVE_RAPTOR
-# include <rdf.h>
-#endif
 #include "mal_instruction.h"
 #include "mosaic.h"
 
@@ -593,7 +590,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			BAT *b = store_funcs.bind_col(sql->session->tr, nc, 0);
 			sql_delta *d;
 			char *msg;
-
 
 			assert(b);
 			if ( BATcount(b) <10000){
@@ -4626,7 +4622,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								BUNappend(atom, &w, FALSE);
 
-								sz = bn->T->heap.free;
+								sz = tailsize(bn, BATcount(bn));
+								sz += headsize(bn, BATcount(bn));
 								BUNappend(size, &sz, FALSE);
 
 								sz = bn->T->vheap ? bn->T->vheap->size : 0;
@@ -4702,13 +4699,16 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											w = (int) (sum / cnt2);
 									}
 									BUNappend(atom, &w, FALSE);
-									sz = bn->T->heap.free;
+									sz = tailsize(bn, BATcount(bn));
+									sz += headsize(bn, BATcount(bn));
 									BUNappend(size, &sz, FALSE);
 
-									sz = bn->T->vheap ? bn->T->vheap->free : 0;
+									sz = bn->T->vheap ? bn->T->vheap->size : 0;
+									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->free : 0;
+									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
+									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
 									BUNappend(indices, &sz, FALSE);
 									sz = IMPSimprintsize(bn);
 									BUNappend(imprints, &sz, FALSE);

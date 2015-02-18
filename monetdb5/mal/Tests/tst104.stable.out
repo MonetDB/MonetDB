@@ -15,7 +15,6 @@ stdout of test 'tst104` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 command user.f(a:any_1,b:bat[:any_1,:any_2],c:any_2):any_2 address dummy;
 !TypeException:user.main[4]:object code for command user.f missing
 !TypeException:user.main[4]:'user.f' undefined in: a:str := user.f(_7:oid, b:bat[:oid,:str], _8:str)
