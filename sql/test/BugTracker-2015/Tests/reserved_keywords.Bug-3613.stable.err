@@ -36,6 +36,15 @@ stderr of test 'reserved_keywords.Bug-3613` in directory 'sql/test/BugTracker-20
 # 18:58:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21543" "--port=39106"
 # 18:58:09 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-16764/.s.monetdb.34170
+QUERY = SELECT tbl.schema FROM sys.statistics tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-16764/.s.monetdb.34170
+QUERY = SELECT tbl.user FROM sys.tracelog tbl;
+
+MAPI  = (monetdb) /var/tmp/mtest-16764/.s.monetdb.34170
+QUERY = SELECT schema FROM sys.statistics;
+
 
 # 18:58:09 >  
 # 18:58:09 >  "Done."

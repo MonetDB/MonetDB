@@ -719,18 +719,11 @@ Ready.
 % default # name
 % varchar # type
 % 0 # length
-#SELECT tbl.schema FROM sys.statistics tbl;
-% sys.tbl # table_name
-% schema # name
-% clob # type
-% 0 # length
 #SELECT tbl.schema FROM sys.storage tbl;
 % .tbl # table_name
 % schema # name
 % clob # type
 % 3 # length
-[ "sys"	]
-[ "sys"	]
 [ "sys"	]
 [ "sys"	]
 [ "sys"	]
@@ -1007,11 +1000,6 @@ Ready.
 % 7 # length
 [ "monetdb"	]
 [ "monetdb"	]
-#SELECT tbl.user FROM sys.tracelog tbl;
-% .tbl # table_name
-% user # name
-% int # type
-% 1 # length
 #SELECT action FROM sys.keys;
 % sys.keys # table_name
 % action # name
@@ -1702,18 +1690,11 @@ Ready.
 % default # name
 % varchar # type
 % 0 # length
-#SELECT schema FROM sys.statistics;
-% sys.statistics # table_name
-% schema # name
-% clob # type
-% 0 # length
 #SELECT schema FROM sys.storage;
 % .storage # table_name
 % schema # name
 % clob # type
 % 3 # length
-[ "sys"	]
-[ "sys"	]
 [ "sys"	]
 [ "sys"	]
 [ "sys"	]
