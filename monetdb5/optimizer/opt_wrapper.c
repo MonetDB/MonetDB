@@ -45,7 +45,6 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
-#include "opt_emptySet.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
@@ -58,7 +57,6 @@
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_pushranges.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
 #include "opt_querylog.h"
@@ -82,7 +80,6 @@ struct{
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
-	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
@@ -95,7 +92,6 @@ struct{
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
-	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
 	{"recycler", &OPTrecyclerImplementation},

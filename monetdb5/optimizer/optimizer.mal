@@ -94,14 +94,6 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-#opt_emptySet.mal
-
-pattern optimizer.emptySet():str
-address OPTwrapper;
-pattern optimizer.emptySet(mod:str, fcn:str):str
-address OPTwrapper
-comment "Symbolic evaluation of empty BAT expressions";
-
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str
@@ -291,15 +283,6 @@ comment "Dead code optimizer";
 # address ALGprejoin
 # comment "Recluster the table to reduce random access behavior.";
 
-
-#opt_pushranges.mal
-
-pattern optimizer.pushranges():str
-address OPTwrapper;
-pattern optimizer.pushranges(mod:str, fcn:str):str
-address OPTwrapper
-comment "Push constant range selections through the program";
-
 #opt_qep.mal
 
 pattern optimizer.dumpQEP()
@@ -382,7 +365,7 @@ comment "Collect trace of a specific operation";
 # address OPTtraceCall
 # comment "Dump the previous instruction to a temporary file";
 
-#opt_pushranges.mal
+#opt_pushselect.mal
 
 pattern optimizer.pushselect():str
 address OPTwrapper;

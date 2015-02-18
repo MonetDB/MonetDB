@@ -1683,7 +1683,6 @@ int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 int OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-int OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1702,7 +1701,6 @@ int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 str OPTmultiplexSimple(Client cntxt);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-int OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
