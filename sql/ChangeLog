@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Feb 18 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for the mseed library.
+
 * Tue Feb 17 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed support for RDF.
 - Removed DataCell.  It was experimental code that was never enabled.
