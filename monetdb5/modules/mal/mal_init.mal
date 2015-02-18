@@ -81,7 +81,6 @@ include manifold;
 include factories;
 include recycle;
 include remote;
-include trader; # experimental
 
 include mat; 	# experimental
 # include histogram; 	# experimental
