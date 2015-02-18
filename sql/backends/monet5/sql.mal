@@ -1013,14 +1013,6 @@ pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 
-pattern cluster1(sch:str, tbl:str)
-address SQLcluster1
-comment "Cluster the columns of a table on the (first) primary key";
-
-pattern cluster2(sch:str, tbl:str)
-address SQLcluster2
-comment "Cluster the columns of a table on the (first) primary key";
-
 pattern shrink(sch:str, tbl:str)
 address SQLshrink
 comment "Consolidate the deletion table over all columns using shrinking";

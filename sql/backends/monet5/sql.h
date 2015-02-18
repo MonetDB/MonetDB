@@ -134,8 +134,6 @@ sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str zero_or_one(ptr ret, const bat *bid);
 sql5_export str not_unique(bit *ret, const bat *bid);
 sql5_export str not_unique_oids(bat *ret, const bat *bid);
-sql5_export str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

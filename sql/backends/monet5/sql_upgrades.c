@@ -1379,6 +1379,10 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 		}
 	}
 
+	/* remove code from 19_cluster.sql script */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.cluster1;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.cluster2;\n");
+
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
