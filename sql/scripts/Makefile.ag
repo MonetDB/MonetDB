@@ -53,17 +53,3 @@ headers_hge = {
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 39_analytics_hge.sql 40_json_hge.sql
 }
-
-headers_moresql = {
-	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = \
-		cache.sql octopus.sql parts.sql 
-}
-
-headers_rdf = {
-	COND = HAVE_RAPTOR
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 30_rdf.sql
-}

@@ -94,7 +94,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	size_t sz;
 
 	fd = malOpenSource(name);
-	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		mnstr_destroy(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}

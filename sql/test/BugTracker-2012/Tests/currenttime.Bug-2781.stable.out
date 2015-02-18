@@ -41,7 +41,6 @@ stdout of test 'currenttime.Bug-2781` in directory 'sql/test/BugTracker-2012` it
 # loading sql script: 23_skyserver.sql
 # loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
-# loading sql script: 30_rdf.sql
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 80_udf.sql

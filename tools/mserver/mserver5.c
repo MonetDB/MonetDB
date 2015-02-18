@@ -74,7 +74,7 @@ mserver_abort()
 {
 	fprintf(stderr, "\n! mserver_abort() was called by terminate(). !\n");
 	fflush(stderr);
-	MT_global_exit(0);
+	exit(0);
 }
 #endif
 

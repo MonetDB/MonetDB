@@ -90,8 +90,8 @@ Ready.
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	smallint # type
-% 4,	15,	4,	0,	1,	5,	1,	5,	1 # length
-[ 6616,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+% 4,	15,	4,	4,	1,	5,	1,	5,	1 # length
+[ 6616,	"systemfunctions",	2000,	"NULL",	0,	true,	0,	false,	0	]
 #drop function limited;
 #drop table tbls;
 

@@ -16,7 +16,6 @@ stdout of test 'tst2504` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 factory user.random(seed:int):int;
     random := seed;
     i := seed;

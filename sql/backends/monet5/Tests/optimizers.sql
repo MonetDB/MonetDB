@@ -13,11 +13,11 @@ select 'optimizer on test:',optimizer;
 set optimizer='';
 select 'optimizer <empty> test:',optimizer;
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
 set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
@@ -35,9 +35,9 @@ set optimizer='optimizer.reduce();optimizer.garbageCollector();';
 
 set optimizer='optimizer.garbageCollector();';
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
 
 set optimizer='optimizer.inline();';
 

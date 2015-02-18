@@ -18,7 +18,6 @@ stdout of test 'dataflow5` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.tst():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);

@@ -35,3 +35,13 @@ CREATE FUNCTION "text" (p inet) RETURNS clob
 	EXTERNAL NAME inet."text";
 CREATE FUNCTION "abbrev" (p inet) RETURNS clob
 	EXTERNAL NAME inet."abbrev";
+
+CREATE FUNCTION "left_shift"(i1 inet, i2 inet) RETURNS boolean
+	EXTERNAL NAME inet."<<";
+CREATE FUNCTION "right_shift"(i1 inet, i2 inet) RETURNS boolean
+	EXTERNAL NAME inet.">>";
+
+CREATE FUNCTION "left_shift_assign"(i1 inet, i2 inet) RETURNS boolean
+	EXTERNAL NAME inet."<<=";
+CREATE FUNCTION "right_shift_assign"(i1 inet, i2 inet) RETURNS boolean
+	EXTERNAL NAME inet.">>=";

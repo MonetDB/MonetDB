@@ -43,23 +43,6 @@
 #include "bat5.h"
 #include "mal_exception.h"
 
-/*
- * The next collection of operators fill a hole in the MonetDB kernel libraries.
- * It provide handy operations on void-BATs.
- */
-static BAT *
-lock_desc(bat bid)
-{
-	BBPfix(bid);
-	return BBPquickdesc(abs(bid), 0);
-}
-
-static void
-unlock_desc(bat bid)
-{
-	BBPunfix(bid);
-}
-
 /* set access mode to bat, replacing input with output */
 static BAT *
 setaccess(BAT *b, int mode)
@@ -76,7 +59,6 @@ setaccess(BAT *b, int mode)
 		}
 		BBPunfix(b->batCacheid);
 	}
-
 	return bn;
 }
 
@@ -386,25 +368,6 @@ CMDrename(bit *retval, BAT *b, const char *s)
 }
 
 static int
-CMDunload(bit *res, const char *input)
-{
-	bat bid = abs(BBPindex(input));
-
-	*res = FALSE;
-	if (bid > 0) {
-		BAT *b;
-
-		BBPfix(bid);
-		b = BBP_cache(bid);
-		if (b) {
-			BBPcold(bid);	/* will trigger unload of also persistent bats */
-		}
-		*res = BBPunfix(bid) == 0;
-	}
-	return GDK_SUCCEED;
-}
-
-static int
 CMDsave(bit *res, const char *input)
 {
 	bat bid = BBPindex(input);
@@ -425,8 +388,7 @@ CMDsave(bit *res, const char *input)
 
 
 /*
- * Wrapping
- * The remainder contains the wrapper code over the version 4
+ * The remainder contains the wrapper code over the mserver version 4
  * InformationFunctions
  * In most cases we pass a BAT identifier, which should be unified
  * with a BAT descriptor. Upon failure we can simply abort the function.
@@ -582,52 +544,6 @@ BKCorder_rev(bat *r, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-char *
-BKCinsert_bun(bat *r, const bat *bid, const oid *h, const void *t)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (t == 0 || *(str*)t == 0)
-			t = (ptr) str_nil;
-		else
-			t = (ptr) *(str *)t;
-	}
-	if (BUNins(b, h, t, FALSE) == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-char *
-BKCinsert_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (t == 0 || *(str*)t == 0)
-			t = (ptr) str_nil;
-		else
-			t = (ptr) *(str *)t;
-	}
-	if (BUNins(b, h, t, *force) == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 str
 BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
 {
@@ -670,105 +586,6 @@ BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
 		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	}
 	BBPunfix(s->batCacheid);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-
-str
-BKCreplace_bun(bat *r, const bat *bid, const oid *h, const void *t)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (t == 0 || *(str*)t == 0)
-			t = (ptr) str_nil;
-		else
-			t = (ptr) *(str *)t;
-	}
-	if (BUNreplace(b, h, t, 0) == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCreplace_bat(bat *r, const bat *bid, const bat *sid)
-{
-	BAT *b, *s;
-	gdk_return ret;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
-	ret = BATreplace(b, s, 0);
-	BBPunfix(s->batCacheid);
-	if (ret == GDK_FAIL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", GDK_EXCEPTION);
-	}
-	if( b->batPersistence == PERSISTENT)
-		BATmsync(b);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCreplace_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (t == 0 || *(str*)t == 0)
-			t = (ptr) str_nil;
-		else
-			t = (ptr) *(str *)t;
-	}
-	if (BUNreplace(b, h, t, *force) == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
-{
-	BAT *b, *s;
-	gdk_return ret;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.replace", OPERATION_FAILED);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
-	ret = BATreplace(b, s, *force);
-	BBPunfix(s->batCacheid);
-	if (ret == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.replace", GDK_EXCEPTION);
-	}
-	if( b->batPersistence == PERSISTENT)
-		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1062,46 +879,15 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bit *force)
 
 /*end of SQL enhancement */
 
-char *
-BKCgetAlpha(bat *r, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getInserted", RUNTIME_OBJECT_MISSING);
-	bn = BATalpha(b);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "bat.getInserted", GDK_EXCEPTION);
-	BBPkeepref(*r = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-char *
-BKCgetDelta(bat *r, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getDeleted", RUNTIME_OBJECT_MISSING);
-	bn = BATdelta(b);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "bat.getDeleted", GDK_EXCEPTION);
-	BBPkeepref(*r = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
 str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
 	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = lock_desc(*bid);
+		BAT *b = BBPquickdesc(abs(*bid), 0);
 
 		if (b != NULL)
 			*res = (lng) BATcapacity(b);
-		unlock_desc(*bid);
 	}
 	return MAL_SUCCEED;
 }
@@ -1112,12 +898,11 @@ BKCgetColumnType(str *res, const bat *bid)
 	const char *ret = str_nil;
 
 	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = lock_desc(*bid);
+		BAT *b = BBPquickdesc(abs(*bid), 0);
 
 		if (b) {
 			ret = *bid < 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
 		}
-		unlock_desc(*bid);
 	}
 	*res = GDKstrdup(ret);
 	return MAL_SUCCEED;
@@ -1490,54 +1275,6 @@ BKCgetBBPname(str *ret, const bat *bid)
 }
 
 str
-BKCunload(bit *res, const char * const *input)
-{
-	CMDunload(res, *input);
-	return MAL_SUCCEED;
-}
-
-str
-BKCload(bat *res, const char * const *input)
-{
-	bat bid = BBPindex(*input);
-
-	*res = bid;
-	if (bid) {
-		BBPincref(bid,TRUE);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "bat.unload", ILLEGAL_ARGUMENT " File name missing");
-}
-
-str
-BKCsetColdBAT(void *res, const bat *bid)
-{
-	BAT *b;
-
-	(void) res;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
-	}
-	BBPcold(b->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetHotBAT(void *res, const bat *bid)
-{
-	BAT *b;
-
-	(void) res;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
-	}
-	BBPhot(b->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCsave(bit *res, const char * const *input)
 {
 	CMDsave(res, *input);
@@ -1553,37 +1290,14 @@ BKCsave2(void *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
+	if ( b->batPersistence != TRANSIENT){
+		throw(MAL, "bat.save", "Only save transient columns.");
+	}
 
 	if (b && BATdirty(b))
 		BBPsave(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *hhp, const int *thp)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.mmap", RUNTIME_OBJECT_MISSING);
-	}
-	/* == int_nil means no change */
-	BATmmap(b,
-			*hbns == int_nil ? b->batMaphead : *hbns,
-			*tbns == int_nil ? b->batMaptail : *tbns,
-			b->H->vheap && *hhp == int_nil ? b->batMaphheap : *hhp,
-			b->T->vheap && *thp == int_nil ? b->batMaptheap : *thp,
-			0);
-	*res = TRUE;
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCmmap2(bit *res, const bat *bid, const int *mode)
-{
-	return BKCmmap(res, bid, mode, mode, mode, mode);
 }
 
 /*

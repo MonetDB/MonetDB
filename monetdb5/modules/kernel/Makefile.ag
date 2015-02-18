@@ -19,8 +19,7 @@ INCLUDES = ../../mal \
 		   ../atoms \
 		   ../../../common/options \
 		   ../../../common/stream \
-		   ../../../gdk \
-		   $(HWCOUNTERS_INCS)
+		   ../../../gdk
 
 MTSAFE
 
@@ -34,7 +33,6 @@ lib_kernel = {
 		batcolor.c batcolor.h \
 		batmmath.c batmmath.h \
 		batstr.c \
-		counters.c counters.h \
 		group.c group.h \
 		logger.c \
 		microbenchmark.c microbenchmark.h \
@@ -49,7 +47,7 @@ headers_mal = {
 		mmath.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mal aggr.mal \
-		counters.mal logger.mal microbenchmark.mal
+		logger.mal microbenchmark.mal
 }
 
 headers_hge = {
@@ -59,6 +57,6 @@ headers_hge = {
 	SOURCES = 00_aggr_hge.mal
 }
 
-EXTRA_DIST = alarm.mal counters.mal logger.mal microbenchmark.mal aggr.mal 00_aggr_hge.mal group.mal algebra.mal
+EXTRA_DIST = alarm.mal logger.mal microbenchmark.mal aggr.mal 00_aggr_hge.mal group.mal algebra.mal
 
 EXTRA_DIST_DIR = Tests

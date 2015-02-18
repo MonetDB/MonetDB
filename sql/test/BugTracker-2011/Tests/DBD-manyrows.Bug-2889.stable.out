@@ -15,7 +15,6 @@ stdout of test 'DBD-manyrows.Bug-2889` in directory 'sql/test/BugTracker-2011` i
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:39984/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module not loaded
 # SQLException:mvc:SQL module not initialized
 
 Ready.
@@ -37,7 +36,6 @@ Ready.
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/24_zorder.sql
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/25_debug.sql
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/40_geom.sql
-# SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/50_datacell.sql
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/80_udf.sql
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/99_system.sql
 

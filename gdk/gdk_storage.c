@@ -281,13 +281,22 @@ GDKextendf(int fd, size_t size, const char *fn)
 	/* if necessary, extend the underlying file */
 	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
+#ifdef HAVE_FALLOCATE
+		if (fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size) < 0 &&
+		    errno == EOPNOTSUPP)
+			/* on Linux, posix_fallocate uses a slow
+			 * method to allocate blocks if the underlying
+			 * file system doesn't support the operation,
+			 * so use fallocate instead and just resize
+			 * the file if it fails */
 #ifdef HAVE_POSIX_FALLOCATE
 		/* posix_fallocate returns error number on failure,
 		 * not -1 :-( */
-		if ((rt = posix_fallocate(fd, 0, (off_t) size)) == EINVAL)
+		if ((rt = posix_fallocate(fd, stb.st_size, (off_t) size - stb.st_size)) == EINVAL)
 			/* on Solaris/OpenIndiana, this may mean that
 			 * the underlying file system doesn't support
 			 * the operation, so just resize the file */
+#endif
 #endif
 		rt = ftruncate(fd, (off_t) size);
 	}
