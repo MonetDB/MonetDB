@@ -118,13 +118,6 @@ pattern optimizer.garbageCollector(mod:str, fcn:str):str
 address OPTwrapper
 comment "Garbage collector optimizer";
 
-#opt_groups.mal
-pattern optimizer.groups():str
-address OPTwrapper;
-pattern optimizer.groups(mod:str, fcn:str):str
-address OPTwrapper
-comment "Join path constructor";
-
 #opt_generator.mal
 pattern optimizer.generator():str
 address OPTwrapper;

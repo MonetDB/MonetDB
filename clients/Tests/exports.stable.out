@@ -1687,7 +1687,6 @@ int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 int OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-int OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTisAlias(InstrPtr p);
 int OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -2285,7 +2284,6 @@ MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);
 str grabRef;
 str groupRef;
 str groupbyRef;
-str groupsRef;
 int hasCommonResults(InstrPtr p, InstrPtr q);
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);

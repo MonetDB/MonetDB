@@ -101,7 +101,6 @@ str grabRef;
 str groupRef;
 str subgroupRef;
 str subgroupdoneRef;
-str groupsRef;
 str groupbyRef;
 str hashRef;
 str identityRef;
@@ -354,7 +353,6 @@ void optimizerInit(void)
 	groupRef = putName("group",5);
 	subgroupRef = putName("subgroup",8);
 	subgroupdoneRef= putName("subgroupdone",12);
-	groupsRef = putName("groups",6);
 	groupbyRef = putName("groupby",7);
 	hashRef = putName("hash",4);
 	identityRef = putName("identity",8);

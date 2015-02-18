@@ -99,7 +99,6 @@ opt_export  str grabRef;
 opt_export  str groupRef;
 opt_export  str subgroupRef;
 opt_export  str subgroupdoneRef;
-opt_export  str groupsRef;
 opt_export  str groupbyRef;
 opt_export  str hashRef;
 opt_export  str identityRef;

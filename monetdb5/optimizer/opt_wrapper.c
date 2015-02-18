@@ -49,7 +49,6 @@
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
-#include "opt_groups.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
 #include "opt_matpack.h"
@@ -84,7 +83,6 @@ struct{
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
-	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
 	{"matpack", &OPTmatpackImplementation},

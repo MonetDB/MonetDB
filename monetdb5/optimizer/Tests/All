@@ -59,7 +59,6 @@ manifold2
 
 #joinpath calls for new joinpath optimizer
 leftjoinpath
-groups00
 
 ifthencst
 #CXerror1 transaction primitives removed

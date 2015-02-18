@@ -143,7 +143,6 @@ struct OPTcatalog {
 	int debug;
 } optcatalog[]= {
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
-{"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
