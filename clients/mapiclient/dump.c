@@ -1060,7 +1060,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	MapiHdl hdl = NULL;
 	char *query;
 	size_t maxquerylen;
-	int *string = NULL;
+	unsigned char *string = NULL;
 	char *sname = NULL;
 
 	if (schema == NULL) {
@@ -1138,15 +1138,12 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	cnt = mapi_get_field_count(hdl);
 	if (cnt < 1 || cnt >= 1 << 29)
 		goto bailout;	/* ridiculous number of columns */
-	string = malloc(sizeof(int) * cnt);
+	string = malloc(sizeof(unsigned char) * cnt);
 	for (i = 0; i < cnt; i++) {
-		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-		    strcmp(mapi_get_type(hdl, i), "json") == 0) {
-			string[i] = 1;
-		}
+		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
+			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
+			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
+			     strcmp(mapi_get_type(hdl, i), "json") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *s;
