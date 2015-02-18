@@ -300,7 +300,6 @@ int MT_create_thread(MT_Id *t, void( *function)(void *), void *arg, enum MT_thr_
 void MT_exiting_thread(void);
 MT_Id MT_getpid(void);
 size_t MT_getrss(void);
-void MT_global_exit(int status) __attribute__((__noreturn__));
 void MT_init(void);
 int MT_join_thread(MT_Id t);
 int MT_lockf(char *filename, int mode, off_t off, off_t len);

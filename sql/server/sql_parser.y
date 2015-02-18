@@ -527,7 +527,7 @@ int yydebug=1;
 %left <operation> AND
 %left <operation> NOT
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT CONCATSTRING SUBSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION
 %right UMINUS
 %left <operation> '*' 
 %left <operation> '/' '%'
@@ -3496,6 +3496,20 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "left_shift_assign")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp RIGHT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "right_shift_assign")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '+' scalar_exp %prec UMINUS 
 			{ $$ = $2; }
  |  '-' scalar_exp %prec UMINUS 
@@ -4889,6 +4903,13 @@ non_reserved_word:
 | RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
+
+| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
+| DEFAULT	{ $$ = sa_strdup(SA, "default"); }	/* sloppy: officially reserved */
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
+| USER		{ $$ = sa_strdup(SA, "user"); }	/* sloppy: officially reserved */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
