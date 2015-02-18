@@ -1376,26 +1376,26 @@ def ApproveOutput (env, TST) :
                 o = open(stableOUTPUT).read()
                 open(stableOUTPUT, 'w').write(o)
                 o = None
+
+                thefile = os.path.split(stableOUTPUT)[1]
+                dir,file = os.path.split(stableOUT)
+                test = re.compile('^%s.*$' % re.escape(file))
+                list = []
+                for f in os.listdir(dir or os.curdir):
+                    if f != thefile and test.match(f):
+                        remove(os.path.join(dir or os.curdir, f + '.rej'))
+                        remove(os.path.join(dir or os.curdir, f + '.orig'))
+                        proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
+                        proc.wait()
+                        if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
+                            list.append(f)
+                if len(list) > 0:
+                    Warn('There are other (specific) stable outputs for test  %s\nfor which patching failed:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
+                    STDERR.write('  Look at the *.rej files in directory %s.\n\n' % os.path.join(TSTDIR,'Tests'))
+                    STDERR.flush()
             else:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
             remove(patch + ".0")
-
-            thefile = os.path.split(stableOUTPUT)[1]
-            dir,file = os.path.split(stableOUT)
-            test = re.compile('^%s.*$' % re.escape(file))
-            list = []
-            for f in os.listdir(dir or os.curdir):
-                if f != thefile and test.match(f):
-                    remove(os.path.join(dir or os.curdir, f + '.rej'))
-                    remove(os.path.join(dir or os.curdir, f + '.orig'))
-                    proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
-                    proc.wait()
-                    if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
-                        list.append(f)
-            if len(list) > 0:
-                Warn('There are other (specific) stable outputs for test  %s\nfor which patching failed:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
-                STDERR.write('  Look at the *.rej files in directory %s.\n\n' % os.path.join(TSTDIR,'Tests'))
-                STDERR.flush()
         else:
             i = TST.rfind('.')
             if i > 0:
