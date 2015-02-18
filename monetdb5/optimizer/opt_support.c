@@ -145,7 +145,6 @@ struct OPTcatalog {
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
 {"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
-{"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},

@@ -97,7 +97,6 @@ include sample;
 include optimizer;
 
 include iterator;
-include cluster;
 include txtsim;
 include tokenizer;
 include zorder;

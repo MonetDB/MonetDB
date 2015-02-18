@@ -31,14 +31,6 @@ pattern optimizer.aliases(mod:str, fcn:str):str
 address OPTwrapper
 comment "Alias removal optimizer";
 
-#opt_cluster
-
-pattern optimizer.cluster():str
-address OPTwrapper;
-pattern optimizer.cluster(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple cores";
-
 #opt_coercions.mal
 
 pattern optimizer.coercions():str
