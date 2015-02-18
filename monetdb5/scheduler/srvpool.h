@@ -18,7 +18,7 @@
  */
 
 /* Author(s) M.Ivanova, M.Kersten
- * The srvpool abstracts away specifics from octopus and centipede
+ * The srvpool abstracts away specifics from the experimental octopus and centipede
  * to reach a re-useable framework for ochestrating multiple mservers
  * an execute distributed queries.
 */
@@ -31,11 +31,7 @@
 #define DEBUG_RUN_SRVPOOL 	/* to trace processing */
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define octopus_export extern __declspec(dllimport)
-#else
 #define mpool_export extern __declspec(dllexport)
-#endif
 #else
 #define mpool_export extern
 #endif

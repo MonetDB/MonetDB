@@ -57,5 +57,5 @@ headers_moresql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5
 	SOURCES = \
-		cache.sql octopus.sql parts.sql 
+		cache.sql parts.sql 
 }

@@ -59,7 +59,6 @@
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_octopus.h"
 #include "opt_pushranges.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
@@ -98,7 +97,6 @@ struct{
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
-	{"octopus", &OPToctopusImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},

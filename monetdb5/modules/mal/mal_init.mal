@@ -108,7 +108,6 @@ include zorder;
 # scheduler components
 include run_isolate;
 include run_memo;
-include run_octopus;
 include srvpool;
 
 include mal_mapi;

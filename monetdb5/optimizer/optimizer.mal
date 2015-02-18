@@ -274,18 +274,6 @@ pattern optimizer.json(mod:str, fcn:str):str
 address OPTwrapper
 comment "Unroll the mat.pack operation";
 
-#opt_octopus.mal
-module octopus;
-pattern optimizer.octopus():str
-address OPTwrapper;
-pattern optimizer.octopus(mod:str, fcn:str):str
-address OPTwrapper
-comment "Map-execute-reduce parallelism optimizer";
-
-pattern legAdvice(mod:str, fcn:str):int
-address OPTlegAdvice
-comment "Derive the number of legs to be used for query function";
-
 #opt_origin
 pattern optimizer.origin():str
 address OPTwrapper;

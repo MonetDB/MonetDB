@@ -167,7 +167,6 @@ str newRef;
 str notRef;
 str nextRef;
 str oidRef;
-str octopusRef;
 str openRef;
 str optimizerRef;
 str parametersRef;
@@ -421,7 +420,6 @@ void optimizerInit(void)
 	notRef = putName("not",3);
 	nextRef = putName("next",4);
 	oidRef = putName("oid",3);
-	octopusRef = putName("octopus",7);
 	optimizerRef = putName("optimizer",9);
 	openRef = putName("open",4);
 	parametersRef = putName("parameters",10);

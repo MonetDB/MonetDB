@@ -53,7 +53,6 @@ lib_optimizer = {
 		opt_mergetable.c opt_mergetable.h \
 		opt_mitosis.c opt_mitosis.h \
 		opt_multiplex.c opt_multiplex.h \
-		opt_octopus.c opt_octopus.h \
 		opt_pipes.c opt_pipes.h \
 		opt_prelude.c opt_prelude.h \
 		opt_pushranges.c opt_pushranges.h \

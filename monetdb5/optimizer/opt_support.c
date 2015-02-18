@@ -168,7 +168,6 @@ struct OPTcatalog {
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
-{"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
 {"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
@@ -761,12 +760,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
-	if ( getModuleId(p) == octopusRef){
-		if (getFunctionId(p) == bindRef) return FALSE;
-		if (getFunctionId(p) == bindidxRef) return FALSE;
-		if (getFunctionId(p) == binddbatRef) return FALSE;
-		return TRUE;
-	}
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	if ( getModuleId(p) == recycleRef)
@@ -937,7 +930,7 @@ int isFragmentGroup(InstrPtr p){
 }
 
 /*
- * Some optimizers are interdependent (e.g. mitosis and octopus), which
+ * Some optimizers are interdependent (e.g. mitosis ), which
  * requires inspection of the pipeline attached to a MAL block.
  */
 int

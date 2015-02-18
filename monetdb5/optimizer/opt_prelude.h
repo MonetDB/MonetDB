@@ -165,7 +165,6 @@ opt_export  str newRef;
 opt_export  str notRef;
 opt_export  str nextRef;
 opt_export  str oidRef;
-opt_export  str octopusRef;
 opt_export  str openRef;
 opt_export  str optimizerRef;
 opt_export  str parametersRef;
