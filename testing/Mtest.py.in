@@ -1388,12 +1388,15 @@ def ApproveOutput (env, TST) :
             list = []
             for f in os.listdir(dir or os.curdir):
                 if f != thefile and test.match(f):
-                    list.append(f)
+                    remove(os.path.join(dir or os.curdir, f + '.rej'))
+                    remove(os.path.join(dir or os.curdir, f + '.orig'))
+                    proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
+                    proc.wait()
+                    if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
+                        list.append(f)
             if len(list) > 0:
-                Warn('There are other (specific) stable outputs for test  %s:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
-                STDERR.write('  To propagate the changes that were just made in  %s\n' % os.path.join(TSTDIR,'Tests',thefile))
-                STDERR.write('  to the other (specific) stable outputs,\n')
-                STDERR.write('  simply apply the patch in  %s  to them.\n\n' % patch)
+                Warn('There are other (specific) stable outputs for test  %s\nfor which patching failed:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
+                STDERR.write('  Look at the *.rej files in directory %s.\n\n' % os.path.join(TSTDIR,'Tests'))
                 STDERR.flush()
         else:
             i = TST.rfind('.')
