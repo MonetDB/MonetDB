@@ -1833,10 +1833,12 @@ doFileBulk(Mapi mid, FILE *fp)
 				size_t fromlen;
 				char *to, *nbuf;
 				size_t tolen = length * 4 + 1;
+				size_t otolen;
 
 				if (tolen <= bufsize)
 					tolen = bufsize + 1;
 			  retry:
+				otolen = tolen;
 				from = buf;
 				fromlen = length;
 				nbuf = to = malloc(tolen);
@@ -1848,7 +1850,7 @@ doFileBulk(Mapi mid, FILE *fp)
 						fprintf(stderr, "Illegal input sequence\n");
 						return 1;
 					case E2BIG:
-						tolen *= 2;
+						tolen = otolen * 2;
 						free(nbuf);
 						goto retry;
 					case EINVAL:
@@ -1859,7 +1861,7 @@ doFileBulk(Mapi mid, FILE *fp)
 						return 1;
 					}
 				}
-				length = tolen;
+				length = otolen - tolen;
 				free(buf);
 				buf = nbuf;
 			}
