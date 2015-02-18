@@ -76,7 +76,6 @@ end user.main;
 [ "isSynced",	"command",	"bat",	"(b:bat[:oid,:any_1]):bit ",	"BKCisSorted;"  ]
 [ "isTransient",	"command",	"bat",	"(b:bat[:oid,:any_1]):bit ",	"BKCgetKey;"  ]
 [ "isaKey",	"command",	"bat",	"(b:bat[:oid,:any_1]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) ",	"BKCinfo;"  ]
-[ "load",	"command",	"bat",	"(name:str):bat[:oid,:any_1] ",	"BKCload;"  ]
 [ "mergecand",	"command",	"bat",	"(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",	"BKCmergecand;"  ]
 [ "mirror",	"command",	"bat",	"(b:bat[:any_1,:any_2]):bat[:any_1,:any_1] ",	"BKCmirror;"  ]
 [ "new",	"command",	"bat",	"(nme:str):bat[:oid,:any_1] ",	"CMDBATderivedByName;"  ]
@@ -94,10 +93,10 @@ end user.main;
 [ "partition",	"pattern",	"bat",	"(b:bat[:oid,:any_1]):bat[:oid,:any_1]... ",	"CMDBATpartition;"  ]
 [ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] ",	"BKCreuseBATmap;"  ]
 [ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] ",	"BKCreuseBAT;"  ]
-[ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] ",	"BKCreplace_bat_force;"  ]
-[ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] ",	"BKCreplace_bat;"  ]
-[ "reuse",	"command",	"bat",	"(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] ",	"BKCreplace_bun_force;"  ]
-[ "reuseMap",	"command",	"bat",	"(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] ",	"BKCreplace_bun;"  ]
+[ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] ",	"BKCbat_inplace_force;"  ]
+[ "replace",	"command",	"bat",	"(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] ",	"BKCbat_inplace;"  ]
+[ "reuse",	"command",	"bat",	"(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] ",	"BKCbun_inplace_force;"  ]
+[ "reuseMap",	"command",	"bat",	"(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] ",	"BKCbun_inplace;"  ]
 [ "reverse",	"command",	"bat",	"(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] ",	"BKCreverse;"  ]
 [ "save",	"pattern",	"bat",	"(val:any_1):bat[:oid,:any_1] ",	"CMDBATsingle;"  ]
 [ "save",	"command",	"bat",	"(b:bat[:oid,:any_1]):bit ",	"BKCsetImprints;"  ]
@@ -112,7 +111,6 @@ end user.main;
 [ "setRole",	"command",	"bat",	"(b:bat[:oid,:any_1],s:str):void ",	"BKCsetName;"  ]
 [ "setTransient",	"command",	"bat",	"(b:bat[:oid,:any_1],mode:str):bat[:oid,:any_1] ",	"BKCsetAccess;"  ]
 [ "single",	"command",	"bat",	"(b:bat[:oid,:any_1],mode:bit):bat[:oid,:any_1] ",	"BKCsetkey;"  ]
-[ "unload",	"command",	"bat",	"(name:str):bit ",	"BKCunload;"  ]
 
 # 08:55:30 >  
 # 08:55:30 >  Done.

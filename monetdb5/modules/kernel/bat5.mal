@@ -29,22 +29,6 @@ command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1]
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
-command replace(b:bat[:oid, :any_1], h:oid, t:any_1) :bat[:oid,:any_1]
-address BKCreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[:oid, :any_1], h:oid, t:any_1, force:bit) :bat[:oid,:any_1]
-address BKCreplace_bun_force
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address BKCreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1], force:bit) :bat[:oid,:any_1]
-address BKCreplace_bat_force
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
 command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid,:any_1]
 address BKCdelete
 comment "Delete all BUNs with a certain head value.";
@@ -58,6 +42,23 @@ address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
         in the second.";
 # END TO BE MADE HEADLESS PLAN
+
+command replace(b:bat[:oid, :any_1], h:oid, t:any_1) :bat[:oid,:any_1]
+address BKCbun_inplace
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:oid, :any_1], h:oid, t:any_1, force:bit) :bat[:oid,:any_1]
+address BKCbun_inplace_force
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address BKCbat_inplace
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:oid, :any_1], src:bat[:oid,:any_1], force:bit) :bat[:oid,:any_1]
+address BKCbat_inplace_force
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
 
 command order(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
 address BKCorder
@@ -196,15 +197,6 @@ comment "Save a BAT to storage, if it was loaded and dirty.
         Returns whether IO was necessary.  Please realize that 
 	calling this function violates the atomic commit protocol!!";
 
-
-command load(name:str) :bat[:oid,:any_1] 
-address BKCload
-comment "Load a particular BAT from disk";
-
-command unload(name:str) :bit 
-address BKCunload
-comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
-        Returns whether the unload indeed happened. ";
 
 command setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash
