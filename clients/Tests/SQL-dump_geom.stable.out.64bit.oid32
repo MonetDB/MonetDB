@@ -102,8 +102,6 @@ SYSTEM FUNCTION  sys.bbp
 SYSTEM FUNCTION  sys.boundary
 SYSTEM FUNCTION  sys.broadcast
 SYSTEM FUNCTION  sys.buffer
-SYSTEM FUNCTION  sys.cluster1
-SYSTEM FUNCTION  sys.cluster2
 SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION  sys.contains
 SYSTEM FUNCTION  sys.convexhull
@@ -477,34 +475,6 @@ create function boundary(g geometry) returns geometry external name geom."Bounda
 create function "broadcast" (p inet) returns inet 
 	external name inet."broadcast";
 create function buffer(a geometry, distance float) returns geometry external name geom."Buffer";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
---
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
-
--- Clustering a relational table should be done with care.
--- For, the oid's are used in join-indices.
-
--- Clustering of tables may improve IO performance
--- The foreign key constraints should be dropped before
--- and re-established after the cluster operation.
-
-create procedure cluster1(sys string, tab string)
-	external name sql.cluster1;
-create procedure cluster2(sys string, tab string)
-	external name sql.cluster2;
 -- The predicted storage footprint of the complete database
 -- determines the amount of diskspace needed for persistent storage
 -- and the upperbound when all possible index structures are created.
@@ -7288,7 +7258,7 @@ CREATE TABLE "sys"."schemas" (
 COPY 3 RECORDS INTO "sys"."schemas" FROM stdin USING DELIMITERS '\t','\n','"';
 2000	"sys"	2	3	true
 2106	"tmp"	2	3	true
-6284	"json"	3	3	true
+6276	"json"	3	3	true
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."sequences" (
@@ -8458,53 +8428,53 @@ COPY 1334 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 5526
 5530
 5534
-5538
-5542
-5547
-5552
-5557
-5562
-5567
-5572
-5577
-5582
-5587
-5592
-5597
-5602
-5607
-5612
-5617
-5622
-5627
-5631
-5647
-5650
-5654
-5657
-5661
-5664
-5671
-5676
-5682
-5688
-5693
+5539
+5544
+5549
+5554
+5559
+5564
+5569
+5574
+5579
+5584
+5589
+5594
+5599
+5604
+5609
+5614
+5619
+5623
+5639
+5642
+5646
+5649
+5653
+5656
+5663
+5668
+5674
+5680
+5685
+5690
+5694
 5698
 5702
 5706
-5710
-5714
-5717
+5709
+5719
 5727
-5735
-5749
-5753
-5773
-5776
-5779
-5782
-5785
-5788
+5741
+5745
+5765
+5768
+5771
+5774
+5777
+5780
+5783
+5787
 5791
 5795
 5799
@@ -8555,70 +8525,70 @@ COPY 1334 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 5979
 5983
 5987
-5991
-5995
-6000
-6005
-6010
-6015
-6020
-6025
-6030
-6035
-6040
-6045
-6050
-6055
-6060
-6065
-6070
-6075
-6080
-6098
-6102
-6107
-6112
-6117
-6122
-6127
-6132
-6137
-6142
-6147
+5992
+5997
+6002
+6007
+6012
+6017
+6022
+6027
+6032
+6037
+6042
+6047
+6052
+6057
+6062
+6067
+6072
+6090
+6094
+6099
+6104
+6109
+6114
+6119
+6124
+6129
+6134
+6139
+6144
+6148
 6152
 6156
-6160
-6164
+6161
+6165
 6169
 6173
 6177
 6181
 6185
 6189
-6193
-6197
-6202
-6207
-6212
-6217
-6222
-6227
-6232
-6237
+6194
+6199
+6204
+6209
+6214
+6219
+6224
+6229
+6235
+6239
 6243
-6247
-6251
-6256
-6261
-6265
-6270
-6275
-6280
-6287
-6292
-6297
-6302
-6307
+6248
+6253
+6257
+6262
+6267
+6272
+6279
+6284
+6289
+6294
+6299
+6304
+6308
 6312
 6316
 6320
@@ -8727,21 +8697,21 @@ COPY 44 RECORDS INTO "sys"."types" FROM stdin USING DELIMITERS '\t','\n','"';
 26	"sqlblob"	"blob"	0	0	0	5	0
 5272	"url"	"url"	0	0	0	14	2000
 5352	"inet"	"inet"	0	0	0	14	2000
-6084	"wkb"	"point"	0	0	0	14	2000
-6085	"wkb"	"curve"	0	0	0	14	2000
-6086	"wkb"	"linestring"	0	0	0	14	2000
-6087	"wkb"	"surface"	0	0	0	14	2000
-6088	"wkb"	"polygon"	0	0	0	14	2000
-6089	"wkb"	"multipoint"	0	0	0	14	2000
-6090	"wkb"	"multicurve"	0	0	0	14	2000
-6091	"wkb"	"multilinestring"	0	0	0	14	2000
-6092	"wkb"	"multisurface"	0	0	0	14	2000
-6093	"wkb"	"multipolygon"	0	0	0	14	2000
-6094	"wkb"	"geometry"	0	0	0	14	2000
-6095	"wkb"	"geomcollection"	0	0	0	14	2000
-6096	"mbr"	"mbr"	0	0	0	14	2000
-6285	"json"	"json"	0	0	0	14	2000
-6383	"uuid"	"uuid"	0	0	0	14	2000
+6076	"wkb"	"point"	0	0	0	14	2000
+6077	"wkb"	"curve"	0	0	0	14	2000
+6078	"wkb"	"linestring"	0	0	0	14	2000
+6079	"wkb"	"surface"	0	0	0	14	2000
+6080	"wkb"	"polygon"	0	0	0	14	2000
+6081	"wkb"	"multipoint"	0	0	0	14	2000
+6082	"wkb"	"multicurve"	0	0	0	14	2000
+6083	"wkb"	"multilinestring"	0	0	0	14	2000
+6084	"wkb"	"multisurface"	0	0	0	14	2000
+6085	"wkb"	"multipolygon"	0	0	0	14	2000
+6086	"wkb"	"geometry"	0	0	0	14	2000
+6087	"wkb"	"geomcollection"	0	0	0	14	2000
+6088	"mbr"	"mbr"	0	0	0	14	2000
+6277	"json"	"json"	0	0	0	14	2000
+6375	"uuid"	"uuid"	0	0	0	14	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."user_role" (

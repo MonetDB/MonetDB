@@ -40315,10 +40315,6 @@ command bat.info(b:bat[:oid,:any_1]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str])
 address BKCinfo;
 comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. 
 
-command bat.load(name:str):bat[:oid,:any_1] 
-address BKCload;
-comment Load a particular BAT from disk
-
 command bat.mergecand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] 
 address BKCmergecand;
 comment Merge two candidate lists into one
@@ -40382,19 +40378,19 @@ address BKCreuseBAT;
 comment Shuffle the values around to restore a dense representation of buns.
 
 command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
-address BKCreplace_bat_force;
+address BKCbat_inplace_force;
 comment Perform replace for all BUNs of the second BAT into the first.
 
 command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCreplace_bat;
+address BKCbat_inplace;
 comment Perform replace for all BUNs of the second BAT into the first.
 
 command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
-address BKCreplace_bun_force;
+address BKCbun_inplace_force;
 comment Replace the tail value of one BUN that has some head value.
 
 command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
-address BKCreplace_bun;
+address BKCbun_inplace;
 comment Replace the tail value of one BUN that has some head value.
 
 command bat.reverse(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] 
@@ -40450,10 +40446,6 @@ comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-on
 command bat.setKey(b:bat[:oid,:any_1],mode:bit):bat[:oid,:any_1] 
 address BKCsetkey;
 comment Sets the 'key' property of the tail column to 'mode'. In 'key' mode,         the kernel will silently block insertions that cause a duplicate         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 		function does not automatically eliminate duplicates. 
-
-command bat.unload(name:str):bit 
-address BKCunload;
-comment Swapout a BAT to disk. Transient BATs can also be swapped out.             Returns whether the unload indeed happened. 
 
 pattern bbp.bind(name:str):bat[:oid,:any_2] 
 address CMDbbpbind;
@@ -48445,70 +48437,10 @@ command calc.xml(src:xml):xml
 address XMLxml2xml;
 command calc.xml(src:str):xml 
 address XMLstr2xml;
-pattern cluster.column(m:bat[:oid,:oid],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLUSTER_column;
-comment Reorder tail of the BAT using the cluster map
-
-command cluster.key(b:bat[:oid,:any_1]):bat[:oid,:oid] 
-address CLUSTER_key;
-comment Create the hash key list
-
-command cluster.map(psum:bat[:oid,:wrd],cluster:bat[:oid,:bte],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLS_map2;
-comment Reorder tail of bat b, using a cluster prefix sum and map. In case themap is sorted with a non dense head we assume no remapping is needed
-
-command cluster.map(cluster:bat[:oid,:wrd],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLS_map;
-comment Reorder tail of bat b, using a cluster map
-
-command cluster.map(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CLUSTER_map;
-comment Recluster a hash key table and produce a re-allocation map
-
 command cluster.new(b:bat[:oid,:hge],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
 address CLS_create2_hge;
 command cluster.new(b:bat[:oid,:hge],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
 address CLS_create_hge;
-command cluster.new(b:bat[:oid,:dbl],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_dbl;
-command cluster.new(b:bat[:oid,:dbl],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_dbl;
-command cluster.new(b:bat[:oid,:flt],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_flt;
-command cluster.new(b:bat[:oid,:flt],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_flt;
-command cluster.new(b:bat[:oid,:lng],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_lng;
-command cluster.new(b:bat[:oid,:lng],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_lng;
-command cluster.new(b:bat[:oid,:wrd],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_wrd;
-command cluster.new(b:bat[:oid,:wrd],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_wrd;
-command cluster.new(b:bat[:oid,:int],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_int;
-command cluster.new(b:bat[:oid,:int],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_int;
-command cluster.new(b:bat[:oid,:sht],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_sht;
-command cluster.new(b:bat[:oid,:sht],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_sht;
-command cluster.new(b:bat[:oid,:bte],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_bte;
-comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' representation of the map, ie [:oid,:bte], the repeated values are not inserted. The order flag indicates that the clustering is used for ordering, ie partition keys aren't fixed so we can internaly optimize partition sizes.
-
-command cluster.new(b:bat[:oid,:bte],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_bte;
-comment Compute the cluster map for bat b of hash key values. A cluster map is a list of unique (new) BUN positions. The p(refix) sum is a by product which returns the prefix sum of the per masked key frequency.
-
-pattern cluster.split(clustered:bat[:oid,:any_1],psum:bat[:oid,:wrd]):bat[:oid,:any_1]... 
-address CLS_split;
-comment split the clustered bat into parts
-
-pattern cluster.table(b:bat[:oid,:any]...):bat[:oid,:oid] 
-address CLUSTER_table;
-comment Cluster the BATs using the first one as reference.Return the oid map used
-
 pattern clients.addUser(nme:str,pw:str):oid 
 address CLTaddUser;
 comment Allow user with password access to the given scenarios
@@ -50767,31 +50699,6 @@ command mtime.year(d:date):int
 address MTIMEdate_extract_year;
 comment extracts year from date (nonzero	value between -5867411 and +5867411).
 
-function octopus.bind_idxbat(conn:str,sch:str,tab:str,index:str,access:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:oid];
-function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:any_1];
-function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:any_1];
-function octopus.bind_idxbat(conn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind_idxbat(mvc:int,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
-function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
-command octopus.connect(dbname:str):str 
-address OCTOPUSconnect;
-comment Returns the connection to the server dbname.
-
-function octopus.getBid(dbname:str,fn:str,bidtype:sht):lng;
-function octopus.getVariable(conn:str,name:str):any_1;
-command octopus.getVersion():int 
-address OCTOPUSgetVersion;
-comment Returns database version.
-
-pattern octopus.legAdvice(mod:str,fcn:str):int 
-address OPTlegAdvice;
-comment Derive the number of legs to be used for query function
-
-pattern octopus.register(dbname:str,fname:str...):void 
-address OCTOPUSregister;
-comment Register mal function fname at server dbname.
-
 pattern optimizer.aliases(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Alias removal optimizer
@@ -50836,12 +50743,6 @@ comment Handle simple type coercions
 
 pattern optimizer.coercions():str 
 address OPTwrapper;
-pattern optimizer.cluster(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Modify the plan to exploit parallel processing on multiple cores
-
-pattern optimizer.cluster():str 
-address OPTwrapper;
 pattern optimizer.dumpQEP(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Produce an indented tree visualisation
@@ -50872,12 +50773,6 @@ comment Evaluate constant expressions once.
 
 pattern optimizer.evaluate():str 
 address OPTwrapper;
-pattern optimizer.emptySet(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Symbolic evaluation of empty BAT expressions
-
-pattern optimizer.emptySet():str 
-address OPTwrapper;
 pattern optimizer.factorize(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Turn function into a factory
@@ -50889,12 +50784,6 @@ address OPTwrapper;
 comment Sequence generator optimizer
 
 pattern optimizer.generator():str 
-address OPTwrapper;
-pattern optimizer.groups(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Join path constructor
-
-pattern optimizer.groups():str 
 address OPTwrapper;
 pattern optimizer.garbageCollector(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -50966,12 +50855,6 @@ comment OID origin tracker
 
 pattern optimizer.origin():str 
 address OPTwrapper;
-pattern optimizer.octopus(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Map-execute-reduce parallelism optimizer
-
-pattern optimizer.octopus():str 
-address OPTwrapper;
 pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void 
 address OPTorcam;
 comment Inverse macro, find pattern and replace with a function call.
@@ -50989,12 +50872,6 @@ address OPTwrapper;
 comment Push selects down projections
 
 pattern optimizer.pushselect():str 
-address OPTwrapper;
-pattern optimizer.pushranges(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Push constant range selections through the program
-
-pattern optimizer.pushranges():str 
 address OPTwrapper;
 pattern optimizer.prejoin(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -51240,8 +51117,6 @@ pattern rapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address RAPIevalAggr;
 comment grouped aggregates through R
 
-function remote.bind_idxbat{inline}(dbconn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function remote.bind{inline}(dbconn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
 pattern remote.bintype():void 
 address RMTbintype;
 comment print the binary type of this mserver5
@@ -51378,10 +51253,6 @@ command sabaoth.retreatScenario(lang:str):void
 address SABretreatScenario;
 comment Unpublishes the given language as available for this server
 
-pattern scheduler.bidding():bit 
-address OCTOPUSbidding;
-comment Collect bids from workers.
-
 pattern scheduler.costPrediction(a:any):lng 
 address RUNcostPrediction;
 comment A sample cost prediction function
@@ -51398,14 +51269,6 @@ pattern scheduler.isolation():void
 address RUNisolation;
 comment Run a private copy of the MAL program
 
-pattern scheduler.makeSchedule(X_1:int,X_2:lng...):str... 
-address OCTOPUSmakeSchedule;
-comment Make schedule based on bids.
-
-pattern scheduler.octopus(t:int):bit 
-address OCTOPUSrun;
-comment Run the program block in parallel, but don't wait longer than t seconds. Also fix a consistent database version.
-
 pattern scheduler.peers(N:int):void 
 address SRVsetServers;
 comment Simulate N peers
@@ -51417,10 +51280,6 @@ comment Activate the peers matching the pattern and return number found.
 pattern scheduler.pick(arg:any_1...):any_1 
 address RUNpickResult;
 comment Pick up the first result
-
-pattern scheduler.register():bit 
-address OCTOPUSdiscoverRegister;
-comment Discover workers and register tentacles.
 
 pattern scheduler.srvpool():int 
 address SRVPOOLscheduler;
@@ -51530,14 +51389,6 @@ comment Bind the 'schema.table.index' BAT with access kind:	0 - base table	1 - i
 pattern sql.bind_idxbat(mvc:int,schema:str,table:str,index:str,access:int):bat[:oid,:any_1] 
 address mvc_bind_idxbat_wrap;
 comment Bind the 'schema.table.index' BAT with access kind:	0 - base table	1 - inserts	2 - updates
-
-pattern sql.cluster2(sch:str,tbl:str):void 
-address SQLcluster2;
-comment Cluster the columns of a table on the (first) primary key
-
-pattern sql.cluster1(sch:str,tbl:str):void 
-address SQLcluster1;
-comment Cluster the columns of a table on the (first) primary key
 
 pattern sql.current_timestamp():timestamp 
 address SQLcurrent_timestamp;
@@ -52456,14 +52307,6 @@ comment open the named tokenizer store, a new one is created if the specified na
 pattern tokenizer.take(i:oid):str 
 address TKNZRtakeOid;
 comment reconstruct and returns the i-th string
-
-pattern trader.makeBids(bidtype:sht,fnname1:str...):lng... 
-address TRADERmakeBids;
-comment Make execution bids for functions octopus.<fnname1>, ...
-
-pattern trader.makeBid(fnname:str,bidtype:sht):lng 
-address TRADERmakeBid;
-comment Make a bid for execution of function octopus.<fnname>
 
 command txtsim.editdistance2(s:str,t:str):int 
 address levenshteinbasic2_impl;
