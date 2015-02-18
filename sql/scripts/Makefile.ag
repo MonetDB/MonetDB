@@ -52,10 +52,3 @@ headers_hge = {
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 39_analytics_hge.sql 40_json_hge.sql
 }
-
-headers_moresql = {
-	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = \
-		cache.sql parts.sql 
-}
