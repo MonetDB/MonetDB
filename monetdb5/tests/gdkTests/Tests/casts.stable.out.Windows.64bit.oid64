@@ -2290,7 +2290,7 @@ exit MALException:str ;
     s := "random string";
     s_str := calc.str(s);
     io.print(s_str);
-end main;
+end user.main;
 # casting to int
 # io.print(0);
 [ 0 ]
