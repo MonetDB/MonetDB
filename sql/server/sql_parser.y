@@ -4905,11 +4905,20 @@ non_reserved_word:
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
 | ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
-| DEFAULT	{ $$ = sa_strdup(SA, "default"); }	/* sloppy: officially reserved */
+| AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
+| AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
+| COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
+| CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
+| DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
+| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }	/* sloppy: officially reserved */
+| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
+| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
+| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
+| SAMPLE	{ $$ = sa_strdup(SA, "sample"); }	/* sloppy: officially reserved */
 | SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
 | STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
-| USER		{ $$ = sa_strdup(SA, "user"); }	/* sloppy: officially reserved */
+| TABLE		{ $$ = sa_strdup(SA, "table"); } 	/* sloppy: officially reserved */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
