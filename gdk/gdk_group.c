@@ -198,24 +198,40 @@
 	)
 
 
+/* If a hash table exists on b we use it.
+ *
+ * The algorithm is simple.  We go through b and for each value we
+ * follow the hash chain starting at the next element after that value
+ * to find one that is equal to the value we're currently looking at.
+ * If we found such a value (including the preexisting group if we're
+ * refining), we add the value to the same group.  If we reach the end
+ * of the chain, we create a new group.
+ *
+ * If b (the original, that is) is a view on another BAT, and this
+ * other BAT has a hash, we use that.  The lo and hi values are the
+ * bounds of the parent BAT that we're considering.
+ *
+ * Note this algorithm depends critically on the fact that our hash
+ * chains go from higher to lower BUNs.
+ */
 #define GRP_use_existing_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b);	\
+		for (r = lo, p = r, q = hi;				\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
-			/* this loop is similar, but not equal, to	\
-			 * HASHloop: the difference is that we only	\
-			 * consider BUNs smaller than the one we're	\
-			 * looking up (p), and that we also consider	\
-			 * the input groups */				\
+			/* this loop is similar, but not equal, to */	\
+			/* HASHloop: the difference is that we only */	\
+			/* consider BUNs smaller than the one we're */	\
+			/* looking up (p), and that we also consider */	\
+			/* the input groups */				\
 			if (grps) {					\
-				for (hb = HASHget(hs, HASH);		\
-				     hb != HASHnil(hs);			\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (hb < p &&			\
-					    grps[hb - r] == grps[p - r] && \
+					assert(hb < p);			\
+					if (grps[hb - r] == grps[p - r] && \
 					    COMP) {			\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp;	\
@@ -228,11 +244,11 @@
 					}				\
 				}					\
 			} else {					\
-				for (hb = HASHget(hs, HASH);		\
-				     hb != HASHnil(hs);			\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (hb < p &&			\
-					    COMP) {			\
+					assert(hb < p);			\
+					if (COMP) {			\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp;	\
 						if (histo)		\
@@ -375,6 +391,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
+	bat parent;
 
 	if (b == NULL || !BAThdense(b)) {
 		GDKerror("BATgroup: b must be dense-headed\n");
@@ -671,7 +688,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(pgrp);
 	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
-		 * track of doled out group ids */
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 256 groups, so the group id
+		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
 		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
 		unsigned char v;
@@ -695,7 +714,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(bgrps);
 	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
-		 * track of doled out group ids */
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 65536 groups, so the group
+		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
 		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
 		unsigned short v;
@@ -717,8 +738,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(sgrps);
-	} else if (b->T->hash) {
-		/* we already have a hash table on b */
+	} else if (b->T->hash ||
+		   (b->batPersistence == PERSISTENT &&
+		    !BATprepareHash(BATmirror(b))) ||
+		   ((parent = VIEWtparent(b)) != 0 &&
+		    BBPdescriptor(-parent)->T->hash)) {
+		BUN lo, hi;
+
+		/* we already have a hash table on b, or b is
+		 * persistent and we could create a hash table, or b
+		 * is a view on a bat that already has a hash table */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -729,6 +758,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
+		if ((parent = VIEWtparent(b)) != 0) {
+			/* b is a view on another bat (b2 for now).
+			 * calculate the bounds [lo, hi) in the parent
+			 * that b uses */
+			BAT *b2 = BBPdescriptor(-parent);
+			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			hi = lo + BATcount(b);
+			b = b2;
+		} else {
+			lo = BUNfirst(b);
+			hi = BUNlast(b);
+		}
 		hs = b->T->hash;
 		gn->tsorted = 1; /* be optimistic */
 
@@ -753,6 +794,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		default:
 			GRP_use_existing_hash_table_any();
+			break;
 		}
 	} else {
 		bit gc = g && (g->tsorted || g->trevsorted);

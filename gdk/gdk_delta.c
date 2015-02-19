@@ -157,21 +157,16 @@ BATundo(BAT *b)
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
 		if (hunfix || tunfix || hatmdel || tatmdel || b->H->hash || b->T->hash) {
+			HASHdestroy(b);
 			for (p = bunfirst; p <= bunlast; p++, i++) {
 				ptr h = BUNhead(bi, p);
 				ptr t = BUNtail(bi, p);
 
-				if (b->H->hash) {
-					HASHdel(b->H->hash, i, h, p < bunlast);
-				}
 				if (hunfix) {
 					(*hunfix) (h);
 				}
 				if (hatmdel) {
 					(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
-				}
-				if (b->T->hash) {
-					HASHdel(b->T->hash, i, t, p < bunlast);
 				}
 				if (tunfix) {
 					(*tunfix) (t);

@@ -52,6 +52,7 @@ BATsubunique(BAT *b, BAT *s)
 	BUN hb;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
+	bat parent;
 
 	BATcheck(b, "BATsubunique");
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
@@ -60,6 +61,9 @@ BATsubunique(BAT *b, BAT *s)
 			/* we can return a slice of the candidate list */
 			oid lo = b->hseqbase;
 			oid hi = lo + BATcount(b);
+			ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: already unique, slice candidates\n",
+					  BATgetId(b), BATcount(b),
+					  BATgetId(s), BATcount(s));
 			b = BATsubselect(s, NULL, &lo, &hi, 1, 0, 0);
 			if (b == NULL)
 				return NULL;
@@ -68,6 +72,8 @@ BATsubunique(BAT *b, BAT *s)
 			return virtualize(bn);
 		}
 		/* we can return all values */
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=NULL): trivial case: already unique, return all\n",
+				  BATgetId(b), BATcount(b));
 		bn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
@@ -81,6 +87,10 @@ BATsubunique(BAT *b, BAT *s)
 
 	if (start == end) {
 		/* trivial: empty result */
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: empty\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
@@ -93,6 +103,10 @@ BATsubunique(BAT *b, BAT *s)
 	if ((b->tsorted && b->trevsorted) ||
 	    (b->ttype == TYPE_void && b->tseqbase == oid_nil)) {
 		/* trivial: all values are the same */
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: all equal\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		bn = BATnew(TYPE_void, TYPE_void, 1, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
@@ -105,6 +119,10 @@ BATsubunique(BAT *b, BAT *s)
 	if (cand && BATcount(b) > 16 * BATcount(s)) {
 		BAT *nb, *r, *nr;
 
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): recurse: few candidates\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		nb = BATproject(s, b);
 		if (nb == NULL)
 			return NULL;
@@ -137,6 +155,10 @@ BATsubunique(BAT *b, BAT *s)
 	if (b->tsorted || b->trevsorted) {
 		const void *prev = NULL;
 
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): (reverse) sorted\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -159,6 +181,10 @@ BATsubunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): byte sized atoms\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
 		seen = GDKzalloc(256 / 16);
 		if (seen == NULL)
@@ -187,6 +213,10 @@ BATsubunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): short sized atoms\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
 		seen = GDKzalloc(65536 / 16);
 		if (seen == NULL)
@@ -212,8 +242,26 @@ BATsubunique(BAT *b, BAT *s)
 		}
 		GDKfree(seen);
 		seen = NULL;
-	} else if (b->T->hash) {
+	} else if (b->T->hash ||
+		   (b->batPersistence == PERSISTENT &&
+		    !BATprepareHash(BATmirror(b))) ||
+		   ((parent = VIEWtparent(b)) != 0 &&
+		    BBPdescriptor(-parent)->T->hash)) {
+		BUN lo;
+
 		/* use existing hash table */
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): use existing hash\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
+		if ((parent = VIEWtparent(b)) != 0) {
+			BAT *b2 = BBPdescriptor(-parent);
+			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			b = b2;
+			bi = bat_iterator(b);
+		} else {
+			lo = BUNfirst(b);
+		}
 		hs = b->T->hash;
 		for (;;) {
 			if (cand) {
@@ -228,11 +276,11 @@ BATsubunique(BAT *b, BAT *s)
 					break;
 			}
 			v = VALUE(i);
-			for (hb = HASHget(hs, HASHprobe(hs, v));
-			     hb != HASHnil(hs);
+			for (hb = HASHgetlink(hs, i + BUNfirst(b));
+			     hb != HASHnil(hs) && hb >= lo;
 			     hb = HASHgetlink(hs, hb)) {
-				if (hb < i + BUNfirst(b) &&
-				    cmp(v, BUNtail(bi, hb)) == 0) {
+				assert(hb < i + BUNfirst(b));
+				if (cmp(v, BUNtail(bi, hb)) == 0) {
 					o = hb - BUNfirst(b) + b->hseqbase;
 					if (cand == NULL ||
 					    SORTfnd(s, &o) != BUN_NONE) {
@@ -252,6 +300,10 @@ BATsubunique(BAT *b, BAT *s)
 		BUN prb;
 		BUN p;
 
+		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): create partial hash\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s ? BATcount(s) : 0);
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
