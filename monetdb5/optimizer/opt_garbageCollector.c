@@ -51,10 +51,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// move SQL query to front
 	p = NULL;
-	for(i = 2; i< limit; i++){
+	for(i = limit; i> 2; i--){
 		if( getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
 			p= mb->stmt[i];
-			p = pushInt(mb,p,mb->stop);
+			p = pushInt(mb,p,i+1);
 			break;
 		}
 	}
