@@ -38,7 +38,6 @@ Ready.
 # loading sql script: 25_debug.sql
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
-# loading sql script: 50_datacell.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 

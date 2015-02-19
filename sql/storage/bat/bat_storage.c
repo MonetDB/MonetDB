@@ -1544,11 +1544,35 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 }
 
 static int
+gtr_update_dbat(sql_dbat *d, int *changes)
+{
+	int ok = LOG_OK;
+	BAT *idb;
+	int dbid = logger_find_bat(bat_logger, d->dname);
+
+	assert(store_nr_active==0);
+	if (d->dbid == dbid)
+		return ok;
+	idb = temp_descriptor(d->dbid);
+	if (BUNlast(idb) > idb->batInserted) {
+		BAT *cdb = temp_descriptor(dbid);
+
+		(*changes)++;
+		append_inserted(cdb, idb);
+		bat_destroy(cdb);
+	}
+	bat_destroy(idb);
+	return ok;
+}
+
+
+static int
 gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 {
 	int ok = LOG_OK;
 	node *n;
 
+	gtr_update_dbat(t->data, tchanges);
 	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 		int changes = 0;
 		sql_column *c = n->data;
@@ -1653,7 +1677,7 @@ gtr_minmax_table(sql_trans *tr, sql_table *t, int *changes)
 	node *n;
 
 	(void)changes;
-	if (t->readonly) {
+	if (t->access > TABLE_WRITABLE) {
 		for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 			sql_column *c = n->data;
 	

@@ -488,7 +488,7 @@ int yydebug=1;
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
-%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
+%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
@@ -527,7 +527,7 @@ int yydebug=1;
 %left <operation> AND
 %left <operation> NOT
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT CONCATSTRING SUBSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION
 %right UMINUS
 %left <operation> '*' 
 %left <operation> '/' '%'
@@ -978,6 +978,11 @@ alter_statement:
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname SET INSERT ONLY
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ WRITE
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -1043,6 +1048,19 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
+ |	opt_column ident SET STORAGE STRING
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  if (!strlen($5))
+	  	append_string(l, NULL);
+	  else
+	  	append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_STORAGE, l); }
+ |	opt_column ident SET STORAGE sqlNULL
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_STORAGE, l); }
  ;
 
 drop_table_element:
@@ -3478,6 +3496,20 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "left_shift_assign")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp RIGHT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "right_shift_assign")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '+' scalar_exp %prec UMINUS 
 			{ $$ = $2; }
  |  '-' scalar_exp %prec UMINUS 
@@ -4872,6 +4904,13 @@ non_reserved_word:
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
+| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
+| DEFAULT	{ $$ = sa_strdup(SA, "default"); }	/* sloppy: officially reserved */
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
+| USER		{ $$ = sa_strdup(SA, "user"); }	/* sloppy: officially reserved */
+
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
 |  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
@@ -4917,6 +4956,7 @@ non_reserved_word:
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 |  TEMP		{ $$ = sa_strdup(SA, "temp"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 ;
 
 name_commalist:

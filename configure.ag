@@ -129,6 +129,7 @@ case "$CC" in
 	9.*)	CC="$CC -no-gcc";;
 	10.*)	CC="$CC -no-gcc";;
 	11.*)	CC="$CC -no-gcc";;
+	15.*)	CC="$CC -no-gcc";;
 	*)	AC_MSG_WARN([icc ($CC) $icc_ver not handled, yet]);;
 	esac
 	;;
@@ -158,20 +159,6 @@ no-auto)
 	disable_monetdb5="(MonetDB5 requires GDK.)"
 	;;
 esac
-
-dft_rdf=no
-AC_ARG_ENABLE(rdf,
-	AS_HELP_STRING([--enable-rdf],
-		[enable support for RDF [experimental/unsupported] (default=no)]),
-	enable_rdf=$enableval,
-	enable_rdf=$dft_rdf)
-
-dft_datacell=no
-AC_ARG_ENABLE(datacell,
-	AS_HELP_STRING([--enable-datacell],
-		[enable datacell stream components [experimental/unsupported] (default=no)]),
-	enable_datacell=$enableval,
-	enable_datacell=$dft_datacell)
 
 dft_fits=auto
 AC_ARG_ENABLE(fits,
@@ -661,7 +648,10 @@ yes-*-*)
 	;;
 -*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
-	LDFLAGS="$LDFLAGS -i_dynamic"
+	case $icc_ver in
+	?.*)	LDFLAGS="$LDFLAGS -i_dynamic";;
+	??.*)	LDFLAGS="$LDFLAGS -shared-intel";;
+	esac
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
@@ -683,6 +673,7 @@ yes-*-*)
 	9.*)	;;
 	10.*)	;;
 	11.*)	;;
+	15.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -700,11 +691,12 @@ yes-*-*)
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
 	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,193,1357"
-	dnl ICC 11 warns about non-pointer conversion from "<type>" to
+	dnl ICC 11 & 15 warn about non-pointer conversion from "<type>" to
 	dnl "<smaller>" may lose significant bits, it does however, also for
 	dnl constants like short s = 1234, which is too much
 	case $icc_ver in
 	11.*)       X_CFLAGS="$X_CFLAGS,2259" ;;
+	15.*)       X_CFLAGS="$X_CFLAGS,2259" ;;
 	esac
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
@@ -1042,6 +1034,10 @@ if test "x$enable_optimize" = xyes; then
 
 	      dnl  We need to use -mp instead of -mp1 as otherwise nextafter() & nextafterf() do not work correctly for 0
 	      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp  -O3 -restrict -unroll                     -axSSE4.2	";; 
+	      dnl  -mp does no longer exist with icc 15; using -mieee-fp, instead.
+	      dnl  adding -axSSE4.2 (or even -axCORE-AVX512) results in errors like
+	      dnl  "error: ODBCFetch has been targeted for automatic cpu dispatch" ...
+	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -xHost -xHOST";; 
 
 	      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 	      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
@@ -2164,21 +2160,6 @@ auto-no)
 esac
 
 
-org_have_raptor=no
-have_raptor=$org_have_raptor
-if test "x$enable_rdf" != xno; then
-	req_raptor_ver='1.4.16'
-	PKG_CHECK_MODULES([raptor], [raptor],
-		[AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have raptor installed])
-		 have_raptor="yes"],
-		[if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi
-		 have_raptor="no"; why_have_raptor="(raptor library not found)"
-		 enable_rdf=no; disable_rdf="(raptor library not found)"])
-fi
-AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
-
-AM_CONDITIONAL(HAVE_DATACELL, test x"$enable_datacell" != xno)
-
 PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
 if test x"$have_curl" = x"yes" ; then
 	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
@@ -2370,45 +2351,6 @@ else
 	why_have_unixodbc="(ODBC disabled)"
 fi
 AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
-
-# mseed, only used by sql
-org_have_mseed="auto"
-have_mseed=$org_have_mseed
-AC_ARG_WITH(mseed,
-    AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
-    [have_mseed="$withval"])
-if test "x$have_mseed" != xno; then
-
-	case "$have_mseed" in
-	auto|yes)
-	    ;;
-	*)
-	    MSEED_CFLAGS="-I$have_mseed/include"
-	    MSEED_LIBS="-L$have_mseed/lib -lmseed"
-	    ;;
-	esac
-
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $MSEED_CFLAGS"
-	LDFLAGS="$LDFLAGS $MSEED_LIBS"
-	AC_CHECK_HEADER(libmseed.h,
-		AC_CHECK_LIB(mseed, msr_init,
-			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library]),
-			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi
-			  have_mseed=no; why_have_mseed="(mseed library not found)" ], "-lm"),
-		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi
-		  have_mseed=no; why_have_mseed="(libmseed.h header not found)" ])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-	if test "x$have_mseed" = "xyes" -o "x$have_mseed" = "xauto"; then
-	    MSEED_CFLAGS=
-	    MSEED_LIBS="-lmseed"
-	fi
-fi
-AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
-AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
-AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # samtools, only used by sql
 org_have_samtools="auto"
@@ -2889,6 +2831,7 @@ AC_CHECK_FUNCS([\
 				backtrace \
 				ctime_r \
 				fabsf \
+				fallocate \
 				fcntl \
 				fpclass \
 				fpclassify \
@@ -2971,109 +2914,6 @@ AC_TRY_LINK([$ac_includes_default], [printf("%s\n", _sys_siglist[0]);], mn_cv_ha
 if test $mn_cv_have__sys_siglist = yes; then
 	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
 fi
-
-dnl     checks for system services
-dnl hwcounters
-org_have_hwcounters=auto
-have_hwcounters=$org_have_hwcounters
-HWCOUNTERS_LIBS=""
-HWCOUNTERS_INCS=""
-AC_ARG_WITH(hwcounters,
-	AS_HELP_STRING([--with-hwcounters=DIR],
-		[hwcounters library is installed in DIR]),
-	have_hwcounters="$withval")
-case "$have_hwcounters" in
-yes|no|auto)
-	;;
-*)
-	HWCOUNTERS_LIBS="-L$withval/lib"
-	HWCOUNTERS_INCS="-I$withval/include"
-	;;
-esac
-if test "x$have_hwcounters" != xno; then
-	case "$host_os-$host" in
-	linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
-	esac
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $HWCOUNTERS_LIBS"
-	have_hwcounters=no
-	why_have_hwcounters="(no supported harwdware counters interface found)"
-	case "$host_os-$host" in
-	linux*-i?86*|linux*-x86_64*)
-		AC_CHECK_HEADERS( libperfctr.h ,
-		 AC_CHECK_LIB( perfctr, vperfctr_open ,
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr"
-			AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-				AC_CHECK_HEADERS( libpperf.h,
-			 AC_CHECK_LIB( pperf, start_counters,
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf"
-					AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
-					have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	 linux*-ia64*)
-		AC_CHECK_HEADERS( perfmon/pfmlib.h ,
-		 AC_CHECK_LIB( pfm, pfm_initialize ,
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm"
-			AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		;;
-	 solaris*)
-		AC_CHECK_HEADERS( libcpc.h ,
-		 AC_CHECK_TYPE( cpc_event_t,
-		  AC_CHECK_LIB( cpc, cpc_access ,
-		   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc"
-			 AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-			 have_hwcounters=yes
-		   ]
-		  )
-		  , , [#include <libcpc.h>]
-		 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-			AC_CHECK_HEADERS( perfmon.h ,
-			 AC_CHECK_LIB( perfmon, clr_pic ,
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon"
-				AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
-				have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	 irix*)
-		AC_CHECK_LIB( perfex, start_counters ,
-		 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex"
-		   have_hwcounters=yes
-		 ]
-		)
-		;;
-	esac
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-
-	if test "x$have_hwcounters" != xyes; then
-		HWCOUNTERS_LIBS=""
-		HWCOUNTERS_INCS=""
-	else
-		CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
-	fi
-fi
-AC_SUBST(HWCOUNTERS_LIBS)
-AC_SUBST(HWCOUNTERS_INCS)
 
 dnl check dependencies (might need more than just SQL)
 if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
@@ -3450,9 +3290,7 @@ for comp in \
 	'fits        ' \
 	'jsonstore   ' \
 	'microhttpd  ' \
-	'rdf         ' \
 	'rintegration' \
-	'datacell    ' \
 	'odbc        ' \
 	'jdbc        ' \
 	'control     ' \
@@ -3481,19 +3319,16 @@ for comp in \
 	'curl         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
-	'hwcounters   ' \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \
 	'libxml2      ' \
-	'mseed        ' \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \
-	'raptor       ' \
 	'readline     ' \
 	'rubygem      ' \
 	'samtools     ' \

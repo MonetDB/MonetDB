@@ -564,10 +564,9 @@ static void resetTomograph(void){
 static lng
 gnuXtics(int withlabels)
 {
-	double scale = 1.0;
 	const char * scalename = "MB";
 	int digits;
-	lng tw, w = lastclktick - starttime;
+	lng scale =1, tw, w = lastclktick - starttime;
 	int i;
 
 	if (w >= 10 * US_DD) {
@@ -610,12 +609,12 @@ gnuXtics(int withlabels)
 		fprintf(gnudata, "set xtics ( \"\" 0.0,");
 	for (i = 1; i * tw < w - 2 * tw / 3; i++){
 		if( withlabels)
-		fprintf(gnudata, "\"%g\" "LLFMT".0,", (double) i * tw / scale, i * tw);
+		fprintf(gnudata, "\"%g\" "LLFMT".0,", ((double) i) * tw / scale, i * tw);
 		else
 		fprintf(gnudata, "\"\" "LLFMT".0,", i * tw);
 	}
 	if( withlabels)
-		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, (double) w / scale, scalename, w);
+		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, ((double) w) / scale, scalename, w);
 	else
 		fprintf(gnudata, "\"\" "LLFMT".0",   w);
 	fprintf(gnudata, ")\n");
@@ -1763,7 +1762,9 @@ parser(char *row)
 int
 main(int argc, char **argv)
 {
-	int i, n, len;
+	int i;
+	ssize_t m;
+	size_t n, len;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
@@ -2005,8 +2006,8 @@ main(int argc, char **argv)
 			fprintf(stderr,"Could not create trace file\n");
 
 		len = 0;
-		while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-			buf[len + n] = 0;
+		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
+			buf[len + m] = 0;
 			if( trace) 
 				fprintf(trace,"%s",buf);
 			response = buf;

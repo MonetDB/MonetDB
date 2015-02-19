@@ -1,8 +1,0 @@
-# propagate the minimum lowerbound
-b := bat.new(:oid,:int);
-s1:= algebra.subselect(b,1,80,true,true,false);
-s2:= algebra.subselect(s1,nil:int,75,true,true,false);
-io.print(s2);
-optimizer.pushranges();
-optimizer.deadcode();
-mdb.List();

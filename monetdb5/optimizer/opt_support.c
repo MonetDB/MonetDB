@@ -143,19 +143,15 @@ struct OPTcatalog {
 	int debug;
 } optcatalog[]= {
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
-{"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
-{"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
 {"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
 {"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
-{"datacell",	0,	0,	0,	DEBUG_OPT_DATACELL},
 {"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
 {"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
 {"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
-{"emptySet",	0,	0,	0,	DEBUG_OPT_EMPTYSET},
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
 {"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
 {"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
@@ -165,15 +161,12 @@ struct OPTcatalog {
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
 {"json",		0,	0,	0,	DEBUG_OPT_JSON},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
-{"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
 {"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
-{"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
 {"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
 {"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
@@ -183,7 +176,6 @@ struct OPTcatalog {
 {"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
-{"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
 {"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
 { 0,	0,	0,	0,	0}
 };
@@ -764,12 +756,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
-	if ( getModuleId(p) == octopusRef){
-		if (getFunctionId(p) == bindRef) return FALSE;
-		if (getFunctionId(p) == bindidxRef) return FALSE;
-		if (getFunctionId(p) == binddbatRef) return FALSE;
-		return TRUE;
-	}
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	if ( getModuleId(p) == recycleRef)
@@ -940,7 +926,7 @@ int isFragmentGroup(InstrPtr p){
 }
 
 /*
- * Some optimizers are interdependent (e.g. mitosis and octopus), which
+ * Some optimizers are interdependent (e.g. mitosis ), which
  * requires inspection of the pipeline attached to a MAL block.
  */
 int

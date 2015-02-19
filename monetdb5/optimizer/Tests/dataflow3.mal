@@ -37,10 +37,10 @@ function user.s1_0{autoCommit=true}():void;
     _57 := remote.get(_84,_87);
     remote.disconnect(_84);
 
-    bat.insert(_17,_54);
-    bat.insert(_17,_55);
-    bat.insert(_17,_56);
-    bat.insert(_17,_57);
+    bat.append(_17,_54);
+    bat.append(_17,_55);
+    bat.append(_17,_56);
+    bat.append(_17,_57);
     io.print(_17);
 
 #COUNT/SUM

@@ -43,8 +43,6 @@
  * head of the plan if the dataflow such permits.
  * If you are not careful, you will end up with
  * the breadth first plan again.
- * This track is abandonded in favor of a combination
- * of octopus and recycler on a single platform.
  *
  * Beware, variables can be assigned a value multiple times.
  * The order this implies should be respected.

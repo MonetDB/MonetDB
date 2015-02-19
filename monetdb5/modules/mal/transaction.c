@@ -18,7 +18,6 @@
  */
 
 /*
- * @f transaction
  * @a M.L. Kersten, P. Boncz
  * @+ Transaction management
  * In the philosophy of Monet, transaction management overhead should only
@@ -28,9 +27,6 @@
  * serious OLTP is being supported.
  * Note, however, the SQL front-end obeys transaction semantics.
  *
- */
-/*
- * @+ Implementation Code
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -52,8 +48,6 @@ transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNsubcommit(bit *ret, bat *bid);
 transaction_export str TRNtrans_prev(bat *ret, bat *bid);
-transaction_export str TRNtrans_alpha(bat *ret, bat *bid);
-transaction_export str TRNtrans_delta(bat *ret, bat *bid);
 
 #include "mal_exception.h"
 str
@@ -160,16 +154,4 @@ TRNtrans_prev(bat *ret, bat *bid)
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-TRNtrans_alpha(bat *ret, bat *bid)
-{
-	return BKCgetAlpha(ret, bid);
-}
-
-str
-TRNtrans_delta(bat *ret, bat *bid)
-{
-	return BKCgetDelta(ret, bid);
 }

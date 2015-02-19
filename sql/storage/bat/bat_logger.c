@@ -26,10 +26,10 @@ logger *bat_logger = NULL;
 static int
 bl_preversion( int oldversion, int newversion)
 {
-#define CATALOG_FEB2013 52001
+#define CATALOG_OCT2014 52100
 
 	(void)newversion;
-	if (oldversion == CATALOG_FEB2013) {
+	if (oldversion == CATALOG_OCT2014) {
 		catalog_version = oldversion;
 		return 0;
 	}
@@ -76,125 +76,42 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
-	if (catalog_version == CATALOG_FEB2013) {
-		/* we need to add the new schemas.system column */
-		BAT *b, *b1, *b2, *b3, *u, *f, *l;
-		BATiter bi, fi, li;
+	if (catalog_version == CATALOG_OCT2014) {
+		/* we need to replace tables.readonly by tables.access column */
+		BAT *b, *b1;
+		BATiter bi;
 		char *s = "sys", n[64];
 		BUN p,q;
 
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
-		if (!b)
-			return;
-		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-		if (!b1)
-			return;
-        	BATseqbase(b1, b->hseqbase);
-		/* only sys and tmp are system schemas */
-		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			bit v = FALSE;
-			char *name = BUNtail(bi, p);
-			if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0)
-				v = TRUE;
-			BUNappend(b1, &v, TRUE);
-		}
-		BATsetaccess(b1, BAT_READ);
-		logger_add_bat(lg, b1, N(n, NULL, s, "schemas_system"));
-		bat_destroy(b);
-		bat_destroy(b1);
+		while(s) {
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_readonly")));
+			if (!b)
+				return;
+			bi = bat_iterator(b);
+			b1 = BATnew(TYPE_void, TYPE_sht, BATcount(b), PERSISTENT);
+			if (!b1)
+				return;
+        		BATseqbase(b1, b->hseqbase);
 
-		/* add args.inout (default to ARG_IN) */
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "args_name")));
-		if (!b)
-			return;
-		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bte, BATcount(b), PERSISTENT);
-		if (!b1)
-			return;
-        	BATseqbase(b1, b->hseqbase);
-		/* default to ARG_IN, names starting with 'res' are ARG_OUT */
-		bi = bat_iterator(b);
-		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			bte v = ARG_IN;
-			char *name = BUNtail(bi, p);
-			if (strncmp(name, "res", 3) == 0)
-				v = ARG_OUT;
-			BUNappend(b1, &v, TRUE);
-		}
-		BATsetaccess(b1, BAT_READ);
-		logger_add_bat(lg, b1, N(n, NULL, s, "args_inout"));
-		bat_destroy(b);
-		bat_destroy(b1);
-
-		/* add functions.vararg/varres */
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_sql")));
-		u = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_type")));
-		f = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_func")));
-		l = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_name")));
-		fi = bat_iterator(f);
-		li = bat_iterator(l);
-
-		if (!b || !u || !f || !l)
-			return;
-		bi = bat_iterator(b);
-		b1 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-		b2 = BATnew(TYPE_void, TYPE_bit, BATcount(b), PERSISTENT);
-		b3 = BATnew(TYPE_void, TYPE_int, BATcount(b), PERSISTENT);
-
-		if (!b1 || !b2 || !b3)
-			return;
-        	BATseqbase(b1, b->hseqbase);
-        	BATseqbase(b2, b->hseqbase);
-        	BATseqbase(b3, b->hseqbase);
-
-		/* default to no variable arguments and results */
-		for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			bit v = FALSE, t = TRUE;
-			int lang, type = F_UNION;
-			char *name = BUNtail(li, p);
-
-			if (strcmp(name, "copyfrom") == 0) {
-				/* var in and out, and union func */
-				void_inplace(u, p, &type, TRUE);
-				BUNappend(b1, &t, TRUE);
-				BUNappend(b2, &t, TRUE);
-
-				lang = 0;
-				BUNappend(b3, &lang, TRUE);
-			} else {
-				BUNappend(b1, &v, TRUE);
-				BUNappend(b2, &v, TRUE);
-
-				/* this should be value of functions_sql + 1*/
-				lang = *(bit*) BUNtloc(bi,p) + 1;
-				BUNappend(b3, &lang, TRUE);
+			bi = bat_iterator(b);
+			for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+				bit ro = *(bit*)BUNtail(bi, p);
+				sht access = 0;
+				if (ro)
+					access = TABLE_READONLY;
+				BUNappend(b1, &access, TRUE);
 			}
-
-			/* beware these will all be drop and recreated in the sql
-			 * upgrade code */
-			name = BUNtail(fi, p);
-			if (strcasestr(name, "RETURNS TABLE") != NULL) 
-				void_inplace(u, p, &type, TRUE);
+			BATsetaccess(b1, BAT_READ);
+			logger_add_bat(lg, b1, N(n, NULL, s, "_tables_access"));
+			/* delete functions.sql */
+			logger_del_bat(lg, b->batCacheid);
+			bat_destroy(b);
+			bat_destroy(b1);
+			if (strcmp(s,"sys")==0)
+				s = "tmp";
+			else
+				s = NULL;
 		}
-		BATsetaccess(b1, BAT_READ);
-		BATsetaccess(b2, BAT_READ);
-		BATsetaccess(b3, BAT_READ);
-
-		logger_add_bat(lg, b1, N(n, NULL, s, "functions_vararg"));
-		logger_add_bat(lg, b2, N(n, NULL, s, "functions_varres"));
-		logger_add_bat(lg, b3, N(n, NULL, s, "functions_language"));
-
-		bat_destroy(b);
-		bat_destroy(u);
-		bat_destroy(l);
-
-		/* delete functions.sql */
-		logger_del_bat(lg, b->batCacheid);
-
-		bat_destroy(b1);
-		bat_destroy(b2);
-		bat_destroy(b3);
 	}
 }
 

@@ -15,7 +15,7 @@
 # Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST HAVE_DATACELL?datacell HAVE_JSONSTORE?rest HAVE_GSL?gsl generator
+SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST HAVE_JSONSTORE?rest HAVE_GSL?gsl generator
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \
@@ -30,7 +30,6 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../gdk \
-		   ../../../monetdb5/extras/rdf \
 		   $(READLINE_INCS)
 
 lib__sql = {
@@ -57,18 +56,17 @@ lib__sql = {
 		sql_cast_impl_up_to_flt.h \
 		sql_cast_impl_up_to_int.h \
 		sql_round.c sql_round_impl.h sql_bat2time.c \
-		sql_fround.c sql_fround_impl.h sql_rdf.c
+		sql_fround.c sql_fround_impl.h
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
 		   ../../common/libsqlcommon \
-		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
  		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
-		   $(openssl_LIBS) $(raptor_LIBS) $(MATH_LIBS)
+		   $(openssl_LIBS) $(MATH_LIBS)
 }
 
 
@@ -109,7 +107,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
-		sql_rank.mal  sql_rdf.mal  sql.mal sql_octopus.mal
+		sql_rank.mal sql.mal 
 }
 
 headers_mal_hge = {
@@ -136,6 +134,6 @@ EXTRA_DIST = 40_sql.mal \
 	41_sql_hge.mal sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal \
 	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 	sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
-	sql_rank.mal  sql_rdf.mal  sql.mal sql_octopus.mal
+	sql_rank.mal sql.mal 
 
 EXTRA_DIST_DIR = Tests

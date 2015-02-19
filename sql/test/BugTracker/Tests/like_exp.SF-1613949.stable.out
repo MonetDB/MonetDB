@@ -26,11 +26,11 @@ Ready.
 
 #select * from tables where name LIKE ('hel%');
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	1,	1 # length
 
-# 19:37:54 >  
-# 19:37:54 >  Done.
-# 19:37:54 >  
+# 11:30:04 >  
+# 11:30:04 >  "Done."
+# 11:30:04 >  
 

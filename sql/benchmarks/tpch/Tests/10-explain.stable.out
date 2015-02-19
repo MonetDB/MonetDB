@@ -61,8 +61,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 624 # length
+% 642 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
+    X_217:void  := querylog.define("explain select\n\tc_custkey,\n\tc_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\tc_acctbal,\n\tn_name,\n\tc_address,\n\tc_phone,\n\tc_comment\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tnation\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate >= date \\'1993-10-01\\'\n\tand o_orderdate < date \\'1993-10-01\\' + interval \\'3\\' month\n\tand l_returnflag = \\'R\\'\n\tand c_nationkey = n_nationkey\ngroup by\n\tc_custkey,\n\tc_name,\n\tc_acctbal,\n\tc_phone,\n\tn_name,\n\tc_address,\n\tc_comment\norder by\n\trevenue desc\nlimit 20;","sequential_pipe");
     X_7 := sql.mvc();
     X_11:bat[:oid,:str]  := sql.bind(X_7,"sys","lineitem","l_returnflag",0);
     X_8:bat[:oid,:oid]  := sql.tid(X_7,"sys","lineitem");
@@ -177,8 +178,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     sql.rsColumn(X_182,"sys.customer","c_comment","varchar",117,0,X_181);
     X_215 := io.stdout();
     sql.exportResult(X_215,X_182);
-end s2_1;
-# querylog.define("explain select\n\tc_custkey,\n\tc_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\tc_acctbal,\n\tn_name,\n\tc_address,\n\tc_phone,\n\tc_comment\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tnation\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate >= date \\'1993-10-01\\'\n\tand o_orderdate < date \\'1993-10-01\\' + interval \\'3\\' month\n\tand l_returnflag = \\'R\\'\n\tand c_nationkey = n_nationkey\ngroup by\n\tc_custkey,\n\tc_name,\n\tc_acctbal,\n\tc_phone,\n\tn_name,\n\tc_address,\n\tc_comment\norder by\n\trevenue desc\nlimit 20;","sequential_pipe")
+end user.s2_1;
 
 # 22:53:27 >  
 # 22:53:27 >  "Done."

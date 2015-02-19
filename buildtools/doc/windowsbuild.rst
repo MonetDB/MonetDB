@@ -856,7 +856,6 @@ possible:
 - ``HAVE_TESTING=1`` - include the testing component;
 - ``HAVE_PYTHON=1`` - include the Python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
-- ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
 - ``HAVE_PERL=1`` - include the Perl component.
 

@@ -16,7 +16,6 @@ tst4602
 tst4630
 tst4700
 tst4701
-tst4820
 
 #qep00 deprecated optimizer
 #qep01 ,,
@@ -39,9 +38,6 @@ reorder00
 #rangePush00 optimizer out of date
 #rangePush01
 
-#emptyset00 Optimizer does not deal with subselects
-#emptyset01 no more kdifference
-
 inline00
 inline01
 inline02
@@ -63,7 +59,6 @@ manifold2
 
 #joinpath calls for new joinpath optimizer
 leftjoinpath
-groups00
 
 ifthencst
 #CXerror1 transaction primitives removed
@@ -79,7 +74,6 @@ GCexample01
 CXexample
 JPexample
 Mexample
-SRexample
 
 dataflow
 dataflow3
