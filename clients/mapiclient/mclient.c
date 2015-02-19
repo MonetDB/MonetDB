@@ -116,7 +116,6 @@ enum formatters {
 	SAMformatter
 };
 static enum formatters formatter = NOformatter;
-char *output = NULL;		/* output format as string */
 char *separator = NULL;		/* column separator for CSV/TAB format */
 int csvheader = 0;		/* include header line in CSV format */
 
@@ -2812,6 +2811,7 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *command = NULL;
 	char *dbname = NULL;
+	char *output = NULL;	/* output format as string */
 	int trace = 0;
 	int dump = 0;
 	int useinserts = 0;
@@ -3149,6 +3149,7 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
+		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
