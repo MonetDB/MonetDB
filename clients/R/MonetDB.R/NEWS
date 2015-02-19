@@ -1,3 +1,9 @@
+0.9.7
+- monetdb.read.csv TODO (thanks, Duncan)
+- dbWriteTable encoding checks  TODO (thanks, Anthony)
+- deprecated nrows parameter to monetdb.read.csv, not neccessary any more because of upgrades to MonetDB
+- added query progress bar (counting MAL statements) for MonetDB releases following Oct2014, enable with options(monetdb.profile=T)
+
 0.9.6
 - Fixed non-ASCII character handling (thanks, Roman!)
 - Fully removed C-based socket code

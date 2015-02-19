@@ -1,36 +1,74 @@
-/*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
- *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
- */
-
-#include <R.h>
-#include <Rdefines.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
 
+#include <R.h>
+#include <Rdefines.h>
+
 typedef enum {
 	INQUOTES, ESCAPED, INTOKEN, INCRAP
-} chrstate;
+} mapi_line_chrstate;
+
+void mapi_line_split(char* line, char** out, size_t ncols) {
+	int cCol = 0;
+	int tokenStart = 2;
+	int endQuote = 0;
+	int curPos;
+
+	int linelen = strlen(line);
+	mapi_line_chrstate state = INCRAP;
+
+	for (curPos = 2; curPos < linelen - 1; curPos++) {
+		char chr = line[curPos];
+
+		switch (state) {
+		case INCRAP:
+			if (chr != '\t' && chr != ',' && chr != ' ') {
+				tokenStart = curPos;
+				if (chr == '"') {
+					state = INQUOTES;
+					tokenStart++;
+				} else {
+					state = INTOKEN;
+				}
+			}
+			break;
+
+		case INTOKEN:
+			if (chr == ',' || curPos == linelen - 2) {
+				int tokenLen = curPos - tokenStart - endQuote;
+				line[tokenStart + tokenLen] = '\0';
+				out[cCol] = &line[tokenStart];
+				assert(cCol < ncols);
+				cCol++;
+				endQuote = 0;
+				state = INCRAP;
+			}
+			break;
+
+		case ESCAPED:
+			state = INQUOTES;
+			break;
+
+		case INQUOTES:
+			if (chr == '"') {
+				state = INTOKEN;
+				endQuote++;
+				break;
+			}
+			if (chr == '\\') {
+				state = ESCAPED;
+				break;
+			}
+			break;
+		}
+	}
+}
 
 char nullstr[] = "NULL";
 
-SEXP mapiSplit(SEXP mapiLinesVector, SEXP numCols) {
-	PROTECT(mapiLinesVector = AS_CHARACTER(mapiLinesVector));
+SEXP mapi_split(SEXP mapiLinesVector, SEXP numCols) {
+	assert(TYPEOF(mapiLinesVector) == CHARSXP);
 
 	int cols = INTEGER_POINTER(AS_INTEGER(numCols))[0];
 	int rows = LENGTH(mapiLinesVector);
@@ -54,105 +92,33 @@ SEXP mapiSplit(SEXP mapiLinesVector, SEXP numCols) {
 	int tokenStart;
 	int curPos;
 	int endQuote;
-
-	int bsize = 1024;
-	char *valPtr = (char*) malloc(bsize * sizeof(char));
-	if (valPtr == NULL) {
-		error("malloc() failed. Are you running out of memory? [%s]\n",
-				strerror(errno));
-		return colVec;
-	}
+	char* elems[cols];
 
 	for (cRow = 0; cRow < rows; cRow++) {
-		const char *val = CHAR(STRING_ELT(mapiLinesVector, cRow));
-		int linelen = LENGTH(STRING_ELT(mapiLinesVector, cRow));
+		const char *rval = CHAR(STRING_ELT(mapiLinesVector, cRow));
+		char *val = strdup(rval);
+		int linelen = strlen(val);
 
 		cCol = 0;
 		tokenStart = 2;
 		curPos = 0;
 		endQuote = 0;
 
-		chrstate state = INCRAP;
+		mapi_line_split(val, elems, cols);
 
-		for (curPos = 2; curPos < linelen - 1; curPos++) {
-			char chr = val[curPos];
-
-			switch (state) {
-			case INCRAP:
-				if (chr != '\t' && chr != ',') {
-					tokenStart = curPos;
-					if (chr == '"') {
-						state = INQUOTES;
-						tokenStart++;
-					} else {
-						state = INTOKEN;
-					}
-				}
-				break;
-			case INTOKEN:
-				if (chr == ',' || curPos == linelen - 2) {
-					// we thing we are at the end of a token, so copy the token from the line and add to result
-
-					// copy from line, extend buffer if required
-					int tokenLen = curPos - tokenStart - endQuote;
-					// check if token fits in buffer, if not, realloc
-					while (tokenLen >= bsize) {
-						bsize *= 2;
-						valPtr = realloc(valPtr, bsize * sizeof(char*));
-						if (valPtr == NULL) {
-							error(
-									"realloc() failed. Are you running out of memory? [%s]\n",
-									strerror(errno));
-							return colVec;
-						}
-					}
-					strncpy(valPtr, val + tokenStart, tokenLen);
-					valPtr[tokenLen] = '\0';
-
-					// get correct column vector from result set and set element
-					if (cCol >= cols) {
-						warning(
-								"Unreadable line from server response (#%d/%d).",
-								cRow, rows);
-						curPos = linelen;
-						continue;
-					}
-					assert(cCol < cols);
-					SEXP colV = VECTOR_ELT(colVec, cCol);
-					if (tokenLen < 1 || strcmp(valPtr, nullstr) == 0) {
-						SET_STRING_ELT(colV, cRow, NA_STRING);
-
-					} else {
-						SET_STRING_ELT(colV, cRow, mkCharLen(valPtr, tokenLen));
-					}
-
-					cCol++;
-					// reset
-					endQuote = 0;
-					state = INCRAP;
-				}
-
-				break;
-
-			case ESCAPED:
-				state = INQUOTES;
-				break;
-			case INQUOTES:
-				if (chr == '"') {
-					state = INTOKEN;
-					endQuote++;
-					break;
-				}
-				if (chr == '\\') {
-					state = ESCAPED;
-					break;
-				}
-				break;
+		for (cCol = 0; cCol < cols; cCol++) {
+			SEXP colV = VECTOR_ELT(colVec, cCol);
+			size_t tokenLen = strlen(elems[cCol]);
+			if (tokenLen < 1 || strcmp(elems[cCol], nullstr) == 0) {
+				SET_STRING_ELT(colV, cRow, NA_STRING);
+			}
+			else {
+				SET_STRING_ELT(colV, cRow, mkCharLen(elems[cCol], tokenLen));
 			}
 		}
+		free(val);
 	}
-	free(valPtr);
 
-	UNPROTECT(2);
+	UNPROTECT(1);
 	return colVec;
 }
