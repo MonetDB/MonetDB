@@ -60,9 +60,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 808 # length
+% 812 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
-    X_231:void  := querylog.define("explain select\n\ts_name,\n\tcount(*) as numwait\nfrom\n\tsupplier,\n\tlineitem l1,\n\torders,\n\tnation\nwhere\n\ts_suppkey = l1.l_suppkey\n\tand o_orderkey = l1.l_orderkey\n\tand o_orderstatus = \\'F\\'\n\tand l1.l_receiptdate > l1.l_commitdate\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l2\n\t\twhere\n\t\t\tl2.l_orderkey = l1.l_orderkey\n\t\t\tand l2.l_suppkey <> l1.l_suppkey\n\t)\n\tand not exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l3\n\t\twhere\n\t\t\tl3.l_orderkey = l1.l_orderkey\n\t\t\tand l3.l_suppkey <> l1.l_suppkey\n\t\t\tand l3.l_receiptdate > l3.l_commitdate\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'SAUDI ARABIA\\'\ngroup by\n\ts_name\norder by\n\tnumwait desc,\n\ts_name\nlimit 100;","sequential_pipe");
+    X_231:void  := querylog.define("explain select\n\ts_name,\n\tcount(*) as numwait\nfrom\n\tsupplier,\n\tlineitem l1,\n\torders,\n\tnation\nwhere\n\ts_suppkey = l1.l_suppkey\n\tand o_orderkey = l1.l_orderkey\n\tand o_orderstatus = \\'F\\'\n\tand l1.l_receiptdate > l1.l_commitdate\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l2\n\t\twhere\n\t\t\tl2.l_orderkey = l1.l_orderkey\n\t\t\tand l2.l_suppkey <> l1.l_suppkey\n\t)\n\tand not exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l3\n\t\twhere\n\t\t\tl3.l_orderkey = l1.l_orderkey\n\t\t\tand l3.l_suppkey <> l1.l_suppkey\n\t\t\tand l3.l_receiptdate > l3.l_commitdate\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'SAUDI ARABIA\\'\ngroup by\n\ts_name\norder by\n\tnumwait desc,\n\ts_name\nlimit 100;","sequential_pipe",130);
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","lineitem");
     X_8:bat[:oid,:date]  := sql.bind(X_4,"sys","lineitem","l_receiptdate",0);

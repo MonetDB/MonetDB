@@ -33,6 +33,7 @@
 #include "mal_debugger.h"
 
 stream *eventstream = 0;
+stream *progressstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
@@ -198,7 +199,12 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	} else 
 	if( start){
 		logadd("\"start\",\t");
-		logadd(LLFMT ",\t", pci->ticks);
+		// determine the Estimated Time of Completion
+		if ( pci->calls){
+			logadd(LLFMT ",\t", pci->totticks/pci->calls);
+		} else{
+			logadd(LLFMT ",\t", pci->ticks);
+		}
 	} else {
 		logadd("\"done \",\t");
 		logadd(LLFMT ",\t", pci->ticks);

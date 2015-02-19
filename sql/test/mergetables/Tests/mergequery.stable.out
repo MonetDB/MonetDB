@@ -88,9 +88,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 127 # length
+% 131 # length
 function user.s13_1{autoCommit=true}(A0:dbl,A1:dbl):void;
-    X_61:void  := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe");
+    X_61:void  := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",196);
 barrier X_295 := language.dataflow();
     X_4 := sql.mvc();
     X_5:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);
@@ -294,9 +294,9 @@ end user.s13_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 149 # length
+% 153 # length
 function user.s14_1{autoCommit=true}(A0:dbl,A1:dbl,A2:dbl,A3:dbl):void;
-    X_64:void  := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe");
+    X_64:void  := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",232);
 barrier X_340 := language.dataflow();
     X_6 := sql.mvc();
     X_7:bat[:oid,:dbl]  := bat.new(nil:oid,nil:dbl);

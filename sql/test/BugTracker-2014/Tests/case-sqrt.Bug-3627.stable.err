@@ -30,6 +30,20 @@ stderr of test 'case-sqrt.Bug-3627` in directory 'sql/test/BugTracker-2014` itse
 # 15:36:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29576" "--port=33717"
 # 15:36:03 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-10895/.s.monetdb.31956
+QUERY = SELECT t0.id
+              ,t0.colint
+              ,t0.sqrt_colint
+          FROM (SELECT id
+                      ,colint
+                      ,CASE WHEN colint < 0
+                            THEN SQRT(-1 * colint)
+                            ELSE SQRT(colint)
+                       END AS sqrt_colint
+                  FROM t1
+               ) t0
+        ;
+
 
 # 15:36:03 >  
 # 15:36:03 >  "Done."

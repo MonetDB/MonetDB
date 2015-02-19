@@ -27,9 +27,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 101 # length
 function user.s3_1{autoCommit=true}(A0:dbl):void;
-    X_26:void  := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe");
+    X_26:void  := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",15);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","sf_2596114");
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
@@ -47,9 +47,9 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
+% 94 # length
 function user.s4_1{autoCommit=true}():void;
-    X_25:void  := querylog.define("explain select x*x from sf_2596114;","sequential_pipe");
+    X_25:void  := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",15);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","sf_2596114");
     X_6:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);

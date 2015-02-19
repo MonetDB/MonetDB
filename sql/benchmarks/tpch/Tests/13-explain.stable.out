@@ -49,9 +49,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 448 # length
+% 451 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
-    X_103:void  := querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe");
+    X_103:void  := querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe",55);
     X_4:bat[:oid,:int]  := bat.new(nil:oid,nil:int);
     X_3 := sql.mvc();
     X_7:bat[:oid,:oid]  := sql.tid(X_3,"sys","customer");
