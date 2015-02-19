@@ -173,6 +173,8 @@ default was found in .monetdb file.
 Specify the output format.
 The possible values are
 .BR sql ,
+.BR expanded ,
+.BR x ,
 .BR csv ,
 .BR tab ,
 .BR raw ,
@@ -186,7 +188,13 @@ is tab-separated values,
 is no special formatting (data is dumped the way the server sends it
 to the client),
 .B sql
-is a pretty format which is meant for human consumption, and
+is a pretty format which is meant for human consumption where columns
+are clearly shown,
+.B expanded
+and
+.B x
+are synonyms and are another pretty format meant for human consumption
+where column values are printed in full and below each other, and
 .B xml
 is a valid (in the XML sense) document.
 In addition to plain \fBcsv\fP, two other forms are possible.
