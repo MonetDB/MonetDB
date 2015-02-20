@@ -153,16 +153,17 @@ void profiler_clearbar() {
 void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	int bs;
 	unsigned short percentage, symbols;
-	percentage = (unsigned short) ceil((1.0 * 
-		state / total) * 100);
-	symbols = PROFILER_BARSYMB*(percentage/100.0);
 
 	profiler_clearbar();
 	profiler_needcleanup = 1;
+
+	percentage = (unsigned short) ceil((1.0 * 
+		state / total) * 100);
+	symbols = PROFILER_BARSYMB*(percentage/100.0);
+	
 	printf("%s ", symbol);
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
-
 	printf(" %3u%% ", percentage);
 	fflush(stdout);
 }
@@ -222,7 +223,7 @@ void *profiler_thread() {
 
 			profiler_msgs_done++;
 
-	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 200) {
+	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 500) {
 	        	profiler_renderbar(profiler_msgs_done, profiler_msgs_expect, profiler_symb_query);
         	}
         	if (profiler_msgs_done >= profiler_msgs_expect) {
