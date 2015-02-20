@@ -7,13 +7,12 @@
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
+#include <math.h>
+#include <stdlib.h>
 
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
-
-#include <R.h>
-#include <Rdefines.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>
@@ -243,13 +242,11 @@ void profiler_arm() {
 	profiler_armed = 1;
 }
 
-SEXP profiler_start_listen() {
-	SEXP port;
-
+int profiler_start() {
 	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if(profiler_socket < 0) {
-	    error("socket error\n");
-	    return R_NilValue;
+	    fprintf(stderr, "socket error\n");
+	    return -1;
 	}
 
 	struct sockaddr_in serv_addr;
@@ -262,16 +259,11 @@ SEXP profiler_start_listen() {
 
 	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 || 
 		getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) < 0) {
-       error("could not bind to process (%d) %s\n", errno, strerror(errno));
-       return R_NilValue;
+      	fprintf(stderr, "could not bind to process (%d) %s\n", errno, strerror(errno));
+      	return -1;
 	}
-	// start backgroud listening thread
-	pthread_create(&profiler_pthread, NULL, profiler_thread, NULL);
 
-	port = NEW_INTEGER(1);
- 	INTEGER_POINTER(port)[0] = ntohs(serv_addr.sin_port);
-
- 	// some nicer characters for UTF-enabled terminals
+	// some nicer characters for UTF-enabled terminals
  	char* ctype = getenv("LC_CTYPE");
  	strupp(ctype);
  	if (strstr(ctype, "UTF-8") != NULL) {
@@ -280,5 +272,8 @@ SEXP profiler_start_listen() {
 		profiler_symb_bfree = "\u2591";
 		profiler_symb_bfull = "\u2588";
  	}
-	return port;
+
+	// start backgroud listening thread
+	pthread_create(&profiler_pthread, NULL, profiler_thread, NULL);
+	return ntohs(serv_addr.sin_port);
 }
