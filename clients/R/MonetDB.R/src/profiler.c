@@ -177,6 +177,9 @@ static void* profiler_thread(void* params) {
 		recvd = read(profiler_socket, buf, sizeof(buf));
 		if (recvd > 0) {
 			buf[recvd] = 0;
+			if (buf[0]== '#') {
+				continue;
+			}
 			mapi_line_split(buf, elems, TRACE_NCOLS);
 			if (strncmp(elems[TRACE_COL_STATEFL], "done", 4) != 0) {
 				continue;
