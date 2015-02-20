@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
+#include "mapisplit.h"
 
 typedef enum {
 	INQUOTES, ESCAPED, INTOKEN, INCRAP
@@ -22,7 +23,7 @@ void mapi_unescape(char* in, char* out) {
 }
 
 void mapi_line_split(char* line, char** out, size_t ncols) {
-	int cCol = 0;
+	size_t cCol = 0;
 	int tokenStart = 2;
 	int endQuote = 0;
 	int curPos;

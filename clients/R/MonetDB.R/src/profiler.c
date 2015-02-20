@@ -22,6 +22,9 @@
 #include <netinet/in.h>
 #endif
 
+#include "mapisplit.h"
+#include "profiler.h"
+
 // trace output format and columns
 #define TRACE_NCOLS 14
 #define TRACE_COL_QUERYID 2
@@ -42,25 +45,14 @@ static char* profiler_symb_trans = "V";
 static char* profiler_symb_bfree = "_";
 static char* profiler_symb_bfull = "#";
 
-int strupp(char *s) {
-    int i;
+static int profiler_strupp(char *s) {
+    size_t i;
     for (i = 0; i < strlen(s); i++)
         s[i] = toupper(s[i]);
     return i;
 }
 
 /* standalone MAL function call parser */
-typedef enum {
-	ASSIGNMENT, FUNCTION, PARAM, QUOTED, ESCAPED
-} mal_statement_state;
-
-typedef struct {
-	char* assignment;
-	char* function;
-	unsigned short nparams;
-	char** params;
-} mal_statement;
-
 void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 	#define TRIM(str) \
 	while (str[0] == ' ' || str[0] == '"') str++; endPos = curPos - 1; \
@@ -117,23 +109,19 @@ void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 				break;
 			}
 			if (chr == '\\') {
-				state = ESCAPED;
+				state = ESCAPEDP;
 				break;
 			}
 			break;
 
-		case ESCAPED:
+		case ESCAPEDP:
 			state = QUOTED;
 			break;
 		}
 	}
 }
 
-// from mapisplit.c, the trace tuple format is similar(*) to the mapi tuple format
-void mapi_line_split(char* line, char** out, size_t ncols);
-void mapi_unescape(char* in, char* out);
-
-unsigned long profiler_tsms() {
+static unsigned long profiler_tsms() {
 	unsigned long ret = 0;
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -167,7 +155,8 @@ void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	fflush(stdout);
 }
 
-void *profiler_thread() {
+static void* profiler_thread(void* params) {
+	params = (void*) params;
 	char buf[BUFSIZ];
 	char* elems[TRACE_NCOLS];
 	// query ids are unlikely to be longer than BUFSIZ
@@ -231,7 +220,6 @@ void *profiler_thread() {
         	}
 		}
 	}
-	return NULL;
 }
 
 void profiler_renderbar_dl(int* state, int* total) {
@@ -265,7 +253,7 @@ int profiler_start() {
 
 	// some nicer characters for UTF-enabled terminals
  	char* ctype = getenv("LC_CTYPE");
- 	strupp(ctype);
+ 	profiler_strupp(ctype);
  	if (strstr(ctype, "UTF-8") != NULL) {
  		profiler_symb_query = "\u27F2";
 		profiler_symb_trans = "\u2193";
@@ -274,6 +262,6 @@ int profiler_start() {
  	}
 
 	// start backgroud listening thread
-	pthread_create(&profiler_pthread, NULL, profiler_thread, NULL);
+	pthread_create(&profiler_pthread, NULL, &profiler_thread, NULL);
 	return ntohs(serv_addr.sin_port);
 }
