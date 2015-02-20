@@ -687,7 +687,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 				data = nullstring;
 			do {
 				edata = utf8skip(data, ~(size_t)0);
-				w = utf8strlen(data, edata);
+				w = (int) utf8strlen(data, edata);
 				if (w > valuew)
 					valuew = w;
 				data = edata;
