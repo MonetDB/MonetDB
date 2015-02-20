@@ -1330,7 +1330,7 @@ str catchKernelException(Client cntxt, str ret)
 			/* trap hidden (GDK) exception */
 			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
 			if (z)
-				sprintf(z, "GDKerror:%s\n", errbuf);
+				sprintf(z, "GDKerror:%s", errbuf);
 		}
 		/* did we eat the error away of not */
 		if (z)
