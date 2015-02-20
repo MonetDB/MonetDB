@@ -120,19 +120,18 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   connenv$deferred <- list()
   connenv$exception <- list()
   
-  conn <- new("MonetDBConnection", socket=socket, connenv=connenv, Id=-1L)
+  conn <- new("MonetDBConnection", socket=socket, connenv=connenv)
   if (getOption("monetdb.sequential", F)) {
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
 
   # enable profiler, we use a MAL connection for this
-  if (getOption("monetdb.profile", F)) {
+  if (getOption("monetdb.profile", T)) {
     msocket <- .mapiConnect(host, port, timeout) 
     .mapiAuthenticate(msocket, dbname, user, password, language="mal")
     .profiler_enable(msocket)
     .mapiDisconnect(msocket);
-    message("Enabled profiler")
   }
   
   return(conn)
@@ -143,7 +142,7 @@ valueClass="MonetDBConnection")
 
 ### MonetDBConnection
 setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
-                                             connenv="environment", fetchSize="integer", Id="integer"))
+                                             connenv="environment"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   envdata <- dbGetQuery(dbObj, "SELECT name, value from sys.env()")
@@ -238,6 +237,9 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   conn@connenv$exception <- list()
   env <- NULL
   if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
+  # make the progress bar wait for querylog.define
+  if (getOption("monetdb.profile", T))  .profiler_arm()
+
   # the actual request
   mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
   resp <- .mapiParseResponse(mresp)
@@ -526,13 +528,15 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   }
   
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
-  if (length(res@env$data) < n) {
+  while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
+                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(min(10000,n-length(res@env$data))))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
+    #print(paste0(length(res@env$data), " of ", info$rows));
+    if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
   # convert tuple string vector into matrix so we can access a single column efficiently
@@ -571,6 +575,8 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   attr(df, "row.names") <- c(NA_integer_, length(df[[1]]))
   class(df) <- "data.frame"
   
+  if (getOption("monetdb.profile", T))  .profiler_clear()
+
   return(df)
 })
 
