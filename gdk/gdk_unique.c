@@ -258,12 +258,14 @@ BATsubunique(BAT *b, BAT *s)
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BBPdescriptor(-parent)->T->hash)) {
 		BUN lo;
+		oid seq;
 
 		/* use existing hash table */
 		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): use existing hash\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
+		seq = b->hseqbase;
 		if ((parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(-parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
@@ -277,7 +279,7 @@ BATsubunique(BAT *b, BAT *s)
 			if (cand) {
 				if (cand == candend)
 					break;
-				i = *cand++ - b->hseqbase;
+				i = *cand++ - seq;
 				if (i >= end)
 					break;
 			} else {
@@ -286,12 +288,12 @@ BATsubunique(BAT *b, BAT *s)
 					break;
 			}
 			v = VALUE(i);
-			for (hb = HASHgetlink(hs, i + BUNfirst(b));
+			for (hb = HASHgetlink(hs, i + lo);
 			     hb != HASHnil(hs) && hb >= lo;
 			     hb = HASHgetlink(hs, hb)) {
-				assert(hb < i + BUNfirst(b));
+				assert(hb < i + lo);
 				if (cmp(v, BUNtail(bi, hb)) == 0) {
-					o = hb - BUNfirst(b) + b->hseqbase;
+					o = hb - lo + seq;
 					if (cand == NULL ||
 					    SORTfnd(s, &o) != BUN_NONE) {
 						/* we've seen this
@@ -301,7 +303,7 @@ BATsubunique(BAT *b, BAT *s)
 				}
 			}
 			if (hb == HASHnil(hs)) {
-				o = i + b->hseqbase;
+				o = i + seq;
 				bunfastapp(bn, &o);
 			}
 		}
