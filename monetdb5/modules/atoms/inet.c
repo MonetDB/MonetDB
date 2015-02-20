@@ -54,7 +54,15 @@ typedef struct _inet {
 	unsigned char filler2;
 	unsigned char isnil;
 } inet;
+#ifdef WORDS_BIGENDIAN
+/* HACK ALERT: once upon a time, lng_nil was used as inet_nil, but on
+ * big endian hardware, the byte that is not zero is on the other end;
+ * luckily, a mask of 0 is pretty useless, so we regard 128.0.0.0/0
+ * also as nil */
+#define in_isnil(i) ((((i)->q1 == 0 && (i)->isnil != 0) || ((i)->q1 == 128 && (i)->isnil == 0 && (i)->filler1 == 0 && (i)->filler2 == 0)) && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0)
+#else
 #define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
+#endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
 #ifdef WIN32
