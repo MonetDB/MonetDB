@@ -77,6 +77,7 @@ static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
+static int beat = 5000;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int capturing=0;
@@ -93,6 +94,7 @@ usageTachograph(void)
     fprintf(stderr, "  -u | --user=<user>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
     fprintf(stderr, "  -o | --output=<webfile>\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
@@ -324,6 +326,7 @@ main(int argc, char **argv)
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "beat", 1, 0, 'b' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
@@ -334,11 +337,14 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:o:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'b':
+			beat = atoi(optarg ? optarg : "5000");
+			break;
 		case 'D':
 			debug = 1;
 			break;
