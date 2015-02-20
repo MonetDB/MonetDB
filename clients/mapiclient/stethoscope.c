@@ -198,9 +198,14 @@ main(int argc, char **argv)
 			   it: if -? or --help, exit with 0, else with -1 */
 			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-				usageStethoscope();
+			usageStethoscope();
 			exit(-1);
 		}
+	}
+
+	if(dbname == NULL){
+		usageStethoscope();
+		exit(-1);
 	}
 
 	if(debug)
