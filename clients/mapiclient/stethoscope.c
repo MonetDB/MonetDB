@@ -38,7 +38,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#include <pthread.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
@@ -121,7 +120,8 @@ stop_disconnect:
 int
 main(int argc, char **argv)
 {
-	int  n, len;
+	ssize_t  n;
+	size_t len;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
@@ -198,9 +198,14 @@ main(int argc, char **argv)
 			   it: if -? or --help, exit with 0, else with -1 */
 			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-				usageStethoscope();
+			usageStethoscope();
 			exit(-1);
 		}
+	}
+
+	if(dbname == NULL){
+		usageStethoscope();
+		exit(-1);
 	}
 
 	if(debug)

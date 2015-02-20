@@ -19,7 +19,6 @@
 
 #include "monetdb_config.h"
 #include "opt_mitosis.h"
-#include "opt_octopus.h"
 #include "mal_interpreter.h"
 #include <gdk_utils.h>
 
@@ -129,35 +128,31 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Experience shows that the pieces should not be too small.
 	 * If we should limit to |threads| is still an open issue.
 	 */
-	if ((i = OPTlegAdviceInternal(mb, stk, p)) > 0)
-		pieces = i;
-	else {
-		r = (wrd) (monet_memory / argsize);
-		/* if data exceeds memory size,
-		 * i.e., (rowcnt*argsize > monet_memory),
-		 * i.e., (rowcnt > monet_memory/argsize = r) */
-		if (rowcnt > r && r / threads > 0) {
-			/* create |pieces| > |threads| partitions such that
-			 * |threads| partitions at a time fit in memory,
-			 * i.e., (threads*(rowcnt/pieces) <= r),
-			 * i.e., (rowcnt/pieces <= r/threads),
-			 * i.e., (pieces => rowcnt/(r/threads))
-			 * (assuming that (r > threads*MINPARTCNT)) */
-			pieces = (int) (rowcnt / (r / threads)) + 1;
-		} else if (rowcnt > MINPARTCNT) {
-		/* exploit parallelism, but ensure minimal partition size to
-		 * limit overhead */
-			pieces = (int) MIN((rowcnt / MINPARTCNT), (wrd) threads);
-		}
-		/* when testing, always aim for full parallelism, but avoid
-		 * empty pieces */
-		FORCEMITODEBUG
-		if (pieces < threads)
-			pieces = (int) MIN((wrd) threads, rowcnt);
-		/* prevent plan explosion */
-		if (pieces > MAXSLICES)
-			pieces = MAXSLICES;
+	r = (wrd) (monet_memory / argsize);
+	/* if data exceeds memory size,
+	 * i.e., (rowcnt*argsize > monet_memory),
+	 * i.e., (rowcnt > monet_memory/argsize = r) */
+	if (rowcnt > r && r / threads > 0) {
+		/* create |pieces| > |threads| partitions such that
+		 * |threads| partitions at a time fit in memory,
+		 * i.e., (threads*(rowcnt/pieces) <= r),
+		 * i.e., (rowcnt/pieces <= r/threads),
+		 * i.e., (pieces => rowcnt/(r/threads))
+		 * (assuming that (r > threads*MINPARTCNT)) */
+		pieces = (int) (rowcnt / (r / threads)) + 1;
+	} else if (rowcnt > MINPARTCNT) {
+	/* exploit parallelism, but ensure minimal partition size to
+	 * limit overhead */
+		pieces = (int) MIN((rowcnt / MINPARTCNT), (wrd) threads);
 	}
+	/* when testing, always aim for full parallelism, but avoid
+	 * empty pieces */
+	FORCEMITODEBUG
+	if (pieces < threads)
+		pieces = (int) MIN((wrd) threads, rowcnt);
+	/* prevent plan explosion */
+	if (pieces > MAXSLICES)
+		pieces = MAXSLICES;
 	/* to enable experimentation we introduce the option to set
 	 * the number of parts required and/or the size of each chunk (in K)
 	 */

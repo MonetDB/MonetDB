@@ -20,7 +20,7 @@ CREATE SEQUENCE sys.vaultid AS int;
 
 CREATE TABLE sys.vault (
 vid 			int PRIMARY KEY,-- Internal key
-kind			string,			-- vault kind (CSV, MSEED, FITS,..)
+kind			string,			-- vault kind (CSV, FITS,..)
 source			string,			-- remote file name for cURL to access
 target			string,			-- file name of source file in vault
 created			timestamp,		-- timestamp upon entering the cache

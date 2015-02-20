@@ -466,6 +466,7 @@ pattern storage()(
 	table:bat[:oid,:str],
 	column:bat[:oid,:str],
 	type:bat[:oid,:str],
+	mode:bat[:oid,:str],
 	location:bat[:oid,:str],
 	count:bat[:oid,:lng],
 	atomwidth:bat[:oid,:int],
@@ -1012,14 +1013,6 @@ pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 
-pattern cluster1(sch:str, tbl:str)
-address SQLcluster1
-comment "Cluster the columns of a table on the (first) primary key";
-
-pattern cluster2(sch:str, tbl:str)
-address SQLcluster2
-comment "Cluster the columns of a table on the (first) primary key";
-
 pattern shrink(sch:str, tbl:str)
 address SQLshrink
 comment "Consolidate the deletion table over all columns using shrinking";
@@ -1101,7 +1094,5 @@ include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;
 include sql_inspect;
-include sql_rdf;
-include sql_octopus;
 
 sql.prelude();

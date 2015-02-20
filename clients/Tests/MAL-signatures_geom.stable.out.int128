@@ -2823,13 +2823,16 @@ command algebra.groupby(gids:bat[:oid,:oid],cnts:bat[:oid,:wrd]):bat[:oid,:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-function algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address ILIKEsubjoin1;
 command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address ILIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
 
-function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
-function algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect4;
+command algebra.ilikesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect1;
 command algebra.ilike(s:str,pat:str):bit 
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
@@ -2844,20 +2847,6 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids 	  from 'left' and 'right' for which there are BUNs in 'left' 	  and 'right' with equal tails
 
-command algebra.join(l:bat[:any_1,:any_2],rl:bat[:any_3,:any_2],rh:bat[:any_3,:any_2],li:bit,hi:bit):bat[:any_1,:any_3] 
-address ALGrangejoin;
-command algebra.kunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGkunion;
-comment Returns the union of two BATs; looking at head-columns only.		Results in all BUNs of 'left' that are  not in 'right', plus	all BUNs of 'right'.  *no* double-elimination is done.
-
-command algebra.kdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGkdiff;
-comment Returns the difference taken over only the *head* columns of two BATs. 		Results in all BUNs of 'left' that are *not* in 'right'. 		It does *not* do double-elimination over the 'left' BUNs. 		If you want this, use:	 'kdifference(left.kunique,right.kunique)' 	or: 'kdifference(left,right).kunique'.
-
-command algebra.kintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
-address ALGsemijoin;
-comment Returns the intersection taken over only the *head* columns of two BATs. 	Results in all BUNs of 'left' that are also in 'right'. 		Does *not* do double- elimination over the 'left' BUNs.		If you want this, use: 'kintersect(kunique(left),kunique(right))' 	or: 'kunique(kintersect(left,right))'.
-
 pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -2866,13 +2855,16 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-function algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]);
+command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
+address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
 address LIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
-function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid];
-function algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid];
+command algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect5;
+command algebra.likesubselect(b:bat[:oid,:str],cand:bat[:oid,:oid],pat:str,esc:str,anti:bit):bat[:oid,:oid] 
+address PCRElikesubselect3;
 command algebra.likesubselect(b:bat[:oid,:str],s:bat[:oid,:oid],pat:str,esc:str,caseignore:bit,anti:bit):bat[:oid,:oid] 
 address PCRElikesubselect2;
 comment Select all head values of the first input BAT for which the	tail value is "like" the given (SQL-style) pattern and for	which the head value occurs in the tail of the second input	BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -2889,9 +2881,9 @@ command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:o
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
 
-command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3],estimate:lng):bat[:any_1,:any_3] 
+command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate:lng):bat[:oid,:any_3] 
 address ALGleftjoinestimate;
-command algebra.leftjoin(left:bat[:any_1,:any_2],right:bat[:any_2,:any_3]):bat[:any_1,:any_3] 
+command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
 address ALGleftjoin;
 command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
 address ALGmark_grp_2;
@@ -3076,9 +3068,9 @@ command algebra.thetasubselect(b:bat[:oid,:any_1],val:any_1,op:str):bat[:oid,:oi
 address ALGthetasubselect1;
 comment Select all head values for which the tail value obeys the relation	value OP VAL.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.tdifference(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
+command algebra.tdifference(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtdifference;
-command algebra.tintersect(left:bat[:any_1,:any_2],right:bat[:any_1,:any]):bat[:any_1,:any_2] 
+command algebra.tintersect(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtintersect;
 command alarm.ctime{unsafe}():str 
 address ALARMctime;
@@ -40161,10 +40153,6 @@ command bat.delete(b:bat[:oid,:any_1],h:oid):bat[:oid,:any_1]
 address BKCdelete;
 comment Delete all BUNs with a certain head value.
 
-command bat.delete(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
-address BKCdelete_bun;
-comment Delete one specific BUN.
-
 command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
@@ -40192,14 +40180,6 @@ comment Returns the current allocation size (in max number of elements) of a BAT
 command bat.getSize(b:bat[:oid,:any_1]):lng 
 address BKCgetSize;
 comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
-
-command bat.getDelta(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCgetDelta;
-comment Obtain the list of BUNs deleted
-
-command bat.getAlpha(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCgetAlpha;
-comment Obtain the list of BUNs added
 
 command bat.imprintsize(b:bat[:oid,:hge]):lng 
 address CMDBATimprintsize;
@@ -40260,42 +40240,6 @@ comment Return whether the column tail values are unique (key).
 command bat.info(b:bat[:oid,:any_1]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) 
 address BKCinfo;
 comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. 
-
-command bat.inplace(o:bat[:oid,:any_1],d:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
-address BKCbat_inplace_force;
-comment inplace replace values on the given locations
-
-command bat.inplace(o:bat[:oid,:any_1],id:oid,t:any_1,force:bit):bat[:oid,:any_1] 
-address BKCbun_inplace_force;
-comment Inplace replace values on the given positions
-
-command bat.inplace(o:bat[:oid,:any_1],d:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCbat_inplace;
-comment Inplace replace values on the given positions
-
-command bat.inplace(o:bat[:oid,:any_1],id:oid,t:any_1):bat[:oid,:any_1] 
-address BKCbun_inplace;
-comment Inplace replace values on the given positions
-
-command bat.insert(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
-address BKCinsert_bat_force;
-comment Insert all BUNs of the second BAT into the first.
-
-command bat.insert(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCinsert_bat;
-comment Insert all BUNs of the second BAT into the first.
-
-command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
-address BKCinsert_bun_force;
-comment Insert one BUN[h,t] in a BAT.
-
-command bat.insert(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
-address BKCinsert_bun;
-comment Insert one BUN[h,t] in a BAT.
-
-command bat.load(name:str):bat[:oid,:any_1] 
-address BKCload;
-comment Load a particular BAT from disk
 
 command bat.mergecand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] 
 address BKCmergecand;
@@ -40360,32 +40304,28 @@ address BKCreuseBAT;
 comment Shuffle the values around to restore a dense representation of buns.
 
 command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
-address BKCreplace_bat_force;
+address BKCbat_inplace_force;
 comment Perform replace for all BUNs of the second BAT into the first.
 
 command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCreplace_bat;
+address BKCbat_inplace;
 comment Perform replace for all BUNs of the second BAT into the first.
 
 command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1,force:bit):bat[:oid,:any_1] 
-address BKCreplace_bun_force;
+address BKCbun_inplace_force;
 comment Replace the tail value of one BUN that has some head value.
 
 command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
-address BKCreplace_bun;
+address BKCbun_inplace;
 comment Replace the tail value of one BUN that has some head value.
 
 command bat.reverse(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] 
 address BKCreverse;
 comment Returns the reverse view of a BAT (head is tail and tail is head).        BEWARE  no copying is involved; input and output refer to the         same object!
 
-command bat.shrinkMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] 
-address BKCshrinkBATmap;
-comment Derive the oid mapping for shrink BAT based on list of to-be-deleted
-
-command bat.shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] 
-address BKCshrinkBAT;
-comment Shrink the BAT based on a list of entries identified as to-be-deleted
+pattern bat.single(val:any_1):bat[:oid,:any_1] 
+address CMDBATsingle;
+comment Create a BAT with a single elemenet
 
 command bat.setImprints(b:bat[:oid,:any_1]):bit 
 address BKCsetImprints;
@@ -40394,22 +40334,6 @@ comment Create an imprints structure on the column
 command bat.setHash(b:bat[:oid,:any_1]):bit 
 address BKCsetHash;
 comment Create a hash structure on the column
-
-command bat.setMemoryMap(b:bat[:oid,:any_1],mode:int):bit 
-address BKCmmap2;
-comment Alias for mmap(b, mode, mode, mode, mode)
-
-command bat.setMemoryMap(b:bat[:oid,:any_1],head_mode:int,tail_mode:int,hheap_mode:int,theap_mode:int):bit 
-address BKCmmap;
-comment For each individual heap, you can change the allocation mode         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:        no change.  Changing a dirty STORE_MEM heap into STORE_MMAP, 	will cause a BAT save (this has to happen before the heap can         be mapped into virtual memory). These modes are persistent. 
-
-command bat.setHot(b:bat[:oid,:any_1]):void 
-address BKCsetHotBAT;
-comment Makes a BAT very hot for the BBP. The chance of being chosen for         swapout is small, afterwards.
-
-command bat.setCold(b:bat[:oid,:any_1]):void 
-address BKCsetColdBAT;
-comment Makes a BAT very cold for the BBP. The chance of being choses         for swapout is big, afterwards.
 
 command bat.save(nme:str):bit 
 address BKCsave;
@@ -40420,10 +40344,6 @@ address BKCsave2;
 command bat.setPersistent(b:bat[:oid,:any_1]):void 
 address BKCsetPersistent;
 comment Make the BAT persistent.
-
-command bat.setPersistent(b:bat[:oid,:any_1],f:bit):void 
-address BKCpersists;
-comment Backward compatibility
 
 command bat.setTransient(b:bat[:oid,:any_1]):void 
 address BKCsetTransient;
@@ -40452,10 +40372,6 @@ comment Try to change the update access priviliges 	to this BAT. Mode:	 r[ead-on
 command bat.setKey(b:bat[:oid,:any_1],mode:bit):bat[:oid,:any_1] 
 address BKCsetkey;
 comment Sets the 'key' property of the tail column to 'mode'. In 'key' mode,         the kernel will silently block insertions that cause a duplicate         entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 		function does not automatically eliminate duplicates. 
-
-command bat.unload(name:str):bit 
-address BKCunload;
-comment Swapout a BAT to disk. Transient BATs can also be swapped out.             Returns whether the unload indeed happened. 
 
 pattern bbp.bind(name:str):bat[:oid,:any_2] 
 address CMDbbpbind;
@@ -48447,74 +48363,10 @@ command calc.xml(src:xml):xml
 address XMLxml2xml;
 command calc.xml(src:str):xml 
 address XMLstr2xml;
-pattern centipede.vector(b:bat[:oid,:any_1]) (X_2:oid,X_3:oid...) 
-address OPTvectorOid;
-comment Derive a series of slices values based on sampling
-
-pattern cluster.column(m:bat[:oid,:oid],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLUSTER_column;
-comment Reorder tail of the BAT using the cluster map
-
-command cluster.key(b:bat[:oid,:any_1]):bat[:oid,:oid] 
-address CLUSTER_key;
-comment Create the hash key list
-
-command cluster.map(psum:bat[:oid,:wrd],cluster:bat[:oid,:bte],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLS_map2;
-comment Reorder tail of bat b, using a cluster prefix sum and map. In case themap is sorted with a non dense head we assume no remapping is needed
-
-command cluster.map(cluster:bat[:oid,:wrd],b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address CLS_map;
-comment Reorder tail of bat b, using a cluster map
-
-command cluster.map(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address CLUSTER_map;
-comment Recluster a hash key table and produce a re-allocation map
-
 command cluster.new(b:bat[:oid,:hge],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
 address CLS_create2_hge;
 command cluster.new(b:bat[:oid,:hge],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
 address CLS_create_hge;
-command cluster.new(b:bat[:oid,:dbl],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_dbl;
-command cluster.new(b:bat[:oid,:dbl],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_dbl;
-command cluster.new(b:bat[:oid,:flt],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_flt;
-command cluster.new(b:bat[:oid,:flt],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_flt;
-command cluster.new(b:bat[:oid,:lng],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_lng;
-command cluster.new(b:bat[:oid,:lng],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_lng;
-command cluster.new(b:bat[:oid,:wrd],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_wrd;
-command cluster.new(b:bat[:oid,:wrd],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_wrd;
-command cluster.new(b:bat[:oid,:int],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_int;
-command cluster.new(b:bat[:oid,:int],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_int;
-command cluster.new(b:bat[:oid,:sht],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_sht;
-command cluster.new(b:bat[:oid,:sht],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_sht;
-command cluster.new(b:bat[:oid,:bte],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_bte;
-comment Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' representation of the map, ie [:oid,:bte], the repeated values are not inserted. The order flag indicates that the clustering is used for ordering, ie partition keys aren't fixed so we can internaly optimize partition sizes.
-
-command cluster.new(b:bat[:oid,:bte],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_bte;
-comment Compute the cluster map for bat b of hash key values. A cluster map is a list of unique (new) BUN positions. The p(refix) sum is a by product which returns the prefix sum of the per masked key frequency.
-
-pattern cluster.split(clustered:bat[:oid,:any_1],psum:bat[:oid,:wrd]):bat[:oid,:any_1]... 
-address CLS_split;
-comment split the clustered bat into parts
-
-pattern cluster.table(b:bat[:oid,:any]...):bat[:oid,:oid] 
-address CLUSTER_table;
-comment Cluster the BATs using the first one as reference.Return the oid map used
-
 pattern clients.addUser(nme:str,pw:str):oid 
 address CLTaddUser;
 comment Allow user with password access to the given scenarios
@@ -49919,10 +49771,6 @@ command mapi.trace(mid:int,flag:int):void
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
 
-command mapreduce.getCloud(nme:str):bat[:oid,:str] 
-address MRgetCloud;
-comment Localize the elements of a named cloud
-
 pattern manual.completion(pat:str):void 
 address MANUALcompletion;
 comment Produces the wordcompletion table.
@@ -50749,31 +50597,6 @@ command mtime.year(d:date):int
 address MTIMEdate_extract_year;
 comment extracts year from date (nonzero	value between -5867411 and +5867411).
 
-function octopus.bind_idxbat(conn:str,sch:str,tab:str,index:str,access:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:oid];
-function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:any_1];
-function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,part_nr:int,nr_parts:int,version:int):bat[:oid,:any_1];
-function octopus.bind_idxbat(conn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind_idxbat(mvc:int,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function octopus.bind(conn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
-function octopus.bind(mvc:int,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
-command octopus.connect(dbname:str):str 
-address OCTOPUSconnect;
-comment Returns the connection to the server dbname.
-
-function octopus.getBid(dbname:str,fn:str,bidtype:sht):lng;
-function octopus.getVariable(conn:str,name:str):any_1;
-command octopus.getVersion():int 
-address OCTOPUSgetVersion;
-comment Returns database version.
-
-pattern octopus.legAdvice(mod:str,fcn:str):int 
-address OPTlegAdvice;
-comment Derive the number of legs to be used for query function
-
-pattern octopus.register(dbname:str,fname:str...):void 
-address OCTOPUSregister;
-comment Register mal function fname at server dbname.
-
 pattern optimizer.aliases(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Alias removal optimizer
@@ -50818,18 +50641,6 @@ comment Handle simple type coercions
 
 pattern optimizer.coercions():str 
 address OPTwrapper;
-pattern optimizer.cluster(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Modify the plan to exploit parallel processing on multiple cores
-
-pattern optimizer.cluster():str 
-address OPTwrapper;
-pattern optimizer.centipede(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Modify the plan to exploit parallel processing on multiple cores
-
-pattern optimizer.centipede():str 
-address OPTwrapper;
 pattern optimizer.dumpQEP(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Produce an indented tree visualisation
@@ -50854,23 +50665,11 @@ comment Dataflow bracket code injection
 
 pattern optimizer.dataflow():str 
 address OPTwrapper;
-pattern optimizer.datacell(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Datacell expression optimizer
-
-pattern optimizer.datacell():str 
-address OPTwrapper;
 pattern optimizer.evaluate(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Evaluate constant expressions once.
 
 pattern optimizer.evaluate():str 
-address OPTwrapper;
-pattern optimizer.emptySet(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Symbolic evaluation of empty BAT expressions
-
-pattern optimizer.emptySet():str 
 address OPTwrapper;
 pattern optimizer.factorize(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -50883,12 +50682,6 @@ address OPTwrapper;
 comment Sequence generator optimizer
 
 pattern optimizer.generator():str 
-address OPTwrapper;
-pattern optimizer.groups(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Join path constructor
-
-pattern optimizer.groups():str 
 address OPTwrapper;
 pattern optimizer.garbageCollector(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -50946,12 +50739,6 @@ comment Resolve the multi-table definitions
 
 pattern optimizer.mergetable():str 
 address OPTwrapper;
-pattern optimizer.mapreduce(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Modify the plan to exploit parallel processing on multiple systems using map-reduce
-
-pattern optimizer.mapreduce():str 
-address OPTwrapper;
 pattern optimizer.macro(mod:str,fcn:str,targetmod:str,targetfcn:str):void 
 address OPTmacro;
 comment Inline a target function used in a specific function.
@@ -50965,12 +50752,6 @@ address OPTwrapper;
 comment OID origin tracker
 
 pattern optimizer.origin():str 
-address OPTwrapper;
-pattern optimizer.octopus(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Map-execute-reduce parallelism optimizer
-
-pattern optimizer.octopus():str 
 address OPTwrapper;
 pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void 
 address OPTorcam;
@@ -50989,12 +50770,6 @@ address OPTwrapper;
 comment Push selects down projections
 
 pattern optimizer.pushselect():str 
-address OPTwrapper;
-pattern optimizer.pushranges(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Push constant range selections through the program
-
-pattern optimizer.pushranges():str 
 address OPTwrapper;
 pattern optimizer.prejoin(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -51056,12 +50831,6 @@ pattern optimizer.sql_append():str
 address OPTsql_append;
 comment Avoid extra BAT copy with sql.append() whenever possible.
 
-pattern optimizer.strengthReduction(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Move constant expressions out of the loop
-
-pattern optimizer.strengthReduction():str 
-address OPTwrapper;
 pattern optimizer.selcrack(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Selection cracking
@@ -51120,10 +50889,6 @@ command pcre.sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre;
 comment Convert a SQL like pattern with the given escape character into a PCRE pattern.
 
-pattern profiler.activate(name:str...):void 
-address CMDactivateProfiler;
-comment A list of counters to be activated.
-
 command profiler.cpuload(user:lng,nice:lng,sys:lng,idle:lng,iowait:lng) (cycles:int,io:int) 
 address CMDcpuloadPercentage;
 comment Calculate the average cpu load percentage and io waiting times
@@ -51136,14 +50901,6 @@ command profiler.cleanup():void
 address CMDcleanup;
 comment Remove the temporary tables for profiling
 
-pattern profiler.clrFilter(v:any):void 
-address CMDsetFilterVariable;
-comment Stop tracing the variable
-
-pattern profiler.clrFilter(mod:str,fcn:str):void 
-address CMDclrFilterProfiler;
-comment Clear the performance trace bit	of the selected functions.
-
 command profiler.closeStream():void 
 address CMDcloseProfilerStream;
 comment Stop sending the event records
@@ -51151,14 +50908,6 @@ comment Stop sending the event records
 command profiler.dumpTrace():void 
 address CMDdumpTrace;
 comment List the events collected
-
-pattern profiler.deactivate(name:str...):void 
-address CMDdeactivateProfiler;
-comment A list of counters to be deactivated.
-
-pattern profiler.getFootprint():lng 
-address CMDgetFootprint;
-comment Get the amount of memory claimed and reset the flag
 
 command profiler.getSystemTime():lng 
 address CMDgetSystemTime;
@@ -51175,10 +50924,6 @@ comment Obtain the number of physical reads
 command profiler.getDiskReads():lng 
 address CMDgetDiskReads;
 comment Obtain the number of physical reads
-
-pattern profiler.getEvent() (X_1:lng,X_2:lng,X_3:lng) 
-address CMDgetEvent;
-comment Retrieve the performance indicators of the previous instruction
 
 command profiler.getTrace(e:str):bat[:oid,:any_1] 
 address CMDgetTrace;
@@ -51204,49 +50949,29 @@ command profiler.reset():void
 address CMDclearTrace;
 comment Clear the profiler traces
 
+command profiler.setHeartbeat(b:int):void 
+address CMDsetHeartbeat;
+comment Set heart beat performance tracing
+
 pattern profiler.stop():void 
 address CMDstopProfiler;
 comment Stop performance tracing
 
-pattern profiler.start():void 
-address CMDstartProfiler;
-comment Start performance tracing
+command profiler.stethoscope(b:int):void 
+address CMDstethoscope;
+comment Start stethoscope profiling with heart beat
 
-pattern profiler.setEndPoint(mod:str,fcn:str):void 
-address CMDendPointProfiler;
-comment End performance tracing after mod.fcn
-
-pattern profiler.setStartPoint(mod:str,fcn:str):void 
-address CMDstartPointProfiler;
-comment Start performance tracing at mod.fcn
-
-pattern profiler.setFilter(v:any):void 
-address CMDsetFilterVariable;
-comment Generate an event record for	every instruction where v is used.
-
-pattern profiler.setFilter(mod:str,fcn:str):void 
-address CMDsetFilterProfiler;
-comment Generate an event record for all	function calls that satisfy the regular	expression mod.fcn. A wildcard (*) can	be used as name to identify all
-
-pattern profiler.setNone():void 
-address CMDsetNoneProfiler;
-comment Short cut for clrFilter(*,*).
-
-pattern profiler.setAll():void 
-address CMDsetAllProfiler;
-comment Short cut for setFilter(*,*).
-
-command profiler.tomograph():void 
+command profiler.tomograph(b:int):void 
 address CMDtomograph;
-comment No-op operation, merely a signal to the tomograph package
+comment Start tomograph profiler with heart beat
 
-pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int,space:lng):void 
+pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;
 comment Add a new query call to the query log
 
-pattern querylog.define(q:str,pipe:str,usr:str,tick:timestamp):oid 
-address QLOGdefine;
-comment Add a new query call to the query log
+command querylog.define(q:str,pipe:str):void 
+address QLOGdefineNaive;
+comment Noop operation, just marking the query
 
 command querylog.disable():void 
 address QLOGdisable;
@@ -51264,12 +50989,14 @@ command querylog.enable(threshold:int):void
 address QLOGenableThreshold;
 comment Turn on the query logger
 
+pattern querylog.insert(q:str,pipe:str,usr:str,tick:timestamp):void 
+address QLOGinsert;
+comment Add a new query call to the query log
+
 command querylog.isset():int 
 address QLOGissetFcn;
 comment Return status of query logger
 
-function remote.bind_idxbat{inline}(dbconn:str,sch:str,tab:str,index:str,access:int,version:int):bat[:oid,:oid];
-function remote.bind{inline}(dbconn:str,sch:str,tab:str,col:str,kind:int,version:int):bat[:oid,:any_1];
 pattern remote.bintype():void 
 address RMTbintype;
 comment print the binary type of this mserver5
@@ -51406,10 +51133,6 @@ command sabaoth.retreatScenario(lang:str):void
 address SABretreatScenario;
 comment Unpublishes the given language as available for this server
 
-pattern scheduler.bidding():bit 
-address OCTOPUSbidding;
-comment Collect bids from workers.
-
 pattern scheduler.costPrediction(a:any):lng 
 address RUNcostPrediction;
 comment A sample cost prediction function
@@ -51426,14 +51149,6 @@ pattern scheduler.isolation():void
 address RUNisolation;
 comment Run a private copy of the MAL program
 
-pattern scheduler.makeSchedule(X_1:int,X_2:lng...):str... 
-address OCTOPUSmakeSchedule;
-comment Make schedule based on bids.
-
-pattern scheduler.octopus(t:int):bit 
-address OCTOPUSrun;
-comment Run the program block in parallel, but don't wait longer than t seconds. Also fix a consistent database version.
-
 pattern scheduler.peers(N:int):void 
 address SRVsetServers;
 comment Simulate N peers
@@ -51445,10 +51160,6 @@ comment Activate the peers matching the pattern and return number found.
 pattern scheduler.pick(arg:any_1...):any_1 
 address RUNpickResult;
 comment Pick up the first result
-
-pattern scheduler.register():bit 
-address OCTOPUSdiscoverRegister;
-comment Discover workers and register tentacles.
 
 pattern scheduler.srvpool():int 
 address SRVPOOLscheduler;
@@ -51549,14 +51260,6 @@ comment Bind the 'schema.table.index' BAT with access kind:	0 - base table	1 - i
 pattern sql.bind_idxbat(mvc:int,schema:str,table:str,index:str,access:int):bat[:oid,:any_1] 
 address mvc_bind_idxbat_wrap;
 comment Bind the 'schema.table.index' BAT with access kind:	0 - base table	1 - inserts	2 - updates
-
-pattern sql.cluster2(sch:str,tbl:str):void 
-address SQLcluster2;
-comment Cluster the columns of a table on the (first) primary key
-
-pattern sql.cluster1(sch:str,tbl:str):void 
-address SQLcluster1;
-comment Cluster the columns of a table on the (first) primary key
 
 pattern sql.current_timestamp():timestamp 
 address SQLcurrent_timestamp;
@@ -51674,7 +51377,7 @@ command sql.dec_round(v:bte,r:bte):bte
 address bte_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
-pattern sql.dump_trace() (event:bat[:oid,:int],clk:bat[:oid,:str],pc:bat[:oid,:str],thread:bat[:oid,:int],user:bat[:oid,:int],ticks:bat[:oid,:lng],reads:bat[:oid,:lng],writes:bat[:oid,:lng],rbytes:bat[:oid,:lng],wbytes:bat[:oid,:lng],type:bat[:oid,:str],stmt:bat[:oid,:str]) 
+pattern sql.dump_trace() (event:bat[:oid,:int],clk:bat[:oid,:str],pc:bat[:oid,:str],thread:bat[:oid,:int],ticks:bat[:oid,:lng],rssMB:bat[:oid,:lng],vmMB:bat[:oid,:lng],reads:bat[:oid,:lng],writes:bat[:oid,:lng],minflt:bat[:oid,:lng],majflt:bat[:oid,:lng],nvcsw:bat[:oid,:lng],stmt:bat[:oid,:str]) 
 address dump_trace;
 comment dump the trace statistics
 
@@ -51838,21 +51541,17 @@ command sql.querylog_enable():void
 address QLOGenable;
 pattern sql.querylog_empty():void 
 address sql_querylog_empty;
-pattern sql.querylog_calls() (id:bat[:oid,:oid],start:bat[:oid,:timestamp],stop:bat[:oid,:timestamp],arguments:bat[:oid,:str],tuples:bat[:oid,:wrd],exec:bat[:oid,:lng],result:bat[:oid,:lng],cpuload:bat[:oid,:int],iowait:bat[:oid,:int],space:bat[:oid,:lng]) 
+pattern sql.querylog_calls() (id:bat[:oid,:oid],start:bat[:oid,:timestamp],stop:bat[:oid,:timestamp],arguments:bat[:oid,:str],tuples:bat[:oid,:wrd],exec:bat[:oid,:lng],result:bat[:oid,:lng],cpuload:bat[:oid,:int],iowait:bat[:oid,:int]) 
 address sql_querylog_calls;
 comment Obtain the query log calls
 
-pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:bat[:oid,:timestamp],query:bat[:oid,:str],pipe:bat[:oid,:str],mal:bat[:oid,:int],optimize:bat[:oid,:lng]) 
+pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:bat[:oid,:timestamp],query:bat[:oid,:str],pipe:bat[:oid,:str],plan:bat[:oid,:str],mal:bat[:oid,:int],optimize:bat[:oid,:lng]) 
 address sql_querylog_catalog;
 comment Obtain the query log catalog
 
 command sql.round(v:hge,d:int,s:int,r:bte):hge 
 address hge_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
-
-pattern sql.rdfshred(location:str,gname:str,schema:str):void 
-address SQLrdfShred;
-comment Procedure that wraps around the shredder of the rdf module in MAL. Shredding an RDF data file from location results in 7 new tables (6 permutations of SPO and a mapping) in the RDF schema and an entry to table rdf.graph We can then query with SQL queries the RDF triple storeby quering tables gid_spo, gid_pso etc., where gid is looked up in rdf.graph
 
 command sql.rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
 address sql_rank;
@@ -51948,7 +51647,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
 
@@ -51968,7 +51667,8 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
-function sql.single(x:any_2):bat[:oid,:any_2];
+pattern sql.single(x:any_2):bat[:oid,:any_2] 
+address CMDBATsingle;
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 
 address DELTAsub2;
 comment Return a single bat of subselected delta.
@@ -52478,14 +52178,6 @@ comment open the named tokenizer store, a new one is created if the specified na
 pattern tokenizer.take(i:oid):str 
 address TKNZRtakeOid;
 comment reconstruct and returns the i-th string
-
-pattern trader.makeBids(bidtype:sht,fnname1:str...):lng... 
-address TRADERmakeBids;
-comment Make execution bids for functions octopus.<fnname1>, ...
-
-pattern trader.makeBid(fnname:str,bidtype:sht):lng 
-address TRADERmakeBid;
-comment Make a bid for execution of function octopus.<fnname>
 
 command txtsim.editdistance2(s:str,t:str):int 
 address levenshteinbasic2_impl;

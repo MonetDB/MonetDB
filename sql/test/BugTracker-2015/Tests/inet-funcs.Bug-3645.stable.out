@@ -1,0 +1,80 @@
+stdout of test 'inet-funcs.Bug-3645` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 18:30:57 >  
+# 18:30:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36397" "--set" "mapi_usock=/var/tmp/mtest-8361/.s.monetdb.36397" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 18:30:57 >  
+
+# MonetDB 5 server v11.19.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36397/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8361/.s.monetdb.36397
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:30:57 >  
+# 18:30:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8361" "--port=36397"
+# 18:30:57 >  
+
+#SELECT inet'192.168.0.1' << inet'192.168.0.0/24';
+% .L # table_name
+% left_shift_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT inet'192.168.0.1' <<= inet'192.168.0.0/24';
+% .L # table_name
+% left_shift_assign_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT inet'192.168.0.1' >> inet'192.168.0.0/24';
+% .L # table_name
+% right_shift_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT inet'192.168.0.1' >>= inet'192.168.0.0/24';
+% .L # table_name
+% right_shift_assign_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT inet'192.168.0.1' << inet'192.168.0.1/24';
+% .L # table_name
+% left_shift_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT inet'192.168.0.1' <<= inet'192.168.0.1/24';
+% .L # table_name
+% left_shift_assign_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT inet'192.168.0.1' >> inet'192.168.0.1/24';
+% .L # table_name
+% right_shift_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT inet'192.168.0.1' >>= inet'192.168.0.1/24';
+% .L # table_name
+% right_shift_assign_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+
+# 18:30:57 >  
+# 18:30:57 >  "Done."
+# 18:30:57 >  
+

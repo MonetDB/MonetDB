@@ -13,7 +13,7 @@ barrier (h,t):= iterator.new(b);
 	B1:= algebra.fetch(b,h);
 	B2:= algebra.fetch(c,h);
 	t:= B1+B2;
-	bat.insert(d,h,t);
+	bat.append(d,t);
 	redo (h,t):= iterator.next(b);
 catch 	GDKerror:str;
 exit	GDKerror;

@@ -24,7 +24,7 @@ function user.load():bat[:oid,:lng];
 barrier i := 0:lng;
     k := calc.+(k,1);
     l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
+    bat.append(b,l);
     redo i := iterator.next(1:lng,1000000:lng);
 exit i;
     mdb.setDebug(dbgmsk_restore);

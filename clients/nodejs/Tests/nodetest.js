@@ -87,8 +87,20 @@ conn.query('SELECT id from tables where name=? and type=? and readonly=?',
 	['connections', 0, false], function(err, res) {
 		assert.equal(null, err);
 		assert(res.rows > 0);
-
 }); 
+
+/* Try the log callback functionality */
+var nr_log_callbacks = 0;
+conn.log_callback = function(message, error, result) {
+	assert(message); // message must contain something
+	++nr_log_callbacks;
+}
+conn.query('SELECT id FROM tables WHERE name=? AND type=? AND readonly=?',
+	['connections', 0, false], function(err, res) {
+		assert.equal(null, err);
+		assert(nr_log_callbacks > 0);
+		conn.log_callback = null;	
+});
 
 /* some quoting fun, jesus */
 conn.query("SELECT '\\\\asdf','\"', '\\\"', '\\\\\"', '\\''", function(err, res) {

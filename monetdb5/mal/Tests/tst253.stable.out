@@ -21,8 +21,8 @@ stdout of test 'tst253` in directory 'monetdb5/mal` itself:
 function user.main():void;
 # testing void bats 
     b := bat.new(:oid,:str);
-    bat.insert(b,nil:oid,"hello");
-    bat.insert(b,nil:oid,"world");
+    bat.append(b,"hello");
+    bat.append(b,"world");
     io.print(b);
 #materialize header 
     c := bat.reverse(b);
@@ -34,14 +34,14 @@ end user.main;
 # h	t  # name
 # oid	str  # type
 #--------------------------#
-[ nil,	"hello"  ]
-[ nil,	"world"  ]
+[ 0@0,	"hello"  ]
+[ 1@0,	"world"  ]
 #--------------------------#
 # t	h  # name
 # str	oid  # type
 #--------------------------#
-[ "hello",	nil  ]
-[ "world",	nil  ]
+[ "hello",	0@0  ]
+[ "world",	1@0  ]
 #--------------------------#
 # h	t  # name
 # str	void  # type

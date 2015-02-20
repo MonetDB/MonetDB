@@ -31,31 +31,6 @@ pattern optimizer.aliases(mod:str, fcn:str):str
 address OPTwrapper
 comment "Alias removal optimizer";
 
-#opt_centipede.mal
-module centipede;
-pattern optimizer.centipede():str
-address OPTwrapper;
-pattern optimizer.centipede(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple cores";
-
-# command centipede.materialize(b:bat[:oid,:any_2], low:any_2, high:any_2) :bat[:oid,:any_2]
-# address OPTcentipedeMaterialize
-# comment "Implement the centipede partition operation. Throw an exception if the partition was empty,
-# because then the subquery should produce a NIL ";
-
-pattern centipede.vector(b:bat[:oid,:any_1]) (:oid,:oid...)
-address OPTvectorOid
-comment "Derive a series of slices values based on sampling";
-
-#opt_cluster
-
-pattern optimizer.cluster():str
-address OPTwrapper;
-pattern optimizer.cluster(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple cores";
-
 #opt_coercions.mal
 
 pattern optimizer.coercions():str
@@ -95,14 +70,6 @@ pattern optimizer.crackers(mod:str, fcn:str):str
 address OPTwrapper
 comment "Replace algebra select with crackers select";
 
-#opt_datacell.mal
-
-pattern optimizer.datacell():str
-address OPTwrapper;
-pattern optimizer.datacell(mod:str, fcn:str):str
-address OPTwrapper
-comment "Datacell expression optimizer";
-
 #opt_dataflow.mal
 
 pattern optimizer.dataflow():str
@@ -127,14 +94,6 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-#opt_emptySet.mal
-
-pattern optimizer.emptySet():str
-address OPTwrapper;
-pattern optimizer.emptySet(mod:str, fcn:str):str
-address OPTwrapper
-comment "Symbolic evaluation of empty BAT expressions";
-
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str
@@ -158,13 +117,6 @@ address OPTwrapper;
 pattern optimizer.garbageCollector(mod:str, fcn:str):str
 address OPTwrapper
 comment "Garbage collector optimizer";
-
-#opt_groups.mal
-pattern optimizer.groups():str
-address OPTwrapper;
-pattern optimizer.groups(mod:str, fcn:str):str
-address OPTwrapper
-comment "Join path constructor";
 
 #opt_generator.mal
 pattern optimizer.generator():str
@@ -260,20 +212,6 @@ pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void
 address OPTorcam
 comment "Inverse macro, find pattern and replace with a function call.";
 
-#opt_mapreduce.mal
-
-pattern optimizer.mapreduce():str
-address OPTwrapper;
-pattern optimizer.mapreduce(mod:str, fcn:str):str
-address OPTwrapper
-comment "Modify the plan to exploit parallel processing on multiple systems using map-reduce";
-
-#module mapreduce;
-module mapreduce;
-command getCloud(nme:str):bat[:oid,:str]
-address MRgetCloud
-comment "Localize the elements of a named cloud";
-
 #opt_mergetable.mal
 
 pattern optimizer.mergetable():str
@@ -313,18 +251,6 @@ pattern optimizer.json(mod:str, fcn:str):str
 address OPTwrapper
 comment "Unroll the mat.pack operation";
 
-#opt_octopus.mal
-module octopus;
-pattern optimizer.octopus():str
-address OPTwrapper;
-pattern optimizer.octopus(mod:str, fcn:str):str
-address OPTwrapper
-comment "Map-execute-reduce parallelism optimizer";
-
-pattern legAdvice(mod:str, fcn:str):int
-address OPTlegAdvice
-comment "Derive the number of legs to be used for query function";
-
 #opt_origin
 pattern optimizer.origin():str
 address OPTwrapper;
@@ -349,15 +275,6 @@ comment "Dead code optimizer";
 # command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1])(c:bat[:oid,:oid],d:bat[:oid,:any_1])
 # address ALGprejoin
 # comment "Recluster the table to reduce random access behavior.";
-
-
-#opt_pushranges.mal
-
-pattern optimizer.pushranges():str
-address OPTwrapper;
-pattern optimizer.pushranges(mod:str, fcn:str):str
-address OPTwrapper
-comment "Push constant range selections through the program";
 
 #opt_qep.mal
 
@@ -422,14 +339,6 @@ address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
 
-#opt_strengthReduction.mal
-
-pattern optimizer.strengthReduction():str
-address OPTwrapper;
-pattern optimizer.strengthReduction(mod:str, fcn:str):str
-address OPTwrapper
-comment "Move constant expressions out of the loop";
-
 #opt_support.mal
 
 command mdb.traceOptimizer(flg:str)
@@ -449,7 +358,7 @@ comment "Collect trace of a specific operation";
 # address OPTtraceCall
 # comment "Dump the previous instruction to a temporary file";
 
-#opt_pushranges.mal
+#opt_pushselect.mal
 
 pattern optimizer.pushselect():str
 address OPTwrapper;

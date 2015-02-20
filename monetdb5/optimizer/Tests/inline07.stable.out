@@ -18,7 +18,7 @@ function user.foo{inline}(a:int,b:bat[:oid,:int]):dbl;
 end user.foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
-    bat.insert(b,0@0,1);
+    bat.append(b,1);
     z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);
 end user.qry;
 function user.main():void;
@@ -27,10 +27,10 @@ function user.main():void;
 end user.main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    X_13 := aggr.sum(b);                #  3 _13:dbl := CMDBATsum(b:bat[:oid,:int]) {G}
-    X_14 := batcalc.+(b,X_13);          #  4 _14:bat[:oid,:dbl] := CMDbatADDsignal(b:bat[:oid,:int], _13:dbl) {G}
-    z:bat[:oid,:dbl] {inline} := X_14;  #  5 z:bat[:oid,:dbl] := _14:bat[:oid,:dbl] {G}
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    X_12 := aggr.sum(b);                #  3 _12:dbl := CMDBATsum(b:bat[:oid,:int]) {G}
+    X_13 := batcalc.+(b,X_12);          #  4 _13:bat[:oid,:dbl] := CMDbatADDsignal(b:bat[:oid,:int], _12:dbl) {G}
+    z:bat[:oid,:dbl] {inline} := X_13;  #  5 z:bat[:oid,:dbl] := _13:bat[:oid,:dbl] {G}
 end user.qry;                           #  6  
 
 # 18:00:44 >  

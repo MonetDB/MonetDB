@@ -275,6 +275,7 @@ scanner_init_keywords(void)
 	keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
+	keywords_insert("STORAGE", STORAGE);
 
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
@@ -895,6 +896,10 @@ int scanner_symbol(mvc * c, int cur)
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
+			cur = scanner_getc(lc);
+			if (cur == '=')
+				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
+			utf8_putchar(lc, cur); 
 			return scanner_token( lc, LEFT_SHIFT);
 		} else {
 			utf8_putchar(lc, cur); 
@@ -904,6 +909,10 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '>') {
+			cur = scanner_getc(lc);
+			if (cur == '=')
+				return scanner_token( lc, RIGHT_SHIFT_ASSIGN);
+			utf8_putchar(lc, cur); 
 			return scanner_token( lc, RIGHT_SHIFT);
 		} else if (cur != '=') {
 			utf8_putchar(lc, cur); 

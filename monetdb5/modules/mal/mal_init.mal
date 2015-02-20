@@ -81,7 +81,6 @@ include manifold;
 include factories;
 include recycle;
 include remote;
-include trader; # experimental
 
 include mat; 	# experimental
 # include histogram; 	# experimental
@@ -97,7 +96,6 @@ include sample;
 include optimizer;
 
 include iterator;
-include cluster;
 include txtsim;
 include tokenizer;
 include zorder;
@@ -108,7 +106,6 @@ include zorder;
 # scheduler components
 include run_isolate;
 include run_memo;
-include run_octopus;
 include srvpool;
 
 include mal_mapi;

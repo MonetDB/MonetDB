@@ -136,22 +136,8 @@ logbat_new(int tt, BUN size, int role)
 }
 
 static int
-log_read_format_old(logger *l, logformat *data)
-{
-	int nr = 0;
-	int ok =  mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->log, &nr) == 1 &&
-		mnstr_readInt(l->log, &data->tid) == 1;
-	data->nr = nr;
-	return ok;
-}
-
-static int
 log_read_format(logger *l, logformat *data)
 {
-	if (l->postfuncp) /* we need to convert from the old logformat, 
-       		             needs to be removed once we released Aug2014 */
-		return log_read_format_old(l, data);
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
 		mnstr_readLng(l->log, &data->nr) == 1 &&
 		mnstr_readInt(l->log, &data->tid) == 1;

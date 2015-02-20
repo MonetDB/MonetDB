@@ -758,7 +758,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && !c->t->readonly &&
+	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -776,7 +776,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 { 
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-	if (isTable(i->t) && !i->t->readonly &&
+	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);

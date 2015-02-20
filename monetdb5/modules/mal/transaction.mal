@@ -44,9 +44,3 @@ comment "Declare a BAT clean without flushing to disk.";
 command prev(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address TRNtrans_prev
 comment "The previous state of this BAT";
-command alpha(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address TRNtrans_alpha
-comment	"List insertions since last commit.";
-command delta(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address TRNtrans_delta
-comment	"List deletions since last commit.";

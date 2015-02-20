@@ -17,7 +17,6 @@ stdout of test 'qgram` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.main():void;
     b := txtsim.str2qgrams("hello world");
     io.print(b);

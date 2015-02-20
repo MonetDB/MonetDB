@@ -59,9 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 322 # length
+% 325 # length
 function user.s3_1{autoCommit=true}():void;
-    X_143:void  := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe");
+    X_143:void  := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",78);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","supplier");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","supplier","s_suppkey",0);

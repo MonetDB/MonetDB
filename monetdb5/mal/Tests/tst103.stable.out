@@ -17,7 +17,6 @@ stdout of test 'tst103` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.f(a:any_1,b:any_2) (u:bat[:oid,:any_1],w:bat[:oid,:any_2]);
     x := bat.new(:oid,:any_1);
     y := bat.new(:oid,:any_2);

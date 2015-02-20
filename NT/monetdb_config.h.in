@@ -130,6 +130,9 @@
 /* Define to 1 if you have the `fabsf' function. */
 #define HAVE_FABSF 1
 
+/* Define to 1 if you have the `fallocate' function. */
+/* #undef HAVE_FALLOCATE */
+
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
 
@@ -354,9 +357,6 @@
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
 
-/* Define if you have the mseed library */
-/* #undef HAVE_MSEED */
-
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
@@ -431,9 +431,6 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
-
-/* Define if you have the raptor library */
-/* #undef HAVE_RAPTOR */
 
 /* Define to 1 if you have the <regex.h> header file. */
 /* #undef HAVE_REGEX_H */
