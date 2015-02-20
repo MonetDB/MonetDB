@@ -166,7 +166,7 @@ progressBarInit(void)
 	fprintf(tachofd," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 	fprintf(tachofd," \"query\":\"%s\",\n",currentquery?currentquery:"");
 	fprintf(tachofd," \"started\": "LLFMT",\n",starttime);
-	fprintf(tachofd," \"duration\":"LLFMT"\n",duration);
+	fprintf(tachofd," \"duration\":"LLFMT",\n",duration);
 	fprintf(tachofd," \"instructions\":%d\n",malsize);
 	fprintf(tachofd,"},\n");
 	fflush(tachofd);
@@ -261,6 +261,7 @@ update(EventRecord *ev)
 		}
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
 		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
@@ -277,6 +278,7 @@ update(EventRecord *ev)
 	if (ev->state == DONE ){
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"done\",\n");
 		fprintf(tachofd,"\"ticks\": "LLFMT",\n",ev->ticks);
