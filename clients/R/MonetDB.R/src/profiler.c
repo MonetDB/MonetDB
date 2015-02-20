@@ -153,7 +153,7 @@ void profiler_clearbar() {
 void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	int bs;
 	unsigned short percentage, symbols;
-	percentage = (unsigned short) round((1.0 * 
+	percentage = (unsigned short) ceil((1.0 * 
 		state / total) * 100);
 	symbols = PROFILER_BARSYMB*(percentage/100.0);
 
@@ -179,7 +179,7 @@ void *profiler_thread() {
 	size_t profiler_msgs_done = 0;
 
 	unsigned long profiler_querystart;
-	char* stmtbuf = malloc(65507); // maximum size of an IPv6 UDP packet
+	char* stmtbuf = malloc(65507); // maximum size of an IPv4 UDP packet
 
 	mal_statement *stmt = malloc(sizeof(mal_statement));
 	stmt->params = malloc(TRACE_MAL_MAXPARAMS * sizeof(char*));
@@ -207,7 +207,7 @@ void *profiler_thread() {
 
 			if (profiler_armed && strcmp(stmt->function, "querylog.define") == 0) {
 				// the third parameter to querylog.define contains the MAL plan size
-				profiler_msgs_expect = atol(stmt->params[2])- 5; 
+				profiler_msgs_expect = atol(stmt->params[2]) - 2; 
 				strcpy(queryid, thisqueryid);
 				profiler_querystart = profiler_tsms();
 				profiler_msgs_done = 0;
@@ -221,6 +221,7 @@ void *profiler_thread() {
 			}
 
 			profiler_msgs_done++;
+
 	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 200) {
 	        	profiler_renderbar(profiler_msgs_done, profiler_msgs_expect, profiler_symb_query);
         	}
