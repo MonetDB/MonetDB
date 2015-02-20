@@ -72,11 +72,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = pushArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
-	/* size of MAL plan for external progress meter */
-	q = newAssignment(mb);
-	tuples= getArg(q, 0) = newVariable(mb, GDKstrdup("plansize"), TYPE_lng);
-	(void) pushLng(mb, q, limit);
-
 	q = newStmt1(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));

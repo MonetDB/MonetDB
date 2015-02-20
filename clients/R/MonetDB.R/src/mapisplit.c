@@ -9,6 +9,21 @@ typedef enum {
 	INQUOTES, ESCAPED, INTOKEN, INCRAP
 } mapi_line_chrstate;
 
+void mapi_unescape(char* in, char* out) {
+	char escaped = 0;
+	size_t i, o = 0;
+
+	for (i=0; i < strlen(in); i++) {
+		if (!escaped && in[i] == '\\') {
+			escaped = 1;
+			continue;
+		}
+		out[o++] = in[i];
+		escaped = 0;
+	}
+	out[o] = '\0';
+}
+
 void mapi_line_split(char* line, char** out, size_t ncols) {
 	int cCol = 0;
 	int tokenStart = 2;
@@ -89,21 +104,12 @@ SEXP mapi_split(SEXP mapiLinesVector, SEXP numCols) {
 
 	int cRow;
 	int cCol;
-	int tokenStart;
-	int curPos;
-	int endQuote;
 	char* elems[cols];
 
 	for (cRow = 0; cRow < rows; cRow++) {
 		const char *rval = CHAR(STRING_ELT(mapiLinesVector, cRow));
 		char *val = strdup(rval);
-		int linelen = strlen(val);
-
 		cCol = 0;
-		tokenStart = 2;
-		curPos = 0;
-		endQuote = 0;
-
 		mapi_line_split(val, elems, cols);
 
 		for (cCol = 0; cCol < cols; cCol++) {

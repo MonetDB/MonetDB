@@ -108,6 +108,12 @@ Ready.
 % char,	tinyint # type
 % 1,	1 # length
 [ "6",	6	]
+#SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 END;
+% .L # table_name
+% isnull_=_single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
 #SELECT '' AS "Five",
 #  CASE
 #    WHEN i >= 3 THEN i
@@ -269,33 +275,41 @@ Ready.
 % 0,	1,	24,	1,	2 # length
 [ "",	4,	NULL,	2,	-2	]
 [ "",	4,	NULL,	2,	-4	]
+#UPDATE CASE_TBL
+#  SET i = CASE WHEN i >= 3 THEN (- i)
+#                ELSE (2 * i) END;
+[ 4	]
 #SELECT * FROM CASE_TBL;
 % sys.case_tbl,	sys.case_tbl # table_name
 % i,	f # name
 % int,	double # type
-% 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
-[ 4,	NULL	]
+% 2,	24 # length
+[ 2,	10.1	]
+[ 4,	20.2	]
+[ -3,	-30.3	]
+[ -4,	NULL	]
+#UPDATE CASE_TBL
+#  SET i = CASE WHEN i >= 2 THEN (2 * i)
+#                ELSE (3 * i) END;
+[ 4	]
 #SELECT * FROM CASE_TBL;
 % sys.case_tbl,	sys.case_tbl # table_name
 % i,	f # name
 % int,	double # type
-% 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
-[ 4,	NULL	]
+% 3,	24 # length
+[ 4,	10.1	]
+[ 8,	20.2	]
+[ -9,	-30.3	]
+[ -12,	NULL	]
 #SELECT * FROM CASE_TBL;
 % sys.case_tbl,	sys.case_tbl # table_name
 % i,	f # name
 % int,	double # type
-% 1,	24 # length
-[ 1,	10.1	]
-[ 2,	20.2	]
-[ 3,	-30.3	]
-[ 4,	NULL	]
+% 3,	24 # length
+[ 4,	10.1	]
+[ 8,	20.2	]
+[ -9,	-30.3	]
+[ -12,	NULL	]
 #DROP TABLE CASE_TBL;
 #DROP TABLE CASE2_TBL;
 

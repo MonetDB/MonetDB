@@ -113,10 +113,10 @@ enum formatters {
 	TESTformatter,
 	CLEANformatter,
 	TIMERformatter,
-	SAMformatter
+	SAMformatter,
+	EXPANDEDformatter
 };
 static enum formatters formatter = NOformatter;
-char *output = NULL;		/* output format as string */
 char *separator = NULL;		/* column separator for CSV/TAB format */
 int csvheader = 0;		/* include header line in CSV format */
 
@@ -661,6 +661,61 @@ XMLrenderer(MapiHdl hdl)
 	}
 	mnstr_printf(toConsole_raw, "</table>\n");
 	mnstr_flush(toConsole_raw);
+}
+
+static void
+EXPANDEDrenderer(MapiHdl hdl)
+{
+	int i, fields, fieldw, rec = 0;
+
+	fields = mapi_get_field_count(hdl);
+	fieldw = 0;
+	for (i = 0; i < fields; i++) {
+		int w = (int) utf8strlen(mapi_get_name(hdl, i), NULL);
+		if (w > fieldw)
+			fieldw = w;
+	}
+	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+		int valuew = 0, len;
+		++rec;
+		for (i = 0; i < fields; i++) {
+			char *data = mapi_fetch_field(hdl, i);
+			char *edata;
+			int w;
+
+			if (data == NULL)
+				data = nullstring;
+			do {
+				edata = utf8skip(data, ~(size_t)0);
+				w = (int) utf8strlen(data, edata);
+				if (w > valuew)
+					valuew = w;
+				data = edata;
+				if (*data)
+					data++;
+			} while (*edata);
+		}
+		len = mnstr_printf(toConsole, "-[ RECORD %d ]-", rec);
+		while (len++ < fieldw + valuew + 3)
+			mnstr_write(toConsole, "-", 1, 1);
+		mnstr_write(toConsole, "\n", 1, 1);
+		for (i = 0; i < fields; i++) {
+			char *data = mapi_fetch_field(hdl, i);
+			char *edata;
+			const char *name = mapi_get_name(hdl, i);
+			if (data == NULL)
+				data = nullstring;
+			do {
+				edata = utf8skip(data, ~(size_t)0);
+				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data);
+				name = "";
+				data = edata;
+				if (*data)
+					data++;
+			} while (*edata);
+		}
+	}
+	mnstr_flush(toConsole);
 }
 
 static void
@@ -1479,6 +1534,8 @@ setFormatter(const char *s)
 		formatter = TIMERformatter;
 	} else if (strcmp(s, "sam") == 0) {
 		formatter = SAMformatter;
+	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
+		formatter = EXPANDEDformatter;
 	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
 	}
@@ -1702,6 +1759,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
+				break;
+			case EXPANDEDformatter:
+				EXPANDEDrenderer(hdl);
 				break;
 			default:
 				RAWrenderer(hdl);
@@ -2641,6 +2701,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
+						case EXPANDEDformatter:
+							mnstr_printf(toConsole, "expanded\n");
+							break;
 						default:
 							mnstr_printf(toConsole, "none\n");
 							break;
@@ -2812,6 +2875,7 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *command = NULL;
 	char *dbname = NULL;
+	char *output = NULL;	/* output format as string */
 	int trace = 0;
 	int dump = 0;
 	int useinserts = 0;
@@ -3149,6 +3213,7 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
+		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");

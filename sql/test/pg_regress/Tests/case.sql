@@ -59,7 +59,7 @@ SELECT '6' AS "One",
   END AS "Two WHEN with default";
 
 -- Test for cases involving untyped literals in test expression
-SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 COMMIT;
+SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 END;
 
 --
 -- Examples of targets involving tables
@@ -130,21 +130,21 @@ SELECT '' AS "Two", *
 
 UPDATE CASE_TBL
   SET i = CASE WHEN i >= 3 THEN (- i)
-                ELSE (2 * i) COMMIT;
+                ELSE (2 * i) END;
 
 SELECT * FROM CASE_TBL;
 
 UPDATE CASE_TBL
   SET i = CASE WHEN i >= 2 THEN (2 * i)
-                ELSE (3 * i) COMMIT;
+                ELSE (3 * i) END;
 
 SELECT * FROM CASE_TBL;
 
 UPDATE CASE_TBL
-  SET i = CASE WHEN b.i >= 2 THEN (2 * j)
-                ELSE (3 * j) END
-  FROM CASE2_TBL b
-  WHERE j = -CASE_TBL.i;
+  SET i = CASE WHEN b.i >= 2 THEN (2 * i)
+                ELSE (3 * i) END
+--  FROM CASE2_TBL b
+  WHERE i = -CASE_TBL.i;
 
 SELECT * FROM CASE_TBL;
 
@@ -154,4 +154,3 @@ SELECT * FROM CASE_TBL;
 
 DROP TABLE CASE_TBL;
 DROP TABLE CASE2_TBL;
-

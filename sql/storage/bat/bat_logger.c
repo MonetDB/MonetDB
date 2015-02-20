@@ -47,31 +47,6 @@ N( char *buf, char *pre, char *schema, char *post)
 }
 
 
-#ifndef HAVE_STRCASESTR
-static const char *
-strcasestr(const char *haystack, const char *needle)
-{
-	const char *p, *np = 0, *startn = 0;
-
-	for (p = haystack; *p; p++) {
-		if (np) {
-			if (toupper(*p) == toupper(*np)) {
-				if (!*++np)
-					return startn;
-			} else
-				np = 0;
-		} else if (toupper(*p) == toupper(*needle)) {
-			np = needle + 1;
-			startn = p;
-			if (!*np)
-				return startn;
-		}
-	}
-
-	return 0;
-}
-#endif
-
 static void 
 bl_postversion( void *lg) 
 {
