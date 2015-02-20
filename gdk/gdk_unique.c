@@ -206,6 +206,11 @@ BATsubunique(BAT *b, BAT *s)
 				seen[val >> 4] |= 1 << (val & 0xF);
 				o = i + b->hseqbase;
 				bunfastapp(bn, &o);
+				if (bn->batCount == 256) {
+					/* there cannot be more than
+					 * 256 distinct values */
+					break;
+				}
 			}
 		}
 		GDKfree(seen);
@@ -238,6 +243,11 @@ BATsubunique(BAT *b, BAT *s)
 				seen[val >> 4] |= 1 << (val & 0xF);
 				o = i + b->hseqbase;
 				bunfastapp(bn, &o);
+				if (bn->batCount == 65536) {
+					/* there cannot be more than
+					 * 65536 distinct values */
+					break;
+				}
 			}
 		}
 		GDKfree(seen);
