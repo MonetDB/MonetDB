@@ -126,12 +126,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
 
-  # enable profiler, we use a MAL connection for this
   if (getOption("monetdb.profile", T)) {
-    msocket <- .mapiConnect(host, port, timeout) 
-    .mapiAuthenticate(msocket, dbname, user, password, language="mal")
-    .profiler_enable(msocket)
-    .mapiDisconnect(msocket);
+    .profiler_enable(conn)
   }
   
   return(conn)

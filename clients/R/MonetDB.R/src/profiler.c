@@ -7,13 +7,12 @@
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
+#include <math.h>
+#include <stdlib.h>
 
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
-
-#include <R.h>
-#include <Rdefines.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>
@@ -22,6 +21,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
+
+#include "mapisplit.h"
+#include "profiler.h"
 
 // trace output format and columns
 #define TRACE_NCOLS 14
@@ -43,25 +45,14 @@ static char* profiler_symb_trans = "V";
 static char* profiler_symb_bfree = "_";
 static char* profiler_symb_bfull = "#";
 
-int strupp(char *s) {
-    int i;
+static int profiler_strupp(char *s) {
+    size_t i;
     for (i = 0; i < strlen(s); i++)
         s[i] = toupper(s[i]);
     return i;
 }
 
 /* standalone MAL function call parser */
-typedef enum {
-	ASSIGNMENT, FUNCTION, PARAM, QUOTED, ESCAPED
-} mal_statement_state;
-
-typedef struct {
-	char* assignment;
-	char* function;
-	unsigned short nparams;
-	char** params;
-} mal_statement;
-
 void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 	#define TRIM(str) \
 	while (str[0] == ' ' || str[0] == '"') str++; endPos = curPos - 1; \
@@ -118,23 +109,19 @@ void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 				break;
 			}
 			if (chr == '\\') {
-				state = ESCAPED;
+				state = ESCAPEDP;
 				break;
 			}
 			break;
 
-		case ESCAPED:
+		case ESCAPEDP:
 			state = QUOTED;
 			break;
 		}
 	}
 }
 
-// from mapisplit.c, the trace tuple format is similar(*) to the mapi tuple format
-void mapi_line_split(char* line, char** out, size_t ncols);
-void mapi_unescape(char* in, char* out);
-
-unsigned long profiler_tsms() {
+static unsigned long profiler_tsms() {
 	unsigned long ret = 0;
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -153,21 +140,23 @@ void profiler_clearbar() {
 void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	int bs;
 	unsigned short percentage, symbols;
-	percentage = (unsigned short) round((1.0 * 
-		state / total) * 100);
-	symbols = PROFILER_BARSYMB*(percentage/100.0);
 
 	profiler_clearbar();
 	profiler_needcleanup = 1;
+
+	percentage = (unsigned short) ceil((1.0 * 
+		state / total) * 100);
+	symbols = PROFILER_BARSYMB*(percentage/100.0);
+	
 	printf("%s ", symbol);
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
-
 	printf(" %3u%% ", percentage);
 	fflush(stdout);
 }
 
-void *profiler_thread() {
+static void* profiler_thread(void* params) {
+	params = (void*) params;
 	char buf[BUFSIZ];
 	char* elems[TRACE_NCOLS];
 	// query ids are unlikely to be longer than BUFSIZ
@@ -179,7 +168,7 @@ void *profiler_thread() {
 	size_t profiler_msgs_done = 0;
 
 	unsigned long profiler_querystart;
-	char* stmtbuf = malloc(65507); // maximum size of an IPv6 UDP packet
+	char* stmtbuf = malloc(65507); // maximum size of an IPv4 UDP packet
 
 	mal_statement *stmt = malloc(sizeof(mal_statement));
 	stmt->params = malloc(TRACE_MAL_MAXPARAMS * sizeof(char*));
@@ -188,6 +177,9 @@ void *profiler_thread() {
 		recvd = read(profiler_socket, buf, sizeof(buf));
 		if (recvd > 0) {
 			buf[recvd] = 0;
+			if (buf[0]== '#') {
+				continue;
+			}
 			mapi_line_split(buf, elems, TRACE_NCOLS);
 			if (strncmp(elems[TRACE_COL_STATEFL], "done", 4) != 0) {
 				continue;
@@ -207,7 +199,7 @@ void *profiler_thread() {
 
 			if (profiler_armed && strcmp(stmt->function, "querylog.define") == 0) {
 				// the third parameter to querylog.define contains the MAL plan size
-				profiler_msgs_expect = atol(stmt->params[2])- 5; 
+				profiler_msgs_expect = atol(stmt->params[2]) - 2; 
 				strcpy(queryid, thisqueryid);
 				profiler_querystart = profiler_tsms();
 				profiler_msgs_done = 0;
@@ -221,7 +213,8 @@ void *profiler_thread() {
 			}
 
 			profiler_msgs_done++;
-	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 200) {
+
+	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 500) {
 	        	profiler_renderbar(profiler_msgs_done, profiler_msgs_expect, profiler_symb_query);
         	}
         	if (profiler_msgs_done >= profiler_msgs_expect) {
@@ -230,7 +223,6 @@ void *profiler_thread() {
         	}
 		}
 	}
-	return NULL;
 }
 
 void profiler_renderbar_dl(int* state, int* total) {
@@ -241,13 +233,11 @@ void profiler_arm() {
 	profiler_armed = 1;
 }
 
-SEXP profiler_start_listen() {
-	SEXP port;
-
+int profiler_start() {
 	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if(profiler_socket < 0) {
-	    error("socket error\n");
-	    return R_NilValue;
+	    fprintf(stderr, "socket error\n");
+	    return -1;
 	}
 
 	struct sockaddr_in serv_addr;
@@ -260,23 +250,21 @@ SEXP profiler_start_listen() {
 
 	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 || 
 		getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) < 0) {
-       error("could not bind to process (%d) %s\n", errno, strerror(errno));
-       return R_NilValue;
+      	fprintf(stderr, "could not bind to process (%d) %s\n", errno, strerror(errno));
+      	return -1;
 	}
-	// start backgroud listening thread
-	pthread_create(&profiler_pthread, NULL, profiler_thread, NULL);
 
-	port = NEW_INTEGER(1);
- 	INTEGER_POINTER(port)[0] = ntohs(serv_addr.sin_port);
-
- 	// some nicer characters for UTF-enabled terminals
+	// some nicer characters for UTF-enabled terminals
  	char* ctype = getenv("LC_CTYPE");
- 	strupp(ctype);
+ 	profiler_strupp(ctype);
  	if (strstr(ctype, "UTF-8") != NULL) {
  		profiler_symb_query = "\u27F2";
 		profiler_symb_trans = "\u2193";
 		profiler_symb_bfree = "\u2591";
 		profiler_symb_bfull = "\u2588";
  	}
-	return port;
+
+	// start backgroud listening thread
+	pthread_create(&profiler_pthread, NULL, &profiler_thread, NULL);
+	return ntohs(serv_addr.sin_port);
 }
