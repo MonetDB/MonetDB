@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "bat_logger.h"
 #include "bat_utils.h"
+#include "sql_types.h" /* EC_POS */
 
 logger *bat_logger = NULL;
 
@@ -32,8 +33,13 @@ bl_preversion( int oldversion, int newversion)
 #define CATALOG_AUG2011 51101
 #define CATALOG_DEC2011 52000
 #define CATALOG_FEB2013 52001
+#define CATALOG_OCT2014 52100
 
 	(void)newversion;
+	if (oldversion == CATALOG_OCT2014) {
+		catalog_version = oldversion;
+		return 0;
+	}
 	if (oldversion == CATALOG_FEB2013) {
 		catalog_version = oldversion;
 		return 0;
@@ -104,6 +110,37 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
+	if (catalog_version == CATALOG_OCT2014) {
+		BAT *te, *tn, *tne;
+		BATiter tei, tni;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		if (!te || !tn)
+			return;
+		tei = bat_iterator(te);
+		tni = bat_iterator(te);
+		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		if (!tne)
+			return;
+        	BATseqbase(tne, te->hseqbase);
+		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+			int eclass = *(int*)BUNtail(tei, p);
+			char *name = BUNtail(tni, p);
+
+			if (eclass >= EC_POS && strcmp(name, "oid") != 0)
+				eclass++;
+			else if (strcmp(name, "oid") == 0)
+				eclass = EC_POS;
+			BUNappend(tne, &eclass, TRUE);
+		}
+		tne = BATsetaccess(tne, BAT_READ);
+		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
+		bat_destroy(te);
+		bat_destroy(tn);
+	}
 	if (catalog_version == CATALOG_FEB2013) {
 		/* we need to add the new schemas.system column */
 		BAT *b, *b1, *b2, *b3, *u, *f, *l;
