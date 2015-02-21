@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <math.h>
 #include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
@@ -122,6 +123,8 @@ lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
 int malsize = 0;
+char *prevquery= 0;
+int prevprogress =0;
 
 static FILE *tachofd;
 
@@ -137,21 +140,54 @@ static void resetTachograph(void){
 	duration =0;
 	fclose(tachofd);
 	tachofd = 0;
+	prevprogress = 0;
+	printf("\n"); 
+	fflush(stdout);
 }
 
-/*
-static char stamp[BUFSIZ];
+static char stamp[BUFSIZ]={0};
 static void
-rendertime(lng ticks)
+rendertime(lng ticks, int flg)
 {
 	int t, hr,min,sec;
 	t = (int) (ticks/1000000);
 	sec = t % 60;
 	min = (t /60) %60;
 	hr = (t /3600);
+	if( flg)
 	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d.%06d", hr,min,sec, (int) ticks %1000000); 
+	else
+	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec); 
 }
-*/
+
+
+static void
+showBar(int progress, lng clk)
+{
+	int i;
+	rendertime(duration,0);
+	printf("%s [", stamp);
+	if( prevprogress)
+		for( i=76; i> prevprogress/2; i--)
+			printf("\b \b");
+	for( ; i < progress/2; i++)
+		putchar('#');
+	for( ; i < 50; i++)
+		putchar('.');
+	putchar(']');
+	printf(" %3d%%",progress);
+	if( duration && duration- clk > 0){
+		rendertime(duration - clk,0);
+		printf("  %s",stamp);
+	} else
+	if( duration && duration- clk < 0){
+		rendertime(clk -duration ,0);
+		printf(" -%s",stamp);
+	} else
+		printf("          ");
+	fflush(stdout);
+}
+
 /* create the progressbar JSON file for pickup */
 static void
 progressBarInit(void)
@@ -177,6 +213,7 @@ progressBarInit(void)
 static void
 update(EventRecord *ev)
 {
+	int progress=0;
 	int i;
 	char *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
@@ -242,23 +279,19 @@ update(EventRecord *ev)
 			malsize = atoi(malarguments[3]);
 			// use the truncated query text, beware the the \ is already escaped in the call argument.
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			for (c= currentquery; *c; )
-				switch(*c){
-				case '\\':
-					c++;
-					switch(*c){
-					case 'n': *q++=' '; c++; break;
-					case 't': *q++=' '; c++; break;
-					case '\\': break;
-					default:
-						*q++ = *c++;
-					}
-					break;
-				default:
-					*q++ = *c++;
-				}
+			for (c= currentquery; *c; ){
+				if ( strncmp(c,"\\\\n",3) == 0){
+					*q++ = '\n';
+					c+=3;
+				} else if ( strncmp(c,"\\\\",2) == 0){
+					c+= 2;
+				} else *q++ = *c++;
+			}
 			*q =0;
 			currentquery = qry;
+			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) )
+				printf("%s\n",qry);
+			prevquery = currentquery;
 			progressBarInit();
 		}
 		fprintf(tachofd,"{\n");
@@ -287,6 +320,18 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
+		if( duration){
+			progress = (int)(ev->clkticks / (duration/100.0));
+			if ( progress > 100)
+				progress = 100;
+		} else {
+			progress = (int)( ev->pc / (malsize/100.0));
+		}
+		if( progress > prevprogress) {
+			showBar(progress,ev->clkticks);
+			//printf("progress "LLFMT" %d\n", ev->clkticks,progress);
+			prevprogress = progress;
+		}
 	}
 	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
@@ -294,6 +339,7 @@ update(EventRecord *ev)
 				free(currentfunction);
 				currentfunction = 0;
 			}
+			showBar(100,ev->clkticks);
 			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
