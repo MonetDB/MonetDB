@@ -240,13 +240,17 @@ showBar(int level, lng clk, char *stmt)
 		putchar('.');
 	putchar(']');
 	printf(" %3d%%",level);
+	if( duration == 0){
+		rendertime(clk,0);
+		printf(" +%s",stamp);
+	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf("  %s",stamp);
+		printf(" %c%s", (level == 100? '-':' '),stamp);
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk -duration ,0);
-		printf(" -%s",stamp);
+		printf(" +%s",stamp);
 	} else
 		printf("          ");
 	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
@@ -352,6 +356,10 @@ update(EventRecord *ev)
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
 			for (c= currentquery; *c; ){
+				if ( strncmp(c,"\\\\t",3) == 0){
+					*q++ = '\t';
+					c+=3;
+				} else
 				if ( strncmp(c,"\\\\n",3) == 0){
 					*q++ = '\n';
 					c+=3;
