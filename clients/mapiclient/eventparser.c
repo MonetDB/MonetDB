@@ -27,6 +27,16 @@ char *malarguments[MAXMALARGS];
 int malargtop;
 int debug;
 
+void
+clearArguments(void)
+{
+	int i;
+	for(i = 0; i < malargtop; i++)
+	if( malarguments[i])
+		free(malarguments[i]);
+	malargtop = 0;
+}
+
 static void
 parseArguments(char *call)
 {
