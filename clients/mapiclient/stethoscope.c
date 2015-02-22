@@ -79,7 +79,7 @@ static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "stethoscope";
 static int debug = 0;
-static int beat = 5000;
+static int beat = 50;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 
@@ -96,7 +96,7 @@ usageStethoscope(void)
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
     fprintf(stderr, "  -o | --output=<file>\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }

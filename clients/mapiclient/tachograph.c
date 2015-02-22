@@ -169,6 +169,11 @@ static void
 rendertime(lng ticks, int flg)
 {
 	int t, hr,min,sec;
+
+	if( ticks == 0){
+		strcpy(stamp,"unknown ");
+		return;
+	}
 	t = (int) (ticks/1000000);
 	sec = t % 60;
 	min = (t /60) %60;
@@ -184,11 +189,17 @@ rendertime(lng ticks, int flg)
 #define MSGLEN 100
 
 static void
-renderCall(char *line, char *stmt)
+renderCall(char *line, int len, int filler, char *stmt)
 {
-	char *limit= line + MSGLEN-1, *l, *c = stmt;
+	char *limit= line + len -1, *l, *c = stmt;
 
-	for( c= stmt, l= line; *c && l < limit; ) {
+	c = stmt;
+	c = strstr(stmt,":=");
+	if( c) 
+		c+=2;
+	else c = stmt;
+	if( *c == '(') c++;
+	for( l= line; *c && l < limit; ) {
 		if( *c == 'X' && *(c+1)=='_') {
 			for(; *c && *c != '='; c++) {
 				//skip variables
@@ -203,6 +214,7 @@ renderCall(char *line, char *stmt)
 		}
 		if(*c) *l++ = *c++;
 	}
+	if( filler)
 	for(; l < limit; l++)
 		*l= ' ';
 	*l = 0;
@@ -212,7 +224,7 @@ static void
 showBar(int level, lng clk, char *stmt)
 {
 	lng i =0;
-	char line[BUFSIZ], *c;
+	char line[BUFSIZ];
 
 	if(interactive == 0)
 		return;
@@ -239,13 +251,8 @@ showBar(int level, lng clk, char *stmt)
 		printf("          ");
 	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
 	line[MSGLEN]=0;
-	if(stmt){
-		c = strstr(stmt,":=");
-		if( c )
-			renderCall(line,c+2);
-		else
-			renderCall(line,stmt);
-	} 
+	if(stmt)
+		renderCall(line,MSGLEN,1,stmt);
 	printf("%s",line);
 	fflush(stdout);
 }
@@ -279,6 +286,7 @@ update(EventRecord *ev)
 	int i;
 	char *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
+	char line[BUFSIZ];
  
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= PING ) {
@@ -359,7 +367,8 @@ update(EventRecord *ev)
 			progressBarInit();
 		}
 		events[ev->pc].state = RUNNING;
-		events[ev->pc].stmt = ev->stmt;
+		renderCall(line,BUFSIZ, 0, ev->stmt);
+		events[ev->pc].stmt = strdup(line);
 		events[ev->pc].etc = ev->ticks;
 		if( ev->pc > lastpc)
 			lastpc = ev->pc;
@@ -369,7 +378,7 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
 		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
+		fprintf(tachofd,"\"stmt\": \"%s\"\n",line);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
 
