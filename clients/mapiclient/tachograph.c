@@ -164,7 +164,7 @@ rendertime(lng ticks, int flg)
 static void
 showBar(int progress, lng clk)
 {
-	int i;
+	int i =0;
 	rendertime(duration,0);
 	printf("%s [", stamp);
 	if( prevprogress)
