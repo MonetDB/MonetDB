@@ -502,7 +502,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(50);");
+	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
