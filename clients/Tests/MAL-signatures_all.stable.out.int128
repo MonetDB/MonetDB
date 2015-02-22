@@ -51071,7 +51071,7 @@ pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:l
 address QLOGcall;
 comment Add a new query call to the query log
 
-command querylog.define(q:str,pipe:str):void 
+command querylog.define(q:str,pipe:str,size:int):void 
 address QLOGdefineNaive;
 comment Noop operation, just marking the query
 
