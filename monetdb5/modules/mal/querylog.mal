@@ -41,10 +41,6 @@ pattern insert(q:str, pipe:str, usr:str, tick:timestamp)
 address QLOGinsert
 comment "Add a new query call to the query log";
 
-command define(q:str, pipe:str)
-address QLOGdefineNaive
-comment "Noop operation, just marking the query";
-
 command define(q:str, pipe:str, size:int)
 address QLOGdefineNaive
 comment "Noop operation, just marking the query";

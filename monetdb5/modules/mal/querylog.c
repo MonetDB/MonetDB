@@ -325,12 +325,13 @@ QLOGinsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-QLOGdefineNaive(void *ret, str *qry, str *opt)
+QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 {
 	// Nothing else to be done.
 	(void) ret;
 	(void) qry;
 	(void) opt;
+	(void) nr;
 	return MAL_SUCCEED;
 }
 
