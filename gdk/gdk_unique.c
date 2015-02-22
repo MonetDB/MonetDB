@@ -302,7 +302,7 @@ BATsubunique(BAT *b, BAT *s)
 					}
 				}
 			}
-			if (hb == HASHnil(hs)) {
+			if (hb == HASHnil(hs) || hb < lo) {
 				o = i + seq;
 				bunfastapp(bn, &o);
 			}

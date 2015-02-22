@@ -260,7 +260,7 @@
 					}				\
 				}					\
 			}						\
-			if (hb == HASHnil(hs)) {			\
+			if (hb == HASHnil(hs) || hb < lo) {		\
 				GRPnotfound();				\
 			}						\
 		}							\
