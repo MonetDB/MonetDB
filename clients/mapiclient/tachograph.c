@@ -83,6 +83,16 @@ static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int capturing=0;
 
+#define RUNNING 1
+#define FINISHED 2
+typedef struct{
+	int state;
+	lng etc;
+	char *stmt;
+} Event;
+
+Event *events;
+
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
  */
@@ -143,6 +153,10 @@ static void resetTachograph(void){
 	prevprogress = 0;
 	printf("\n"); 
 	fflush(stdout);
+	if( events){
+		free(events);
+		events = 0;
+	}
 }
 
 static char stamp[BUFSIZ]={0};
@@ -160,15 +174,19 @@ rendertime(lng ticks, int flg)
 	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec); 
 }
 
-
+// determine maximal width
+// line is built from 76 + size of stmt
+#define MSGLEN 100
 static void
-showBar(int progress, lng clk)
+showBar(int progress, lng clk, char *stmt)
 {
 	int i =0;
+	char line[BUFSIZ], *c;
+
 	rendertime(duration,0);
 	printf("%s [", stamp);
 	if( prevprogress)
-		for( i=76; i> prevprogress/2; i--)
+		for( i=76+MSGLEN-1; i> prevprogress/2; i--)
 			printf("\b \b");
 	for( ; i < progress/2; i++)
 		putchar('#');
@@ -185,6 +203,16 @@ showBar(int progress, lng clk)
 		printf(" -%s",stamp);
 	} else
 		printf("          ");
+	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
+	line[MSGLEN]=0;
+	if(stmt){
+		c = strstr(stmt,":=");
+		if( c )
+			snprintf(line,MSGLEN,"%-*s",MSGLEN,c+2);
+		else
+			snprintf(line,MSGLEN,"%-*s",MSGLEN,stmt);
+	} 
+	printf("%s",line);
 	fflush(stdout);
 }
 
@@ -277,7 +305,8 @@ update(EventRecord *ev)
 			// extract a string argument
 			currentquery = malarguments[0];
 			malsize = atoi(malarguments[3]);
-			// use the truncated query text, beware the the \ is already escaped in the call argument.
+			events = (Event*) malloc(malsize * sizeof(Event));
+			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
 			for (c= currentquery; *c; ){
 				if ( strncmp(c,"\\\\n",3) == 0){
@@ -294,6 +323,10 @@ update(EventRecord *ev)
 			prevquery = currentquery;
 			progressBarInit();
 		}
+		events[ev->pc].state = RUNNING;
+		events[ev->pc].stmt = ev->stmt;
+		events[ev->pc].etc = ev->ticks;
+		free(ev->fcn);
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
@@ -311,6 +344,12 @@ update(EventRecord *ev)
 	}
 	/* end the instruction box */
 	if (ev->state == DONE ){
+		if( events[ev->pc].stmt){
+			free(events[ev->pc].stmt);
+			events[ev->pc].stmt= 0;
+			events[ev->pc].state= FINISHED;
+		}
+			
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
@@ -320,6 +359,9 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
+
+		free(ev->fcn);
+		free(ev->stmt);
 		if( duration){
 			progress = (int)(ev->clkticks / (duration/100.0));
 			if ( progress > 100)
@@ -328,7 +370,11 @@ update(EventRecord *ev)
 			progress = (int)( ev->pc / (malsize/100.0));
 		}
 		if( progress > prevprogress) {
-			showBar(progress,ev->clkticks);
+			// pick up last unfinished instruction
+			for(i= ev->pc; i >0; i--)
+				if( events[i].state == RUNNING)
+					break;
+			showBar(progress,ev->clkticks,events[i].stmt);
 			//printf("progress "LLFMT" %d\n", ev->clkticks,progress);
 			prevprogress = progress;
 		}
@@ -339,7 +385,7 @@ update(EventRecord *ev)
 				free(currentfunction);
 				currentfunction = 0;
 			}
-			showBar(100,ev->clkticks);
+			showBar(100,ev->clkticks, 0);
 			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
