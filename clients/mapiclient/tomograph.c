@@ -1736,8 +1736,6 @@ main(int argc, char **argv)
 		len = 0;
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
-			if( trace) 
-				fprintf(trace,"%s",buf);
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
@@ -1745,8 +1743,10 @@ main(int argc, char **argv)
 				update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
-				response = e + 1;
-			}
+				if( trace && i >=0 && capturing) 
+					fprintf(trace,"%s\n",response);
+					response = e + 1;
+				}
 			/* handle last line in buffer */
 			if (*response) {
 				if (debug)
