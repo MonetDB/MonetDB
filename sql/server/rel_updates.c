@@ -290,19 +290,106 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
 }
 
+
+static list *
+check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tname)
+{
+	list *collist;
+
+	if (columns) {
+		dnode *n;
+
+		collist = sa_list(sql->sa);
+		for (n = columns->h; n; n = n->next) {
+			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
+
+			if (c) {
+				list_append(collist, c);
+			} else {
+				return sql_error(sql, 02, "42S22!%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
+			}
+		}
+	} else {
+		collist = t->columns.set;
+	}
+	return collist;
+}
+
+static list *
+rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
+{
+	int len, i;
+	sql_exp **inserts = insert_exp_array(sql, t, &len);
+	list *exps = NULL;
+	node *n, *m;
+
+	if (r->exps) {
+		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
+			sql_column *c = m->data;
+			sql_exp *e = n->data;
+	
+			inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
+		}
+	}
+	for (i = 0; i < len; i++) {
+		if (!inserts[i]) {
+			for (m = t->columns.set->h; m; m = m->next) {
+				sql_column *c = m->data;
+
+				if (c->colnr == i) {
+					size_t j = 0;
+					sql_exp *exps = NULL;
+
+					for(j = 0; j < rowcount; j++) {
+						sql_exp *e = NULL;
+
+						if (c->def) {
+							char *q = sa_message(sql->sa, "select %s;", c->def);
+							e = rel_parse_val(sql, q, sql->emode);
+							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+								return NULL;
+						} else {
+							atom *a = atom_general(sql->sa, &c->type, NULL);
+							e = exp_atom(sql->sa, a);
+						}
+						if (!e) 
+							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+						if (exps) {
+							list *vals_list = exps->f;
+			
+							list_append(vals_list, e);
+						}
+						if (!exps && j+1 < rowcount) {
+							exps = exp_values(sql->sa, sa_list(sql->sa));
+							exps->tpe = c->type;
+							exp_label(sql->sa, exps, ++sql->label);
+						}
+						if (!exps)
+							exps = e;
+					}
+					inserts[i] = exps;
+				}
+			}
+			assert(inserts[i]);
+		}
+	}
+	/* now rewrite project exps in proper table order */
+	exps = new_exp_list(sql->sa);
+	for (i = 0; i<len; i++) 
+		list_append(exps, inserts[i]);
+	return exps;
+}
+
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
 	size_t rowcount = 1;
-	int i, len = 0;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	list *collist = NULL, *exps;
+	list *collist = NULL;
 	sql_rel *r = NULL;
-	sql_exp **inserts;
-	node *n, *m;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "3F000!INSERT INTO: no such schema '%s'", sname);
@@ -330,23 +417,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (!table_privs(sql, t, PRIV_INSERT)) {
 		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", stack_get_string(sql, "current_user"), tname);
 	}
-	if (columns) {
-		dnode *n;
 
-		collist = sa_list(sql->sa);
-		for (n = columns->h; n; n = n->next) {
-			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
-
-			if (c) {
-				list_append(collist, c);
-			} else {
-				return sql_error(sql, 02, "42S22!INSERT INTO: no such column '%s.%s'", tname, n->data.sval);
-			}
-		}
-	} else {
-		collist = t->columns.set;
-	}
-
+	collist = check_table_columns(sql, t, columns, "INSERT", tname);
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
 		dlist *values;
@@ -367,7 +439,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				dnode *n;
-				node *v;
+				node *v, *m;
 
 				if (o->next && list_empty(exps)) {
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
@@ -427,64 +499,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	   (!r->exps && collist)) 
 		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
-	inserts = insert_exp_array(sql, t, &len);
-
-	if (r->exps) {
-		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
-			sql_column *c = m->data;
-			sql_exp *e = n->data;
-	
-			inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
-		}
-	}
-
-	for (i = 0; i < len; i++) {
-		if (!inserts[i]) {
-			for (m = t->columns.set->h; m; m = m->next) {
-				sql_column *c = m->data;
-
-				if (c->colnr == i) {
-					size_t j = 0;
-					sql_exp *exps = NULL;
-
-					for(j = 0; j < rowcount; j++) {
-						sql_exp *e = NULL;
-
-						if (c->def) {
-							char *q = sa_message(sql->sa, "select %s;", c->def);
-							e = rel_parse_val(sql, q, sql->emode);
-							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return NULL;
-						} else {
-							atom *a = atom_general(sql->sa, &c->type, NULL);
-							e = exp_atom(sql->sa, a);
-						}
-						if (!e) 
-							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
-						if (exps) {
-							list *vals_list = exps->f;
-			
-							list_append(vals_list, e);
-						}
-						if (!exps && j+1 < rowcount) {
-							exps = exp_values(sql->sa, sa_list(sql->sa));
-							exps->tpe = c->type;
-							exp_label(sql->sa, exps, ++sql->label);
-						}
-						if (!exps)
-							exps = e;
-					}
-					inserts[i] = exps;
-				}
-			}
-			assert(inserts[i]);
-		}
-	}
-	/* now rewrite project exps in proper table order */
-	exps = new_exp_list(sql->sa);
-	for (i = 0; i<len; i++) 
-		list_append(exps, inserts[i]);
-	r->exps = exps;
+	r->exps = rel_inserts(sql, t, r, collist, rowcount);
 	return rel_insert_table(sql, t, tname, r);
 }
 
@@ -1097,7 +1112,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1110,6 +1125,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
+	list *collist;
 
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
@@ -1192,7 +1208,9 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!rel)
 		return rel;
-	rel = rel_insert_table(sql, t, t->base.name, rel);
+	collist = check_table_columns(sql, t, columns, "COPY", tname);
+	rel->exps = rel_inserts(sql, t, rel, collist, 1);
+	rel = rel_insert_table(sql, t, tname, rel);
 	if (rel && locked)
 		rel->flag |= UPD_LOCKED;
 	if (rel && !constraint)
@@ -1410,7 +1428,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
