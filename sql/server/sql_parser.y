@@ -2510,25 +2510,27 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
-	  append_list(l, $6);
+	  append_list(l, $5);
 	  append_list(l, $7);
+	  append_list(l, $8);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
+	  append_string(l, $9);
 	  append_int(l, $10);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
+	  append_list(l, $5);
 	  append_list(l, NULL);
-	  append_list(l, $7);
+	  append_list(l, $8);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
+	  append_string(l, $9);
 	  append_int(l, $10);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -4914,7 +4916,6 @@ non_reserved_word:
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
 | SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
-| SAMPLE	{ $$ = sa_strdup(SA, "sample"); }	/* sloppy: officially reserved */
 | SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
 | STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
