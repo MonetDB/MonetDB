@@ -214,6 +214,9 @@ showBar(int level, lng clk, char *stmt)
 	lng i =0;
 	char line[BUFSIZ], *c;
 
+	if(interactive == 0)
+		return;
+
 	rendertime(duration,0);
 	printf("%s [", stamp);
 	if( prevprogress)
@@ -350,7 +353,7 @@ update(EventRecord *ev)
 			}
 			*q =0;
 			currentquery = qry;
-			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) )
+			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
 				printf("%s\n",qry);
 			prevquery = currentquery;
 			progressBarInit();
