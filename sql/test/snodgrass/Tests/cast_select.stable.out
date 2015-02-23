@@ -92,12 +92,6 @@ Ready.
 % month_interval # type
 % 0 # length
 [ 2	]
-#SELECT CAST('3-7' AS INTERVAL MONTH );
-% .L1 # table_name
-% L1 # name
-% month_interval # type
-% 0 # length
-[ 3	]
 #SELECT CAST( INTERVAL '3' YEAR AS INTERVAL YEAR TO MONTH ) = INTERVAL '3-0' YEAR TO MONTH;
 % .L1 # table_name
 % =_single_value # name
