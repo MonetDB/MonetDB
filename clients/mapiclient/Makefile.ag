@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../mapilib ../../common/options ../../common/stream $(READLINE_INCS)
+INCLUDES = ../mapilib ../../common/options ../../common/stream ../R/MonetDB.R/src/ $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
@@ -24,7 +24,7 @@ lib_mcutil = {
 }
 
 bin_mclient = {
-	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
+	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h mapisplit-dummy.c profiler-dummy.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) \
