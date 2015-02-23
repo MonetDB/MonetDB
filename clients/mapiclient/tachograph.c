@@ -144,8 +144,12 @@ lng prevprogress =0;
 static FILE *tachofd;
 
 static void resetTachograph(void){
+	int i;
 	if (debug)
 		fprintf(stderr, "RESET tachograph\n");
+	for(i=0; i < malsize; i++)
+	if( events[i].stmt)
+		free(events[i].stmt);
 	malsize= 0;
 	malargtop =0;
 	currentfunction = 0;
@@ -345,8 +349,8 @@ static void
 update(EventRecord *ev)
 {
 	double progress=0;
-	int i;
-	char *qry, *q = 0, *c;
+	int i,j;
+	char *v, *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
  
@@ -434,7 +438,7 @@ update(EventRecord *ev)
 		}
 		events[ev->pc].state = RUNNING;
 		renderCall(line,BUFSIZ, 0, ev->stmt,0);
-		events[ev->pc].stmt = strdup(line);
+		events[ev->pc].stmt = strdup(ev->stmt);
 		events[ev->pc].etc = ev->ticks;
 		if( ev->pc > lastpc)
 			lastpc = ev->pc;
@@ -446,7 +450,19 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
 		fprintf(tachofd,"\"stmt\": \"%s\",\n",ev->stmt);
 		fprintf(tachofd,"\"beautystmt\": \"%s\",\n",line);
-		fprintf(tachofd,"\"prereq\":[]\n");
+		// collect all input producing PCs
+		fprintf(tachofd,"\"prereq\":[");
+		for( i=0; i < malvartop; i++){
+			for(j= ev->pc; j>=0;j --){
+				if(debug)
+					fprintf(stderr,"locate %s in %s\n",malvariables[i], events[j].stmt);
+				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
+					fprintf(tachofd,"%s%d",(i?", ":""), j);
+					break;
+				}
+			}
+		}
+		fprintf(tachofd,"]\n");
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
 
@@ -459,8 +475,6 @@ update(EventRecord *ev)
 	}
 	/* end the instruction box */
 	if (ev->state == DONE ){
-		if( events[ev->pc].stmt)
-			free(events[ev->pc].stmt);
 			
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
@@ -474,7 +488,6 @@ update(EventRecord *ev)
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
 
-		events[ev->pc].stmt= 0;
 		events[ev->pc].state= FINISHED;
 		free(ev->stmt);
 		if( duration)

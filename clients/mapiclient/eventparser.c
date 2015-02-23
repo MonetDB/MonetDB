@@ -25,6 +25,8 @@ char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollec
 
 char *malarguments[MAXMALARGS];
 int malargtop;
+char *malvariables[MAXMALARGS];
+int malvartop;
 int debug;
 
 void
@@ -35,6 +37,10 @@ clearArguments(void)
 	if( malarguments[i])
 		free(malarguments[i]);
 	malargtop = 0;
+	for(i = 0; i < malvartop; i++)
+	if( malvariables[i])
+		free(malvariables[i]);
+	malvartop = 0;
 }
 
 static void
@@ -42,6 +48,7 @@ parseArguments(char *call)
 {
 	int i;
 	char  *c = call, *l, ch;
+	char *v;
 	
 	malargtop = 0;
 	if( debug)
@@ -51,14 +58,15 @@ parseArguments(char *call)
 			break;
 		if (*c == ',')
 			continue;
-		if (*c == 'X'){
-			// skip variable
+		if (*c == 'X' || *c == 'A'){
+			// remember variable in its own structure
+			v=  c;
 			c= strchr(c,'=');
 			if( c == 0)
 				break;
+			*c = 0;
+			malvariables[malvartop++] = strdup(v);
 			c++;
-			if( debug)
-				fprintf(stderr,"arg:%s\n",c);
 		}
 		if (*c== '\\' && *(c+1) =='"'){
 			c++; c++;
@@ -85,9 +93,12 @@ parseArguments(char *call)
 				*l =0;
 		}
 	}
-	if( debug)
-	for(i=0; i < malargtop; i++)
-		fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+	if( debug){
+		for(i=0; i < malargtop; i++)
+			fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+		for(i=0; i < malvartop; i++)
+			fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
+	}
 }
 int
 eventparser(char *row, EventRecord *ev)
