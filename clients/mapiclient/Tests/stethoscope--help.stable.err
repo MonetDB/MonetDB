@@ -16,7 +16,7 @@ stethoscope [options]
   -p | --port=<portnr>
   -h | --host=<hostname>
   -o | --output=<file>
-  -b | --beat=<delay> in milliseconds (default 5000)
+  -b | --beat=<delay> in milliseconds (default 50)
   -? | --help
 
 
