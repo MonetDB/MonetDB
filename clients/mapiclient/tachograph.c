@@ -78,6 +78,7 @@ static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
 static int beat = 5000;
+static int wait = 5000;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int interactive = 1;
@@ -110,6 +111,7 @@ usageTachograph(void)
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -i | --interactive=<o | 1> show trace on stdout\n");
     fprintf(stderr, "  -o | --output=<webfile>\n");
+    fprintf(stderr, "  -w | --wait=<delay time> in milliseconds\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }
@@ -188,30 +190,86 @@ rendertime(lng ticks, int flg)
 
 #define MSGLEN 100
 
+/*
+ * Render the output of the stethoscope into a more user-friendly format.
+ * This involves removal of MAL variables and possibly renaming the MAL functions
+ * by more general alternatives.
+ */
+static struct{
+	char *name;
+	int length;
+	char *alias;
+	int newl;
+}mapping[]={
+	{"dataflow.language", 17,	"parallel", 8},
+	{"calc.lng", 8,	"long", 4},
+	{"sql.bind", 8,	"bind", 4},
+	{"language.pass(nil)", 18,	"pass", 4},
+	{"language.pass", 13,	"pass", 4},
+	{"algebra.subselect", 17, "select",6},
+	{"algebra.subjoin", 15, "join",4},
+	{"algebra.leftfetchjoin", 21, "project",7},
+	{"algebra.leftfetchjoinPath", 25, "join path",9},
+	{"mat.packIncrement", 17, "pack",4},
+	{"batcalc.", 8, "", 0},
+	{"calc.", 5, "", 0},
+	{"sql.", 4,	"", 0},
+	{"aggr.", 5,	"", 0},
+	{"group.", 6,	"", 0},
+	{0,0,0,0}};
+
 static void
-renderCall(char *line, int len, int filler, char *stmt)
+renderCall(char *line, int len, int filler, char *stmt, int state)
 {
-	char *limit= line + len -1, *l, *c = stmt;
+	char *limit= line + len -1, *l = line, *c = stmt;
+	int i;
 
 	c = stmt;
-	c = strstr(stmt,":=");
-	if( c) 
-		c+=2;
-	else c = stmt;
-	if( *c == '(') c++;
-	for( l= line; *c && l < limit; ) {
+	if( state == 0){
+		if( *c == '(') c++;
+		c = strstr(stmt,":=");
+		if( c) 
+			c+=2;
+		else c = stmt;
+	}
+goon:
+	while ( *c && isspace((int) *c)) c++;
+	/* consider a function name remapping */
+	for(i=0; mapping[i].name; i++)
+		if( strncmp(c,mapping[i].name, mapping[i].length) == 0){
+			c+= mapping[i].length;
+			sprintf(line,"%s",  mapping[i].alias);
+			l += mapping[i].newl;
+			break;
+		}
+	for( ; *c && l < limit; ) {
+		// delayed assignment skipping, not yet used
+		if( state == 1 && *c == ':' && *(c+1) == '='){
+			if(*c) *l++ = *c++;
+			if(*c) *l++ = *c++;
+			state = 0;
+			goto goon;
+		}
 		if( *c == 'X' && *(c+1)=='_') {
 			for(; *c && *c != '='; c++) {
 				//skip variables
 			}
-			if ( *c) c++;
+			if ( *(c+1) != '<') c++;
 		}
 		if ( *c == 'A' && strchr(c,'=')){
 			for(; *c && *c != '='; c++) {
 				//skip argument variables
 			}
-			if ( *c) c++;
+			if ( *(c+1) != '<') c++;
 		}
+		if( *c == '=' && *(c+1) == '<'){
+			for(; *c && *c != '>'; c++) {
+				//skip (temporary) column names
+			}
+			if (*c == '>') c++;
+		} else 
+		if( *c == '=')
+			c++;
 		if(*c) *l++ = *c++;
 	}
 	if( filler)
@@ -226,13 +284,13 @@ showBar(int level, lng clk, char *stmt)
 	lng i =0;
 	char line[BUFSIZ];
 
-	if(interactive == 0)
-		return;
+	//if(interactive == 0 || clk < wait)
+		//return;
 
 	rendertime(duration,0);
 	printf("%s [", stamp);
 	if( prevprogress)
-		for( i=76+MSGLEN-1; i> prevprogress/2; i--)
+		for( i=77+MSGLEN-1; i> prevprogress/2; i--)
 			printf("\b \b");
 	for( ; i < level/2; i++)
 		putchar('#');
@@ -242,21 +300,21 @@ showBar(int level, lng clk, char *stmt)
 	printf(" %3d%%",level);
 	if( duration == 0){
 		rendertime(clk,0);
-		printf(" +%s",stamp);
+		printf(" +%s ",stamp);
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s", (level == 100? '-':' '),stamp);
+		printf(" %c%s ", (level == 100? '-':' '),stamp);
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk -duration ,0);
-		printf(" +%s",stamp);
+		printf(" +%s ",stamp);
 	} else
-		printf("          ");
+		printf("           ");
 	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
 	line[MSGLEN]=0;
 	if(stmt)
-		renderCall(line,MSGLEN,1,stmt);
+		renderCall(line,MSGLEN,1,stmt,1);
 	printf("%s",line);
 	fflush(stdout);
 }
@@ -375,7 +433,7 @@ update(EventRecord *ev)
 			progressBarInit();
 		}
 		events[ev->pc].state = RUNNING;
-		renderCall(line,BUFSIZ, 0, ev->stmt);
+		renderCall(line,BUFSIZ, 0, ev->stmt,0);
 		events[ev->pc].stmt = strdup(line);
 		events[ev->pc].etc = ev->ticks;
 		if( ev->pc > lastpc)
@@ -386,7 +444,9 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
 		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachofd,"\"stmt\": \"%s\"\n",line);
+		fprintf(tachofd,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachofd,"\"beautystmt\": \"%s\",\n",line);
+		fprintf(tachofd,"\"prereq\":[]\n");
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
 
@@ -401,8 +461,6 @@ update(EventRecord *ev)
 	if (ev->state == DONE ){
 		if( events[ev->pc].stmt)
 			free(events[ev->pc].stmt);
-		events[ev->pc].stmt= 0;
-		events[ev->pc].state= FINISHED;
 			
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
@@ -411,9 +469,13 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"status\": \"done\",\n");
 		fprintf(tachofd,"\"ticks\": "LLFMT",\n",ev->ticks);
 		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
+		//renderCall(line,BUFSIZ, 0, ev->stmt,1);
+		//fprintf(tachofd,"\"beautystmt\": \"%s\",\n",line);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
 
+		events[ev->pc].stmt= 0;
+		events[ev->pc].state= FINISHED;
 		free(ev->stmt);
 		if( duration)
 			progress = (int)(ev->clkticks / (duration/100.0));
@@ -471,6 +533,7 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
+		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
 	};
@@ -480,7 +543,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:w:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -490,6 +553,9 @@ main(int argc, char **argv)
 			break;
 		case 'b':
 			beat = atoi(optarg ? optarg : "5000");
+			break;
+		case 'w':
+			wait = atoi(optarg ? optarg : "5000");
 			break;
 		case 'D':
 			debug = 1;
