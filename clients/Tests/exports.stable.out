@@ -1725,7 +1725,7 @@ str PropertyOperatorString(prop_op_t op);
 str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void QLOGcalls(BAT **r);
 void QLOGcatalog(BAT **r);
-str QLOGdefineNaive(void *ret, str *qry, str *opt);
+str QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr);
 str QLOGdisable(void *ret);
 str QLOGempty(void *ret);
 str QLOGenable(void *ret);

@@ -248,6 +248,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 					msec *= 10;
 				for( ;d>3; d--) 
 					msec /= 10;
+				n = nn;
 			}
 		}
 		val += msec;

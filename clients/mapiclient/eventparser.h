@@ -102,5 +102,6 @@ extern char *malarguments[MAXMALARGS];
 extern int malargtop;
 extern int debug;
 
+extern void clearArguments(void);
 extern int eventparser(char *row, EventRecord *ev);
 #endif /*_EVENT_PARSER_*/

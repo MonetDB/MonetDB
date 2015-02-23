@@ -159,7 +159,7 @@ main(int argc, char **argv)
 			debug = 1;
 			break;
 		case 'b':
-			beat = atoi(optarg ? optarg : "100");
+			beat = atoi(optarg ? optarg : "5000");
 			break;
 		case 'd':
 			dbname = optarg;

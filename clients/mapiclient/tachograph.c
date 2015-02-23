@@ -20,8 +20,7 @@
 /* (c) M Kersten
  * Progress indicator
  * tachograph -d demo 
- * which connects to the demo database server and
- * will present a progress bar for each query.
+ * which connects to the demo database server and presents a server progress bar.
 */
 
 #include "monetdb_config.h"
@@ -34,6 +33,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <math.h>
 #include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
@@ -77,9 +77,23 @@ static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
+static int beat = 5000;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
+static int interactive = 1;
 static int capturing=0;
+static int lastpc;
+static int pccount;
+
+#define RUNNING 1
+#define FINISHED 2
+typedef struct{
+	int state;
+	lng etc;
+	char *stmt;
+} Event;
+
+Event *events;
 
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
@@ -93,6 +107,8 @@ usageTachograph(void)
     fprintf(stderr, "  -u | --user=<user>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
+	fprintf(stderr, "  -i | --interactive=<o | 1> show trace on stdout\n");
     fprintf(stderr, "  -o | --output=<webfile>\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
@@ -120,6 +136,8 @@ lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
 int malsize = 0;
+char *prevquery= 0;
+lng prevprogress =0;
 
 static FILE *tachofd;
 
@@ -135,21 +153,114 @@ static void resetTachograph(void){
 	duration =0;
 	fclose(tachofd);
 	tachofd = 0;
+	prevprogress = 0;
+	lastpc = 0;
+	pccount = 0;
+	printf("\n"); 
+	fflush(stdout);
+	if( events){
+		free(events);
+		events = 0;
+	}
 }
 
-/*
-static char stamp[BUFSIZ];
+static char stamp[BUFSIZ]={0};
 static void
-rendertime(lng ticks)
+rendertime(lng ticks, int flg)
 {
 	int t, hr,min,sec;
+
+	if( ticks == 0){
+		strcpy(stamp,"unknown ");
+		return;
+	}
 	t = (int) (ticks/1000000);
 	sec = t % 60;
 	min = (t /60) %60;
 	hr = (t /3600);
+	if( flg)
 	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d.%06d", hr,min,sec, (int) ticks %1000000); 
+	else
+	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec); 
 }
-*/
+
+// determine maximal line width TODO
+
+#define MSGLEN 100
+
+static void
+renderCall(char *line, int len, int filler, char *stmt)
+{
+	char *limit= line + len -1, *l, *c = stmt;
+
+	c = stmt;
+	c = strstr(stmt,":=");
+	if( c) 
+		c+=2;
+	else c = stmt;
+	if( *c == '(') c++;
+	for( l= line; *c && l < limit; ) {
+		if( *c == 'X' && *(c+1)=='_') {
+			for(; *c && *c != '='; c++) {
+				//skip variables
+			}
+			if ( *c) c++;
+		}
+		if ( *c == 'A' && strchr(c,'=')){
+			for(; *c && *c != '='; c++) {
+				//skip argument variables
+			}
+			if ( *c) c++;
+		}
+		if(*c) *l++ = *c++;
+	}
+	if( filler)
+	for(; l < limit; l++)
+		*l= ' ';
+	*l = 0;
+}
+
+static void
+showBar(int level, lng clk, char *stmt)
+{
+	lng i =0;
+	char line[BUFSIZ];
+
+	if(interactive == 0)
+		return;
+
+	rendertime(duration,0);
+	printf("%s [", stamp);
+	if( prevprogress)
+		for( i=76+MSGLEN-1; i> prevprogress/2; i--)
+			printf("\b \b");
+	for( ; i < level/2; i++)
+		putchar('#');
+	for( ; i < 50; i++)
+		putchar('.');
+	putchar(']');
+	printf(" %3d%%",level);
+	if( duration == 0){
+		rendertime(clk,0);
+		printf(" +%s",stamp);
+	} else
+	if( duration && duration- clk > 0){
+		rendertime(duration - clk,0);
+		printf(" %c%s", (level == 100? '-':' '),stamp);
+	} else
+	if( duration && duration- clk < 0){
+		rendertime(clk -duration ,0);
+		printf(" +%s",stamp);
+	} else
+		printf("          ");
+	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
+	line[MSGLEN]=0;
+	if(stmt)
+		renderCall(line,MSGLEN,1,stmt);
+	printf("%s",line);
+	fflush(stdout);
+}
+
 /* create the progressbar JSON file for pickup */
 static void
 progressBarInit(void)
@@ -166,7 +277,7 @@ progressBarInit(void)
 	fprintf(tachofd," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 	fprintf(tachofd," \"query\":\"%s\",\n",currentquery?currentquery:"");
 	fprintf(tachofd," \"started\": "LLFMT",\n",starttime);
-	fprintf(tachofd," \"duration\":"LLFMT"\n",duration);
+	fprintf(tachofd," \"duration\":"LLFMT",\n",duration);
 	fprintf(tachofd," \"instructions\":%d\n",malsize);
 	fprintf(tachofd,"},\n");
 	fflush(tachofd);
@@ -175,9 +286,11 @@ progressBarInit(void)
 static void
 update(EventRecord *ev)
 {
+	double progress=0;
 	int i;
 	char *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
+	char line[BUFSIZ];
  
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= PING ) {
@@ -229,7 +342,7 @@ update(EventRecord *ev)
 	}
 	ev->clkticks -= starttime;
 
-	if ( !capturing || ev->thread >= MAXTHREADS)
+	if ( !capturing)
 		return;
 
 	/* start of instruction box */
@@ -238,35 +351,46 @@ update(EventRecord *ev)
 			// extract a string argument
 			currentquery = malarguments[0];
 			malsize = atoi(malarguments[3]);
-			// use the truncated query text, beware the the \ is already escaped in the call argument.
+			events = (Event*) malloc(malsize * sizeof(Event));
+			memset((char*)events, 0, malsize * sizeof(Event));
+			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			for (c= currentquery; *c; )
-				switch(*c){
-				case '\\':
-					c++;
-					switch(*c){
-					case 'n': *q++=' '; c++; break;
-					case 't': *q++=' '; c++; break;
-					case '\\': break;
-					default:
-						*q++ = *c++;
-					}
-					break;
-				default:
-					*q++ = *c++;
-				}
+			for (c= currentquery; *c; ){
+				if ( strncmp(c,"\\\\t",3) == 0){
+					*q++ = '\t';
+					c+=3;
+				} else
+				if ( strncmp(c,"\\\\n",3) == 0){
+					*q++ = '\n';
+					c+=3;
+				} else if ( strncmp(c,"\\\\",2) == 0){
+					c+= 2;
+				} else *q++ = *c++;
+			}
 			*q =0;
 			currentquery = qry;
+			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
+				printf("%s\n",qry);
+			prevquery = currentquery;
 			progressBarInit();
 		}
+		events[ev->pc].state = RUNNING;
+		renderCall(line,BUFSIZ, 0, ev->stmt);
+		events[ev->pc].stmt = strdup(line);
+		events[ev->pc].etc = ev->ticks;
+		if( ev->pc > lastpc)
+			lastpc = ev->pc;
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
 		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
+		fprintf(tachofd,"\"stmt\": \"%s\"\n",line);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
+
+		clearArguments();
 		return;
 	}
 	if( tachofd == NULL){
@@ -275,14 +399,37 @@ update(EventRecord *ev)
 	}
 	/* end the instruction box */
 	if (ev->state == DONE ){
+		if( events[ev->pc].stmt)
+			free(events[ev->pc].stmt);
+		events[ev->pc].stmt= 0;
+		events[ev->pc].state= FINISHED;
+			
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"done\",\n");
 		fprintf(tachofd,"\"ticks\": "LLFMT",\n",ev->ticks);
 		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
+
+		free(ev->stmt);
+		if( duration)
+			progress = (int)(ev->clkticks / (duration/100.0));
+		else
+			progress = (int)( pccount++ / (malsize/100.0));
+		if( progress > prevprogress ){
+			// pick up last unfinished instruction
+			for(i= lastpc; i >0; i--)
+				if( events[i].state == RUNNING && events[i].stmt)
+					break;
+			if( progress < prevprogress)
+				progress = prevprogress;
+			showBar((progress>100.0?(int)100:(int)progress),ev->clkticks,events[i].stmt);
+			prevprogress = progress>100.0?100: (int)progress;
+		}
+		clearArguments();
 	}
 	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
@@ -290,13 +437,12 @@ update(EventRecord *ev)
 				free(currentfunction);
 				currentfunction = 0;
 			}
+			showBar(100,ev->clkticks, 0);
 			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			resetTachograph();
 		} 
-		if( capturing == 0)
-			return;
 	}
 }
 
@@ -322,6 +468,8 @@ main(int argc, char **argv)
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "beat", 1, 0, 'b' },
+		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
@@ -332,11 +480,17 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'i':
+			interactive = atoi(optarg ? optarg : "1") == 1;
+			break;
+		case 'b':
+			beat = atoi(optarg ? optarg : "5000");
+			break;
 		case 'D':
 			debug = 1;
 			break;
@@ -448,7 +602,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(50);");
+	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
@@ -460,8 +614,6 @@ main(int argc, char **argv)
 	len = 0;
 	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 		buf[len + n] = 0;
-		if( trace) 
-			fprintf(trace,"%s",buf);
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
@@ -470,6 +622,8 @@ main(int argc, char **argv)
 			i= eventparser(response, &event);
 			if (debug  )
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
+			if( trace && i >=0 && capturing) 
+				fprintf(trace,"%s\n",response);
 			update(&event);
 			response = e + 1;
 		}

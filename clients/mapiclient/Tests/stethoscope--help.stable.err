@@ -16,11 +16,10 @@ stethoscope [options]
   -p | --port=<portnr>
   -h | --host=<hostname>
   -o | --output=<file>
-  -b | --beat=<delay> in milliseconds (default 50)
+  -b | --beat=<delay> in milliseconds (default 5000)
   -? | --help
 
 
 # 19:24:05 >  
 # 19:24:05 >  "Done."
-# 19:24:05 >  
 

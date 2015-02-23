@@ -239,6 +239,8 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	if ( msg){
 		logadd("\"%s\",\t",msg);
 	} else {
+		// TODO Obfusate instructions unless administrator calls for it.
+		
 		/* generate actual call statement */
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
 		c = stmt;
@@ -989,14 +991,14 @@ static void profilerHeartbeat(void *dummy)
 	while (ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat")) {
 		/* wait until you need this info */
 		while (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0; t -= 15) {
-				MT_sleep_ms(15);
+			for (t = 1000; t > 0; t -= 25) {
+				MT_sleep_ms(25);
 				if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 15) {
-			MT_sleep_ms(t > 15 ? 15 : t);
+		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 25) {
+			MT_sleep_ms(t > 25 ? 25 : t);
 			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 				return;
 		}
