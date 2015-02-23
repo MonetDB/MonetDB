@@ -78,6 +78,10 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
+// FIXME: this is eeevil
+#include "../R/MonetDB.R/src/mapisplit.c"
+#include "../R/MonetDB.R/src/profiler.c"
+
 enum modes {
 	MAL,
 	SQL,
@@ -1932,14 +1936,13 @@ doFileBulk(Mapi mid, FILE *fp)
 			}
 		}
 		timerResume();
-
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		assert(hdl != NULL);
-
+		profiler_arm();
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2720,6 +2723,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
+			profiler_arm();
+
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2859,6 +2864,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
+	fprintf(stderr, " -P          | --progress         show progress bar\n");
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -2885,6 +2891,7 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
+	int progress = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
@@ -2910,6 +2917,7 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
+		{"progress", 0, 0, 'P'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 #if 0
@@ -2968,7 +2976,7 @@ main(int argc, char **argv)
 #if 0
 				"t"
 #endif
-				"w:r:p:s:Xu:vzH?",
+				"w:r:p:s:Xu:vzHP?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -3112,6 +3120,9 @@ main(int argc, char **argv)
 		case 'z':
 			settz = 0;
 			break;
+		case 'P':
+			progress = 1;
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3224,6 +3235,16 @@ main(int argc, char **argv)
 		}
 	}
 
+	// switch on progress bars
+	if (mode == SQL && progress) {
+		char* buf = malloc(100);
+		int port = profiler_start();
+		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
+		mapi_query(mid, buf);
+		sprintf(buf, "CALL profiler_stethoscope(0)");
+		mapi_query(mid, buf);
+	}
+
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3294,6 +3315,7 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
+		profiler_arm();
 		c = doRequest(mid, command);
 		timerEnd();
 	}
