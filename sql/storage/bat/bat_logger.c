@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "bat_logger.h"
 #include "bat_utils.h"
+#include "sql_types.h" /* EC_POS */
 
 logger *bat_logger = NULL;
 
@@ -51,6 +52,37 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
+	if (catalog_version == CATALOG_OCT2014) {
+		BAT *te, *tn, *tne;
+		BATiter tei, tni;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		if (!te || !tn)
+			return;
+		tei = bat_iterator(te);
+		tni = bat_iterator(te);
+		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		if (!tne)
+			return;
+        	BATseqbase(tne, te->hseqbase);
+		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+			int eclass = *(int*)BUNtail(tei, p);
+			char *name = BUNtail(tni, p);
+
+			if (eclass >= EC_POS && strcmp(name, "oid") != 0)
+				eclass++;
+			else if (strcmp(name, "oid") == 0)
+				eclass = EC_POS;
+			BUNappend(tne, &eclass, TRUE);
+		}
+		BATsetaccess(tne, BAT_READ);
+		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
+		bat_destroy(te);
+		bat_destroy(tn);
+	}
 	if (catalog_version == CATALOG_OCT2014) {
 		/* we need to replace tables.readonly by tables.access column */
 		BAT *b, *b1;

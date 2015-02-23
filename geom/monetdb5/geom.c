@@ -1048,6 +1048,7 @@ wkbRelate(bit *out, wkb **a, wkb **b, const str *pattern)
 {
 	GEOSGeom ga = wkb2geos(*a);
 	GEOSGeom gb = wkb2geos(*b);
+	char res;
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
@@ -1064,11 +1065,14 @@ wkbRelate(bit *out, wkb **a, wkb **b, const str *pattern)
 		return MAL_SUCCEED;
 	}
 
-	*out = GEOSRelatePattern(ga, gb, *pattern);
+	res = GEOSRelatePattern(ga, gb, *pattern);
 
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
 
+	if (res == 2)
+		throw(MAL, "geom.Relate", GDK_EXCEPTION);
+	*out = (bit) res;
 	return MAL_SUCCEED;
 }
 

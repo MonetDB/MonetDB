@@ -162,6 +162,8 @@ SYSTEM FUNCTION  sys.optimizer_stats
 SYSTEM FUNCTION  sys.optimizers
 SYSTEM FUNCTION  sys.password_hash
 SYSTEM FUNCTION  sys.pause
+SYSTEM FUNCTION  sys.profiler_openstream
+SYSTEM FUNCTION  sys.profiler_stethoscope
 SYSTEM FUNCTION  sys.quantile
 SYSTEM FUNCTION  sys.querycache
 SYSTEM FUNCTION  sys.querylog

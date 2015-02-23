@@ -130,8 +130,11 @@ SYSTEM FUNCTION  sys.distance
 SYSTEM FUNCTION  sys.env
 SYSTEM FUNCTION  sys.envelope
 SYSTEM FUNCTION  sys.environment
+SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
+SYSTEM FUNCTION  sys.fitsattach
+SYSTEM FUNCTION  sys.fitsload
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext
@@ -161,6 +164,8 @@ SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
 SYSTEM FUNCTION  sys.isempty
 SYSTEM FUNCTION  sys.issimple
+SYSTEM FUNCTION  sys.left_shift
+SYSTEM FUNCTION  sys.left_shift_assign
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
@@ -188,6 +193,8 @@ SYSTEM FUNCTION  sys.point
 SYSTEM FUNCTION  sys.pointfromtext
 SYSTEM FUNCTION  sys.polyfromtext
 SYSTEM FUNCTION  sys.polygonfromtext
+SYSTEM FUNCTION  sys.profiler_openstream
+SYSTEM FUNCTION  sys.profiler_stethoscope
 SYSTEM FUNCTION  sys.quantile
 SYSTEM FUNCTION  sys.querycache
 SYSTEM FUNCTION  sys.querylog
@@ -202,6 +209,8 @@ SYSTEM FUNCTION  sys.relate
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
+SYSTEM FUNCTION  sys.right_shift
+SYSTEM FUNCTION  sys.right_shift_assign
 SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession
@@ -255,7 +264,7 @@ CREATE TABLE "sys"."_tables" (
 	"type"          SMALLINT,
 	"system"        BOOLEAN,
 	"commit_action" SMALLINT,
-	"readonly"      BOOLEAN
+	"access"        SMALLINT
 );
 CREATE TABLE "sys"."args" (
 	"id"          INTEGER,
@@ -1035,8 +1044,7 @@ returns table(
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
 	cpu int,  		-- average cpu load percentage during execution
-	io int,			-- percentage time waiting for IO to finish 
-	space bigint		-- total storage size of intermediates created (in MB)
+	io int			-- percentage time waiting for IO to finish 
 )
 external name sql.querylog_calls;
 -- The contents of this file are subject to the MonetDB Public License
@@ -1068,6 +1076,7 @@ returns table(
 	defined timestamp,
 	query string,
 	pipe string,
+	"plan" string,		-- Name of MAL plan
 	mal int,			-- size of MAL plan
 	optimize bigint 	-- time in usec
 )
@@ -1281,9 +1290,9 @@ external name sql.sysmon_stop;
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
 
-create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
-external name sql.storage;
+create function sys."storage"()
+returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
+external name sql."storage";
 create function sys.storagemodel()
 returns table (
 	"schema" string,
@@ -1313,7 +1322,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.storage() x;
+	select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys."storage"() x;
 
 	update sys.storagemodelinput
 	set reference = true
@@ -1401,13 +1410,14 @@ create function sys.tracelog()
 		clk varchar(20), 	-- wallclock, no mtime in kernel
 		pc varchar(50), 	-- module.function[nr]
 		thread int, 		-- thread identifier
-		"user" int, 		-- user identifier
 		ticks bigint, 		-- time in microseconds
+		rrsmb bigint, 		-- resident memory in MB
+		vmmb bigint, 		-- virtual size in MB
 		reads bigint, 		-- number of blocks read
 		writes bigint, 	-- number of blocks written
-		rbytes bigint,		-- amount of bytes touched
-		wbytes bigint,		-- amount of bytes written
-		type string,		-- return types
+		minflt bigint, 		-- minor page faults
+		majflt bigint, 		-- major page faults
+		nvcsw bigint, 		-- non-volantary conext switch
 		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;
@@ -1496,7 +1506,7 @@ CREATE TABLE "sys"."_columns" (
 	"number"      INTEGER,
 	"storage"     VARCHAR(2048)
 );
-COPY 284 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 286 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
 2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
 2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
 2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
@@ -1555,7 +1565,7 @@ COPY 284 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 2064	"type"	"smallint"	16	0	2059	NULL	true	4	NULL
 2065	"system"	"boolean"	1	0	2059	NULL	true	5	NULL
 2066	"commit_action"	"smallint"	16	0	2059	NULL	true	6	NULL
-2067	"readonly"	"boolean"	1	0	2059	NULL	true	7	NULL
+2067	"access"	"smallint"	16	0	2059	NULL	true	7	NULL
 2069	"id"	"int"	32	0	2068	NULL	true	0	NULL
 2070	"name"	"varchar"	1024	0	2068	NULL	true	1	NULL
 2071	"type"	"varchar"	1024	0	2068	NULL	true	2	NULL
@@ -1596,7 +1606,7 @@ COPY 284 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 2112	"type"	"smallint"	16	0	2107	NULL	true	4	NULL
 2113	"system"	"boolean"	1	0	2107	NULL	true	5	NULL
 2114	"commit_action"	"smallint"	16	0	2107	NULL	true	6	NULL
-2115	"readonly"	"boolean"	1	0	2107	NULL	true	7	NULL
+2115	"access"	"smallint"	16	0	2107	NULL	true	7	NULL
 2117	"id"	"int"	32	0	2116	NULL	true	0	NULL
 2118	"name"	"varchar"	1024	0	2116	NULL	true	1	NULL
 2119	"type"	"varchar"	1024	0	2116	NULL	true	2	NULL
@@ -3279,16 +3289,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3584	547	"arg_1"	"blob"	0	0	1	1
 3585	547	"arg_2"	"bigint"	64	0	1	2
 3586	548	"res_0"	"decimal"	2	0	0	0
-3587	548	"arg_1"	"tinyint"	8	0	1	1
+3587	548	"arg_1"	"oid"	31	0	1	1
 3588	548	"arg_2"	"decimal"	2	0	1	2
 3589	549	"res_0"	"decimal"	2	0	0	0
-3590	549	"arg_1"	"smallint"	16	0	1	1
+3590	549	"arg_1"	"tinyint"	8	0	1	1
 3591	549	"arg_2"	"decimal"	2	0	1	2
 3592	550	"res_0"	"decimal"	2	0	0	0
-3593	550	"arg_1"	"int"	32	0	1	1
+3593	550	"arg_1"	"smallint"	16	0	1	1
 3594	550	"arg_2"	"decimal"	2	0	1	2
 3595	551	"res_0"	"decimal"	2	0	0	0
-3596	551	"arg_1"	"oid"	31	0	1	1
+3596	551	"arg_1"	"int"	32	0	1	1
 3597	551	"arg_2"	"decimal"	2	0	1	2
 3598	552	"res_0"	"decimal"	2	0	0	0
 3599	552	"arg_1"	"wrd"	32	0	1	1
@@ -3339,16 +3349,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3644	567	"arg_1"	"blob"	0	0	1	1
 3645	567	"arg_2"	"decimal"	2	0	1	2
 3646	568	"res_0"	"decimal"	4	0	0	0
-3647	568	"arg_1"	"tinyint"	8	0	1	1
+3647	568	"arg_1"	"oid"	31	0	1	1
 3648	568	"arg_2"	"decimal"	4	0	1	2
 3649	569	"res_0"	"decimal"	4	0	0	0
-3650	569	"arg_1"	"smallint"	16	0	1	1
+3650	569	"arg_1"	"tinyint"	8	0	1	1
 3651	569	"arg_2"	"decimal"	4	0	1	2
 3652	570	"res_0"	"decimal"	4	0	0	0
-3653	570	"arg_1"	"int"	32	0	1	1
+3653	570	"arg_1"	"smallint"	16	0	1	1
 3654	570	"arg_2"	"decimal"	4	0	1	2
 3655	571	"res_0"	"decimal"	4	0	0	0
-3656	571	"arg_1"	"oid"	31	0	1	1
+3656	571	"arg_1"	"int"	32	0	1	1
 3657	571	"arg_2"	"decimal"	4	0	1	2
 3658	572	"res_0"	"decimal"	4	0	0	0
 3659	572	"arg_1"	"wrd"	32	0	1	1
@@ -3399,16 +3409,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3704	587	"arg_1"	"blob"	0	0	1	1
 3705	587	"arg_2"	"decimal"	4	0	1	2
 3706	588	"res_0"	"decimal"	9	0	0	0
-3707	588	"arg_1"	"tinyint"	8	0	1	1
+3707	588	"arg_1"	"oid"	31	0	1	1
 3708	588	"arg_2"	"decimal"	9	0	1	2
 3709	589	"res_0"	"decimal"	9	0	0	0
-3710	589	"arg_1"	"smallint"	16	0	1	1
+3710	589	"arg_1"	"tinyint"	8	0	1	1
 3711	589	"arg_2"	"decimal"	9	0	1	2
 3712	590	"res_0"	"decimal"	9	0	0	0
-3713	590	"arg_1"	"int"	32	0	1	1
+3713	590	"arg_1"	"smallint"	16	0	1	1
 3714	590	"arg_2"	"decimal"	9	0	1	2
 3715	591	"res_0"	"decimal"	9	0	0	0
-3716	591	"arg_1"	"oid"	31	0	1	1
+3716	591	"arg_1"	"int"	32	0	1	1
 3717	591	"arg_2"	"decimal"	9	0	1	2
 3718	592	"res_0"	"decimal"	9	0	0	0
 3719	592	"arg_1"	"wrd"	32	0	1	1
@@ -3459,16 +3469,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3764	607	"arg_1"	"blob"	0	0	1	1
 3765	607	"arg_2"	"decimal"	9	0	1	2
 3766	608	"res_0"	"decimal"	19	0	0	0
-3767	608	"arg_1"	"tinyint"	8	0	1	1
+3767	608	"arg_1"	"oid"	31	0	1	1
 3768	608	"arg_2"	"decimal"	19	0	1	2
 3769	609	"res_0"	"decimal"	19	0	0	0
-3770	609	"arg_1"	"smallint"	16	0	1	1
+3770	609	"arg_1"	"tinyint"	8	0	1	1
 3771	609	"arg_2"	"decimal"	19	0	1	2
 3772	610	"res_0"	"decimal"	19	0	0	0
-3773	610	"arg_1"	"int"	32	0	1	1
+3773	610	"arg_1"	"smallint"	16	0	1	1
 3774	610	"arg_2"	"decimal"	19	0	1	2
 3775	611	"res_0"	"decimal"	19	0	0	0
-3776	611	"arg_1"	"oid"	31	0	1	1
+3776	611	"arg_1"	"int"	32	0	1	1
 3777	611	"arg_2"	"decimal"	19	0	1	2
 3778	612	"res_0"	"decimal"	19	0	0	0
 3779	612	"arg_1"	"wrd"	32	0	1	1
@@ -3519,16 +3529,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3824	627	"arg_1"	"blob"	0	0	1	1
 3825	627	"arg_2"	"decimal"	19	0	1	2
 3826	628	"res_0"	"real"	24	0	0	0
-3827	628	"arg_1"	"tinyint"	8	0	1	1
+3827	628	"arg_1"	"oid"	31	0	1	1
 3828	628	"arg_2"	"real"	24	0	1	2
 3829	629	"res_0"	"real"	24	0	0	0
-3830	629	"arg_1"	"smallint"	16	0	1	1
+3830	629	"arg_1"	"tinyint"	8	0	1	1
 3831	629	"arg_2"	"real"	24	0	1	2
 3832	630	"res_0"	"real"	24	0	0	0
-3833	630	"arg_1"	"int"	32	0	1	1
+3833	630	"arg_1"	"smallint"	16	0	1	1
 3834	630	"arg_2"	"real"	24	0	1	2
 3835	631	"res_0"	"real"	24	0	0	0
-3836	631	"arg_1"	"oid"	31	0	1	1
+3836	631	"arg_1"	"int"	32	0	1	1
 3837	631	"arg_2"	"real"	24	0	1	2
 3838	632	"res_0"	"real"	24	0	0	0
 3839	632	"arg_1"	"wrd"	32	0	1	1
@@ -3579,16 +3589,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3884	647	"arg_1"	"blob"	0	0	1	1
 3885	647	"arg_2"	"real"	24	0	1	2
 3886	648	"res_0"	"double"	53	0	0	0
-3887	648	"arg_1"	"tinyint"	8	0	1	1
+3887	648	"arg_1"	"oid"	31	0	1	1
 3888	648	"arg_2"	"double"	53	0	1	2
 3889	649	"res_0"	"double"	53	0	0	0
-3890	649	"arg_1"	"smallint"	16	0	1	1
+3890	649	"arg_1"	"tinyint"	8	0	1	1
 3891	649	"arg_2"	"double"	53	0	1	2
 3892	650	"res_0"	"double"	53	0	0	0
-3893	650	"arg_1"	"int"	32	0	1	1
+3893	650	"arg_1"	"smallint"	16	0	1	1
 3894	650	"arg_2"	"double"	53	0	1	2
 3895	651	"res_0"	"double"	53	0	0	0
-3896	651	"arg_1"	"oid"	31	0	1	1
+3896	651	"arg_1"	"int"	32	0	1	1
 3897	651	"arg_2"	"double"	53	0	1	2
 3898	652	"res_0"	"double"	53	0	0	0
 3899	652	"arg_1"	"wrd"	32	0	1	1
@@ -3639,16 +3649,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 3944	667	"arg_1"	"blob"	0	0	1	1
 3945	667	"arg_2"	"double"	53	0	1	2
 3946	668	"res_0"	"month_interval"	32	0	0	0
-3947	668	"arg_1"	"tinyint"	8	0	1	1
+3947	668	"arg_1"	"oid"	31	0	1	1
 3948	668	"arg_2"	"month_interval"	32	0	1	2
 3949	669	"res_0"	"month_interval"	32	0	0	0
-3950	669	"arg_1"	"smallint"	16	0	1	1
+3950	669	"arg_1"	"tinyint"	8	0	1	1
 3951	669	"arg_2"	"month_interval"	32	0	1	2
 3952	670	"res_0"	"month_interval"	32	0	0	0
-3953	670	"arg_1"	"int"	32	0	1	1
+3953	670	"arg_1"	"smallint"	16	0	1	1
 3954	670	"arg_2"	"month_interval"	32	0	1	2
 3955	671	"res_0"	"month_interval"	32	0	0	0
-3956	671	"arg_1"	"oid"	31	0	1	1
+3956	671	"arg_1"	"int"	32	0	1	1
 3957	671	"arg_2"	"month_interval"	32	0	1	2
 3958	672	"res_0"	"month_interval"	32	0	0	0
 3959	672	"arg_1"	"wrd"	32	0	1	1
@@ -3699,16 +3709,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4004	687	"arg_1"	"blob"	0	0	1	1
 4005	687	"arg_2"	"month_interval"	32	0	1	2
 4006	688	"res_0"	"sec_interval"	19	0	0	0
-4007	688	"arg_1"	"tinyint"	8	0	1	1
+4007	688	"arg_1"	"oid"	31	0	1	1
 4008	688	"arg_2"	"sec_interval"	19	0	1	2
 4009	689	"res_0"	"sec_interval"	19	0	0	0
-4010	689	"arg_1"	"smallint"	16	0	1	1
+4010	689	"arg_1"	"tinyint"	8	0	1	1
 4011	689	"arg_2"	"sec_interval"	19	0	1	2
 4012	690	"res_0"	"sec_interval"	19	0	0	0
-4013	690	"arg_1"	"int"	32	0	1	1
+4013	690	"arg_1"	"smallint"	16	0	1	1
 4014	690	"arg_2"	"sec_interval"	19	0	1	2
 4015	691	"res_0"	"sec_interval"	19	0	0	0
-4016	691	"arg_1"	"oid"	31	0	1	1
+4016	691	"arg_1"	"int"	32	0	1	1
 4017	691	"arg_2"	"sec_interval"	19	0	1	2
 4018	692	"res_0"	"sec_interval"	19	0	0	0
 4019	692	"arg_1"	"wrd"	32	0	1	1
@@ -3759,16 +3769,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4064	707	"arg_1"	"blob"	0	0	1	1
 4065	707	"arg_2"	"sec_interval"	19	0	1	2
 4066	708	"res_0"	"time"	7	0	0	0
-4067	708	"arg_1"	"tinyint"	8	0	1	1
+4067	708	"arg_1"	"oid"	31	0	1	1
 4068	708	"arg_2"	"time"	7	0	1	2
 4069	709	"res_0"	"time"	7	0	0	0
-4070	709	"arg_1"	"smallint"	16	0	1	1
+4070	709	"arg_1"	"tinyint"	8	0	1	1
 4071	709	"arg_2"	"time"	7	0	1	2
 4072	710	"res_0"	"time"	7	0	0	0
-4073	710	"arg_1"	"int"	32	0	1	1
+4073	710	"arg_1"	"smallint"	16	0	1	1
 4074	710	"arg_2"	"time"	7	0	1	2
 4075	711	"res_0"	"time"	7	0	0	0
-4076	711	"arg_1"	"oid"	31	0	1	1
+4076	711	"arg_1"	"int"	32	0	1	1
 4077	711	"arg_2"	"time"	7	0	1	2
 4078	712	"res_0"	"time"	7	0	0	0
 4079	712	"arg_1"	"wrd"	32	0	1	1
@@ -3819,16 +3829,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4124	727	"arg_1"	"blob"	0	0	1	1
 4125	727	"arg_2"	"time"	7	0	1	2
 4126	728	"res_0"	"timetz"	7	0	0	0
-4127	728	"arg_1"	"tinyint"	8	0	1	1
+4127	728	"arg_1"	"oid"	31	0	1	1
 4128	728	"arg_2"	"timetz"	7	0	1	2
 4129	729	"res_0"	"timetz"	7	0	0	0
-4130	729	"arg_1"	"smallint"	16	0	1	1
+4130	729	"arg_1"	"tinyint"	8	0	1	1
 4131	729	"arg_2"	"timetz"	7	0	1	2
 4132	730	"res_0"	"timetz"	7	0	0	0
-4133	730	"arg_1"	"int"	32	0	1	1
+4133	730	"arg_1"	"smallint"	16	0	1	1
 4134	730	"arg_2"	"timetz"	7	0	1	2
 4135	731	"res_0"	"timetz"	7	0	0	0
-4136	731	"arg_1"	"oid"	31	0	1	1
+4136	731	"arg_1"	"int"	32	0	1	1
 4137	731	"arg_2"	"timetz"	7	0	1	2
 4138	732	"res_0"	"timetz"	7	0	0	0
 4139	732	"arg_1"	"wrd"	32	0	1	1
@@ -3879,16 +3889,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4184	747	"arg_1"	"blob"	0	0	1	1
 4185	747	"arg_2"	"timetz"	7	0	1	2
 4186	748	"res_0"	"date"	0	0	0	0
-4187	748	"arg_1"	"tinyint"	8	0	1	1
+4187	748	"arg_1"	"oid"	31	0	1	1
 4188	748	"arg_2"	"date"	0	0	1	2
 4189	749	"res_0"	"date"	0	0	0	0
-4190	749	"arg_1"	"smallint"	16	0	1	1
+4190	749	"arg_1"	"tinyint"	8	0	1	1
 4191	749	"arg_2"	"date"	0	0	1	2
 4192	750	"res_0"	"date"	0	0	0	0
-4193	750	"arg_1"	"int"	32	0	1	1
+4193	750	"arg_1"	"smallint"	16	0	1	1
 4194	750	"arg_2"	"date"	0	0	1	2
 4195	751	"res_0"	"date"	0	0	0	0
-4196	751	"arg_1"	"oid"	31	0	1	1
+4196	751	"arg_1"	"int"	32	0	1	1
 4197	751	"arg_2"	"date"	0	0	1	2
 4198	752	"res_0"	"date"	0	0	0	0
 4199	752	"arg_1"	"wrd"	32	0	1	1
@@ -3939,16 +3949,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4244	767	"arg_1"	"blob"	0	0	1	1
 4245	767	"arg_2"	"date"	0	0	1	2
 4246	768	"res_0"	"timestamp"	7	0	0	0
-4247	768	"arg_1"	"tinyint"	8	0	1	1
+4247	768	"arg_1"	"oid"	31	0	1	1
 4248	768	"arg_2"	"timestamp"	7	0	1	2
 4249	769	"res_0"	"timestamp"	7	0	0	0
-4250	769	"arg_1"	"smallint"	16	0	1	1
+4250	769	"arg_1"	"tinyint"	8	0	1	1
 4251	769	"arg_2"	"timestamp"	7	0	1	2
 4252	770	"res_0"	"timestamp"	7	0	0	0
-4253	770	"arg_1"	"int"	32	0	1	1
+4253	770	"arg_1"	"smallint"	16	0	1	1
 4254	770	"arg_2"	"timestamp"	7	0	1	2
 4255	771	"res_0"	"timestamp"	7	0	0	0
-4256	771	"arg_1"	"oid"	31	0	1	1
+4256	771	"arg_1"	"int"	32	0	1	1
 4257	771	"arg_2"	"timestamp"	7	0	1	2
 4258	772	"res_0"	"timestamp"	7	0	0	0
 4259	772	"arg_1"	"wrd"	32	0	1	1
@@ -3999,16 +4009,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4304	787	"arg_1"	"blob"	0	0	1	1
 4305	787	"arg_2"	"timestamp"	7	0	1	2
 4306	788	"res_0"	"timestamptz"	7	0	0	0
-4307	788	"arg_1"	"tinyint"	8	0	1	1
+4307	788	"arg_1"	"oid"	31	0	1	1
 4308	788	"arg_2"	"timestamptz"	7	0	1	2
 4309	789	"res_0"	"timestamptz"	7	0	0	0
-4310	789	"arg_1"	"smallint"	16	0	1	1
+4310	789	"arg_1"	"tinyint"	8	0	1	1
 4311	789	"arg_2"	"timestamptz"	7	0	1	2
 4312	790	"res_0"	"timestamptz"	7	0	0	0
-4313	790	"arg_1"	"int"	32	0	1	1
+4313	790	"arg_1"	"smallint"	16	0	1	1
 4314	790	"arg_2"	"timestamptz"	7	0	1	2
 4315	791	"res_0"	"timestamptz"	7	0	0	0
-4316	791	"arg_1"	"oid"	31	0	1	1
+4316	791	"arg_1"	"int"	32	0	1	1
 4317	791	"arg_2"	"timestamptz"	7	0	1	2
 4318	792	"res_0"	"timestamptz"	7	0	0	0
 4319	792	"arg_1"	"wrd"	32	0	1	1
@@ -4059,16 +4069,16 @@ COPY 3716 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4364	807	"arg_1"	"blob"	0	0	1	1
 4365	807	"arg_2"	"timestamptz"	7	0	1	2
 4366	808	"res_0"	"blob"	0	0	0	0
-4367	808	"arg_1"	"tinyint"	8	0	1	1
+4367	808	"arg_1"	"oid"	31	0	1	1
 4368	808	"arg_2"	"blob"	0	0	1	2
 4369	809	"res_0"	"blob"	0	0	0	0
-4370	809	"arg_1"	"smallint"	16	0	1	1
+4370	809	"arg_1"	"tinyint"	8	0	1	1
 4371	809	"arg_2"	"blob"	0	0	1	2
 4372	810	"res_0"	"blob"	0	0	0	0
-4373	810	"arg_1"	"int"	32	0	1	1
+4373	810	"arg_1"	"smallint"	16	0	1	1
 4374	810	"arg_2"	"blob"	0	0	1	2
 4375	811	"res_0"	"blob"	0	0	0	0
-4376	811	"arg_1"	"oid"	31	0	1	1
+4376	811	"arg_1"	"int"	32	0	1	1
 4377	811	"arg_2"	"blob"	0	0	1	2
 4378	812	"res_0"	"blob"	0	0	0	0
 4379	812	"arg_1"	"wrd"	32	0	1	1
@@ -8428,8 +8438,9 @@ COPY 1327 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 5751
 5754
 5757
-5761
-5765
+5760
+5763
+5766
 5769
 5773
 5777
