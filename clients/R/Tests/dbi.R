@@ -13,6 +13,7 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 options(monetdb.insert.splitsize=10)
+options(monetdb.profile=F)
 
 tname <- "monetdbtest"
 

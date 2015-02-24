@@ -20,6 +20,11 @@
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#define HAVE_NL_LANGINFO	/* not on Windows, probably everywhere else */
+#endif
+
+#ifdef HAVE_NL_LANGINFO
+#include <langinfo.h>
 #endif
 
 #include "mapisplit.h"
@@ -44,13 +49,6 @@ static char* profiler_symb_query = "X";
 static char* profiler_symb_trans = "V";
 static char* profiler_symb_bfree = "_";
 static char* profiler_symb_bfull = "#";
-
-static int profiler_strupp(char *s) {
-    size_t i;
-    for (i = 0; i < strlen(s); i++)
-        s[i] = toupper(s[i]);
-    return i;
-}
 
 /* standalone MAL function call parser */
 void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
@@ -121,7 +119,7 @@ void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 	}
 }
 
-static unsigned long profiler_tsms() {
+static unsigned long profiler_tsms(void) {
 	unsigned long ret = 0;
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -131,9 +129,10 @@ static unsigned long profiler_tsms() {
 }
 
 // clear line and overwrite with spaces
-void profiler_clearbar() {
+void profiler_clearbar(void) {
+	int bs;
 	if (!profiler_needcleanup) return;
-	for (int bs=0; bs < PROFILER_BARSYMB + 3 + 6; bs++) printf("\b \b"); 
+	for (bs=0; bs < PROFILER_BARSYMB + 3 + 6; bs++) printf("\b \b"); 
 	profiler_needcleanup = 0;
 }
 
@@ -152,11 +151,10 @@ void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
 	printf(" %3u%% ", percentage);
-	fflush(stdout);
+	fflush(NULL);
 }
 
 static void* profiler_thread(void* params) {
-	params = (void*) params;
 	char buf[BUFSIZ];
 	char* elems[TRACE_NCOLS];
 	// query ids are unlikely to be longer than BUFSIZ
@@ -167,15 +165,20 @@ static void* profiler_thread(void* params) {
 	size_t profiler_msgs_expect = 0;
 	size_t profiler_msgs_done = 0;
 
-	unsigned long profiler_querystart;
+	unsigned long profiler_querystart = 0;
 	char* stmtbuf = malloc(65507); // maximum size of an IPv4 UDP packet
 
 	mal_statement *stmt = malloc(sizeof(mal_statement));
 	stmt->params = malloc(TRACE_MAL_MAXPARAMS * sizeof(char*));
 
+	(void) params;
 	for(;;) {
 		recvd = read(profiler_socket, buf, sizeof(buf));
+		if (recvd < 0)
+			return NULL;
 		if (recvd > 0) {
+			size_t i = 0, j = 0;
+			char ib = 0;
 			buf[recvd] = 0;
 			if (buf[0]== '#') {
 				continue;
@@ -185,8 +188,6 @@ static void* profiler_thread(void* params) {
 				continue;
 			}
 			// cleanup overloaded query identifier
-			size_t i = 0, j = 0;
-			char ib = 0;
 			for (i = 0; i < strlen(elems[TRACE_COL_QUERYID]); i++) {
 				if (elems[TRACE_COL_QUERYID][i] == '[') {ib = 1; thisqueryid[j++] = '*'; }
 				if (elems[TRACE_COL_QUERYID][i] == ']') {ib = 0; continue;}
@@ -229,19 +230,18 @@ void profiler_renderbar_dl(int* state, int* total) {
 	profiler_renderbar(*state, *total, profiler_symb_trans);
 }
 
-void profiler_arm() {
+void profiler_arm(void) {
 	profiler_armed = 1;
 }
 
-int profiler_start() {
-	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if(profiler_socket < 0) {
-	    fprintf(stderr, "socket error\n");
-	    return -1;
-	}
-
+int profiler_start(void) {
 	struct sockaddr_in serv_addr;
 	socklen_t len = sizeof(serv_addr);
+
+	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if(profiler_socket < 0) {
+	    return -1;
+	}
 
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -250,19 +250,17 @@ int profiler_start() {
 
 	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 || 
 		getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) < 0) {
-      	fprintf(stderr, "could not bind to process (%d) %s\n", errno, strerror(errno));
       	return -1;
 	}
 
-	// some nicer characters for UTF-enabled terminals
- 	char* ctype = getenv("LC_CTYPE");
- 	profiler_strupp(ctype);
- 	if (strstr(ctype, "UTF-8") != NULL) {
- 		profiler_symb_query = "\u27F2";
-		profiler_symb_trans = "\u2193";
-		profiler_symb_bfree = "\u2591";
-		profiler_symb_bfull = "\u2588";
- 	}
+#ifdef HAVE_NL_LANGINFO
+	if (strcasecmp(nl_langinfo(CODESET), "utf-8") == 0) {
+		profiler_symb_query = "\342\237\262";	/* U+27F2 */
+		profiler_symb_trans = "\342\206\223";	/* U+2193 */
+		profiler_symb_bfree = "\342\226\221";	/* U+2591 */
+		profiler_symb_bfull = "\342\226\210";	/* U+2588 */
+	}
+#endif
 
 	// start backgroud listening thread
 	pthread_create(&profiler_pthread, NULL, &profiler_thread, NULL);

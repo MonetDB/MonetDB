@@ -15,36 +15,6 @@
 # Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../../monetdb5/mal \
-	   ../../../../common/options \
-	   ../../../../common/stream \
-	   ../../../../common/utils \
-	   ../../../../gdk
-
-lib__gsl = {
-	MODULE
-	DIR = libdir/monetdb5
-	SOURCES = gsl.c
-	LIBS = $(gsl_LIBS)
-}
-
-headers_gslmal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = gsl.mal
-}
-
-headers_gslautoload = {
-    HEADERS = mal
-    DIR = libdir/monetdb5/autoload
-    SOURCES = 73_gsl.mal
-}
-
-headers_gsl = {
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 46_gsl.sql
-}
-
-EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 73_gsl.mal gsl.mal
+SUBDIRS = src
+EXTRA_DIST = DESCRIPTION NAMESPACE NEWS
+EXTRA_DIST_DIR = R man
