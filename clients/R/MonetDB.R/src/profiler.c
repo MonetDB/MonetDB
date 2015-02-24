@@ -15,15 +15,15 @@
 #include <sys/types.h>
 #ifdef _MSC_VER
 #include <sys/timeb.h>
+typedef int ssize_t;
 #else
 #include <sys/fcntl.h>
 #include <sys/time.h>
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__WIN32__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
-typedef int ssize_t;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -225,7 +225,7 @@ static void* profiler_thread(void* params)
 
 			if (profiler_armed && strcmp(stmt->function, "querylog.define") == 0) {
 				// the third parameter to querylog.define contains the MAL plan size
-				profiler_msgs_expect = atol(stmt->params[2]) - 2; 
+				profiler_msgs_expect = atol(stmt->params[2]) - 3; 
 #ifdef _MSC_VER
 				strcpy_s(queryid, BUFSIZ, thisqueryid);
 #else
