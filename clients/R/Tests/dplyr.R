@@ -12,6 +12,8 @@ library(MonetDB.R,quietly=T,lib.loc=ll)
 library(dplyr,quietly=T)
 library(Lahman,quietly=T)
 
+options(monetdb.profile=F)
+
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
 dbname <- "mTests_clients_R"
