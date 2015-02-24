@@ -3239,6 +3239,9 @@ main(int argc, char **argv)
 	if (mode == SQL && progress) {
 		char* buf = malloc(100);
 		int port = profiler_start();
+		if (port < 0) {
+			fprintf(stderr, "Unable to listen for UDP profiling messages\n");
+		}
 		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
 		mapi_query(mid, buf);
 		sprintf(buf, "CALL profiler_stethoscope(0)");

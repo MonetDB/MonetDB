@@ -1,11 +1,16 @@
 #include <R.h>
 #include <Rdefines.h>
 
-int profiler_start();
+#include "profiler.h"
 
 SEXP profiler_start_listen() {
 	SEXP port;
+	int pret;
 	port = NEW_INTEGER(1);
- 	INTEGER_POINTER(port)[0] = profiler_start();
+	pret = profiler_start();
+	if (pret < 0) {
+		error("Failed to listen for UDP messages");
+	}
+ 	INTEGER_POINTER(port)[0] = pret;
 	return port;
 }

@@ -20,7 +20,6 @@
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
-
 #define HAVE_NL_LANGINFO	/* not on Windows, probably everywhere else */
 #endif
 
@@ -152,7 +151,7 @@ void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
 	printf(" %3u%% ", percentage);
-	fflush(stdout);
+	fflush(NULL);
 }
 
 static void* profiler_thread(void* params) {
@@ -241,7 +240,6 @@ int profiler_start(void) {
 
 	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if(profiler_socket < 0) {
-	    fprintf(stderr, "socket error\n");
 	    return -1;
 	}
 
@@ -252,7 +250,6 @@ int profiler_start(void) {
 
 	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 || 
 		getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) < 0) {
-      	fprintf(stderr, "could not bind to process (%d) %s\n", errno, strerror(errno));
       	return -1;
 	}
 
