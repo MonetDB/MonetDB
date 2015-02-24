@@ -78,7 +78,7 @@ static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
 static int beat = 5000;
-static int wait = 5000;
+static int delay = 500; // ms
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int interactive = 1;
@@ -91,6 +91,7 @@ static int pccount;
 typedef struct{
 	int state;
 	lng etc;
+	lng actual;
 	char *stmt;
 } Event;
 
@@ -147,6 +148,8 @@ static void resetTachograph(void){
 	int i;
 	if (debug)
 		fprintf(stderr, "RESET tachograph\n");
+	if( prevprogress)
+		printf("\n"); 
 	for(i=0; i < malsize; i++)
 	if( events[i].stmt)
 		free(events[i].stmt);
@@ -162,7 +165,6 @@ static void resetTachograph(void){
 	prevprogress = 0;
 	lastpc = 0;
 	pccount = 0;
-	printf("\n"); 
 	fflush(stdout);
 	if( events){
 		free(events);
@@ -189,8 +191,6 @@ rendertime(lng ticks, int flg)
 	else
 	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec); 
 }
-
-// determine maximal line width TODO
 
 #define MSGLEN 100
 
@@ -260,7 +260,7 @@ goon:
 			}
 			if ( *(c+1) != '<') c++;
 		}
-		if ( *c == 'A' && strchr(c,'=')){
+		if ( (*c == 'A' || *c == 'r') && strchr(c,'=')){
 			for(; *c && *c != '='; c++) {
 				//skip argument variables
 			}
@@ -287,9 +287,6 @@ showBar(int level, lng clk, char *stmt)
 {
 	lng i =0;
 	char line[BUFSIZ];
-
-	//if(interactive == 0 || clk < wait)
-		//return;
 
 	rendertime(duration,0);
 	printf("%s [", stamp);
@@ -501,9 +498,12 @@ update(EventRecord *ev)
 					break;
 			if( progress < prevprogress)
 				progress = prevprogress;
-			showBar((progress>100.0?(int)100:(int)progress),ev->clkticks,events[i].stmt);
-			prevprogress = progress>100.0?100: (int)progress;
+			if( ev->clkticks >delay * 1000 && interactive){
+				showBar((progress>100.0?(int)100:(int)progress),ev->clkticks,events[i].stmt);
+				prevprogress = progress>100.0?100: (int)progress;
+			}
 		}
+		events[ev->pc].actual= ev->ticks;
 		clearArguments();
 	}
 	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
@@ -512,7 +512,8 @@ update(EventRecord *ev)
 				free(currentfunction);
 				currentfunction = 0;
 			}
-			showBar(100,ev->clkticks, 0);
+			if( ev->clkticks >delay * 1000 && interactive)
+				showBar(100,ev->clkticks, 0);
 			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
@@ -568,7 +569,7 @@ main(int argc, char **argv)
 			beat = atoi(optarg ? optarg : "5000");
 			break;
 		case 'w':
-			wait = atoi(optarg ? optarg : "5000");
+			delay = atoi(optarg ? optarg : "5000");
 			break;
 		case 'D':
 			debug = 1;
