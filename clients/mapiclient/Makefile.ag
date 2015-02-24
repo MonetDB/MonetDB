@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../mapilib ../../common/options ../../common/stream ../R/MonetDB.R/src/ $(READLINE_INCS)
+INCLUDES = ../mapilib ../../common/options ../../common/stream ../R/MonetDB.R/src $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
@@ -28,7 +28,7 @@ bin_mclient = {
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) \
-		$(curl_LIBS) $(LTLIBICONV)
+		$(curl_LIBS) $(LTLIBICONV) $(PTHREAD_LIBS) $(MATH_LIBS)
 }
 
 bin_msqldump = {
