@@ -166,7 +166,7 @@ static void* profiler_thread(void* params) {
 	size_t profiler_msgs_expect = 0;
 	size_t profiler_msgs_done = 0;
 
-	unsigned long profiler_querystart;
+	unsigned long profiler_querystart = 0;
 	char* stmtbuf = malloc(65507); // maximum size of an IPv4 UDP packet
 
 	mal_statement *stmt = malloc(sizeof(mal_statement));
