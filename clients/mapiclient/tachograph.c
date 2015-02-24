@@ -140,7 +140,7 @@ lng finishtime = 0;
 lng duration =0;
 int malsize = 0;
 char *prevquery= 0;
-lng prevprogress =0;
+int prevprogress =0;
 
 static FILE *tachofd;
 
@@ -345,7 +345,7 @@ progressBarInit(void)
 static void
 update(EventRecord *ev)
 {
-	double progress=0;
+	int progress=0;
 	int i,j;
 	char *v, *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
