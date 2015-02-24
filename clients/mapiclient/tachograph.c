@@ -78,7 +78,7 @@ static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
 static int beat = 5000;
-static int delay = 5000; // ms
+static int delay = 1000; // ms
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int interactive = 1;
@@ -198,34 +198,40 @@ rendertime(lng ticks, int flg)
  * Render the output of the stethoscope into a more user-friendly format.
  * This involves removal of MAL variables and possibly renaming the MAL functions
  * by more general alternatives.
+ * If mode is set then we go for a minimal base-table related display
  */
 static struct{
 	char *name;
 	int length;
 	char *alias;
 	int newl;
+	int mode;
 }mapping[]={
-	{"dataflow.language", 17,	"parallel", 8},
-	{"calc.lng", 8,	"long", 4},
-	{"sql.bind", 8,	"bind", 4},
-	{"language.pass(nil)", 18,	"pass", 4},
-	{"language.pass", 13,	"pass", 4},
-	{"algebra.subselect", 17, "select",6},
-	{"algebra.subjoin", 15, "join",4},
-	{"algebra.leftfetchjoin", 21, "project",7},
-	{"algebra.leftfetchjoinPath", 25, "join path",9},
-	{"mat.packIncrement", 17, "pack",4},
-	{"batcalc.", 8, "", 0},
-	{"calc.", 5, "", 0},
-	{"sql.", 4,	"", 0},
-	{"aggr.", 5,	"", 0},
-	{"group.", 6,	"", 0},
-	{0,0,0,0}};
+	{"algebra.leftfetchjoinPath", 25, "PROJECTION",10, 0},
+	{"algebra.thetasubselect", 22, "SELECTION",9, 0},
+	{"algebra.leftfetchjoin", 21, "PROJECTION",10, 0},
+	{"language.pass(nil)", 18,	"pass", 4, 0},
+	{"dataflow.language", 17,	"parallel", 8, 0},
+	{"algebra.subselect", 17, "SELECTION",9, 0},
+	{"algebra.subjoin", 15, "JOIN",4, 0},
+	{"mat.packIncrement", 17, "pack",4, 0},
+	{"language.pass", 13,	"pass", 4, 0},
+	{"bat.append", 10,	"APPEND", 6, 0},
+	{"calc.lng", 8,	"long", 4, 0},
+	{"sql.bind", 8,	"bind", 4, 0},
+	{"batcalc.", 8, "", 0, 0},
+	{"calc.", 5, "", 0, 0},
+	{"sql.", 4,	"", 0, 0},
+	{"bat.", 4,	"", 0, 0},
+	{"aggr.", 5,	"", 0, 0},
+	{"group.", 6,	"", 0, 0},
+	{0,0,0,0,0}};
 
 static void
-renderCall(char *line, int len, int filler, char *stmt, int state)
+renderCall(char *line, int len, int filler, char *stmt, int state, int mode)
 {
 	char *limit= line + len -1, *l = line, *c = stmt;
+	char varname[BUFSIZ], *v;
 	int i;
 
 	c = stmt;
@@ -246,35 +252,76 @@ goon:
 			l += mapping[i].newl;
 			break;
 		}
-	for( ; *c && l < limit; ) {
-		// delayed assignment skipping, not yet used
-		if( state == 1 && *c == ':' && *(c+1) == '='){
+	if( mode && mapping[i].mode){
+		/* try to find the underlying base table column(s) 
+		 * and use those as input namings instead
+		 */
+		for( ; *c && l < limit; ) {
+			// delayed assignment skipping, not yet used
+			if( state == 1 && *c == ':' && *(c+1) == '='){
+				if(*c) c++;
+				if(*c) c++;
+				state = 0;
+				goto goon;
+			}
+			if ( ( (*c=='X' && *(c+1)=='_') || *c == 'A' || *c == 'r') && strchr(c,'=')){
+				v= varname;
+				for(; *c && *c != '=';) 
+					*v++ = *c++;
+				if ( *(c+1) != '<') c++;
+				*v = 0;
+				v = varname;
+			}
+			if( *c == '=' && *(c+1) == '<'){
+				for(; *c && *c != '>'; c++) {
+					//skip (temporary) column names
+				}
+				c++;
+				// show the cardinality and source
+				// lookup base table
+				snprintf(l,BUFSIZ - strlen(line)," ON %s WITH ",varname);
+				for(; *l; l++);
+				for(c++; c && *c != ']'; )
+					*l++= *c++;
+				snprintf(l,BUFSIZ - strlen(line)," TUPLES");
+				l+= 7;
+				c++;
+			} else 
+			if( *c == '=')
+				c++;
+			if(*c) c++;
+		}
+	} else {
+		for( ; *c && l < limit; ) {
+			// delayed assignment skipping, not yet used
+			if( state == 1 && *c == ':' && *(c+1) == '='){
+				if(*c) *l++ = *c++;
+				if(*c) *l++ = *c++;
+				state = 0;
+				goto goon;
+			}
+			if( *c == 'X' && *(c+1)=='_') {
+				for(; *c && *c != '='; c++) {
+					//skip variables
+				}
+				if ( *(c+1) != '<') c++;
+			}
+			if ( (*c == 'A' || *c == 'r') && strchr(c,'=')){
+				for(; *c && *c != '='; c++) {
+					//skip argument variables
+				}
+				if ( *(c+1) != '<') c++;
+			}
+			if( *c == '=' && *(c+1) == '<'){
+				for(; *c && *c != '>'; c++) {
+					//skip (temporary) column names
+				}
+				if (*c == '>') c++;
+			} else 
+			if( *c == '=')
+				c++;
 			if(*c) *l++ = *c++;
-			if(*c) *l++ = *c++;
-			state = 0;
-			goto goon;
 		}
-		if( *c == 'X' && *(c+1)=='_') {
-			for(; *c && *c != '='; c++) {
-				//skip variables
-			}
-			if ( *(c+1) != '<') c++;
-		}
-		if ( (*c == 'A' || *c == 'r') && strchr(c,'=')){
-			for(; *c && *c != '='; c++) {
-				//skip argument variables
-			}
-			if ( *(c+1) != '<') c++;
-		}
-		if( *c == '=' && *(c+1) == '<'){
-			for(; *c && *c != '>'; c++) {
-				//skip (temporary) column names
-			}
-			if (*c == '>') c++;
-		} else 
-		if( *c == '=')
-			c++;
-		if(*c) *l++ = *c++;
 	}
 	if( filler)
 	for(; l < limit; l++)
@@ -315,7 +362,7 @@ showBar(int level, lng clk, char *stmt)
 	snprintf(line,MSGLEN,"%-*s",MSGLEN," ");
 	line[MSGLEN]=0;
 	if(stmt)
-		renderCall(line,MSGLEN,1,stmt,1);
+		renderCall(line,MSGLEN,1,stmt,1,1);
 	printf("%s",line);
 	fflush(stdout);
 }
@@ -434,7 +481,7 @@ update(EventRecord *ev)
 			progressBarInit();
 		}
 		events[ev->pc].state = RUNNING;
-		renderCall(line,BUFSIZ, 0, ev->stmt,0);
+		renderCall(line,BUFSIZ, 0, ev->stmt,0,1);
 		events[ev->pc].stmt = strdup(ev->stmt);
 		events[ev->pc].etc = ev->ticks;
 		if( ev->pc > lastpc)
@@ -480,7 +527,7 @@ update(EventRecord *ev)
 		fprintf(tachofd,"\"status\": \"done\",\n");
 		fprintf(tachofd,"\"ticks\": "LLFMT",\n",ev->ticks);
 		fprintf(tachofd,"\"stmt\": \"%s\"\n",ev->stmt);
-		//renderCall(line,BUFSIZ, 0, ev->stmt,1);
+		//renderCall(line,BUFSIZ, 0, ev->stmt,1,1);
 		//fprintf(tachofd,"\"beautystmt\": \"%s\",\n",line);
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);

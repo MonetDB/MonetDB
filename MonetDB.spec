@@ -255,12 +255,13 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains stethoscope and tomograph.  These tools can be
-used to monitor the MonetDB database server.
+This package contains stethoscope, tomograph, and tachograph.  These
+tools can be used to monitor the MonetDB database server.
 
 %files client-tools
 %defattr(-,root,root)
 %{_bindir}/stethoscope
+%{_bindir}/tachograph
 %{_bindir}/tomograph
 
 %package client-devel
