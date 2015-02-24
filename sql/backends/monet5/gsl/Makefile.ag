@@ -23,28 +23,24 @@ INCLUDES = ../../../../monetdb5/mal \
 
 lib__gsl = {
 	MODULE
-	COND = HAVE_GSL
 	DIR = libdir/monetdb5
 	SOURCES = gsl.c
 	LIBS = $(gsl_LIBS)
 }
 
 headers_gslmal = {
-	COND = HAVE_GSL
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = gsl.mal
 }
 
 headers_gslautoload = {
-    COND = HAVE_GSL
     HEADERS = mal
     DIR = libdir/monetdb5/autoload
     SOURCES = 73_gsl.mal
 }
 
 headers_gsl = {
-	COND = HAVE_GSL
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 46_gsl.sql
