@@ -78,7 +78,7 @@ static char hostname[128];
 static char *basefilename = "tacho";
 static char *dbname;
 static int beat = 5000;
-static int delay = 500; // ms
+static int delay = 5000; // ms
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int interactive = 1;
@@ -140,7 +140,7 @@ lng finishtime = 0;
 lng duration =0;
 int malsize = 0;
 char *prevquery= 0;
-lng prevprogress =0;
+int prevprogress =0;
 
 static FILE *tachofd;
 
@@ -345,7 +345,7 @@ progressBarInit(void)
 static void
 update(EventRecord *ev)
 {
-	double progress=0;
+	int progress=0;
 	int i,j;
 	char *v, *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
@@ -490,7 +490,7 @@ update(EventRecord *ev)
 		if( duration)
 			progress = (int)(ev->clkticks / (duration/100.0));
 		else
-			progress = (int)( pccount++ / (malsize/100.0));
+			progress = (int)(pccount++ / (malsize/100.0));
 		if( progress > prevprogress ){
 			// pick up last unfinished instruction
 			for(i= lastpc; i >0; i--)
