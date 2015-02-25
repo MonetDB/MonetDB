@@ -46,6 +46,8 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 		 SQLPOINTER ValuePtr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
+	SQLULEN v;
+	SQLRETURN r;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtOption " PTRFMT " %s\n",
@@ -57,23 +59,29 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
+	/* only the ODBC 1.0 and ODBC 2.0 options */
 	switch (Option) {
-		/* only the ODBC 1.0 and ODBC 2.0 options */
-	case SQL_QUERY_TIMEOUT:
-	case SQL_MAX_ROWS:
-	case SQL_NOSCAN:
-	case SQL_MAX_LENGTH:
 	case SQL_ASYNC_ENABLE:
-	case SQL_BIND_TYPE:
-	case SQL_CURSOR_TYPE:
 	case SQL_CONCURRENCY:
-	case SQL_KEYSET_SIZE:
-	case SQL_ROWSET_SIZE:
-	case SQL_SIMULATE_CURSOR:
+	case SQL_CURSOR_TYPE:
+	case SQL_NOSCAN:
+	case SQL_QUERY_TIMEOUT:
 	case SQL_RETRIEVE_DATA:
+	case SQL_SIMULATE_CURSOR:
 	case SQL_USE_BOOKMARKS:
-/*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 	case SQL_ROW_NUMBER:
+		/* SQLGetStmtAttr returns 64 bit value, but we need to
+		 * return 32 bit value */
+		r = SQLGetStmtAttr_(stmt, Option, &v, 0, NULL);
+		if (SQL_SUCCEEDED(r))
+			*(SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
+		return r;
+	case SQL_BIND_TYPE:
+	case SQL_KEYSET_SIZE:
+	case SQL_MAX_LENGTH:
+	case SQL_MAX_ROWS:
+	case SQL_ROWSET_SIZE:
+/*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 		/* use mapping as described in ODBC 3.0 SDK Help */
 		return SQLGetStmtAttr_(stmt, Option, ValuePtr, 0, NULL);
 	default:

@@ -51,83 +51,92 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 	 * StringLengthPtr */
 
 	switch (Attribute) {
-	case SQL_ATTR_APP_PARAM_DESC:
+	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
 		*(SQLHANDLE *) ValuePtr = stmt->ApplParamDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_APP_ROW_DESC:
+	case SQL_ATTR_APP_ROW_DESC:		/* SQLHANDLE */
 		*(SQLHANDLE *) ValuePtr = stmt->ApplRowDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_ASYNC_ENABLE:
-		*(SQLUINTEGER *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
+	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
+		/* SQL_ASYNC_ENABLE */
+		*(SQLULEN *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
 		break;
-	case SQL_ATTR_CONCURRENCY:
-		*(SQLUINTEGER *) ValuePtr = SQL_CONCUR_READ_ONLY;
+	case SQL_ATTR_CONCURRENCY:		/* SQLULEN */
+		/* SQL_CONCURRENCY */
+		*(SQLULEN *) ValuePtr = SQL_CONCUR_READ_ONLY;
 		break;
-	case SQL_ATTR_CURSOR_SCROLLABLE:
-		*(SQLUINTEGER *) ValuePtr = stmt->cursorScrollable;
+	case SQL_ATTR_CURSOR_SCROLLABLE:	/* SQLULEN */
+		*(SQLULEN *) ValuePtr = stmt->cursorScrollable;
 		break;
-	case SQL_ATTR_CURSOR_SENSITIVITY:
-		*(SQLUINTEGER *) ValuePtr = SQL_INSENSITIVE;
+	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
+		*(SQLULEN *) ValuePtr = SQL_INSENSITIVE;
 		break;
-	case SQL_ATTR_CURSOR_TYPE:
-		*(SQLUINTEGER *) ValuePtr = stmt->cursorType;
+	case SQL_ATTR_CURSOR_TYPE:		/* SQLULEN */
+		/* SQL_CURSOR_TYPE */
+		*(SQLULEN *) ValuePtr = stmt->cursorType;
 		break;
-	case SQL_ATTR_IMP_PARAM_DESC:
+	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */
 		*(SQLHANDLE *) ValuePtr = stmt->ImplParamDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_IMP_ROW_DESC:
+	case SQL_ATTR_IMP_ROW_DESC:		/* SQLHANDLE */
 		*(SQLHANDLE *) ValuePtr = stmt->ImplRowDescr;
 		return SQL_SUCCESS;
-	case SQL_ATTR_MAX_LENGTH:
+	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
+		/* SQL_MAX_LENGTH */
 		*(SQLULEN *) ValuePtr = 0;
 		break;
-	case SQL_ATTR_MAX_ROWS:
+	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
+		/* SQL_MAX_ROWS */
 		*(SQLULEN *) ValuePtr = 0;
 		break;
-	case SQL_ATTR_NOSCAN:
-		*(SQLUINTEGER *) ValuePtr = stmt->noScan;
+	case SQL_ATTR_METADATA_ID:		/* SQLULEN */
+		*(SQLULEN *) ValuePtr = stmt->Dbc->sql_attr_metadata_id;
 		break;
-	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
+	case SQL_ATTR_NOSCAN:			/* SQLULEN */
+		/* SQL_NOSCAN */
+		*(SQLULEN *) ValuePtr = stmt->noScan;
+		break;
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:	/* SQLULEN* */
 		return SQLGetDescField_(stmt->ApplParamDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_PARAM_BIND_TYPE:
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_BIND_TYPE, ValuePtr,
-					BufferLength, StringLengthPtr);
-	case SQL_ATTR_PARAM_OPERATION_PTR:
+	case SQL_ATTR_PARAM_BIND_TYPE:		/* SQLULEN */
+		/* SQL_BIND_TYPE */
+		*(SQLULEN *) ValuePtr = stmt->ApplParamDescr->sql_desc_bind_type;
+		break;
+	case SQL_ATTR_PARAM_OPERATION_PTR:	/* SQLUSMALLINT* */
 		return SQLGetDescField_(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_PARAM_STATUS_PTR:
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
-					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
-					BufferLength, StringLengthPtr);
-	case SQL_ATTR_PARAMS_PROCESSED_PTR:
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
-					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
-					BufferLength, StringLengthPtr);
-	case SQL_ATTR_PARAMSET_SIZE:
+	case SQL_ATTR_PARAMSET_SIZE:		/* SQLULEN */
 		return SQLGetDescField_(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_RETRIEVE_DATA:
-		*(SQLUINTEGER *) ValuePtr = stmt->retrieveData;
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:	/* SQLULEN* */
+		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
+					BufferLength, StringLengthPtr);
+	case SQL_ATTR_PARAM_STATUS_PTR:		/* SQLUSMALLINT* */
+		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
+					BufferLength, StringLengthPtr);
+	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
+		/* SQL_RETRIEVE_DATA */
+		*(SQLULEN *) ValuePtr = stmt->retrieveData;
 		break;
-	case SQL_ATTR_ROW_ARRAY_SIZE:
+	case SQL_ATTR_ROW_ARRAY_SIZE:		/* SQLULEN */
 	case SQL_ROWSET_SIZE:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:	/* SQLULEN* */
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_ROW_BIND_TYPE:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
-					SQL_DESC_BIND_TYPE, ValuePtr,
-					BufferLength, StringLengthPtr);
-	case SQL_ATTR_ROW_NUMBER:
+	case SQL_ATTR_ROW_BIND_TYPE:		/* SQLULEN */
+		*(SQLULEN *) ValuePtr = stmt->ApplRowDescr->sql_desc_bind_type;
+		break;
+	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
 		if (stmt->State <= EXECUTED1) {
 			/* Invalid cursor state */
 			addStmtError(stmt, "24000", NULL, 0);
@@ -135,29 +144,37 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		}
 		*(SQLULEN *) ValuePtr = (SQLULEN) stmt->currentRow;
 		break;
-	case SQL_ATTR_ROW_OPERATION_PTR:
+	case SQL_ATTR_ROW_OPERATION_PTR:	/* SQLUSMALLINT* */
 		return SQLGetDescField_(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_ROW_STATUS_PTR:
+	case SQL_ATTR_ROW_STATUS_PTR:		/* SQLUSMALLINT* */
 		return SQLGetDescField_(stmt->ImplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_ROWS_FETCHED_PTR:
+	case SQL_ATTR_ROWS_FETCHED_PTR:		/* SQLULEN* */
 		return SQLGetDescField_(stmt->ImplRowDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
-	case SQL_ATTR_METADATA_ID:
-		*(SQLUINTEGER *) ValuePtr = stmt->Dbc->sql_attr_metadata_id;
-		break;
 
 		/* TODO: implement requested behavior */
-	case SQL_ATTR_ENABLE_AUTO_IPD:
-	case SQL_ATTR_FETCH_BOOKMARK_PTR:
-	case SQL_ATTR_KEYSET_SIZE:
-	case SQL_ATTR_QUERY_TIMEOUT:
-	case SQL_ATTR_SIMULATE_CURSOR:
-	case SQL_ATTR_USE_BOOKMARKS:
+#ifdef SQL_ATTR_ASYNC_STMT_EVENT
+	case SQL_ATTR_ASYNC_EVENT:		/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_STMT_PCALLBACK
+	case SQL_ATTR_ASYNC_PCALLBACK:		/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_STMT_PCONTEXT
+	case SQL_ATTR_ASYNC_PCONTEXT:		/* SQLPOINTER */
+#endif
+	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
+	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
+		/* SQL_KEYSET_SIZE */
+	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
+		/* SQL_QUERY_TIMEOUT */
+	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
+	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
