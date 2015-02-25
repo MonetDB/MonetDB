@@ -1444,7 +1444,7 @@ translateStmtOption(SQLUSMALLINT Option)
 	case SQL_ROW_NUMBER:
 		return "SQL_ROW_NUMBER";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%u)", Option);
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) Option);
 		return unknown;
 	}
 }
