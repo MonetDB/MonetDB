@@ -51,15 +51,36 @@ SQLColAttributes_(ODBCStmt *stmt,
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (FieldIdentifier) {
-	case SQL_COLUMN_NAME:
-		FieldIdentifier = SQL_DESC_NAME;
-		break;
-	case SQL_COLUMN_NULLABLE:
-		FieldIdentifier = SQL_DESC_NULLABLE;
-		break;
+	case SQL_COLUMN_AUTO_INCREMENT: /* SQL_DESC_AUTO_UNIQUE_VALUE */
+	case SQL_COLUMN_CASE_SENSITIVE: /* SQL_DESC_CASE_SENSITIVE */
 	case SQL_COLUMN_COUNT:
-		FieldIdentifier = SQL_DESC_COUNT;
+	case SQL_COLUMN_DISPLAY_SIZE:	/* SQL_DESC_DISPLAY_SIZE */
+	case SQL_COLUMN_LABEL:		/* SQL_DESC_LABEL */
+	case SQL_COLUMN_LENGTH:
+	case SQL_COLUMN_MONEY:		/* SQL_DESC_FIXED_PREC_SCALE */
+	case SQL_COLUMN_NAME:
+	case SQL_COLUMN_NULLABLE:
+		/* SQL_COLUMN_NULLABLE should be translated to
+		 * SQL_DESC_NULLABLE, except in the 64 bit
+		 * documentation, the former isn't mentioned as
+		 * returning a 64 bit value whereas the latter is.
+		 * Hence we don't translate but return differently
+		 * sized values for the two */
+	case SQL_COLUMN_OWNER_NAME:	/* SQL_DESC_SCHEMA_NAME */
+	case SQL_COLUMN_PRECISION:
+	case SQL_COLUMN_QUALIFIER_NAME: /* SQL_DESC_CATALOG_NAME */
+	case SQL_COLUMN_SCALE:
+	case SQL_COLUMN_SEARCHABLE:	/* SQL_DESC_SEARCHABLE */
+	case SQL_COLUMN_TABLE_NAME:	/* SQL_DESC_TABLE_NAME */
+	case SQL_COLUMN_TYPE:		/* SQL_DESC_CONCISE_TYPE */
+	case SQL_COLUMN_TYPE_NAME:	/* SQL_DESC_TYPE_NAME */
+	case SQL_COLUMN_UNSIGNED:	/* SQL_DESC_UNSIGNED */
+	case SQL_COLUMN_UPDATABLE:	/* SQL_DESC_UPDATABLE */
 		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError(stmt, "HY091", NULL, 0);
+		return SQL_ERROR;
 	}
 	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
 

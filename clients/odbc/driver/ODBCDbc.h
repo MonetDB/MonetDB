@@ -163,6 +163,6 @@ SQLRETURN SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER Valu
  * Function to translate an ODBC SQL query to native format.
  * The return value is a freshly allocated null-terminated string.
  */
-extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER noscan);
+extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan);
 
 #endif

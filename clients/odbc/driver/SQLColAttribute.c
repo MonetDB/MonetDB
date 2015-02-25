@@ -86,7 +86,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 	rec = stmt->ImplRowDescr->descRec + ColumnNumber;
 
 	switch (FieldIdentifier) {
-	case SQL_DESC_AUTO_UNIQUE_VALUE:	/* SQL_COLUMN_AUTO_INCREMENT */
+	case SQL_DESC_AUTO_UNIQUE_VALUE:/* SQL_COLUMN_AUTO_INCREMENT */
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_auto_unique_value;
 		break;
@@ -119,6 +119,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_concise_type;
 		break;
+	case SQL_COLUMN_COUNT:
 	case SQL_DESC_COUNT:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = stmt->ImplRowDescr->sql_desc_count;
@@ -131,7 +132,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_fixed_prec_scale;
 		break;
-	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
+	case SQL_DESC_LABEL:		/* SQL_COLUMN_LABEL */
 		copyString(rec->sql_desc_label,
 			   strlen((char *) rec->sql_desc_label),
 			   CharacterAttributePtr, BufferLength,
@@ -160,12 +161,17 @@ SQLColAttribute_(ODBCStmt *stmt,
 			   StringLengthPtr, SQLSMALLINT, addStmtError,
 			   stmt, return SQL_ERROR);
 		break;
+	case SQL_COLUMN_NAME:
 	case SQL_DESC_NAME:
 		copyString(rec->sql_desc_name,
 			   strlen((char *) rec->sql_desc_name),
 			   CharacterAttributePtr, BufferLength,
 			   StringLengthPtr, SQLSMALLINT, addStmtError,
 			   stmt, return SQL_ERROR);
+		break;
+	case SQL_COLUMN_NULLABLE:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_nullable;
 		break;
 	case SQL_DESC_NULLABLE:
 		if (NumericAttributePtr)
@@ -180,11 +186,17 @@ SQLColAttribute_(ODBCStmt *stmt,
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_octet_length;
 		break;
 	case SQL_COLUMN_PRECISION:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_precision;
+		break;
 	case SQL_DESC_PRECISION:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_precision;
 		break;
 	case SQL_COLUMN_SCALE:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_scale;
+		break;
 	case SQL_DESC_SCALE:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_scale;
@@ -222,7 +234,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unnamed;
 		break;
-	case SQL_DESC_UNSIGNED:	/* SQL_COLUMN_UNSIGNED */
+	case SQL_DESC_UNSIGNED:		/* SQL_COLUMN_UNSIGNED */
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unsigned;
 		break;
@@ -259,6 +271,41 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
+	switch (FieldIdentifier) {
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_CATALOG_NAME:
+	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_COUNT:
+	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_LABEL:
+	case SQL_DESC_LENGTH:
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_NULLABLE:
+	case SQL_DESC_NUM_PREC_RADIX:
+	case SQL_DESC_OCTET_LENGTH:
+	case SQL_DESC_PRECISION:
+	case SQL_DESC_SCALE:
+	case SQL_DESC_SCHEMA_NAME:
+	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_TABLE_NAME:
+	case SQL_DESC_TYPE:
+	case SQL_DESC_TYPE_NAME:
+	case SQL_DESC_UNNAMED:
+	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UPDATABLE:
+		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError((ODBCStmt *) StatementHandle, "HY091", NULL, 0);
+		return SQL_ERROR;
+	}
 	return SQLColAttribute_((ODBCStmt *) StatementHandle,
 				ColumnNumber,
 				FieldIdentifier,
@@ -337,10 +384,31 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 			return SQL_ERROR;
 		}
 		break;
-	default:
+	/* all other attributes */
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_COUNT:
+	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_LENGTH:
+	case SQL_DESC_NULLABLE:
+	case SQL_DESC_NUM_PREC_RADIX:
+	case SQL_DESC_OCTET_LENGTH:
+	case SQL_DESC_PRECISION:
+	case SQL_DESC_SCALE:
+	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_TYPE:
+	case SQL_DESC_UNNAMED:
+	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UPDATABLE:
 		n = BufferLength;
 		ptr = CharacterAttributePtr;
 		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError(stmt, "HY091", NULL, 0);
+		return SQL_ERROR;
 	}
 
 	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, ptr,

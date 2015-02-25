@@ -92,9 +92,9 @@ typedef struct tODBCDRIVERSTMT {
 	int querytype;		/* query type as returned by server */
 
 	SQLUINTEGER cursorType;
-	SQLUINTEGER cursorScrollable;
-	SQLUINTEGER retrieveData;
-	SQLUINTEGER noScan;
+	SQLULEN cursorScrollable;
+	SQLULEN retrieveData;
+	SQLULEN noScan;
 
 	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
 	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */
@@ -185,9 +185,9 @@ SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol,
 SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		    SQLPOINTER ptr, SQLLEN buflen, SQLLEN *lenp,
 		    SQLLEN *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
-		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
+		    SQLINTEGER datetime_interval_precision, SQLLEN offset,
 		    SQLULEN row);
-SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset,
+SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLLEN offset,
 		    SQLULEN row, char **bufp, size_t *bufposp, size_t *buflenp,
 		    char *sep);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);

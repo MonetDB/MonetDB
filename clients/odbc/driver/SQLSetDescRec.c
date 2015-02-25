@@ -112,20 +112,20 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 		return SQL_INVALID_HANDLE;
 
 	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_TYPE,
-			     (SQLPOINTER) (ssize_t) Type, 0) == SQL_ERROR)
+			     (SQLPOINTER) (intptr_t) Type, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if ((Type == SQL_DATETIME || Type == SQL_INTERVAL) &&
 	    SQLSetDescField_(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
-			     (SQLPOINTER) (ssize_t) SubType, 0) == SQL_ERROR)
+			     (SQLPOINTER) (intptr_t) SubType, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
-			     (SQLPOINTER) (ssize_t) Length, 0) == SQL_ERROR)
+			     (SQLPOINTER) (intptr_t) Length, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_PRECISION,
-			     (SQLPOINTER) (ssize_t) Precision, 0) == SQL_ERROR)
+			     (SQLPOINTER) (intptr_t) Precision, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_SCALE,
-			     (SQLPOINTER) (ssize_t) Scale, 0) == SQL_ERROR)
+			     (SQLPOINTER) (intptr_t) Scale, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
 			     (SQLPOINTER) StringLengthPtr, 0) == SQL_ERROR)

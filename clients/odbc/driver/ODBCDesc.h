@@ -45,9 +45,9 @@ typedef struct {
 	SQLCHAR *sql_desc_name;
 	SQLSMALLINT sql_desc_nullable;
 	SQLINTEGER sql_desc_num_prec_radix;
-	SQLULEN sql_desc_octet_length;
+	SQLLEN sql_desc_octet_length;
 	SQLLEN *sql_desc_octet_length_ptr;
-	SQLINTEGER sql_desc_parameter_type;
+	SQLSMALLINT sql_desc_parameter_type;
 	SQLSMALLINT sql_desc_precision;
 	SQLSMALLINT sql_desc_rowver;
 	SQLSMALLINT sql_desc_scale;
@@ -74,8 +74,8 @@ typedef struct {
 	SQLSMALLINT sql_desc_alloc_type;
 	SQLULEN sql_desc_array_size;
 	SQLUSMALLINT *sql_desc_array_status_ptr;
-	SQLINTEGER *sql_desc_bind_offset_ptr;
-	SQLUINTEGER sql_desc_bind_type;
+	SQLLEN *sql_desc_bind_offset_ptr;
+	SQLINTEGER sql_desc_bind_type;
 	SQLSMALLINT sql_desc_count;
 	SQLULEN *sql_desc_rows_processed_ptr;
 } ODBCDesc;

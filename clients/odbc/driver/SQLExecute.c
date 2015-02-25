@@ -413,7 +413,7 @@ SQLExecute_(ODBCStmt *stmt)
 	size_t querypos;
 	int i;
 	ODBCDesc *desc;
-	SQLINTEGER offset;
+	SQLLEN offset;
 
 	/* check statement cursor state, query should be prepared */
 	if (stmt->State == INITED ||
