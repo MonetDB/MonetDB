@@ -653,8 +653,8 @@ Ready.
 #SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
 % sys.date_tbl,	sys.L1 # table_name
 % f1,	sql_sub_f1 # name
-% date,	int # type
-% 10,	6 # length
+% date,	month_interval # type
+% 10,	0 # length
 [ 1957-04-09,	-16318	]
 [ 1957-06-13,	-16253	]
 [ 1996-02-28,	-2114	]
@@ -674,8 +674,8 @@ Ready.
 #SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
 % sys.date_tbl,	.L1 # table_name
 % f1,	sql_sub_single_value # name
-% date,	int # type
-% 10,	6 # length
+% date,	month_interval # type
+% 10,	0 # length
 [ 1957-04-09,	16318	]
 [ 1957-06-13,	16253	]
 [ 1996-02-28,	2114	]
@@ -1001,8 +1001,8 @@ Ready.
 #SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
 % sys.L # table_name
 % "Days From 2K" # name
-% int # type
-% 6 # length
+% month_interval # type
+% 0 # length
 [ -15607 ]
 [ -15542 ]
 [ -1403 ]
@@ -1022,38 +1022,38 @@ Ready.
 #SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
 % .L # table_name
 % One day # name
-% int # type
-% 2 # length
+% month_interval # type
+% 0 # length
 [ -1 ]
 #SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
 % .L # table_name
 % One day # name
-% int # type
-% 2 # length
+% month_interval # type
+% 0 # length
 [ -1 ]
 #SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
 % .L # table_name
 % Two days # name
-% int # type
-% 2 # length
+% month_interval # type
+% 0 # length
 [ -2 ]
 #SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
 % .L # table_name
 % One day # name
-% int # type
-% 1 # length
+% month_interval # type
+% 0 # length
 [ 1 ]
 #SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
 % .L # table_name
 % One day # name
-% int # type
-% 1 # length
+% month_interval # type
+% 0 # length
 [ 1 ]
 #SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
 % .L # table_name
 % Two days # name
-% int # type
-% 1 # length
+% month_interval # type
+% 0 # length
 [ 2 ]
 
 # 11:57:21 >  

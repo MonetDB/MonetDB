@@ -763,7 +763,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-			} else if (col->type.type->eclass == EC_INTERVAL && strcmp(col->type.type->sqlname, "sec_interval") == 0) {
+			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
 			}
@@ -1146,7 +1146,7 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_INTERVAL && strcmp(sqlname, "sec_interval") == 0) {
+	} else if (eclass == EC_SEC) {
 		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
 		ok = mnstr_write(s, *buf, l, 1) == 1;
 	} else {
@@ -1326,7 +1326,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
-		} else if (c->type.type->eclass == EC_INTERVAL && strcmp(c->type.type->sqlname, "sec_interval") == 0) {
+		} else if (c->type.type->eclass == EC_SEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &sec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) 3;

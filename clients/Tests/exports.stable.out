@@ -1571,6 +1571,7 @@ str MTIMEdaytime2(daytime *ret, const int *h, const int *m);
 str MTIMEdaytime2daytime(daytime *ret, const daytime *src);
 str MTIMEdaytime3(daytime *ret, const int *h, const int *m, const int *s);
 str MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *sec, const int *msec);
+str MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2);
 str MTIMEdaytime_extract_hours(int *ret, const daytime *v);
 str MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid);
 str MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v);

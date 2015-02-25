@@ -1078,7 +1078,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	int len = 7 + (filename != NULL);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION, NULL); 
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1233,7 +1233,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "

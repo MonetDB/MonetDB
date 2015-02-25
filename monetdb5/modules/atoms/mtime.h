@@ -179,6 +179,7 @@ mtime_export str MTIMEdate_submonths(date *ret, const date *v, const int *delta)
 mtime_export str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
 mtime_export str MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mtime_export str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec);
+mtime_export str MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2);
 mtime_export str MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2);
 mtime_export str MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z);

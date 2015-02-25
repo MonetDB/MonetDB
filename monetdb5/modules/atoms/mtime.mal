@@ -380,6 +380,10 @@ command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval_wrap
 comment "Add seconds to a time";
 
+command diff(val1:daytime, val2:daytime) :lng
+address MTIMEdaytime_diff
+comment "returns the number of msec between 'val1' and 'val2'.";
+
 command date_add_month_interval(t:date,s:int):date
 address MTIMEdate_addmonths
 comment "Add months to a date";

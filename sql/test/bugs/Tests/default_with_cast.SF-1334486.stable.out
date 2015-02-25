@@ -20,10 +20,10 @@ Ready.
 
 [ 1	]
 #select cast(now() as date) - d from t;
-% .L # table_name
+% .L1 # table_name
 % current_timestamp # name
-% int # type
-% 1 # length
+% month_interval # type
+% 0 # length
 [ 0	]
 
 # 12:59:30 >  

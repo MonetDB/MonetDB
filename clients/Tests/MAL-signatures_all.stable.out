@@ -37888,6 +37888,10 @@ pattern fits.listdir(dirname:str):void
 address FITSdir;
 comment Attach all FITS files in the directory
 
+pattern generator.join(b:bat[:oid,:hge],gen:bat[:oid,:hge]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+address VLTgenerator_join;
+comment Overloaded join operation
+
 pattern generator.join(gen:bat[:oid,:dbl],low:bat[:oid,:dbl],hgh:bat[:oid,:dbl],li:bit,ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_rangejoin;
 comment Overloaded range join operation
@@ -39561,6 +39565,10 @@ comment Subtract months from a date
 command mtime.date_add_month_interval(t:date,s:int):date 
 address MTIMEdate_addmonths;
 comment Add months to a date
+
+command mtime.diff(val1:daytime,val2:daytime):lng 
+address MTIMEdaytime_diff;
+comment returns the number of msec between 'val1' and 'val2'.
 
 command mtime.date_add_msec_interval(t:date,ms:lng):date 
 address MTIMEdate_add_msec_interval_lng_wrap;

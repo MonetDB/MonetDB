@@ -27,7 +27,7 @@
 #include <sql_storage.h>
 #include <stream.h>
 
-#define EC_MAX 		15
+#define EC_MAX 		16
 #define EC_ANY	 	0
 #define EC_TABLE 	1
 #define EC_BIT 		2
@@ -38,21 +38,23 @@
 
 #define EC_POS 		6
 #define EC_NUM 		7
-#define EC_INTERVAL 	8
-#define EC_DEC 		9
-#define EC_FLT 		10
-#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||e==EC_FLT)
+#define EC_MONTH 	8
+#define EC_SEC	 	9
+#define EC_DEC 		10
+#define EC_FLT 		11
+#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
+#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
 
-#define EC_TIME		11
-#define EC_DATE		12
-#define EC_TIMESTAMP	13
+#define EC_TIME		12
+#define EC_DATE		13
+#define EC_TIMESTAMP	14
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
-#define EC_EXTERNAL	14
+#define EC_EXTERNAL	15
 
 #define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
 
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
-			 e==EC_POS||e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
+			 e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
 
 #define has_tz(e,n)	(EC_TEMP(e) && \
 			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
@@ -102,8 +104,8 @@ extern sql_func *sql_create_aggr2(sql_allocator *sa, char *name, char *mod, char
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
-extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, char *name, int nrargs, int type);
-extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp, int nrargs);
+extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, char *name, int nrargs, int type, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp, int nrargs, sql_subfunc *prev);
 extern sql_subfunc *sql_bind_func(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, int type);
 extern sql_subfunc *sql_bind_func3(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, int type);
 extern sql_subfunc *sql_bind_func_result(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
