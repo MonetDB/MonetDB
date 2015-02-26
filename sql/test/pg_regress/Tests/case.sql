@@ -141,7 +141,7 @@ UPDATE CASE_TBL
 SELECT * FROM CASE_TBL;
 
 UPDATE CASE_TBL
-  SET i = CASE WHEN b.i >= 2 THEN (2 * i)
+  SET i = CASE WHEN i >= 2 THEN (2 * i)
                 ELSE (3 * i) END
 --  FROM CASE2_TBL b
   WHERE i = -CASE_TBL.i;
