@@ -1207,7 +1207,7 @@ translateFetchOrientation(SQLUSMALLINT FetchOrientation)
 	case SQL_FETCH_BOOKMARK:
 		return "SQL_FETCH_BOOKMARK";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%u)", FetchOrientation);
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) FetchOrientation);
 		return unknown;
 	}
 }
