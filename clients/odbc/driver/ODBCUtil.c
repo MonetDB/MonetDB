@@ -1207,7 +1207,7 @@ translateFetchOrientation(SQLUSMALLINT FetchOrientation)
 	case SQL_FETCH_BOOKMARK:
 		return "SQL_FETCH_BOOKMARK";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%u)", FetchOrientation);
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) FetchOrientation);
 		return unknown;
 	}
 }
@@ -1277,7 +1277,7 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_TXN_ISOLATION:
 		return "SQL_ATTR_TXN_ISOLATION";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
 		return unknown;
 	}
 }
@@ -1328,7 +1328,7 @@ translateEnvAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_CP_MATCH:
 		return "SQL_ATTR_CP_MATCH";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
 		return unknown;
 	}
 }
@@ -1406,7 +1406,7 @@ translateStmtAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_USE_BOOKMARKS:
 		return "SQL_ATTR_USE_BOOKMARKS";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
 		return unknown;
 	}
 }
@@ -1444,7 +1444,7 @@ translateStmtOption(SQLUSMALLINT Option)
 	case SQL_ROW_NUMBER:
 		return "SQL_ROW_NUMBER";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%u)", Option);
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) Option);
 		return unknown;
 	}
 }
