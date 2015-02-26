@@ -170,7 +170,7 @@ void profiler_renderbar(size_t state, size_t total, char *symbol) {
 	printf("%s ", symbol);
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
-	printf(" %3u%% ", percentage);
+	printf(" %3u%% ", (unsigned int) percentage);
 	fflush(NULL);
 }
 
