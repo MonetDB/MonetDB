@@ -126,7 +126,7 @@ main(int argc, char **argv)
 	SQLSMALLINT nullable;
 	SQLULEN *processed;
 	SQLUSMALLINT *status;
-	SQLINTEGER offset;
+	SQLULEN offset;
 	int *data_i;
 	char (*data_s)[20];
 	SQLLEN *data_slen;
