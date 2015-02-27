@@ -70,7 +70,7 @@ def main():
     pre = post = start = end = None
     verbose = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'arl:v',
+        opts, args = getopt.getopt(sys.argv[1:], 'arl:sv',
                                    ['pre=', 'post=', 'start=', 'end='])
     except getopt.GetoptError:
         print >> sys.stderr, usage % {'prog': sys.argv[0]}
@@ -80,6 +80,8 @@ def main():
             func = addlicense
         elif o == '-r':
             func = dellicense
+        elif o == '-s':
+            func = listfile
         elif o == '-l':
             try:
                 f = open(a)
@@ -144,7 +146,7 @@ suffixrules = {
     '.pm':   ('',      '',    '# ',   ''),
     '.py':   ('',      '',    '# ',   ''),
     '.rb':   ('',      '',    '# ',   ''),
-    '.rc':   ('',      '',    '# ',   ''),
+    '.rc':   ('',      '',    '// ',  ''),
     '.rst':  ('',      '',    '.. ',  ''),
     '.sh':   ('',      '',    '# ',   ''),
     '.sql':  ('',      '',    '-- ',  ''),
@@ -174,10 +176,6 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
             if line[:2] == '#!':
                 ext = '.sh'
             else:
-                return
-        if ext == '.rc':
-            # .rc suffix only used for shell scripts in TestTools directory
-            if 'TestTools' not in file:
                 return
         pre, post, start, end = suffixrules[ext]
     if not pre:
@@ -296,10 +294,6 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             if line[:2] == '#!':
                 ext = '.sh'
             else:
-                return
-        if ext == '.rc':
-            # .rc suffix only used for shell scripts in TestTools directory
-            if 'TestTools' not in file:
                 return
         pre, post, start, end = suffixrules[ext]
     if not pre:
@@ -458,6 +452,143 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             print file
     except OSError:
         print >> sys.stderr, 'Cannot move file %s into position' % file
+
+def listfile(file, pre = None, post = None, start = None, end = None, verbose = False):
+    ext = ''
+    if pre is None and post is None and start is None and end is None:
+        root, ext = os.path.splitext(file)
+        if ext == '.in':
+            # special case: .in suffix doesn't count
+            root, ext = os.path.splitext(root)
+        if not suffixrules.has_key(ext):
+            # no known suffix
+            # see if file starts with #! (i.e. shell script)
+            try:
+                f = open(file)
+                line = f.readline()
+                f.close()
+            except IOError:
+                return
+            if line[:2] == '#!':
+                ext = '.sh'
+            else:
+                return
+        pre, post, start, end = suffixrules[ext]
+    if not pre:
+        pre = ''
+    if not post:
+        post = ''
+    if not start:
+        start = ''
+    if not end:
+        end = ''
+    pre = normalize(pre)
+    post = normalize(post)
+    start = normalize(start)
+    end = normalize(end)
+    try:
+        f = open(file)
+    except IOError:
+        print >> sys.stderr, 'Cannot open file %s' % file
+        return
+    data = f.read()
+    res = re_copyright.search(data)
+    if res is not None:
+        pos = res.end(0)
+        if ext == '.pm':
+            start = pre = post = end = ''
+        nl = data.find('\n', pos) + 1
+        nstart = normalize(start)
+        while normalize(data[pos:nl]) == nstart:
+            pos = nl
+            nl = data.find('\n', pos) + 1
+        line = data[pos:nl]
+        for l in license:
+            nline = normalize(line)
+            if nline.find(normalize(l)) >= 0:
+                pos = nl
+                nl = data.find('\n', pos) + 1
+                line = data[pos:nl]
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'line doesn\'t match in file %s' % file
+                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'license: "%s"' % l
+                f.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        pos2 = pos
+        nl2 = nl
+        if normalize(line) == normalize(start):
+            pos2 = nl2
+            nl2 = data.find('\n', pos2) + 1
+            line = data[pos2:nl2]
+            nline = normalize(line)
+        if nline.find('Contributors') >= 0:
+            nstart = normalize(start)
+            nstartlen = len(nstart)
+            while normalize(line)[:nstartlen] == nstart and \
+                  len(normalize(line)) > 1:
+                pos2 = nl2
+                nl2 = data.find('\n', pos2) + 1
+                line = data[pos2:nl2]
+                nline = normalize(line)
+            pos = pos2
+    else:
+        f.seek(0)
+        line = f.readline()
+        if line[:2] == '#!':
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        if line.find('-*-') >= 0:
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        if line[:5] == '<?xml':
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        nline = normalize(line)
+        if pre:
+            if nline == pre:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
+                f.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        for l in license:
+            if nline.find(normalize(l)) >= 0:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'line doesn\'t match in file %s' % file
+                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'license: "%s"' % l
+                f.close()
+                return
+        if post:
+            if nline == post:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'POST doesn\'t match in file %s' % file
+                f.close()
+                return
+    f.close()
+    print file
 
 if __name__ == '__main__' or sys.argv[0] == __name__:
     main()
