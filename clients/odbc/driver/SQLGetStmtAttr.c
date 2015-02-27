@@ -195,8 +195,10 @@ SQLGetStmtAttr(SQLHSTMT StatementHandle,
 	       SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttr " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLGetStmtAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr, BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -233,8 +235,10 @@ SQLGetStmtAttrW(SQLHSTMT StatementHandle,
 		SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr, BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

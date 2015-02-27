@@ -205,6 +205,50 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	return SQL_NO_DATA;
 }
 
+#ifdef ODBCDEBUG
+static char *
+translateDiagIdentifier(SQLSMALLINT DiagIdentifier)
+{
+	static char unknown[32];
+
+	switch (DiagIdentifier) {
+	case SQL_DIAG_CLASS_ORIGIN:
+		return "SQL_DIAG_CLASS_ORIGIN";
+	case SQL_DIAG_COLUMN_NUMBER:
+		return "SQL_DIAG_COLUMN_NUMBER";
+	case SQL_DIAG_CONNECTION_NAME:
+		return "SQL_DIAG_CONNECTION_NAME";
+	case SQL_DIAG_CURSOR_ROW_COUNT:
+		return "SQL_DIAG_CURSOR_ROW_COUNT";
+	case SQL_DIAG_DYNAMIC_FUNCTION:
+		return "SQL_DIAG_DYNAMIC_FUNCTION";
+	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
+		return "SQL_DIAG_DYNAMIC_FUNCTION_CODE";
+	case SQL_DIAG_MESSAGE_TEXT:
+		return "SQL_DIAG_MESSAGE_TEXT";
+	case SQL_DIAG_NATIVE:
+		return "SQL_DIAG_NATIVE";
+	case SQL_DIAG_NUMBER:
+		return "SQL_DIAG_NUMBER";
+	case SQL_DIAG_RETURNCODE:
+		return "SQL_DIAG_RETURNCODE";
+	case SQL_DIAG_ROW_COUNT:
+		return "SQL_DIAG_ROW_COUNT";
+	case SQL_DIAG_ROW_NUMBER:
+		return "SQL_DIAG_ROW_NUMBER";
+	case SQL_DIAG_SERVER_NAME:
+		return "SQL_DIAG_SERVER_NAME";
+	case SQL_DIAG_SQLSTATE:
+		return "SQL_DIAG_SQLSTATE";
+	case SQL_DIAG_SUBCLASS_ORIGIN:
+		return "SQL_DIAG_SUBCLASS_ORIGIN";
+	default:
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", DiagIdentifier);
+		return unknown;
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLHANDLE Handle,
@@ -215,10 +259,12 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLSMALLINT *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n",
+	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
-		(int) BufferLength);
+		PTRFMTCAST Handle, (int) RecNumber, 
+		translateDiagIdentifier(DiagIdentifier),
+		PTRFMTCAST DiagInfoPtr,
+		(int) BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	return SQLGetDiagField_(HandleType,
@@ -262,10 +308,12 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %d %d\n",
+	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
-		(int) BufferLength);
+		PTRFMTCAST Handle, (int) RecNumber, 
+		translateDiagIdentifier(DiagIdentifier),
+		PTRFMTCAST DiagInfoPtr,
+		BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	switch (DiagIdentifier) {

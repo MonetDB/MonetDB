@@ -288,9 +288,10 @@ SQLGetDescField(SQLHDESC DescriptorHandle,
 		SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescField " PTRFMT " %d %s\n",
+	ODBCLOG("SQLGetDescField " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST DescriptorHandle, (int) RecordNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST ValuePtr, BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
@@ -335,9 +336,10 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescFieldW " PTRFMT " %d %s\n",
+	ODBCLOG("SQLGetDescFieldW " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST DescriptorHandle, (int) RecordNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST ValuePtr, BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDesc(desc))
