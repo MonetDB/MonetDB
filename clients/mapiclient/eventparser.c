@@ -58,7 +58,7 @@ parseArguments(char *call)
 			break;
 		if (*c == ',')
 			continue;
-		if (*c == 'X' || *c == 'A'){
+		if(isalpha((int)*c) &&  strncmp(c,"nil",3) && strncmp(c,"true",4) && strncmp(c,"false",5) ){
 			// remember variable in its own structure
 			v=  c;
 			c= strchr(c,'=');
