@@ -405,7 +405,7 @@ static struct convert {
 };
 
 char *
-ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
+ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan)
 {
 	char *nquery;
 	const char *p;
@@ -926,6 +926,7 @@ struct sql_types ODBC_c_types[] = {
 #ifdef ODBCDEBUG
 
 const char *ODBCdebug;
+static char unknown[32];
 
 char *
 translateCType(SQLSMALLINT ValueType)
@@ -1010,7 +1011,8 @@ translateCType(SQLSMALLINT ValueType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", ValueType);
+		return unknown;
 	}
 }
 
@@ -1095,7 +1097,8 @@ translateSQLType(SQLSMALLINT ParameterType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", ParameterType);
+		return unknown;
 	}
 }
 
@@ -1180,7 +1183,8 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 	case SQL_DESC_UPDATABLE:
 		return "SQL_DESC_UPDATABLE";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", FieldIdentifier);
+		return unknown;
 	}
 }
 
@@ -1203,7 +1207,8 @@ translateFetchOrientation(SQLUSMALLINT FetchOrientation)
 	case SQL_FETCH_BOOKMARK:
 		return "SQL_FETCH_BOOKMARK";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) FetchOrientation);
+		return unknown;
 	}
 }
 
@@ -1213,6 +1218,22 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	switch (Attribute) {
 	case SQL_ATTR_ACCESS_MODE:
 		return "SQL_ATTR_ACCESS_MODE";
+#ifdef SQL_ATTR_ASYNC_DBC_EVENT
+	case SQL_ATTR_ASYNC_DBC_EVENT:
+		return "SQL_ATTR_ASYNC_DBC_EVENT";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE
+	case SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE:
+		return "SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCALLBACK
+	case SQL_ATTR_ASYNC_DBC_PCALLBACK:
+		return "SQL_ATTR_ASYNC_DBC_PCALLBACK";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCONTEXT
+	case SQL_ATTR_ASYNC_DBC_PCONTEXT:
+		return "SQL_ATTR_ASYNC_DBC_PCONTEXT";
+#endif
 	case SQL_ATTR_ASYNC_ENABLE:
 		return "SQL_ATTR_ASYNC_ENABLE";
 	case SQL_ATTR_AUTOCOMMIT:
@@ -1225,6 +1246,10 @@ translateConnectAttribute(SQLINTEGER Attribute)
 		return "SQL_ATTR_CONNECTION_TIMEOUT";
 	case SQL_ATTR_CURRENT_CATALOG:
 		return "SQL_ATTR_CURRENT_CATALOG";
+#ifdef SQL_ATTR_DBC_INFO_TOKEN
+	case SQL_ATTR_DBC_INFO_TOKEN:
+		return "SQL_ATTR_DBC_INFO_TOKEN";
+#endif
 	case SQL_ATTR_DISCONNECT_BEHAVIOR:
 		return "SQL_ATTR_DISCONNECT_BEHAVIOR";
 	case SQL_ATTR_ENLIST_IN_DTC:
@@ -1252,7 +1277,8 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_TXN_ISOLATION:
 		return "SQL_ATTR_TXN_ISOLATION";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1302,7 +1328,8 @@ translateEnvAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_CP_MATCH:
 		return "SQL_ATTR_CP_MATCH";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1379,7 +1406,8 @@ translateStmtAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_USE_BOOKMARKS:
 		return "SQL_ATTR_USE_BOOKMARKS";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1416,7 +1444,8 @@ translateStmtOption(SQLUSMALLINT Option)
 	case SQL_ROW_NUMBER:
 		return "SQL_ROW_NUMBER";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) Option);
+		return unknown;
 	}
 }
 
@@ -1429,7 +1458,8 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	case SQL_ROLLBACK:
 		return "SQL_ROLLBACK";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)", CompletionType);
+		return unknown;
 	}
 }
 

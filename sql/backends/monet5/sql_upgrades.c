@@ -1320,6 +1320,8 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tsorted boolean);\n");
 
 	/* 15_querylog update the querylog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.querylog_history;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.querylog_calls;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.querylog_calls;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function sys.querylog_calls()\
 \treturns table(\
@@ -1333,9 +1335,15 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \t    cpu int,\n\
 \t    io int \n\
 \t) external name sql.querylog_calls;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.querylog_calls as select * from sys.querylog_calls();\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.querylog_history as\n\
+select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n\
+from sys.querylog_catalog() qd, sys.querylog_calls() ql\n\
+where qd.id = ql.id and qd.owner = user;\n");
 
 
 	/* 16_tracelog update the tracelog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.tracelog;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.tracelog;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function sys.tracelog()\n\
 \treturns table (\n\
@@ -1353,10 +1361,12 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tnvcsw bigint,  \n\
 \tstmt string         \n\
 \t) external name sql.dump_trace;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
 
 
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls','tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from systemfunctions where function_id not in (select id from functions);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1375,6 +1385,12 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
 					t->system = 0;
 			}
 		}

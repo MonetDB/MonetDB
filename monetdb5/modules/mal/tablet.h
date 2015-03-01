@@ -69,6 +69,7 @@ typedef struct Column_t {
 	void *(*frstr)(struct Column_t *fmt, int type, const char *s, const char *e, char quote);
 	void *extra;
 	void *data;
+	int skip;					/* only skip to the next field */
 	int len;
 	int nillen;
 	bit ws;						/* if set we need to skip white space */

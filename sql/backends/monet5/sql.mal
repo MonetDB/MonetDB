@@ -345,13 +345,13 @@ pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
-pattern copy_from{unsafe}( sname:str, tname:str, 
+pattern copy_from{unsafe}( t:ptr, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern copyfrom{unsafe}( sname:str, tname:str, 
+pattern copyfrom{unsafe}( t:ptr,
 	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
 address mvc_import_table_stdin
 comment "Import a table from bstream s with the 

@@ -4,23 +4,33 @@
 #include <errno.h>
 
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <pthread.h>
+#endif
 #include <signal.h>
 #include <unistd.h>
 #include <math.h>
 #include <stdlib.h>
 
 #include <sys/types.h>
+#ifdef _MSC_VER
+#include <sys/timeb.h>
+typedef int ssize_t;
+#else
 #include <sys/fcntl.h>
 #include <sys/time.h>
+#endif
 
-#ifdef __WIN32__
+#if defined(_MSC_VER) || defined(__WIN32__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #define HAVE_NL_LANGINFO	/* not on Windows, probably everywhere else */
+typedef int SOCKET;
+#define INVALID_SOCKET (-1)
+#define SOCKET_ERROR (-1)
 #endif
 
 #ifdef HAVE_NL_LANGINFO
@@ -40,8 +50,12 @@
 // size of the progress bar in characters
 #define PROFILER_BARSYMB 60
 
-static int profiler_socket;
+static SOCKET profiler_socket;
+#ifdef _MSC_VER
+static HANDLE profiler_pthread;
+#else
 static pthread_t profiler_pthread;
+#endif
 static int profiler_needcleanup = 0;
 static int profiler_armed = 0;
 
@@ -56,7 +70,7 @@ void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 	while (str[0] == ' ' || str[0] == '"') str++; endPos = curPos - 1; \
 	while (stmt[endPos] == ' ' || stmt[endPos] == '"') { stmt[endPos] = '\0'; endPos--; }
 
-	unsigned int curPos, endPos, paramStart = 0, stmtLen;
+	size_t curPos, endPos, paramStart = 0, stmtLen;
 	mal_statement_state state = ASSIGNMENT;
 
 	out->assignment = stmt;
@@ -120,12 +134,18 @@ void mal_statement_split(char* stmt, mal_statement *out, size_t maxparams) {
 }
 
 static unsigned long profiler_tsms(void) {
+#ifdef _MSC_VER
+	struct _timeb tb;
+	_ftime_s(&tb);
+	return (unsigned long) tb.time * 1000 + (unsigned long) tb.millitm;
+#else
 	unsigned long ret = 0;
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	ret += tv.tv_sec * 1000;
 	ret += tv.tv_usec / 1000;
 	return ret;
+#endif
 }
 
 // clear line and overwrite with spaces
@@ -145,16 +165,21 @@ void profiler_renderbar(size_t state, size_t total, char *symbol) {
 
 	percentage = (unsigned short) ceil((1.0 * 
 		state / total) * 100);
-	symbols = PROFILER_BARSYMB*(percentage/100.0);
+	symbols = (unsigned short) (PROFILER_BARSYMB*(percentage/100.0));
 	
 	printf("%s ", symbol);
 	for (bs=0; bs < symbols; bs++) printf("%s", profiler_symb_bfull);
 	for (bs=0; bs < PROFILER_BARSYMB-symbols; bs++) printf("%s", profiler_symb_bfree); 
-	printf(" %3u%% ", percentage);
+	printf(" %3u%% ", (unsigned int) percentage);
 	fflush(NULL);
 }
 
-static void* profiler_thread(void* params) {
+#ifdef _MSC_VER
+static DWORD WINAPI profiler_thread(LPVOID params)
+#else
+static void* profiler_thread(void* params)
+#endif
+{
 	char buf[BUFSIZ];
 	char* elems[TRACE_NCOLS];
 	// query ids are unlikely to be longer than BUFSIZ
@@ -173,9 +198,9 @@ static void* profiler_thread(void* params) {
 
 	(void) params;
 	for(;;) {
-		recvd = read(profiler_socket, buf, sizeof(buf));
-		if (recvd < 0)
-			return NULL;
+		recvd = recv(profiler_socket, buf, sizeof(buf), 0);
+		if (recvd == SOCKET_ERROR)
+			return 0;
 		if (recvd > 0) {
 			size_t i = 0, j = 0;
 			char ib = 0;
@@ -200,8 +225,12 @@ static void* profiler_thread(void* params) {
 
 			if (profiler_armed && strcmp(stmt->function, "querylog.define") == 0) {
 				// the third parameter to querylog.define contains the MAL plan size
-				profiler_msgs_expect = atol(stmt->params[2]) - 2; 
+				profiler_msgs_expect = atol(stmt->params[2]) - 3; 
+#ifdef _MSC_VER
+				strcpy_s(queryid, BUFSIZ, thisqueryid);
+#else
 				strcpy(queryid, thisqueryid);
+#endif
 				profiler_querystart = profiler_tsms();
 				profiler_msgs_done = 0;
 				profiler_needcleanup = 0;
@@ -215,13 +244,13 @@ static void* profiler_thread(void* params) {
 
 			profiler_msgs_done++;
 
-	        if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 500) {
-	        	profiler_renderbar(profiler_msgs_done, profiler_msgs_expect, profiler_symb_query);
-        	}
-        	if (profiler_msgs_done >= profiler_msgs_expect) {
-        		profiler_clearbar();
-        		profiler_msgs_expect = 0;
-        	}
+			if (profiler_msgs_expect > 0 && (profiler_tsms() - profiler_querystart) > 500) {
+				profiler_renderbar(profiler_msgs_done, profiler_msgs_expect, profiler_symb_query);
+			}
+			if (profiler_msgs_done >= profiler_msgs_expect) {
+				profiler_clearbar();
+				profiler_msgs_expect = 0;
+			}
 		}
 	}
 }
@@ -239,8 +268,8 @@ int profiler_start(void) {
 	socklen_t len = sizeof(serv_addr);
 
 	profiler_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if(profiler_socket < 0) {
-	    return -1;
+	if(profiler_socket == INVALID_SOCKET) {
+		return -1;
 	}
 
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
@@ -248,9 +277,9 @@ int profiler_start(void) {
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = 0; // automatically find free port
 
-	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 || 
-		getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) < 0) {
-      	return -1;
+	if (bind(profiler_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == SOCKET_ERROR || 
+	    getsockname(profiler_socket, (struct sockaddr *)&serv_addr, &len) == SOCKET_ERROR) {
+		return -1;
 	}
 
 #ifdef HAVE_NL_LANGINFO
@@ -263,6 +292,10 @@ int profiler_start(void) {
 #endif
 
 	// start backgroud listening thread
+#ifdef _MSC_VER
+	profiler_pthread = CreateThread(NULL, 1024*1024, profiler_thread, NULL, 0, NULL);
+#else
 	pthread_create(&profiler_pthread, NULL, &profiler_thread, NULL);
+#endif
 	return ntohs(serv_addr.sin_port);
 }

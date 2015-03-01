@@ -28,7 +28,7 @@ bin_mclient = {
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) \
-		$(curl_LIBS) $(LTLIBICONV) $(PTHREAD_LIBS) $(MATH_LIBS)
+		$(curl_LIBS) $(LTLIBICONV) $(PTHREAD_LIBS) $(MATH_LIBS) $(SOCKET_LIBS)
 }
 
 bin_msqldump = {

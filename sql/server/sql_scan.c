@@ -694,7 +694,7 @@ keyword_or_ident(mvc * c, int cur)
 			if (k) 
 				lc->yyval = k->token;
 			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
 				lc->yyval = FILTER_FUNC;
 			return lc->yyval;
 		}
@@ -704,7 +704,7 @@ keyword_or_ident(mvc * c, int cur)
 	if (k) 
 		lc->yyval = k->token;
 	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
 		lc->yyval = FILTER_FUNC;
 	return lc->yyval;
 }

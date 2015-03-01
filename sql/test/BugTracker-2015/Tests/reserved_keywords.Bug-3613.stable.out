@@ -51,7 +51,6 @@ Ready.
 [ "SELECT DISTINCT minvalue FROM sys.sequences WHERE minvalue IS NOT NULL ORDER BY minvalue;"	]
 [ "SELECT DISTINCT plan FROM sys.querylog_catalog WHERE plan IS NOT NULL ORDER BY plan;"	]
 [ "SELECT DISTINCT plan FROM sys.querylog_history WHERE plan IS NOT NULL ORDER BY plan;"	]
-[ "SELECT DISTINCT sample FROM sys.statistics WHERE sample IS NOT NULL ORDER BY sample;"	]
 [ "SELECT DISTINCT schema FROM sys.storage WHERE schema IS NOT NULL ORDER BY schema;"	]
 [ "SELECT DISTINCT schema FROM sys.storagemodel WHERE schema IS NOT NULL ORDER BY schema;"	]
 [ "SELECT DISTINCT schema FROM sys.storagemodelinput WHERE schema IS NOT NULL ORDER BY schema;"	]
@@ -266,12 +265,7 @@ Ready.
 % plan # name
 % clob # type
 % 0 # length
-#SELECT distinct sample FROM sys.statistics;
-% sys.statistics # table_name
-% sample # name
-% bigint # type
-% 1 # length
-#SELECT distinct schema FROM sys.storage;
+#SELECT DISTINCT schema FROM sys.storage WHERE schema IS NOT NULL ORDER BY schema;
 % .storage # table_name
 % schema # name
 % clob # type

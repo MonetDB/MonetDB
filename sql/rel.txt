@@ -135,7 +135,7 @@ for aggr
 e_column
 	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)
 	-> name alias for the expression (i.e., alias of ->r, used by higher expressions)
-		l,r names of refered expression
+		l,r names of referred expression
 	-> l 	optional relation name 
 	-> r	expression name
 	-> type 

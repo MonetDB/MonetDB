@@ -228,7 +228,7 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 	rc = SQLGetDiagRec_(HandleType, Handle, RecNumber, state,
 			    NativeErrorPtr, msg, (SQLSMALLINT) sizeof(msg), &n);
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRecW: %s\n", (char *) msg);
+	ODBCLOG("SQLGetDiagRecW: %s\n", SQL_SUCCEEDED(rc) ? (char *) msg : rc == SQL_NO_DATA ? "no error" : "failed");
 #endif
 
 	if (SQL_SUCCEEDED(rc)) {

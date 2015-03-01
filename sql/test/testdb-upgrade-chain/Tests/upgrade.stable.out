@@ -124,8 +124,48 @@ create table sys.statistics(
 	minval string,
 	maxval string,
 	sorted boolean);
-insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+drop view sys.querylog_history;
+drop view sys.querylog_calls;
+drop function sys.querylog_calls;
+create function sys.querylog_calls()	returns table(	    id oid,
+	    "start" timestamp,
+	    "stop" timestamp,
+	    arguments string,
+	    tuples wrd,
+	    run bigint,
+	    ship bigint,
+	    cpu int,
+	    io int 
+	) external name sql.querylog_calls;
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
+where qd.id = ql.id and qd.owner = user;
+drop view sys.tracelog;
+drop function sys.tracelog;
+create function sys.tracelog()
+	returns table (
+	event integer,      
+	clk varchar(20),    
+	pc varchar(50),     
+	thread int,         
+	ticks bigint,       
+	rrsMB bigint,       
+	vmMB bigint,        
+	reads bigint,       
+	writes bigint,  
+	minflt bigint,  
+	majflt bigint,  
+	nvcsw bigint,  
+	stmt string         
+	) external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from systemfunctions where function_id not in (select id from functions);
+update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
+drop procedure sys.cluster1;
+drop procedure sys.cluster2;
 set schema "testschema";
 
 # 09:43:35 >  

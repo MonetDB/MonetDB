@@ -24,10 +24,10 @@ Ready.
 # 13:46:34 >  
 
 #select round(750,1); 
-% . # table_name
+% .L # table_name
 % round_single_value # name
-% decimal # type
-% 5 # length
+% double # type
+% 24 # length
 [ 750	]
 
 # 13:46:35 >  

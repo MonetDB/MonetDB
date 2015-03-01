@@ -86,7 +86,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 	}
 
 	switch (Attribute) {
-	case SQL_ATTR_ODBC_VERSION:
+	case SQL_ATTR_ODBC_VERSION:		/* SQLINTEGER */
 		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
 		case SQL_OV_ODBC3:
 		case SQL_OV_ODBC2:
@@ -98,7 +98,11 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 			return SQL_ERROR;
 		}
 		break;
-	case SQL_ATTR_OUTPUT_NTS:
+	case SQL_ATTR_CP_MATCH:			/* SQLUINTEGER */
+		/* Optional feature not implemented */
+		addEnvError(env, "HYC00", NULL, 0);
+		return SQL_ERROR;
+	case SQL_ATTR_OUTPUT_NTS:		/* SQLINTEGER */
 		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
 		case SQL_TRUE:
 			break;
@@ -112,11 +116,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 			return SQL_ERROR;
 		}
 		break;
-	case SQL_ATTR_CP_MATCH:
-		/* Optional feature not implemented */
-		addEnvError(env, "HYC00", NULL, 0);
-		return SQL_ERROR;
-	case SQL_ATTR_CONNECTION_POOLING:
+	case SQL_ATTR_CONNECTION_POOLING:	/* SQLUINTEGER */
 		/* not valid with non-NULL environment handle parameter */
 	default:
 		/* Invalid attribute/option identifier */

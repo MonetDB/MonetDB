@@ -1775,7 +1775,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 
-			if (t->type->localtype == f->type->localtype && (t->type->eclass == f->type->eclass || (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) && f->type->eclass != EC_INTERVAL && f->type->eclass != EC_DEC &&
+			if (t->type->localtype == f->type->localtype && (t->type->eclass == f->type->eclass || (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) && !EC_INTERVAL(f->type->eclass) && f->type->eclass != EC_DEC &&
 			    (t->digits == 0 || f->digits == t->digits)
 				) {
 				s->nr = l;
@@ -1787,12 +1787,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (t->type->eclass == EC_EXTERNAL)
 				convert = t->type->sqlname;
 
-			if (t->type->eclass == EC_INTERVAL) {
-				if (t->type->localtype == TYPE_int)
-					convert = "month_interval";
-				else
-					convert = "second_interval";
-			}
+			if (t->type->eclass == EC_MONTH) 
+				convert = "month_interval";
+			else if (t->type->eclass == EC_SEC)
+				convert = "second_interval";
 
 			/* Lookup the sql convert function, there is no need
 			 * for single value vs bat, this is handled by the
@@ -1800,7 +1798,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->nrcols == 0) {	/* simple calc */
 				q = newStmt1(mb, calcRef, convert);
 			} else if (s->nrcols > 0 &&
-				   (t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || t->type->eclass == EC_INTERVAL || EC_TEMP(t->type->eclass) ||
+				   (t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || EC_INTERVAL(t->type->eclass) || EC_TEMP(t->type->eclass) ||
 				    (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)))) {
 				int type = t->type->localtype;
 
@@ -1826,7 +1824,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, f->scale);
 			q = pushArgument(mb, q, l);
 
-			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || t->type->eclass == EC_INTERVAL) {
+			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 				/* digits, scale of the result decimal */
 				q = pushInt(mb, q, t->digits);
 				if (!EC_TEMP_FRAC(t->type->eclass))

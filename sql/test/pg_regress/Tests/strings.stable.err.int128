@@ -91,10 +91,10 @@ QUERY = select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
 ERROR = !SELECT: no such operator 'split_part'
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
-ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
+ERROR = !SELECT: no such unary operator 'to_hex(hugeint)'
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
-ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
+ERROR = !SELECT: no such unary operator 'to_hex(hugeint)'
 
 
 

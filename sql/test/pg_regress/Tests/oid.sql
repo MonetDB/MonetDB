@@ -35,24 +35,30 @@ INSERT INTO OID_TBL(f1) VALUES (-23582358720398502385);
 
 SELECT '' AS ten, OID_TBL.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL ORDER BY	f1;
 
-DELETE FROM OID_TBL WHERE f1 = -1040;
+DELETE FROM OID_TBL WHERE f1 < '0';
 
 SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = 1234;
+SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = 1234@0;
 SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = '1234';
 
 SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> 1234;
+SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> 1234@0;
 SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> '1234';
 
 SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= 1234;
+SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= 1234@0;
 SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= '1234';
 
 SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < 1234;
+SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < 1234@0;
 SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < '1234';
 
 SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= 1234;
+SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= 1234@0;
 SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= '1234';
 
 SELECT '' AS two, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 > 1234;
+SELECT '' AS two, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 > 1234@0;
 SELECT '' AS two, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 > '1234';
 
 DROP TABLE OID_TBL;

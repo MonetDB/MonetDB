@@ -28,7 +28,7 @@ void mapi_line_split(char* line, char** out, size_t ncols) {
 	int endQuote = 0;
 	int curPos;
 
-	int linelen = strlen(line);
+	int linelen = (int) strlen(line);
 	mapi_line_chrstate state = INCRAP;
 
 	for (curPos = 2; curPos < linelen - 1; curPos++) {

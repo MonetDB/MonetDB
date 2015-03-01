@@ -2510,27 +2510,29 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_column_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
 	  append_list(l, $7);
 	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
 	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_column_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
 	  append_list(l, NULL);
 	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
 	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();

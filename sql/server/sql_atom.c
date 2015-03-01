@@ -365,7 +365,7 @@ atom2sql(atom *a)
 	int ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
 
-	if (a->data.vtype == TYPE_str && ec == EC_INTERVAL)
+	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
 		ec = EC_STRING; 
 	/* todo handle NULL's early */
 	switch (ec) {
@@ -385,7 +385,8 @@ atom2sql(atom *a)
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
-	case EC_INTERVAL: {
+	case EC_MONTH: 
+	case EC_SEC: {
 		lng v;
 		switch (a->data.vtype) {
 		case TYPE_lng:

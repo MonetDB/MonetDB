@@ -724,31 +724,6 @@ returns hugeint external name udf.fuse;
 
 -- (c) Author M.Kersten
 
-create function sys.generate_series(first hugeint, last hugeint)
-returns table (value hugeint)
-external name generator.series;
-create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
-returns table (value hugeint)
-external name generator.series;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
---
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
-
--- (c) Author M.Kersten
-
 create function sys.generate_series(first tinyint, last tinyint)
 returns table (value tinyint)
 external name generator.series;
@@ -784,6 +759,31 @@ returns table (value decimal(10,2))
 external name generator.series;
 create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
 returns table (value timestamp)
+external name generator.series;
+-- The contents of this file are subject to the MonetDB Public License
+-- Version 1.1 (the "License"); you may not use this file except in
+-- compliance with the License. You may obtain a copy of the License at
+-- http://www.monetdb.org/Legal/MonetDBLicense
+--
+-- Software distributed under the License is distributed on an "AS IS"
+-- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+-- License for the specific language governing rights and limitations
+-- under the License.
+--
+-- The Original Code is the MonetDB Database System.
+--
+-- The Initial Developer of the Original Code is CWI.
+-- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+-- Copyright August 2008-2015 MonetDB B.V.
+-- All Rights Reserved.
+
+-- (c) Author M.Kersten
+
+create function sys.generate_series(first hugeint, last hugeint)
+returns table (value hugeint)
+external name generator.series;
+create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
+returns table (value hugeint)
 external name generator.series;
 create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
 create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
@@ -7486,223 +7486,225 @@ COPY 1504 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 1030	"current_timestamp"	"current_timestamp"	"mtime"	0	1	false	false	false	0
 1031	"localtime"	"current_time"	"sql"	0	1	false	false	false	0
 1032	"localtimestamp"	"current_timestamp"	"sql"	0	1	false	false	false	0
-1033	"sql_sub"	"date_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1034	"sql_sub"	"date_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1035	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1036	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1037	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1038	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1039	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	0
+1033	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
+1034	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
+1035	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
+1036	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
+1037	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
+1038	"sql_sub"	"date_sub_msec_interval"	"mtime"	0	1	false	false	false	0
+1039	"sql_sub"	"date_sub_month_interval"	"mtime"	0	1	false	false	false	0
 1040	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1041	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1042	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1043	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1044	"sql_add"	"date_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1045	"sql_add"	"addmonths"	"mtime"	0	1	false	false	false	0
-1046	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1047	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	0
+1041	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	0
+1042	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
+1043	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
+1044	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
+1045	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
+1046	"sql_add"	"date_add_msec_interval"	"mtime"	0	1	false	false	false	0
+1047	"sql_add"	"addmonths"	"mtime"	0	1	false	false	false	0
 1048	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	0
 1049	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	0
-1050	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1051	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1052	"local_timezone"	"local_timezone"	"mtime"	0	1	false	false	false	0
-1053	"year"	"year"	"mtime"	0	1	false	false	false	0
-1054	"month"	"month"	"mtime"	0	1	false	false	false	0
-1055	"day"	"day"	"mtime"	0	1	false	false	false	0
-1056	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1057	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1058	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1059	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1060	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1061	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1062	"year"	"year"	"mtime"	0	1	false	false	false	0
-1063	"month"	"month"	"mtime"	0	1	false	false	false	0
-1064	"day"	"day"	"mtime"	0	1	false	false	false	0
-1065	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1066	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1067	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1068	"year"	"year"	"mtime"	0	1	false	false	false	0
-1069	"month"	"month"	"mtime"	0	1	false	false	false	0
-1070	"day"	"day"	"mtime"	0	1	false	false	false	0
-1071	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1072	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1073	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1074	"year"	"year"	"mtime"	0	1	false	false	false	0
-1075	"month"	"month"	"mtime"	0	1	false	false	false	0
-1076	"day"	"day"	"mtime"	0	1	false	false	false	0
-1077	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1078	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1079	"second"	"seconds"	"mtime"	0	1	false	false	false	0
-1080	"dayofyear"	"dayofyear"	"mtime"	0	1	false	false	false	0
-1081	"weekofyear"	"weekofyear"	"mtime"	0	1	false	false	false	0
-1082	"dayofweek"	"dayofweek"	"mtime"	0	1	false	false	false	0
-1083	"dayofmonth"	"day"	"mtime"	0	1	false	false	false	0
-1084	"week"	"weekofyear"	"mtime"	0	1	false	false	false	0
-1085	"next_value_for"	"next_value"	"sql"	0	1	true	false	false	0
-1086	"get_value_for"	"get_value"	"sql"	0	1	false	false	false	0
-1087	"restart"	"restart"	"sql"	0	1	false	false	false	0
-1088	"index"	"index"	"calc"	0	1	false	false	false	0
-1089	"index"	"index"	"calc"	0	1	false	false	false	0
+1050	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	0
+1051	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	0
+1052	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
+1053	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
+1054	"local_timezone"	"local_timezone"	"mtime"	0	1	false	false	false	0
+1055	"year"	"year"	"mtime"	0	1	false	false	false	0
+1056	"month"	"month"	"mtime"	0	1	false	false	false	0
+1057	"day"	"day"	"mtime"	0	1	false	false	false	0
+1058	"hour"	"hours"	"mtime"	0	1	false	false	false	0
+1059	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
+1060	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
+1061	"hour"	"hours"	"mtime"	0	1	false	false	false	0
+1062	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
+1063	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
+1064	"year"	"year"	"mtime"	0	1	false	false	false	0
+1065	"month"	"month"	"mtime"	0	1	false	false	false	0
+1066	"day"	"day"	"mtime"	0	1	false	false	false	0
+1067	"hour"	"hours"	"mtime"	0	1	false	false	false	0
+1068	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
+1069	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
+1070	"year"	"year"	"mtime"	0	1	false	false	false	0
+1071	"month"	"month"	"mtime"	0	1	false	false	false	0
+1072	"day"	"day"	"mtime"	0	1	false	false	false	0
+1073	"hour"	"hours"	"mtime"	0	1	false	false	false	0
+1074	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
+1075	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
+1076	"year"	"year"	"mtime"	0	1	false	false	false	0
+1077	"month"	"month"	"mtime"	0	1	false	false	false	0
+1078	"day"	"day"	"mtime"	0	1	false	false	false	0
+1079	"hour"	"hours"	"mtime"	0	1	false	false	false	0
+1080	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
+1081	"second"	"seconds"	"mtime"	0	1	false	false	false	0
+1082	"dayofyear"	"dayofyear"	"mtime"	0	1	false	false	false	0
+1083	"weekofyear"	"weekofyear"	"mtime"	0	1	false	false	false	0
+1084	"dayofweek"	"dayofweek"	"mtime"	0	1	false	false	false	0
+1085	"dayofmonth"	"day"	"mtime"	0	1	false	false	false	0
+1086	"week"	"weekofyear"	"mtime"	0	1	false	false	false	0
+1087	"next_value_for"	"next_value"	"sql"	0	1	true	false	false	0
+1088	"get_value_for"	"get_value"	"sql"	0	1	false	false	false	0
+1089	"restart"	"restart"	"sql"	0	1	false	false	false	0
 1090	"index"	"index"	"calc"	0	1	false	false	false	0
-1091	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1092	"locate"	"locate"	"str"	0	1	false	false	false	0
-1093	"locate"	"locate"	"str"	0	1	false	false	false	0
-1094	"substring"	"substring"	"str"	0	1	false	false	false	0
-1095	"substring"	"substring"	"str"	0	1	false	false	false	0
-1096	"like"	"like"	"algebra"	0	1	false	false	false	0
-1097	"like"	"like"	"algebra"	0	1	false	false	false	0
-1098	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1099	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1100	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1101	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1102	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1103	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1104	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1105	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1106	"concat"	"+"	"calc"	0	1	false	false	false	0
-1107	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1108	"code"	"unicode"	"str"	0	1	false	false	false	0
-1109	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1110	"right"	"stringright"	"str"	0	1	false	false	false	0
-1111	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1112	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1113	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1114	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1115	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1116	"trim"	"trim"	"str"	0	1	false	false	false	0
-1117	"trim"	"trim"	"str"	0	1	false	false	false	0
-1118	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1119	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1120	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1121	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1122	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1123	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1124	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1125	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1126	"insert"	"insert"	"str"	0	1	false	false	false	0
-1127	"replace"	"replace"	"str"	0	1	false	false	false	0
-1128	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1129	"space"	"space"	"str"	0	1	false	false	false	0
-1130	"char_length"	"length"	"str"	0	1	false	false	false	0
-1131	"character_length"	"length"	"str"	0	1	false	false	false	0
-1132	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1133	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1134	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1135	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1136	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1137	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1138	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1139	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1140	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1141	"index"	"index"	"calc"	0	1	false	false	false	0
-1142	"index"	"index"	"calc"	0	1	false	false	false	0
+1091	"index"	"index"	"calc"	0	1	false	false	false	0
+1092	"index"	"index"	"calc"	0	1	false	false	false	0
+1093	"strings"	"strings"	"calc"	0	1	false	false	false	0
+1094	"locate"	"locate"	"str"	0	1	false	false	false	0
+1095	"locate"	"locate"	"str"	0	1	false	false	false	0
+1096	"substring"	"substring"	"str"	0	1	false	false	false	0
+1097	"substring"	"substring"	"str"	0	1	false	false	false	0
+1098	"like"	"like"	"algebra"	0	1	false	false	false	0
+1099	"like"	"like"	"algebra"	0	1	false	false	false	0
+1100	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1101	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1102	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1103	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1104	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1105	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1106	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
+1107	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
+1108	"concat"	"+"	"calc"	0	1	false	false	false	0
+1109	"ascii"	"ascii"	"str"	0	1	false	false	false	0
+1110	"code"	"unicode"	"str"	0	1	false	false	false	0
+1111	"length"	"stringlength"	"str"	0	1	false	false	false	0
+1112	"right"	"stringright"	"str"	0	1	false	false	false	0
+1113	"left"	"stringleft"	"str"	0	1	false	false	false	0
+1114	"upper"	"toUpper"	"str"	0	1	false	false	false	0
+1115	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
+1116	"lower"	"toLower"	"str"	0	1	false	false	false	0
+1117	"lcase"	"toLower"	"str"	0	1	false	false	false	0
+1118	"trim"	"trim"	"str"	0	1	false	false	false	0
+1119	"trim"	"trim"	"str"	0	1	false	false	false	0
+1120	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1121	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1122	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1123	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1124	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1125	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1126	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1127	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1128	"insert"	"insert"	"str"	0	1	false	false	false	0
+1129	"replace"	"replace"	"str"	0	1	false	false	false	0
+1130	"repeat"	"repeat"	"str"	0	1	false	false	false	0
+1131	"space"	"space"	"str"	0	1	false	false	false	0
+1132	"char_length"	"length"	"str"	0	1	false	false	false	0
+1133	"character_length"	"length"	"str"	0	1	false	false	false	0
+1134	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
+1135	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
+1136	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
+1137	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
+1138	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
+1139	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
+1140	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
+1141	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
+1142	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
 1143	"index"	"index"	"calc"	0	1	false	false	false	0
-1144	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1145	"locate"	"locate"	"str"	0	1	false	false	false	0
-1146	"locate"	"locate"	"str"	0	1	false	false	false	0
-1147	"substring"	"substring"	"str"	0	1	false	false	false	0
-1148	"substring"	"substring"	"str"	0	1	false	false	false	0
-1149	"like"	"like"	"algebra"	0	1	false	false	false	0
-1150	"like"	"like"	"algebra"	0	1	false	false	false	0
-1151	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1152	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1153	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1154	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1155	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1156	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1157	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1158	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1159	"concat"	"+"	"calc"	0	1	false	false	false	0
-1160	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1161	"code"	"unicode"	"str"	0	1	false	false	false	0
-1162	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1163	"right"	"stringright"	"str"	0	1	false	false	false	0
-1164	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1165	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1166	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1167	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1168	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1169	"trim"	"trim"	"str"	0	1	false	false	false	0
-1170	"trim"	"trim"	"str"	0	1	false	false	false	0
-1171	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1172	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1173	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1174	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1175	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1176	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1177	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1178	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1179	"insert"	"insert"	"str"	0	1	false	false	false	0
-1180	"replace"	"replace"	"str"	0	1	false	false	false	0
-1181	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1182	"space"	"space"	"str"	0	1	false	false	false	0
-1183	"char_length"	"length"	"str"	0	1	false	false	false	0
-1184	"character_length"	"length"	"str"	0	1	false	false	false	0
-1185	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1186	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1187	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1188	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1189	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1190	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1191	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1192	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1193	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1194	"index"	"index"	"calc"	0	1	false	false	false	0
-1195	"index"	"index"	"calc"	0	1	false	false	false	0
+1144	"index"	"index"	"calc"	0	1	false	false	false	0
+1145	"index"	"index"	"calc"	0	1	false	false	false	0
+1146	"strings"	"strings"	"calc"	0	1	false	false	false	0
+1147	"locate"	"locate"	"str"	0	1	false	false	false	0
+1148	"locate"	"locate"	"str"	0	1	false	false	false	0
+1149	"substring"	"substring"	"str"	0	1	false	false	false	0
+1150	"substring"	"substring"	"str"	0	1	false	false	false	0
+1151	"like"	"like"	"algebra"	0	1	false	false	false	0
+1152	"like"	"like"	"algebra"	0	1	false	false	false	0
+1153	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1154	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1155	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1156	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1157	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1158	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1159	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
+1160	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
+1161	"concat"	"+"	"calc"	0	1	false	false	false	0
+1162	"ascii"	"ascii"	"str"	0	1	false	false	false	0
+1163	"code"	"unicode"	"str"	0	1	false	false	false	0
+1164	"length"	"stringlength"	"str"	0	1	false	false	false	0
+1165	"right"	"stringright"	"str"	0	1	false	false	false	0
+1166	"left"	"stringleft"	"str"	0	1	false	false	false	0
+1167	"upper"	"toUpper"	"str"	0	1	false	false	false	0
+1168	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
+1169	"lower"	"toLower"	"str"	0	1	false	false	false	0
+1170	"lcase"	"toLower"	"str"	0	1	false	false	false	0
+1171	"trim"	"trim"	"str"	0	1	false	false	false	0
+1172	"trim"	"trim"	"str"	0	1	false	false	false	0
+1173	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1174	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1175	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1176	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1177	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1178	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1179	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1180	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1181	"insert"	"insert"	"str"	0	1	false	false	false	0
+1182	"replace"	"replace"	"str"	0	1	false	false	false	0
+1183	"repeat"	"repeat"	"str"	0	1	false	false	false	0
+1184	"space"	"space"	"str"	0	1	false	false	false	0
+1185	"char_length"	"length"	"str"	0	1	false	false	false	0
+1186	"character_length"	"length"	"str"	0	1	false	false	false	0
+1187	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
+1188	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
+1189	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
+1190	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
+1191	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
+1192	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
+1193	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
+1194	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
+1195	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
 1196	"index"	"index"	"calc"	0	1	false	false	false	0
-1197	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1198	"locate"	"locate"	"str"	0	1	false	false	false	0
-1199	"locate"	"locate"	"str"	0	1	false	false	false	0
-1200	"substring"	"substring"	"str"	0	1	false	false	false	0
-1201	"substring"	"substring"	"str"	0	1	false	false	false	0
-1202	"like"	"like"	"algebra"	0	1	false	false	false	0
-1203	"like"	"like"	"algebra"	0	1	false	false	false	0
-1204	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1205	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1206	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1207	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1208	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1209	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1210	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1211	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1212	"concat"	"+"	"calc"	0	1	false	false	false	0
-1213	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1214	"code"	"unicode"	"str"	0	1	false	false	false	0
-1215	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1216	"right"	"stringright"	"str"	0	1	false	false	false	0
-1217	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1218	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1219	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1220	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1221	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1222	"trim"	"trim"	"str"	0	1	false	false	false	0
-1223	"trim"	"trim"	"str"	0	1	false	false	false	0
-1224	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1225	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1226	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1227	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1228	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1229	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1230	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1231	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1232	"insert"	"insert"	"str"	0	1	false	false	false	0
-1233	"replace"	"replace"	"str"	0	1	false	false	false	0
-1234	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1235	"space"	"space"	"str"	0	1	false	false	false	0
-1236	"char_length"	"length"	"str"	0	1	false	false	false	0
-1237	"character_length"	"length"	"str"	0	1	false	false	false	0
-1238	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1239	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1240	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1241	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1242	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1243	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1244	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1245	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1246	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1247	"copyfrom"	"copy_from"	"sql"	0	5	false	true	false	0
-1248	"copyfrom"	"copyfrom"	"sql"	0	5	false	true	false	0
-1249	"copyfrom"	"importTable"	"sql"	0	5	false	true	false	0
+1197	"index"	"index"	"calc"	0	1	false	false	false	0
+1198	"index"	"index"	"calc"	0	1	false	false	false	0
+1199	"strings"	"strings"	"calc"	0	1	false	false	false	0
+1200	"locate"	"locate"	"str"	0	1	false	false	false	0
+1201	"locate"	"locate"	"str"	0	1	false	false	false	0
+1202	"substring"	"substring"	"str"	0	1	false	false	false	0
+1203	"substring"	"substring"	"str"	0	1	false	false	false	0
+1204	"like"	"like"	"algebra"	0	1	false	false	false	0
+1205	"like"	"like"	"algebra"	0	1	false	false	false	0
+1206	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1207	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
+1208	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1209	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
+1210	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1211	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
+1212	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
+1213	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
+1214	"concat"	"+"	"calc"	0	1	false	false	false	0
+1215	"ascii"	"ascii"	"str"	0	1	false	false	false	0
+1216	"code"	"unicode"	"str"	0	1	false	false	false	0
+1217	"length"	"stringlength"	"str"	0	1	false	false	false	0
+1218	"right"	"stringright"	"str"	0	1	false	false	false	0
+1219	"left"	"stringleft"	"str"	0	1	false	false	false	0
+1220	"upper"	"toUpper"	"str"	0	1	false	false	false	0
+1221	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
+1222	"lower"	"toLower"	"str"	0	1	false	false	false	0
+1223	"lcase"	"toLower"	"str"	0	1	false	false	false	0
+1224	"trim"	"trim"	"str"	0	1	false	false	false	0
+1225	"trim"	"trim"	"str"	0	1	false	false	false	0
+1226	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1227	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
+1228	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1229	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
+1230	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1231	"lpad"	"lpad"	"str"	0	1	false	false	false	0
+1232	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1233	"rpad"	"rpad"	"str"	0	1	false	false	false	0
+1234	"insert"	"insert"	"str"	0	1	false	false	false	0
+1235	"replace"	"replace"	"str"	0	1	false	false	false	0
+1236	"repeat"	"repeat"	"str"	0	1	false	false	false	0
+1237	"space"	"space"	"str"	0	1	false	false	false	0
+1238	"char_length"	"length"	"str"	0	1	false	false	false	0
+1239	"character_length"	"length"	"str"	0	1	false	false	false	0
+1240	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
+1241	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
+1242	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
+1243	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
+1244	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
+1245	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
+1246	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
+1247	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
+1248	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
+1249	"copyfrom"	"copy_from"	"sql"	0	5	false	true	false	0
+1250	"copyfrom"	"copyfrom"	"sql"	0	5	false	true	false	0
+1251	"copyfrom"	"importTable"	"sql"	0	5	false	true	false	0
 29	"not_unique"	"not_unique"	"sql"	0	3	false	false	false	0
 41	"zero_or_one"	"zero_or_one"	"sql"	0	3	false	false	false	0
 42	"exist"	"exist"	"aggr"	0	3	false	false	false	0
@@ -9360,6 +9362,8 @@ COPY 1504 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 1247
 1248
 1249
+1250
+1251
 29
 41
 42

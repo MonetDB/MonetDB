@@ -2046,6 +2046,17 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	return MAL_SUCCEED;
 }
 
+str
+MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2)
+{
+	if (*v1 == daytime_nil || *v2 == daytime_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = (lng) (*v1 - *v2);
+	}
+	return MAL_SUCCEED;
+}
+
 /* returns the number of milliseconds between 'val1' and 'val2'. */
 str
 MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2)

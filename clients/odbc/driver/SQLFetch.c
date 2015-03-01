@@ -51,7 +51,7 @@ SQLFetch_(ODBCStmt *stmt)
 	ODBCDescRec *rec;
 	int i;
 	SQLULEN row;
-	SQLINTEGER offset;
+	SQLLEN offset;
 	SQLUSMALLINT *statusp;
 
 	/* stmt->startRow is the (0 based) index of the first row we

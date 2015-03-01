@@ -51,19 +51,27 @@ SQLGetConnectOption_(ODBCDbc *dbc,
 		     SQLUSMALLINT Option,
 		     SQLPOINTER ValuePtr)
 {
+	SQLLEN v;
+	SQLRETURN r;
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (Option) {
 		/* connection attributes (ODBC 1 and 2 only) */
 	case SQL_ACCESS_MODE:
 	case SQL_AUTOCOMMIT:
 	case SQL_LOGIN_TIMEOUT:
-	case SQL_ODBC_CURSORS:
 	case SQL_OPT_TRACE:
 	case SQL_PACKET_SIZE:
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
 		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
+	case SQL_ODBC_CURSORS:
+		/* 32 bit integer argument, but SQLGetConnectAttr returns 64 */
+		r = SQLGetConnectAttr_(dbc, Option, &v, 0, NULL);
+		if (SQL_SUCCEEDED(r))
+			* (SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
+		return r;
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
 		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);

@@ -351,11 +351,8 @@ getNativeErrorCode(ODBCError *error)
 ODBCError *
 getErrorRec(ODBCError *error, int recNumber)
 {
-	while (error && --recNumber > 0) {
+	while (error && --recNumber > 0)
 		error = error->next;
-		if (!error)
-			return NULL;
-	}
 	return error;
 }
 

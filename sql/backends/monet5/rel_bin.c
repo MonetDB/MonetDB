@@ -986,7 +986,7 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC)) != NULL) {
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);

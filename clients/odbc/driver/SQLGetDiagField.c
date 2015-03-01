@@ -156,6 +156,23 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
+#if 0
+/* not clear yet what to return here */
+	case SQL_DIAG_MESSAGE_TEXT: {
+		char msg[1024];
+		snprintf(msg, sizeof(msg), "");
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
+		return SQL_SUCCESS;
+	}
+#endif
+	case SQL_DIAG_NATIVE:
+		*(SQLINTEGER *) DiagInfoPtr = getNativeErrorCode(err);
+		return SQL_SUCCESS;
+	case SQL_DIAG_ROW_NUMBER:
+		if (HandleType != SQL_HANDLE_STMT)
+			return SQL_ERROR;
+		*(SQLLEN *) DiagInfoPtr = SQL_ROW_NUMBER_UNKNOWN;
+		return SQL_SUCCESS;
 	case SQL_DIAG_SERVER_NAME:{
 		char *msg = dbc && dbc->Connected && dbc->dsn ? dbc->dsn : "";
 
