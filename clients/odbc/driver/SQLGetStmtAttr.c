@@ -197,7 +197,7 @@ SQLGetStmtAttr(SQLHSTMT StatementHandle,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
-		PTRFMTCAST ValuePtr, BufferLength,
+		PTRFMTCAST ValuePtr, (int) BufferLength,
 		PTRFMTCAST StringLengthPtr);
 #endif
 
@@ -237,7 +237,7 @@ SQLGetStmtAttrW(SQLHSTMT StatementHandle,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
-		PTRFMTCAST ValuePtr, BufferLength,
+		PTRFMTCAST ValuePtr, (int) BufferLength,
 		PTRFMTCAST StringLengthPtr);
 #endif
 

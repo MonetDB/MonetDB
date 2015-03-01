@@ -55,7 +55,8 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 	ODBCLOG("SQLGetEnvAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST EnvironmentHandle,
 		translateEnvAttribute(Attribute),
-		PTRFMTCAST ValuePtr, BufferLength, PTRFMTCAST StringLengthPtr);
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	(void) BufferLength;	/* Stefan: unused!? */

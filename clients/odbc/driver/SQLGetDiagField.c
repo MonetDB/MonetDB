@@ -243,7 +243,8 @@ translateDiagIdentifier(SQLSMALLINT DiagIdentifier)
 	case SQL_DIAG_SUBCLASS_ORIGIN:
 		return "SQL_DIAG_SUBCLASS_ORIGIN";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", DiagIdentifier);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) DiagIdentifier);
 		return unknown;
 	}
 }
@@ -313,7 +314,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 		PTRFMTCAST Handle, (int) RecNumber, 
 		translateDiagIdentifier(DiagIdentifier),
 		PTRFMTCAST DiagInfoPtr,
-		BufferLength, PTRFMTCAST StringLengthPtr);
+		(int) BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	switch (DiagIdentifier) {

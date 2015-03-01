@@ -1011,7 +1011,8 @@ translateCType(SQLSMALLINT ValueType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", ValueType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ValueType);
 		return unknown;
 	}
 }
@@ -1097,7 +1098,8 @@ translateSQLType(SQLSMALLINT ParameterType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", ParameterType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ParameterType);
 		return unknown;
 	}
 }
@@ -1183,7 +1185,8 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 	case SQL_DESC_UPDATABLE:
 		return "SQL_DESC_UPDATABLE";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", FieldIdentifier);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) FieldIdentifier);
 		return unknown;
 	}
 }
@@ -1277,7 +1280,8 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_TXN_ISOLATION:
 		return "SQL_ATTR_TXN_ISOLATION";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1328,7 +1332,8 @@ translateEnvAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_CP_MATCH:
 		return "SQL_ATTR_CP_MATCH";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1406,7 +1411,8 @@ translateStmtAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_USE_BOOKMARKS:
 		return "SQL_ATTR_USE_BOOKMARKS";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1458,7 +1464,8 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	case SQL_ROLLBACK:
 		return "SQL_ROLLBACK";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", CompletionType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) CompletionType);
 		return unknown;
 	}
 }
