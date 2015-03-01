@@ -48,7 +48,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 96 # length
+% 95 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
     X_12:void  := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
     X_3 := udf.reverse(A0);
@@ -82,7 +82,7 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 102 # length
+% 101 # length
 function user.s6_1{autoCommit=true}():void;
     X_24:void  := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",15);
     X_2 := sql.mvc();

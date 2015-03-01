@@ -27,7 +27,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 100 # length
 function user.s3_1{autoCommit=true}(A0:dbl):void;
     X_26:void  := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",15);
     X_3 := sql.mvc();
@@ -47,7 +47,7 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 94 # length
+% 93 # length
 function user.s4_1{autoCommit=true}():void;
     X_25:void  := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",15);
     X_2 := sql.mvc();

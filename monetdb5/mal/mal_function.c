@@ -480,14 +480,14 @@ void
 listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
 {
 	int i;
-	if ( flg == 0)
-		return;
 	if (mb == NULL) {
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
-	first = first<0?0:first;
-	size = size < 0?-size:size;
+	if ( flg == 0)
+		return;
+	assert(size>=0);
+	assert(first>=0 && first <mb->stop);
 	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
@@ -512,10 +512,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 }
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
-	if (mb == NULL) {
-		mnstr_printf(fd, "# function definition missing\n");
-		return;
-	}
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 

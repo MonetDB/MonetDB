@@ -94,19 +94,14 @@ mal_export void mal_exit(void);
 
 /* Listing modes are globally known */
 #define LIST_INPUT      1       /* echo original input */
-#define LIST_MAL_STMT  2       /* show mal instruction */
+#define LIST_MAL_NAME   2       /* show variable name */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_UDF    8       /* show type resolutoin */
-#define LIST_MAL_PROPS    16       /* show line numbers */
-#define LIST_MAL_DETAIL 32		/* type details */
-#define LIST_MAL_VALUE  64		/* list bat tuple count */
-#define LIST_MAL_MAPI  128       /* output Mapi compatible output */
-#define LIST_MAL_ARG 256		/* show the formal argument name */
-#define LIST_MAL_LNR    512       /* show line numbers */
-#define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
-#define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG | LIST_MAL_TYPE)
-#define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_ARG)
-#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR | LIST_MAL_MAPI)
+#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_PROPS 16       /* show variable properties */
+#define LIST_MAL_MAPI  32       /* output Mapi compatible output */
+#define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
+#define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
+#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
 
 #ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED

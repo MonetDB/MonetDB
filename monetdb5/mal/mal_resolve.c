@@ -678,14 +678,15 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			mb->errors++;
 			if (!silent) {
-				char errsig[4 * PATHLENGTH] = "";
+				char *errsig;
 
-				instructionCall(mb, p, errsig, errsig, sizeof(errsig) - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) - strlen(errsig));
+				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_VALUE));
 				showScriptException(out, mb, getPC(mb, p), TYPE,
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),
 									(getModuleId(p) ? "." : ""),
 									getFunctionId(p), errsig);
+				GDKfree(errsig);
 			} else
 				mb->errors = olderrors;
 			p->typechk = TYPE_UNKNOWN;

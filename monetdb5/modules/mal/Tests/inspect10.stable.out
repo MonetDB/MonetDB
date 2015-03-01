@@ -31,9 +31,9 @@ end user.main;
 # int	str					  # type
 #-------------------------------------------------#
 [ 0@0,	  "function user.dummy(i:int):void;"	  ]
-[ 1@0,	  "    io.print(i);"			  ]
+[ 1@0,	"    io.print();"  ]
 [ 2@0,	  "     := mdb.getDefinition();"	  ]
-[ 3@0,	  "    io.print(b);"			  ]
+[ 3@0,	"    io.print();"  ]
 [ 4@0,	  "    mdb.list();"			  ]
 [ 5@0,	"end user.dummy;"  ]
 function user.dummy(i:int):void;

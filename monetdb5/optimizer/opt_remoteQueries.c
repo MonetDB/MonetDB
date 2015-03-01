@@ -136,7 +136,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		q= newStmt(mb,mapiRef,putRef);\
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);\
 		q= pushArgument(mb,q,location[getArg(p,j)]);\
-		q= pushStr(mb,q, getRefName(mb,getArg(p,j)));\
+		q= pushStr(mb,q, getVarName(mb,getArg(p,j)));\
 		(void) pushArgument(mb,q,getArg(p,j));\
 	}
 
@@ -329,7 +329,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					getArg(q,0)= getArg(p,j);
 					q= pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
-						getRefName(mb,getArg(p,j)) );
+						getVarName(mb,getArg(p,j)) );
 					(void) pushStr(mb,q,buf);
 				}
 				pushInstruction(mb,p);
@@ -350,7 +350,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					q= newStmt(mb,mapiRef,putRef);
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= pushArgument(mb, q, remoteSite);
-					q= pushStr(mb,q, getRefName(mb,getArg(p,j)));
+					q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
 					(void) pushArgument(mb, q, getArg(p,j));
 				}
 				s= RQcall2str(mb, p);

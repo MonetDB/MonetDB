@@ -11,8 +11,11 @@ stdout of test 'tst661` in directory 'monetdb5/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38050/
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37646/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1317/.s.monetdb.37646
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 pattern user.fi(i:int):int... address MDBdummy;
 pattern user.fs(i:int):str... address MDBdummy;
 function user.tst():void;
@@ -24,15 +27,23 @@ function user.tst():void;
 end user.tst;
 function user.main():void;
 #Testing variable return lists 
+    mdb.list("user","tst");
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    a := user.fi(1);                    #  1 a:int := MDBdummy(_2:int) 
-    (a,b) := user.fi(1);                #  2 (a:int, b:int) := MDBdummy(_2:int) 
-    (a,b,c) := user.fi(1);              #  3 (a:int, b:int, c:int) := MDBdummy(_2:int) 
-    z := user.fs(1);                    #  4 z:str := MDBdummy(_2:int) {G}
-    (y,z) := user.fs(1);                #  5 (y:str, z:str) := MDBdummy(_2:int) {G}
-end user.tst;                           #  6  
+function user.tst():void;
+    a := user.fi(1);
+    (a,b) := user.fi(1);
+    (a,b,c) := user.fi(1);
+    z := user.fs(1);
+    (y,z) := user.fs(1);
+end user.tst;
+function user.tst():void;
+    a:int := user.fi(1:int);
+    (a:int,b:int) := user.fi(1:int);
+    (a:int,b:int,c:int) := user.fi(1:int);
+    z:str := user.fs(1:int);
+    (y:str,z:str) := user.fs(1:int);
+end user.tst;
 
 # 16:47:50 >  
 # 16:47:50 >  Done.

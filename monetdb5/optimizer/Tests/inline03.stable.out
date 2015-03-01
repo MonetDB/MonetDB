@@ -28,18 +28,18 @@ function user.main():void;
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    X_13 := 1;                          #  3 _13:int := _5:int 
-    X_14 := batcalc.+(b,b);             #  4 _14:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    X_14 := batcalc.*(X_14,X_13);       #  5 _14:bat[:oid,:int] := CMDbatMULsignal(_14:bat[:oid,:int], _13:int) {G}
-    z:bat[:oid,:int] {inline} := X_14;  #  6 z:bat[:oid,:int] := _14:bat[:oid,:int] {G}
-    X_18 := 1;                          #  7 _18:int := _5:int 
-    X_19 := batcalc.+(b,2);             #  8 _19:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _9:int) {G}
-    X_19 := batcalc.*(X_19,X_18);       #  9 _19:bat[:oid,:int] := CMDbatMULsignal(_19:bat[:oid,:int], _18:int) {G}
-    z:bat[:oid,:int] {inline} := X_19;  # 10 z:bat[:oid,:int] := _19:bat[:oid,:int] {G}
-end user.qry;                           # 11  
+function user.qry():void;
+    b:bat[:oid,:int] := bat.new(:oid,:int);
+    bat.append(b:bat[:oid,:int],1:int);
+    X_13:int := 1:int;
+    X_14:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);
+    X_14:bat[:oid,:int] := batcalc.*(X_14:bat[:oid,:int],X_13:int);
+    z:bat[:oid,:int]{inline} := X_14:bat[:oid,:int];
+    X_18:int := 1:int;
+    X_19:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);
+    X_19:bat[:oid,:int] := batcalc.*(X_19:bat[:oid,:int],X_18:int);
+    z:bat[:oid,:int]{inline} := X_19:bat[:oid,:int];
+end user.qry;
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

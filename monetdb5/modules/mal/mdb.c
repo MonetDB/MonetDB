@@ -460,7 +460,7 @@ MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_UDF );
+	printFunction(cntxt->fdout, mb, 0,  LIST_MAL_NAME);
 	return MAL_SUCCEED;
 }
 
@@ -483,7 +483,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
-	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_STMT | LIST_MAL_UDF );
+	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME );
 	(void) mb;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -493,7 +493,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS );
 	return MAL_SUCCEED;
 }
 
@@ -507,7 +507,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
-	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL);
+	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS );
 	(void) mb;		/* fool compiler */
 	return NULL;
 }

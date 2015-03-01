@@ -21,10 +21,10 @@ stdout of test 'tst308` in directory 'monetdb5/mal` itself:
 #exit NotDefinedException;
 #end foo;
 function user.foo():void;
-catch NotDefinedException:str ;
+catch NotDefinedException:str;
     io.print("Shouldn't do this");
     io.print(NotDefinedException);
-exit NotDefinedException:str ;
+exit NotDefinedException:str;
 end user.foo;
 function user.main():void;
 # exception variables are implicitly defined 

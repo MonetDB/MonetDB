@@ -22,10 +22,9 @@ function user.test(b:bat[:any,:any_2],c:any_2):void;
     k := calc.+(1,c);
     io.print(k);
 end user.test;
-!TypeException:user.test[1]:'calc.+' undefined in: k:any := calc.+(_4:int, c:str)
-
+!TypeException:user.test[1]:'calc.+' undefined in: k := calc.+(1,c);
 !MALException:user.test[0]:Error in cloned function
-!TypeException:user.main[4]:'user.test' undefined in: _6:void := user.test(c:bat[:oid,:str], _7:str)
+!TypeException:user.main[4]:'user.test' undefined in: user.test(c,"hello");
 function user.main():void;
 # Polymorphic function tests 
 # Catching a dynamic error 

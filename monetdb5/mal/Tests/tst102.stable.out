@@ -13,11 +13,7 @@ stdout of test 'tst102` in directory 'monetdb5/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.+(L:any_1,R:any_1):any_1 address addIntInt;
-#
-#a:=1+"hello";
-#b:=3.5+1;
-#
-!TypeException:user.main[2]:'calc.+' undefined in: a:any := calc.+(_3:int, _4:str)
+!TypeException:user.main[2]:'calc.+' undefined in: a := calc.+(1,"hello");
 function user.main():void;
 # the calls are wrong, they violate the type constraint 
     a := calc.+(1,"hello");

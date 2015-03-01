@@ -47,22 +47,22 @@ function user.main():void;
 #optimizer.garbageCollector("user","getz"); 
     mdb.List("user","getz");
 end user.main;
-function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
-    x := nil:int;                       #  1 x:int := _3:int 
-    V6 := calc.sht(10);                 #  2 V6:sht := CMDvarCONVERT(_6:int) 
-    V9 := calc.int(V6);                 #  3 V9:int := CMDvarCONVERT(V6:sht) 
-    V11 := calc.>(p,V9);                #  4 V11:bit := CMDvarGT(p:int, V9:int) 
-barrier V12 := V11;                     #  5 V12:bit := V11:bit {J10}
-    V15 := calc.int(2);                 #  6 V15:int := CMDvarCONVERT(_12:int) 
-    V22 := calc.*(p,V15);               #  7 V22:int := CMDvarMULsignal(p:int, V15:int) 
-    V24 := calc.int(V22);               #  8 V24:int := CMDvarCONVERT(V22:int) 
-    x := V24;                           #  9 x:int := V24:int 
-exit V12;                               # 10 V12:bit 
-barrier V27 := calc.not(V11);           # 11 V27:bit := CMDvarNOT(V11:bit) {J13}
-    x := p;                             # 12 x:int := p:int 
-exit V27;                               # 13 V27:bit 
-    return V31 := x;                    # 14 V31:int := x:int 
-end user.getz;                          # 15  
+function user.getz(p:int):int;
+    x:int := nil:int;
+    V6:sht := calc.sht(10:int);
+    V9:int := calc.int(V6:sht);
+    V11:bit := calc.>(p:int,V9:int);
+barrier V12:bit := V11:bit;
+    V15:int := calc.int(2:int);
+    V22:int := calc.*(p:int,V15:int);
+    V24:int := calc.int(V22:int);
+    x:int := V24:int;
+exit V12:bit;
+barrier V27:bit := calc.not(V11:bit);
+    x:int := p:int;
+exit V27:bit;
+    return V31:int := x:int;
+end user.getz;
 
 # 19:53:37 >  
 # 19:53:37 >  Done.

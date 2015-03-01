@@ -1897,7 +1897,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, op->nr);
 				if (special) {
 					q = pushInt(mb, q, tpe->digits);
+					setVarUDFtype(mb, getArg(q, q->argc-1));
 					q = pushInt(mb, q, tpe->scale);
+					setVarUDFtype(mb, getArg(q, q->argc-1));
 				}
 				special = 0;
 			}

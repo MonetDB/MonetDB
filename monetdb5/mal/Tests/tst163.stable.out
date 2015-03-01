@@ -14,12 +14,7 @@ stdout of test 'tst163` in directory 'monetdb5/mal` itself:
 #atom myint:int;
 #atom myint:int;
 !TypeException:atomDefinition:Redefinition of atom 'myint'
-#i:= 1:myint;
-#j:= i+3;
-#io.print(i);
-#io.print(j);
-#
-!TypeException:user.main[3]:'calc.+' undefined in: j:any := calc.+(i:myint, _5:int)
+!TypeException:user.main[3]:'calc.+' undefined in: j := calc.+(i,3);
 function user.main():void;
 #multiple atomary types 
     i := "1":myint;

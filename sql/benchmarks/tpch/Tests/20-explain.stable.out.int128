@@ -63,7 +63,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 790 # length
+% 789 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
     X_243:void  := querylog.define("explain select\n\ts_name,\n\ts_address\nfrom\n\tsupplier,\n\tnation\nwhere\n\ts_suppkey in (\n\t\tselect\n\t\t\tps_suppkey\n\t\tfrom\n\t\t\tpartsupp\n\t\twhere\n\t\t\tps_partkey in (\n\t\t\t\tselect\n\t\t\t\t\tp_partkey\n\t\t\t\tfrom\n\t\t\t\t\tpart\n\t\t\t\twhere\n\t\t\t\t\tp_name like \\'forest%\\'\n\t\t\t)\n\t\t\tand ps_availqty > (\n\t\t\t\tselect\n\t\t\t\t\t0.5 * sum(l_quantity)\n\t\t\t\tfrom\n\t\t\t\t\tlineitem\n\t\t\t\twhere\n\t\t\t\t\tl_partkey = ps_partkey\n\t\t\t\t\tand l_suppkey = ps_suppkey\n\t\t\t\t\tand l_shipdate >= date \\'1994-01-01\\'\n\t\t\t\t\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\t\t\t)\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'CANADA\\'\norder by\n\ts_name;","sequential_pipe",139);
     X_8 := sql.mvc();
@@ -92,7 +92,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     (X_50,r1_52) := sql.bind(X_8,"sys","part","p_partkey",2);
     X_53:bat[:oid,:int]  := sql.bind(X_8,"sys","part","p_partkey",1);
     X_55 := sql.delta(X_46,X_50,r1_52,X_53);
-    X_56:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_43,X_33,X_55);
+    X_56:bat[:oid,:int] := algebra.leftfetchjoinPath(X_43,X_33,X_55);
     (X_57,r1_60) := algebra.subjoin(X_31,X_56,nil:BAT,nil:BAT,false,nil:lng);
     X_60 := algebra.tinter(X_32,X_57);
     X_283 := algebra.leftfetchjoin(X_60,X_23);
@@ -115,13 +115,13 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_89:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_partkey",1);
     X_91 := sql.delta(X_82,X_86,r1_93,X_89);
     X_92:bat[:oid,:int]  := algebra.leftfetchjoin(X_284,X_91);
-    X_93:bat[:oid,:wrd]  := batmkey.hash(X_92);
+    X_93:bat[:oid,:wrd] := batmkey.hash(X_92);
     X_95:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_suppkey",0);
     (X_98,r1_109) := sql.bind(X_8,"sys","lineitem","l_suppkey",2);
     X_100:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_suppkey",1);
     X_101 := sql.delta(X_95,X_98,r1_109,X_100);
     X_102:bat[:oid,:int]  := algebra.leftfetchjoin(X_284,X_101);
-    X_103:bat[:oid,:wrd]  := mkey.bulk_rotate_xor_hash(X_93,22,X_102);
+    X_103:bat[:oid,:wrd] := mkey.bulk_rotate_xor_hash(X_93,22,X_102);
     (X_104,r1_116) := algebra.subjoin(X_68,X_103,nil:BAT,nil:BAT,false,nil:lng);
     X_108 := algebra.leftfetchjoin(X_60,X_31);
     X_109 := algebra.leftfetchjoin(X_104,X_108);
@@ -149,20 +149,20 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     X_160:bat[:oid,:int]  := sql.bind(X_8,"sys","lineitem","l_quantity",1);
     X_161 := sql.delta(X_153,X_158,r1_183,X_160);
     X_162:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_132,X_129,X_284,X_161);
-    X_163:bat[:oid,:hge]  := aggr.subsum(X_162,X_136,r1_154,true,true);
+    X_163:bat[:oid,:hge] := aggr.subsum(X_162,X_136,r1_154,true,true);
     X_139:bat[:oid,:int]  := sql.bind(X_8,"sys","partsupp","ps_availqty",0);
     (X_141,r1_159) := sql.bind(X_8,"sys","partsupp","ps_availqty",2);
     X_143:bat[:oid,:int]  := sql.bind(X_8,"sys","partsupp","ps_availqty",1);
     X_144 := sql.delta(X_139,X_141,r1_159,X_143);
-    X_145:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_285,X_60,X_23,X_144);
-    X_146:bat[:oid,:hge]  := batcalc.hge(X_145,22,2);
+    X_145:bat[:oid,:int] := algebra.leftfetchjoinPath(X_285,X_60,X_23,X_144);
+    X_146:bat[:oid,:hge] := batcalc.hge(X_145,22,2);
     X_149 := calc.lng(1,A1,11,1);
     X_152 := calc.hge(1,X_149,22,1);
-    X_165:bat[:oid,:lng]  := batcalc.lng(X_163,11,1);
-    X_166:bat[:oid,:hge]  := batcalc.*(X_152,X_165);
-    X_167:bat[:oid,:bit]  := batcalc.>(X_146,X_166);
+    X_165:bat[:oid,:lng] := batcalc.lng(X_163,11,1);
+    X_166:bat[:oid,:hge] := batcalc.*(X_152,X_165);
+    X_167:bat[:oid,:bit] := batcalc.>(X_146,X_166);
     X_168 := algebra.subselect(X_167,true,true,true,true,false);
-    X_170:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_168,X_285,X_127);
+    X_170:bat[:oid,:int] := algebra.leftfetchjoinPath(X_168,X_285,X_127);
     (X_171,r1_203) := algebra.subjoin(X_21,X_170,nil:BAT,nil:BAT,false,nil:lng);
     X_175 := algebra.tinter(X_22,X_171);
     X_286 := algebra.leftfetchjoin(X_175,X_9);
@@ -182,21 +182,21 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str)
     (X_202,r1_236) := sql.bind(X_8,"sys","nation","n_nationkey",2);
     X_204:bat[:oid,:int]  := sql.bind(X_8,"sys","nation","n_nationkey",1);
     X_205 := sql.delta(X_200,X_202,r1_236,X_204);
-    X_206:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_197,X_187,X_205);
+    X_206:bat[:oid,:int] := algebra.leftfetchjoinPath(X_197,X_187,X_205);
     (X_207,r1_242) := algebra.subjoin(X_186,X_206,nil:BAT,nil:BAT,false,nil:lng);
     X_287 := algebra.leftfetchjoin(X_207,X_175);
     X_211:bat[:oid,:str]  := sql.bind(X_8,"sys","supplier","s_name",0);
     (X_215,r1_250) := sql.bind(X_8,"sys","supplier","s_name",2);
     X_218:bat[:oid,:str]  := sql.bind(X_8,"sys","supplier","s_name",1);
     X_220 := sql.delta(X_211,X_215,r1_250,X_218);
-    X_221:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_287,X_9,X_220);
+    X_221:bat[:oid,:str] := algebra.leftfetchjoinPath(X_287,X_9,X_220);
     (X_222,r1_259,r2_259) := algebra.subsort(X_221,false,false);
     X_225 := algebra.leftfetchjoin(r1_259,X_221);
     X_226:bat[:oid,:str]  := sql.bind(X_8,"sys","supplier","s_address",0);
     (X_229,r1_266) := sql.bind(X_8,"sys","supplier","s_address",2);
     X_231:bat[:oid,:str]  := sql.bind(X_8,"sys","supplier","s_address",1);
     X_232 := sql.delta(X_226,X_229,r1_266,X_231);
-    X_233:bat[:oid,:str]  := algebra.leftfetchjoinPath(r1_259,X_287,X_9,X_232);
+    X_233:bat[:oid,:str] := algebra.leftfetchjoinPath(r1_259,X_287,X_9,X_232);
     X_234 := sql.resultSet(2,1,X_225);
     sql.rsColumn(X_234,"sys.supplier","s_name","varchar",25,0,X_225);
     sql.rsColumn(X_234,"sys.supplier","s_address","varchar",40,0,X_233);

@@ -268,7 +268,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
 			OPTDEBUGdataflow{
 				mnstr_printf(cntxt->fdout,"#conflict %d dataflow %d dflowAssignConflict %d\n",i, dataflowConflict(cntxt,mb,p),dflowAssignConflict(p,i,assigned,eolife));
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_STMT);
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 			}
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){

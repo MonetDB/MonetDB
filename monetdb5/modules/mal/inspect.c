@@ -397,7 +397,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_STMT);
+			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_NAME );
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
 				char *bn;

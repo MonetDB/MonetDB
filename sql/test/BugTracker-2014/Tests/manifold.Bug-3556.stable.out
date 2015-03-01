@@ -61,7 +61,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 196 # length
+% 195 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
     X_39:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n  from sys.functions\n) as x;","sequential_pipe",21);
     X_4 := sql.mvc();
@@ -91,7 +91,7 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 200 # length
+% 199 # length
 function user.s3_1{autoCommit=true}(A0:str,A1:str,A2:lng):void;
     X_45:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n  from sys.functions\n) as x;","sequential_pipe",25);
     X_5 := sql.mvc();
@@ -125,7 +125,7 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 201 # length
+% 200 # length
 function user.s4_1{autoCommit=true}(A0:str,A1:str):void;
     X_43:void  := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n  from sys.functions\n) as x;","sequential_pipe",24);
     X_4 := sql.mvc();

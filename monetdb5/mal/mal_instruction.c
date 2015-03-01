@@ -661,8 +661,8 @@ getVarName(MalBlkPtr mb, int i)
 
 	nme = mb->var[i]->name;
 
-	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+	if (nme == 0 || *nme =='_') {
+		snprintf(buf, PATHLENGTH, "%c_%d", REFMARKER, mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
 	return nme;
@@ -699,21 +699,6 @@ resetVarName(MalBlkPtr mb, int i)
 		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
 		mb->var[i]->name = GDKstrdup(buf);
 	}
-}
-
-inline str
-getRefName(MalBlkPtr mb, int i)
-{
-	str nme;
-	char buf[PATHLENGTH];
-
-	nme = mb->var[i]->name;
-
-	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", REFMARKER, mb->var[i]->tmpindex);
-		nme = mb->var[i]->name = GDKstrdup(buf);
-	}
-	return nme;
 }
 
 int
@@ -1920,7 +1905,6 @@ varGetPropStr(MalBlkPtr mb, int var)
 	if (v->propc == 0)
 		return NULL;
 
-	*s++ = '{';
 	for (i = 0; i < v->propc; i++) {
 		char *t = NULL;
 		MalProp *p = mb->prps + v->prps[i];
@@ -1929,7 +1913,8 @@ varGetPropStr(MalBlkPtr mb, int var)
 		if (!first) {
 			*s++ = ',';
 			*s++ = ' ';
-		}
+		} else
+			*s++ = '{';
 		if (p->var) {
 			VarPtr v = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t) p->op);
@@ -1963,7 +1948,8 @@ varGetPropStr(MalBlkPtr mb, int var)
 			s++;
 		first = 0;
 	}
-	*s++ = '}';
+	if( !first)
+		*s++ = '}';
 	*s = 0;
 	return GDKstrdup(buf);
 }

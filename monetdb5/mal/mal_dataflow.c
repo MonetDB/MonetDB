@@ -590,7 +590,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	PARDEBUG {
 		for (n = 0; n < flow->stop - flow->start; n++) {
 			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAL_MAPI);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_MAPI);
 			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
 			for (j = n; flow->edges[j]; j = flow->edges[j]) {
 				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
@@ -625,7 +625,7 @@ static void showFlowEvent(DataFlow flow, int pc)
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
 			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_STMT | LIST_MAL_MAPI);
+			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }
 */
@@ -740,7 +740,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 #ifdef DEBUG_FLOW
 	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(GDKstdout, mb, 0, LIST_MAPI);
 #endif
 
 	/* in debugging mode we should not start multiple threads */

@@ -72,7 +72,7 @@ offlineProfilerHeader(void)
 	lognew();
 	logadd("# ");
 	logadd("event,\t");
-	logadd("\ttime,\t");
+	logadd("time,\t");
 	logadd("pc,\t");
 	logadd("thread,\t");
 	logadd("state,\t");

@@ -283,7 +283,7 @@ static void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_DEBUG);
+	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
 	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg,
 			getModuleId(getInstrPtr(mb, 0)),
 			getFunctionId(getInstrPtr(mb, 0)), pc);
@@ -407,7 +407,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				/* help mclients with fake prompt */
 				if (lastcmd != 'l' && lastcmd != 'L') {
 					mnstr_printf(out, "mdb>");
-					printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+					printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 				}
 
 		}
@@ -877,9 +877,9 @@ retryRead:
 			int i, lstng, varid;
 			InstrPtr q;
 
-			lstng = LIST_MAL_DEBUG | LIST_MAL_UDF | LIST_MAL_LNR;
-			if (*b == 'L')
-				lstng |= LIST_MAL_DETAIL;
+			lstng = LIST_MAL_NAME;
+			if(*b == 'L')
+				lstng = LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS;
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b, out);
@@ -1119,7 +1119,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
 				mnstr_printf(out, "mdb>");
-			printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+			printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		} else if (ch)
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
@@ -1128,7 +1128,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':
-		printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+		printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		break;
 	case 'C':
 		mdbSessionActive = 0; /* for name completion */

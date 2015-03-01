@@ -26,50 +26,50 @@ function user.main():void;
 # taken as function 
     res:str  := remote.put(conn,:void);
     res:str  := remote.exec(conn,"io.print","bla");
-catch SyntaxException:str ;
+catch SyntaxException:str;
     io.print("Received first error from the remote site");
     io.printf("!%s\n",SyntaxException);
-exit SyntaxException:str ;
+exit SyntaxException:str;
 # now do it with a function that returns something (a BAT in this case) 
     bn := bat.new(:oid,:str);
     b := remote.put(conn,bn);
-catch MALException:str ;
+catch MALException:str;
     io.print("Received second init error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
     io.print(b);
     b := remote.exec(conn,"inspect","getAtomNames");
-catch MALException:str ;
+catch MALException:str;
     io.print("Received second error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
     io.print(b);
     c:bat[:oid,:str]  := remote.get(conn,b);
     io.print(c);
-catch MALException:str ;
+catch MALException:str;
     io.print("Received third error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
 # io.print only outputs things, but returns nothing 
     ah:str  := remote.put(conn,:void);
     io.print(ah);
     ah:str  := remote.exec(conn,"io","print",b);
-catch MALException:str ;
+catch MALException:str;
     io.print("Received fourth error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
     d:void  := remote.get(conn,ah);
     io.print(d);
-catch MALException:str ;
+catch MALException:str;
     io.print("Received fifth error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
 end user.main;
 [ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0__8_void := io.print.bla();
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_8_void := io.print.bla();
 SyntaxException:parseError:                       ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]

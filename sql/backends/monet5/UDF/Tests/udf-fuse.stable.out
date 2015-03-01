@@ -27,7 +27,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 82 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte):void;
     X_14:void  := querylog.define("explain select fuse(1,2);","sequential_pipe",5);
     X_4 := udf.fuse(A0,A1);
@@ -43,7 +43,7 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 88 # length
 function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
     X_14:void  := querylog.define("explain select fuse(1000,2000);","sequential_pipe",5);
     X_4 := udf.fuse(A0,A1);
@@ -59,7 +59,7 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 95 # length
+% 94 # length
 function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
     X_14:void  := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",5);
     X_4 := udf.fuse(A0,A1);
@@ -93,7 +93,7 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 97 # length
 function user.s8_1{autoCommit=true}():void;
     X_32:void  := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",20);
     X_2 := sql.mvc();
@@ -118,7 +118,7 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 97 # length
 function user.s9_1{autoCommit=true}():void;
     X_32:void  := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",20);
     X_2 := sql.mvc();
@@ -143,7 +143,7 @@ end user.s9_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 97 # length
 function user.s10_1{autoCommit=true}():void;
     X_32:void  := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",20);
     X_2 := sql.mvc();

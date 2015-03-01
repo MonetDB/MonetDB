@@ -31,17 +31,17 @@ function user.main():void;
 # recursive inlining 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    X_19 := calc.+(1,2);                #  3 _19:int := CMDvarADDsignal(_5:int, _7:int) 
-    X_15 := X_19;                       #  4 _15:int := _19:int 
-    zz := X_15;                         #  5 zz:int := _15:int 
+function user.qry():void;
+    b:bat[:oid,:int] := bat.new(:oid,:int);
+    bat.append(b:bat[:oid,:int],1:int);
+    X_19:int := calc.+(1:int,2:int);
+    X_15:int := X_19:int;
+    zz:int := X_15:int;
 # base line test for inlining 
-    X_27 := batcalc.+(b,b);             #  7 _27:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    X_23 := X_27;                       #  8 _23:bat[:oid,:int] := _27:bat[:oid,:int] {G}
-    z:bat[:oid,:int] {inline} := X_23;  #  9 z:bat[:oid,:int] := _23:bat[:oid,:int] {G}
-end user.qry;                           # 10  
+    X_27:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);
+    X_23:bat[:oid,:int] := X_27:bat[:oid,:int];
+    z:bat[:oid,:int]{inline} := X_23:bat[:oid,:int];
+end user.qry;
 
 # 11:53:01 >  
 # 11:53:01 >  Done.

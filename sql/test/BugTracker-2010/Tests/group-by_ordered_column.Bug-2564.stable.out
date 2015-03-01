@@ -38,7 +38,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 113 # length
 function user.s5_1{autoCommit=true}():void;
     X_50:void  := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",28);
     X_2 := sql.mvc();

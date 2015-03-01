@@ -25,24 +25,24 @@ function user.main():void;
     user.f();
 #shows self-modification in action 
 end user.main;
-function user.f():void;                 #  0 f:void := user.f() {G}
-    i{runonce, rows>4} := 1;            #  1 i:int := _3:int 
+function user.f():void;
+    i:int{runonce, rows>4} := 1:int;
 # just properties 
-    mdb.List();                         #  3 _5:void := MDBlistDetail() 
-    io.print("start running\n");        #  4 _6:void := IOprint_val(_7:str) {G}
-    scheduler.isolation();              #  5 _8:void := RUNisolation() 
-    io.print("done\n");                 #  6 _9:void := IOprint_val(_10:str) {G}
-    mdb.List();                         #  7 _11:void := MDBlistDetail() 
-end user.f;                             #  8  
+    mdb.List();
+    io.print("start running\n":str);
+    scheduler.isolation();
+    io.print("done\n":str);
+    mdb.List();
+end user.f;
 [ "start running\n" ]
-function user.f():void;                 #  0 f:void := user.f() {G}
-    i{runonce, rows>4} := 1;            #  1 i:int := _3:int 
+function user.f():void;
+    i:int{runonce, rows>4} := 1:int;
 # just properties 
-    mdb.List();                         #  3 _5:void := MDBlistDetail() 
-    io.print("start running\n");        #  4 _6:void := IOprint_val(_7:str) {G}
-    io.print("done\n");                 #  5 _9:void := IOprint_val(_10:str) {G}
-    mdb.List();                         #  6 _11:void := MDBlistDetail() 
-end user.f;                             #  7  
+    mdb.List();
+    io.print("start running\n":str);
+    io.print("done\n":str);
+    mdb.List();
+end user.f;
 
 # 23:28:18 >  
 # 23:28:18 >  Done.

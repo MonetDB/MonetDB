@@ -26,7 +26,7 @@ function user.bar{inline}(a:str,b:str):str;
     c := calc.+(sa,sb);
     return bar := c;
 end user.bar;
-!TypeException:user.qry[2]:'bat.append' undefined in: _4:any := bat.append(b:bat[:oid,:str], _5:int)
+!TypeException:user.qry[2]:'bat.append' undefined in: bat.append(b,1);
 function user.qry():void;
     b := bat.new(:oid,:str);
     bat.append(b,1);
@@ -36,11 +36,11 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.append(b,1);                    #  2 _4:any := bat.append(b:bat[:oid,:str], _5:int) {U}
-    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);#  3 z:bat[:oid,:str] := mal.multiplex(_7:str, _8:str, b:bat[:oid,:str], b:bat[:oid,:str]) {U}
-end user.qry;                           #  4  {U}
+function user.qry():void;
+    b:bat[:oid,:str] := bat.new(:oid,:str);
+    bat.append(b:bat[:oid,:str],1:int);
+    z:bat[:oid,:str] := mal.multiplex("user":str,"bar":str,b:bat[:oid,:str],b:bat[:oid,:str]);
+end user.qry;
 
 # 20:02:17 >  
 # 20:02:17 >  Done.

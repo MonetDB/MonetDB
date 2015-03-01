@@ -2251,7 +2251,6 @@ str getPipeDefinition(str name);
 int getProfileCounter(int idx);
 stream *getProfilerStream(void);
 str getRef;
-str getRefName(MalBlkPtr mb, int i);
 str getScenarioLanguage(Client c);
 lng getSystemTime(void);
 BAT *getTrace(const char *ev);

@@ -16,17 +16,17 @@ function user.help{inline}():void;
     c := bat.new(:oid,:int);
     z:int  := 1;
     bat.append(b,1);
-barrier (x,z:int ) := iterator.new(b);
+barrier (x,z:int) := iterator.new(b);
     io.print(x);
-catch MALException:str ;
-exit MALException:str ;
-exit (x,z:int );
-barrier (x,z:int ) := iterator.new(c);
+catch MALException:str;
+exit MALException:str;
+exit (x,z:int);
+barrier (x,z:int) := iterator.new(c);
     io.print(x);
-    redo (x,z:int ) := iterator.next(c);
-catch MALException:str ;
-exit MALException:str ;
-exit (x,y,z:int );
+    redo (x,z:int) := iterator.next(c);
+catch MALException:str;
+exit MALException:str;
+exit (x,y,z:int);
 end user.help;
 function user.qry1{inline}():void;
     user.help();
@@ -37,23 +37,23 @@ end user.qry;
 function user.main():void;
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    X_5 := bat.new(:oid,:int);          #  1 _5:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
-    X_8 := bat.new(:oid,:int);          #  2 _8:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
-    X_9:int  := 1;                      #  3 _9:int := _10:int 
-    bat.append(X_5,1);                  #  4 _11:bat[:oid,:int] := BKCappend_val_wrap(_5:bat[:oid,:int], _10:int) {G}
-barrier (X_12,X_9:int ) := iterator.new(X_5);#  5 (_12:oid, _9:int) := ITRbunIterator(_5:bat[:oid,:int]) {GJ9}
-    io.print(X_12);                     #  6 _13:void := IOprint_val(_12:oid) 
-catch MALException:str ;                #  7 MALException:str {J8}
-exit MALException:str ;                 #  8 MALException:str 
-exit (X_12,X_9:int );                   #  9 (_12:oid, _9:int) 
-barrier (X_12,X_9:int ) := iterator.new(X_8);# 10 (_12:oid, _9:int) := ITRbunIterator(_8:bat[:oid,:int]) {GJ15}
-    io.print(X_12);                     # 11 _15:void := IOprint_val(_12:oid) 
-    redo (X_12,X_9:int ) := iterator.next(X_8);# 12 (_12:oid, _9:int) := ITRbunNext(_8:bat[:oid,:int]) {GJ11}
-catch MALException:str ;                # 13 MALException:str {J14}
-exit MALException:str ;                 # 14 MALException:str 
-exit (X_12,X_16,X_9:int );              # 15 (_12:oid, _16:any, _9:int) 
-end user.qry;                           # 16  
+function user.qry():void;
+    X_5:bat[:oid,:int] := bat.new(:oid,:int);
+    X_8:bat[:oid,:int] := bat.new(:oid,:int);
+    X_9:int := 1:int;
+    bat.append(X_5:bat[:oid,:int],1:int);
+barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:oid,:int]);
+    io.print(X_12:oid);
+catch MALException:str;
+exit MALException:str;
+exit (X_12:oid,X_9:int);
+barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:oid,:int]);
+    io.print(X_12:oid);
+    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:oid,:int]);
+catch MALException:str;
+exit MALException:str;
+exit (X_12:oid,X_16:any,X_9:int);
+end user.qry;
 
 # 00:18:07 >  
 # 00:18:07 >  Done.

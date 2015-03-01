@@ -341,7 +341,7 @@ newpass:
 	mnstr_printf(cntxt->fdout,"#Evicted ltop %d vtop %d instruction(s) \n",ltop,vtop);
 	for(v=0; v<vtop;v++){
 		mnstr_printf(cntxt->fdout,"#%d\t " LLFMT" ",leaves[v],recycleBlk->stmt[leaves[v]]->ticks);
-		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[leaves[v]], LIST_MAL_ALL);
+		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[leaves[v]], 0);
 	}
 #endif
 
@@ -461,7 +461,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 #ifdef _DEBUG_RECYCLE_
 	mnstr_printf(cntxt->fdout,"#RECYCLE [%3d] cost "LLFMT" mem "LLFMT" srch %5.2f ",
 		recycleBlk->stop-1, recycleBlk->stmt[i]->ticks, wr, ((double)recycleSearchTime)/recycleSearchCalls);
-	printInstruction( cntxt->fdout,recycleBlk, 0, q, LIST_MAL_DEBUG);
+	printInstruction( cntxt->fdout,recycleBlk, 0, q, 0);
 #else
 	(void) cntxt;
 #endif
@@ -792,7 +792,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_
 		//mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect using candidate list");
-		//printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_STMT);
+		//printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    0);
 #endif
 		nbid = stk->stk[getArg(p,2)].val.bval;
         stk->stk[getArg(p,2)].val.bval = bid;
@@ -843,7 +843,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		p = getInstrPtr(recycleBlk,i);
 		mnstr_printf(cntxt->fdout,"#REUSED  [%3d]  "LLFMT" (usec) ",i, recycleBlk->stmt[i]->ticks);
 		if ( p)
-			printInstruction(cntxt->fdout,recycleBlk,0, p, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,recycleBlk,0, p, 0);
 		else
 			mnstr_printf(cntxt->fdout,"instruction already garbage collected\n");
 		MT_lock_unset(&recycleLock, "recycle");
@@ -997,7 +997,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 		}
 #ifdef _DEBUG_RESET_
 		mnstr_printf(cntxt->fdout,"#Marked for eviction [%d]",i);
-		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, 0);
 #endif
 		for(j=0;j<p->argc;j++) {
 			release[getArg(p,j)]=1;//propagate the removal request
@@ -1062,7 +1062,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 		}
 #ifdef _DEBUG_RESET_
 		mnstr_printf(cntxt->fdout,"#EVICT [%d]",i);
-		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, 0);
 #endif
 		for(j=0;j<p->argc;j++) {
 			release[getArg(p,j)]=1;//propagate the removal request
@@ -1108,7 +1108,7 @@ RECYCLEdumpInternal(stream *s)
             recycleBlk->stmt[i]->ticks,
             recycleBlk->stmt[i]->rbytes,
             recycleBlk->stmt[i]->wbytes,
-            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),LIST_MAL_DEBUG));
+            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0));
     }
 #else
 	(void) i;

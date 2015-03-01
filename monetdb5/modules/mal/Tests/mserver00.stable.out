@@ -74,9 +74,9 @@ function user.main():void;
 # algebra.join@remotedb(a,b) using remote objects 
 # c:= mapi.rpc(remotedb,algebra,join,a,b) 
 # the remainder should be tested  
-catch MapiException:str ;
+catch MapiException:str;
     io.printf("foutje:%s\n",MapiException);
-exit MapiException:str ;
+exit MapiException:str;
     mapi.disconnect(mid);
 end user.main;
 [ 1 ]
