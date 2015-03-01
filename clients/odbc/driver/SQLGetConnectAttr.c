@@ -156,7 +156,8 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 	ODBCLOG("SQLGetConnectAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST ConnectionHandle,
 		translateConnectAttribute(Attribute),
-		PTRFMTCAST ValuePtr, BufferLength, PTRFMTCAST StringLengthPtr);
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
