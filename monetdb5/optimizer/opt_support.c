@@ -862,7 +862,7 @@ int isDiffOp(InstrPtr p){
 }
 
 int isMatJoinOp(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
+	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
                  getFunctionId(p) == joinRef ||
                  getFunctionId(p) == subjoinRef ||
@@ -870,7 +870,7 @@ int isMatJoinOp(InstrPtr p){
                  getFunctionId(p) == subthetajoinRef ||
                  getFunctionId(p) == subbandjoinRef ||
                  getFunctionId(p) == subrangejoinRef)
-		);
+		));
 }
 
 int isDelta(InstrPtr p){
@@ -900,8 +900,7 @@ int isSubSelect(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 9 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-9,"subselect") == 0);
+	return (l >= 9 && strcmp(func+l-9,"subselect") == 0);
 }
 
 int isSubJoin(InstrPtr p)
@@ -909,8 +908,7 @@ int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 7 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-7,"subjoin") == 0);
+	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
 }
 
 int isFragmentGroup(InstrPtr p){

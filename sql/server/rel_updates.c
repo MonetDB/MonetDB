@@ -419,6 +419,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	}
 
 	collist = check_table_columns(sql, t, columns, "INSERT", tname);
+	if (!collist)
+		return NULL;
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
 		dlist *values;
@@ -1063,7 +1065,8 @@ table_column_types(sql_allocator *sa, sql_table *t)
 
 	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(types, &c->type);
+		if (c->base.name[0] != '%')
+			append(types, &c->type);
 	}
 	return types;
 }
@@ -1084,9 +1087,8 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( append( new_exp_list(sql->sa), 
-		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)), 
-		exp_atom_str(sql->sa, t->base.name, &tpe)), 
+	args = append( append( append( append( append( new_exp_list(sql->sa), 
+		exp_atom_ptr(sql->sa, t)), 
 		exp_atom_str(sql->sa, tsep, &tpe)), 
 		exp_atom_str(sql->sa, rsep, &tpe)), 
 		exp_atom_str(sql->sa, ssep, &tpe)), 
@@ -1105,20 +1107,21 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		if (c->base.name[0] != '%')
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, 1);
 	return res;
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
-	sql_table *t = NULL;
+	sql_table *t = NULL, *nt = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
@@ -1177,6 +1180,34 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *seps, dlis
 		sql->caching = 0; 	/* do not cache this query */
 	}
 		 
+	collist = check_table_columns(sql, t, columns, "COPY", tname);
+	if (!collist)
+		return NULL;
+	/* if collist has skip and different order (or format specification) use intermediate table */
+	nt = t;
+	if (headers) {
+		dnode *n;
+
+		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1);
+		for (n = headers->h; n; n = n->next) {
+			char *cname = n->data.sval;
+			sql_column *cs = NULL;
+
+			if (!list_find_name(collist, cname)) {
+				char *name;
+				int len = strlen(cname) + 2;
+				sql_subtype *ctype = sql_bind_localtype("oid");
+
+				name = sa_alloc(sql->sa, len);
+				snprintf(name, len, "%%cname");
+				cs = mvc_create_column(sql, nt, name, ctype);
+			} else {
+				cs = find_sql_column(t, cname);
+				cs = mvc_create_column(sql, nt, cname, &cs->type);
+			}
+			(void)cs;
+		}
+	}
 	if (files) {
 		dnode *n = files->h;
 
@@ -1194,7 +1225,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *seps, dlis
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset, locked);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked);
 
 			if (!rel)
 				rel = nrel;
@@ -1204,11 +1235,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *seps, dlis
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
 	}
 	if (!rel)
 		return rel;
-	collist = check_table_columns(sql, t, columns, "COPY", tname);
 	rel->exps = rel_inserts(sql, t, rel, collist, 1);
 	rel = rel_insert_table(sql, t, tname, rel);
 	if (rel && locked)
@@ -1428,7 +1458,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

@@ -508,6 +508,7 @@ la_bat_destroy(logger *lg, logaction *la)
 #endif
 			BUNdelete(lg->snapshots_bid, p, FALSE);
 			BUNdelete(lg->snapshots_tid, p, FALSE);
+			/* move to the dirty new part of the snapshots list */
 			BUNappend(lg->snapshots_bid, &bid, FALSE);
 			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 		}
@@ -622,6 +623,7 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
+	/* move to the dirty new part of the snapshots list, new snapshots will get flushed to disk */
 	BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE);
 	BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 	logbat_destroy(b);

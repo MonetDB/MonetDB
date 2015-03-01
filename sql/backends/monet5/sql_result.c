@@ -681,22 +681,15 @@ has_whitespace(const char *s)
 }
 
 BAT **
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {
 	int i = 0;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
 	node *n;
 	Tablet as;
 	Column *fmt;
 	BUN cnt = 0;
 	BAT **bats = NULL;
 
-	if (!t) {
-		sql_error(m, 500, "table %s not found", tname);
-		m->type = -1;
-		return NULL;
-	}
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
 		m->type = -1;
@@ -760,6 +753,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
 			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
+			fmt[i].skip = (col->base.name[0] == '%');
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
