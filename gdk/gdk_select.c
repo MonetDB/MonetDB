@@ -222,7 +222,15 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	GDKqsort(dst, NULL, NULL, BATcount(bn), SIZEOF_OID, 0, TYPE_oid);
+	if (cnt > 1) {
+		/* hash chains produce results in the order high to
+		 * low, so we just need to reverse */
+		for (l = BUNfirst(bn), h = BUNlast(bn) - 1; l < h; l++, h--) {
+			o = dst[l];
+			dst[l] = dst[h];
+			dst[h] = o;
+		}
+	}
 	bn->tsorted = 1;
 	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
