@@ -59,7 +59,7 @@ SQLError(SQLHENV EnvironmentHandle,
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	if (StatementHandle)
-		return SQLGetDiagRec_(SQL_HANDLE_STMT,
+		return MNDBGetDiagRec(SQL_HANDLE_STMT,
 				      StatementHandle,
 				      ++((ODBCStmt *) StatementHandle)->RetrievedErrors,
 				      SQLState,
@@ -68,7 +68,7 @@ SQLError(SQLHENV EnvironmentHandle,
 				      BufferLength,
 				      TextLengthPtr);
 	else if (ConnectionHandle)
-		return SQLGetDiagRec_(SQL_HANDLE_DBC,
+		return MNDBGetDiagRec(SQL_HANDLE_DBC,
 				      ConnectionHandle,
 				      ++((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
 				      SQLState,
@@ -77,7 +77,7 @@ SQLError(SQLHENV EnvironmentHandle,
 				      BufferLength,
 				      TextLengthPtr);
 	else if (EnvironmentHandle)
-		return SQLGetDiagRec_(SQL_HANDLE_ENV,
+		return MNDBGetDiagRec(SQL_HANDLE_ENV,
 				      EnvironmentHandle,
 				      ++((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
 				      SQLState,
@@ -130,19 +130,19 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	if (StatementHandle)
-		rc = SQLGetDiagRec_(SQL_HANDLE_STMT,
+		rc = MNDBGetDiagRec(SQL_HANDLE_STMT,
 				    StatementHandle,
 				    ((ODBCStmt *) StatementHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,
 				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
 	else if (ConnectionHandle)
-		rc = SQLGetDiagRec_(SQL_HANDLE_DBC,
+		rc = MNDBGetDiagRec(SQL_HANDLE_DBC,
 				    ConnectionHandle,
 				    ((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,
 				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
 	else if (EnvironmentHandle)
-		rc = SQLGetDiagRec_(SQL_HANDLE_ENV,
+		rc = MNDBGetDiagRec(SQL_HANDLE_ENV,
 				    EnvironmentHandle,
 				    ((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,

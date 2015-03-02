@@ -37,7 +37,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLSetDescField_(ODBCDesc *desc,
+MNDBSetDescField(ODBCDesc *desc,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT FieldIdentifier,
 		 SQLPOINTER ValuePtr,
@@ -312,7 +312,7 @@ SQLSetDescField(SQLHDESC DescriptorHandle,
 
 	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
-	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
+	return MNDBSetDescField((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
 }
 
 SQLRETURN SQL_API
@@ -353,7 +353,7 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 		break;
 	}
 
-	rc = SQLSetDescField_(desc, RecNumber, FieldIdentifier, ptr, n);
+	rc = MNDBSetDescField(desc, RecNumber, FieldIdentifier, ptr, n);
 
 	if (ptr && ptr != ValuePtr)
 		free(ptr);

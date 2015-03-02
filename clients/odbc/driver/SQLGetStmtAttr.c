@@ -41,7 +41,7 @@
 
 
 SQLRETURN
-SQLGetStmtAttr_(ODBCStmt *stmt,
+MNDBGetStmtAttr(ODBCStmt *stmt,
 		SQLINTEGER Attribute,
 		SQLPOINTER ValuePtr,
 		SQLINTEGER BufferLength,
@@ -97,7 +97,7 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		*(SQLULEN *) ValuePtr = stmt->noScan;
 		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:	/* SQLULEN* */
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+		return MNDBGetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_PARAM_BIND_TYPE:		/* SQLULEN */
@@ -105,19 +105,19 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		*(SQLULEN *) ValuePtr = stmt->ApplParamDescr->sql_desc_bind_type;
 		break;
 	case SQL_ATTR_PARAM_OPERATION_PTR:	/* SQLUSMALLINT* */
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+		return MNDBGetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_PARAMSET_SIZE:		/* SQLULEN */
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+		return MNDBGetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_PARAMS_PROCESSED_PTR:	/* SQLULEN* */
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+		return MNDBGetDescField(stmt->ImplParamDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_PARAM_STATUS_PTR:		/* SQLUSMALLINT* */
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+		return MNDBGetDescField(stmt->ImplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
@@ -126,11 +126,11 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:		/* SQLULEN */
 	case SQL_ROWSET_SIZE:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+		return MNDBGetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_ROW_BIND_OFFSET_PTR:	/* SQLULEN* */
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+		return MNDBGetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_ROW_BIND_TYPE:		/* SQLULEN */
@@ -145,15 +145,15 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		*(SQLULEN *) ValuePtr = (SQLULEN) stmt->currentRow;
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:	/* SQLUSMALLINT* */
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+		return MNDBGetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_ROW_STATUS_PTR:		/* SQLUSMALLINT* */
-		return SQLGetDescField_(stmt->ImplRowDescr, 0,
+		return MNDBGetDescField(stmt->ImplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_ROWS_FETCHED_PTR:		/* SQLULEN* */
-		return SQLGetDescField_(stmt->ImplRowDescr, 0,
+		return MNDBGetDescField(stmt->ImplRowDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 
@@ -195,8 +195,10 @@ SQLGetStmtAttr(SQLHSTMT StatementHandle,
 	       SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttr " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLGetStmtAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -204,7 +206,7 @@ SQLGetStmtAttr(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLGetStmtAttr_((ODBCStmt *) StatementHandle,
+	return MNDBGetStmtAttr((ODBCStmt *) StatementHandle,
 			       Attribute,
 			       ValuePtr,
 			       BufferLength,
@@ -233,8 +235,10 @@ SQLGetStmtAttrW(SQLHSTMT StatementHandle,
 		SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -244,7 +248,7 @@ SQLGetStmtAttrW(SQLHSTMT StatementHandle,
 
 	/* there are no string-valued attributes */
 
-	return SQLGetStmtAttr_((ODBCStmt *) StatementHandle,
+	return MNDBGetStmtAttr((ODBCStmt *) StatementHandle,
 			       Attribute,
 			       ValuePtr,
 			       BufferLength,

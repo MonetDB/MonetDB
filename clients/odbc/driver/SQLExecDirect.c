@@ -154,7 +154,7 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 }
 
 SQLRETURN
-SQLExecDirect_(ODBCStmt *stmt,
+MNDBExecDirect(ODBCStmt *stmt,
 	       SQLCHAR *StatementText,
 	       SQLINTEGER TextLength)
 {
@@ -173,9 +173,9 @@ SQLExecDirect_(ODBCStmt *stmt,
 	for (i = 0; i < TextLength; i++)
 		if (StatementText[i] == '?') {
 			/* query may have parameters, take the long route */
-			ret = SQLPrepare_(stmt, StatementText, TextLength);
+			ret = MNDBPrepare(stmt, StatementText, TextLength);
 			if (ret == SQL_SUCCESS)
-				ret = SQLExecute_(stmt);
+				ret = MNDBExecute(stmt);
 			return ret;
 		}
 
@@ -197,7 +197,7 @@ SQLExecDirect(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLExecDirect_((ODBCStmt *) StatementHandle,
+	return MNDBExecDirect((ODBCStmt *) StatementHandle,
 			      StatementText,
 			      TextLength);
 }
@@ -231,7 +231,7 @@ SQLExecDirectW(SQLHSTMT StatementHandle,
 	fixWcharIn(StatementText, TextLength, SQLCHAR, sql,
 		   addStmtError, stmt, return SQL_ERROR);
 
-	rc = SQLExecDirect_((ODBCStmt *) StatementHandle, sql, SQL_NTS);
+	rc = MNDBExecDirect((ODBCStmt *) StatementHandle, sql, SQL_NTS);
 
 	if (sql)
 		free(sql);

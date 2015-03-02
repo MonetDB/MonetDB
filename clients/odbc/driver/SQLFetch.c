@@ -45,7 +45,7 @@
 #endif
 
 SQLRETURN
-SQLFetch_(ODBCStmt *stmt)
+MNDBFetch(ODBCStmt *stmt)
 {
 	ODBCDesc *ard, *ird;
 	ODBCDescRec *rec;
@@ -193,5 +193,5 @@ SQLFetch(SQLHSTMT StatementHandle)
 
 	stmt->startRow += stmt->rowSetSize;
 
-	return SQLFetch_(stmt);
+	return MNDBFetch(stmt);
 }

@@ -43,7 +43,7 @@
 #define NCOLUMNS	18
 
 static SQLRETURN
-SQLColumns_(ODBCStmt *stmt,
+MNDBColumns(ODBCStmt *stmt,
 	    SQLCHAR *CatalogName,
 	    SQLSMALLINT NameLength1,
 	    SQLCHAR *SchemaName,
@@ -523,7 +523,7 @@ SQLColumns_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
@@ -567,7 +567,7 @@ SQLColumns(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLColumns_(stmt,
+	return MNDBColumns(stmt,
 			   CatalogName, NameLength1,
 			   SchemaName, NameLength2,
 			   TableName, NameLength3,
@@ -625,7 +625,7 @@ SQLColumnsW(SQLHSTMT StatementHandle,
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLColumns_(stmt,
+	rc = MNDBColumns(stmt,
 			 catalog, SQL_NTS,
 			 schema, SQL_NTS,
 			 table, SQL_NTS,

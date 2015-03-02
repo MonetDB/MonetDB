@@ -43,7 +43,7 @@
 
 
 SQLRETURN
-SQLFetchScroll_(ODBCStmt *stmt,
+MNDBFetchScroll(ODBCStmt *stmt,
 		SQLSMALLINT FetchOrientation,
 		SQLLEN FetchOffset)
 {
@@ -179,7 +179,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	return SQLFetch_(stmt);
+	return MNDBFetch(stmt);
 }
 
 SQLRETURN SQL_API
@@ -213,5 +213,5 @@ SQLFetchScroll(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	return SQLFetchScroll_(stmt, FetchOrientation, FetchOffset);
+	return MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
 }

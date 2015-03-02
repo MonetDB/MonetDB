@@ -42,7 +42,7 @@
 
 
 static SQLRETURN
-SQLProcedures_(ODBCStmt *stmt,
+MNDBProcedures(ODBCStmt *stmt,
 	       SQLCHAR *CatalogName,
 	       SQLSMALLINT NameLength1,
 	       SQLCHAR *SchemaName,
@@ -187,7 +187,7 @@ SQLProcedures_(ODBCStmt *stmt,
 
 	/* query the MonetDB data dictionary tables */
 
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 
@@ -226,7 +226,7 @@ SQLProcedures(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedures_(stmt,
+	return MNDBProcedures(stmt,
 			      CatalogName, NameLength1,
 			      SchemaName, NameLength2,
 			      ProcName, NameLength3);
@@ -273,7 +273,7 @@ SQLProceduresW(SQLHSTMT StatementHandle,
 	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLProcedures_(stmt,
+	rc = MNDBProcedures(stmt,
 			    catalog, SQL_NTS,
 			    schema, SQL_NTS,
 			    proc, SQL_NTS);

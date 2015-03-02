@@ -47,7 +47,7 @@
 #endif
 
 static SQLRETURN
-SQLGetConnectOption_(ODBCDbc *dbc,
+MNDBGetConnectOption(ODBCDbc *dbc,
 		     SQLUSMALLINT Option,
 		     SQLPOINTER ValuePtr)
 {
@@ -65,21 +65,21 @@ SQLGetConnectOption_(ODBCDbc *dbc,
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr, 0, NULL);
 	case SQL_ODBC_CURSORS:
 		/* 32 bit integer argument, but SQLGetConnectAttr returns 64 */
-		r = SQLGetConnectAttr_(dbc, Option, &v, 0, NULL);
+		r = MNDBGetConnectAttr(dbc, Option, &v, 0, NULL);
 		if (SQL_SUCCEEDED(r))
 			* (SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
 		return r;
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr, 0, NULL);
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr,
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr,
 					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
 	default:
 		/* Invalid attribute/option identifier */
@@ -98,15 +98,16 @@ SQLGetConnectOption(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
+	ODBCLOG("SQLGetConnectOption " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 	clearDbcErrors(dbc);
 
-	return SQLGetConnectOption_(dbc, Option, ValuePtr);
+	return MNDBGetConnectOption(dbc, Option, ValuePtr);
 }
 
 SQLRETURN SQL_API
@@ -127,8 +128,9 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
+	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -153,7 +155,7 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLGetConnectOption_(dbc, Option, ptr);
+	rc = MNDBGetConnectOption(dbc, Option, ptr);
 
 	if (ptr != ValuePtr) {
 		if (SQL_SUCCEEDED(rc)) {

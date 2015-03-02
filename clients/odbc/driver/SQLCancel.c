@@ -52,6 +52,6 @@ SQLCancel(SQLHSTMT StatementHandle)
 	clearStmtErrors(stmt);
 
 	if (stmt->Dbc->Env->sql_attr_odbc_version == SQL_OV_ODBC2)
-		return SQLFreeStmt_(stmt, SQL_CLOSE);
+		return MNDBFreeStmt(stmt, SQL_CLOSE);
 	return SQL_SUCCESS;
 }

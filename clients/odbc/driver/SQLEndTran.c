@@ -47,7 +47,7 @@
 
 
 SQLRETURN
-SQLEndTran_(SQLSMALLINT HandleType,
+MNDBEndTran(SQLSMALLINT HandleType,
 	    SQLHANDLE Handle,
 	    SQLSMALLINT CompletionType)
 {
@@ -117,7 +117,7 @@ SQLEndTran_(SQLSMALLINT HandleType,
 			assert(isValidDbc(dbc));
 			if (!dbc->Connected)
 				continue;
-			rc = SQLEndTran_(SQL_HANDLE_DBC, dbc, CompletionType);
+			rc = MNDBEndTran(SQL_HANDLE_DBC, dbc, CompletionType);
 			if (rc == SQL_ERROR)
 				rc1 = SQL_ERROR;
 			else if (rc == SQL_SUCCESS_WITH_INFO &&
@@ -135,10 +135,10 @@ SQLEndTran_(SQLSMALLINT HandleType,
 	}
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocStmt_(dbc, &StatementHandle);
+	rc = MNDBAllocStmt(dbc, &StatementHandle);
 	if (SQL_SUCCEEDED(rc)) {
 		ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
-		rc = SQLExecDirect_(stmt,
+		rc = MNDBExecDirect(stmt,
 				    CompletionType == SQL_COMMIT ? (SQLCHAR *) "commit" : (SQLCHAR *) "rollback",
 				    SQL_NTS);
 
@@ -149,7 +149,7 @@ SQLEndTran_(SQLSMALLINT HandleType,
 			SQLINTEGER nativeErrCode;
 			SQLCHAR msgText[SQL_MAX_MESSAGE_LENGTH + 1];
 
-			(void) SQLGetDiagRec_(SQL_HANDLE_STMT, stmt, 1,
+			(void) MNDBGetDiagRec(SQL_HANDLE_STMT, stmt, 1,
 					      sqlState, &nativeErrCode,
 					      msgText, sizeof(msgText), NULL);
 
@@ -184,5 +184,5 @@ SQLEndTran(SQLSMALLINT HandleType,
 		PTRFMTCAST Handle, translateCompletionType(CompletionType));
 #endif
 
-	return SQLEndTran_(HandleType, Handle, CompletionType);
+	return MNDBEndTran(HandleType, Handle, CompletionType);
 }

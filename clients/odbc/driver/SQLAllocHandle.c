@@ -48,7 +48,7 @@
 #include "ODBCError.h"
 
 static SQLRETURN
-SQLAllocEnv_(SQLHANDLE *OutputHandlePtr)
+MNDBAllocEnv(SQLHANDLE *OutputHandlePtr)
 {
 	if (OutputHandlePtr == NULL) {
 		return SQL_INVALID_HANDLE;
@@ -61,7 +61,7 @@ SQLAllocEnv_(SQLHANDLE *OutputHandlePtr)
 }
 
 static SQLRETURN
-SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *OutputHandlePtr)
+MNDBAllocDbc(ODBCEnv *env, SQLHANDLE *OutputHandlePtr)
 {
 	if (env->sql_attr_odbc_version == 0) {
 		/* Function sequence error */
@@ -81,7 +81,7 @@ SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *OutputHandlePtr)
 }
 
 SQLRETURN
-SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
+MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
@@ -101,7 +101,7 @@ SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 }
 
 static SQLRETURN
-SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
+MNDBAllocDesc(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
@@ -121,7 +121,7 @@ SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 }
 
 SQLRETURN
-SQLAllocHandle_(SQLSMALLINT HandleType,
+MNDBAllocHandle(SQLSMALLINT HandleType,
 		SQLHANDLE InputHandle,
 		SQLHANDLE *OutputHandlePtr)
 {
@@ -129,22 +129,22 @@ SQLAllocHandle_(SQLSMALLINT HandleType,
 	case SQL_HANDLE_ENV:
 		if (InputHandle != NULL)
 			return SQL_INVALID_HANDLE;
-		return SQLAllocEnv_(OutputHandlePtr);
+		return MNDBAllocEnv(OutputHandlePtr);
 	case SQL_HANDLE_DBC:
 		if (!isValidEnv((ODBCEnv *) InputHandle))
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors((ODBCEnv *) InputHandle);
-		return SQLAllocDbc_((ODBCEnv *) InputHandle, OutputHandlePtr);
+		return MNDBAllocDbc((ODBCEnv *) InputHandle, OutputHandlePtr);
 	case SQL_HANDLE_STMT:
 		if (!isValidDbc((ODBCDbc *) InputHandle))
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors((ODBCDbc *) InputHandle);
-		return SQLAllocStmt_((ODBCDbc *) InputHandle, OutputHandlePtr);
+		return MNDBAllocStmt((ODBCDbc *) InputHandle, OutputHandlePtr);
 	case SQL_HANDLE_DESC:
 		if (!isValidDbc((ODBCDbc *) InputHandle))
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors((ODBCDbc *) InputHandle);
-		return SQLAllocDesc_((ODBCDbc *) InputHandle, OutputHandlePtr);
+		return MNDBAllocDesc((ODBCDbc *) InputHandle, OutputHandlePtr);
 	default:
 		/* we cannot set an error because we do not know
 		   the handle type of the possibly non-null handle */
@@ -165,5 +165,5 @@ SQLAllocHandle(SQLSMALLINT HandleType,	/* type to be allocated */
 		PTRFMTCAST InputHandle);
 #endif
 
-	return SQLAllocHandle_(HandleType, InputHandle, OutputHandlePtr);
+	return MNDBAllocHandle(HandleType, InputHandle, OutputHandlePtr);
 }

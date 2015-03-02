@@ -44,7 +44,7 @@
 void
 ODBCResetStmt(ODBCStmt *stmt)
 {
-	SQLFreeStmt_(stmt, SQL_CLOSE);
+	MNDBFreeStmt(stmt, SQL_CLOSE);
 	setODBCDescRecCount(stmt->ImplParamDescr, 0);
 
 	if (stmt->queryid >= 0)
@@ -55,7 +55,7 @@ ODBCResetStmt(ODBCStmt *stmt)
 }
 
 SQLRETURN
-SQLPrepare_(ODBCStmt *stmt,
+MNDBPrepare(ODBCStmt *stmt,
 	    SQLCHAR *StatementText,
 	    SQLINTEGER TextLength)
 {
@@ -340,7 +340,7 @@ SQLPrepare(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLPrepare_((ODBCStmt *) StatementHandle,
+	return MNDBPrepare((ODBCStmt *) StatementHandle,
 			   StatementText,
 			   TextLength);
 }
@@ -374,7 +374,7 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 	fixWcharIn(StatementText, TextLength, SQLCHAR, sql,
 		   addStmtError, stmt, return SQL_ERROR);
 
-	rc = SQLPrepare_(stmt, sql, SQL_NTS);
+	rc = MNDBPrepare(stmt, sql, SQL_NTS);
 
 	if (sql)
 		free(sql);

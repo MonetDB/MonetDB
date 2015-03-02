@@ -1011,7 +1011,8 @@ translateCType(SQLSMALLINT ValueType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", ValueType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ValueType);
 		return unknown;
 	}
 }
@@ -1097,7 +1098,8 @@ translateSQLType(SQLSMALLINT ParameterType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", ParameterType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ParameterType);
 		return unknown;
 	}
 }
@@ -1112,12 +1114,22 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 		return "SQL_COLUMN_PRECISION";
 	case SQL_COLUMN_SCALE:
 		return "SQL_COLUMN_SCALE";
+	case SQL_DESC_ALLOC_TYPE:
+		return "SQL_DESC_ALLOC_TYPE";
+	case SQL_DESC_ARRAY_SIZE:
+		return "SQL_DESC_ARRAY_SIZE";
+	case SQL_DESC_ARRAY_STATUS_PTR:
+		return "SQL_DESC_ARRAY_STATUS_PTR";
 	case SQL_DESC_AUTO_UNIQUE_VALUE:
 		return "SQL_DESC_AUTO_UNIQUE_VALUE";
 	case SQL_DESC_BASE_COLUMN_NAME:
 		return "SQL_DESC_BASE_COLUMN_NAME";
 	case SQL_DESC_BASE_TABLE_NAME:
 		return "SQL_DESC_BASE_TABLE_NAME";
+	case SQL_DESC_BIND_OFFSET_PTR:
+		return "SQL_DESC_BIND_OFFSET_PTR";
+	case SQL_DESC_BIND_TYPE:
+		return "SQL_DESC_BIND_TYPE";
 	case SQL_DESC_CASE_SENSITIVE:
 		return "SQL_DESC_CASE_SENSITIVE";
 	case SQL_DESC_CATALOG_NAME:
@@ -1162,6 +1174,8 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 		return "SQL_DESC_PARAMETER_TYPE";
 	case SQL_DESC_PRECISION:
 		return "SQL_DESC_PRECISION";
+	case SQL_DESC_ROWS_PROCESSED_PTR:
+		return "SQL_DESC_ROWS_PROCESSED_PTR";
 	case SQL_DESC_ROWVER:
 		return "SQL_DESC_ROWVER";
 	case SQL_DESC_SCALE:
@@ -1183,7 +1197,8 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 	case SQL_DESC_UPDATABLE:
 		return "SQL_DESC_UPDATABLE";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", FieldIdentifier);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) FieldIdentifier);
 		return unknown;
 	}
 }
@@ -1277,7 +1292,8 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_TXN_ISOLATION:
 		return "SQL_ATTR_TXN_ISOLATION";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1328,7 +1344,8 @@ translateEnvAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_CP_MATCH:
 		return "SQL_ATTR_CP_MATCH";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1406,7 +1423,8 @@ translateStmtAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_USE_BOOKMARKS:
 		return "SQL_ATTR_USE_BOOKMARKS";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", (int) Attribute);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
 		return unknown;
 	}
 }
@@ -1458,7 +1476,8 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	case SQL_ROLLBACK:
 		return "SQL_ROLLBACK";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%d)", CompletionType);
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) CompletionType);
 		return unknown;
 	}
 }

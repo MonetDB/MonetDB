@@ -272,7 +272,7 @@ translateDriverCompletion(SQLUSMALLINT DriverCompletion)
 #endif
 
 static SQLRETURN
-SQLDriverConnect_(ODBCDbc *dbc,
+MNDBDriverConnect(ODBCDbc *dbc,
 		  SQLHWND WindowHandle,
 		  SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
@@ -357,7 +357,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	} else if (tryOnly) {
 		rc = SQL_SUCCESS;
 	} else {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
 				 (SQLCHAR *) uid, SQL_NTS,
 				 (SQLCHAR *) pwd, SQL_NTS,
 				 host, port, database);
@@ -403,7 +403,7 @@ SQLDriverConnect(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLDriverConnect_(dbc,
+	return MNDBDriverConnect(dbc,
 				 WindowHandle,
 				 InConnectionString,
 				 StringLength1,
@@ -461,7 +461,7 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
 		   addDbcError, dbc, return SQL_ERROR);
 
-	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
+	rc = MNDBDriverConnect(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
 			       DriverCompletion, 1);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
@@ -473,7 +473,7 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, out, n, &n,
+	rc = MNDBDriverConnect(dbc, WindowHandle, in, SQL_NTS, out, n, &n,
 			       DriverCompletion, 0);
 	if (SQL_SUCCEEDED(rc)) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,

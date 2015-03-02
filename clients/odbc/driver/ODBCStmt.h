@@ -196,30 +196,30 @@ const char *ODBCGetTypeInfo(int concise_type, int *data_type,
 			    int *sql_data_type, int *sql_datetime_sub);
 int ODBCConciseType(const char *name);
 void ODBCResetStmt(ODBCStmt *stmt);
-SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
+SQLRETURN MNDBBindParameter(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 			    SQLSMALLINT ParameterType, SQLULEN ColumnSize,
 			    SQLSMALLINT DecimalDigits,
 			    SQLPOINTER ParameterValuePtr, SQLLEN BufferLength,
 			    SQLLEN *StrLen_or_IndPtr);
-SQLRETURN SQLColAttribute_(ODBCStmt *stmt,
+SQLRETURN MNDBColAttribute(ODBCStmt *stmt,
 			   SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier,
 			   SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax,
 			   SQLSMALLINT *pnValueLength, LENP_OR_POINTER_T pnValue);
-SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
-SQLRETURN SQLExecute_(ODBCStmt *stmt);
-SQLRETURN SQLFetch_(ODBCStmt *stmt);
-SQLRETURN SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation,
+SQLRETURN MNDBExecute(ODBCStmt *stmt);
+SQLRETURN MNDBFetch(ODBCStmt *stmt);
+SQLRETURN MNDBFetchScroll(ODBCStmt *stmt, SQLSMALLINT nOrientation,
 			  SQLLEN nOffset);
-SQLRETURN SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option);
-SQLRETURN SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+SQLRETURN MNDBFreeStmt(ODBCStmt *stmt, SQLUSMALLINT option);
+SQLRETURN MNDBGetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER BufferLength,
 			  SQLINTEGER *StringLength);
-SQLRETURN SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBPrepare(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
-SQLRETURN SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+SQLRETURN MNDBSetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
 const char *ODBCErrorType(const char *msg, const char **emsg);
 

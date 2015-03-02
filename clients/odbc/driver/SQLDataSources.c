@@ -42,7 +42,7 @@
 
 
 static SQLRETURN
-SQLDataSources_(ODBCEnv *env,
+MNDBDataSources(ODBCEnv *env,
 		SQLUSMALLINT Direction,
 		SQLCHAR *ServerName,
 		SQLSMALLINT BufferLength1,
@@ -113,7 +113,7 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 
 	clearEnvErrors(env);
 
-	return SQLDataSources_(env, Direction,
+	return MNDBDataSources(env, Direction,
 			       ServerName, BufferLength1, NameLength1,
 			       Description, BufferLength2, NameLength2);
 }
@@ -170,7 +170,7 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 		return SQL_ERROR;
 	}
 
-	rc = SQLDataSources_(env, Direction,
+	rc = MNDBDataSources(env, Direction,
 			     server, 100, &length1,
 			     descr, 100, &length2);
 

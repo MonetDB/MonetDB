@@ -87,7 +87,7 @@ translateNullable(SQLUSMALLINT Nullable)
 #endif
 
 static SQLRETURN
-SQLSpecialColumns_(ODBCStmt *stmt,
+MNDBSpecialColumns(ODBCStmt *stmt,
 		   SQLUSMALLINT IdentifierType,
 		   SQLCHAR *CatalogName,
 		   SQLSMALLINT NameLength1,
@@ -524,7 +524,7 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 	}
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt,
+	rc = MNDBExecDirect(stmt,
 			    (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
@@ -570,7 +570,7 @@ SQLSpecialColumns(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLSpecialColumns_(stmt,
+	return MNDBSpecialColumns(stmt,
 				  IdentifierType,
 				  CatalogName, NameLength1,
 				  SchemaName, NameLength2,
@@ -634,7 +634,7 @@ SQLSpecialColumnsW(SQLHSTMT StatementHandle,
 	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLSpecialColumns_(stmt,
+	rc = MNDBSpecialColumns(stmt,
 				IdentifierType,
 				catalog, SQL_NTS,
 				schema, SQL_NTS,

@@ -61,5 +61,5 @@ SQLCloseCursor(SQLHSTMT StatementHandle)
 		return SQL_ERROR;
 	}
 
-	return SQLFreeStmt_(stmt, SQL_CLOSE);
+	return MNDBFreeStmt(stmt, SQL_CLOSE);
 }

@@ -50,11 +50,11 @@ SQLParamOptions(SQLHSTMT StatementHandle,
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE,
+	rc = MNDBSetStmtAttr(stmt, SQL_ATTR_PARAMSET_SIZE,
 			     (SQLPOINTER) (uintptr_t) RowNumber, 0);
 
 	if (SQL_SUCCEEDED(rc)) {
-		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
+		rc = MNDBSetStmtAttr(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
 				     RowNumberPtr, 0);
 	}
 	return rc;

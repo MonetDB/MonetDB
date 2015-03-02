@@ -41,7 +41,7 @@
 
 
 static SQLRETURN
-SQLColumnPrivileges_(ODBCStmt *stmt,
+MNDBColumnPrivileges(ODBCStmt *stmt,
 		     SQLCHAR *CatalogName,
 		     SQLSMALLINT NameLength1,
 		     SQLCHAR *SchemaName,
@@ -226,7 +226,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
@@ -270,7 +270,7 @@ SQLColumnPrivileges(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLColumnPrivileges_(stmt,
+	return MNDBColumnPrivileges(stmt,
 				    CatalogName, NameLength1,
 				    SchemaName, NameLength2,
 				    TableName, NameLength3,
@@ -328,7 +328,7 @@ SQLColumnPrivilegesW(SQLHSTMT StatementHandle,
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLColumnPrivileges_(stmt,
+	rc = MNDBColumnPrivileges(stmt,
 				  catalog, SQL_NTS,
 				  schema, SQL_NTS,
 				  table, SQL_NTS,

@@ -41,7 +41,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLNativeSql_(ODBCDbc *dbc,
+MNDBNativeSql(ODBCDbc *dbc,
 	      SQLCHAR *InStatementText,
 	      SQLINTEGER TextLength1,
 	      SQLCHAR *OutStatementText,
@@ -96,7 +96,7 @@ SQLNativeSql(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLNativeSql_(dbc,
+	return MNDBNativeSql(dbc,
 			     InStatementText,
 			     TextLength1,
 			     OutStatementText,
@@ -146,7 +146,7 @@ SQLNativeSqlW(SQLHDBC ConnectionHandle,
 	fixWcharIn(InStatementText, TextLength1, SQLCHAR, sqlin,
 		   addDbcError, dbc, return SQL_ERROR);
 
-	rc = SQLNativeSql_(dbc, sqlin, SQL_NTS, NULL, 0, &n);
+	rc = MNDBNativeSql(dbc, sqlin, SQL_NTS, NULL, 0, &n);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearDbcErrors(dbc);
@@ -157,7 +157,7 @@ SQLNativeSqlW(SQLHDBC ConnectionHandle,
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLNativeSql_(dbc, sqlin, SQL_NTS, sqlout, n, &n);
+	rc = MNDBNativeSql(dbc, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
 	if (SQL_SUCCEEDED(rc)) {
 		fixWcharOut(rc, sqlout, nn, OutStatementText, BufferLength,

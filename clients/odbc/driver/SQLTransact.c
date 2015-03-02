@@ -52,11 +52,11 @@ SQLTransact(SQLHENV EnvironmentHandle,
 
 	/* use mapping as described in ODBC 3 SDK Help */
 	if (ConnectionHandle != SQL_NULL_HDBC)
-		return SQLEndTran_(SQL_HANDLE_DBC,
+		return MNDBEndTran(SQL_HANDLE_DBC,
 				   ConnectionHandle,
 				   CompletionType);
 	else
-		return SQLEndTran_(SQL_HANDLE_ENV,
+		return MNDBEndTran(SQL_HANDLE_ENV,
 				   EnvironmentHandle,
 				   CompletionType);
 }

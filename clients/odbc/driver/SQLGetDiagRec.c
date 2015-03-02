@@ -44,7 +44,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDiagRec_(SQLSMALLINT HandleType,
+MNDBGetDiagRec(SQLSMALLINT HandleType,
 	       SQLHANDLE Handle,
 	       SQLSMALLINT RecNumber,
 	       SQLCHAR *SQLState,
@@ -173,7 +173,7 @@ SQLGetDiagRec(SQLSMALLINT HandleType,
 		PTRFMTCAST Handle, (int) RecNumber, (int) BufferLength);
 #endif
 
-	return SQLGetDiagRec_(HandleType,
+	return MNDBGetDiagRec(HandleType,
 			      Handle,
 			      RecNumber,
 			      SQLState,
@@ -225,7 +225,7 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 #endif
 
 
-	rc = SQLGetDiagRec_(HandleType, Handle, RecNumber, state,
+	rc = MNDBGetDiagRec(HandleType, Handle, RecNumber, state,
 			    NativeErrorPtr, msg, (SQLSMALLINT) sizeof(msg), &n);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagRecW: %s\n", SQL_SUCCEEDED(rc) ? (char *) msg : rc == SQL_NO_DATA ? "no error" : "failed");

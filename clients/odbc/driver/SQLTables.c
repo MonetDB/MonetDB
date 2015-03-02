@@ -88,7 +88,7 @@ static const char **tuples[NROWS] = {
 };
 
 static SQLRETURN
-SQLTables_(ODBCStmt *stmt,
+MNDBTables(ODBCStmt *stmt,
 	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
 	   SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
 	   SQLCHAR *TableName, SQLSMALLINT NameLength3,
@@ -337,7 +337,7 @@ SQLTables_(ODBCStmt *stmt,
 
 	/* query the MonetDB data dictionary tables */
 
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 
@@ -375,7 +375,7 @@ SQLTables(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLTables_(stmt,
+	return MNDBTables(stmt,
 			  CatalogName, NameLength1,
 			  SchemaName, NameLength2,
 			  TableName, NameLength3,
@@ -425,7 +425,7 @@ SQLTablesW(SQLHSTMT StatementHandle,
 	fixWcharIn(TableType, NameLength4, SQLCHAR, type,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLTables_(stmt,
+	rc = MNDBTables(stmt,
 			catalog, SQL_NTS,
 			schema, SQL_NTS,
 			table, SQL_NTS,

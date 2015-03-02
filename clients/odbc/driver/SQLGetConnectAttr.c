@@ -42,7 +42,7 @@
 
 
 SQLRETURN
-SQLGetConnectAttr_(ODBCDbc *dbc,
+MNDBGetConnectAttr(ODBCDbc *dbc,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength,
@@ -153,9 +153,11 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttr " PTRFMT " %s\n",
+	ODBCLOG("SQLGetConnectAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST ConnectionHandle,
-		translateConnectAttribute(Attribute));
+		translateConnectAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -163,7 +165,7 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLGetConnectAttr_((ODBCDbc *) ConnectionHandle,
+	return MNDBGetConnectAttr((ODBCDbc *) ConnectionHandle,
 				  Attribute,
 				  ValuePtr,
 				  BufferLength,
@@ -197,9 +199,11 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %s\n",
+	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
 		PTRFMTCAST ConnectionHandle,
-		translateConnectAttribute(Attribute));
+		translateConnectAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -210,7 +214,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	switch (Attribute) {
 	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-		rc = SQLGetConnectAttr_(dbc, Attribute, NULL, 0, &n);
+		rc = MNDBGetConnectAttr(dbc, Attribute, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		clearDbcErrors(dbc);
@@ -228,7 +232,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
+	rc = MNDBGetConnectAttr(dbc, Attribute, ptr, n, &n);
 
 	if (ptr != ValuePtr) {
 		if (SQL_SUCCEEDED(rc)) {

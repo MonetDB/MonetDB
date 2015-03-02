@@ -81,7 +81,7 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	array_status_ptr = stmt->ApplRowDescr->sql_desc_array_status_ptr;
 	stmt->ApplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
 
-	rc = SQLFetchScroll_(stmt, FetchOrientation, FetchOffset);
+	rc = MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
 
 	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
 

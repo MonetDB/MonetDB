@@ -42,7 +42,7 @@
 
 
 static SQLRETURN
-SQLSetCursorName_(ODBCStmt *stmt,
+MNDBSetCursorName(ODBCStmt *stmt,
 		  SQLCHAR *CursorName,
 		  SQLSMALLINT NameLength)
 {
@@ -86,7 +86,7 @@ SQLSetCursorName(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLSetCursorName_(stmt, CursorName, NameLength);
+	return MNDBSetCursorName(stmt, CursorName, NameLength);
 }
 
 SQLRETURN SQL_API
@@ -118,7 +118,7 @@ SQLSetCursorNameW(SQLHSTMT StatementHandle,
 	fixWcharIn(CursorName, NameLength, SQLCHAR, cursor,
 		   addStmtError, stmt, return SQL_ERROR);
 
-	rc = SQLSetCursorName_(stmt, cursor, SQL_NTS);
+	rc = MNDBSetCursorName(stmt, cursor, SQL_NTS);
 
 	if (cursor)
 		free(cursor);
