@@ -2581,6 +2581,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (skip_nils) {
 					while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
 						r++;
+					if (r == p)
+						break;
 				}
 				while (BATcount(bn) < prev - min) {
 					bunfastapp_nocheck(bn, BUNlast(bn),
