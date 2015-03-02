@@ -117,11 +117,11 @@ bl_postversion( void *lg)
 		BUN p,q;
 
 		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
-		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_sqlname")));
 		if (!te || !tn)
 			return;
 		tei = bat_iterator(te);
-		tni = bat_iterator(te);
+		tni = bat_iterator(tn);
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
