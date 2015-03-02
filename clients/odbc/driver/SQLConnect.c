@@ -110,7 +110,7 @@ get_serverinfo(ODBCDbc *dbc)
 }
 
 SQLRETURN
-SQLConnect_(ODBCDbc *dbc,
+MNDBConnect(ODBCDbc *dbc,
 	    SQLCHAR *ServerName,
 	    SQLSMALLINT NameLength1,
 	    SQLCHAR *UserName,
@@ -297,7 +297,7 @@ SQLConnect(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLConnect_((ODBCDbc *) ConnectionHandle,
+	return MNDBConnect((ODBCDbc *) ConnectionHandle,
 			   ServerName, NameLength1,
 			   UserName, NameLength2,
 			   Authentication, NameLength3,
@@ -348,7 +348,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	fixWcharIn(Authentication, NameLength3, SQLCHAR, pwd,
 		   addDbcError, dbc, goto exit);
 
-	rc = SQLConnect_(dbc,
+	rc = MNDBConnect(dbc,
 			 ds, SQL_NTS,
 			 uid, SQL_NTS,
 			 pwd, SQL_NTS,

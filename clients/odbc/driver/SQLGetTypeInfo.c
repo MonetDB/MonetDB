@@ -934,7 +934,7 @@ ODBCGetTypeInfo(int concise_type,
 }
 
 static SQLRETURN
-SQLGetTypeInfo_(ODBCStmt *stmt,
+MNDBGetTypeInfo(ODBCStmt *stmt,
 		SQLSMALLINT DataType)
 {
 	const char **tuples[sizeof(types) / sizeof(types[0])];
@@ -1291,7 +1291,7 @@ SQLGetTypeInfo(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLGetTypeInfo_(stmt, DataType);
+	return MNDBGetTypeInfo(stmt, DataType);
 }
 
 SQLRETURN SQL_API
@@ -1317,5 +1317,5 @@ SQLGetTypeInfoW(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLGetTypeInfo_(stmt, DataType);
+	return MNDBGetTypeInfo(stmt, DataType);
 }

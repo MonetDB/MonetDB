@@ -95,7 +95,7 @@ ODBCFreeStmt_(ODBCStmt *stmt)
 	/* check if statement is not active */
 	if (stmt->State >= EXECUTED0) {
 		/* should be closed first */
-		if (SQLFreeStmt_(stmt, SQL_CLOSE) == SQL_ERROR)
+		if (MNDBFreeStmt(stmt, SQL_CLOSE) == SQL_ERROR)
 			return SQL_ERROR;
 	}
 
@@ -133,7 +133,7 @@ ODBCFreeDesc_(ODBCDesc *desc)
 }
 
 SQLRETURN
-SQLFreeHandle_(SQLSMALLINT HandleType,
+MNDBFreeHandle(SQLSMALLINT HandleType,
 	       SQLHANDLE Handle)
 {
 	/* Check parameter handle */
@@ -201,5 +201,5 @@ SQLFreeHandle(SQLSMALLINT HandleType,
 		PTRFMTCAST Handle);
 #endif
 
-	return SQLFreeHandle_(HandleType, Handle);
+	return MNDBFreeHandle(HandleType, Handle);
 }

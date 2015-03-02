@@ -41,7 +41,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLForeignKeys_(ODBCStmt *stmt,
+MNDBForeignKeys(ODBCStmt *stmt,
 		SQLCHAR *PKCatalogName,
 		SQLSMALLINT NameLength1,
 		SQLCHAR *PKSchemaName,
@@ -286,7 +286,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
@@ -339,7 +339,7 @@ SQLForeignKeys(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLForeignKeys_(stmt, PKCatalogName, NameLength1,
+	return MNDBForeignKeys(stmt, PKCatalogName, NameLength1,
 			       PKSchemaName, NameLength2,
 			       PKTableName, NameLength3,
 			       FKCatalogName, NameLength4,
@@ -412,7 +412,7 @@ SQLForeignKeysW(SQLHSTMT StatementHandle,
 	fixWcharIn(FKTableName, NameLength6, SQLCHAR,
 		   FKtable, addStmtError, stmt, goto exit);
 
-	rc = SQLForeignKeys_(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS,
+	rc = MNDBForeignKeys(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS,
 			     PKtable, SQL_NTS, FKcatalog, SQL_NTS,
 			     FKschema, SQL_NTS, FKtable, SQL_NTS);
 

@@ -37,7 +37,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDescField_(ODBCDesc *desc,
+MNDBGetDescField(ODBCDesc *desc,
 		 SQLSMALLINT RecordNumber,
 		 SQLSMALLINT FieldIdentifier,
 		 SQLPOINTER ValuePtr,
@@ -299,7 +299,7 @@ SQLGetDescField(SQLHDESC DescriptorHandle,
 		return SQL_INVALID_HANDLE;
 	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
-	return SQLGetDescField_((ODBCDesc *) DescriptorHandle,
+	return MNDBGetDescField((ODBCDesc *) DescriptorHandle,
 				RecordNumber,
 				FieldIdentifier,
 				ValuePtr,
@@ -361,7 +361,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
-		rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier,
+		rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier,
 				      NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
@@ -380,7 +380,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 		break;
 	}
 
-	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
+	rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
 
 	if (ptr != ValuePtr) {
 		if (SQL_SUCCEEDED(rc)) {

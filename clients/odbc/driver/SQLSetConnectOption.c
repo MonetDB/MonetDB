@@ -51,7 +51,7 @@
 #endif
 
 static SQLRETURN
-SQLSetConnectOption_(ODBCDbc *dbc,
+MNDBSetConnectOption(ODBCDbc *dbc,
 		     SQLUSMALLINT Option,
 		     SQLULEN ValuePtr)
 {
@@ -67,18 +67,18 @@ SQLSetConnectOption_(ODBCDbc *dbc,
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLSetConnectAttr_(dbc, Option,
+		return MNDBSetConnectAttr(dbc, Option,
 					  (SQLPOINTER) (uintptr_t) ValuePtr, 0);
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
-		return SQLSetConnectAttr_(dbc, Option,
+		return MNDBSetConnectAttr(dbc, Option,
 					  (SQLPOINTER) (uintptr_t) ValuePtr, 0);
 
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLSetConnectAttr_(dbc, Option,
+		return MNDBSetConnectAttr(dbc, Option,
 					  (SQLPOINTER) (uintptr_t) ValuePtr,
 					  SQL_NTS);
 
@@ -110,7 +110,7 @@ SQLSetConnectOption(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLSetConnectOption_(dbc, Option, ValuePtr);
+	return MNDBSetConnectOption(dbc, Option, ValuePtr);
 }
 
 SQLRETURN SQL_API
@@ -155,7 +155,7 @@ SQLSetConnectOptionW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLSetConnectOption_(dbc, Option, p);
+	rc = MNDBSetConnectOption(dbc, Option, p);
 
 	if (ptr &&p != ValuePtr)
 		free(ptr);

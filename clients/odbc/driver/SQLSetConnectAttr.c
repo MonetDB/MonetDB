@@ -42,7 +42,7 @@
 
 
 SQLRETURN
-SQLSetConnectAttr_(ODBCDbc *dbc,
+MNDBSetConnectAttr(ODBCDbc *dbc,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER StringLength)
@@ -169,7 +169,7 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle,
+	return MNDBSetConnectAttr((ODBCDbc *) ConnectionHandle,
 				  Attribute,
 				  ValuePtr,
 				  StringLength);
@@ -225,7 +225,7 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLSetConnectAttr_(dbc, Attribute, ptr, n);
+	rc = MNDBSetConnectAttr(dbc, Attribute, ptr, n);
 
 	if (ptr && ptr != ValuePtr)
 		free(ptr);

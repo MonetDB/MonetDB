@@ -41,7 +41,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLPrimaryKeys_(ODBCStmt *stmt,
+MNDBPrimaryKeys(ODBCStmt *stmt,
 		SQLCHAR *CatalogName,
 		SQLSMALLINT NameLength1,
 		SQLCHAR *SchemaName,
@@ -181,7 +181,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt,
+	rc = MNDBExecDirect(stmt,
 			    (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
@@ -222,7 +222,7 @@ SQLPrimaryKeys(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLPrimaryKeys_(stmt,
+	return MNDBPrimaryKeys(stmt,
 			       CatalogName, NameLength1,
 			       SchemaName, NameLength2,
 			       TableName, NameLength3);
@@ -272,7 +272,7 @@ SQLPrimaryKeysW(SQLHSTMT StatementHandle,
 	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLPrimaryKeys_(stmt,
+	rc = MNDBPrimaryKeys(stmt,
 			     catalog, SQL_NTS,
 			     schema, SQL_NTS,
 			     table, SQL_NTS);

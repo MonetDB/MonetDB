@@ -45,7 +45,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLBindParameter_(ODBCStmt *stmt,
+MNDBBindParameter(ODBCStmt *stmt,
 		  SQLUSMALLINT ParameterNumber,
 		  SQLSMALLINT InputOutputType,
 		  SQLSMALLINT ValueType,
@@ -231,10 +231,10 @@ SQLBindParameter_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	rc = SQLSetDescField_(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ValueType, 0);
+	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ValueType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
-	rc = SQLSetDescField_(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ParameterType, 0);
+	rc = MNDBSetDescField(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ParameterType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	ipdrec->sql_desc_parameter_type = InputOutputType;
@@ -266,7 +266,7 @@ SQLBindParameter(SQLHSTMT StatementHandle,
 		ULENCAST ColumnSize, (int) DecimalDigits);
 #endif
 
-	return SQLBindParameter_((ODBCStmt *) StatementHandle, ParameterNumber,
+	return MNDBBindParameter((ODBCStmt *) StatementHandle, ParameterNumber,
 				 InputOutputType, ValueType, ParameterType,
 				 ColumnSize, DecimalDigits, ParameterValuePtr,
 				 BufferLength, StrLen_or_IndPtr);

@@ -50,7 +50,7 @@ SQLAllocEnv(SQLHENV *OutputHandlePtr)
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	r = SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
+	r = MNDBAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
 			    (SQLHANDLE *) OutputHandlePtr);
 	if (SQL_SUCCEEDED(r)) {
 		/* ODBC 3.x applications never call this interface, so

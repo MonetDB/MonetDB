@@ -53,7 +53,7 @@
 
 
 static SQLRETURN
-SQLBrowseConnect_(ODBCDbc *dbc,
+MNDBBrowseConnect(ODBCDbc *dbc,
 		  SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
 		  SQLCHAR *OutConnectionString,
@@ -179,7 +179,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	}
 
 	if (uid != NULL && pwd != NULL) {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
 		if (SQL_SUCCEEDED(rc)) {
 			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 						  BufferLength,
@@ -278,7 +278,7 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLBrowseConnect_(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
+	return MNDBBrowseConnect(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
 SQLRETURN SQL_API
@@ -322,7 +322,7 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
+	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 1024, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
 			    StringLength2Ptr, 1, addDbcError, dbc);

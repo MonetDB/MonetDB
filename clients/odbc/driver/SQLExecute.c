@@ -403,7 +403,7 @@ ODBCInitResult(ODBCStmt *stmt)
 }
 
 SQLRETURN
-SQLExecute_(ODBCStmt *stmt)
+MNDBExecute(ODBCStmt *stmt)
 {
 	MapiHdl hdl;
 	MapiMsg msg;
@@ -542,5 +542,5 @@ SQLExecute(SQLHSTMT StatementHandle)
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLExecute_((ODBCStmt *) StatementHandle);
+	return MNDBExecute((ODBCStmt *) StatementHandle);
 }

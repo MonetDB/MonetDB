@@ -111,29 +111,29 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_TYPE,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_TYPE,
 			     (SQLPOINTER) (intptr_t) Type, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if ((Type == SQL_DATETIME || Type == SQL_INTERVAL) &&
-	    SQLSetDescField_(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
+	    MNDBSetDescField(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
 			     (SQLPOINTER) (intptr_t) SubType, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
 			     (SQLPOINTER) (intptr_t) Length, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_PRECISION,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_PRECISION,
 			     (SQLPOINTER) (intptr_t) Precision, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_SCALE,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_SCALE,
 			     (SQLPOINTER) (intptr_t) Scale, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
 			     (SQLPOINTER) StringLengthPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_INDICATOR_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_INDICATOR_PTR,
 			     (SQLPOINTER) IndicatorPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_DATA_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_DATA_PTR,
 			     (SQLPOINTER) DataPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

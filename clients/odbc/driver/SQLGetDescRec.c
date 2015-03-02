@@ -37,7 +37,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLGetDescRec_(ODBCDesc *desc,
+MNDBGetDescRec(ODBCDesc *desc,
 	       SQLSMALLINT RecNumber,
 	       SQLCHAR *Name,
 	       SQLSMALLINT BufferLength,
@@ -123,7 +123,7 @@ SQLGetDescRec(SQLHDESC DescriptorHandle,
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	return SQLGetDescRec_(desc,
+	return MNDBGetDescRec(desc,
 			      RecNumber,
 			      Name,
 			      BufferLength,
@@ -189,7 +189,7 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 		return SQL_INVALID_HANDLE;
 
 	/* dry run: figure out how much data we'll get */
-	rc = SQLGetDescRec_(desc, RecNumber, NULL, 0, &n, TypePtr, SubTypePtr,
+	rc = MNDBGetDescRec(desc, RecNumber, NULL, 0, &n, TypePtr, SubTypePtr,
 			    LengthPtr, PrecisionPtr, ScalePtr, NullablePtr);
 
 	/* get the data */
@@ -199,7 +199,7 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 		addDescError(desc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLGetDescRec_(desc, RecNumber, name, n + 1, &n, TypePtr,
+	rc = MNDBGetDescRec(desc, RecNumber, name, n + 1, &n, TypePtr,
 			    SubTypePtr, LengthPtr, PrecisionPtr, ScalePtr,
 			    NullablePtr);
 

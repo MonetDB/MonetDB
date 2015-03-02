@@ -45,7 +45,7 @@
 
 
 static SQLRETURN
-SQLProcedureColumns_(ODBCStmt *stmt,
+MNDBProcedureColumns(ODBCStmt *stmt,
 		     SQLCHAR *CatalogName,
 		     SQLSMALLINT NameLength1,
 		     SQLCHAR *SchemaName,
@@ -122,7 +122,7 @@ SQLProcedureColumns(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedureColumns_(stmt,
+	return MNDBProcedureColumns(stmt,
 				    CatalogName, NameLength1,
 				    SchemaName, NameLength2,
 				    ProcName, NameLength3,
@@ -180,7 +180,7 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLProcedureColumns_(stmt,
+	rc = MNDBProcedureColumns(stmt,
 				  catalog, SQL_NTS,
 				  schema, SQL_NTS,
 				  proc, SQL_NTS,

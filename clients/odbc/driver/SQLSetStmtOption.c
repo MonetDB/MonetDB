@@ -76,7 +76,7 @@ SQLSetStmtOption(SQLHSTMT StatementHandle,
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr_(stmt,
+		return MNDBSetStmtAttr(stmt,
 				       Option,
 				       (SQLPOINTER) (uintptr_t) ValuePtr,
 				       SQL_NTS);

@@ -72,7 +72,7 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 	case SQL_ROW_NUMBER:
 		/* SQLGetStmtAttr returns 64 bit value, but we need to
 		 * return 32 bit value */
-		r = SQLGetStmtAttr_(stmt, Option, &v, 0, NULL);
+		r = MNDBGetStmtAttr(stmt, Option, &v, 0, NULL);
 		if (SQL_SUCCEEDED(r))
 			*(SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
 		return r;
@@ -83,7 +83,7 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 	case SQL_ROWSET_SIZE:
 /*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLGetStmtAttr_(stmt, Option, ValuePtr, 0, NULL);
+		return MNDBGetStmtAttr(stmt, Option, ValuePtr, 0, NULL);
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);

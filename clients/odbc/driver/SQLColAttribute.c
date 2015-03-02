@@ -42,7 +42,7 @@
 
 
 SQLRETURN
-SQLColAttribute_(ODBCStmt *stmt,
+MNDBColAttribute(ODBCStmt *stmt,
 		 SQLUSMALLINT ColumnNumber,
 		 SQLUSMALLINT FieldIdentifier,
 		 SQLPOINTER CharacterAttributePtr,
@@ -306,7 +306,7 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 		addStmtError((ODBCStmt *) StatementHandle, "HY091", NULL, 0);
 		return SQL_ERROR;
 	}
-	return SQLColAttribute_((ODBCStmt *) StatementHandle,
+	return MNDBColAttribute((ODBCStmt *) StatementHandle,
 				ColumnNumber,
 				FieldIdentifier,
 				CharacterAttributePtr,
@@ -371,7 +371,7 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier,
+		rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier,
 				      NULL, 0, &n, NumericAttributePtr);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
@@ -411,7 +411,7 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, ptr,
+	rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier, ptr,
 			      n, &n, NumericAttributePtr);
 
 	if (ptr != CharacterAttributePtr) {

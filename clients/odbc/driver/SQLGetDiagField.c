@@ -55,7 +55,7 @@
 		} while (0)
 
 static SQLRETURN
-SQLGetDiagField_(SQLSMALLINT HandleType,
+MNDBGetDiagField(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT DiagIdentifier,
@@ -268,7 +268,7 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		(int) BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
-	return SQLGetDiagField_(HandleType,
+	return MNDBGetDiagField(HandleType,
 				Handle,
 				RecNumber,
 				DiagIdentifier,
@@ -326,7 +326,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	case SQL_DIAG_SERVER_NAME:
 	case SQL_DIAG_SQLSTATE:
 	case SQL_DIAG_SUBCLASS_ORIGIN:
-		rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+		rc = MNDBGetDiagField(HandleType, Handle, RecNumber,
 				      DiagIdentifier, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
@@ -339,7 +339,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 		break;
 	}
 
-	rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+	rc = MNDBGetDiagField(HandleType, Handle, RecNumber,
 			      DiagIdentifier, ptr, n, &n);
 #ifdef ODBCDEBUG
 	if (ptr != DiagInfoPtr)

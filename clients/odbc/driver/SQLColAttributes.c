@@ -38,7 +38,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLColAttributes_(ODBCStmt *stmt,
+MNDBColAttributes(ODBCStmt *stmt,
 		  SQLUSMALLINT ColumnNumber,
 		  SQLUSMALLINT FieldIdentifier,
 		  SQLPOINTER CharacterAttributePtr,
@@ -82,7 +82,7 @@ SQLColAttributes_(ODBCStmt *stmt,
 		addStmtError(stmt, "HY091", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
+	rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
 
 	/* TODO: implement special semantics for FieldIdentifiers:
 	 * SQL_COLUMN_TYPE, SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and
@@ -121,7 +121,7 @@ SQLColAttributes(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLColAttributes_(stmt,
+	return MNDBColAttributes(stmt,
 				 ColumnNumber,
 				 FieldIdentifier,
 				 CharacterAttributePtr,
@@ -187,7 +187,7 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier,
+		rc = MNDBColAttributes(stmt, ColumnNumber, FieldIdentifier,
 				       NULL, 0, &n, NumericAttributePtr);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
@@ -206,7 +206,7 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 		break;
 	}
 
-	rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier, ptr,
+	rc = MNDBColAttributes(stmt, ColumnNumber, FieldIdentifier, ptr,
 			       n, &n, NumericAttributePtr);
 
 	if (ptr != CharacterAttributePtr) {

@@ -59,7 +59,7 @@ SQLSetParam(SQLHSTMT StatementHandle,
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return SQLBindParameter_((ODBCStmt *) StatementHandle,
+	return MNDBBindParameter((ODBCStmt *) StatementHandle,
 				 ParameterNumber,
 				 SQL_PARAM_INPUT_OUTPUT,
 				 ValueType,

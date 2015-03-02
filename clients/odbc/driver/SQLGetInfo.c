@@ -42,7 +42,7 @@
 
 
 static SQLRETURN
-SQLGetInfo_(ODBCDbc *dbc,
+MNDBGetInfo(ODBCDbc *dbc,
 	    SQLUSMALLINT InfoType,
 	    SQLPOINTER InfoValuePtr,
 	    SQLSMALLINT BufferLength,
@@ -1585,7 +1585,7 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLGetInfo_(dbc,
+	return MNDBGetInfo(dbc,
 			   InfoType,
 			   InfoValuePtr,
 			   BufferLength,
@@ -1671,7 +1671,7 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	case SQL_TABLE_TERM:
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
-		rc = SQLGetInfo_(dbc, InfoType, NULL, 0, &n);
+		rc = MNDBGetInfo(dbc, InfoType, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		clearDbcErrors(dbc);
@@ -1689,7 +1689,7 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLGetInfo_(dbc, InfoType, ptr, n, &n);
+	rc = MNDBGetInfo(dbc, InfoType, ptr, n, &n);
 
 	if (ptr != InfoValuePtr) {
 		if (SQL_SUCCEEDED(rc)) {

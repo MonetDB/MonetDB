@@ -48,6 +48,6 @@ SQLAllocStmt(SQLHDBC ConnectionHandle,
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_STMT, (SQLHANDLE) ConnectionHandle,
+	return MNDBAllocHandle(SQL_HANDLE_STMT, (SQLHANDLE) ConnectionHandle,
 			       (SQLHANDLE *) OutputHandlePtr);
 }

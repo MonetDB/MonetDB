@@ -43,7 +43,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLFreeStmt_(ODBCStmt *stmt,
+MNDBFreeStmt(ODBCStmt *stmt,
 	     SQLUSMALLINT Option)
 {
 	switch (Option) {
@@ -116,5 +116,5 @@ SQLFreeStmt(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLFreeStmt_((ODBCStmt *) StatementHandle, Option);
+	return MNDBFreeStmt((ODBCStmt *) StatementHandle, Option);
 }

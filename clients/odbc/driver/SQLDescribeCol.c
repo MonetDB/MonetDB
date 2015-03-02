@@ -42,7 +42,7 @@
 
 
 static SQLRETURN
-SQLDescribeCol_(ODBCStmt *stmt,
+MNDBDescribeCol(ODBCStmt *stmt,
 		SQLUSMALLINT ColumnNumber,
 		SQLCHAR *ColumnName,
 		SQLSMALLINT BufferLength,
@@ -152,7 +152,7 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLDescribeCol_(stmt,
+	return MNDBDescribeCol(stmt,
 			       ColumnNumber,
 			       ColumnName,
 			       BufferLength,
@@ -211,7 +211,7 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	rc = SQLDescribeCol_(stmt, ColumnNumber, NULL, 0, &n, DataTypePtr,
+	rc = MNDBDescribeCol(stmt, ColumnNumber, NULL, 0, &n, DataTypePtr,
 			     ColumnSizePtr, DecimalDigitsPtr, NullablePtr);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
@@ -223,7 +223,7 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLDescribeCol_(stmt,
+	rc = MNDBDescribeCol(stmt,
 			     ColumnNumber,
 			     colname,
 			     n,
