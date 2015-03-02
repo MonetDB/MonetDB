@@ -38,15 +38,24 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCEnv.h"
 
 SQLRETURN SQL_API
 SQLAllocEnv(SQLHENV *OutputHandlePtr)
 {
+	SQLRETURN r;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLAllocEnv\n");
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
-			       (SQLHANDLE *) OutputHandlePtr);
+	r = SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
+			    (SQLHANDLE *) OutputHandlePtr);
+	if (SQL_SUCCEEDED(r)) {
+		/* ODBC 3.x applications never call this interface, so
+		 * this is an ODBC 2.x application */
+		((ODBCEnv *) *OutputHandlePtr)->sql_attr_odbc_version = SQL_OV_ODBC2;
+	}
+	return r;
 }
