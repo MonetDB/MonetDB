@@ -202,7 +202,7 @@ int malsize = 0;
 char *prevquery= 0;
 int prevprogress =0;
 int prevlevel =0; 
-int txtlength=0;
+size_t txtlength=0;
 
 static FILE *tachofd;
 
@@ -380,7 +380,8 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 static void
 showBar(int level, lng clk, char *stmt)
 {
-	lng i =0, nl, stamplen=0;
+	lng i =0, nl;
+	size_t stamplen=0;
 	char line[BUFSIZ]={0};
 
 	nl = level/2-prevlevel/2;

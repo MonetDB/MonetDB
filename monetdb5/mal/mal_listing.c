@@ -51,7 +51,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int nameused= 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	str pstring;
-	ValRecord *val;
+	ValRecord *val = 0;
 	char *cv =0;
 	str tpe;
 	int showtype = 0, closequote=0;
