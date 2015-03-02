@@ -72,10 +72,12 @@ bl_postversion( void *lg)
 			int eclass = *(int*)BUNtail(tei, p);
 			char *name = BUNtail(tni, p);
 
-			if (eclass >= EC_POS && strcmp(name, "oid") != 0)
-				eclass++;
-			else if (strcmp(name, "oid") == 0)
-				eclass = EC_POS;
+			if (eclass == EC_POS)		/* old EC_NUM */
+				eclass = strcmp(name, "oid") == 0 ? EC_POS : EC_NUM;
+			else if (eclass == EC_NUM)	/* old EC_INTERVAL */
+				eclass = strcmp(name, "sec_interval") == 0 ? EC_SEC : EC_MONTH;
+			else if (eclass >= EC_MONTH)	/* old EC_DEC */
+				eclass += 2;
 			BUNappend(tne, &eclass, TRUE);
 		}
 		BATsetaccess(tne, BAT_READ);
