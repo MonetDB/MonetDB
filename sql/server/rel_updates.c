@@ -1195,7 +1195,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 
 			if (!list_find_name(collist, cname)) {
 				char *name;
-				int len = strlen(cname) + 2;
+				size_t len = strlen(cname) + 2;
 				sql_subtype *ctype = sql_bind_localtype("oid");
 
 				name = sa_alloc(sql->sa, len);
