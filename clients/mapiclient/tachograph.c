@@ -452,6 +452,8 @@ update(EventRecord *ev)
 	char *v, *qry, *q = 0, *c;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
+	char prereq[BUFSIZ]={0};
+	char number[BUFSIZ]={0};
  
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= PING ) {
@@ -592,15 +594,20 @@ update(EventRecord *ev)
 		// collect all input producing PCs
 		fprintf(tachofd,"\"prereq\":[");
 		for( i=0; i < malvartop; i++){
-			for(j= ev->pc; j>=0;j --){
+			// remove duplicates
+			for(j= ev->pc-1; j>=0;j --){
 				//if(debug)
 					//fprintf(stderr,"locate %s in %s\n",malvariables[i], events[j].stmt);
 				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					fprintf(tachofd,"%s%d",(i?", ":""), j);
+					snprintf(number,BUFSIZ,"%d",j);
+					if( strstr(prereq,number) == 0)
+						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s%d",(i?", ":""), j);
+					//fprintf(tachofd,"%s%d",(i?", ":""), j);
 					break;
 				}
 			}
 		}
+		fprintf(tachofd,"%s",prereq);
 		fprintf(tachofd,"]\n");
 		fprintf(tachofd,"},\n");
 		fflush(tachofd);
