@@ -1478,28 +1478,14 @@ memProfileVector(stream *out, int cells)
 			Hash *h;
 
 			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
-			hp = &b->H->heap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\ttail=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = &b->T->heap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\thead=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
 			}
 
-			hp = b->H->vheap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\thheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = b->T->vheap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\ttheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
-			h = b->H->hash;
-			if (h && h->mask) {
-				mnstr_printf(out, "\thhash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\thhashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
-						(h->mask + h->lim + 1) * sizeof(int));
 			}
 			h = b->T->hash;
 			if (h && h->mask) {

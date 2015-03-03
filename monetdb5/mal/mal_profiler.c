@@ -813,15 +813,10 @@ getDiskSpace(void)
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += headsize(b, cnt);
 					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
-					if (b->H->vheap)
-						size += b->H->vheap->size;
 					if (b->T->vheap)
 						size += b->T->vheap->size;
-					if (b->H->hash)
-						size += sizeof(BUN) * cnt;
 					if (b->T->hash)
 						size += sizeof(BUN) * cnt;
 				}

@@ -85,9 +85,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 		cnt = BATcount(b);
-		heapinfo(&b->H->heap); total += vol;
-		heapinfo(b->H->vheap); total += vol;
-		hashinfo(b->H->hash); total += vol;
 
 		heapinfo(&b->T->heap); total += vol;
 		heapinfo(b->T->vheap); total += vol;

@@ -254,7 +254,6 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			cnt = BATcount(b);
 			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
-			vol += ((rd && !isview) || !VIEWhparent(b)) ? headsize(b, cnt) : 0;
 			vol += ((rd && !isview) || !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
 		}
 	}
@@ -289,12 +288,8 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
         if (b == NULL || isVIEW(b) || b->batPersistence == PERSISTENT)
             return;
 		cnt = BATcount(b);
-		total += heapinfo(&b->H->heap);
-		total += heapinfo(b->H->vheap);
-
 		total += heapinfo(&b->T->heap);
 		total += heapinfo(b->T->vheap);
-		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
 		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)
