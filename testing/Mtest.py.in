@@ -1294,6 +1294,7 @@ def ApproveOutput (env, TST) :
     os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
     FORCE = par['FORCE']
+    NOPATCH = par['NOPATCH']
 
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
@@ -1383,14 +1384,15 @@ def ApproveOutput (env, TST) :
                 dir,file = os.path.split(stableOUT)
                 test = re.compile('^%s.*$' % re.escape(file))
                 list = []
-                for f in os.listdir(dir or os.curdir):
-                    if f != thefile and test.match(f):
-                        remove(os.path.join(dir or os.curdir, f + '.rej'))
-                        remove(os.path.join(dir or os.curdir, f + '.orig'))
-                        proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
-                        proc.wait()
-                        if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
-                            list.append(f)
+                if not NOPATCH:
+                    for f in os.listdir(dir or os.curdir):
+                        if f != thefile and test.match(f):
+                            remove(os.path.join(dir or os.curdir, f + '.rej'))
+                            remove(os.path.join(dir or os.curdir, f + '.orig'))
+                            proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
+                            proc.wait()
+                            if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
+                                list.append(f)
                 if len(list) > 0:
                     Warn('There are other (specific) stable outputs for test  %s\nfor which patching failed:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
                     STDERR.write('  Look at the *.rej files in directory %s.\n\n' % os.path.join(TSTDIR,'Tests'))
@@ -3487,6 +3489,8 @@ def main(argv) :
               % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['SINGLE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
+            ('nopatch', None, 'nopatch', None,
+             "do not attempt to patch other outputs"),
             ]
     else:
         options = []
@@ -3593,6 +3597,7 @@ def main(argv) :
         else:
             ErrXit("Extension (-x) must be one of: 'out', 'err' !")
         par['FORCE'] = opts.get('force', False)
+        par['NOPATCH'] = opts.get('nopatch', False)
         a = opts.get('sys')
         if a is None:
             par['SYSTEM'] = ''
