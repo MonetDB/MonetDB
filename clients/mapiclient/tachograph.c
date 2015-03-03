@@ -277,15 +277,17 @@ static struct{
 	int mode;
 }mapping[]={
 	{"algebra.leftfetchjoinPath", 25, "join",4, 0},
-	{"algebra.thetasubselect", 22, "selection",9, 0},
+	{"algebra.thetasubselect", 22, "select",6, 0},
 	{"algebra.leftfetchjoin", 21, "join",4, 0},
 	{"dataflow.language", 17,	"parallel", 8, 0},
-	{"algebra.subselect", 17, "selection",9, 0},
-	{"sql.projectdelta", 16, "projection",4, 0},
+	{"algebra.subselect", 17, "select",6, 0},
+	{"sql.projectdelta", 16, "project",7, 0},
 	{"algebra.subjoin", 15, "join",4, 0},
 	{"language.pass(nil)", 18,	"pass", 4, 0},
 	{"mat.packIncrement", 17, "pack",4, 0},
 	{"language.pass", 13,	"pass", 4, 0},
+	{"aggr.subcount", 13,	"count", 3, 0},
+	{"sql.subdelta", 12, "project",7, 0},
 	{"bat.append", 10,	"append", 6, 0},
 	{"aggr.subavg", 11,	"average", 7, 0},
 	{"aggr.subsum", 11,	"sum", 3, 0},
@@ -305,6 +307,7 @@ static struct{
 	{"aggr.", 5,	"", 0, 0},
 	{"group.sub", 9,	"", 0, 0},
 	{"group.", 6,	"", 0, 0},
+	{"mtime.", 6,	"", 0, 0},
 	{0,0,0,0,0}};
 
 static void
@@ -399,9 +402,9 @@ showBar(int level, lng clk, char *stmt)
 		putchar('.');
 	putchar(level ==100?']':'>');
 	printf(" %3d%%",level);
-	if( duration == 0){
+	if( level == 100 || duration == 0){
 		rendertime(clk,0);
-		printf(" +%s ",stamp);
+		printf("  %s ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk > 0){
@@ -410,7 +413,7 @@ showBar(int level, lng clk, char *stmt)
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
-		rendertime(clk -duration ,0);
+		rendertime(clk - duration ,0);
 		printf(" +%s ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
