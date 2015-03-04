@@ -484,22 +484,11 @@ create function boundary(g geometry) returns geometry external name geom."Bounda
 create function "broadcast" (p inet) returns inet 
 	external name inet."broadcast";
 create function buffer(a geometry, distance float) returns geometry external name geom."Buffer";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- (co) Arjen de Rijke, Bart Scheers
 -- Use statistical functions from gsl library
@@ -553,22 +542,11 @@ create function crosses(a geometry, b geometry) returns boolean external name ge
 create function date_to_str(d date, format string) returns string
 	external name mtime."date_to_str";
 CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create function degrees(r double) 
 returns double
@@ -609,22 +587,11 @@ return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk wher
 create function dependencies_owners_on_schemas()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 --Schema s has a dependency on user u
 create function dependencies_schemas_on_users()
@@ -689,22 +656,11 @@ returns integer external name udf.fuse;
 -- fuse two (4-byte) integer values into one (8-byte) bigint value
 create function fuse(one integer, two integer)
 returns bigint external name udf.fuse;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- (c) Author M.Kersten
 
@@ -828,22 +784,11 @@ returns uuid external name uuid."isaUUID";
 create function isempty(g geometry) returns boolean external name geom."IsEmpty";
 create function issimple(g geometry) returns boolean external name geom."IsSimple";
 create function length(g geometry) returns float external name geom."Length";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
@@ -856,22 +801,11 @@ create function "masklen" (p inet) returns int
 -- minimum bounding rectangle (mbr)
 create function mbr (g geometry) returns mbr external name geom.mbr;
 create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mbroverlaps";
-
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- (co) Arjen de Rijke
 -- Functions supporting jsonstore
@@ -916,22 +850,11 @@ returns string
 begin
         return cast(num as string);
 end;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))
 returns varchar(32)
@@ -964,22 +887,11 @@ create function newurl(protocol string, hostname string, "port" int, file string
 create function newurl(protocol string, hostname string, file string) 
 	returns url 
 	external name url."new";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats () 
@@ -991,22 +903,11 @@ create function sys.optimizers ()
 	returns table (name string, def string, status string)
 	external name sql.optimizers;
 create function overlaps(a geometry, b geometry) returns boolean external name geom."Overlaps";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create function sys.password_hash (username string) 
 	returns string 
@@ -1079,22 +980,11 @@ returns table(
 	io int			-- percentage time waiting for IO to finish 
 )
 external name sql.querylog_calls;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- QUERY HISTORY
 -- The query history mechanism of MonetDB/SQL relies on a few hooks.
@@ -1123,22 +1013,11 @@ create procedure sys.querylog_enable()
 external name sql.querylog_enable;
 create procedure sys.querylog_enable(threshold smallint)
 external name sql.querylog_enable_threshold;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- System monitoring
 
@@ -1165,22 +1044,11 @@ create procedure sys.resume(tag bigint)
 external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string)
 	external name sql.reuse;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- add function signatures to SQL catalog
 
@@ -1200,22 +1068,11 @@ create procedure sys.settimeout("query" bigint)
 	external name sql.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name sql.settimeout;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- Vacuum a relational table should be done with care.
 -- For, the oid's are used in join-indices.
@@ -1251,22 +1108,11 @@ create aggregate stddev_pop(val time) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val timestamp) returns double
 	external name "aggr"."stdevp";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create aggregate stddev_samp(val tinyint) returns double
 	external name "aggr"."stdev";
@@ -1292,22 +1138,11 @@ create procedure sys.stop(tag int)
 external name sql.sysmon_stop;
 create procedure sys.stop(tag bigint)
 external name sql.sysmon_stop;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 
 -- Author M.Kersten
@@ -1420,22 +1255,11 @@ create function "text" (p inet) returns clob
 create procedure times()
 external name sql.times;
 create function touches(a geometry, b geometry) returns boolean external name geom."Touches";
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- make the offline tracing table available for inspection
 create function sys.tracelog() 
@@ -1508,22 +1332,11 @@ create function zorder_decode_x(z oid) returns integer
     external name zorder.decode_x;
 create function zorder_decode_y(z oid) returns integer
     external name zorder.decode_y;
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 create function zorder_encode(x integer, y integer) returns oid
     external name zorder.encode;
