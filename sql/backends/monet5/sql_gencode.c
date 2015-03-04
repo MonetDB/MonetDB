@@ -1861,7 +1861,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				    (q = newStmt(mb, "mkey", "bulk_rotate_xor_hash")) == NULL)
 					return -1;
 				if (!q) {
-					q = newStmt(mb, "mal", "multiplex");
+					if (f->func->type == F_UNION)
+						q = newStmt(mb, "batmal", "multiplex");
+					else
+						q = newStmt(mb, "mal", "multiplex");
 					if (q == NULL)
 						return -1;
 					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));

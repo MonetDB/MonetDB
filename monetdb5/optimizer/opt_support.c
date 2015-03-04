@@ -911,6 +911,12 @@ int isSubJoin(InstrPtr p)
 	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
 }
 
+int isMultiplex(InstrPtr p)
+{
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
+		getFunctionId(p) == multiplexRef);
+}
+
 int isFragmentGroup(InstrPtr p){
 	return
 			(getModuleId(p)== algebraRef && (

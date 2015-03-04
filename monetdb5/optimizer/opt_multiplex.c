@@ -47,14 +47,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = 2, iter = 0;
 	int hvar, tvar;
 	str mod, fcn;
-	int *alias;
+	int *alias, *resB;
 	InstrPtr q;
 	int ht, tt;
-	int *resB;
+	int bat = (getModuleId(pci) == batmalRef) ;
 
 	(void) cntxt;
 	(void) stk;
-
 	for (i = 0; i < pci->retc; i++) {
 		ht = getHeadType(getArgType(mb, pci, i));
 		if (ht != TYPE_oid)
@@ -101,7 +100,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 */
 
 	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
-	resB = (int*)GDKmalloc(sizeof(int)*pci->retc);
+	resB = (int*) GDKmalloc(sizeof(int) * pci->retc);
 	if (alias == NULL || resB == NULL)  {
 		GDKfree(alias);
 		GDKfree(resB);
@@ -131,7 +130,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pushArgument(mb,q,iter);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
-	for (i = pci->retc+2; i < pci->argc; i++)
+	for (i = pci->retc+2; i < pci->argc; i++) {
 		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
@@ -139,13 +138,24 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q= pushArgument(mb, q, getArg(pci, i));
 			(void) pushArgument(mb, q, hvar);
 		}
+	}
 
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCall(mb, mod, fcn);
-	q->retc = pci->retc;
-	q->argc = pci->retc;
-	for (i = 0; i < pci->retc; i++) 
-		getArg(q, i) = newTmpVariable(mb, TYPE_any);
+	for (i = 0; i < pci->retc; i++) {
+		int nvar = 0;
+		if (bat) {
+			ht = getHeadType(getArgType(mb, pci, i));
+			tt = getColumnType(getArgType(mb, pci, i));
+			nvar = newTmpVariable(mb, newBatType(ht, tt));
+		} else {
+			nvar = newTmpVariable(mb, TYPE_any);
+		}
+		if (i)
+			q = pushReturn(mb, q, nvar);
+		else
+			getArg(q, 0) = nvar;
+	}
 
 	for (i = pci->retc+2; i < pci->argc; i++) {
 		if (getArg(pci, i) == iter) {
@@ -181,6 +191,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		(void) pushArgument(mb, q, resB[i]);
 	}
 	GDKfree(alias);
+	GDKfree(resB);
 	return MAL_SUCCEED;
 }
 
@@ -198,7 +209,7 @@ OPTmultiplexSimple(Client cntxt)
 	if(mb)
 	for( i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
+		if(isMultiplex(p))
 			doit++;
 	}
 	if( doit) {
@@ -229,9 +240,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED && getModuleId(p) == malRef &&
-		    getFunctionId(p) == multiplexRef) {
-
+		if (msg == MAL_SUCCEED && isMultiplex(p)) { 
 			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
 				setFunctionId(p, manifoldRef);
 				pushInstruction(mb, p);

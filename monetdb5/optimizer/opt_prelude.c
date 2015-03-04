@@ -140,6 +140,7 @@ str listRef;
 str lockRef;
 str lookupRef;
 str malRef;
+str batmalRef;
 str mapiRef;
 str markRef;
 str mark_grpRef;
@@ -392,6 +393,7 @@ void optimizerInit(void)
 	lockRef = putName("lock",4);
 	lookupRef = putName("lookup",6);
 	malRef = putName("mal", 3);
+	batmalRef = putName("batmal", 6);
 	mapiRef = putName("mapi", 4);
 	markRef = putName("mark", 4);
 	mark_grpRef = putName("mark_grp", 8);

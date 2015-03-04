@@ -138,6 +138,7 @@ opt_export  str not_ilikeRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
 opt_export  str malRef;
+opt_export  str batmalRef;
 opt_export  str mapiRef;
 opt_export  str markRef;
 opt_export  str mark_grpRef;

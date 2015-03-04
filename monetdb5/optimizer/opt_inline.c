@@ -56,9 +56,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * Time for inlining functions that are used in multiplex operations.
 			 * They are produced by SQL compiler.
 			 */
-			if( getFunctionId(q)== multiplexRef &&
-				getModuleId(q) == malRef &&
-				OPTinlineMultiplex(cntxt,mb,q)){
+			if(isMultiplex(q) && OPTinlineMultiplex(cntxt,mb,q)){
 
 				OPTDEBUGinline {
 					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");

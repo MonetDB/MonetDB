@@ -173,9 +173,7 @@ static int
 dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) 
 {
 	if (p->token == ENDsymbol || 
-	    (getFunctionId(p) == multiplexRef &&
-		 getModuleId(p) == malRef &&
-	     MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
+	   (isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
 	    blockCntrl(p) || blockStart(p) || blockExit(p))
 		return TRUE;
 	switch(p->token){

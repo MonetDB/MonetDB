@@ -15,9 +15,8 @@ CREATE FUNCTION widetolong(subject int, age int, height int, weight int) RETURNS
 				value=c(split$age, split$height, split$weight))))
 };
 
-SELECT widetolong(subject, age, height, weight) from observations;
-SELECT * FROM widetolong(SELECT * FROM observations);
-SELECT * FROM widetolong(observations);
+SELECT * FROM widetolong( (SELECT * FROM observations AS o) );
+--SELECT * FROM widetolong(observations);
 
 -- result should look like this (without the row number)
 --    subject    key value

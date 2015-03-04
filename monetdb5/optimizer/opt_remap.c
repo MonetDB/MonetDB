@@ -314,8 +314,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 	(void) stk;
 	(void) scope;
 
-	if( getModuleId(pci)!= malRef &&
-	    getFunctionId(pci) != multiplexRef &&
+	if( !isMultiplex(pci) &&
 	    !isVarConstant(mb,getArg(pci,1)) &&
 	    !isVarConstant(mb,getArg(pci,2)) &&
 	    !isVarConstant(mb,getArg(pci,4)) &&
@@ -359,8 +358,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if ( getModuleId(p) == malRef && 
-			getFunctionId(p) == multiplexRef) {
+		if (isMultiplex(p) && getModuleId(p) != batmalRef /* for now only simple mal.multiplex */){
 			/*
 			 * The next step considered is to handle inlined functions.
 			 * It means we have already skipped the most obvious ones,

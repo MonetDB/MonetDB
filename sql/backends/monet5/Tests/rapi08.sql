@@ -11,11 +11,8 @@ CREATE FUNCTION pagerank(arg1 integer, arg2 integer) RETURNS TABLE ("node" integ
 
 SELECT * FROM pagerank(1,2);
 
--- this is the naive version that would be nicest
---SELECT * FROM pagerank(edges);
-
--- of course, a subselect might also be useful 
 SELECT * FROM pagerank( (SELECT * FROM edges AS e) );
+--SELECT * FROM pagerank(edges);
 
 -- output should be
 --   node      rank
@@ -27,8 +24,3 @@ DROP FUNCTION pagerank;
 DROP TABLE edges;
 
 ROLLBACK;
-
-
-
-
-
