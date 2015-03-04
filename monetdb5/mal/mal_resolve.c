@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -678,14 +667,15 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			mb->errors++;
 			if (!silent) {
-				char errsig[4 * PATHLENGTH] = "";
+				char *errsig;
 
-				instructionCall(mb, p, errsig, errsig, sizeof(errsig) - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) - strlen(errsig));
+				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_VALUE));
 				showScriptException(out, mb, getPC(mb, p), TYPE,
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),
 									(getModuleId(p) ? "." : ""),
 									getFunctionId(p), errsig);
+				GDKfree(errsig);
 			} else
 				mb->errors = olderrors;
 			p->typechk = TYPE_UNKNOWN;

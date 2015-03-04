@@ -49,9 +49,9 @@ function user.main():void;
 #setPersistent(c); 
     io.print(c);
     io.printf("caught anything?\n");
-catch GDKerror:str ;
+catch GDKerror:str;
     io.printf("Catched the renaming exception\n");
-exit GDKerror:str ;
+exit GDKerror:str;
 #get rid of it again 
 #destroy(b); 
 #destroy(c); 

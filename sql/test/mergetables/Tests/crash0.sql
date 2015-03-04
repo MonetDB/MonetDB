@@ -19,7 +19,4 @@ ALTER TABLE complete ADD TABLE cpart1;
 ALTER TABLE complete ADD TABLE cpart2;
 ALTER TABLE complete SET READ ONLY;
 
-DROP TABLE complete;
-DROP TABLE cpart1;
-DROP TABLE cpart2;
-ABORT;
+rollback;

@@ -46,9 +46,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 103 # length
 function user.s6_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -68,9 +68,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 102 # length
+% 104 # length
 function user.s7_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -111,9 +111,9 @@ end user.s7_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 103 # length
 function user.s14_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -133,9 +133,9 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 102 # length
+% 104 # length
 function user.s15_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -170,9 +170,9 @@ end user.s15_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 103 # length
 function user.s21_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;
@@ -192,9 +192,9 @@ end user.s21_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 102 # length
+% 104 # length
 function user.s22_1{autoCommit=true}(A0:int):void;
-    X_23:void  := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe");
+    X_23:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
     X_3 := sql.mvc();
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
     X_10 := X_7;

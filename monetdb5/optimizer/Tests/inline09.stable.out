@@ -31,16 +31,16 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.append(b,"HELLO WORLD");        #  2 _4:bat[:oid,:str] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
-    X_12 := b;                          #  3 _12:bat[:oid,:str] := b:bat[:oid,:str] {G}
-    X_12 := batstr.substring(X_12,1,5); #  4 _12:bat[:oid,:str] := STRbatsubstringcst(_12:bat[:oid,:str], _13:int, _14:int) {G}
-    X_15 := b;                          #  5 _15:bat[:oid,:str] := b:bat[:oid,:str] {G}
-    X_15 := batstr.substring(X_15,1,3); #  6 _15:bat[:oid,:str] := STRbatsubstringcst(_15:bat[:oid,:str], _13:int, _16:int) {G}
-    X_17 := batcalc.+(X_12,X_15);       #  7 _17:bat[:oid,:str] := CMDbatADD(_12:bat[:oid,:str], _15:bat[:oid,:str]) {G}
-    z:bat[:oid,:str] {inline} := X_17;  #  8 z:bat[:oid,:str] := _17:bat[:oid,:str] {G}
-end user.qry;                           #  9  
+function user.qry():void;
+    b:bat[:oid,:str] := bat.new(:oid,:str);
+    bat.append(b:bat[:oid,:str],"HELLO WORLD":str);
+    X_12:bat[:oid,:str] := b:bat[:oid,:str];
+    X_12:bat[:oid,:str] := batstr.substring(X_12:bat[:oid,:str],1:int,5:int);
+    X_15:bat[:oid,:str] := b:bat[:oid,:str];
+    X_15:bat[:oid,:str] := batstr.substring(X_15:bat[:oid,:str],1:int,3:int);
+    X_17:bat[:oid,:str] := batcalc.+(X_12:bat[:oid,:str],X_15:bat[:oid,:str]);
+    z:bat[:oid,:str]{inline} := X_17:bat[:oid,:str];
+end user.qry;
 
 # 11:53:00 >  
 # 11:53:00 >  Done.

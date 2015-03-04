@@ -22,17 +22,17 @@ function user.main():void;
 #Code factorization 
     mdb.List("user","test");
 end user.main;
-factory user.test(s:str):wrd;           #  0 test:wrd := user.test(s:str) {G}
-    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
-    bat.append(b,"hello");              #  2 _5:bat[:oid,:str] := BKCappend_val_wrap(b:bat[:oid,:str], _6:str) {G}
-barrier always := true;                 #  3 always:bit := _10:bit {J8}
-    z := algebra.select(b,s,s);         #  4 z:bat[:oid,:str] := ALGselect(b:bat[:oid,:str], s:str, s:str) {G}
-    i := aggr.count(z);                 #  5 i:wrd := ALGcount_bat(z:bat[:oid,:str]) {G}
-    yield test := i;                    #  6 test:wrd := i:wrd 
-    redo always;                        #  7 always:bit {J4}
-exit always;                            #  8 always:bit 
-    return test := test;                #  9 test:wrd := test:wrd 
-end user.test;                          # 10  
+factory user.test(s:str):wrd;
+    b:bat[:oid,:str] := bat.new(:oid,:str);
+    bat.append(b:bat[:oid,:str],"hello":str);
+barrier always:bit := true:bit;
+    z:bat[:oid,:str] := algebra.select(b:bat[:oid,:str],s:str,s:str);
+    i:wrd := aggr.count(z:bat[:oid,:str]);
+    yield test:wrd := i:wrd;
+    redo always:bit;
+exit always:bit;
+    return test:wrd := test:wrd;
+end user.test;
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

@@ -29,18 +29,17 @@ function user.main():void;
     x:str  := remote.get(conn,"b1_str");
 # bit weird that a "may not be used before being initialised" error is a 
 # TypeException 
-catch TypeException:str ;
+catch TypeException:str;
     io.printf("!%s\n",TypeException);
-exit TypeException:str ;
+exit TypeException:str;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
 # this should fail now 
     remote.disconnect(conn);
-catch MALException:str ;
-# make it a comment, the connection name is always different 
+catch MALException:str;
     io.printf("!%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
 end user.main;
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
 !TypeException:remote.get:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized

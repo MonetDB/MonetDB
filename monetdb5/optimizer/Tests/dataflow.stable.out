@@ -45,30 +45,30 @@ function user.main():void;
     mdb.List("user","tst");
     user.tst();
 end user.main;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    s:bat[:oid,:int]  := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000);#  1 s:bat[:oid,:int] := MBMuniform(_2:oid, _3:wrd, _4:int) {G}
-    l := aggr.min(s);                   #  2 l:int := ALGminany(s:bat[:oid,:int]) {G}
-    h := l;                             #  3 h:int := l:int 
+function user.tst():void;
+    s:bat[:oid,:int] := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000:int);
+    l:int := aggr.min(s:bat[:oid,:int]);
+    h:int := l:int;
 #mdb.setTimer(true); 
 #mdb.setThread(true); 
-    z := nil:bat[:oid,:int];            #  6 z:bat[:oid,:int] := _10:bat[:oid,:int] {G}
-barrier go := language.dataflow();      #  7 go:bit := MALstartDataflow() {J17}
-    t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t3 := algebra.select(s,l,h);        # 10 t3:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t4 := algebra.select(s,l,h);        # 11 t4:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t5 := algebra.select(s,l,h);        # 12 t5:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t6 := algebra.select(s,l,h);        # 13 t6:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t7 := algebra.select(s,l,h);        # 14 t7:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], l:int, h:int) {G}
-    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:int] := MATpack(t1:bat[:oid,:int], t2:bat[:oid,:int], t3:bat[:oid,:int], t4:bat[:oid,:int], t5:bat[:oid,:int], t6:bat[:oid,:int], t7:bat[:oid,:int], t8:bat[:oid,:int]) {G}
-exit go;                                # 17 go:bit 
-    s:bat[:oid,:int]  := nil:bat[:oid,:int];# 18 s:bat[:oid,:int] := _26:bat[:oid,:int] {G}
-    mdb.var();                          # 19 _20:void := MDBvar() 
-    c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:int]) {G}
-    io.print(c);                        # 21 _22:void := IOprint_val(c:wrd) 
-    io.print("done");                   # 22 _23:void := IOprint_val(_24:str) {G}
-end user.tst;                           # 23  
+    z:bat[:oid,:int] := nil:bat[:oid,:int];
+barrier go:bit := language.dataflow();
+    t1:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t2:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t3:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t4:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t5:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t6:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t7:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    t8:bat[:oid,:int] := algebra.select(s:bat[:oid,:int],l:int,h:int);
+    z:bat[:oid,:int] := mat.pack(t1:bat[:oid,:int],t2:bat[:oid,:int],t3:bat[:oid,:int],t4:bat[:oid,:int],t5:bat[:oid,:int],t6:bat[:oid,:int],t7:bat[:oid,:int],t8:bat[:oid,:int]);
+exit go:bit;
+    s:bat[:oid,:int] := nil:bat[:oid,:int];
+    mdb.var();
+    c:wrd := aggr.count(z:bat[:oid,:int]);
+    io.print(c:wrd);
+    io.print("done":str);
+end user.tst;
 #Stack 'tst' size=32 top=27
 #[1]     s = nil :bat[:oid,:int]   eolife=18 
 #[2]    _2 = 0@0 :oid  constant 

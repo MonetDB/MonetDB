@@ -29,14 +29,14 @@ end user.qry;
 function user.main():void;
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    bat.append(b,10);                   #  3 _6:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
-    bat.append(b,20);                   #  4 _8:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
-    r:bat[:oid,:int] {inline} := mal.multiplex("user","foo",b);#  5 r:bat[:oid,:int] := MANIFOLDremapMultiplex(_11:str, _12:str, b:bat[:oid,:int]) {G}
-    io.print(r{inline});                #  6 _13:void := IOprint_val(r:bat[:oid,:int]) {G}
-end user.qry;                           #  7  
+function user.qry():void;
+    b:bat[:oid,:int] := bat.new(:oid,:int);
+    bat.append(b:bat[:oid,:int],1:int);
+    bat.append(b:bat[:oid,:int],10:int);
+    bat.append(b:bat[:oid,:int],20:int);
+    r:bat[:oid,:int]{inline} := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int]);
+    io.print(r:bat[:oid,:int]{inline});
+end user.qry;
 
 # 11:53:01 >  
 # 11:53:01 >  Done.

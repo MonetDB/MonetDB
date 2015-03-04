@@ -46,9 +46,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s6_1{autoCommit=true}():void;
-    X_36:void  := querylog.define("explain select * from tmp3;","sequential_pipe");
+    X_36:void := querylog.define("explain select * from tmp3;","sequential_pipe",20);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
@@ -75,9 +75,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s11_1{autoCommit=true}():void;
-    X_18:void  := querylog.define("explain select i from tmp3;","sequential_pipe");
+    X_18:void := querylog.define("explain select i from tmp3;","sequential_pipe",11);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
@@ -91,9 +91,9 @@ end user.s11_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s12_1{autoCommit=true}():void;
-    X_17:void  := querylog.define("explain select b from tmp3;","sequential_pipe");
+    X_17:void := querylog.define("explain select b from tmp3;","sequential_pipe",11);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0);
@@ -107,9 +107,9 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s13_1{autoCommit=true}():void;
-    X_18:void  := querylog.define("explain select f from tmp3;","sequential_pipe");
+    X_18:void := querylog.define("explain select f from tmp3;","sequential_pipe",11);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0);
@@ -123,9 +123,9 @@ end user.s13_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s14_1{autoCommit=true}():void;
-    X_18:void  := querylog.define("explain select t from tmp3;","sequential_pipe");
+    X_18:void := querylog.define("explain select t from tmp3;","sequential_pipe",11);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0);
@@ -249,9 +249,9 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 83 # length
+% 85 # length
 function user.s22_1{autoCommit=true}():void;
-    X_36:void  := querylog.define("explain select * from tmp3;","sequential_pipe");
+    X_36:void := querylog.define("explain select * from tmp3;","sequential_pipe",20);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);

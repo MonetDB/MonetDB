@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -41,7 +30,7 @@
 
 
 static SQLRETURN
-SQLColumnPrivileges_(ODBCStmt *stmt,
+MNDBColumnPrivileges(ODBCStmt *stmt,
 		     SQLCHAR *CatalogName,
 		     SQLSMALLINT NameLength1,
 		     SQLCHAR *SchemaName,
@@ -226,7 +215,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);
@@ -270,7 +259,7 @@ SQLColumnPrivileges(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLColumnPrivileges_(stmt,
+	return MNDBColumnPrivileges(stmt,
 				    CatalogName, NameLength1,
 				    SchemaName, NameLength2,
 				    TableName, NameLength3,
@@ -328,7 +317,7 @@ SQLColumnPrivilegesW(SQLHSTMT StatementHandle,
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLColumnPrivileges_(stmt,
+	rc = MNDBColumnPrivileges(stmt,
 				  catalog, SQL_NTS,
 				  schema, SQL_NTS,
 				  table, SQL_NTS,

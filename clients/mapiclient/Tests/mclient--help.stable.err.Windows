@@ -37,6 +37,7 @@ SQL specific opions
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
  -N          | --inserts          use INSERT INTO statements when dumping
+ -P          | --progress         show progress bar
 The file argument can be - for stdin
 
 # 18:57:57 >  

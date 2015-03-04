@@ -39,19 +39,19 @@ end user.main;
 [ "Welcome" ]
 [ "Welcome" ]
 [ 2 ]
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # the first test for macro expansions and inversions 
-    io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) {G}
-    X_13 := 0;                          #  3 _13:int := _14:int 
-barrier X_15 := calc.<(X_13,2);         #  4 _15:bit := CMDvarLT(_13:int, _8:int) {J8}
-    io.print("Welcome");                #  5 _16:void := IOprint_val(_17:str) {G}
-    X_13 := calc.+(X_13,1);             #  6 _13:int := CMDvarADDsignal(_13:int, _18:int) 
-    redo X_15 := calc.<(X_13,2);        #  7 _15:bit := CMDvarLT(_13:int, _8:int) {J5}
-exit X_15;                              #  8 _15:bit 
-    a := X_13;                          #  9 a:int := _13:int 
-    io.print(a);                        # 10 _9:void := IOprint_val(a:int) 
-    mdb.List();                         # 11 _10:void := MDBlistDetail() 
-end user.main;                          # 12  
+    io.print("test expansion":str);
+    X_13:int := 0:int;
+barrier X_15:bit := calc.<(X_13:int,2:int);
+    io.print("Welcome":str);
+    X_13:int := calc.+(X_13:int,1:int);
+    redo X_15:bit := calc.<(X_13:int,2:int);
+exit X_15:bit;
+    a:int := X_13:int;
+    io.print(a:int);
+    mdb.List();
+end user.main;
 
 # 19:36:05 >  
 # 19:36:05 >  Done.

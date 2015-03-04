@@ -315,7 +315,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       protocol <- redirect[[1]][1]
       if (protocol == "merovingian") {
         # retry auth on same connection, we will get a new challenge
-        .mapiAuthenticate(con, dbname, user, password, endhashfunc)
+        .mapiAuthenticate(con, dbname, user, password, endhashfunc, language)
       }
       if (protocol == "monetdb") {
         stop("Forwarding to another server (", link, ") not supported.")
@@ -327,8 +327,10 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   } else {
     if (getOption("monetdb.debug.mapi", F)) message("II: Authentication successful.")
     # setting some server parameters...not sure if this should happen here
-    .mapiWrite(con, paste0("Xreply_size ", REPLY_SIZE)); .mapiRead(con)
-    .mapiWrite(con, "Xauto_commit 1"); .mapiRead(con)
+    if (language == "sql") {
+      .mapiWrite(con, paste0("Xreply_size ", REPLY_SIZE)); .mapiRead(con)
+      .mapiWrite(con, "Xauto_commit 1"); .mapiRead(con)
+    }
   }
 }
 

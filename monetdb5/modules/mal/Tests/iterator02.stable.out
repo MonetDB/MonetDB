@@ -30,11 +30,11 @@ function user.main():void;
     io.print(t);
     rb := bat.new(:oid,:url);
     io.print("start loop");
-barrier (h:oid ,B2:url ) := iterator.new(t);
+barrier (h:oid,B2:url) := iterator.new(t);
     io.print(B2);
     bat.append(rb,B2);
-    redo (h:oid ,B2:url ) := iterator.next(t);
-exit h:oid ;
+    redo (h:oid,B2:url) := iterator.next(t);
+exit h:oid;
     io.print(rb);
 end user.main;
 [ "build a table finished" ]

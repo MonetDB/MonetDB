@@ -83,8 +83,8 @@ conn.query('MEHR BIER',
 
 
 /* fire-and-forget query with parameters */
-conn.query('SELECT id from tables where name=? and type=? and readonly=?',
-	['connections', 0, false], function(err, res) {
+conn.query('SELECT id from tables where name=? and type=? and temporary=?',
+	['connections', 0, 0], function(err, res) {
 		assert.equal(null, err);
 		assert(res.rows > 0);
 }); 
@@ -95,8 +95,8 @@ conn.log_callback = function(message, error, result) {
 	assert(message); // message must contain something
 	++nr_log_callbacks;
 }
-conn.query('SELECT id FROM tables WHERE name=? AND type=? AND readonly=?',
-	['connections', 0, false], function(err, res) {
+conn.query('SELECT id FROM tables WHERE name=? AND type=? AND temporary=?',
+	['connections', 0, 0], function(err, res) {
 		assert.equal(null, err);
 		assert(nr_log_callbacks > 0);
 		conn.log_callback = null;	
@@ -113,11 +113,11 @@ conn.query("SELECT '\\\\asdf','\"', '\\\"', '\\\\\"', '\\''", function(err, res)
 });
 
 /* prepared statements can also be re-used  */
-conn.prepare('SELECT id from tables where name=? and type=? and readonly=?', function(err, res){
+conn.prepare('SELECT id from tables where name=? and type=? and temporary=?', function(err, res){
 	assert.equal(null, err);
 
 	/* parameters can also be given as array */
-	res.exec(['connections', 0, false], function(err, res) {
+	res.exec(['connections', 0, 0], function(err, res) {
 		assert.equal(null, err);
 		assert(res.rows > 0);
 	});

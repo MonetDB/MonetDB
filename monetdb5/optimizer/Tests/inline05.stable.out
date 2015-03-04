@@ -28,12 +28,12 @@ function user.main():void;
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_7:str, _8:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:dbl] {inline} := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:dbl] := MANIFOLDremapMultiplex(_7:str, _8:str, b:bat[:oid,:int], _9:int) {G}
-end user.qry;                           #  5  
+function user.qry():void;
+    b:bat[:oid,:int] := bat.new(:oid,:int);
+    bat.append(b:bat[:oid,:int],1:int);
+    z:bat[:oid,:dbl]{inline} := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],b:bat[:oid,:int]);
+    z:bat[:oid,:dbl]{inline} := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],2:int);
+end user.qry;
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

@@ -1,21 +1,10 @@
 #!@PYTHON2@
 
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 #TODO:
 #=====
@@ -1292,6 +1281,7 @@ def ApproveOutput (env, TST) :
     os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
     FORCE = par['FORCE']
+    NOPATCH = par['NOPATCH']
 
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
@@ -1314,11 +1304,10 @@ def ApproveOutput (env, TST) :
             SYSTEM = stableOUTPUT.split(WHAT)[-1]
 
         if os.path.isfile(testOUTPUT):
-#                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
             if os.path.isfile(stableOUTPUT):
-                oc = 'overwriting old'
+                oc = '   (overwriting old file)'
             else:
-                oc = 'creating new'
+                oc = '   (creating new file)'
                 if os.path.isfile(stableOUT):
                     shutil.copy(stableOUT,stableOUTPUT)
                 else:
@@ -1338,7 +1327,9 @@ def ApproveOutput (env, TST) :
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
-                print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc)
+                if not verbose:
+                    oc = ''
+                print "Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc)
 
                 f = open(patch + ".1", "wb")
                 for l in open(patch + ".0"):
@@ -1363,7 +1354,10 @@ def ApproveOutput (env, TST) :
                 o = open(stableOUTPUT).read()
                 open(stableOUTPUT + ".ORG", 'wb').write(o)
                 open(stableOUTPUT, 'wb').write(o)
-                proc = process.Popen(['patch', stableOUTPUT, patch + '.1'])
+                patchcmd = ['patch']
+                if not verbose:
+                    patchcmd.append('--quiet')
+                proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'])
                 proc.wait()
                 f = open(patch, 'w')
                 proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
@@ -1381,22 +1375,23 @@ def ApproveOutput (env, TST) :
                 dir,file = os.path.split(stableOUT)
                 test = re.compile('^%s.*$' % re.escape(file))
                 list = []
-                for f in os.listdir(dir or os.curdir):
-                    if f != thefile and test.match(f):
-                        remove(os.path.join(dir or os.curdir, f + '.rej'))
-                        remove(os.path.join(dir or os.curdir, f + '.orig'))
-                        proc = process.Popen(['patch', '--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
-                        proc.wait()
-                        if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
-                            list.append(f)
+                if not NOPATCH:
+                    for f in os.listdir(dir or os.curdir):
+                        if f.endswith('.rej') or f.endswith('.orig'):
+                            pass
+                        elif f != thefile and test.match(f):
+                            remove(os.path.join(dir or os.curdir, f + '.rej'))
+                            remove(os.path.join(dir or os.curdir, f + '.orig'))
+                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
+                            proc.wait()
+                            if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
+                                list.append(f)
                 if len(list) > 0:
-                    Warn('There are other (specific) stable outputs for test  %s\nfor which patching failed:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
-                    STDERR.write('  Look at the *.rej files in directory %s.\n\n' % os.path.join(TSTDIR,'Tests'))
-                    STDERR.flush()
-            else:
+                    Warn('There are other (specific) stable outputs for test\n%s for which patching failed:\n  %s\n\n  Look at the *.rej files in directory %s.' % (os.path.join(TSTDIR,'Tests',TST), str(list), os.path.join(TSTDIR,'Tests')))
+            elif verbose:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
             remove(patch + ".0")
-        else:
+        elif verbose:
             i = TST.rfind('.')
             if i > 0:
                 return ApproveOutput(env, TST[:i])
@@ -2018,7 +2013,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         if env['exe']['Mtimeout'][0]:
             # set timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            SetExecEnv(env['exe'],0)
+            SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
             if TIMEOUT > 0:
@@ -2166,7 +2161,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         if env['exe']['Mtimeout'][0]:
             # reset timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            SetExecEnv(env['exe'],0)
+            SetExecEnv(env['exe'],False)
 
         try:
             Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
@@ -2304,7 +2299,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 ACCURACYerr = 0
             else:
                 cmd.append('-d')
-            if quiet:
+            if not verbose:
                 cmd.append('-q')
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
@@ -3118,29 +3113,29 @@ def CheckClassPath() :
                 if os.path.isfile(p):
                     if f == 'BugConcurrent_clients_SF_1504657.class':
                         C = 'HAVE_JDBCTESTS_DIR'
-                        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ):
+                        if not CONDITIONALS.get(C):
                             cp = cp + os.pathsep + d
                             CONDITIONALS[C] = '#'
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if not JARS.has_key(C):
                             C = 'HAVE_MONETDBJDBC_JAR'
-                        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ) \
-                           and JARS[C].match(f):
+                        if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
                             CONDITIONALS[C] = '#'
     if cp:
         os.environ['CLASSPATH'] = cp
-    miss = ''
-    for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
-        C = 'HAVE_%s' % j.upper().replace('.','_')
-        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ):
-            miss += ' "%s"' % j
-    if miss and not quiet:
-        Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
-    if ( CONDITIONALS.has_key('HAVE_MONETDBJDBC_JAR') and CONDITIONALS['HAVE_MONETDBJDBC_JAR'] ) and \
-       ( ( CONDITIONALS.has_key('HAVE_JDBCTESTS_JAR') and CONDITIONALS['HAVE_JDBCTESTS_JAR'] ) or \
-         ( CONDITIONALS.has_key('HAVE_JDBCTESTS_DIR') and CONDITIONALS['HAVE_JDBCTESTS_DIR'] ) ):
+    if verbose:
+        miss = ''
+        for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
+            C = 'HAVE_%s' % j.upper().replace('.','_')
+            if not CONDITIONALS.get(C):
+                miss += ' "%s"' % j
+        if miss:
+            Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
+    if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
+       ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
+         CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath() #
 
@@ -3493,6 +3488,8 @@ def main(argv) :
               % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['INT128'], v['SINGLE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
+            ('nopatch', None, 'nopatch', None,
+             "do not attempt to patch other outputs"),
             ]
     else:
         options = []
@@ -3599,6 +3596,7 @@ def main(argv) :
         else:
             ErrXit("Extension (-x) must be one of: 'out', 'err' !")
         par['FORCE'] = opts.get('force', False)
+        par['NOPATCH'] = opts.get('nopatch', False)
         a = opts.get('sys')
         if a is None:
             par['SYSTEM'] = ''
@@ -3611,7 +3609,7 @@ def main(argv) :
 
     # display par's
     STDERR.flush()
-    if not quiet:
+    if verbose:
         for v in par.keys():
             #os.environ[v] = par[v]
             print"%s = %s" % (v, str(par[v]))
@@ -3665,7 +3663,7 @@ def main(argv) :
     for p in 'TSTSRCBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             rp = os.path.realpath(env[p])
-            if not quiet and os.path.normcase(rp) != os.path.normcase(env[p]):
+            if verbose and os.path.normcase(rp) != os.path.normcase(env[p]):
                 Warn("%s: Replacing logical path  %s  by absolute physical path  %s" % (p, env[p], rp))
             env[p] = rp
         else:
@@ -3759,9 +3757,9 @@ def main(argv) :
     for v in vars_:
         if env.has_key(v):
             os.environ[v] = env[v]
-            if not quiet:
+            if verbose:
                 print "%s = %s" % (v, env[v])
-    if not quiet:
+    if verbose:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
@@ -3857,10 +3855,7 @@ def main(argv) :
             if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
                 exe['Mtimeout'] = '', ''
             env['exe'] = exe
-            if not quiet:
-                SetExecEnv(exe,1)
-            else:
-                SetExecEnv(exe,0)
+            SetExecEnv(exe,verbose)
 
             #TODO:
             #exe['JAVA']       = 'java'
@@ -4003,7 +3998,7 @@ def main(argv) :
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)
             STDERR.flush()
-            if not quiet:
+            if verbose:
                 print "Bits: ", env['TST_BITS']
                 print "OIDs: ", env['TST_OIDS']
                 if env['TST_INT128']:
@@ -4040,7 +4035,7 @@ def main(argv) :
                 tsts = "tests "+str(testlist)
             else:
                 tsts = "all tests"
-            if not quiet:
+            if verbose:
                 print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
             t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts)
             if elem is not None:
@@ -4049,7 +4044,7 @@ def main(argv) :
                 else:
                     body_bad.append(elem)
         else:
-            if not quiet:
+            if verbose:
                 print "\nRunning all tests in directories %s.\n" % str(testdirs)
             for d in testdirs:
                 t, elem, diff = PerformDir(env, d, [], BusyPorts)
@@ -4214,7 +4209,9 @@ VALUES (%s, '%s', '%s', '%s',
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html")
                 sys.exit(1)
             else:
-                if not quiet:
+                if quiet:
+                    pass
+                elif verbose:
                     print """\
 
  No differences encountered during testing.
@@ -4222,11 +4219,12 @@ VALUES (%s, '%s', '%s', '%s',
  If necessary, you can checkin your modifications, now.
 """
                 else:
-                    print ""
+                    print "No differences encountered during testing."
                 sys.exit(0)
 
         if THISFILE == "Mapprove.py":
-            print """\
+            if not quiet:
+                print """\
 
  First, run 'hg diff` to check what you have changed.
 
