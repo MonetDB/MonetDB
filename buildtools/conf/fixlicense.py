@@ -17,14 +17,6 @@
 # Copyright August 2008-2015 MonetDB B.V.
 # All Rights Reserved.
 
-# This script requires Python 2.2 or later.
-
-# backward compatibility for Python 2.2
-try:
-    True
-except NameError:
-    False, True = 0, 1
-
 import os, sys, getopt, stat, re
 
 usage = '''\
@@ -62,8 +54,6 @@ license = [
     'Copyright August 2008-2015 MonetDB B.V.',
     'All Rights Reserved.',
     ]
-
-re_copyright = re.compile('(?:Copyright Notice:\n(.*-------*\n)?|=head1 COPYRIGHT AND LICENCE\n)')
 
 def main():
     func = addlicense
@@ -155,28 +145,31 @@ suffixrules = {
     '.xq':   ('(:',    ':)',  '',     ''),
     '.xs':   ('/*',    ' */', ' * ',  ''),
     '.y':    ('/*',    ' */', ' * ',  ''),
+    # we also match some complete filenames
+    'Makefile': ('', '', '# ', ''),
+    'configure.ag': ('', '', 'dnl ', ''),
     }
 
-def addlicense(file, pre = None, post = None, start = None, end = None, verbose = False):
+def getcomments(file, pre = None, post = None, start = None, end = None):
     ext = ''
     if pre is None and post is None and start is None and end is None:
-        root, ext = os.path.splitext(file)
-        if ext == '.in':
-            # special case: .in suffix doesn't count
-            root, ext = os.path.splitext(root)
-        if not suffixrules.has_key(ext):
-            # no known suffix
-            # see if file starts with #! (i.e. shell script)
-            try:
-                f = open(file)
+        if suffixrules.has_key(os.path.basename(file)):
+            ext = os.path.basename(file)
+        else:
+            root, ext = os.path.splitext(file)
+            if ext == '.in':
+                # special case: .in suffix doesn't count
+                root, ext = os.path.splitext(root)
+            if not suffixrules.has_key(ext):
+                # no known suffix
+                # see if file starts with #! (i.e. shell script)
+                f = open(file)      # can raise IOError
                 line = f.readline()
                 f.close()
-            except IOError:
-                return
-            if line[:2] == '#!':
-                ext = '.sh'
-            else:
-                return
+                if line[:2] == '#!':
+                    ext = '.sh'
+                else:
+                    return '', '', '', '', ''
         pre, post, start, end = suffixrules[ext]
     if not pre:
         pre = ''
@@ -186,6 +179,11 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         start = ''
     if not end:
         end = ''
+    return ext, pre, post, start, end
+
+PERL_COPYRIGHT = 'COPYRIGHT AND LICENCE\n\n'
+
+def addlicense(file, pre = None, post = None, start = None, end = None, verbose = False):
     try:
         f = open(file)
     except IOError:
@@ -197,15 +195,23 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         print >> sys.stderr, 'Cannot create temp file %s.new' % file
         return
     data = f.read()
-    res = re_copyright.search(data)
-    if res is not None:
-        pos = res.end(0)
+    if PERL_COPYRIGHT in data:
+        pos = data.find(PERL_COPYRIGHT) + len(PERL_COPYRIGHT)
         g.write(data[:pos])
-        if ext == '.pm':
-            start = pre = post = end = ''
-        g.write(start.rstrip() + '\n')
+        for l in license:
+            if file.endswith('README'):
+                g.write('  ')
+            g.write(l)
+            g.write('\n')
+        g.write(data[pos:])
     else:
-        f.seek(0)
+        try:
+            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            if not ext:
+                return
+        except IOError:
+            return
+        f = open(file)
         line = f.readline()
         addblank = False
         if line[:2] == '#!':
@@ -221,6 +227,13 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
             # add a blank line
             addblank = True
             line = f.readline()
+        if line.find('vim:') >= 0:
+            # if file starts with a vim mode specification, keep
+            # the line there
+            g.write(line)
+            # add a blank line
+            addblank = True
+            line = f.readline()
         if line[:5] == '<?xml':
             # if line starts with an XML declaration, keep the line there
             g.write(line)
@@ -231,16 +244,12 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
             g.write('\n')
         if pre:
             g.write(pre + '\n')
-    for l in license:
-        if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
-            # if text after start begins with tab, remove spaces from start
-            g.write(start.rstrip() + l + end + '\n')
-        else:
-            g.write(start + l + end + '\n')
-    if res is not None:
-        # copy rest of file
-        g.write(data[pos:])
-    else:
+        for l in license:
+            if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
+                # if text after start begins with tab, remove spaces from start
+                g.write(start.rstrip() + l + end + '\n')
+            else:
+                g.write(start + l + end + '\n')
         if post:
             g.write(post + '\n')
         # add empty line after license
@@ -276,38 +285,6 @@ def normalize(s):
     return ' '.join(s.split())
 
 def dellicense(file, pre = None, post = None, start = None, end = None, verbose = False):
-    ext = ''
-    if pre is None and post is None and start is None and end is None:
-        root, ext = os.path.splitext(file)
-        if ext == '.in':
-            # special case: .in suffix doesn't count
-            root, ext = os.path.splitext(root)
-        if not suffixrules.has_key(ext):
-            # no known suffix
-            # see if file starts with #! (i.e. shell script)
-            try:
-                f = open(file)
-                line = f.readline()
-                f.close()
-            except IOError:
-                return
-            if line[:2] == '#!':
-                ext = '.sh'
-            else:
-                return
-        pre, post, start, end = suffixrules[ext]
-    if not pre:
-        pre = ''
-    if not post:
-        post = ''
-    if not start:
-        start = ''
-    if not end:
-        end = ''
-    pre = normalize(pre)
-    post = normalize(post)
-    start = normalize(start)
-    end = normalize(end)
     try:
         f = open(file)
     except IOError:
@@ -319,29 +296,15 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         print >> sys.stderr, 'Cannot create temp file %s.new' % file
         return
     data = f.read()
-    res = re_copyright.search(data)
-    if res is not None:
-        pos = res.end(0)
+    if PERL_COPYRIGHT in data:
+        pos = data.find(PERL_COPYRIGHT) + len(PERL_COPYRIGHT)
         g.write(data[:pos])
-        if ext == '.pm':
-            start = pre = post = end = ''
-        nl = data.find('\n', pos) + 1
-        nstart = normalize(start)
-        while normalize(data[pos:nl]) == nstart:
-            pos = nl
-            nl = data.find('\n', pos) + 1
-        line = data[pos:nl]
         for l in license:
-            nline = normalize(line)
-            if nline.find(normalize(l)) >= 0:
-                pos = nl
-                nl = data.find('\n', pos) + 1
-                line = data[pos:nl]
-                nline = normalize(line)
-            else:
-                # doesn't match
+            while data[pos] == ' ':
+                pos += 1
+            if data[pos:pos+len(l)+1] != l + '\n':
                 print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'file:    "%s"' % data[pos:pos+len(l)]
                 print >> sys.stderr, 'license: "%s"' % l
                 f.close()
                 g.close()
@@ -350,26 +313,20 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 except OSError:
                     pass
                 return
-        pos2 = pos
-        nl2 = nl
-        if normalize(line) == normalize(start):
-            pos2 = nl2
-            nl2 = data.find('\n', pos2) + 1
-            line = data[pos2:nl2]
-            nline = normalize(line)
-        if nline.find('Contributors') >= 0:
-            nstart = normalize(start)
-            nstartlen = len(nstart)
-            while normalize(line)[:nstartlen] == nstart and \
-                  len(normalize(line)) > 1:
-                pos2 = nl2
-                nl2 = data.find('\n', pos2) + 1
-                line = data[pos2:nl2]
-                nline = normalize(line)
-            pos = pos2
+            pos += len(l) + 1
         g.write(data[pos:])
     else:
-        f.seek(0)
+        try:
+            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            if not ext:
+                return
+        except IOError:
+            return
+        pre = normalize(pre)
+        post = normalize(post)
+        start = normalize(start)
+        end = normalize(end)
+        f = open(file)
         line = f.readline()
         if line[:2] == '#!':
             g.write(line)
@@ -377,6 +334,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             if line and line == '\n':
                 line = f.readline()
         if line.find('-*-') >= 0:
+            g.write(line)
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        if line.find('vim:') >= 0:
             g.write(line)
             line = f.readline()
             if line and line == '\n':
@@ -454,98 +416,46 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         print >> sys.stderr, 'Cannot move file %s into position' % file
 
 def listfile(file, pre = None, post = None, start = None, end = None, verbose = False):
-    ext = ''
-    if pre is None and post is None and start is None and end is None:
-        root, ext = os.path.splitext(file)
-        if ext == '.in':
-            # special case: .in suffix doesn't count
-            root, ext = os.path.splitext(root)
-        if not suffixrules.has_key(ext):
-            # no known suffix
-            # see if file starts with #! (i.e. shell script)
-            try:
-                f = open(file)
-                line = f.readline()
-                f.close()
-            except IOError:
-                return
-            if line[:2] == '#!':
-                ext = '.sh'
-            else:
-                return
-        pre, post, start, end = suffixrules[ext]
-    if not pre:
-        pre = ''
-    if not post:
-        post = ''
-    if not start:
-        start = ''
-    if not end:
-        end = ''
-    pre = normalize(pre)
-    post = normalize(post)
-    start = normalize(start)
-    end = normalize(end)
     try:
         f = open(file)
     except IOError:
         print >> sys.stderr, 'Cannot open file %s' % file
         return
     data = f.read()
-    res = re_copyright.search(data)
-    if res is not None:
-        pos = res.end(0)
-        if ext == '.pm':
-            start = pre = post = end = ''
-        nl = data.find('\n', pos) + 1
-        nstart = normalize(start)
-        while normalize(data[pos:nl]) == nstart:
-            pos = nl
-            nl = data.find('\n', pos) + 1
-        line = data[pos:nl]
+    if PERL_COPYRIGHT in data:
+        pos = data.find(PERL_COPYRIGHT) + len(PERL_COPYRIGHT)
         for l in license:
-            nline = normalize(line)
-            if nline.find(normalize(l)) >= 0:
-                pos = nl
-                nl = data.find('\n', pos) + 1
-                line = data[pos:nl]
-                nline = normalize(line)
-            else:
-                # doesn't match
+            while data[pos] == ' ':
+                pos += 1
+            if data[pos:pos+len(l)+1] != l + '\n':
                 print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'file:    "%s"' % data[pos:pos+len(l)]
                 print >> sys.stderr, 'license: "%s"' % l
                 f.close()
-                try:
-                    os.unlink(file + '.new')
-                except OSError:
-                    pass
                 return
-        pos2 = pos
-        nl2 = nl
-        if normalize(line) == normalize(start):
-            pos2 = nl2
-            nl2 = data.find('\n', pos2) + 1
-            line = data[pos2:nl2]
-            nline = normalize(line)
-        if nline.find('Contributors') >= 0:
-            nstart = normalize(start)
-            nstartlen = len(nstart)
-            while normalize(line)[:nstartlen] == nstart and \
-                  len(normalize(line)) > 1:
-                pos2 = nl2
-                nl2 = data.find('\n', pos2) + 1
-                line = data[pos2:nl2]
-                nline = normalize(line)
-            pos = pos2
+            pos += len(l) + 1
     else:
-        f.seek(0)
+        try:
+            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            if not ext:
+                return
+        except IOError:
+            return
+        pre = normalize(pre)
+        post = normalize(post)
+        start = normalize(start)
+        end = normalize(end)
+        f = open(file)
         line = f.readline()
         if line[:2] == '#!':
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
         if line.find('-*-') >= 0:
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        if line.find('vim:') >= 0:
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
@@ -562,10 +472,6 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 # doesn't match
                 print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
                 f.close()
-                try:
-                    os.unlink(file + '.new')
-                except OSError:
-                    pass
                 return
         for l in license:
             if nline.find(normalize(l)) >= 0:
