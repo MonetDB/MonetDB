@@ -195,6 +195,7 @@ stop_disconnect:
 
 char *currentfunction= 0;
 char *currentquery= 0;
+int currenttag;		// to distinguish query invocations
 lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
@@ -223,6 +224,7 @@ static void resetTachograph(void){
 	malsize= 0;
 	malargtop =0;
 	currentfunction = 0;
+	currenttag = 0;
 	currentquery = 0;
 	starttime = 0;
 	finishtime = 0;
@@ -404,23 +406,23 @@ showBar(int level, lng clk, char *stmt)
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
 		rendertime(clk,0);
-		printf("  %s     ",stamp);
+		printf("  %s    ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ETC ", (level == 100? '-':' '),stamp);
+		printf(" ETC%c%s ", (level == 100? '-':' '),stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk - duration ,0);
-		printf(" +%s ETC ",stamp);
+		printf(" ETC+%s ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
 	renderCall(line,MSGLEN,(stmt?stmt:""),0,1);
 	printf("%s",line);
 	fflush(stdout);
-	txtlength = 10 + stamplen + strlen(line);
+	txtlength = 9 + stamplen + strlen(line);
 	prevlevel = level;
 }
 
@@ -438,6 +440,7 @@ progressBarInit(char *qry)
 	}
 	fprintf(tachofd,"{ \"tachograph\":0.1,\n");
 	fprintf(tachofd," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+	fprintf(tachofd," \"tag\":\"%d\",\n",currenttag);
 	fprintf(tachofd," \"query\":\"%s\",\n",qry);
 	fprintf(tachofd," \"started\": "LLFMT",\n",starttime);
 	fprintf(tachofd," \"duration\":"LLFMT",\n",duration);
@@ -499,8 +502,10 @@ update(EventRecord *ev)
 			finishtime = ev->clkticks + ev->ticks;
 			duration = ev->ticks;
 		}
-		if (currentfunction == 0)
+		if (currentfunction == 0){
 			currentfunction = strdup(ev->fcn+9);
+			currenttag = ev->tag;
+		}
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		return;
@@ -539,6 +544,8 @@ update(EventRecord *ev)
 			prevquery = currentquery;
 			progressBarInit(ev->stmt);
 		}
+		if( ev->tag != currenttag)
+			return;	// forget all except one query
 		events[ev->pc].state = RUNNING;
 		renderCall(line,BUFSIZ, ev->stmt,0,1);
 		events[ev->pc].stmt = strdup(ev->stmt);
@@ -587,6 +594,7 @@ update(EventRecord *ev)
 		}
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
@@ -624,8 +632,11 @@ update(EventRecord *ev)
 	/* end the instruction box */
 	if (ev->state == DONE ){
 			
+		if( ev->tag != currenttag)
+			return;	// forget all except one query
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"done\",\n");
