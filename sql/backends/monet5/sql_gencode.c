@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -1861,7 +1850,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				    (q = newStmt(mb, "mkey", "bulk_rotate_xor_hash")) == NULL)
 					return -1;
 				if (!q) {
-					q = newStmt(mb, "mal", "multiplex");
+					if (f->func->type == F_UNION)
+						q = newStmt(mb, "batmal", "multiplex");
+					else
+						q = newStmt(mb, "mal", "multiplex");
 					if (q == NULL)
 						return -1;
 					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
