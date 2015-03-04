@@ -766,6 +766,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			hi = lo + BATcount(b);
 			b = b2;
+			bi = bat_iterator(b);
 		} else {
 			lo = BUNfirst(b);
 			hi = BUNlast(b);
