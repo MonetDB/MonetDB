@@ -9,14 +9,13 @@ CREATE FUNCTION pagerank(arg1 integer, arg2 integer) RETURNS TABLE ("node" integ
 	return(data.frame(node=as.integer(V(graph)), rank=page.rank(graph)$vector))
 };
 
+SELECT * FROM pagerank(1,2);
+
 -- this is the naive version that would be nicest
-SELECT * FROM pagerank(edges);
+--SELECT * FROM pagerank(edges);
 
 -- of course, a subselect might also be useful 
-SELECT * FROM pagerank(SELECT * FROM edges AS e);
-
--- or a CTE?
-WITH e AS SELECT * FROM edges SELECT * FROM pagerank(e); 
+SELECT * FROM pagerank( (SELECT * FROM edges AS e) );
 
 -- output should be
 --   node      rank

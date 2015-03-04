@@ -44,24 +44,27 @@
 static str
 OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i = 2, resB, iter = 0, cr;
+	int i = 2, iter = 0;
 	int hvar, tvar;
 	str mod, fcn;
 	int *alias;
 	InstrPtr q;
 	int ht, tt;
+	int *resB;
 
 	(void) cntxt;
 	(void) stk;
 
-	ht = getHeadType(getArgType(mb, pci, 0));
-	if (ht != TYPE_oid)
-		throw(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getColumnType(getArgType(mb, pci, 0));
-	if (tt== TYPE_any)
-		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
-	if (isAnyExpression(getArgType(mb, pci, 0)))
-		throw(MAL, "optimizer.multiplex", "Target type is missing");
+	for (i = 0; i < pci->retc; i++) {
+		ht = getHeadType(getArgType(mb, pci, i));
+		if (ht != TYPE_oid)
+			throw(MAL, "optimizer.multiplex", "Target head type is missing");
+		tt = getColumnType(getArgType(mb, pci, i));
+		if (tt== TYPE_any)
+			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
+		if (isAnyExpression(getArgType(mb, pci, i)))
+			throw(MAL, "optimizer.multiplex", "Target type is missing");
+	}
 
 	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
 	mod = putName(mod,strlen(mod));
@@ -98,16 +101,26 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 */
 
 	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
-	if (alias == NULL)
+	resB = (int*)GDKmalloc(sizeof(int)*pci->retc);
+	if (alias == NULL || resB == NULL)  {
+		GDKfree(alias);
+		GDKfree(resB);
 		return NULL;
+	}
 
 	/* resB := new(refBat) */
-	q = newFcnCall(mb, batRef, newRef);
-	resB = getArg(q, 0);
+	for (i = 0; i < pci->retc; i++) {
+		q = newFcnCall(mb, batRef, newRef);
+		resB[i] = getArg(q, 0);
 
-	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-	q = pushType(mb, q, ht);
-	q = pushType(mb, q, tt);
+		ht = getHeadType(getArgType(mb, pci, i));
+		tt = getColumnType(getArgType(mb, pci, i));
+
+		setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+		q = pushType(mb, q, ht);
+		q = pushType(mb, q, tt);
+	}
+
 	/* barrier (h,r) := iterator.new(refBat); */
 	q = newFcnCall(mb, iteratorRef, newRef);
 	q->barrier = BARRIERsymbol;
@@ -118,10 +131,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pushArgument(mb,q,iter);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
-	alias[i] = tvar;
-
-	for (i++; i < pci->argc; i++)
-		if (isaBatType(getArgType(mb, pci, i))) {
+	for (i = pci->retc+2; i < pci->argc; i++)
+		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
@@ -131,21 +142,26 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCall(mb, mod, fcn);
-	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
+	q->retc = pci->retc;
+	q->argc = pci->retc;
+	for (i = 0; i < pci->retc; i++) 
+		getArg(q, i) = newTmpVariable(mb, TYPE_any);
 
-	for (i = pci->retc+2; i < pci->argc; i++)
-		if (isaBatType(getArgType(mb, pci, i))) {
-			q= pushArgument(mb, q, alias[i]);
+	for (i = pci->retc+2; i < pci->argc; i++) {
+		if (getArg(pci, i) == iter) {
+			q = pushArgument(mb, q, tvar);
+		} else if (isaBatType(getArgType(mb, pci, i))) {
+			q = pushArgument(mb, q, alias[i]);
 		} else {
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
+	}
 
-	/* append(resB,h,cr);
-	   not append(resB, cr); the head type (oid) may dynamically change */
-
-	q = newFcnCall(mb, batRef, appendRef);
-	q= pushArgument(mb, q, resB);
-	(void) pushArgument(mb, q, cr);
+	for (i = 0; i < pci->retc; i++) {
+		InstrPtr a = newFcnCall(mb, batRef, appendRef);
+		a = pushArgument(mb, a, resB[i]);
+		(void) pushArgument(mb, a, getArg(q,i));
+	}
 
 /* redo (h,r):= iterator.next(refBat); */
 	q = newFcnCall(mb, iteratorRef, nextRef);
@@ -159,9 +175,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getArg(q,0) = hvar;
 	(void) pushReturn(mb, q, tvar);
 
-	q = newAssignment(mb);
-	getArg(q, 0) = getArg(pci, 0);
-	(void) pushArgument(mb, q, resB);
+	for (i = 0; i < pci->retc; i++) {
+		q = newAssignment(mb);
+		getArg(q, 0) = getArg(pci, i);
+		(void) pushArgument(mb, q, resB[i]);
+	}
 	GDKfree(alias);
 	return MAL_SUCCEED;
 }
