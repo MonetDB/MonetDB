@@ -404,24 +404,23 @@ showBar(int level, lng clk, char *stmt)
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
 		rendertime(clk,0);
-		printf("  %s ",stamp);
+		printf("  %s     ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ", (level == 100? '-':' '),stamp);
+		printf(" %c%s ETC ", (level == 100? '-':' '),stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk - duration ,0);
-		printf(" +%s ",stamp);
+		printf(" +%s ETC ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
-	if(stmt)
-		renderCall(line,MSGLEN,stmt,0,1);
+	renderCall(line,MSGLEN,(stmt?stmt:""),0,1);
 	printf("%s",line);
 	fflush(stdout);
-	txtlength = 6 + stamplen + strlen(line);
+	txtlength = 10 + stamplen + strlen(line);
 	prevlevel = level;
 }
 
@@ -639,9 +638,9 @@ update(EventRecord *ev)
 
 		events[ev->pc].state= FINISHED;
 		free(ev->stmt);
-		if( duration)
-			progress = (int)(ev->clkticks / (duration/100.0));
-		else
+		//if( duration)
+			//progress = (int)(ev->clkticks / (duration/100.0));
+		//else
 			progress = (int)(pccount++ / (malsize/100.0));
 		if( progress > prevprogress ){
 			// pick up last unfinished instruction
