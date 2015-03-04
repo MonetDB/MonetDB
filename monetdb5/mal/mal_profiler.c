@@ -113,7 +113,8 @@ static void logsend(char *logbuffer)
 			offlineProfilerHeader();
 		eventcounter++;
 		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
-		error= mnstr_flush(eventstream);
+		if( error == 0)
+			error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
 		if ( error) stopProfiler();
 	}
