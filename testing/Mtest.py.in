@@ -3119,29 +3119,29 @@ def CheckClassPath() :
                 if os.path.isfile(p):
                     if f == 'BugConcurrent_clients_SF_1504657.class':
                         C = 'HAVE_JDBCTESTS_DIR'
-                        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ):
+                        if not CONDITIONALS.get(C):
                             cp = cp + os.pathsep + d
                             CONDITIONALS[C] = '#'
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if not JARS.has_key(C):
                             C = 'HAVE_MONETDBJDBC_JAR'
-                        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ) \
-                           and JARS[C].match(f):
+                        if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
                             CONDITIONALS[C] = '#'
     if cp:
         os.environ['CLASSPATH'] = cp
-    miss = ''
-    for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
-        C = 'HAVE_%s' % j.upper().replace('.','_')
-        if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ):
-            miss += ' "%s"' % j
-    if miss and not quiet:
-        Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
-    if ( CONDITIONALS.has_key('HAVE_MONETDBJDBC_JAR') and CONDITIONALS['HAVE_MONETDBJDBC_JAR'] ) and \
-       ( ( CONDITIONALS.has_key('HAVE_JDBCTESTS_JAR') and CONDITIONALS['HAVE_JDBCTESTS_JAR'] ) or \
-         ( CONDITIONALS.has_key('HAVE_JDBCTESTS_DIR') and CONDITIONALS['HAVE_JDBCTESTS_DIR'] ) ):
+    if verbose:
+        miss = ''
+        for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
+            C = 'HAVE_%s' % j.upper().replace('.','_')
+            if not CONDITIONALS.get(C):
+                miss += ' "%s"' % j
+        if miss:
+            Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
+    if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
+       ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
+         CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath() #
 
