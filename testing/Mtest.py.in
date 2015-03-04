@@ -1390,7 +1390,9 @@ def ApproveOutput (env, TST) :
                 list = []
                 if not NOPATCH:
                     for f in os.listdir(dir or os.curdir):
-                        if f != thefile and test.match(f):
+                        if f.endswith('.rej') or f.endswith('.orig'):
+                            pass
+                        elif f != thefile and test.match(f):
                             remove(os.path.join(dir or os.curdir, f + '.rej'))
                             remove(os.path.join(dir or os.curdir, f + '.orig'))
                             proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
