@@ -219,7 +219,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     X_264:bat[:oid,:lng] := batcalc.-(X_255,X_263);
     X_265:bat[:oid,:hge] := batcalc.*(X_253,X_264);
     X_266:hge := aggr.sum(X_265);
-    sql.exportValue(1,"sys.L1","revenue","decimal",33,4,9,X_266,"");
+    sql.exportValue(1,"sys.L1","revenue","decimal",33,4,10,X_266,"");
 end user.s2_1;
 
 # 22:53:30 >  
