@@ -143,8 +143,8 @@ fndSource(char *varname)
 		fprintf(stderr,"fndSource %s\n",varname);
 	for( i=0; i< srctop; i++)
 	if( strcmp(varname, sources[i].varname)==0)
-		return sources[i].source;
-	return "TEMP";
+		return strdup(sources[i].source);
+	return strdup(varname);
 }
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
@@ -302,35 +302,9 @@ static struct{
 	{0,0,0,0,0}};
 
 static void
-renderCall(char *line, int len, char *stmt, int state, int mode)
+renderArgs(char *c, int len,  char *line, char *limit, char *l)
 {
-	char *limit= line + len, *l = line, *c = stmt;
-	int i;
 	char varname[BUFSIZ], *v=0;
-
-	(void) state;
-	// look for assignment
-	c = strstr(c,":=");
-	if( c) 
-		c+=2;
-	else c=stmt;
-
-	while ( *c && isspace((int) *c)) c++;
-	/* consider a function name remapping */
-	if( mode){
-		for(i=0; mapping[i].name; i++)
-			if( strncmp(c,mapping[i].name, mapping[i].length) == 0){
-				c+= mapping[i].length;
-				sprintf(l,"%s",  mapping[i].alias);
-				l += mapping[i].newl;
-				*l=0;
-				break;
-			}
-		while(*c && *c !='(') *l++= *c++;
-	}  else
-		while(*c && *c !='(') *l++= *c++;
-	// handle argument list
-	if( *c == '(') *l++ = *c++;
 	for(; *c && *c !=')' && l < limit-1; ){
 		v= 0;
 		if(isalpha((int)*c) ){ 
@@ -346,6 +320,7 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 				v= fndSource(varname);
 				snprintf(l, len -strlen(line)-2,"%s",v);
 				while(*l) l++;
+				free(v);
 			}
 			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
 			if( *c == ']' && l < limit) *l++ = *c++;
@@ -367,8 +342,50 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 			for(v = varname; *v; ) *l++ = *v++;
 		*l++= *c++;
 	}
-	*l++ = *c;
+	if(*c) *l++ = *c;
 	*l=0;
+}
+
+static void
+renderCall(char *line, int len, char *stmt, int state, int mode)
+{
+	char *limit= line + len, *l = line, *c = stmt, *s;
+	int i;
+
+	(void) state;
+	// look for assignment
+	c = strstr(c,":=");
+	if( c) {
+		if(state){
+			// for finished instructions show the result too
+			*c =0;
+			s = stmt;
+			if( *s == '(') *l++ = *c++;
+			renderArgs(s, len, line, limit, l);
+			while(*l) l++;
+			sprintf(l," := ");
+			while(*l) l++;
+		}
+		c+=2;
+	 } else c=stmt;
+
+	while ( *c && isspace((int) *c)) c++;
+	/* consider a function name remapping */
+	if( mode){
+		for(i=0; mapping[i].name; i++)
+			if( strncmp(c,mapping[i].name, mapping[i].length) == 0){
+				c+= mapping[i].length;
+				sprintf(l,"%s",  mapping[i].alias);
+				l += mapping[i].newl;
+				*l=0;
+				break;
+			}
+		while(*c && *c !='(') *l++= *c++;
+	}  else
+		while(*c && *c !='(') *l++= *c++;
+	// handle argument list
+	if( *c == '(') *l++ = *c++;
+	renderArgs(c, len, line, limit, l);
 }
 
 static void
