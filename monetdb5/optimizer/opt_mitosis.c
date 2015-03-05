@@ -117,7 +117,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Experience shows that the pieces should not be too small.
 	 * If we should limit to |threads| is still an open issue.
 	 */
-	r = (wrd) (monet_memory / argsize);
+	r = (wrd) (monet_memory / argsize/ MCactiveClients());
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
 	 * i.e., (rowcnt > monet_memory/argsize = r) */
@@ -128,7 +128,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * i.e., (rowcnt/pieces <= r/threads),
 		 * i.e., (pieces => rowcnt/(r/threads))
 		 * (assuming that (r > threads*MINPARTCNT)) */
-		pieces = (int) (rowcnt / (r / threads)) + 1;
+		pieces = (int) (rowcnt / (r / threads/ MCactiveClients())) + 1;
 	} else if (rowcnt > MINPARTCNT) {
 	/* exploit parallelism, but ensure minimal partition size to
 	 * limit overhead */
