@@ -277,14 +277,14 @@ static struct{
 	{"language.pass(nil)", 18,	"pass", 4, 0},
 	{"mat.packIncrement", 17, "pack",4, 0},
 	{"language.pass", 13,	"pass", 4, 0},
-	{"aggr.subcount", 13,	"count", 3, 0},
+	{"aggr.subcount", 13,	"count", 5, 0},
 	{"sql.subdelta", 12, "project",7, 0},
 	{"bat.append", 10,	"append", 6, 0},
 	{"aggr.subavg", 11,	"average", 7, 0},
 	{"aggr.subsum", 11,	"sum", 3, 0},
 	{"aggr.submin", 11,	"minimum", 7, 0},
 	{"aggr.submax", 11,	"maximum", 7, 0},
-	{"aggr.count", 10,	"count", 3, 0},
+	{"aggr.count", 10,	"count", 5, 0},
 	{"calc.lng", 8,	"long", 4, 0},
 	{"sql.bind", 8,	"bind", 4, 0},
 	{"batcalc.hge", 11, "hugeint", 7, 0},
@@ -306,8 +306,9 @@ renderArgs(char *c, int len,  char *line, char *limit, char *l)
 {
 	char varname[BUFSIZ], *v=0;
 	for(; *c && *c !=')' && l < limit-1; ){
+		if( *c == ',')*l++= *c++;
 		v= 0;
-		if(isalpha((int)*c) ){ 
+		if(isalpha((int)*c) || *c == '_' ){ 
 			v= varname;
 			while(*c && (isalnum((int)*c) || *c=='_')) *v++ = *c++;
 			*v=0;
@@ -323,13 +324,17 @@ renderArgs(char *c, int len,  char *line, char *limit, char *l)
 				free(v);
 			}
 			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
-			if( *c == ']' && l < limit) *l++ = *c++;
+			while(*c && *c != ']') c++;
+			if( *c == ']' ) *l++ = *c++;
 		}
 		if (*c == '"' ) {
 			*l++ = *c++;
 			while(*c && *c !='"' && *(c-1) !='\\' && l < limit-2 ) *l++ =*c++;
-		}  else
+			while(*c && *c !='"') c++;
+		}  else{
 			while(*c && *c !=':' && *c !=',' && l < limit-2) *l++ = *c++;
+			while(*c && *c !=':' && *c !=',' )  c++;
+		}
 		if (*c == ':'){
 			if( strncmp(c,":bat",4)== 0){
 				while(*c && *c !=']') c++;
@@ -340,7 +345,6 @@ renderArgs(char *c, int len,  char *line, char *limit, char *l)
 		// literals
 		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
 			for(v = varname; *v; ) *l++ = *v++;
-		*l++= *c++;
 	}
 	if(*c) *l++ = *c;
 	*l=0;
@@ -354,19 +358,20 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 
 	(void) state;
 	// look for assignment
-	c = strstr(c,":=");
+	c = strstr(c," :=");
 	if( c) {
 		if(state){
 			// for finished instructions show the result too
 			*c =0;
 			s = stmt;
-			if( *s == '(') *l++ = *c++;
+			while(*s && isspace((int) *s)) s++;
+			if( *s == '(') *l++ = *s++;
 			renderArgs(s, len, line, limit, l);
 			while(*l) l++;
 			sprintf(l," := ");
 			while(*l) l++;
 		}
-		c+=2;
+		c+=3;
 	 } else c=stmt;
 
 	while ( *c && isspace((int) *c)) c++;
