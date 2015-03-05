@@ -214,7 +214,7 @@
  * Note this algorithm depends critically on the fact that our hash
  * chains go from higher to lower BUNs.
  */
-#define GRP_use_existing_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+#define GRP_use_existing_hash_table(INIT_0,INIT_1,COMP)			\
 	do {								\
 		INIT_0;							\
 		for (r = lo, p = r, q = hi;				\
@@ -270,7 +270,6 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
-	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* COMP   */	w[p] == w[hb]				\
 	)
 
@@ -278,7 +277,6 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* HASH   */	HASHprobe(hs, v)		,	\
 	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
