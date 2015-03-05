@@ -939,8 +939,13 @@ fltToStr(char **dst, int *len, const flt *src)
 	}
 	for (i = 4; i < 10; i++) {
 		snprintf(*dst, *len, "%.*g", i, *src);
+#ifdef HAVE_STRTOF
 		if (strtof(*dst, NULL) == *src)
 			break;
+#else
+		if ((float) strtod(*dst, NULL) == *src)
+			break;
+#endif
 	}
 	return (int) strlen(*dst);
 }

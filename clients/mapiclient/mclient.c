@@ -1050,11 +1050,20 @@ TESTrenderer(MapiHdl hdl)
 			} else if (strcmp(tp, "real") == 0) {
 				char buf[32];
 				int j;
+#ifdef HAVE_STRTOF
 				float v = strtof(s, NULL);
+#else
+				float v = (float) strtod(s, NULL);
+#endif
 				for (j = 4; j < 6; j++) {
 					snprintf(buf, sizeof(buf), "%.*g", j, v);
+#ifdef HAVE_STRTOF
 					if (v == strtof(buf, NULL))
 						break;
+#else
+					if (v == (float) strtod(buf, NULL))
+						break;
+#endif
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else
