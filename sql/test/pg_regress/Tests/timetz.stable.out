@@ -48,6 +48,9 @@ Ready.
 [ 1 ]
 #INSERT INTO TIMETZ_TBL VALUES ('11:59:59.99 PM PDT');
 [ 1 ]
+#INSERT INTO TIMETZ_TBL VALUES (null);
+[ 1	]
+#SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL;
 % sys.L # table_name
 % "Time TZ" # name
@@ -63,6 +66,7 @@ Ready.
 [ 13:01:00.00+01:00	]
 [ 00:59:00.00+01:00	]
 [ 12:59:59.99+01:00	]
+[ NULL	]
 #SELECT f1 AS "Three" FROM TIMETZ_TBL WHERE f1 < '05:06:07-07';
 % sys.L # table_name
 % Three # name
@@ -103,8 +107,58 @@ Ready.
 [ 13:01:00.00+01:00	]
 [ 00:59:00.00+01:00	]
 [ 12:59:59.99+01:00	]
-#INSERT INTO TIMETZ_TBL VALUES (null);
-[ 1	]
+#SET TIME ZONE INTERVAL '+04:30' HOUR TO MINUTE;
+#SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
+% sys.L # table_name
+% "Time TZ" # name
+% timetz # type
+% 17 # length
+[ NULL	]
+[ 04:31:00.00+04:30	]
+[ 05:30:00.00+04:30	]
+[ 06:33:00.00+04:30	]
+[ 11:37:00.00+04:30	]
+[ 12:38:00.00+04:30	]
+[ 16:29:00.00+04:30	]
+[ 16:29:59.99+04:30	]
+[ 16:30:00.00+04:30	]
+[ 16:31:00.00+04:30	]
+[ 04:29:00.00+04:30	]
+#SET TIME ZONE INTERVAL '+14:00' HOUR TO MINUTE;
+#SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
+% sys.L # table_name
+% "Time TZ" # name
+% timetz # type
+% 17 # length
+[ NULL	]
+[ 14:01:00.00+14:00	]
+[ 15:00:00.00+14:00	]
+[ 16:03:00.00+14:00	]
+[ 21:07:00.00+14:00	]
+[ 22:08:00.00+14:00	]
+[ 01:59:00.00+14:00	]
+[ 01:59:59.99+14:00	]
+[ 02:00:00.00+14:00	]
+[ 02:01:00.00+14:00	]
+[ 13:59:00.00+14:00	]
+#SET TIME ZONE INTERVAL '-07:00' HOUR TO MINUTE;
+#SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
+% sys.L # table_name
+% "Time TZ" # name
+% timetz # type
+% 17 # length
+[ NULL	]
+[ 17:01:00.00-07:00	]
+[ 18:00:00.00-07:00	]
+[ 19:03:00.00-07:00	]
+[ 00:07:00.00-07:00	]
+[ 01:08:00.00-07:00	]
+[ 04:59:00.00-07:00	]
+[ 04:59:59.99-07:00	]
+[ 05:00:00.00-07:00	]
+[ 05:01:00.00-07:00	]
+[ 16:59:00.00-07:00	]
+#SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #SELECT f1, "hour"(f1) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys.L # table_name
 % f1,	hour_sql_add_f1 # name
