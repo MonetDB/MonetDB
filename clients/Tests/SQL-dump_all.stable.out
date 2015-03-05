@@ -106,6 +106,7 @@ SYSTEM FUNCTION  sys.buffer
 SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION  sys.contains
+SYSTEM FUNCTION  sys.convert
 SYSTEM FUNCTION  sys.convexhull
 SYSTEM FUNCTION  sys.corr
 SYSTEM FUNCTION  sys.crosses

@@ -295,6 +295,9 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_header_list
+	header_list
+	header
 	ident_commalist
 	opt_corresponding
 	column_ref_commalist
@@ -2499,7 +2502,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_column_list opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2511,7 +2514,7 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_column_list opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2548,6 +2551,28 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+
+opt_header_list:
+       /* empty */		{ $$ = NULL; }
+ | '(' header_list ')'		{ $$ = $2; }
+ ;
+
+header_list:
+   header 			{ $$ = append_list(L(), $1); }
+ | header_list ',' header 	{ $$ = append_list($1, $3); }
+ ;
+
+header:
+	ident		
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  $$ = l; }
+ |	ident STRING
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  append_string(l, $2 );
+			  $$ = l; }
+ ;
 
 opt_seps:
     /* empty */
