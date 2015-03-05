@@ -3200,6 +3200,8 @@ command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb]
 address wkbcreatepoint_bat;
 comment Construct a point-BAT from two geometry-BATs
 
+pattern batmal.multiplex(mod:str,fcn:str,a:any...):any... 
+address MANIFOLDremapMultiplex;
 command batalgebra.ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
 address BATPCREilike2;
 command batalgebra.ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 

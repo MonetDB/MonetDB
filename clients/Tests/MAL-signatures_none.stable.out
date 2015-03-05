@@ -2667,6 +2667,8 @@ command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte]
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+pattern batmal.multiplex(mod:str,fcn:str,a:any...):any... 
+address MANIFOLDremapMultiplex;
 command batalgebra.ilike(s:bat[:oid,:str],pat:str):bat[:oid,:bit] 
 address BATPCREilike2;
 command batalgebra.ilike(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:bit] 

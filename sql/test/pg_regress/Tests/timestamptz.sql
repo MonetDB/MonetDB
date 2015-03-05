@@ -127,7 +127,22 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES ('Jan 01 17:32:01 2001');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('Feb 16 17:32:01 -0097');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('Feb 16 17:32:01 5097 BC');
 
-SELECT '' AS "64", d1 FROM TIMESTAMPTZ_TBL;
+INSERT INTO TIMESTAMPTZ_TBL VALUES (null);
+
+SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
+SELECT '' AS "17", d1 FROM TIMESTAMPTZ_TBL;
+
+SET TIME ZONE INTERVAL '+04:30' HOUR TO MINUTE;
+SELECT d1 AS "Timestamp TZ" FROM TIMESTAMPTZ_TBL ORDER BY 1;
+
+SET TIME ZONE INTERVAL '+14:00' HOUR TO MINUTE;
+SELECT d1 AS "Timestamp TZ" FROM TIMESTAMPTZ_TBL ORDER BY 1;
+
+SET TIME ZONE INTERVAL '-07:00' HOUR TO MINUTE;
+SELECT d1 AS "Timestamp TZ" FROM TIMESTAMPTZ_TBL ORDER BY 1;
+
+SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
+
 
 -- Demonstrate functions and operators
 SELECT '' AS "48", d1 FROM TIMESTAMPTZ_TBL
@@ -237,8 +252,6 @@ SELECT '' AS to_timestamp_16, to_timestamp('200401', 'YYYYWW');
 
 
 /* SET DateStyle TO DEFAULT; */
-
-INSERT INTO TIMESTAMPTZ_TBL VALUES (null);
 
 -- test MonetDB date functions
 -- select distinct name, func, mod, language, type, schema_id from sys.functions where id in (select func_id from sys.args where number in (0, 1) and name in ('res_0', 'arg_1') and type = 'timestamptz') order by name, func, schema_id

@@ -892,7 +892,18 @@ sql_bind_func_result_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *op
 {
 	node *n = funcs->h;
 
-	(void)s;
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+		sql_arg *firstres = NULL;
+
+		if (!f->res)
+			continue;
+		firstres = f->res->h->data;
+		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
+			return sql_dup_subfunc(sa, f, ops, NULL);
+	}
+	if (s && s->funcs.set)
+		n = s->funcs.set->h;
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
 		sql_arg *firstres = NULL;
