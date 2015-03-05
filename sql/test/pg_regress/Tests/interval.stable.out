@@ -80,6 +80,12 @@ Ready.
 [ "",	-1.000	]
 [ "",	-1363962815083169.272	]
 [ "",	-5670419503621183.312	]
+#select avg(cast(f1 as decimal(22,3))) from interval_tbl;
+% sys.L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ -1.406863761e+18	]
 #select min(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
@@ -92,6 +98,12 @@ Ready.
 % sec_interval # type
 % 0 # length
 [ 63513504000.000	]
+#select sum(cast(f1 as decimal(22,3))) from interval_tbl;
+% sys.L2 # table_name
+% L2 # name
+% decimal # type
+% 24 # length
+[ -7034318805200352350.000	]
 #select count(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
