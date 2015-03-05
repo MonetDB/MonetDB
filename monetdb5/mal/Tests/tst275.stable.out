@@ -54,8 +54,8 @@ end user.main;
 # h	t			t		  # name
 # oid	str			str		  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_633"  ]
-[ 1@0,	"batCacheid",	"411"  ]
+[ 0@0,	"batId",	"tmp_634"  ]
+[ 1@0,	"batCacheid",	"412"  ]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -104,7 +104,7 @@ end user.main;
 [ 47@0,	"htop",	"0"  ]
 [ 48@0,	"ttop",	"0"  ]
 [ 49@0,	"batStamp",	"205"  ]
-[ 50@0,	"lastUsed",	"11231"  ]
+[ 50@0,	"lastUsed",	"11155"  ]
 [ 51@0,	"curStamp",	"207"  ]
 [ 52@0,	"batCopiedtodisk",	"0"  ]
 [ 53@0,	"batDirtydesc",	"dirty"  ]
@@ -119,7 +119,7 @@ end user.main;
 [ 62@0,	"tail.size",	"1024"  ]
 [ 63@0,	"tail.storage",	"malloced"  ]
 [ 64@0,	"tail.newstorage",	"malloced"  ]
-[ 65@0,	"tail.filename",	"06/633.tail"  ]
+[ 65@0,	"tail.filename",	"06/634.tail"  ]
 [ 66@0,	"H->vheap->dirty",	"clean"  ]
 [ 67@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#

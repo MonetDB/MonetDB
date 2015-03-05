@@ -31,7 +31,7 @@ function user.main():void;
     mdb.List("user","tst");
 end user.main;
 function user.tst():void;
-    io.print(57.295779513082323:dbl);
+    io.print(57.29577951308232:dbl);
 end user.tst;
 
 # 21:32:15 >  

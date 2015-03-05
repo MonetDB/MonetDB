@@ -18,7 +18,7 @@ function user.main():void;
     in := nil:int;
     io.printf("int %d %d\n",i,in);
     io.printf("int %d %d %d %d\n",i,in,i,in);
-    f := 3.1400001;
+    f := 3.14;
     if := nil:flt;
     io.printf("float mix %f %d\n",f,if);
     l := 1:lng;

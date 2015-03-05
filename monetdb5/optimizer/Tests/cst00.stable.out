@@ -38,8 +38,8 @@ function user.tst():void;
     io.print(6:int);
     d:flt := 6:flt;
     io.print(6:flt);
-    e:flt := -0.279415488:flt;
-    io.print(-0.279415488:flt);
+    e:flt := -0.2794155:flt;
+    io.print(-0.2794155:flt);
 end user.tst;
 
 # 08:40:57 >  

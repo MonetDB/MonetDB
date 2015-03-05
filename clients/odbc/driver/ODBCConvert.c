@@ -1371,7 +1371,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_REAL: {
 			data = (char *) ptr;
 
-			for (i = 0; i < 18; i++) {
+			for (i = 4; i < 18; i++) {
 				sz = (SQLLEN) snprintf(data, buflen, "%.*g", i, fval);
 				if (sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;

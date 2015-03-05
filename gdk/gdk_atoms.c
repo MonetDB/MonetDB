@@ -844,7 +844,23 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	return (int) (p - src);
 }
 
-atomtostr(dbl, "%.17g", (double))
+int
+dblToStr(char **dst, int *len, const dbl *src)
+{
+	int i;
+
+	atommem(char, dblStrlen);
+	if (*src == dbl_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 18; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtod(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(dbl, Lng, lng)
 
 #ifdef _MSC_VER
@@ -912,7 +928,23 @@ fltFromStr(const char *src, int *len, flt **dst)
 	return n;
 }
 
-atomtostr(flt, "%.9g", (float))
+int
+fltToStr(char **dst, int *len, const flt *src)
+{
+	int i;
+
+	atommem(char, fltStrlen);
+	if (*src == flt_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 10; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtof(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(flt, Int, int)
 
 

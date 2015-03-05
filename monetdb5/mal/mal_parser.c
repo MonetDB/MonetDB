@@ -412,7 +412,7 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			cst->vtype = TYPE_flt;
+			cst->vtype = TYPE_dbl;
 		}
 		if (*s == 'e' || *s == 'E') {
 			i++;
@@ -446,11 +446,6 @@ cstToken(Client cntxt, ValPtr cst)
 				GDKfree(pval);
 			} else
 				cst->val.dval = 0;
-
-			if (cst->val.dval > FLT_MIN && cst->val.dval <= FLT_MAX) {
-				cst->vtype = TYPE_flt;
-				cst->val.fval = (flt) cst->val.dval;
-			}
 		}
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
@@ -835,6 +830,9 @@ propList(Client cntxt, int arg)
 						if( msg) GDKfree(msg);
 					} else
 						parseError(cntxt, "simple type expected\n");
+				} else if (cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+					cst.vtype = TYPE_flt;
+					cst.val.fval = (flt) cst.val.dval;
 				}
 				varSetProperty(curBlk, arg, pname, opname, &cst);
 			} else {
@@ -915,9 +913,13 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	malType tpe = TYPE_any;
 
 	if ((i = cstToken(cntxt, &cst))) {
+		advance(cntxt, i);
+		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+			cst.vtype = TYPE_flt;
+			cst.val.fval = (flt) cst.val.dval;
+		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
-			advance(cntxt, i);
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
@@ -942,7 +944,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant */
-			advance(cntxt, i);
 			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0)

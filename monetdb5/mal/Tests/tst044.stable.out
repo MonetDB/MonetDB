@@ -26,31 +26,31 @@ stdout of test 'tst044` in directory 'monetdb5/mal` itself:
 #
 function user.main():void;
 #testing floating point numbers; 
-    a := 3.14499998:flt;
+    a := 3.145:flt;
     io.print(a);
-    a := -3.14499998:flt;
+    a := -3.145:flt;
     io.print(a);
-    a := 3.45000005:flt;
+    a := 3.45:flt;
     io.print(a);
-    a := 0.341500014:flt;
+    a := 0.3415:flt;
     io.print(a);
-    b := 3.1449999809265137:dbl;
+    b := 3.145:dbl;
     io.print(b);
-    b := -3.1449999809265137:dbl;
+    b := -3.145:dbl;
     io.print(b);
-    b := 3.4500000476837158:dbl;
+    b := 3.45:dbl;
     io.print(b);
-    b := 0.34150001406669617:dbl;
+    b := 0.3415:dbl;
     io.print(b);
 end user.main;
-[ 3.14499998 ]
-[ -3.14499998 ]
-[ 3.45000005 ]
-[ 0.341500014 ]
-[ 3.1449999809265137 ]
-[ -3.1449999809265137 ]
-[ 3.4500000476837158 ]
-[ 0.34150001406669617 ]
+[ 3.145 ]
+[ -3.145 ]
+[ 3.45 ]
+[ 0.3415 ]
+[ 3.145 ]
+[ -3.145 ]
+[ 3.45 ]
+[ 0.3415 ]
 
 # 16:38:20 >  
 # 16:38:20 >  Done.
