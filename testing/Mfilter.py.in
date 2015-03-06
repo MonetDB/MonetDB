@@ -134,7 +134,9 @@ def mFilter (FILE, IGNORE) :
     il = iw = ic = el = ew = ec = al = aw = ac = 0
     for iline in open(FILE, 'rU'):
         iline = iline.replace('\033[?1034h','')
-        if iline.startswith('# builtin opt') or iline.startswith('# cmdline opt'):
+        if iline.startswith('# builtin opt') or \
+           iline.startswith('# cmdline opt') or \
+           iline.startswith('# config opt'):
             continue
         # normalize exponents in floating point representation: remove
         # leading zeros from exponent (but keeping at least one digit,
