@@ -145,6 +145,10 @@ def mFilter (FILE, IGNORE) :
     il = iw = ic = el = ew = ec = al = aw = ac = 0
     for iline in open(FILE, 'rU'):
         iline = iline.replace('\033[?1034h','')
+        # normalize exponents in floating point representation: remove
+        # leading zeros from exponent (but keeping at least one digit,
+        # even if zero)
+        iline = re.sub(r'(\d+(?:\.\d*)?e[-+]?)0*(\d+)', r'\1\2', iline)
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
             ig = 1
