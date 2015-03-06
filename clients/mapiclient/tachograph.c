@@ -417,23 +417,23 @@ showBar(int level, lng clk, char *stmt)
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
 		rendertime(clk,0);
-		printf("  %s    ",stamp);
+		printf("  %s      ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" ETC%c%s ", (level == 100? '-':' '),stamp);
+		printf(" %c%s ETC  ", (level == 100? '-':' '),stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk - duration ,0);
-		printf(" ETC+%s ",stamp);
+		printf(" +%s ETC  ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
 	renderCall(line,MSGLEN,(stmt?stmt:""),0,1);
 	printf("%s",line);
 	fflush(stdout);
-	txtlength = 9 + stamplen + strlen(line);
+	txtlength = 11 + stamplen + strlen(line);
 	prevlevel = level;
 }
 
