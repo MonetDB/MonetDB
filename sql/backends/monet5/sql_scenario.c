@@ -50,6 +50,7 @@
 #include "opt_statistics.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
+#include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 
@@ -1102,9 +1103,21 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
+		// look for outdated plans
+		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+			msg = SQLCacheRemove(c, be->q->name);
+			qc_delete(be->mvc->qc, be->q);
+			goto recompilequery;
+		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+		// look for outdated plans
+		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+			msg = SQLCacheRemove(c, be->q->name);
+			qc_delete(be->mvc->qc, be->q);
+			goto recompilequery;
+		}
 
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
@@ -1114,8 +1127,11 @@ SQLparser(Client c)
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
-		sql_rel *r = sql_symbol2relation(m, m->sym);
-		stmt *s = sql_relation2stmt(m, r);
+		sql_rel *r;
+		stmt *s;
+recompilequery:
+		r = sql_symbol2relation(m, m->sym);
+		s = sql_relation2stmt(m, r);
 
 		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
