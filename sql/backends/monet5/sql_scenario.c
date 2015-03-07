@@ -1138,10 +1138,7 @@ SQLparser(Client c)
 				trimMalBlk(c->curprg->def);
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
-				if (!cachable(m, s))
-					addOptimizerPipe(c, mb, "minimal_pipe");
-				else
-					addOptimizerPipe(c, mb, "default_pipe");
+				addOptimizerPipe(c, mb, "default_pipe");
 				msg = optimizeMALBlock(c, mb);
 				if (msg != MAL_SUCCEED) {
 					sqlcleanup(m, err);
