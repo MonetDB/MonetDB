@@ -6783,6 +6783,25 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = NULL;
 		return rel;
 	}
+	if (r->op == op_union) { 
+		list *p;
+		sql_rel *nl;
+
+		assert( rel_uses_exps(r->l, rel->exps) && rel_uses_exps(r->r, rel->exps));
+		/* apply returns all input columns + the output of the inner relation */
+		/* so we prepend the input colunms to the unions expression list */
+		/* Push the apply down the union */
+		p = rel_projections(sql, rel, NULL, 1, 1);
+		nl = rel_crossproduct(sql->sa, rel_dup(rel->l), r->l, op_apply);
+		rel->r = r->r; 
+		nl->flag = rel->flag;
+		nl->exps = rel->exps;
+		r->l = nl;
+		r->r = rel;
+		r->exps = list_merge(p, r->exps, (fdup)NULL);
+		(*changes)++;
+		return r;
+	}
 	if (r->op == op_project) { /* merge projections */
 		if (!r->l) { /* TODO check realy apply case */
 			(*changes)++;
