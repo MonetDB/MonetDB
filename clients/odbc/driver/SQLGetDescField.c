@@ -53,29 +53,29 @@ MNDBGetDescField(ODBCDesc *desc,
 	/* header fields ignore RecordNumber */
 	switch (FieldIdentifier) {
 	case SQL_DESC_ALLOC_TYPE:		/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = desc->sql_desc_alloc_type;
+		WriteData(ValuePtr, desc->sql_desc_alloc_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_SIZE:		/* SQLULEN */
 		if (isAD(desc))
-			*(SQLULEN *) ValuePtr = desc->sql_desc_array_size;
+			WriteData(ValuePtr, desc->sql_desc_array_size, SQLULEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_STATUS_PTR:		/* SQLUSMALLINT * */
-		*(SQLUSMALLINT **) ValuePtr = desc->sql_desc_array_status_ptr;
+		WriteData(ValuePtr, desc->sql_desc_array_status_ptr, SQLUSMALLINT *);
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_OFFSET_PTR:		/* SQLLEN * */
 		if (isAD(desc))
-			*(SQLLEN **) ValuePtr = desc->sql_desc_bind_offset_ptr;
+			WriteData(ValuePtr, desc->sql_desc_bind_offset_ptr, SQLLEN *);
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_TYPE:		/* SQLINTEGER */
 		if (isAD(desc))
-			*(SQLINTEGER *) ValuePtr = desc->sql_desc_bind_type;
+			WriteData(ValuePtr, desc->sql_desc_bind_type, SQLINTEGER);
 		return SQL_SUCCESS;
 	case SQL_DESC_COUNT:			/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = desc->sql_desc_count;
+		WriteData(ValuePtr, desc->sql_desc_count, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWS_PROCESSED_PTR:	/* SQLULEN * */
 		if (desc->Stmt)
-			*(SQLULEN **) ValuePtr = desc->sql_desc_rows_processed_ptr;
+			WriteData(ValuePtr, desc->sql_desc_rows_processed_ptr, SQLULEN *);
 		return SQL_SUCCESS;
 	}
 
@@ -92,7 +92,7 @@ MNDBGetDescField(ODBCDesc *desc,
 	switch (FieldIdentifier) {
 	case SQL_DESC_AUTO_UNIQUE_VALUE:	/* SQLINTEGER */
 		if (isIRD(desc))
-			*(SQLINTEGER *) ValuePtr = rec->sql_desc_auto_unique_value;
+			WriteData(ValuePtr, rec->sql_desc_auto_unique_value, SQLINTEGER);
 		return SQL_SUCCESS;
 	case SQL_DESC_BASE_COLUMN_NAME:		/* SQLCHAR * */
 		if (isIRD(desc))
@@ -112,7 +112,7 @@ MNDBGetDescField(ODBCDesc *desc,
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CASE_SENSITIVE:		/* SQLINTEGER */
 		if (isID(desc))
-			*(SQLINTEGER *) ValuePtr = rec->sql_desc_case_sensitive;
+			WriteData(ValuePtr, rec->sql_desc_case_sensitive, SQLINTEGER);
 		return SQL_SUCCESS;
 	case SQL_DESC_CATALOG_NAME:		/* SQLCHAR * */
 		if (isIRD(desc))
@@ -123,29 +123,29 @@ MNDBGetDescField(ODBCDesc *desc,
 				   return SQL_ERROR);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CONCISE_TYPE:		/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = rec->sql_desc_concise_type;
+		WriteData(ValuePtr, rec->sql_desc_concise_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_DATA_PTR:			/* SQLPOINTER */
 		if (!isIRD(desc))
-			*(SQLPOINTER *) ValuePtr = rec->sql_desc_data_ptr;
+			WriteData(ValuePtr, rec->sql_desc_data_ptr, SQLPOINTER);
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_CODE:	/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = rec->sql_desc_datetime_interval_code;
+		WriteData(ValuePtr, rec->sql_desc_datetime_interval_code, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_PRECISION: /* SQLINTEGER */
-		*(SQLINTEGER *) ValuePtr = rec->sql_desc_datetime_interval_precision;
+		WriteData(ValuePtr, rec->sql_desc_datetime_interval_precision, SQLINTEGER);
 		return SQL_SUCCESS;
 	case SQL_DESC_DISPLAY_SIZE:		/* SQLLEN */
 		if (isIRD(desc))
-			*(SQLLEN *) ValuePtr = (SQLINTEGER) rec->sql_desc_display_size;
+			WriteData(ValuePtr, (SQLINTEGER) rec->sql_desc_display_size, SQLLEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_FIXED_PREC_SCALE:		/* SQLSMALLINT */
 		if (isID(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_fixed_prec_scale;
+			WriteData(ValuePtr, rec->sql_desc_fixed_prec_scale, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_INDICATOR_PTR:		/* SQLLEN * */
 		if (isAD(desc))
-			*(SQLLEN **) ValuePtr = rec->sql_desc_indicator_ptr;
+			WriteData(ValuePtr, rec->sql_desc_indicator_ptr, SQLLEN *);
 		return SQL_SUCCESS;
 	case SQL_DESC_LABEL:			/* SQLCHAR * */
 		if (isIRD(desc))
@@ -156,7 +156,7 @@ MNDBGetDescField(ODBCDesc *desc,
 				   return SQL_ERROR);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LENGTH:			/* SQLULEN */
-		*(SQLULEN *) ValuePtr = (SQLUINTEGER) rec->sql_desc_length;
+		WriteData(ValuePtr, (SQLUINTEGER) rec->sql_desc_length, SQLULEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:		/* SQLCHAR * */
 		if (isIRD(desc))
@@ -192,31 +192,31 @@ MNDBGetDescField(ODBCDesc *desc,
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_NULLABLE:			/* SQLSMALLINT */
 		if (isID(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_nullable;
+			WriteData(ValuePtr, rec->sql_desc_nullable, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_NUM_PREC_RADIX:		/* SQLINTEGER */
-		*(SQLINTEGER *) ValuePtr = rec->sql_desc_num_prec_radix;
+		WriteData(ValuePtr, rec->sql_desc_num_prec_radix, SQLINTEGER);
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH:		/* SQLLEN */
-		*(SQLLEN *) ValuePtr = rec->sql_desc_octet_length;
+		WriteData(ValuePtr, rec->sql_desc_octet_length, SQLLEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH_PTR:		/* SQLLEN * */
 		if (isAD(desc))
-			*(SQLLEN **) ValuePtr = rec->sql_desc_octet_length_ptr;
+			WriteData(ValuePtr, rec->sql_desc_octet_length_ptr, SQLLEN *);
 		return SQL_SUCCESS;
 	case SQL_DESC_PARAMETER_TYPE:		/* SQLSMALLINT */
 		if (isIPD(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_parameter_type;
+			WriteData(ValuePtr, rec->sql_desc_parameter_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_PRECISION:		/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = rec->sql_desc_precision;
+		WriteData(ValuePtr, rec->sql_desc_precision, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWVER:			/* SQLSMALLINT */
 		if (isID(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_rowver;
+			WriteData(ValuePtr, rec->sql_desc_rowver, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_SCALE:			/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = rec->sql_desc_scale;
+		WriteData(ValuePtr, rec->sql_desc_scale, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_SCHEMA_NAME:		/* SQLCHAR * */
 		if (isIRD(desc))
@@ -228,7 +228,7 @@ MNDBGetDescField(ODBCDesc *desc,
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_SEARCHABLE:		/* SQLSMALLINT */
 		if (isIRD(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_searchable;
+			WriteData(ValuePtr, rec->sql_desc_searchable, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_TABLE_NAME:		/* SQLCHAR * */
 		if (isIRD(desc))
@@ -239,7 +239,7 @@ MNDBGetDescField(ODBCDesc *desc,
 				   return SQL_ERROR);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_TYPE:			/* SQLSMALLINT */
-		*(SQLSMALLINT *) ValuePtr = rec->sql_desc_type;
+		WriteData(ValuePtr, rec->sql_desc_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_TYPE_NAME:		/* SQLCHAR * */
 		if (isID(desc))
@@ -251,15 +251,15 @@ MNDBGetDescField(ODBCDesc *desc,
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_UNNAMED:			/* SQLSMALLINT */
 		if (isID(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_unnamed;
+			WriteData(ValuePtr, rec->sql_desc_unnamed, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_UNSIGNED:			/* SQLSMALLINT */
 		if (isID(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_unsigned;
+			WriteData(ValuePtr, rec->sql_desc_unsigned, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_UPDATABLE:		/* SQLSMALLINT */
 		if (isIRD(desc))
-			*(SQLSMALLINT *) ValuePtr = rec->sql_desc_updatable;
+			WriteData(ValuePtr, rec->sql_desc_updatable, SQLSMALLINT);
 		return SQL_SUCCESS;
 	}
 
@@ -350,13 +350,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
-		rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier,
-				      NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDescErrors(desc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDescError(desc, "HY001", NULL, 0);
@@ -364,14 +358,26 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = ValuePtr;
 		break;
 	}
 
-	rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
+	rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier, ptr,
+			      BufferLength, &n);
 
 	if (ptr != ValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDescErrors(desc);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDescError(desc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetDescField(desc, RecordNumber,
+					      FieldIdentifier, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			SQLSMALLINT nn = (SQLSMALLINT) n;
 

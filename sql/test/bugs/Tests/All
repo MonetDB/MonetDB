@@ -105,3 +105,4 @@ correlated_update_bug
 polymorphism
 emili
 substring_limit_bug
+apply_with_union_assertion

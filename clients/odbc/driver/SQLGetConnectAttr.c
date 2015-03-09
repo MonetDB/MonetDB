@@ -47,40 +47,40 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 	switch (Attribute) {
 	case SQL_ATTR_ACCESS_MODE:		/* SQLUINTEGER */
 		/* SQL_ACCESS_MODE */
-		*(SQLUINTEGER *) ValuePtr = SQL_MODE_READ_WRITE;
+		WriteData(ValuePtr, SQL_MODE_READ_WRITE, SQLUINTEGER);
 		break;
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
-		*(SQLULEN *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
+		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
 		break;
 	case SQL_ATTR_AUTO_IPD:			/* SQLUINTEGER */
 		/* TODO implement automatic filling of IPD See also
 		 * SQLSetStmtAttr.c for SQL_ATTR_ENABLE_AUTO_IPD */
-		*(SQLUINTEGER *) ValuePtr = SQL_FALSE;
+		WriteData(ValuePtr, SQL_FALSE, SQLUINTEGER);
 		break;
 	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
 		/* SQL_AUTOCOMMIT */
-		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_autocommit;
+		WriteData(ValuePtr, dbc->sql_attr_autocommit, SQLUINTEGER);
 		break;
 	case SQL_ATTR_CONNECTION_DEAD:		/* SQLUINTEGER */
-		*(SQLUINTEGER *) ValuePtr = dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE;
+		WriteData(ValuePtr, dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE, SQLUINTEGER);
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
-		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_connection_timeout;
+		WriteData(ValuePtr, dbc->sql_attr_connection_timeout, SQLUINTEGER);
 		break;
 	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
 		/* SQL_LOGIN_TIMEOUT */
-		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
+		WriteData(ValuePtr, 0, SQLUINTEGER);	/* no timeout */
 		break;
 	case SQL_ATTR_METADATA_ID:		/* SQLUINTEGER */
-		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_metadata_id;
+		WriteData(ValuePtr, dbc->sql_attr_metadata_id, SQLUINTEGER);
 		break;
 	case SQL_ATTR_ODBC_CURSORS:		/* SQLULEN */
 		/* SQL_ODBC_CURSORS */
-		*(SQLULEN *) ValuePtr = SQL_CUR_USE_DRIVER;
+		WriteData(ValuePtr, SQL_CUR_USE_DRIVER, SQLULEN);
 		break;
 	case SQL_ATTR_TRACE:			/* SQLUINTEGER */
 		/* SQL_OPT_TRACE */
-		*(SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
+		WriteData(ValuePtr, SQL_OPT_TRACE_OFF, SQLUINTEGER);
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
 		/* SQL_CURRENT_QUALIFIER */
@@ -90,7 +90,7 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		break;
 	case SQL_ATTR_TXN_ISOLATION:		/* SQLUINTEGER */
 		/* SQL_TXN_ISOLATION */
-		*(SQLUINTEGER *) ValuePtr = SQL_TXN_SERIALIZABLE;
+		WriteData(ValuePtr, SQL_TXN_SERIALIZABLE, SQLUINTEGER);
 		break;
 
 /* TODO: implement all the other Connection Attributes */
@@ -203,12 +203,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	switch (Attribute) {
 	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-		rc = MNDBGetConnectAttr(dbc, Attribute, NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDbcErrors(dbc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDbcError(dbc, "HY001", NULL, 0);
@@ -216,14 +211,24 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = ValuePtr;
 		break;
 	}
 
-	rc = MNDBGetConnectAttr(dbc, Attribute, ptr, n, &n);
+	rc = MNDBGetConnectAttr(dbc, Attribute, ptr, BufferLength, &n);
 
 	if (ptr != ValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDbcErrors(dbc);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDbcError(dbc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetConnectAttr(dbc, Attribute, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			SQLSMALLINT nn = (SQLSMALLINT) n;
 

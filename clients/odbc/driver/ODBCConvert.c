@@ -242,6 +242,7 @@ parsedate(const char *data, DATE_STRUCT *dval)
 {
 	int n;
 
+	memset(dval, 0, sizeof(*dval));
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{d '%hd-%hu-%hu'}%n",
@@ -267,6 +268,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	int n;
 	int braces;
 
+	memset(tval, 0, sizeof(*tval));
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{t '%hu:%hu:%hu%n",
@@ -312,6 +314,7 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	int n;
 	int braces;
 
+	memset(tsval, 0, sizeof(*tsval));
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n",
@@ -531,6 +534,7 @@ parsemonthintervalstring(char **svalp,
 	long val1 = -1, val2 = -1;
 	SQLLEN leadingprecision;
 
+	memset(ival, 0, sizeof(*ival));
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -688,6 +692,7 @@ parsesecondintervalstring(char **svalp,
 	unsigned v1, v2, v3, v4;
 	int n;
 
+	memset(ival, 0, sizeof(*ival));
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -998,6 +1003,10 @@ ODBCFetch(ODBCStmt *stmt,
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
 	double fval = 0;
+
+	/* staging variables for output data */
+	SQL_NUMERIC_STRUCT nmval;
+	SQL_INTERVAL_STRUCT ivval;
 
 	assert(ptr != NULL);
 
@@ -1837,11 +1846,21 @@ ODBCFetch(ODBCStmt *stmt,
 			SQLSMALLINT n;
 
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
+#ifdef ODBCDEBUG
+			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
+				(int) (n * sizeof(SQLWCHAR)),
+				PTRFMTCAST origptr);
+#endif
 
 			if (origlenp)
 				*origlenp = n * sizeof(SQLWCHAR); /* # of bytes, not chars */
 			free(ptr);
 		}
+#ifdef ODBCDEBUG
+		else
+			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
+				(int) strlen(ptr), PTRFMTCAST ptr);
+#endif
 		break;
 	}
 	case SQL_C_BINARY:
@@ -1913,7 +1932,7 @@ ODBCFetch(ODBCStmt *stmt,
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
-			*(unsigned char *) ptr = fval >= 1;
+			WriteData(ptr, fval >= 1, unsigned char);
 
 			if (fval != 0 && fval != 1) {
 				/* Fractional truncation */
@@ -1938,7 +1957,7 @@ ODBCFetch(ODBCStmt *stmt,
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
-			*(unsigned char *) ptr = (unsigned char) nval.val;
+			WriteData(ptr, (unsigned char) nval.val, unsigned char);
 
 			if (truncated) {
 				/* Fractional truncation */
@@ -2036,18 +2055,18 @@ ODBCFetch(ODBCStmt *stmt,
 			switch (type) {
 			case SQL_C_STINYINT:
 			case SQL_C_TINYINT:
-				*(signed char *) ptr = nval.sign ? (signed char) nval.val : -(signed char) nval.val;
+				WriteData(ptr, nval.sign ? (signed char) nval.val : -(signed char) nval.val, signed char);
 				break;
 			case SQL_C_SSHORT:
 			case SQL_C_SHORT:
-				*(short *) ptr = nval.sign ? (short) nval.val : -(short) nval.val;
+				WriteData(ptr, nval.sign ? (short) nval.val : -(short) nval.val, short);
 				break;
 			case SQL_C_SLONG:
 			case SQL_C_LONG:
-				*(int *) ptr = nval.sign ? (int) nval.val : -(int) nval.val;
+				WriteData(ptr, nval.sign ? (int) nval.val : -(int) nval.val, int);
 				break;
 			case SQL_C_SBIGINT:
-				*(SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val;
+				WriteData(ptr, nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val, SQLBIGINT);
 				break;
 			}
 			break;
@@ -2136,16 +2155,16 @@ ODBCFetch(ODBCStmt *stmt,
 
 			switch (type) {
 			case SQL_C_UTINYINT:
-				*(unsigned char *) ptr = (unsigned char) nval.val;
+				WriteData(ptr, (unsigned char) nval.val, unsigned char);
 				break;
 			case SQL_C_USHORT:
-				*(unsigned short *) ptr = (unsigned short) nval.val;
+				WriteData(ptr, (unsigned short) nval.val, unsigned short);
 				break;
 			case SQL_C_ULONG:
-				*(unsigned int *) ptr = (unsigned int) nval.val;
+				WriteData(ptr, (unsigned int) nval.val, unsigned int);
 				break;
 			case SQL_C_UBIGINT:
-				*(SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;
+				WriteData(ptr, (SQLUBIGINT) nval.val, SQLUBIGINT);
 				break;
 			}
 			break;
@@ -2201,21 +2220,23 @@ ODBCFetch(ODBCStmt *stmt,
 				nval.scale--;
 				nval.precision--;
 			}
-			((SQL_NUMERIC_STRUCT *) ptr)->precision = nval.precision;
-			((SQL_NUMERIC_STRUCT *) ptr)->scale = nval.scale;
-			((SQL_NUMERIC_STRUCT *) ptr)->sign = nval.sign;
+			memset(&nmval, 0, sizeof(nmval));
+			nmval.precision = nval.precision;
+			nmval.scale = nval.scale;
+			nmval.sign = nval.sign;
 			for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++) {
-				((SQL_NUMERIC_STRUCT *) ptr)->val[i] = (SQLCHAR) (nval.val & 0xFF);
+				nmval.val[i] = (SQLCHAR) (nval.val & 0xFF);
 				nval.val >>= 8;
 			}
+			WriteData(ptr, nmval, SQL_NUMERIC_STRUCT);
+			if (lenp)
+				*lenp = sizeof(SQL_NUMERIC_STRUCT);
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		if (lenp)
-			*lenp = sizeof(SQL_NUMERIC_STRUCT);
 		break;
 	case SQL_C_FLOAT:
 	case SQL_C_DOUBLE:
@@ -2269,13 +2290,13 @@ ODBCFetch(ODBCStmt *stmt,
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
-			*(float *) ptr = (float) fval;
+			WriteData(ptr, (float) fval, float);
 			if (lenp)
 				*lenp = sizeof(float);
 		} else {
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? (SQLINTEGER) sizeof(double) : bind_type));
-			*(double *) ptr = fval;
+			WriteData(ptr, fval, double);
 
 			if (lenp)
 				*lenp = sizeof(double);
@@ -2310,7 +2331,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_TYPE_DATE:
-			*(DATE_STRUCT *) ptr = dval;
+			WriteData(ptr, dval, DATE_STRUCT);
 			break;
 		default:
 			/* Restricted data type attribute violation */
@@ -2349,7 +2370,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_TYPE_TIME:
-			*(TIME_STRUCT *) ptr = tval;
+			WriteData(ptr, tval, TIME_STRUCT);
 			break;
 		default:
 			/* Restricted data type attribute violation */
@@ -2412,7 +2433,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
-			*(TIMESTAMP_STRUCT *) ptr = tsval;
+			WriteData(ptr, tsval, TIMESTAMP_STRUCT);
 			break;
 		default:
 			/* Restricted data type attribute violation */
@@ -2456,14 +2477,14 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-#define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
-		p->interval_sign = ival.interval_sign;
-		p->intval.year_month.year = 0;
-		p->intval.year_month.month = 0;
+		memset(&ivval, 0, sizeof(ivval));
+		ivval.interval_sign = ival.interval_sign;
+		ivval.intval.year_month.year = 0;
+		ivval.intval.year_month.month = 0;
 		switch (type) {
 		case SQL_C_INTERVAL_YEAR:
-			p->interval_type = SQL_IS_YEAR;
-			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_YEAR;
+			if ((ivval.intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -2474,24 +2495,24 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_INTERVAL_MONTH:
-			p->interval_type = SQL_IS_MONTH;
-			if ((p->intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_MONTH;
+			if ((ivval.intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
 			break;
 		case SQL_C_INTERVAL_YEAR_TO_MONTH:
-			p->interval_type = SQL_IS_YEAR_TO_MONTH;
-			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_YEAR_TO_MONTH;
+			if ((ivval.intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.year_month.month = ival.intval.year_month.month;
+			ivval.intval.year_month.month = ival.intval.year_month.month;
 			break;
 		}
-#undef p
+		WriteData(ptr, ivval, SQL_INTERVAL_STRUCT);
 		if (lenp)
 			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
@@ -2543,17 +2564,17 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-#define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
-		p->interval_sign = ival.interval_sign;
-		p->intval.day_second.day = 0;
-		p->intval.day_second.hour = 0;
-		p->intval.day_second.minute = 0;
-		p->intval.day_second.second = 0;
-		p->intval.day_second.fraction = 0;
+		memset(&ivval, 0, sizeof(ivval));
+		ivval.interval_sign = ival.interval_sign;
+		ivval.intval.day_second.day = 0;
+		ivval.intval.day_second.hour = 0;
+		ivval.intval.day_second.minute = 0;
+		ivval.intval.day_second.second = 0;
+		ivval.intval.day_second.fraction = 0;
 		switch (type) {
 		case SQL_C_INTERVAL_DAY:
-			p->interval_type = SQL_IS_DAY;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_DAY;
+			if ((ivval.intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -2564,8 +2585,8 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_INTERVAL_HOUR:
-			p->interval_type = SQL_IS_HOUR;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_HOUR;
+			if ((ivval.intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -2576,8 +2597,8 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_INTERVAL_MINUTE:
-			p->interval_type = SQL_IS_MINUTE;
-			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_MINUTE;
+			if ((ivval.intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
@@ -2588,104 +2609,104 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_INTERVAL_SECOND:
-			p->interval_type = SQL_IS_SECOND;
-			if ((p->intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_SECOND;
+			if ((ivval.intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.fraction = ival.intval.day_second.fraction;
+			ivval.intval.day_second.fraction = ival.intval.day_second.fraction;
 			break;
 		case SQL_C_INTERVAL_DAY_TO_HOUR:
-			p->interval_type = SQL_IS_DAY_TO_HOUR;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_DAY_TO_HOUR;
+			if ((ivval.intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.hour = ival.intval.day_second.hour;
+			ivval.intval.day_second.hour = ival.intval.day_second.hour;
 			if (ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
 			break;
 		case SQL_C_INTERVAL_DAY_TO_MINUTE:
-			p->interval_type = SQL_IS_DAY_TO_MINUTE;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_DAY_TO_MINUTE;
+			if ((ivval.intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.hour = ival.intval.day_second.hour;
-			p->intval.day_second.minute = ival.intval.day_second.minute;
+			ivval.intval.day_second.hour = ival.intval.day_second.hour;
+			ivval.intval.day_second.minute = ival.intval.day_second.minute;
 			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
 			break;
 		case SQL_C_INTERVAL_DAY_TO_SECOND:
-			p->interval_type = SQL_IS_DAY_TO_SECOND;
-			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_DAY_TO_SECOND;
+			if ((ivval.intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.hour = ival.intval.day_second.hour;
-			p->intval.day_second.minute = ival.intval.day_second.minute;
-			p->intval.day_second.second = ival.intval.day_second.second;
-			p->intval.day_second.fraction = ival.intval.day_second.fraction;
+			ivval.intval.day_second.hour = ival.intval.day_second.hour;
+			ivval.intval.day_second.minute = ival.intval.day_second.minute;
+			ivval.intval.day_second.second = ival.intval.day_second.second;
+			ivval.intval.day_second.fraction = ival.intval.day_second.fraction;
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_MINUTE:
-			p->interval_type = SQL_IS_HOUR_TO_MINUTE;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_HOUR_TO_MINUTE;
+			if ((ivval.intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.minute = ival.intval.day_second.minute;
+			ivval.intval.day_second.minute = ival.intval.day_second.minute;
 			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
-			p->interval_type = SQL_IS_HOUR_TO_SECOND;
-			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_HOUR_TO_SECOND;
+			if ((ivval.intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.minute = ival.intval.day_second.minute;
-			p->intval.day_second.second = ival.intval.day_second.second;
-			p->intval.day_second.fraction = ival.intval.day_second.fraction;
+			ivval.intval.day_second.minute = ival.intval.day_second.minute;
+			ivval.intval.day_second.second = ival.intval.day_second.second;
+			ivval.intval.day_second.fraction = ival.intval.day_second.fraction;
 			break;
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-			p->interval_type = SQL_IS_MINUTE_TO_SECOND;
-			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
+			ivval.interval_type = SQL_IS_MINUTE_TO_SECOND;
+			if ((ivval.intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
 				return SQL_ERROR;
 			}
-			p->intval.day_second.second = ival.intval.day_second.second;
-			p->intval.day_second.fraction = ival.intval.day_second.fraction;
+			ivval.intval.day_second.second = ival.intval.day_second.second;
+			ivval.intval.day_second.fraction = ival.intval.day_second.fraction;
 			break;
 		}
-		if (p->intval.day_second.fraction) {
+		if (ivval.intval.day_second.fraction) {
 			while (ivalprec < precision) {
 				ivalprec++;
-				p->intval.day_second.fraction *= 10;
+				ivval.intval.day_second.fraction *= 10;
 			}
 			while (ivalprec > precision) {
 				ivalprec--;
 				if (stmt->Error == NULL &&
-				    p->intval.day_second.fraction % 10 != 0) {
+				    ivval.intval.day_second.fraction % 10 != 0) {
 					/* Fractional truncation */
 					addStmtError(stmt, "01S07", NULL, 0);
 				}
-				p->intval.day_second.fraction /= 10;
+				ivval.intval.day_second.fraction /= 10;
 			}
 		}
-#undef p
+		WriteData(ptr, ivval, SQL_INTERVAL_STRUCT);
 		if (lenp)
 			*lenp = sizeof(SQL_INTERVAL_STRUCT);
 		break;
@@ -2695,6 +2716,9 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+#ifdef ODBCDEBUG
+		ODBCLOG("Writing 16 bytes to " PTRFMT "\n", PTRFMTCAST ptr);
+#endif
 		for (i = 0; i < 16; i++) {
 			if (i == 8 || i == 12 || i == 16 || i == 20) {
 				if (*data != '-') {
@@ -2706,25 +2730,25 @@ ODBCFetch(ODBCStmt *stmt,
 				data++;
 			}
 			if ('0' <= *data && *data <= '9')
-				* (unsigned char *) ptr = *data - '0';
+				((unsigned char *) ptr)[i] = *data - '0';
 			else if ('a' <= *data && *data <= 'f')
-				* (unsigned char *) ptr = *data - 'a' + 10;
+				((unsigned char *) ptr)[i] = *data - 'a' + 10;
 			else if ('A' <= *data && *data <= 'F')
-				* (unsigned char *) ptr = *data - 'A' + 10;
+				((unsigned char *) ptr)[i] = *data - 'A' + 10;
 			else {
 				/* Restricted data type attribute
 				 * violation */
 				addStmtError(stmt, "07006", NULL, 0);
 				return SQL_ERROR;
 			}
-			* (unsigned char *) ptr <<= 4;
+			((unsigned char *) ptr)[i] <<= 4;
 			data++;
 			if ('0' <= *data && *data <= '9')
-				* (unsigned char *) ptr |= *data - '0';
+				((unsigned char *) ptr)[i] |= *data - '0';
 			else if ('a' <= *data && *data <= 'f')
-				* (unsigned char *) ptr |= *data - 'a' + 10;
+				((unsigned char *) ptr)[i] |= *data - 'a' + 10;
 			else if ('A' <= *data && *data <= 'F')
-				* (unsigned char *) ptr |= *data - 'A' + 10;
+				((unsigned char *) ptr)[i] |= *data - 'A' + 10;
 			else {
 				/* Restricted data type attribute
 				 * violation */
@@ -2732,7 +2756,6 @@ ODBCFetch(ODBCStmt *stmt,
 				return SQL_ERROR;
 			}
 			data++;
-			ptr = (SQLPOINTER) ((char *) ptr + 1);
 		}
 		break;
 	default:

@@ -41,9 +41,9 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetEnvAttr " PTRFMT " %s 0x%lx\n",
+	ODBCLOG("SQLSetEnvAttr " PTRFMT " %s " PTRFMT " %d\n",
 		PTRFMTCAST EnvironmentHandle, translateEnvAttribute(Attribute),
-		(unsigned long) (uintptr_t) ValuePtr);
+		PTRFMTCAST ValuePtr, (int) StringLength);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */
@@ -76,10 +76,10 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:		/* SQLINTEGER */
-		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
+		switch ((SQLINTEGER) (intptr_t) ValuePtr) {
 		case SQL_OV_ODBC3:
 		case SQL_OV_ODBC2:
-			env->sql_attr_odbc_version = (SQLINTEGER) (ssize_t) ValuePtr;
+			env->sql_attr_odbc_version = (SQLINTEGER) (intptr_t) ValuePtr;
 			break;
 		default:
 			/* Invalid attribute value */
@@ -92,7 +92,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 		addEnvError(env, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	case SQL_ATTR_OUTPUT_NTS:		/* SQLINTEGER */
-		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
+		switch ((SQLINTEGER) (intptr_t) ValuePtr) {
 		case SQL_TRUE:
 			break;
 		case SQL_FALSE:

@@ -27,6 +27,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -41,49 +42,49 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 
 	switch (Attribute) {
 	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
-		*(SQLHANDLE *) ValuePtr = stmt->ApplParamDescr;
+		WriteData(ValuePtr, stmt->ApplParamDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:		/* SQLHANDLE */
-		*(SQLHANDLE *) ValuePtr = stmt->ApplRowDescr;
+		WriteData(ValuePtr, stmt->ApplRowDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 		/* SQL_ASYNC_ENABLE */
-		*(SQLULEN *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
+		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
 		break;
 	case SQL_ATTR_CONCURRENCY:		/* SQLULEN */
 		/* SQL_CONCURRENCY */
-		*(SQLULEN *) ValuePtr = SQL_CONCUR_READ_ONLY;
+		WriteData(ValuePtr, SQL_CONCUR_READ_ONLY, SQLULEN);
 		break;
 	case SQL_ATTR_CURSOR_SCROLLABLE:	/* SQLULEN */
-		*(SQLULEN *) ValuePtr = stmt->cursorScrollable;
+		WriteData(ValuePtr, stmt->cursorScrollable, SQLULEN);
 		break;
 	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
-		*(SQLULEN *) ValuePtr = SQL_INSENSITIVE;
+		WriteData(ValuePtr, SQL_INSENSITIVE, SQLULEN);
 		break;
 	case SQL_ATTR_CURSOR_TYPE:		/* SQLULEN */
 		/* SQL_CURSOR_TYPE */
-		*(SQLULEN *) ValuePtr = stmt->cursorType;
+		WriteData(ValuePtr, stmt->cursorType, SQLULEN);
 		break;
 	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */
-		*(SQLHANDLE *) ValuePtr = stmt->ImplParamDescr;
+		WriteData(ValuePtr, stmt->ImplParamDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:		/* SQLHANDLE */
-		*(SQLHANDLE *) ValuePtr = stmt->ImplRowDescr;
+		WriteData(ValuePtr, stmt->ImplRowDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
 		/* SQL_MAX_LENGTH */
-		*(SQLULEN *) ValuePtr = 0;
+		WriteData(ValuePtr, 0, SQLULEN);
 		break;
 	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
 		/* SQL_MAX_ROWS */
-		*(SQLULEN *) ValuePtr = 0;
+		WriteData(ValuePtr, 0, SQLULEN);
 		break;
 	case SQL_ATTR_METADATA_ID:		/* SQLULEN */
-		*(SQLULEN *) ValuePtr = stmt->Dbc->sql_attr_metadata_id;
+		WriteData(ValuePtr, stmt->Dbc->sql_attr_metadata_id, SQLULEN);
 		break;
 	case SQL_ATTR_NOSCAN:			/* SQLULEN */
 		/* SQL_NOSCAN */
-		*(SQLULEN *) ValuePtr = stmt->noScan;
+		WriteData(ValuePtr, stmt->noScan, SQLULEN);
 		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:	/* SQLULEN* */
 		return MNDBGetDescField(stmt->ApplParamDescr, 0,
@@ -91,7 +92,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_PARAM_BIND_TYPE:		/* SQLULEN */
 		/* SQL_BIND_TYPE */
-		*(SQLULEN *) ValuePtr = stmt->ApplParamDescr->sql_desc_bind_type;
+		WriteData(ValuePtr, stmt->ApplParamDescr->sql_desc_bind_type, SQLULEN);
 		break;
 	case SQL_ATTR_PARAM_OPERATION_PTR:	/* SQLUSMALLINT* */
 		return MNDBGetDescField(stmt->ApplParamDescr, 0,
@@ -111,7 +112,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
 		/* SQL_RETRIEVE_DATA */
-		*(SQLULEN *) ValuePtr = stmt->retrieveData;
+		WriteData(ValuePtr, stmt->retrieveData, SQLULEN);
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:		/* SQLULEN */
 	case SQL_ROWSET_SIZE:
@@ -123,7 +124,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_ROW_BIND_TYPE:		/* SQLULEN */
-		*(SQLULEN *) ValuePtr = stmt->ApplRowDescr->sql_desc_bind_type;
+		WriteData(ValuePtr, stmt->ApplRowDescr->sql_desc_bind_type, SQLULEN);
 		break;
 	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
 		if (stmt->State <= EXECUTED1) {
@@ -131,7 +132,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 			addStmtError(stmt, "24000", NULL, 0);
 			return SQL_ERROR;
 		}
-		*(SQLULEN *) ValuePtr = (SQLULEN) stmt->currentRow;
+		WriteData(ValuePtr, (SQLULEN) stmt->currentRow, SQLULEN);
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:	/* SQLUSMALLINT* */
 		return MNDBGetDescField(stmt->ApplRowDescr, 0,
