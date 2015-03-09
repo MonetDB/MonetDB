@@ -156,7 +156,7 @@ SQLBindCol(SQLHSTMT StatementHandle,
 
 		if (ColumnNumber > desc->sql_desc_count)
 			setODBCDescRecCount(desc, ColumnNumber);
-		rc = MNDBSetDescField(desc, ColumnNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) TargetType, 0);
+		rc = MNDBSetDescField(desc, ColumnNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) TargetType, 0);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		rec = &desc->descRec[ColumnNumber];

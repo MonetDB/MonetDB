@@ -231,7 +231,7 @@ MNDBBindParameter(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ValueType, 0);
+	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ValueType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	rc = MNDBSetDescField(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ParameterType, 0);
