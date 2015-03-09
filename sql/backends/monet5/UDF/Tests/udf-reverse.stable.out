@@ -83,7 +83,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 101 # length
-function user.s6_1{autoCommit=true}():void;
+function user.s10_1{autoCommit=true}():void;
     X_24:void  := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",15);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_reverse");
@@ -97,7 +97,7 @@ function user.s6_1{autoCommit=true}():void;
     sql.rsColumn(X_17,"sys.L","reverse_x","clob",0,0,X_16);
     X_22 := io.stdout();
     sql.exportResult(X_22,X_17);
-end user.s6_1;
+end user.s10_1;
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name
