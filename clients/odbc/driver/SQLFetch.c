@@ -88,10 +88,14 @@ MNDBFetch(ODBCStmt *stmt)
 			return SQL_NO_DATA;
 		}
 		if (statusp) {
-			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++)
-				*statusp++ = SQL_ROW_SUCCESS;
-			for (; row < ard->sql_desc_array_size; row++)
-				*statusp++ = SQL_ROW_NOROW;
+			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++) {
+				WriteValue(statusp, SQL_ROW_SUCCESS);
+				statusp++;
+			}
+			for (; row < ard->sql_desc_array_size; row++) {
+				WriteValue(statusp, SQL_ROW_NOROW);
+				statusp++;
+			}
 		}
 		return SQL_SUCCESS;
 	}
@@ -109,14 +113,14 @@ MNDBFetch(ODBCStmt *stmt)
 				break;
 			case MTIMEOUT:
 				if (statusp)
-					*statusp = SQL_ROW_ERROR;
+					WriteValue(statusp, SQL_ROW_ERROR);
 				/* Timeout expired / Communication
 				 * link failure */
 				addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			default:
 				if (statusp)
-					*statusp = SQL_ROW_ERROR;
+					WriteValue(statusp, SQL_ROW_ERROR);
 				/* General error */
 				addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
@@ -124,7 +128,7 @@ MNDBFetch(ODBCStmt *stmt)
 			break;
 		}
 		if (statusp)
-			*statusp = SQL_ROW_SUCCESS;
+			WriteValue(statusp, SQL_ROW_SUCCESS);
 
 		stmt->rowSetSize++;
 
@@ -147,7 +151,7 @@ MNDBFetch(ODBCStmt *stmt)
 				      rec->sql_desc_datetime_interval_precision,
 				      offset, row) == SQL_ERROR) {
 				if (statusp)
-					*statusp = SQL_ROW_SUCCESS_WITH_INFO;
+					WriteValue(statusp, SQL_ROW_SUCCESS_WITH_INFO);
 			}
 		}
 		if (statusp)
@@ -157,8 +161,10 @@ MNDBFetch(ODBCStmt *stmt)
 		*ird->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
 
 	if (statusp)
-		while (row++ < ard->sql_desc_array_size)
-			*statusp++ = SQL_ROW_NOROW;
+		while (row++ < ard->sql_desc_array_size) {
+			WriteValue(statusp, SQL_ROW_NOROW);
+			statusp++;
+		}
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

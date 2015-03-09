@@ -38,6 +38,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN SQL_API
 SQLExtendedFetch(SQLHSTMT StatementHandle,
@@ -55,10 +56,11 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT "\n",
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT " " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle,
 		translateFetchOrientation(FetchOrientation),
-		LENCAST FetchOffset);
+		LENCAST FetchOffset, PTRFMTCAST RowCountPtr,
+		PTRFMTCAST RowStatusArray);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -90,9 +92,9 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 
 	if (SQL_SUCCEEDED(rc) && RowCountPtr) {
 #ifdef BUILD_REAL_64_BIT_MODE	/* note: only defined on Debian Lenny */
-		*RowCountPtr = (SQLUINTEGER) stmt->rowSetSize;
+		WriteValue(RowCountPtr, (SQLUINTEGER) stmt->rowSetSize);
 #else
-		*RowCountPtr = (SQLULEN) stmt->rowSetSize;
+		WriteValue(RowCountPtr, (SQLULEN) stmt->rowSetSize);
 #endif
 	}
 

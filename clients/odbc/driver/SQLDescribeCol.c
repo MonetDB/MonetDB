@@ -143,8 +143,12 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeCol " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
+	ODBCLOG("SQLDescribeCol " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
+		PTRFMTCAST ColumnName, (int) BufferLength,
+		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
+		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
+		PTRFMTCAST NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -202,8 +206,12 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeColW " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
+	ODBCLOG("SQLDescribeColW " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
+		PTRFMTCAST ColumnName, (int) BufferLength,
+		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
+		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
+		PTRFMTCAST NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))

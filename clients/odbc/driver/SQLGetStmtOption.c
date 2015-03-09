@@ -39,6 +39,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN SQL_API
 SQLGetStmtOption(SQLHSTMT StatementHandle,
@@ -50,8 +51,9 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 	SQLRETURN r;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtOption(Option));
+	ODBCLOG("SQLGetStmtOption " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -74,7 +76,7 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 		 * return 32 bit value */
 		r = MNDBGetStmtAttr(stmt, Option, &v, 0, NULL);
 		if (SQL_SUCCEEDED(r))
-			*(SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
+			WriteData(ValuePtr, (SQLUINTEGER) v, SQLUINTEGER);
 		return r;
 	case SQL_BIND_TYPE:
 	case SQL_KEYSET_SIZE:

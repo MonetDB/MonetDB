@@ -101,11 +101,12 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d\n",
+	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d " PTRFMT " " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
 		isAD(desc) ? translateCType(Type) : translateSQLType(Type),
 		translateSubType(Type, SubType), LENCAST Length,
-		(int) Precision, (int) Scale);
+		(int) Precision, (int) Scale, PTRFMTCAST DataPtr,
+		PTRFMTCAST StringLengthPtr, PTRFMTCAST IndicatorPtr);
 #endif
 
 	if (!isValidDesc(desc))

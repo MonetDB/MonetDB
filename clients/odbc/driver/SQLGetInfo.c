@@ -1557,7 +1557,7 @@ translateInfoType(SQLUSMALLINT InfoType)
 	case SQL_XOPEN_CLI_YEAR:
 		return "SQL_XOPEN_CLI_YEAR";
 	default:
-		snprintf(unknown, sizeof(unknown), "unknown (%u)", 
+		snprintf(unknown, sizeof(unknown), "unknown (%u)",
 			 (unsigned int) InfoType);
 		return unknown;
 	}

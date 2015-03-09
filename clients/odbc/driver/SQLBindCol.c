@@ -52,9 +52,10 @@ SQLBindCol(SQLHSTMT StatementHandle,
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol " PTRFMT " %u %s " LENFMT "\n",
+	ODBCLOG("SQLBindCol " PTRFMT " %u %s " PTRFMT " " LENFMT "\n",
 		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
-		translateCType(TargetType), LENCAST BufferLength);
+		translateCType(TargetType), PTRFMTCAST TargetValuePtr,
+		LENCAST BufferLength);
 #endif
 
 	if (!isValidStmt(stmt))

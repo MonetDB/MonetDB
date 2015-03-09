@@ -48,9 +48,9 @@ SQLSetStmtOption(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtOption " PTRFMT " %s 0x%lx\n",
+	ODBCLOG("SQLSetStmtOption " PTRFMT " %s " ULENFMT "\n",
 		PTRFMTCAST StatementHandle, translateStmtOption(Option),
-		(unsigned long) ValuePtr);
+		ULENCAST ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))
