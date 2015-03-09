@@ -214,12 +214,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	switch (Attribute) {
 	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-		rc = MNDBGetConnectAttr(dbc, Attribute, NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDbcErrors(dbc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDbcError(dbc, "HY001", NULL, 0);
@@ -227,14 +222,24 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = ValuePtr;
 		break;
 	}
 
-	rc = MNDBGetConnectAttr(dbc, Attribute, ptr, n, &n);
+	rc = MNDBGetConnectAttr(dbc, Attribute, ptr, BufferLength, &n);
 
 	if (ptr != ValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDbcErrors(dbc);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDbcError(dbc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetConnectAttr(dbc, Attribute, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			SQLSMALLINT nn = (SQLSMALLINT) n;
 

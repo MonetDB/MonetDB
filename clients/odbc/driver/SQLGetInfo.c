@@ -1671,12 +1671,7 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	case SQL_TABLE_TERM:
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
-		rc = MNDBGetInfo(dbc, InfoType, NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDbcErrors(dbc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDbcError(dbc, "HY001", NULL, 0);
@@ -1684,14 +1679,23 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = InfoValuePtr;
 		break;
 	}
 
-	rc = MNDBGetInfo(dbc, InfoType, ptr, n, &n);
+	rc = MNDBGetInfo(dbc, InfoType, ptr, BufferLength, &n);
 
 	if (ptr != InfoValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDbcErrors(dbc);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDbcError(dbc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetInfo(dbc, InfoType, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			fixWcharOut(rc, ptr, n, InfoValuePtr, BufferLength,
 				    StringLengthPtr, 2, addDbcError, dbc);

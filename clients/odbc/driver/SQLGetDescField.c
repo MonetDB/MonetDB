@@ -361,13 +361,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
-		rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier,
-				      NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDescErrors(desc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDescError(desc, "HY001", NULL, 0);
@@ -375,14 +369,26 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = ValuePtr;
 		break;
 	}
 
-	rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
+	rc = MNDBGetDescField(desc, RecordNumber, FieldIdentifier, ptr,
+			      BufferLength, &n);
 
 	if (ptr != ValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDescErrors(desc);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDescError(desc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetDescField(desc, RecordNumber,
+					      FieldIdentifier, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			SQLSMALLINT nn = (SQLSMALLINT) n;
 
