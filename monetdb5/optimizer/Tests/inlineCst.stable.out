@@ -34,15 +34,15 @@ end user.main;
 [ 0@0,	  213	  ]
 [ 1@0,	  213	  ]
 [ 2@0,	  213	  ]
-function user.qry():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-    bat.append(b:bat[:oid,:int],10:int);
-    bat.append(b:bat[:oid,:int],20:int);
-    X_16:int := 213:int;
-    r:bat[:oid,:int]{inline} := algebra.project(b:bat[:oid,:int],X_16:int);
-    io.print(r:bat[:oid,:int]{inline});
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],10:int);	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],20:int);	# BKCappend_val_wrap
+    X_16:int := 213:int;                	# 
+    r:bat[:oid,:int]{inline} := algebra.project(b:bat[:oid,:int],X_16:int);	# ALGprojecttail
+    io.print(r:bat[:oid,:int]{inline}); 	# IOprint_val
+end user.qry;                           	# 
 
 # 20:07:33 >  
 # 20:07:33 >  Done.

@@ -910,7 +910,7 @@ retryRead:
 				} else if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
 				if (m)
-					printFunction(out, m, 0, lstng);
+					debugFunction(out, m, 0, lstng, 0,m->stop);
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -932,7 +932,7 @@ partial:
 				*b = 0;
 				if (stepsize < 0)
 					first -= stepsize;
-				listFunction(out, mb, 0, lstng, first, stepsize);
+				debugFunction(out, mb, 0, lstng, first, stepsize);
 				first = first + stepsize > mb->stop ? first : first + stepsize;
 			}
 			continue;

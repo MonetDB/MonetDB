@@ -40,11 +40,11 @@ function user.qry():void;
     j := calc.*(i,i);
     io.print(j);
 end user.qry;
-function user.qry():void;
-    i:int := 23:int;
-    j:int := calc.*(i:int,i:int);
-    io.print(j:int);
-end user.qry;
+function user.qry():void;               		 # 
+    i:int := 23:int;                    		 # 
+    j:int := calc.*(i:int,i:int);       		 # CMDvarMULsignal
+    io.print(j:int);                    		 # IOprint_val
+end user.qry;                           		 # 
 [ "start" ]
 [ 529 ]
 [ "next" ]

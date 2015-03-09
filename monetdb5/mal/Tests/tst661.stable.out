@@ -37,13 +37,13 @@ function user.tst():void;
     z := user.fs(1);
     (y,z) := user.fs(1);
 end user.tst;
-function user.tst():void;
-    a:int := user.fi(1:int);
-    (a:int,b:int) := user.fi(1:int);
-    (a:int,b:int,c:int) := user.fi(1:int);
-    z:str := user.fs(1:int);
-    (y:str,z:str) := user.fs(1:int);
-end user.tst;
+function user.tst():void;               		 # 
+    a:int := user.fi(1:int);            		 # MDBdummy
+    (a:int,b:int) := user.fi(1:int);    		 # MDBdummy
+    (a:int,b:int,c:int) := user.fi(1:int);		 # MDBdummy
+    z:str := user.fs(1:int);            		 # MDBdummy
+    (y:str,z:str) := user.fs(1:int);    	# MDBdummy
+end user.tst;                           	# 
 
 # 16:47:50 >  
 # 16:47:50 >  Done.

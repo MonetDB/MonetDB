@@ -466,6 +466,30 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
  * is returned.
  */
 void
+debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
+{
+	int i;
+	str ps;
+	InstrPtr p;
+
+	if (mb == NULL) {
+		mnstr_printf(fd, "# function definition missing\n");
+		return;
+	}
+	if ( flg == 0)
+		return;
+	assert(size>=0);
+	assert(first>=0 && first <mb->stop);
+	for (i = first; i < first +size && i < mb->stop; i++){
+		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
+		if (ps) {
+			mnstr_printf(fd,"%-40s\t# %s\n",ps, (p->blk && p->blk->binding? p->blk->binding:""));
+			GDKfree(ps);
+		}
+	}
+}
+
+void
 listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
 {
 	int i;
@@ -499,6 +523,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
+
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	listFunction(fd,mb,stk,flg,0,mb->stop);

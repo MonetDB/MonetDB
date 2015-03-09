@@ -22,16 +22,16 @@ function user.main():void;
     l3 := calc.+(l,24);
     mdb.List();
 end user.main;
-function user.main():void;
-# The 4000 series deals with strategic optimizer constructs 
-# common subexpression evaluation 
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    c:bat[:oid,:int] := bat.new(:oid,:int);
-    d:bat[:oid,:int] := algebra.select(b:bat[:oid,:int],0:int,100:int);
-    l:int := calc.+(24:int,27:int);
-    l3:int := calc.+(l:int,24:int);
-    mdb.List();
-end user.main;
+function user.main():void;              	# 
+# The 4000 series deals with strategic optimizer constructs 	# 
+# common subexpression evaluation       	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    c:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    d:bat[:oid,:int] := algebra.select(b:bat[:oid,:int],0:int,100:int);	# ALGselect
+    l:int := calc.+(24:int,27:int);     	# CMDvarADDsignal
+    l3:int := calc.+(l:int,24:int);     	# CMDvarADDsignal
+    mdb.List();                         	# MDBlistDetail
+end user.main;                          	# 
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

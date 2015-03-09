@@ -2162,6 +2162,7 @@ int daytime_fromstr(const char *buf, int *len, daytime **ret);
 int daytime_tostr(str *buf, int *len, const daytime *val);
 int daytime_tz_fromstr(const char *buf, int *len, daytime **ret);
 str dblRef;
+void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 void debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span);
 str debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void debugParser(int i);

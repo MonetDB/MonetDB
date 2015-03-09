@@ -35,17 +35,17 @@ end user.main;
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-function user.main():void;
-# the first test for macro expansions and inversions 
-    io.print("test expansion":str);
-    X_12:int := 0:int;
-barrier X_14:bit := calc.<(X_12:int,2:int);
-    io.print("Welcome":str);
-    X_12:int := calc.+(X_12:int,1:int);
-    redo X_14:bit := calc.<(X_12:int,2:int);
-exit X_14:bit;
-    mdb.List();
-end user.main;
+function user.main():void;              	# 
+# the first test for macro expansions and inversions 	# 
+    io.print("test expansion":str);     	# IOprint_val
+    X_12:int := 0:int;                  	# 
+barrier X_14:bit := calc.<(X_12:int,2:int);	# CMDvarLT
+    io.print("Welcome":str);            	# IOprint_val
+    X_12:int := calc.+(X_12:int,1:int); 	# CMDvarADDsignal
+    redo X_14:bit := calc.<(X_12:int,2:int);	# CMDvarLT
+exit X_14:bit;                          	# 
+    mdb.List();                         	# MDBlistDetail
+end user.main;                          	# 
 
 # 19:36:04 >  
 # 19:36:04 >  Done.

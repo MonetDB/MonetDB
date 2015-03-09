@@ -32,21 +32,21 @@ function user.main():void;
     mdb.var("user","tst");
     mdb.List("user","tst");
 end user.main;
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;
-barrier X_9:bit{transparent} := language.dataflow();
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);
-exit X_9:bit{transparent};
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);
-    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);
-exit (X_16:oid,X_17:dbl);
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
-end user.tst;
+function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	# 
+barrier X_9:bit{transparent} := language.dataflow();	# MALstartDataflow
+    c:wrd := aggr.count(b:bat[:oid,:dbl]);	# ALGcount_bat
+    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	# ALGcount_bat
+exit X_9:bit{transparent};              	# 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	# CMDBATnew
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	# ITRbunIterator
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	# ALGfetchoid
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	# CALCmax
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	# BKCappend_val_wrap
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	# ITRbunNext
+exit (X_16:oid,X_17:dbl);               	# 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	# 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	# IOtable
+end user.tst;                           	# 
 #[1]     b =  :bat[:oid,:dbl]  
 #[2]    b2 =  :bat[:oid,:dbl]  
 #[5]     z =  :bat[:oid,:dbl]  
@@ -60,21 +60,21 @@ end user.tst;
 #[17]   _17 =  :dbl  
 #[19]   _19 =  :dbl  
 #[21]   _21 =  :dbl  
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;
-barrier X_9:bit{transparent} := language.dataflow();
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);
-exit X_9:bit{transparent};
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);
-    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);
-exit (X_16:oid,X_17:dbl);
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
-end user.tst;
+function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	# 
+barrier X_9:bit{transparent} := language.dataflow();	# MALstartDataflow
+    c:wrd := aggr.count(b:bat[:oid,:dbl]);	# ALGcount_bat
+    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	# ALGcount_bat
+exit X_9:bit{transparent};              	# 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	# CMDBATnew
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	# ITRbunIterator
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	# ALGfetchoid
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	# CALCmax
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	# BKCappend_val_wrap
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	# ITRbunNext
+exit (X_16:oid,X_17:dbl);               	# 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	# 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	# IOtable
+end user.tst;                           	# 
 
 # 09:02:36 >  
 # 09:02:36 >  "Done."

@@ -33,27 +33,27 @@ function user.main():void;
 #checking proper handling of scopes for the garbage collector 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    c:bat[:oid,:int] := bat.new(:oid,:int);
-    d:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-barrier (x:oid,z:int) := iterator.new(b:bat[:oid,:int]);
-    io.print(x:oid);
-exit (x:oid,z:int);
-    b:bat[:oid,:int] := nil:bat[:oid,:int];
-barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);
-    io.print(x:oid);
-    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);
-exit (x:oid,z:int);
-    c:bat[:oid,:int] := nil:bat[:oid,:int];
-# do not close d, it may be reused 
-barrier go:bit := true:bit;
-    io.print(d:bat[:oid,:int]);
-    redo go:bit := true:bit;
-exit go:bit;
-    d:bat[:oid,:int] := nil:bat[:oid,:int];
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    c:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    d:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+barrier (x:oid,z:int) := iterator.new(b:bat[:oid,:int]);	# ITRbunIterator
+    io.print(x:oid);                    	# IOprint_val
+exit (x:oid,z:int);                     	# 
+    b:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);	# ITRbunIterator
+    io.print(x:oid);                    	# IOprint_val
+    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);	# ITRbunNext
+exit (x:oid,z:int);                     	# 
+    c:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+# do not close d, it may be reused      	# 
+barrier go:bit := true:bit;             	# 
+    io.print(d:bat[:oid,:int]);         	# IOprint_val
+    redo go:bit := true:bit;            	# 
+exit go:bit;                            	# 
+    d:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

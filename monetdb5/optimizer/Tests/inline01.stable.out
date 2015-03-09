@@ -37,23 +37,23 @@ end user.qry;
 function user.main():void;
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    X_5:bat[:oid,:int] := bat.new(:oid,:int);
-    X_8:bat[:oid,:int] := bat.new(:oid,:int);
-    X_9:int := 1:int;
-    bat.append(X_5:bat[:oid,:int],1:int);
-barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:oid,:int]);
-    io.print(X_12:oid);
-catch MALException:str;
-exit MALException:str;
-exit (X_12:oid,X_9:int);
-barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:oid,:int]);
-    io.print(X_12:oid);
-    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:oid,:int]);
-catch MALException:str;
-exit MALException:str;
-exit (X_12:oid,X_16:any,X_9:int);
-end user.qry;
+function user.qry():void;               	# 
+    X_5:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    X_8:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    X_9:int := 1:int;                   	# 
+    bat.append(X_5:bat[:oid,:int],1:int);	# BKCappend_val_wrap
+barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:oid,:int]);	# ITRbunIterator
+    io.print(X_12:oid);                 	# IOprint_val
+catch MALException:str;                 	# 
+exit MALException:str;                  	# 
+exit (X_12:oid,X_9:int);                	# 
+barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:oid,:int]);	# ITRbunIterator
+    io.print(X_12:oid);                 	# IOprint_val
+    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:oid,:int]);	# ITRbunNext
+catch MALException:str;                 	# 
+exit MALException:str;                  	# 
+exit (X_12:oid,X_16:any,X_9:int);       	# 
+end user.qry;                           	# 
 
 # 00:18:07 >  
 # 00:18:07 >  Done.

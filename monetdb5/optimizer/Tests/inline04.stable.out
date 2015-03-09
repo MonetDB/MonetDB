@@ -34,26 +34,26 @@ function user.main():void;
 # just multiplex callable functions. 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-    X_13:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);
-    X_14:int := 1:int;
-barrier X_15:bit := true:bit;
-    X_13:bat[:oid,:int] := batcalc.*(X_13:bat[:oid,:int],X_13:bat[:oid,:int]);
-    X_14:int := calc.+(X_14:int,1:int);
-    redo X_15:bit := calc.<(X_14:int,3:int);
-exit X_15:bit;
-    z:bat[:oid,:int]{inline} := X_13:bat[:oid,:int];
-    X_21:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);
-    X_22:int := 1:int;
-barrier X_23:bit := true:bit;
-    X_21:bat[:oid,:int] := batcalc.*(X_21:bat[:oid,:int],X_21:bat[:oid,:int]);
-    X_22:int := calc.+(X_22:int,1:int);
-    redo X_23:bit := calc.<(X_22:int,3:int);
-exit X_23:bit;
-    z:bat[:oid,:int]{inline} := X_21:bat[:oid,:int];
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    X_13:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	# CMDbatADDsignal
+    X_14:int := 1:int;                  	# 
+barrier X_15:bit := true:bit;           	# 
+    X_13:bat[:oid,:int] := batcalc.*(X_13:bat[:oid,:int],X_13:bat[:oid,:int]);	# CMDbatMULsignal
+    X_14:int := calc.+(X_14:int,1:int); 	# CMDvarADDsignal
+    redo X_15:bit := calc.<(X_14:int,3:int);	# CMDvarLT
+exit X_15:bit;                          	# 
+    z:bat[:oid,:int]{inline} := X_13:bat[:oid,:int];	# 
+    X_21:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	# CMDbatADDsignal
+    X_22:int := 1:int;                  	# 
+barrier X_23:bit := true:bit;           	# 
+    X_21:bat[:oid,:int] := batcalc.*(X_21:bat[:oid,:int],X_21:bat[:oid,:int]);	# CMDbatMULsignal
+    X_22:int := calc.+(X_22:int,1:int); 	# CMDvarADDsignal
+    redo X_23:bit := calc.<(X_22:int,3:int);	# CMDvarLT
+exit X_23:bit;                          	# 
+    z:bat[:oid,:int]{inline} := X_21:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

@@ -30,9 +30,9 @@ function user.main():void;
 # test constant expressions 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;
-    io.print(57.29577951308232:dbl);
-end user.tst;
+function user.tst():void;               	# 
+    io.print(57.29577951308232:dbl);    	# IOprint_val
+end user.tst;                           	# 
 
 # 21:32:15 >  
 # 21:32:15 >  Done.

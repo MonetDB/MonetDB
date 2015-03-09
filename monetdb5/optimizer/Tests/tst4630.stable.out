@@ -27,18 +27,18 @@ function user.main():void;
 # the common part should not be replicated 
     mdb.List("user","qry");
 end user.main;
-function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
-    a1:bat[:any_1,:any_2] := a:bat[:any_1,:any_2];
-    b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3];
-    c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4];
-    z:any := algebra.join(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3]);
-    zz:any := algebra.join(z:any,c:bat[:any_3,:any_4]);
-    ww:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);
-    X_12:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);
-    yy:bat[:void,:any] := algebra.join(X_12:any,b1:bat[:any_2,:any_3]);
-    xx:bat[:void,:any] := algebra.joinPath(X_12:any,b1:bat[:any_2,:any_3],c1:bat[:any_3,:any_4]);
-    return qry:bat[:any_1,:any_4] := xx:bat[:void,:any];
-end user.qry;
+function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 
+    a1:bat[:any_1,:any_2] := a:bat[:any_1,:any_2];	# 
+    b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3];	# 
+    c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4];	# 
+    z:any := algebra.join(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3]);	# 
+    zz:any := algebra.join(z:any,c:bat[:any_3,:any_4]);	# 
+    ww:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);	# 
+    X_12:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);	# 
+    yy:bat[:void,:any] := algebra.join(X_12:any,b1:bat[:any_2,:any_3]);	# 
+    xx:bat[:void,:any] := algebra.joinPath(X_12:any,b1:bat[:any_2,:any_3],c1:bat[:any_3,:any_4]);	# 
+    return qry:bat[:any_1,:any_4] := xx:bat[:void,:any];	# 
+end user.qry;                           	# 
 
 # 12:56:30 >  
 # 12:56:30 >  Done.

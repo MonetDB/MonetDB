@@ -28,17 +28,17 @@ function user.main():void;
 # inspired by SQL module 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-    X_15:int := calc.+(1:int,2:int);
-    zz:int := X_15:int;
-# base line test for inlining 
-    X_19:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);
-    z:bat[:oid,:int]{inline} := X_19:bat[:oid,:int];
-    X_23:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);
-    z:bat[:oid,:int]{inline} := X_23:bat[:oid,:int];
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    X_15:int := calc.+(1:int,2:int);    	# CMDvarADDsignal
+    zz:int := X_15:int;                 	# 
+# base line test for inlining           	# 
+    X_19:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	# CMDbatADDsignal
+    z:bat[:oid,:int]{inline} := X_19:bat[:oid,:int];	# 
+    X_23:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	# CMDbatADDsignal
+    z:bat[:oid,:int]{inline} := X_23:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

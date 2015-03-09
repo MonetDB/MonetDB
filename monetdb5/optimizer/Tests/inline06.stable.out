@@ -29,20 +29,20 @@ function user.main():void;
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-    X_13:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);
-    X_14:int := mmath.rand();
-# 
-    X_13:bat[:oid,:int] := batcalc.*(X_13:bat[:oid,:int],X_14:int);
-    z:bat[:oid,:int]{inline} := X_13:bat[:oid,:int];
-    X_19:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);
-    X_20:int := mmath.rand();
-# 
-    X_19:bat[:oid,:int] := batcalc.*(X_19:bat[:oid,:int],X_20:int);
-    z:bat[:oid,:int]{inline} := X_19:bat[:oid,:int];
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    X_13:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	# CMDbatADDsignal
+    X_14:int := mmath.rand();           	# MATHrandint
+#                                       	# 
+    X_13:bat[:oid,:int] := batcalc.*(X_13:bat[:oid,:int],X_14:int);	# CMDbatMULsignal
+    z:bat[:oid,:int]{inline} := X_13:bat[:oid,:int];	# 
+    X_19:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	# CMDbatADDsignal
+    X_20:int := mmath.rand();           	# MATHrandint
+#                                       	# 
+    X_19:bat[:oid,:int] := batcalc.*(X_19:bat[:oid,:int],X_20:int);	# CMDbatMULsignal
+    z:bat[:oid,:int]{inline} := X_19:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

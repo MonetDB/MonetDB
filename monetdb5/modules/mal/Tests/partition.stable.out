@@ -35,26 +35,26 @@ function user.main():void;
     mdb.List("user","tst");
     user.tst();
 end user.main;
-function user.tst():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],1:int);
-    bat.append(b:bat[:oid,:int],2:int);
-    bat.append(b:bat[:oid,:int],3:int);
-    bat.append(b:bat[:oid,:int],4:int);
-    bat.append(b:bat[:oid,:int],5:int);
-    c:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,0:int);
-    io.print(c:bat[:oid,:int]);
-    d:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,1:int);
-    io.print(d:bat[:oid,:int]);
-    (b1:bat[:oid,:int],b2:bat[:oid,:int]) := bat.partition(b:bat[:oid,:int]);
-    io.print(b1:bat[:oid,:int]);
-    io.print(b2:bat[:oid,:int]);
-    b3:bat[:oid,:int] := bat.partition(b:bat[:oid,:int]);
-    io.print(b3:bat[:oid,:int]);
-# an error should be produced 
-    e:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,-1:int);
-    io.print(e:bat[:oid,:int]);
-end user.tst;
+function user.tst():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],2:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],3:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],4:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],5:int); 	# BKCappend_val_wrap
+    c:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,0:int);	# CMDBATpartition2
+    io.print(c:bat[:oid,:int]);         	# IOprint_val
+    d:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,1:int);	# CMDBATpartition2
+    io.print(d:bat[:oid,:int]);         	# IOprint_val
+    (b1:bat[:oid,:int],b2:bat[:oid,:int]) := bat.partition(b:bat[:oid,:int]);	# CMDBATpartition
+    io.print(b1:bat[:oid,:int]);        	# IOprint_val
+    io.print(b2:bat[:oid,:int]);        	# IOprint_val
+    b3:bat[:oid,:int] := bat.partition(b:bat[:oid,:int]);	# CMDBATpartition
+    io.print(b3:bat[:oid,:int]);        	# IOprint_val
+# an error should be produced           	# 
+    e:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,-1:int);	# CMDBATpartition2
+    io.print(e:bat[:oid,:int]);         	# IOprint_val
+end user.tst;                           	# 
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

@@ -19,14 +19,14 @@ function user.main():void;
     b := algebra.subsort(b,false,false);
     mdb.List();
 end user.main;
-function user.main():void;
-    b:bat[:oid,:int] := bat.new(:oid,:int);
-    bat.append(b:bat[:oid,:int],2:int);
-    bat.append(b:bat[:oid,:int],5:int);
-    bat.append(b:bat[:oid,:int],3:int);
-    b:bat[:oid,:int] := algebra.subsort(b:bat[:oid,:int],false:bit,false:bit);
-    mdb.List();
-end user.main;
+function user.main():void;              	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],2:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],5:int); 	# BKCappend_val_wrap
+    bat.append(b:bat[:oid,:int],3:int); 	# BKCappend_val_wrap
+    b:bat[:oid,:int] := algebra.subsort(b:bat[:oid,:int],false:bit,false:bit);	# ALGsubsort11
+    mdb.List();                         	# MDBlistDetail
+end user.main;                          	# 
 
 # 22:31:27 >  
 # 22:31:27 >  Done.
