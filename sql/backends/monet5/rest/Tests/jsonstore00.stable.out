@@ -182,7 +182,7 @@ Ready.
 % .L # table_name
 % error # name
 % char # type
-% 21 # length
+% 20 # length
 [ "No Parameter Allowed"	]
 #SELECT 'Missing Attachment PATH' AS error;
 % .L # table_name

@@ -71,7 +71,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, strlen, buf, len, lenp, lent, errfunc, hdl, ret)	\
+#define copyString(str, strlen, buf, len, lenp, lent, errfunc, hdl, ret) \
 	do {								\
 		lent _l;						\
 		if ((len) < 0) {					\
@@ -122,6 +122,24 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 		if (wslp)						\
 			*(wslp) = (sl) * (cw);				\
 	} while (0)
+
+#ifdef ODBCDEBUG
+#define WriteData(ptr, val, TYPE)					\
+	do {								\
+		*(TYPE *) (ptr) = (val);				\
+		ODBCLOG("Writing %d bytes of type %s to " PTRFMT "\n",	\
+			(int) sizeof(TYPE), #TYPE, PTRFMTCAST (ptr));	\
+	} while (0)
+#define WriteValue(ptr, val)						\
+	do {								\
+		*(ptr) = (val);						\
+		ODBCLOG("Writing %d bytes to " PTRFMT "\n",		\
+			(int) sizeof(*(ptr)), PTRFMTCAST (ptr));	\
+	} while (0)
+#else
+#define WriteData(ptr, val, TYPE)	(*(TYPE *) (ptr) = (val))
+#define WriteValue(ptr, val)		(*(ptr) = (val))
+#endif
 
 char *ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len);
 char *ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len);
