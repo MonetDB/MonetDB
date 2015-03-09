@@ -18,6 +18,7 @@
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
+#include "mal_function.h"
 #include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
