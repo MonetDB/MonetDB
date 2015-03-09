@@ -78,12 +78,12 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	array_status_ptr = stmt->ApplRowDescr->sql_desc_array_status_ptr;
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
+	array_status_ptr = stmt->ImplRowDescr->sql_desc_array_status_ptr;
+	stmt->ImplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
 
 	rc = MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
 
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
+	stmt->ImplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
 
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NO_DATA)
 		stmt->State = EXTENDEDFETCHED;
