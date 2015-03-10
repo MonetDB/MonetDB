@@ -1260,7 +1260,7 @@ GDKexit(int status)
 #endif
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
-#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
 		MT_global_exit(status);
