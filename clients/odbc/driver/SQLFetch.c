@@ -45,14 +45,13 @@
 #endif
 
 SQLRETURN
-MNDBFetch(ODBCStmt *stmt)
+MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 {
 	ODBCDesc *ard, *ird;
 	ODBCDescRec *rec;
 	int i;
 	SQLULEN row;
 	SQLLEN offset;
-	SQLUSMALLINT *statusp;
 
 	/* stmt->startRow is the (0 based) index of the first row we
 	 * stmt->need to fetch */
@@ -73,8 +72,6 @@ MNDBFetch(ODBCStmt *stmt)
 
 	stmt->State = FETCHED;
 
-	statusp = ird->sql_desc_array_status_ptr;
-
 	if (stmt->retrieveData == SQL_RD_OFF) {
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
@@ -87,14 +84,14 @@ MNDBFetch(ODBCStmt *stmt)
 			stmt->rowSetSize = 0;
 			return SQL_NO_DATA;
 		}
-		if (statusp) {
+		if (RowStatusArray) {
 			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++) {
-				WriteValue(statusp, SQL_ROW_SUCCESS);
-				statusp++;
+				WriteValue(RowStatusArray, SQL_ROW_SUCCESS);
+				RowStatusArray++;
 			}
 			for (; row < ard->sql_desc_array_size; row++) {
-				WriteValue(statusp, SQL_ROW_NOROW);
-				statusp++;
+				WriteValue(RowStatusArray, SQL_ROW_NOROW);
+				RowStatusArray++;
 			}
 		}
 		return SQL_SUCCESS;
@@ -112,23 +109,23 @@ MNDBFetch(ODBCStmt *stmt)
 					return SQL_NO_DATA;
 				break;
 			case MTIMEOUT:
-				if (statusp)
-					WriteValue(statusp, SQL_ROW_ERROR);
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_ERROR);
 				/* Timeout expired / Communication
 				 * link failure */
 				addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			default:
-				if (statusp)
-					WriteValue(statusp, SQL_ROW_ERROR);
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_ERROR);
 				/* General error */
 				addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			}
 			break;
 		}
-		if (statusp)
-			WriteValue(statusp, SQL_ROW_SUCCESS);
+		if (RowStatusArray)
+			WriteValue(RowStatusArray, SQL_ROW_SUCCESS);
 
 		stmt->rowSetSize++;
 
@@ -150,20 +147,20 @@ MNDBFetch(ODBCStmt *stmt)
 				      rec->sql_desc_scale,
 				      rec->sql_desc_datetime_interval_precision,
 				      offset, row) == SQL_ERROR) {
-				if (statusp)
-					WriteValue(statusp, SQL_ROW_SUCCESS_WITH_INFO);
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_SUCCESS_WITH_INFO);
 			}
 		}
-		if (statusp)
-			statusp++;
+		if (RowStatusArray)
+			RowStatusArray++;
 	}
 	if (ird->sql_desc_rows_processed_ptr)
 		*ird->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
 
-	if (statusp)
+	if (RowStatusArray)
 		while (row++ < ard->sql_desc_array_size) {
-			WriteValue(statusp, SQL_ROW_NOROW);
-			statusp++;
+			WriteValue(RowStatusArray, SQL_ROW_NOROW);
+			RowStatusArray++;
 		}
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
@@ -199,5 +196,5 @@ SQLFetch(SQLHSTMT StatementHandle)
 
 	stmt->startRow += stmt->rowSetSize;
 
-	return MNDBFetch(stmt);
+	return MNDBFetch(stmt, stmt->ImplRowDescr->sql_desc_array_status_ptr);
 }
