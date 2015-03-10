@@ -2982,6 +2982,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if TestErr is not None:
             TestErr.write(Prompt('Done.'))
             TestErr.close()
+        # there are two tests that create a temporary file called
+        # /tmp/MonetEvents; we just unconditionally remove the file
+        remove('/tmp/MonetEvents')
+
     except KeyboardInterrupt:
         if pSrvrTimer is not None:
             pSrvrTimer.cancel()
