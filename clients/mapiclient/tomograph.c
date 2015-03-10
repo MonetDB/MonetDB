@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -83,7 +72,7 @@ static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
-static int beat = 50;
+static int beat = 5000;
 static int cpus = 0;
 static int atlas= 1;
 static int atlaspage = 0;
@@ -440,7 +429,7 @@ usageTomograph(void)
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -A | --atlas=<number> maximum number of pages\n");
 	fprintf(stderr, "  -D | --debug\n");
 	fprintf(stderr, "  -? | --help\n");
@@ -1537,7 +1526,7 @@ main(int argc, char **argv)
 			atlas = atoi(optarg ? optarg : "1");
 			break;
 		case 'b':
-			beat = atoi(optarg ? optarg : "100");
+			beat = atoi(optarg ? optarg : "5000");
 			break;
 		case 'D':
 			debug = 1;
@@ -1736,8 +1725,6 @@ main(int argc, char **argv)
 		len = 0;
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
-			if( trace) 
-				fprintf(trace,"%s",buf);
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
@@ -1745,8 +1732,10 @@ main(int argc, char **argv)
 				update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
-				response = e + 1;
-			}
+				if( trace && i >=0 && capturing) 
+					fprintf(trace,"%s\n",response);
+					response = e + 1;
+				}
 			/* handle last line in buffer */
 			if (*response) {
 				if (debug)

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -38,6 +27,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN SQL_API
 SQLExtendedFetch(SQLHSTMT StatementHandle,
@@ -55,10 +45,11 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT "\n",
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT " " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle,
 		translateFetchOrientation(FetchOrientation),
-		LENCAST FetchOffset);
+		LENCAST FetchOffset, PTRFMTCAST RowCountPtr,
+		PTRFMTCAST RowStatusArray);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -78,21 +69,21 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	array_status_ptr = stmt->ApplRowDescr->sql_desc_array_status_ptr;
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
+	array_status_ptr = stmt->ImplRowDescr->sql_desc_array_status_ptr;
+	stmt->ImplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
 
-	rc = SQLFetchScroll_(stmt, FetchOrientation, FetchOffset);
+	rc = MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
 
-	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
+	stmt->ImplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
 
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NO_DATA)
 		stmt->State = EXTENDEDFETCHED;
 
 	if (SQL_SUCCEEDED(rc) && RowCountPtr) {
 #ifdef BUILD_REAL_64_BIT_MODE	/* note: only defined on Debian Lenny */
-		*RowCountPtr = (SQLUINTEGER) stmt->rowSetSize;
+		WriteValue(RowCountPtr, (SQLUINTEGER) stmt->rowSetSize);
 #else
-		*RowCountPtr = (SQLULEN) stmt->rowSetSize;
+		WriteValue(RowCountPtr, (SQLULEN) stmt->rowSetSize);
 #endif
 	}
 

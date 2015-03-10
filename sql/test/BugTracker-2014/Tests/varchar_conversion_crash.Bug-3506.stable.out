@@ -28,12 +28,15 @@ Ready.
 #CREATE TABLE config (id SERIAL ,dataset INT NOT NULL ,section VARCHAR(100) ,key VARCHAR(100) ,value VARCHAR(500) ,type VARCHAR(5) ,UNIQUE (dataset, section, key)) ;
 #INSERT INTO config (dataset, section, key, value, type) VALUES (6, 'quality_lofar', 'low_bound', 1.9, 'float');
 [ 1	]
+#INSERT INTO config (dataset, section, key, value, type) VALUES (6, 'quality_lofar', 'high_bound', 80, 'int');
+[ 1	]
 #select * from config;
 % sys.config,	sys.config,	sys.config,	sys.config,	sys.config,	sys.config # table_name
 % id,	dataset,	section,	key,	value,	type # name
 % int,	int,	varchar,	varchar,	varchar,	varchar # type
-% 1,	1,	13,	9,	3,	5 # length
+% 1,	1,	13,	10,	3,	5 # length
 [ 1,	6,	"quality_lofar",	"low_bound",	"1.9",	"float"	]
+[ 2,	6,	"quality_lofar",	"high_bound",	"80",	"int"	]
 #drop table config;
 
 # 18:58:33 >  

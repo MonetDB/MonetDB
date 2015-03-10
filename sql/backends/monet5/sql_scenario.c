@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -61,6 +50,7 @@
 #include "opt_statistics.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
+#include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 
@@ -1113,9 +1103,21 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
+		// look for outdated plans
+		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+			msg = SQLCacheRemove(c, be->q->name);
+			qc_delete(be->mvc->qc, be->q);
+			goto recompilequery;
+		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+		// look for outdated plans
+		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+			msg = SQLCacheRemove(c, be->q->name);
+			qc_delete(be->mvc->qc, be->q);
+			goto recompilequery;
+		}
 
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
@@ -1125,8 +1127,11 @@ SQLparser(Client c)
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
-		sql_rel *r = sql_symbol2relation(m, m->sym);
-		stmt *s = sql_relation2stmt(m, r);
+		sql_rel *r;
+		stmt *s;
+recompilequery:
+		r = sql_symbol2relation(m, m->sym);
+		s = sql_relation2stmt(m, r);
 
 		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
@@ -1149,10 +1154,7 @@ SQLparser(Client c)
 				trimMalBlk(c->curprg->def);
 				mb = c->curprg->def;
 				chkProgram(c->fdout, c->nspace, mb);
-				if (!cachable(m, s))
-					addOptimizerPipe(c, mb, "minimal_pipe");
-				else
-					addOptimizerPipe(c, mb, "default_pipe");
+				addOptimizerPipe(c, mb, "default_pipe");
 				msg = optimizeMALBlock(c, mb);
 				if (msg != MAL_SUCCEED) {
 					sqlcleanup(m, err);

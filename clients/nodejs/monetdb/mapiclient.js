@@ -321,7 +321,7 @@ function __sha512(str) {
 	return crypto.createHash('sha512').update(str).digest('hex');
 }
 
-function _parsetuples(names, types, lines) {
+exports.parsetuples =  _parsetuples = function(types, lines) {
 	var state = 'INCRAP';
 	var resultarr = [];
 	for (li in lines) {
@@ -334,7 +334,7 @@ function _parsetuples(names, types, lines) {
 			var chr = line.charAt(curPos);
 			switch (state) {
 			case 'INCRAP':
-				if (chr != '\t' && chr != ',') {
+				if (chr != '\t' && chr != ',' && chr != ' ') {
 					if (chr == '"') {
 						state = 'INQUOTES';
 					} else {
@@ -437,7 +437,7 @@ function _parseresponse(msg) {
 			resp.col[colinfo.column] = colinfo.index;
 			resp.structure.push(colinfo);
 		}
-		resp.data = _parsetuples(column_names, column_types, lines.slice(5, lines.length-1));
+		resp.data = _parsetuples(column_types, lines.slice(5, lines.length-1));
 	}
 	return resp;
 }

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -72,7 +61,7 @@ offlineProfilerHeader(void)
 	lognew();
 	logadd("# ");
 	logadd("event,\t");
-	logadd("\ttime,\t");
+	logadd("time,\t");
 	logadd("pc,\t");
 	logadd("thread,\t");
 	logadd("state,\t");
@@ -239,6 +228,8 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	if ( msg){
 		logadd("\"%s\",\t",msg);
 	} else {
+		// TODO Obfusate instructions unless administrator calls for it.
+		
 		/* generate actual call statement */
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
 		c = stmt;
@@ -811,15 +802,10 @@ getDiskSpace(void)
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += headsize(b, cnt);
 					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
-					if (b->H->vheap)
-						size += b->H->vheap->size;
 					if (b->T->vheap)
 						size += b->T->vheap->size;
-					if (b->H->hash)
-						size += sizeof(BUN) * cnt;
 					if (b->T->hash)
 						size += sizeof(BUN) * cnt;
 				}
@@ -989,14 +975,14 @@ static void profilerHeartbeat(void *dummy)
 	while (ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat")) {
 		/* wait until you need this info */
 		while (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0; t -= 15) {
-				MT_sleep_ms(15);
+			for (t = 1000; t > 0; t -= 25) {
+				MT_sleep_ms(25);
 				if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 15) {
-			MT_sleep_ms(t > 15 ? 15 : t);
+		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 25) {
+			MT_sleep_ms(t > 25 ? 25 : t);
 			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 				return;
 		}

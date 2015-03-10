@@ -25,9 +25,9 @@ function user.tst():void;
     raise myNewException:str  := "new exception";
     io.printf("should not come here\n");
 #exception block; 
-catch myNewException:str ;
+catch myNewException:str;
     io.printf("caught exception\n");
-exit myNewException:str ;
+exit myNewException:str;
 end user.tst;
 function user.main():void;
 # Exception identifiers can be introduced at any place 

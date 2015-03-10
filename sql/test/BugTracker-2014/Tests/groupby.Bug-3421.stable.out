@@ -68,8 +68,8 @@ Ready.
 % toplevelorderid,	businessdate,	connector,	filledvalue,	filledqty,	numberoffills,	chargeusd # name
 % bigint,	date,	varchar,	real,	real,	int,	real # type
 % 4,	10,	2,	15,	15,	1,	15 # length
-[ 5508,	2013-02-01,	"C1",	3000000,	3000000,	4,	NULL	]
-[ 5508,	2013-02-01,	"C2",	2000000,	2000000,	2,	NULL	]
+[ 5508,	2013-02-01,	"C1",	3e+06,	3e+06,	4,	NULL	]
+[ 5508,	2013-02-01,	"C2",	2e+06,	2e+06,	2,	NULL	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name

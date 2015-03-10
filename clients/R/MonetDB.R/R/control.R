@@ -69,7 +69,7 @@ monetdb.server.start <-
 
 
 monetdb.server.stop <-
-  function( correct.pid, wait=T ){
+  function( correct.pid, wait=TRUE ){
     
     if ( .Platform$OS.type == "unix" ) {
       system(paste0("kill ",correct.pid))  

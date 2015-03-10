@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -47,31 +36,39 @@
 #endif
 
 static SQLRETURN
-SQLGetConnectOption_(ODBCDbc *dbc,
+MNDBGetConnectOption(ODBCDbc *dbc,
 		     SQLUSMALLINT Option,
 		     SQLPOINTER ValuePtr)
 {
+	SQLLEN v;
+	SQLRETURN r;
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (Option) {
 		/* connection attributes (ODBC 1 and 2 only) */
 	case SQL_ACCESS_MODE:
 	case SQL_AUTOCOMMIT:
 	case SQL_LOGIN_TIMEOUT:
-	case SQL_ODBC_CURSORS:
 	case SQL_OPT_TRACE:
 	case SQL_PACKET_SIZE:
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr, 0, NULL);
+	case SQL_ODBC_CURSORS:
+		/* 32 bit integer argument, but SQLGetConnectAttr returns 64 */
+		r = MNDBGetConnectAttr(dbc, Option, &v, 0, NULL);
+		if (SQL_SUCCEEDED(r))
+			WriteData(ValuePtr, (SQLUINTEGER) v, SQLUINTEGER);
+		return r;
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr, 0, NULL);
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLGetConnectAttr_(dbc, Option, ValuePtr,
+		return MNDBGetConnectAttr(dbc, Option, ValuePtr,
 					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
 	default:
 		/* Invalid attribute/option identifier */
@@ -90,15 +87,16 @@ SQLGetConnectOption(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
+	ODBCLOG("SQLGetConnectOption " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 	clearDbcErrors(dbc);
 
-	return SQLGetConnectOption_(dbc, Option, ValuePtr);
+	return MNDBGetConnectOption(dbc, Option, ValuePtr);
 }
 
 SQLRETURN SQL_API
@@ -119,8 +117,9 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
+	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -145,7 +144,7 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLGetConnectOption_(dbc, Option, ptr);
+	rc = MNDBGetConnectOption(dbc, Option, ptr);
 
 	if (ptr != ValuePtr) {
 		if (SQL_SUCCEEDED(rc)) {

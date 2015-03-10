@@ -18,6 +18,15 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+CREATE FUNCTION "left_shift"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet."<<";
+CREATE FUNCTION "right_shift"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.">>";
+CREATE FUNCTION "left_shift_assign"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet."<<=";
+CREATE FUNCTION "right_shift_assign"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.">>=";
+insert into sys.systemfunctions (select id from sys.functions where name in ('left_shift', 'right_shift', 'left_shift_assign', 'right_shift_assign') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
 create function sys.fuse(one bigint, two bigint)
 returns hugeint
 external name udf.fuse;
@@ -63,8 +72,8 @@ from sys.storagemodel() group by "schema","table";
 insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
-insert into sys.types values(6831, 'hge', 'hugeint', 128, 1, 2, 6, 0);
-insert into sys.types values(6832, 'hge', 'decimal', 39, 1, 10, 8, 0);
+insert into sys.types values(6872, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(6873, 'hge', 'decimal', 39, 1, 10, 8, 0);
 update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
 set schema "testschema";
 
@@ -164,8 +173,48 @@ create table sys.statistics(
 	minval string,
 	maxval string,
 	sorted boolean);
-insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+drop view sys.querylog_history;
+drop view sys.querylog_calls;
+drop function sys.querylog_calls;
+create function sys.querylog_calls()	returns table(	    id oid,
+	    "start" timestamp,
+	    "stop" timestamp,
+	    arguments string,
+	    tuples wrd,
+	    run bigint,
+	    ship bigint,
+	    cpu int,
+	    io int 
+	) external name sql.querylog_calls;
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
+where qd.id = ql.id and qd.owner = user;
+drop view sys.tracelog;
+drop function sys.tracelog;
+create function sys.tracelog()
+	returns table (
+	event integer,      
+	clk varchar(20),    
+	pc varchar(50),     
+	thread int,         
+	ticks bigint,       
+	rrsMB bigint,       
+	vmMB bigint,        
+	reads bigint,       
+	writes bigint,  
+	minflt bigint,  
+	majflt bigint,  
+	nvcsw bigint,  
+	stmt string         
+	) external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from systemfunctions where function_id not in (select id from functions);
+update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
+drop procedure sys.cluster1;
+drop procedure sys.cluster2;
 set schema "testschema";
 
 

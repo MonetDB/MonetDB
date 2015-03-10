@@ -25,13 +25,13 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    X_12 := aggr.sum(b);                #  3 _12:dbl := CMDBATsum(b:bat[:oid,:int]) {G}
-    X_13 := batcalc.+(b,X_12);          #  4 _13:bat[:oid,:dbl] := CMDbatADDsignal(b:bat[:oid,:int], _12:dbl) {G}
-    z:bat[:oid,:dbl] {inline} := X_13;  #  5 z:bat[:oid,:dbl] := _13:bat[:oid,:dbl] {G}
-end user.qry;                           #  6  
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    X_12:dbl := aggr.sum(b:bat[:oid,:int]);	# CMDBATsum
+    X_13:bat[:oid,:dbl] := batcalc.+(b:bat[:oid,:int],X_12:dbl);	# CMDbatADDsignal
+    z:bat[:oid,:dbl]{inline} := X_13:bat[:oid,:dbl];	# 
+end user.qry;                           	# 
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

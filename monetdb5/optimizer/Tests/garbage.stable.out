@@ -19,11 +19,11 @@ end user.tst;
 function user.main():void;
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    c{keep} := bat.new(:oid,:int);      #  2 c:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    io.print(b);                        #  3 _5:void := IOprint_val(b:bat[:oid,:int]) {G}
-end user.tst;                           #  4  
+function user.tst():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    c:bat[:oid,:int]{keep} := bat.new(:oid,:int);	# CMDBATnew
+    io.print(b:bat[:oid,:int]);         	# IOprint_val
+end user.tst;                           	# 
 
 # 17:24:05 >  
 # 17:24:05 >  Done.

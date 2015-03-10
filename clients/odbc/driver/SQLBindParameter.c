@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -45,7 +34,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLBindParameter_(ODBCStmt *stmt,
+MNDBBindParameter(ODBCStmt *stmt,
 		  SQLUSMALLINT ParameterNumber,
 		  SQLSMALLINT InputOutputType,
 		  SQLSMALLINT ValueType,
@@ -231,10 +220,10 @@ SQLBindParameter_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	rc = SQLSetDescField_(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ValueType, 0);
+	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ValueType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
-	rc = SQLSetDescField_(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ParameterType, 0);
+	rc = MNDBSetDescField(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ParameterType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	ipdrec->sql_desc_parameter_type = InputOutputType;
@@ -259,14 +248,16 @@ SQLBindParameter(SQLHSTMT StatementHandle,
 		 SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d\n",
+	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d " PTRFMT " " LENFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
 		(int) InputOutputType, translateCType(ValueType),
 		translateSQLType(ParameterType),
-		ULENCAST ColumnSize, (int) DecimalDigits);
+		ULENCAST ColumnSize, (int) DecimalDigits,
+		PTRFMTCAST ParameterValuePtr, LENCAST BufferLength,
+		PTRFMTCAST StrLen_or_IndPtr);
 #endif
 
-	return SQLBindParameter_((ODBCStmt *) StatementHandle, ParameterNumber,
+	return MNDBBindParameter((ODBCStmt *) StatementHandle, ParameterNumber,
 				 InputOutputType, ValueType, ParameterType,
 				 ColumnSize, DecimalDigits, ParameterValuePtr,
 				 BufferLength, StrLen_or_IndPtr);

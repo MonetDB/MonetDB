@@ -56,7 +56,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 989 # length
+% 988 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A6:date):void;
     X_199:void  := querylog.define("explain select\n\tsupp_nation,\n\tcust_nation,\n\tl_year,\n\tsum(volume) as revenue\nfrom\n\t(\n\t\tselect\n\t\t\tn1.n_name as supp_nation,\n\t\t\tn2.n_name as cust_nation,\n\t\t\textract(year from l_shipdate) as l_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume\n\t\tfrom\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand c_custkey = o_custkey\n\t\t\tand s_nationkey = n1.n_nationkey\n\t\t\tand c_nationkey = n2.n_nationkey\n\t\t\tand (\n\t\t\t\t(n1.n_name = \\'FRANCE\\' and n2.n_name = \\'GERMANY\\')\n\t\t\t\tor (n1.n_name = \\'GERMANY\\' and n2.n_name = \\'FRANCE\\')\n\t\t\t)\n\t\t\tand l_shipdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t) as shipping\ngroup by\n\tsupp_nation,\n\tcust_nation,\n\tl_year\norder by\n\tsupp_nation,\n\tcust_nation,\n\tl_year;","sequential_pipe",110);
     X_9 := sql.mvc();
@@ -80,7 +80,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A
     (X_40,r1_43) := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",2);
     X_44:bat[:oid,:oid]  := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",1);
     X_45 := sql.delta(X_38,X_40,r1_43,X_44);
-    X_46:bat[:oid,:oid]  := algebra.leftfetchjoinPath(X_233,X_10,X_45);
+    X_46:bat[:oid,:oid] := algebra.leftfetchjoinPath(X_233,X_10,X_45);
     X_47:bat[:oid,:oid]  := sql.tid(X_9,"sys","orders");
     (X_49,r1_54) := algebra.subjoin(X_46,X_47,nil:BAT,nil:BAT,false,nil:lng);
     X_234 := algebra.leftfetchjoin(r1_37,X_32);
@@ -112,7 +112,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A
     (X_98,r1_109) := sql.bind_idxbat(X_9,"sys","customer","customer_c_nationkey_fkey",2);
     X_100:bat[:oid,:oid]  := sql.bind_idxbat(X_9,"sys","customer","customer_c_nationkey_fkey",1);
     X_101 := sql.delta(X_96,X_98,r1_109,X_100);
-    X_102:bat[:oid,:oid]  := algebra.leftfetchjoinPath(r1_105,X_92,X_101);
+    X_102:bat[:oid,:oid] := algebra.leftfetchjoinPath(r1_105,X_92,X_101);
     X_103 := algebra.subselect(X_69,A2,A2,true,true,false);
     X_106 := algebra.subselect(X_69,A4,A4,true,true,false);
     X_107 := bat.mergecand(X_103,X_106);
@@ -130,7 +130,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A
     X_121 := algebra.leftfetchjoin(X_119,X_114);
     X_237 := algebra.leftfetchjoin(X_119,X_109);
     X_122:bat[:oid,:date]  := algebra.leftfetchjoinPath(X_237,X_94,X_76,X_49,X_34,X_23,X_22);
-    X_123:bat[:oid,:int]  := batmtime.year(X_122);
+    X_123:bat[:oid,:int] := batmtime.year(X_122);
     (X_124,r1_163,r2_163) := group.subgroup(X_123);
     (X_127,r1_166,r2_166) := group.subgroup(X_121,X_124);
     (X_130,r1_169,r2_169) := group.subgroupdone(X_120,X_127);
@@ -141,17 +141,17 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A
     (X_154,r1_193) := sql.bind(X_9,"sys","lineitem","l_extendedprice",2);
     X_157:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_extendedprice",1);
     X_159 := sql.delta(X_149,X_154,r1_193,X_157);
-    X_160:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_237,X_94,X_76,X_49,X_34,X_23,X_10,X_159);
-    X_161:bat[:oid,:hge]  := batcalc.hge(2,X_160,33,2);
+    X_160:bat[:oid,:lng] := algebra.leftfetchjoinPath(X_237,X_94,X_76,X_49,X_34,X_23,X_10,X_159);
+    X_161:bat[:oid,:hge] := batcalc.hge(2,X_160,33,2);
     X_163 := calc.lng(A0,15,2);
     X_165:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_discount",0);
     (X_167,r1_216) := sql.bind(X_9,"sys","lineitem","l_discount",2);
     X_169:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_discount",1);
     X_170 := sql.delta(X_165,X_167,r1_216,X_169);
-    X_171:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_237,X_94,X_76,X_49,X_34,X_23,X_10,X_170);
-    X_172:bat[:oid,:lng]  := batcalc.-(X_163,X_171);
-    X_173:bat[:oid,:hge]  := batcalc.*(X_161,X_172);
-    X_174:bat[:oid,:hge]  := aggr.subsum(X_173,X_130,r1_169,true,true);
+    X_171:bat[:oid,:lng] := algebra.leftfetchjoinPath(X_237,X_94,X_76,X_49,X_34,X_23,X_10,X_170);
+    X_172:bat[:oid,:lng] := batcalc.-(X_163,X_171);
+    X_173:bat[:oid,:hge] := batcalc.*(X_161,X_172);
+    X_174:bat[:oid,:hge] := aggr.subsum(X_173,X_130,r1_169,true,true);
     (X_136,r1_175,r2_175) := algebra.subsort(X_135,false,false);
     (X_140,r1_179,r2_179) := algebra.subsort(X_134,r1_175,r2_175,false,false);
     (X_143,r1_182,r2_182) := algebra.subsort(X_133,r1_179,r2_179,false,false);

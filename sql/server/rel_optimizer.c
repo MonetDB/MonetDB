@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -6936,6 +6925,25 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			rel->op = op_join;
 		rel->exps = NULL;
 		return rel;
+	}
+	if (r->op == op_union) { 
+		list *p;
+		sql_rel *nl;
+
+		assert( rel_uses_exps(r->l, rel->exps) && rel_uses_exps(r->r, rel->exps));
+		/* apply returns all input columns + the output of the inner relation */
+		/* so we prepend the input colunms to the unions expression list */
+		/* Push the apply down the union */
+		p = rel_projections(sql, rel, NULL, 1, 1);
+		nl = rel_crossproduct(sql->sa, rel_dup(rel->l), r->l, op_apply);
+		rel->r = r->r; 
+		nl->flag = rel->flag;
+		nl->exps = rel->exps;
+		r->l = nl;
+		r->r = rel;
+		r->exps = list_merge(p, r->exps, (fdup)NULL);
+		(*changes)++;
+		return r;
 	}
 	if (r->op == op_project) { /* merge projections */
 		if (!r->l) { /* TODO check realy apply case */

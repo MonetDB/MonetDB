@@ -1,1 +1,1 @@
-u := url.new(void,url);
+u := url.new(:oid,:url);

@@ -25,7 +25,6 @@ function user.s1_0{autoCommit=true}():void;
     X55 := bat.new(nil:oid,nil:wrd);
     X56 := bat.new(nil:oid,nil:wrd);
     X57 := bat.new(nil:oid,nil:wrd);
-#barrier _58 := language.dataflow(); 
     X59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
     remote.register(X59,"user","s1_0map");
     X66 := remote.put(X59,X54);

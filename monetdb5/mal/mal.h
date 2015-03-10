@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -94,19 +83,14 @@ mal_export void mal_exit(void);
 
 /* Listing modes are globally known */
 #define LIST_INPUT      1       /* echo original input */
-#define LIST_MAL_STMT  2       /* show mal instruction */
+#define LIST_MAL_NAME   2       /* show variable name */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_UDF    8       /* show type resolutoin */
-#define LIST_MAL_PROPS    16       /* show line numbers */
-#define LIST_MAL_DETAIL 32		/* type details */
-#define LIST_MAL_VALUE  64		/* list bat tuple count */
-#define LIST_MAL_MAPI  128       /* output Mapi compatible output */
-#define LIST_MAL_ARG 256		/* show the formal argument name */
-#define LIST_MAL_LNR    512       /* show line numbers */
-#define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
-#define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG | LIST_MAL_TYPE)
-#define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_ARG)
-#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR | LIST_MAL_MAPI)
+#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_PROPS 16       /* show variable properties */
+#define LIST_MAL_MAPI  32       /* output Mapi compatible output */
+#define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
+#define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
+#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
 
 #ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED
@@ -228,6 +212,7 @@ typedef struct MALBLK {
 	lng runtime;				/* average execution time of block in ticks */
 	int calls;					/* number of calls */
 	lng optimize;				/* total optimizer time */
+	int activeClients;			/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128

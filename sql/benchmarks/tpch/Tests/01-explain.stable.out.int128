@@ -50,7 +50,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 623 # length
+% 622 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     X_170:void  := querylog.define("explain select\n\tl_returnflag,\n\tl_linestatus,\n\tsum(l_quantity) as sum_qty,\n\tsum(l_extendedprice) as sum_base_price,\n\tsum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n\tsum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n\tavg(l_quantity) as avg_qty,\n\tavg(l_extendedprice) as avg_price,\n\tavg(l_discount) as avg_disc,\n\tcount(*) as count_order\nfrom\n\tlineitem\nwhere\n\tl_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n\tl_returnflag,\n\tl_linestatus\norder by\n\tl_returnflag,\n\tl_linestatus;","sequential_pipe",87);
     X_7 := sql.mvc();
@@ -92,25 +92,25 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     X_85:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_discount",1);
     X_87 := sql.projectdelta(X_20,X_77,X_82,r1_97,X_85);
     X_88:bat[:oid,:lng]  := batcalc.-(X_75,X_87);
-    X_89:bat[:oid,:hge]  := batcalc.*(X_73,X_88);
-    X_90:bat[:oid,:hge]  := aggr.subsum(X_89,X_37,r1_45,true,true);
+    X_89:bat[:oid,:hge] := batcalc.*(X_73,X_88);
+    X_90:bat[:oid,:hge] := aggr.subsum(X_89,X_37,r1_45,true,true);
     X_93 := calc.lng(A1,15,2);
     X_94:bat[:oid,:lng]  := batcalc.-(X_93,X_87);
-    X_95:bat[:oid,:hge]  := batcalc.*(X_73,X_94);
+    X_95:bat[:oid,:hge] := batcalc.*(X_73,X_94);
     X_96 := calc.lng(A2,15,2);
     X_97:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_tax",0);
     (X_99,r1_121) := sql.bind(X_7,"sys","lineitem","l_tax",2);
     X_101:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_tax",1);
     X_102 := sql.projectdelta(X_20,X_97,X_99,r1_121,X_101);
     X_103:bat[:oid,:lng]  := batcalc.+(X_96,X_102);
-    X_104:bat[:oid,:hge]  := batcalc.*(X_95,X_103);
-    X_105:bat[:oid,:hge]  := aggr.subsum(X_104,X_37,r1_45,true,true);
+    X_104:bat[:oid,:hge] := batcalc.*(X_95,X_103);
+    X_105:bat[:oid,:hge] := aggr.subsum(X_104,X_37,r1_45,true,true);
     X_107 := batcalc.dbl(X_61);
     X_108:bat[:oid,:dbl]  := aggr.subavg(X_107,X_37,r1_45,true,true);
     X_110:bat[:oid,:dbl]  := batcalc.dbl(2,X_70);
-    X_112:bat[:oid,:dbl]  := aggr.subavg(X_110,X_37,r1_45,true,true);
+    X_112:bat[:oid,:dbl] := aggr.subavg(X_110,X_37,r1_45,true,true);
     X_114:bat[:oid,:dbl]  := batcalc.dbl(2,X_87);
-    X_115:bat[:oid,:dbl]  := aggr.subavg(X_114,X_37,r1_45,true,true);
+    X_115:bat[:oid,:dbl] := aggr.subavg(X_114,X_37,r1_45,true,true);
     X_118:bat[:oid,:wrd]  := aggr.subcount(X_37,X_37,r1_45,false);
     (X_42,r1_50,r2_50) := algebra.subsort(X_41,false,false);
     (X_46,r1_54,r2_54) := algebra.subsort(X_40,r1_50,r2_50,false,false);

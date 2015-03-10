@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -42,7 +31,7 @@
 
 
 static SQLRETURN
-SQLGetInfo_(ODBCDbc *dbc,
+MNDBGetInfo(ODBCDbc *dbc,
 	    SQLUSMALLINT InfoType,
 	    SQLPOINTER InfoValuePtr,
 	    SQLSMALLINT BufferLength,
@@ -1173,6 +1162,8 @@ SQLGetInfo_(ODBCDbc *dbc,
 static char *
 translateInfoType(SQLUSMALLINT InfoType)
 {
+	static char unknown[32];
+
 	switch (InfoType) {
 	case SQL_ACCESSIBLE_PROCEDURES:
 		return "SQL_ACCESSIBLE_PROCEDURES";
@@ -1286,6 +1277,8 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_CREATE_TABLE";
 	case SQL_CREATE_TRANSLATION:
 		return "SQL_CREATE_TRANSLATION";
+	case SQL_CREATE_VIEW:
+		return "SQL_CREATE_VIEW";
 	case SQL_CURSOR_COMMIT_BEHAVIOR:
 		return "SQL_CURSOR_COMMIT_BEHAVIOR";
 	case SQL_CURSOR_ROLLBACK_BEHAVIOR:
@@ -1298,6 +1291,8 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_DATA_SOURCE_NAME";
 	case SQL_DATA_SOURCE_READ_ONLY:
 		return "SQL_DATA_SOURCE_READ_ONLY";
+	case SQL_DATETIME_LITERALS:
+		return "SQL_DATETIME_LITERALS";
 	case SQL_DBMS_NAME:
 		return "SQL_DBMS_NAME";
 	case SQL_DBMS_VER:
@@ -1352,6 +1347,8 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_DYNAMIC_CURSOR_ATTRIBUTES2";
 	case SQL_EXPRESSIONS_IN_ORDERBY:
 		return "SQL_EXPRESSIONS_IN_ORDERBY";
+	case SQL_FETCH_DIRECTION:
+		return "SQL_FETCH_DIRECTION";
 	case SQL_FILE_USAGE:
 		return "SQL_FILE_USAGE";
 	case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1:
@@ -1382,6 +1379,8 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_KEYWORDS";
 	case SQL_LIKE_ESCAPE_CLAUSE:
 		return "SQL_LIKE_ESCAPE_CLAUSE";
+	case SQL_LOCK_TYPES:
+		return "SQL_LOCK_TYPES";
 	case SQL_MAX_ASYNC_CONCURRENT_STATEMENTS:
 		return "SQL_MAX_ASYNC_CONCURRENT_STATEMENTS";
 	case SQL_MAX_BINARY_LITERAL_LEN:
@@ -1440,8 +1439,14 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_NULL_COLLATION";
 	case SQL_NUMERIC_FUNCTIONS:
 		return "SQL_NUMERIC_FUNCTIONS";
+	case SQL_ODBC_API_CONFORMANCE:
+		return "SQL_ODBC_API_CONFORMANCE";
 	case SQL_ODBC_INTERFACE_CONFORMANCE:
 		return "SQL_ODBC_INTERFACE_CONFORMANCE";
+	case SQL_ODBC_SAG_CLI_CONFORMANCE:
+		return "SQL_ODBC_SAG_CLI_CONFORMANCE";
+	case SQL_ODBC_SQL_CONFORMANCE:
+		return "SQL_ODBC_SQL_CONFORMANCE";
 #ifdef SQL_ODBC_STANDARD_CLI_CONFORMANCE
 	case SQL_ODBC_STANDARD_CLI_CONFORMANCE:
 		return "SQL_ODBC_STANDARD_CLI_CONFORMANCE";
@@ -1458,6 +1463,10 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_PARAM_ARRAY_ROW_COUNTS";
 	case SQL_PARAM_ARRAY_SELECTS:
 		return "SQL_PARAM_ARRAY_SELECTS";
+	case SQL_POSITIONED_STATEMENTS:
+		return "SQL_POSITIONED_STATEMENTS";
+	case SQL_POS_OPERATIONS:
+		return "SQL_POS_OPERATIONS";
 	case SQL_PROCEDURES:
 		return "SQL_PROCEDURES";
 	case SQL_PROCEDURE_TERM:
@@ -1470,6 +1479,8 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_SCHEMA_TERM";
 	case SQL_SCHEMA_USAGE:
 		return "SQL_SCHEMA_USAGE";
+	case SQL_SCROLL_CONCURRENCY:
+		return "SQL_SCROLL_CONCURRENCY";
 	case SQL_SCROLL_OPTIONS:
 		return "SQL_SCROLL_OPTIONS";
 	case SQL_SEARCH_PATTERN_ESCAPE:
@@ -1478,12 +1489,38 @@ translateInfoType(SQLUSMALLINT InfoType)
 		return "SQL_SERVER_NAME";
 	case SQL_SPECIAL_CHARACTERS:
 		return "SQL_SPECIAL_CHARACTERS";
+	case SQL_SQL92_DATETIME_FUNCTIONS:
+		return "SQL_SQL92_DATETIME_FUNCTIONS";
+	case SQL_SQL92_FOREIGN_KEY_DELETE_RULE:
+		return "SQL_SQL92_FOREIGN_KEY_DELETE_RULE";
+	case SQL_SQL92_FOREIGN_KEY_UPDATE_RULE:
+		return "SQL_SQL92_FOREIGN_KEY_UPDATE_RULE";
+	case SQL_SQL92_GRANT:
+		return "SQL_SQL92_GRANT";
+	case SQL_SQL92_NUMERIC_VALUE_FUNCTIONS:
+		return "SQL_SQL92_NUMERIC_VALUE_FUNCTIONS";
+	case SQL_SQL92_PREDICATES:
+		return "SQL_SQL92_PREDICATES";
+	case SQL_SQL92_RELATIONAL_JOIN_OPERATORS:
+		return "SQL_SQL92_RELATIONAL_JOIN_OPERATORS";
+	case SQL_SQL92_REVOKE:
+		return "SQL_SQL92_REVOKE";
+	case SQL_SQL92_ROW_VALUE_CONSTRUCTOR:
+		return "SQL_SQL92_ROW_VALUE_CONSTRUCTOR";
+	case SQL_SQL92_STRING_FUNCTIONS:
+		return "SQL_SQL92_STRING_FUNCTIONS";
+	case SQL_SQL92_VALUE_EXPRESSIONS:
+		return "SQL_SQL92_VALUE_EXPRESSIONS";
 	case SQL_SQL_CONFORMANCE:
 		return "SQL_SQL_CONFORMANCE";
+	case SQL_STANDARD_CLI_CONFORMANCE:
+		return "SQL_STANDARD_CLI_CONFORMANCE";
 	case SQL_STATIC_CURSOR_ATTRIBUTES1:
 		return "SQL_STATIC_CURSOR_ATTRIBUTES1";
 	case SQL_STATIC_CURSOR_ATTRIBUTES2:
 		return "SQL_STATIC_CURSOR_ATTRIBUTES2";
+	case SQL_STATIC_SENSITIVITY:
+		return "SQL_STATIC_SENSITIVITY";
 	case SQL_STRING_FUNCTIONS:
 		return "SQL_STRING_FUNCTIONS";
 	case SQL_SUBQUERIES:
@@ -1509,7 +1546,9 @@ translateInfoType(SQLUSMALLINT InfoType)
 	case SQL_XOPEN_CLI_YEAR:
 		return "SQL_XOPEN_CLI_YEAR";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%u)",
+			 (unsigned int) InfoType);
+		return unknown;
 	}
 }
 #endif
@@ -1524,8 +1563,10 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfo " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType));
+	ODBCLOG("SQLGetInfo " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
+		PTRFMTCAST InfoValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -1533,7 +1574,7 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLGetInfo_(dbc,
+	return MNDBGetInfo(dbc,
 			   InfoType,
 			   InfoValuePtr,
 			   BufferLength,
@@ -1567,8 +1608,10 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfoW " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType));
+	ODBCLOG("SQLGetInfoW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
+		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
+		PTRFMTCAST InfoValuePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -1617,12 +1660,7 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	case SQL_TABLE_TERM:
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
-		rc = SQLGetInfo_(dbc, InfoType, NULL, 0, &n);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearDbcErrors(dbc);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addDbcError(dbc, "HY001", NULL, 0);
@@ -1630,14 +1668,23 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = InfoValuePtr;
 		break;
 	}
 
-	rc = SQLGetInfo_(dbc, InfoType, ptr, n, &n);
+	rc = MNDBGetInfo(dbc, InfoType, ptr, BufferLength, &n);
 
 	if (ptr != InfoValuePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearDbcErrors(dbc);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addDbcError(dbc, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBGetInfo(dbc, InfoType, ptr, n, &n);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			fixWcharOut(rc, ptr, n, InfoValuePtr, BufferLength,
 				    StringLengthPtr, 2, addDbcError, dbc);

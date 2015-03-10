@@ -44,7 +44,7 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 143 # length
+% 142 # length
 function user.s4_1(A0:hge,A1:bte):void;
     X_44:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",23);
     X_3 := sql.mvc();
@@ -97,7 +97,7 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 148 # length
+% 147 # length
 function user.s10_1(A0:hge,A1:bte):void;
     X_44:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",23);
     X_3 := sql.mvc();

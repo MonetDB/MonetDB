@@ -2,7 +2,7 @@
 -- 'default', 'null', 'unique' and 'user' as those names need to be avoided as SQL systems table column names at all times.
 SELECT 'SELECT DISTINCT '||C.name||' FROM '||S.name||'.'||T.name||' WHERE '||C.name||' IS NOT NULL ORDER BY '||C.name||';' as SQL_query
   FROM sys.columns C join sys.tables T on C.table_id = T.id join sys.schemas S on T.schema_id = S.id
- WHERE lower(C.name) in ('action', 'as', 'authorization', 'column', 'cycle', 'distinct', 'increment', 'maxvalue', 'minvalue', 'plan', 'sample', 'schema', 'start', 'statement', 'table')
+ WHERE lower(C.name) in ('action', 'as', 'authorization', 'column', 'cycle', 'distinct', 'increment', 'maxvalue', 'minvalue', 'plan', 'schema', 'start', 'statement', 'table')
  ORDER BY C.name, S.name, T.name;
 
 SELECT DISTINCT action FROM sys.keys WHERE action IS NOT NULL ORDER BY action;
@@ -19,7 +19,6 @@ SELECT DISTINCT maxvalue FROM sys.sequences WHERE maxvalue IS NOT NULL ORDER BY 
 SELECT DISTINCT minvalue FROM sys.sequences WHERE minvalue IS NOT NULL ORDER BY minvalue;
 SELECT DISTINCT plan FROM sys.querylog_catalog WHERE plan IS NOT NULL ORDER BY plan;
 SELECT DISTINCT plan FROM sys.querylog_history WHERE plan IS NOT NULL ORDER BY plan;
-SELECT DISTINCT sample FROM sys.statistics WHERE sample IS NOT NULL ORDER BY sample;
 SELECT DISTINCT schema FROM sys.storage WHERE schema IS NOT NULL ORDER BY schema;
 SELECT DISTINCT schema FROM sys.storagemodel WHERE schema IS NOT NULL ORDER BY schema;
 SELECT DISTINCT schema FROM sys.storagemodelinput WHERE schema IS NOT NULL ORDER BY schema;

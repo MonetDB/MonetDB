@@ -1,0 +1,66 @@
+stdout of test 'format_date` in directory 'sql/test/copy` itself:
+
+
+# 11:44:44 >  
+# 11:44:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38047" "--set" "mapi_usock=/var/tmp/mtest-20793/.s.monetdb.38047" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:44:44 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_copy', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:38047/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20793/.s.monetdb.38047
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:44:45 >  
+# 11:44:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20793" "--port=38047"
+# 11:44:45 >  
+
+#CREATE TABLE orders_1 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
+#CREATE TABLE orders_2 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
+#COPY 150 RECORDS INTO orders_1 from STDIN USING DELIMITERS '|', '|\n';
+#1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
+#2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
+#3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |
+#4|1369|O|56000.91|1995-10-11|5-LOW|Clerk#000000124|0|final requests detect slyly across the blithely bold pinto beans. eve|
+#5|445|F|105367.67|1994-07-30|5-LOW|Clerk#000000925|0|even deposits cajole furiously. quickly spe|
+[ 150	]
+#COPY 150 RECORDS INTO orders_2 from STDIN (o_orderkey, o_custkey, o_orderstatus, o_totalprice, o_orderdate '%Y-%m-%d', o_orderpriority, o_clerk, o_shippriority, o_comment ) USING DELIMITERS '|', '|\n';
+#1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
+#2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
+#3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |
+[ 150	]
+#select * from orders_1 o1, orders_2 o2 where
+#o1.o_orderkey = o2.o_orderkey and o1.o_orderdate <> o2.o_orderdate;
+% sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o1,	sys.o2,	sys.o2,	sys.o2,	sys.o2,	sys.o2,	sys.o2,	sys.o2,	sys.o2,	sys.o2 # table_name
+% o_orderkey,	o_custkey,	o_orderstatus,	o_totalprice,	o_orderdate,	o_orderpriority,	o_clerk,	o_shippriority,	o_comment,	o_orderkey,	o_custkey,	o_orderstatus,	o_totalprice,	o_orderdate,	o_orderpriority,	o_clerk,	o_shippriority,	o_comment # name
+% int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar,	int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar # type
+% 1,	1,	0,	24,	10,	0,	0,	1,	0,	1,	1,	0,	24,	10,	0,	0,	1,	0 # length
+#select count(*) from orders_1;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 3 # length
+[ 150	]
+#select count(*) from orders_2;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 3 # length
+[ 150	]
+#drop table orders_1;
+#drop table orders_2;
+
+# 11:44:45 >  
+# 11:44:45 >  "Done."
+# 11:44:45 >  
+

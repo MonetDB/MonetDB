@@ -30,7 +30,7 @@ stderr of test 'case-sqrt.Bug-3627` in directory 'sql/test/BugTracker-2014` itse
 # 15:36:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29576" "--port=33717"
 # 15:36:03 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-10895/.s.monetdb.31956
+MAPI  = (monetdb) /var/tmp/mtest-17200/.s.monetdb.32363
 QUERY = SELECT t0.id
               ,t0.colint
               ,t0.sqrt_colint
@@ -43,6 +43,7 @@ QUERY = SELECT t0.id
                   FROM t1
                ) t0
         ;
+ERROR = !Math exception: Numerical argument out of domain
 
 
 # 15:36:03 >  

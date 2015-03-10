@@ -52,6 +52,21 @@ getVarMergeTableId(MalBlkPtr mb, int v)
 	return -1;
 }
 
+
+/* The plans are marked with the concurrent user load.
+ *  * If this has changed, we may want to recompile the query
+ *   */
+int
+OPTmitosisPlanOverdue(Client cntxt, str fname)
+{
+    Symbol s;
+
+    s = findSymbol(cntxt->nspace, userRef, fname);
+    if(s )
+        return s->def->activeClients != MCactiveClients();
+    return 0;
+}
+
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -62,12 +77,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	size_t argsize = 6 * sizeof(lng);
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
+	int activeClients;
 
 	(void) cntxt;
 	(void) stk;
 	if (!eligible(mb))
 		return 0;
 
+	activeClients = mb->activeClients = MCactiveClients();
 	old = mb->stmt;
 	for (i = 1; i < mb->stop; i++) {
 		InstrPtr p = old[i];
@@ -127,19 +144,22 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * threads than strictly needed.
 	 * Experience shows that the pieces should not be too small.
 	 * If we should limit to |threads| is still an open issue.
+	 *
+	 * Take into account the number of client connections, 
+	 * because all user together are responsible for resource contentions
 	 */
 	r = (wrd) (monet_memory / argsize);
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
 	 * i.e., (rowcnt > monet_memory/argsize = r) */
-	if (rowcnt > r && r / threads > 0) {
+	if (rowcnt > r && r / threads / activeClients > 0) {
 		/* create |pieces| > |threads| partitions such that
 		 * |threads| partitions at a time fit in memory,
 		 * i.e., (threads*(rowcnt/pieces) <= r),
 		 * i.e., (rowcnt/pieces <= r/threads),
 		 * i.e., (pieces => rowcnt/(r/threads))
 		 * (assuming that (r > threads*MINPARTCNT)) */
-		pieces = (int) (rowcnt / (r / threads)) + 1;
+		pieces = (int) (rowcnt / (r / threads / activeClients)) + 1;
 	} else if (rowcnt > MINPARTCNT) {
 	/* exploit parallelism, but ensure minimal partition size to
 	 * limit overhead */

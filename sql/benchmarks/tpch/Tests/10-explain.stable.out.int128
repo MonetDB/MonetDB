@@ -61,7 +61,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 646 # length
+% 645 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     X_219:void  := querylog.define("explain select\n\tc_custkey,\n\tc_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\tc_acctbal,\n\tn_name,\n\tc_address,\n\tc_phone,\n\tc_comment\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tnation\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate >= date \\'1993-10-01\\'\n\tand o_orderdate < date \\'1993-10-01\\' + interval \\'3\\' month\n\tand l_returnflag = \\'R\\'\n\tand c_nationkey = n_nationkey\ngroup by\n\tc_custkey,\n\tc_name,\n\tc_acctbal,\n\tc_phone,\n\tn_name,\n\tc_address,\n\tc_comment\norder by\n\trevenue desc\nlimit 20;","sequential_pipe",118);
     X_7 := sql.mvc();
@@ -121,16 +121,16 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     X_107:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_extendedprice",1);
     X_109 := sql.projectdelta(X_19,X_99,X_104,r1_128,X_107);
     X_110:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_264,X_38,X_109);
-    X_111:bat[:oid,:hge]  := batcalc.hge(2,X_110,33,2);
+    X_111:bat[:oid,:hge] := batcalc.hge(2,X_110,33,2);
     X_113 := calc.lng(A0,15,2);
     X_115:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_discount",0);
     (X_117,r1_148) := sql.bind(X_7,"sys","lineitem","l_discount",2);
     X_119:bat[:oid,:lng]  := sql.bind(X_7,"sys","lineitem","l_discount",1);
     X_120 := sql.projectdelta(X_19,X_115,X_117,r1_148,X_119);
     X_121:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_264,X_38,X_120);
-    X_122:bat[:oid,:lng]  := batcalc.-(X_113,X_121);
-    X_123:bat[:oid,:hge]  := batcalc.*(X_111,X_122);
-    X_124:bat[:oid,:hge]  := aggr.subsum(X_123,X_90,r1_106,true,true);
+    X_122:bat[:oid,:lng] := batcalc.-(X_113,X_121);
+    X_123:bat[:oid,:hge] := batcalc.*(X_111,X_122);
+    X_124:bat[:oid,:hge] := aggr.subsum(X_123,X_90,r1_106,true,true);
     (X_94,r1_118) := algebra.subjoin(X_93,X_85,nil:BAT,nil:BAT,false,nil:lng);
     X_126 := algebra.leftfetchjoin(X_94,X_124);
     X_128 := algebra.firstn(X_126,20:wrd,false,false);
@@ -138,7 +138,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     (X_131,r1_172,r2_172) := algebra.subsort(X_130,true,false);
     X_265 := algebra.leftfetchjoin(r1_172,X_128);
     X_134:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_265,X_94,X_93);
-    X_136 := algebra.subslice(X_134,0:wrd,19:wrd);
+    X_136 := algebra.subslice(X_134,0,19:wrd);
     X_266 := algebra.leftfetchjoin(X_136,r1_172);
     X_157:bat[:oid,:str]  := algebra.leftfetchjoinPath(X_266,X_128,X_94,r1_106,X_76);
     X_137 := algebra.leftfetchjoin(X_136,X_134);

@@ -100,7 +100,7 @@ function user.main():void;
     io.print(c);
     c := nil:bit;
     io.print(c);
-    d := 3.1400001:flt;
+    d := 3.14:flt;
     io.print(d);
     d := calc.flt(nil);
     io.print(d);
@@ -148,11 +148,11 @@ end user.main;
 [ true ]
 [ false ]
 [ nil ]
-[ 3.1400001 ]
+[ 3.14 ]
 [ nil ]
 [ nil ]
 [ 5 ]
-[ 7.13999987 ]
+[ 7.14 ]
 [ nil ]
 [ "hello" ]
 [ nil ]

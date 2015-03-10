@@ -15,7 +15,7 @@ stdout of test 'tst3010` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38399/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.add{writeable, safe}(i:int,j:int):int;
+function user.add{writeable, safe}(i:int{readonly},j:int{readonly}):int;
     j := calc.+(j,i);
     return add := j;
 end user.add;

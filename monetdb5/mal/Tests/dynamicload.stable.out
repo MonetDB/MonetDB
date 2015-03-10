@@ -14,7 +14,7 @@ stdout of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.wrong():void address UNKOWNaddress;
 !TypeException:user.main[2]:object code for command user.wrong missing
-!TypeException:user.main[2]:'user.wrong' undefined in: _2:void := user.wrong()
+!TypeException:user.main[2]:'user.wrong' undefined in: user.wrong();
 function user.main():void;
 # examples of non-bindable instructions 
     user.wrong();

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold */
@@ -25,15 +14,33 @@ char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollec
 
 char *malarguments[MAXMALARGS];
 int malargtop;
+char *malvariables[MAXMALARGS];
+int malvartop;
 int debug;
+
+void
+clearArguments(void)
+{
+	int i;
+	for(i = 0; i < malargtop; i++)
+	if( malarguments[i])
+		free(malarguments[i]);
+	malargtop = 0;
+	for(i = 0; i < malvartop; i++)
+	if( malvariables[i])
+		free(malvariables[i]);
+	malvartop = 0;
+}
 
 static void
 parseArguments(char *call)
 {
 	int i;
 	char  *c = call, *l, ch;
+	char *v;
 	
 	malargtop = 0;
+	malvartop = 0;
 	if( debug)
 		fprintf(stderr,"call:%s\n",call);
 	for( ; c && *c && malargtop < MAXMALARGS;  c++){
@@ -41,16 +48,17 @@ parseArguments(char *call)
 			break;
 		if (*c == ',')
 			continue;
-		if (*c == 'X'){
-			// skip variable
+		if(isalpha((int)*c) &&  strncmp(c,"nil",3) && strncmp(c,"true",4) && strncmp(c,"false",5) ){
+			// remember variable in its own structure
+			v=  c;
 			c= strchr(c,'=');
 			if( c == 0)
 				break;
+			*c = 0;
+			malvariables[malvartop++] = strdup(v);
 			c++;
-			if( debug)
-				fprintf(stderr,"arg:%s\n",c);
 		}
-		if (*c== '\\' && *(c+1) =='"'){
+		if (*c && *c== '\\' && *(c+1) =='"'){
 			c++; c++;
 			// parse string skipping escapes
 			for(l=c; *l; l++){
@@ -60,7 +68,7 @@ parseArguments(char *call)
 			*l= 0;
 			malarguments[malargtop++] = strdup(c);
 			c= l+1;
-		} else {
+		} else if(*c) {
 			l = strchr(c, ch = ',');
 			if( l == 0){
 				l = strchr(c, ch = ')');
@@ -75,9 +83,12 @@ parseArguments(char *call)
 				*l =0;
 		}
 	}
-	if( debug)
-	for(i=0; i < malargtop; i++)
-		fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+	if( debug){
+		for(i=0; i < malargtop; i++)
+			fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+		for(i=0; i < malvartop; i++)
+			fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
+	}
 }
 int
 eventparser(char *row, EventRecord *ev)
@@ -131,6 +142,10 @@ eventparser(char *row, EventRecord *ev)
 		if( c == 0)
 			return -4;
 		ev->pc = atoi(c+1);
+		c= strchr(c+1,']');
+		if ( c == 0)
+			return -4;
+		ev->tag = atoi(c+1);
 	}
 	c = strchr(c+1, ',');
 	if (c == 0)

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 %{
@@ -306,6 +295,9 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_header_list
+	header_list
+	header
 	ident_commalist
 	opt_corresponding
 	column_ref_commalist
@@ -2510,25 +2502,29 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
-	  append_list(l, $6);
+	  append_list(l, $5);
 	  append_list(l, $7);
+	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
+	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
+	  append_list(l, $5);
 	  append_list(l, NULL);
-	  append_list(l, $7);
+	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
+	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -2555,6 +2551,28 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+
+opt_header_list:
+       /* empty */		{ $$ = NULL; }
+ | '(' header_list ')'		{ $$ = $2; }
+ ;
+
+header_list:
+   header 			{ $$ = append_list(L(), $1); }
+ | header_list ',' header 	{ $$ = append_list($1, $3); }
+ ;
+
+header:
+	ident		
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  $$ = l; }
+ |	ident STRING
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  append_string(l, $2 );
+			  $$ = l; }
+ ;
 
 opt_seps:
     /* empty */
@@ -4914,7 +4932,6 @@ non_reserved_word:
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
 | SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
-| SAMPLE	{ $$ = sa_strdup(SA, "sample"); }	/* sloppy: officially reserved */
 | SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
 | STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
