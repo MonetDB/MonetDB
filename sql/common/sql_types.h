@@ -16,7 +16,7 @@
 #include <sql_storage.h>
 #include <stream.h>
 
-#define EC_MAX 		16
+#define EC_MAX 		17
 #define EC_ANY	 	0
 #define EC_TABLE 	1
 #define EC_BIT 		2
@@ -38,10 +38,10 @@
 #define EC_DATE		13
 #define EC_TIMESTAMP	14
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
-#define EC_GEOM		13
-#define EC_GEOMA	14
-#define EC_MBR		15
-#define EC_EXTERNAL	16
+#define EC_GEOM		15
+#define EC_GEOMA	15
+#define EC_MBR		16
+#define EC_EXTERNAL	17
 
 #define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
 
