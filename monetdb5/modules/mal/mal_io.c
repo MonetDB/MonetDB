@@ -280,11 +280,7 @@ IOprintf_(str *res, str format, ...)
 				return_error(toofew_error);
 			}
 			type = va_arg(ap, int);
-			if (type != ATOMstorage(type) &&
-				ATOMnilptr(type) == ATOMnilptr(ATOMstorage(type)) &&
-				ATOMcompare(type) == ATOMcompare(ATOMstorage(type)) &&
-				BATatoms[type].atomHash == BATatoms[ATOMstorage(type)].atomHash)
-				type = ATOMstorage(type);
+			type = ATOMbasetype(type);
 
 			len = 1 + (cur - paramseen);
 			memcpy(meta, paramseen, len);

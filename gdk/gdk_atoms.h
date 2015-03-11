@@ -211,6 +211,15 @@ gdk_export const ptr ptr_nil;
 #define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
 #define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
 
+/* The base type is the storage type if the comparison function and
+ * nil values are the same as those of the storage type; otherwise it
+ * is the type itself. */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
+
 /*
  * In case that atoms are added to a bat, their logical reference
  * count should be incremented (and decremented if deleted). Notice
