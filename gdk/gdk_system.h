@@ -151,7 +151,11 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 #include "gdk_atomic.h"
 
-#ifdef ATOMIC_LOCK
+/* define this if you want to use pthread (or Windows) locks instead
+ * of atomic instructions for locking (latching) */
+/* #define USE_PTHREAD_LOCKS */
+
+#ifdef USE_PTHREAD_LOCKS
 
 typedef pthread_mutex_t MT_Lock;
 

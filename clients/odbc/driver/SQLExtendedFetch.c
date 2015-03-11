@@ -41,7 +41,6 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 		 SQLUSMALLINT *RowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
-	SQLUSMALLINT *array_status_ptr;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
@@ -69,12 +68,8 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	array_status_ptr = stmt->ImplRowDescr->sql_desc_array_status_ptr;
-	stmt->ImplRowDescr->sql_desc_array_status_ptr = RowStatusArray;
-
-	rc = MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
-
-	stmt->ImplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
+	rc = MNDBFetchScroll(stmt, FetchOrientation, FetchOffset,
+			     RowStatusArray);
 
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NO_DATA)
 		stmt->State = EXTENDEDFETCHED;

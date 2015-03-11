@@ -57,7 +57,7 @@
 
 MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
-#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;
@@ -390,7 +390,7 @@ MT_kill_thread(MT_Id t)
 	return -1;
 }
 
-#ifdef ATOMIC_LOCK
+#ifdef USE_PTHREAD_LOCKS
 
 void
 pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)

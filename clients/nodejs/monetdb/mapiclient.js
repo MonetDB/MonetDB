@@ -122,26 +122,31 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	thizz.query(query, function(error, resp) {
 		if (!error) {
 			var execfun = function(bindparams, ecallback) {
-				var quoted = bindparams.map(function(param) {
+				var quoted = bindparams.map(function(param, paramIndex) {
 					if(param === null) {
 						return "NULL";
 					}
 					var type = typeof param;
+					var s;
 					switch(type) {
 						case 'boolean':
 						case 'number':
-							return '' + param;
+							s = '' + param;
 							break
 						case 'string':
 						/* escape single quotes except if they are already escaped */
-							return "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
+							s = "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
 							break
 						default:
-							return param;
+							s = param;
 							break;
 					}
+					var colData = resp.data[resp.rows-bindparams.length+paramIndex];
+					if(colData && colData[0] == "timestamp") {
+						s = "timestamp "+s;
+					}
+					return s;
 				}).join(', ');
-
 				var execquery = 'EXEC ' + resp.queryid + '(' + quoted + ')';
 				thizz.query(execquery, ecallback);
 			}
