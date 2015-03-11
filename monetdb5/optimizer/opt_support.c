@@ -340,7 +340,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				isVarConstant(mb,getArg(q,k)) ) {
 					w= getVar(mb,getArg(p,k));
 					u= getVar(mb,getArg(q,k));
-					cmp = BATatoms[w->value.vtype].atomCmp;
+					cmp = ATOMcompare(w->value.vtype);
 					if ( w->value.vtype == u->value.vtype &&
 						(*cmp)(VALptr(&w->value), VALptr(&u->value)) == 0)
 						continue;

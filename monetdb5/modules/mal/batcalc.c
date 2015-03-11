@@ -18,13 +18,6 @@
 #define batcalc_export extern
 #endif
 
-/* see gdk_private.h -- copied here until that can be moved to gdk.h */
-#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
-			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
-			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
-			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
-			 ATOMstorage(t) : (t))
-
 static str
 mythrow(enum malexception type, const char *fcn, const char *msg)
 {

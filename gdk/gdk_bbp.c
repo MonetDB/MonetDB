@@ -726,13 +726,13 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
 		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT " LLFMT "\n", HT, batid);
 	else if (var && t != 0 ?
-		 BATatoms[t].size < width ||
+		 ATOMsize(t) < width ||
 		 (width != 1 && width != 2 && width != 4
 #if SIZEOF_VAR_T == 8
 		  && width != 8
 #endif
 			 ) :
-		 BATatoms[t].size != width
+		 ATOMsize(t) != width
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
 		 && (t != TYPE_oid || oidsize == 0 || width != oidsize)
 #endif

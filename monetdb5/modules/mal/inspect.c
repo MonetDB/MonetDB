@@ -476,7 +476,7 @@ INSPECTatom_sup_names(bat *ret)
 	BATseqbase(b,0);
 
 	for (i = 0; i < GDKatomcnt; i++) {
-		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)
+		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
 			;
 		BUNappend(b, ATOMname(k), FALSE);
 	}

@@ -528,29 +528,29 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		break;
 	default:
 		if (tp1 != tp2 ||
-		    !BATatoms[tp1].linear ||
-		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+		    !ATOMlinear(tp1) ||
+		    (atomcmp = ATOMcompare(tp1)) == NULL)
 			goto unsupported;
 		/* a bit of a hack: for inherited types, use
 		 * type-expanded version if comparison function is
 		 * equal to the inherited-from comparison function,
 		 * and yes, we jump right into the middle of a switch,
 		 * but that is legal (although not encouraged) C */
-		if (atomcmp == BATatoms[TYPE_bte].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_bte))
 			goto btebte;
-		if (atomcmp == BATatoms[TYPE_sht].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_sht))
 			goto shtsht;
-		if (atomcmp == BATatoms[TYPE_int].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_int))
 			goto intint;
-		if (atomcmp == BATatoms[TYPE_lng].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_lng))
 			goto lnglng;
 #ifdef HAVE_HGE
-		if (atomcmp == BATatoms[TYPE_hge].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_hge))
 			goto hgehge;
 #endif
-		if (atomcmp == BATatoms[TYPE_flt].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_flt))
 			goto fltflt;
-		if (atomcmp == BATatoms[TYPE_dbl].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
 		CANDLOOP(dst, k, TPE_nil, 0, start);

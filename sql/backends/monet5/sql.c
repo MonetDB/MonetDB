@@ -3891,8 +3891,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
-	ocmp = BATatoms[b->ttype].atomCmp;
-	gcmp = BATatoms[g->ttype].atomCmp;
+	ocmp = ATOMcompare(b->ttype);
+	gcmp = ATOMcompare(g->ttype);
 	oc = BUNtail(bi, BUNfirst(b));
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g)) {
@@ -3949,7 +3949,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, "bat not sorted");
 
 	bi = bat_iterator(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {

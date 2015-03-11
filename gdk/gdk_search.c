@@ -498,7 +498,7 @@ HASHgonebad(BAT *b, const void *v)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = BATatoms[b->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
 		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);

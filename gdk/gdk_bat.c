@@ -960,11 +960,11 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		bn->tdense = bn->T->nonil = 0;
 	}
 	if (BATcount(bn) <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->hrevsorted = ATOMlinear(b->htype);
 		bn->hkey = 1;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = 1;
 	}
 	if (writable != TRUE)
@@ -1059,7 +1059,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	assert(x != NULL || col->type == TYPE_void);
 	if (b->batCount == 0) {
 		/* first value */
-		col->sorted = col->revsorted = BATatoms[col->type].linear != 0;
+		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
 		col->key |= 1;
 		if (col->type == TYPE_void) {
 			if (x) {
@@ -2067,8 +2067,8 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
-		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
-		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
+		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 	}
 	assert(b->batCapacity >= cnt);
 }
@@ -2821,8 +2821,8 @@ BATassertHeadProps(BAT *b)
 		}
 	}
 	/* only linear atoms can be sorted */
-	assert(!b->hsorted || BATatoms[b->htype].linear);
-	assert(!b->hrevsorted || BATatoms[b->htype].linear);
+	assert(!b->hsorted || ATOMlinear(b->htype));
+	assert(!b->hrevsorted || ATOMlinear(b->htype));
 
 	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
 	    !b->H->nonil && !b->H->nil) {
@@ -3041,7 +3041,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	}
 	/* tentatively set until proven otherwise */
 	key = 1;
-	sorted = revsorted = (BATatoms[b->htype].linear != 0);
+	sorted = revsorted = (ATOMlinear(b->htype) != 0);
 	dense = (b->htype == TYPE_oid);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
