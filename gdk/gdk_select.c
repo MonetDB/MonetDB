@@ -197,8 +197,10 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		 * boundaries */
 		if (s->tseqbase + BATcount(s) < seq + (h - l))
 			h -= seq + (h - l) - (s->tseqbase + BATcount(s));
-		if (s->tseqbase > seq)
+		if (s->tseqbase > seq) {
 			l += s->tseqbase - seq;
+			seq += s->tseqbase - seq;
+		}
 		s = NULL;
 	}
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
