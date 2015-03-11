@@ -70,7 +70,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % decimal # type
-% 2 # length
+% 3 # length
 [ 0	]
 
 # 20:26:51 >  
