@@ -25,7 +25,7 @@
 #include "mal_instruction.h"
 
 str
-batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
+batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -48,7 +48,7 @@ batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			lng l;
 			timestamp r;
 		} u;
-		msg = str_2time_timestamp(&u.r, &v, digits);
+		msg = str_2time_timestamptz(&u.r, &v, digits, tz);
 		if (msg)
 			break;
 		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
@@ -56,6 +56,13 @@ batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
+{
+	int zero = 0;
+	return batstr_2time_timestamptz( res, bid, digits, &zero);
 }
 
 str
@@ -127,7 +134,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 }
 
 str
-batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
+batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -150,7 +157,7 @@ batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 			lng l;
 			daytime r;
 		} u;
-		msg = str_2time_daytime(&u.r, &v, digits);
+		msg = str_2time_daytimetz(&u.r, &v, digits, tz);
 		if (msg)
 			break;
 		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
@@ -158,6 +165,13 @@ batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
+{
+	int zero = 0;
+	return batstr_2time_daytimetz( res, bid, digits, &zero);
 }
 
 str
