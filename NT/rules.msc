@@ -1,21 +1,10 @@
 # -*- makefile -*-
 
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 VERSION=11.20.0
 #       ^^^^^^
@@ -312,11 +301,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_DATACELL
-	$(ECHO) HAVE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_FITS
 	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -389,11 +373,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_MSEED
-	$(ECHO) HAVE_MSEED_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_MSEED_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_ODBC
 	$(ECHO) HAVE_ODBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -428,11 +407,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_RAPTOR
-	$(ECHO) HAVE_RAPTOR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_RAPTOR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_RUBYGEM
 	$(ECHO) HAVE_RUBYGEM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

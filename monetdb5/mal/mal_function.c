@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -477,17 +466,41 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
  * is returned.
  */
 void
-listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
+debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
 {
 	int i;
-	if ( flg == 0)
-		return;
+	str ps;
+	InstrPtr p;
+
 	if (mb == NULL) {
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
-	first = first<0?0:first;
-	size = size < 0?-size:size;
+	if ( flg == 0)
+		return;
+	assert(size>=0);
+	assert(first>=0 && first <mb->stop);
+	for (i = first; i < first +size && i < mb->stop; i++){
+		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
+		if (ps) {
+			mnstr_printf(fd,"%-40s\t# %s\n",ps, (p->blk && p->blk->binding? p->blk->binding:""));
+			GDKfree(ps);
+		}
+	}
+}
+
+void
+listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
+{
+	int i;
+	if (mb == NULL) {
+		mnstr_printf(fd, "# function definition missing\n");
+		return;
+	}
+	if ( flg == 0)
+		return;
+	assert(size>=0);
+	assert(first>=0 && first <mb->stop);
 	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
@@ -510,12 +523,9 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
+
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
-	if (mb == NULL) {
-		mnstr_printf(fd, "# function definition missing\n");
-		return;
-	}
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 

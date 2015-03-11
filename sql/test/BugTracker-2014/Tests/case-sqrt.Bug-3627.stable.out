@@ -79,27 +79,6 @@ Ready.
 [ 3,	0,	0	]
 [ 4,	1,	1	]
 [ 5,	2,	1.414213562	]
-#SELECT t0.id
-#      ,t0.colint
-#      ,SQRT(t0.colint_sq) 
-#  FROM (SELECT id
-#              ,colint
-#              ,CASE WHEN colint < 0
-#                    THEN -1 * colint
-#                    ELSE colint
-#               END AS colint_sq
-#          FROM t1
-#       ) t0
-#;
-#% sys.t0,	sys.t0,	sys.t0 # table_name
-% id,	colint,	sqrt_colint # name
-% int,	int,	double # type
-% 1,	2,	24 # length
-[ 1,	-2,	1.414213562	]
-[ 2,	-1,	1	]
-[ 3,	0,	0	]
-[ 4,	1,	1	]
-[ 5,	2,	1.414213562	]
 #ROLLBACK;
 
 # 15:36:03 >  

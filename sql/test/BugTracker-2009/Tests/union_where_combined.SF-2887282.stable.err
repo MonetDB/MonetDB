@@ -55,7 +55,6 @@ stderr of test 'union_where_combined.SF-2887282` in directory 'sql/test/BugTrack
 # config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 # config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-# config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	mitosis_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf

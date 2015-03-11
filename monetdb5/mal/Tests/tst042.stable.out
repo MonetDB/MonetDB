@@ -39,7 +39,7 @@ stdout of test 'tst042` in directory 'monetdb5/mal` itself:
 function user.main():void;
     s := "hello";
     i := 1;
-    f := 3.1400001;
+    f := 3.14;
     b := true;
     w := 1:wrd;
     B := 2:bte;

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -510,12 +499,10 @@ BATclear(BAT *b, int force)
 {
 	BUN p, q;
 	int voidbat;
-	BAT *bm;
 
 	BATcheck(b, "BATclear", GDK_FAIL);
 
 	voidbat = 0;
-	bm = BATmirror(b);
 
 	if (BAThdense(b) && b->htype == TYPE_void) {
 		voidbat = 1;
@@ -533,12 +520,7 @@ BATclear(BAT *b, int force)
 	}
 
 	/* kill all search accelerators */
-	if (b->H->hash) {
-		HASHremove(bm);
-	}
-	if (b->T->hash) {
-		HASHremove(b);
-	}
+	HASHdestroy(b);
 	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
@@ -1024,19 +1006,7 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 				*_dst++ = *_src++;			\
 		}							\
 	} while (0)
-#define hacc_update(func, get, p, idx)					\
-	do {								\
-		if (b->H->hash) {					\
-			func(b->H->hash, idx, get(bi, p), p < last);	\
-		}							\
-	} while (0)
-#define tacc_update(func, get, p, idx)					\
-	do {								\
-		if (b->T->hash) {					\
-			func(b->T->hash, idx, get(bi, p), p < last);	\
-		}							\
-	} while (0)
-#define acc_move(l, p, idx2, idx1)					\
+#define acc_move(l, p)							\
 	do {								\
 		char tmp[16];						\
 		/* avoid compiler warning: dereferencing type-punned pointer \
@@ -1045,12 +1015,6 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 									\
 		assert(hs <= 16);					\
 		assert(ts <= 16);					\
-		if (b->H->hash) {					\
-			HASHmove(b->H->hash, idx2, idx1, BUNhead(bi, l), l < last); \
-		}							\
-		if (b->T->hash) {					\
-			HASHmove(b->T->hash, idx2, idx1, BUNtail(bi, l), l < last); \
-		}							\
 									\
 		/* move first to tmp */					\
 		un_move(Hloc(b, l), tmpp, hs);				\
@@ -1214,14 +1178,13 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) == GDK_FAIL)
 			return GDK_FAIL;
 	} else {
-		size_t hsize = 0, tsize = 0;
-
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
 			GDKerror("BUNins: bat too large\n");
 			return GDK_FAIL;
 		}
 
+		HASHdestroy(b);
 		if (unshare_string_heap(b) == GDK_FAIL) {
 			GDKerror("BUNins: failed to unshare string heap\n");
 			return GDK_FAIL;
@@ -1229,10 +1192,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
-		if (b->H->hash && b->H->vheap)
-			hsize = b->H->vheap->size;
-		if (b->T->hash && b->T->vheap)
-			tsize = b->T->vheap->size;
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);
@@ -1241,18 +1200,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			bunfastins(b, h, t);
 		} else {
 			BATsetcount(b, b->batCount + 1);
-		}
-
-		if (b->H->hash) {
-			HASHins(bm, p, h);
-			if (hsize && hsize != b->H->vheap->size)
-				HEAPwarm(b->H->vheap);
-		}
-		if (b->T->hash) {
-			HASHins(b, p, t);
-
-			if (tsize && tsize != b->T->vheap->size)
-				HEAPwarm(b->T->vheap);
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1387,16 +1334,13 @@ BUNappend(BAT *b, const void *t, bit force)
  * one now must do:
  *	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
  */
-#define hashins(h,i,v,n) HASHins_any(h,i,v)
-#define hashdel(h,i,v,n) HASHdel(h,i,v,n)
-
 static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
 {
 	BATiter bi = bat_iterator(b);
 	BAT *bm = BBP_cache(-b->batCacheid);
 	BUN l, last = BUNlast(b) - 1;
-	BUN idx1, idx2;
+	BUN idx1;
 
 	ALIGNdel(b, "BUNdelete", force, BUN_NONE);	/* zap alignment info */
 
@@ -1404,12 +1348,10 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	 * @- Committed Delete.
 	 * Deleting a (committed) bun: the first and deleted swap position.
 	 */
+	HASHdestroy(b);
 	if (p < b->batInserted && !force) {
 		idx1 = p;
 		if (p == b->batFirst) {	/* first can simply be discarded */
-			hacc_update(hashdel,BUNhead,p,idx1);
-			tacc_update(hashdel,BUNtail,p,idx1);
-
 			if (BAThdense(b)) {
 				bm->tseqbase = ++b->hseqbase;
 			}
@@ -1419,12 +1361,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 		} else {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 
-			hacc_update(hashdel,BUNhead,p,idx1);
-			tacc_update(hashdel,BUNtail,p,idx1);
-
 			l = BUNfirst(b);
-			idx2 = l;
-			acc_move(l,p,idx2,idx1);
+			acc_move(l,p);
 			if (b->hsorted) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
@@ -1478,15 +1416,12 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
 		idx1 = p;
-		hacc_update(hashdel,BUNhead,p,idx1);
-		tacc_update(hashdel,BUNtail,p,idx1);
-		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
 
 			/* coverity[result_independent_of_operands] */
-			acc_move(last,p,idx2,idx1);
+			acc_move(last,p);
 			/* If a column was sorted before the BUN was
 			   deleted, check whether it is still sorted
 			   afterward.  This is done by comparing the
@@ -1627,7 +1562,6 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		BAT *bm = BBP_cache(-b->batCacheid);
 		BUN pit = p;
 		BATiter bi = bat_iterator(b);
-		size_t tsize = b->tvarsized ? b->T->vheap->size : 0;
 		int tt;
 		BUN prv, nxt;
 
@@ -1640,9 +1574,8 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 			 * property, so we must clear it */
 			b->T->nil = 0;
 		}
-		tacc_update(hashdel,BUNtail,p,pit);
+		HASHremove(BATmirror(b));
 		Treplacevalue(b, BUNtloc(bi, p), t);
-		tacc_update(hashins,BUNtail,p,pit);
 
 		tt = b->ttype;
 		prv = p > b->batFirst ? p - 1 : BUN_NONE;
@@ -1677,8 +1610,6 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 				b->T->norevsorted = pit;
 			}
 		}
-		if (b->tvarsized && b->T->hash && tsize != b->T->vheap->size)
-			HEAPwarm(b->T->vheap);
 		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 			BATkey(bm, FALSE);
 		}

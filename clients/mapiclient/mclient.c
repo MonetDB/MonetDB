@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -78,6 +67,8 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
+#include "profiler.h"
+
 enum modes {
 	MAL,
 	SQL,
@@ -113,10 +104,10 @@ enum formatters {
 	TESTformatter,
 	CLEANformatter,
 	TIMERformatter,
-	SAMformatter
+	SAMformatter,
+	EXPANDEDformatter
 };
 static enum formatters formatter = NOformatter;
-char *output = NULL;		/* output format as string */
 char *separator = NULL;		/* column separator for CSV/TAB format */
 int csvheader = 0;		/* include header line in CSV format */
 
@@ -664,6 +655,61 @@ XMLrenderer(MapiHdl hdl)
 }
 
 static void
+EXPANDEDrenderer(MapiHdl hdl)
+{
+	int i, fields, fieldw, rec = 0;
+
+	fields = mapi_get_field_count(hdl);
+	fieldw = 0;
+	for (i = 0; i < fields; i++) {
+		int w = (int) utf8strlen(mapi_get_name(hdl, i), NULL);
+		if (w > fieldw)
+			fieldw = w;
+	}
+	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+		int valuew = 0, len;
+		++rec;
+		for (i = 0; i < fields; i++) {
+			char *data = mapi_fetch_field(hdl, i);
+			char *edata;
+			int w;
+
+			if (data == NULL)
+				data = nullstring;
+			do {
+				edata = utf8skip(data, ~(size_t)0);
+				w = (int) utf8strlen(data, edata);
+				if (w > valuew)
+					valuew = w;
+				data = edata;
+				if (*data)
+					data++;
+			} while (*edata);
+		}
+		len = mnstr_printf(toConsole, "-[ RECORD %d ]-", rec);
+		while (len++ < fieldw + valuew + 3)
+			mnstr_write(toConsole, "-", 1, 1);
+		mnstr_write(toConsole, "\n", 1, 1);
+		for (i = 0; i < fields; i++) {
+			char *data = mapi_fetch_field(hdl, i);
+			char *edata;
+			const char *name = mapi_get_name(hdl, i);
+			if (data == NULL)
+				data = nullstring;
+			do {
+				edata = utf8skip(data, ~(size_t)0);
+				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data);
+				name = "";
+				data = edata;
+				if (*data)
+					data++;
+			} while (*edata);
+		}
+	}
+	mnstr_flush(toConsole);
+}
+
+static void
 CSVrenderer(MapiHdl hdl)
 {
 	int fields;
@@ -991,10 +1037,36 @@ TESTrenderer(MapiHdl hdl)
 				}
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else if (strcmp(tp, "double") == 0 ||
-				   strcmp(tp, "dbl") == 0 ||
-				   strcmp(tp, "real") == 0)
-				mnstr_printf(toConsole, "%.10g", atof(s));
-			else
+				   strcmp(tp, "dbl") == 0) {
+				char buf[32];
+				int j;
+				double v = strtod(s, NULL);
+				for (j = 4; j < 11; j++) {
+					snprintf(buf, sizeof(buf), "%.*g", j, v);
+					if (v == strtod(buf, NULL))
+						break;
+				}
+				mnstr_printf(toConsole, "%s", buf);
+			} else if (strcmp(tp, "real") == 0) {
+				char buf[32];
+				int j;
+#ifdef HAVE_STRTOF
+				float v = strtof(s, NULL);
+#else
+				float v = (float) strtod(s, NULL);
+#endif
+				for (j = 4; j < 6; j++) {
+					snprintf(buf, sizeof(buf), "%.*g", j, v);
+#ifdef HAVE_STRTOF
+					if (v == strtof(buf, NULL))
+						break;
+#else
+					if (v == (float) strtod(buf, NULL))
+						break;
+#endif
+				}
+				mnstr_printf(toConsole, "%s", buf);
+			} else
 				mnstr_printf(toConsole, "%s", s);
 		}
 		mnstr_printf(toConsole, "\t]\n");
@@ -1479,6 +1551,8 @@ setFormatter(const char *s)
 		formatter = TIMERformatter;
 	} else if (strcmp(s, "sam") == 0) {
 		formatter = SAMformatter;
+	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
+		formatter = EXPANDEDformatter;
 	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
 	}
@@ -1703,6 +1777,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			case SAMformatter:
 				SAMrenderer(hdl);
 				break;
+			case EXPANDEDformatter:
+				EXPANDEDrenderer(hdl);
+				break;
 			default:
 				RAWrenderer(hdl);
 				break;
@@ -1834,10 +1911,12 @@ doFileBulk(Mapi mid, FILE *fp)
 				size_t fromlen;
 				char *to, *nbuf;
 				size_t tolen = length * 4 + 1;
+				size_t otolen;
 
 				if (tolen <= bufsize)
 					tolen = bufsize + 1;
 			  retry:
+				otolen = tolen;
 				from = buf;
 				fromlen = length;
 				nbuf = to = malloc(tolen);
@@ -1849,7 +1928,7 @@ doFileBulk(Mapi mid, FILE *fp)
 						fprintf(stderr, "Illegal input sequence\n");
 						return 1;
 					case E2BIG:
-						tolen *= 2;
+						tolen = otolen * 2;
 						free(nbuf);
 						goto retry;
 					case EINVAL:
@@ -1860,7 +1939,7 @@ doFileBulk(Mapi mid, FILE *fp)
 						return 1;
 					}
 				}
-				length = tolen;
+				length = otolen - tolen;
 				free(buf);
 				buf = nbuf;
 			}
@@ -1872,14 +1951,13 @@ doFileBulk(Mapi mid, FILE *fp)
 			}
 		}
 		timerResume();
-
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		}
 
 		assert(hdl != NULL);
-
+		profiler_arm();
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2641,6 +2719,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
+						case EXPANDEDformatter:
+							mnstr_printf(toConsole, "expanded\n");
+							break;
 						default:
 							mnstr_printf(toConsole, "none\n");
 							break;
@@ -2657,6 +2738,8 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
+			profiler_arm();
+
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2796,6 +2879,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
+	fprintf(stderr, " -P          | --progress         show progress bar\n");
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -2812,6 +2896,7 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *command = NULL;
 	char *dbname = NULL;
+	char *output = NULL;	/* output format as string */
 	int trace = 0;
 	int dump = 0;
 	int useinserts = 0;
@@ -2821,6 +2906,7 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
+	int progress = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
@@ -2846,6 +2932,7 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
+		{"progress", 0, 0, 'P'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 #if 0
@@ -2904,7 +2991,7 @@ main(int argc, char **argv)
 #if 0
 				"t"
 #endif
-				"w:r:p:s:Xu:vzH?",
+				"w:r:p:s:Xu:vzHP?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -3048,6 +3135,9 @@ main(int argc, char **argv)
 		case 'z':
 			settz = 0;
 			break;
+		case 'P':
+			progress = 1;
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3149,6 +3239,7 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
+		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
@@ -3157,6 +3248,19 @@ main(int argc, char **argv)
 		} else {
 			setFormatter("raw");
 		}
+	}
+
+	// switch on progress bars
+	if (mode == SQL && progress) {
+		char* buf = malloc(100);
+		int port = profiler_start();
+		if (port < 0) {
+			fprintf(stderr, "Unable to listen for UDP profiling messages\n");
+		}
+		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
+		mapi_query(mid, buf);
+		sprintf(buf, "CALL profiler_stethoscope(0)");
+		mapi_query(mid, buf);
 	}
 
 	/* give the user a welcome message with some general info */
@@ -3229,6 +3333,7 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
+		profiler_arm();
 		c = doRequest(mid, command);
 		timerEnd();
 	}

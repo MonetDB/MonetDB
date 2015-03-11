@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 INCLUDES = ../mal ../optimizer \
 		   ../modules/atoms ../modules/mal ../modules/kernel \
@@ -31,7 +20,6 @@ lib_scheduler = {
 		run_adder.c run_adder.h \
 		run_isolate.c run_isolate.h \
 		run_memo.c run_memo.h \
-		run_octopus.c run_octopus.h \
 		srvpool.c srvpool.h \
 		run_pipeline.c run_pipeline.h
 }
@@ -39,8 +27,8 @@ lib_scheduler = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = run_adder.mal run_isolate.mal run_memo.mal run_octopus.mal srvpool.mal
+	SOURCES = run_adder.mal run_isolate.mal run_memo.mal srvpool.mal
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = run_adder.mal run_isolate.mal run_memo.mal run_octopus.mal srvpool.mal
+EXTRA_DIST = run_adder.mal run_isolate.mal run_memo.mal srvpool.mal

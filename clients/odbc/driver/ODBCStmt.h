@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -92,9 +81,9 @@ typedef struct tODBCDRIVERSTMT {
 	int querytype;		/* query type as returned by server */
 
 	SQLUINTEGER cursorType;
-	SQLUINTEGER cursorScrollable;
-	SQLUINTEGER retrieveData;
-	SQLUINTEGER noScan;
+	SQLULEN cursorScrollable;
+	SQLULEN retrieveData;
+	SQLULEN noScan;
 
 	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
 	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */
@@ -185,9 +174,9 @@ SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol,
 SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		    SQLPOINTER ptr, SQLLEN buflen, SQLLEN *lenp,
 		    SQLLEN *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
-		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
+		    SQLINTEGER datetime_interval_precision, SQLLEN offset,
 		    SQLULEN row);
-SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset,
+SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLLEN offset,
 		    SQLULEN row, char **bufp, size_t *bufposp, size_t *buflenp,
 		    char *sep);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
@@ -196,30 +185,30 @@ const char *ODBCGetTypeInfo(int concise_type, int *data_type,
 			    int *sql_data_type, int *sql_datetime_sub);
 int ODBCConciseType(const char *name);
 void ODBCResetStmt(ODBCStmt *stmt);
-SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
+SQLRETURN MNDBBindParameter(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 			    SQLSMALLINT ParameterType, SQLULEN ColumnSize,
 			    SQLSMALLINT DecimalDigits,
 			    SQLPOINTER ParameterValuePtr, SQLLEN BufferLength,
 			    SQLLEN *StrLen_or_IndPtr);
-SQLRETURN SQLColAttribute_(ODBCStmt *stmt,
+SQLRETURN MNDBColAttribute(ODBCStmt *stmt,
 			   SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier,
 			   SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax,
 			   SQLSMALLINT *pnValueLength, LENP_OR_POINTER_T pnValue);
-SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
-SQLRETURN SQLExecute_(ODBCStmt *stmt);
-SQLRETURN SQLFetch_(ODBCStmt *stmt);
-SQLRETURN SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation,
-			  SQLLEN nOffset);
-SQLRETURN SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option);
-SQLRETURN SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+SQLRETURN MNDBExecute(ODBCStmt *stmt);
+SQLRETURN MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray);
+SQLRETURN MNDBFetchScroll(ODBCStmt *stmt, SQLSMALLINT nOrientation,
+			  SQLLEN nOffset, SQLUSMALLINT *RowStatusArray);
+SQLRETURN MNDBFreeStmt(ODBCStmt *stmt, SQLUSMALLINT option);
+SQLRETURN MNDBGetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER BufferLength,
 			  SQLINTEGER *StringLength);
-SQLRETURN SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBPrepare(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
-SQLRETURN SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+SQLRETURN MNDBSetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
 const char *ODBCErrorType(const char *msg, const char **emsg);
 

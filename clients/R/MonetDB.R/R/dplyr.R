@@ -43,7 +43,7 @@ sample_frac.tbl_monetdb <- function(tbl, frac=1, replace = FALSE, weight = NULL)
   if (n < 1) {
     stop("not sampling 0 rows...")
   }
-  sample_n(tbl, n, replace, weight)
+  dplyr::sample_n(tbl, n, replace, weight)
 }
 
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef MAL_PRELUDE
@@ -57,7 +46,6 @@ opt_export  str bpmRef;
 opt_export  str bstreamRef;
 opt_export  str calcRef;
 opt_export  str catalogRef;
-opt_export  str centipedeRef;
 opt_export  str clear_tableRef;
 opt_export  str closeRef;
 opt_export  str columnRef;
@@ -72,7 +60,6 @@ opt_export  str copy_fromRef;
 opt_export  str count_no_nilRef;
 opt_export  str crossRef;
 opt_export  str createRef;
-opt_export  str datacellRef;
 opt_export  str dataflowRef;
 opt_export  str datacyclotronRef;
 opt_export  str dblRef;
@@ -101,7 +88,6 @@ opt_export  str grabRef;
 opt_export  str groupRef;
 opt_export  str subgroupRef;
 opt_export  str subgroupdoneRef;
-opt_export  str groupsRef;
 opt_export  str groupbyRef;
 opt_export  str hashRef;
 opt_export  str identityRef;
@@ -141,6 +127,7 @@ opt_export  str not_ilikeRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
 opt_export  str malRef;
+opt_export  str batmalRef;
 opt_export  str mapiRef;
 opt_export  str markRef;
 opt_export  str mark_grpRef;
@@ -167,7 +154,6 @@ opt_export  str newRef;
 opt_export  str notRef;
 opt_export  str nextRef;
 opt_export  str oidRef;
-opt_export  str octopusRef;
 opt_export  str openRef;
 opt_export  str optimizerRef;
 opt_export  str parametersRef;

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -179,6 +168,7 @@ mtime_export str MTIMEdate_submonths(date *ret, const date *v, const int *delta)
 mtime_export str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
 mtime_export str MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mtime_export str MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec);
+mtime_export str MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2);
 mtime_export str MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2);
 mtime_export str MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z);

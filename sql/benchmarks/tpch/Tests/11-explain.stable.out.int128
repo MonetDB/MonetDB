@@ -56,9 +56,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 732 # length
+% 734 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
-    X_137:void  := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe");
+    X_137:void  := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey \nhaving\n\tsum(ps_supplycost * ps_availqty) >\n\t(\n\t\tselect\n\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation\n\t\twhere\n\t\t\tps_suppkey = s_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_name = \\'GERMANY\\'\n\t)\norder by\n\tvalue desc;","sequential_pipe",74);
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","supplier");
     X_9:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",0);
@@ -87,7 +87,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     (X_51,r1_52) := sql.bind(X_5,"sys","partsupp","ps_partkey",2);
     X_54:bat[:oid,:int]  := sql.bind(X_5,"sys","partsupp","ps_partkey",1);
     X_56 := sql.delta(X_48,X_51,r1_52,X_54);
-    X_57:bat[:oid,:int]  := algebra.leftfetchjoinPath(r1_47,X_36,X_56);
+    X_57:bat[:oid,:int] := algebra.leftfetchjoinPath(r1_47,X_36,X_56);
     (X_58,r1_60,r2_60) := group.subgroupdone(X_57);
     X_61 := algebra.leftfetchjoin(r1_60,X_57);
     X_63:bat[:oid,:lng]  := sql.bind(X_5,"sys","partsupp","ps_supplycost",0);
@@ -103,8 +103,8 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     X_80 := sql.delta(X_73,X_77,r1_81,X_79);
     X_81 := algebra.leftfetchjoin(X_36,X_80);
     X_82 := algebra.leftfetchjoin(r1_47,X_81);
-    X_83:bat[:oid,:hge]  := batcalc.*(X_71,X_82);
-    X_84:bat[:oid,:hge]  := aggr.subsum(X_83,X_58,r1_60,true,true);
+    X_83:bat[:oid,:hge] := batcalc.*(X_71,X_82);
+    X_84:bat[:oid,:hge] := aggr.subsum(X_83,X_58,r1_60,true,true);
     X_62 := bat.mirror(X_61);
     X_86 := algebra.subselect(X_27,A2,A2,true,true,false);
     X_88 := algebra.leftfetchjoin(X_86,X_19);
@@ -114,11 +114,11 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     X_98 := algebra.leftfetchjoin(r1_131,X_69);
     X_99:bat[:oid,:hge]  := batcalc.hge(2,X_98,39,2);
     X_101 := algebra.leftfetchjoin(r1_131,X_81);
-    X_102:bat[:oid,:hge]  := batcalc.*(X_99,X_101);
-    X_103:hge  := aggr.sum(X_102);
+    X_102:bat[:oid,:hge] := batcalc.*(X_99,X_101);
+    X_103:hge := aggr.sum(X_102);
     X_104 := calc.*(X_103,A1);
     X_105 := sql.single(X_104);
-    X_107:bat[:oid,:hge]  := batsql.dec_round(X_105,100:hge);
+    X_107:bat[:oid,:hge] := batsql.dec_round(X_105,100);
     (X_108,r1_167) := algebra.subthetajoin(X_84,X_107,nil:BAT,nil:BAT,1,true,nil:lng);
     X_113 := algebra.tinter(X_62,X_108);
     X_114 := algebra.leftfetchjoin(X_113,X_84);

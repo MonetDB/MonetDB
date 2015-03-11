@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -405,7 +394,7 @@ static struct convert {
 };
 
 char *
-ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
+ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan)
 {
 	char *nquery;
 	const char *p;
@@ -926,6 +915,7 @@ struct sql_types ODBC_c_types[] = {
 #ifdef ODBCDEBUG
 
 const char *ODBCdebug;
+static char unknown[32];
 
 char *
 translateCType(SQLSMALLINT ValueType)
@@ -1010,7 +1000,9 @@ translateCType(SQLSMALLINT ValueType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ValueType);
+		return unknown;
 	}
 }
 
@@ -1095,7 +1087,9 @@ translateSQLType(SQLSMALLINT ParameterType)
 	case SQL_INTERVAL:
 		return "SQL_INTERVAL";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) ParameterType);
+		return unknown;
 	}
 }
 
@@ -1109,12 +1103,22 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 		return "SQL_COLUMN_PRECISION";
 	case SQL_COLUMN_SCALE:
 		return "SQL_COLUMN_SCALE";
+	case SQL_DESC_ALLOC_TYPE:
+		return "SQL_DESC_ALLOC_TYPE";
+	case SQL_DESC_ARRAY_SIZE:
+		return "SQL_DESC_ARRAY_SIZE";
+	case SQL_DESC_ARRAY_STATUS_PTR:
+		return "SQL_DESC_ARRAY_STATUS_PTR";
 	case SQL_DESC_AUTO_UNIQUE_VALUE:
 		return "SQL_DESC_AUTO_UNIQUE_VALUE";
 	case SQL_DESC_BASE_COLUMN_NAME:
 		return "SQL_DESC_BASE_COLUMN_NAME";
 	case SQL_DESC_BASE_TABLE_NAME:
 		return "SQL_DESC_BASE_TABLE_NAME";
+	case SQL_DESC_BIND_OFFSET_PTR:
+		return "SQL_DESC_BIND_OFFSET_PTR";
+	case SQL_DESC_BIND_TYPE:
+		return "SQL_DESC_BIND_TYPE";
 	case SQL_DESC_CASE_SENSITIVE:
 		return "SQL_DESC_CASE_SENSITIVE";
 	case SQL_DESC_CATALOG_NAME:
@@ -1159,6 +1163,8 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 		return "SQL_DESC_PARAMETER_TYPE";
 	case SQL_DESC_PRECISION:
 		return "SQL_DESC_PRECISION";
+	case SQL_DESC_ROWS_PROCESSED_PTR:
+		return "SQL_DESC_ROWS_PROCESSED_PTR";
 	case SQL_DESC_ROWVER:
 		return "SQL_DESC_ROWVER";
 	case SQL_DESC_SCALE:
@@ -1180,7 +1186,9 @@ translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
 	case SQL_DESC_UPDATABLE:
 		return "SQL_DESC_UPDATABLE";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) FieldIdentifier);
+		return unknown;
 	}
 }
 
@@ -1203,7 +1211,8 @@ translateFetchOrientation(SQLUSMALLINT FetchOrientation)
 	case SQL_FETCH_BOOKMARK:
 		return "SQL_FETCH_BOOKMARK";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) FetchOrientation);
+		return unknown;
 	}
 }
 
@@ -1213,6 +1222,26 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	switch (Attribute) {
 	case SQL_ATTR_ACCESS_MODE:
 		return "SQL_ATTR_ACCESS_MODE";
+#ifdef SQL_ATTR_ANSI_APP
+	case SQL_ATTR_ANSI_APP:
+		return "SQL_ATTR_ANSI_APP";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_EVENT
+	case SQL_ATTR_ASYNC_DBC_EVENT:
+		return "SQL_ATTR_ASYNC_DBC_EVENT";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE
+	case SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE:
+		return "SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCALLBACK
+	case SQL_ATTR_ASYNC_DBC_PCALLBACK:
+		return "SQL_ATTR_ASYNC_DBC_PCALLBACK";
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCONTEXT
+	case SQL_ATTR_ASYNC_DBC_PCONTEXT:
+		return "SQL_ATTR_ASYNC_DBC_PCONTEXT";
+#endif
 	case SQL_ATTR_ASYNC_ENABLE:
 		return "SQL_ATTR_ASYNC_ENABLE";
 	case SQL_ATTR_AUTOCOMMIT:
@@ -1225,6 +1254,10 @@ translateConnectAttribute(SQLINTEGER Attribute)
 		return "SQL_ATTR_CONNECTION_TIMEOUT";
 	case SQL_ATTR_CURRENT_CATALOG:
 		return "SQL_ATTR_CURRENT_CATALOG";
+#ifdef SQL_ATTR_DBC_INFO_TOKEN
+	case SQL_ATTR_DBC_INFO_TOKEN:
+		return "SQL_ATTR_DBC_INFO_TOKEN";
+#endif
 	case SQL_ATTR_DISCONNECT_BEHAVIOR:
 		return "SQL_ATTR_DISCONNECT_BEHAVIOR";
 	case SQL_ATTR_ENLIST_IN_DTC:
@@ -1252,7 +1285,9 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_TXN_ISOLATION:
 		return "SQL_ATTR_TXN_ISOLATION";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1302,7 +1337,9 @@ translateEnvAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_CP_MATCH:
 		return "SQL_ATTR_CP_MATCH";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1379,7 +1416,9 @@ translateStmtAttribute(SQLINTEGER Attribute)
 	case SQL_ATTR_USE_BOOKMARKS:
 		return "SQL_ATTR_USE_BOOKMARKS";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) Attribute);
+		return unknown;
 	}
 }
 
@@ -1416,7 +1455,8 @@ translateStmtOption(SQLUSMALLINT Option)
 	case SQL_ROW_NUMBER:
 		return "SQL_ROW_NUMBER";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%u)", (unsigned int) Option);
+		return unknown;
 	}
 }
 
@@ -1429,7 +1469,9 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	case SQL_ROLLBACK:
 		return "SQL_ROLLBACK";
 	default:
-		return "unknown";
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) CompletionType);
+		return unknown;
 	}
 }
 

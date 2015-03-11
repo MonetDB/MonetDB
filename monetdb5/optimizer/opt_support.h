@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _OPT_SUPPORT_H
@@ -48,13 +37,10 @@
 #define DEBUG_OPT_CONSTANTS			7
 #define DEBUG_OPT_COSTMODEL			8
 #define DEBUG_OPT_CRACK				9
-#define DEBUG_OPT_DATACELL			10
 #define DEBUG_OPT_DATACYCLOTRON		11
 #define DEBUG_OPT_DATAFLOW			12
 #define DEBUG_OPT_DEADCODE     		13
-#define DEBUG_OPT_GROUPS			14
 #define DEBUG_OPT_DICTIONARY		15
-#define DEBUG_OPT_EMPTYSET			16
 #define DEBUG_OPT_EVALUATE			17
 #define DEBUG_OPT_FACTORIZE			18
 #define DEBUG_OPT_GARBAGE			19
@@ -64,12 +50,10 @@
 #define DEBUG_OPT_MACRO				23
 #define DEBUG_OPT_MATPACK			53
 #define DEBUG_OPT_MERGETABLE		24
-#define DEBUG_OPT_OCTOPUS			25
 #define DEBUG_OPT_ORIGIN			52
 #define DEBUG_OPT_PARTITIONS		26
 #define DEBUG_OPT_PEEPHOLE			27
 #define DEBUG_OPT_PREJOIN      		28
-#define DEBUG_OPT_PUSHRANGES		29
 #define DEBUG_OPT_QEP				30
 #define DEBUG_OPT_RECYCLE			31
 #define DEBUG_OPT_REMAP       		32
@@ -83,13 +67,10 @@
 #define DEBUG_OPT_MITOSIS			41
 #define DEBUG_OPT_MULTIPLEX			42
 #define DEBUG_OPT_ACCUMULATORS		43
-#define DEBUG_OPT_CLUSTER			44
-#define DEBUG_OPT_MAPREDUCE			45
 #define DEBUG_OPT_SELCRACK			46
 #define DEBUG_OPT_SIDCRACK			47
 #define DEBUG_OPT_TRACE				48
 #define DEBUG_OPT_HEURISTIC			49
-#define DEBUG_OPT_CENTIPEDE			50
 #define DEBUG_OPT_PUSHSELECT		51
 #define DEBUG_OPT_JSON				54
 #define DEBUG_OPT_GEOSPATIAL			55
@@ -130,6 +111,7 @@ opt_export int isOrderby(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
 opt_export int isSubSelect(InstrPtr q);
 opt_export int isSubJoin(InstrPtr q);
+opt_export int isMultiplex(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
 opt_export str OPTsetDebugStr(void *ret, str *nme);

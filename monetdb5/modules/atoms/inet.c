@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -54,7 +43,15 @@ typedef struct _inet {
 	unsigned char filler2;
 	unsigned char isnil;
 } inet;
+#ifdef WORDS_BIGENDIAN
+/* HACK ALERT: once upon a time, lng_nil was used as inet_nil, but on
+ * big endian hardware, the byte that is not zero is on the other end;
+ * luckily, a mask of 0 is pretty useless, so we regard 128.0.0.0/0
+ * also as nil */
+#define in_isnil(i) ((((i)->q1 == 0 && (i)->isnil != 0) || ((i)->q1 == 128 && (i)->isnil == 0 && (i)->filler1 == 0 && (i)->filler2 == 0)) && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0)
+#else
 #define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
+#endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
 #ifdef WIN32

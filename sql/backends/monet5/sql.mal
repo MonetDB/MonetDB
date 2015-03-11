@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -345,13 +334,13 @@ pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
-pattern copy_from{unsafe}( sname:str, tname:str, 
+pattern copy_from{unsafe}( t:ptr, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern copyfrom{unsafe}( sname:str, tname:str, 
+pattern copyfrom{unsafe}( t:ptr,
 	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
 address mvc_import_table_stdin
 comment "Import a table from bstream s with the 
@@ -1014,14 +1003,6 @@ pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 
-pattern cluster1(sch:str, tbl:str)
-address SQLcluster1
-comment "Cluster the columns of a table on the (first) primary key";
-
-pattern cluster2(sch:str, tbl:str)
-address SQLcluster2
-comment "Cluster the columns of a table on the (first) primary key";
-
 pattern shrink(sch:str, tbl:str)
 address SQLshrink
 comment "Consolidate the deletion table over all columns using shrinking";
@@ -1103,7 +1084,5 @@ include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;
 include sql_inspect;
-include sql_rdf;
-include sql_octopus;
 
 sql.prelude();

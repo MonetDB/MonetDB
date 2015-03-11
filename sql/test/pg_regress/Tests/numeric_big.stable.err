@@ -61,43 +61,43 @@ QUERY = DROP TABLE num_result;
 ERROR = !DROP TABLE: no such table 'num_result'
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_data (id integer, val numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_data (id integer, val numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_data (id integer, val numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_add (id1 integer, id2 integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_add (id1 integer, id2 integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_sub (id1 integer, id2 integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_sub (id1 integer, id2 integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_div (id1 integer, id2 integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_div (id1 integer, id2 integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_mul (id1 integer, id2 integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_mul (id1 integer, id2 integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_sqrt (id integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_sqrt (id integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_sqrt (id integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_ln (id integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_ln (id integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_ln (id integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_log10 (id integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_log10 (id integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_log10 (id integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_exp_power_10_ln (id integer, expected numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_exp_power_10_ln (id integer, expected numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = CREATE TABLE num_result (id1 integer, id2 integer, result numeric(1000,800));
-ERROR = !decimal(1000,800) isn't supported because P=1000 > 38 in: "create table num_result (id1 integer, id2 integer, result numeric(1000,800)"
+ERROR = !decimal(1000,800) isn't supported because P=1000 > 18 in: "create table num_result (id1 integer, id2 integer, result numeric(1000,800)"
         !syntax error, unexpected ')' in: ")"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = BEGIN TRANSACTION;

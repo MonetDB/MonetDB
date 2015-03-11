@@ -28,9 +28,6 @@ stderr of test 'varchar_conversion_crash.Bug-3506` in directory 'sql/test/BugTra
 # 18:58:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28742" "--port=38663"
 # 18:58:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28742/.s.monetdb.38663
-QUERY = INSERT INTO config (dataset, section, key, value, type) VALUES (6, 'quality_lofar', 'high_bound', 80, 'int');
-ERROR = !EXEC: wrong type for argument 4 of prepared statement: decimal, expected decimal
 
 # 18:58:33 >  
 # 18:58:33 >  "Done."

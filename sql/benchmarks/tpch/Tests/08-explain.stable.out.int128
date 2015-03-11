@@ -57,9 +57,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 960 # length
+% 963 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
-    X_219:void  := querylog.define("explain select\n\to_year,\n\tsum(case\n\t\twhen nation = \\'BRAZIL\\' then volume\n\t\telse 0\n\tend) / sum(volume) as mkt_share\nfrom\n\t(\n\t\tselect\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume,\n\t\t\tn2.n_name as nation\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = l_partkey\n\t\t\tand s_suppkey = l_suppkey\n\t\t\tand l_orderkey = o_orderkey\n\t\t\tand o_custkey = c_custkey\n\t\t\tand c_nationkey = n1.n_nationkey\n\t\t\tand n1.n_regionkey = r_regionkey\n\t\t\tand r_name = \\'AMERICA\\'\n\t\t\tand s_nationkey = n2.n_nationkey\n\t\t\tand o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t\t\tand p_type = \\'ECONOMY ANODIZED STEEL\\'\n\t) as all_nations\ngroup by\n\to_year\norder by\n\to_year;","sequential_pipe");
+    X_219:void  := querylog.define("explain select\n\to_year,\n\tsum(case\n\t\twhen nation = \\'BRAZIL\\' then volume\n\t\telse 0\n\tend) / sum(volume) as mkt_share\nfrom\n\t(\n\t\tselect\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume,\n\t\t\tn2.n_name as nation\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = l_partkey\n\t\t\tand s_suppkey = l_suppkey\n\t\t\tand l_orderkey = o_orderkey\n\t\t\tand o_custkey = c_custkey\n\t\t\tand c_nationkey = n1.n_nationkey\n\t\t\tand n1.n_regionkey = r_regionkey\n\t\t\tand r_name = \\'AMERICA\\'\n\t\t\tand s_nationkey = n2.n_nationkey\n\t\t\tand o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t\t\tand p_type = \\'ECONOMY ANODIZED STEEL\\'\n\t) as all_nations\ngroup by\n\to_year\norder by\n\to_year;","sequential_pipe",120);
     X_9 := sql.mvc();
     X_10:bat[:oid,:oid]  := sql.tid(X_9,"sys","lineitem");
     X_13:bat[:oid,:oid]  := sql.bind_idxbat(X_9,"sys","lineitem","lineitem_l_orderkey_fkey",0);
@@ -138,7 +138,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,
     X_280 := algebra.leftfetchjoin(X_138,X_126);
     X_142 := sql.projectdelta(X_29,X_24,X_26,r1_27,X_28);
     X_143:bat[:oid,:date]  := algebra.leftfetchjoinPath(X_280,X_109,X_88,X_72,X_58,r1_37,X_142);
-    X_144:bat[:oid,:int]  := batmtime.year(X_143);
+    X_144:bat[:oid,:int] := batmtime.year(X_143);
     (X_145,r1_177,r2_177) := group.subgroupdone(X_144);
     X_148 := algebra.leftfetchjoin(r1_177,X_144);
     X_154:bat[:oid,:str]  := sql.bind(X_9,"sys","nation","n_name",0);
@@ -147,30 +147,30 @@ function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,
     X_164 := sql.projectdelta(X_86,X_154,X_158,r1_190,X_161);
     X_165 := algebra.leftfetchjoin(r1_162,X_164);
     X_166:bat[:oid,:bit]  := batcalc.==(X_165,A0);
-    X_167:bat[:oid,:bit]  := batcalc.isnil(X_166);
-    X_168:bat[:oid,:bit]  := batcalc.ifthenelse(X_167,false,X_166);
+    X_167:bat[:oid,:bit] := batcalc.isnil(X_166);
+    X_168:bat[:oid,:bit] := batcalc.ifthenelse(X_167,false,X_166);
     X_169:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_extendedprice",0);
     (X_172,r1_213) := sql.bind(X_9,"sys","lineitem","l_extendedprice",2);
     X_174:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_extendedprice",1);
     X_175 := sql.projectdelta(X_10,X_169,X_172,r1_213,X_174);
     X_176:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_280,X_109,X_88,X_72,X_58,X_32,X_175);
-    X_177:bat[:oid,:hge]  := batcalc.hge(2,X_176,33,2);
+    X_177:bat[:oid,:hge] := batcalc.hge(2,X_176,33,2);
     X_180 := calc.lng(A2,15,2);
     X_182:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_discount",0);
     (X_186,r1_236) := sql.bind(X_9,"sys","lineitem","l_discount",2);
     X_188:bat[:oid,:lng]  := sql.bind(X_9,"sys","lineitem","l_discount",1);
     X_190 := sql.projectdelta(X_10,X_182,X_186,r1_236,X_188);
     X_191:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_280,X_109,X_88,X_72,X_58,X_32,X_190);
-    X_192:bat[:oid,:lng]  := batcalc.-(X_180,X_191);
-    X_193:bat[:oid,:hge]  := batcalc.*(X_177,X_192);
+    X_192:bat[:oid,:lng] := batcalc.-(X_180,X_191);
+    X_193:bat[:oid,:hge] := batcalc.*(X_177,X_192);
     X_194 := calc.hge(A1,33,4);
-    X_196:bat[:oid,:hge]  := batcalc.ifthenelse(X_168,X_193,X_194);
-    X_197:bat[:oid,:hge]  := aggr.subsum(X_196,X_145,r1_177,true,true);
-    X_202:bat[:oid,:hge]  := aggr.subsum(X_193,X_145,r1_177,true,true);
+    X_196:bat[:oid,:hge] := batcalc.ifthenelse(X_168,X_193,X_194);
+    X_197:bat[:oid,:hge] := aggr.subsum(X_196,X_145,r1_177,true,true);
+    X_202:bat[:oid,:hge] := aggr.subsum(X_193,X_145,r1_177,true,true);
     (X_149,r1_181,r2_181) := algebra.subsort(X_148,false,false);
     X_153 := algebra.leftfetchjoin(r1_181,X_148);
-    X_199:bat[:oid,:hge]  := batcalc.hge(4,X_197,37,8);
-    X_203:bat[:oid,:hge]  := batcalc./(X_199,X_202);
+    X_199:bat[:oid,:hge] := batcalc.hge(4,X_197,37,8);
+    X_203:bat[:oid,:hge] := batcalc./(X_199,X_202);
     X_204 := algebra.leftfetchjoin(r1_181,X_203);
     X_205 := sql.resultSet(2,1,X_153);
     sql.rsColumn(X_205,"sys.all_nations","o_year","int",32,0,X_153);

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -681,22 +670,15 @@ has_whitespace(const char *s)
 }
 
 BAT **
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {
 	int i = 0;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
 	node *n;
 	Tablet as;
 	Column *fmt;
 	BUN cnt = 0;
 	BAT **bats = NULL;
 
-	if (!t) {
-		sql_error(m, 500, "table %s not found", tname);
-		m->type = -1;
-		return NULL;
-	}
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
 		m->type = -1;
@@ -760,10 +742,11 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].nullstr = ns;
 			fmt[i].null_length = strlen(ns);
 			fmt[i].nildata = ATOMnilptr(fmt[i].adt);
+			fmt[i].skip = (col->base.name[0] == '%');
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-			} else if (col->type.type->eclass == EC_INTERVAL && strcmp(col->type.type->sqlname, "sec_interval") == 0) {
+			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
 			}
@@ -1146,7 +1129,7 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_INTERVAL && strcmp(sqlname, "sec_interval") == 0) {
+	} else if (eclass == EC_SEC) {
 		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
 		ok = mnstr_write(s, *buf, l, 1) == 1;
 	} else {
@@ -1326,7 +1309,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
-		} else if (c->type.type->eclass == EC_INTERVAL && strcmp(c->type.type->sqlname, "sec_interval") == 0) {
+		} else if (c->type.type->eclass == EC_SEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &sec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) 3;

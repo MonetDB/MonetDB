@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -59,7 +48,6 @@ str bpmRef;
 str bstreamRef;
 str calcRef;
 str catalogRef;
-str centipedeRef;
 str clear_tableRef;
 str closeRef;
 str columnRef;
@@ -74,7 +62,6 @@ str copy_fromRef;
 str count_no_nilRef;
 str crossRef;
 str createRef;
-str datacellRef;
 str dataflowRef;
 str datacyclotronRef;
 str dblRef;
@@ -103,7 +90,6 @@ str grabRef;
 str groupRef;
 str subgroupRef;
 str subgroupdoneRef;
-str groupsRef;
 str groupbyRef;
 str hashRef;
 str identityRef;
@@ -143,6 +129,7 @@ str listRef;
 str lockRef;
 str lookupRef;
 str malRef;
+str batmalRef;
 str mapiRef;
 str markRef;
 str mark_grpRef;
@@ -169,7 +156,6 @@ str newRef;
 str notRef;
 str nextRef;
 str oidRef;
-str octopusRef;
 str openRef;
 str optimizerRef;
 str parametersRef;
@@ -314,7 +300,6 @@ void optimizerInit(void)
 	bstreamRef = putName("bstream",7);
 	calcRef = putName("calc",4);
 	catalogRef = putName("catalog",7);
-	centipedeRef = putName("centipede",9);
 	clear_tableRef = putName("clear_table",11);
 	closeRef = putName("close",5);
 	columnRef = putName("column",6);
@@ -330,7 +315,6 @@ void optimizerInit(void)
 	crossRef = putName("crossproduct",12);
 	createRef = putName("create",6);
 	dateRef = putName("date",4);
-	datacellRef = putName("datacell",8);
 	dataflowRef = putName("dataflow",8);
 	datacyclotronRef = putName("datacyclotron",13);
 	dblRef = putName("dbl",3);
@@ -359,7 +343,6 @@ void optimizerInit(void)
 	groupRef = putName("group",5);
 	subgroupRef = putName("subgroup",8);
 	subgroupdoneRef= putName("subgroupdone",12);
-	groupsRef = putName("groups",6);
 	groupbyRef = putName("groupby",7);
 	hashRef = putName("hash",4);
 	identityRef = putName("identity",8);
@@ -399,6 +382,7 @@ void optimizerInit(void)
 	lockRef = putName("lock",4);
 	lookupRef = putName("lookup",6);
 	malRef = putName("mal", 3);
+	batmalRef = putName("batmal", 6);
 	mapiRef = putName("mapi", 4);
 	markRef = putName("mark", 4);
 	mark_grpRef = putName("mark_grp", 8);
@@ -425,7 +409,6 @@ void optimizerInit(void)
 	notRef = putName("not",3);
 	nextRef = putName("next",4);
 	oidRef = putName("oid",3);
-	octopusRef = putName("octopus",7);
 	optimizerRef = putName("optimizer",9);
 	openRef = putName("open",4);
 	parametersRef = putName("parameters",10);

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -39,6 +28,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN SQL_API
 SQLGetStmtOption(SQLHSTMT StatementHandle,
@@ -46,10 +36,13 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 		 SQLPOINTER ValuePtr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
+	SQLULEN v;
+	SQLRETURN r;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtOption(Option));
+	ODBCLOG("SQLGetStmtOption " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtOption(Option),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -57,25 +50,31 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
+	/* only the ODBC 1.0 and ODBC 2.0 options */
 	switch (Option) {
-		/* only the ODBC 1.0 and ODBC 2.0 options */
-	case SQL_QUERY_TIMEOUT:
-	case SQL_MAX_ROWS:
-	case SQL_NOSCAN:
-	case SQL_MAX_LENGTH:
 	case SQL_ASYNC_ENABLE:
-	case SQL_BIND_TYPE:
-	case SQL_CURSOR_TYPE:
 	case SQL_CONCURRENCY:
-	case SQL_KEYSET_SIZE:
-	case SQL_ROWSET_SIZE:
-	case SQL_SIMULATE_CURSOR:
+	case SQL_CURSOR_TYPE:
+	case SQL_NOSCAN:
+	case SQL_QUERY_TIMEOUT:
 	case SQL_RETRIEVE_DATA:
+	case SQL_SIMULATE_CURSOR:
 	case SQL_USE_BOOKMARKS:
-/*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 	case SQL_ROW_NUMBER:
+		/* SQLGetStmtAttr returns 64 bit value, but we need to
+		 * return 32 bit value */
+		r = MNDBGetStmtAttr(stmt, Option, &v, 0, NULL);
+		if (SQL_SUCCEEDED(r))
+			WriteData(ValuePtr, (SQLUINTEGER) v, SQLUINTEGER);
+		return r;
+	case SQL_BIND_TYPE:
+	case SQL_KEYSET_SIZE:
+	case SQL_MAX_LENGTH:
+	case SQL_MAX_ROWS:
+	case SQL_ROWSET_SIZE:
+/*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLGetStmtAttr_(stmt, Option, ValuePtr, 0, NULL);
+		return MNDBGetStmtAttr(stmt, Option, ValuePtr, 0, NULL);
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);

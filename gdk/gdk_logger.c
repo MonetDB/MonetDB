@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -136,22 +125,8 @@ logbat_new(int tt, BUN size, int role)
 }
 
 static int
-log_read_format_old(logger *l, logformat *data)
-{
-	int nr = 0;
-	int ok =  mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->log, &nr) == 1 &&
-		mnstr_readInt(l->log, &data->tid) == 1;
-	data->nr = nr;
-	return ok;
-}
-
-static int
 log_read_format(logger *l, logformat *data)
 {
-	if (l->postfuncp) /* we need to convert from the old logformat, 
-       		             needs to be removed once we released Aug2014 */
-		return log_read_format_old(l, data);
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
 		mnstr_readLng(l->log, &data->nr) == 1 &&
 		mnstr_readInt(l->log, &data->tid) == 1;
@@ -522,6 +497,7 @@ la_bat_destroy(logger *lg, logaction *la)
 #endif
 			BUNdelete(lg->snapshots_bid, p, FALSE);
 			BUNdelete(lg->snapshots_tid, p, FALSE);
+			/* move to the dirty new part of the snapshots list */
 			BUNappend(lg->snapshots_bid, &bid, FALSE);
 			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 		}
@@ -636,6 +612,7 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
+	/* move to the dirty new part of the snapshots list, new snapshots will get flushed to disk */
 	BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE);
 	BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 	logbat_destroy(b);

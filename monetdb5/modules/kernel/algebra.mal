@@ -1,37 +1,27 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
+
 # 
 module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
+command tintersect( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtintersect;
 
-command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) :bat[:any_1,:any_2]
+command tdifference ( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
 address ALGtdifference;
 
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3]) :bat[:any_1,:any_3]
+command leftjoin( left:bat[:oid,:any_2], right:bat[:any_2,:any_3]) :bat[:oid,:any_3]
 address ALGleftjoin;
-command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:any_1,:any_3]
+command leftjoin( left:bat[:oid,:any_2], right:bat[:any_2,:any_3], estimate:lng) :bat[:oid,:any_3]
 address ALGleftjoinestimate;
 
 #END OF HEADLESS PLANS

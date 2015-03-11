@@ -27,9 +27,9 @@ function user.main():void;
     user.myException();
     io.print("should not come here");
 #exception block; 
-catch MALException:str ;
+catch MALException:str;
     io.printf("caught IllegalAccess\n");
-exit MALException:str ;
+exit MALException:str;
     io.print("done");
 end user.main;
 caught IllegalAccess

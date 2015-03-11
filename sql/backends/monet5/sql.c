@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -40,12 +29,8 @@
 #include <rel_dump.h>
 #include <rel_bin.h>
 #include <bbp.h>
-#include <cluster.h>
 #include <opt_pipes.h>
 #include "clients.h"
-#ifdef HAVE_RAPTOR
-# include <rdf.h>
-#endif
 #include "mal_instruction.h"
 
 static int
@@ -2795,16 +2780,15 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
 	str filename, cs;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
-	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	str *fname = getArgReference_str(stk, pci, pci->retc + 5), msg;
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 	bstream *s;
 	stream *ss;
 	str utf8 = "UTF-8";
@@ -2887,7 +2871,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fix_windows_newline(ssep);
 #endif
 	if (s != NULL) {
-		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+		b = mvc_import_table(cntxt, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 		bstream_destroy(s);
 	}
 	GDKfree(filename);
@@ -2914,15 +2898,14 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 5);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 6);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 7);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -2959,7 +2942,7 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKstrFromStr(ns, *N, len);
 	len = 0;
-	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+	b = mvc_import_table(cntxt, m, m->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if (ssep)
@@ -4026,172 +4009,10 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_DEBUG);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
-	return MAL_SUCCEED;
-}
-
-/*
- * The table is searched for all columns and they are
- * re-clustered on the hash value over the  primary key.
- * Initially the first column
- */
-
-str
-SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *map = NULL, *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			msg = CLUSTER_key(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLUSTER_map(&mid, &hid);
-			BBPdecref(hid, TRUE);
-			if (msg)
-				return msg;
-			map = BATdescriptor(mid);
-			if (map == NULL)
-				throw(SQL, "sql.cluster", "Can not access descriptor");
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
-		msg = CLUSTER_apply(&bid, b, map);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(map->batCacheid);
-			return msg;
-		}
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	if (map) {
-		BBPunfix(map->batCacheid);
-		BBPdecref(mid, TRUE);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			bat psum;
-			int bits = 10, off = 0;
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			msg = MKEYbathash(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLS_create_wrd(&psum, &mid, &hid, &bits, &off);
-			BBPdecref(hid, TRUE);
-			BBPdecref(psum, TRUE);
-			if (msg)
-				return msg;
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
-		msg = CLS_map(&bid, &mid, &b->batCacheid);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(bid);
-			return msg;
-		}
-
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
 	return MAL_SUCCEED;
 }
 
