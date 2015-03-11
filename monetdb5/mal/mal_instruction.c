@@ -132,6 +132,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->calls = 0;
 	mb->optimize = 0;
 	mb->stmt = NULL;
+	mb->activeClients = 1;
 	if (newMalBlkStmt(mb, maxstmts) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb->stmt);
@@ -235,6 +236,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->dotfile = old->dotfile;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
+	mb->activeClients = 1;
 
 	if (mb->var == NULL) {
 		GDKfree(mb);
