@@ -195,10 +195,10 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
 		 * boundaries */
+		if (s->tseqbase + BATcount(s) < seq + (h - l))
+			h -= seq + (h - l) - (s->tseqbase + BATcount(s));
 		if (s->tseqbase > seq)
 			l += s->tseqbase - seq;
-		if (s->tseqbase + BATcount(s) < seq + (h - l))
-			h -= seq + BATcount(b) - (s->tseqbase + BATcount(s));
 		s = NULL;
 	}
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
