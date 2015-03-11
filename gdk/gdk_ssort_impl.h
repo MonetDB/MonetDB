@@ -814,7 +814,7 @@ GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 	ms.allocedt = MERGESTATE_TEMP_SIZE;
 	ms.n = 0;
 	ms.min_gallop = MIN_GALLOP;
-	ms.compare = BATatoms[tpe].atomCmp;
+	ms.compare = ATOMcompare(tpe);
 	ms.heap = heap;
 	ms.hs = hs;
 	ms.ts = ts;

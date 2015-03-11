@@ -296,7 +296,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			if (ATOMstorage(tpe) == TYPE_str) 
 				mat[i].size = Tsize(mat[i].b);
 			else
-				mat[i].size = BATatoms[tpe].size;
+				mat[i].size = ATOMsize(tpe);
 			mat[i].cnt = cnt;
 			if ( mat[i].b->ttype == TYPE_void){
 				o = mat[i].b->tseqbase;

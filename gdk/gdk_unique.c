@@ -138,7 +138,7 @@ BATsubunique(BAT *b, BAT *s)
 	else
 		vars = NULL;
 	width = Tsize(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	bi = bat_iterator(b);
 
 	if (b->tsorted || b->trevsorted) {

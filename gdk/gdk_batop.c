@@ -1058,10 +1058,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 	}
 	if (bn->batCount <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->hrevsorted = ATOMlinear(b->htype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		BATkey(bn, 1);
 		BATkey(BATmirror(bn), 1);
 	} else {
@@ -1747,7 +1747,7 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 		n -= BUNfirst(bn);
 		break;
 	}
-	bn->T->nil = n >= 1 && (*BATatoms[tailtype].atomCmp)(v, BATatoms[tailtype].atomNull) == 0;
+	bn->T->nil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;

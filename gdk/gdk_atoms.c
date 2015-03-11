@@ -218,7 +218,7 @@ ATOMisdescendant(int tpe, int parent)
 		cur = tpe;
 		if (cur == parent)
 			return TRUE;
-		tpe = BATatoms[tpe].storage;
+		tpe = ATOMstorage(tpe);
 	}
 	return FALSE;
 }

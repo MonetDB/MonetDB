@@ -308,8 +308,8 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		hash = FALSE;						\
 	}								\
 									\
-	merge = BATatoms[l->htype].atomCmp;				\
-	cmp = BATatoms[l->ttype].atomCmp;				\
+	merge = ATOMcompare(l->htype);					\
+	cmp = ATOMcompare(l->ttype);					\
 	hnil = ATOMnilptr(l->htype);					\
 	tnil = ATOMnilptr(l->ttype);					\
 	(void) cmp;							\

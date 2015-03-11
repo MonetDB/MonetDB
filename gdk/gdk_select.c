@@ -560,7 +560,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 {
 	const void *v;
 	const void *nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	BATiter bi = bat_iterator(b);
 	oid o;
 	BUN p = r;
@@ -640,7 +640,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	BATiter bi = bat_iterator(b);
 	oid o;
 	BUN p = r;
@@ -767,7 +767,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(b->ttype != TYPE_void || equi || b->T->nonil);
 
 #ifndef NDEBUG
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 #endif
 
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
@@ -1640,7 +1640,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	int rlwidth, rhwidth;
 	int lwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	int t;
 	BUN cnt, ncnt;
 	oid *restrict dst1, *restrict dst2;

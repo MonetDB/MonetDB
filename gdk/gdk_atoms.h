@@ -25,15 +25,15 @@
 #define simple_GT(x,y,tpe)	((*(const tpe*) (x))  > (*(const tpe*) (y)))
 #define simple_LE(x,y,tpe)	((*(const tpe*) (x)) <= (*(const tpe*) (y)))
 #define simple_GE(x,y,tpe)	((*(const tpe*) (x)) >= (*(const tpe*) (y)))
-#define atom_CMP(x,y,id)	(*BATatoms[id].atomCmp)(x,y)
-#define atom_EQ(x,y,id)		((*BATatoms[id].atomCmp)(x,y) == 0)
-#define atom_NE(x,y,id,nl)	((*BATatoms[id].atomCmp)(y,BATatoms[id].atomNull) != 0 && (*BATatoms[id].atomCmp)(x,y) != 0)
-#define atom_LT(x,y,id)		((*BATatoms[id].atomCmp)(x,y) < 0)
-#define atom_GT(x,y,id)		((*BATatoms[id].atomCmp)(x,y) > 0)
-#define atom_LE(x,y,id)		((*BATatoms[id].atomCmp)(x,y) <= 0)
-#define atom_GE(x,y,id)		((*BATatoms[id].atomCmp)(x,y) >= 0)
+#define atom_CMP(x,y,id)	(*ATOMcompare(id))(x,y)
+#define atom_EQ(x,y,id)		((*ATOMcompare(id))(x,y) == 0)
+#define atom_NE(x,y,id,nl)	((*ATOMcompare(id))(y,ATOMnilptr(id)) != 0 && (*ATOMcompare(id))(x,y) != 0)
+#define atom_LT(x,y,id)		((*ATOMcompare(id))(x,y) < 0)
+#define atom_GT(x,y,id)		((*ATOMcompare(id))(x,y) > 0)
+#define atom_LE(x,y,id)		((*ATOMcompare(id))(x,y) <= 0)
+#define atom_GE(x,y,id)		((*ATOMcompare(id))(x,y) >= 0)
 #define simple_HASH(v,tpe,dst)	((dst) *(const tpe *) (v))
-#define atom_HASH(v,id,dst)	((dst) (*BATatoms[id].atomHash)(v))
+#define atom_HASH(v,id,dst)	((dst) ATOMhash(id, v))
 
 /*
  * @- maximum atomic string lengths
@@ -250,7 +250,7 @@ gdk_export const ptr ptr_nil;
 									\
 		assert(BATatoms[t_].atomPut == NULL);			\
 		ATOMfix(t_, s_);					\
-		switch (BATatoms[t_].size) {				\
+		switch (ATOMsize(t_)) {					\
 		case 0:		/* void */				\
 			break;						\
 		case 1:							\
@@ -267,7 +267,7 @@ gdk_export const ptr ptr_nil;
 			break;						\
 		ATOM_CASE_16_hge;					\
 		default:						\
-			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
 			break;						\
 		}							\
 	} while (0)
@@ -297,7 +297,7 @@ gdk_export const ptr ptr_nil;
 		assert(BATatoms[t_].atomPut == NULL);			\
 		ATOMfix(t_, s_);					\
 		ATOMunfix(t_, d_);					\
-		switch (BATatoms[t_].size) {				\
+		switch (ATOMsize(t_)) {					\
 		case 0:	     /* void */					\
 			break;						\
 		case 1:							\
@@ -314,7 +314,7 @@ gdk_export const ptr ptr_nil;
 			break;						\
 		ATOM_CASE_16_hge;					\
 		default:						\
-			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
 			break;						\
 		}							\
 	} while (0)

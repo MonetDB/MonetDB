@@ -1680,7 +1680,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			}						\
 			(col)->sorted = 1;				\
 		} else if ((b)->batCount <= 1) {			\
-			if (BATatoms[(col)->type].linear) {		\
+			if (ATOMlinear((col)->type)) {			\
 				(col)->sorted = 1;			\
 				(col)->revsorted = 1;			\
 			}						\
@@ -1707,7 +1707,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->seq = sqbs;			\
 			}						\
 		}							\
-		if (!BATatoms[(col)->type].linear) {			\
+		if (!ATOMlinear((col)->type)) {				\
 			(col)->sorted = 0;				\
 			(col)->revsorted = 0;				\
 		}							\
