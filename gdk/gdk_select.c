@@ -192,6 +192,15 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		l = BUNfirst(b);
 		h = BUNlast(b);
 	}
+	if (s && BATtdense(s)) {
+		/* no need for binary search in s, we just adjust the
+		 * boundaries */
+		if (s->tseqbase > seq)
+			l += s->tseqbase - seq;
+		if (s->tseqbase + BATcount(s) < seq + (h - l))
+			h -= seq + BATcount(b) - (s->tseqbase + BATcount(s));
+		s = NULL;
+	}
 	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
