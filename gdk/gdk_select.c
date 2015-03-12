@@ -1483,7 +1483,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (hash && estimate == BUN_NONE && !b->T->hash) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select */
-		if (BATcount(b) <= 10000) {
+		BUN cnt = BATcount(b);
+		if (s && BATcount(s) < cnt)
+			cnt = BATcount(s);
+		if (cnt <= 10000) {
 			/* "small" input: don't bother about more accurate
 			 * estimate */
 			estimate = maximum;
@@ -1517,7 +1520,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BATcount(b) / 100) - 1;
 			}
 		}
-		hash = estimate < BATcount(b) / 100;
+		hash = estimate < cnt / 100;
 	}
 	if (estimate == BUN_NONE) {
 		/* no better estimate possible/required:
