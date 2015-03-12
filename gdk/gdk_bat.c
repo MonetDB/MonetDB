@@ -1566,7 +1566,7 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 			 * property, so we must clear it */
 			b->T->nil = 0;
 		}
-		HASHremove(BATmirror(b));
+		HASHremove(b);
 		Treplacevalue(b, BUNtloc(bi, p), t);
 
 		tt = b->ttype;
