@@ -922,14 +922,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public int getInt(int columnIndex) throws SQLException {
 		int ret = 0;
-		try {
-			// note: Integer.parseInt DOES unlike Double and Float
-			// accept a null value
-			ret = Integer.parseInt(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			try {
+				ret = Integer.parseInt(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
@@ -958,14 +959,23 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public long getLong(int columnIndex) throws SQLException {
 		long ret = 0;
-		try {
-			// note: Long.parseLong DOES unlike Double and Float
-			// accept a null value
-			ret = Long.parseLong(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			// The oid datatype values (as string) have a  @0  suffix in the string value.
+			// To allow succesful parsing and conversion to long, we need to remove it first
+			if ("oid".equals(types[columnIndex - 1])) {
+				int len = val.length();
+				if (len > 2 && val.endsWith("@0"))
+					val = val.substring(0, len-2);
+			}
+
+			try {
+				ret = Long.parseLong(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
@@ -1844,12 +1854,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public short getShort(int columnIndex) throws SQLException {
 		short ret = 0;	// note: relaxing by compiler here
-		try {
-			ret = Short.parseShort(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			try {
+				ret = Short.parseShort(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
