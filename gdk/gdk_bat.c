@@ -2879,6 +2879,7 @@ BATassertHeadProps(BAT *b)
 			size_t nmelen = strlen(nme);
 			Heap *hp;
 			Hash *hs = NULL;
+			BUN mask;
 
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
@@ -2892,10 +2893,16 @@ BATassertHeadProps(BAT *b)
 			snprintf(hp->filename, nmelen + 30,
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
+			if (ATOMsize(b->htype) == 1)
+				mask = 1 << 8;
+			else if (ATOMsize(b->htype) == 2)
+				mask = 1 << 16;
+			else
+				mask = HASHmask(b->batCount);
 			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
 							hashheap)) < 0 ||
 			    (hs = HASHnew(hp, b->htype, BUNlast(b),
-					  HASHmask(b->batCount))) == NULL) {
+					  mask)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3093,16 +3100,23 @@ BATderiveHeadProps(BAT *b, int expensive)
 		b->H->nodense = 0;
 	}
 	if (expensive) {
+		BUN mask;
+
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(b->htype) == 1)
+			mask = 1 << 8;
+		else if (ATOMsize(b->htype) == 2)
+			mask = 1 << 16;
+		else
+			mask = HASHmask(b->batCount);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->htype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

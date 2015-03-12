@@ -98,7 +98,7 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 8;		/* minimum size */
+	BUN m = 1 << 8;		/* minimum size */
 
 	while (m + m < cnt)
 		m += m;
@@ -263,7 +263,7 @@ BAThash(BAT *b, BUN masksize)
 		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
 		} else if (ATOMsize(tpe) == 2) {
-			mask = (1 << 12);
+			mask = (1 << 16);
 		} else if (b->tkey) {
 			mask = HASHmask(cnt);
 		} else {
@@ -278,8 +278,6 @@ BAThash(BAT *b, BUN masksize)
 				p = q;
 		}
 
-		if (mask < 1024)
-			mask = 1024;
 		t0 = GDKusec();
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */

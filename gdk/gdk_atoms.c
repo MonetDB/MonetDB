@@ -82,7 +82,7 @@ bteHash(const bte *v)
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) mix_sht(*(const unsigned short *) v);
+	return (BUN) *(const unsigned short *) v;
 }
 
 static BUN
