@@ -1941,7 +1941,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public String getNString(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNString() not supported", "0A000");
+		return getString(columnIndex);
 	}
 
 	/**
