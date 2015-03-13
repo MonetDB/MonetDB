@@ -163,7 +163,7 @@ for workerrec in workers:
     atable = 'alter table ' + shardtable + ' add table ' + shardtable + workerrec['tpf'];
     c.execute(rtable)
     c.execute(atable)
-    rtable = 'create remote table ' +  repltable + workerrec['tpf'] + ' ' + shardedtabledef + ' on \'' + workerrec['mapi'] + '\''
+    rtable = 'create remote table ' +  repltable + workerrec['tpf'] + ' ' + replicatedtabledef + ' on \'' + workerrec['mapi'] + '\''
     atable = 'alter table ' + repltable + ' add table ' + repltable + workerrec['tpf'];
     c.execute(rtable)
     c.execute(atable)
