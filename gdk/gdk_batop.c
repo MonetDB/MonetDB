@@ -1349,8 +1349,8 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			if (on == NULL)
 				goto error;
 			BATsetcount(on, BATcount(b));
-			BATseqbase(on, 0);
-			BATseqbase(BATmirror(on), 0);
+			BATseqbase(on, b->hseqbase);
+			BATseqbase(BATmirror(on), b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
@@ -1408,13 +1408,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
 			for (p = 0, q = BATcount(bn); p < q; p++)
-				grps[p] = p;
+				grps[p] = p + b->hseqbase;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 			on->T->nil = 0;
 			on->T->nonil = 1;
 		}
-		BATseqbase(on, 0);
+		BATseqbase(on, b->hseqbase);
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
 		*order = on;
