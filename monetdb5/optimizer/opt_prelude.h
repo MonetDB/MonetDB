@@ -89,6 +89,7 @@ opt_export  str groupRef;
 opt_export  str subgroupRef;
 opt_export  str subgroupdoneRef;
 opt_export  str groupbyRef;
+opt_export  str hgeRef;
 opt_export  str hashRef;
 opt_export  str identityRef;
 opt_export  str ifthenelseRef;
