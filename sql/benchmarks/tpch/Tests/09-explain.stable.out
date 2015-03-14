@@ -55,9 +55,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 736 # length
+% 739 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str):void;
-    X_198:void  := querylog.define("explain select\n\tnation,\n\to_year,\n\tsum(amount) as sum_profit\nfrom\n\t(\n\t\tselect\n\t\t\tn_name as nation,\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\tpartsupp,\n\t\t\torders,\n\t\t\tnation\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand ps_suppkey = l_suppkey\n\t\t\tand ps_partkey = l_partkey\n\t\t\tand p_partkey = l_partkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand p_name like \\'%green%\\'\n\t) as profit\ngroup by\n\tnation,\n\to_year\norder by\n\tnation,\n\to_year desc;","sequential_pipe");
+    X_198:void := querylog.define("explain select\n\tnation,\n\to_year,\n\tsum(amount) as sum_profit\nfrom\n\t(\n\t\tselect\n\t\t\tn_name as nation,\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\tpartsupp,\n\t\t\torders,\n\t\t\tnation\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand ps_suppkey = l_suppkey\n\t\t\tand ps_partkey = l_partkey\n\t\t\tand p_partkey = l_partkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand p_name like \\'%green%\\'\n\t) as profit\ngroup by\n\tnation,\n\to_year\norder by\n\tnation,\n\to_year desc;","sequential_pipe",104);
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","lineitem");
     X_8:bat[:oid,:oid]  := sql.bind_idxbat(X_4,"sys","lineitem","lineitem_l_partkey_fkey",0);
@@ -145,7 +145,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str):void;
     X_169 := sql.projectdelta(X_5,X_163,X_166,r1_202,X_168);
     X_170:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_244,X_57,X_43,X_29,X_169);
     X_171:bat[:oid,:lng]  := batcalc.*(X_162,X_170);
-    X_173:bat[:oid,:lng]  := batcalc.*(X_171,100:lng);
+    X_173:bat[:oid,:lng] := batcalc.*(X_171,100);
     X_174:bat[:oid,:lng]  := batcalc.-(X_150,X_173);
     X_175:bat[:oid,:lng]  := aggr.subsum(X_174,X_113,r1_132,true,true);
     (X_118,r1_137,r2_137) := algebra.subsort(X_117,false,false);

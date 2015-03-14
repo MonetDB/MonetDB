@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -28,6 +17,7 @@
 #define tr_readonly	1
 #define tr_writable	2
 #define tr_serializable 4
+#define tr_append 	8
 
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
@@ -467,13 +457,17 @@ typedef enum table_types {
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
 
+#define TABLE_WRITABLE	0
+#define TABLE_READONLY	1
+#define TABLE_APPENDONLY	2
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
+	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
-	bit readonly;	
 	char *query;		/* views may require some query */
 	int  sz;
 

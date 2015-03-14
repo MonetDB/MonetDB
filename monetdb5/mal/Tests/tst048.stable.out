@@ -42,12 +42,12 @@ function user.main():void;
     bat.append(a,2);
     io.print(a);
     b := bat.new(:oid,:flt);
-    bat.append(b,0.300000012);
-    bat.append(b,1.39999998);
+    bat.append(b,0.3);
+    bat.append(b,1.4);
     bat.append(b,2.5);
     io.print(b);
-## c should be of type [:oid, :flt], but it was printed as [:oid, :int] 
-    c := algebra.project(a,2.0999999);
+# c should be of type [:oid, :flt], but it was printed as [:oid, :int] 
+    c := algebra.project(a,2.1);
     io.print(c);
     e := algebra.project(b,2.5);
     io.print(e);
@@ -63,19 +63,19 @@ end user.main;
 [ 2@0,	  2	  ]
 #-------------------------#
 # h	t		  # name
-# oid	flt		  # type
-#-------------------------#
-[ 0@0,	  0.300000012	  ]
-[ 1@0,	  1.39999998	  ]
+# void	flt  # type
+#--------------------------#
+[ 0@0,	0.3  ]
+[ 1@0,	1.4  ]
 [ 2@0,	  2.5		  ]
 #-------------------------#
 # h	t		  # name
 # void	flt		  # type
-#-------------------------#
-[ 0@0,	  2.0999999	  ]
-[ 1@0,	  2.0999999	  ]
-[ 2@0,	  2.0999999	  ]
-#-----------------#
+#--------------------------#
+[ 0@0,	2.1  ]
+[ 1@0,	2.1  ]
+[ 2@0,	2.1  ]
+#--------------------------#
 # h	t	  # name
 # void	flt	  # type
 #-----------------#

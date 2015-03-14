@@ -60,12 +60,12 @@ Ready.
 [ 5	]
 #SELECT t0.id
 #      ,t0.colint
-#      ,SQRT(t0.colint_sq) 
+#      ,t0.sqrt_colint
 #  FROM (SELECT id
 #              ,colint
 #              ,CASE WHEN colint < 0
-#                    THEN -1 * colint
-#                    ELSE colint
+#                    THEN SQRT(-1 * colint)
+#                    ELSE SQRT(colint)
 #               END AS colint_sq
 #          FROM t1
 #       ) t0
@@ -79,6 +79,7 @@ Ready.
 [ 3,	0,	0	]
 [ 4,	1,	1	]
 [ 5,	2,	1.414213562	]
+
 #SELECT t0.id
 #      ,t0.colint
 #      ,SQRT(t0.colint_sq) 
@@ -91,7 +92,7 @@ Ready.
 #          FROM t1
 #       ) t0
 #;
-#% sys.t0,	sys.t0,	sys.t0 # table_name
+% sys.t0,	sys.t0,	sys.t0 # table_name
 % id,	colint,	sqrt_colint # name
 % int,	int,	double # type
 % 1,	2,	24 # length

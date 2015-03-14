@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -95,8 +84,6 @@
 static int
 HASHwidth(BUN hashsize)
 {
-	if (hashsize <= (BUN) BUN1_NONE)
-		return BUN1;
 	if (hashsize <= (BUN) BUN2_NONE)
 		return BUN2;
 #if SIZEOF_BUN <= 4
@@ -111,7 +98,7 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 8;		/* minimum size */
+	BUN m = 1 << 8;		/* minimum size */
 
 	while (m + m < cnt)
 		m += m;
@@ -123,28 +110,13 @@ HASHmask(BUN cnt)
 static void
 HASHclear(Hash *h)
 {
-	BUN i, j = h->mask, nil = HASHnil(h);
-
-	switch (h->width) {
-	case 1:
-		for (i = 0; i <= j; i++)
-			HASHput1(h, i, nil);
-		break;
-	case 2:
-		for (i = 0; i <= j; i++)
-			HASHput2(h, i, nil);
-		break;
-	case 4:
-		for (i = 0; i <= j; i++)
-			HASHput4(h, i, nil);
-		break;
-#if SIZEOF_BUN == 8
-	case 8:
-		for (i = 0; i <= j; i++)
-			HASHput8(h, i, nil);
-		break;
-#endif
-	}
+	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE
+	 * are all equal to -1 (~0), i.e., have all bits set,
+	 * we can use a simple memset() to clear the Hash,
+	 * rather than iteratively assigning individual
+	 * BUNi_NONE values in a for-loop
+	 */
+	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
 Hash *
@@ -163,9 +135,6 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	h->mask = mask - 1;
 	h->width = width;
 	switch (width) {
-	case BUN1:
-		h->nil = (BUN) BUN1_NONE;
-		break;
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
 		break;
@@ -294,7 +263,7 @@ BAThash(BAT *b, BUN masksize)
 		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
 		} else if (ATOMsize(tpe) == 2) {
-			mask = (1 << 12);
+			mask = (1 << 16);
 		} else if (b->tkey) {
 			mask = HASHmask(cnt);
 		} else {
@@ -309,8 +278,6 @@ BAThash(BAT *b, BUN masksize)
 				p = q;
 		}
 
-		if (mask < 1024)
-			mask = 1024;
 		t0 = GDKusec();
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
@@ -529,7 +496,7 @@ HASHgonebad(BAT *b, const void *v)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = BATatoms[b->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
 		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);

@@ -15,7 +15,6 @@ stdout of test 'mclient-lsql-d.Bug-2861` in directory 'sql/test/BugTracker-2011`
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:31159/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module not loaded
 # SQLException:mvc:SQL module not initialized
 
 Ready.

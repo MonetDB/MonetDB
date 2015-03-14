@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -39,30 +28,23 @@
 */
 #include "opt_accumulators.h"
 #include "opt_aliases.h"
-#include "opt_centipede.h"
-#include "opt_cluster.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
-#include "opt_emptySet.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
-#include "opt_groups.h"
 #include "opt_inline.h"
 #include "opt_joinpath.h"
-#include "opt_mapreduce.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_octopus.h"
-#include "opt_pushranges.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
 #include "opt_querylog.h"
@@ -72,7 +54,6 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_statistics.h"
-#include "opt_strengthReduction.h"
 
 struct{
 	str nme;
@@ -80,8 +61,6 @@ struct{
 } codes[] = {
 	{"accumulators", &OPTaccumulatorsImplementation},
 	{"aliases", &OPTaliasesImplementation},
-	{"centipede", &OPTcentipedeImplementation},
-	{"cluster", &OPTclusterImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"constants", &OPTconstantsImplementation},
@@ -89,22 +68,17 @@ struct{
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
-	{"emptySet", &OPTemptySetImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
-	{"groups", &OPTgroupsImplementation},
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
-	{"mapreduce", &OPTmapreduceImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
-	{"octopus", &OPToctopusImplementation},
-	{"pushranges", &OPTpushrangesImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
 	{"recycler", &OPTrecyclerImplementation},
@@ -112,7 +86,6 @@ struct{
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
-	{"strengthReduction", &OPTstrengthReductionImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

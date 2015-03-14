@@ -15,7 +15,6 @@ stdout of test 'device-self-ref-fk` in directory 'sql/test/BugTracker-2011` itse
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:33057/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module not loaded
 # SQLException:mvc:SQL module not initialized
 
 Ready.
@@ -37,7 +36,6 @@ Ready.
 # loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
 # loading sql script: 40_geom.sql
-# loading sql script: 50_datacell.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _BAT_H_
@@ -34,10 +23,6 @@
 #endif
 
 bat5_export char *BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname);
-bat5_export char *BKCgetAlpha(bat *r, const bat *bid);
-bat5_export char *BKCgetDelta(bat *r, const bat *bid);
-bat5_export char *BKCinsert_bun(bat *r, const bat *bid, const oid *h, const void *t);
-bat5_export char *BKCinsert_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force);
 bat5_export char *BKCdelete(bat *r, const bat *bid, const oid *h);
 bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t);
 bat5_export str BKCnewBAT(bat *res, const int *ht, const int *tt, const BUN *cap, int role);
@@ -50,10 +35,6 @@ bat5_export str BKCorder(bat *ret, const bat *bid);
 bat5_export str BKCorder_rev(bat *ret, const bat *bid);
 bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
-bat5_export str BKCreplace_bun(bat *r, const bat *bid, const oid *h, const void *t);
-bat5_export str BKCreplace_bat(bat *r, const bat *bid, const bat *sid);
-bat5_export str BKCreplace_bun_force(bat *r, const bat *bid, const oid *h, const void *t, const bit *force);
-bat5_export str BKCreplace_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);
 bat5_export str BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCappend_wrap(bat *r, const bat *bid, const bat *uid);
@@ -87,14 +68,8 @@ bat5_export str BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 bat5_export str BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export str BKCsetName(void *r, const bat *bid, const char * const *s);
 bat5_export str BKCgetBBPname(str *ret, const bat *bid);
-bat5_export str BKCunload(bit *res, const char * const *input);
-bat5_export str BKCload(bat *res, const char * const *input);
-bat5_export str BKCsetColdBAT(void *res, const bat *bid);
-bat5_export str BKCsetHotBAT(void *res, const bat *bid);
 bat5_export str BKCsave(bit *res, const char * const *input);
 bat5_export str BKCsave2(void *r, const bat *bid);
-bat5_export str BKCmmap(bit *res, const bat *bid, const int *hbns, const int *tbns, const int *hhp, const int *thp);
-bat5_export str BKCmmap2(bit *res, const bat *bid, const int *bns);
 bat5_export str BKCsetHash(bit *ret, const bat *bid);
 bat5_export str BKCsetImprints(bit *ret, const bat *bid);
 bat5_export str BKCgetSequenceBase(oid *r, const bat *bid);

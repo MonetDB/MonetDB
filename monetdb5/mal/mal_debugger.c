@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -29,6 +18,7 @@
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
+#include "mal_function.h"
 #include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
@@ -283,7 +273,7 @@ static void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_DEBUG);
+	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
 	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg,
 			getModuleId(getInstrPtr(mb, 0)),
 			getFunctionId(getInstrPtr(mb, 0)), pc);
@@ -407,7 +397,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				/* help mclients with fake prompt */
 				if (lastcmd != 'l' && lastcmd != 'L') {
 					mnstr_printf(out, "mdb>");
-					printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+					printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 				}
 
 		}
@@ -877,9 +867,9 @@ retryRead:
 			int i, lstng, varid;
 			InstrPtr q;
 
-			lstng = LIST_MAL_DEBUG | LIST_MAL_UDF | LIST_MAL_LNR;
-			if (*b == 'L')
-				lstng |= LIST_MAL_DETAIL;
+			lstng = LIST_MAL_NAME;
+			if(*b == 'L')
+				lstng = LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS;
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b, out);
@@ -921,7 +911,7 @@ retryRead:
 				} else if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
 				if (m)
-					printFunction(out, m, 0, lstng);
+					debugFunction(out, m, 0, lstng, 0,m->stop);
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -943,7 +933,7 @@ partial:
 				*b = 0;
 				if (stepsize < 0)
 					first -= stepsize;
-				listFunction(out, mb, 0, lstng, first, stepsize);
+				debugFunction(out, mb, 0, lstng, first, stepsize);
 				first = first + stepsize > mb->stop ? first : first + stepsize;
 			}
 			continue;
@@ -1119,7 +1109,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
 				mnstr_printf(out, "mdb>");
-			printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+			printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		} else if (ch)
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
@@ -1128,7 +1118,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':
-		printTraceCall(out, mb, stk, pc, LIST_MAL_DEBUG);
+		printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		break;
 	case 'C':
 		mdbSessionActive = 0; /* for name completion */
@@ -1478,28 +1468,14 @@ memProfileVector(stream *out, int cells)
 			Hash *h;
 
 			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
-			hp = &b->H->heap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\ttail=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = &b->T->heap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\thead=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
 			}
 
-			hp = b->H->vheap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\thheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = b->T->vheap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\ttheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
-			h = b->H->hash;
-			if (h && h->mask) {
-				mnstr_printf(out, "\thhash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\thhashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
-						(h->mask + h->lim + 1) * sizeof(int));
 			}
 			h = b->T->hash;
 			if (h && h->mask) {

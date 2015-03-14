@@ -122,26 +122,31 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 	thizz.query(query, function(error, resp) {
 		if (!error) {
 			var execfun = function(bindparams, ecallback) {
-				var quoted = bindparams.map(function(param) {
+				var quoted = bindparams.map(function(param, paramIndex) {
 					if(param === null) {
 						return "NULL";
 					}
 					var type = typeof param;
+					var s;
 					switch(type) {
 						case 'boolean':
 						case 'number':
-							return '' + param;
+							s = '' + param;
 							break
 						case 'string':
 						/* escape single quotes except if they are already escaped */
-							return "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
+							s = "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
 							break
 						default:
-							return param;
+							s = param;
 							break;
 					}
+					var colData = resp.data[resp.rows-bindparams.length+paramIndex];
+					if(colData && colData[0] == "timestamp") {
+						s = "timestamp "+s;
+					}
+					return s;
 				}).join(', ');
-
 				var execquery = 'EXEC ' + resp.queryid + '(' + quoted + ')';
 				thizz.query(execquery, ecallback);
 			}
@@ -321,7 +326,7 @@ function __sha512(str) {
 	return crypto.createHash('sha512').update(str).digest('hex');
 }
 
-function _parsetuples(names, types, lines) {
+exports.parsetuples =  _parsetuples = function(types, lines) {
 	var state = 'INCRAP';
 	var resultarr = [];
 	for (li in lines) {
@@ -334,7 +339,7 @@ function _parsetuples(names, types, lines) {
 			var chr = line.charAt(curPos);
 			switch (state) {
 			case 'INCRAP':
-				if (chr != '\t' && chr != ',') {
+				if (chr != '\t' && chr != ',' && chr != ' ') {
 					if (chr == '"') {
 						state = 'INQUOTES';
 					} else {
@@ -437,7 +442,7 @@ function _parseresponse(msg) {
 			resp.col[colinfo.column] = colinfo.index;
 			resp.structure.push(colinfo);
 		}
-		resp.data = _parsetuples(column_names, column_types, lines.slice(5, lines.length-1));
+		resp.data = _parsetuples(column_types, lines.slice(5, lines.length-1));
 	}
 	return resp;
 }

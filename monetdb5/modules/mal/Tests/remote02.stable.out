@@ -20,7 +20,7 @@ function user.main():void;
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
     a:str  := "Fabian!";
-    b:flt  := 4.30000019;
+    b:flt := 4.3;
     c:int  := 12;
     d:bat[:oid,:str]  := bat.new(:oid,:str);
     bat.append(d,"bla");
@@ -46,7 +46,7 @@ function user.main():void;
     remote.disconnect(conn);
 end user.main;
 [ "Fabian!" ]
-[ 4.30000019 ]
+[ 4.3 ]
 [ 12 ]
 #-----------------#
 # h	t	  # name

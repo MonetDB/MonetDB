@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* this file is included multiple times by gdk_calc.c */
@@ -539,29 +528,29 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		break;
 	default:
 		if (tp1 != tp2 ||
-		    !BATatoms[tp1].linear ||
-		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+		    !ATOMlinear(tp1) ||
+		    (atomcmp = ATOMcompare(tp1)) == NULL)
 			goto unsupported;
 		/* a bit of a hack: for inherited types, use
 		 * type-expanded version if comparison function is
 		 * equal to the inherited-from comparison function,
 		 * and yes, we jump right into the middle of a switch,
 		 * but that is legal (although not encouraged) C */
-		if (atomcmp == BATatoms[TYPE_bte].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_bte))
 			goto btebte;
-		if (atomcmp == BATatoms[TYPE_sht].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_sht))
 			goto shtsht;
-		if (atomcmp == BATatoms[TYPE_int].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_int))
 			goto intint;
-		if (atomcmp == BATatoms[TYPE_lng].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_lng))
 			goto lnglng;
 #ifdef HAVE_HGE
-		if (atomcmp == BATatoms[TYPE_hge].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_hge))
 			goto hgehge;
 #endif
-		if (atomcmp == BATatoms[TYPE_flt].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_flt))
 			goto fltflt;
-		if (atomcmp == BATatoms[TYPE_dbl].atomCmp)
+		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
 		CANDLOOP(dst, k, TPE_nil, 0, start);

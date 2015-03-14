@@ -52,9 +52,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 514 # length
+% 516 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date):void;
-    X_163:void  := querylog.define("explain select\n\tl_orderkey,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\to_orderdate,\n\to_shippriority\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\tc_mktsegment = \\'BUILDING\\'\n\tand c_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate < date \\'1995-03-15\\'\n\tand l_shipdate > date \\'1995-03-15\\'\ngroup by\n\tl_orderkey,\n\to_orderdate,\n\to_shippriority\norder by\n\trevenue desc,\n\to_orderdate\nlimit 10;","sequential_pipe");
+    X_163:void := querylog.define("explain select\n\tl_orderkey,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\to_orderdate,\n\to_shippriority\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\tc_mktsegment = \\'BUILDING\\'\n\tand c_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate < date \\'1995-03-15\\'\n\tand l_shipdate > date \\'1995-03-15\\'\ngroup by\n\tl_orderkey,\n\to_orderdate,\n\to_shippriority\norder by\n\trevenue desc,\n\to_orderdate\nlimit 10;","sequential_pipe",93);
     X_6 := sql.mvc();
     X_10:bat[:oid,:date]  := sql.bind(X_6,"sys","orders","o_orderdate",0);
     X_7:bat[:oid,:oid]  := sql.tid(X_6,"sys","orders");
@@ -132,7 +132,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date):void;
     (X_132,r1_165,r2_165) := algebra.subsort(X_127,r1_162,r2_162,false,false);
     X_205 := algebra.leftfetchjoin(r1_165,X_126);
     X_135:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_205,r1_112,X_86);
-    X_137 := algebra.subslice(X_135,0:wrd,9:wrd);
+    X_137 := algebra.subslice(X_135,0,9:wrd);
     X_206 := algebra.leftfetchjoin(X_137,r1_165);
     X_141:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_206,X_126,r1_112,X_75);
     X_138 := algebra.leftfetchjoin(X_137,X_135);

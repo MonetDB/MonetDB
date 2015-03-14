@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -42,7 +31,7 @@
 
 
 SQLRETURN
-SQLSetConnectAttr_(ODBCDbc *dbc,
+MNDBSetConnectAttr(ODBCDbc *dbc,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER StringLength)
@@ -50,7 +39,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 	(void) StringLength;	/* Stefan: unused!? */
 
 	switch (Attribute) {
-	case SQL_ATTR_AUTOCOMMIT:
+	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
 		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_AUTOCOMMIT_ON:
 		case SQL_AUTOCOMMIT_OFF:
@@ -68,23 +57,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
-	case SQL_ATTR_METADATA_ID:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
-		case SQL_TRUE:
-		case SQL_FALSE:
-			dbc->sql_attr_metadata_id = (SQLUINTEGER) (uintptr_t) ValuePtr;
-#ifdef ODBCDEBUG
-			ODBCLOG("SQLSetConnectAttr set metadata_id %s\n",
-				dbc->sql_attr_metadata_id == SQL_TRUE ? "true" : "false");
-#endif
-			break;
-		default:
-			/* Invalid attribute value */
-			addDbcError(dbc, "HY024", NULL, 0);
-			return SQL_ERROR;
-		}
-		return SQL_SUCCESS;
-	case SQL_ATTR_CURRENT_CATALOG:
+	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
 		fixODBCstring(ValuePtr, StringLength, SQLINTEGER,
 			      addDbcError, dbc, return SQL_ERROR);
 		if (dbc->Connected) {
@@ -101,31 +74,64 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 			return SQL_ERROR;
 		}
 		break;
-	case SQL_ATTR_CONNECTION_TIMEOUT:
+	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
 		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (uintptr_t) ValuePtr;
 		if (dbc->mid)
 			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
 		break;
-	case SQL_ATTR_TXN_ISOLATION:
+	case SQL_ATTR_METADATA_ID:		/* SQLUINTEGER */
+		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+		case SQL_TRUE:
+		case SQL_FALSE:
+			dbc->sql_attr_metadata_id = (SQLUINTEGER) (uintptr_t) ValuePtr;
+#ifdef ODBCDEBUG
+			ODBCLOG("SQLSetConnectAttr set metadata_id %s\n",
+				dbc->sql_attr_metadata_id == SQL_TRUE ? "true" : "false");
+#endif
+			break;
+		default:
+			/* Invalid attribute value */
+			addDbcError(dbc, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		return SQL_SUCCESS;
+	case SQL_ATTR_TXN_ISOLATION:		/* SQLUINTEGER */
 		/* nothing to change, we only do the highest level */
 		break;
 
 		/* TODO: implement connection attribute behavior */
-	case SQL_ATTR_ACCESS_MODE:
-	case SQL_ATTR_ASYNC_ENABLE:
-	case SQL_ATTR_LOGIN_TIMEOUT:
-	case SQL_ATTR_ODBC_CURSORS:
-	case SQL_ATTR_PACKET_SIZE:
-	case SQL_ATTR_QUIET_MODE:
-	case SQL_ATTR_TRACE:
-	case SQL_ATTR_TRACEFILE:
-	case SQL_ATTR_TRANSLATE_LIB:
-	case SQL_ATTR_TRANSLATE_OPTION:
+	case SQL_ATTR_ACCESS_MODE:		/* SQLUINTEGER */
+#ifdef SQL_ATTR_ASYNC_DBC_EVENT
+	case SQL_ATTR_ASYNC_DBC_EVENT:		/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE
+	case SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE: /* SQLUINTEGER */
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCALLBACK
+	case SQL_ATTR_ASYNC_DBC_PCALLBACK:	/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_DBC_PCONTEXT
+	case SQL_ATTR_ASYNC_DBC_PCONTEXT:	/* SQLPOINTER */
+#endif
+	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
+#ifdef SQL_ATTR_DBC_INFO_TOKEN
+	case SQL_ATTR_DBC_INFO_TOKEN:		/* SQLPOINTER */
+#endif
+	case SQL_ATTR_ENLIST_IN_DTC:		/* SQLPOINTER */
+	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
+	case SQL_ATTR_ODBC_CURSORS:		/* SQLULEN */
+	case SQL_ATTR_PACKET_SIZE:		/* SQLUINTEGER */
+	case SQL_ATTR_QUIET_MODE:		/* HWND (SQLPOINTER) */
+	case SQL_ATTR_TRACE:			/* SQLUINTEGER */
+	case SQL_ATTR_TRACEFILE:		/* SQLCHAR* */
+	case SQL_ATTR_TRANSLATE_LIB:		/* SQLCHAR* */
+	case SQL_ATTR_TRANSLATE_OPTION:		/* SQLUINTEGER */
 		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
-	case SQL_ATTR_AUTO_IPD:	       /* read-only attribute */
-	case SQL_ATTR_CONNECTION_DEAD:
+	case SQL_ATTR_AUTO_IPD:			/* SQLUINTEGER */
+	case SQL_ATTR_CONNECTION_DEAD:		/* SQLUINTEGER */
+		/* read-only attribute */
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
@@ -142,9 +148,10 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttr " PTRFMT " %s\n",
+	ODBCLOG("SQLSetConnectAttr " PTRFMT " %s " PTRFMT " %d\n",
 		PTRFMTCAST ConnectionHandle,
-		translateConnectAttribute(Attribute));
+		translateConnectAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) StringLength);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -152,7 +159,7 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle,
+	return MNDBSetConnectAttr((ODBCDbc *) ConnectionHandle,
 				  Attribute,
 				  ValuePtr,
 				  StringLength);
@@ -182,9 +189,10 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %s\n",
+	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %s " PTRFMT " %d\n",
 		PTRFMTCAST ConnectionHandle,
-		translateConnectAttribute(Attribute));
+		translateConnectAttribute(Attribute),
+		PTRFMTCAST ValuePtr, (int) StringLength);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -208,7 +216,7 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 		break;
 	}
 
-	rc = SQLSetConnectAttr_(dbc, Attribute, ptr, n);
+	rc = MNDBSetConnectAttr(dbc, Attribute, ptr, n);
 
 	if (ptr && ptr != ValuePtr)
 		free(ptr);

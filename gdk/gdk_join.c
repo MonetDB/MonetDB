@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -355,7 +344,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const char *lvars, *rvars;
 	int lwidth, rwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *v, *prev = NULL;
 	BUN nl, nr;
 	BUN total;		/* number of rows in l we scan */
@@ -1284,7 +1273,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	const char *lvars;
 	int lwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	oid lval = oid_nil;	/* hold value if l has dense tail */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
@@ -1626,7 +1615,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 	const char *lvars, *rvars;
 	int lwidth, rwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *vl, *vr;
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
@@ -1852,7 +1841,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int lwidth, rwidth;
 	int t;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *vl, *vr;
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
@@ -2632,7 +2621,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	BUN n;
 	oid lo, hi;
 	BATiter ri, bni;
-	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(r->ttype);
 	const void *nil = ATOMnilptr(r->ttype);
 	const void *v;
 	BUN prev = BUN_NONE;

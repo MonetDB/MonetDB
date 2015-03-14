@@ -17,7 +17,6 @@ stdout of test 'tst028` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 function user.f(a:bat[:oid,:any]):void;
     io.print(a);
 end user.f;

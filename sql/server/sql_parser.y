@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 %{
@@ -306,6 +295,9 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_header_list
+	header_list
+	header
 	ident_commalist
 	opt_corresponding
 	column_ref_commalist
@@ -488,7 +480,7 @@ int yydebug=1;
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
-%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
+%token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
@@ -527,7 +519,7 @@ int yydebug=1;
 %left <operation> AND
 %left <operation> NOT
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT CONCATSTRING SUBSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION
 %right UMINUS
 %left <operation> '*' 
 %left <operation> '/' '%'
@@ -978,6 +970,11 @@ alter_statement:
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname SET INSERT ONLY
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ WRITE
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -1043,6 +1040,19 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
+ |	opt_column ident SET STORAGE STRING
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  if (!strlen($5))
+	  	append_string(l, NULL);
+	  else
+	  	append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_STORAGE, l); }
+ |	opt_column ident SET STORAGE sqlNULL
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_STORAGE, l); }
  ;
 
 drop_table_element:
@@ -2492,25 +2502,29 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
-	  append_list(l, $6);
+	  append_list(l, $5);
 	  append_list(l, $7);
+	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
+	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
+	  append_list(l, $5);
 	  append_list(l, NULL);
-	  append_list(l, $7);
+	  append_list(l, $8);
+	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $8);
-	  append_int(l, $9);
-	  append_int(l, $10);
+	  append_string(l, $10);
+	  append_int(l, $11);
+	  append_int(l, $12);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -2537,6 +2551,28 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+
+opt_header_list:
+       /* empty */		{ $$ = NULL; }
+ | '(' header_list ')'		{ $$ = $2; }
+ ;
+
+header_list:
+   header 			{ $$ = append_list(L(), $1); }
+ | header_list ',' header 	{ $$ = append_list($1, $3); }
+ ;
+
+header:
+	ident		
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  $$ = l; }
+ |	ident STRING
+			{ dlist *l = L();
+			  append_string(l, $1 );
+			  append_string(l, $2 );
+			  $$ = l; }
+ ;
 
 opt_seps:
     /* empty */
@@ -3475,6 +3511,20 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "right_shift")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "left_shift_assign")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp RIGHT_SHIFT_ASSIGN scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "right_shift_assign")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4872,6 +4922,21 @@ non_reserved_word:
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
+| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
+| AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
+| AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
+| COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
+| CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
+| DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
+| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }	/* sloppy: officially reserved */
+| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
+| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
+| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
+| TABLE		{ $$ = sa_strdup(SA, "table"); } 	/* sloppy: officially reserved */
+
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }
 |  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
@@ -4917,6 +4982,7 @@ non_reserved_word:
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 |  TEMP		{ $$ = sa_strdup(SA, "temp"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 ;
 
 name_commalist:

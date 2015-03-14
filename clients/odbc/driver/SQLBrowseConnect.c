@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -53,7 +42,7 @@
 
 
 static SQLRETURN
-SQLBrowseConnect_(ODBCDbc *dbc,
+MNDBBrowseConnect(ODBCDbc *dbc,
 		  SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
 		  SQLCHAR *OutConnectionString,
@@ -179,7 +168,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	}
 
 	if (uid != NULL && pwd != NULL) {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
 		if (SQL_SUCCEEDED(rc)) {
 			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 						  BufferLength,
@@ -278,7 +267,7 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLBrowseConnect_(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
+	return MNDBBrowseConnect(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
 SQLRETURN SQL_API
@@ -322,7 +311,7 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
+	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 1024, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
 			    StringLength2Ptr, 1, addDbcError, dbc);

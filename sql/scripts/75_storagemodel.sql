@@ -1,19 +1,8 @@
--- The contents of this file are subject to the MonetDB Public License
--- Version 1.1 (the "License"); you may not use this file except in
--- compliance with the License. You may obtain a copy of the License at
--- http://www.monetdb.org/Legal/MonetDBLicense
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Software distributed under the License is distributed on an "AS IS"
--- basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
--- License for the specific language governing rights and limitations
--- under the License.
---
--- The Original Code is the MonetDB Database System.
---
--- The Initial Developer of the Original Code is CWI.
--- Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
--- Copyright August 2008-2015 MonetDB B.V.
--- All Rights Reserved.
+-- Copyright 2008-2015 MonetDB B.V.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -28,11 +17,11 @@
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
 
-create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
-external name sql.storage;
+create function sys."storage"()
+returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
+external name sql."storage";
 
-create view sys.storage as select * from sys.storage();
+create view sys."storage" as select * from sys."storage"();
 
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
@@ -57,7 +46,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys.storage() X;
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys."storage"() X;
 
 	update sys.storagemodelinput
 	set reference = true

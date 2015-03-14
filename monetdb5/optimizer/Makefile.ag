@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 INCLUDES = ../mal ../modules/atoms ../modules/mal ../modules/kernel \
 	../../clients/mapilib \
@@ -31,33 +20,27 @@ lib_optimizer = {
 		optimizer.c optimizer.h optimizer_private.h \
 		opt_accumulators.c opt_accumulators.h \
 		opt_aliases.c opt_aliases.h \
-		opt_cluster.c opt_cluster.h \
 		opt_coercion.c opt_coercion.h \
 		opt_commonTerms.c opt_commonTerms.h \
 		opt_constants.c opt_constants.h \
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \
 		opt_deadcode.c opt_deadcode.h \
-		opt_emptySet.c opt_emptySet.h \
 		opt_evaluate.c opt_evaluate.h \
 		opt_factorize.c opt_factorize.h \
 		opt_garbageCollector.c opt_garbageCollector.h \
 		opt_generator.c opt_generator.h \
-		opt_groups.c opt_groups.h \
 		opt_querylog.c opt_querylog.h \
 		opt_inline.c opt_inline.h \
 		opt_joinpath.c opt_joinpath.h \
 		opt_macro.c opt_macro.h \
-		opt_mapreduce.c opt_mapreduce.h \
 		opt_matpack.c opt_matpack.h \
 		opt_json.c opt_json.h \
 		opt_mergetable.c opt_mergetable.h \
 		opt_mitosis.c opt_mitosis.h \
 		opt_multiplex.c opt_multiplex.h \
-		opt_octopus.c opt_octopus.h \
 		opt_pipes.c opt_pipes.h \
 		opt_prelude.c opt_prelude.h \
-		opt_pushranges.c opt_pushranges.h \
 		opt_qep.c opt_qep.h \
 		opt_recycler.c opt_recycler.h \
 		opt_reduce.c opt_reduce.h \
@@ -65,9 +48,7 @@ lib_optimizer = {
 		opt_remoteQueries.c opt_remoteQueries.h \
 		opt_reorder.c opt_reorder.h \
 		opt_statistics.c opt_statistics.h \
-		opt_strengthReduction.c opt_strengthReduction.h \
 		opt_support.c opt_support.h \
-		opt_centipede.c opt_centipede.h \
 		opt_pushselect.c opt_pushselect.h \
 		opt_wrapper.c
 }

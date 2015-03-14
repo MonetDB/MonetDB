@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,24 +33,26 @@
 static str
 OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i = 2, resB, iter = 0, cr;
+	int i = 2, iter = 0;
 	int hvar, tvar;
 	str mod, fcn;
-	int *alias;
+	int *alias, *resB;
 	InstrPtr q;
 	int ht, tt;
+	int bat = (getModuleId(pci) == batmalRef) ;
 
 	(void) cntxt;
 	(void) stk;
-
-	ht = getHeadType(getArgType(mb, pci, 0));
-	if (ht != TYPE_oid)
-		throw(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getColumnType(getArgType(mb, pci, 0));
-	if (tt== TYPE_any)
-		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
-	if (isAnyExpression(getArgType(mb, pci, 0)))
-		throw(MAL, "optimizer.multiplex", "Target type is missing");
+	for (i = 0; i < pci->retc; i++) {
+		ht = getHeadType(getArgType(mb, pci, i));
+		if (ht != TYPE_oid)
+			throw(MAL, "optimizer.multiplex", "Target head type is missing");
+		tt = getColumnType(getArgType(mb, pci, i));
+		if (tt== TYPE_any)
+			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
+		if (isAnyExpression(getArgType(mb, pci, i)))
+			throw(MAL, "optimizer.multiplex", "Target type is missing");
+	}
 
 	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
 	mod = putName(mod,strlen(mod));
@@ -98,16 +89,26 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 */
 
 	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
-	if (alias == NULL)
+	resB = (int*) GDKmalloc(sizeof(int) * pci->retc);
+	if (alias == NULL || resB == NULL)  {
+		GDKfree(alias);
+		GDKfree(resB);
 		return NULL;
+	}
 
 	/* resB := new(refBat) */
-	q = newFcnCall(mb, batRef, newRef);
-	resB = getArg(q, 0);
+	for (i = 0; i < pci->retc; i++) {
+		q = newFcnCall(mb, batRef, newRef);
+		resB[i] = getArg(q, 0);
 
-	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-	q = pushType(mb, q, ht);
-	q = pushType(mb, q, tt);
+		ht = getHeadType(getArgType(mb, pci, i));
+		tt = getColumnType(getArgType(mb, pci, i));
+
+		setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+		q = pushType(mb, q, ht);
+		q = pushType(mb, q, tt);
+	}
+
 	/* barrier (h,r) := iterator.new(refBat); */
 	q = newFcnCall(mb, iteratorRef, newRef);
 	q->barrier = BARRIERsymbol;
@@ -118,34 +119,48 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pushArgument(mb,q,iter);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
-	alias[i] = tvar;
-
-	for (i++; i < pci->argc; i++)
-		if (isaBatType(getArgType(mb, pci, i))) {
+	for (i = pci->retc+2; i < pci->argc; i++) {
+		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
 			(void) pushArgument(mb, q, hvar);
 		}
+	}
 
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCall(mb, mod, fcn);
-	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
+	for (i = 0; i < pci->retc; i++) {
+		int nvar = 0;
+		if (bat) {
+			ht = getHeadType(getArgType(mb, pci, i));
+			tt = getColumnType(getArgType(mb, pci, i));
+			nvar = newTmpVariable(mb, newBatType(ht, tt));
+		} else {
+			nvar = newTmpVariable(mb, TYPE_any);
+		}
+		if (i)
+			q = pushReturn(mb, q, nvar);
+		else
+			getArg(q, 0) = nvar;
+	}
 
-	for (i = pci->retc+2; i < pci->argc; i++)
-		if (isaBatType(getArgType(mb, pci, i))) {
-			q= pushArgument(mb, q, alias[i]);
+	for (i = pci->retc+2; i < pci->argc; i++) {
+		if (getArg(pci, i) == iter) {
+			q = pushArgument(mb, q, tvar);
+		} else if (isaBatType(getArgType(mb, pci, i))) {
+			q = pushArgument(mb, q, alias[i]);
 		} else {
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
+	}
 
-	/* append(resB,h,cr);
-	   not append(resB, cr); the head type (oid) may dynamically change */
-
-	q = newFcnCall(mb, batRef, appendRef);
-	q= pushArgument(mb, q, resB);
-	(void) pushArgument(mb, q, cr);
+	for (i = 0; i < pci->retc; i++) {
+		InstrPtr a = newFcnCall(mb, batRef, appendRef);
+		a = pushArgument(mb, a, resB[i]);
+		(void) pushArgument(mb, a, getArg(q,i));
+	}
 
 /* redo (h,r):= iterator.next(refBat); */
 	q = newFcnCall(mb, iteratorRef, nextRef);
@@ -159,10 +174,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getArg(q,0) = hvar;
 	(void) pushReturn(mb, q, tvar);
 
-	q = newAssignment(mb);
-	getArg(q, 0) = getArg(pci, 0);
-	(void) pushArgument(mb, q, resB);
+	for (i = 0; i < pci->retc; i++) {
+		q = newAssignment(mb);
+		getArg(q, 0) = getArg(pci, i);
+		(void) pushArgument(mb, q, resB[i]);
+	}
 	GDKfree(alias);
+	GDKfree(resB);
 	return MAL_SUCCEED;
 }
 
@@ -180,7 +198,7 @@ OPTmultiplexSimple(Client cntxt)
 	if(mb)
 	for( i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
+		if(isMultiplex(p))
 			doit++;
 	}
 	if( doit) {
@@ -211,9 +229,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED && getModuleId(p) == malRef &&
-		    getFunctionId(p) == multiplexRef) {
-
+		if (msg == MAL_SUCCEED && isMultiplex(p)) { 
 			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
 				setFunctionId(p, manifoldRef);
 				pushInstruction(mb, p);

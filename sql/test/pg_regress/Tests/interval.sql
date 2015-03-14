@@ -72,17 +72,15 @@ SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc;
 -- updating pg_aggregate.agginitval
 
 select avg(f1) from interval_tbl;
-
 select avg(cast(f1 as double)) from interval_tbl;
 select avg(cast(f1 as decimal)) from interval_tbl;
-select avg(cast(f1 as decimal(9,3))) from interval_tbl;
-select avg(cast(f1 as integer)) from interval_tbl;
+select avg(cast(f1 as decimal(22,3))) from interval_tbl;
 
 select min(f1) from interval_tbl;
 select max(f1) from interval_tbl;
 
-select sum(f1) from interval_tbl;
-select sum(cast(f1 as integer)) from interval_tbl;
+--select sum(f1) from interval_tbl;
+select sum(cast(f1 as decimal(22,3))) from interval_tbl;
 
 select count(f1) from interval_tbl;
 select count(distinct f1) from interval_tbl;

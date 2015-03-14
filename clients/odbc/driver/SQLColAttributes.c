@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -38,7 +27,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLColAttributes_(ODBCStmt *stmt,
+MNDBColAttributes(ODBCStmt *stmt,
 		  SQLUSMALLINT ColumnNumber,
 		  SQLUSMALLINT FieldIdentifier,
 		  SQLPOINTER CharacterAttributePtr,
@@ -51,17 +40,38 @@ SQLColAttributes_(ODBCStmt *stmt,
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (FieldIdentifier) {
-	case SQL_COLUMN_NAME:
-		FieldIdentifier = SQL_DESC_NAME;
-		break;
-	case SQL_COLUMN_NULLABLE:
-		FieldIdentifier = SQL_DESC_NULLABLE;
-		break;
+	case SQL_COLUMN_AUTO_INCREMENT: /* SQL_DESC_AUTO_UNIQUE_VALUE */
+	case SQL_COLUMN_CASE_SENSITIVE: /* SQL_DESC_CASE_SENSITIVE */
 	case SQL_COLUMN_COUNT:
-		FieldIdentifier = SQL_DESC_COUNT;
+	case SQL_COLUMN_DISPLAY_SIZE:	/* SQL_DESC_DISPLAY_SIZE */
+	case SQL_COLUMN_LABEL:		/* SQL_DESC_LABEL */
+	case SQL_COLUMN_LENGTH:
+	case SQL_COLUMN_MONEY:		/* SQL_DESC_FIXED_PREC_SCALE */
+	case SQL_COLUMN_NAME:
+	case SQL_COLUMN_NULLABLE:
+		/* SQL_COLUMN_NULLABLE should be translated to
+		 * SQL_DESC_NULLABLE, except in the 64 bit
+		 * documentation, the former isn't mentioned as
+		 * returning a 64 bit value whereas the latter is.
+		 * Hence we don't translate but return differently
+		 * sized values for the two */
+	case SQL_COLUMN_OWNER_NAME:	/* SQL_DESC_SCHEMA_NAME */
+	case SQL_COLUMN_PRECISION:
+	case SQL_COLUMN_QUALIFIER_NAME: /* SQL_DESC_CATALOG_NAME */
+	case SQL_COLUMN_SCALE:
+	case SQL_COLUMN_SEARCHABLE:	/* SQL_DESC_SEARCHABLE */
+	case SQL_COLUMN_TABLE_NAME:	/* SQL_DESC_TABLE_NAME */
+	case SQL_COLUMN_TYPE:		/* SQL_DESC_CONCISE_TYPE */
+	case SQL_COLUMN_TYPE_NAME:	/* SQL_DESC_TYPE_NAME */
+	case SQL_COLUMN_UNSIGNED:	/* SQL_DESC_UNSIGNED */
+	case SQL_COLUMN_UPDATABLE:	/* SQL_DESC_UPDATABLE */
 		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError(stmt, "HY091", NULL, 0);
+		return SQL_ERROR;
 	}
-	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
+	rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
 
 	/* TODO: implement special semantics for FieldIdentifiers:
 	 * SQL_COLUMN_TYPE, SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and
@@ -89,10 +99,12 @@ SQLColAttributes(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %u %s\n",
+	ODBCLOG("SQLColAttributes " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle,
 		(unsigned int) ColumnNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -100,7 +112,7 @@ SQLColAttributes(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLColAttributes_(stmt,
+	return MNDBColAttributes(stmt,
 				 ColumnNumber,
 				 FieldIdentifier,
 				 CharacterAttributePtr,
@@ -142,10 +154,12 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %u %s\n",
+	ODBCLOG("SQLColAttributesW " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle,
 		(unsigned int) ColumnNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -166,13 +180,7 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier,
-				       NULL, 0, &n, NumericAttributePtr);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearStmtErrors(stmt);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addStmtError(stmt, "HY001", NULL, 0);
@@ -180,15 +188,27 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 		}
 		break;
 	default:
-		n = BufferLength;
 		ptr = CharacterAttributePtr;
 		break;
 	}
 
-	rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier, ptr,
-			       n, &n, NumericAttributePtr);
+	rc = MNDBColAttributes(stmt, ColumnNumber, FieldIdentifier, ptr,
+			       BufferLength, &n, NumericAttributePtr);
 
 	if (ptr != CharacterAttributePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearStmtErrors(stmt);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBColAttributes(stmt, ColumnNumber,
+					       FieldIdentifier, ptr, n, &n,
+					       NumericAttributePtr);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			fixWcharOut(rc, ptr, n, CharacterAttributePtr,
 				    BufferLength, StringLengthPtr, 2,

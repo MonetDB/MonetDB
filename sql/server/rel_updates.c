@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -290,19 +279,106 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
 }
 
+
+static list *
+check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tname)
+{
+	list *collist;
+
+	if (columns) {
+		dnode *n;
+
+		collist = sa_list(sql->sa);
+		for (n = columns->h; n; n = n->next) {
+			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
+
+			if (c) {
+				list_append(collist, c);
+			} else {
+				return sql_error(sql, 02, "42S22!%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
+			}
+		}
+	} else {
+		collist = t->columns.set;
+	}
+	return collist;
+}
+
+static list *
+rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
+{
+	int len, i;
+	sql_exp **inserts = insert_exp_array(sql, t, &len);
+	list *exps = NULL;
+	node *n, *m;
+
+	if (r->exps) {
+		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
+			sql_column *c = m->data;
+			sql_exp *e = n->data;
+	
+			inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
+		}
+	}
+	for (i = 0; i < len; i++) {
+		if (!inserts[i]) {
+			for (m = t->columns.set->h; m; m = m->next) {
+				sql_column *c = m->data;
+
+				if (c->colnr == i) {
+					size_t j = 0;
+					sql_exp *exps = NULL;
+
+					for(j = 0; j < rowcount; j++) {
+						sql_exp *e = NULL;
+
+						if (c->def) {
+							char *q = sa_message(sql->sa, "select %s;", c->def);
+							e = rel_parse_val(sql, q, sql->emode);
+							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+								return NULL;
+						} else {
+							atom *a = atom_general(sql->sa, &c->type, NULL);
+							e = exp_atom(sql->sa, a);
+						}
+						if (!e) 
+							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+						if (exps) {
+							list *vals_list = exps->f;
+			
+							list_append(vals_list, e);
+						}
+						if (!exps && j+1 < rowcount) {
+							exps = exp_values(sql->sa, sa_list(sql->sa));
+							exps->tpe = c->type;
+							exp_label(sql->sa, exps, ++sql->label);
+						}
+						if (!exps)
+							exps = e;
+					}
+					inserts[i] = exps;
+				}
+			}
+			assert(inserts[i]);
+		}
+	}
+	/* now rewrite project exps in proper table order */
+	exps = new_exp_list(sql->sa);
+	for (i = 0; i<len; i++) 
+		list_append(exps, inserts[i]);
+	return exps;
+}
+
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
 	size_t rowcount = 1;
-	int i, len = 0;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	list *collist = NULL, *exps;
+	list *collist = NULL;
 	sql_rel *r = NULL;
-	sql_exp **inserts;
-	node *n, *m;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "3F000!INSERT INTO: no such schema '%s'", sname);
@@ -321,7 +397,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
-	} else if (t->readonly) {
+	} else if (t->access == TABLE_READONLY) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
@@ -330,23 +406,10 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (!table_privs(sql, t, PRIV_INSERT)) {
 		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", stack_get_string(sql, "current_user"), tname);
 	}
-	if (columns) {
-		dnode *n;
 
-		collist = sa_list(sql->sa);
-		for (n = columns->h; n; n = n->next) {
-			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
-
-			if (c) {
-				list_append(collist, c);
-			} else {
-				return sql_error(sql, 02, "42S22!INSERT INTO: no such column '%s.%s'", tname, n->data.sval);
-			}
-		}
-	} else {
-		collist = t->columns.set;
-	}
-
+	collist = check_table_columns(sql, t, columns, "INSERT", tname);
+	if (!collist)
+		return NULL;
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
 		dlist *values;
@@ -367,7 +430,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				dnode *n;
-				node *v;
+				node *v, *m;
 
 				if (o->next && list_empty(exps)) {
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
@@ -427,64 +490,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	   (!r->exps && collist)) 
 		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
-	inserts = insert_exp_array(sql, t, &len);
-
-	if (r->exps) {
-		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
-			sql_column *c = m->data;
-			sql_exp *e = n->data;
-	
-			inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
-		}
-	}
-
-	for (i = 0; i < len; i++) {
-		if (!inserts[i]) {
-			for (m = t->columns.set->h; m; m = m->next) {
-				sql_column *c = m->data;
-
-				if (c->colnr == i) {
-					size_t j = 0;
-					sql_exp *exps = NULL;
-
-					for(j = 0; j < rowcount; j++) {
-						sql_exp *e = NULL;
-
-						if (c->def) {
-							char *q = sa_message(sql->sa, "select %s;", c->def);
-							e = rel_parse_val(sql, q, sql->emode);
-							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return NULL;
-						} else {
-							atom *a = atom_general(sql->sa, &c->type, NULL);
-							e = exp_atom(sql->sa, a);
-						}
-						if (!e) 
-							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
-						if (exps) {
-							list *vals_list = exps->f;
-			
-							list_append(vals_list, e);
-						}
-						if (!exps && j+1 < rowcount) {
-							exps = exp_values(sql->sa, sa_list(sql->sa));
-							exps->tpe = c->type;
-							exp_label(sql->sa, exps, ++sql->label);
-						}
-						if (!exps)
-							exps = e;
-					}
-					inserts[i] = exps;
-				}
-			}
-			assert(inserts[i]);
-		}
-	}
-	/* now rewrite project exps in proper table order */
-	exps = new_exp_list(sql->sa);
-	for (i = 0; i<len; i++) 
-		list_append(exps, inserts[i]);
-	r->exps = exps;
+	r->exps = rel_inserts(sql, t, r, collist, rowcount);
 	return rel_insert_table(sql, t, tname, r);
 }
 
@@ -816,8 +822,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "UPDATE: cannot update read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "UPDATE: cannot update read or append only table '%s'", tname);
 	} else {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
@@ -1000,8 +1006,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	} else if (t->readonly) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "DELETE FROM: cannot delete from read or append only table '%s'", tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
@@ -1048,7 +1054,8 @@ table_column_types(sql_allocator *sa, sql_table *t)
 
 	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(types, &c->type);
+		if (c->base.name[0] != '%')
+			append(types, &c->type);
 	}
 	return types;
 }
@@ -1063,15 +1070,14 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	int len = 7 + (filename != NULL);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION, NULL); 
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( append( new_exp_list(sql->sa), 
-		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)), 
-		exp_atom_str(sql->sa, t->base.name, &tpe)), 
+	args = append( append( append( append( append( new_exp_list(sql->sa), 
+		exp_atom_ptr(sql->sa, t)), 
 		exp_atom_str(sql->sa, tsep, &tpe)), 
 		exp_atom_str(sql->sa, rsep, &tpe)), 
 		exp_atom_str(sql->sa, ssep, &tpe)), 
@@ -1090,26 +1096,28 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		if (c->base.name[0] != '%')
+			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, 1);
 	return res;
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
-	sql_table *t = NULL;
+	sql_table *t = NULL, *nt = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
 	char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
+	list *collist;
 
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
@@ -1128,7 +1136,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
@@ -1161,6 +1169,45 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		sql->caching = 0; 	/* do not cache this query */
 	}
 		 
+	collist = check_table_columns(sql, t, columns, "COPY", tname);
+	if (!collist)
+		return NULL;
+	/* if collist has skip and different order (or format specification) use intermediate table */
+	nt = t;
+	if (headers) {
+		int has_formats = 0;
+		dnode *n;
+
+		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1);
+		for (n = headers->h; n; n = n->next) {
+			dnode *dn = n->data.lval->h;
+			char *cname = dn->data.sval;
+			char *format = NULL;
+			sql_column *cs = NULL;
+
+			if (dn->next)
+				format = dn->next->data.sval;
+			if (!list_find_name(collist, cname)) {
+				char *name;
+				size_t len = strlen(cname) + 2;
+				sql_subtype *ctype = sql_bind_localtype("oid");
+
+				name = sa_alloc(sql->sa, len);
+				snprintf(name, len, "%%cname");
+				cs = mvc_create_column(sql, nt, name, ctype);
+			} else if (!format) {
+				cs = find_sql_column(t, cname);
+				cs = mvc_create_column(sql, nt, cname, &cs->type);
+			} else { /* load as string, parse later */
+				sql_subtype *ctype = sql_bind_localtype("str");
+				cs = mvc_create_column(sql, nt, cname, ctype);
+				has_formats = 1;
+			}
+			(void)cs;
+		}
+		if (!has_formats)
+			headers = NULL;
+	}
 	if (files) {
 		dnode *n = files->h;
 
@@ -1178,7 +1225,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset, locked);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked);
 
 			if (!rel)
 				rel = nrel;
@@ -1188,11 +1235,50 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
 	}
+	if (headers) {
+		dnode *n;
+		node *m = rel->exps->h;
+		list *nexps = sa_list(sql->sa);
+
+		assert(is_project(rel->op) || is_base(rel->op));
+		for (n = headers->h; n; n = n->next) {
+			dnode *dn = n->data.lval->h;
+			char *cname = dn->data.sval;
+			sql_exp *e;
+
+			if (!list_find_name(collist, cname)) 
+				continue;
+		       	e = m->data;
+			if (dn->next) {
+				char *format = dn->next->data.sval;
+				sql_column *cs = find_sql_column(t, cname);
+				sql_schema *sys = mvc_bind_schema(sql, "sys");
+				sql_subtype st;
+				sql_subfunc *f;
+				list *args = sa_list(sql->sa);
+
+				sql_find_subtype(&st, "clob", 0, 0);
+				f = sql_bind_func_result(sql->sa, sys, "convert", &st, &st, &cs->type); 
+				if (!f)
+					return sql_error(sql, 02, "COPY INTO: 'convert' missing for type %s", cs->type.type->sqlname);
+				append(args, e);
+				append(args, exp_atom_clob(sql->sa, format));
+				e = exp_op(sql->sa, args, f);
+				append(nexps, e);
+			} else {
+				append(nexps, e);
+			}
+			m = m->next;
+		}
+		rel = rel_project(sql->sa, rel, nexps);
+	}
+	
 	if (!rel)
 		return rel;
-	rel = rel_insert_table(sql, t, t->base.name, rel);
+	rel->exps = rel_inserts(sql, t, rel, collist, 1);
+	rel = rel_insert_table(sql, t, tname, rel);
 	if (rel && locked)
 		rel->flag |= UPD_LOCKED;
 	if (rel && !constraint)
@@ -1215,7 +1301,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -1238,7 +1324,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	}
 	if (!t) 
 		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->readonly) 
+	if (t->access == TABLE_READONLY) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
@@ -1410,7 +1496,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

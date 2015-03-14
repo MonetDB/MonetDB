@@ -32,15 +32,15 @@ function user.main():void;
     io.printf("# io.print(2147483647);\n");
     io.print(2147483647);
     io.printf("# io.print(2147483648);\n");
-    io.print(2147483648:lng);
+    io.print(2147483648);
     io.printf("# io.print(2147483649);\n");
-    io.print(2147483649:lng);
+    io.print(2147483649);
     io.printf("# io.print(-2147483647);\n");
     io.print(-2147483647);
     io.printf("# io.print(-2147483648);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483648);
     io.printf("# io.print(-2147483649);\n");
-    io.print(-2147483649:lng);
+    io.print(-2147483649);
     io.printf("# int from bit\n");
     io.printf("# bi:= true:int; io.print(bi);\n");
     bi := 1:int;
@@ -70,32 +70,32 @@ function user.main():void;
     io.print(-2147483647:int);
     io.printf("# i:= 2147483647:int+1:int;\n");
     i := calc.+(2147483647:int,1:int);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(i);\n");
     io.print(i);
     io.printf("# z:= -2147483647:int - 1:int;\n");
     z := calc.-(-2147483647:int,1:int);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(z);\n");
     io.print(z);
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# z:= 2147483647:int + 2:int;\n");
     z := calc.+(2147483647:int,2:int);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(z);\n");
     io.print(z);
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# z:= -2147483647:int - 2:int;\n");
     z := calc.-(-2147483647:int,2:int);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(z);\n");
     io.print(z);
     io.printf("# int from lng\n");
@@ -137,7 +137,7 @@ exit MALException:str ;
     io.printf("# io.print(2147483847.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483647.0:int);\n");
-    io.print(nil:int);
+    io.print(-2147483647:int);
     io.printf("# io.print(-2147483648.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483649.0:int);\n");
@@ -201,16 +201,16 @@ exit MALException:str ;
     s := "2147483648";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"2147483649\"; s_int := calc.int(s); io.print(s_int);\n");
     s := "2147483649";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-2147483647\"; s_int := calc.int(s); io.print(s_int);\n");
     s := "-2147483647";
     s_int := calc.int(s);
@@ -219,30 +219,30 @@ exit SQLException:str ;
     s := "-2147483648";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-2147483649\"; s_int := calc.int(s); io.print(s_int);\n");
     s := "-2147483649";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_int := calc.int(s); io.print(s_int);\n");
     s := "";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_int := calc.int(s); io.print(s_int);\n");
     s := "random string";
     s_int := calc.int(s);
     io.print(s_int);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to bit\n");
     io.printf("# bit from bit\n");
     io.printf("# io.print(true:bit);\n");
@@ -342,16 +342,16 @@ exit SQLException:str ;
     s := "random string";
     s_bit := calc.bit(s);
     io.print(s_bit);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_bit := calc.bit(s); io.print(s_bit);\n");
     s := "";
     s_bit := calc.bit(s);
     io.print(s_bit);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to sht\n");
     io.printf("# sht from bit\n");
     io.printf("# io.print(true:sht);\n");
@@ -478,16 +478,16 @@ exit SQLException:str ;
     s := "32768";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"32769\"; s_sht := calc.sht(s); io.print(s_sht);\n");
     s := "32769";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-32767\"; s_sht := calc.sht(s); io.print(s_sht);\n");
     s := "-32767";
     s_sht := calc.sht(s);
@@ -496,65 +496,65 @@ exit SQLException:str ;
     s := "-32768";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-32769\"; s_sht := calc.sht(s); io.print(s_sht);\n");
     s := "-32769";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_sht := calc.sht(s); io.print(s_sht);\n");
     s := "";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_sht := calc.sht(s); io.print(s_sht);\n");
     s := "random string";
     s_sht := calc.sht(s);
     io.print(s_sht);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to long\n");
     io.printf("# io.print(0LL);\n");
-    io.print(0:lng);
+    io.print(0);
     io.printf("# io.print(1LL);\n");
-    io.print(1:lng);
+    io.print(1);
     io.printf("# io.print(32767LL);\n");
-    io.print(32767:lng);
+    io.print(32767);
     io.printf("# io.print(32768LL);\n");
-    io.print(32768:lng);
+    io.print(32768);
     io.printf("# io.print(32769LL);\n");
-    io.print(32769:lng);
+    io.print(32769);
     io.printf("# io.print(2147483647LL);\n");
-    io.print(2147483647:lng);
+    io.print(2147483647);
     io.printf("# io.print(2147483648LL);\n");
-    io.print(2147483648:lng);
+    io.print(2147483648);
     io.printf("# io.print(2147483649LL);\n");
-    io.print(2147483649:lng);
+    io.print(2147483649);
     io.printf("# io.print(-2147483647LL);\n");
-    io.print(-2147483647:lng);
+    io.print(-2147483647);
     io.printf("# io.print(-2147483648LL);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483648);
     io.printf("# io.print(-2147483649LL);\n");
-    io.print(-2147483649:lng);
+    io.print(-2147483649);
     io.printf("# io.print(9223372036854775807LL);\n");
-    io.print(9223372036854775807:lng);
+    io.print(9223372036854775807);
     io.printf("# io.print(9223372036854775808LL);\n");
-    io.print(nil:lng);
+    io.print(nil);
     io.printf("# io.print(9223372036854775809LL);\n");
-    io.print(nil:lng);
+    io.print(nil);
     io.printf("# io.print(-9223372036854775807LL);\n");
-    io.print(-9223372036854775807:lng);
+    io.print(-9223372036854775807);
     io.printf("# io.print(-9223372036854775808LL);\n");
-    io.print(nil:lng);
+    io.print(nil);
     io.printf("# io.print(-9223372036854775809LL);\n");
-    io.print(nil:lng);
+    io.print(nil);
     io.printf("# lng from bit\n");
     io.printf("# io.print(true:lng);\n");
     io.print(1:lng);
@@ -582,18 +582,18 @@ exit SQLException:str ;
     io.print(-2147483647:lng);
     io.printf("# lz:= 2147483647 +1;\n");
     lz := calc.+(2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# l:= calc.lng(lz);\n");
     l := calc.lng(lz);
     io.printf("# io.print(l);\n");
     io.print(l);
     io.printf("# lu:= -2147483647 -1;\n");
     lu := calc.-(-2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# l:= calc.lng(lu);\n");
     l := calc.lng(lu);
     io.printf("# io.print(l);\n");
@@ -601,17 +601,17 @@ exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# la:= 2147483647 +2;\n");
     la := calc.+(2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(la);\n");
     io.print(la);
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# lb:= -2147483647 -2;\n");
     lb := calc.-(-2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(lb);\n");
     io.print(lb);
     io.printf("# lng from lng\n");
@@ -635,17 +635,17 @@ exit MALException:str ;
     io.printf("# io.print(-1.0:lng);\n");
     io.print(-1:lng);
     io.printf("# io.print(2147483647.0:lng);\n");
-    io.print(2147483648:lng);
+    io.print(2147483647:lng);
     io.printf("# io.print(2147483648.0:lng);\n");
     io.print(2147483648:lng);
     io.printf("# io.print(2147483649.0:lng);\n");
-    io.print(2147483648:lng);
+    io.print(2147483649:lng);
     io.printf("# io.print(-2147483647.0:lng);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483647:lng);
     io.printf("# io.print(-2147483648.0:lng);\n");
     io.print(-2147483648:lng);
     io.printf("# io.print(-2147483649.0:lng);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
     io.printf("# io.print(9223972036854775807.0:lng);\n");
     io.print(nil:lng);
     io.printf("# io.print(-9223372036854775807.0:lng);\n");
@@ -747,16 +747,16 @@ exit MALException:str ;
     s := "";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_lng := calc.lng(s); io.print(s_lng);\n");
     s := "random string";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"9223372036854775807\"; s_lng := calc.lng(s); io.print(s_lng);\n");
     s := "9223372036854775807";
     s_lng := calc.lng(s);
@@ -765,16 +765,16 @@ exit SQLException:str ;
     s := "9223372036854775808";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"9223372036854775809\"; s_lng := calc.lng(s); io.print(s_lng);\n");
     s := "9223372036854775809";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-9223372036854775807\"; s_lng := calc.lng(s); io.print(s_lng);\n");
     s := "-9223372036854775807";
     s_lng := calc.lng(s);
@@ -783,16 +783,16 @@ exit SQLException:str ;
     s := "-9223372036854775808";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-9223372036854775809\"; s_lng := calc.lng(s); io.print(s_lng);\n");
     s := "-9223372036854775809";
     s_lng := calc.lng(s);
     io.print(s_lng);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to flt\n");
     io.printf("# flt from bit\n");
     io.printf("# io.print(true:flt);\n");
@@ -816,23 +816,23 @@ exit SQLException:str ;
     io.printf("# io.print(32768:flt);\n");
     io.print(32768:flt);
     io.printf("# io.print(2147483647:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(-2147483647:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# fl:= 2147483647+1;\n");
     fl := calc.+(2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# f:= calc.flt(fl);\n");
     f := calc.flt(fl);
     io.printf("# io.print(f);\n");
     io.print(f);
     io.printf("# fi:= -2147483647-1;\n");
     fi := calc.-(-2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# f:= calc.flt(fi);\n");
     f := calc.flt(fi);
     io.printf("# io.print(f);\n");
@@ -840,9 +840,9 @@ exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# ff:= 2147483647+2;\n");
     ff := calc.+(2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# f:= calc.flt(ff);\n");
     f := calc.flt(ff);
     io.printf("# io.print(f);\n");
@@ -850,9 +850,9 @@ exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# fg:= -2147483647 -2;\n");
     fg := calc.-(-2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# f:= calc.flt(fg);\n");
     f := calc.flt(fg);
     io.printf("# io.print(f);\n");
@@ -861,25 +861,25 @@ exit MALException:str ;
     io.printf("# io.print(1LL:flt);\n");
     io.print(1:flt);
     io.printf("# io.print(2147483647LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483648LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483649LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(-2147483647LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# io.print(-2147483648LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# io.print(-2147483649LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# io.print(9223372036854775807LL:flt);\n");
-    io.print(9.22337204e+018:flt);
+    io.print(9.223372e+018:flt);
     io.printf("# io.print(9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(9223372036854775809LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(-9223372036854775807LL:flt);\n");
-    io.print(-9.22337204e+018:flt);
+    io.print(-9.223372e+018:flt);
     io.printf("# io.print(-9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(-9223372036854775809LL:flt);\n");
@@ -888,44 +888,44 @@ exit MALException:str ;
     io.printf("# io.print(0.0LL:flt);\n");
     io.print(0:flt);
     io.printf("# io.print(0.1LL:flt);\n");
-    io.print(0.100000001:flt);
+    io.print(0.1:flt);
     io.printf("# io.print(0.5LL:flt);\n");
     io.print(0.5:flt);
     io.printf("# io.print(0.9LL:flt);\n");
-    io.print(0.899999976:flt);
+    io.print(0.9:flt);
     io.printf("# io.print(1.0LL:flt);\n");
     io.print(1:flt);
     io.printf("# io.print(-0.1LL:flt);\n");
-    io.print(-0.100000001:flt);
+    io.print(-0.1:flt);
     io.printf("# io.print(-0.5LL:flt);\n");
     io.print(-0.5:flt);
     io.printf("# io.print(-0.9LL:flt);\n");
-    io.print(-0.899999976:flt);
+    io.print(-0.9:flt);
     io.printf("# io.print(-1.0LL:flt);\n");
     io.print(-1:flt);
     io.printf("# io.print(2147483647.0LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483648.0LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483649.0LL:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(-2147483647.0LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# io.print(-2147483648.0LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# io.print(-2147483649.0LL:flt);\n");
-    io.print(-2.14748365e+009:flt);
+    io.print(-2.1474836e+009:flt);
     io.printf("# flt from oid\n");
     io.printf("# io.print(2@0:flt);\n");
     io.print(2:flt);
     io.printf("# io.print(2@1:flt);\n");
     io.print(2:flt);
     io.printf("# io.print(2147483647@0:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483648@0:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# io.print(2147483649@0:flt);\n");
-    io.print(2.14748365e+009:flt);
+    io.print(2.1474836e+009:flt);
     io.printf("# flt from str\n");
     io.printf("# s := \"0\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "0";
@@ -1242,16 +1242,16 @@ exit MALException:str ;
     s := "-340282346600000000000000000000000000000";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-340282346700000000000000000000000000000\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "-340282346700000000000000000000000000000";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"3.402823466E+38\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "3.402823466E+38";
     s_flt := calc.flt(s);
@@ -1272,44 +1272,44 @@ exit SQLException:str ;
     s := "-3.402823466E+38";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-3.402823467E+38\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "-3.402823467E+38";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-0.3402823466E+39\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "-0.3402823466E+39";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-34.02823466E+37\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "-34.02823466E+37";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "random string";
     s_flt := calc.flt(s);
     io.print(s_flt);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to dbl\n");
     io.printf("# dbl from bit\n");
     io.printf("# io.print(true:dbl);\n");
@@ -1342,18 +1342,18 @@ exit SQLException:str ;
     io.print(-2147483647:dbl);
     io.printf("# zd:= 2147483647 + 1;\n");
     zd := calc.+(2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# ze:= calc.dbl(zd);\n");
     ze := calc.dbl(zd);
     io.printf("# io.print(zd);\n");
     io.print(zd);
     io.printf("# zj:= -2147483647 - 1;\n");
     zj := calc.-(-2147483647,1);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# d:= calc.dbl(zj);\n");
     d := calc.dbl(zj);
     io.printf("# io.print(d);\n");
@@ -1361,9 +1361,9 @@ exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# zn:= 2147483647 + 2;\n");
     zn := calc.+(2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# d:= calc.dbl(zn);\n");
     d := calc.dbl(zn);
     io.printf("# io.print(d);\n");
@@ -1371,9 +1371,9 @@ exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# zk:= -2147483647 - 2;\n");
     zk := calc.-(-2147483647,2);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# d:= calc.dbl(zk);\n");
     d := calc.dbl(zk);
     io.printf("# io.print(d);\n");
@@ -1394,13 +1394,13 @@ exit MALException:str ;
     io.printf("# io.print(-2147483649LL:dbl);\n");
     io.print(-2147483649:dbl);
     io.printf("# io.print(9223372036854775807LL:dbl);\n");
-    io.print(9.2233720368547758e+018:dbl);
+    io.print(9.223372036854776e+018:dbl);
     io.printf("# io.print(9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(9223372036854775809LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775807LL:dbl);\n");
-    io.print(-9.2233720368547758e+018:dbl);
+    io.print(-9.223372036854776e+018:dbl);
     io.printf("# io.print(-9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775809LL:dbl);\n");
@@ -1409,33 +1409,33 @@ exit MALException:str ;
     io.printf("# io.print(0.0:dbl);\n");
     io.print(0:dbl);
     io.printf("# io.print(0.1:dbl);\n");
-    io.print(0.10000000149011612:dbl);
+    io.print(0.1:dbl);
     io.printf("# io.print(0.5:dbl);\n");
     io.print(0.5:dbl);
     io.printf("# io.print(0.9:dbl);\n");
-    io.print(0.89999997615814209:dbl);
+    io.print(0.9:dbl);
     io.printf("# io.print(1.0:dbl);\n");
     io.print(1:dbl);
     io.printf("# io.print(-0.1:dbl);\n");
-    io.print(-0.10000000149011612:dbl);
+    io.print(-0.1:dbl);
     io.printf("# io.print(-0.5:dbl);\n");
     io.print(-0.5:dbl);
     io.printf("# io.print(-0.9:dbl);\n");
-    io.print(-0.89999997615814209:dbl);
+    io.print(-0.9:dbl);
     io.printf("# io.print(-1.0:dbl);\n");
     io.print(-1:dbl);
     io.printf("# io.print(2147483647.0:dbl);\n");
-    io.print(2147483648:dbl);
+    io.print(2147483647:dbl);
     io.printf("# io.print(2147483648.0:dbl);\n");
     io.print(2147483648:dbl);
     io.printf("# io.print(2147483649.0:dbl);\n");
-    io.print(2147483648:dbl);
+    io.print(2147483649:dbl);
     io.printf("# io.print(-2147483647.0:dbl);\n");
-    io.print(-2147483648:dbl);
+    io.print(-2147483647:dbl);
     io.printf("# io.print(-2147483648.0:dbl);\n");
     io.print(-2147483648:dbl);
     io.printf("# io.print(-2147483649.0:dbl);\n");
-    io.print(-2147483648:dbl);
+    io.print(-2147483649:dbl);
     io.printf("# dbl from oid\n");
     io.printf("# io.print(2@0:dbl);\n");
     io.print(2:dbl);
@@ -1805,16 +1805,16 @@ exit MALException:str ;
     s := "-179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-179769313486231580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "-179769313486231580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"1.7976931348623157E+308\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "1.7976931348623157E+308";
     s_dbl := calc.dbl(s);
@@ -1835,44 +1835,44 @@ exit SQLException:str ;
     s := "-1.7976931348623157E+308";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-1.7976931348623158E+308\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "-1.7976931348623158E+308";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-0.17976931348623157E+309\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "-0.17976931348623157E+309";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-17.976931348623157E+307\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "-17.976931348623157E+307";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_dbl := calc.dbl(s); io.print(s_dbl);\n");
     s := "random string";
     s_dbl := calc.dbl(s);
     io.print(s_dbl);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to oid\n");
     io.printf("# oid from bit\n");
     io.printf("# io.print(true:oid);\n");
@@ -1901,75 +1901,75 @@ exit SQLException:str ;
     o9 := -2147483647;
     o := calc.oid(o9);
     io.print(o);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# o3:= 2147483647 +1; o:= calc.oid(o3); io.print(o);\n");
     o3 := calc.+(2147483647,1);
     o := calc.oid(o3);
     io.print(o);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# o4:= -2147483647 -1; o:= calc.oid(o4); io.print(o);\n");
     o4 := calc.-(-2147483647,1);
     o := calc.oid(o4);
     io.print(o);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# o5:= 2147483647 +2; o:=calc.oid(o5); io.print(o);\n");
     o5 := calc.+(2147483647,2);
     o := calc.oid(o5);
     io.print(o);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# o6:= -2147483647 -2; o:=calc.oid(o6); io.print(o);\n");
     o6 := calc.-(-2147483647,2);
     o := calc.oid(o6);
     io.print(o);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# oid from lng\n");
     io.printf("# io.print(1LL:oid);\n");
     io.print(1@0:oid);
     io.printf("# io.print(2147483647LL:oid);\n");
     io.print(2147483647@0:oid);
     io.printf("# ol3:= 2147483647LL; o:= calc.oid(ol3); io.print(o);\n");
-    ol3 := 2147483647:lng;
+    ol3 := 2147483647;
     o := calc.oid(ol3);
     io.print(o);
     io.printf("# io.print(2147483648LL:oid);\n");
     io.print(2147483648@0:oid);
     io.printf("# ol3:= 2147483648LL; o:= calc.oid(ol3); io.print(o);\n");
-    ol3 := 2147483648:lng;
+    ol3 := 2147483648;
     o := calc.oid(ol3);
     io.print(o);
     io.printf("# io.print(2147483649LL:oid);\n");
     io.print(2147483649@0:oid);
     io.printf("# ol3:= 2147483649LL; o:= calc.oid(ol3); io.print(o);\n");
-    ol3 := 2147483649:lng;
+    ol3 := 2147483649;
     o := calc.oid(ol3);
     io.print(o);
     io.printf("# io.print(-2147483647LL:oid);\n");
     io.print(nil:oid);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(-2147483648LL:oid);\n");
     io.print(nil:oid);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# io.print(-2147483649LL:oid);\n");
     io.print(nil:oid);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# oid from flt\n");
     io.printf("# io.print(0.0:oid);\n");
     io.print(0@0:oid);
@@ -1990,11 +1990,11 @@ exit MALException:str ;
     io.printf("# io.print(-1.0:oid);\n");
     io.print(nil:oid);
     io.printf("# io.print(2147483647.0:oid);\n");
-    io.print(2147483648@0:oid);
+    io.print(2147483647@0:oid);
     io.printf("# io.print(2147483648.0:oid);\n");
     io.print(2147483648@0:oid);
     io.printf("# io.print(2147483649.0:oid);\n");
-    io.print(2147483648@0:oid);
+    io.print(2147483649@0:oid);
     io.printf("# io.print(-2147483647.0:oid);\n");
     io.print(nil:oid);
     io.printf("# io.print(-2147483648.0:oid);\n");
@@ -2060,51 +2060,51 @@ exit MALException:str ;
     s := "2147483648";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"2147483649\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "2147483649";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-2147483647\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "-2147483647";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-2147483648\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "-2147483648";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"-2147483649\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "-2147483649";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# s := \"random string\"; s_oid := calc.oid(s); io.print(s_oid);\n");
     s := "random string";
     s_oid := calc.oid(s);
     io.print(s_oid);
-catch SQLException:str ;
+catch SQLException:str;
     io.printf("Caught exception\n");
-exit SQLException:str ;
+exit SQLException:str;
     io.printf("# to str\n");
     io.printf("# str from bit\n");
     io.printf("# io.print(true:str);\n");
@@ -2135,32 +2135,32 @@ exit SQLException:str ;
     wd := calc.+(2147483647:int,1);
     sv := calc.str(wd);
     io.print(sv);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# wc:= -2147483647 -1; sv:= calc.str(wc); io.print(sv);\n");
     wc := calc.-(-2147483647,1);
     sv := calc.str(wc);
     io.print(sv);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# we:= 2147483647:int +2; sv:= calc.str(we); io.print(sv);\n");
     we := calc.+(2147483647:int,2);
     sv := calc.str(we);
     io.print(sv);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# should this produce nil (overflow)?\n");
     io.printf("# wb:= -2147483647 -2; sv:= calc.str(wb); io.print(sv);\n");
     wb := calc.-(-2147483647,2);
     sv := calc.str(wb);
     io.print(sv);
-catch MALException:str ;
+catch MALException:str;
     io.printf("Caught exception\n");
-exit MALException:str ;
+exit MALException:str;
     io.printf("# str from lng\n");
     io.printf("# io.print(1LL:str);\n");
     io.print("1":str);
@@ -2180,50 +2180,50 @@ exit MALException:str ;
     io.printf("# io.print(0.0:str);\n");
     io.print("0":str);
     io.printf("# io.print(0.1:str);\n");
-    io.print("0.100000001":str);
+    io.print("0.1":str);
     io.printf("# io.print(0.5:str);\n");
     io.print("0.5":str);
     io.printf("# io.print(0.9:str);\n");
-    io.print("0.899999976":str);
+    io.print("0.9":str);
     io.printf("# io.print(1.0:str);\n");
     io.print("1":str);
     io.printf("# io.print(-0.1:str);\n");
-    io.print("-0.100000001":str);
+    io.print("-0.1":str);
     io.printf("# io.print(-0.5:str);\n");
     io.print("-0.5":str);
     io.printf("# io.print(-0.9:str);\n");
-    io.print("-0.899999976":str);
+    io.print("-0.9":str);
     io.printf("# io.print(-1.0:str);\n");
     io.print("-1":str);
     io.printf("# io.print(2147483647.0:str);\n");
-    io.print("2.14748365e+009":str);
+    io.print("2147483647":str);
     io.printf("# io.print(2147483648.0:str);\n");
-    io.print("2.14748365e+009":str);
+    io.print("2147483648":str);
     io.printf("# io.print(2147483649.0:str);\n");
-    io.print("2.14748365e+009":str);
+    io.print("2147483649":str);
     io.printf("# io.print(-2147483647.0:str);\n");
-    io.print("-2.14748365e+009":str);
+    io.print("-2147483647":str);
     io.printf("# io.print(-2147483648.0:str);\n");
-    io.print("-2.14748365e+009":str);
+    io.print("-2147483648":str);
     io.printf("# io.print(-2147483649.0:str);\n");
-    io.print("-2.14748365e+009":str);
+    io.print("-2147483649":str);
     io.printf("# str from dbl\n");
     io.printf("# io.print(0.0LL:str);\n");
     io.print("0":str);
     io.printf("# io.print(0.1LL:str);\n");
-    io.print("0.10000000000000001":str);
+    io.print("0.1":str);
     io.printf("# io.print(0.5LL:str);\n");
     io.print("0.5":str);
     io.printf("# io.print(0.9LL:str);\n");
-    io.print("0.90000000000000002":str);
+    io.print("0.9":str);
     io.printf("# io.print(1.0LL:str);\n");
     io.print("1":str);
     io.printf("# io.print(-0.1LL:str);\n");
-    io.print("-0.10000000000000001":str);
+    io.print("-0.1":str);
     io.printf("# io.print(-0.5LL:str);\n");
     io.print("-0.5":str);
     io.printf("# io.print(-0.9LL:str);\n");
-    io.print("-0.90000000000000002":str);
+    io.print("-0.9":str);
     io.printf("# io.print(-1.0LL:str);\n");
     io.print("-1":str);
     io.printf("# io.print(2147483647.0LL:str);\n");
@@ -2290,7 +2290,7 @@ exit MALException:str ;
     s := "random string";
     s_str := calc.str(s);
     io.print(s_str);
-end main;
+end user.main;
 # casting to int
 # io.print(0);
 [ 0 ]
@@ -2390,7 +2390,7 @@ Caught exception
 # io.print(2147483847.0:int);
 [ nil ]
 # io.print(-2147483647.0:int);
-[ nil ]
+[ -2147483647 ]
 # io.print(-2147483648.0:int);
 [ nil ]
 # io.print(-2147483649.0:int);
@@ -2770,17 +2770,17 @@ Caught exception
 # io.print(-1.0:lng);
 [ -1 ]
 # io.print(2147483647.0:lng);
-[ 2147483648 ]
+[ 2147483647 ]
 # io.print(2147483648.0:lng);
 [ 2147483648 ]
 # io.print(2147483649.0:lng);
-[ 2147483648 ]
+[ 2147483649 ]
 # io.print(-2147483647.0:lng);
-[ -2147483648 ]
+[ -2147483647 ]
 # io.print(-2147483648.0:lng);
 [ -2147483648 ]
 # io.print(-2147483649.0:lng);
-[ -2147483648 ]
+[ -2147483649 ]
 # io.print(9223972036854775807.0:lng);
 [ nil ]
 # io.print(-9223372036854775807.0:lng);
@@ -2897,9 +2897,9 @@ Caught exception
 # io.print(32768:flt);
 [ 32768 ]
 # io.print(2147483647:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(-2147483647:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # fl:= 2147483647+1;
 Caught exception
 # f:= calc.flt(fl);
@@ -2926,25 +2926,25 @@ Caught exception
 # io.print(1LL:flt);
 [ 1 ]
 # io.print(2147483647LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483648LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483649LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(-2147483647LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # io.print(-2147483648LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # io.print(-2147483649LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # io.print(9223372036854775807LL:flt);
-[ 9.22337204e+018 ]
+[ 9.223372e+018 ]
 # io.print(9223372036854775808LL:flt);
 [ nil ]
 # io.print(9223372036854775809LL:flt);
 [ nil ]
 # io.print(-9223372036854775807LL:flt);
-[ -9.22337204e+018 ]
+[ -9.223372e+018 ]
 # io.print(-9223372036854775808LL:flt);
 [ nil ]
 # io.print(-9223372036854775809LL:flt);
@@ -2953,65 +2953,65 @@ Caught exception
 # io.print(0.0LL:flt);
 [ 0 ]
 # io.print(0.1LL:flt);
-[ 0.100000001 ]
+[ 0.1 ]
 # io.print(0.5LL:flt);
 [ 0.5 ]
 # io.print(0.9LL:flt);
-[ 0.899999976 ]
+[ 0.9 ]
 # io.print(1.0LL:flt);
 [ 1 ]
 # io.print(-0.1LL:flt);
-[ -0.100000001 ]
+[ -0.1 ]
 # io.print(-0.5LL:flt);
 [ -0.5 ]
 # io.print(-0.9LL:flt);
-[ -0.899999976 ]
+[ -0.9 ]
 # io.print(-1.0LL:flt);
 [ -1 ]
 # io.print(2147483647.0LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483648.0LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483649.0LL:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(-2147483647.0LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # io.print(-2147483648.0LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # io.print(-2147483649.0LL:flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # flt from oid
 # io.print(2@0:flt);
 [ 2 ]
 # io.print(2@1:flt);
 [ 2 ]
 # io.print(2147483647@0:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483648@0:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # io.print(2147483649@0:flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # flt from str
 # s := "0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 0 ]
 # s := "32767"; s_flt := calc.flt(s); io.print(s_flt);
 [ 32767 ]
 # s := "2147483647"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # s := "2147483648"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # s := "2147483649"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+009 ]
+[ 2.1474836e+009 ]
 # s := "-2147483647"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # s := "-2147483648"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # s := "-2147483649"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+009 ]
+[ -2.1474836e+009 ]
 # s := "0.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 0 ]
 # s := "0.1"; s_flt := calc.flt(s); io.print(s_flt);
-[ 0.100000001 ]
+[ 0.1 ]
 # s := "1.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1e0"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3023,7 +3023,7 @@ Caught exception
 # s := "1e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "1.e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3033,7 +3033,7 @@ Caught exception
 # s := "1.e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1.e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "1.0e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.0e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3043,11 +3043,11 @@ Caught exception
 # s := "1.0e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1.0e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "-0.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -0 ]
 # s := "-0.1"; s_flt := calc.flt(s); io.print(s_flt);
-[ -0.100000001 ]
+[ -0.1 ]
 # s := "-1.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1e0"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3059,7 +3059,7 @@ Caught exception
 # s := "-1e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # s := "-1.e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3069,7 +3069,7 @@ Caught exception
 # s := "-1.e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1.e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # s := "-1.0e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.0e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3079,7 +3079,7 @@ Caught exception
 # s := "-1.0e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1.0e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # s := "1E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3089,7 +3089,7 @@ Caught exception
 # s := "1E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "1.E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3099,7 +3099,7 @@ Caught exception
 # s := "1.E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1.E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "1.0E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.0E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3109,7 +3109,7 @@ Caught exception
 # s := "1.0E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+010 ]
 # s := "1.0E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-010 ]
+[ 1e-010 ]
 # s := "-1E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3119,7 +3119,7 @@ Caught exception
 # s := "-1E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # s := "-1.E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3129,7 +3129,7 @@ Caught exception
 # s := "-1.E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1.E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # s := "-1.0E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.0E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3139,28 +3139,28 @@ Caught exception
 # s := "-1.0E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+010 ]
 # s := "-1.0E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-010 ]
+[ -1e-010 ]
 # flt range is -3.402823466E+38F to 3.402823466E+38F which is
 # -3.4028234663852886e+38 to 3.4028234663852886e+38 in double
 # precission
 # s := "340282347000000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "340282346600000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "340282346700000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "-340282346600000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "-340282346700000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "3.402823466E+38"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "3.402823467E+38"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "0.3402823466E+39"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "34.02823466E+37"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+038 ]
+[ 3.4028235e+038 ]
 # s := "-3.402823466E+38"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "-3.402823467E+38"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3237,13 +3237,13 @@ Caught exception
 # io.print(-2147483649LL:dbl);
 [ -2147483649 ]
 # io.print(9223372036854775807LL:dbl);
-[ 9.2233720368547758e+018 ]
+[ 9.223372036854776e+018 ]
 # io.print(9223372036854775808LL:dbl);
 [ nil ]
 # io.print(9223372036854775809LL:dbl);
 [ nil ]
 # io.print(-9223372036854775807LL:dbl);
-[ -9.2233720368547758e+018 ]
+[ -9.223372036854776e+018 ]
 # io.print(-9223372036854775808LL:dbl);
 [ nil ]
 # io.print(-9223372036854775809LL:dbl);
@@ -3252,33 +3252,33 @@ Caught exception
 # io.print(0.0:dbl);
 [ 0 ]
 # io.print(0.1:dbl);
-[ 0.10000000149011612 ]
+[ 0.1 ]
 # io.print(0.5:dbl);
 [ 0.5 ]
 # io.print(0.9:dbl);
-[ 0.89999997615814209 ]
+[ 0.9 ]
 # io.print(1.0:dbl);
 [ 1 ]
 # io.print(-0.1:dbl);
-[ -0.10000000149011612 ]
+[ -0.1 ]
 # io.print(-0.5:dbl);
 [ -0.5 ]
 # io.print(-0.9:dbl);
-[ -0.89999997615814209 ]
+[ -0.9 ]
 # io.print(-1.0:dbl);
 [ -1 ]
 # io.print(2147483647.0:dbl);
-[ 2147483648 ]
+[ 2147483647 ]
 # io.print(2147483648.0:dbl);
 [ 2147483648 ]
 # io.print(2147483649.0:dbl);
-[ 2147483648 ]
+[ 2147483649 ]
 # io.print(-2147483647.0:dbl);
-[ -2147483648 ]
+[ -2147483647 ]
 # io.print(-2147483648.0:dbl);
 [ -2147483648 ]
 # io.print(-2147483649.0:dbl);
-[ -2147483648 ]
+[ -2147483649 ]
 # dbl from oid
 # io.print(2@0:dbl);
 [ 2 ]
@@ -3310,7 +3310,7 @@ Caught exception
 # s := "0.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 0 ]
 # s := "0.1"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 0.10000000000000001 ]
+[ 0.1 ]
 # s := "1.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1 ]
 # s := "1e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3318,9 +3318,9 @@ Caught exception
 # s := "1e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "1.e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3328,9 +3328,9 @@ Caught exception
 # s := "1.e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "1.0e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3338,15 +3338,15 @@ Caught exception
 # s := "1.0e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.0e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.0e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.0e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "-0.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -0 ]
 # s := "-0.1"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -0.10000000000000001 ]
+[ -0.1 ]
 # s := "-1.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1 ]
 # s := "-1e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3354,9 +3354,9 @@ Caught exception
 # s := "-1e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "-1.e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3364,9 +3364,9 @@ Caught exception
 # s := "-1.e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "-1.0e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3374,9 +3374,9 @@ Caught exception
 # s := "-1.0e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.0e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.0e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.0e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "1E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3384,9 +3384,9 @@ Caught exception
 # s := "1E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "1.E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3394,9 +3394,9 @@ Caught exception
 # s := "1.E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "1.0E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3404,9 +3404,9 @@ Caught exception
 # s := "1.0E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.0E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.0E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+010 ]
 # s := "1.0E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-010 ]
 # s := "-1E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3414,9 +3414,9 @@ Caught exception
 # s := "-1E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "-1.E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3424,9 +3424,9 @@ Caught exception
 # s := "-1.E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "-1.0E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3434,35 +3434,35 @@ Caught exception
 # s := "-1.0E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.0E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.0E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+010 ]
 # s := "-1.0E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-010 ]
 # s := "340282346600000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+038 ]
+[ 3.402823466e+038 ]
 # s := "340282346700000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234670000002e+038 ]
+[ 3.402823467e+038 ]
 # s := "-340282346600000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+038 ]
+[ -3.402823466e+038 ]
 # s := "-340282346700000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234670000002e+038 ]
+[ -3.402823467e+038 ]
 # s := "3.402823466E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+038 ]
+[ 3.402823466e+038 ]
 # s := "3.402823467E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234670000002e+038 ]
+[ 3.402823467e+038 ]
 # s := "0.3402823466E+39"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+038 ]
+[ 3.402823466e+038 ]
 # s := "34.02823466E+37"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+038 ]
+[ 3.402823466e+038 ]
 # s := "-3.402823466E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+038 ]
+[ -3.402823466e+038 ]
 # s := "-3.402823467E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234670000002e+038 ]
+[ -3.402823467e+038 ]
 # s := "-0.3402823466E+39"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+038 ]
+[ -3.402823466e+038 ]
 # s := "-34.02823466E+37"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+038 ]
+[ -3.402823466e+038 ]
 # dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.
 # s := "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1.7976931348623157e+308 ]
@@ -3565,11 +3565,11 @@ Caught exception
 # io.print(-1.0:oid);
 [ nil ]
 # io.print(2147483647.0:oid);
-[ 2147483648@0 ]
+[ 2147483647@0 ]
 # io.print(2147483648.0:oid);
 [ 2147483648@0 ]
 # io.print(2147483649.0:oid);
-[ 2147483648@0 ]
+[ 2147483649@0 ]
 # io.print(-2147483647.0:oid);
 [ nil ]
 # io.print(-2147483648.0:oid);
@@ -3690,50 +3690,50 @@ Caught exception
 # io.print(0.0:str);
 [ "0" ]
 # io.print(0.1:str);
-[ "0.100000001" ]
+[ "0.1" ]
 # io.print(0.5:str);
 [ "0.5" ]
 # io.print(0.9:str);
-[ "0.899999976" ]
+[ "0.9" ]
 # io.print(1.0:str);
 [ "1" ]
 # io.print(-0.1:str);
-[ "-0.100000001" ]
+[ "-0.1" ]
 # io.print(-0.5:str);
 [ "-0.5" ]
 # io.print(-0.9:str);
-[ "-0.899999976" ]
+[ "-0.9" ]
 # io.print(-1.0:str);
 [ "-1" ]
 # io.print(2147483647.0:str);
-[ "2.14748365e+009" ]
+[ "2147483647" ]
 # io.print(2147483648.0:str);
-[ "2.14748365e+009" ]
+[ "2147483648" ]
 # io.print(2147483649.0:str);
-[ "2.14748365e+009" ]
+[ "2147483649" ]
 # io.print(-2147483647.0:str);
-[ "-2.14748365e+009" ]
+[ "-2147483647" ]
 # io.print(-2147483648.0:str);
-[ "-2.14748365e+009" ]
+[ "-2147483648" ]
 # io.print(-2147483649.0:str);
-[ "-2.14748365e+009" ]
+[ "-2147483649" ]
 # str from dbl
 # io.print(0.0LL:str);
 [ "0" ]
 # io.print(0.1LL:str);
-[ "0.10000000000000001" ]
+[ "0.1" ]
 # io.print(0.5LL:str);
 [ "0.5" ]
 # io.print(0.9LL:str);
-[ "0.90000000000000002" ]
+[ "0.9" ]
 # io.print(1.0LL:str);
 [ "1" ]
 # io.print(-0.1LL:str);
-[ "-0.10000000000000001" ]
+[ "-0.1" ]
 # io.print(-0.5LL:str);
 [ "-0.5" ]
 # io.print(-0.9LL:str);
-[ "-0.90000000000000002" ]
+[ "-0.9" ]
 # io.print(-1.0LL:str);
 [ "-1" ]
 # io.print(2147483647.0LL:str);

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1449,20 +1438,20 @@ bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2
 }
 
 static sql_subfunc *
-bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs)
+bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs, sql_subfunc *prev)
 {
 	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
 		list_length(sql->forward->ops) == nrargs && is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type)) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, t);
-	return sql_bind_member(sql->sa, s, fname, t, nrargs);
+	return sql_bind_member(sql->sa, s, fname, t, nrargs, prev);
 }
 
 static sql_subfunc *
-find_func(mvc *sql, sql_schema *s, char *fname, int len, int type )
+find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *prev )
 {
 	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == len) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
-	return sql_find_func(sql->sa, s, fname, len, type);
+	return sql_find_func(sql->sa, s, fname, len, type, prev);
 }
 
 static sql_rel *
@@ -1536,40 +1525,77 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 		sf = bind_func_(sql, s, fname, tl, F_UNION);
 		if (sf) {
 			e = exp_op(sql->sa, exps, sf);
-		} else if (list_length(tl) &&
-			   ((sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl))) != NULL ||
-		   	    (sf = find_func(sql, s, fname, list_length(tl), F_UNION)) != NULL)){
-			node *n, *m;
-			list *nexps;
+		} else if (list_length(tl)) { 
+			sql_subfunc * prev = NULL;
 
-			if (sf->func->vararg) {
-				e = exp_op(sql->sa, exps, sf);
-			} else {
-	       			nexps = new_exp_list(sql->sa);
-				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
-					sql_arg *a = m->data;
-					sql_exp *e = n->data;
+			while(!e && (sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl), prev)) != NULL) {
+				node *n, *m;
+				list *nexps;
 
-					if (a->type.type->eclass == EC_ANY) {
-						sql_subtype *st = &e->tpe;
-						sql_init_subtype(&a->type, st->type, st->digits, st->scale);
-					}
-					e = rel_check_type(sql, &a->type, e, type_equal);
-					if (!e) {
-						nexps = NULL;
-						break;
-					}
-					if (e->card > CARD_ATOM) {
-						sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+				prev = sf;
+				if (sf->func->vararg) {
+					e = exp_op(sql->sa, exps, sf);
+				} else {
+	       				nexps = new_exp_list(sql->sa);
+					for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+						sql_arg *a = m->data;
+						sql_exp *e = n->data;
+	
+						if (a->type.type->eclass == EC_ANY) {
+							sql_subtype *st = &e->tpe;
+							sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+						}
+						e = rel_check_type(sql, &a->type, e, type_equal);
+						if (!e) {
+							nexps = NULL;
+							break;
+						}
+						if (e->card > CARD_ATOM) {
+							sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 		
-						e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+							e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+						}
+						append(nexps, e);
 					}
-					append(nexps, e);
+					e = NULL;
+					if (nexps) 
+						e = exp_op(sql->sa, nexps, sf);
 				}
-				e = NULL;
-				if (nexps) 
-					e = exp_op(sql->sa, nexps, sf);
-				exps = nexps;
+			}
+			prev = NULL;
+			while(!e && (sf = find_func(sql, s, fname, list_length(tl), F_UNION, prev)) != NULL) {
+				node *n, *m;
+				list *nexps;
+
+				prev = sf;
+				if (sf->func->vararg) {
+					e = exp_op(sql->sa, exps, sf);
+				} else {
+	       				nexps = new_exp_list(sql->sa);
+					for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+						sql_arg *a = m->data;
+						sql_exp *e = n->data;
+	
+						if (a->type.type->eclass == EC_ANY) {
+							sql_subtype *st = &e->tpe;
+							sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+						}
+						e = rel_check_type(sql, &a->type, e, type_equal);
+						if (!e) {
+							nexps = NULL;
+							break;
+						}
+						if (e->card > CARD_ATOM) {
+							sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+		
+							e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+						}
+						append(nexps, e);
+					}
+					e = NULL;
+					if (nexps) 
+						e = exp_op(sql->sa, nexps, sf);
+				}
 			}
 		}
 		if (!e)
@@ -2164,15 +2190,13 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 #ifdef HAVE_HGE
 		if (ares->type.type->radix == 10 && res->digits > 39)
 			res->digits = 39;
+		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->digits = 128;
 #else
 		if (ares->type.type->radix == 10 && res->digits > 19)
 			res->digits = 19;
-#endif
-		if (ares->type.type->radix == 2 && res->digits > 53)
-#ifdef HAVE_HGE
-			res->digits = 128;
-#else
-			res->digits = 53;
+		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->digits = 64;
 #endif
 
 		/* sum of digits may mean we need a bigger result type
@@ -2224,15 +2248,13 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 #ifdef HAVE_HGE
 		if (res->type->radix == 10 && digits > 39)
 			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
 #else
 		if (res->type->radix == 10 && digits > 19)
 			digits = 19;
-#endif
-		if (res->type->radix == 2 && digits > 53)
-#ifdef HAVE_HGE
-			digits = 128;
-#else
-			digits = 53;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
 #endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
@@ -2345,7 +2367,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
 	if (!f) {
-		if ((f = sql_find_func(sql->sa, s, filter_op, list_length(exps), F_FILT)) != NULL) { 
+		if ((f = sql_find_func(sql->sa, s, filter_op, list_length(exps), F_FILT, NULL)) != NULL) { 
 			node *n,*m = f->func->ops->h;
 			list *nexps = sa_list(sql->sa);
 			for(n = exps->h, m = f->func->ops->h; m && n; m = m->next, n = n->next) {
@@ -3533,7 +3555,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 	 * the value to the type needed by this function!
 	 */
 	if (!f &&
-	   (f = find_func(sql, s, fname, 1, type)) != NULL &&
+	   (f = find_func(sql, s, fname, 1, type, NULL)) != NULL &&
 	   ((card == card_none && !f->res) || 
 	    (card != card_none && f->res))) {
 
@@ -3590,7 +3612,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (!s)
 		return NULL;
 	if (!e)
-		f = find_func(sql, s, fname, 1, F_AGGR);
+		f = find_func(sql, s, fname, 1, F_AGGR, NULL);
 	if (!e && f) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
@@ -3602,9 +3624,9 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	t = exp_subtype(e);
 	if (!t) {
-		f = find_func(sql, s, fname, 1, type);
+		f = find_func(sql, s, fname, 1, type, NULL);
 		if (!f)
-			f = find_func(sql, s, fname, 1, F_AGGR);
+			f = find_func(sql, s, fname, 1, F_AGGR, NULL);
 		if (f) {
 			sql_arg *a = f->func->ops->h->data;
 
@@ -3727,26 +3749,33 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		sql_exp *ol = l;
 		sql_exp *or = r;
 
-		if (!EC_NUMBER(t1->type->eclass) &&
-		   (f = bind_member_func(sql, s, fname, t1, 2)) != NULL &&
-	     	   ((card == card_none && !f->res) || 
-	    	    (card != card_none && f->res))) {
+		if (!EC_NUMBER(t1->type->eclass)) {
+		   sql_subfunc *prev = NULL;
+
+		   while((f = bind_member_func(sql, s, fname, t1, 2, prev)) != NULL) { 
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
+			if (!((card == card_none && !f->res) || 
+	    	    	      (card != card_none && f->res)))
+				continue;
+
+			prev = f;
 			l = rel_check_type(sql, &a->type, l, type_equal);
 			a = m->next->data;
 			r = rel_check_type(sql, &a->type, r, type_equal);
 			if (l && r) 
 				return exp_binop(sql->sa, l, r, f);
-		}
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
+			
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 
-		l = ol;
-		r = or;
+			l = ol;
+			r = or;
+		    }
+		}
 		/* try finding function based on both arguments */
 		if (rel_convert_types(sql, &l, &r, 1/*fix scale*/, type_equal) >= 0){
 			/* try operators */
@@ -3786,7 +3815,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		t1 = exp_subtype(l);
 		(void) exp_subtype(r);
 
-		if ((f = bind_member_func(sql, s, fname, t1, 2)) != NULL &&
+		if ((f = bind_member_func(sql, s, fname, t1, 2, NULL)) != NULL &&
 	     	   ((card == card_none && !f->res) || 
 	    	    (card != card_none && f->res))) {
 			/* try finding function based on first argument */
@@ -3806,7 +3835,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		l = ol;
 		r = or;
 		/* everything failed, fall back to bind on function name only */
-		if ((f = find_func(sql, s, fname, 2, type)) != NULL &&
+		if ((f = find_func(sql, s, fname, 2, type, NULL)) != NULL &&
 	     	   ((card == card_none && !f->res) || 
 	    	    (card != card_none && f->res))) {
 
@@ -3854,7 +3883,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
 	if (!l && !r)
-		sf = find_func(sql, s, fname, 2, F_AGGR);
+		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
@@ -3863,7 +3892,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 
 	if (type == F_FUNC) {
-		sf = find_func(sql, s, fname, 2, F_AGGR);
+		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 		if (sf) {
 			if (!l || !r) { /* reset error */
 				sql->session->status = 0;
@@ -3938,39 +3967,78 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	f = bind_func_(sql, s, fname, tl, type);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
-	} else if (((f = bind_member_func(sql, s, fname, obj_type, nr_args)) != NULL ||
-		   (f = find_func(sql, s, fname, nr_args, type)) != NULL)){
+	} else if ((f = bind_member_func(sql, s, fname, obj_type, nr_args, NULL)) != NULL) { 
+		sql_subfunc *prev = NULL;
 		node *n, *m;
 		list *nexps;
 
-		if (f->func->type != type)
-			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
-		if (f->func->vararg) 
-			return exp_op(sql->sa, exps, f);
-	       	nexps = new_exp_list(sql->sa);
-		for (n = exps->h, m = f->func->ops->h; n && m;
-				  n = n->next, m = m->next) {
-			sql_arg *a = m->data;
-			sql_exp *e = n->data;
+		while((f = bind_member_func(sql, s, fname, obj_type, nr_args, prev)) != NULL) { 
+			prev = f;
+			if (f->func->type != type)
+				continue;
+			if (f->func->vararg) 
+				return exp_op(sql->sa, exps, f);
+	       		nexps = new_exp_list(sql->sa);
+			for (n = exps->h, m = f->func->ops->h; n && m;
+				  	n = n->next, m = m->next) {
+				sql_arg *a = m->data;
+				sql_exp *e = n->data;
 
-			if (a->type.type->eclass == EC_ANY) {
-				sql_subtype *st = &e->tpe;
-				sql_init_subtype(&a->type, st->type, st->digits, st->scale);
-			}
-			e = rel_check_type(sql, &a->type, e, type_equal);
-			if (!e) {
-				nexps = NULL;
-				break;
-			}
-			if (table_func && e->card > CARD_ATOM) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+				if (a->type.type->eclass == EC_ANY) {
+					sql_subtype *st = &e->tpe;
+					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+				}
+				e = rel_check_type(sql, &a->type, e, type_equal);
+				if (!e) {
+					nexps = NULL;
+					break;
+				}
+				if (table_func && e->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
-				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
+				append(nexps, e);
 			}
-			append(nexps, e);
+			if (nexps) 
+				return exp_op(sql->sa, nexps, f);
 		}
-		if (nexps) 
-			return exp_op(sql->sa, nexps, f);
+	} else if ((f = find_func(sql, s, fname, nr_args, type, NULL)) != NULL) {
+		sql_subfunc *prev = NULL;
+		node *n, *m;
+		list *nexps;
+
+		while((f = find_func(sql, s, fname, nr_args, type, prev)) != NULL) { 
+			prev = f;
+			if (f->func->type != type)
+				continue;
+			if (f->func->vararg) 
+				return exp_op(sql->sa, exps, f);
+	       		nexps = new_exp_list(sql->sa);
+			for (n = exps->h, m = f->func->ops->h; n && m;
+			  	n = n->next, m = m->next) {
+				sql_arg *a = m->data;
+				sql_exp *e = n->data;
+
+				if (a->type.type->eclass == EC_ANY) {
+					sql_subtype *st = &e->tpe;
+					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+				}
+				e = rel_check_type(sql, &a->type, e, type_equal);
+				if (!e) {
+					nexps = NULL;
+					break;
+				}
+				if (table_func && e->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+	
+					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
+				append(nexps, e);
+			}
+			if (nexps) 
+				return exp_op(sql->sa, nexps, f);
+		}
 	}
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }

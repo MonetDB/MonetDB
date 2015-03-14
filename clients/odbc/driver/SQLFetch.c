@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -45,14 +34,13 @@
 #endif
 
 SQLRETURN
-SQLFetch_(ODBCStmt *stmt)
+MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 {
 	ODBCDesc *ard, *ird;
 	ODBCDescRec *rec;
 	int i;
 	SQLULEN row;
-	SQLINTEGER offset;
-	SQLUSMALLINT *statusp;
+	SQLLEN offset;
 
 	/* stmt->startRow is the (0 based) index of the first row we
 	 * stmt->need to fetch */
@@ -73,8 +61,6 @@ SQLFetch_(ODBCStmt *stmt)
 
 	stmt->State = FETCHED;
 
-	statusp = ird->sql_desc_array_status_ptr;
-
 	if (stmt->retrieveData == SQL_RD_OFF) {
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
@@ -87,11 +73,15 @@ SQLFetch_(ODBCStmt *stmt)
 			stmt->rowSetSize = 0;
 			return SQL_NO_DATA;
 		}
-		if (statusp) {
-			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++)
-				*statusp++ = SQL_ROW_SUCCESS;
-			for (; row < ard->sql_desc_array_size; row++)
-				*statusp++ = SQL_ROW_NOROW;
+		if (RowStatusArray) {
+			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++) {
+				WriteValue(RowStatusArray, SQL_ROW_SUCCESS);
+				RowStatusArray++;
+			}
+			for (; row < ard->sql_desc_array_size; row++) {
+				WriteValue(RowStatusArray, SQL_ROW_NOROW);
+				RowStatusArray++;
+			}
 		}
 		return SQL_SUCCESS;
 	}
@@ -108,23 +98,23 @@ SQLFetch_(ODBCStmt *stmt)
 					return SQL_NO_DATA;
 				break;
 			case MTIMEOUT:
-				if (statusp)
-					*statusp = SQL_ROW_ERROR;
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_ERROR);
 				/* Timeout expired / Communication
 				 * link failure */
 				addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			default:
-				if (statusp)
-					*statusp = SQL_ROW_ERROR;
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_ERROR);
 				/* General error */
 				addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			}
 			break;
 		}
-		if (statusp)
-			*statusp = SQL_ROW_SUCCESS;
+		if (RowStatusArray)
+			WriteValue(RowStatusArray, SQL_ROW_SUCCESS);
 
 		stmt->rowSetSize++;
 
@@ -146,19 +136,21 @@ SQLFetch_(ODBCStmt *stmt)
 				      rec->sql_desc_scale,
 				      rec->sql_desc_datetime_interval_precision,
 				      offset, row) == SQL_ERROR) {
-				if (statusp)
-					*statusp = SQL_ROW_SUCCESS_WITH_INFO;
+				if (RowStatusArray)
+					WriteValue(RowStatusArray, SQL_ROW_SUCCESS_WITH_INFO);
 			}
 		}
-		if (statusp)
-			statusp++;
+		if (RowStatusArray)
+			RowStatusArray++;
 	}
 	if (ird->sql_desc_rows_processed_ptr)
 		*ird->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
 
-	if (statusp)
-		while (row++ < ard->sql_desc_array_size)
-			*statusp++ = SQL_ROW_NOROW;
+	if (RowStatusArray)
+		while (row++ < ard->sql_desc_array_size) {
+			WriteValue(RowStatusArray, SQL_ROW_NOROW);
+			RowStatusArray++;
+		}
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
@@ -193,5 +185,5 @@ SQLFetch(SQLHSTMT StatementHandle)
 
 	stmt->startRow += stmt->rowSetSize;
 
-	return SQLFetch_(stmt);
+	return MNDBFetch(stmt, stmt->ImplRowDescr->sql_desc_array_status_ptr);
 }

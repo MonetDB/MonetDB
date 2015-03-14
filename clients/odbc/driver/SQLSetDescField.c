@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -37,7 +26,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLSetDescField_(ODBCDesc *desc,
+MNDBSetDescField(ODBCDesc *desc,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT FieldIdentifier,
 		 SQLPOINTER ValuePtr,
@@ -52,11 +41,11 @@ SQLSetDescField_(ODBCDesc *desc,
 		tp = ODBC_sql_types;
 
 	switch (FieldIdentifier) {
-	case SQL_DESC_ALLOC_TYPE:
+	case SQL_DESC_ALLOC_TYPE:		/* SQLSMALLINT */
 		/* Invalid descriptor field identifier */
 		addDescError(desc, "HY091", NULL, 0);
 		return SQL_ERROR;
-	case SQL_DESC_ARRAY_SIZE:
+	case SQL_DESC_ARRAY_SIZE:		/* SQLULEN */
 		if ((SQLULEN) (uintptr_t) ValuePtr == 0) {
 			/* Invalid attribute/option identifier */
 			addDescError(desc, "HY092", NULL, 0);
@@ -72,26 +61,26 @@ SQLSetDescField_(ODBCDesc *desc,
 			desc->sql_desc_array_size = (SQLULEN) (uintptr_t) ValuePtr;
 		}
 		return SQL_SUCCESS;
-	case SQL_DESC_ARRAY_STATUS_PTR:
+	case SQL_DESC_ARRAY_STATUS_PTR:		/* SQLUSMALLINT * */
 		desc->sql_desc_array_status_ptr = (SQLUSMALLINT *) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_BIND_OFFSET_PTR:
+	case SQL_DESC_BIND_OFFSET_PTR:		/* SQLLEN * */
 		if (isAD(desc))
-			desc->sql_desc_bind_offset_ptr = (SQLINTEGER *) ValuePtr;
+			desc->sql_desc_bind_offset_ptr = (SQLLEN *) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_BIND_TYPE:
+	case SQL_DESC_BIND_TYPE:		/* SQLINTEGER */
 		if (isAD(desc))
-			desc->sql_desc_bind_type = (SQLUINTEGER) (uintptr_t) ValuePtr;
+			desc->sql_desc_bind_type = (SQLINTEGER) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_COUNT:
+	case SQL_DESC_COUNT:			/* SQLSMALLINT */
 		if (isIRD(desc)) {
 			/* Invalid descriptor field identifier */
 			addDescError(desc, "HY091", NULL, 0);
 			return SQL_ERROR;
 		}
-		setODBCDescRecCount(desc, (int) (SQLSMALLINT) (ssize_t) ValuePtr);
+		setODBCDescRecCount(desc, (int) (SQLSMALLINT) (intptr_t) ValuePtr);
 		return SQL_SUCCESS;
-	case SQL_DESC_ROWS_PROCESSED_PTR:
+	case SQL_DESC_ROWS_PROCESSED_PTR:	/* SQLULEN * */
 		if (desc->Stmt)
 			desc->sql_desc_rows_processed_ptr = (SQLULEN *) ValuePtr;
 		return SQL_SUCCESS;
@@ -117,29 +106,29 @@ SQLSetDescField_(ODBCDesc *desc,
 	/* break for read-only fields since the error is the same as
 	   unknown FieldIdentifier */
 	switch (FieldIdentifier) {
-	case SQL_DESC_AUTO_UNIQUE_VALUE:
-	case SQL_DESC_BASE_COLUMN_NAME:
-	case SQL_DESC_BASE_TABLE_NAME:
-	case SQL_DESC_CASE_SENSITIVE:
-	case SQL_DESC_CATALOG_NAME:
-	case SQL_DESC_DISPLAY_SIZE:
-	case SQL_DESC_FIXED_PREC_SCALE:
-	case SQL_DESC_LABEL:
-	case SQL_DESC_LITERAL_PREFIX:
-	case SQL_DESC_LITERAL_SUFFIX:
-	case SQL_DESC_LOCAL_TYPE_NAME:
-	case SQL_DESC_NULLABLE:
-	case SQL_DESC_ROWVER:
-	case SQL_DESC_SCHEMA_NAME:
-	case SQL_DESC_SEARCHABLE:
-	case SQL_DESC_TABLE_NAME:
-	case SQL_DESC_TYPE_NAME:
-	case SQL_DESC_UNSIGNED:
-	case SQL_DESC_UPDATABLE:
+	case SQL_DESC_AUTO_UNIQUE_VALUE:	/* SQLINTEGER */
+	case SQL_DESC_BASE_COLUMN_NAME:		/* SQLCHAR * */
+	case SQL_DESC_BASE_TABLE_NAME:		/* SQLCHAR * */
+	case SQL_DESC_CASE_SENSITIVE:		/* SQLINTEGER */
+	case SQL_DESC_CATALOG_NAME:		/* SQLCHAR * */
+	case SQL_DESC_DISPLAY_SIZE:		/* SQLLEN */
+	case SQL_DESC_FIXED_PREC_SCALE:		/* SQLSMALLINT */
+	case SQL_DESC_LABEL:			/* SQLCHAR * */
+	case SQL_DESC_LITERAL_PREFIX:		/* SQLCHAR * */
+	case SQL_DESC_LITERAL_SUFFIX:		/* SQLCHAR * */
+	case SQL_DESC_LOCAL_TYPE_NAME:		/* SQLCHAR * */
+	case SQL_DESC_NULLABLE:			/* SQLSMALLINT */
+	case SQL_DESC_ROWVER:			/* SQLSMALLINT */
+	case SQL_DESC_SCHEMA_NAME:		/* SQLCHAR * */
+	case SQL_DESC_SEARCHABLE:		/* SQLSMALLINT */
+	case SQL_DESC_TABLE_NAME:		/* SQLCHAR * */
+	case SQL_DESC_TYPE_NAME:		/* SQLCHAR * */
+	case SQL_DESC_UNSIGNED:			/* SQLSMALLINT */
+	case SQL_DESC_UPDATABLE:		/* SQLSMALLINT */
 		break;		/* read-only or unused */
-	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_CONCISE_TYPE:		/* SQLSMALLINT */
 		while (tp->concise_type != 0) {
-			if ((ssize_t) tp->concise_type == (ssize_t) ValuePtr) {
+			if ((intptr_t) tp->concise_type == (intptr_t) ValuePtr) {
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
 				rec->sql_desc_datetime_interval_code = tp->code;
@@ -160,13 +149,13 @@ SQLSetDescField_(ODBCDesc *desc,
 		/* Invalid attribute/option identifier */
 		addDescError(desc, "HY092", NULL, 0);
 		return SQL_ERROR;
-	case SQL_DESC_DATA_PTR:
+	case SQL_DESC_DATA_PTR:			/* SQLPOINTER */
 		/* TODO: consistency check */
 		rec->sql_desc_data_ptr = ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_DATETIME_INTERVAL_CODE:
+	case SQL_DESC_DATETIME_INTERVAL_CODE:	/* SQLSMALLINT */
 		while (tp->concise_type != 0) {
-			if ((ssize_t) tp->code == (ssize_t) ValuePtr &&
+			if ((intptr_t) tp->code == (intptr_t) ValuePtr &&
 			    tp->type == rec->sql_desc_type) {
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
@@ -188,17 +177,17 @@ SQLSetDescField_(ODBCDesc *desc,
 		/* Inconsistent descriptor information */
 		addDescError(desc, "HY021", NULL, 0);
 		return SQL_ERROR;
-	case SQL_DESC_DATETIME_INTERVAL_PRECISION:
-		rec->sql_desc_datetime_interval_precision = (SQLINTEGER) (ssize_t) ValuePtr;
+	case SQL_DESC_DATETIME_INTERVAL_PRECISION: /* SQLINTEGER */
+		rec->sql_desc_datetime_interval_precision = (SQLINTEGER) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_INDICATOR_PTR:
+	case SQL_DESC_INDICATOR_PTR:		/* SQLLEN * */
 		if (isAD(desc))
 			rec->sql_desc_indicator_ptr = (SQLLEN *) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_LENGTH:
-		rec->sql_desc_length = (SQLUINTEGER) (uintptr_t) ValuePtr;
+	case SQL_DESC_LENGTH:			/* SQLULEN */
+		rec->sql_desc_length = (SQLULEN) (uintptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_NAME:
+	case SQL_DESC_NAME:			/* SQLCHAR * */
 		if (isID(desc)) {
 			fixODBCstring(ValuePtr, BufferLength, SQLINTEGER,
 				      addDescError, desc, return SQL_ERROR);
@@ -214,17 +203,17 @@ SQLSetDescField_(ODBCDesc *desc,
 		}
 		return SQL_SUCCESS;
 	case SQL_DESC_NUM_PREC_RADIX:
-		rec->sql_desc_num_prec_radix = (SQLINTEGER) (ssize_t) ValuePtr;
+		rec->sql_desc_num_prec_radix = (SQLINTEGER) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_OCTET_LENGTH:
-		rec->sql_desc_octet_length = (SQLINTEGER) (ssize_t) ValuePtr;
+	case SQL_DESC_OCTET_LENGTH:		/* SQLLEN */
+		rec->sql_desc_octet_length = (SQLLEN) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_OCTET_LENGTH_PTR:
+	case SQL_DESC_OCTET_LENGTH_PTR:		/* SQLLEN * */
 		if (isAD(desc))
 			rec->sql_desc_octet_length_ptr = (SQLLEN *) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_PARAMETER_TYPE:
-		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
+	case SQL_DESC_PARAMETER_TYPE:		/* SQLSMALLINT */
+		switch ((SQLSMALLINT) (intptr_t) ValuePtr) {
 		case SQL_PARAM_INPUT:
 			break;
 		case SQL_PARAM_INPUT_OUTPUT:
@@ -238,19 +227,19 @@ SQLSetDescField_(ODBCDesc *desc,
 			return SQL_ERROR;
 		}
 		if (isIPD(desc))
-			rec->sql_desc_parameter_type = (SQLINTEGER) (ssize_t) ValuePtr;
+			rec->sql_desc_parameter_type = (SQLSMALLINT) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_PRECISION:
-		rec->sql_desc_precision = (SQLSMALLINT) (ssize_t) ValuePtr;
+	case SQL_DESC_PRECISION:		/* SQLSMALLINT */
+		rec->sql_desc_precision = (SQLSMALLINT) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_SCALE:
-		rec->sql_desc_scale = (SQLSMALLINT) (ssize_t) ValuePtr;
+	case SQL_DESC_SCALE:			/* SQLSMALLINT */
+		rec->sql_desc_scale = (SQLSMALLINT) (intptr_t) ValuePtr;
 		return SQL_SUCCESS;
-	case SQL_DESC_TYPE:
+	case SQL_DESC_TYPE:			/* SQLSMALLINT */
 		while (tp->concise_type != 0) {
-			if ((ssize_t) tp->type == (ssize_t) ValuePtr &&
-			    (((ssize_t) ValuePtr != (ssize_t) SQL_DATETIME &&
-			      (ssize_t) ValuePtr != (ssize_t) SQL_INTERVAL) ||
+			if ((SQLSMALLINT) (intptr_t) ValuePtr == tp->type &&
+			    (((SQLSMALLINT) (intptr_t) ValuePtr != SQL_DATETIME &&
+			      (SQLSMALLINT) (intptr_t) ValuePtr != SQL_INTERVAL) ||
 			     tp->code == rec->sql_desc_datetime_interval_code)) {
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
@@ -272,12 +261,12 @@ SQLSetDescField_(ODBCDesc *desc,
 		/* Inconsistent descriptor information */
 		addDescError(desc, "HY021", NULL, 0);
 		return SQL_ERROR;
-	case SQL_DESC_UNNAMED:
-		if ((SQLSMALLINT) (ssize_t) ValuePtr == SQL_NAMED) {
+	case SQL_DESC_UNNAMED:			/* SQLSMALLINT */
+		if ((SQLSMALLINT) (intptr_t) ValuePtr == SQL_NAMED) {
 			/* Invalid descriptor field identifier */
 			addDescError(desc, "HY091", NULL, 0);
 			return SQL_ERROR;
-		} else if ((SQLSMALLINT) (ssize_t) ValuePtr == SQL_UNNAMED && isIPD(desc)) {
+		} else if ((SQLSMALLINT) (intptr_t) ValuePtr == SQL_UNNAMED && isIPD(desc)) {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
 			if (rec->sql_desc_name)
 				free(rec->sql_desc_name);
@@ -302,9 +291,10 @@ SQLSetDescField(SQLHDESC DescriptorHandle,
 		SQLINTEGER BufferLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescField " PTRFMT " %d %s\n",
+	ODBCLOG("SQLSetDescField " PTRFMT " %d %s " PTRFMT " %d\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
-		translateFieldIdentifier(FieldIdentifier));
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST ValuePtr, (int) BufferLength);
 #endif
 
 	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
@@ -312,7 +302,7 @@ SQLSetDescField(SQLHDESC DescriptorHandle,
 
 	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
-	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
+	return MNDBSetDescField((ODBCDesc *) DescriptorHandle, RecNumber, FieldIdentifier, ValuePtr, BufferLength);
 }
 
 SQLRETURN SQL_API
@@ -328,10 +318,10 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %s " PTRFMT "\n",
+	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %s " PTRFMT " %d\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST ValuePtr);
+		PTRFMTCAST ValuePtr, (int) BufferLength);
 #endif
 
 	if (!isValidDesc(desc))
@@ -353,7 +343,7 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 		break;
 	}
 
-	rc = SQLSetDescField_(desc, RecNumber, FieldIdentifier, ptr, n);
+	rc = MNDBSetDescField(desc, RecNumber, FieldIdentifier, ptr, n);
 
 	if (ptr && ptr != ValuePtr)
 		free(ptr);

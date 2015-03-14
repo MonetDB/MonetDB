@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* Manual config.h. needed for win32 .  */
@@ -129,6 +118,9 @@
 
 /* Define to 1 if you have the `fabsf' function. */
 #define HAVE_FABSF 1
+
+/* Define to 1 if you have the `fallocate' function. */
+/* #undef HAVE_FALLOCATE */
 
 /* Define to 1 if you have the `fcntl' function. */
 /* #undef HAVE_FCNTL */
@@ -354,9 +346,6 @@
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
 
-/* Define if you have the mseed library */
-/* #undef HAVE_MSEED */
-
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
@@ -431,9 +420,6 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
-
-/* Define if you have the raptor library */
-/* #undef HAVE_RAPTOR */
 
 /* Define to 1 if you have the <regex.h> header file. */
 /* #undef HAVE_REGEX_H */

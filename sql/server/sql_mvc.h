@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -190,7 +179,8 @@ extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, co
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
-extern sql_table * mvc_readonly(mvc *m, sql_table *t, int readonly);
+extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
+extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);

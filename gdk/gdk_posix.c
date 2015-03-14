@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -540,6 +529,19 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					}
 					if (write(fd, old_address,
 						  old_size) < 0 ||
+#ifdef HAVE_FALLOCATE
+					    /* prefer Linux-specific
+					     * fallocate over standard
+					     * posix_fallocate, since
+					     * glibc uses a rather
+					     * slow method of
+					     * allocating the file if
+					     * the file system doesn't
+					     * support the operation,
+					     * we just use ftruncate
+					     * in that case */
+					    (fallocate(fd, 0, (off_t) old_size, (off_t) *new_size - (off_t) old_size) < 0 && (errno != EOPNOTSUPP || ftruncate(fd, (off_t) *new_size) < 0))
+#else
 #ifdef HAVE_POSIX_FALLOCATE
 					    /* posix_fallocate returns
 					     * error number on
@@ -550,18 +552,23 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					     * operation, so we then
 					     * need to try
 					     * ftruncate */
-					    ((rt = posix_fallocate(fd, 0, (off_t) *new_size)) == EINVAL ? ftruncate(fd, (off_t) *new_size) < 0 : rt != 0)
+					    ((rt = posix_fallocate(fd, (off_t) old_size, (off_t) *new_size - (off_t) old_size)) == EINVAL ? ftruncate(fd, (off_t) *new_size) < 0 : rt != 0)
 #else
 					    ftruncate(fd, (off_t) *new_size) < 0
+#endif
 #endif
 						) {
 						close(fd);
 						fprintf(stderr,
 							"= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): write() or "
+#ifdef HAVE_FALLOCATE
+							"fallocate()"
+#else
 #ifdef HAVE_POSIX_FALLOCATE
 							"posix_fallocate()"
 #else
 							"ftruncate()"
+#endif
 #endif
 							" failed\n", __FILE__, __LINE__, path, PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;

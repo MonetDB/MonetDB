@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -333,12 +322,13 @@ extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *p
 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
-extern sql_table *sql_trans_alter_readonly(sql_trans *tr, sql_table *t, bit readonly);
+extern sql_table *sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
 extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
+extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);

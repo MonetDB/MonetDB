@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -758,7 +747,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && !c->t->readonly &&
+	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -776,7 +765,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 { 
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-	if (isTable(i->t) && !i->t->readonly &&
+	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(sql->sa, i, RD_INS);
@@ -986,7 +975,7 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC)) != NULL) {
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);

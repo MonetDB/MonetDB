@@ -43,10 +43,10 @@ Ready.
 % double,	real # type
 % 24,	15 # length
 [ 0,	0	]
-[ 0.1,	0.100000001	]
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
+[ 0.2,	0.2	]
 #select * from t3220 where y = 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
@@ -64,75 +64,75 @@ Ready.
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
 #select * from t3220 where z < 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
 #select * from t3220 where y > 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ 0.1,	0.100000001	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ 0.2,	0.2	]
 #select * from t3220 where z > 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ 0.1,	0.100000001	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ 0.2,	0.2	]
 #select * from t3220 where y <> 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ 0.1,	0.100000001	]
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
+[ 0.2,	0.2	]
 #select * from t3220 where z <> 0;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ 0.1,	0.100000001	]
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
+[ 0.2,	0.2	]
 #select * from t3220 where y > 0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ 0.2,	0.200000003	]
+[ 0.2,	0.2	]
 #select * from t3220 where y < 0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
 [ 0,	0	]
-[ -0.1,	-0.100000001	]
-[ -0.2,	-0.200000003	]
+[ -0.1,	-0.1	]
+[ -0.2,	-0.2	]
 #select * from t3220 where y < -0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
-[ -0.2,	-0.200000003	]
+[ -0.2,	-0.2	]
 #select * from t3220 where y > -0.1;
 % sys.t3220,	sys.t3220 # table_name
 % y,	z # name
 % double,	real # type
 % 24,	15 # length
 [ 0,	0	]
-[ 0.1,	0.100000001	]
-[ 0.2,	0.200000003	]
+[ 0.1,	0.1	]
+[ 0.2,	0.2	]
 #rollback;
 
 # 10:08:24 >  

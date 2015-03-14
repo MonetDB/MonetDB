@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -254,7 +243,6 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			cnt = BATcount(b);
 			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
-			vol += ((rd && !isview) || !VIEWhparent(b)) ? headsize(b, cnt) : 0;
 			vol += ((rd && !isview) || !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
 		}
 	}
@@ -289,12 +277,8 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
         if (b == NULL || isVIEW(b) || b->batPersistence == PERSISTENT)
             return;
 		cnt = BATcount(b);
-		total += heapinfo(&b->H->heap);
-		total += heapinfo(b->H->vheap);
-
 		total += heapinfo(&b->T->heap);
 		total += heapinfo(b->T->vheap);
-		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
 		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -623,6 +612,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_NULL:
 			msg = "set column options for"; 
 			break;
+		case SQL_STORAGE:
+			msg = "set column storage for"; 
+			break;
 		case SQL_DROP_DEFAULT:
 			msg = "drop default column option from"; 
 			break;
@@ -685,6 +677,20 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		mvc_default(sql, c, r);
 		_DELETE(r);
+	}
+	break;
+	case SQL_STORAGE:
+	{
+		dlist *l = s->data.lval;
+		char *cname = l->h->data.sval;
+		char *storage_type = l->h->next->data.sval;
+		sql_column *c = mvc_bind_column(sql, t, cname);
+
+		if (!c) {
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			return SQL_ERR;
+		}
+		mvc_storage(sql, c, storage_type);
 	}
 	break;
 	case SQL_NOT_NULL:
@@ -1139,9 +1145,11 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 				return sql_error(sql, 02, "42S02!ALTER TABLE: read only MERGE TABLES are not supported");
 
 			if (state == tr_readonly) {
-				nt = mvc_readonly(sql, nt, 1);
+				nt = mvc_access(sql, nt, TABLE_READONLY);
+			} else if (state == tr_append) {
+				nt = mvc_access(sql, nt, TABLE_APPENDONLY);
 			} else {
-				nt = mvc_readonly(sql, nt, 0);
+				nt = mvc_access(sql, nt, TABLE_WRITABLE);
 			}
 			return rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
 		}

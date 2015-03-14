@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* This file provides interfaces to perform certain atomic operations
@@ -49,7 +38,10 @@
 #ifndef _GDK_ATOMIC_H_
 #define _GDK_ATOMIC_H_
 
-#if defined(HAVE_LIBATOMIC_OPS) && !defined(USE_PTHREAD_LOCKS)
+/* define this if you don't want to use atomic instructions */
+/* #define NO_ATOMIC_INSTRUCTIONS */
+
+#if defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <atomic_ops.h>
 
@@ -71,7 +63,7 @@
 
 #else
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(USE_PTHREAD_LOCKS)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <intrin.h>
 
@@ -118,7 +110,7 @@
 #define ATOMIC_TAS(var, lck, fcn)	_InterlockedCompareExchange(&var, 1, 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER) && !defined(USE_PTHREAD_LOCKS)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #if SIZEOF_SSIZE_T == SIZEOF_LNG
 #define ATOMIC_TYPE			lng
@@ -237,7 +229,8 @@ __ATOMIC_DEC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
 }
 #define ATOMIC_DEC(var, lck, fcn)		__ATOMIC_DEC(&var, &(lck))
 
-#define ATOMIC_LOCK		/* must use locks */
+#define USE_PTHREAD_LOCKS	/* must use pthread locks */
+#define ATOMIC_LOCK		/* must use locks for atomic access */
 #define ATOMIC_INIT(lck, fcn)	MT_lock_init(&(lck), fcn)
 
 #define ATOMIC_FLAG int

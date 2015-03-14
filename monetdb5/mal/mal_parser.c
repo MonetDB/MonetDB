@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -423,7 +412,7 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			cst->vtype = TYPE_flt;
+			cst->vtype = TYPE_dbl;
 		}
 		if (*s == 'e' || *s == 'E') {
 			i++;
@@ -457,11 +446,6 @@ cstToken(Client cntxt, ValPtr cst)
 				GDKfree(pval);
 			} else
 				cst->val.dval = 0;
-
-			if (cst->val.dval > FLT_MIN && cst->val.dval <= FLT_MAX) {
-				cst->vtype = TYPE_flt;
-				cst->val.fval = (flt) cst->val.dval;
-			}
 		}
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
@@ -846,6 +830,9 @@ propList(Client cntxt, int arg)
 						if( msg) GDKfree(msg);
 					} else
 						parseError(cntxt, "simple type expected\n");
+				} else if (cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+					cst.vtype = TYPE_flt;
+					cst.val.fval = (flt) cst.val.dval;
 				}
 				varSetProperty(curBlk, arg, pname, opname, &cst);
 			} else {
@@ -926,9 +913,13 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	malType tpe = TYPE_any;
 
 	if ((i = cstToken(cntxt, &cst))) {
+		advance(cntxt, i);
+		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+			cst.vtype = TYPE_flt;
+			cst.val.fval = (flt) cst.val.dval;
+		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
-			advance(cntxt, i);
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
@@ -953,7 +944,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant */
-			advance(cntxt, i);
 			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0)

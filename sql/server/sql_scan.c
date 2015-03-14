@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -275,6 +264,7 @@ scanner_init_keywords(void)
 	keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
+	keywords_insert("STORAGE", STORAGE);
 
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
@@ -693,7 +683,7 @@ keyword_or_ident(mvc * c, int cur)
 			if (k) 
 				lc->yyval = k->token;
 			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
 				lc->yyval = FILTER_FUNC;
 			return lc->yyval;
 		}
@@ -703,7 +693,7 @@ keyword_or_ident(mvc * c, int cur)
 	if (k) 
 		lc->yyval = k->token;
 	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
 		lc->yyval = FILTER_FUNC;
 	return lc->yyval;
 }
@@ -895,6 +885,10 @@ int scanner_symbol(mvc * c, int cur)
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
+			cur = scanner_getc(lc);
+			if (cur == '=')
+				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
+			utf8_putchar(lc, cur); 
 			return scanner_token( lc, LEFT_SHIFT);
 		} else {
 			utf8_putchar(lc, cur); 
@@ -904,6 +898,10 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '>') {
+			cur = scanner_getc(lc);
+			if (cur == '=')
+				return scanner_token( lc, RIGHT_SHIFT_ASSIGN);
+			utf8_putchar(lc, cur); 
 			return scanner_token( lc, RIGHT_SHIFT);
 		} else if (cur != '=') {
 			utf8_putchar(lc, cur); 

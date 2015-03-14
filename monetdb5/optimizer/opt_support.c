@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
  /*
@@ -143,19 +132,15 @@ struct OPTcatalog {
 	int debug;
 } optcatalog[]= {
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
-{"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
-{"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
 {"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
 {"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
 {"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
 {"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
-{"datacell",	0,	0,	0,	DEBUG_OPT_DATACELL},
 {"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
 {"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
 {"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
-{"emptySet",	0,	0,	0,	DEBUG_OPT_EMPTYSET},
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
 {"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
 {"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
@@ -165,15 +150,12 @@ struct OPTcatalog {
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
 {"json",		0,	0,	0,	DEBUG_OPT_JSON},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
-{"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
 {"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
-{"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
 {"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
 {"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
@@ -183,7 +165,6 @@ struct OPTcatalog {
 {"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
-{"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
 {"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
 { 0,	0,	0,	0,	0}
 };
@@ -359,7 +340,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				isVarConstant(mb,getArg(q,k)) ) {
 					w= getVar(mb,getArg(p,k));
 					u= getVar(mb,getArg(q,k));
-					cmp = BATatoms[w->value.vtype].atomCmp;
+					cmp = ATOMcompare(w->value.vtype);
 					if ( w->value.vtype == u->value.vtype &&
 						(*cmp)(VALptr(&w->value), VALptr(&u->value)) == 0)
 						continue;
@@ -764,12 +745,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
-	if ( getModuleId(p) == octopusRef){
-		if (getFunctionId(p) == bindRef) return FALSE;
-		if (getFunctionId(p) == bindidxRef) return FALSE;
-		if (getFunctionId(p) == binddbatRef) return FALSE;
-		return TRUE;
-	}
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	if ( getModuleId(p) == recycleRef)
@@ -876,7 +851,7 @@ int isDiffOp(InstrPtr p){
 }
 
 int isMatJoinOp(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
+	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
                  getFunctionId(p) == joinRef ||
                  getFunctionId(p) == subjoinRef ||
@@ -884,7 +859,7 @@ int isMatJoinOp(InstrPtr p){
                  getFunctionId(p) == subthetajoinRef ||
                  getFunctionId(p) == subbandjoinRef ||
                  getFunctionId(p) == subrangejoinRef)
-		);
+		));
 }
 
 int isDelta(InstrPtr p){
@@ -914,8 +889,7 @@ int isSubSelect(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 9 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-9,"subselect") == 0);
+	return (l >= 9 && strcmp(func+l-9,"subselect") == 0);
 }
 
 int isSubJoin(InstrPtr p)
@@ -923,8 +897,13 @@ int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 7 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-7,"subjoin") == 0);
+	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
+}
+
+int isMultiplex(InstrPtr p)
+{
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
+		getFunctionId(p) == multiplexRef);
 }
 
 int isFragmentGroup(InstrPtr p){
@@ -940,7 +919,7 @@ int isFragmentGroup(InstrPtr p){
 }
 
 /*
- * Some optimizers are interdependent (e.g. mitosis and octopus), which
+ * Some optimizers are interdependent (e.g. mitosis ), which
  * requires inspection of the pipeline attached to a MAL block.
  */
 int

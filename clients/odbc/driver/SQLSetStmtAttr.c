@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -41,7 +30,7 @@
 
 
 SQLRETURN
-SQLSetStmtAttr_(ODBCStmt *stmt,
+MNDBSetStmtAttr(ODBCStmt *stmt,
 		SQLINTEGER Attribute,
 		SQLPOINTER ValuePtr,
 		SQLINTEGER StringLength)
@@ -67,7 +56,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 
 	switch (Attribute) {
 #define desc ((ODBCDesc *) ValuePtr)	/* abbrev. */
-	case SQL_ATTR_APP_PARAM_DESC:
+	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
 		if (ValuePtr == SQL_NULL_HDESC ||
 		    desc == stmt->AutoApplParamDescr) {
 			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
@@ -86,7 +75,7 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		}
 		stmt->ApplParamDescr = desc;
 		break;
-	case SQL_ATTR_APP_ROW_DESC:
+	case SQL_ATTR_APP_ROW_DESC:		/* SQLHANDLE */
 		if (ValuePtr == SQL_NULL_HDESC ||
 		    desc == stmt->AutoApplRowDescr) {
 			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
@@ -106,8 +95,8 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		stmt->ApplRowDescr = desc;
 		break;
 #undef desc
-	case SQL_ATTR_CURSOR_SCROLLABLE:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+	case SQL_ATTR_CURSOR_SCROLLABLE:	/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_NONSCROLLABLE:
 			stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
 			break;
@@ -119,10 +108,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->cursorScrollable = (SQLUINTEGER) (uintptr_t) ValuePtr;
+		stmt->cursorScrollable = (SQLULEN) (uintptr_t) ValuePtr;
 		break;
-	case SQL_ATTR_CURSOR_TYPE:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+	case SQL_ATTR_CURSOR_TYPE:		/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_CURSOR_KEYSET_DRIVEN:
 		case SQL_CURSOR_DYNAMIC:
 			/* Option value changed */
@@ -143,14 +132,14 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 		break;
-	case SQL_ATTR_IMP_PARAM_DESC:
-	case SQL_ATTR_IMP_ROW_DESC:
+	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */
+	case SQL_ATTR_IMP_ROW_DESC:		/* SQLHANDLE */
 		/* Invalid use of an automatically allocated
 		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
-	case SQL_ATTR_NOSCAN:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+	case SQL_ATTR_NOSCAN:			/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_NOSCAN_ON:
 		case SQL_NOSCAN_OFF:
 			break;
@@ -159,34 +148,37 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->noScan = (SQLUINTEGER) (uintptr_t) ValuePtr;
+		stmt->noScan = (SQLULEN) (uintptr_t) ValuePtr;
 		break;
-	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
-		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:	/* SQLULEN* */
+		return MNDBSetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_PARAM_BIND_TYPE:
-		return SQLSetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_BIND_TYPE, ValuePtr,
+	case SQL_ATTR_PARAM_BIND_TYPE:		/* SQLULEN */
+	{
+		SQLUINTEGER v = (SQLUINTEGER) (SQLULEN) (uintptr_t) ValuePtr;
+		return MNDBSetDescField(stmt->ApplParamDescr, 0,
+					SQL_DESC_BIND_TYPE, (SQLPOINTER) (uintptr_t) v,
 					StringLength);
-	case SQL_ATTR_PARAM_OPERATION_PTR:
-		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+	}
+	case SQL_ATTR_PARAM_OPERATION_PTR:	/* SQLUSMALLINT* */
+		return MNDBSetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_PARAM_STATUS_PTR:
-		return SQLSetDescField_(stmt->ImplParamDescr, 0,
+	case SQL_ATTR_PARAM_STATUS_PTR:		/* SQLUSMALLINT* */
+		return MNDBSetDescField(stmt->ImplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_PARAMS_PROCESSED_PTR:
-		return SQLSetDescField_(stmt->ImplParamDescr, 0,
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:	/* SQLULEN* */
+		return MNDBSetDescField(stmt->ImplParamDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_PARAMSET_SIZE:
-		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+	case SQL_ATTR_PARAMSET_SIZE:		/* SQLULEN */
+		return MNDBSetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					StringLength);
-	case SQL_ATTR_RETRIEVE_DATA:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_RD_ON:
 		case SQL_RD_OFF:
 			break;
@@ -195,35 +187,35 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->retrieveData = (SQLUINTEGER) (uintptr_t) ValuePtr;
+		stmt->retrieveData = (SQLULEN) (uintptr_t) ValuePtr;
 		break;
-	case SQL_ATTR_ROW_ARRAY_SIZE:
+	case SQL_ATTR_ROW_ARRAY_SIZE:		/* SQLULEN */
 	case SQL_ROWSET_SIZE:
-		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+		return MNDBSetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					StringLength);
-	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
-		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:	/* SQLULEN* */
+		return MNDBSetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_BIND_OFFSET_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_ROW_BIND_TYPE:
-		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+	case SQL_ATTR_ROW_BIND_TYPE:		/* SQLULEN */
+		return MNDBSetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_BIND_TYPE, ValuePtr,
 					StringLength);
-	case SQL_ATTR_ROW_OPERATION_PTR:
-		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+	case SQL_ATTR_ROW_OPERATION_PTR:	/* SQLUSMALLINT* */
+		return MNDBSetDescField(stmt->ApplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_ROW_STATUS_PTR:
-		return SQLSetDescField_(stmt->ImplRowDescr, 0,
+	case SQL_ATTR_ROW_STATUS_PTR:		/* SQLUSMALLINT* */
+		return MNDBSetDescField(stmt->ImplRowDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_ROWS_FETCHED_PTR:
-		return SQLSetDescField_(stmt->ImplRowDescr, 0,
+	case SQL_ATTR_ROWS_FETCHED_PTR:		/* SQLULEN* */
+		return MNDBSetDescField(stmt->ImplRowDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					StringLength);
-	case SQL_ATTR_METADATA_ID:
-		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
+	case SQL_ATTR_METADATA_ID:		/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_TRUE:
 		case SQL_FALSE:
 			break;
@@ -232,10 +224,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (uintptr_t) ValuePtr;
+		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (SQLULEN) (uintptr_t) ValuePtr;
 		break;
 
-	case SQL_ATTR_CONCURRENCY:
+	case SQL_ATTR_CONCURRENCY:		/* SQLULEN */
 		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_CONCUR_READ_ONLY:
 			/* the only value we support */
@@ -249,23 +241,33 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		}
 		break;
 
-	case SQL_ATTR_ROW_NUMBER: /* read-only attribute */
+	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
+		/* read-only attribute */
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 
 		/* TODO: implement requested behavior */
-	case SQL_ATTR_ASYNC_ENABLE:
-	case SQL_ATTR_CURSOR_SENSITIVITY:
-	case SQL_ATTR_ENABLE_AUTO_IPD:
-	case SQL_ATTR_FETCH_BOOKMARK_PTR:
-	case SQL_ATTR_KEYSET_SIZE:
-	case SQL_ATTR_MAX_LENGTH:
-	case SQL_ATTR_MAX_ROWS:
-	case SQL_ATTR_QUERY_TIMEOUT:
-	case SQL_ATTR_SIMULATE_CURSOR:
-	case SQL_ATTR_USE_BOOKMARKS:
+	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
+#ifdef SQL_ATTR_ASYNC_STMT_EVENT
+	case SQL_ATTR_ASYNC_EVENT:		/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_STMT_PCALLBACK
+	case SQL_ATTR_ASYNC_PCALLBACK:		/* SQLPOINTER */
+#endif
+#ifdef SQL_ATTR_ASYNC_STMT_PCONTEXT
+	case SQL_ATTR_ASYNC_PCONTEXT:		/* SQLPOINTER */
+#endif
+	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
+	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
+	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
+	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
+	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
+	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
+	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
+	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
@@ -281,9 +283,9 @@ SQLSetStmtAttr(SQLHSTMT StatementHandle,
 	       SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtAttr " PTRFMT " %s " PTRFMT "\n",
+	ODBCLOG("SQLSetStmtAttr " PTRFMT " %s " PTRFMT " %d\n",
 		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
-		PTRFMTCAST ValuePtr);
+		PTRFMTCAST ValuePtr, (int) StringLength);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -291,7 +293,7 @@ SQLSetStmtAttr(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLSetStmtAttr_((ODBCStmt *) StatementHandle,
+	return MNDBSetStmtAttr((ODBCStmt *) StatementHandle,
 			       Attribute,
 			       ValuePtr,
 			       StringLength);
@@ -304,9 +306,9 @@ SQLSetStmtAttrW(SQLHSTMT StatementHandle,
 		SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtAttrW " PTRFMT " %s " PTRFMT "\n",
+	ODBCLOG("SQLSetStmtAttrW " PTRFMT " %s " PTRFMT " %d\n",
 		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
-		PTRFMTCAST ValuePtr);
+		PTRFMTCAST ValuePtr, (int) StringLength);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -316,7 +318,7 @@ SQLSetStmtAttrW(SQLHSTMT StatementHandle,
 
 	/* there are no string-valued attributes */
 
-	return SQLSetStmtAttr_((ODBCStmt *) StatementHandle,
+	return MNDBSetStmtAttr((ODBCStmt *) StatementHandle,
 			       Attribute,
 			       ValuePtr,
 			       StringLength);

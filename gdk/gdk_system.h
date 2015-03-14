@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -130,8 +119,6 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d);
 gdk_export void MT_exiting_thread(void);
-__declspec(noreturn) gdk_export void MT_global_exit(int status)
-	__attribute__((__noreturn__));
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 
@@ -164,7 +151,11 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 #include "gdk_atomic.h"
 
-#ifdef ATOMIC_LOCK
+/* define this if you want to use pthread (or Windows) locks instead
+ * of atomic instructions for locking (latching) */
+/* #define USE_PTHREAD_LOCKS */
+
+#ifdef USE_PTHREAD_LOCKS
 
 typedef pthread_mutex_t MT_Lock;
 

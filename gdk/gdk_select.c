@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -163,33 +152,68 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	return virtualize(bn);
 }
 
+#define HASHloop_bound(bi, h, hb, v, lo, hi)		\
+	for (hb = HASHget(h, HASHprobe((h), v));	\
+	     hb != HASHnil(h);				\
+	     hb = HASHgetlink(h,hb))			\
+		if (hb >= (lo) && hb < (hi) &&		\
+		    (cmp == NULL ||			\
+		     (*cmp)(v, BUNtail(bi, hb)) == 0))
+
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
 	oid o, *restrict dst;
-	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
-	 * instead of wrd, we could also use ssize_t or int/lng with
-	 * 32/64-bit OIDs */
-	wrd off;
+	BUN l, h;
+	oid seq;
+	int (*cmp)(const void *, const void *);
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
-	off = b->hseqbase - b->batFirst;
+	seq = b->hseqbase;
+	if (VIEWtparent(b)) {
+		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
+		l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+		h = l + BATcount(b);
+		b = b2;
+	} else {
+		l = BUNfirst(b);
+		h = BUNlast(b);
+	}
+	if (s && BATtdense(s)) {
+		/* no need for binary search in s, we just adjust the
+		 * boundaries */
+		if (s->tseqbase + BATcount(s) < seq + (h - l))
+			h -= seq + (h - l) - (s->tseqbase + BATcount(s));
+		if (s->tseqbase > seq) {
+			l += s->tseqbase - seq;
+			seq += s->tseqbase - seq;
+		}
+		s = NULL;
+	}
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
 		return NULL;
+	}
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+		cmp = NULL;	/* no need to compare: "hash" is perfect */
+		break;
+	default:
+		cmp = ATOMcompare(b->ttype);
+		break;
 	}
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
-		HASHloop(bi, b->T->hash, i, tl) {
-			o = (oid) (i + off);
+		HASHloop_bound(bi, b->T->hash, i, tl, l, h) {
+			o = (oid) (i - l + seq);
 			if (SORTfnd(s, &o) != BUN_NONE) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
@@ -198,8 +222,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			}
 		}
 	} else {
-		HASHloop(bi, b->T->hash, i, tl) {
-			o = (oid) (i + off);
+		HASHloop_bound(bi, b->T->hash, i, tl, l, h) {
+			o = (oid) (i - l + seq);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
 				  maximum, NULL);
@@ -208,7 +232,15 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
-	GDKqsort(dst, NULL, NULL, BATcount(bn), SIZEOF_OID, 0, TYPE_oid);
+	if (cnt > 1) {
+		/* hash chains produce results in the order high to
+		 * low, so we just need to reverse */
+		for (l = BUNfirst(bn), h = BUNlast(bn) - 1; l < h; l++, h--) {
+			o = dst[l];
+			dst[l] = dst[h];
+			dst[h] = o;
+		}
+	}
 	bn->tsorted = 1;
 	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
@@ -541,7 +573,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 {
 	const void *v;
 	const void *nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	BATiter bi = bat_iterator(b);
 	oid o;
 	BUN p = r;
@@ -621,7 +653,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	BATiter bi = bat_iterator(b);
 	oid o;
 	BUN p = r;
@@ -748,7 +780,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(b->ttype != TYPE_void || equi || b->T->nonil);
 
 #ifndef NDEBUG
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 #endif
 
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
@@ -1454,13 +1486,18 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
 	hash = equi &&
-	       b->batPersistence == PERSISTENT &&
-	       (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
-	       BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
+		(b->batPersistence == PERSISTENT ||
+		 ((parent = VIEWtparent(b)) != 0 &&
+		  BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
+		(size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
 	if (hash && estimate == BUN_NONE && !b->T->hash) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select */
-		if (BATcount(b) <= 10000) {
+		BUN cnt = BATcount(b);
+		if (s && BATcount(s) < cnt)
+			cnt = BATcount(s);
+		if (cnt <= 10000) {
 			/* "small" input: don't bother about more accurate
 			 * estimate */
 			estimate = maximum;
@@ -1494,7 +1531,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BATcount(b) / 100) - 1;
 			}
 		}
-		hash = estimate < BATcount(b) / 100;
+		hash = estimate < cnt / 100;
 	}
 	if (estimate == BUN_NONE) {
 		/* no better estimate possible/required:
@@ -1619,7 +1656,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	int rlwidth, rhwidth;
 	int lwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	int t;
 	BUN cnt, ncnt;
 	oid *restrict dst1, *restrict dst2;

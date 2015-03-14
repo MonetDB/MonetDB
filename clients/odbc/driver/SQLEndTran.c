@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -47,7 +36,7 @@
 
 
 SQLRETURN
-SQLEndTran_(SQLSMALLINT HandleType,
+MNDBEndTran(SQLSMALLINT HandleType,
 	    SQLHANDLE Handle,
 	    SQLSMALLINT CompletionType)
 {
@@ -117,7 +106,7 @@ SQLEndTran_(SQLSMALLINT HandleType,
 			assert(isValidDbc(dbc));
 			if (!dbc->Connected)
 				continue;
-			rc = SQLEndTran_(SQL_HANDLE_DBC, dbc, CompletionType);
+			rc = MNDBEndTran(SQL_HANDLE_DBC, dbc, CompletionType);
 			if (rc == SQL_ERROR)
 				rc1 = SQL_ERROR;
 			else if (rc == SQL_SUCCESS_WITH_INFO &&
@@ -135,10 +124,10 @@ SQLEndTran_(SQLSMALLINT HandleType,
 	}
 
 	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
-	rc = SQLAllocStmt_(dbc, &StatementHandle);
+	rc = MNDBAllocStmt(dbc, &StatementHandle);
 	if (SQL_SUCCEEDED(rc)) {
 		ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
-		rc = SQLExecDirect_(stmt,
+		rc = MNDBExecDirect(stmt,
 				    CompletionType == SQL_COMMIT ? (SQLCHAR *) "commit" : (SQLCHAR *) "rollback",
 				    SQL_NTS);
 
@@ -149,7 +138,7 @@ SQLEndTran_(SQLSMALLINT HandleType,
 			SQLINTEGER nativeErrCode;
 			SQLCHAR msgText[SQL_MAX_MESSAGE_LENGTH + 1];
 
-			(void) SQLGetDiagRec_(SQL_HANDLE_STMT, stmt, 1,
+			(void) MNDBGetDiagRec(SQL_HANDLE_STMT, stmt, 1,
 					      sqlState, &nativeErrCode,
 					      msgText, sizeof(msgText), NULL);
 
@@ -184,5 +173,5 @@ SQLEndTran(SQLSMALLINT HandleType,
 		PTRFMTCAST Handle, translateCompletionType(CompletionType));
 #endif
 
-	return SQLEndTran_(HandleType, Handle, CompletionType);
+	return MNDBEndTran(HandleType, Handle, CompletionType);
 }

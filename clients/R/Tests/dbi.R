@@ -13,6 +13,7 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 options(monetdb.insert.splitsize=10)
+options(monetdb.profile=F)
 
 tname <- "monetdbtest"
 
@@ -93,7 +94,7 @@ stopifnot(identical(dbExistsTable(con,tname),FALSE))
 # test csv import
 file <- tempfile()
 write.table(iris,file,sep=",")
-monetdb.read.csv(con,file,tname,150)
+monetdb.read.csv(con,file,tname)
 unlink(file)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 iris3 <- dbReadTable(con,tname)

@@ -1,19 +1,8 @@
-@REM The contents of this file are subject to the MonetDB Public License
-@REM Version 1.1 (the "License"); you may not use this file except in
-@REM compliance with the License. You may obtain a copy of the License at
-@REM http://www.monetdb.org/Legal/MonetDBLicense
+@REM This Source Code Form is subject to the terms of the Mozilla Public
+@REM License, v. 2.0.  If a copy of the MPL was not distributed with this
+@REM file, You can obtain one at http://mozilla.org/MPL/2.0/.
 @REM
-@REM Software distributed under the License is distributed on an "AS IS"
-@REM basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@REM License for the specific language governing rights and limitations
-@REM under the License.
-@REM
-@REM The Original Code is the MonetDB Database System.
-@REM
-@REM The Initial Developer of the Original Code is CWI.
-@REM Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@REM Copyright August 2008-2015 MonetDB B.V.
-@REM All Rights Reserved.
+@REM Copyright 2008-2015 MonetDB B.V.
 
 @echo off
 

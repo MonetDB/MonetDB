@@ -35,7 +35,7 @@ QUERY = SELECT *
            FROM onek
            WHERE onek.unique1 < 2;
 ERROR = !syntax error, unexpected TABLE in: "select *
-        !   into table"
+        !   into table tmp1"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'
@@ -45,7 +45,7 @@ QUERY = SELECT *
            FROM onek2
            WHERE onek2.unique1 < 2;
 ERROR = !syntax error, unexpected TABLE in: "select *
-        !   into table"
+        !   into table tmp1"
 MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'

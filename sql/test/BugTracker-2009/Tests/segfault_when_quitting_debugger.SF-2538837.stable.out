@@ -15,19 +15,16 @@ stdout of test 'segfault_when_quitting_debugger.SF-2538837` in directory 'sql/te
 # MonetDB/SQL module v2.28.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 16:24:01 >  
+# 16:24:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17200" "--port=32363"
+# 16:24:01 >  
 
-# 12:13:20 >  
-# 12:13:20 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=36460 
-# 12:13:20 >  
+#debug select * from tables;
+mdb>#mdb.start();
+mdb>#X_2=0@0:void := user.s1_1();
 
-mdb>#    mdb.start();
-mdb>#    X_2:void  := user.s1_1();
-
-# 12:13:21 >  
-# 12:13:21 >  Done.
-# 12:13:21 >  
+# 16:24:01 >  
+# 16:24:01 >  "Done."
+# 16:24:01 >  
 

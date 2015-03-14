@@ -17,7 +17,6 @@ stdout of test 'tst007` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
 !TypeException:user.foo[16]:'entry_or_exittest' may not be used before being initialized
 !TypeException:user.foo[29]:'booleanexpr' may not be used before being initialized
 function user.foo():void;
