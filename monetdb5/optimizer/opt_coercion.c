@@ -45,7 +45,7 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	return 0;
 }
 
-/* check coercions for know types that can handle smaller ones also.
+/* Check coercions for numeric types that can be handled with smaller ones.
  * For now, limit to +,-,/,*,% hge expressions
  * To be extended to deal with math calls as well.
  */
@@ -60,6 +60,18 @@ coercionOptimizerCalcStep(MalBlkPtr mb, int i, Coercion *coerce)
 		return;
 
 	r = getColumnType(getVarType(mb, getArg(p,0)));
+	switch(r){
+	case TYPE_bit:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+		break;
+	case TYPE_dbl:
+	case TYPE_flt:
+		/* to be determined */
+	default:
+		return;
+	}
 	a = getColumnType(getVarType(mb, getArg(p,1)));
 	b = getColumnType(getVarType(mb, getArg(p,2)));
 	if ( a == r && coerce[getArg(p,1)].src && coerce[getArg(p,1)].fromtype < r ) /*digit/scale test as well*/
