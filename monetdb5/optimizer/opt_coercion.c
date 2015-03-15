@@ -61,7 +61,7 @@ coercionOptimizerCalcStep(MalBlkPtr mb, int i, Coercion *coerce)
 
 	r = getColumnType(getVarType(mb, getArg(p,0)));
 	switch(r){
-	case TYPE_bit:
+	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
