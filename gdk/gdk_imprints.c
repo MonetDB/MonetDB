@@ -816,9 +816,6 @@ BATimprints(BAT *b)
 		}
 		b->T->imprints = imprints;
 	}
- 
-        t1 = GDKusec();
-        ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
 	t1 = GDKusec();
 	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);

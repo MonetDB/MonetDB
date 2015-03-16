@@ -1302,7 +1302,7 @@ if test "x$have_python2" != xno; then
 			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
 			have_python2_libdir=yes
 			;;
-		*)	PYTHON2_LIBDIR="$PROJpython2_libdir"
+		*)	PYTHON2_LIBDIR="$have_python2_libdir"
 			have_python2_libdir=yes
 			;;
 	esac
