@@ -417,15 +417,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	int i;
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
- 
-	/*
-	 * Control the level of parallelism. The maximum number of
-	 * concurrent MAL plans is determined by an environment
-	 * variable. It is initially set equal to the number of cores,
-	 * which may be too coarse.
-	 */
+
 	cntxt->lastcmd= time(0);
-	MT_sema_down(&mal_parallelism,"callMAL");
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -460,10 +453,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	case PATcall:
 	case CMDcall:
 	default:
-		MT_sema_up(&mal_parallelism,"callMAL");
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	MT_sema_up(&mal_parallelism,"callMAL");
 	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
