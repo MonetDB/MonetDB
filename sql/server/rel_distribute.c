@@ -241,7 +241,7 @@ distribute(mvc *sql, sql_rel *rel)
 		    r && find_prop(r->p, PROP_REMOTE) == NULL) {
 			r = rel->r = distribute(sql, replica(sql, rel->r, pl->value));
 		} else if (l && find_prop(l->p, PROP_REMOTE) == NULL &&
-		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
+		    r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			l = rel->l = distribute(sql, replica(sql, rel->l, pr->value));
 		}
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
