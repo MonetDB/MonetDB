@@ -126,12 +126,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
 
-  if (getOption("monetdb.profile", T)) {
-    .profiler_enable(conn)
-  }
-  
+  # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
   return(conn)
-
 }, 
 valueClass="MonetDBConnection")
 
@@ -234,7 +230,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   env <- NULL
   if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
   # make the progress bar wait for querylog.define
-  if (getOption("monetdb.profile", T))  .profiler_arm()
+  # if (getOption("monetdb.profile", T))  .profiler_arm()
 
   # the actual request
   mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
@@ -532,7 +528,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
     #print(paste0(length(res@env$data), " of ", info$rows));
-    if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
+    # if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
   # convert tuple string vector into matrix so we can access a single column efficiently
@@ -571,7 +567,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   attr(df, "row.names") <- c(NA_integer_, length(df[[1]]))
   class(df) <- "data.frame"
   
-  if (getOption("monetdb.profile", T))  .profiler_clear()
+  # if (getOption("monetdb.profile", T))  .profiler_clear()
 
   return(df)
 })
