@@ -65,6 +65,9 @@ coercionOptimizerCalcStep(MalBlkPtr mb, int i, Coercion *coerce)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
 		break;
 	case TYPE_dbl:
 	case TYPE_flt:
