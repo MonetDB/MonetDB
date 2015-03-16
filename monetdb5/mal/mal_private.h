@@ -70,7 +70,6 @@ extern void showAtoms(stream *fd)		/* used in src/mal/mal_debugger.c */
 	__attribute__((__visibility__("hidden")));
 
 extern MT_Lock mal_namespaceLock;
-extern MT_Sema mal_parallelism;
 
 extern int mdbInit(void)
 	__attribute__((__visibility__("hidden")));
