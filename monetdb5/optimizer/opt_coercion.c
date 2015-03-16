@@ -84,6 +84,24 @@ coercionOptimizerCalcStep(MalBlkPtr mb, int i, Coercion *coerce)
 	return;
 }
 
+static void
+coercionOptimizerAggrStep(MalBlkPtr mb, int i, Coercion *coerce)
+{
+	InstrPtr p = getInstrPtr(mb,i);
+	int r, k;
+
+	if( getModuleId(p) != aggrRef || getFunctionId(p) == 0) return;
+	if( ! (getFunctionId(p) == subavgRef ) || p->argc !=6)
+		return;
+
+	r = getColumnType(getVarType(mb, getArg(p,0)));
+	k = getArg(p,1);
+	// check the digits/scale
+	if( r == TYPE_dbl &&  coerce[k].src )
+		getArg(p,1) = coerce[getArg(p,1)].src;
+	return;
+}
+
 int
 OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -117,6 +135,14 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
 		}
 #endif
+		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef && p->retc == 1 && ((p->argc == 3 && isVarConstant(mb,getArg(p,1))) || p->argc ==2) ){
+			k = getArg(p,0);
+			coerce[k].pc= i;
+			coerce[k].totype= TYPE_dbl;
+			coerce[k].src= getArg(p,1 + (p->argc ==3));
+			coerce[k].fromtype= getColumnType(getArgType(mb,p,1 + (p->argc ==3)));
+		}
+		coercionOptimizerAggrStep(mb, i, coerce);
 		coercionOptimizerCalcStep(mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {
 			k= coercionOptimizerStep(mb, i, p);
