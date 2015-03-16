@@ -522,12 +522,11 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
   while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(min(10000,n-length(res@env$data))))))
+                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
-    #print(paste0(length(res@env$data), " of ", info$rows));
     # if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
@@ -619,7 +618,8 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
-                                               locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
+                                               locked=FALSE, na.strings="", nrow.check=500, 
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
@@ -638,7 +638,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
   
-  dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   
