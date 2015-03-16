@@ -47,6 +47,8 @@ __hidden int ATOMunknown_find(const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckhash(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
@@ -131,7 +133,7 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
+__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHremove(BAT *b)
 	__attribute__((__visibility__("hidden")));

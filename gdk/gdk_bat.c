@@ -1869,9 +1869,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			 * BUNlocate). Other threads might then crash.
 			 */
 			if (dohash(v->H))
-				(void) BATprepareHash(BATmirror(v));
+				(void) BAThash(BATmirror(v), 0);
 			if (dohash(v->T))
-				(void) BATprepareHash(v);
+				(void) BAThash(v, 0);
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -2902,7 +2902,7 @@ BATassertHeadProps(BAT *b)
 			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
 							hashheap)) < 0 ||
 			    (hs = HASHnew(hp, b->htype, BUNlast(b),
-					  mask)) == NULL) {
+					  mask, BUN_NONE)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3116,7 +3116,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask)) == NULL) {
+		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

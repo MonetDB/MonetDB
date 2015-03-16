@@ -658,6 +658,7 @@ BATimprints(BAT *b)
 				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 				b->T->imprints = imprints;
 				close(fd);
+				ALGODEBUG fprintf(stderr, "#BATimprints: reusing persisted imprints\n");
 				goto do_return;
 			}
 			close(fd);
@@ -795,23 +796,26 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
-		if (b->batRole == PERSISTENT &&
+		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+			ALGODEBUG fprintf(stderr, "#BATimprints: persisting imprints\n");
 			/* add version number */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 			/* sync-on-disk checked bit */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
+			if (!(GDKdebug & FORCEMITOMASK)) {
 #if defined(NATIVE_WIN32)
-			_commit(fd);
+				_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-			fdatasync(fd);
+				fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-			fsync(fd);
+				fsync(fd);
 #endif
+			}
 			close(fd);
 		}
 		b->T->imprints = imprints;
@@ -918,6 +922,8 @@ IMPSremove(BAT *b)
 	if ((imprints = b->T->imprints) != NULL) {
 		b->T->imprints = NULL;
 
+		if (* (size_t *) imprints->imprints->base & (1 << 16))
+			ALGODEBUG fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
 			       b->batCacheid > 0 ? "timprints" : "himprints"))
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));

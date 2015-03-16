@@ -734,11 +734,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(sgrps);
-	} else if (b->T->hash ||
+	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    !BATprepareHash(b)) ||
+		    BAThash(b, 0) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
-		    BBPdescriptor(-parent)->T->hash)) {
+		    BATcheckhash(BBPdescriptor(-parent)))) {
 		BUN lo, hi;
 
 		/* we already have a hash table on b, or b is
@@ -849,7 +849,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  MAX(HASHmask(b->batCount), 1 << 16))) == NULL) {
+				  MAX(HASHmask(b->batCount), 1 << 16), BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

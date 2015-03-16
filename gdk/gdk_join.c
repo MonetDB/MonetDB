@@ -1349,7 +1349,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		return GDK_SUCCEED;
 	}
 
-	if (BATprepareHash(r))
+	if (BAThash(r, 0) == GDK_FAIL)
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);

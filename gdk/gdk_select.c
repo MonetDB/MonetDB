@@ -194,7 +194,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		}
 		s = NULL;
 	}
-	if (BATprepareHash(b)) {
+	if (BAThash(b, 0) == GDK_FAIL) {
 		BBPreclaim(bn);
 		return NULL;
 	}
@@ -1491,7 +1491,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		  BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
 		(size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
-	if (hash && estimate == BUN_NONE && !b->T->hash) {
+	if (hash && estimate == BUN_NONE && !BATcheckhash(b)) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select */
 		BUN cnt = BATcount(b);
