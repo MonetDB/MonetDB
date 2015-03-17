@@ -151,6 +151,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		          || ( p->argc == 3
 		               && isVarConstant(mb,getArg(p,1))
 		               && getArgType(mb,p,1) == TYPE_int
+		               /* to-scale == 0, i.e., no scale change */
 		               && getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
