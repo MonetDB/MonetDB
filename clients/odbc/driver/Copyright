@@ -7,7 +7,7 @@ The original code is licensed under the terms of the LGPL (GNU Library
 General Public License, Version 2, June 1991), and therefore the code
 in this directory is also licensed under the LPGL (see the file
 COPYING in this directory), unlike the other directories in this
-project which are under the MonetDB Public License.
+project which are under the Mozilla Public License, v. 2.0.
 
 All original files have been modified, often heavily, and some have
 been deleted since they were originally copied in June 2001.  The
