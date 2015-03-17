@@ -2277,6 +2277,7 @@ int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 int hasSideEffects(InstrPtr p, int strict);
 str hashRef;
 int headProp;
+str hgeRef;
 int hlbProp;
 int horiginProp;
 int hubProp;
