@@ -129,8 +129,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		     && getFunctionId(p) == hgeRef
 		     && p->retc == 1
 		     && p->argc == 5
+		     && isVarConstant(mb,getArg(p,1))
+		     && getArgType(mb,p,1) == TYPE_int
+		     && isVarConstant(mb,getArg(p,3))
+		     && getArgType(mb,p,3) == TYPE_int
 		     && isVarConstant(mb,getArg(p,4))
-		     && isVarConstant(mb,getArg(p,3)) ){
+		     && getArgType(mb,p,4) == TYPE_int ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
