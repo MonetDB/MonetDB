@@ -62,8 +62,8 @@ default_ident(char *s)
 void
 BATinit_idents(BAT *bn)
 {
-	bn->hident = (char *) BATstring_h; //="h"
-	bn->tident = (char *) BATstring_t; //="t"
+	bn->hident = (char *) BATstring_h;
+	bn->tident = (char *) BATstring_t;
 }
 
 BATstore *
@@ -285,14 +285,6 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	return bs;
 }
 
-/**
- * Create new BAT
- * int ht: header type
- * int tt: tail type
- * BUN cap: BAT capacity
- * int role: TRANSIENT or PERSISTENT
- * Returns a new BAT
- */
 BAT *
 BATnew(int ht, int tt, BUN cap, int role)
 {

@@ -26,7 +26,6 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-
 str
 nil_2_timestamp(timestamp *res, const void *val)
 {

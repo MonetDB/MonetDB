@@ -444,7 +444,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->cmd = debug;
-
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:

@@ -55,7 +55,6 @@
 #include "opt_reorder.h"
 #include "opt_statistics.h"
 
-
 struct{
 	str nme;
 	int (*fcn)();

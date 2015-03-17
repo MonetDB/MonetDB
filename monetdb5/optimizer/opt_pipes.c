@@ -175,7 +175,6 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
-
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };

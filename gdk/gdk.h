@@ -873,7 +873,7 @@ typedef struct PROPrec PROPrec;
 typedef struct {
 	str id;			/* label for head/tail column */
 
-	unsigned short width;	/* byte-width of the atom array, the width of the offsets */
+	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bunwidth */
 	unsigned int

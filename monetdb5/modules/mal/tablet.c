@@ -404,7 +404,6 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 		int l;
 
 		if (f->c) {
-			/* p contains the data read from BAT */
 			p = BUNtail(f->ci, f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {

@@ -64,8 +64,6 @@
  * UDT
  */
 
-
-
 %parse-param { mvc *m }
 %lex-param { void *m }
 

@@ -280,7 +280,6 @@ sql5_export str str_2_sqlblob(sqlblob * *res, const str *val);
 sql5_export str batstr_2_sqlblob(bat *res, const bat *val);
 sql5_export str SQLsqlblob_2_str(str *res, const sqlblob * val);
 
-//sql5_export str geometry_2_point(wkb *res, wkb geom);
 
 sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

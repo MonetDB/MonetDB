@@ -17,9 +17,9 @@
 typedef enum { LINE_1, LINE_N } prot;
 
 struct scanner {
-	bstream *rs;	/* input stream */
-	stream *ws;	/* output stream */
-	stream *log;	/* log stream */
+	bstream *rs;
+	stream *ws;
+	stream *log;
 
 	int yynext;		/* next token, lr(1) isn't powerful enough for sql */
 	int yylast;		/* previous token, to detect superfluous semi-colons */

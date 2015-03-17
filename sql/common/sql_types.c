@@ -331,10 +331,8 @@ type_cmp(sql_type *t1, sql_type *t2)
 int
 subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
-	//check whether the types exist
 	if (!t1->type || !t2->type)
 		return -1;
-	
 	if ( !(t1->type->eclass == t2->type->eclass && 
 	       EC_INTERVAL(t1->type->eclass)) &&
 	      (t1->digits != t2->digits || 
@@ -1386,7 +1384,6 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", *t, *t);
 	}
-	
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", SHT, DBL);

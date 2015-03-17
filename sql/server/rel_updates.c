@@ -455,7 +455,6 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					}
 				} else {
 					/* only allow correlation in a single row of values */
-					/* loop over the inserted values and the table columns */
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
@@ -476,7 +475,6 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		if (collist)
 			r = rel_project(sql->sa, inner, exps);
 	} else {
-		/* the insetion is done through a query */
 		exp_kind ek = {type_value, card_relation, TRUE};
 
 		r = rel_subquery(sql, NULL, val_or_q, ek, APPLY_JOIN);

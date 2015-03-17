@@ -356,6 +356,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nva
 
 	for(k=1; k < mat[m].mi->argc; k++) {
 		InstrPtr q = copyInstruction(p);
+
 		getArg(q, 0) = newTmpVariable(mb, tpe);
 		getArg(q, mvar) = getArg(mat[m].mi, k);
 		getArg(q, nvar) = getArg(mat[n].mi, k);
@@ -1458,7 +1459,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		InstrPtr r;
 
 		p = old[i];
-
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
 			mat_set_prop(mb, p);
@@ -1651,7 +1651,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* subselect on insert, should use last tid only */
 		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0) {
-
 			r = copyInstruction(p);
 			getArg(r, fm) = getArg(mat[m].mi, mat[m].mi->argc-1);
 			pushInstruction(mb, r);
@@ -1674,7 +1673,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), mat, mtop)) >= 0){
-
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
 			if ((r = mat_apply3(mb, p, mat, m, n, o, fm, fn, fo)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
@@ -1685,7 +1683,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0){
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
-			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL) 
+			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
@@ -1694,7 +1692,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && bats == 1 && (isFragmentGroup(p) || isMapOp(p) || 
 		   (!getModuleId(p) && !getFunctionId(p) && p->barrier == 0 /* simple assignment */)) && p->retc != 2 && 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0){
-
 			if ((r = mat_apply1(mb, p, mat, mtop, m, fm)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;

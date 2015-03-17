@@ -22,7 +22,6 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
-
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif

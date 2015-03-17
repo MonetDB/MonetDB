@@ -51,7 +51,7 @@ exp_is_point_select(sql_exp *e)
 		sql_exp *l = e->l;
 
 		if (!is_func(l->type) && r->card <= CARD_AGGR)
- 			return 1;
+			return 1;
 	}
 	return 0;
 }

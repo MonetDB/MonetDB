@@ -416,8 +416,6 @@ MSserveClient(void *dummy)
 	MalBlkPtr mb;
 	Client c = (Client) dummy;
 	str msg = 0;
-//int i=0;
-//backend *be = (backend *) c->sqlcontext;
 
 	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
@@ -445,7 +443,6 @@ MSserveClient(void *dummy)
 		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
 		GDKfree(msg);
 	} else {
-
 		do {
 			do {
 				runScenario(c);
