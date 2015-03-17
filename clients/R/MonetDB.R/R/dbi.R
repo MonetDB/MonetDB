@@ -126,12 +126,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
 
-  if (getOption("monetdb.profile", T)) {
-    .profiler_enable(conn)
-  }
-  
+  # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
   return(conn)
-
 }, 
 valueClass="MonetDBConnection")
 
@@ -234,7 +230,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   env <- NULL
   if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
   # make the progress bar wait for querylog.define
-  if (getOption("monetdb.profile", T))  .profiler_arm()
+  # if (getOption("monetdb.profile", T))  .profiler_arm()
 
   # the actual request
   mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
@@ -526,13 +522,12 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
   while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(min(10000,n-length(res@env$data))))))
+                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
-    #print(paste0(length(res@env$data), " of ", info$rows));
-    if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
+    # if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
   # convert tuple string vector into matrix so we can access a single column efficiently
@@ -571,7 +566,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   attr(df, "row.names") <- c(NA_integer_, length(df[[1]]))
   class(df) <- "data.frame"
   
-  if (getOption("monetdb.profile", T))  .profiler_clear()
+  # if (getOption("monetdb.profile", T))  .profiler_clear()
 
   return(df)
 })
@@ -623,7 +618,8 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
-                                               locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
+                                               locked=FALSE, na.strings="", nrow.check=500, 
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
@@ -642,7 +638,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
   
-  dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   

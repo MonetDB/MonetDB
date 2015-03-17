@@ -854,6 +854,9 @@ comment "Cast to timestamp";
 command calc.timestamp( v:str, digits:int ) :timestamp 
 address str_2time_timestamp
 comment "cast to timestamp and check for overflow";
+command calc.timestamp( v:str, digits:int, has_tz:int ) :timestamp 
+address str_2time_timestamptz
+comment "cast to timestamp and check for overflow";
 command calc.timestamp( v:timestamp, digits:int ) :timestamp 
 address timestamp_2time_timestamp
 comment "cast timestamp to timestamp and check for overflow";
@@ -863,6 +866,9 @@ address batstr_2_timestamp
 comment "Cast to timestamp";
 command batcalc.timestamp( v:bat[:oid,:str], digits:int ) :bat[:oid,:timestamp] 
 address batstr_2time_timestamp
+comment "cast to timestamp and check for overflow";
+command batcalc.timestamp( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:timestamp] 
+address batstr_2time_timestamptz
 comment "cast to timestamp and check for overflow";
 command batcalc.timestamp( v:bat[:oid,:timestamp], digits:int ) :bat[:oid,:timestamp] 
 address battimestamp_2time_timestamp
@@ -888,6 +894,9 @@ comment "Cast to daytime";
 command calc.daytime( v:str, digits:int ) :daytime 
 address str_2time_daytime
 comment "cast to daytime and check for overflow";
+command calc.daytime( v:str, digits:int, has_tz:int ) :daytime 
+address str_2time_daytimetz
+comment "cast to daytime and check for overflow";
 command calc.daytime( v:daytime, digits:int ) :daytime 
 address daytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
@@ -897,6 +906,9 @@ address batstr_2_daytime
 comment "Cast to daytime";
 command batcalc.daytime( v:bat[:oid,:str], digits:int ) :bat[:oid,:daytime] 
 address batstr_2time_daytime
+comment "cast to daytime and check for overflow";
+command batcalc.daytime( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:daytime] 
+address batstr_2time_daytimetz
 comment "cast to daytime and check for overflow";
 command batcalc.daytime( v:bat[:oid,:daytime], digits:int ) :bat[:oid,:daytime] 
 address batdaytime_2time_daytime

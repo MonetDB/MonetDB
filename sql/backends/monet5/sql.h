@@ -245,14 +245,18 @@ sql5_export str batnil_2num_hge(bat *res, const bat *v, const int *len);
 sql5_export str nil_2time_timestamp(timestamp *res, const void *v, const int *len);
 sql5_export str batnil_2time_timestamp(bat *res, const bat *v, const int *len);
 sql5_export str str_2time_timestamp(timestamp *res, const str *v, const int *len);
+sql5_export str str_2time_timestamptz(timestamp *res, const str *v, const int *len, int *tz);
 sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const int *len);
+sql5_export str batstr_2time_timestamptz(bat *res, const bat *v, const int *len, int *tz);
 sql5_export str timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *len);
 sql5_export str battimestamp_2time_timestamp(bat *res, const bat *v, const int *len);
 
 sql5_export str nil_2time_daytime(daytime *res, const void *v, const int *len);
 sql5_export str batnil_2time_daytime(bat *res, const bat *v, const int *len);
 sql5_export str str_2time_daytime(daytime *res, const str *v, const int *len);
+sql5_export str str_2time_daytimetz(daytime *res, const str *v, const int *len, int *tz);
 sql5_export str batstr_2time_daytime(bat *res, const bat *v, const int *len);
+sql5_export str batstr_2time_daytimetz(bat *res, const bat *v, const int *len, int *tz);
 sql5_export str daytime_2time_daytime(daytime *res, const daytime *v, const int *len);
 sql5_export str batdaytime_2time_daytime(bat *res, const bat *v, const int *len);
 

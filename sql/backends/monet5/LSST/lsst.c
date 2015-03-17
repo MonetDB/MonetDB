@@ -494,7 +494,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	xr->T->nonil = 1;
 	xr->H->nonil = 1;
 
-	for (lo = xl->hseqbase; l < lend; lo++, l++) {
+	for (lo = bl->hseqbase; l < lend; lo++, l++) {
 		if (*l != lng_nil) {
 			lhtm = *l >> shift;
 			r= (lng*) Tloc(br, BUNfirst(br));

@@ -344,7 +344,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const char *lvars, *rvars;
 	int lwidth, rwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *v, *prev = NULL;
 	BUN nl, nr;
 	BUN total;		/* number of rows in l we scan */
@@ -1273,7 +1273,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	const char *lvars;
 	int lwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	oid lval = oid_nil;	/* hold value if l has dense tail */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
@@ -1349,7 +1349,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		return GDK_SUCCEED;
 	}
 
-	if (BATprepareHash(r))
+	if (BAThash(r, 0) == GDK_FAIL)
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
@@ -1615,7 +1615,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 	const char *lvars, *rvars;
 	int lwidth, rwidth;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *vl, *vr;
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
@@ -1841,7 +1841,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int lwidth, rwidth;
 	int t;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	const char *vl, *vr;
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
@@ -2622,7 +2622,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	BUN n;
 	oid lo, hi;
 	BATiter ri, bni;
-	int (*cmp)(const void *, const void *) = BATatoms[r->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = ATOMcompare(r->ttype);
 	const void *nil = ATOMnilptr(r->ttype);
 	const void *v;
 	BUN prev = BUN_NONE;

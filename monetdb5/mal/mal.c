@@ -34,7 +34,6 @@ MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
 MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
-MT_Sema		mal_parallelism;
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -77,11 +76,6 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 #endif
-	/* "/2" is arbitrarily used / chosen, as on systems with
-	 * hyper-threading enabled, using all hardware threads rather than
-	 * "only" all physical cores does not necessarily yield a linear
-	 * performance benefit */
-	MT_sema_init( &mal_parallelism, (GDKnr_threads > 1 ? GDKnr_threads/2: 1), "mal_parallelism");
 
 	tstAligned();
 	MCinit();

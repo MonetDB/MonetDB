@@ -321,7 +321,7 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
-	buf.cmp = BATatoms[tpe].atomCmp;
+	buf.cmp = ATOMcompare(tpe);
 	buf.base = base;
 
 	if (ATOMvarsized(tpe)) {
@@ -375,7 +375,7 @@ GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int t
 
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
-	buf.cmp = BATatoms[tpe].atomCmp;
+	buf.cmp = ATOMcompare(tpe);
 	buf.base = base;
 
 	if (ATOMvarsized(tpe)) {

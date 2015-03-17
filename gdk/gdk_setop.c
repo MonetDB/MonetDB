@@ -130,7 +130,7 @@
 		BATiter ri = bat_iterator(BATmirror(r));		\
 									\
 		ALGODEBUG fprintf(stderr, "#BATins_%s%s: hashcheck[%s, %s, %s, %s, k];\n", #a1, #a2, #a1, #a2, #a3, #a4); \
-		if (BATprepareHash(BATmirror(r))) {			\
+		if (BAThash(BATmirror(r), 0) == GDK_FAIL) {		\
 			goto bunins_failed;				\
 		}							\
 		BATloop(l, p1, q1) {					\
@@ -308,8 +308,8 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		hash = FALSE;						\
 	}								\
 									\
-	merge = BATatoms[l->htype].atomCmp;				\
-	cmp = BATatoms[l->ttype].atomCmp;				\
+	merge = ATOMcompare(l->htype);					\
+	cmp = ATOMcompare(l->ttype);					\
 	hnil = ATOMnilptr(l->htype);					\
 	tnil = ATOMnilptr(l->ttype);					\
 	(void) cmp;							\

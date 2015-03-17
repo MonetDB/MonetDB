@@ -3209,7 +3209,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-		if (BATprepareHash(b))
+		if (BAThash(b, 0) == GDK_FAIL)
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
@@ -3313,7 +3313,7 @@ nil_2time_daytime(daytime *res, const void *v, const int *digits)
 }
 
 str
-str_2time_daytime(daytime *res, const str *v, const int *digits)
+str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(daytime), pos;
 
@@ -3321,10 +3321,20 @@ str_2time_daytime(daytime *res, const str *v, const int *digits)
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	pos = daytime_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = daytime_tz_fromstr(*v, &len, &res);
+	else
+		pos = daytime_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "daytime", "22007!daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime(res, res, digits);
+}
+
+str
+str_2time_daytime(daytime *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_daytimetz(res, v, digits, &zero);
 }
 
 str
@@ -3379,7 +3389,7 @@ nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 }
 
 str
-str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(timestamp), pos;
 
@@ -3387,10 +3397,20 @@ str_2time_timestamp(timestamp *res, const str *v, const int *digits)
 		*res = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = timestamp_tz_fromstr(*v, &len, &res);
+	else
+		pos = timestamp_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "timestamp", "22007!timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);
+}
+
+str
+str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_timestamptz(res, v, digits, &zero);
 }
 
 str
@@ -3891,8 +3911,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
-	ocmp = BATatoms[b->ttype].atomCmp;
-	gcmp = BATatoms[g->ttype].atomCmp;
+	ocmp = ATOMcompare(b->ttype);
+	gcmp = ATOMcompare(g->ttype);
 	oc = BUNtail(bi, BUNfirst(b));
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g)) {
@@ -3949,7 +3969,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, "bat not sorted");
 
 	bi = bat_iterator(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {

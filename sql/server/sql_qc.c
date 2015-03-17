@@ -183,7 +183,7 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 			   (!(tp->type->eclass == EC_DEC &&
 			      at->type->eclass == EC_NUM &&
 			      tp->type->localtype >= at->type->localtype &&
-		             (at->digits <= tp->digits || atom_num_digits(a) <= tp->digits) && at->scale <= tp->scale)) &&
+		             atom_num_digits(a)+tp->scale <= tp->digits)) &&
 			/*
 			   (!(tp->type->eclass == EC_DEC &&
 			      at->type->eclass == EC_DEC &&

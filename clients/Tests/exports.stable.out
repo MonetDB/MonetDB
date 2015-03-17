@@ -2711,6 +2711,7 @@ str timestampRef;
 int timestamp_fromstr(const char *buf, int *len, timestamp **ret);
 timestamp *timestamp_nil;
 int timestamp_tostr(str *buf, int *len, const timestamp *val);
+int timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret);
 int timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone);
 str tinterRef;
 str tintersectRef;

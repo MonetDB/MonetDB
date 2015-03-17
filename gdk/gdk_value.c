@@ -250,7 +250,7 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 
 	if (tpe == TYPE_ptr)
 		return 0;	/* ignore comparing C pointers */
-	cmp = BATatoms[tpe].atomCmp;
+	cmp = ATOMcompare(tpe);
 	nilptr = ATOMnilptr(tpe);
 	pp = VALptr(p);
 	pq = VALptr(q);
@@ -294,5 +294,5 @@ VALisnil(const ValRecord *v)
 	default:
 		break;
 	}
-	return (*BATatoms[v->vtype].atomCmp)(VALptr(v), ATOMnilptr(v->vtype)) == 0;
+	return (*ATOMcompare(v->vtype))(VALptr(v), ATOMnilptr(v->vtype)) == 0;
 }

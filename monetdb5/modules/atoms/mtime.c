@@ -810,6 +810,41 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 }
 
 int
+timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret)
+{
+	const char *s = buf;
+	int pos = timestamp_fromstr(s, len, ret);
+	lng offset = 0;
+
+	if (!*ret || *ret == timestamp_nil)
+		return pos;
+
+	s = buf + pos;
+	pos = 0;
+	while (GDKisspace(*s))
+		s++;
+	/* incase of gmt we need to add the time zone */
+	if (fleximatch(s, "gmt", 0) == 3) {
+		s += 3;
+	}
+	if ((s[0] == '-' || s[0] == '+') &&
+		GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
+		((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
+		offset = (((s[1] - '0') * (lng) 10 + (s[2] - '0')) * (lng) 60 + (s[pos] - '0') * (lng) 10 + (s[pos + 1] - '0')) * (lng) 60000;
+		pos += 2;
+		if (s[0] != '-')
+			offset = -offset;
+		s += pos;
+	} else {
+		/* if no tzone is specified; work with the local */
+		offset = get_offset(&tzone_local) * (lng) -60000;
+	}
+	MTIMEtimestamp_add(*ret, *ret, &offset);
+	return (int) (s - buf);
+}
+
+
+int
 timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone)
 {
 	int len1, len2, big = 128;

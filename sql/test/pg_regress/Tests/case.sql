@@ -109,16 +109,16 @@ SELECT * FROM CASE_TBL WHERE COALESCE(f,i) = 4;
 
 SELECT * FROM CASE_TBL WHERE NULLIF(f,i) = 2;
 
-SELECT COALESCE(a.f, b.i, b.j)
-  FROM CASE_TBL a, CASE2_TBL b;
+SELECT distinct COALESCE(a.f, b.i, b.j)
+  FROM CASE_TBL a, CASE2_TBL b  Order By COALESCE(a.f, b.i, b.j);
 
 SELECT *
   FROM CASE_TBL a, CASE2_TBL b
   WHERE COALESCE(a.f, b.i, b.j) = 2;
 
-SELECT '' AS Five, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
+SELECT distinct '' AS Siksteen, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
   NULLIF(b.i, 4) AS "NULLIF(b.i,4)"
-  FROM CASE_TBL a, CASE2_TBL b;
+  FROM CASE_TBL a, CASE2_TBL b  Order By 2,3;
 
 SELECT '' AS "Two", *
   FROM CASE_TBL a, CASE2_TBL b

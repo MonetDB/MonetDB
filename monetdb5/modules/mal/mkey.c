@@ -74,9 +74,9 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	default:
 		if (ATOMextern(tpe))
-			*res = (*BATatoms[tpe].atomHash)(*(ptr*)val);
+			*res = ATOMhash(tpe, *(ptr*)val);
 		else
-			*res = (*BATatoms[tpe].atomHash)(val);
+			*res = ATOMhash(tpe, val);
 		break;
 	}
 	return MAL_SUCCEED;
@@ -163,8 +163,8 @@ MKEYbathash(bat *res, const bat *bid)
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
-		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
-		void *nil = BATatoms[b->ttype].atomNull;
+		int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+		void *nil = ATOMnilptr(b->ttype);
 		BUN i;
 		const void *v;
 
@@ -234,9 +234,9 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = (*BATatoms[tpe].atomHash)(*(ptr*)pval);
+			val = ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = (*BATatoms[tpe].atomHash)(pval);
+			val = ATOMhash(tpe, pval);
 		break;
 	}
 	*dst = GDK_ROTATE(h, lbit, rbit, mask) ^ val;
@@ -431,9 +431,9 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = (*BATatoms[tpe].atomHash)(*(ptr*)pval);
+			val = ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = (*BATatoms[tpe].atomHash)(pval);
+			val = ATOMhash(tpe, pval);
 		break;
 	}
 

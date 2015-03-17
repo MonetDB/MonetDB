@@ -47,6 +47,8 @@ __hidden int ATOMunknown_find(const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckhash(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
@@ -131,7 +133,7 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
+__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHremove(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -248,15 +250,6 @@ extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
-
-/* The base type is the storage type if the comparison function and
- * nil values are the same as those of the storage type; otherwise it
- * is the type itself. */
-#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
-			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
-			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
-			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
-			 ATOMstorage(t) : (t))
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 

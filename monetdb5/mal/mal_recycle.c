@@ -620,7 +620,7 @@ lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
-    cmp = BATatoms[tpe].atomCmp;
+    cmp = ATOMcompare(tpe);
     nilptr = ATOMnilptr(tpe);
     pp = VALptr(p);
     pq = VALptr(q);
@@ -652,7 +652,7 @@ greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
-    cmp = BATatoms[tpe].atomCmp;
+    cmp = ATOMcompare(tpe);
     nilptr = ATOMnilptr(tpe);
     pp = VALptr(p);
     pq = VALptr(q);
@@ -721,7 +721,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 				getFunctionId(p) == likesubselectRef ||
 				getFunctionId(p) == thetasubselectRef ) &&
 				getVarConstant(recycleBlk, getArg(q,1)).val.bval == stk->stk[getArg(p,1)].val.bval &&
-				BATatoms[getArgType(recycleBlk,q,2)].linear )
+				ATOMlinear(getArgType(recycleBlk,q,2)) )
 		{ 	bit	subsmp = 0;
 			/* Time to check for the inclusion constraint */
 			if ( getFunctionId(p) == subselectRef )

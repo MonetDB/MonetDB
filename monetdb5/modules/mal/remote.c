@@ -839,7 +839,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 				mod, fcn);
 	}
 
-	qry = function2str(sym->def, 0);
+	qry = function2str(sym->def,  LIST_MAL_CALL );
 #ifdef _DEBUG_REMOTE
 	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif

@@ -2591,6 +2591,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 					prev = grps[p];
 			}
 		}
+		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
 			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}

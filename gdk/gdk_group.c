@@ -186,7 +186,6 @@
 	/* KEEP   */	pv = v					\
 	)
 
-
 /* If a hash table exists on b we use it.
  *
  * The algorithm is simple.  We go through b and for each value we
@@ -283,7 +282,7 @@
 				     hb != HASHnil(hs) &&		\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = HASHgetlink(hs,hb)) {		\
-					assert( HASHgetlink(hs,hb) == HASHnil(hs) \
+					assert(HASHgetlink(hs,hb) == HASHnil(hs) \
 					       || HASHgetlink(hs,hb) < hb); \
 					if (COMP) {		\
 						oid grp = ngrps[hb - r]; \
@@ -302,7 +301,7 @@
 					hb = HASHnil(hs);		\
 				}					\
 			} else if (grps) {				\
-				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
+				prb = (prb ^ (BUN) grps[p-r] << bits) & hs->mask; \
 				for (hb = HASHget(hs,prb);		\
 				     hb != HASHnil(hs);			\
 				     hb = HASHgetlink(hs,hb)) {		\
@@ -735,11 +734,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(sgrps);
-	} else if (b->T->hash ||
+	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    !BATprepareHash(b)) ||
+		    BAThash(b, 0) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
-		    BBPdescriptor(-parent)->T->hash)) {
+		    BATcheckhash(BBPdescriptor(-parent)))) {
 		BUN lo, hi;
 
 		/* we already have a hash table on b, or b is
@@ -833,6 +832,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(t) == 1) {
+			mask = 1 << 16;
+			bits = 8;
+		} else if (ATOMsize(t) == 2) {
+			mask = 1 << 16;
+			bits = 8;
+		} else {
+			mask = HASHmask(b->batCount);
+			bits = 0;
+		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
@@ -840,7 +849,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+				  MAX(HASHmask(b->batCount), 1 << 16), BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

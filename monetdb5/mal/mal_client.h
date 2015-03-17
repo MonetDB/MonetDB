@@ -28,8 +28,8 @@
 /*
  * The prompt structure is designed to simplify recognition of the
  * language framework for interaction. For direct console access it is a
- * short printable ascii string. For access through an API we assume the
- * prompt is an ascii string surrounded by a \001 character. This
+ * short printable ASCII string. For access through an API we assume the
+ * prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
@@ -58,8 +58,8 @@ typedef struct CLIENT {
 	/*
 	 * The actions for a client is separated into several stages:
 	 * parsing, strategic optimization, tactical optimization, and
-	 * execution. The routines to handle them are obtained once the
-	 * scenario is choosen. Each stage carries a state descriptor, but
+	 * execution.  The routines to handle them are obtained once the
+	 * scenario is chosen.  Each stage carries a state descriptor, but
 	 * they share the IO state description. A backup structure is
 	 * provided to temporarily switch to another scenario.
 	 */
