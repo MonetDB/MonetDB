@@ -441,7 +441,7 @@ setClass("MonetDBResult", representation("DBIResult", env="environment"))
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
   
-  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
+  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
     return("numeric")
   }
   if (dbType %in% c("CHAR", "VARCHAR", "CLOB", "STR")) {
