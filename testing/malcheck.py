@@ -50,6 +50,7 @@ pdecls = {}
 def process(f):
     data = open(f).read()
     if f.endswith('.mal'):
+        data = re.sub(r'[ \t]*#.*', '', data) # remove comments
         res = comreg.search(data)
         while res is not None:
             malf, args, rets, func = res.groups()
