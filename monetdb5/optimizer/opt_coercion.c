@@ -135,7 +135,14 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
 		}
 #endif
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef && p->retc == 1 && p->argc == 2 ){
+		if ( getModuleId(p) == batcalcRef
+		     && getFunctionId(p) == dblRef
+		     && p->retc == 1
+		     && ( p->argc == 2
+		          || ( p->argc == 3
+		               && isVarConstant(mb,getArg(p,1))
+		               && getArgType(mb,p,1) == TYPE_int
+		               && getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_dbl;
