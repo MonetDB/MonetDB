@@ -134,7 +134,9 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		     && isVarConstant(mb,getArg(p,3))
 		     && getArgType(mb,p,3) == TYPE_int
 		     && isVarConstant(mb,getArg(p,4))
-		     && getArgType(mb,p,4) == TYPE_int ){
+		     && getArgType(mb,p,4) == TYPE_int
+		     /* from-scale == to-scale, i.e., no scale change */
+		     && getVarValue(mb, getArg(p,1)) == getVarValue(mb, getArg(p,4)) ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
