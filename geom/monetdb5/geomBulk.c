@@ -27,7 +27,7 @@
 /********** One input **********/
 /*******************************/
 
-str geom_2_geom_bat(int* outBAT_id, int* inBAT_id, int* columnType, int* columnSRID) {
+str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, int* columnType, int* columnSRID) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL, *outWKB = NULL;
 	BUN p =0, q =0;
@@ -140,7 +140,7 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 /*****************************************************************************/
 /********************* IN: mbr - OUT: double - FLAG :int *********************/
 /*****************************************************************************/
-str wkbCoordinateFromMBR_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
+str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	mbr *inMBR = NULL;
 	double outDbl = 0.0;
@@ -645,7 +645,7 @@ str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 /********* Two inputs **********/
 /*******************************/
 
-str wkbBox2D_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+str wkbBox2D_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
@@ -711,7 +711,7 @@ clean:
 	return ret;
 }
 
-str wkbContains_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+str wkbContains_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
@@ -775,7 +775,7 @@ clean:
 	return ret;
 }
 
-str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
+str wkbContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p=0, q=0;
@@ -825,7 +825,7 @@ str wkbContains_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 
 }
 
-str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
+str wkbContains_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWKB) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p=0, q=0;
@@ -877,7 +877,7 @@ str wkbContains_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
 
 
 /*
-str wkbFromWKB_bat(int* outBAT_id, int* inBAT_id) {
+str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb **inWKB = NULL, *outWKB = NULL;
 	BUN i;
@@ -1022,7 +1022,7 @@ clean:
 
 
 /* sets the srid of the geometry - BULK version*/
-str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
+str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p=0, q=0;
 	BATiter inBAT_iter;
@@ -1073,7 +1073,7 @@ str wkbSetSRID_bat(int* outBAT_id, int* inBAT_id, int* srid) {
 	return MAL_SUCCEED;
 }
 
-str wkbDistance_bat(int* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
+str wkbDistance_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i=0;
@@ -1138,7 +1138,7 @@ clean:
 
 }
 
-str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
+str wkbDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p=0, q=0;
@@ -1186,14 +1186,14 @@ str wkbDistance_geom_bat(int* outBAT_id, wkb** geomWKB, int* inBAT_id) {
 	return MAL_SUCCEED;
 }
 
-str wkbDistance_bat_geom(int* outBAT_id, int* inBAT_id, wkb** geomWKB) {
+str wkbDistance_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWKB) {
 	return wkbDistance_geom_bat(outBAT_id, geomWKB, inBAT_id);
 }
 
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **//*
-str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int* bBAT_id) {
+str wkbFilter_bat(bat* aBATfiltered_id, bat* bBATfiltered_id, bat* aBAT_id, bat* bBAT_id) {
 	BAT *aBATfiltered = NULL, *bBATfiltered = NULL, *aBAT = NULL, *bBAT = NULL;
 	wkb *aWKB = NULL, *bWKB = NULL;
 	bit outBIT;
@@ -1284,7 +1284,7 @@ str wkbFilter_bat(int* aBATfiltered_id, int* bBATfiltered_id, int* aBAT_id, int*
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
-str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) {
+str wkbFilter_geom_bat(bat* BATfiltered_id, wkb** geomWKB, bat* BAToriginal_id) {
 	BAT *BATfiltered = NULL, *BAToriginal = NULL;
 	wkb *WKBoriginal = NULL;
 	BATiter BAToriginal_iter;
@@ -1375,14 +1375,14 @@ str wkbFilter_geom_bat(int* BATfiltered_id, wkb** geomWKB, int* BAToriginal_id) 
 
 }
 
-str wkbFilter_bat_geom(int* BATfiltered_id, int* BAToriginal_id, wkb** geomWKB) {
+str wkbFilter_bat_geom(bat* BATfiltered_id, bat* BAToriginal_id, wkb** geomWKB) {
 	return wkbFilter_geom_bat(BATfiltered_id, geomWKB, BAToriginal_id);
 }
 
 /* MBR */
 
 /* Creates the BAT with mbrs from the BAT with geometries. */
-str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
+str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id) {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	mbr *outMBR = NULL;
@@ -1436,7 +1436,7 @@ str wkbMBR_bat(int* outBAT_id, int* inBAT_id) {
 }
 
  
-str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) {
+str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx) {
 	str err = NULL;
 	int inBAT_mbr_id = 0; //the id of the bat with the mbrs
 
@@ -1452,7 +1452,7 @@ str wkbCoordinateFromWKB_bat(int *outBAT_id, int *inBAT_id, int* coordinateIdx) 
 	return wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
 }
 
-str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
+str wkbMakeLine_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i;
@@ -1521,7 +1521,7 @@ str wkbMakeLine_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
 	return MAL_SUCCEED;
 }
 
-str wkbUnion_bat(int* outBAT_id, int* aBAT_id, int* bBAT_id) {
+str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i;

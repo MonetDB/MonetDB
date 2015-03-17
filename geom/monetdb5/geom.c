@@ -988,7 +988,7 @@ static str segmentizeGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* ge
 	return MAL_SUCCEED;
 }
 
-str wkbSegmentize(wkb** outWKB, wkb** geomWKB, double *sz) {
+str wkbSegmentize(wkb** outWKB, wkb** geomWKB, dbl *sz) {
 	GEOSGeometry* outGeometry;
 	GEOSGeom geosGeometry;
 	str err;
@@ -1278,7 +1278,7 @@ static str translateGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geo
 
 
 
-str wkbTranslate(wkb** outWKB, wkb** geomWKB, double* dx, double* dy, double* dz) {
+str wkbTranslate(wkb** outWKB, wkb** geomWKB, dbl* dx, dbl* dy, dbl* dz) {
 	GEOSGeometry* outGeometry;
 	GEOSGeom geosGeometry;
 	str err;
@@ -1316,7 +1316,7 @@ str wkbTranslate(wkb** outWKB, wkb** geomWKB, double* dx, double* dy, double* dz
 //It creates a Delaunay triangulation
 //flag = 0 => returns a collection of polygons
 //flag = 1 => returns a multilinestring
-str wkbDelaunayTriangles(wkb** outWKB, wkb** geomWKB, double* tolerance, int* flag){
+str wkbDelaunayTriangles(wkb** outWKB, wkb** geomWKB, dbl* tolerance, int* flag){
 	GEOSGeometry* outGeometry;
 	GEOSGeom geosGeometry;
 
@@ -1477,7 +1477,7 @@ static str dumpGeometriesGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* 
 	return MAL_SUCCEED;
 }
 
-str wkbDump(int* idBAT_id, int* geomBAT_id, wkb** geomWKB) {
+str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb** geomWKB) {
 	BAT *idBAT = NULL, *geomBAT = NULL;
 	GEOSGeom geosGeometry;
 	unsigned int geometriesNum;
@@ -1743,7 +1743,7 @@ static str dumpPointsGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geos
 	return MAL_SUCCEED;
 }
 
-str wkbDumpPoints(int* idBAT_id, int* geomBAT_id, wkb** geomWKB) {
+str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb** geomWKB) {
 	BAT *idBAT = NULL, *geomBAT = NULL;
 	GEOSGeom geosGeometry;
 	int check =0;
@@ -1839,36 +1839,44 @@ str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID) 
 }
 
 /*check if the geometry has z coordinate*/
-void geoHasZ(int* res, int* info) {
+str geoHasZ(int* res, int* info) {
 	if(geometryHasZ(*info)) *res=1;
 	else *res=0;
+	return MAL_SUCCEED;
 
 }
 /*check if the geometry has m coordinate*/
-void geoHasM(int* res, int* info) {
+str geoHasM(int* res, int* info) {
 	if(geometryHasM(*info)) *res=1;
 	else *res=0;
+	return MAL_SUCCEED;
 }
 /*check the geometry subtype*/
 /*returns the length of the resulting string*/
-void geoGetType(char** res, int* info, int* flag) {
+str geoGetType(char** res, int* info, int* flag) {
 	int type = (*info >> 2);
 	const char* typeStr=geom_type2str(type, *flag) ;
 
 	*res=GDKmalloc(strlen(typeStr));
+	if (*res == NULL)
+		throw(MAL, "geo.getType", MAL_MALLOC_FAIL);
 	strcpy(*res, typeStr);
+	return MAL_SUCCEED;
 }
 
 /* initialise geos */
-bat *geom_prelude(void) {
+str geom_prelude(void *ret) {
+	(void) ret;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 /* clean geos */
-void geom_epilogue(void) {
+str geom_epilogue(void *ret) {
+	(void) ret;
 	libgeom_exit();
+	return MAL_SUCCEED;
 }
 
 /* Check if fixed-sized atom mbr is null */
@@ -2432,7 +2440,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	return MAL_SUCCEED;
 }
 
-str wkbMakePoint(wkb** out, double *x, double *y, double *z, double *m, int *zmFlag) {
+str wkbMakePoint(wkb** out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag) {
 	GEOSGeom geosGeometry = NULL;
 	GEOSCoordSequence *seq = NULL;
 
@@ -2562,7 +2570,7 @@ str wkbSetSRID(wkb** resultGeomWKB, wkb **geomWKB, int* srid) {
 }
 
 /* depending on the specific function it returns the X,Y or Z coordinate of a point */
-str wkbGetCoordinate(double *out, wkb **geom, int *dimNum) {	
+str wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum) {	
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 	const GEOSCoordSequence* gcs;
 
@@ -2628,7 +2636,7 @@ str wkbEnvelope(wkb **out, wkb **geom) {
 	return wkbBasic(out, geom, GEOSEnvelope, "geom.Envelope");
 }
 
-str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xmax, double* ymax, int* srid) {
+str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl* xmax, dbl* ymax, int* srid) {
 	GEOSGeom geosGeometry, linearRingGeometry;
  	
 	//create the coordinates sequence
@@ -2664,7 +2672,7 @@ str wkbEnvelopeFromCoordinates(wkb** out, double* xmin, double* ymin, double* xm
 	return MAL_SUCCEED;
 }
 
-str wkbMakePolygon(wkb** out, wkb** external, int* internalBAT_id, int* srid) {
+str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid) {
 	GEOSGeom geosGeometry, externalGeometry, linearRingGeometry;
 	bit closed = 0;
 	GEOSCoordSeq coordSeq_copy;
@@ -2858,7 +2866,7 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 }
 
 //Gets a BAT with geometries and returns a single LineString
-str wkbMakeLineAggr(wkb** outWKB, int* inBAT_id) {
+str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id) {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN i;
@@ -3179,7 +3187,7 @@ str wkbExteriorRing(wkb **exteriorRingWKB, wkb **geom) {
 }
 
 /* Returns the n-th interior ring of a polygon */
-str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, short* ringNum) {
+str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int* ringNum) {
 	GEOSGeom geosGeometry = NULL;
 	const GEOSGeometry* interiorRingGeometry;
 	int rN = -1;
@@ -3752,7 +3760,7 @@ str wkbUnion(wkb **out, wkb **a, wkb **b) {
 }
 
 //Gets a BAT with geometries and returns a single LineString
-str wkbUnionAggr(wkb** outWKB, int* inBAT_id) {
+str wkbUnionAggr(wkb** outWKB, bat* inBAT_id) {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN i;
@@ -4082,7 +4090,7 @@ str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b) {
 	return MAL_SUCCEED;
 }
 
-str wkbDWithin(bit* out, wkb** geomWKB_a, wkb** geomWKB_b, double* distance) {
+str wkbDWithin(bit* out, wkb** geomWKB_a, wkb** geomWKB_b, dbl* distance) {
 	double distanceComputed;
 	str err;
 
@@ -4635,7 +4643,7 @@ str mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB) {
 }
 
 /* returns the Euclidean distance of the centroids of the boxes */
-str mbrDistance(double *out, mbr **b1, mbr **b2) {
+str mbrDistance(dbl *out, mbr **b1, mbr **b2) {
 	double b1_Cx = 0.0, b1_Cy = 0.0, b2_Cx =0.0, b2_Cy=0.0;
 
 	if (mbr_isnil(*b1) || mbr_isnil(*b2)) {
@@ -4656,7 +4664,7 @@ str mbrDistance(double *out, mbr **b1, mbr **b2) {
 }
 
 /*returns the Euclidean distance of the centroids of the mbrs of the two geometries */
-str mbrDistance_wkb(double *out, wkb **geom1WKB, wkb **geom2WKB) {
+str mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB) {
 	mbr *geom1MBR = NULL, *geom2MBR = NULL;
 	str ret = MAL_SUCCEED;
 

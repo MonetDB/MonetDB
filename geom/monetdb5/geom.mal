@@ -680,9 +680,6 @@ command Dimension(w:bat[:oid,:wkb]) :bat[:oid,:int] address wkbDimension_bat;
 
 
 
-command pbsmIndexCreate(x:bat[:oid,:dbl], y:bat[:oid,:dbl], xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :bat[:oid,:int] address pbsmIndexCreate_bat;
-command geom.pbsmIndexLoad() address pbsmIndexLoad_bat;
-
 #the 1 version of the functions use geos the 2 versions have custom implementations
 
 command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_bat;
