@@ -223,16 +223,13 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
 		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
+		(l)->contention++;					\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l, n)						\
 	do {								\
 		if (_spincnt == 1024)					\
 			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
-	} while (0)
-#define _DBG_LOCK_COUNT_1(l)			\
-	do {					\
-		(l)->contention++;		\
-		(l)->sleep += _spincnt >= 1024;	\
+		(l)->sleep++;						\
 	} while (0)
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -295,7 +292,6 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		((void) (n))
 #define _DBG_LOCK_CONTENTION(l, n)	((void) (n))
 #define _DBG_LOCK_SLEEP(l, n)		((void) (n))
-#define _DBG_LOCK_COUNT_1(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l, n)		((void) (n))
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
@@ -313,10 +309,9 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			do {						\
 				if (++_spincnt >= 1024) {		\
 					_DBG_LOCK_SLEEP(l, n);		\
-					MT_sleep_ms(_spincnt >> 10);	\
+					MT_sleep_ms(1);			\
 				}					\
 			} while (ATOMIC_TAS((l)->lock, dummy, n) != 0); \
-			_DBG_LOCK_COUNT_1(l);				\
 		}							\
 		_DBG_LOCK_LOCKER(l, n);					\
 		_DBG_LOCK_COUNT_2(l);					\
