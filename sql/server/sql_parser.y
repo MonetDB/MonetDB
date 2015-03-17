@@ -114,6 +114,7 @@ int yydebug=1;
 	copyfrom_stmt
 	table_def
 	view_def
+/*SciQL*/ array_def
 	query_expression
 	role_def
 	type_def
@@ -165,13 +166,16 @@ int yydebug=1;
 	revoke
 	operation
 	table_content_source
+/*SciQL*/array_content_source
 	table_element
+/*SciQL*/	array_dimension
 	add_table_element
 	alter_table_element
 	drop_table_element
 	table_constraint
 	table_constraint_type
 	column_def
+/*SciQL*/ dimension_def
 	column_options
 	column_option
 	column_constraint
@@ -262,6 +266,8 @@ int yydebug=1;
 	XML_value_expression
 	XML_primary
 	opt_comma_string_value_expression
+/*SciQL*/ dimension
+/*SciQL*/ range_term	
 
 %type <type>
 	data_type
@@ -335,6 +341,9 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
+/*SciQL*/	array_element_list
+/*SciQL*/	array_dimension_list
+/*SciQL*/ range_exp
 	as_subquery_clause
 	column_exp_commalist
 	column_option_list
@@ -567,6 +576,10 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
 
 %token X_BODY 
+
+/* SciQL tokens */
+%token ARRAY DIMENSION
+
 %%
 
 sqlstmt:
@@ -665,7 +678,7 @@ sqlstmt:
 
 
 create:
-    CREATE 		
+    CREATE 	
 
 drop:
     DROP 		
@@ -1090,6 +1103,7 @@ create_statement:
    create role_def 	{ $$ = $2; }
  | create table_def 	{ $$ = $2; }
  | create view_def 	{ $$ = $2; }
+ | create array_def { $$ = $2; }
  | type_def
  | func_def
  | index_def
@@ -1392,6 +1406,19 @@ table_def:
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
+array_def:
+    ARRAY qname array_content_source 
+	{ 	int commit_action = CA_COMMIT;
+	  	dlist *l = L();
+
+	  	append_int(l, SQL_PERSIST);
+	  	append_list(l, $2);
+	  	append_symbol(l, $3);
+	  	append_int(l, commit_action);
+	  	append_string(l, NULL);
+	  	$$ = _symbol_create_list( SQL_CREATE_ARRAY, l ); }
+;
+
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
  |  TEMP		{ $$ = SQL_LOCAL_TEMP; }
@@ -1410,6 +1437,11 @@ opt_on_commit: /* only for temporary tables */
 
 table_content_source:
     '(' table_element_list ')'	{ $$ = _symbol_create_list( SQL_CREATE_TABLE, $2); }
+ |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
+ ;
+
+array_content_source:
+    '(' array_element_list ')'	{ $$ = _symbol_create_list( SQL_CREATE_ARRAY, $2); }
  |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
  ;
 
@@ -1435,13 +1467,76 @@ table_element_list:
 			{ $$ = append_symbol( $1, $3 ); }
  ;
 
+/*the list of elements in the array has two parts, the dimensions and the values */
+/*the values are normal table elements but the dimensions need special care */
+array_element_list:
+    array_dimension_list ',' table_element_list
+			{ append_list(L(), $1);
+				$$ = append_list($$, $3); }
+ ;
+
+array_dimension_list:
+    array_dimension
+			{ $$ = append_symbol(L(), $1); }
+ |  array_dimension_list ',' array_dimension
+			{ $$ = append_symbol( $1, $3 ); }
+ ;
+
 add_table_element: column_def | table_constraint ;
 table_element: add_table_element | column_options | like_table ;
+array_dimension: dimension_def ;
 
 serial_or_bigserial:
 	SERIAL       { $$ = 0; }
  |	BIGSERIAL    { $$ = 1; }
  ;
+
+dimension_def:
+	column data_type dimension 
+	{
+		dlist *l = L();
+		append_string(l, $1);
+		append_type(l, &$2);
+		append_symbol(l, $3);
+		$$ = _symbol_create_list(SQL_DIMENSION, l);
+	}
+;
+
+dimension:
+    DIMENSION range_exp
+    {
+        $$= _symbol_create_list(SQL_RANGE, $2);
+    }
+  | DIMENSION {
+        $$= _symbol_create_list(SQL_RANGE, L());
+    }
+;
+
+range_exp:
+    '[' range_term ':' range_term ':' range_term ']'
+    {
+        dlist *l = L();
+        append_symbol(l, $2);
+        append_symbol(l, $4);
+        $$ = append_symbol(l, $6);
+    }
+    | '[' range_term ':' range_term ']'
+    {
+        dlist *l = L();
+        append_symbol(l, $2);
+        $$ = append_symbol(l, $4);
+    }
+    | '[' range_term ']'
+    {
+        $$= append_symbol(L(), $2);
+    }
+;
+
+range_term:
+    scalar_exp { $$= $1; }
+  | '*' { $$= NULL; }
+;
+	
 
 column_def:
 	column data_type opt_column_def_opt_list
@@ -5570,6 +5665,7 @@ char *token2string(int token)
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_ARRAY);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -5603,6 +5699,7 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
+	SQL(ARRAY);
 	SQL(TYPE);
 	SQL(CASE);
 	SQL(CAST);

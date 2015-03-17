@@ -374,6 +374,9 @@ scanner_init_keywords(void)
 	keywords_insert("URI", URI);
 	keywords_insert("XMLAGG", XMLAGG);
 
+	/*SciQL*/
+	keywords_insert("ARRAY", ARRAY);
+	keywords_insert("DIMENSION", DIMENSION);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -880,6 +883,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '=':
 	case '[':
 	case ']':
+	case ':':
 		lc->started = 1;
 		return scanner_token(lc, cur);
 	case '@':
