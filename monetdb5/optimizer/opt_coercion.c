@@ -128,22 +128,25 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if ( getModuleId(p) == batcalcRef
 		     && getFunctionId(p) == hgeRef
 		     && p->retc == 1
-		     && p->argc == 5
-		     && isVarConstant(mb,getArg(p,1))
-		     && getArgType(mb,p,1) == TYPE_int
-		     && isVarConstant(mb,getArg(p,3))
-		     && getArgType(mb,p,3) == TYPE_int
-		     && isVarConstant(mb,getArg(p,4))
-		     && getArgType(mb,p,4) == TYPE_int
-		     /* from-scale == to-scale, i.e., no scale change */
-		     && getVarValue(mb, getArg(p,1)) == getVarValue(mb, getArg(p,4)) ){
+		     && ( p->argc == 2
+		          || ( p->argc == 5
+		               && isVarConstant(mb,getArg(p,1))
+		               && getArgType(mb,p,1) == TYPE_int
+		               && isVarConstant(mb,getArg(p,3))
+		               && getArgType(mb,p,3) == TYPE_int
+		               && isVarConstant(mb,getArg(p,4))
+		               && getArgType(mb,p,4) == TYPE_int
+		               /* from-scale == to-scale, i.e., no scale change */
+		               && getVarValue(mb, getArg(p,1)) == getVarValue(mb, getArg(p,4)) ) ) ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
 			coerce[k].src= getArg(p,2);
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
-			coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
-			coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
+			if (p->argc == 5) {
+				coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
+				coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
+			}
 		}
 #endif
 		if ( getModuleId(p) == batcalcRef
