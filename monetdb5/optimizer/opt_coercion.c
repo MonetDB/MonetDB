@@ -137,7 +137,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		               && isVarConstant(mb,getArg(p,4))
 		               && getArgType(mb,p,4) == TYPE_int
 		               /* from-scale == to-scale, i.e., no scale change */
-		               && getVarValue(mb, getArg(p,1)) == getVarValue(mb, getArg(p,4)) ) ) ){
+		               && *(int*) getVarValue(mb, getArg(p,1)) == *(int*) getVarValue(mb, getArg(p,4)) ) ) ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
@@ -157,7 +157,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		               && isVarConstant(mb,getArg(p,1))
 		               && getArgType(mb,p,1) == TYPE_int
 		               /* to-scale == 0, i.e., no scale change */
-		               && getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
+		               && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_dbl;
