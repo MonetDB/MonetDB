@@ -125,7 +125,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
  * The code template can be extended to handle other downscale options as well
  */
 #ifdef HAVE_HGE
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == hgeRef && p->retc == 1 && p->argc == 5 && isVarConstant(mb,getArg(p,4)) && isVarConstant(mb,getArg(p,3)) ){
+		if ( getModuleId(p) == batcalcRef
+		     && getFunctionId(p) == hgeRef
+		     && p->retc == 1
+		     && p->argc == 5
+		     && isVarConstant(mb,getArg(p,4))
+		     && isVarConstant(mb,getArg(p,3)) ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
