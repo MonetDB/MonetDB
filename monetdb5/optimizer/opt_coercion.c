@@ -18,8 +18,10 @@ typedef struct{
 	int fromtype;
 	int totype;
 	int src;
+/* not used, yet !??
 	int digits;
 	int scale;
+*/
 } Coercion;
 
 static int
@@ -143,10 +145,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].totype= TYPE_hge;
 			coerce[k].src= getArg(p,2);
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
+/* not used, yet !??
 			if (p->argc == 5) {
 				coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
 				coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
 			}
+*/
 		}
 #endif
 		if ( getModuleId(p) == batcalcRef
