@@ -244,11 +244,11 @@ BATcheckhash(BAT *b)
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) ((hdata[1] + hdata[2]) * hdata[3] + 5 * SIZEOF_SIZE_T) &&
 				    HEAPload(hp, nme, ext, 0) >= 0) {
-					h->lim = hdata[1];
+					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
-					h->mask = hdata[2] - 1;
+					h->mask = (BUN) (hdata[2] - 1);
 					h->heap = hp;
-					h->width = hdata[3];
+					h->width = (int) hdata[3];
 					switch (h->width) {
 					case BUN2:
 						h->nil = (BUN) BUN2_NONE;
