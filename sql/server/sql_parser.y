@@ -341,7 +341,6 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
-/*SciQL*/	array_element_list
 /*SciQL*/	array_dimension_list
 /*SciQL*/ range_exp
 	as_subquery_clause
@@ -1408,13 +1407,12 @@ table_def:
 
 array_def:
     ARRAY qname array_content_source 
-	{ 	int commit_action = CA_COMMIT;
-	  	dlist *l = L();
+	{ 	dlist *l = L();
 
 	  	append_int(l, SQL_PERSIST);
 	  	append_list(l, $2);
 	  	append_symbol(l, $3);
-	  	append_int(l, commit_action);
+	  	append_int(l, CA_COMMIT);
 	  	append_string(l, NULL);
 	  	$$ = _symbol_create_list( SQL_CREATE_ARRAY, l ); }
 ;
@@ -1440,8 +1438,15 @@ table_content_source:
  |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
  ;
 
+/*the list of elements in the array has two parts, the dimensions and the values */
+/*the values are normal table elements but the dimensions need special care */
 array_content_source:
-    '(' array_element_list ')'	{ $$ = _symbol_create_list( SQL_CREATE_ARRAY, $2); }
+    '(' array_dimension_list ',' table_element_list ')'	
+	{ dlist *l = L();
+		append_list(l, $2);
+		append_list(l, $4);  
+		$$ = _symbol_create_list( SQL_CREATE_ARRAY, l); 
+	}
  |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
  ;
 
@@ -1465,14 +1470,6 @@ table_element_list:
 			{ $$ = append_symbol(L(), $1); }
  |  table_element_list ',' table_element
 			{ $$ = append_symbol( $1, $3 ); }
- ;
-
-/*the list of elements in the array has two parts, the dimensions and the values */
-/*the values are normal table elements but the dimensions need special care */
-array_element_list:
-    array_dimension_list ',' table_element_list
-			{ append_list(L(), $1);
-				$$ = append_list($$, $3); }
  ;
 
 array_dimension_list:
@@ -5699,7 +5696,7 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
-	SQL(ARRAY);
+	/*SciQL*/SQL(ARRAY);
 	SQL(TYPE);
 	SQL(CASE);
 	SQL(CAST);
@@ -5799,6 +5796,8 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	/*SciQL*/SQL(DIMENSION);
+	/*SciQL*/SQL(RANGE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
