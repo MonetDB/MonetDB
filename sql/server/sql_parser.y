@@ -168,14 +168,12 @@ int yydebug=1;
 	table_content_source
 /*SciQL*/array_content_source
 	table_element
-/*SciQL*/	array_dimension
 	add_table_element
 	alter_table_element
 	drop_table_element
 	table_constraint
 	table_constraint_type
 	column_def
-/*SciQL*/ dimension_def
 	column_options
 	column_option
 	column_constraint
@@ -341,7 +339,6 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
-/*SciQL*/	array_dimension_list
 /*SciQL*/ range_exp
 	as_subquery_clause
 	column_exp_commalist
@@ -1441,12 +1438,8 @@ table_content_source:
 /*the list of elements in the array has two parts, the dimensions and the values */
 /*the values are normal table elements but the dimensions need special care */
 array_content_source:
-    '(' array_dimension_list ',' table_element_list ')'	
-	{ dlist *l = L();
-		append_list(l, $2);
-		append_list(l, $4);  
-		$$ = _symbol_create_list( SQL_CREATE_ARRAY, l); 
-	}
+    '(' table_element_list ')'	
+	{ $$ = _symbol_create_list( SQL_CREATE_ARRAY, $2); }
  |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
  ;
 
@@ -1472,32 +1465,14 @@ table_element_list:
 			{ $$ = append_symbol( $1, $3 ); }
  ;
 
-array_dimension_list:
-    array_dimension
-			{ $$ = append_symbol(L(), $1); }
- |  array_dimension_list ',' array_dimension
-			{ $$ = append_symbol( $1, $3 ); }
- ;
-
 add_table_element: column_def | table_constraint ;
 table_element: add_table_element | column_options | like_table ;
-array_dimension: dimension_def ;
 
 serial_or_bigserial:
 	SERIAL       { $$ = 0; }
  |	BIGSERIAL    { $$ = 1; }
  ;
 
-dimension_def:
-	column data_type dimension 
-	{
-		dlist *l = L();
-		append_string(l, $1);
-		append_type(l, &$2);
-		append_symbol(l, $3);
-		$$ = _symbol_create_list(SQL_DIMENSION, l);
-	}
-;
 
 dimension:
     DIMENSION range_exp
@@ -1536,7 +1511,16 @@ range_term:
 	
 
 column_def:
-	column data_type opt_column_def_opt_list
+	column data_type dimension
+	{
+		/*a dimensional column*/
+		dlist *l = L();
+		append_string(l, $1);
+		append_type(l, &$2);
+		append_symbol(l, $3);
+		$$ = _symbol_create_list(SQL_DIMENSION, l);
+	}
+ | column data_type opt_column_def_opt_list
 		{
 			dlist *l = L();
 			append_string(l, $1);
