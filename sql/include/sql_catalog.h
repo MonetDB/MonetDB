@@ -353,7 +353,6 @@ typedef enum idx_type {
 } idx_type;
 
 #define hash_index(t) 		(t == hash_idx || t == oph_idx )
-#define idx_is_column(t) 	(hash_index(t) || t == join_idx || t == no_idx)
 #define idx_has_column(t) 	(hash_index(t) || t == join_idx)
 
 typedef struct sql_idx {
