@@ -5,13 +5,7 @@ stdout of test 'currenttime.Bug-2781` in directory 'sql/test/BugTracker-2012` it
 # 14:00:10 >  "/usr/bin/python" "currenttime.Bug-2781.py" "currenttime.Bug-2781"
 # 14:00:10 >  
 
-#select (localtime() - time '14:00:10' < time '00:00:20') and (time '14:00:10' - localtime() < time '00:00:20');
-% . # table_name
-% sql_sub_localtime # name
-% boolean # type
-% 5 # length
-[ true ]
-# MonetDB 5 server v11.13.6
+# MonetDB 5 server v11.19.10 (hg id: 68ab398acb08)
 # This is an unreleased version
 # Serving database 'mTests_test_BugTracker-2012', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -23,6 +17,9 @@ stdout of test 'currenttime.Bug-2781` in directory 'sql/test/BugTracker-2012` it
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -47,7 +44,18 @@ stdout of test 'currenttime.Bug-2781` in directory 'sql/test/BugTracker-2012` it
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 14:00:10 >  
-# 14:00:10 >  "Done."
-# 14:00:10 >  
+# 09:58:27 >  
+# 09:58:27 >  "/usr/bin/python2" "currenttime.Bug-2781.SQL.py" "currenttime.Bug-2781"
+# 09:58:27 >  
+
+#select (localtime() - time '09:58:27' < time '00:00:20') and (time '09:58:27' - localtime() < time '00:00:20');
+% .L # table_name
+% sql_sub_localtime # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 09:58:28 >  
+# 09:58:28 >  "Done."
+# 09:58:28 >  
 

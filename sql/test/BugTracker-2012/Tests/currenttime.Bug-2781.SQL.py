@@ -4,31 +4,16 @@ try:
 except ImportError:
     import process
 
-def server_start():
-    sys.stderr.write('#mserver\n')
-    sys.stderr.flush()
-    srv = process.server(stdin = process.PIPE,
-                         stdout = process.PIPE, stderr = process.PIPE)
-    return srv
-
-def client(lang, user = 'monetdb', passwd = 'monetdb'):
+def main():
     sys.stderr.write('#client\n')
     sys.stderr.flush()
-    clt = process.client(lang, user = user, passwd = passwd,
+    clt = process.client('sql', user = 'monetdb', passwd = 'monetdb',
                          stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     currenttime = time.strftime('%H:%M:%S', time.localtime(time.time()))
     #SQL command for checking the localtime
     sqlcommand = "select (localtime() - time '%s' < time '00:00:20') and (time '%s' - localtime() < time '00:00:20');" % (currenttime, currenttime)
-    return clt.communicate(sqlcommand)
-
-def main():
-    srv = server_start()
-    out, err = client('sql')
-
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    out, err = srv.communicate()
+    out, err = clt.communicate(sqlcommand)
     sys.stdout.write(out)
     sys.stderr.write(err)
 
