@@ -52,12 +52,16 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 	 * StringLengthPtr */
 
 	switch (Attribute) {
+#ifndef STATIC_CODE_ANALYSIS
+	/* Coverity doesn't like the debug print in WriteData, so we
+	 * hide this whole thing */
 	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
 		WriteData(ValuePtr, stmt->ApplParamDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:		/* SQLHANDLE */
 		WriteData(ValuePtr, stmt->ApplRowDescr, SQLHANDLE);
 		return SQL_SUCCESS;
+#endif
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 		/* SQL_ASYNC_ENABLE */
 		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
@@ -76,12 +80,16 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		/* SQL_CURSOR_TYPE */
 		WriteData(ValuePtr, stmt->cursorType, SQLULEN);
 		break;
+#ifndef STATIC_CODE_ANALYSIS
+	/* Coverity doesn't like the debug print in WriteData, so we
+	 * hide this whole thing */
 	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */
 		WriteData(ValuePtr, stmt->ImplParamDescr, SQLHANDLE);
 		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:		/* SQLHANDLE */
 		WriteData(ValuePtr, stmt->ImplRowDescr, SQLHANDLE);
 		return SQL_SUCCESS;
+#endif
 	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
 		/* SQL_MAX_LENGTH */
 		WriteData(ValuePtr, 0, SQLULEN);

@@ -66,8 +66,10 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	SQLSMALLINT len = 0;
 	char buf[256];
 	int n;
-	int allocated = 0;
 	SQLRETURN rc;
+#ifdef ODBCDEBUG
+	int allocated = 0;
+#endif
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 
@@ -82,32 +84,37 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 		return SQL_ERROR;
 	}
 
-	dsn = dbc->dsn;
-	uid = dbc->uid;
-	pwd = dbc->pwd;
-	host = dbc->host;
+	dsn = dbc->dsn ? strdup(dbc->dsn) : NULL;
+	uid = dbc->uid ? strdup(dbc->uid) : NULL;
+	pwd = dbc->pwd ? strdup(dbc->pwd) : NULL;
+	host = dbc->host ? strdup(dbc->host) : NULL;
 	port = dbc->port;
-	dbname = dbc->dbname;
+	dbname = dbc->dbname ? strdup(dbc->dbname) : NULL;
 
 	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
+			if (dsn)
+				free(dsn);
 			dsn = attr;
-			allocated |= 1;
 		} else if (strcasecmp(key, "uid") == 0 && uid == NULL) {
+			if (uid)
+				free(uid);
 			uid = attr;
-			allocated |= 2;
 		} else if (strcasecmp(key, "pwd") == 0 && pwd == NULL) {
+			if (pwd)
+				free(pwd);
 			pwd = attr;
-			allocated |= 4;
 		} else if (strcasecmp(key, "host") == 0 && host == NULL) {
+			if (host)
+				free(host);
 			host = attr;
-			allocated |= 8;
 		} else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
 		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
+			if (dbname)
+				free(dbname);
 			dbname = attr;
-			allocated |= 16;
 #ifdef ODBCDEBUG
 		} else if (strcasecmp(key, "logfile") == 0 &&
 			   getenv("ODBCDEBUG") == NULL) {
@@ -115,7 +122,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
 			ODBCdebug = attr;
-			allocated |= 32;
+			allocated = 1;
 #endif
 		} else
 			free(attr);
@@ -131,7 +138,6 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 				uid = strdup(buf);
 				if (uid == NULL)
 					goto nomem;
-				allocated |= 2;
 			}
 		}
 		if (pwd == NULL) {
@@ -140,7 +146,6 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 				pwd = strdup(buf);
 				if (pwd == NULL)
 					goto nomem;
-				allocated |= 4;
 			}
 		}
 		if (host == NULL) {
@@ -149,7 +154,6 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 				host = strdup(buf);
 				if (host == NULL)
 					goto nomem;
-				allocated |= 8;
 			}
 		}
 		if (port == 0) {
@@ -164,11 +168,10 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 				dbname = strdup(buf);
 				if (dbname == NULL)
 					goto nomem;
-				allocated |= 16;
 			}
 		}
 #ifdef ODBCDEBUG
-		if ((allocated & 32) == 0 && getenv("ODBCDEBUG") == NULL) {
+		if (!allocated && getenv("ODBCDEBUG") == NULL) {
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
@@ -240,15 +243,15 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	}
 
   bailout:
-	if (allocated & 1)
+	if (dsn)
 		free(dsn);
-	if (allocated & 2)
+	if (uid)
 		free(uid);
-	if (allocated & 4)
+	if (pwd)
 		free(pwd);
-	if (allocated & 8)
+	if (host)
 		free(host);
-	if (allocated & 16)
+	if (dbname)
 		free(dbname);
 	return rc;
 

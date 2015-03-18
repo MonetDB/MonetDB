@@ -1504,7 +1504,7 @@ BBPdir(int cnt, bat *subcommit)
 	}
 	if (fclose(fp) == EOF) {
 		GDKsyserror("BBPdir: Closing BBP.dir file failed\n");
-		goto bailout;
+		return -1;
 	}
 
 	IODEBUG fprintf(stderr, "#BBPdir end\n");

@@ -4289,8 +4289,11 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		char *q;
 
 		if (sz < 512 &&
-		    (q = realloc(hdl->query, sz + size + 1)) != NULL)
-			hdl->query = strncat(q, query, size);
+		    (q = realloc(hdl->query, sz + size + 1)) != NULL) {
+			strncpy(q + sz, query, size);
+			q[sz + size] = 0;
+			hdl->query = q;
+		}
 	}
 
 	if (mid->trace == MAPI_TRACE) {
