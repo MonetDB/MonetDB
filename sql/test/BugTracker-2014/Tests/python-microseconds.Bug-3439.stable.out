@@ -55,7 +55,7 @@ Ready.
 [(datetime.datetime(2014, 4, 24, 19, 12, 12, 415000),)]
 [(datetime.date(2014, 4, 24),)]
 [(datetime.time(17, 12, 12),)]
-[(datetime.time(17, 12, 12),)]
+[(datetime.time(19, 12, 12),)]
 
 # 17:15:02 >  
 # 17:15:02 >  "Done."
