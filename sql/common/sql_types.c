@@ -395,7 +395,7 @@ static sql_subaggr *
 _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 {
 	node *tn;
-	int scale = 0, digits = 0;
+	unsigned int scale = 0, digits = 0;
 	sql_subaggr *ares = SA_ZNEW(sa, sql_subaggr);
 
 	assert (a->res);
@@ -409,7 +409,8 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 		digits = r->digits;
 		scale = r->scale;
 		/* same scale as the input */
-		if (member) {
+		if (member && (member->scale != scale ||
+			(digits != member->digits && !EC_NUMBER(member->type->eclass)))) {
 			digits = member->digits;
 			scale = member->scale;
 		}
