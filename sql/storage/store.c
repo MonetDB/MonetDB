@@ -4010,7 +4010,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql) || isArray(t));
 
 	t->query = sql ? sa_strdup(tr->sa, sql) : NULL;
 	t->s = s;
@@ -4023,7 +4023,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
-	if (isTable(t)) {
+	if (isTable(t) || isArray(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
 			if (bs_debug)
 				fprintf(stderr, "#\tload table %s missing 'deletes'", t->base.name);
@@ -4032,7 +4032,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	}
 
 	ca = t->commit_action;
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t) && !isDeclaredArray(t))
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
 			&t->system, &ca, &t->access);
