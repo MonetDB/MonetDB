@@ -20,7 +20,7 @@
 #define MAXTYPEVAR  10
 
 mal_export void chkProgram(stream *out, Module s, MalBlkPtr mb);
-mal_export void chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
+mal_export int chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
 mal_export void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent);
 mal_export void typeChecker(stream *out,  Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 mal_export int fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p);

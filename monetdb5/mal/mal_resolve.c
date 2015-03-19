@@ -115,7 +115,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	Symbol s;
 	InstrPtr sig;
 	int i, k, unmatched = 0, s1;
-	/* int foundbutwrong=0; */
 	int polytype[MAXTYPEVAR];
 	int returns[256];
 	int *returntype = NULL;
@@ -396,7 +395,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				}
 			}
 		if (s1 < 0) {
-			/* if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++; */
 			s = s->peer;
 			continue;
 		}
@@ -445,7 +443,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		 * typed. This should be reflected in the symbol table.
 		 */
 		s1 = returntype[0];		/* for those interested */
-		/* foundbutwrong = 0; */
 		/*
 		 * If the call refers to a polymorphic function, we clone it
 		 * to arrive at a bounded instance. Polymorphic patterns and
@@ -485,12 +482,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	/* foundbutwrong has not been changed, commented out code above
-		if (foundbutwrong && !silent) {
-			showScriptException(out, mb, getPC(mb, p), TYPE,
-								"type conflict in assignment");
-		}
-	 */
 	if (returntype && returntype != returns)
 		GDKfree(returntype);
 	return -3;
@@ -819,13 +810,17 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 
 /*
  * Type checking an individual instruction is dangerous,
- * because it ignores data flow and declarations issues.
- * It is only to be used in isolated cases.
+ * because it ignores data flow and variable declarations.
  */
-void
+int
 chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p)
 {
-	typeChecker(out, s, mb, p, FALSE);
+	int olderrors= mb->errors;
+	int error;
+	typeChecker(out, s, mb, p, TRUE);
+	error = mb->errors;
+	mb->errors = olderrors;
+	return error;
 }
 
 void
