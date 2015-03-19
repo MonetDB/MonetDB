@@ -446,11 +446,6 @@ cstToken(Client cntxt, ValPtr cst)
 				GDKfree(pval);
 			} else
 				cst->val.dval = 0;
-
-			if (cst->val.dval > FLT_MIN && cst->val.dval <= FLT_MAX) {
-				cst->vtype = TYPE_flt;
-				cst->val.fval = (flt) cst->val.dval;
-			}
 		}
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
@@ -921,6 +916,11 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
 			advance(cntxt, i);
+			if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+				cst.vtype = TYPE_flt;
+				cst.val.fval = (flt) cst.val.dval;
+			}
+
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
