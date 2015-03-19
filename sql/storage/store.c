@@ -1157,7 +1157,7 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 
 	assert(sa);
 	assert((persistence==SQL_PERSIST ||
-		persistence==SQL_DECLARED_TABLE || 
+		persistence==SQL_DECLARED_TABLE || persistence==SQL_DECLARED_ARRAY || 
 		commit_action) && commit_action>=0);
 	base_init(sa, &t->base, next_oid(), TR_NEW, name);
 	t->type = type;
@@ -2032,10 +2032,10 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	cs_add(&t->columns, col, TR_NEW);
 
-	if (isDeclaredTable(c->t)) 
-	if (isTable(t))
-		if (store_funcs.create_col(tr, col) == LOG_ERR)
-			return NULL;
+	if (isDeclaredTable(c->t) || isDeclaredArray(c->t)) 
+		if (isTable(t) || isArray(t))
+			if (store_funcs.create_col(tr, col) == LOG_ERR)
+				return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
@@ -2582,7 +2582,7 @@ rollforward_create_seq(sql_trans *tr, sql_sequence *k, int mode)
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 {
-	if (isTable(c->t)) {
+	if (isTable(c->t) || isArray(c->t)) {
 		int p = (tr->parent == gtrans && !isTempTable(c->t));
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_col(tr, c) != LOG_OK) ||

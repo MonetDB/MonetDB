@@ -648,6 +648,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	}
 
 	switch (s->token) {
+	case SQL_DIMENSION:
+		fprintf(stderr, "table_element: Do something for dimensions\n");
+		break;
 	case SQL_COLUMN:
 		res = create_column(sql, s, ss, t, alter);
 		break;
@@ -803,6 +806,90 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		return SQL_ERR;
 	}
 	return res;
+}
+
+sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *array_elements, int commit_action) {
+	sql_schema *s = NULL;
+//	int instantiate = (sql->emode == m_instantiate);
+//	int deps = (sql->emode == m_deps);
+//	int create = (!instantiate && !deps);
+	int tt = tt_array;
+
+fprintf(stderr, "In rel_create_array\n");
+//	(void)create;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE ARRAY: no such schema '%s'", sname);
+
+	if (temp != SQL_PERSIST && tt == tt_array && commit_action == CA_COMMIT)
+		commit_action = CA_DELETE;
+	
+	if (temp != SQL_DECLARED_ARRAY) {
+		if (temp != SQL_PERSIST && tt == tt_array) {
+			s = mvc_bind_schema(sql, "tmp");
+			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
+				return sql_error(sql, 02, "3F000!CREATE ARRAY: local tempory arrays should be stored in the '%s' schema", s->base.name);
+		} else if (s == NULL) {
+			s = ss;
+		}
+	}
+
+	if (temp != SQL_DECLARED_ARRAY && s)
+		sname = s->base.name;
+
+	if (mvc_bind_table(sql, s, name)) {
+		char *cd = (temp == SQL_DECLARED_ARRAY)?"DECLARE":"CREATE";
+		return sql_error(sql, 02, "42S01!%s ARRAY: name '%s' already in use", cd, name);
+	} else if (temp != SQL_DECLARED_ARRAY && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+		return sql_error(sql, 02, "42000!CREATE ARRAY: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (array_elements->token == SQL_CREATE_ARRAY) { 
+		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_ARRAY, commit_action, -1);
+
+		dlist *columns = array_elements->data.lval;
+		dnode *n;
+
+		for (n = columns->h; n; n = n->next) {
+			symbol *sym = n->data.sym;
+			int res = table_element(sql, sym, s, t, 0);
+
+			if (res == SQL_ERR) 
+				return NULL;
+		}
+		temp = (tt == tt_array)?temp:SQL_PERSIST;
+		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
+	} 
+#if 0
+	else { /* [col name list] as subquery with or without data */
+		sql_rel *sq = NULL, *res = NULL;
+		dlist *as_sq = table_elements_or_subquery->data.lval;
+		dlist *column_spec = as_sq->h->data.lval;
+		symbol *subquery = as_sq->h->next->data.sym;
+		int with_data = as_sq->h->next->next->data.i_val;
+		sql_table *t = NULL; 
+
+		assert(as_sq->h->next->next->type == type_int);
+		sq = rel_selects(sql, subquery);
+		if (!sq)
+			return NULL;
+
+		/* create table */
+		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
+			rel_destroy(sq);
+			return NULL;
+		}
+
+		/* insert query result into this table */
+		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		if (with_data) {
+			res = rel_insert(sql, res, sq);
+		} else {
+			rel_destroy(sq);
+		}
+		return res;
+	}
+#endif
+	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
+return NULL;
 }
 
 sql_rel *
@@ -1675,6 +1762,19 @@ rel_schemas(mvc *sql, symbol *s)
 			   dlist_get_schema_name(auth_name),
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
+	} 	break;
+	case SQL_CREATE_ARRAY:
+	{
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->next->data.lval;
+		char *sname = qname_schema(qname); //the name of the schema
+		char *name = qname_table(qname); //the name of the array
+		int temp = l->h->data.i_val; //the type of the array. For now there is only tt_array
+
+		//if any of the following is not true there is an error in the parse tree
+		assert(l->h->type == type_int); 
+		assert(l->h->next->next->next->type == type_int);
+		ret = rel_create_array(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 	} 	break;
 	case SQL_CREATE_TABLE:
 	{

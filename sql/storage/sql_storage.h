@@ -33,6 +33,7 @@
 #define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0 || \
 			  strcmp((x)->base.name, dt_schema) == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
+#define isDeclaredArray(x)  ((x)->persistence==SQL_DECLARED_ARRAY)
 
 extern int catalog_version;
 

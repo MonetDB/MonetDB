@@ -962,7 +962,6 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
-
 sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
 {
@@ -971,7 +970,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
 
-	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
+	if ((persistence == SQL_DECLARED_TABLE || persistence == SQL_DECLARED_ARRAY) && (!s || strcmp(s->base.name, dt_schema))) {
 		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
 		t->s = s;
 	} else {

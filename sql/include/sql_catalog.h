@@ -122,6 +122,7 @@ typedef enum temp_t {
 	SQL_LOCAL_TEMP,
 	SQL_GLOBAL_TEMP,
 	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
+	SQL_DECLARED_ARRAY,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE,
 	SQL_STREAM,
 	SQL_REMOTE,
@@ -457,7 +458,8 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	tt_array = 7	/* array */
 } table_types;
 
 #define isTable(x) 	  (x->type==tt_table)
@@ -467,6 +469,7 @@ typedef enum table_types {
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isArray(x)	(x->type==tt_array)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -474,7 +477,7 @@ typedef enum table_types {
 
 typedef struct sql_table {
 	sql_base base;
-	sht type;		/* table, view, etc */
+	sht type;		/* table, view, array, etc */
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
