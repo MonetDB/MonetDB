@@ -913,13 +913,13 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	malType tpe = TYPE_any;
 
 	if ((i = cstToken(cntxt, &cst))) {
+		advance(cntxt, i);
+		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+			cst.vtype = TYPE_flt;
+			cst.val.fval = (flt) cst.val.dval;
+		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
-			advance(cntxt, i);
-			if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
-				cst.vtype = TYPE_flt;
-				cst.val.fval = (flt) cst.val.dval;
-			}
 
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
@@ -945,7 +945,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant */
-			advance(cntxt, i);
 			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0)
