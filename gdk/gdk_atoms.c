@@ -809,8 +809,6 @@ fltFromStr(const char *src, int *len, flt **dst)
 		errno = 0;
 		f = strtof(src, &pe);
 		p = pe;
-		while (GDKisspace(*p))
-			p++;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
@@ -837,8 +835,11 @@ fltFromStr(const char *src, int *len, flt **dst)
 		{
 			**dst = flt_nil; /* default return value is nil */
 			n = 0;
-		} else
+		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (flt) f;
+		}
 	}
 	return n;
 }
