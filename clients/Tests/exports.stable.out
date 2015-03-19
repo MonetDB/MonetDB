@@ -2115,7 +2115,7 @@ str catchKernelException(Client cntxt, str ret);
 int charCst(Client cntxt, ValPtr val);
 void chkDeclarations(stream *out, MalBlkPtr mb);
 void chkFlow(stream *out, MalBlkPtr mb);
-void chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
+int chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
 void chkProgram(stream *out, Module s, MalBlkPtr mb);
 void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent);
 str cleanupProfiler(void);
