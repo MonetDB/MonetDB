@@ -553,7 +553,7 @@ update(EventRecord *ev)
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
 				printf("%s\n",qry);
 			prevquery = currentquery;
-			progressBarInit(ev->stmt);
+			progressBarInit(qry);
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
