@@ -158,7 +158,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
 	Client c;
-	MT_Id p;
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -328,15 +327,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 	/* fork a new thread to handle this client */
 	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
-	if (MT_create_thread(&p, MSserveClient, (void *) c, MT_THR_DETACHED) != 0) {
-		mnstr_printf(fout, "!internal server error (cannot fork new "
-						   "client thread), please try again later\n");
-		mnstr_flush(fout);
-		c->mode = FINISHCLIENT;
-		MCexitClient(c);
-		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
-		return;
-	}
+	MSserveClient(c);
 }
 
 /*

@@ -103,19 +103,26 @@ static void generateChallenge(str buf, int min, int max) {
 	buf[i] = '\0';
 }
 
+struct challengedata {
+	stream *in;
+	stream *out;
+};
+
 static void
-doChallenge(stream *in, stream *out) {
+doChallenge(void *data)
+{
 #ifdef DEBUG_SERVER
 	Client cntxt= mal_clients;
 #endif
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
-	stream *fdin = block_stream(in);
-	stream *fdout = block_stream(out);
+	stream *fdin = block_stream(((struct challengedata *) data)->in);
+	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
 	int len = 0;
 
+	GDKfree(data);
 	if (buf == NULL || fdin == NULL || fdout == NULL){
 		if (fdin) {
 			mnstr_close(fdin);
@@ -203,6 +210,8 @@ SERVERlistenThread(SOCKET *Sock)
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET usock = INVALID_SOCKET;
 	SOCKET msgsock = INVALID_SOCKET;
+	struct challengedata *data;
+	MT_Id tid;
 
 	if (*Sock) {
 		sock = Sock[0];
@@ -356,9 +365,17 @@ SERVERlistenThread(SOCKET *Sock)
 		printf("server:accepted\n");
 		fflush(stdout);
 #endif
-		doChallenge(
-				socket_rastream(msgsock, "Server read"),
-				socket_wastream(msgsock, "Server write"));
+		data = GDKmalloc(sizeof(*data));
+		data->in = socket_rastream(msgsock, "Server read");
+		data->out = socket_wastream(msgsock, "Server write");
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+			mnstr_printf(data->out, "!internal server error (cannot fork new "
+						 "client thread), please try again later\n");
+			mnstr_flush(data->out);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot fork new client thread");
+			free(data);
+		}
 	} while (!ATOMIC_GET(serverexiting, atomicLock, "SERVERlistenThread") &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock, "SERVERlistenThread");
@@ -730,9 +747,22 @@ SERVERresume(void *res)
 str
 SERVERclient(void *res, const Stream *In, const Stream *Out)
 {
+	struct challengedata *data;
+	MT_Id tid;
+
 	(void) res;
 	/* in embedded mode we allow just one client */
-	doChallenge(*In, *Out);
+	data = GDKmalloc(sizeof(*data));
+	data->in = *In;
+	data->out = *Out;
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		mnstr_printf(data->out, "!internal server error (cannot fork new "
+					 "client thread), please try again later\n");
+		mnstr_flush(data->out);
+		showException(GDKstdout, MAL, "mapi.SERVERclient",
+					  "cannot fork new client thread");
+		free(data);
+	}
 	return MAL_SUCCEED;
 }
 

@@ -543,6 +543,9 @@ acceptConnections(int sock, int usock)
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
 			p->next = threads;
 			threads = p;
+		} else {
+			free(data);
+			free(p);
 		}
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
