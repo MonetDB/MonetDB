@@ -502,6 +502,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BAT *b;
 
 		snprintf(qbuf, BUFSIZ, "io.table(%s);", ident);
+#define _DEBUG_REMOTE
 #ifdef _DEBUG_REMOTE
 		mnstr_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
 #else
@@ -839,7 +840,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 				mod, fcn);
 	}
 
-	qry = function2str(sym->def);
+	qry = mal2str(sym->def, 0, sym->def->stop);
 #ifdef _DEBUG_REMOTE
 	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif

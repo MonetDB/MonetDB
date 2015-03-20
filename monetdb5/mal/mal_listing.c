@@ -68,7 +68,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			val = &stk->stk[varid];
 
 		VALformat(&cv, val);
-		if (strlen(cv) >= len)
+		if (len + strlen(cv) >= maxlen)
 			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
 		if( buf == 0){
@@ -399,7 +399,11 @@ mal2str(MalBlkPtr mb, int first, int last)
 		if( i == 0)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
-			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL );
+			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS );
+#ifdef _DEBUG_LISTING_
+		mnstr_printf(GDKout,"%s\n",txt[i]);
+#endif
+
 		if ( txt[i])
 			totlen += len[i] = (int)strlen(txt[i]);
 	}
@@ -424,13 +428,8 @@ mal2str(MalBlkPtr mb, int first, int last)
 	return ps;
 }
 
-str
-function2str(MalBlkPtr mb){
-	return mal2str(mb, 0,mb->stop);
-}
-
 void
-promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
 
@@ -442,12 +441,6 @@ promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	}
-}
-
-void
-printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
-{
-	promptInstruction(fd, mb, stk, p, flg);
 	mnstr_printf(fd, "\n");
 }
 

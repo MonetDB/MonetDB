@@ -73,12 +73,18 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	b = getColumnType(getVarType(mb, getArg(p,2)));
 	if ( a == r && coerce[getArg(p,1)].src && coerce[getArg(p,1)].fromtype < r ) 
 	{
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", getArg(p,1));
+#endif
 		varid = getArg(p,1);
 		getArg(p,1) = coerce[getArg(p,1)].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
 			p->argv[1] = varid;
 	}
 	if ( b == r && coerce[getArg(p,2)].src &&  coerce[getArg(p,2)].fromtype < r ) 
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", getArg(p,2));
+#endif
 	{
 		varid = getArg(p,2);
 		getArg(p,2) = coerce[getArg(p,2)].src;
