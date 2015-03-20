@@ -1806,7 +1806,7 @@ COPY 286 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 6466	"heapsize"	"bigint"	64	0	6470	NULL	true	4	NULL
 6467	"hashes"	"bigint"	64	0	6470	NULL	true	5	NULL
 6468	"imprints"	"bigint"	64	0	6470	NULL	true	6	NULL
-6469	"auxiliary"	"bigint"	53	0	6470	NULL	true	7	NULL
+6469	"auxiliary"	"bigint"	64	0	6470	NULL	true	7	NULL
 6472	"schema"	"clob"	0	0	6485	NULL	true	0	NULL
 6473	"table"	"clob"	0	0	6485	NULL	true	1	NULL
 6474	"column"	"clob"	0	0	6485	NULL	true	2	NULL
