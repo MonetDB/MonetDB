@@ -2,20 +2,20 @@
 uri := sabaoth.getLocalConnectionURI();
 conn:str := remote.connect(uri, "monetdb", "monetdb");
 
-d:bat[:str,:int] := bat.new(:str, :int);
-bat.insert(d, "bla", 1);
-bat.insert(d, nil:str, 2);
-bat.insert(d, "boe", nil:int);
-bat.insert(d, d); # 6
-bat.insert(d, d); # 12
-bat.insert(d, d); # 24
-bat.insert(d, d); # 48
-bat.insert(d, d); # 96
-bat.insert(d, d); # 192
-bat.insert(d, d); # 384
-bat.insert(d, d); # 768
-bat.insert(d, d); # 1536
-bat.insert(d, d); # 3072
+d:bat[:oid,:str] := bat.new(:oid,:str);
+bat.append(d, "bla");
+bat.append(d, nil:str);
+bat.append(d, "boe");
+bat.append(d, d); # 6
+bat.append(d, d); # 12
+bat.append(d, d); # 24
+bat.append(d, d); # 48
+bat.append(d, d); # 96
+bat.append(d, d); # 192
+bat.append(d, d); # 384
+bat.append(d, d); # 768
+bat.append(d, d); # 1536
+bat.append(d, d); # 3072
 
 # store the values
 t1 := alarm.time();
@@ -26,7 +26,7 @@ io.printf("# put: %d\n", t3);
 
 # retrieve the values
 t1 := alarm.time();
-u:bat[:str,:int] := remote.get(conn, l);
+u:bat[:oid,:str] := remote.get(conn, l);
 t2 := alarm.time();
 t3 := t2 - t1;
 io.printf("# get: %d\n", t3);
