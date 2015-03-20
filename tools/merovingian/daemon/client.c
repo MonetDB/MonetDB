@@ -45,8 +45,14 @@
 #include "controlrunner.h"
 #include "client.h"
 
-static err
-handleClient(int sock, char isusock)
+struct clientdata {
+	int sock;
+	int isusock;
+};
+
+static void *
+handleClient(void *data)
+
 {
 	stream *fdin, *fout;
 	char buf[8096];
@@ -65,7 +71,12 @@ handleClient(int sock, char isusock)
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
 	char *algos;
+	int sock;
+	char isusock;
 
+	sock = ((struct clientdata *) data)->sock;
+	isusock = ((struct clientdata *) data)->isusock;
+	free(data);
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
 	if (fdin == 0)
 		return(newErr("merovingian-client inputstream problems"));
@@ -400,8 +411,13 @@ acceptConnections(int sock, int usock)
 	int retval;
 	fd_set fds;
 	int msgsock;
-	err e;
+	void *e;
 	struct timeval tv;
+	struct clientdata *data;
+	struct threads {
+		struct threads *next;
+		pthread_t tid;
+	} *threads = NULL, **threadp, *p;
 
 	do {
 		/* handle socket connections */
@@ -414,6 +430,22 @@ acceptConnections(int sock, int usock)
 		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+		/* join any handleClient threads that we started and that may
+		 * have finished by now */
+		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
+			if (pthread_tryjoin_np((*threadp)->tid, &e) == 0) {
+				p = *threadp;
+				*threadp = p->next;
+				free(p);
+				if (e != NO_ERR) {
+					Mfprintf(stderr, "client error: %s\n",
+							 getErrMsg((char *) e));
+					freeErr(e);
+				}
+				if (*threadp == NULL)
+					break;
+			}
+		}
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -499,13 +531,18 @@ acceptConnections(int sock, int usock)
 					close(msgsock);
 					Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
-			}	
+			}
 		} else
 			continue;
-		e = handleClient(msgsock, FD_ISSET(usock, &fds));
-		if (e != NO_ERR) {
-			Mfprintf(stderr, "client error: %s\n", getErrMsg(e));
-			freeErr(e);
+		/* start handleClient as a thread so that we're not blocked by
+		 * a slow client */
+		data = malloc(sizeof(*data));
+		data->sock = msgsock;
+		data->isusock = FD_ISSET(usock, &fds);
+		p = malloc(sizeof(*p));	/* freed by handleClient */
+		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
+			p->next = threads;
+			threads = p;
 		}
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
