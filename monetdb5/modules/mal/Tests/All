@@ -36,7 +36,7 @@ remote02
 HAVE_GEOM?remote03
 remote04
 remote06
-# should be run as 'mclient -d demo -l mal remote07.mal
+remote07
 remote08
 remote09
 remote11

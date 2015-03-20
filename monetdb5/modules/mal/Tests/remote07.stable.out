@@ -12,59 +12,24 @@ stdout of test 'remote07` in directory 'monetdb5/modules/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:30248/
-# MonetDB/SQL module v2.39.0 loaded
-# MonetDB/GIS module v0.19.0 loaded
-function user.main():void;
-# let connect figure out itself how to connect to the running db 
-    uri := sabaoth.getLocalConnectionURI();
-    conn:str  := remote.connect(uri,"monetdb","monetdb");
-    d:bat[:str,:int]  := bat.new(:str,:int);
-    bat.insert(d,"bla",1);
-    bat.insert(d,nil:str,2);
-    bat.insert(d,"boe",nil:int);
-    bat.insert(d,d);
-# 6 
-    bat.insert(d,d);
-# 12 
-    bat.insert(d,d);
-# 24 
-    bat.insert(d,d);
-# 48 
-    bat.insert(d,d);
-# 96 
-    bat.insert(d,d);
-# 192 
-    bat.insert(d,d);
-# 384 
-    bat.insert(d,d);
-# 768 
-    bat.insert(d,d);
-# 1536 
-    bat.insert(d,d);
-# 3072 
-# store the values 
-    t1 := alarm.time();
-    l:str  := remote.put(conn,d);
-    t2 := alarm.time();
-    t3 := calc.-(t2,t1);
-    io.printf("# put: %d\n",t3);
-# retrieve the values 
-    t1 := alarm.time();
-    u:bat[:str,:int]  := remote.get(conn,l);
-    t2 := alarm.time();
-    t3 := calc.-(t2,t1);
-    io.printf("# get: %d\n",t3);
-# see if it really is here 
-    c := aggr.count(u);
-    io.print(c);
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn);
-end main;
-# put: 310
-# get: 10
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35702/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20095/.s.monetdb.35702
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:10:58 >  
+# 10:10:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20095" "--port=35702"
+# 10:10:58 >  
+
+#io.printf("# put: %d\n", t3);
+# put: 2
+#io.printf("# get: %d\n", t3);
+# get: 1
+#io.print(c);
 [ 3072 ]
 
 # 10:41:05 >  
