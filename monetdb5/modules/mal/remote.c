@@ -502,7 +502,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BAT *b;
 
 		snprintf(qbuf, BUFSIZ, "io.table(%s);", ident);
-#define _DEBUG_REMOTE
 #ifdef _DEBUG_REMOTE
 		mnstr_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
 #else
