@@ -75,6 +75,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	{
 #ifdef _DEBUG_COERCION_
 		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", getArg(p,1));
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		varid = getArg(p,1);
 		getArg(p,1) = coerce[getArg(p,1)].src;
@@ -82,15 +83,20 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 			p->argv[1] = varid;
 	}
 	if ( b == r && coerce[getArg(p,2)].src &&  coerce[getArg(p,2)].fromtype < r ) 
+	{
 #ifdef _DEBUG_COERCION_
 		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", getArg(p,2));
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-	{
 		varid = getArg(p,2);
 		getArg(p,2) = coerce[getArg(p,2)].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
 			p->argv[2] = varid;
 	}
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#final instruction\n");
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
 	return;
 }
 
