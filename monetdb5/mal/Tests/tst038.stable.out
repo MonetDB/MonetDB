@@ -20,9 +20,9 @@ stdout of test 'tst038` in directory 'monetdb5/mal` itself:
 function user.tst2(b:bat[:oid,:any_1]):void;
     bat.append(b,"hello");
 end user.tst2;
-!TypeException:user.tst2[1]:'bat.append' undefined in: bat.append(b,"hello");
+
 !MALException:user.tst2[0]:Error in cloned function
-!TypeException:user.main[4]:'user.tst2' undefined in: user.tst2(b);
+
 function user.main():void;
 #test the capability to deal with unspecified bats. 
     b := bat.new(:oid,:int);

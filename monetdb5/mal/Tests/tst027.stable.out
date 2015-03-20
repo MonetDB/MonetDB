@@ -20,7 +20,7 @@ stdout of test 'tst027` in directory 'monetdb5/mal` itself:
 function user.test(s:str,b:bat[:oid,:any_1]...):void;
     io.print(s);
 end user.test;
-!TypeException:user.main[4]:'user.test' undefined in: user.test("hello",b,c);
+
 function user.main():void;
 #variable arguments are only allowed in patterns 
     b := bat.new(:oid,:int);
