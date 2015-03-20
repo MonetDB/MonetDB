@@ -435,7 +435,13 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				 * only accepts int */
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
+#ifndef STATIC_CODE_ANALYSIS
+					/* Coverity doesn't seem to
+					 * recognize that we're just
+					 * printing the value of ptr,
+					 * not its contents */
 					IODEBUG fprintf(stderr, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+#endif
 
 					if (n <= 0)
 						break;

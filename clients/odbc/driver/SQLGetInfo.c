@@ -1677,6 +1677,7 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	if (ptr != InfoValuePtr) {
 		if (rc == SQL_SUCCESS_WITH_INFO) {
 			clearDbcErrors(dbc);
+			free(ptr);
 			ptr = malloc(++n); /* add one for NULL byte */
 			if (ptr == NULL) {
 				/* Memory allocation error */

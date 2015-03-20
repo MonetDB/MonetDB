@@ -126,8 +126,12 @@ MNDBGetDescField(ODBCDesc *desc,
 		WriteData(ValuePtr, rec->sql_desc_concise_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_DATA_PTR:			/* SQLPOINTER */
+#ifndef STATIC_CODE_ANALYSIS
+		/* Coverity doesn't like the debug print in WriteData,
+		 * so we hide this whole thing */
 		if (!isIRD(desc))
 			WriteData(ValuePtr, rec->sql_desc_data_ptr, SQLPOINTER);
+#endif
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_CODE:	/* SQLSMALLINT */
 		WriteData(ValuePtr, rec->sql_desc_datetime_interval_code, SQLSMALLINT);

@@ -12,3 +12,5 @@ negative_oid_crash.Bug-3667
 ukey_check_unaligned.Bug-3669
 inet-funcs.Bug-3645
 reserved_keywords.Bug-3613
+operator-priority.Bug-3686
+incorrect_result_type.Bug-3687

@@ -154,7 +154,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):v
     sql.rsColumn(X_193,"sys.dwdate","d_year","int",32,0,X_165);
     sql.rsColumn(X_193,"sys.supplier","s_nation","clob",0,0,X_166);
     sql.rsColumn(X_193,"sys.part","p_category","clob",0,0,X_167);
-    sql.rsColumn(X_193,"sys.L1","profit1","hugeint",64,0,X_192);
+    sql.rsColumn(X_193,"sys.L1","profit1","hugeint",128,0,X_192);
     X_213 := io.stdout();
     sql.exportResult(X_213,X_193);
 end user.s2_1;

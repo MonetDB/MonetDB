@@ -1647,10 +1647,10 @@ COPY 329 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 7002	"schema"	"clob"	0	0	7010	NULL	true	0	NULL
 7003	"table"	"clob"	0	0	7010	NULL	true	1	NULL
 7004	"count"	"bigint"	64	0	7010	NULL	true	2	NULL
-7005	"columnsize"	"hugeint"	64	0	7010	NULL	true	3	NULL
-7006	"heapsize"	"hugeint"	64	0	7010	NULL	true	4	NULL
-7007	"hashes"	"hugeint"	64	0	7010	NULL	true	5	NULL
-7008	"imprints"	"hugeint"	64	0	7010	NULL	true	6	NULL
+7005	"columnsize"	"hugeint"	128	0	7010	NULL	true	3	NULL
+7006	"heapsize"	"hugeint"	128	0	7010	NULL	true	4	NULL
+7007	"hashes"	"hugeint"	128	0	7010	NULL	true	5	NULL
+7008	"imprints"	"hugeint"	128	0	7010	NULL	true	6	NULL
 7009	"auxiliary"	"hugeint"	128	0	7010	NULL	true	7	NULL
 7012	"column_id"	"int"	32	0	7023	NULL	true	0	NULL
 7013	"type"	"clob"	0	0	7023	NULL	true	1	NULL
