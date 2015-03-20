@@ -58,7 +58,7 @@ polyInit(void)
 				p->token = CMDcall;									\
 				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
 				if (p->fcn == NULL) {								\
-					showScriptException(out, mb, getPC(mb, p), TYPE, \
+					if(!silent) showScriptException(out, mb, getPC(mb, p), TYPE, \
 										"object code for command %s.%s missing", \
 										p->modname, p->fcnname);	\
 					p->typechk = TYPE_UNKNOWN;						\
@@ -411,7 +411,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-				showScriptException(out, mb, getPC(mb, p), TYPE, "Assignment to constant");
+				if( !silent) showScriptException(out, mb, getPC(mb, p), TYPE, "Assignment to constant");
 				p->typechk = TYPE_UNKNOWN;
 				mb->errors++;
 				goto wrapup;
@@ -660,7 +660,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			if (!silent) {
 				char *errsig;
 
-				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_VALUE));
+				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
 				showScriptException(out, mb, getPC(mb, p), TYPE,
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),
@@ -675,7 +675,6 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		return;
 	}
 	/*
-	 * @- Assignment
 	 * When we arrive here the operator is an assignment.
 	 * The language should also recognize (a,b):=(1,2);
 	 * This is achieved by propagation of the rhs types to the lhs
@@ -736,7 +735,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 }
 
 /*
- * @- Function binder
+ * Function binder
  * In some cases the front-end may already assure type correctness
  * of the MAL instruction generated (e.g. the SQL front-end)
  * In that case we merely have to locate the function address and
@@ -841,7 +840,7 @@ chkProgram(stream *out, Module s, MalBlkPtr mb)
 }
 
 /*
- * @- Polymorphic type analysis
+ * Polymorphic type analysis
  * MAL provides for type variables of the form any$N. This feature
  * supports polymorphic types, but also complicates the subsequent
  * analysis. A variable typed with any$N not occuring in the function
