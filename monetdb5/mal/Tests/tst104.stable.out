@@ -17,7 +17,7 @@ stdout of test 'tst104` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 command user.f(a:any_1,b:bat[:any_1,:any_2],c:any_2):any_2 address dummy;
 !TypeException:user.main[4]:object code for command user.f missing
-
+!TypeException:user.main[4]:'user.f' undefined in:     a:str := user.f(1@0:oid,b:bat[:oid,:str],"hello":str);
 function user.main():void;
 # check propagation of type variables over bats 
 # can be checked after bat module has been added 

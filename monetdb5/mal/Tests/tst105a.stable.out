@@ -14,7 +14,7 @@ stdout of test 'tst105a` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command bbp.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;
 !TypeException:user.main[2]:object code for command bbp.new missing
-
+!TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:str,:int] := bbp.new(:str,:int);
 function user.main():void;
 # check classification of functions in the proper module 
     b := bbp.new(:str,:int);

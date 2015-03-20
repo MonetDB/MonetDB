@@ -17,7 +17,7 @@ stdout of test 'tst611` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12850/.s.monetdb.31390
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-
+!TypeException:user.main[7]:'bat.setWriteMode' undefined in:     bat.setWriteMode(RKB:any);
 function user.main():void;
 # initialization of BATs on the stack 
 # caused a problem when executed in interactve mode 

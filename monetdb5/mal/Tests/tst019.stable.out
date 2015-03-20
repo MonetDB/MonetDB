@@ -56,7 +56,7 @@ function user.welcome5(lim:int) (X_2:str,X_3:int);
     i := 2;
     return (w,i) := ("hello",2);
 end user.welcome5;
-
+!TypeException:user.main[5]:'user.welcome2' undefined in:     (x:any,y:str) := user.welcome2(1:int);
 function user.main():void;
     y := user.welcome1(1);
     io.print(y);
