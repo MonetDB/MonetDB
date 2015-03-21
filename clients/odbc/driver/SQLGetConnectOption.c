@@ -59,7 +59,7 @@ MNDBGetConnectOption(ODBCDbc *dbc,
 		/* 32 bit integer argument, but SQLGetConnectAttr returns 64 */
 		r = MNDBGetConnectAttr(dbc, Option, &v, 0, NULL);
 		if (SQL_SUCCEEDED(r))
-			* (SQLUINTEGER *) ValuePtr = (SQLUINTEGER) v;
+			WriteData(ValuePtr, (SQLUINTEGER) v, SQLUINTEGER);
 		return r;
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */

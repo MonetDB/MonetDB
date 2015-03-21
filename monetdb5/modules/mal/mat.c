@@ -889,7 +889,7 @@ MATsortloop_rev( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte ma
 	BUN end_i2 = val_i2 + cnt_i2;
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
-	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
+	int (*cmp) (const void *, const void *) = ATOMcompare(i1->ttype);
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
 	if (res == NULL)
@@ -949,7 +949,7 @@ MATsortloop_( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i
 	BUN end_i2 = val_i2 + cnt_i2;
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
-	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
+	int (*cmp) (const void *, const void *) = ATOMcompare(i1->ttype);
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2, TRANSIENT);
 
 	if (res == NULL)

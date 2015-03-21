@@ -1252,7 +1252,7 @@ GDKexit(int status)
 #endif
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
-#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
 		MT_global_exit(status);
@@ -1356,7 +1356,6 @@ GDKunlockHome(void)
  * GDKerrorCount(); Furthermore, threads may have set their private
  * error buffer.
  */
-static int THRerrorcount[THREADDATA];
 
 /* do the real work for GDKaddbuf below. */
 static void
@@ -1364,7 +1363,6 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 {
 	char *buf;
 
-	THRerrorcount[THRgettid()]++;
 	buf = GDKerrbuf;
 	if (buf) {
 		char *dst = buf + strlen(buf);

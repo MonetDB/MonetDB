@@ -31,16 +31,16 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;
-    b:bat[:oid,:str] := bat.new(:oid,:str);
-    bat.append(b:bat[:oid,:str],"HELLO WORLD":str);
-    X_12:bat[:oid,:str] := b:bat[:oid,:str];
-    X_12:bat[:oid,:str] := batstr.substring(X_12:bat[:oid,:str],1:int,5:int);
-    X_15:bat[:oid,:str] := b:bat[:oid,:str];
-    X_15:bat[:oid,:str] := batstr.substring(X_15:bat[:oid,:str],1:int,3:int);
-    X_17:bat[:oid,:str] := batcalc.+(X_12:bat[:oid,:str],X_15:bat[:oid,:str]);
-    z:bat[:oid,:str]{inline} := X_17:bat[:oid,:str];
-end user.qry;
+function user.qry():void;               	# 
+    b:bat[:oid,:str] := bat.new(:oid,:str);	# CMDBATnew
+    bat.append(b:bat[:oid,:str],"HELLO WORLD":str);	# BKCappend_val_wrap
+    X_12:bat[:oid,:str] := b:bat[:oid,:str];	# 
+    X_12:bat[:oid,:str] := batstr.substring(X_12:bat[:oid,:str],1:int,5:int);	# STRbatsubstringcst
+    X_15:bat[:oid,:str] := b:bat[:oid,:str];	# 
+    X_15:bat[:oid,:str] := batstr.substring(X_15:bat[:oid,:str],1:int,3:int);	# STRbatsubstringcst
+    X_17:bat[:oid,:str] := batcalc.+(X_12:bat[:oid,:str],X_15:bat[:oid,:str]);	# CMDbatADD
+    z:bat[:oid,:str]{inline} := X_17:bat[:oid,:str];	# 
+end user.qry;                           	# 
 
 # 11:53:00 >  
 # 11:53:00 >  Done.

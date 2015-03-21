@@ -17,10 +17,10 @@ function user.main():void;
     mdb.List();
 end user.main;
 [ "done" ]
-function user.main():void;
-    io.print("done":str);
-    mdb.List();
-end user.main;
+function user.main():void;              	# 
+    io.print("done":str);               	# IOprint_val
+    mdb.List();                         	# MDBlistDetail
+end user.main;                          	# 
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

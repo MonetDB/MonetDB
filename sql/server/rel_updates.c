@@ -1175,13 +1175,18 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	/* if collist has skip and different order (or format specification) use intermediate table */
 	nt = t;
 	if (headers) {
+		int has_formats = 0;
 		dnode *n;
 
 		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1);
 		for (n = headers->h; n; n = n->next) {
-			char *cname = n->data.sval;
+			dnode *dn = n->data.lval->h;
+			char *cname = dn->data.sval;
+			char *format = NULL;
 			sql_column *cs = NULL;
 
+			if (dn->next)
+				format = dn->next->data.sval;
 			if (!list_find_name(collist, cname)) {
 				char *name;
 				size_t len = strlen(cname) + 2;
@@ -1190,12 +1195,18 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				name = sa_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
 				cs = mvc_create_column(sql, nt, name, ctype);
-			} else {
+			} else if (!format) {
 				cs = find_sql_column(t, cname);
 				cs = mvc_create_column(sql, nt, cname, &cs->type);
+			} else { /* load as string, parse later */
+				sql_subtype *ctype = sql_bind_localtype("str");
+				cs = mvc_create_column(sql, nt, cname, ctype);
+				has_formats = 1;
 			}
 			(void)cs;
 		}
+		if (!has_formats)
+			headers = NULL;
 	}
 	if (files) {
 		dnode *n = files->h;
@@ -1226,6 +1237,44 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	} else {
 		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
 	}
+	if (headers) {
+		dnode *n;
+		node *m = rel->exps->h;
+		list *nexps = sa_list(sql->sa);
+
+		assert(is_project(rel->op) || is_base(rel->op));
+		for (n = headers->h; n; n = n->next) {
+			dnode *dn = n->data.lval->h;
+			char *cname = dn->data.sval;
+			sql_exp *e;
+
+			if (!list_find_name(collist, cname)) 
+				continue;
+		       	e = m->data;
+			if (dn->next) {
+				char *format = dn->next->data.sval;
+				sql_column *cs = find_sql_column(t, cname);
+				sql_schema *sys = mvc_bind_schema(sql, "sys");
+				sql_subtype st;
+				sql_subfunc *f;
+				list *args = sa_list(sql->sa);
+
+				sql_find_subtype(&st, "clob", 0, 0);
+				f = sql_bind_func_result(sql->sa, sys, "convert", &st, &st, &cs->type); 
+				if (!f)
+					return sql_error(sql, 02, "COPY INTO: 'convert' missing for type %s", cs->type.type->sqlname);
+				append(args, e);
+				append(args, exp_atom_clob(sql->sa, format));
+				e = exp_op(sql->sa, args, f);
+				append(nexps, e);
+			} else {
+				append(nexps, e);
+			}
+			m = m->next;
+		}
+		rel = rel_project(sql->sa, rel, nexps);
+	}
+	
 	if (!rel)
 		return rel;
 	rel->exps = rel_inserts(sql, t, rel, collist, 1);

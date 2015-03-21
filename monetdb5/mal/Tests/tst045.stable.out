@@ -24,7 +24,7 @@ function user.dummy():void;
 end user.dummy;
 function user.main():void;
 # test variable scope resolution 
-    pi := 3.14700007:flt;
+    pi := 3.147:flt;
 end user.main;
 
 # 07:58:45 >  

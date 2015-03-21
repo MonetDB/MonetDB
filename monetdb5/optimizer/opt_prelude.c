@@ -93,6 +93,7 @@ str groupRef;
 str subgroupRef;
 str subgroupdoneRef;
 str groupbyRef;
+str hgeRef;
 str hashRef;
 str identityRef;
 str ifthenelseRef;
@@ -349,6 +350,7 @@ void optimizerInit(void)
 	subgroupRef = putName("subgroup",8);
 	subgroupdoneRef= putName("subgroupdone",12);
 	groupbyRef = putName("groupby",7);
+	hgeRef = putName("hge",3);
 	hashRef = putName("hash",4);
 	identityRef = putName("identity",8);
 	ifthenelseRef = putName("ifthenelse",10);

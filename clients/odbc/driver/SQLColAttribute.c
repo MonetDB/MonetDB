@@ -250,9 +250,12 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 		LENP_OR_POINTER_T NumericAttributePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle,
-		translateFieldIdentifier(FieldIdentifier));
+	ODBCLOG("SQLColAttribute " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr,
+		PTRFMTCAST (void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -337,9 +340,12 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributeW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle,
-		translateFieldIdentifier(FieldIdentifier));
+	ODBCLOG("SQLColAttributeW " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr,
+		PTRFMTCAST (void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -360,13 +366,7 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier,
-				      NULL, 0, &n, NumericAttributePtr);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearStmtErrors(stmt);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addStmtError(stmt, "HY001", NULL, 0);
@@ -391,7 +391,6 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_UNNAMED:
 	case SQL_DESC_UNSIGNED:
 	case SQL_DESC_UPDATABLE:
-		n = BufferLength;
 		ptr = CharacterAttributePtr;
 		break;
 	default:
@@ -401,9 +400,22 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	}
 
 	rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier, ptr,
-			      n, &n, NumericAttributePtr);
+			      BufferLength, &n, NumericAttributePtr);
 
 	if (ptr != CharacterAttributePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearStmtErrors(stmt);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBColAttribute(stmt, ColumnNumber,
+					      FieldIdentifier, ptr, n, &n,
+					      NumericAttributePtr);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			fixWcharOut(rc, ptr, n, CharacterAttributePtr,
 				    BufferLength, StringLengthPtr, 2,

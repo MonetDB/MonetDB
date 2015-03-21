@@ -47,22 +47,22 @@ function user.main():void;
 #optimizer.garbageCollector("user","getz"); 
     mdb.List("user","getz");
 end user.main;
-function user.getz(p:int):int;
-    x:int := nil:int;
-    V6:sht := calc.sht(10:int);
-    V9:int := calc.int(V6:sht);
-    V11:bit := calc.>(p:int,V9:int);
-barrier V12:bit := V11:bit;
-    V15:int := calc.int(2:int);
-    V22:int := calc.*(p:int,V15:int);
-    V24:int := calc.int(V22:int);
-    x:int := V24:int;
-exit V12:bit;
-barrier V27:bit := calc.not(V11:bit);
-    x:int := p:int;
-exit V27:bit;
-    return V31:int := x:int;
-end user.getz;
+function user.getz(p:int):int;          	# 
+    x:int := nil:int;                   	# 
+    V6:sht := calc.sht(10:int);         	# CMDvarCONVERT
+    V9:int := calc.int(V6:sht);         	# CMDvarCONVERT
+    V11:bit := calc.>(p:int,V9:int);    	# CMDvarGT
+barrier V12:bit := V11:bit;             	# 
+    V15:int := calc.int(2:int);         	# CMDvarCONVERT
+    V22:int := calc.*(p:int,V15:int);   	# CMDvarMULsignal
+    V24:int := calc.int(V22:int);       	# CMDvarCONVERT
+    x:int := V24:int;                   	# 
+exit V12:bit;                           	# 
+barrier V27:bit := calc.not(V11:bit);   	# CMDvarNOT
+    x:int := p:int;                     	# 
+exit V27:bit;                           	# 
+    return V31:int := x:int;            	# 
+end user.getz;                          	# 
 
 # 19:53:37 >  
 # 19:53:37 >  Done.

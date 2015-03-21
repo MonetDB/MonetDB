@@ -1411,8 +1411,8 @@ case "$have_rubygem_dir" in
 				yes|auto)
 					AC_MSG_CHECKING([where rubygems are stored])
 					RUBY_DIR=
-					d=`$RUBY -rrbconfig -e "puts Config::CONFIG[['prefix']]" 2>/dev/null`
-					RUBY_DIR=`$RUBY -rrbconfig -e "puts Config::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
+					d=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['prefix']]" 2>/dev/null`
+					RUBY_DIR=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
 					if test x"$RUBY_DIR" = x ; then
 						if test x"$have_rubygem_dir" != xauto; then
 							AC_MSG_ERROR([unable to determine rubygems location])
@@ -1437,7 +1437,7 @@ esac
 case "$RUBY_DIR" in
 ${prefix}/*)
 	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
-/*)	;;
+/*)	RUBY_DIR="\${prefix}$RUBY_DIR";;
 *)
 	RUBY_DIR="\${prefix}/$RUBY_DIR";;
 esac

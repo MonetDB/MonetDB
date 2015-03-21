@@ -132,6 +132,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->calls = 0;
 	mb->optimize = 0;
 	mb->stmt = NULL;
+	mb->activeClients = 1;
 	if (newMalBlkStmt(mb, maxstmts) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb->stmt);
@@ -235,6 +236,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->dotfile = old->dotfile;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
+	mb->activeClients = 1;
 
 	if (mb->var == NULL) {
 		GDKfree(mb);
@@ -1385,7 +1387,7 @@ convertConstant(int type, ValPtr vr)
 		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 		   (*BATatoms[type].atomFromStr) (buf, &ll, &d);
 		   if( d==0 ){
-		   VALinit(vr, type, BATatoms[type].atomNull);
+		   VALinit(vr, type, ATOMnilptr(type));
 		   throw(SYNTAX, "convertConstant", "conversion error");
 		   }
 		   VALset(vr, type, d);

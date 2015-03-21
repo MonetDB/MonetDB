@@ -1058,10 +1058,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 	}
 	if (bn->batCount <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->hrevsorted = ATOMlinear(b->htype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		BATkey(bn, 1);
 		BATkey(BATmirror(bn), 1);
 	} else {
@@ -1328,8 +1328,8 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			if (on == NULL)
 				goto error;
 			BATsetcount(on, BATcount(b));
-			BATseqbase(on, 0);
-			BATseqbase(BATmirror(on), 0);
+			BATseqbase(on, b->hseqbase);
+			BATseqbase(BATmirror(on), b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
@@ -1387,13 +1387,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
 			for (p = 0, q = BATcount(bn); p < q; p++)
-				grps[p] = p;
+				grps[p] = p + b->hseqbase;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 			on->T->nil = 0;
 			on->T->nonil = 1;
 		}
-		BATseqbase(on, 0);
+		BATseqbase(on, b->hseqbase);
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
 		*order = on;
@@ -1747,7 +1747,7 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 		n -= BUNfirst(bn);
 		break;
 	}
-	bn->T->nil = n >= 1 && (*BATatoms[tailtype].atomCmp)(v, BATatoms[tailtype].atomNull) == 0;
+	bn->T->nil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;

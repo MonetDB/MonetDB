@@ -29,6 +29,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCEnv.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN SQL_API
@@ -58,13 +59,13 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		*(SQLINTEGER *) ValuePtr = env->sql_attr_odbc_version;
+		WriteData(ValuePtr, env->sql_attr_odbc_version, SQLINTEGER);
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
-		*(SQLINTEGER *) ValuePtr = SQL_TRUE;
+		WriteData(ValuePtr, SQL_TRUE, SQLINTEGER);
 		break;
 	case SQL_ATTR_CONNECTION_POOLING:
-		*(SQLUINTEGER *) ValuePtr = SQL_CP_OFF;
+		WriteData(ValuePtr, SQL_CP_OFF, SQLUINTEGER);
 		break;
 	case SQL_ATTR_CP_MATCH:
 		/* TODO: implement this function and corresponding behavior */

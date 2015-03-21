@@ -199,9 +199,9 @@ SQLRETURN MNDBColAttribute(ODBCStmt *stmt,
 SQLRETURN MNDBExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
 SQLRETURN MNDBExecute(ODBCStmt *stmt);
-SQLRETURN MNDBFetch(ODBCStmt *stmt);
+SQLRETURN MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray);
 SQLRETURN MNDBFetchScroll(ODBCStmt *stmt, SQLSMALLINT nOrientation,
-			  SQLLEN nOffset);
+			  SQLLEN nOffset, SQLUSMALLINT *RowStatusArray);
 SQLRETURN MNDBFreeStmt(ODBCStmt *stmt, SQLUSMALLINT option);
 SQLRETURN MNDBGetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER BufferLength,

@@ -82,7 +82,7 @@ bteHash(const bte *v)
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) mix_sht(*(const unsigned short *) v);
+	return (BUN) *(const unsigned short *) v;
 }
 
 static BUN
@@ -218,7 +218,7 @@ ATOMisdescendant(int tpe, int parent)
 		cur = tpe;
 		if (cur == parent)
 			return TRUE;
-		tpe = BATatoms[tpe].storage;
+		tpe = ATOMstorage(tpe);
 	}
 	return FALSE;
 }
@@ -844,7 +844,23 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	return (int) (p - src);
 }
 
-atomtostr(dbl, "%.17g", (double))
+int
+dblToStr(char **dst, int *len, const dbl *src)
+{
+	int i;
+
+	atommem(char, dblStrlen);
+	if (*src == dbl_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 18; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtod(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(dbl, Lng, lng)
 
 #ifdef _MSC_VER
@@ -878,8 +894,6 @@ fltFromStr(const char *src, int *len, flt **dst)
 		errno = 0;
 		f = strtof(src, &pe);
 		p = pe;
-		while (GDKisspace(*p))
-			p++;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
@@ -906,13 +920,37 @@ fltFromStr(const char *src, int *len, flt **dst)
 		{
 			**dst = flt_nil; /* default return value is nil */
 			n = 0;
-		} else
+		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (flt) f;
+		}
 	}
 	return n;
 }
 
-atomtostr(flt, "%.9g", (float))
+int
+fltToStr(char **dst, int *len, const flt *src)
+{
+	int i;
+
+	atommem(char, fltStrlen);
+	if (*src == flt_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 10; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+#ifdef HAVE_STRTOF
+		if (strtof(*dst, NULL) == *src)
+			break;
+#else
+		if ((float) strtod(*dst, NULL) == *src)
+			break;
+#endif
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(flt, Int, int)
 
 

@@ -207,7 +207,8 @@ q_requeue(Queue *q, FlowEvent d)
 static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
 {
-	FlowEvent r = NULL;
+	FlowEvent r = NULL, s = NULL;
+	int i;
 
 	assert(q);
 	MT_sema_down(&q->s, "q_dequeue");
@@ -215,19 +216,31 @@ q_dequeue(Queue *q, Client cntxt)
 		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
 	if (cntxt) {
-		int i;
+		int i, minpc = -1;
 
 		for (i = q->last - 1; i >= 0; i--) {
 			if (q->data[i]->flow->cntxt == cntxt) {
-				r = q->data[i];
-				q->last--;
-				while (i < q->last) {
-					q->data[i] = q->data[i + 1];
-					i++;
+				if(minpc < 0){
+					minpc = i;
+					s = q->data[i];
 				}
-				break;
+				r = q->data[i];
+				if( s && r && s->pc > r->pc){
+					minpc = i;
+					s = r;
+				}
 			}
 		}
+		if( minpc >= 0){
+			r = q->data[minpc];
+			i = minpc;
+			q->last--;
+			while (i < q->last) {
+				q->data[i] = q->data[i + 1];
+				i++;
+			}
+		} else r = NULL;
+
 		MT_lock_unset(&q->l, "q_dequeue");
 		return r;
 	}
@@ -240,6 +253,15 @@ q_dequeue(Queue *q, Client cntxt)
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
 		r = q->data[--q->last];
+		for(i= q->last-1; r &&  i>=0; i--){
+			s= q->data[i];
+			if( s && s->flow && s->flow->stk &&
+			    r && r->flow && r->flow->stk &&
+			    s->flow->stk->tag < r->flow->stk->tag){
+				q->data[i]= r;
+				r = s;
+			}
+		}
 		q->data[q->last] = 0;
 	}
 	/* else: terminating */

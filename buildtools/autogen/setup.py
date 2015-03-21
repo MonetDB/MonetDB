@@ -16,6 +16,6 @@ setup(name = "autogen",
       url = "http://www.monetdb.org/",
       maintainer = "Sjoerd Mullender",
       maintainer_email = "info@monetdb.org",
-      license = "MonetDB Public License",
+      license = "Mozilla Public License, v. 2.0",
       packages = ['autogen'],
       scripts = ['autogen.py'])

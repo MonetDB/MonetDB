@@ -73,7 +73,7 @@ has_remote_or_replica( sql_rel *rel )
 }
 
 static sql_rel *
-rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p) 
+rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p, int remote_prop)
 {
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
@@ -85,6 +85,14 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p)
 		exp_setname(sql->sa, ne, e->rname, e->name);
 	}
 	rel_destroy(rel);
+
+	/* set_remote() */
+	if (remote_prop && p && isRemote(p)) {
+		char *uri = p->query;
+		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p); 
+
+		p->value = uri;
+	}
 	return r;
 }
 
@@ -119,7 +127,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 					sql_table *p = n->data;
 	
 					if (isRemote(p) && strcmp(uri, p->query) == 0) {
-						rel = rewrite_replica(sql, rel, t, p);
+						rel = rewrite_replica(sql, rel, t, p, 0);
 						break;
 					}
 				}
@@ -128,7 +136,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 				if (t->tables.set) {
 					p = t->tables.set->h->data;
-					rel = rewrite_replica(sql, rel, t, p);
+					rel = rewrite_replica(sql, rel, t, p, 1);
 				} else {
 					rel = NULL;
 				}

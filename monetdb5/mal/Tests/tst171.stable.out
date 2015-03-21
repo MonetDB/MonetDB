@@ -74,7 +74,7 @@ function user.main():void;
     f := calc.flt(nil);
     x := calc.isnil(f);
     io.print(x);
-    x := calc.isnil(3.1400001);
+    x := calc.isnil(3.14);
     io.print(x);
     io.print("nil");
     g := nil;

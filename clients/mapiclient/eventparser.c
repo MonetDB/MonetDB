@@ -40,6 +40,7 @@ parseArguments(char *call)
 	char *v;
 	
 	malargtop = 0;
+	malvartop = 0;
 	if( debug)
 		fprintf(stderr,"call:%s\n",call);
 	for( ; c && *c && malargtop < MAXMALARGS;  c++){
@@ -57,7 +58,7 @@ parseArguments(char *call)
 			malvariables[malvartop++] = strdup(v);
 			c++;
 		}
-		if (*c== '\\' && *(c+1) =='"'){
+		if (*c && *c== '\\' && *(c+1) =='"'){
 			c++; c++;
 			// parse string skipping escapes
 			for(l=c; *l; l++){
@@ -67,7 +68,7 @@ parseArguments(char *call)
 			*l= 0;
 			malarguments[malargtop++] = strdup(c);
 			c= l+1;
-		} else {
+		} else if(*c) {
 			l = strchr(c, ch = ',');
 			if( l == 0){
 				l = strchr(c, ch = ')');
@@ -141,6 +142,10 @@ eventparser(char *row, EventRecord *ev)
 		if( c == 0)
 			return -4;
 		ev->pc = atoi(c+1);
+		c= strchr(c+1,']');
+		if ( c == 0)
+			return -4;
+		ev->tag = atoi(c+1);
 	}
 	c = strchr(c+1, ',');
 	if (c == 0)

@@ -114,6 +114,7 @@ mtime_export timestamp *timestamp_nil;
 #define ts_isnil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
 mtime_export int daytime_tz_fromstr(const char *buf, int *len, daytime **ret);
+mtime_export int timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret);
 mtime_export str MTIMEcurrent_timestamp(timestamp *t);
 mtime_export str MTIMEcurrent_date(date *d);
 mtime_export str MTIMEcurrent_time(daytime *t);

@@ -137,7 +137,7 @@ exit MALException:str;
     io.printf("# io.print(2147483847.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483647.0:int);\n");
-    io.print(nil:int);
+    io.print(-2147483647:int);
     io.printf("# io.print(-2147483648.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483649.0:int);\n");
@@ -635,17 +635,17 @@ exit MALException:str;
     io.printf("# io.print(-1.0:lng);\n");
     io.print(-1:lng);
     io.printf("# io.print(2147483647.0:lng);\n");
-    io.print(2147483648:lng);
+    io.print(2147483647:lng);
     io.printf("# io.print(2147483648.0:lng);\n");
     io.print(2147483648:lng);
     io.printf("# io.print(2147483649.0:lng);\n");
-    io.print(2147483648:lng);
+    io.print(2147483649:lng);
     io.printf("# io.print(-2147483647.0:lng);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483647:lng);
     io.printf("# io.print(-2147483648.0:lng);\n");
     io.print(-2147483648:lng);
     io.printf("# io.print(-2147483649.0:lng);\n");
-    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
     io.printf("# io.print(9223972036854775807.0:lng);\n");
     io.print(nil:lng);
     io.printf("# io.print(-9223372036854775807.0:lng);\n");
@@ -816,9 +816,9 @@ exit SQLException:str;
     io.printf("# io.print(32768:flt);\n");
     io.print(32768:flt);
     io.printf("# io.print(2147483647:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(-2147483647:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# fl:= 2147483647+1;\n");
     fl := calc.+(2147483647,1);
 catch MALException:str;
@@ -861,25 +861,25 @@ exit MALException:str;
     io.printf("# io.print(1LL:flt);\n");
     io.print(1:flt);
     io.printf("# io.print(2147483647LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483648LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483649LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(-2147483647LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# io.print(-2147483648LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# io.print(-2147483649LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# io.print(9223372036854775807LL:flt);\n");
-    io.print(9.22337204e+18:flt);
+    io.print(9.223372e+18:flt);
     io.printf("# io.print(9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(9223372036854775809LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(-9223372036854775807LL:flt);\n");
-    io.print(-9.22337204e+18:flt);
+    io.print(-9.223372e+18:flt);
     io.printf("# io.print(-9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(-9223372036854775809LL:flt);\n");
@@ -888,44 +888,44 @@ exit MALException:str;
     io.printf("# io.print(0.0LL:flt);\n");
     io.print(0:flt);
     io.printf("# io.print(0.1LL:flt);\n");
-    io.print(0.100000001:flt);
+    io.print(0.1:flt);
     io.printf("# io.print(0.5LL:flt);\n");
     io.print(0.5:flt);
     io.printf("# io.print(0.9LL:flt);\n");
-    io.print(0.899999976:flt);
+    io.print(0.9:flt);
     io.printf("# io.print(1.0LL:flt);\n");
     io.print(1:flt);
     io.printf("# io.print(-0.1LL:flt);\n");
-    io.print(-0.100000001:flt);
+    io.print(-0.1:flt);
     io.printf("# io.print(-0.5LL:flt);\n");
     io.print(-0.5:flt);
     io.printf("# io.print(-0.9LL:flt);\n");
-    io.print(-0.899999976:flt);
+    io.print(-0.9:flt);
     io.printf("# io.print(-1.0LL:flt);\n");
     io.print(-1:flt);
     io.printf("# io.print(2147483647.0LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483648.0LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483649.0LL:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(-2147483647.0LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# io.print(-2147483648.0LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# io.print(-2147483649.0LL:flt);\n");
-    io.print(-2.14748365e+09:flt);
+    io.print(-2.1474836e+09:flt);
     io.printf("# flt from oid\n");
     io.printf("# io.print(2@0:flt);\n");
     io.print(2:flt);
     io.printf("# io.print(2@1:flt);\n");
     io.print(2:flt);
     io.printf("# io.print(2147483647@0:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483648@0:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# io.print(2147483649@0:flt);\n");
-    io.print(2.14748365e+09:flt);
+    io.print(2.1474836e+09:flt);
     io.printf("# flt from str\n");
     io.printf("# s := \"0\"; s_flt := calc.flt(s); io.print(s_flt);\n");
     s := "0";
@@ -1394,13 +1394,13 @@ exit MALException:str;
     io.printf("# io.print(-2147483649LL:dbl);\n");
     io.print(-2147483649:dbl);
     io.printf("# io.print(9223372036854775807LL:dbl);\n");
-    io.print(9.2233720368547758e+18:dbl);
+    io.print(9.223372036854776e+18:dbl);
     io.printf("# io.print(9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(9223372036854775809LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775807LL:dbl);\n");
-    io.print(-9.2233720368547758e+18:dbl);
+    io.print(-9.223372036854776e+18:dbl);
     io.printf("# io.print(-9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775809LL:dbl);\n");
@@ -1409,33 +1409,33 @@ exit MALException:str;
     io.printf("# io.print(0.0:dbl);\n");
     io.print(0:dbl);
     io.printf("# io.print(0.1:dbl);\n");
-    io.print(0.10000000149011612:dbl);
+    io.print(0.1:dbl);
     io.printf("# io.print(0.5:dbl);\n");
     io.print(0.5:dbl);
     io.printf("# io.print(0.9:dbl);\n");
-    io.print(0.89999997615814209:dbl);
+    io.print(0.9:dbl);
     io.printf("# io.print(1.0:dbl);\n");
     io.print(1:dbl);
     io.printf("# io.print(-0.1:dbl);\n");
-    io.print(-0.10000000149011612:dbl);
+    io.print(-0.1:dbl);
     io.printf("# io.print(-0.5:dbl);\n");
     io.print(-0.5:dbl);
     io.printf("# io.print(-0.9:dbl);\n");
-    io.print(-0.89999997615814209:dbl);
+    io.print(-0.9:dbl);
     io.printf("# io.print(-1.0:dbl);\n");
     io.print(-1:dbl);
     io.printf("# io.print(2147483647.0:dbl);\n");
-    io.print(2147483648:dbl);
+    io.print(2147483647:dbl);
     io.printf("# io.print(2147483648.0:dbl);\n");
     io.print(2147483648:dbl);
     io.printf("# io.print(2147483649.0:dbl);\n");
-    io.print(2147483648:dbl);
+    io.print(2147483649:dbl);
     io.printf("# io.print(-2147483647.0:dbl);\n");
-    io.print(-2147483648:dbl);
+    io.print(-2147483647:dbl);
     io.printf("# io.print(-2147483648.0:dbl);\n");
     io.print(-2147483648:dbl);
     io.printf("# io.print(-2147483649.0:dbl);\n");
-    io.print(-2147483648:dbl);
+    io.print(-2147483649:dbl);
     io.printf("# dbl from oid\n");
     io.printf("# io.print(2@0:dbl);\n");
     io.print(2:dbl);
@@ -1990,11 +1990,11 @@ exit MALException:str;
     io.printf("# io.print(-1.0:oid);\n");
     io.print(nil:oid);
     io.printf("# io.print(2147483647.0:oid);\n");
-    io.print(2147483648@0:oid);
+    io.print(2147483647@0:oid);
     io.printf("# io.print(2147483648.0:oid);\n");
     io.print(2147483648@0:oid);
     io.printf("# io.print(2147483649.0:oid);\n");
-    io.print(2147483648@0:oid);
+    io.print(2147483649@0:oid);
     io.printf("# io.print(-2147483647.0:oid);\n");
     io.print(nil:oid);
     io.printf("# io.print(-2147483648.0:oid);\n");
@@ -2180,50 +2180,50 @@ exit MALException:str;
     io.printf("# io.print(0.0:str);\n");
     io.print("0":str);
     io.printf("# io.print(0.1:str);\n");
-    io.print("0.100000001":str);
+    io.print("0.1":str);
     io.printf("# io.print(0.5:str);\n");
     io.print("0.5":str);
     io.printf("# io.print(0.9:str);\n");
-    io.print("0.899999976":str);
+    io.print("0.9":str);
     io.printf("# io.print(1.0:str);\n");
     io.print("1":str);
     io.printf("# io.print(-0.1:str);\n");
-    io.print("-0.100000001":str);
+    io.print("-0.1":str);
     io.printf("# io.print(-0.5:str);\n");
     io.print("-0.5":str);
     io.printf("# io.print(-0.9:str);\n");
-    io.print("-0.899999976":str);
+    io.print("-0.9":str);
     io.printf("# io.print(-1.0:str);\n");
     io.print("-1":str);
     io.printf("# io.print(2147483647.0:str);\n");
-    io.print("2.14748365e+09":str);
+    io.print("2147483647":str);
     io.printf("# io.print(2147483648.0:str);\n");
-    io.print("2.14748365e+09":str);
+    io.print("2147483648":str);
     io.printf("# io.print(2147483649.0:str);\n");
-    io.print("2.14748365e+09":str);
+    io.print("2147483649":str);
     io.printf("# io.print(-2147483647.0:str);\n");
-    io.print("-2.14748365e+09":str);
+    io.print("-2147483647":str);
     io.printf("# io.print(-2147483648.0:str);\n");
-    io.print("-2.14748365e+09":str);
+    io.print("-2147483648":str);
     io.printf("# io.print(-2147483649.0:str);\n");
-    io.print("-2.14748365e+09":str);
+    io.print("-2147483649":str);
     io.printf("# str from dbl\n");
     io.printf("# io.print(0.0LL:str);\n");
     io.print("0":str);
     io.printf("# io.print(0.1LL:str);\n");
-    io.print("0.10000000000000001":str);
+    io.print("0.1":str);
     io.printf("# io.print(0.5LL:str);\n");
     io.print("0.5":str);
     io.printf("# io.print(0.9LL:str);\n");
-    io.print("0.90000000000000002":str);
+    io.print("0.9":str);
     io.printf("# io.print(1.0LL:str);\n");
     io.print("1":str);
     io.printf("# io.print(-0.1LL:str);\n");
-    io.print("-0.10000000000000001":str);
+    io.print("-0.1":str);
     io.printf("# io.print(-0.5LL:str);\n");
     io.print("-0.5":str);
     io.printf("# io.print(-0.9LL:str);\n");
-    io.print("-0.90000000000000002":str);
+    io.print("-0.9":str);
     io.printf("# io.print(-1.0LL:str);\n");
     io.print("-1":str);
     io.printf("# io.print(2147483647.0LL:str);\n");
@@ -2390,7 +2390,7 @@ Caught exception
 # io.print(2147483847.0:int);
 [ nil ]
 # io.print(-2147483647.0:int);
-[ nil ]
+[ -2147483647 ]
 # io.print(-2147483648.0:int);
 [ nil ]
 # io.print(-2147483649.0:int);
@@ -2770,17 +2770,17 @@ Caught exception
 # io.print(-1.0:lng);
 [ -1 ]
 # io.print(2147483647.0:lng);
-[ 2147483648 ]
+[ 2147483647 ]
 # io.print(2147483648.0:lng);
 [ 2147483648 ]
 # io.print(2147483649.0:lng);
-[ 2147483648 ]
+[ 2147483649 ]
 # io.print(-2147483647.0:lng);
-[ -2147483648 ]
+[ -2147483647 ]
 # io.print(-2147483648.0:lng);
 [ -2147483648 ]
 # io.print(-2147483649.0:lng);
-[ -2147483648 ]
+[ -2147483649 ]
 # io.print(9223972036854775807.0:lng);
 [ nil ]
 # io.print(-9223372036854775807.0:lng);
@@ -2897,9 +2897,9 @@ Caught exception
 # io.print(32768:flt);
 [ 32768 ]
 # io.print(2147483647:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(-2147483647:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # fl:= 2147483647+1;
 Caught exception
 # f:= calc.flt(fl);
@@ -2926,25 +2926,25 @@ Caught exception
 # io.print(1LL:flt);
 [ 1 ]
 # io.print(2147483647LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483648LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483649LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(-2147483647LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # io.print(-2147483648LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # io.print(-2147483649LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # io.print(9223372036854775807LL:flt);
-[ 9.22337204e+18 ]
+[ 9.223372e+18 ]
 # io.print(9223372036854775808LL:flt);
 [ nil ]
 # io.print(9223372036854775809LL:flt);
 [ nil ]
 # io.print(-9223372036854775807LL:flt);
-[ -9.22337204e+18 ]
+[ -9.223372e+18 ]
 # io.print(-9223372036854775808LL:flt);
 [ nil ]
 # io.print(-9223372036854775809LL:flt);
@@ -2953,65 +2953,65 @@ Caught exception
 # io.print(0.0LL:flt);
 [ 0 ]
 # io.print(0.1LL:flt);
-[ 0.100000001 ]
+[ 0.1 ]
 # io.print(0.5LL:flt);
 [ 0.5 ]
 # io.print(0.9LL:flt);
-[ 0.899999976 ]
+[ 0.9 ]
 # io.print(1.0LL:flt);
 [ 1 ]
 # io.print(-0.1LL:flt);
-[ -0.100000001 ]
+[ -0.1 ]
 # io.print(-0.5LL:flt);
 [ -0.5 ]
 # io.print(-0.9LL:flt);
-[ -0.899999976 ]
+[ -0.9 ]
 # io.print(-1.0LL:flt);
 [ -1 ]
 # io.print(2147483647.0LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483648.0LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483649.0LL:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(-2147483647.0LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # io.print(-2147483648.0LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # io.print(-2147483649.0LL:flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # flt from oid
 # io.print(2@0:flt);
 [ 2 ]
 # io.print(2@1:flt);
 [ 2 ]
 # io.print(2147483647@0:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483648@0:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # io.print(2147483649@0:flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # flt from str
 # s := "0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 0 ]
 # s := "32767"; s_flt := calc.flt(s); io.print(s_flt);
 [ 32767 ]
 # s := "2147483647"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # s := "2147483648"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # s := "2147483649"; s_flt := calc.flt(s); io.print(s_flt);
-[ 2.14748365e+09 ]
+[ 2.1474836e+09 ]
 # s := "-2147483647"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # s := "-2147483648"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # s := "-2147483649"; s_flt := calc.flt(s); io.print(s_flt);
-[ -2.14748365e+09 ]
+[ -2.1474836e+09 ]
 # s := "0.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 0 ]
 # s := "0.1"; s_flt := calc.flt(s); io.print(s_flt);
-[ 0.100000001 ]
+[ 0.1 ]
 # s := "1.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1e0"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3023,7 +3023,7 @@ Caught exception
 # s := "1e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "1.e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3033,7 +3033,7 @@ Caught exception
 # s := "1.e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1.e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "1.0e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.0e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3043,11 +3043,11 @@ Caught exception
 # s := "1.0e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1.0e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "-0.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -0 ]
 # s := "-0.1"; s_flt := calc.flt(s); io.print(s_flt);
-[ -0.100000001 ]
+[ -0.1 ]
 # s := "-1.0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1e0"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3059,7 +3059,7 @@ Caught exception
 # s := "-1e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # s := "-1.e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3069,7 +3069,7 @@ Caught exception
 # s := "-1.e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1.e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # s := "-1.0e0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.0e1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3079,7 +3079,7 @@ Caught exception
 # s := "-1.0e+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1.0e-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # s := "1E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3089,7 +3089,7 @@ Caught exception
 # s := "1E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "1.E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3099,7 +3099,7 @@ Caught exception
 # s := "1.E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1.E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "1.0E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1 ]
 # s := "1.0E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3109,7 +3109,7 @@ Caught exception
 # s := "1.0E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ 1e+10 ]
 # s := "1.0E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ 1.00000001e-10 ]
+[ 1e-10 ]
 # s := "-1E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3119,7 +3119,7 @@ Caught exception
 # s := "-1E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # s := "-1.E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3129,7 +3129,7 @@ Caught exception
 # s := "-1.E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1.E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # s := "-1.0E0"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1 ]
 # s := "-1.0E1"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3139,28 +3139,28 @@ Caught exception
 # s := "-1.0E+10"; s_flt := calc.flt(s); io.print(s_flt);
 [ -1e+10 ]
 # s := "-1.0E-10"; s_flt := calc.flt(s); io.print(s_flt);
-[ -1.00000001e-10 ]
+[ -1e-10 ]
 # flt range is -3.402823466E+38F to 3.402823466E+38F which is
 # -3.4028234663852886e+38 to 3.4028234663852886e+38 in double
 # precission
 # s := "340282347000000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "340282346600000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "340282346700000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "-340282346600000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "-340282346700000000000000000000000000000"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "3.402823466E+38"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "3.402823467E+38"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "0.3402823466E+39"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "34.02823466E+37"; s_flt := calc.flt(s); io.print(s_flt);
-[ 3.40282347e+38 ]
+[ 3.4028235e+38 ]
 # s := "-3.402823466E+38"; s_flt := calc.flt(s); io.print(s_flt);
 [ nil ]
 # s := "-3.402823467E+38"; s_flt := calc.flt(s); io.print(s_flt);
@@ -3237,13 +3237,13 @@ Caught exception
 # io.print(-2147483649LL:dbl);
 [ -2147483649 ]
 # io.print(9223372036854775807LL:dbl);
-[ 9.2233720368547758e+18 ]
+[ 9.223372036854776e+18 ]
 # io.print(9223372036854775808LL:dbl);
 [ nil ]
 # io.print(9223372036854775809LL:dbl);
 [ nil ]
 # io.print(-9223372036854775807LL:dbl);
-[ -9.2233720368547758e+18 ]
+[ -9.223372036854776e+18 ]
 # io.print(-9223372036854775808LL:dbl);
 [ nil ]
 # io.print(-9223372036854775809LL:dbl);
@@ -3252,33 +3252,33 @@ Caught exception
 # io.print(0.0:dbl);
 [ 0 ]
 # io.print(0.1:dbl);
-[ 0.10000000149011612 ]
+[ 0.1 ]
 # io.print(0.5:dbl);
 [ 0.5 ]
 # io.print(0.9:dbl);
-[ 0.89999997615814209 ]
+[ 0.9 ]
 # io.print(1.0:dbl);
 [ 1 ]
 # io.print(-0.1:dbl);
-[ -0.10000000149011612 ]
+[ -0.1 ]
 # io.print(-0.5:dbl);
 [ -0.5 ]
 # io.print(-0.9:dbl);
-[ -0.89999997615814209 ]
+[ -0.9 ]
 # io.print(-1.0:dbl);
 [ -1 ]
 # io.print(2147483647.0:dbl);
-[ 2147483648 ]
+[ 2147483647 ]
 # io.print(2147483648.0:dbl);
 [ 2147483648 ]
 # io.print(2147483649.0:dbl);
-[ 2147483648 ]
+[ 2147483649 ]
 # io.print(-2147483647.0:dbl);
-[ -2147483648 ]
+[ -2147483647 ]
 # io.print(-2147483648.0:dbl);
 [ -2147483648 ]
 # io.print(-2147483649.0:dbl);
-[ -2147483648 ]
+[ -2147483649 ]
 # dbl from oid
 # io.print(2@0:dbl);
 [ 2 ]
@@ -3310,7 +3310,7 @@ Caught exception
 # s := "0.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 0 ]
 # s := "0.1"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 0.10000000000000001 ]
+[ 0.1 ]
 # s := "1.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1 ]
 # s := "1e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3318,9 +3318,9 @@ Caught exception
 # s := "1e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "1.e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3328,9 +3328,9 @@ Caught exception
 # s := "1.e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "1.0e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3338,15 +3338,15 @@ Caught exception
 # s := "1.0e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.0e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.0e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.0e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "-0.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -0 ]
 # s := "-0.1"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -0.10000000000000001 ]
+[ -0.1 ]
 # s := "-1.0"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1 ]
 # s := "-1e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3354,9 +3354,9 @@ Caught exception
 # s := "-1e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "-1.e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3364,9 +3364,9 @@ Caught exception
 # s := "-1.e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "-1.0e0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3374,9 +3374,9 @@ Caught exception
 # s := "-1.0e1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.0e10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.0e+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.0e-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "1E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3384,9 +3384,9 @@ Caught exception
 # s := "1E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "1.E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3394,9 +3394,9 @@ Caught exception
 # s := "1.E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "1.0E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3404,9 +3404,9 @@ Caught exception
 # s := "1.0E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 10 ]
 # s := "1.0E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.0E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 10000000000 ]
+[ 1e+10 ]
 # s := "1.0E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1e-10 ]
 # s := "-1E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3414,9 +3414,9 @@ Caught exception
 # s := "-1E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "-1.E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3424,9 +3424,9 @@ Caught exception
 # s := "-1.E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "-1.0E0"; s_dbl := calc.dbl(s); io.print(s_dbl);
@@ -3434,35 +3434,35 @@ Caught exception
 # s := "-1.0E1"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -10 ]
 # s := "-1.0E10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.0E+10"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -10000000000 ]
+[ -1e+10 ]
 # s := "-1.0E-10"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ -1e-10 ]
 # s := "340282346600000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+38 ]
+[ 3.402823466e+38 ]
 # s := "340282346700000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234670000002e+38 ]
+[ 3.402823467e+38 ]
 # s := "-340282346600000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+38 ]
+[ -3.402823466e+38 ]
 # s := "-340282346700000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234670000002e+38 ]
+[ -3.402823467e+38 ]
 # s := "3.402823466E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+38 ]
+[ 3.402823466e+38 ]
 # s := "3.402823467E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234670000002e+38 ]
+[ 3.402823467e+38 ]
 # s := "0.3402823466E+39"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+38 ]
+[ 3.402823466e+38 ]
 # s := "34.02823466E+37"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ 3.4028234660000002e+38 ]
+[ 3.402823466e+38 ]
 # s := "-3.402823466E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+38 ]
+[ -3.402823466e+38 ]
 # s := "-3.402823467E+38"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234670000002e+38 ]
+[ -3.402823467e+38 ]
 # s := "-0.3402823466E+39"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+38 ]
+[ -3.402823466e+38 ]
 # s := "-34.02823466E+37"; s_dbl := calc.dbl(s); io.print(s_dbl);
-[ -3.4028234660000002e+38 ]
+[ -3.402823466e+38 ]
 # dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.
 # s := "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"; s_dbl := calc.dbl(s); io.print(s_dbl);
 [ 1.7976931348623157e+308 ]
@@ -3565,11 +3565,11 @@ Caught exception
 # io.print(-1.0:oid);
 [ nil ]
 # io.print(2147483647.0:oid);
-[ 2147483648@0 ]
+[ 2147483647@0 ]
 # io.print(2147483648.0:oid);
 [ 2147483648@0 ]
 # io.print(2147483649.0:oid);
-[ 2147483648@0 ]
+[ 2147483649@0 ]
 # io.print(-2147483647.0:oid);
 [ nil ]
 # io.print(-2147483648.0:oid);
@@ -3690,50 +3690,50 @@ Caught exception
 # io.print(0.0:str);
 [ "0" ]
 # io.print(0.1:str);
-[ "0.100000001" ]
+[ "0.1" ]
 # io.print(0.5:str);
 [ "0.5" ]
 # io.print(0.9:str);
-[ "0.899999976" ]
+[ "0.9" ]
 # io.print(1.0:str);
 [ "1" ]
 # io.print(-0.1:str);
-[ "-0.100000001" ]
+[ "-0.1" ]
 # io.print(-0.5:str);
 [ "-0.5" ]
 # io.print(-0.9:str);
-[ "-0.899999976" ]
+[ "-0.9" ]
 # io.print(-1.0:str);
 [ "-1" ]
 # io.print(2147483647.0:str);
-[ "2.14748365e+09" ]
+[ "2147483647" ]
 # io.print(2147483648.0:str);
-[ "2.14748365e+09" ]
+[ "2147483648" ]
 # io.print(2147483649.0:str);
-[ "2.14748365e+09" ]
+[ "2147483649" ]
 # io.print(-2147483647.0:str);
-[ "-2.14748365e+09" ]
+[ "-2147483647" ]
 # io.print(-2147483648.0:str);
-[ "-2.14748365e+09" ]
+[ "-2147483648" ]
 # io.print(-2147483649.0:str);
-[ "-2.14748365e+09" ]
+[ "-2147483649" ]
 # str from dbl
 # io.print(0.0LL:str);
 [ "0" ]
 # io.print(0.1LL:str);
-[ "0.10000000000000001" ]
+[ "0.1" ]
 # io.print(0.5LL:str);
 [ "0.5" ]
 # io.print(0.9LL:str);
-[ "0.90000000000000002" ]
+[ "0.9" ]
 # io.print(1.0LL:str);
 [ "1" ]
 # io.print(-0.1LL:str);
-[ "-0.10000000000000001" ]
+[ "-0.1" ]
 # io.print(-0.5LL:str);
 [ "-0.5" ]
 # io.print(-0.9LL:str);
-[ "-0.90000000000000002" ]
+[ "-0.9" ]
 # io.print(-1.0LL:str);
 [ "-1" ]
 # io.print(2147483647.0LL:str);

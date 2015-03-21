@@ -70,6 +70,7 @@ extern char *statenames[];
 typedef struct  {
 	int state;
 	int pc;
+	int tag;
 	lng eventnr;
 	int thread;
 	lng clkticks;

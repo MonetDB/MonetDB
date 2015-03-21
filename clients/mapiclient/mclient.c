@@ -1037,10 +1037,36 @@ TESTrenderer(MapiHdl hdl)
 				}
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else if (strcmp(tp, "double") == 0 ||
-				   strcmp(tp, "dbl") == 0 ||
-				   strcmp(tp, "real") == 0)
-				mnstr_printf(toConsole, "%.10g", atof(s));
-			else
+				   strcmp(tp, "dbl") == 0) {
+				char buf[32];
+				int j;
+				double v = strtod(s, NULL);
+				for (j = 4; j < 11; j++) {
+					snprintf(buf, sizeof(buf), "%.*g", j, v);
+					if (v == strtod(buf, NULL))
+						break;
+				}
+				mnstr_printf(toConsole, "%s", buf);
+			} else if (strcmp(tp, "real") == 0) {
+				char buf[32];
+				int j;
+#ifdef HAVE_STRTOF
+				float v = strtof(s, NULL);
+#else
+				float v = (float) strtod(s, NULL);
+#endif
+				for (j = 4; j < 6; j++) {
+					snprintf(buf, sizeof(buf), "%.*g", j, v);
+#ifdef HAVE_STRTOF
+					if (v == strtof(buf, NULL))
+						break;
+#else
+					if (v == (float) strtod(buf, NULL))
+						break;
+#endif
+				}
+				mnstr_printf(toConsole, "%s", buf);
+			} else
 				mnstr_printf(toConsole, "%s", s);
 		}
 		mnstr_printf(toConsole, "\t]\n");

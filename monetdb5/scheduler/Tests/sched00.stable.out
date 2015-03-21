@@ -25,24 +25,24 @@ function user.main():void;
     user.f();
 #shows self-modification in action 
 end user.main;
-function user.f():void;
-    i:int{runonce, rows>4} := 1:int;
-# just properties 
-    mdb.List();
-    io.print("start running\n":str);
-    scheduler.isolation();
-    io.print("done\n":str);
-    mdb.List();
-end user.f;
+function user.f():void;                 	# 
+    i:int{runonce, rows>4} := 1:int;    	# 
+# just properties                       	# 
+    mdb.List();                         	# MDBlistDetail
+    io.print("start running\n":str);    	# IOprint_val
+    scheduler.isolation();              	# RUNisolation
+    io.print("done\n":str);             	# IOprint_val
+    mdb.List();                         	# MDBlistDetail
+end user.f;                             	# 
 [ "start running\n" ]
-function user.f():void;
-    i:int{runonce, rows>4} := 1:int;
-# just properties 
-    mdb.List();
-    io.print("start running\n":str);
-    io.print("done\n":str);
-    mdb.List();
-end user.f;
+function user.f():void;                 	# 
+    i:int{runonce, rows>4} := 1:int;    	# 
+# just properties                       	# 
+    mdb.List();                         	# MDBlistDetail
+    io.print("start running\n":str);    	# IOprint_val
+    io.print("done\n":str);             	# IOprint_val
+    mdb.List();                         	# MDBlistDetail
+end user.f;                             	# 
 
 # 23:28:18 >  
 # 23:28:18 >  Done.

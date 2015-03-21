@@ -220,10 +220,10 @@ MNDBBindParameter(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ValueType, 0);
+	rc = MNDBSetDescField(apd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ValueType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
-	rc = MNDBSetDescField(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) ParameterType, 0);
+	rc = MNDBSetDescField(ipd, ParameterNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (intptr_t) ParameterType, 0);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	ipdrec->sql_desc_parameter_type = InputOutputType;
@@ -248,11 +248,13 @@ SQLBindParameter(SQLHSTMT StatementHandle,
 		 SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d\n",
+	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d " PTRFMT " " LENFMT " " PTRFMT "\n",
 		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
 		(int) InputOutputType, translateCType(ValueType),
 		translateSQLType(ParameterType),
-		ULENCAST ColumnSize, (int) DecimalDigits);
+		ULENCAST ColumnSize, (int) DecimalDigits,
+		PTRFMTCAST ParameterValuePtr, LENCAST BufferLength,
+		PTRFMTCAST StrLen_or_IndPtr);
 #endif
 
 	return MNDBBindParameter((ODBCStmt *) StatementHandle, ParameterNumber,

@@ -34,7 +34,8 @@
 SQLRETURN
 MNDBFetchScroll(ODBCStmt *stmt,
 		SQLSMALLINT FetchOrientation,
-		SQLLEN FetchOffset)
+		SQLLEN FetchOffset,
+		SQLUSMALLINT *RowStatusArray)
 {
 	assert(stmt->hdl);
 
@@ -168,7 +169,7 @@ MNDBFetchScroll(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	return MNDBFetch(stmt);
+	return MNDBFetch(stmt, RowStatusArray);
 }
 
 SQLRETURN SQL_API
@@ -202,5 +203,6 @@ SQLFetchScroll(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	return MNDBFetchScroll(stmt, FetchOrientation, FetchOffset);
+	return MNDBFetchScroll(stmt, FetchOrientation, FetchOffset,
+			       stmt->ImplRowDescr->sql_desc_array_status_ptr);
 }

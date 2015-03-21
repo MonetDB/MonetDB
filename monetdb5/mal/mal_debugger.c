@@ -18,6 +18,7 @@
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
+#include "mal_function.h"
 #include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
@@ -910,7 +911,7 @@ retryRead:
 				} else if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
 				if (m)
-					printFunction(out, m, 0, lstng);
+					debugFunction(out, m, 0, lstng, 0,m->stop);
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -932,7 +933,7 @@ partial:
 				*b = 0;
 				if (stepsize < 0)
 					first -= stepsize;
-				listFunction(out, mb, 0, lstng, first, stepsize);
+				debugFunction(out, mb, 0, lstng, first, stepsize);
 				first = first + stepsize > mb->stop ? first : first + stepsize;
 			}
 			continue;
@@ -1467,28 +1468,14 @@ memProfileVector(stream *out, int cells)
 			Hash *h;
 
 			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
-			hp = &b->H->heap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\ttail=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = &b->T->heap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\thead=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
 			}
 
-			hp = b->H->vheap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\thheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
 			hp = b->T->vheap;
 			if (hp && hp->base) {
 				mnstr_printf(out, "\ttheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
-			h = b->H->hash;
-			if (h && h->mask) {
-				mnstr_printf(out, "\thhash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\thhashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
-						(h->mask + h->lim + 1) * sizeof(int));
 			}
 			h = b->T->hash;
 			if (h && h->mask) {

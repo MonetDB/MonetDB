@@ -128,14 +128,13 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
-#define mix_sht(X)	(((X)>>7)^(X))
 #define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
 #define hash_any(H,V)	(ATOMhash((H)->type, (V)) & (H)->mask)
 #define heap_hash_any(hp,H,V)	((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
-#define hash_bte(H,V)	((BUN) (*(const unsigned char*) (V)) & (H)->mask)
-#define hash_sht(H,V)	((BUN) mix_sht(*((const unsigned short*) (V))) & (H)->mask)
+#define hash_bte(H,V)	(assert(((H)->mask & 0xFF) == 0xFF), (BUN) *(const unsigned char*) (V))
+#define hash_sht(H,V)	(assert(((H)->mask & 0xFFFF) == 0xFFFF), (BUN) *(const unsigned short*) (V))
 #define hash_int(H,V)	((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
 #define hash_lng(H,V)	((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(const lng *)(V) >> 32))) & (H)->mask)
@@ -226,109 +225,26 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
 /*
  * A new entry is added with HASHins using the BAT, the BUN index, and
- * a pointer to the value to be stored. An entry is removed by HASdel.
- */
-#define HASHins_TYPE(h, i, v, TYPE)		\
-	do {					\
-		BUN _c = hash_##TYPE(h,v);	\
-		HASHputall(h,i,_c);		\
-	} while (0)
-
-#define HASHins_str(h,i,v)			\
-	do {					\
-		BUN _c;				\
-		GDK_STRHASH(v,_c);		\
-		_c &= (h)->mask;		\
-		HASHputall(h,i,_c);		\
-	} while (0)
-#define HASHins_str_hv(h,i,v)				\
-	do {						\
-		BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
-		HASHputall(h,i,_c);		\
-	} while (0)
-
-#define HASHins_any(h,i,v)			\
-	do {					\
-		BUN _c = HASHprobe(h, v);	\
-		HASHputall(h,i,_c);		\
-	} while (0)
-
-/* HASHins receives a BAT* param and is adaptive, killing wrongly
+ * a pointer to the value to be stored.
+ *
+ * HASHins receives a BAT* param and is adaptive, killing wrongly
  * configured hash tables.
  * Use HASHins_any or HASHins_<tpe> instead if you know what you're
  * doing or want to keep the hash. */
 #define HASHins(b,i,v)							\
 	do {								\
-		if (((i) & 1023) == 1023 && HASHgonebad((b),(v)))	\
+		if (((i) & 1023) == 1023 && HASHgonebad((b), (v)))	\
 			HASHremove(b);					\
-		else							\
-			HASHins_any((b)->T->hash,(i),(v));		\
+		else {							\
+			BUN _c = HASHprobe((b)->T->hash, (v));		\
+			HASHputall((b)->T->hash, (i), _c);		\
+		}							\
 	} while (0)
 
-#if SIZEOF_VOID_P == SIZEOF_INT
-#define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-#define HASHins_ptr(h,i,v)	HASHins_lng(h,i,v)
-#endif
-#define HASHins_bit(h,i,v)	HASHins_bte(h,i,v)
-#if SIZEOF_OID == SIZEOF_INT	/* OIDDEPEND */
-#define HASHins_oid(h,i,v)	HASHins_int(h,i,v)
-#else
-#define HASHins_oid(h,i,v)	HASHins_lng(h,i,v)
-#endif
-#define HASHins_flt(h,i,v)	HASHins_int(h,i,v)
-#define HASHins_dbl(h,i,v)	HASHins_lng(h,i,v)
-#define HASHinsvar(h,i,v)	HASHins_any(h,i,v)
-#define HASHinsloc(h,i,v)	HASHins_any(h,i,v)
-
-#define HASHins_bte(h,i,v)	HASHins_TYPE(h,i,v,bte)
-#define HASHins_sht(h,i,v)	HASHins_TYPE(h,i,v,sht)
-#define HASHins_int(h,i,v)	HASHins_TYPE(h,i,v,int)
-#define HASHins_lng(h,i,v)	HASHins_TYPE(h,i,v,lng)
-#ifdef HAVE_HGE
-#define HASHins_hge(h,i,v)	HASHins_TYPE(h,i,v,hge)
-#endif
-
-#define HASHdel(h, i, v, next)						\
-	do {								\
-		if (next && HASHgetlink(h, i+1) == i) {			\
-			HASHputlink(h,i+1,HASHgetlink(h,i));		\
-		} else {						\
-			BUN _c = HASHprobe(h, v);			\
-			if (HASHget(h,_c) == i) {			\
-				HASHput(h,_c, HASHgetlink(h,i));	\
-			} else {					\
-				for(_c = HASHget(h,_c); _c != HASHnil(h); \
-				    _c = HASHgetlink(h,_c)) {		\
-					if (HASHgetlink(h,_c) == i) {	\
-						HASHputlink(h,_c, HASHgetlink(h,i)); \
-						break;			\
-					}				\
-				}					\
-			}						\
-		}							\
-		HASHputlink(h,i,HASHnil(h));				\
-	} while (0)
-
-#define HASHmove(h, i, j, v, next)					\
-	do {								\
-		if (next && HASHgetlink(h,i+1) == i) {			\
-			HASHputlink(h,i+1,j);				\
-		} else {						\
-			BUN _c = HASHprobe(h, v);			\
-			if (HASHget(h,_c) == i) {			\
-				HASHput(h,_c,j);			\
-			} else {					\
-				for(_c = HASHget(h,_c) ; _c != HASHnil(h); \
-				    _c = HASHgetlink(h,_c)) {		\
-					if (HASHgetlink(h,_c) == i) {	\
-						HASHputlink(h,_c,j);	\
-						break;			\
-					}				\
-				}					\
-			}						\
-		}							\
-		HASHputlink(h,j, HASHgetlink(h,i));			\
+#define HASHins_oid(h,i,v)			\
+	do {					\
+		BUN _c = hash_oid(h,v);		\
+		HASHputall(h,i,_c);		\
 	} while (0)
 
 /* Functions to perform a binary search on a sorted BAT.

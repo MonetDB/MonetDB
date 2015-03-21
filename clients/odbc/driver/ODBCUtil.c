@@ -1222,6 +1222,10 @@ translateConnectAttribute(SQLINTEGER Attribute)
 	switch (Attribute) {
 	case SQL_ATTR_ACCESS_MODE:
 		return "SQL_ATTR_ACCESS_MODE";
+#ifdef SQL_ATTR_ANSI_APP
+	case SQL_ATTR_ANSI_APP:
+		return "SQL_ATTR_ANSI_APP";
+#endif
 #ifdef SQL_ATTR_ASYNC_DBC_EVENT
 	case SQL_ATTR_ASYNC_DBC_EVENT:
 		return "SQL_ATTR_ASYNC_DBC_EVENT";

@@ -34,16 +34,16 @@ function user.main():void;
 #Testing variable return lists 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;
-    X100:lng := -1:lng;
-    X102:lng := -1:lng;
-    X103:lng := -1:lng;
-    X104:lng := -1:lng;
-    (X112:bte,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeSchedule(2:int,X100:lng,X103:lng,X102:lng,X104:lng);
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleB(2:int,X100:lng,X103:lng,X102:lng,X104:lng);
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleC(2:int,X100:lng,X103:lng,X102:lng,X104:lng);
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleD(2:int,X100:lng,X103:lng,X102:lng,X104:lng);
-end user.tst;
+function user.tst():void;               	# 
+    X100:lng := -1:lng;                 	# 
+    X102:lng := -1:lng;                 	# 
+    X103:lng := -1:lng;                 	# 
+    X104:lng := -1:lng;                 	# 
+    (X112:bte,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeSchedule(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	# MDBdummy
+    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleB(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	# MDBdummy
+    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleC(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	# MDBdummy
+    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleD(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	# MDBdummy
+end user.tst;                           	# 
 
 # 16:39:29 >  
 # 16:39:29 >  Done.

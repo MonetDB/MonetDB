@@ -143,8 +143,8 @@ fndSource(char *varname)
 		fprintf(stderr,"fndSource %s\n",varname);
 	for( i=0; i< srctop; i++)
 	if( strcmp(varname, sources[i].varname)==0)
-		return sources[i].source;
-	return "TEMP";
+		return strdup(sources[i].source);
+	return strdup(varname);
 }
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
@@ -184,6 +184,7 @@ stop_disconnect:
 
 char *currentfunction= 0;
 char *currentquery= 0;
+int currenttag;		// to distinguish query invocations
 lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
@@ -212,6 +213,7 @@ static void resetTachograph(void){
 	malsize= 0;
 	malargtop =0;
 	currentfunction = 0;
+	currenttag = 0;
 	currentquery = 0;
 	starttime = 0;
 	finishtime = 0;
@@ -275,14 +277,14 @@ static struct{
 	{"language.pass(nil)", 18,	"pass", 4, 0},
 	{"mat.packIncrement", 17, "pack",4, 0},
 	{"language.pass", 13,	"pass", 4, 0},
-	{"aggr.subcount", 13,	"count", 3, 0},
+	{"aggr.subcount", 13,	"count", 5, 0},
 	{"sql.subdelta", 12, "project",7, 0},
 	{"bat.append", 10,	"append", 6, 0},
 	{"aggr.subavg", 11,	"average", 7, 0},
 	{"aggr.subsum", 11,	"sum", 3, 0},
 	{"aggr.submin", 11,	"minimum", 7, 0},
 	{"aggr.submax", 11,	"maximum", 7, 0},
-	{"aggr.count", 10,	"count", 3, 0},
+	{"aggr.count", 10,	"count", 5, 0},
 	{"calc.lng", 8,	"long", 4, 0},
 	{"sql.bind", 8,	"bind", 4, 0},
 	{"batcalc.hge", 11, "hugeint", 7, 0},
@@ -300,18 +302,77 @@ static struct{
 	{0,0,0,0,0}};
 
 static void
+renderArgs(char *c, int len,  char *line, char *limit, char *l)
+{
+	char varname[BUFSIZ], *v=0;
+	for(; *c && *c !=')' && l < limit-1; ){
+		if( *c == ',')*l++= *c++;
+		v= 0;
+		if(isalpha((int)*c) || *c == '_' ){ 
+			v= varname;
+			while(*c && (isalnum((int)*c) || *c=='_')) *v++ = *c++;
+			*v=0;
+		}
+		if( *c == '=') c++;
+		if( *c == '<'){
+			while(*c && *c !='>') c++;
+			if(*c) c++;
+			if (v && varname[0]){
+				v= fndSource(varname);
+				snprintf(l, len -strlen(line)-2,"%s",v);
+				while(*l) l++;
+				free(v);
+			}
+			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
+			while(*c && *c != ']') c++;
+			if( *c == ']' ) *l++ = *c++;
+		}
+		if (*c == '"' ) {
+			*l++ = *c++;
+			while(*c && *c !='"' && *(c-1) !='\\' && l < limit-2 ) *l++ =*c++;
+			while(*c && *c !='"') c++;
+		}  else{
+			while(*c && *c !=':' && *c !=',' && l < limit-2) *l++ = *c++;
+			while(*c && *c !=':' && *c !=',' )  c++;
+		}
+		if (*c == ':'){
+			if( strncmp(c,":bat",4)== 0){
+				while(*c && *c !=']') c++;
+				if( *c == ']') c++;
+			} else
+				while(*c && *c != ',' && *c != ')') c++;
+		}
+		// literals
+		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
+			for(v = varname; *v; ) *l++ = *v++;
+	}
+	if(*c) *l++ = *c;
+	*l=0;
+}
+
+static void
 renderCall(char *line, int len, char *stmt, int state, int mode)
 {
-	char *limit= line + len, *l = line, *c = stmt;
+	char *limit= line + len, *l = line, *c = stmt, *s;
 	int i;
-	char varname[BUFSIZ], *v=0;
 
 	(void) state;
 	// look for assignment
-	c = strstr(c,":=");
-	if( c) 
-		c+=2;
-	else c=stmt;
+	c = strstr(c," :=");
+	if( c) {
+		if(state){
+			// for finished instructions show the result too
+			*c =0;
+			s = stmt;
+			while(*s && isspace((int) *s)) s++;
+			if( *s == '(') *l++ = *s++;
+			renderArgs(s, len, line, limit, l);
+			while(*l) l++;
+			sprintf(l," := ");
+			while(*l) l++;
+		}
+		c+=3;
+	 } else c=stmt;
 
 	while ( *c && isspace((int) *c)) c++;
 	/* consider a function name remapping */
@@ -329,44 +390,7 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 		while(*c && *c !='(') *l++= *c++;
 	// handle argument list
 	if( *c == '(') *l++ = *c++;
-	for(; *c && *c !=')' && l < limit-1; ){
-		v= 0;
-		if(isalpha((int)*c) ){ 
-			v= varname;
-			while(*c && (isalnum((int)*c) || *c=='_')) *v++ = *c++;
-			*v=0;
-		}
-		if( *c == '=') c++;
-		if( *c == '<'){
-			while(*c && *c !='>') c++;
-			if(*c) c++;
-			if (v && varname[0]){
-				v= fndSource(varname);
-				snprintf(l, len -strlen(line)-2,"%s",v);
-				while(*l) l++;
-			}
-			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
-			if( *c == ']' && l < limit) *l++ = *c++;
-		}
-		if (*c == '"' ) {
-			*l++ = *c++;
-			while(*c && *c !='"' && *(c-1) !='\\' && l < limit-2 ) *l++ =*c++;
-		}  else
-			while(*c && *c !=':' && *c !=',' && l < limit-2) *l++ = *c++;
-		if (*c == ':'){
-			if( strncmp(c,":bat",4)== 0){
-				while(*c && *c !=']') c++;
-				if( *c == ']') c++;
-			} else
-				while(*c && *c != ',' && *c != ')') c++;
-		}
-		// literals
-		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
-			for(v = varname; *v; ) *l++ = *v++;
-		*l++= *c++;
-	}
-	*l++ = *c;
-	*l=0;
+	renderArgs(c, len, line, limit, l);
 }
 
 static void
@@ -393,24 +417,23 @@ showBar(int level, lng clk, char *stmt)
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
 		rendertime(clk,0);
-		printf("  %s ",stamp);
+		printf("  %s      ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ", (level == 100? '-':' '),stamp);
+		printf(" %c%s ETC  ", (level == 100? '-':' '),stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
 		rendertime(clk - duration ,0);
-		printf(" +%s ",stamp);
+		printf(" +%s ETC  ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
-	if(stmt)
-		renderCall(line,MSGLEN,stmt,0,1);
+	renderCall(line,MSGLEN,(stmt?stmt:""),0,1);
 	printf("%s",line);
 	fflush(stdout);
-	txtlength = 6 + stamplen + strlen(line);
+	txtlength = 11 + stamplen + strlen(line);
 	prevlevel = level;
 }
 
@@ -428,6 +451,7 @@ progressBarInit(char *qry)
 	}
 	fprintf(tachofd,"{ \"tachograph\":0.1,\n");
 	fprintf(tachofd," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+	fprintf(tachofd," \"tag\":\"%d\",\n",currenttag);
 	fprintf(tachofd," \"query\":\"%s\",\n",qry);
 	fprintf(tachofd," \"started\": "LLFMT",\n",starttime);
 	fprintf(tachofd," \"duration\":"LLFMT",\n",duration);
@@ -489,8 +513,10 @@ update(EventRecord *ev)
 			finishtime = ev->clkticks + ev->ticks;
 			duration = ev->ticks;
 		}
-		if (currentfunction == 0)
+		if (currentfunction == 0){
 			currentfunction = strdup(ev->fcn+9);
+			currenttag = ev->tag;
+		}
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		return;
@@ -527,8 +553,10 @@ update(EventRecord *ev)
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
 				printf("%s\n",qry);
 			prevquery = currentquery;
-			progressBarInit(ev->stmt);
+			progressBarInit(qry);
 		}
+		if( ev->tag != currenttag)
+			return;	// forget all except one query
 		events[ev->pc].state = RUNNING;
 		renderCall(line,BUFSIZ, ev->stmt,0,1);
 		events[ev->pc].stmt = strdup(ev->stmt);
@@ -577,6 +605,7 @@ update(EventRecord *ev)
 		}
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"start\",\n");
@@ -614,8 +643,11 @@ update(EventRecord *ev)
 	/* end the instruction box */
 	if (ev->state == DONE ){
 			
+		if( ev->tag != currenttag)
+			return;	// forget all except one query
 		fprintf(tachofd,"{\n");
 		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
 		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachofd,"\"status\": \"done\",\n");
@@ -628,9 +660,9 @@ update(EventRecord *ev)
 
 		events[ev->pc].state= FINISHED;
 		free(ev->stmt);
-		if( duration)
-			progress = (int)(ev->clkticks / (duration/100.0));
-		else
+		//if( duration)
+			//progress = (int)(ev->clkticks / (duration/100.0));
+		//else
 			progress = (int)(pccount++ / (malsize/100.0));
 		if( progress > prevprogress ){
 			// pick up last unfinished instruction
