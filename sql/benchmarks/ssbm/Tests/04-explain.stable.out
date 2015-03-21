@@ -100,7 +100,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
     (X_108,r1_123) := sql.bind(X_4,"sys","lineorder","lo_revenue",2);
     X_111:bat[:oid,:int]  := sql.bind(X_4,"sys","lineorder","lo_revenue",1);
     X_113 := sql.projectdelta(X_5,X_103,X_108,r1_123,X_111);
-    X_114:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_175,X_27,X_113);
+    X_114:bat[:oid,:int] := algebra.leftfetchjoinPath(X_176,X_27,X_113);
     X_115:bat[:oid,:lng]  := aggr.subsum(X_114,X_91,r1_106,true,true);
     (X_96,r1_111,r2_111) := algebra.subsort(X_95,false,false);
     (X_100,r1_115,r2_115) := algebra.subsort(X_94,r1_111,r2_111,false,false);
@@ -108,11 +108,11 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
     X_119 := algebra.leftfetchjoin(r1_115,X_94);
     X_118 := algebra.leftfetchjoin(r1_115,X_95);
     X_120 := sql.resultSet(3,1,X_117);
-    sql.rsColumn(X_120,"sys.L1","L1","bigint",32,0,X_117);
+    sql.rsColumn(X_120,"sys.L1","L1","bigint",64,0,X_117);
     sql.rsColumn(X_120,"sys.dwdate","d_year","int",32,0,X_118);
     sql.rsColumn(X_120,"sys.part","p_brand1","clob",0,0,X_119);
-    X_135 := io.stdout();
-    sql.exportResult(X_135,X_120);
+    X_136 := io.stdout();
+    sql.exportResult(X_136,X_120);
 end user.s2_1;
 
 # 23:10:46 >  
