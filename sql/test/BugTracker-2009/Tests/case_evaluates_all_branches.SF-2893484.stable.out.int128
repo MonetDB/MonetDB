@@ -1,0 +1,45 @@
+stdout of test 'case_evaluates_all_branches.SF-2893484` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 18:09:39 >  
+# 18:09:39 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31453 --set xrpc_port=43643 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 18:09:39 >  
+
+# MonetDB server v5.16.0, based on kernel v1.34.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31453/
+# MonetDB/SQL module v2.34.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 18:09:40 >  
+# 18:09:40 >  mclient -lsql -i --host=alf --port=31453 
+# 18:09:40 >  
+
+[ 5	]
+#SELECT CASE SUM(payout_units_cpc) WHEN 0 THEN 0 ELSE 1 END AS avg_cost_cpc FROM stats_2009_week_31; 
+% sys.L1 # table_name
+% avg_cost_cpc # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#SELECT CASE SUM(payout_units_cpc) WHEN 0 THEN 0 ELSE cast(SUM(payout_units_cpc * payout_cpc) as numeric(12,4)) / SUM(payout_units_cpc) END AS avg_cost_cpc FROM stats_2009_week_31;
+% sys.L4 # table_name
+% avg_cost_cpc # name
+% decimal # type
+% 41 # length
+[ 0.0000	]
+
+# 18:09:40 >  
+# 18:09:40 >  Done.
+# 18:09:40 >  
+

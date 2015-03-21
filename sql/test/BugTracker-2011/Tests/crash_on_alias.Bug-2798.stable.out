@@ -44,9 +44,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 140 # length
+% 142 # length
 function user.s4_1(A0:lng,A1:bte):void;
-    X_44:void  := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
+    X_44:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",23);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
@@ -63,7 +63,7 @@ function user.s4_1(A0:lng,A1:bte):void;
     X_24:bat[:oid,:lng]  := batcalc.*(A0,X_23);
     X_25 := sql.resultSet(3,1,X_14);
     sql.rsColumn(X_25,"sys.dbg","d","int",32,0,X_14);
-    sql.rsColumn(X_25,"sys.L1","L1","bigint",32,0,X_18);
+    sql.rsColumn(X_25,"sys.L1","L1","bigint",64,0,X_18);
     sql.rsColumn(X_25,".L3","f","bigint",64,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
@@ -97,9 +97,9 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 145 # length
+% 147 # length
 function user.s10_1(A0:lng,A1:bte):void;
-    X_44:void  := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe");
+    X_44:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",23);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","dbg");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","dbg","a",0);
@@ -116,7 +116,7 @@ function user.s10_1(A0:lng,A1:bte):void;
     X_24:bat[:oid,:lng]  := batcalc.*(A0,X_23);
     X_25 := sql.resultSet(3,1,X_14);
     sql.rsColumn(X_25,"sys.dbg","d","int",32,0,X_14);
-    sql.rsColumn(X_25,"sys.L1","e","bigint",32,0,X_18);
+    sql.rsColumn(X_25,"sys.L1","e","bigint",64,0,X_18);
     sql.rsColumn(X_25,".L3","f","bigint",64,0,X_24);
     X_42 := io.stdout();
     sql.exportResult(X_42,X_25);
