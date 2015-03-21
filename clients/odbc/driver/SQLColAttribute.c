@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -42,7 +31,7 @@
 
 
 SQLRETURN
-SQLColAttribute_(ODBCStmt *stmt,
+MNDBColAttribute(ODBCStmt *stmt,
 		 SQLUSMALLINT ColumnNumber,
 		 SQLUSMALLINT FieldIdentifier,
 		 SQLPOINTER CharacterAttributePtr,
@@ -86,7 +75,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 	rec = stmt->ImplRowDescr->descRec + ColumnNumber;
 
 	switch (FieldIdentifier) {
-	case SQL_DESC_AUTO_UNIQUE_VALUE:	/* SQL_COLUMN_AUTO_INCREMENT */
+	case SQL_DESC_AUTO_UNIQUE_VALUE:/* SQL_COLUMN_AUTO_INCREMENT */
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_auto_unique_value;
 		break;
@@ -119,6 +108,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_concise_type;
 		break;
+	case SQL_COLUMN_COUNT:
 	case SQL_DESC_COUNT:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = stmt->ImplRowDescr->sql_desc_count;
@@ -131,7 +121,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_fixed_prec_scale;
 		break;
-	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
+	case SQL_DESC_LABEL:		/* SQL_COLUMN_LABEL */
 		copyString(rec->sql_desc_label,
 			   strlen((char *) rec->sql_desc_label),
 			   CharacterAttributePtr, BufferLength,
@@ -160,12 +150,17 @@ SQLColAttribute_(ODBCStmt *stmt,
 			   StringLengthPtr, SQLSMALLINT, addStmtError,
 			   stmt, return SQL_ERROR);
 		break;
+	case SQL_COLUMN_NAME:
 	case SQL_DESC_NAME:
 		copyString(rec->sql_desc_name,
 			   strlen((char *) rec->sql_desc_name),
 			   CharacterAttributePtr, BufferLength,
 			   StringLengthPtr, SQLSMALLINT, addStmtError,
 			   stmt, return SQL_ERROR);
+		break;
+	case SQL_COLUMN_NULLABLE:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_nullable;
 		break;
 	case SQL_DESC_NULLABLE:
 		if (NumericAttributePtr)
@@ -180,11 +175,17 @@ SQLColAttribute_(ODBCStmt *stmt,
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_octet_length;
 		break;
 	case SQL_COLUMN_PRECISION:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_precision;
+		break;
 	case SQL_DESC_PRECISION:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_precision;
 		break;
 	case SQL_COLUMN_SCALE:
+		if (NumericAttributePtr)
+			*(SQLINTEGER *) NumericAttributePtr = rec->sql_desc_scale;
+		break;
 	case SQL_DESC_SCALE:
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_scale;
@@ -222,7 +223,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unnamed;
 		break;
-	case SQL_DESC_UNSIGNED:	/* SQL_COLUMN_UNSIGNED */
+	case SQL_DESC_UNSIGNED:		/* SQL_COLUMN_UNSIGNED */
 		if (NumericAttributePtr)
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_unsigned;
 		break;
@@ -249,9 +250,12 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 		LENP_OR_POINTER_T NumericAttributePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle,
-		translateFieldIdentifier(FieldIdentifier));
+	ODBCLOG("SQLColAttribute " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr,
+		PTRFMTCAST (void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -259,7 +263,42 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 
 	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLColAttribute_((ODBCStmt *) StatementHandle,
+	switch (FieldIdentifier) {
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_CATALOG_NAME:
+	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_COUNT:
+	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_LABEL:
+	case SQL_DESC_LENGTH:
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_NULLABLE:
+	case SQL_DESC_NUM_PREC_RADIX:
+	case SQL_DESC_OCTET_LENGTH:
+	case SQL_DESC_PRECISION:
+	case SQL_DESC_SCALE:
+	case SQL_DESC_SCHEMA_NAME:
+	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_TABLE_NAME:
+	case SQL_DESC_TYPE:
+	case SQL_DESC_TYPE_NAME:
+	case SQL_DESC_UNNAMED:
+	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UPDATABLE:
+		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError((ODBCStmt *) StatementHandle, "HY091", NULL, 0);
+		return SQL_ERROR;
+	}
+	return MNDBColAttribute((ODBCStmt *) StatementHandle,
 				ColumnNumber,
 				FieldIdentifier,
 				CharacterAttributePtr,
@@ -301,9 +340,12 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributeW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle,
-		translateFieldIdentifier(FieldIdentifier));
+	ODBCLOG("SQLColAttributeW " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+		translateFieldIdentifier(FieldIdentifier),
+		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
+		PTRFMTCAST StringLengthPtr,
+		PTRFMTCAST (void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -324,29 +366,56 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier,
-				      NULL, 0, &n, NumericAttributePtr);
-		if (!SQL_SUCCEEDED(rc))
-			return rc;
-		clearStmtErrors(stmt);
-		n++;		/* account for NUL byte */
-		ptr = (SQLPOINTER) malloc(n);
+		ptr = malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addStmtError(stmt, "HY001", NULL, 0);
 			return SQL_ERROR;
 		}
 		break;
-	default:
-		n = BufferLength;
+	/* all other attributes */
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_COUNT:
+	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_LENGTH:
+	case SQL_DESC_NULLABLE:
+	case SQL_DESC_NUM_PREC_RADIX:
+	case SQL_DESC_OCTET_LENGTH:
+	case SQL_DESC_PRECISION:
+	case SQL_DESC_SCALE:
+	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_TYPE:
+	case SQL_DESC_UNNAMED:
+	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UPDATABLE:
 		ptr = CharacterAttributePtr;
 		break;
+	default:
+		/* Invalid descriptor field identifier */
+		addStmtError(stmt, "HY091", NULL, 0);
+		return SQL_ERROR;
 	}
 
-	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, ptr,
-			      n, &n, NumericAttributePtr);
+	rc = MNDBColAttribute(stmt, ColumnNumber, FieldIdentifier, ptr,
+			      BufferLength, &n, NumericAttributePtr);
 
 	if (ptr != CharacterAttributePtr) {
+		if (rc == SQL_SUCCESS_WITH_INFO) {
+			clearStmtErrors(stmt);
+			free(ptr);
+			ptr = malloc(++n); /* add one for NULL byte */
+			if (ptr == NULL) {
+				/* Memory allocation error */
+				addStmtError(stmt, "HY001", NULL, 0);
+				return SQL_ERROR;
+			}
+			rc = MNDBColAttribute(stmt, ColumnNumber,
+					      FieldIdentifier, ptr, n, &n,
+					      NumericAttributePtr);
+		}
 		if (SQL_SUCCEEDED(rc)) {
 			fixWcharOut(rc, ptr, n, CharacterAttributePtr,
 				    BufferLength, StringLengthPtr, 2,

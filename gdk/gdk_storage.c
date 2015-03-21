@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -446,7 +435,13 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				 * only accepts int */
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
+#ifndef STATIC_CODE_ANALYSIS
+					/* Coverity doesn't seem to
+					 * recognize that we're just
+					 * printing the value of ptr,
+					 * not its contents */
 					IODEBUG fprintf(stderr, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+#endif
 
 					if (n <= 0)
 						break;

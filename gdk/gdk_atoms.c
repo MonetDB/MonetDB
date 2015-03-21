@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -93,7 +82,7 @@ bteHash(const bte *v)
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) mix_sht(*(const unsigned short *) v);
+	return (BUN) *(const unsigned short *) v;
 }
 
 static BUN
@@ -229,7 +218,7 @@ ATOMisdescendant(int tpe, int parent)
 		cur = tpe;
 		if (cur == parent)
 			return TRUE;
-		tpe = BATatoms[tpe].storage;
+		tpe = ATOMstorage(tpe);
 	}
 	return FALSE;
 }
@@ -864,7 +853,23 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	return (int) (p - src);
 }
 
-atomtostr(dbl, "%.17g", (double))
+int
+dblToStr(char **dst, int *len, const dbl *src)
+{
+	int i;
+
+	atommem(char, dblStrlen);
+	if (*src == dbl_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 18; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtod(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(dbl, Lng, lng)
 
 #ifdef _MSC_VER
@@ -898,8 +903,6 @@ fltFromStr(const char *src, int *len, flt **dst)
 		errno = 0;
 		f = strtof(src, &pe);
 		p = pe;
-		while (GDKisspace(*p))
-			p++;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
@@ -926,13 +929,37 @@ fltFromStr(const char *src, int *len, flt **dst)
 		{
 			**dst = flt_nil; /* default return value is nil */
 			n = 0;
-		} else
+		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (flt) f;
+		}
 	}
 	return n;
 }
 
-atomtostr(flt, "%.9g", (float))
+int
+fltToStr(char **dst, int *len, const flt *src)
+{
+	int i;
+
+	atommem(char, fltStrlen);
+	if (*src == flt_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 10; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+#ifdef HAVE_STRTOF
+		if (strtof(*dst, NULL) == *src)
+			break;
+#else
+		if ((float) strtod(*dst, NULL) == *src)
+			break;
+#endif
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(flt, Int, int)
 
 

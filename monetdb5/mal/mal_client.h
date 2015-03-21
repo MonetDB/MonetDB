@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -39,8 +28,8 @@
 /*
  * The prompt structure is designed to simplify recognition of the
  * language framework for interaction. For direct console access it is a
- * short printable ascii string. For access through an API we assume the
- * prompt is an ascii string surrounded by a \001 character. This
+ * short printable ASCII string. For access through an API we assume the
+ * prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
@@ -68,9 +57,9 @@ typedef struct CLIENT {
 	oid user;       /* user id in the auth administration */
 	/*
 	 * The actions for a client is separated into several stages:
-	 * parsing, strategic optimization, tactial optimization, and
+	 * parsing, strategic optimization, tactical optimization, and
 	 * execution.  The routines to handle them are obtained once the
-	 * scenario is choosen.  Each stage carries a state descriptor, but
+	 * scenario is chosen.  Each stage carries a state descriptor, but
 	 * they share the IO state description. A backup structure is
 	 * provided to temporarily switch to another scenario.
 	 */
@@ -103,7 +92,7 @@ typedef struct CLIENT {
 	bstream  *fdin;
 	int       yycur;    /* the scanners current position */
 	/*
-	 * Keeping track of instructions executed is a valueable tool for
+	 * Keeping track of instructions executed is a valuable tool for
 	 * script processing and debugging.  It can be changed at runtime
 	 * for individual clients using the operation clients.listing(mask).
 	 * A listing bit controls the level of detail to be generated during

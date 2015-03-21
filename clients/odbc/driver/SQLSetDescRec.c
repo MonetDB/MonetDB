@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -101,39 +90,40 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d\n",
+	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d " PTRFMT " " PTRFMT " " PTRFMT "\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
 		isAD(desc) ? translateCType(Type) : translateSQLType(Type),
 		translateSubType(Type, SubType), LENCAST Length,
-		(int) Precision, (int) Scale);
+		(int) Precision, (int) Scale, PTRFMTCAST DataPtr,
+		PTRFMTCAST StringLengthPtr, PTRFMTCAST IndicatorPtr);
 #endif
 
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_TYPE,
-			     (SQLPOINTER) (ssize_t) Type, 0) == SQL_ERROR)
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_TYPE,
+			     (SQLPOINTER) (intptr_t) Type, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	if ((Type == SQL_DATETIME || Type == SQL_INTERVAL) &&
-	    SQLSetDescField_(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
-			     (SQLPOINTER) (ssize_t) SubType, 0) == SQL_ERROR)
+	    MNDBSetDescField(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
+			     (SQLPOINTER) (intptr_t) SubType, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
-			     (SQLPOINTER) (ssize_t) Length, 0) == SQL_ERROR)
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
+			     (SQLPOINTER) (intptr_t) Length, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_PRECISION,
-			     (SQLPOINTER) (ssize_t) Precision, 0) == SQL_ERROR)
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_PRECISION,
+			     (SQLPOINTER) (intptr_t) Precision, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_SCALE,
-			     (SQLPOINTER) (ssize_t) Scale, 0) == SQL_ERROR)
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_SCALE,
+			     (SQLPOINTER) (intptr_t) Scale, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
 			     (SQLPOINTER) StringLengthPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_INDICATOR_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_INDICATOR_PTR,
 			     (SQLPOINTER) IndicatorPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_DATA_PTR,
+	if (MNDBSetDescField(desc, RecNumber, SQL_DESC_DATA_PTR,
 			     (SQLPOINTER) DataPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

@@ -3,6 +3,8 @@
 \alias{tbl.src_monetdb}
 \alias{src_desc.src_monetdb}
 \alias{src_translate_env.src_monetdb}
+\alias{sample_frac.tbl_monetdb}
+\alias{sample_n.tbl_monetdb}
 \alias{db_analyze.MonetDBConnection}
 \alias{db_create_index.MonetDBConnection}
 \alias{db_insert_into.MonetDBConnection}

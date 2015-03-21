@@ -18,7 +18,7 @@ if (length(args) > 1)
 # install.packages("sqlsurvey", repos=c("http://cran.r-project.org","http://R-Forge.R-project.org"), dep=TRUE)
 
 dburl <- paste0("monetdb://localhost:",dbport,"/",dbname)
-
+options(monetdb.profile=F)
 db <- dbConnect( MonetDB.R() , dburl)
 
 data( api )

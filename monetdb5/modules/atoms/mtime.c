@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -819,6 +808,41 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 	}
 	return (int) (s - buf);
 }
+
+int
+timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret)
+{
+	const char *s = buf;
+	int pos = timestamp_fromstr(s, len, ret);
+	lng offset = 0;
+
+	if (!*ret || *ret == timestamp_nil)
+		return pos;
+
+	s = buf + pos;
+	pos = 0;
+	while (GDKisspace(*s))
+		s++;
+	/* incase of gmt we need to add the time zone */
+	if (fleximatch(s, "gmt", 0) == 3) {
+		s += 3;
+	}
+	if ((s[0] == '-' || s[0] == '+') &&
+		GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
+		((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
+		offset = (((s[1] - '0') * (lng) 10 + (s[2] - '0')) * (lng) 60 + (s[pos] - '0') * (lng) 10 + (s[pos + 1] - '0')) * (lng) 60000;
+		pos += 2;
+		if (s[0] != '-')
+			offset = -offset;
+		s += pos;
+	} else {
+		/* if no tzone is specified; work with the local */
+		offset = get_offset(&tzone_local) * (lng) -60000;
+	}
+	MTIMEtimestamp_add(*ret, *ret, &offset);
+	return (int) (s - buf);
+}
+
 
 int
 timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone)
@@ -2043,6 +2067,17 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2)
+{
+	if (*v1 == daytime_nil || *v2 == daytime_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = (lng) (*v1 - *v2);
+	}
 	return MAL_SUCCEED;
 }
 

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -68,7 +57,7 @@
 
 MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
-#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;
@@ -101,11 +90,11 @@ sortlocklist(MT_Lock *l)
 	 * start of unprocessed part of left and right lists */
 	t = ll = NULL;
 	while (l && r) {
-		if (l->contention < r->contention ||
-		    (l->contention == r->contention &&
-		     l->sleep < r->sleep) ||
-		    (l->contention == r->contention &&
-		     l->sleep == r->sleep &&
+		if (l->sleep < r->sleep ||
+		    (l->sleep == r->sleep &&
+		     l->contention < r->contention) ||
+		    (l->sleep == r->sleep &&
+		     l->contention == r->contention &&
 		     l->count <= r->count)) {
 			/* l is smaller */
 			if (ll == NULL) {
@@ -401,7 +390,7 @@ MT_kill_thread(MT_Id t)
 	return -1;
 }
 
-#ifdef ATOMIC_LOCK
+#ifdef USE_PTHREAD_LOCKS
 
 void
 pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)

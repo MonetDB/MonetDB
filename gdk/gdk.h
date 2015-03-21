@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -1694,7 +1683,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			}						\
 			(col)->sorted = 1;				\
 		} else if ((b)->batCount <= 1) {			\
-			if (BATatoms[(col)->type].linear) {		\
+			if (ATOMlinear((col)->type)) {			\
 				(col)->sorted = 1;			\
 				(col)->revsorted = 1;			\
 			}						\
@@ -1721,7 +1710,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(col)->seq = sqbs;			\
 			}						\
 		}							\
-		if (!BATatoms[(col)->type].linear) {			\
+		if (!ATOMlinear((col)->type)) {				\
 			(col)->sorted = 0;				\
 			(col)->revsorted = 0;				\
 		}							\
@@ -2087,19 +2076,12 @@ gdk_export oid OIDnew(oid inc);
  *  BAThash (BAT *b, BUN masksize)
  * @end multitable
  *
- * The current BAT implementation supports one search accelerator:
- * hashing. The routine BAThash makes sure that a hash accelerator on
- * the head of the BAT exists. A zero is returned upon failure to
- * create the supportive structures.
- *
- * The hash data structures are currently maintained during update
- * operations.
+ * The current BAT implementation supports two search accelerators:
+ * hashing and imprints.  The routine BAThash makes sure that a hash
+ * accelerator on the tail of the BAT exists. GDK_FAIL is returned
+ * upon failure to create the supportive structures.
  */
 gdk_export gdk_return BAThash(BAT *b, BUN masksize);
-
-/* low level functions */
-
-#define BATprepareHash(X) (BAThash((X), 0) == GDK_FAIL)
 
 /*
  * @- Column Imprints Functions

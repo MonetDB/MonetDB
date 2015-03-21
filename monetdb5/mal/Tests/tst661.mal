@@ -13,4 +13,5 @@ a:=fi(1);
 z:= fs(1);
 (y,z):=fs(1);
 end tst;
+mdb.list("user","tst");
 mdb.List("user","tst");

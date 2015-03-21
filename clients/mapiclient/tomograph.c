@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -40,6 +29,7 @@
 #include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
+#include "eventparser.h"
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -59,19 +49,6 @@
 #  include <time.h>
 # endif
 #endif
-
-#define TME_US  1
-#define TME_MS  2
-#define TME_SS  4
-#define TME_MM  8
-#define TME_HH 16
-#define TME_DD 32
-
-#define US_MS ((lng) 1000)
-#define US_SS (US_MS * 1000)
-#define US_MM (US_SS * 60)
-#define US_HH (US_MM * 60)
-#define US_DD (US_HH * 24)
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -95,8 +72,7 @@ static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
-static int debug = 0;
-static int beat = 50;
+static int beat = 5000;
 static int cpus = 0;
 static int atlas= 1;
 static int atlaspage = 0;
@@ -453,7 +429,7 @@ usageTomograph(void)
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -A | --atlas=<number> maximum number of pages\n");
 	fprintf(stderr, "  -D | --debug\n");
 	fprintf(stderr, "  -? | --help\n");
@@ -485,16 +461,6 @@ stop_disconnect:
 		mapi_disconnect(dbh);
 	exit(0);
 }
-
-#define START 1
-#define DONE 2
-#define ACTION 3
-#define PING 4
-#define WAIT 5
-#define IOSTAT 6
-#define GCOLLECT 7
-
-static char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollect"};
 
 typedef struct BOX {
 	int row;
@@ -1272,7 +1238,7 @@ updateNumaHeatmap(int thread, char *numa){
 static int ping = -1;
 
 static void
-update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, lng vmmemory, lng inblock, lng oublock, lng majflt, lng nswap, lng csw, char *fcn, char *stmt, char *line)
+update(char *line, EventRecord *ev)
 {
 	int idx, i;
 	Box b;
@@ -1286,12 +1252,12 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		exit(0);
 	}
 	/* handle a ping event, keep the current instruction in focus */
-	if (state >= PING ) {
-		if (cpus == 0 && state == PING) {
+	if (ev->state >= PING ) {
+		if (cpus == 0 && ev->state == PING) {
 			char *s;
-			if( (s= stmt,'[')) 
+			if( (s= ev->stmt,'[')) 
 				s++;
-			else s = stmt;
+			else s = ev->stmt;
 			while (s && isspace((int) *s))
 				s++;
 			while (s) {
@@ -1302,37 +1268,37 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 					cpus++;
 			}
 		}
-		if( startrange && starttime && clkticks-starttime < startrange)
+		if( startrange && starttime && ev->clkticks-starttime < startrange)
 			return;
-		if( endrange && starttime && clkticks-starttime > endrange)
+		if( endrange && starttime && ev->clkticks-starttime > endrange)
 			return;
-		idx = threads[thread];
+		idx = threads[ev->thread];
 		b = box[idx];
-		box[idx].state = state;
-		box[idx].thread = thread;
+		box[idx].state = ev->state;
+		box[idx].thread = ev->thread;
 		//lastclk[thread] = clkticks-starttime;
-		box[idx].clkend = box[idx].clkstart = clkticks-starttime;
-		if (state == GCOLLECT)
-			box[idx].clkstart -= ticks;
-		box[idx].memend = box[idx].memstart = memory;
-		box[idx].footstart = box[idx].vmmemory = vmmemory;
-		box[idx].inblock = inblock;
-		box[idx].oublock = oublock;
-		box[idx].majflt = majflt;
-		box[idx].nswap = nswap;
-		box[idx].csw = csw;
-		s = strchr(stmt, ']');
+		box[idx].clkend = box[idx].clkstart = ev->clkticks-starttime;
+		if (ev->state == GCOLLECT)
+			box[idx].clkstart -= ev->ticks;
+		box[idx].memend = box[idx].memstart = ev->memory;
+		box[idx].footstart = box[idx].vmmemory = ev->vmmemory;
+		box[idx].inblock = ev->inblock;
+		box[idx].oublock = ev->oublock;
+		box[idx].majflt = ev->majflt;
+		box[idx].nswap = ev->swaps;
+		box[idx].csw = ev->csw;
+		s = strchr(ev->stmt, ']');
 		if (s)
 			*s = 0;
-		box[idx].stmt = stmt;
+		box[idx].stmt = ev->stmt;
 
 		if ( !capturing){
 			ping = idx;
 			return;
 		}
-		box[idx].fcn = state == PING? strdup("profiler.ping"):strdup("profiler.wait");
-		threads[thread] = ++topbox;
-		idx = threads[thread];
+		box[idx].fcn = ev->state == PING? strdup("profiler.ping"):strdup("profiler.wait");
+		threads[ev->thread] = ++topbox;
+		idx = threads[ev->thread];
 		box[idx] = b;
 		if( tracefd)
 			fprintf(tracefd,"%s\n",line);
@@ -1340,18 +1306,18 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 	}
 
 	if (debug)
-		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT" %s\n",(state>=0?statenames[state]:"unknown"),(fcn?fcn:"(null)"),(currentfunction?currentfunction:""),clkticks -starttime,(numa?numa:""));
+		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT" %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),(ev->fcn?ev->fcn:"(null)"),(currentfunction?currentfunction:""),ev->clkticks -starttime,(ev->numa?ev->numa:""));
 
 	if (starttime == 0) {
-		if (fcn == 0 ) {
+		if (ev->fcn == 0 ) {
 			if (debug)
-				fprintf(stderr, "Skip %s input %s\n",(state>=0?statenames[state]:"unknown"),fcn);
+				fprintf(stderr, "Skip %s input %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),ev->fcn);
 			return;
 		}
 		if (debug)
-			fprintf(stderr, "Start capturing updates %s\n",fcn);
+			fprintf(stderr, "Start capturing updates %s\n",ev->fcn);
 	}
-	if (clkticks < 0) {
+	if (ev->clkticks < 0) {
 		/* HACK: *TRY TO* compensate for the fact that the MAL
 		 * profiler chops-off day information, and assume that
 		 * clkticks is < starttime because the tomograph run
@@ -1360,56 +1326,56 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		 * NOTE: this surely does NOT work correctly if the
 		 * tomograph run takes 24 hours or more ...
 		 */
-		clkticks += US_DD;
+		ev->clkticks += US_DD;
 	}
 
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
-	if (!capturing && state == START && fcn && strncmp(fcn, "function", 8) == 0) {
-		if( (i = sscanf(fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
+	if (!capturing && ev->state == START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
 				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
 			return;
 		}
 		if (capturing++ == 0)
-			starttime = clkticks;
+			starttime = ev->clkticks;
 		if( ping >= 0){
 			box[ping].clkend = box[ping].clkstart = 0;
 			ping = -1;
 		}
 		if (currentfunction == 0)
-			currentfunction = strdup(fcn+9);
+			currentfunction = strdup(ev->fcn+9);
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
 		if( tracefd)
 			fprintf(tracefd,"%s\n",line);
 		return;
 	}
-	clkticks -= starttime;
+	ev->clkticks -= starttime;
 
-	if ( !capturing || thread >= MAXTHREADS)
+	if ( !capturing || ev->thread >= MAXTHREADS)
 		return;
-	idx = threads[thread];
-	lastclk[thread] = endrange? endrange: clkticks;
+	idx = threads[ev->thread];
+	lastclk[ev->thread] = endrange? endrange: ev->clkticks;
 
 	/* track the input in the trace file */
 	if( tracefd)
 		fprintf(tracefd,"%s\n",line);
 	/* start of instruction box */
-	if (state == START ) {
+	if (ev->state == START ) {
 		if(debug)
-			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (fcn?fcn:""), clkticks,currentfunction, thread,idx,topbox);
-		box[idx].state = state;
-		box[idx].thread = thread;
-		box[idx].clkstart = clkticks? clkticks:1;
-		box[idx].clkend = clkticks;
-		box[idx].memstart = memory;
-		box[idx].memend = memory;
-		box[idx].numa = numa;
-		if(numa) updateNumaHeatmap(thread, numa);
-		box[idx].footstart = vmmemory;
-		box[idx].stmt = stmt;
-		box[idx].fcn = fcn ? fcn : strdup("");
-		if(fcn && strstr(fcn,"querylog.define") ){
+			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (ev->fcn?ev->fcn:""), ev->clkticks,currentfunction, ev->thread,idx,topbox);
+		box[idx].state = ev->state;
+		box[idx].thread = ev->thread;
+		box[idx].clkstart = ev->clkticks? ev->clkticks:1;
+		box[idx].clkend = ev->clkticks;
+		box[idx].memstart = ev->memory;
+		box[idx].memend = ev->memory;
+		box[idx].numa = ev->numa;
+		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
+		box[idx].footstart = ev->vmmemory;
+		box[idx].stmt = ev->stmt;
+		box[idx].fcn = ev->fcn ? ev->fcn : strdup("");
+		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
 			currentquery = malarguments[0];
 			// use the truncated query text, beware the the \ is already escaped in the call argument.
@@ -1443,8 +1409,8 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 		return;
 	}
 	/* end the instruction box */
-	if (state == DONE && fcn && strncmp(fcn, "function", 8) == 0) {
-		if (currentfunction && strcmp(currentfunction, fcn+9) == 0) {
+	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
 			if( capturing == 0){
 				free(currentfunction);
 				currentfunction = 0;
@@ -1465,25 +1431,25 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 			return;
 		}
 	}
-	if (state == DONE ){
+	if (ev->state == DONE ){
 		if( box[idx].clkstart == 0){
 			// ignore incorrect pairs
 			if(debug) fprintf(stderr, "INCORRECT START\n");
 			return;
 		}
 		if( debug)
-			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (fcn?fcn:""), clkticks, (currentfunction?currentfunction:""), thread,idx,topbox);
+			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (ev->fcn?ev->fcn:""), ev->clkticks, (currentfunction?currentfunction:""), ev->thread,idx,topbox);
 		events++;
-		box[idx].clkend = clkticks;
-		box[idx].memend = memory;
-		box[idx].vmmemory = vmmemory;
-		box[idx].ticks = ticks;
+		box[idx].clkend = ev->clkticks;
+		box[idx].memend = ev->memory;
+		box[idx].vmmemory = ev->vmmemory;
+		box[idx].ticks = ev->ticks;
 		box[idx].state = ACTION;
-		box[idx].inblock = inblock;
-		box[idx].oublock = oublock;
-		box[idx].majflt = majflt;
-		box[idx].nswap = nswap;
-		box[idx].csw = csw;
+		box[idx].inblock = ev->inblock;
+		box[idx].oublock = ev->oublock;
+		box[idx].majflt = ev->majflt;
+		box[idx].nswap = ev->swaps;
+		box[idx].csw = ev->csw;
 		/* focus on part of the time frame */
 		if (endrange) {
 			if( debug){
@@ -1499,265 +1465,13 @@ update(int state, int thread, lng clkticks, lng ticks, lng memory, char *numa, l
 			if (box[idx].clkend > endrange)
 				box[idx].clkend = endrange;
 		}
-		threads[thread] = ++topbox;
+		threads[ev->thread] = ++topbox;
 		lastclktick = box[idx].clkend + starttime;
 		totalclkticks += box[idx].clkend - box[idx].clkstart;
 		totalexecticks += box[idx].ticks - box[idx].ticks;
 	}
 }
 
-/*
- * Beware the UDP protocol may cause some loss
- * Incomplete records from previous runs may also appear
- */
-
-static void
-parseArguments(char *call)
-{
-	int i;
-	char  *c = call, *l, ch;
-	
-	malargtop = 0;
-	if( debug)
-		fprintf(stderr,"call:%s\n",call);
-	for( i=0; c && *c && i < MAXMALARGS; i++, c++){
-		if (*c ==')')
-			break;
-		if (*c == 'X'){
-			// skip variable
-			c= strchr(c,'=');
-			if( c == 0)
-				break;
-			c++;
-			if( debug)
-				fprintf(stderr,"arg:%s\n",c);
-		}
-		if (*c== '\\' && *(c+1) =='"'){
-			c++; c++;
-			// parse string
-			l= strstr(c,"\\\",");
-			if ( l == 0)
-				l= strstr(c,"\\\")");
-			if ( l ==0)
-				break;
-			*l= 0;
-			malarguments[malargtop++] = strdup(c);
-			*l = '\\';
-			c= l+1;
-			if (l[2] ==')')
-				break;
-		} else {
-			// all the rest
-			l = strchr(c, ch = ',');
-			if( l == 0){
-				l = strchr(c, ch = ')');
-				break;
-				}
-			*l=0;
-			malarguments[malargtop++] = strdup(c);
-			*l=ch;
-			c= l;
-			l = strchr(malarguments[malargtop-1],')');
-			if(l)
-				*l =0;
-		}
-	}
-	if( debug)
-	for(i=0; i < malargtop; i++)
-		fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
-}
-
-static int
-parser(char *row)
-{
-#ifdef HAVE_STRPTIME
-	char *c, *cc, *v =0, *line = row;
-	struct tm stm;
-	lng clkticks = 0;
-	int thread = 0;
-	lng ticks = 0;
-	lng memory = 0; /* in MB*/
-	lng vmmemory = 0; /* in MB*/
-	char *fcn = 0, *stmt = 0;
-	char *numa =0;
-	int state = 0;
-	int eventnr = 0;
-	lng inblock= 0, oublock= 0;
-	lng majflt= 0, swaps=0, csw= 0;
-	lng userid= 0;
-
-	(void) eventnr;
-	(void) userid;
-	/* check basic validaty first */
-	if (row[0] =='#')
-		return 0;
-	if (row[0] != '[')
-		return -1;
-	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
-		return -1;
-
-	/* scan event record number */
-	c = row+1;
-	if (c == 0)
-		return -2;
-	eventnr = atoi(c + 1);
-
-	/* scan event time" */
-	c = strchr(c + 1, '"');
-	if (c) {
-		/* convert time to epoch in seconds*/
-		cc =c;
-		memset(&stm, 0, sizeof(struct tm));
-		c = strptime(c + 1, "%H:%M:%S", &stm);
-		clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-		if (c == 0)
-			return -3;
-		if (*c == '.') {
-			lng usec;
-			/* microseconds */
-			usec = strtoll(c + 1, NULL, 10);
-			assert(usec >= 0 && usec < 1000000);
-			clkticks += usec;
-		}
-		c = strchr(c + 1, '"');
-		if (clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", clkticks, cc);
-		}
-		c++;
-	} else
-		return -3;
-
-	/* skip pc tag */
-	c = strchr(c+1, ',');
-	if (c == 0)
-		return -4;
-
-	/* scan thread */
-	thread = atoi(c+1);
-
-	/* scan status */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -5;
-	if (strncmp(c + 1, "start", 5) == 0) {
-		state = START;
-		c += 6;
-	} else if (strncmp(c + 1, "done", 4) == 0) {
-		state = DONE;
-		c += 5;
-	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		state = PING;
-		c += 5;
-	} else if (strncmp(c + 1, "stat", 4) == 0) {
-		state = IOSTAT;
-		c += 6;
-	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		state = WAIT;
-		c += 5;
-	} else {
-		state = 0;
-		c = strchr(c + 1, '"');
-		if (c == 0)
-			return -5;
-	}
-
-
-	/* scan usec */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -6;
-	ticks = strtoll(c + 1, NULL, 10);
-
-	/* scan rssMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -7;
-	memory = strtoll(c + 1, NULL, 10);
-
-	/* scan vmMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -8;
-	vmmemory = strtoll(c + 1, NULL, 10);
-
-#ifdef NUMAPROFILING
-	for(; *c && *c !='"'; c++) ;
-	numa = c+1;
-	for(c++; *c && *c !='"'; c++)
-		;
-	if (*c == 0)
-		return -1;
-	*c = 0;
-	numa= strdup(numa);
-	*c = '"';
-#endif
-
-	/* scan inblock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -9;
-	inblock = strtoll(c + 1, NULL, 10);
-
-	/* scan oublock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -10;
-	oublock = strtoll(c + 1, NULL, 10);
-
-	/* scan majflt */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -11;
-	majflt = strtoll(c + 1, NULL, 10);
-
-	/* scan swaps */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -12;
-	swaps = strtoll(c + 1, NULL, 10);
-
-	/* scan context switches */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -13;
-	csw = strtoll(c + 1, NULL, 10);
-
-	/* parse the MAL call, check basic validity */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -15;
-	c++;
-	fcn = strdup(c);
-	stmt = strdup(fcn);
-	c=fcn;
-	if( *c != '[')
-	{
-		c = strstr(c + 1, ":=");
-		if (c) {
-			fcn = c + 2;
-			/* find genuine function calls */
-			while (isspace((int) *fcn) && *fcn)
-				fcn++;
-			if (strchr(fcn, '.') == 0) 
-				fcn = 0;
-		} else {
-			v=  strchr(fcn+1,';');
-			if ( v ) *v = 0;
-		}
-	}
-
-	if (fcn && (v=strchr(fcn, '(')))
-		*v = 0;
-	if( v)
-		parseArguments(v+1);
-
-	update(state, thread, clkticks, ticks, memory, numa, vmmemory, inblock, oublock, majflt,swaps,csw, fcn, stmt,line);
-	if(numa) free(numa);
-#else
-	(void) row;
-#endif
-	return 0;
-}
 
 int
 main(int argc, char **argv)
@@ -1775,6 +1489,7 @@ main(int argc, char **argv)
 	FILE *trace = NULL;
 	FILE *inpfd;
 	int colormap=0;
+	EventRecord event;
 
 	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
@@ -1811,7 +1526,7 @@ main(int argc, char **argv)
 			atlas = atoi(optarg ? optarg : "1");
 			break;
 		case 'b':
-			beat = atoi(optarg ? optarg : "100");
+			beat = atoi(optarg ? optarg : "5000");
 			break;
 		case 'D':
 			debug = 1;
@@ -1940,7 +1655,9 @@ main(int argc, char **argv)
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = parser(response);
+				//i = parser(response);
+				i = eventparser(response, &event);
+				update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
@@ -2008,16 +1725,17 @@ main(int argc, char **argv)
 		len = 0;
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
-			if( trace) 
-				fprintf(trace,"%s",buf);
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = parser(response);
+				i = eventparser(response,&event);
+				update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
-				response = e + 1;
-			}
+				if( trace && i >=0 && capturing) 
+					fprintf(trace,"%s\n",response);
+					response = e + 1;
+				}
 			/* handle last line in buffer */
 			if (*response) {
 				if (debug)

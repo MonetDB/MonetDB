@@ -1,7 +1,7 @@
-HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions
-HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_gsl
-HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions_bam
-!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_nogeom
+HAVE_FITS&HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions
+HAVE_FITS&HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_gsl
+!HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions_bam
+!HAVE_FITS&!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_nogeom
 example
 example-queries
 example-drop

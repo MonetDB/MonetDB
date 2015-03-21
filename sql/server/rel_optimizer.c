@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -1322,6 +1311,18 @@ project_unsafe(sql_rel *rel)
 }
 
 static int 
+math_unsafe(sql_subfunc *f)
+{
+	if (!f->func->s) {
+		if (strcmp(f->func->base.name, "sql_div") == 0 ||
+		    strcmp(f->func->base.name, "sqrt") == 0 ||
+		    strcmp(f->func->base.name, "atan") == 0 ) 
+			return 1;
+	}
+	return 0;
+}
+
+static int 
 can_push_func(sql_exp *e, sql_rel *rel, int *must)
 {
 	if (!e)
@@ -1348,7 +1349,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		
 		if (e->f){
 			sql_subfunc *f = e->f;
-			if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+			if (math_unsafe(f))
 				return 0;
 		}
 		if (l) for (n = l->h; n && res; n = n->next)
@@ -2226,16 +2227,37 @@ find_func( mvc *sql, char *name, list *exps )
 	return sql_bind_func_(sql->sa, sql->session->schema, name, l, F_FUNC);
 }
 
+/* f (args) unsafe  (examples a/b iff b == 0 and sqrt(a iff a<0))
+ */
 static sql_exp *
-sql_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
+math_unsafe_fixup_unop( mvc *sql, sql_exp *e, sql_exp *le, sql_exp *cond, int lr)
 {
-	list *args = e->l;
-	sql_exp *le = args->h->data, *o;
-	sql_exp *re = args->h->next->data;
+	list *args = new_exp_list(sql->sa);
 	sql_subfunc *ifthen;
+	sql_exp *o;
 
 	/* if (cond) then val else const */
-	args = new_exp_list(sql->sa);
+	append(args, cond);
+	if (!lr)
+		append(args, le);
+	o = exp_atom_wrd(sql->sa, 1);
+	append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(le)));
+	if (lr)
+		append(args, le);
+	ifthen = find_func(sql, "ifthenelse", args);
+	assert(ifthen);
+	le = exp_op(sql->sa, args, ifthen);
+	return exp_unop(sql->sa, le, e->f);
+}
+
+static sql_exp *
+math_unsafe_fixup_binop( mvc *sql, sql_exp *e, sql_exp *le, sql_exp *re, sql_exp *cond, int lr )
+{
+	list *args = new_exp_list(sql->sa);
+	sql_subfunc *ifthen;
+	sql_exp *o;
+
+	/* if (cond) then val else const */
 	append(args, cond);
 	if (!lr)
 		append(args, re);
@@ -2250,8 +2272,18 @@ sql_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 	return exp_binop(sql->sa, le, re, e->f);
 }
 
+static sql_exp *
+math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
+{
+	list *args = e->l;
+	if (args->h->next)
+		return math_unsafe_fixup_binop(sql, e, args->h->data, args->h->next->data, cond, lr);
+	else
+		return math_unsafe_fixup_unop(sql, e, args->h->data, cond, lr);
+}
+
 static int 
-exp_find_func( sql_exp *e, char *name)
+exp_find_math_unsafe( sql_exp *e)
 {
 	if (!e)
 		return 0;
@@ -2263,19 +2295,19 @@ exp_find_func( sql_exp *e, char *name)
 			node *n;
 			sql_subfunc *f = e->f;
 
-			if (!f->func->s && !strcmp(f->func->base.name, name)) 
+			if (math_unsafe(f))
 				return 1;
 			if (!l)
 				return 0;
 			for (n = l->h; n; n = n->next) {
 				sql_exp *ne = n->data;
 
-				if (exp_find_func( ne, name))
+				if (exp_find_math_unsafe(ne))
 					return 1;
 			}
 		}
 	case e_convert:
-		return exp_find_func( e->l, name);
+		return exp_find_math_unsafe(e->l);
 	case e_column: 
 	case e_cmp:
 	case e_psm:
@@ -2285,7 +2317,7 @@ exp_find_func( sql_exp *e, char *name)
 	}
 }
 
-static sql_exp * exp_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr );
+static sql_exp * exp_math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr );
 
 static list *
 exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
@@ -2299,8 +2331,8 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 			if (is_func(e->type) && e->l && !is_rank_op(e) ) {
 				sql_subfunc *f = e->f;
 
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) {
-					e = sql_div_fixup(sql, e, cond, lr);
+				if (math_unsafe(f)) {
+					e = math_unsafe_fixup(sql, e, cond, lr);
 				} else {
 					list *l = exps_case_fixup(sql, e->l, cond, lr);
 					sql_exp *ne = exp_op(sql->sa, l, f);
@@ -2308,7 +2340,7 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 					e = ne;
 				}
 			} else if (e->type == e_convert) {
-				sql_exp *l = exp_div_fixup(sql, e->l, cond, lr);
+				sql_exp *l = exp_math_unsafe_fixup(sql, e->l, cond, lr);
 				sql_exp *ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
 				e = ne;
 			}
@@ -2320,13 +2352,13 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 }
 
 static sql_exp *
-exp_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
+exp_math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 {
 	if (is_func(e->type) && e->l && !is_rank_op(e) ) {
 		sql_subfunc *f = e->f;
 
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) {
-			e = sql_div_fixup(sql, e, cond, lr);
+		if (math_unsafe(f)) {
+			e = math_unsafe_fixup(sql, e, cond, lr);
 		} else {
 			list *l = exps_case_fixup(sql, e->l, cond, lr);
 			sql_exp *ne = exp_op(sql->sa, l, f);
@@ -2382,13 +2414,13 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			sql_exp *a2 = args->h->next->next->data; 
 
 			/* rewrite right hands of div */
-			if ((a1->type == e_func || a1->type == e_convert) && exp_find_func(a1, "sql_div")) {
-				a1 = exp_div_fixup(sql, a1, cond, 0);
+			if ((a1->type == e_func || a1->type == e_convert) && exp_find_math_unsafe(a1)) {
+				a1 = exp_math_unsafe_fixup(sql, a1, cond, 0);
 			} else if (a1->type == e_func && a1->l) { 
 				a1->l = exps_case_fixup(sql, a1->l, cond, 0); 
 			}
-			if  ((a2->type == e_func || a2->type == e_convert) && exp_find_func(a2, "sql_div")) {
-				a2 = exp_div_fixup(sql, a2, cond, 1);
+			if  ((a2->type == e_func || a2->type == e_convert) && exp_find_math_unsafe(a2)) {
+				a2 = exp_math_unsafe_fixup(sql, a2, cond, 1);
 			} else if (a2->type == e_func && a2->l) { 
 				a2->l = exps_case_fixup(sql, a2->l, cond, 1); 
 			}
@@ -6936,6 +6968,25 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			rel->op = op_join;
 		rel->exps = NULL;
 		return rel;
+	}
+	if (r->op == op_union) { 
+		list *p;
+		sql_rel *nl;
+
+		assert( rel_uses_exps(r->l, rel->exps) && rel_uses_exps(r->r, rel->exps));
+		/* apply returns all input columns + the output of the inner relation */
+		/* so we prepend the input colunms to the unions expression list */
+		/* Push the apply down the union */
+		p = rel_projections(sql, rel, NULL, 1, 1);
+		nl = rel_crossproduct(sql->sa, rel_dup(rel->l), r->l, op_apply);
+		rel->r = r->r; 
+		nl->flag = rel->flag;
+		nl->exps = rel->exps;
+		r->l = nl;
+		r->r = rel;
+		r->exps = list_merge(p, r->exps, (fdup)NULL);
+		(*changes)++;
+		return r;
 	}
 	if (r->op == op_project) { /* merge projections */
 		if (!r->l) { /* TODO check realy apply case */

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11776,7 +11765,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	default:
 		assert(tp != TYPE_oid);
 		assert(tp != TYPE_wrd);
-		if (!BATatoms[tp].linear ||
+		if (!ATOMlinear(tp) ||
 		    (atomcmp = ATOMcompare(tp)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			GDKerror("%s: bad input type %s.\n",
@@ -11992,7 +11981,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		GDKerror("VARcalcbetween: incompatible input types.\n");
 		return GDK_FAIL;
 	}
-	if (!BATatoms[t].linear) {
+	if (!ATOMlinear(t)) {
 		GDKerror("VARcalcbetween: non-linear input type.\n");
 		return GDK_FAIL;
 	}
@@ -13320,7 +13309,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		} else {
 			int len;
 			p = VALget(ret);
-			ret->len = BATatoms[ret->vtype].size;
+			ret->len = ATOMsize(ret->vtype);
 			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &ret->len, &p)) <= 0 ||
 			    len < (int) strlen(v->val.sval)) {

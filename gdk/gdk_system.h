@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -162,7 +151,11 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 #include "gdk_atomic.h"
 
-#ifdef ATOMIC_LOCK
+/* define this if you want to use pthread (or Windows) locks instead
+ * of atomic instructions for locking (latching) */
+/* #define USE_PTHREAD_LOCKS */
+
+#ifdef USE_PTHREAD_LOCKS
 
 typedef pthread_mutex_t MT_Lock;
 
@@ -217,16 +210,13 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
 		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
+		(l)->contention++;					\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l, n)						\
 	do {								\
 		if (_spincnt == 1024)					\
 			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
-	} while (0)
-#define _DBG_LOCK_COUNT_1(l)			\
-	do {					\
-		(l)->contention++;		\
-		(l)->sleep += _spincnt >= 1024;	\
+		(l)->sleep++;						\
 	} while (0)
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -289,7 +279,6 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		((void) (n))
 #define _DBG_LOCK_CONTENTION(l, n)	((void) (n))
 #define _DBG_LOCK_SLEEP(l, n)		((void) (n))
-#define _DBG_LOCK_COUNT_1(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l, n)		((void) (n))
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
@@ -307,10 +296,9 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			do {						\
 				if (++_spincnt >= 1024) {		\
 					_DBG_LOCK_SLEEP(l, n);		\
-					MT_sleep_ms(_spincnt >> 10);	\
+					MT_sleep_ms(1);			\
 				}					\
 			} while (ATOMIC_TAS((l)->lock, dummy, n) != 0); \
-			_DBG_LOCK_COUNT_1(l);				\
 		}							\
 		_DBG_LOCK_LOCKER(l, n);					\
 		_DBG_LOCK_COUNT_2(l);					\

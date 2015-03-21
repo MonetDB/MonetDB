@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -502,12 +491,10 @@ BATclear(BAT *b, int force)
 {
 	BUN p, q;
 	int voidbat;
-	BAT *bm;
 
 	BATcheck(b, "BATclear", GDK_FAIL);
 
 	voidbat = 0;
-	bm = BATmirror(b);
 
 	if (BAThdense(b) && b->htype == TYPE_void) {
 		voidbat = 1;
@@ -525,12 +512,7 @@ BATclear(BAT *b, int force)
 	}
 
 	/* kill all search accelerators */
-	if (b->H->hash) {
-		HASHremove(bm);
-	}
-	if (b->T->hash) {
-		HASHremove(b);
-	}
+	HASHdestroy(b);
 	IMPSdestroy(b);
 
 	/* we must dispose of all inserted atoms */
@@ -978,11 +960,11 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		bn->tdense = bn->T->nonil = 0;
 	}
 	if (BATcount(bn) <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->hrevsorted = ATOMlinear(b->htype);
 		bn->hkey = 1;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = 1;
 	}
 	if (writable != TRUE)
@@ -1016,19 +998,7 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 				*_dst++ = *_src++;			\
 		}							\
 	} while (0)
-#define hacc_update(func, get, p, idx)					\
-	do {								\
-		if (b->H->hash) {					\
-			func(b->H->hash, idx, get(bi, p), p < last);	\
-		}							\
-	} while (0)
-#define tacc_update(func, get, p, idx)					\
-	do {								\
-		if (b->T->hash) {					\
-			func(b->T->hash, idx, get(bi, p), p < last);	\
-		}							\
-	} while (0)
-#define acc_move(l, p, idx2, idx1)					\
+#define acc_move(l, p)							\
 	do {								\
 		char tmp[16];						\
 		/* avoid compiler warning: dereferencing type-punned pointer \
@@ -1037,12 +1007,6 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 									\
 		assert(hs <= 16);					\
 		assert(ts <= 16);					\
-		if (b->H->hash) {					\
-			HASHmove(b->H->hash, idx2, idx1, BUNhead(bi, l), l < last); \
-		}							\
-		if (b->T->hash) {					\
-			HASHmove(b->T->hash, idx2, idx1, BUNtail(bi, l), l < last); \
-		}							\
 									\
 		/* move first to tmp */					\
 		un_move(Hloc(b, l), tmpp, hs);				\
@@ -1095,7 +1059,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	assert(x != NULL || col->type == TYPE_void);
 	if (b->batCount == 0) {
 		/* first value */
-		col->sorted = col->revsorted = BATatoms[col->type].linear != 0;
+		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
 		col->key |= 1;
 		if (col->type == TYPE_void) {
 			if (x) {
@@ -1206,14 +1170,13 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) == GDK_FAIL)
 			return GDK_FAIL;
 	} else {
-		size_t hsize = 0, tsize = 0;
-
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
 			GDKerror("BUNins: bat too large\n");
 			return GDK_FAIL;
 		}
 
+		HASHdestroy(b);
 		if (unshare_string_heap(b) == GDK_FAIL) {
 			GDKerror("BUNins: failed to unshare string heap\n");
 			return GDK_FAIL;
@@ -1221,10 +1184,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
-		if (b->H->hash && b->H->vheap)
-			hsize = b->H->vheap->size;
-		if (b->T->hash && b->T->vheap)
-			tsize = b->T->vheap->size;
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);
@@ -1233,18 +1192,6 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			bunfastins(b, h, t);
 		} else {
 			BATsetcount(b, b->batCount + 1);
-		}
-
-		if (b->H->hash) {
-			HASHins(bm, p, h);
-			if (hsize && hsize != b->H->vheap->size)
-				HEAPwarm(b->H->vheap);
-		}
-		if (b->T->hash) {
-			HASHins(b, p, t);
-
-			if (tsize && tsize != b->T->vheap->size)
-				HEAPwarm(b->T->vheap);
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1379,16 +1326,13 @@ BUNappend(BAT *b, const void *t, bit force)
  * one now must do:
  *	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
  */
-#define hashins(h,i,v,n) HASHins_any(h,i,v)
-#define hashdel(h,i,v,n) HASHdel(h,i,v,n)
-
 static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
 {
 	BATiter bi = bat_iterator(b);
 	BAT *bm = BBP_cache(-b->batCacheid);
 	BUN l, last = BUNlast(b) - 1;
-	BUN idx1, idx2;
+	BUN idx1;
 
 	ALIGNdel(b, "BUNdelete", force, BUN_NONE);	/* zap alignment info */
 
@@ -1396,12 +1340,10 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	 * @- Committed Delete.
 	 * Deleting a (committed) bun: the first and deleted swap position.
 	 */
+	HASHdestroy(b);
 	if (p < b->batInserted && !force) {
 		idx1 = p;
 		if (p == b->batFirst) {	/* first can simply be discarded */
-			hacc_update(hashdel,BUNhead,p,idx1);
-			tacc_update(hashdel,BUNtail,p,idx1);
-
 			if (BAThdense(b)) {
 				bm->tseqbase = ++b->hseqbase;
 			}
@@ -1411,12 +1353,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 		} else {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 
-			hacc_update(hashdel,BUNhead,p,idx1);
-			tacc_update(hashdel,BUNtail,p,idx1);
-
 			l = BUNfirst(b);
-			idx2 = l;
-			acc_move(l,p,idx2,idx1);
+			acc_move(l,p);
 			if (b->hsorted) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
@@ -1470,15 +1408,12 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
 		idx1 = p;
-		hacc_update(hashdel,BUNhead,p,idx1);
-		tacc_update(hashdel,BUNtail,p,idx1);
-		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
 
 			/* coverity[result_independent_of_operands] */
-			acc_move(last,p,idx2,idx1);
+			acc_move(last,p);
 			/* If a column was sorted before the BUN was
 			   deleted, check whether it is still sorted
 			   afterward.  This is done by comparing the
@@ -1619,7 +1554,6 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		BAT *bm = BBP_cache(-b->batCacheid);
 		BUN pit = p;
 		BATiter bi = bat_iterator(b);
-		size_t tsize = b->tvarsized ? b->T->vheap->size : 0;
 		int tt;
 		BUN prv, nxt;
 
@@ -1632,9 +1566,8 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 			 * property, so we must clear it */
 			b->T->nil = 0;
 		}
-		tacc_update(hashdel,BUNtail,p,pit);
+		HASHremove(b);
 		Treplacevalue(b, BUNtloc(bi, p), t);
-		tacc_update(hashins,BUNtail,p,pit);
 
 		tt = b->ttype;
 		prv = p > b->batFirst ? p - 1 : BUN_NONE;
@@ -1669,8 +1602,6 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 				b->T->norevsorted = pit;
 			}
 		}
-		if (b->tvarsized && b->T->hash && tsize != b->T->vheap->size)
-			HEAPwarm(b->T->vheap);
 		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 			BATkey(bm, FALSE);
 		}
@@ -1938,9 +1869,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			 * BUNlocate). Other threads might then crash.
 			 */
 			if (dohash(v->H))
-				(void) BATprepareHash(BATmirror(v));
+				(void) BAThash(BATmirror(v), 0);
 			if (dohash(v->T))
-				(void) BATprepareHash(v);
+				(void) BAThash(v, 0);
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -2136,8 +2067,8 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
-		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
-		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
+		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 	}
 	assert(b->batCapacity >= cnt);
 }
@@ -2890,8 +2821,8 @@ BATassertHeadProps(BAT *b)
 		}
 	}
 	/* only linear atoms can be sorted */
-	assert(!b->hsorted || BATatoms[b->htype].linear);
-	assert(!b->hrevsorted || BATatoms[b->htype].linear);
+	assert(!b->hsorted || ATOMlinear(b->htype));
+	assert(!b->hrevsorted || ATOMlinear(b->htype));
 
 	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
 	    !b->H->nonil && !b->H->nil) {
@@ -2948,6 +2879,7 @@ BATassertHeadProps(BAT *b)
 			size_t nmelen = strlen(nme);
 			Heap *hp;
 			Hash *hs = NULL;
+			BUN mask;
 
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
@@ -2961,10 +2893,16 @@ BATassertHeadProps(BAT *b)
 			snprintf(hp->filename, nmelen + 30,
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
+			if (ATOMsize(b->htype) == 1)
+				mask = 1 << 8;
+			else if (ATOMsize(b->htype) == 2)
+				mask = 1 << 16;
+			else
+				mask = HASHmask(b->batCount);
 			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
 							hashheap)) < 0 ||
 			    (hs = HASHnew(hp, b->htype, BUNlast(b),
-					  HASHmask(b->batCount))) == NULL) {
+					  mask, BUN_NONE)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3110,7 +3048,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	}
 	/* tentatively set until proven otherwise */
 	key = 1;
-	sorted = revsorted = (BATatoms[b->htype].linear != 0);
+	sorted = revsorted = (ATOMlinear(b->htype) != 0);
 	dense = (b->htype == TYPE_oid);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
@@ -3162,16 +3100,23 @@ BATderiveHeadProps(BAT *b, int expensive)
 		b->H->nodense = 0;
 	}
 	if (expensive) {
+		BUN mask;
+
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(b->htype) == 1)
+			mask = 1 << 8;
+		else if (ATOMsize(b->htype) == 2)
+			mask = 1 << 16;
+		else
+			mask = HASHmask(b->batCount);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->htype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

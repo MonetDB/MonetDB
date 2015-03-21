@@ -8,4 +8,5 @@ int_parse_best
 int_parse
 load_stdin_incorrect_line_nr
 overflow_error
+format_date
 key_copy

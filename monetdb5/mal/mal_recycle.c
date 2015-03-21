@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -341,7 +330,7 @@ newpass:
 	mnstr_printf(cntxt->fdout,"#Evicted ltop %d vtop %d instruction(s) \n",ltop,vtop);
 	for(v=0; v<vtop;v++){
 		mnstr_printf(cntxt->fdout,"#%d\t " LLFMT" ",leaves[v],recycleBlk->stmt[leaves[v]]->ticks);
-		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[leaves[v]], LIST_MAL_ALL);
+		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[leaves[v]], 0);
 	}
 #endif
 
@@ -461,7 +450,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 #ifdef _DEBUG_RECYCLE_
 	mnstr_printf(cntxt->fdout,"#RECYCLE [%3d] cost "LLFMT" mem "LLFMT" srch %5.2f ",
 		recycleBlk->stop-1, recycleBlk->stmt[i]->ticks, wr, ((double)recycleSearchTime)/recycleSearchCalls);
-	printInstruction( cntxt->fdout,recycleBlk, 0, q, LIST_MAL_DEBUG);
+	printInstruction( cntxt->fdout,recycleBlk, 0, q, 0);
 #else
 	(void) cntxt;
 #endif
@@ -631,7 +620,7 @@ lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
-    cmp = BATatoms[tpe].atomCmp;
+    cmp = ATOMcompare(tpe);
     nilptr = ATOMnilptr(tpe);
     pp = VALptr(p);
     pq = VALptr(q);
@@ -663,7 +652,7 @@ greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
-    cmp = BATatoms[tpe].atomCmp;
+    cmp = ATOMcompare(tpe);
     nilptr = ATOMnilptr(tpe);
     pp = VALptr(p);
     pq = VALptr(q);
@@ -732,7 +721,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 				getFunctionId(p) == likesubselectRef ||
 				getFunctionId(p) == thetasubselectRef ) &&
 				getVarConstant(recycleBlk, getArg(q,1)).val.bval == stk->stk[getArg(p,1)].val.bval &&
-				BATatoms[getArgType(recycleBlk,q,2)].linear )
+				ATOMlinear(getArgType(recycleBlk,q,2)) )
 		{ 	bit	subsmp = 0;
 			/* Time to check for the inclusion constraint */
 			if ( getFunctionId(p) == subselectRef )
@@ -792,7 +781,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_
 		//mnstr_printf(cntxt->fdout,"#RECYCLEreuse subselect using candidate list");
-		//printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_STMT);
+		//printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    0);
 #endif
 		nbid = stk->stk[getArg(p,2)].val.bval;
         stk->stk[getArg(p,2)].val.bval = bid;
@@ -843,7 +832,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 		p = getInstrPtr(recycleBlk,i);
 		mnstr_printf(cntxt->fdout,"#REUSED  [%3d]  "LLFMT" (usec) ",i, recycleBlk->stmt[i]->ticks);
 		if ( p)
-			printInstruction(cntxt->fdout,recycleBlk,0, p, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,recycleBlk,0, p, 0);
 		else
 			mnstr_printf(cntxt->fdout,"instruction already garbage collected\n");
 		MT_lock_unset(&recycleLock, "recycle");
@@ -997,7 +986,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 		}
 #ifdef _DEBUG_RESET_
 		mnstr_printf(cntxt->fdout,"#Marked for eviction [%d]",i);
-		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, 0);
 #endif
 		for(j=0;j<p->argc;j++) {
 			release[getArg(p,j)]=1;//propagate the removal request
@@ -1062,7 +1051,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 		}
 #ifdef _DEBUG_RESET_
 		mnstr_printf(cntxt->fdout,"#EVICT [%d]",i);
-		printInstruction(cntxt->fdout,recycleBlk,0,p, LIST_MAL_DEBUG);
+		printInstruction(cntxt->fdout,recycleBlk,0,p, 0);
 #endif
 		for(j=0;j<p->argc;j++) {
 			release[getArg(p,j)]=1;//propagate the removal request
@@ -1108,7 +1097,7 @@ RECYCLEdumpInternal(stream *s)
             recycleBlk->stmt[i]->ticks,
             recycleBlk->stmt[i]->rbytes,
             recycleBlk->stmt[i]->wbytes,
-            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),LIST_MAL_DEBUG));
+            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0));
     }
 #else
 	(void) i;

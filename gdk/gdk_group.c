@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -197,25 +186,40 @@
 	/* KEEP   */	pv = v					\
 	)
 
-
-#define GRP_use_existing_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+/* If a hash table exists on b we use it.
+ *
+ * The algorithm is simple.  We go through b and for each value we
+ * follow the hash chain starting at the next element after that value
+ * to find one that is equal to the value we're currently looking at.
+ * If we found such a value (including the preexisting group if we're
+ * refining), we add the value to the same group.  If we reach the end
+ * of the chain, we create a new group.
+ *
+ * If b (the original, that is) is a view on another BAT, and this
+ * other BAT has a hash, we use that.  The lo and hi values are the
+ * bounds of the parent BAT that we're considering.
+ *
+ * Note this algorithm depends critically on the fact that our hash
+ * chains go from higher to lower BUNs.
+ */
+#define GRP_use_existing_hash_table(INIT_0,INIT_1,COMP)			\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b);	\
+		for (r = lo, p = r, q = hi;				\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
-			/* this loop is similar, but not equal, to	\
-			 * HASHloop: the difference is that we only	\
-			 * consider BUNs smaller than the one we're	\
-			 * looking up (p), and that we also consider	\
-			 * the input groups */				\
+			/* this loop is similar, but not equal, to */	\
+			/* HASHloop: the difference is that we only */	\
+			/* consider BUNs smaller than the one we're */	\
+			/* looking up (p), and that we also consider */	\
+			/* the input groups */				\
 			if (grps) {					\
-				for (hb = HASHget(hs, HASH);		\
-				     hb != HASHnil(hs);			\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (hb < p &&			\
-					    grps[hb - r] == grps[p - r] && \
+					assert(hb < p);			\
+					if (grps[hb - r] == grps[p - r] && \
 					    COMP) {			\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp;	\
@@ -228,11 +232,11 @@
 					}				\
 				}					\
 			} else {					\
-				for (hb = HASHget(hs, HASH);		\
-				     hb != HASHnil(hs);			\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (hb < p &&			\
-					    COMP) {			\
+					assert(hb < p);			\
+					if (COMP) {			\
 						oid grp = ngrps[hb - r]; \
 						ngrps[p - r] = grp;	\
 						if (histo)		\
@@ -244,7 +248,7 @@
 					}				\
 				}					\
 			}						\
-			if (hb == HASHnil(hs)) {			\
+			if (hb == HASHnil(hs) || hb < lo) {		\
 				GRPnotfound();				\
 			}						\
 		}							\
@@ -254,7 +258,6 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
-	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
 	/* COMP   */	w[p] == w[hb]				\
 	)
 
@@ -262,7 +265,6 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* HASH   */	HASHprobe(hs, v)		,	\
 	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
@@ -280,7 +282,7 @@
 				     hb != HASHnil(hs) &&		\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = HASHgetlink(hs,hb)) {		\
-					assert( HASHgetlink(hs,hb) == HASHnil(hs) \
+					assert(HASHgetlink(hs,hb) == HASHnil(hs) \
 					       || HASHgetlink(hs,hb) < hb); \
 					if (COMP) {		\
 						oid grp = ngrps[hb - r]; \
@@ -299,7 +301,7 @@
 					hb = HASHnil(hs);		\
 				}					\
 			} else if (grps) {				\
-				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
+				prb = (prb ^ (BUN) grps[p-r] << bits) & hs->mask; \
 				for (hb = HASHget(hs,prb);		\
 				     hb != HASHnil(hs);			\
 				     hb = HASHgetlink(hs,hb)) {		\
@@ -375,6 +377,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
+	bat parent;
 
 	if (b == NULL || !BAThdense(b)) {
 		GDKerror("BATgroup: b must be dense-headed\n");
@@ -681,7 +684,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(pgrp);
 	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
-		 * track of doled out group ids */
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 256 groups, so the group id
+		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
 		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
 		unsigned char v;
@@ -705,7 +710,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(bgrps);
 	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
-		 * track of doled out group ids */
+		 * track of doled out group ids; note that we can't
+		 * possibly have more than 65536 groups, so the group
+		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
 		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
 		unsigned short v;
@@ -727,8 +734,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(sgrps);
-	} else if (b->T->hash) {
-		/* we already have a hash table on b */
+	} else if (BATcheckhash(b) ||
+		   (b->batPersistence == PERSISTENT &&
+		    BAThash(b, 0) == GDK_SUCCEED) ||
+		   ((parent = VIEWtparent(b)) != 0 &&
+		    BATcheckhash(BBPdescriptor(-parent)))) {
+		BUN lo, hi;
+
+		/* we already have a hash table on b, or b is
+		 * persistent and we could create a hash table, or b
+		 * is a view on a bat that already has a hash table */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -739,6 +754,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
+		if ((parent = VIEWtparent(b)) != 0) {
+			/* b is a view on another bat (b2 for now).
+			 * calculate the bounds [lo, hi) in the parent
+			 * that b uses */
+			BAT *b2 = BBPdescriptor(-parent);
+			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			hi = lo + BATcount(b);
+			b = b2;
+			bi = bat_iterator(b);
+		} else {
+			lo = BUNfirst(b);
+			hi = BUNlast(b);
+		}
 		hs = b->T->hash;
 		gn->tsorted = 1; /* be optimistic */
 
@@ -768,6 +796,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		default:
 			GRP_use_existing_hash_table_any();
+			break;
 		}
 	} else {
 		bit gc = g && (g->tsorted || g->trevsorted);
@@ -803,6 +832,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(t) == 1) {
+			mask = 1 << 16;
+			bits = 8;
+		} else if (ATOMsize(t) == 2) {
+			mask = 1 << 16;
+			bits = 8;
+		} else {
+			mask = HASHmask(b->batCount);
+			bits = 0;
+		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
@@ -810,7 +849,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+				  MAX(HASHmask(b->batCount), 1 << 16), BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

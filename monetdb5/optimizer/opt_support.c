@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
  /*
@@ -351,7 +340,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				isVarConstant(mb,getArg(q,k)) ) {
 					w= getVar(mb,getArg(p,k));
 					u= getVar(mb,getArg(q,k));
-					cmp = BATatoms[w->value.vtype].atomCmp;
+					cmp = ATOMcompare(w->value.vtype);
 					if ( w->value.vtype == u->value.vtype &&
 						(*cmp)(VALptr(&w->value), VALptr(&u->value)) == 0)
 						continue;
@@ -862,7 +851,7 @@ int isDiffOp(InstrPtr p){
 }
 
 int isMatJoinOp(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
+	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
                  getFunctionId(p) == joinRef ||
                  getFunctionId(p) == subjoinRef ||
@@ -870,7 +859,7 @@ int isMatJoinOp(InstrPtr p){
                  getFunctionId(p) == subthetajoinRef ||
                  getFunctionId(p) == subbandjoinRef ||
                  getFunctionId(p) == subrangejoinRef)
-		);
+		));
 }
 
 int isDelta(InstrPtr p){
@@ -900,8 +889,7 @@ int isSubSelect(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 9 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-9,"subselect") == 0);
+	return (l >= 9 && strcmp(func+l-9,"subselect") == 0);
 }
 
 int isSubJoin(InstrPtr p)
@@ -909,8 +897,13 @@ int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 7 && getModuleId(p)== algebraRef && 
-	        strcmp(func+l-7,"subjoin") == 0);
+	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
+}
+
+int isMultiplex(InstrPtr p)
+{
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
+		getFunctionId(p) == multiplexRef);
 }
 
 int isFragmentGroup(InstrPtr p){

@@ -1,5 +1,7 @@
 0.9.6
-- Fixed non-ASCII character handling (thanks, Roman!)
+- monetdb.read.csv new create= parameter (Thanks, Duncan)
+- deprecated nrows parameter to monetdb.read.csv, not neccessary any more because of changes to MonetDB
+- Fixed non-ASCII character handling (Thanks, Roman)
 - Fully removed C-based socket code
 - support for dplyr verbs sample_n() and sample_frac()
 

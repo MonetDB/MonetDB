@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -315,9 +304,13 @@ pattern drop_func_upgrade_oct2014(id:int) :int
 address UPGdrop_func
 comment "Drop the function identified by id, needed for the Oct2014 upgrade";
 
-pattern create_func_upgrade_oct2014(f:str) :int
+pattern create_func_upgrade_oct2014(sname:str,f:str) :int
 address UPGcreate_func
 comment "Create the function described by f, needed for the Oct2014 upgrade";
+
+pattern create_view_upgrade_oct2014(sname:str,v:str) :int
+address UPGcreate_view
+comment "Create the view described by f, needed for the Oct2014 upgrade";
 
 pattern exportHead{unsafe}(s:streams, res_id:int) :void
 address mvc_export_head_wrap
@@ -870,6 +863,9 @@ comment "Cast to timestamp";
 command calc.timestamp( v:str, digits:int ) :timestamp 
 address str_2time_timestamp
 comment "cast to timestamp and check for overflow";
+command calc.timestamp( v:str, digits:int, has_tz:int ) :timestamp 
+address str_2time_timestamptz
+comment "cast to timestamp and check for overflow";
 command calc.timestamp( v:timestamp, digits:int ) :timestamp 
 address timestamp_2time_timestamp
 comment "cast timestamp to timestamp and check for overflow";
@@ -879,6 +875,9 @@ address batstr_2_timestamp
 comment "Cast to timestamp";
 command batcalc.timestamp( v:bat[:oid,:str], digits:int ) :bat[:oid,:timestamp] 
 address batstr_2time_timestamp
+comment "cast to timestamp and check for overflow";
+command batcalc.timestamp( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:timestamp] 
+address batstr_2time_timestamptz
 comment "cast to timestamp and check for overflow";
 command batcalc.timestamp( v:bat[:oid,:timestamp], digits:int ) :bat[:oid,:timestamp] 
 address battimestamp_2time_timestamp
@@ -904,6 +903,9 @@ comment "Cast to daytime";
 command calc.daytime( v:str, digits:int ) :daytime 
 address str_2time_daytime
 comment "cast to daytime and check for overflow";
+command calc.daytime( v:str, digits:int, has_tz:int ) :daytime 
+address str_2time_daytimetz
+comment "cast to daytime and check for overflow";
 command calc.daytime( v:daytime, digits:int ) :daytime 
 address daytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
@@ -913,6 +915,9 @@ address batstr_2_daytime
 comment "Cast to daytime";
 command batcalc.daytime( v:bat[:oid,:str], digits:int ) :bat[:oid,:daytime] 
 address batstr_2time_daytime
+comment "cast to daytime and check for overflow";
+command batcalc.daytime( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:daytime] 
+address batstr_2time_daytimetz
 comment "cast to daytime and check for overflow";
 command batcalc.daytime( v:bat[:oid,:daytime], digits:int ) :bat[:oid,:daytime] 
 address batdaytime_2time_daytime
@@ -1017,14 +1022,6 @@ comment "cast lng to a second_interval and check for overflow";
 pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
-
-pattern cluster1(sch:str, tbl:str)
-address SQLcluster1
-comment "Cluster the columns of a table on the (first) primary key";
-
-pattern cluster2(sch:str, tbl:str)
-address SQLcluster2
-comment "Cluster the columns of a table on the (first) primary key";
 
 pattern shrink(sch:str, tbl:str)
 address SQLshrink

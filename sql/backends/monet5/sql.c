@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -41,7 +30,6 @@
 #include <rel_dump.h>
 #include <rel_bin.h>
 #include <bbp.h>
-#include <cluster.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mal_instruction.h"
@@ -929,21 +917,56 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str func = *getArgReference_str(stk, pci, 1);
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str func = *getArgReference_str(stk, pci, 2);
 	stmt *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
 	s = sql_parse(sql, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, func);
+		mvc_set_schema(sql, osname);
 	} else {
+		mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+	}
+	return msg;
+}
+
+str
+UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 1), osname;
+	str view = *getArgReference_str(stk, pci, 2);
+	stmt *s;
+
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	osname = cur_schema(sql)->base.name;
+	mvc_set_schema(sql, sname);
+	s = sql_parse(sql, sa_create(), view, 0);
+	if (s && s->type == st_catalog) {
+		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
+		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
+		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
+
+		msg = create_table_or_view(sql, schema, v, temp);
+		mvc_set_schema(sql, osname);
+	} else {
+		mvc_set_schema(sql, osname);
+		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
 	}
 	return msg;
 }
@@ -3023,9 +3046,6 @@ SQLname2eclass(const str *type)
 	else
 	if ( strcmp(*type,"decimal") == 0)
 		ec = EC_DEC;
-	else
-	if ( strstr(*type, "_interval") )
-		ec = EC_INTERVAL;
 	return ec;
 }
 str
@@ -3464,8 +3484,8 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-		if (BATprepareHash(b))
-			 throw(SQL, "not_uniques", "hash creation failed");
+        if (BAThash(b, 0) == GDK_FAIL)
+             throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
@@ -3568,7 +3588,7 @@ nil_2time_daytime(daytime *res, const void *v, const int *digits)
 }
 
 str
-str_2time_daytime(daytime *res, const str *v, const int *digits)
+str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(daytime), pos;
 
@@ -3576,10 +3596,20 @@ str_2time_daytime(daytime *res, const str *v, const int *digits)
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	pos = daytime_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = daytime_tz_fromstr(*v, &len, &res);
+	else
+		pos = daytime_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "daytime", "22007!daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime(res, res, digits);
+}
+
+str
+str_2time_daytime(daytime *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_daytimetz(res, v, digits, &zero);
 }
 
 str
@@ -3634,7 +3664,7 @@ nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 }
 
 str
-str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(timestamp), pos;
 
@@ -3642,10 +3672,20 @@ str_2time_timestamp(timestamp *res, const str *v, const int *digits)
 		*res = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = timestamp_tz_fromstr(*v, &len, &res);
+	else
+		pos = timestamp_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "timestamp", "22007!timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);
+}
+
+str
+str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_timestamptz(res, v, digits, &zero);
 }
 
 str
@@ -4148,8 +4188,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
-	ocmp = BATatoms[b->ttype].atomCmp;
-	gcmp = BATatoms[g->ttype].atomCmp;
+	ocmp = ATOMcompare(b->ttype);
+	gcmp = ATOMcompare(g->ttype);
 	oc = BUNtail(bi, BUNfirst(b));
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g)) {
@@ -4206,7 +4246,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, "bat not sorted");
 
 	bi = bat_iterator(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
@@ -4273,173 +4313,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/*
- * The table is searched for all columns and they are
- * re-clustered on the hash value over the  primary key.
- * Initially the first column
- */
-
-str
-SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *map = NULL, *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			if ( b == NULL)
-				throw(SQL,"sql.cluster","Can not access column");
-			msg = CLUSTER_key(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLUSTER_map(&mid, &hid);
-			BBPdecref(hid, TRUE);
-			if (msg)
-				return msg;
-			map = BATdescriptor(mid);
-			if (map == NULL)
-				throw(SQL, "sql.cluster", "Can not access descriptor");
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access column");
-		msg = CLUSTER_apply(&bid, b, map);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(map->batCacheid);
-			return msg;
-		}
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	if (map) {
-		BBPunfix(map->batCacheid);
-		BBPdecref(mid, TRUE);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			bat psum;
-			int bits = 10, off = 0;
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			if (b == NULL)
-				throw(SQL, "sql.cluster", "Can not access column");
-			msg = MKEYbathash(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLS_create_wrd(&psum, &mid, &hid, &bits, &off);
-			BBPdecref(hid, TRUE);
-			BBPdecref(psum, TRUE);
-			if (msg)
-				return msg;
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
-		msg = CLS_map(&bid, &mid, &b->batCacheid);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(bid);
-			return msg;
-		}
-
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	return MAL_SUCCEED;
-}
-
-/*
+ /*
  * Vacuum cleaning tables
  * Shrinking and re-using space to vacuum clean the holes in the relations.
  */

@@ -33,7 +33,7 @@ function user.simple(i:int,lim:int,s:str):flt;
 barrier v := calc.<(i,lim);
     z := user.simple(i,lim,s);
 exit v;
-    r := 3.1400001:flt;
+    r := 3.14:flt;
     return simple := r;
 end user.simple;
 function user.main():void;

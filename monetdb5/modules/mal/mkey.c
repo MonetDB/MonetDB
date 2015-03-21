@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -85,9 +74,9 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	default:
 		if (ATOMextern(tpe))
-			*res = (*BATatoms[tpe].atomHash)(*(ptr*)val);
+			*res = ATOMhash(tpe, *(ptr*)val);
 		else
-			*res = (*BATatoms[tpe].atomHash)(val);
+			*res = ATOMhash(tpe, val);
 		break;
 	}
 	return MAL_SUCCEED;
@@ -174,8 +163,8 @@ MKEYbathash(bat *res, const bat *bid)
 	default: {
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
-		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
-		void *nil = BATatoms[b->ttype].atomNull;
+		int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
+		void *nil = ATOMnilptr(b->ttype);
 		BUN i;
 		const void *v;
 
@@ -245,9 +234,9 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = (*BATatoms[tpe].atomHash)(*(ptr*)pval);
+			val = ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = (*BATatoms[tpe].atomHash)(pval);
+			val = ATOMhash(tpe, pval);
 		break;
 	}
 	*dst = GDK_ROTATE(h, lbit, rbit, mask) ^ val;
@@ -442,9 +431,9 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #endif
 	default:
 		if (ATOMextern(tpe))
-			val = (*BATatoms[tpe].atomHash)(*(ptr*)pval);
+			val = ATOMhash(tpe, *(ptr*)pval);
 		else
-			val = (*BATatoms[tpe].atomHash)(pval);
+			val = ATOMhash(tpe, pval);
 		break;
 	}
 

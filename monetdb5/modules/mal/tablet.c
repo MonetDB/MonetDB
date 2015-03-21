@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -215,11 +204,14 @@ TABLETcreate_bats(Tablet *as, BUN est)
 	BUN i,j;
 
 	for (i = 0; i < as->nr_attrs; i++) {
+		if (fmt[i].skip)
+			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			for(j=0; j<i; j++)
-			BBPdecref(fmt[j].c->batCacheid, FALSE);
+				if( !fmt[i].skip)
+					BBPdecref(fmt[j].c->batCacheid, FALSE);
 			throw(SQL,"copy","Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
 	}
@@ -230,12 +222,19 @@ str
 TABLETcollect(BAT **bats, Tablet *as)
 {
 	Column *fmt = as->format;
-	BUN i;
-	BUN cnt = BATcount(fmt[0].c);
+	BUN i, j;
+	BUN cnt = 0;
 
-	for (i = 0; i < as->nr_attrs; i++) {
-		bats[i] = fmt[i].c;
-		BBPfix(bats[i]->batCacheid);
+	if (bats == NULL)
+		throw(SQL,"copy","Missing container");
+	for (i = 0; i < as->nr_attrs && !cnt; i++) 
+		if (!fmt[i].skip)
+			cnt = BATcount(fmt[i].c);
+	for (i = 0, j = 0; i < as->nr_attrs; i++) {
+		if (fmt[i].skip)
+			continue;
+		bats[j] = fmt[i].c;
+		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		BATderiveProps(fmt[i].c, 0);
 
@@ -249,16 +248,21 @@ str
 TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 {
 	Column *fmt = as->format;
-	BUN i;
-	BUN cnt = BATcount(fmt[0].c);
+	BUN i, j;
+	BUN cnt = 0;
 
-	for (i = 0; i < as->nr_attrs; i++) {
-		BAT *b = fmt[i].c;
-		BAT *bv = NULL;
+	for (i = 0; i < as->nr_attrs && !cnt; i++) 
+		if (!fmt[i].skip)
+			cnt = BATcount(fmt[i].c);
 
+	for (i = 0, j = 0; i < as->nr_attrs; i++) {
+		BAT *b, *bv = NULL;
+		if (fmt[i].skip)
+			continue;
+		b = fmt[i].c;
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset>0)?offset-1:0, BATcount(b));
-		bats[i] = bv;
+		bats[j] = bv;
 		BATderiveProps(bv, 0);
 
 		b->tkey = (offset>0)?FALSE:bv->tkey; 
@@ -274,8 +278,9 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 
 		if (offset>0) {
 			BBPunfix(bv->batCacheid);
-			bats[i] = BATslice(b, offset, BATcount(b));
+			bats[j] = BATslice(b, offset, BATcount(b));
 		}
+		j++;
 		if (cnt != BATcount(b)) 
 			throw(SQL,"copy", "Count " BUNFMT " differs from " BUNFMT "\n",  BATcount(b), cnt);
 	}
@@ -832,7 +837,7 @@ SQLworker_column(READERtask *task, int col)
 
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
-	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->top[task->cur]) {
+	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) == GDK_FAIL) {
 			tablet_error(task, lng_nil, col, "Failed to extend the BAT, perhaps disk full\n","SQLworker_column");
 			MT_lock_unset(&mal_copyLock, "tablet insert value");
@@ -842,7 +847,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock, "tablet insert value");
 
 	for (i = 0; i < task->top[task->cur]; i++){
-			if( SQLinsert_val(task, col, i) < 0)
+			if( !fmt[col].skip && SQLinsert_val(task, col, i) < 0)
 				return -1;
 	}
 

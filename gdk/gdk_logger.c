@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -112,6 +101,30 @@ typedef struct logformat_t {
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
+static BUN
+logbat_find_int(BAT *b, int val)
+{
+	BUN p, q;
+	int *t = (int *) Tloc(b, BUNfirst(b));
+
+	for (p = 0, q = BATcount(b); p < q; p++)
+		if (t[p] == val)
+			return p + BUNfirst(b);
+	return BUN_NONE;
+}
+
+static BUN
+logbat_find_bid(BAT *b, log_bid val)
+{
+	BUN p, q;
+	log_bid *t = (log_bid *) Tloc(b, BUNfirst(b));
+
+	for (p = 0, q = BATcount(b); p < q; p++)
+		if (t[p] == val)
+			return p + BUNfirst(b);
+	return BUN_NONE;
+}
+
 static void
 logbat_destroy(BAT *b)
 {
@@ -136,22 +149,8 @@ logbat_new(int tt, BUN size, int role)
 }
 
 static int
-log_read_format_old(logger *l, logformat *data)
-{
-	int nr = 0;
-	int ok =  mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(l->log, &nr) == 1 &&
-		mnstr_readInt(l->log, &data->tid) == 1;
-	data->nr = nr;
-	return ok;
-}
-
-static int
 log_read_format(logger *l, logformat *data)
 {
-	if (l->postfuncp) /* we need to convert from the old logformat, 
-       		             needs to be removed once we released Aug2014 */
-		return log_read_format_old(l, data);
 	return mnstr_read(l->log, &data->flag, 1, 1) == 1 &&
 		mnstr_readLng(l->log, &data->nr) == 1 &&
 		mnstr_readInt(l->log, &data->tid) == 1;
@@ -235,7 +234,7 @@ la_bat_clear(logger *lg, logaction *la)
 		fprintf(stderr, "#la_bat_clear %s\n", la->name);
 	/* do we need to skip these old updates */
 	if (BATcount(lg->snapshots_bid)) {
-		BUN p = BUNfnd(lg->snapshots_bid, &bid);
+		BUN p = logbat_find_bid(lg->snapshots_bid, bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -268,7 +267,7 @@ log_read_seq(logger *lg, logformat *l)
 		return LOG_ERR;
 	}
 
-	if ((p = BUNfnd(lg->seqs_id, &seq)) != BUN_NONE) {
+	if ((p = logbat_find_int(lg->seqs_id, seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
 		BUNdelete(lg->seqs_val, p, FALSE);
 	}
@@ -427,7 +426,7 @@ la_bat_updates(logger *lg, logaction *la)
 
 	/* do we need to skip these old updates */
 	if (BATcount(lg->snapshots_bid)) {
-		BUN p = BUNfnd(lg->snapshots_bid, &bid);
+		BUN p = logbat_find_bid(lg->snapshots_bid, bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -504,7 +503,7 @@ la_bat_destroy(logger *lg, logaction *la)
 		BUN p;
 
 		logger_del_bat(lg, bid);
-		if ((p = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
+		if ((p = logbat_find_bid(lg->snapshots_bid, bid)) != BUN_NONE) {
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -522,6 +521,7 @@ la_bat_destroy(logger *lg, logaction *la)
 #endif
 			BUNdelete(lg->snapshots_bid, p, FALSE);
 			BUNdelete(lg->snapshots_tid, p, FALSE);
+			/* move to the dirty new part of the snapshots list */
 			BUNappend(lg->snapshots_bid, &bid, FALSE);
 			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 		}
@@ -617,7 +617,7 @@ la_bat_use(logger *lg, logaction *la)
 		return;
 	}
 	logger_add_bat(lg, b, la->name);
-	if ((p = BUNfnd(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE) {
+	if ((p = logbat_find_bid(lg->snapshots_bid, b->batCacheid)) != BUN_NONE) {
 		BUNdelete(lg->snapshots_bid, p, FALSE);
 		BUNdelete(lg->snapshots_tid, p, FALSE);
 	}
@@ -636,6 +636,7 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
+	/* move to the dirty new part of the snapshots list, new snapshots will get flushed to disk */
 	BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE);
 	BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 	logbat_destroy(b);
@@ -969,7 +970,7 @@ logger_commit(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
 
-	p = BUNfnd(lg->seqs_id, &id);
+	p = logbat_find_int(lg->seqs_id, id);
 	BUNdelete(lg->seqs_id, p, FALSE);
 	BUNdelete(lg->seqs_val, p, FALSE);
 	BUNappend(lg->seqs_id, &id, FALSE);
@@ -1315,7 +1316,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		if (lg->seqs_val == 0)
 			logger_fatal("Logger_new: inconsistent database, seqs_val does not exist", 0, 0, 0);
 		if (BATcount(lg->seqs_id)) {
-			BUN p = BUNfnd(lg->seqs_id, &id);
+			BUN p = logbat_find_int(lg->seqs_id, id);
 			lg->id = *(lng *) Tloc(lg->seqs_val, p);
 		} else {
 			if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
@@ -1634,7 +1635,7 @@ logger_changes(logger *lg)
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
-	BUN p = BUNfnd(lg->seqs_id, &seq);
+	BUN p = logbat_find_int(lg->seqs_id, seq);
 
 	if (p != BUN_NONE) {
 		*id = *(lng *) Tloc(lg->seqs_val, p);
@@ -1699,7 +1700,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
-		if ((p = BUNfnd(lg->snapshots_bid, &b->batCacheid)) != BUN_NONE){
+		if ((p = logbat_find_bid(lg->snapshots_bid, b->batCacheid)) != BUN_NONE){
 			BUNdelete(lg->snapshots_bid, p, FALSE);
 			BUNdelete(lg->snapshots_tid, p, FALSE);
 		}
@@ -1744,7 +1745,7 @@ log_bat_transient(logger *lg, const char *name)
 	lg->changes++;
 
 	/* if this is a snapshot bat, we need to skip all changes */
-	if ((p = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
+	if ((p = logbat_find_bid(lg->snapshots_bid, bid)) != BUN_NONE) {
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -2058,7 +2059,7 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
-	if ((p = BUNfnd(lg->seqs_id, &seq)) != BUN_NONE) {
+	if ((p = logbat_find_int(lg->seqs_id, seq)) != BUN_NONE) {
 		BUNdelete(lg->seqs_id, p, FALSE);
 		BUNdelete(lg->seqs_val, p, FALSE);
 	}
@@ -2173,14 +2174,14 @@ void
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
-	BUN p = BUNfnd(lg->catalog_bid, &bid), q;
+	BUN p = logbat_find_bid(lg->catalog_bid, bid), q;
 
 	assert(p != BUN_NONE);
 
 	/* if this is a not logger commited snapshot bat, make it
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
-	    (q = BUNfnd(lg->snapshots_bid, &bid)) != BUN_NONE) {
+	    (q = logbat_find_bid(lg->snapshots_bid, bid)) != BUN_NONE) {
 
 		BUNdelete(lg->snapshots_bid, q, FALSE);
 		BUNdelete(lg->snapshots_tid, q, FALSE);

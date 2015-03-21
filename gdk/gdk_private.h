@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -57,6 +46,8 @@ __hidden int ATOMunknown_del(int a)
 __hidden int ATOMunknown_find(const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden str ATOMunknown_name(int a)
+	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
@@ -142,7 +133,7 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
+__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHremove(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -259,15 +250,6 @@ extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
-
-/* The base type is the storage type if the comparison function and
- * nil values are the same as those of the storage type; otherwise it
- * is the type itself. */
-#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
-			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
-			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
-			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
-			 ATOMstorage(t) : (t))
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 

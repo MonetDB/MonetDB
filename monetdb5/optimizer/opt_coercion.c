@@ -1,24 +1,29 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
+ */
+
+/* (c) M. Kersten
+ * Also include down-casting decisions on the SQL code produced
  */
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
+
+typedef struct{
+	int pc;
+	int fromtype;
+	int totype;
+	int src;
+/* not used, yet !?? Indeed
+	int digits;
+	int fromscale;
+	int scale;
+*/
+} Coercion;
 
 static int
 coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
@@ -42,6 +47,78 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	}
 	return 0;
 }
+
+/* Check coercions for numeric types towards :hge that can be handled with smaller ones.
+ * For now, limit to +,-,/,*,% hge expressions
+ * Not every combination may be available in the MAL layer, which calls
+ * for a separate type check before fixing it.
+ * Superflous coercion statements will be garbagecollected later on in the pipeline
+ */
+static void
+coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
+{
+	InstrPtr p = getInstrPtr(mb,i);
+	int r, a, b, varid;
+
+	r = getColumnType(getVarType(mb, getArg(p,0)));
+#ifdef HAVE_HGE
+	if ( r != TYPE_hge)
+		return;
+#endif
+	if( getModuleId(p) != batcalcRef || getFunctionId(p) == 0) return;
+	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || *getFunctionId(p) =='%') || p->argc !=3)
+		return;
+
+	a = getColumnType(getVarType(mb, getArg(p,1)));
+	b = getColumnType(getVarType(mb, getArg(p,2)));
+	if ( a == r && coerce[getArg(p,1)].src && coerce[getArg(p,1)].fromtype < r ) 
+	{
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", getArg(p,1));
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+		varid = getArg(p,1);
+		getArg(p,1) = coerce[getArg(p,1)].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
+			p->argv[1] = varid;
+	}
+	if ( b == r && coerce[getArg(p,2)].src &&  coerce[getArg(p,2)].fromtype < r ) 
+	{
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", getArg(p,2));
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+		varid = getArg(p,2);
+		getArg(p,2) = coerce[getArg(p,2)].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
+			p->argv[2] = varid;
+	}
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#final instruction\n");
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+	return;
+}
+
+static void
+coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
+{
+	InstrPtr p = getInstrPtr(mb,i);
+	int r, k;
+
+	(void) cntxt;
+
+	if( getModuleId(p) != aggrRef || getFunctionId(p) == 0) return;
+	if( ! (getFunctionId(p) == subavgRef ) || p->argc !=6)
+		return;
+
+	r = getColumnType(getVarType(mb, getArg(p,0)));
+	k = getArg(p,1);
+	if( r == TYPE_dbl &&  coerce[k].src )
+		getArg(p,1) = coerce[getArg(p,1)].src;
+	return;
+}
+
 int
 OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -49,7 +126,10 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p;
 	int actions = 0;
 	str calcRef= putName("calc",4);
+	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 
+	if( coerce == NULL)
+		return 0;
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -58,6 +138,52 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p) == NULL)
 			continue;
+/* Downscale the type, avoiding hge storage when lng would be sufficient.
+ */
+#ifdef HAVE_HGE
+		if ( getModuleId(p) == batcalcRef
+		     && getFunctionId(p) == hgeRef
+		     && p->retc == 1
+		     && ( p->argc == 5
+				   && isVarConstant(mb,getArg(p,1))
+				   && getArgType(mb,p,1) == TYPE_int
+				   && isVarConstant(mb,getArg(p,3))
+				   && getArgType(mb,p,3) == TYPE_int
+				   && isVarConstant(mb,getArg(p,4))
+				   && getArgType(mb,p,4) == TYPE_int
+				   /* from-scale == to-scale, i.e., no scale change */
+				   && *(int*) getVarValue(mb, getArg(p,1)) == *(int*) getVarValue(mb, getArg(p,4)) ) ){
+			k = getArg(p,0);
+			coerce[k].pc= i;
+			coerce[k].totype= TYPE_hge;
+			coerce[k].src= getArg(p,2);
+			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
+/* not used, yet !?? indeed
+			coerce[k].fromscale= getVarConstant(mb,getArg(p,1)).val.ival;
+			coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
+			coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
+*/
+		}
+#endif
+/*
+		if ( getModuleId(p) == batcalcRef
+		     && getFunctionId(p) == dblRef
+		     && p->retc == 1
+		     && ( p->argc == 2
+		          || ( p->argc == 3
+		               && isVarConstant(mb,getArg(p,1))
+		               && getArgType(mb,p,1) == TYPE_int
+		               //to-scale == 0, i.e., no scale change 
+		               && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
+			k = getArg(p,0);
+			coerce[k].pc= i;
+			coerce[k].totype= TYPE_dbl;
+			coerce[k].src= getArg(p,1 + (p->argc ==3));
+			coerce[k].fromtype= getColumnType(getArgType(mb,p,1 + (p->argc ==3)));
+		}
+*/
+		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
+		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {
 			k= coercionOptimizerStep(mb, i, p);
 			actions += k;
@@ -68,5 +194,6 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * This optimizer affects the flow, but not the type and declaration
 	 * structure. A cheaper optimizer is sufficient.
 	 */
+	GDKfree(coerce);
 	return actions;
 }

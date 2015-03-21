@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -1885,7 +1874,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 
-			if (t->type->localtype == f->type->localtype && (t->type->eclass == f->type->eclass || (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) && f->type->eclass != EC_INTERVAL && f->type->eclass != EC_DEC &&
+			if (t->type->localtype == f->type->localtype && (t->type->eclass == f->type->eclass || (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) && !EC_INTERVAL(f->type->eclass) && f->type->eclass != EC_DEC &&
 			    (t->digits == 0 || f->digits == t->digits)
 				) {
 				s->nr = l;
@@ -1897,12 +1886,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (t->type->eclass == EC_EXTERNAL)
 				convert = t->type->sqlname;
 
-			if (t->type->eclass == EC_INTERVAL) {
-				if (t->type->localtype == TYPE_int)
-					convert = "month_interval";
-				else
-					convert = "second_interval";
-			}
+			if (t->type->eclass == EC_MONTH) 
+				convert = "month_interval";
+			else if (t->type->eclass == EC_SEC)
+				convert = "second_interval";
 
 			/* Lookup the sql convert function, there is no need
 			 * for single value vs bat, this is handled by the
@@ -1910,7 +1897,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->nrcols == 0) {	/* simple calc */
 				q = newStmt1(mb, calcRef, convert);
 			} else if (s->nrcols > 0 &&
-				   (t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || t->type->eclass == EC_INTERVAL || EC_TEMP(t->type->eclass) ||
+				   (t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || EC_INTERVAL(t->type->eclass) || EC_TEMP(t->type->eclass) ||
 				    (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)))) {
 				int type = t->type->localtype;
 
@@ -1936,7 +1923,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, f->scale);
 			q = pushArgument(mb, q, l);
 
-			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || t->type->eclass == EC_INTERVAL) {
+			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 				/* digits, scale of the result decimal */
 				q = pushInt(mb, q, t->digits);
 				if (!EC_TEMP_FRAC(t->type->eclass))
@@ -1945,6 +1932,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* convert to string, give error on to large strings */
 			if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0))
 				q = pushInt(mb, q, t->digits);
+			/* convert a string to a time(stamp) with time zone */
+			if (EC_VARCHAR(f->type->eclass) && EC_TEMP_FRAC(t->type->eclass) && type_has_tz(t))
+				q = pushInt(mb, q, type_has_tz(t));
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
@@ -1973,7 +1963,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				    (q = newStmt(mb, "mkey", "bulk_rotate_xor_hash")) == NULL)
 					return -1;
 				if (!q) {
-					q = newStmt(mb, "mal", "multiplex");
+					if (f->func->type == F_UNION)
+						q = newStmt(mb, "batmal", "multiplex");
+					else
+						q = newStmt(mb, "mal", "multiplex");
 					if (q == NULL)
 						return -1;
 					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
@@ -2007,7 +2000,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, op->nr);
 				if (special) {
 					q = pushInt(mb, q, tpe->digits);
+					setVarUDFtype(mb, getArg(q, q->argc-1));
 					q = pushInt(mb, q, tpe->scale);
+					setVarUDFtype(mb, getArg(q, q->argc-1));
 				}
 				special = 0;
 			}

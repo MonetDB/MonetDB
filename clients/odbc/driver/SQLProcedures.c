@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -42,7 +31,7 @@
 
 
 static SQLRETURN
-SQLProcedures_(ODBCStmt *stmt,
+MNDBProcedures(ODBCStmt *stmt,
 	       SQLCHAR *CatalogName,
 	       SQLSMALLINT NameLength1,
 	       SQLCHAR *SchemaName,
@@ -187,7 +176,7 @@ SQLProcedures_(ODBCStmt *stmt,
 
 	/* query the MonetDB data dictionary tables */
 
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 
@@ -226,7 +215,7 @@ SQLProcedures(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedures_(stmt,
+	return MNDBProcedures(stmt,
 			      CatalogName, NameLength1,
 			      SchemaName, NameLength2,
 			      ProcName, NameLength3);
@@ -273,7 +262,7 @@ SQLProceduresW(SQLHSTMT StatementHandle,
 	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
 		   addStmtError, stmt, goto exit);
 
-	rc = SQLProcedures_(stmt,
+	rc = MNDBProcedures(stmt,
 			    catalog, SQL_NTS,
 			    schema, SQL_NTS,
 			    proc, SQL_NTS);

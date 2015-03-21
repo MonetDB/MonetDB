@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -55,7 +44,7 @@
 		} while (0)
 
 static SQLRETURN
-SQLGetDiagField_(SQLSMALLINT HandleType,
+MNDBGetDiagField(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT DiagIdentifier,
@@ -102,28 +91,28 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 
 	/* header fields */
 	switch (DiagIdentifier) {
-	case SQL_DIAG_CURSOR_ROW_COUNT:
+	case SQL_DIAG_CURSOR_ROW_COUNT:		/* SQLLEN */
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
 		*(SQLLEN *) DiagInfoPtr = (SQLLEN) ((ODBCStmt *) Handle)->rowSetSize;
 		return SQL_SUCCESS;
-	case SQL_DIAG_DYNAMIC_FUNCTION:
+	case SQL_DIAG_DYNAMIC_FUNCTION:		/* SQLCHAR* */
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
 		copyDiagString("", DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
-	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
+	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:	/* SQLINTEGER */
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
 		*(SQLINTEGER *) DiagInfoPtr = SQL_DIAG_UNKNOWN_STATEMENT;
 		return SQL_SUCCESS;
-	case SQL_DIAG_NUMBER:
+	case SQL_DIAG_NUMBER:			/* SQLINTEGER */
 		*(SQLINTEGER *) DiagInfoPtr = getErrorRecCount(err);
 		return SQL_SUCCESS;
-	case SQL_DIAG_RETURNCODE:
+	case SQL_DIAG_RETURNCODE:		/* SQLRETURN */
 		*(SQLRETURN *) DiagInfoPtr = SQL_SUCCESS;
 		return SQL_SUCCESS;
-	case SQL_DIAG_ROW_COUNT:
+	case SQL_DIAG_ROW_COUNT:		/* SQLLEN */
 		if (HandleType != SQL_HANDLE_STMT || ((ODBCStmt *) Handle)->State < EXECUTED0)
 			return SQL_ERROR;
 		*(SQLLEN *) DiagInfoPtr = (SQLLEN) ((ODBCStmt *) Handle)->rowcount;
@@ -139,36 +128,53 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 		return SQL_NO_DATA;
 
 	switch (DiagIdentifier) {
-	case SQL_DIAG_CLASS_ORIGIN:{
+	case SQL_DIAG_CLASS_ORIGIN:{		/* SQLCHAR* */
 		char *msg = strncmp(getSqlState(err), "IM", 2) == 0 ? "ODBC 3.0" : "ISO 9075";
 
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
-	case SQL_DIAG_COLUMN_NUMBER:
+	case SQL_DIAG_COLUMN_NUMBER:		/* SQLINTEGER */
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
 		*(SQLINTEGER *) DiagInfoPtr = SQL_COLUMN_NUMBER_UNKNOWN;
 		return SQL_SUCCESS;
-	case SQL_DIAG_CONNECTION_NAME:{
+	case SQL_DIAG_CONNECTION_NAME:{		/* SQLCHAR* */
 		char *msg = "MonetDB ODBC/Mapi";
 
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
-	case SQL_DIAG_SERVER_NAME:{
+#if 0
+/* not clear yet what to return here */
+	case SQL_DIAG_MESSAGE_TEXT: {		/* SQLCHAR* */
+		char msg[1024];
+		snprintf(msg, sizeof(msg), "");
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
+		return SQL_SUCCESS;
+	}
+#endif
+	case SQL_DIAG_NATIVE:			/* SQLINTEGER */
+		*(SQLINTEGER *) DiagInfoPtr = getNativeErrorCode(err);
+		return SQL_SUCCESS;
+	case SQL_DIAG_ROW_NUMBER:		/* SQLLEN */
+		if (HandleType != SQL_HANDLE_STMT)
+			return SQL_ERROR;
+		*(SQLLEN *) DiagInfoPtr = SQL_ROW_NUMBER_UNKNOWN;
+		return SQL_SUCCESS;
+	case SQL_DIAG_SERVER_NAME:{		/* SQLCHAR* */
 		char *msg = dbc && dbc->Connected && dbc->dsn ? dbc->dsn : "";
 
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
-	case SQL_DIAG_SQLSTATE:{
+	case SQL_DIAG_SQLSTATE:{		/* SQLCHAR* */
 		char *msg = getSqlState(err);
 
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
-	case SQL_DIAG_SUBCLASS_ORIGIN:{
+	case SQL_DIAG_SUBCLASS_ORIGIN:{		/* SQLCHAR* */
 		char *state = getSqlState(err);
 		char *msg;
 
@@ -188,6 +194,51 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	return SQL_NO_DATA;
 }
 
+#ifdef ODBCDEBUG
+static char *
+translateDiagIdentifier(SQLSMALLINT DiagIdentifier)
+{
+	static char unknown[32];
+
+	switch (DiagIdentifier) {
+	case SQL_DIAG_CLASS_ORIGIN:
+		return "SQL_DIAG_CLASS_ORIGIN";
+	case SQL_DIAG_COLUMN_NUMBER:
+		return "SQL_DIAG_COLUMN_NUMBER";
+	case SQL_DIAG_CONNECTION_NAME:
+		return "SQL_DIAG_CONNECTION_NAME";
+	case SQL_DIAG_CURSOR_ROW_COUNT:
+		return "SQL_DIAG_CURSOR_ROW_COUNT";
+	case SQL_DIAG_DYNAMIC_FUNCTION:
+		return "SQL_DIAG_DYNAMIC_FUNCTION";
+	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
+		return "SQL_DIAG_DYNAMIC_FUNCTION_CODE";
+	case SQL_DIAG_MESSAGE_TEXT:
+		return "SQL_DIAG_MESSAGE_TEXT";
+	case SQL_DIAG_NATIVE:
+		return "SQL_DIAG_NATIVE";
+	case SQL_DIAG_NUMBER:
+		return "SQL_DIAG_NUMBER";
+	case SQL_DIAG_RETURNCODE:
+		return "SQL_DIAG_RETURNCODE";
+	case SQL_DIAG_ROW_COUNT:
+		return "SQL_DIAG_ROW_COUNT";
+	case SQL_DIAG_ROW_NUMBER:
+		return "SQL_DIAG_ROW_NUMBER";
+	case SQL_DIAG_SERVER_NAME:
+		return "SQL_DIAG_SERVER_NAME";
+	case SQL_DIAG_SQLSTATE:
+		return "SQL_DIAG_SQLSTATE";
+	case SQL_DIAG_SUBCLASS_ORIGIN:
+		return "SQL_DIAG_SUBCLASS_ORIGIN";
+	default:
+		snprintf(unknown, sizeof(unknown), "unknown (%d)",
+			 (int) DiagIdentifier);
+		return unknown;
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLHANDLE Handle,
@@ -198,13 +249,15 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLSMALLINT *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n",
+	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
-		(int) BufferLength);
+		PTRFMTCAST Handle, (int) RecNumber,
+		translateDiagIdentifier(DiagIdentifier),
+		PTRFMTCAST DiagInfoPtr,
+		(int) BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
-	return SQLGetDiagField_(HandleType,
+	return MNDBGetDiagField(HandleType,
 				Handle,
 				RecNumber,
 				DiagIdentifier,
@@ -245,10 +298,12 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %d %d\n",
+	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
-		(int) BufferLength);
+		PTRFMTCAST Handle, (int) RecNumber,
+		translateDiagIdentifier(DiagIdentifier),
+		PTRFMTCAST DiagInfoPtr,
+		(int) BufferLength, PTRFMTCAST StringLengthPtr);
 #endif
 
 	switch (DiagIdentifier) {
@@ -260,7 +315,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	case SQL_DIAG_SERVER_NAME:
 	case SQL_DIAG_SQLSTATE:
 	case SQL_DIAG_SUBCLASS_ORIGIN:
-		rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+		rc = MNDBGetDiagField(HandleType, Handle, RecNumber,
 				      DiagIdentifier, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
@@ -273,7 +328,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 		break;
 	}
 
-	rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+	rc = MNDBGetDiagField(HandleType, Handle, RecNumber,
 			      DiagIdentifier, ptr, n, &n);
 #ifdef ODBCDEBUG
 	if (ptr != DiagInfoPtr)

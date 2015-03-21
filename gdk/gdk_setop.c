@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -141,7 +130,7 @@
 		BATiter ri = bat_iterator(BATmirror(r));		\
 									\
 		ALGODEBUG fprintf(stderr, "#BATins_%s%s: hashcheck[%s, %s, %s, %s, k];\n", #a1, #a2, #a1, #a2, #a3, #a4); \
-		if (BATprepareHash(BATmirror(r))) {			\
+		if (BAThash(BATmirror(r), 0) == GDK_FAIL) {		\
 			goto bunins_failed;				\
 		}							\
 		BATloop(l, p1, q1) {					\
@@ -319,8 +308,8 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 		hash = FALSE;						\
 	}								\
 									\
-	merge = BATatoms[l->htype].atomCmp;				\
-	cmp = BATatoms[l->ttype].atomCmp;				\
+	merge = ATOMcompare(l->htype);					\
+	cmp = ATOMcompare(l->ttype);					\
 	hnil = ATOMnilptr(l->htype);					\
 	tnil = ATOMnilptr(l->ttype);					\
 	(void) cmp;							\

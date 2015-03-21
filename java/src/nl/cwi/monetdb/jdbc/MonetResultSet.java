@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 package nl.cwi.monetdb.jdbc;
@@ -933,14 +922,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public int getInt(int columnIndex) throws SQLException {
 		int ret = 0;
-		try {
-			// note: Integer.parseInt DOES unlike Double and Float
-			// accept a null value
-			ret = Integer.parseInt(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			try {
+				ret = Integer.parseInt(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
@@ -969,14 +959,23 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public long getLong(int columnIndex) throws SQLException {
 		long ret = 0;
-		try {
-			// note: Long.parseLong DOES unlike Double and Float
-			// accept a null value
-			ret = Long.parseLong(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			// The oid datatype values (as string) have a  @0  suffix in the string value.
+			// To allow succesful parsing and conversion to long, we need to remove it first
+			if ("oid".equals(types[columnIndex - 1])) {
+				int len = val.length();
+				if (len > 2 && val.endsWith("@0"))
+					val = val.substring(0, len-2);
+			}
+
+			try {
+				ret = Long.parseLong(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
@@ -1855,12 +1854,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public short getShort(int columnIndex) throws SQLException {
 		short ret = 0;	// note: relaxing by compiler here
-		try {
-			ret = Short.parseShort(getString(columnIndex));
-		} catch (NumberFormatException e) {
-			// ignore, return the default: 0
+		String val = getString(columnIndex);
+		if (val != null) {
+			try {
+				ret = Short.parseShort(val);
+			} catch (NumberFormatException e) {
+				// ignore, return the default: 0
+			}
+			// do not catch SQLException for it is declared to be thrown
 		}
-		// do not catch SQLException for it is declared to be thrown
 
 		return ret;
 	}
@@ -1939,7 +1941,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public String getNString(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNString() not supported", "0A000");
+		return getString(columnIndex);
 	}
 
 	/**

@@ -255,12 +255,13 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
-This package contains stethoscope and tomograph.  These tools can be
-used to monitor the MonetDB database server.
+This package contains stethoscope, tomograph, and tachograph.  These
+tools can be used to monitor the MonetDB database server.
 
 %files client-tools
 %defattr(-,root,root)
 %{_bindir}/stethoscope
+%{_bindir}/tachograph
 %{_bindir}/tomograph
 
 %package client-devel
@@ -635,7 +636,7 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
-%exclude %{_libdir}/monetdb5/sql.mal
+%exclude %{_libdir}/monetdb5/sql*.mal
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -644,7 +645,7 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
-%exclude %{_libdir}/monetdb5/autoload/*_sql.mal
+%exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
@@ -722,7 +723,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_libdir}/monetdb5/autoload/*_sql*.mal
+%{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb

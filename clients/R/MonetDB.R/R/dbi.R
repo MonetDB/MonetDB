@@ -120,21 +120,21 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   connenv$deferred <- list()
   connenv$exception <- list()
   
-  conn <- new("MonetDBConnection", socket=socket, connenv=connenv, Id=-1L)
+  conn <- new("MonetDBConnection", socket=socket, connenv=connenv)
   if (getOption("monetdb.sequential", F)) {
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
-  
-  return(conn)
 
+  # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
+  return(conn)
 }, 
 valueClass="MonetDBConnection")
 
 
 ### MonetDBConnection
 setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
-                                             connenv="environment", fetchSize="integer", Id="integer"))
+                                             connenv="environment"))
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   envdata <- dbGetQuery(dbObj, "SELECT name, value from sys.env()")
@@ -222,64 +222,67 @@ setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
 setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="character"),  
           def=function(conn, statement, ..., list=NULL, async=FALSE) {
             
-            if(!is.null(list) || length(list(...))){
-              if (length(list(...))) statement <- .bindParameters(statement, list(...))
-              if (!is.null(list)) statement <- .bindParameters(statement, list)
-            }	
-            conn@connenv$exception <- list()
-            env <- NULL
-            # Auto-convert? 
-            # statement <- enc2utf8(statement)
-            if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
-            resp <- .mapiParseResponse(.mapiRequest(conn, paste0("s", statement, "\n;"), async=async))
-            
-            env <- new.env(parent=emptyenv())
-            
-            if (resp$type == Q_TABLE) {
-              # we have to pass this as an environment to make conn object available to result for fetching
-              env$success = TRUE
-              env$conn <- conn
-              env$data <- resp$tuples
-              resp$tuples <- NULL # clean up
-              env$info <- resp
-              env$delivered <- 0
-              env$query <- statement
-              env$open <- TRUE
-            }
-            if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY) {
-              env$success = TRUE
-              env$conn <- conn
-              env$query <- statement
-              env$info <- resp
+  if(!is.null(list) || length(list(...))){
+    if (length(list(...))) statement <- .bindParameters(statement, list(...))
+    if (!is.null(list)) statement <- .bindParameters(statement, list)
+  }	
+  conn@connenv$exception <- list()
+  env <- NULL
+  if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
+  # make the progress bar wait for querylog.define
+  # if (getOption("monetdb.profile", T))  .profiler_arm()
 
-            }
-            if (resp$type == MSG_MESSAGE) {
-              env$success = FALSE
-              env$conn <- conn
-              env$query <- statement
-              env$info <- resp
-              env$message <- resp$message
-            }
-            
-            if (!env$success) {
-              sp <- strsplit(env$message, "!", fixed=T)[[1]]
-              # truncate statement to not hide actual error message
-              if (nchar(statement) > 100) { statement <- paste0(substring(statement, 1, 100), "...") }
-              if (length(sp) == 3) {
-                errno <- sp[[2]]
-                errmsg <- sp[[3]]
-                conn@connenv$exception <- list(errNum=errno, errMsg=errmsg)
-                stop("Unable to execute statement '", statement, "'.\nServer says '", errmsg, "' [#", 
-                     errno, "].")
-              }
-              else {
-                conn@connenv$exception <- list(errNum=NA, errMsg=env$message)
-                stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
-              }
-            }
-            
-            return(new("MonetDBResult", env=env))
-          })
+  # the actual request
+  mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
+  resp <- .mapiParseResponse(mresp)
+
+  env <- new.env(parent=emptyenv())
+
+  if (resp$type == Q_TABLE) {
+    # we have to pass this as an environment to make conn object available to result for fetching
+    env$success = TRUE
+    env$conn <- conn
+    env$data <- resp$tuples
+    resp$tuples <- NULL # clean up
+    env$info <- resp
+    env$delivered <- 0
+    env$query <- statement
+    env$open <- TRUE
+  }
+  if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY) {
+    env$success = TRUE
+    env$conn <- conn
+    env$query <- statement
+    env$info <- resp
+
+  }
+  if (resp$type == MSG_MESSAGE) {
+    env$success = FALSE
+    env$conn <- conn
+    env$query <- statement
+    env$info <- resp
+    env$message <- resp$message
+  }
+
+  if (!env$success) {
+    sp <- strsplit(env$message, "!", fixed=T)[[1]]
+    # truncate statement to not hide actual error message
+    if (nchar(statement) > 100) { statement <- paste0(substring(statement, 1, 100), "...") }
+    if (length(sp) == 3) {
+      errno <- sp[[2]]
+      errmsg <- sp[[3]]
+      conn@connenv$exception <- list(errNum=errno, errMsg=errmsg)
+      stop("Unable to execute statement '", statement, "'.\nServer says '", errmsg, "' [#", 
+           errno, "].")
+    }
+    else {
+      conn@connenv$exception <- list(errNum=NA, errMsg=env$message)
+      stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
+    }
+  }
+
+  return(new("MonetDBResult", env=env))
+  })
 
 
 
@@ -323,7 +326,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   if (length(value[[1]])) {
     if (csvdump) {
       tmp <- tempfile(fileext = ".csv")
-      write.table(value, tmp, sep = ",", quote = TRUE,row.names = FALSE, col.names = FALSE,na="")
+      write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
       dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
       " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
       file.remove(tmp) 
@@ -438,7 +441,7 @@ setClass("MonetDBResult", representation("DBIResult", env="environment"))
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
   
-  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
+  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
     return("numeric")
   }
   if (dbType %in% c("CHAR", "VARCHAR", "CLOB", "STR")) {
@@ -517,18 +520,19 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   }
   
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
-  if (length(res@env$data) < n) {
+  while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
                                                                   " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
+    # if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
   # convert tuple string vector into matrix so we can access a single column efficiently
   # call to a faster C implementation for the annoying task of splitting everyting into fields
-  parts <- .Call("mapiSplit", res@env$data[1:n], as.integer(info$cols), PACKAGE=C_LIBRARY)
+  parts <- .Call("mapi_split", res@env$data[1:n], as.integer(info$cols), PACKAGE=C_LIBRARY)
   
   # convert values column by column
   for (j in seq.int(info$cols)) {	
@@ -562,6 +566,8 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   attr(df, "row.names") <- c(NA_integer_, length(df[[1]]))
   class(df) <- "data.frame"
   
+  # if (getOption("monetdb.profile", T))  .profiler_clear()
+
   return(df)
 })
 
@@ -610,13 +616,18 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
               has.completed=dbHasCompleted(dbObj), is.select=TRUE))	
 }, valueClass="list")
 
-# copied from RMonetDB, no java-specific things in here...
-monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows, header=TRUE, 
-                                               locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
+# adapted from RMonetDB, no java-specific things in here...
+monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
+                                               locked=FALSE, na.strings="", nrow.check=500, 
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
                     ...)
+
+  if (!missing(nrows)) {
+    warning("monetdb.read.csv(): nrows parameter is not neccessary any more and deprecated.")
+  }
   
   if (length(files)>1){
     nn <- sapply(headers, ncol)
@@ -627,23 +638,22 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows, he
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
   
-  dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   
-  if(header || !missing(nrows)){
-    if (length(nrows)==1) nrows <- rep(nrows, length(files))
+  if(header){
     for(i in seq_along(files)) {
       thefile <- normalizePath(files[i])
-      dbSendUpdate(conn, paste("COPY", format(nrows[i], scientific=FALSE), "OFFSET 2 RECORDS INTO", 
-                               tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
-                                                                                                                na.strings[1], "'", sep=""), if(locked) "LOCKED"))
+      dbSendUpdate(conn, paste("COPY OFFSET 2 INTO", 
+        tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
+        na.strings[1], "'", sep=""), if(locked) "LOCKED"))
     }
   } else {
     for(i in seq_along(files)) {
       thefile <- normalizePath(files[i])
       dbSendUpdate(conn, paste0("COPY INTO ", tablename, " FROM ", paste("'", thefile, "'", sep=""), 
-                                delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
+        delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
     }
   }
   dbGetQuery(conn, paste("select count(*) from", tablename))

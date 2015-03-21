@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -218,7 +207,8 @@ q_requeue(Queue *q, FlowEvent d)
 static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
 {
-	FlowEvent r = NULL;
+	FlowEvent r = NULL, s = NULL;
+	int i;
 
 	assert(q);
 	MT_sema_down(&q->s, "q_dequeue");
@@ -226,19 +216,31 @@ q_dequeue(Queue *q, Client cntxt)
 		return NULL;
 	MT_lock_set(&q->l, "q_dequeue");
 	if (cntxt) {
-		int i;
+		int i, minpc = -1;
 
 		for (i = q->last - 1; i >= 0; i--) {
 			if (q->data[i]->flow->cntxt == cntxt) {
-				r = q->data[i];
-				q->last--;
-				while (i < q->last) {
-					q->data[i] = q->data[i + 1];
-					i++;
+				if(minpc < 0){
+					minpc = i;
+					s = q->data[i];
 				}
-				break;
+				r = q->data[i];
+				if( s && r && s->pc > r->pc){
+					minpc = i;
+					s = r;
+				}
 			}
 		}
+		if( minpc >= 0){
+			r = q->data[minpc];
+			i = minpc;
+			q->last--;
+			while (i < q->last) {
+				q->data[i] = q->data[i + 1];
+				i++;
+			}
+		} else r = NULL;
+
 		MT_lock_unset(&q->l, "q_dequeue");
 		return r;
 	}
@@ -251,6 +253,15 @@ q_dequeue(Queue *q, Client cntxt)
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
 		r = q->data[--q->last];
+		for(i= q->last-1; r &&  i>=0; i--){
+			s= q->data[i];
+			if( s && s->flow && s->flow->stk &&
+			    r && r->flow && r->flow->stk &&
+			    s->flow->stk->tag < r->flow->stk->tag){
+				q->data[i]= r;
+				r = s;
+			}
+		}
 		q->data[q->last] = 0;
 	}
 	/* else: terminating */
@@ -343,47 +354,47 @@ DFLOWworker(void *T)
 		assert(flow);
 
 		/* whenever we have a (concurrent) error, skip it */
+		MT_lock_set(&flow->flowlock, "DFLOWworker");
 		if (flow->error) {
+			MT_lock_unset(&flow->flowlock, "DFLOWworker");
 			q_enqueue(flow->done, fe);
 			continue;
 		}
+		MT_lock_unset(&flow->flowlock, "DFLOWworker");
 
-		/* skip all instructions when we have encontered an error */
-		if (flow->error == 0) {
 #ifdef USE_MAL_ADMISSION
-			if (MALadmission(fe->argclaim, fe->hotclaim)) {
-				fe->hotclaim = 0;   /* don't assume priority anymore */
-				if (todo->last == 0)
-					MT_sleep_ms(DELAYUNIT);
-				q_requeue(todo, fe);
-				continue;
-			}
+		if (MALadmission(fe->argclaim, fe->hotclaim)) {
+			fe->hotclaim = 0;   /* don't assume priority anymore */
+			if (todo->last == 0)
+				MT_sleep_ms(DELAYUNIT);
+			q_requeue(todo, fe);
+			continue;
+		}
 #endif
-			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-			PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
-							 fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
+		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
+		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
+						 fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
 #ifdef USE_MAL_ADMISSION
-			/* release the memory claim */
-			MALadmission(-fe->argclaim, -fe->hotclaim);
+		/* release the memory claim */
+		MALadmission(-fe->argclaim, -fe->hotclaim);
 #endif
-			/* update the numa information. keep the thread-id producing the value */
-			p= getInstrPtr(flow->mb,fe->pc);
-			for( i = 0; i < p->argc; i++)
-				flow->mb->var[getArg(p,i)]->worker = thr->tid;
+		/* update the numa information. keep the thread-id producing the value */
+		p= getInstrPtr(flow->mb,fe->pc);
+		for( i = 0; i < p->argc; i++)
+			flow->mb->var[getArg(p,i)]->worker = thr->tid;
 
+		MT_lock_set(&flow->flowlock, "DFLOWworker");
+		fe->state = DFLOWwrapup;
+		MT_lock_unset(&flow->flowlock, "DFLOWworker");
+		if (error) {
 			MT_lock_set(&flow->flowlock, "DFLOWworker");
-			fe->state = DFLOWwrapup;
+			/* only collect one error (from one thread, needed for stable testing) */
+			if (!flow->error)
+				flow->error = error;
 			MT_lock_unset(&flow->flowlock, "DFLOWworker");
-			if (error) {
-				MT_lock_set(&flow->flowlock, "DFLOWworker");
-				/* only collect one error (from one thread, needed for stable testing) */
-				if (!flow->error)
-					flow->error = error;
-				MT_lock_unset(&flow->flowlock, "DFLOWworker");
-				/* after an error we skip the rest of the block */
-				q_enqueue(flow->done, fe);
-				continue;
-			}
+			/* after an error we skip the rest of the block */
+			q_enqueue(flow->done, fe);
+			continue;
 		}
 
 		/* see if you can find an eligible instruction that uses the
@@ -590,7 +601,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	PARDEBUG {
 		for (n = 0; n < flow->stop - flow->start; n++) {
 			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAL_MAPI);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_MAPI);
 			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
 			for (j = n; flow->edges[j]; j = flow->edges[j]) {
 				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
@@ -625,7 +636,7 @@ static void showFlowEvent(DataFlow flow, int pc)
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
 			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_STMT | LIST_MAL_MAPI);
+			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }
 */
@@ -740,7 +751,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 #ifdef DEBUG_FLOW
 	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(GDKstdout, mb, 0, LIST_MAPI);
 #endif
 
 	/* in debugging mode we should not start multiple threads */
