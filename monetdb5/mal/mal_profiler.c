@@ -231,7 +231,7 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 		// TODO Obfusate instructions unless administrator calls for it.
 		
 		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 		c = stmt;
 
 		while (c && *c && isspace((int)*c))
@@ -702,7 +702,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(ctm + 19, 6, ".%03d", (int)(clock.tv_usec / 1000));
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	c = stmt;
 
 	while (c && *c && (isspace((int)*c) || *c == '!'))

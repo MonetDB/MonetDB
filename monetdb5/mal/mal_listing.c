@@ -119,7 +119,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	}
 
 	// show the properties when required 
-	if (flg & LIST_MAL_PROPS){
+	if ( (flg & LIST_MAL_PROPS) && idx < p->retc) {
 		pstring = varGetPropStr(mb,varid);
 		if( pstring)
 			snprintf(buf+len,maxlen-len,"%s",pstring);
