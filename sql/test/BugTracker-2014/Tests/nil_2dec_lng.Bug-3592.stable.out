@@ -33,18 +33,18 @@ Ready.
 #select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
 % .L5,	.L5 # table_name
 % L2,	v # name
-% bigint,	decimal # type
-% 13,	20 # length
-[ 1412467200000,	42.000000000	]
-[ 1412467200000,	43.000000000	]
-[ 1412467200000,	NULL	]
+% sec_interval,	decimal # type
+% 0,	20 # length
+[ 1412467200.000,	42.000000000	]
+[ 1412467200.000,	43.000000000	]
+[ 1412467200.000,	NULL	]
 #explain select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
 % .explain # table_name
 % mal # name
 % clob # type
-% 204 # length
+% 206 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
-    X_66:void  := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe");
+    X_66:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",70);
 barrier X_124 := language.dataflow();
     X_42 := bat.new(nil:oid,nil:str);
     X_49 := bat.append(X_42,".L5");
@@ -53,10 +53,10 @@ barrier X_124 := language.dataflow();
     X_51 := bat.append(X_44,"L2");
     X_60 := bat.append(X_51,"v");
     X_45 := bat.new(nil:oid,nil:str);
-    X_53 := bat.append(X_45,"bigint");
+    X_53 := bat.append(X_45,"sec_interval");
     X_62 := bat.append(X_53,"decimal");
     X_46 := bat.new(nil:oid,nil:int);
-    X_55 := bat.append(X_46,64);
+    X_55 := bat.append(X_46,19);
     X_64 := bat.append(X_55,18);
     X_48 := bat.new(nil:oid,nil:int);
     X_57 := bat.append(X_48,0);
@@ -65,7 +65,7 @@ barrier X_124 := language.dataflow();
     X_5 := sql.mvc();
     X_81:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec",0,2);
     X_84:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",0,0,2);
-    (X_86:bat[:oid,:oid] ,X_87:bat[:oid,:timestamp] ) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,0,2);
+    (X_86:bat[:oid,:oid],X_87:bat[:oid,:timestamp]) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,0,2);
     X_96 := sql.delta(X_84,X_86,X_87);
     X_98 := algebra.leftfetchjoin(X_81,X_96);
     X_16 := calc.timestamp(A0,7);
@@ -73,7 +73,7 @@ barrier X_124 := language.dataflow();
     X_102 := batmtime.diff(X_98,X_100);
     X_83:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec",1,2);
     X_85:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",0,1,2);
-    (X_88:bat[:oid,:oid] ,X_89:bat[:oid,:timestamp] ) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,1,2);
+    (X_88:bat[:oid,:oid],X_89:bat[:oid,:timestamp]) := sql.bind(X_5,"sys","foo_nil_2dec","t",2,1,2);
     X_14:bat[:oid,:timestamp]  := sql.bind(X_5,"sys","foo_nil_2dec","t",1);
     X_97 := sql.delta(X_85,X_88,X_89,X_14);
     X_99 := algebra.leftfetchjoin(X_83,X_97);
@@ -92,11 +92,11 @@ barrier X_124 := language.dataflow();
     X_22 := bat.append(X_19,X_21,true);
     X_24:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
     X_90:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",0,0,2);
-    (X_92:bat[:oid,:oid] ,X_93:bat[:oid,:lng] ) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,0,2);
+    (X_92:bat[:oid,:oid],X_93:bat[:oid,:lng]) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,0,2);
     X_110 := sql.delta(X_90,X_92,X_93);
     X_112 := algebra.leftfetchjoin(X_81,X_110);
     X_91:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",0,1,2);
-    (X_94:bat[:oid,:oid] ,X_95:bat[:oid,:lng] ) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,1,2);
+    (X_94:bat[:oid,:oid],X_95:bat[:oid,:lng]) := sql.bind(X_5,"sys","foo_nil_2dec","v",2,1,2);
     X_32:bat[:oid,:lng]  := sql.bind(X_5,"sys","foo_nil_2dec","v",1);
     X_111 := sql.delta(X_91,X_94,X_95,X_32);
     X_113 := algebra.leftfetchjoin(X_83,X_111);

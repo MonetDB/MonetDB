@@ -27,9 +27,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 100 # length
 function user.s3_1{autoCommit=true}(A0:dbl):void;
-    X_36:void  := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe");
+    X_36:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",22);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.L");
     X_22 := bat.new(nil:oid,nil:str);
@@ -54,9 +54,9 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
+% 93 # length
 function user.s4_1{autoCommit=true}():void;
-    X_35:void  := querylog.define("explain select x*x from sf_2596114;","sequential_pipe");
+    X_35:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22);
     X_18 := bat.new(nil:oid,nil:str);
     X_26 := bat.append(X_18,"sys.L");
     X_21 := bat.new(nil:oid,nil:str);

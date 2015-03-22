@@ -38,9 +38,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 111 # length
+% 113 # length
 function user.s5_1{autoCommit=true}():void;
-    X_60:void  := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe");
+    X_60:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",35);
     X_42 := bat.new(nil:oid,nil:str);
     X_50 := bat.append(X_42,"sys.L1");
     X_45 := bat.new(nil:oid,nil:str);

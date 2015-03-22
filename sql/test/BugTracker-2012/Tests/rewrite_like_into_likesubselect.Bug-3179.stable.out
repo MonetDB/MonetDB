@@ -29,9 +29,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 131 # length
+% 133 # length
 function user.s2_1(A0:str):void;
-    X_49:void  := querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe");
+    X_49:void := querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';","sequential_pipe",33);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -67,9 +67,9 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 135 # length
+% 137 # length
 function user.s3_1(A0:str):void;
-    X_49:void  := querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe");
+    X_49:void := querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';","sequential_pipe",33);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -105,9 +105,9 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 132 # length
+% 134 # length
 function user.s4_1(A0:str):void;
-    X_49:void  := querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe");
+    X_49:void := querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';","sequential_pipe",33);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -143,9 +143,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 136 # length
+% 138 # length
 function user.s5_1(A0:str):void;
-    X_49:void  := querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe");
+    X_49:void := querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';","sequential_pipe",33);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.functions");
     X_43 := bat.append(X_33,"sys.functions");
@@ -201,9 +201,9 @@ end user.s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 135 # length
+% 137 # length
 function user.s10_1(A0:str):void;
-    X_47:void  := querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe");
+    X_47:void := querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');","sequential_pipe",35);
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -241,9 +241,9 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 139 # length
+% 141 # length
 function user.s11_1(A0:str):void;
-    X_47:void  := querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe");
+    X_47:void := querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');","sequential_pipe",35);
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -281,9 +281,9 @@ end user.s11_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 136 # length
+% 138 # length
 function user.s12_1(A0:str):void;
-    X_47:void  := querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe");
+    X_47:void := querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');","sequential_pipe",35);
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
@@ -321,9 +321,9 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 140 # length
+% 142 # length
 function user.s13_1(A0:str):void;
-    X_47:void  := querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe");
+    X_47:void := querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');","sequential_pipe",35);
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.functions");
     X_41 := bat.append(X_31,"sys.functions");
