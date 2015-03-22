@@ -1852,6 +1852,8 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if( isaBatType(getArgType(mb,pci,2)) )
+		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
