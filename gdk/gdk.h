@@ -1314,7 +1314,6 @@ gdk_export gdk_return BUNdel(BAT *b, const void *left, const void *right, bit fo
 gdk_export gdk_return BUNdelHead(BAT *b, const void *left, bit force);
 gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
 gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
-gdk_export BAT *BATdelHead(BAT *b, BAT *c, bit force);
 
 gdk_export gdk_return BUNreplace(BAT *b, const void *left, const void *right, bit force);
 gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
@@ -1575,7 +1574,7 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
-gdk_export gdk_return  GDKcreatedir(const char *nme);
+gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*
  * @- Printing
