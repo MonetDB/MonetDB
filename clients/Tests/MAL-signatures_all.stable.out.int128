@@ -51756,7 +51756,7 @@ pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oi
 address mvc_row_result_wrap;
 comment Prepare a table result set
 
-pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,val:any):int 
+pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
 address mvc_scalar_value_wrap;
 comment Prepare a table result set
 
