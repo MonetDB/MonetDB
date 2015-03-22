@@ -240,6 +240,7 @@ TABLETcollect(BAT **bats, Tablet *as)
 
 		if (cnt != BATcount(fmt[i].c)) 
 			throw(SQL,"copy", "Count " BUNFMT " differs from " BUNFMT "\n", BATcount(fmt[i].c), cnt);
+		j++;
 	}
 	return MAL_SUCCEED;
 }
@@ -254,7 +255,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 	for (i = 0; i < as->nr_attrs && !cnt; i++) 
 		if (!fmt[i].skip)
 			cnt = BATcount(fmt[i].c);
-
 	for (i = 0, j = 0; i < as->nr_attrs; i++) {
 		BAT *b, *bv = NULL;
 		if (fmt[i].skip)
@@ -280,9 +280,9 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 			BBPunfix(bv->batCacheid);
 			bats[j] = BATslice(b, offset, BATcount(b));
 		}
-		j++;
 		if (cnt != BATcount(b)) 
 			throw(SQL,"copy", "Count " BUNFMT " differs from " BUNFMT "\n",  BATcount(b), cnt);
+		j++;
 	}
 	return MAL_SUCCEED;
 }
@@ -292,21 +292,21 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 static char *
 tablet_skip_string(char *s, char quote)
 {
-    while (*s) {
-        if (*s == '\\' && s[1] != '\0')
-            s++;
-        else if (*s == quote) {
-            if (s[1] == quote)
-                *s++ = '\\';    /* sneakily replace "" with \" */
-            else
-                break;
-        }
-        s++;
-    }
-    assert(*s == quote || *s == '\0');
-    if (*s == 0)
-        return NULL;
-    return s;
+	while (*s) {
+		if (*s == '\\' && s[1] != '\0')
+			s++;
+		else if (*s == quote) {
+			if (s[1] == quote)
+				*s++ = '\\';	/* sneakily replace "" with \" */
+			else
+				break;
+		}
+		s++;
+	}
+	assert(*s == quote || *s == '\0');
+	if (*s == 0)
+		return NULL;
+	return s;
 }
 
 static int

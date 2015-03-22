@@ -1069,8 +1069,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	int len = 8 + (filename != NULL);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 9, F_UNION, NULL); 
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1083,8 +1082,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		exp_atom_str(sql->sa, ssep, &tpe)), 
 		exp_atom_str(sql->sa, ns, &tpe));
 
-	if (filename)
-		append( args, exp_atom_str(sql->sa, filename, &tpe)); 
+	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
 	import = exp_op(sql->sa,  
 	append(
 		append(

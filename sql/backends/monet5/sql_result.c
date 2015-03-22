@@ -674,22 +674,15 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
 	node *n;
 	Tablet as;
 	Column *fmt;
 	BUN cnt = 0;
 	str msg = MAL_SUCCEED;
 
-	if (!t) {
-		sql_error(m, 500, "table %s not found", tname);
-		m->type = -1;
-		return NULL;
-	}
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
 		m->type = -1;

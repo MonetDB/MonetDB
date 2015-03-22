@@ -3111,17 +3111,16 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
 	str filename = NULL, cs;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc + 5);
-	str *fname = getArgReference_str(stk, pci, pci->retc + 6);
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
-	int *besteffort = getArgReference_int(stk, pci, pci->retc + 10);
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	str *fname = getArgReference_str(stk, pci, pci->retc + 5);
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
+	int *besteffort = getArgReference_int(stk, pci, pci->retc + 9);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3166,7 +3165,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!*fname || strcmp(str_nil, *(char **) fname) == 0) 
 		fname = NULL;
 	if (!fname) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
 		/* convert UTF-8 encoded file name to the character set of our
 	 	 * own locale before passing it on to the system call */
@@ -3211,7 +3210,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fix_windows_newline(ssep);
 #endif
 		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 			bstream_destroy(s);
 		}
 		GDKfree(filename);

@@ -340,7 +340,7 @@ comment "export the number of affected rows by the current query";
 #address mvc_export_value_wrap 
 #comment "export a single value onto the stream s";
 
-pattern copy_from{unsafe}( sname:str, tname:str, 
+pattern copy_from{unsafe}( t:ptr, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int) (:bat[:oid,:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
