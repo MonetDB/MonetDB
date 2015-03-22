@@ -757,8 +757,6 @@ str ALGmaxany(ptr result, const bat *bid);
 str ALGminany(ptr result, const bat *bid);
 str ALGouterjoin(bat *result, const bat *lid, const bat *rid);
 str ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
-str ALGprojectNIL(bat *ret, const bat *bid);
-str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGrangejoin(bat *result, const bat *lid, const bat *rlid, const bat *rhid, const bit *li, const bit *hi);
 str ALGrangejoin2(bat *l, bat *r, const bat *lid, const bat *rlid, const bat *rhid, const bit *li, const bit *hi);

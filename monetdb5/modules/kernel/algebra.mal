@@ -297,16 +297,9 @@ address ALGsubrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
 
 # @+ Projection operations
-command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
-address ALGprojectNIL
-comment "Extract the head of a BAT.";
-
-pattern project(v:any_3,b:bat[:any_2,:any_1]) :bat[:any_3,:any_1]
-address ALGprojecthead
-comment "Fill the head with a constant, e.g. [0~b]";
-pattern project(b:bat[:any_2,:any_1],v:any_3) :bat[:any_2,:any_3]
+pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]
 address ALGprojecttail
-comment "Fill the tail with a constant, e.g. [0~b]";
+comment "Fill the tail with a constant";
 
 pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
