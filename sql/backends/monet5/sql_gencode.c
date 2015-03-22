@@ -26,7 +26,6 @@
  * reduce the cost to prepare MAL statements significantly.
  *
  * A dummy module is needed to load properly.
- * @-
  */
 #include "monetdb_config.h"
 #include "sql_gencode.h"
@@ -58,7 +57,7 @@ static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top);
  *
  * The catalog relations should be maintained in a MAL box, which
  * provides the handle for transaction management.
- * @-
+ *
  * The atoms produced by the parser should be converted back into
  * MAL constants. Ideally, this should not be necessary when the
  * SQL parser keeps the string representation around.
@@ -109,7 +108,6 @@ argumentZero(MalBlkPtr mb, int tpe)
 }
 
 /*
- * @-
  * To speedup code generation we freeze the references to the major modules.
  * This safes table lookups.
  */
@@ -128,7 +126,6 @@ initSQLreferences(void)
 }
 
 /*
- * @-
  * The dump_header produces a sequence of instructions for
  * the front-end to prepare presentation of a result table.
  */
