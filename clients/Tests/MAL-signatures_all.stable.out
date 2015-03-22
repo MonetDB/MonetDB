@@ -38026,11 +38026,7 @@ pattern generator.series(first:sht,last:sht,step:sht):bat[:oid,:sht]
 address VLTgenerator_table;
 pattern generator.series(first:bte,last:bte,step:bte):bat[:oid,:bte] 
 address VLTgenerator_table;
-pattern generator.series(first:any_1,last:any_1,step:any_1):bat[:oid,:any_1] 
-address VLTgenerator_table;
 pattern generator.series(first:dbl,last:dbl):bat[:oid,:dbl] 
-address VLTgenerator_table;
-pattern generator.series(first:timestamp,last:timestamp):bat[:oid,:timestamp] 
 address VLTgenerator_table;
 pattern generator.series(first:flt,last:flt):bat[:oid,:flt] 
 address VLTgenerator_table;
@@ -40672,10 +40668,6 @@ comment Prepare a table result set for the COPY INTO stream
 pattern sql.evalAlgebra(cmd:str,optimize:bit):void 
 address RAstatement;
 comment Compile and execute a single 'relational algebra' statement
-
-pattern sql.eval(cmd:str) (nme:bat[:oid,:str],tpe:bat[:oid,:str],val:bat[:oid,:any]...) 
-address SQLstatementResult;
-comment Compile and execute a single sql statement. Return the result set for rendering
 
 pattern sql.eval(cmd:str,output:bit):void 
 address SQLstatement;

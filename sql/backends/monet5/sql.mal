@@ -102,10 +102,6 @@ pattern eval(cmd:str, output:bit):void
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
-pattern eval(cmd:str)(nme:bat[:oid,:str],tpe:bat[:oid,:str],val:bat[:oid,:any]...)
-address SQLstatementResult
-comment "Compile and execute a single sql statement. Return the result set for rendering";
-
 pattern include(fname:str):void 
 address SQLinclude
 comment "Compile and execute a sql statements on the file";

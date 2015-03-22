@@ -46,9 +46,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 376 # length
+% 378 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:dbl):void;
-    X_117:void  := querylog.define("explain select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = \\'Brand#23\\'\n\tand p_container = \\'MED BOX\\'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);","sequential_pipe");
+    X_116:void := querylog.define("explain select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = \\'Brand#23\\'\n\tand p_container = \\'MED BOX\\'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);","sequential_pipe",67);
     X_6 := sql.mvc();
     X_7:bat[:oid,:oid]  := sql.tid(X_6,"sys","lineitem");
     X_10:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_partkey",0);
@@ -62,18 +62,18 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:dbl):void;
     X_27:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_container",0);
     X_32:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_brand",0);
     X_25:bat[:oid,:oid]  := sql.tid(X_6,"sys","part");
-    X_140 := algebra.subselect(X_32,X_25,A1,A1,true,true,false);
+    X_139 := algebra.subselect(X_32,X_25,A1,A1,true,true,false);
     (X_34,r1_40) := sql.bind(X_6,"sys","part","p_brand",2);
-    X_141 := algebra.subselect(r1_40,nil:bat[:oid,:oid],A1,A1,true,true,false);
+    X_140 := algebra.subselect(r1_40,nil:bat[:oid,:oid],A1,A1,true,true,false);
     X_37:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_brand",1);
-    X_143 := algebra.subselect(X_37,X_25,A1,A1,true,true,false);
-    X_38 := sql.subdelta(X_140,X_25,X_34,X_141,X_143);
-    X_144 := algebra.subselect(X_27,X_38,A2,A2,true,true,false);
+    X_142 := algebra.subselect(X_37,X_25,A1,A1,true,true,false);
+    X_38 := sql.subdelta(X_139,X_25,X_34,X_140,X_142);
+    X_143 := algebra.subselect(X_27,X_38,A2,A2,true,true,false);
     (X_29,r1_32) := sql.bind(X_6,"sys","part","p_container",2);
-    X_145 := algebra.subselect(r1_32,nil:bat[:oid,:oid],A2,A2,true,true,false);
+    X_144 := algebra.subselect(r1_32,nil:bat[:oid,:oid],A2,A2,true,true,false);
     X_31:bat[:oid,:str]  := sql.bind(X_6,"sys","part","p_container",1);
-    X_147 := algebra.subselect(X_31,X_38,A2,A2,true,true,false);
-    X_41 := sql.subdelta(X_144,X_38,X_29,X_145,X_147);
+    X_146 := algebra.subselect(X_31,X_38,A2,A2,true,true,false);
+    X_41 := sql.subdelta(X_143,X_38,X_29,X_144,X_146);
     X_42 := X_41;
     (X_43,r1_52) := algebra.subjoin(X_24,X_42,nil:BAT,nil:BAT,false,nil:lng);
     X_47:bat[:oid,:int]  := sql.bind(X_6,"sys","part","p_partkey",0);
@@ -90,30 +90,29 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:dbl):void;
     X_69:bat[:oid,:oid]  := batcalc.identity(X_68);
     X_70 := algebra.leftfetchjoin(r1_69,X_69);
     (X_71,r1_85,r2_85) := group.subgroupdone(X_70);
-    X_148 := algebra.leftfetchjoin(r1_85,r1_69);
+    X_147 := algebra.leftfetchjoin(r1_85,r1_69);
     X_74:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_quantity",0);
     (X_76,r1_90) := sql.bind(X_6,"sys","lineitem","l_quantity",2);
     X_78:bat[:oid,:int]  := sql.bind(X_6,"sys","lineitem","l_quantity",1);
     X_79 := sql.projectdelta(X_7,X_74,X_76,r1_90,X_78);
     X_86 := algebra.leftfetchjoin(X_58,X_79);
-    X_87 := batcalc.dbl(X_86);
-    X_88:bat[:oid,:dbl]  := aggr.subavg(X_87,X_71,r1_85,true,true);
-    X_80:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_148,X_43,X_79);
+    X_87:bat[:oid,:dbl] := aggr.subavg(X_86,X_71,r1_85,true,true);
+    X_80:bat[:oid,:int] := algebra.leftfetchjoinPath(X_147,X_43,X_79);
     X_81 := batcalc.dbl(X_80);
-    X_90:bat[:oid,:dbl]  := batcalc.*(A3,X_88);
-    X_91:bat[:oid,:bit]  := batcalc.<(X_81,X_90);
-    X_92 := algebra.subselect(X_91,true,true,true,true,false);
-    X_94:bat[:oid,:lng]  := sql.bind(X_6,"sys","lineitem","l_extendedprice",0);
-    (X_97,r1_124) := sql.bind(X_6,"sys","lineitem","l_extendedprice",2);
-    X_99:bat[:oid,:lng]  := sql.bind(X_6,"sys","lineitem","l_extendedprice",1);
-    X_100 := sql.projectdelta(X_7,X_94,X_97,r1_124,X_99);
-    X_101:bat[:oid,:lng]  := algebra.leftfetchjoinPath(X_92,X_148,X_43,X_100);
-    X_102:hge  := aggr.sum(X_101);
-    X_103 := calc.lng(2,X_102,15,2);
-    X_105 := calc.lng(2,X_103,18,5);
-    X_109 := calc.lng(1,A0,15,2);
-    X_111 := calc./(X_105,X_109);
-    sql.resultSet("sys.L3","avg_yearly","decimal",18,3,X_111);
+    X_89:bat[:oid,:dbl] := batcalc.*(A3,X_87);
+    X_90:bat[:oid,:bit] := batcalc.<(X_81,X_89);
+    X_91 := algebra.subselect(X_90,true,true,true,true,false);
+    X_93:bat[:oid,:lng] := sql.bind(X_6,"sys","lineitem","l_extendedprice",0);
+    (X_96,r1_124) := sql.bind(X_6,"sys","lineitem","l_extendedprice",2);
+    X_98:bat[:oid,:lng] := sql.bind(X_6,"sys","lineitem","l_extendedprice",1);
+    X_99 := sql.projectdelta(X_7,X_93,X_96,r1_124,X_98);
+    X_100:bat[:oid,:lng] := algebra.leftfetchjoinPath(X_91,X_147,X_43,X_99);
+    X_101:hge := aggr.sum(X_100);
+    X_102 := calc.lng(2,X_101,15,2);
+    X_104 := calc.lng(2,X_102,18,5);
+    X_108 := calc.lng(1,A0,15,2);
+    X_110 := calc./(X_104,X_108);
+    sql.resultSet("sys.L3","avg_yearly","decimal",18,3,X_110);
 end user.s2_1;
 
 # 22:53:29 >  
