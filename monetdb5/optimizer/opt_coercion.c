@@ -18,11 +18,6 @@ typedef struct{
 	int fromtype;
 	int totype;
 	int src;
-/* not used, yet !?? Indeed
-	int digits;
-	int fromscale;
-	int scale;
-*/
 } Coercion;
 
 static int
@@ -71,27 +66,27 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 
 	a = getColumnType(getVarType(mb, getArg(p,1)));
 	b = getColumnType(getVarType(mb, getArg(p,2)));
-	if ( a == r && coerce[getArg(p,1)].src && coerce[getArg(p,1)].fromtype < r ) 
+	varid = getArg(p,1);
+	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
 		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", getArg(p,1));
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		varid = getArg(p,1);
-		getArg(p,1) = coerce[getArg(p,1)].src;
-		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
-			p->argv[1] = varid;
+		getArg(p,1) = coerce[varid].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,1)= varid;
 	}
-	if ( b == r && coerce[getArg(p,2)].src &&  coerce[getArg(p,2)].fromtype < r ) 
+	varid = getArg(p,2);
+	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
 		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", getArg(p,2));
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		varid = getArg(p,2);
-		getArg(p,2) = coerce[getArg(p,2)].src;
-		if ( chkInstruction(NULL, cntxt->nspace, mb, p))
-			p->argv[2] = varid;
+		getArg(p,2) = coerce[varid].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,2) = varid;
 	}
 #ifdef _DEBUG_COERCION_
 		mnstr_printf(cntxt->fdout,"#final instruction\n");
@@ -114,8 +109,11 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 
 	r = getColumnType(getVarType(mb, getArg(p,0)));
 	k = getArg(p,1);
-	if( r == TYPE_dbl &&  coerce[k].src )
+	if( r == TYPE_dbl &&  coerce[k].src ){
 		getArg(p,1) = coerce[getArg(p,1)].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,1)= k;
+	}
 	return;
 }
 
@@ -158,14 +156,8 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].totype= TYPE_hge;
 			coerce[k].src= getArg(p,2);
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
-/* not used, yet !?? indeed
-			coerce[k].fromscale= getVarConstant(mb,getArg(p,1)).val.ival;
-			coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
-			coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
-*/
 		}
 #endif
-/*
 		if ( getModuleId(p) == batcalcRef
 		     && getFunctionId(p) == dblRef
 		     && p->retc == 1
@@ -181,7 +173,6 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].src= getArg(p,1 + (p->argc ==3));
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,1 + (p->argc ==3)));
 		}
-*/
 		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
 		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {

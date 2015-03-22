@@ -2231,7 +2231,6 @@ void freeSymbolList(Symbol s);
 void freeVariable(MalBlkPtr mb, int varid);
 str fstrcmp0_impl(dbl *ret, str *string1, str *string2);
 str fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum);
-str function2str(MalBlkPtr mb);
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 void garbageElement(Client cntxt, ValPtr v);
 str generatorRef;

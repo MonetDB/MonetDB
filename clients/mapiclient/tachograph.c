@@ -122,7 +122,7 @@ addSourcePair(char *varname, char *name)
 		if( srcmax == 0)
 			sources = (Source *) malloc(1024 * sizeof(Source));
 		else
-			sources = (Source *) realloc(sources, srcmax+1024);
+			sources = (Source *) realloc((void *)sources, (srcmax+1024) * sizeof(Source));
 		srcmax+= 1024;
 	}
 	for( i=0; i< srctop; i++)
