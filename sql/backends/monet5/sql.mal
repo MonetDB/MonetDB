@@ -262,7 +262,7 @@ comment "delete from table";
 #pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 #address mvc_table_result_wrap
 #comment "Prepare a table result set";
-pattern resultSet{unsafe}(tbl:str, attr:str, tpe:str, len:int,scale:int, val:any) :int 
+pattern resultSet{unsafe}(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
 comment "Prepare a table result set";
 

@@ -3008,46 +3008,6 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return NULL;
 }
 
-// collect the SQL type identifier associated with a string
-static int
-SQLname2eclass(const str *type)
-{
-	int ec = 0;
-	if ( strcmp(*type,"char") == 0)
-		ec = EC_CHAR;
-	else
-	if ( strncmp(*type,"int",3) == 0 || strcmp(*type,"tinyint") == 0 || strcmp(*type,"bigint") == 0 ||
-		strcmp(*type,"wrd") == 0 || strcmp(*type,"smallint") == 0 || strcmp(*type,"hugeint") == 0)
-		ec = EC_NUM;
-	else
-	if ( strcmp(*type,"wrd") == 0)
-		ec = EC_NUM;
-	else
-	if ( strcmp(*type,"boolean") == 0)
-		ec = EC_BIT;
-	else
-	if ( strcmp(*type,"varchar") == 0)
-		ec = EC_STRING;
-	else
-	if ( strcmp(*type,"real") == 0)
-		ec = EC_FLT;
-	else
-	if ( strcmp(*type,"double") == 0)
-		ec = EC_FLT;
-	else
-	if ( strcmp(*type,"time") == 0)
-		ec = EC_TIME;
-	else
-	if ( strcmp(*type,"timestamp") == 0 || strcmp(*type,"timestamptz") == 0)
-		ec = EC_TIMESTAMP;
-	else
-	if ( strcmp(*type,"date") == 0)
-		ec = EC_DATE;
-	else
-	if ( strcmp(*type,"decimal") == 0)
-		ec = EC_DEC;
-	return ec;
-}
 str
 /*mvc_scalar_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
 mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -3057,9 +3017,9 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *type = getArgReference_str(stk, pci, 3);
 	int *digits = getArgReference_int(stk, pci, 4);
 	int *scale = getArgReference_int(stk, pci, 5);
-	int ec  =0;
-	ptr p = getArgReference(stk, pci, 6);
-	int mtype = getArgType(mb, pci, 6);
+	int *eclass = getArgReference_int(stk, pci, 6);
+	ptr p = getArgReference(stk, pci, 7);
+	int mtype = getArgType(mb, pci, 7);
 	str msg;
 	backend *b = NULL;
 
@@ -3069,9 +3029,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	if (ATOMextern(mtype))
 		p = *(ptr *) p;
-
-	ec = SQLname2eclass(type);
-	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, ec, p, mtype, "", "NULL") != SQL_OK)
+	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, "", "NULL") != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;
 }
@@ -3483,8 +3441,8 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-        if (BAThash(b, 0) == GDK_FAIL)
-             throw(SQL, "not_uniques", "hash creation failed");
+		if (BAThash(b, 0) == GDK_FAIL)
+			throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
@@ -4305,14 +4263,14 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_DEBUG);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
 	return MAL_SUCCEED;
 }
 
- /*
+/*
  * Vacuum cleaning tables
  * Shrinking and re-using space to vacuum clean the holes in the relations.
  */

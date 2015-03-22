@@ -2367,6 +2367,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
 						q = pushInt(mb, q, t->digits);
 						q = pushInt(mb, q, t->scale);
+						q = pushInt(mb, q, t->type->eclass);
 						q = pushArgument(mb, q, c->nr);
 					}
 
