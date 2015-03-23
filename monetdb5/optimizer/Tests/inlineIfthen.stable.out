@@ -35,7 +35,7 @@ function user.qry():void;               	#
     bat.append(b:bat[:oid,:int],10:int);	# BKCappend_val_wrap
     bat.append(b:bat[:oid,:int],20:int);	# BKCappend_val_wrap
     r:bat[:oid,:int]{inline} := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int]);	# MANIFOLDremapMultiplex
-    io.print(r:bat[:oid,:int]{inline}); 	# IOprint_val
+    io.print(r:bat[:oid,:int]);         	# IOprint_val
 end user.qry;                           	# 
 
 # 11:53:01 >  

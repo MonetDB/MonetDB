@@ -115,11 +115,7 @@ algebra_export str ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, c
 algebra_export str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 algebra_export str ALGexist(bit *ret, const bat *bid, const void *val);
 algebra_export str ALGfind(oid *ret, const bat *bid, ptr val);
-algebra_export str ALGprojectNIL(bat *ret, const bat *bid);
 algebra_export str ALGselectNotNil(bat *result, const bat *bid);
-
-algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 algebra_export str ALGreuse(bat *ret, const bat *bid);
 #endif
