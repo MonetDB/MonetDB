@@ -2480,6 +2480,12 @@ drop_statement:
  |  drop USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  |  drop TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
+ | 	drop ARRAY qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_DROP_ARRAY, l ); }
+
  ;
 
 opt_typelist:

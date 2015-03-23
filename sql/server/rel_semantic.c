@@ -177,6 +177,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_VIEW:
 	case SQL_DROP_TABLE:
 	case SQL_DROP_VIEW:
+	/*SciQL*/case SQL_DROP_ARRAY:
 	case SQL_ALTER_TABLE:
 
 	case SQL_GRANT:

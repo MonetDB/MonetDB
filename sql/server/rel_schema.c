@@ -815,7 +815,6 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 //	int create = (!instantiate && !deps);
 	int tt = tt_array;
 
-fprintf(stderr, "In rel_create_array\n");
 //	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "3F000!CREATE ARRAY: no such schema '%s'", sname);
@@ -1201,7 +1200,6 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "3F000!ALTER TABLE: no such schema '%s'", sname);
 		return NULL;
@@ -1741,9 +1739,8 @@ rel_schemas(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY) 
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && s->token != SQL_CREATE_ARRAY && STORE_READONLY) 
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
-
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
 	{
@@ -1797,6 +1794,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_create_view(sql, NULL, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_DROP_TABLE:
+	case SQL_DROP_ARRAY: //at the moment there is no difference
 	{
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
