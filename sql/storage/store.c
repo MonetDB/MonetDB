@@ -513,7 +513,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	else
 		_DELETE(st);
 	c->t = t;
-	if (isTable(c->t))
+	if (isTable(c->t) || isArray(c->t))
 		store_funcs.create_col(tr, c);
 	c->sorted = sql_trans_is_sorted(tr, c);
 	c->dcount = 0;
@@ -614,7 +614,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
 	cs_new(&t->tables, tr->sa, (fdestroy) &table_destroy);
 
-	if (isTable(t)) {
+	if (isTable(t) || isArray(t)) { //create the deltas
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
 			if (bs_debug)
 				fprintf(stderr, "#\tload table %s missing 'deletes'", t->base.name);
@@ -2624,7 +2624,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		/* only register columns without commit action tables */
 		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
 
-		if (isTable(t)) {
+		if (isTable(t) ) { 
 			if (p && mode == R_SNAPSHOT)
 				store_funcs.snapshot_create_del(tr, t);
 			else if (p && mode == R_LOG)
