@@ -48,6 +48,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 			getArg(q,0) = getArg(p,0);
 			freeInstruction(p);
+			actions++;
 			continue;
 		}
 		pushInstruction(mb,p);
