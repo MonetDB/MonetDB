@@ -4529,7 +4529,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 					sql_base *bt = ntab->data;
 					sql_table *t = (sql_table *) bt;
-					if (isTable(t))
+					if (isTable(t) || isArray(t))
 						if (t->columns.set)
 							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
@@ -4603,7 +4603,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BBPunfix(bn->batCacheid);
 							}
 
-					if (isTable(t))
+					if (isTable(t) || isArray(t))
 						if (t->idxs.set)
 							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
