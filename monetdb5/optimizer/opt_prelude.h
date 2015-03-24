@@ -199,8 +199,6 @@ opt_export  str schedulerRef;
 opt_export  str selectNotNilRef;
 opt_export  str seriesRef;
 opt_export  str semaRef;
-opt_export  str semijoinRef;
-opt_export  str semijoinPathRef;
 opt_export  str setAccessRef;
 opt_export  str setWriteModeRef;
 opt_export  str sinkRef;

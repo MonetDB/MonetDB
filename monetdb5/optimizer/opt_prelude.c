@@ -202,8 +202,6 @@ str schedulerRef;
 str selectNotNilRef;
 str seriesRef;
 str semaRef;
-str semijoinRef;
-str semijoinPathRef;
 str setAccessRef;
 str setWriteModeRef;
 str sinkRef;
@@ -455,8 +453,6 @@ void optimizerInit(void)
 	selectNotNilRef = putName("selectNotNil",12);
 	seriesRef = putName("series",6);
 	semaRef = putName("sema",4);
-	semijoinRef = putName("semijoin",8);
-	semijoinPathRef = putName("semijoinPath",12);
 	setAccessRef = putName("setAccess",9);
 	setWriteModeRef= putName("setWriteMode",12);
 	sinkRef = putName("sink",4);

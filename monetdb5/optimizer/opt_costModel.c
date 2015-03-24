@@ -60,15 +60,11 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (getFunctionId(p) == joinRef ||
 				getFunctionId(p) == leftfetchjoinRef ||
 				getFunctionId(p) == leftjoinRef ||
-				getFunctionId(p) == bandjoinRef ||
+				getFunctionId(p) == subbandjoinRef ||
 				getFunctionId(p) == leftfetchjoinPathRef ||
 				getFunctionId(p) == leftjoinPathRef ) {
 				/* assume 1-1 joins */
 				newRows(1,2,(c1 < c2 ? c1 : c2),0);
-			} else if (getFunctionId(p) == semijoinRef ||
-						getFunctionId(p) == semijoinPathRef) {
-				/* assume 1-1 semijoins */
-				newRows(1,2,(c1 < c2? c1 : c2),0);
 			} else
 			if (getFunctionId(p) == crossRef) {
 				newRows(1,2,((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1)),0);

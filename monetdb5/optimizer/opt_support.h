@@ -107,7 +107,6 @@ opt_export int isLikeOp(InstrPtr q);
 opt_export int isTopn(InstrPtr q);
 opt_export int isSlice(InstrPtr q);
 opt_export int isOrderby(InstrPtr q);
-opt_export int isDiffOp(InstrPtr q);
 opt_export int isSubSelect(InstrPtr q);
 opt_export int isSubJoin(InstrPtr q);
 opt_export int isMultiplex(InstrPtr q);

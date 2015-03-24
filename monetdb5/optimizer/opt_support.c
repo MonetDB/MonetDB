@@ -673,12 +673,6 @@ int isOrderby(InstrPtr p){
 		 getFunctionId(p) == sortReverseRef);
 }
 
-int isDiffOp(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
-	    	(getFunctionId(p) == semijoinRef ||
- 	     	 getFunctionId(p) == kdifferenceRef));
-}
-
 int isMatJoinOp(InstrPtr p){
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
