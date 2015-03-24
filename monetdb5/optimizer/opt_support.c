@@ -6,8 +6,8 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
- /*
- * @- Building Your Own Optimizer
+ /* (c) M. Kersten
+ * Building Your Own Optimizer
  * Implementation of your own MAL-MAL optimizer can best be started
  * from refinement of one of the examples included in the code base.
  * Beware that only those used in the critical path of SQL execution
@@ -23,8 +23,8 @@
  * valuable insight in the effectiveness of your optimizer.
  * The effects of all optimizers is collected in a system catalog.
  *
- * Each optimizer ends with a strong defense line, @code{optimizerCheck()}
- * It performs a complete type and data flow analysis before returning.
+ * Each optimizer ends with a strong defense line, optimizerCheck() 
+ * * It performs a complete type and data flow analysis before returning.
  * Moreover, if you are in debug mode, it will  keep a copy of the
  * plan produced for inspection. Studying the differences between
  * optimizer steps provide valuable information to improve your code.
@@ -54,7 +54,6 @@
  * The optimizers defined here are registered to the optimizer module.
  */
 /*
- * @-
  * @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
  * @subsection Optimizer framework
  * The large number of query transformers calls for a flexible scheme for
@@ -121,7 +120,6 @@
 #include "manifold.h"
 
 /*
- * @-
  * Optimizer catalog with runtime statistics;
  */
 struct OPTcatalog {
@@ -172,7 +170,6 @@ struct OPTcatalog {
 lng optDebug;
 
 /*
- * @-
  * Front-ends can set a collection of optimizers by name or their pipe alias.
  */
 str
@@ -208,36 +205,24 @@ OPTsetDebugStr(void *ret, str *nme)
 }
 
 str
-optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag)
+optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
 	if( actions > 0){
-		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-		if( flag & OPT_CHECK_FLOW) chkFlow(cntxt->fdout, mb);
-		if( flag & OPT_CHECK_DECL) chkDeclarations(cntxt->fdout, mb);
+		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+		chkFlow(cntxt->fdout, mb);
+		chkDeclarations(cntxt->fdout, mb);
 	}
 	if( cntxt->debugOptimizer){
-		/* keep the actions take as post block comments */
+		/* keep the actions taken as a post block comments */
 		char buf[BUFSIZ];
 		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
 		newComment(mb,buf);
 		if (mb->errors)
 			throw(MAL, name, PROGRAM_GENERAL);
 	}
-	/* code to collect all last versions to study code coverage  in SQL
-	{stream *fd;
-	char nme[25];
-	snprintf(nme,25,"/tmp/mal_%d",getpid());
-	fd= open_wastream(nme);
-	if( fd == NULL)
-		printf("Error in %s\n",nme);
-	printFunction(fd,mb,0,LIST_MAL_ALL);
-	mnstr_close(fd);
-	}
-	*/
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Limit the loop count in the optimizer to guard against indefinite
  * recursion, provided the optimizer does not itself generate
  * a growing list.
@@ -288,7 +273,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 }
 
 /*
- * @-
  * The default MAL optimizer includes a final call to
  * the multiplex expander.
  * We should take care of functions marked as 'inline',
@@ -350,7 +334,6 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	return TRUE;
 }
 /*
- * @-
  * If two instructions have elements in common in their target list,
  * it means a variable is re-initialized and should not be considered
  * an alias.
@@ -367,7 +350,6 @@ hasCommonResults(InstrPtr p, InstrPtr q)
 	return FALSE;
 }
 /*
- * @-
  * Dependency between target variables and arguments can be
  * checked with isDependent().
  */
@@ -380,7 +362,6 @@ isDependent(InstrPtr p, InstrPtr q){
 	return FALSE;
 }
 /*
- * @-
  * See is all arguments mentioned in the instruction at point pc
  * are still visible at instruction qc and have not been updated
  * in the mean time.
@@ -434,7 +415,6 @@ allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	return TRUE;
 }
 /*
- * @-
  * The safety property should be relatively easy to determine for
  * each MAL function. This calls for accessing the function MAL block
  * and to inspect the arguments of the signature.
@@ -454,7 +434,6 @@ isUnsafeFunction(InstrPtr q)
 }
 
 /*
- * @-
  * Instructions are unsafe is one of the arguments is also mentioned
  * in the result list. Alternatively, the 'unsafe' property is set
  * for the function call itself.
@@ -472,7 +451,6 @@ isUnsafeInstruction(InstrPtr q)
 }
 
 /*
- * @-
  * The routine isInvariant determines if the variable V is not
  * changed in the instruction sequence identified by the range [pcf,pcl].
  */
@@ -487,7 +465,6 @@ isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
 }
 
 /*
- * @-
  * Any instruction may block identification of a common
  * subexpression. It suffices to stumble upon an unsafe function
  * whose parameter lists has a non-empty intersection with the
@@ -547,106 +524,6 @@ isTouched(MalBlkPtr mb, int varid, int p1, int p2)
 	return FALSE;
 }
 #endif
-
-/*
- * @-
- * @node Flow Analysis, Optimizer Toolkit, Lifespan Analysis, The MAL Optimizer
- * @subsection Flow analysis
- * In many optimization rules, the data flow dependency between statements is
- * of crucial importance. The MAL language encodes a multi-source, multi-sink
- * dataflow network. Optimizers typically extract part of the workflow and use
- * the language properties to enumerate semantic equivalent solutions, which
- * under a given cost model turns out to result in better performance.
- *
- * The flow graph plays a crucial role in many optimization steps.
- * It is unclear as yet what primitives and what storage structure is
- * most adequate. For the time being we introduce the operations needed and
- * evaluate them directly against the program
- *
- * For each variable we should determine its scope of stability.
- * End-points in the flow graph are illustrative as dead-code,
- * that do not produce persistent data. It can be removed when
- * you know there are no side-effect.
- *
- * Side-effect free evaluation is a property that should be known upfront.
- * For the time being, we assume it for all operations known to the system.
- * The property "unsafe" is reserved to identify cases where this does not hold.
- * Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
- * @
- * Summarization of the data flow dependencies can be modelled as a dependency graph.
- * It can be made explicit or kept implicit using the operators needed.
- * We start with the latter. The primary steps to deal with is dead code removal.
- * @- Basic Algebraic Blocks
- * Many code snippets produced by e.g. the SQL compiler is just
- * a linear representation of an algebra tree/graph. Its detection
- * makes a number of optimization decisions more easy, because
- * the operations are known to be side-effect free within the tree/graph.
- * This can be used to re-order the plan without concern on impact of the outcome.
- * It suffice to respect the flow graph.
- * [unclear as what we need]
- * @-
- * @node Optimizer Toolkit, Access Mode, Flow Analysis , The MAL Optimizer
- * @+ Optimizer Toolkit
- * In this section, we introduce the collection of MAL optimizers
- * included in the code base. The tool kit is incrementally built, triggered
- * by experimentation and curiousity. Several optimizers require
- * further development to cope with the many features making up the MonetDB system.
- * Such limitations on the implementation are indicated where appropriate.
- *
- * Experience shows that construction and debugging of a front-end specific optimizer
- * is simplified when you retain information on the origin of the MAL code
- * produced as long as possible. For example,
- * the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
- * of simple SQL rewrites using the module name as the discriminator.
- *
- * Pipeline validation. The pipelines used to optimize MAL programs contain
- * dependencies. For example, it does not make much sense to call the deadcode
- * optimizer too early in the pipeline, although it is not an error.
- * Moreover, some optimizers are merely examples of the direction to take,
- * others are critical for proper functioning for e.g. SQL.
- *
- * @menu
- * * Access Mode::
- * * Accumulators::
- * * Alias Removal::
- * * Code Factorization::
- * * Coercions::
- * * Common Terms::
- * * Constant Expressions::
- * * Cost Models::
- * * Data Flow::
- * * Dead Code Removal::
- * * Empty Set Removal::
- * * Garbage Collector::
- * * Heuristic Rules::
- * * Inline Functions::
- * * Join Paths::
- * * Macro Processing::
- * * Memo Execution::
- * * Merge Tables ::
- * * Multiplex Compiler::
- * * Partitioned Tables::
- * * Peephole Optimization::
- * * Query Plans::
- * * Range Propagation::
- * * Recycler::
- * * Remote::
- * * Remote Queries::
- * * Singleton Sets ::
- * * Stack Reduction::
- * * Strength Reduction::
- * @end menu
- * @-
- * The dead code remover should not be used for testing,
- * because it will trim most programs to an empty list.
- * The side effect tests should become part of the signature
- * definitions.
- *
- * A side effect is either an action to leave data around
- * in a variable/resource outside the MALblock.
- * A variant encoded here as well is that the linear flow
- * of control can be broken.
- */
 
 int
 isProcedure(MalBlkPtr mb, InstrPtr p)
@@ -763,7 +640,6 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 }
 
 /*
- * @-
  * Side-effect free functions are crucial for several operators.
  */
 int
@@ -776,7 +652,6 @@ isSideEffectFree(MalBlkPtr mb){
 	return TRUE;
 }
 /*
- * @-
  * Breaking up a MAL program into pieces for distributed requires
  * identification of (partial) blocking instructions. A conservative
  * definition can be used.

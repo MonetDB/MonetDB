@@ -1718,7 +1718,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	OPTDEBUGmergetable {
 		str err;
 		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
-		err= optimizerCheck(cntxt,mb,"merge test",1,0,0);
+		err= optimizerCheck(cntxt,mb,"merge test",1,0);
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 		if( err) GDKfree(err);
 	}

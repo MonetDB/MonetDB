@@ -78,7 +78,7 @@
 opt_export lng optDebug;
 
 opt_export str MALoptimizer(Client c);
-opt_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
+opt_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
 opt_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 opt_export void showOptimizerStep(str fnme,int i, int flg);
 opt_export void showOptimizerHistory(void);
@@ -114,18 +114,6 @@ opt_export int isMultiplex(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
 opt_export str OPTsetDebugStr(void *ret, str *nme);
-/*
- * @-
- * The optimizerCheck is defensive. In some cases, e.g. coercion,
- * a light check would be sufficient. Such a refinement is left
- * for the future using an additional flag.
- */
-#define OPT_CHECK_FLOW	1
-#define OPT_CHECK_TYPES 2
-#define OPT_CHECK_DECL 4
-
-#define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL )
-
 opt_export wrd getVarRows(MalBlkPtr mb, int v);
 
 #endif /* _OPT_SUPPORT_H */
