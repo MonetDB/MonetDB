@@ -204,6 +204,10 @@ OPTsetDebugStr(void *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
+/*
+ * All optimizers should pass the optimizerCheck for defense against
+ * incomplete and malicious MAL code.
+ */
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
@@ -292,6 +296,7 @@ MALoptimizer(Client c)
 	return msg;
 }
 
+/* Only used by opt_commonTerms! */
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){
 	int i;
 
@@ -309,6 +314,7 @@ int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){
 	return FALSE;
 }
 
+/* Only used by opt_commonTerms! */
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {   int k;
 	int (*cmp)(const void *, const void *);
@@ -333,6 +339,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 		}
 	return TRUE;
 }
+
 /*
  * If two instructions have elements in common in their target list,
  * it means a variable is re-initialized and should not be considered
@@ -360,59 +367,6 @@ isDependent(InstrPtr p, InstrPtr q){
 	for(j= p->retc; j<p->argc; j++)
 		if( getArg(q,i)== getArg(p,j)) return TRUE;
 	return FALSE;
-}
-/*
- * See is all arguments mentioned in the instruction at point pc
- * are still visible at instruction qc and have not been updated
- * in the mean time.
- * Take into account that variables may be declared inside
- * a block. This can be calculated using the BARRIER/CATCH
- * and EXIT pairs.
- */
-static int
-countBlocks(MalBlkPtr mb, int start, int stop){
-	int i,cnt =0;
-	InstrPtr p;
-	for(i= start; i< stop; i++){
-		p= getInstrPtr(mb,i);
-		if ( p->barrier == BARRIERsymbol || p->token== CATCHsymbol)
-			cnt++;
-		if ( p->barrier == EXITsymbol )
-			cnt--;
-	}
-	return cnt;
-}
-#if 0
-int
-allArgumentsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
-	int i;
-	InstrPtr p;
-
-	if( countBlocks(mb,pc,qc) )
-		return FALSE;
-	p= getInstrPtr(mb,pc);
-	for(i=p->retc; i< p->argc; i++){
-		if( getLastUpdate(span,getArg(p,i)) >  getBeginLifespan(span,getArg(p,i)) &&
-			qc > getLastUpdate(span,getArg(p,i)) )
-			return FALSE;
-	}
-	return TRUE;
-}
-#endif
-int
-allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
-	int i;
-	InstrPtr p;
-
-	if( countBlocks(mb,pc,qc) )
-		return FALSE;
-	p= getInstrPtr(mb,pc);
-	for(i=0; i < p->retc; i++){
-		if( getLastUpdate(span,getArg(p,i))> getBeginLifespan(span,getArg(p,i))  &&
-			qc > getLastUpdate(span,getArg(p,i)) )
-			return FALSE;
-	}
-	return TRUE;
 }
 /*
  * The safety property should be relatively easy to determine for
