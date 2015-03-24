@@ -684,7 +684,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 
 		GDKfree(pgrp);
-	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_bte) {
+	} else if (g == NULL && t == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 256 groups, so the group id
@@ -710,7 +710,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(bgrps);
-	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_sht) {
+	} else if (g == NULL && t == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 65536 groups, so the group
