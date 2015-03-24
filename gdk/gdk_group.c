@@ -563,6 +563,27 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* figure out if we can use the storage type also for
 	 * comparing values */
 	t = ATOMbasetype(b->ttype);
+	/* for strings we can use the offset instead of the actual
+	 * string values if we know that the strings in the string
+	 * heap are unique */
+	if (t == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
+		switch (b->T->width) {
+		case 1:
+			t = TYPE_bte;
+			break;
+		case 2:
+			t = TYPE_sht;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			t = TYPE_int;
+			break;
+#endif
+		default:
+			t = TYPE_var;
+			break;
+		}
+	}
 
 	if (((b->tsorted || b->trevsorted) &&
 	     (g == NULL || g->tsorted || g->trevsorted)) ||
