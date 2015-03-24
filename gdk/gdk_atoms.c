@@ -569,46 +569,43 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	const char *p = src;
 	int sz = ATOMsize(tp);
 	lng base = 0;
-	lng maxdiv10 = 0;	/* max value / 10 */
-	int maxmod10 = 7;	/* max value % 10 */
-	int sign = 1;
+	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
+	const int maxmod10 = 7;	/* max value % 10 */
+	int sign;
 
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	memcpy(*dst, ATOMnilptr(tp), sz);
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		p += 3;
-		return (int) (p - src);
-	}
-	if (*p == '-') {
+	switch (*p) {
+	case 'n':
+		memcpy(*dst, ATOMnilptr(tp), sz);
+		if (p[1] == 'i' && p[2] == 'l') {
+			p += 3;
+			return (int) (p - src);
+		}
+		/* not a number */
+		return 0;
+	case '-':
 		sign = -1;
 		p++;
-	} else if (*p == '+') {
+		break;
+	case '+':
 		p++;
+		/* fall through */
+	default:
+		sign = 1;
+		break;
 	}
 	if (!num10(*p)) {
 		/* not a number */
+		memcpy(*dst, ATOMnilptr(tp), sz);
 		return 0;
-	}
-	switch (sz) {
-	case 1:
-		maxdiv10 = 12/*7*/;
-		break;
-	case 2:
-		maxdiv10 = 3276/*7*/;
-		break;
-	case 4:
-		maxdiv10 = 214748364/*7*/;
-		break;
-	case 8:
-		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
-		break;
 	}
 	do {
 		if (base > maxdiv10 ||
 		    (base == maxdiv10 && base10(*p) > maxmod10)) {
 			/* overflow */
+			memcpy(*dst, ATOMnilptr(tp), sz);
 			return 0;
 		}
 		base = 10 * base + base10(*p);
@@ -618,16 +615,28 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
+		if (base <= GDK_bte_min || base > GDK_bte_max) {
+			**dstbte = bte_nil;
+			return 0;
+		}
 		**dstbte = (bte) base;
 		break;
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
+		if (base <= GDK_sht_min || base > GDK_sht_max) {
+			**dstsht = sht_nil;
+			return 0;
+		}
 		**dstsht = (sht) base;
 		break;
 	}
 	case 4: {
 		int **dstint = (int **) dst;
+		if (base <= GDK_int_min || base > GDK_int_max) {
+			**dstint = int_nil;
+			return 0;
+		}
 		**dstint = (int) base;
 		break;
 	}
