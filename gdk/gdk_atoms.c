@@ -576,30 +576,32 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	switch (*p) {
-	case 'n':
-		memcpy(*dst, ATOMnilptr(tp), sz);
-		if (p[1] == 'i' && p[2] == 'l') {
-			p += 3;
-			return (int) (p - src);
-		}
-		/* not a number */
-		return 0;
-	case '-':
-		sign = -1;
-		p++;
-		break;
-	case '+':
-		p++;
-		/* fall through */
-	default:
-		sign = 1;
-		break;
-	}
 	if (!num10(*p)) {
-		/* not a number */
-		memcpy(*dst, ATOMnilptr(tp), sz);
-		return 0;
+		switch (*p) {
+		case 'n':
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			if (p[1] == 'i' && p[2] == 'l') {
+				p += 3;
+				return (int) (p - src);
+			}
+			/* not a number */
+			return 0;
+		case '-':
+			sign = -1;
+			p++;
+			break;
+		case '+':
+			p++;
+			/* fall through */
+		default:
+			sign = 1;
+			break;
+		}
+		if (!num10(*p)) {
+			/* still not a number */
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			return 0;
+		}
 	}
 	do {
 		if (base > maxdiv10 ||
