@@ -45,9 +45,15 @@
 #include "controlrunner.h"
 #include "client.h"
 
+struct threads {
+	struct threads *next;
+	pthread_t tid;
+	volatile char dead;
+};
 struct clientdata {
 	int sock;
 	int isusock;
+	struct threads *self;
 };
 
 static void *
@@ -73,18 +79,23 @@ handleClient(void *data)
 	char *algos;
 	int sock;
 	char isusock;
+	struct threads *self;
 
 	sock = ((struct clientdata *) data)->sock;
 	isusock = ((struct clientdata *) data)->isusock;
+	self = ((struct clientdata *) data)->self;
 	free(data);
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
-	if (fdin == 0)
+	if (fdin == 0) {
+		self->dead = 1;
 		return(newErr("merovingian-client inputstream problems"));
+	}
 	fdin = block_stream(fdin);
 
 	fout = socket_wastream(sock, "merovingian->client (write)");
 	if (fout == 0) {
 		close_stream(fdin);
+		self->dead = 1;
 		return(newErr("merovingian-client outputstream problems"));
 	}
 	fout = block_stream(fout);
@@ -139,6 +150,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 	buf[sizeof(buf) - 1] = '\0';
@@ -160,6 +172,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -176,6 +189,7 @@ handleClient(void *data)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		}
 		algo = passwd + 1;
@@ -187,6 +201,7 @@ handleClient(void *data)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		}
 		*s = 0;
@@ -198,6 +213,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -213,6 +229,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -231,6 +248,7 @@ handleClient(void *data)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		} else {
 			*s = '\0';
@@ -245,6 +263,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(newErr("client %s specified no database", host));
 	}
 
@@ -255,6 +274,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(NO_ERR);
 	}
 
@@ -284,6 +304,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 	stat = top;
@@ -296,6 +317,7 @@ handleClient(void *data)
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
 		free(algos);
+		self->dead = 1;
 		return(NO_ERR);
 	}
 
@@ -325,6 +347,7 @@ handleClient(void *data)
 		close_stream(fdin);
 		msab_freeStatus(&top);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -395,12 +418,14 @@ handleClient(void *data)
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		};
 	}
 
 	msab_freeStatus(&top);
 	free(algos);
+	self->dead = 1;
 	return(NO_ERR);
 }
 
@@ -414,10 +439,7 @@ acceptConnections(int sock, int usock)
 	void *e;
 	struct timeval tv;
 	struct clientdata *data;
-	struct threads {
-		struct threads *next;
-		pthread_t tid;
-	} *threads = NULL, **threadp, *p;
+	struct threads *threads = NULL, **threadp, *p;
 
 	do {
 		/* handle socket connections */
@@ -433,7 +455,8 @@ acceptConnections(int sock, int usock)
 		/* join any handleClient threads that we started and that may
 		 * have finished by now */
 		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
-			if (pthread_tryjoin_np((*threadp)->tid, &e) == 0) {
+			if ((*threadp)->dead &&
+				pthread_join((*threadp)->tid, &e) == 0) {
 				p = *threadp;
 				*threadp = p->next;
 				free(p);
@@ -540,6 +563,8 @@ acceptConnections(int sock, int usock)
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
 		p = malloc(sizeof(*p));	/* freed by handleClient */
+		p->dead = 0;
+		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
 			p->next = threads;
 			threads = p;
