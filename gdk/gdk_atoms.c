@@ -571,7 +571,7 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	lng base = 0;
 	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 	const int maxmod10 = 7;	/* max value % 10 */
-	int sign;
+	int sign = 1;
 
 	atommem(void, sz);
 	while (GDKisspace(*p))
@@ -592,9 +592,6 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 			break;
 		case '+':
 			p++;
-			/* fall through */
-		default:
-			sign = 1;
 			break;
 		}
 		if (!num10(*p)) {
