@@ -1,0 +1,54 @@
+
+function qry();
+a:= bat.new(:oid,:oid);
+b:= bat.new(:oid,:oid);
+c:= bat.new(:oid,:oid);
+d:= bat.new(:oid,:str);
+z:= bat.new(:oid,:oid);
+
+bat.append(a,0@0);
+bat.append(a,3@0);
+
+bat.append(b,0@0);
+bat.append(b,1@0);
+bat.append(b,2@0);
+bat.append(b,3@0);
+bat.append(b,4@0);
+
+bat.append(c,0@0);
+bat.append(c,1@0);
+bat.append(c,2@0);
+bat.append(c,4@0);
+bat.append(c,5@0);
+
+bat.append(d,"The");
+bat.append(d,"quick");
+bat.append(d,"brown");
+bat.append(d,"fox");
+bat.append(d,"jumps");
+bat.append(d,"over");
+bat.append(d,"the");
+bat.append(d,"lazy");
+bat.append(d,"dog");
+
+e := algebra.leftfetchjoin(a,b);
+f := algebra.leftfetchjoin(e,c);
+g := algebra.leftfetchjoin(f,d);
+io.print(g);
+
+h := algebra.leftfetchjoinPath(c,d);
+io.print(h);
+
+i := algebra.leftfetchjoinPath(b,c,d);
+io.print(i);
+
+j := algebra.leftfetchjoinPath(a,b,c,d);
+io.print(j);
+
+zz := algebra.leftfetchjoinPath(a,z,d);
+io.print(zz);
+end qry;
+
+optimizer.joinPath("user","qry");
+mdb.list("user","qry");
+qry();
