@@ -865,9 +865,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
+	if (bn->batCount == 1 || bn->batCount == b->batCount)
+		bn->tseqbase = b->hseqbase;
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
