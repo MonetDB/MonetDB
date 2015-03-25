@@ -327,7 +327,7 @@ binsearch(const oid *rcand, oid offset,
  * If nil_on_miss is set, a nil value is returned in r2 if there is no
  * match in r for a particular value in l (left outer join).
  *
- * If semi is set, only a single set of values in t1/r2 is returned if
+ * If semi is set, only a single set of values in r1/r2 is returned if
  * there is a match of l in r, no matter how many matches there are in
  * r; otherwise all matches are returned.
  */
