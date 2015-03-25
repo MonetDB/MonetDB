@@ -216,7 +216,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 				(x) = _i;				\
 				break;					\
 			}						\
-		} else							\
+		} else 							\
 			goto hashfnd_failed;				\
 	} while (0)
 #define HASHfnd_str_hv(x,y,z)						\

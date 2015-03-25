@@ -1929,7 +1929,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
 	if ((isNew(oc) && flag == TR_NEW && tr->parent == gtrans) ||
 	    (oc->base.allocated && flag == TR_OLD && tr->parent != gtrans))
-		if (isTable(c->t)) 
+		if (isTable(c->t) || isArray(c->t)) 
 			store_funcs.dup_col(tr, oc, c);
 	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) {
 		oc->base.flag = TR_OLD;
@@ -2103,7 +2103,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
 	if ((isNew(ot) && flag == TR_NEW && tr->parent == gtrans) ||
 	    (ot->base.allocated && flag == TR_OLD && tr->parent != gtrans))
-		if (isTable(t)) 
+		if (isTable(t) || isArray(t)) 
 			store_funcs.dup_del(tr, ot, t);
 
 	t->s = s;
@@ -2624,7 +2624,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		/* only register columns without commit action tables */
 		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
 
-		if (isTable(t) ) { 
+		if (isTable(t) || isArray(t)) { 
 			if (p && mode == R_SNAPSHOT)
 				store_funcs.snapshot_create_del(tr, t);
 			else if (p && mode == R_LOG)
@@ -2804,7 +2804,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (ok != LOG_OK) 
 		return LOG_ERR;
 
-	if (isTable(ft)) {
+	if (isTable(ft) || isArray(ft)) {
 		if (p && mode == R_SNAPSHOT) {
 			ok = store_funcs.snapshot_table(tr, ft, tt);
 		} else if (p && mode == R_LOG) {
@@ -3075,7 +3075,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 	/* did we make changes or is the global changed after we started */
 	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
 
-		if (isTable(fc->t)) 
+		if (isTable(fc->t) || isArray(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
 
 		fc->null = pfc->null;
@@ -3117,7 +3117,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
-		if (isTable(ft)) 
+		if (isTable(ft) || isArray(ft)) 
 			store_funcs.destroy_del(NULL, ft);
 
 		ft->base.wtime = ft->base.rtime = 0;

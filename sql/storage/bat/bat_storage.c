@@ -1622,7 +1622,7 @@ _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 				int changes = 0;
 				sql_table *t = n->data;
 
-				if (isTable(t) && isGlobal(t))
+				if ((isTable(t) || isArray(t)) && isGlobal(t))
 					ok = gtr_update_table_f(tr, t, &changes);
 				schanges |= changes;
 			}
