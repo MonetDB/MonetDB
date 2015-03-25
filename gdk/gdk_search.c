@@ -243,7 +243,7 @@ BATcheckhash(BAT *b)
 				    hdata[0] == (((size_t) 1 << 24) | HASH_VERSION) &&
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
-				    st.st_size >= (off_t) ((hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
+				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
 				    HEAPload(hp, nme, ext, 0) >= 0) {
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
