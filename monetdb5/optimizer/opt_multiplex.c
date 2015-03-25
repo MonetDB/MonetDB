@@ -59,7 +59,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn,strlen(fcn));
 #ifndef NDEBUG
-	mnstr_printf(GDKstdout,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n", mod,fcn);
+	mnstr_printf(GDKstdout,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
+	printInstruction(GDKstdout, mb, stk, pci, LIST_MAL_DEBUG);
 #endif
 
 	/* search the iterator bat */
