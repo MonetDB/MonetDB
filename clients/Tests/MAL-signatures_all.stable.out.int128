@@ -2907,17 +2907,9 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
-pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
+pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
-comment Fill the tail with a constant, e.g. [0~b]
-
-pattern algebra.project(v:any_3,b:bat[:any_2,:any_1]):bat[:any_3,:any_1] 
-address ALGprojecthead;
-comment Fill the head with a constant, e.g. [0~b]
-
-command algebra.project(b:bat[:any_1,:any_2]):bat[:any_1,:void] 
-address ALGprojectNIL;
-comment Extract the head of a BAT.
+comment Fill the tail with a constant
 
 command algebra.reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address ALGreuse;
