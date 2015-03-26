@@ -743,7 +743,6 @@ str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 str ALGjoin(bat *result, const bat *lid, const bat *rid);
 str ALGjoin2(bat *l, bat *r, const bat *lid, const bat *rid);
 str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-BAT *ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 str ALGjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 str ALGkdiff(bat *result, const bat *lid, const bat *rid);
 str ALGkunion(bat *result, const bat *lid, const bat *rid);
