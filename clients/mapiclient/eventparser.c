@@ -37,12 +37,14 @@ parseArguments(char *call)
 {
 	int i;
 	char  *c = call, *l, ch;
-	char *v;
+	char *v, *w;
 	
 	malargtop = 0;
 	malvartop = 0;
 	if( debug)
-		fprintf(stderr,"call:%s\n",call);
+		fprintf(stderr,"%s\n",call);
+	memset(malarguments, 0, sizeof(malarguments));
+	memset(malvariables, 0, sizeof(malvariables));
 	for( ; c && *c && malargtop < MAXMALARGS;  c++){
 		if (*c ==')')
 			break;
@@ -68,6 +70,8 @@ parseArguments(char *call)
 			*l= 0;
 			malarguments[malargtop++] = strdup(c);
 			c= l+1;
+			// we could find a type descriptor here, which we skip
+			while( *c && *c !=',' && *c !=')') c++;
 		} else if(*c) {
 			l = strchr(c, ch = ',');
 			if( l == 0){
@@ -75,6 +79,9 @@ parseArguments(char *call)
 				break;
 				}
 			*l=0;
+			// we could find a type descriptor as well, which we skip
+			w= strchr(c,':');
+			if( w) *w = 0;
 			malarguments[malargtop++] = strdup(c);
 			*l=ch;
 			c= l;

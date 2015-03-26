@@ -226,10 +226,7 @@ static void resetTachograph(void){
 	lastpc = 0;
 	pccount = 0;
 	fflush(stdout);
-	if( events){
-		free(events);
-		events = 0;
-	}
+	events = 0;
 }
 
 static char stamp[BUFSIZ]={0};
@@ -304,7 +301,7 @@ static struct{
 static void
 renderArgs(char *c, int len,  char *line, char *limit, char *l)
 {
-	char varname[BUFSIZ], *v=0;
+	char varname[BUFSIZ]={0}, *v=0;
 	for(; *c && *c !=')' && l < limit-1; ){
 		if( *c == ',')*l++= *c++;
 		v= 0;
@@ -531,7 +528,7 @@ update(EventRecord *ev)
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
 			currentquery = malarguments[0];
-			malsize = atoi(malarguments[3]);
+			malsize = malarguments[2]? atoi(malarguments[2]): 2048;
 			events = (Event*) malloc(malsize * sizeof(Event));
 			memset((char*)events, 0, malsize * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
@@ -557,6 +554,7 @@ update(EventRecord *ev)
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
+		assert(ev->pc < malsize);
 		events[ev->pc].state = RUNNING;
 		renderCall(line,BUFSIZ, ev->stmt,0,1);
 		events[ev->pc].stmt = strdup(ev->stmt);
