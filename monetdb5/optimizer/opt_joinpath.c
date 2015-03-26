@@ -25,6 +25,8 @@ typedef struct{
 	InstrPtr p;
 } Candidate;
 
+//#undef OPTDEBUGjoinPath 
+//#define OPTDEBUGjoinPath  if(1)
 /*
  * The join path type analysis should also be done at run time,
  * because the expressive power of MAL is insufficient to
@@ -54,7 +56,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-		if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == leftfetchjoinPathRef)
+		if ( getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == leftfetchjoinPathRef)
 			for ( j= p->retc; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
@@ -84,7 +86,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	}
 
 	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
-		if( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p)== leftfetchjoinPathRef)
+		if( getFunctionId(p)== leftjoinPathRef || getFunctionId(p)== leftfetchjoinPathRef)
 			for ( j= p->retc ; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
@@ -129,9 +131,9 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	GDKfree(candidate);
 	/* there may be new opportunities to remove common expressions 
 	   avoid the recursion
+	*/
 	if ( actions )
 		return actions + OPTjoinSubPath(cntxt, mb);
-	*/
 	return actions;
 }
 
@@ -165,7 +167,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	}
 	/*
-	 * Count the variable use as arguments first.
+	 * Count the variable used as arguments first.
 	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
@@ -173,9 +175,11 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			varcnt[getArg(p,j)]++;
 	}
 
+	/* assume a single pass over the plan, and only consider projection sequences composed of leftjoin and leftfetchjoin
+ 	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == leftfetchjoinRef)){
+		if( getModuleId(p)== algebraRef && (getFunctionId(p) == leftjoinRef || getFunctionId(p) == leftfetchjoinRef)){
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
@@ -186,6 +190,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				/*
 				 * Don't inject a pattern when it is used more than once.
+				 * For leftfetchjoin series we may benefitt
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
@@ -194,18 +199,13 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					}
 					r = 0;
 				}
+				
 				OPTDEBUGjoinPath if (r) {
 					mnstr_printf(cntxt->fdout,"#expand list \n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
-				if ( getFunctionId(p) == joinRef){
-					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
-						for(k= r->retc; k<r->argc; k++) 
-							q = pushArgument(mb,q,getArg(r,k));
-					} else 
-						q = pushArgument(mb,q,getArg(p,j));
-				} else if ( getFunctionId(p) == leftjoinRef){
+				if ( getFunctionId(p) == leftjoinRef && p->argc == 3){ // ignore the estimate argument variant
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftjoinRef  || getFunctionId(r)== leftjoinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
@@ -221,7 +221,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			OPTDEBUGjoinPath {
 				chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-				mnstr_printf(cntxt->fdout,"#new [left]joinPath instruction\n");
+				mnstr_printf(cntxt->fdout,"#new [[left]fetch]joinPath instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			if(q->argc<= p->argc){
@@ -231,26 +231,21 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			/*
 			 * Final type check and hardwire the result type, because that  can not be inferred directly from the signature
+			 * We already know that all heads are void. Only the last element may have a non-oid type.
 			 */
 			for(j=1; j<q->argc-1; j++)
-				if( getColumnType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
-				!( getColumnType(getArgType(mb,q,j))== TYPE_oid  &&
-				getHeadType(getArgType(mb,q,j))== TYPE_void) &&
-				!( getColumnType(getArgType(mb,q,j))== TYPE_void &&
-				getHeadType(getArgType(mb,q,j))== TYPE_oid)){
-				/* don't use it */
+				if( getColumnType(getArgType(mb,q,j)) != TYPE_oid  && getColumnType(getArgType(mb,q,j)) != TYPE_void ){
+					/* don't use the candidate list */
 					freeInstruction(q);
 					goto wrapup;
 				}
 
 			/* fix the type */
 			setVarUDFtype(mb, getArg(q,0));
-			setVarType(mb, getArg(q,0), newBatType( getHeadType(getArgType(mb,q,q->retc)), getColumnType(getArgType(mb,q,q->argc-1))));
-			if ( q->argc > 3  &&  getFunctionId(q) == joinRef)
-				setFunctionId(q,joinPathRef);
-			else if ( q->argc > 3  &&  getFunctionId(q) == leftjoinRef)
+			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
+			if ( getFunctionId(q) == leftjoinRef && q->argc == 3)
 				setFunctionId(q,leftjoinPathRef);
-			else if ( q->argc > 2  &&  getFunctionId(q) == leftfetchjoinRef)
+			else if ( getFunctionId(q) == leftfetchjoinRef )
 				setFunctionId(q,leftfetchjoinPathRef);
 			freeInstruction(p);
 			p= q;
@@ -264,8 +259,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
-	/* perform the second phase, try out */
-	if (actions )
+	/* perform a second phase, trial code, effect is not convincing and for the time ignored */
+	if ( 0 && actions )
 		actions += OPTjoinSubPath(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
