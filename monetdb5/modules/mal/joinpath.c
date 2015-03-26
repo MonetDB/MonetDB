@@ -150,7 +150,87 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 	return cost;
 }
 
-BAT *
+/*
+ * The joinChain assumes a list of OID columns ending in a projection column.
+ * It is built from leftfetchjoin operations, which allows for easy chaining.
+ * No intermediates are needed and not multistep cost-based evaluation
+ */
+
+#define MAXCHAINDEPTH 256
+
+static BAT *
+ALGjoinChain(Client cntxt, int top, BAT **joins)
+{
+	BAT *bn = NULL;
+	oid lo, hi, *o, oc;
+	BATiter iter[MAXCHAINDEPTH];
+	int i, pcol= top -1;
+	size_t cnt=0, cap=0, empty=0, offset[MAXCHAINDEPTH];
+	const void *v;
+
+#ifdef _DEBUG_JOINPATH_
+	mnstr_printf(cntxt->fdout,"#joinchain \n");
+#else
+	(void) cntxt;
+#endif
+	for ( i =0; i< top ; i++){
+		if( (cnt  = BATcount(joins[i]) ) > cap)
+			cap = BATcount(joins[i]);
+		empty += cnt == 0;
+		iter[i] = bat_iterator(joins[i]);
+		offset[i] = BUNfirst(joins[i])-joins[i]->hseqbase;
+	}
+
+	bn = BATnew( TYPE_void, joins[pcol]->ttype, cap, TRANSIENT);
+	if( bn == NULL){
+		GDKerror("joinChain" MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	if ( empty)
+		return bn;
+	/* be optimistic, inherit the properties  */
+	bn->T->nonil = joins[pcol]->T->nil;
+	bn->T->nonil = joins[pcol]->T->nonil;
+	bn->tsorted = joins[pcol]->tsorted;
+	bn->trevsorted = joins[pcol]->trevsorted;
+	bn->tkey = joins[pcol]->tkey;
+
+	o = (oid *) BUNtail(iter[0], BUNfirst(joins[0]));
+	for( lo = 0, hi = lo + BATcount(joins[0]); lo < hi && o; o++, lo++)
+	{
+		oc = *o;
+		for(i = 1; i < pcol; i++){
+			v = BUNtail(iter[i], oc + offset[i]);
+			oc = *(oid*) v;
+			if( oc == oid_nil)
+				goto bunins_failed;
+		}
+		// update the join result and keep track of properties
+		v = BUNtail(iter[pcol], oc + offset[pcol]);
+		bunfastapp(bn,v);
+		cnt++;
+		// perform inline property mgmt?
+		// Nonils can not be changed by inclusion of values.
+		// Nils is indicative, not a must that they occur
+		// sorting can be determined by the oids of the last fetch
+		bunins_failed:
+		;
+	}
+    BATsetcount(bn, cnt);
+    BATseqbase(bn, joins[0]->H->seq);
+
+	// release the chain 
+	for ( i =0; i< top ; i++)
+		BBPunfix(joins[i]->batCacheid);
+		
+	BATderiveProps(bn, FALSE);
+
+	if (bn && !(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
+
+	return bn;
+}
+
+static BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 {
 	BAT *b = NULL;
@@ -199,9 +279,6 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			}
 		case 1:
 			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-			break;
-		case 2:
-			b = BATsemijoin(joins[j], joins[j + 1]);
 			break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
@@ -267,13 +344,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 str
 ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,top=0;
+	int i,top=0, chain = 1;
 	bat *bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	int error = 0;
 	str joinPathRef = putName("joinPath",8);
-	str semijoinPathRef = putName("semijoinPath",12);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 
 	if ( joins == NULL)
@@ -298,10 +374,16 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		joins[top++] = b;
 	}
+	/* detect easy chain joins */
+	for ( i =1; i< top ; i++)
+		if( BATcount(joins[i-1])> BATcount(joins[i]) )
+			chain = 0;
+	chain = 0; // disabled for the moment, because it is not robust yet
+
 	ALGODEBUG{
 		char *ps;
 		ps = instruction2str(mb, 0, pci, 0);
-		fprintf(stderr,"#joinpath %s\n", ps ? ps : "");
+		fprintf(stderr,"#joinpath [%s] %s\n", (ps ? ps : ""), chain?"chain":"diverse");
 		GDKfree(ps);
 	}
 	if ( getFunctionId(pci) == joinPathRef)
@@ -309,11 +391,12 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 	if ( getFunctionId(pci) == leftjoinPathRef)
 		b= ALGjoinPathBody(cntxt,top,joins, 0); 
-	else
-	if ( getFunctionId(pci) == semijoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 2);
-	else
-		b= ALGjoinPathBody(cntxt,top,joins, 3); 
+	else{
+		if( chain && top < MAXCHAINDEPTH)
+			b= ALGjoinChain(cntxt,top,joins); 
+		else
+			b= ALGjoinPathBody(cntxt,top,joins, 3); 
+	}
 
 	GDKfree(joins);
 	if ( b)
