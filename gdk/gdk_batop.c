@@ -513,7 +513,7 @@ BATins(BAT *b, BAT *n, bit force)
 			}
 			if (b->htype != TYPE_void && b->hsorted && b->hdense &&
 			    (BAThdense(n) == 0 ||
-			     *(oid *) BUNhloc(bi, last) != 1 + *(oid *) BUNhead(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNhloc(bi, last) != *(oid *) BUNhead(ni, BUNfirst(n)))) {
 				b->hdense = FALSE;
 				b->H->nodense = r;
 			}
@@ -539,7 +539,7 @@ BATins(BAT *b, BAT *n, bit force)
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 			    (BATtdense(n) == 0 ||
-			     *(oid *) BUNtloc(bi, last) != 1 + *(oid *) BUNtail(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, BUNfirst(n)))) {
 				b->tdense = FALSE;
 				b->T->nodense = r;
 			}
@@ -750,7 +750,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 			    (BATtdense(n) == 0 ||
-			     *(oid *) BUNtloc(bi, last) != 1 + *(oid *) BUNtail(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, BUNfirst(n)))) {
 				b->tdense = FALSE;
 				b->T->nodense = r;
 			}
