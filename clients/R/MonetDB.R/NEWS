@@ -1,3 +1,6 @@
+0.9.7
+- Fixed crash on Windows (Sorry, everyone)
+
 0.9.6
 - monetdb.read.csv new create= parameter (Thanks, Duncan)
 - deprecated nrows parameter to monetdb.read.csv, not neccessary any more because of changes to MonetDB
