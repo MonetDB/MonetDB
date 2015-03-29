@@ -91,9 +91,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
 						if ( candidate[k].p == 0 ) {
-							if ( candidate[k].fcn == joinPathRef)
-								q= newStmt(mb, algebraRef, joinRef);
-							else if ( candidate[k].fcn == leftjoinPathRef) 
+							if ( candidate[k].fcn == leftjoinPathRef) 
 								q= newStmt(mb, algebraRef, leftjoinRef);
 							else if ( candidate[k].fcn == leftfetchjoinPathRef)
 								q= newStmt(mb, algebraRef, leftfetchjoinRef);
@@ -106,8 +104,6 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 						if ( p->argc == 3 ){
 							if (getFunctionId(p) == leftjoinPathRef)
 								setFunctionId(p, leftjoinRef);
-							else if ( getFunctionId(p) == joinPathRef)
-								setFunctionId(p, joinRef);
 							else if ( getFunctionId(p) == leftfetchjoinPathRef)
 								setFunctionId(p, leftfetchjoinRef);
 						}
