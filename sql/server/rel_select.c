@@ -5627,11 +5627,10 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		sql_rel *r = rel;
 
-		if (rel_is_ref(rel)) {
-			used = 1;
-			r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-			set_processed(r);
-		}
+		r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+		set_processed(r);
+		used = 1;
+
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
@@ -5643,12 +5642,11 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	if (rel && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 		sql_rel *r = rel;
 
-		if (rel_is_ref(rel)) {
-			if (used)
-				rel = rel_dup(rel);
-			r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-			set_processed(r);
-		}
+		if (used)
+			rel = rel_dup(rel);
+		r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+		set_processed(r);
+
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
