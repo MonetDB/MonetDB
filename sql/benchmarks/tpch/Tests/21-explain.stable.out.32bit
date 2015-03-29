@@ -62,7 +62,7 @@ Ready.
 % clob # type
 % 811 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
-    X_231:void  := querylog.define("explain select\n\ts_name,\n\tcount(*) as numwait\nfrom\n\tsupplier,\n\tlineitem l1,\n\torders,\n\tnation\nwhere\n\ts_suppkey = l1.l_suppkey\n\tand o_orderkey = l1.l_orderkey\n\tand o_orderstatus = \\'F\\'\n\tand l1.l_receiptdate > l1.l_commitdate\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l2\n\t\twhere\n\t\t\tl2.l_orderkey = l1.l_orderkey\n\t\t\tand l2.l_suppkey <> l1.l_suppkey\n\t)\n\tand not exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l3\n\t\twhere\n\t\t\tl3.l_orderkey = l1.l_orderkey\n\t\t\tand l3.l_suppkey <> l1.l_suppkey\n\t\t\tand l3.l_receiptdate > l3.l_commitdate\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'SAUDI ARABIA\\'\ngroup by\n\ts_name\norder by\n\tnumwait desc,\n\ts_name\nlimit 100;","sequential_pipe",130);
+    X_231:void := querylog.define("explain select\n\ts_name,\n\tcount(*) as numwait\nfrom\n\tsupplier,\n\tlineitem l1,\n\torders,\n\tnation\nwhere\n\ts_suppkey = l1.l_suppkey\n\tand o_orderkey = l1.l_orderkey\n\tand o_orderstatus = \\'F\\'\n\tand l1.l_receiptdate > l1.l_commitdate\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l2\n\t\twhere\n\t\t\tl2.l_orderkey = l1.l_orderkey\n\t\t\tand l2.l_suppkey <> l1.l_suppkey\n\t)\n\tand not exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem l3\n\t\twhere\n\t\t\tl3.l_orderkey = l1.l_orderkey\n\t\t\tand l3.l_suppkey <> l1.l_suppkey\n\t\t\tand l3.l_receiptdate > l3.l_commitdate\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'SAUDI ARABIA\\'\ngroup by\n\ts_name\norder by\n\tnumwait desc,\n\ts_name\nlimit 100;","sequential_pipe",124);
     X_4 := sql.mvc();
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","lineitem");
     X_8:bat[:oid,:date]  := sql.bind(X_4,"sys","lineitem","l_receiptdate",0);
@@ -77,12 +77,11 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
     X_24 := algebra.leftfetchjoin(X_5,X_23);
     X_25:bat[:oid,:bit]  := batcalc.>(X_17,X_24);
     X_26 := algebra.subselect(X_25,true,true,true,true,false);
-    X_264 := algebra.leftfetchjoin(X_26,X_5);
     X_28:bat[:oid,:oid]  := sql.bind_idxbat(X_4,"sys","lineitem","lineitem_l_orderkey_fkey",0);
     (X_30,r1_32) := sql.bind_idxbat(X_4,"sys","lineitem","lineitem_l_orderkey_fkey",2);
     X_32:bat[:oid,:oid]  := sql.bind_idxbat(X_4,"sys","lineitem","lineitem_l_orderkey_fkey",1);
     X_33 := sql.delta(X_28,X_30,r1_32,X_32);
-    X_34:bat[:oid,:oid]  := algebra.leftfetchjoin(X_264,X_33);
+    X_34:bat[:oid,:oid] := algebra.leftfetchjoinPath(X_26,X_5,X_33);
     X_35:bat[:oid,:oid]  := sql.tid(X_4,"sys","orders");
     X_38:bat[:oid,:str]  := sql.bind(X_4,"sys","orders","o_orderstatus",0);
     (X_41,r1_44) := sql.bind(X_4,"sys","orders","o_orderstatus",2);

@@ -61,7 +61,7 @@ Ready.
 % clob # type
 % 324 # length
 function user.s3_1{autoCommit=true}():void;
-    X_141:void := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",77);
+    X_141:void := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",76);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","supplier");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","supplier","s_suppkey",0);
@@ -111,23 +111,22 @@ function user.s3_1{autoCommit=true}():void;
     X_84 := algebra.leftfetchjoin(X_83,X_47);
     (X_85,r1_164,r2_164) := algebra.subsort(X_84,false,false);
     X_88 := algebra.leftfetchjoin(r1_164,X_84);
-    X_165 := algebra.leftfetchjoin(r1_164,X_83);
-    X_115:bat[:oid,:hge] := algebra.leftfetchjoin(X_165,X_74);
+    X_115:bat[:oid,:hge] := algebra.leftfetchjoinPath(r1_164,X_83,X_74);
     X_108:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_phone",0);
     (X_110,r1_195) := sql.bind(X_2,"sys","supplier","s_phone",2);
     X_112:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_phone",1);
     X_113 := sql.delta(X_108,X_110,r1_195,X_112);
-    X_114:bat[:oid,:str] := algebra.leftfetchjoinPath(X_165,X_43,X_3,X_113);
+    X_114:bat[:oid,:str] := algebra.leftfetchjoinPath(r1_164,X_83,X_43,X_3,X_113);
     X_101:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_address",0);
     (X_103,r1_185) := sql.bind(X_2,"sys","supplier","s_address",2);
     X_105:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_address",1);
     X_106 := sql.delta(X_101,X_103,r1_185,X_105);
-    X_107:bat[:oid,:str] := algebra.leftfetchjoinPath(X_165,X_43,X_3,X_106);
+    X_107:bat[:oid,:str] := algebra.leftfetchjoinPath(r1_164,X_83,X_43,X_3,X_106);
     X_89:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_name",0);
     (X_93,r1_172) := sql.bind(X_2,"sys","supplier","s_name",2);
     X_96:bat[:oid,:str] := sql.bind(X_2,"sys","supplier","s_name",1);
     X_99 := sql.delta(X_89,X_93,r1_172,X_96);
-    X_100:bat[:oid,:str] := algebra.leftfetchjoinPath(X_165,X_43,X_3,X_99);
+    X_100:bat[:oid,:str] := algebra.leftfetchjoinPath(r1_164,X_83,X_43,X_3,X_99);
     X_116 := sql.resultSet(5,1,X_88);
     sql.rsColumn(X_116,"sys.supplier","s_suppkey","int",32,0,X_88);
     sql.rsColumn(X_116,"sys.supplier","s_name","varchar",25,0,X_100);
