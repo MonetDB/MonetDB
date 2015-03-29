@@ -2344,11 +2344,6 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *sel = NULL;
 	stmt *predicate = NULL;
 
-	if (!rel->exps) {
-		assert(0);
-		return NULL;
-	}
-
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
 		if (!sub) 
@@ -2359,7 +2354,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		predicate = rel2bin_predicate(sql);
 	else if (!predicate)
 		predicate = stmt_const(sql->sa, bin_first_column(sql->sa, sub), stmt_bool(sql->sa, 1));
-	if (!rel->exps->h) {
+	if (!rel->exps || !rel->exps->h) {
 		if (sub)
 			return sub;
 		return predicate;
