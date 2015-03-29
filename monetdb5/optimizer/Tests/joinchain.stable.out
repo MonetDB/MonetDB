@@ -18,12 +18,12 @@ stdout of test 'joinchain` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.qry():void;
+    empty := bat.new(:oid,:oid);
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
     d := bat.new(:oid,:str);
     k := bat.new(:oid,:int);
-    z := bat.new(:oid,:oid);
     bat.append(a,0@0);
     bat.append(a,3@0);
     bat.append(b,0@0);
@@ -66,20 +66,23 @@ function user.qry():void;
     io.print(i);
     j := algebra.leftfetchjoinPath(a,b,c,d);
     io.print(j);
-    zz := algebra.leftfetchjoinPath(a,z,d);
-    io.print(zz);
+    io.print("empty sequences");
+    w := algebra.leftfetchjoinPath(empty,c,d);
+    io.print(w);
+    w := algebra.leftfetchjoinPath(c,empty,d);
+    io.print(w);
 end user.qry;
 function user.main():void;
     mdb.list("user","qry");
     user.qry();
 end user.main;
 function user.qry():void;
+    empty := bat.new(:oid,:oid);
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
     d := bat.new(:oid,:str);
     k := bat.new(:oid,:int);
-    z := bat.new(:oid,:oid);
     bat.append(a,0@0);
     bat.append(a,3@0);
     bat.append(b,0@0);
@@ -122,8 +125,11 @@ function user.qry():void;
     io.print(i);
     j := algebra.leftfetchjoinPath(a,b,c,d);
     io.print(j);
-    zz := algebra.leftfetchjoinPath(a,z,d);
-    io.print(zz);
+    io.print("empty sequences");
+    w := algebra.leftfetchjoinPath(empty,c,d);
+    io.print(w);
+    w := algebra.leftfetchjoinPath(c,empty,d);
+    io.print(w);
 end user.qry;
 #--------------------------#
 # h	t  # name
@@ -161,8 +167,15 @@ end user.qry;
 #--------------------------#
 [ 0@0,	"The"  ]
 [ 1@0,	"jumps"  ]
-!MALException:algebra.joinPath:Can not create object
-!ERROR: BATproject: does not match always
+[ "empty sequences" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
 
 # 11:09:37 >  
 # 11:09:37 >  "Done."

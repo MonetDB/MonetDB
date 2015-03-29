@@ -1,10 +1,10 @@
 function qry();
+empty:= bat.new(:oid,:oid);
 a:= bat.new(:oid,:oid);
 b:= bat.new(:oid,:oid);
 c:= bat.new(:oid,:oid);
 d:= bat.new(:oid,:str);
 k:= bat.new(:oid,:int);
-z:= bat.new(:oid,:oid);
 
 bat.append(a,0@0);
 bat.append(a,3@0);
@@ -57,8 +57,12 @@ io.print(i);
 j := algebra.leftfetchjoinPath(a,b,c,d);
 io.print(j);
 
-zz := algebra.leftfetchjoinPath(a,z,d);
-io.print(zz);
+io.print("empty sequences");
+w :=algebra.leftfetchjoinPath(empty,c,d);
+io.print(w);
+w :=algebra.leftfetchjoinPath(c,empty,d);
+io.print(w);
+
 end qry;
 
 optimizer.joinPath("user","qry");
