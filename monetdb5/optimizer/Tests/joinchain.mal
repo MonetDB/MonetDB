@@ -1,9 +1,9 @@
-
 function qry();
 a:= bat.new(:oid,:oid);
 b:= bat.new(:oid,:oid);
 c:= bat.new(:oid,:oid);
 d:= bat.new(:oid,:str);
+k:= bat.new(:oid,:int);
 z:= bat.new(:oid,:oid);
 
 bat.append(a,0@0);
@@ -31,10 +31,22 @@ bat.append(d,"the");
 bat.append(d,"lazy");
 bat.append(d,"dog");
 
+bat.append(k,1);
+bat.append(k,2);
+bat.append(k,3);
+bat.append(k,4);
+bat.append(k,5);
+bat.append(k,6);
+bat.append(k,7);
+bat.append(k,8);
+bat.append(k,9);
+
 e := algebra.leftfetchjoin(a,b);
 f := algebra.leftfetchjoin(e,c);
 g := algebra.leftfetchjoin(f,d);
+l := algebra.leftfetchjoin(f,k);
 io.print(g);
+io.print(l);
 
 h := algebra.leftfetchjoinPath(c,d);
 io.print(h);

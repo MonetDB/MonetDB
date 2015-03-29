@@ -22,6 +22,7 @@ function user.qry():void;
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
     d := bat.new(:oid,:str);
+    k := bat.new(:oid,:int);
     z := bat.new(:oid,:oid);
     bat.append(a,0@0);
     bat.append(a,3@0);
@@ -44,10 +45,21 @@ function user.qry():void;
     bat.append(d,"the");
     bat.append(d,"lazy");
     bat.append(d,"dog");
+    bat.append(k,1);
+    bat.append(k,2);
+    bat.append(k,3);
+    bat.append(k,4);
+    bat.append(k,5);
+    bat.append(k,6);
+    bat.append(k,7);
+    bat.append(k,8);
+    bat.append(k,9);
     e := algebra.leftfetchjoin(a,b);
     f := algebra.leftfetchjoin(e,c);
     g := algebra.leftfetchjoin(f,d);
+    l := algebra.leftfetchjoin(f,k);
     io.print(g);
+    io.print(l);
     h := algebra.leftfetchjoinPath(c,d);
     io.print(h);
     i := algebra.leftfetchjoinPath(b,c,d);
@@ -66,6 +78,7 @@ function user.qry():void;
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:oid);
     d := bat.new(:oid,:str);
+    k := bat.new(:oid,:int);
     z := bat.new(:oid,:oid);
     bat.append(a,0@0);
     bat.append(a,3@0);
@@ -88,10 +101,21 @@ function user.qry():void;
     bat.append(d,"the");
     bat.append(d,"lazy");
     bat.append(d,"dog");
+    bat.append(k,1);
+    bat.append(k,2);
+    bat.append(k,3);
+    bat.append(k,4);
+    bat.append(k,5);
+    bat.append(k,6);
+    bat.append(k,7);
+    bat.append(k,8);
+    bat.append(k,9);
     e := algebra.leftfetchjoin(a,b);
     f:bat[:oid,:oid] := algebra.leftfetchjoinPath(a,b,c);
-    g:bat[:oid,:str] := algebra.leftfetchjoinPath(a,b,c,d);
+    g := algebra.leftfetchjoin(f,d);
+    l := algebra.leftfetchjoin(f,k);
     io.print(g);
+    io.print(l);
     h := algebra.leftfetchjoinPath(c,d);
     io.print(h);
     i := algebra.leftfetchjoinPath(b,c,d);
@@ -107,6 +131,12 @@ end user.qry;
 #--------------------------#
 [ 0@0,	"The"  ]
 [ 1@0,	"jumps"  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	5  ]
 #--------------------------#
 # h	t  # name
 # void	str  # type
