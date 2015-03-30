@@ -148,38 +148,10 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 			 s##vals + ((x) * s##width))
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
-/* Do a binary search for the first/last occurrence of v between lo and hi
- * (lo inclusive, hi not inclusive) in rvals/rvars.
- * If last is set, return the index of the first value > v; if last is
- * not set, return the index of the first value >= v.
- * If ordering is -1, the values are sorted in reverse order and hence
- * all comparisons are reversed.
- */
-#define BINSEARCHBODY(OP)						\
-	do {								\
-		if (rcand) {						\
-			while (hi - lo > 1) {				\
-				mid = (hi + lo) / 2;			\
-				if (rvals[rcand[mid] - offset] OP v)	\
-					hi = mid;			\
-				else					\
-					lo = mid;			\
-			}						\
-		} else {						\
-			while (hi - lo > 1) {				\
-				mid = (hi + lo) / 2;			\
-				if (rvals[mid] OP v)			\
-					hi = mid;			\
-				else					\
-					lo = mid;			\
-			}						\
-		}							\
-	} while (0)
-
 #define BINSEARCHFUNC(TYPE)						\
 static inline BUN							\
 binsearch_##TYPE(const oid *rcand, oid offset, const TYPE *rvals,	\
-	      BUN lo, BUN hi, const TYPE *vp, int ordering, int last)	\
+		 BUN lo, BUN hi, const void *vp, int ordering, int last) \
 {									\
 	BUN mid;							\
 	TYPE v, x;							\
@@ -187,41 +159,143 @@ binsearch_##TYPE(const oid *rcand, oid offset, const TYPE *rvals,	\
 	assert(ordering == 1 || ordering == -1);			\
 	assert(lo <= hi);						\
 									\
-	v = *vp;		/* value we're searching for */		\
+	v = *(const TYPE *) vp;		/* value we're searching for */	\
 									\
 	if (ordering > 0) {						\
-		if ((x = rvals[rcand ? rcand[lo] - offset : lo]) > v ||	\
-		    (!last && x == v))					\
-			return lo;					\
-		if ((x = rvals[rcand ? rcand[hi] - offset : hi]) < v ||	\
-		    (last && x == v))					\
-			return hi + 1;					\
+		if (rcand) {						\
+			if (last) {					\
+				if ((x = rvals[rcand[lo] - offset]) > v) \
+					return lo;			\
+				if ((x = rvals[rcand[hi] - offset]) < v || \
+				    x == v)				\
+					return hi + 1;			\
 									\
-		if (last) {						\
-			/* loop invariant: */				\
-			/* value@lo <= v < value@hi */			\
-			BINSEARCHBODY(>);				\
+				/* loop invariant: */			\
+				/* value@lo <= v < value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[rcand[mid] - offset] > v) \
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			} else {					\
+				if ((x = rvals[rcand[lo] - offset]) > v || \
+				    x == v)				\
+					return lo;			\
+				if ((x = rvals[rcand[hi] - offset]) < v) \
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo < v <= value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[rcand[mid] - offset] >= v) \
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			}						\
 		} else {						\
-			/* loop invariant: */				\
-			/* value@lo < v <= value@hi */			\
-			BINSEARCHBODY(>=);				\
+			if (last) {					\
+				if ((x = rvals[lo]) > v)		\
+					return lo;			\
+				if ((x = rvals[hi]) < v || x == v)	\
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo <= v < value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[mid] > v)		\
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			} else {					\
+				if ((x = rvals[lo]) > v || x == v)	\
+					return lo;			\
+				if ((x = rvals[hi]) < v)		\
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo < v <= value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[mid] >= v)		\
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			}						\
 		}							\
 	} else {							\
-		if ((x = rvals[rcand ? rcand[lo] - offset : lo]) < v ||	\
-		    (!last && x == v))					\
-			return lo;					\
-		if ((x = rvals[rcand ? rcand[hi] - offset : hi]) > v ||	\
-		    (last && x == v))					\
-			return hi + 1;					\
+		if (rcand) {						\
+			if (last) {					\
+				if ((x = rvals[rcand[lo] - offset]) < v) \
+					return lo;			\
+				if ((x = rvals[rcand[hi] - offset]) > v || \
+				    x == v)				\
+					return hi + 1;			\
 									\
-		if (last) {						\
-			/* loop invariant: */				\
-			/* value@lo >= v > value@hi */			\
-			BINSEARCHBODY(<);				\
+				/* loop invariant: */			\
+				/* value@lo >= v > value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[rcand[mid] - offset] < v) \
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			} else {					\
+				if ((x = rvals[rcand[lo] - offset]) < v || \
+				    x == v)				\
+					return lo;			\
+				if ((x = rvals[rcand[hi] - offset]) > v) \
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo > v >= value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[rcand[mid] - offset] <= v) \
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			}						\
 		} else {						\
-			/* loop invariant: */				\
-			/* value@lo > v >= value@hi */			\
-			BINSEARCHBODY(<=);				\
+			if (last) {					\
+				if ((x = rvals[lo]) < v)		\
+					return lo;			\
+				if ((x = rvals[hi]) > v || x == v)	\
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo >= v > value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[mid] < v)		\
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			} else {					\
+				if ((x = rvals[lo]) < v || x == v)	\
+					return lo;			\
+				if ((x = rvals[hi]) > v)		\
+					return hi + 1;			\
+									\
+				/* loop invariant: */			\
+				/* value@lo > v >= value@hi */		\
+				while (hi - lo > 1) {			\
+					mid = (hi + lo) / 2;		\
+					if (rvals[mid] <= v)		\
+						hi = mid;		\
+					else				\
+						lo = mid;		\
+				}					\
+			}						\
 		}							\
 	}								\
 	return hi;							\
@@ -236,7 +310,20 @@ BINSEARCHFUNC(hge)
 #endif
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
+#if SIZEOF_OID == SIZEOF_INT
+#define binsearch_oid(rcand, offset, rvals, lo, hi, vp, ordering, last) binsearch_int(rcand, offset, (const int *) rvals, lo, hi, (const int *) (vp), ordering, last)
+#endif
+#if SIZEOF_OID == SIZEOF_LNG
+#define binsearch_oid(rcand, offset, rvals, lo, hi, vp, ordering, last) binsearch_lng(rcand, offset, (const lng *) rvals, lo, hi, (const lng *) (vp), ordering, last)
+#endif
 
+/* Do a binary search for the first/last occurrence of v between lo and hi
+ * (lo inclusive, hi not inclusive) in rvals/rvars.
+ * If last is set, return the index of the first value > v; if last is
+ * not set, return the index of the first value >= v.
+ * If ordering is -1, the values are sorted in reverse order and hence
+ * all comparisons are reversed.
+ */
 static BUN
 binsearch(const oid *rcand, oid offset,
 	  int type, const char *rvals, const char *rvars,
