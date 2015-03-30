@@ -2639,29 +2639,33 @@ static int								\
 project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 {									\
 	oid lo, hi;							\
-	const TYPE *rt;							\
+	const TYPE *restrict rt;					\
 	TYPE *restrict bt;						\
 	TYPE v, prev = 0;						\
-	const oid *o;							\
+	const oid *restrict o;						\
+	oid rseq, rend;							\
 									\
 	o = (const oid *) Tloc(l, BUNfirst(l));				\
 	rt = (const TYPE *) Tloc(r, BUNfirst(r));			\
 	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, bt++) { \
-		if (*o == oid_nil) {					\
-			*bt = TYPE##_nil;				\
-			bn->T->nonil = 0;				\
-			bn->T->nil = 1;					\
-			bn->tsorted = 0;				\
-			bn->trevsorted = 0;				\
-			bn->tkey = 0;					\
-		} else if (*o < r->hseqbase ||				\
-		   	*o >= r->hseqbase + BATcount(r)) {		\
-			GDKerror("BATproject: does not match always\n"); \
-			return GDK_FAIL;				\
+	rseq = r->hseqbase;						\
+	rend = rseq + BATcount(r);					\
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {		\
+		if (o[lo] < rseq || o[lo] >= rend) {			\
+			if (o[lo] == oid_nil) {				\
+				bt[lo] = TYPE##_nil;			\
+				bn->T->nonil = 0;			\
+				bn->T->nil = 1;				\
+				bn->tsorted = 0;			\
+				bn->trevsorted = 0;			\
+				bn->tkey = 0;				\
+			} else {					\
+				GDKerror("BATproject: does not match always\n"); \
+				return GDK_FAIL;			\
+			}						\
 		} else {						\
-			v = rt[*o - r->hseqbase];			\
-			*bt = v;					\
+			v = rt[o[lo] - rseq];				\
+			bt[lo] = v;					\
 			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
 				bn->T->nonil = 0;			\
 				bn->T->nil = 1;				\
@@ -2709,41 +2713,35 @@ static int
 project_void(BAT *bn, BAT *l, BAT *r)
 {
 	oid lo, hi;
-	oid v = oid_nil, prev = oid_nil;
 	oid *restrict bt;
 	const oid *o;
+	oid rseq, rend;
 
 	assert(r->tseqbase != oid_nil);
 	o = (const oid *) Tloc(l, BUNfirst(l));
 	bt = (oid *) Tloc(bn, BUNfirst(bn));
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, bt++) {
-		if (*o == oid_nil) {
-			*bt = oid_nil;
-			bn->T->nonil = 0;
-			bn->T->nil = 1;
-			bn->tsorted = 0;
-			bn->trevsorted = 0;
-			bn->tkey = 0;
-		} else if (*o < r->hseqbase ||
-			   *o >= r->hseqbase + BATcount(r)) {
-			GDKerror("BATproject: does not match always\n");
-			return GDK_FAIL;
-		} else {
-			*bt = v = *o - r->hseqbase + r->tseqbase;
-			if (lo && (bn->trevsorted | bn->tsorted | bn->tkey)) {
-				if (prev < v) {
-					bn->trevsorted = 0;
-					if (!bn->tsorted)
-						bn->tkey = 0; /* can't be sure */
-				} else if (prev > v) {
-					bn->tsorted = 0;
-					if (!bn->trevsorted)
-						bn->tkey = 0; /* can't be sure */
-				} else {
-					bn->tkey = 0; /* definitely */
-				}
+	bn->tsorted = l->tsorted;
+	bn->trevsorted = l->trevsorted;
+	bn->tkey = l->tkey & 1;
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
+	rseq = r->hseqbase;
+	rend = rseq + BATcount(r);
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {
+		if (o[lo] < rseq || o[lo] >= rend) {
+			if (o[lo] == oid_nil) {
+				bt[lo] = oid_nil;
+				bn->T->nonil = 0;
+				bn->T->nil = 1;
+				bn->tsorted = 0;
+				bn->trevsorted = 0;
+				bn->tkey = 0;
+			} else {
+				GDKerror("BATproject: does not match always\n");
+				return GDK_FAIL;
 			}
-			prev = v;
+		} else {
+			bt[lo] = o[lo] - rseq + r->tseqbase;
 		}
 	}
 	assert((BUN) lo == BATcount(l));
@@ -2763,25 +2761,29 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	BUN prev = BUN_NONE;
 	const oid *o;
 	int c;
+	oid rseq, rend;
 
 	o = (const oid *) Tloc(l, BUNfirst(l));
 	n = BUNfirst(bn);
 	ri = bat_iterator(r);
 	bni = bat_iterator(bn);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, o++, n++) {
-		if (*o == oid_nil) {
-			tfastins_nocheck(bn, n, nil, Tsize(bn));
-			bn->T->nonil = 0;
-			bn->T->nil = 1;
-			bn->tsorted = 0;
-			bn->trevsorted = 0;
-			bn->tkey = 0;
-		} else if (*o < r->hseqbase ||
-		   	*o >= r->hseqbase + BATcount(r)) {
-			GDKerror("BATproject: does not match always\n");
-			goto bunins_failed;
+	rseq = r->hseqbase;
+	rend = rseq + BATcount(r);
+	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, n++) {
+		if (o[lo] < rseq || o[lo] >= rend) {
+			if (o[lo] == oid_nil) {
+				tfastins_nocheck(bn, n, nil, Tsize(bn));
+				bn->T->nonil = 0;
+				bn->T->nil = 1;
+				bn->tsorted = 0;
+				bn->trevsorted = 0;
+				bn->tkey = 0;
+			} else {
+				GDKerror("BATproject: does not match always\n");
+				goto bunins_failed;
+			}
 		} else {
-			v = BUNtail(ri, *o - r->hseqbase + BUNfirst(r));
+			v = BUNtail(ri, o[lo] - rseq + BUNfirst(r));
 			tfastins_nocheck(bn, n, v, Tsize(bn));
 			if (nilcheck && bn->T->nonil && cmp(v, nil) == 0) {
 				bn->T->nonil = 0;
