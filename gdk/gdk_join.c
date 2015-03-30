@@ -537,10 +537,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if ((l->ttype == TYPE_void && l->tseqbase == oid_nil &&
 		     (r->T->nonil ||
-		      r->ttype != TYPE_void || r->tseqbase != oid_nil)) ||
+		      (r->ttype == TYPE_void && r->tseqbase != oid_nil))) ||
 		    (r->ttype == TYPE_void && r->tseqbase == oid_nil &&
 		     (l->T->nonil ||
-		      l->ttype != TYPE_void || l->tseqbase != oid_nil))) {
+		      (l->ttype == TYPE_void && l->tseqbase != oid_nil)))) {
 			/* nothing to do: all values in l are nil, and
 			 * we can guarantee there are no nil values in
 			 * r, or vice versa */
