@@ -752,7 +752,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					nl++;
 			}
 		} else if (lvals) {
-			v = VALUE(l, lstart);
 			if (loff == wrd_nil) {
 				/* all values are nil */
 				lval = oid_nil;
@@ -761,6 +760,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				v = (const char *) &lval;
 			} else {
 				/* compare values without offset */
+				v = VALUE(l, lstart);
 				if (l->tkey) {
 					/* if l is key, there is a
 					 * single value */
