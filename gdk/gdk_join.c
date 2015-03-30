@@ -403,6 +403,397 @@ binsearch(const oid *rcand, oid offset,
 
 #define APPEND(b, o)		(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
 
+static gdk_return
+mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
+	       int nil_on_miss, int must_match)
+{
+	oid lo, hi;
+	BUN cnt, i;
+	const oid *lvals;
+	oid o, seq;
+
+	/* r has a dense tail, and if there is a candidate list, it
+	 * too is dense.  This means we don't have to do any searches,
+	 * we only need to compare ranges to know whether a value from
+	 * l has a match in r */
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(r->tsorted || r->trevsorted);
+	assert(sl == NULL || sl->tsorted);
+	assert(sr == NULL || sr->tsorted);
+	assert(!nil_on_miss || !must_match); /* can't have both */
+	assert(BATcount(l) > 0);
+	assert(BATtdense(r));
+	assert(BATcount(r) > 0);
+	/* figure out range [lo..hi) of values in r that we need to match */
+	lo = r->tseqbase;
+	hi = lo + BATcount(r);
+	if (sr) {
+		assert(BAThdense(sr));
+		assert(BATtdense(sr));
+		assert(BATcount(sr) > 0);
+		/* restrict [lo..hi) range further using candidate
+		 * list */
+		if (sr->tseqbase > r->hseqbase)
+			lo += sr->tseqbase - r->hseqbase;
+		if (sr->tseqbase + BATcount(sr) < r->hseqbase + BATcount(r))
+			hi -= r->hseqbase + BATcount(r) - sr->tseqbase - BATcount(sr);
+	}
+	/* at this point, the matchable values in r are [lo..hi) */
+	assert(BAThdense(l));
+	if (BATtdense(l)) {
+		/* if l has a dense tail, we can further restrict the
+		 * [lo..hi) range to values in l that match with
+		 * values in r */
+		i = hi - lo;	/* remember these for nil_on_miss case below */
+		o = lo;
+		if (l->tseqbase > lo)
+			lo = l->tseqbase;
+		if (l->tseqbase + BATcount(l) < hi)
+			hi = l->tseqbase + BATcount(l);
+		if (sl == NULL || BATtdense(sl)) {
+			/* l has a dense tail, and so does the left
+			 * candidate list (if it exists); this means
+			 * we don't have to actually look at any
+			 * values in l: we can just do some
+			 * arithmetic; it also means that r1 will be
+			 * dense, and if nil_on_miss is not set, or if
+			 * all values in l match, r2 will too */
+			seq = l->hseqbase;
+			cnt = BATcount(l);
+			if (sl) {
+				/* still further restrict lo and hi
+				 * based on the left candidate list */
+				if (sl->tseqbase > l->hseqbase + (lo - l->tseqbase))
+					lo += sl->tseqbase - (l->hseqbase + (lo - l->tseqbase));
+				if (sl->tseqbase + BATcount(sl) < l->hseqbase + (hi - l->tseqbase))
+					hi -= l->hseqbase + (hi - l->tseqbase) - sl->tseqbase - BATcount(sl);
+				if (sl->tseqbase > l->hseqbase) {
+					cnt -= sl->tseqbase - l->hseqbase;
+					seq = sl->tseqbase;
+				}
+				if (sl->tseqbase + BATcount(sl) < l->hseqbase + BATcount(l))
+					cnt -= l->hseqbase + BATcount(l) - sl->tseqbase - BATcount(sl);
+			}
+
+			if (hi < lo)
+				hi = lo;
+			if (must_match && hi - lo < cnt) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
+
+			/* at this point, the matched values in l and
+			 * r (taking candidate lists into account) are
+			 * [lo..hi) which we can translate back to the
+			 * respective head values that we can store in
+			 * r1 and r2; note that r1 will have a dense
+			 * tail since all values in l will match
+			 * something (even if nil if nil_on_miss is
+			 * set) */
+			r1->tdense = 1;
+			HEAPfree(&r1->T->heap, 1);
+			r1->ttype = TYPE_void;
+			r1->tvarsized = 1;
+			r1->T->width = 0;
+			r1->T->shift = 0;
+			if (nil_on_miss && hi - lo < cnt) {
+				/* we need to fill in nils in r2 for
+				 * missing values */
+				BATsetcount(r1, cnt);
+				BATseqbase(BATmirror(r1), seq);
+				if (BATextend(r2, cnt) == GDK_FAIL)
+					goto bailout;
+				for (o = seq - l->hseqbase + l->tseqbase; o < lo; o++)
+					APPEND(r2, oid_nil);
+				for (o = lo; o < hi; o++)
+					APPEND(r2, o - r->tseqbase + r->hseqbase);
+				for (o = BATcount(r2); o < cnt; o++)
+					APPEND(r2, oid_nil);
+				BATsetcount(r2, BATcount(r2));
+				r2->T->nonil = 0;
+				r2->T->nil = 1;
+				if (BATcount(r2) <= 1) {
+					r2->tsorted = 1;
+					r2->trevsorted = 1;
+					r2->tdense = 1;
+					if (BATcount(r2) == 0)
+						BATseqbase(BATmirror(r2), 0);
+					else
+						BATseqbase(BATmirror(r2), *(oid*)Tloc(r2, BUNfirst(r2)));
+				} else {
+					r2->tsorted = 0;
+					r2->trevsorted = 0;
+					r2->tdense = 0;
+					r2->tseqbase = oid_nil;
+				}
+				/* (hi - lo) different OIDs in r2,
+				 * plus one for nil */
+				r2->tkey = hi - lo + 1 == cnt;
+				ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+						  BATgetId(l), BATgetId(r),
+						  BATgetId(r1), BATcount(r1),
+						  r1->tsorted ? "-sorted" : "",
+						  r1->trevsorted ? "-revsorted" : "",
+						  BATgetId(r2), BATcount(r2),
+						  r2->tsorted ? "-sorted" : "",
+						  r2->trevsorted ? "-revsorted" : "");
+				return GDK_SUCCEED;
+			}
+			BATsetcount(r1, hi - lo);
+			BATseqbase(BATmirror(r1), l->hseqbase + lo - l->tseqbase);
+			r2->tdense = 1;
+			HEAPfree(&r2->T->heap, 1);
+			r2->ttype = TYPE_void;
+			r2->tvarsized = 1;
+			r2->T->width = 0;
+			r2->T->shift = 0;
+			BATsetcount(r2, hi - lo);
+			BATseqbase(BATmirror(r2), r->hseqbase + lo - r->tseqbase);
+			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+					  BATgetId(l), BATgetId(r),
+					  BATgetId(r1), BATcount(r1),
+					  r1->tsorted ? "-sorted" : "",
+					  r1->trevsorted ? "-revsorted" : "",
+					  BATgetId(r2), BATcount(r2),
+					  r2->tsorted ? "-sorted" : "",
+					  r2->trevsorted ? "-revsorted" : "");
+			return GDK_SUCCEED;
+		}
+		/* l has a dense tail, but the candidate list exists
+		 * and does not have a dense tail; we can, by
+		 * manipulating the range [lo..hi), just look at the
+		 * candidate list values */
+		assert(!BATtdense(sl));
+		lvals = (const oid *) Tloc(sl, BUNfirst(sl));
+		/* translate lo and hi to l's head values that now
+		 * need to match */
+		lo = lo - l->tseqbase + l->hseqbase;
+		hi = hi - l->tseqbase + l->hseqbase;
+		r2->T->nil = 0;
+		r2->T->nonil = 1;
+		r2->tkey = 1;
+		r2->tsorted = 1;
+		cnt = BATcount(sl);
+		if (BATextend(r1, cnt) == GDK_FAIL ||
+		    BATextend(r2, cnt) == GDK_FAIL) {
+			goto bailout;
+		}
+		if (nil_on_miss) {
+			for (i = 0; i < cnt && lvals[i] < lo; i++) {
+				APPEND(r1, lvals[i]);
+				APPEND(r2, oid_nil);
+			}
+			if (i > 0) {
+				r2->T->nil = 1;
+				r2->T->nonil = 0;
+				r2->tkey = i > 1;
+			}
+		} else {
+			i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, &lo, 1, 0);
+			if (must_match && i > 0) {
+				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+				goto bailout;
+			}
+		}
+		for (; i < cnt && lvals[i] < hi; i++) {
+			APPEND(r1, lvals[i]);
+			APPEND(r2, lvals[i] - l->hseqbase + l->tseqbase - r->tseqbase + r->hseqbase);
+		}
+		if (nil_on_miss) {
+			if (i < cnt) {
+				r2->tkey = r2->T->nil || (cnt - i > 1);
+				r2->T->nil = 1;
+				r2->T->nonil = 0;
+				r2->tsorted = 0;
+			}
+			for (; i < cnt; i++) {
+				APPEND(r1, lvals[i]);
+				APPEND(r2, oid_nil);
+			}
+		} else if (must_match && i < cnt) {
+			GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+			goto bailout;
+		}
+		BATsetcount(r1, BATcount(r1));
+		BATsetcount(r2, BATcount(r2));
+		r1->tdense = BATcount(r1) <= 1;
+		r2->tdense = BATcount(r2) <= 1;
+		r1->tsorted = 1;
+		r1->trevsorted = BATcount(r1) <= 1;
+		r2->trevsorted = BATcount(r2) <= 1;
+		r1->T->nil = 0;
+		r1->T->nonil = 1;
+		r1->tkey = 1;
+		ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(r1), BATcount(r1),
+				  r1->tsorted ? "-sorted" : "",
+				  r1->trevsorted ? "-revsorted" : "",
+				  BATgetId(r2), BATcount(r2),
+				  r2->tsorted ? "-sorted" : "",
+				  r2->trevsorted ? "-revsorted" : "");
+		return GDK_SUCCEED;
+	}
+	/* l does not have a dense tail, so we need to look at the
+	 * values and check whether they are in the range [lo..hi) */
+	lvals = (const oid *) Tloc(l, BUNfirst(l));
+	seq = l->hseqbase;
+	cnt = BATcount(l);
+	if (sl) {
+		if (BATtdense(sl)) {
+			/* candidate list exists and has a dense tail,
+			 * we can try to restrict the values in l that
+			 * we need to look at */
+			if (sl->tseqbase > l->hseqbase) {
+				/* we don't need to start at the
+				 * beginning of l */
+				lvals += sl->tseqbase - l->hseqbase;
+				seq += sl->tseqbase - l->hseqbase;
+				cnt -= sl->tseqbase - l->hseqbase;
+			}
+			if (sl->tseqbase + BATcount(sl) < l->hseqbase + BATcount(l)) {
+				/* we don't have to continue to the
+				 * end of l */
+				if (cnt < l->hseqbase + BATcount(l) - sl->tseqbase - BATcount(sl))
+					cnt = 0;
+				else
+					cnt -= l->hseqbase + BATcount(l) - sl->tseqbase - BATcount(sl);
+			}
+		} else {
+			const oid *lcand = (const oid *) Tloc(sl, BUNfirst(sl));
+			o = l->hseqbase;
+			cnt = BATcount(sl);
+			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
+			lcand += i;
+			cnt -= i;
+			o = l->hseqbase + BATcount(l);
+			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
+			cnt -= i;
+
+			if (BATextend(r1, cnt) == GDK_FAIL ||
+			    BATextend(r2, cnt) == GDK_FAIL) {
+				goto bailout;
+			}
+			r2->T->nil = 0;
+			r2->T->nonil = 1;
+			for (i = 0; i < cnt; i++) {
+				oid c = lcand[i];
+				if (c >= l->hseqbase && c < l->hseqbase + BATcount(l)) {
+					o = lvals[c - l->hseqbase];
+					if (o >= lo && o < hi) {
+						APPEND(r1, c);
+						APPEND(r2, o - r->tseqbase + r->hseqbase);
+					} else if (must_match) {
+						GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+						goto bailout;
+					} else if (nil_on_miss) {
+						APPEND(r1, c);
+						APPEND(r2, oid_nil);
+						r2->T->nil = 1;
+						r2->T->nonil = 0;
+					}
+				}
+			}
+			BATsetcount(r1, BATcount(r1));
+			BATsetcount(r2, BATcount(r2));
+			r1->tsorted = 1;
+			r1->trevsorted = BATcount(r1) <= 1;
+			r1->tkey = 1;
+			r1->tdense = 0;
+			r1->T->nil = 0;
+			r1->T->nonil = 1;
+			r2->tsorted = l->tsorted || BATcount(r2) <= 1;
+			r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
+			r2->tkey = (l->tkey & 1) || BATcount(r2) <= 1;
+			r2->tdense = 0;
+			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+					  BATgetId(l), BATgetId(r),
+					  BATgetId(r1), BATcount(r1),
+					  r1->tsorted ? "-sorted" : "",
+					  r1->trevsorted ? "-revsorted" : "",
+					  BATgetId(r2), BATcount(r2),
+					  r2->tsorted ? "-sorted" : "",
+					  r2->trevsorted ? "-revsorted" : "");
+			return GDK_SUCCEED;
+		}
+	}
+	if (BATextend(r1, cnt) == GDK_FAIL ||
+	    BATextend(r2, cnt) == GDK_FAIL) {
+		goto bailout;
+	}
+	r1->tdense = 1;
+	r1->tseqbase = seq;
+	r1->tkey = 1;
+	r1->tsorted = 1;
+	r1->T->nil = 0;
+	r1->T->nonil = 1;
+	r2->T->nil = 0;
+	r2->T->nonil = 1;
+	for (i = 0; i < cnt; i++) {
+		o = lvals[i];
+		if (o >= lo && o < hi) {
+			APPEND(r1, i + seq);
+			APPEND(r2, o - r->tseqbase + r->hseqbase);
+		} else if (must_match) {
+			GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+			goto bailout;
+		} else if (nil_on_miss) {
+			APPEND(r1, i + seq);
+			APPEND(r2, oid_nil);
+			r2->T->nil = 1;
+			r2->T->nonil = 0;
+		} else if (r1->tdense) {
+			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
+		}
+	}
+	BATsetcount(r1, BATcount(r1));
+	BATsetcount(r2, BATcount(r2));
+	if (BATcount(r1) <= 1) {
+		r1->trevsorted = 1;
+		r2->tdense = r2->T->nonil;
+		if (BATcount(r1) == 0) {
+			r1->tseqbase = 0;
+			r2->tseqbase = 0;
+		} else {
+			r1->tseqbase = *(oid *) Tloc(r1, BUNfirst(r1));
+			r2->tseqbase = *(oid *) Tloc(r2, BUNfirst(r2));
+		}
+		r2->tkey = 1;
+		r2->tsorted = 1;
+		r2->trevsorted = 1;
+		r2->tdense = 1;
+	} else {
+		r1->trevsorted = 0;
+		if (r2->T->nil) {
+			r2->tkey = 0;
+			r2->tsorted = 0;
+			r2->trevsorted = 0;
+		} else {
+			r2->tkey = l->tkey & 1;
+			r2->tsorted = l->tsorted;
+			r2->trevsorted = l->trevsorted;
+		}
+		r2->tdense = 0;
+		r2->tseqbase = oid_nil;
+	}
+	ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
+	return GDK_SUCCEED;
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
 /* Perform a "merge" join on l and r (if both are sorted) with
  * optional candidate lists, or join using binary search on r if l is
  * not sorted.  The return BATs have already been created by the
@@ -2370,7 +2761,11 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	if ((r->tsorted || r->trevsorted) &&
+	if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
+		/* use special implementation for dense right-hand side */
+		return mergejoin_void(r1, r2, l, r, sl, sr,
+				      nil_on_miss, must_match);
+	} else if ((r->tsorted || r->trevsorted) &&
 	    (r->ttype == TYPE_void ||
 	     lcount < 1024 ||
 	     BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
@@ -2533,7 +2928,13 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		rpcount = BATcount(r);
 		rhash = BATcheckhash(r);
 	}
-	if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
+	if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
+		/* use special implementation for dense right-hand side */
+		return mergejoin_void(r1, r2, l, r, sl, sr, 0, 0);
+	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
+		/* use special implementation for dense right-hand side */
+		return mergejoin_void(r2, r1, r, l, sr, sl, 0, 0);
+	} else if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
 		/* both sorted, smallest on left */
 		if (BATcount(l) <= BATcount(r))
 			return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0);
