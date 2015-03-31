@@ -58,7 +58,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 335 # length
+% 332 # length
 project (
 | group by (
 | | group by (
@@ -74,11 +74,11 @@ project (
 | | | | | ) [ partsupp.ps_suppkey NOT NULL = L3.L2 NOT NULL HASHCOL  ],
 | | | | | select (
 | | | | | | table(sys.part) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, part.%TID% NOT NULL ] COUNT 
-| | | | | ) [ part.p_brand NOT NULL != varchar(10)[char(8) "Brand#45"], char[part.p_type NOT NULL] ! FILTER like (char[char(16) "MEDIUM POLISHED%"], char ""), part.p_size NOT NULL in (int[tinyint "49"], int[tinyint "14"], int[tinyint "23"], int[tinyint "45"], int[tinyint "19"], int[tinyint "3"], int[tinyint "36"], int[tinyint "9"]) ]
+| | | | | ) [ part.p_brand NOT NULL != char(10)[char(8) "Brand#45"], char[part.p_type NOT NULL] ! FILTER like (char[char(16) "MEDIUM POLISHED%"], char ""), part.p_size NOT NULL in (int[tinyint "49"], int[tinyint "14"], int[tinyint "23"], int[tinyint "45"], int[tinyint "19"], int[tinyint "3"], int[tinyint "36"], int[tinyint "9"]) ]
 | | | | ) [ partsupp.%partsupp_ps_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey ]
 | | | ) [ partsupp.ps_suppkey NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL ]
-| | ) [ partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L5.L5 NOT NULL ]
-| ) [ part.p_size NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, sys.count no nil (L5.L5 NOT NULL) NOT NULL as L4.L4 ]
+| | ) [ part.p_brand NOT NULL, partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L5.L5 NOT NULL ]
+| ) [ part.p_brand NOT NULL, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, sys.count no nil (L5.L5 NOT NULL) NOT NULL as L4.L4 ]
 ) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L4 NOT NULL as L4.supplier_cnt ] [ L4.supplier_cnt NOT NULL, part.p_brand ASC NOT NULL, part.p_type ASC NOT NULL, part.p_size ASC NOT NULL ]
 
 # 22:46:33 >  

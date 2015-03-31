@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	nation,
 	o_year,

@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	s_name,
 	count(*) as numwait

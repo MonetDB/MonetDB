@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	l_shipmode,
 	sum(case

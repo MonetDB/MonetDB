@@ -137,7 +137,7 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6
     X_138 := algebra.leftfetchjoin(r1_179,X_136);
     X_134 := algebra.leftfetchjoin(r1_179,X_133);
     X_139 := sql.resultSet(3,1,X_132);
-    sql.rsColumn(X_139,"sys.custsale","cntrycode","varchar",15,0,X_132);
+    sql.rsColumn(X_139,"sys.custsale","cntrycode","char",15,0,X_132);
     sql.rsColumn(X_139,"sys.L2","numcust","wrd",64,0,X_134);
     sql.rsColumn(X_139,"sys.L3","totacctbal","decimal",15,2,X_138);
     X_158 := io.stdout();
