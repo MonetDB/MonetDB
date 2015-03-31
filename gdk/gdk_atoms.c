@@ -820,6 +820,7 @@ int
 dblFromStr(const char *src, int *len, dbl **dst)
 {
 	const char *p = src;
+	int n = 0;
 	double d;
 
 	/* alloc memory */
@@ -830,6 +831,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = dbl_nil;
 		p += 3;
+		n = (int) (p - src);
 	} else {
 		/* on overflow, strtod returns HUGE_VAL and sets
 		 * errno to ERANGE; on underflow, it returns a value
@@ -840,16 +842,17 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		errno = 0;
 		d = strtod(src, &pe);
 		p = pe;
-		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
+		n = (int) (p - src);
+		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))) {
 			**dst = dbl_nil; /* default return value is nil */
-			p = src;
+			n = 0;
 		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (dbl) d;
 		}
 	}
-	while (GDKisspace(*p))
-		p++;
-	return (int) (p - src);
+	return n;
 }
 
 int

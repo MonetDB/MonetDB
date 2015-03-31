@@ -128,7 +128,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6
     X_112 := algebra.leftfetchjoin(r1_94,X_111);
     X_103 := algebra.leftfetchjoin(r1_94,X_101);
     X_113 := sql.resultSet(3,1,X_86);
-    sql.rsColumn(X_113,"sys.lineitem","l_shipmode","varchar",10,0,X_86);
+    sql.rsColumn(X_113,"sys.lineitem","l_shipmode","char",10,0,X_86);
     sql.rsColumn(X_113,"sys.L1","high_line_count","hugeint",128,0,X_103);
     sql.rsColumn(X_113,"sys.L2","low_line_count","hugeint",128,0,X_112);
     X_130 := io.stdout();

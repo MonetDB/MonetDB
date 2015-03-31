@@ -61,7 +61,7 @@ Ready.
 % clob # type
 % 324 # length
 function user.s3_1{autoCommit=true}():void;
-    X_141:void := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",76);
+    X_142:void := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",76);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","supplier");
     X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","supplier","s_suppkey",0);
@@ -129,12 +129,12 @@ function user.s3_1{autoCommit=true}():void;
     X_100:bat[:oid,:str] := algebra.leftfetchjoinPath(r1_164,X_83,X_43,X_3,X_99);
     X_116 := sql.resultSet(5,1,X_88);
     sql.rsColumn(X_116,"sys.supplier","s_suppkey","int",32,0,X_88);
-    sql.rsColumn(X_116,"sys.supplier","s_name","varchar",25,0,X_100);
+    sql.rsColumn(X_116,"sys.supplier","s_name","char",25,0,X_100);
     sql.rsColumn(X_116,"sys.supplier","s_address","varchar",40,0,X_107);
-    sql.rsColumn(X_116,"sys.supplier","s_phone","varchar",15,0,X_114);
+    sql.rsColumn(X_116,"sys.supplier","s_phone","char",15,0,X_114);
     sql.rsColumn(X_116,"sys.revenue0","total_revenue","decimal",33,4,X_115);
-    X_139 := io.stdout();
-    sql.exportResult(X_139,X_116);
+    X_140 := io.stdout();
+    sql.exportResult(X_140,X_116);
 end user.s3_1;
 #drop view revenue0;
 
