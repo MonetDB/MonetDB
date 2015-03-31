@@ -298,7 +298,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			if ( j == 0) {
 				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
 				ALGODEBUG{
-					mnstr_printf(cntxt->fdout,"#joinpath step produces "SZFMT"\n", BATcount(b));
+					mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
 				}
 				break;
 			}
@@ -308,7 +308,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
 			ALGODEBUG{
-				mnstr_printf(cntxt->fdout,"#joinpath step produces "SZFMT"\n", BATcount(b));
+				mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
 			}
 			break;
 		}
