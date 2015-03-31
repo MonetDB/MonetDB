@@ -165,7 +165,7 @@ ALGjoinChain(Client cntxt, int top, BAT **joins)
 	oid lo, hi, *o, oc, prevoc;
 	BATiter iter[MAXCHAINDEPTH];
 	int i, pcol= top -1;
-	size_t cnt=0, cap=0, empty=0, offset[MAXCHAINDEPTH], size[MAXCHAINDEPTH];
+	BUN cnt=0, cap=0, empty=0, offset[MAXCHAINDEPTH], size[MAXCHAINDEPTH];
 	const void *v;
 
 //#undef ALGODEBUG
@@ -181,7 +181,7 @@ ALGjoinChain(Client cntxt, int top, BAT **joins)
 		size[i] = BATcount(joins[i]);
 		offset[i] = BUNfirst(joins[i])-joins[i]->hseqbase;
 		ALGODEBUG {
-			mnstr_printf(cntxt->fdout,"#%d types [%d, %d] "SZFMT" "SZFMT" \n",i,  joins[i]->htype, joins[i]->ttype, size[i], offset[i]);
+			mnstr_printf(cntxt->fdout,"#%d types [%d, %d] "BUNFMT" "BUNFMT" \n",i,  joins[i]->htype, joins[i]->ttype, size[i], offset[i]);
 		}
 	}
 
