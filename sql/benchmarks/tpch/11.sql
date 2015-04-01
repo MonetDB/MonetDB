@@ -17,6 +17,9 @@ group by
 		sum(ps_supplycost * ps_availqty) > (
 			select
 				sum(ps_supplycost * ps_availqty) * 0.0100000000
+			--	                                   ^^^^^^^^^^^^
+			-- The above constant needs to be adjusted according
+			-- to the scale factor (SF): constant = 0.0001 / SF.
 			from
 				partsupp,
 				supplier,
