@@ -2831,10 +2831,6 @@ command algebra.ilike(s:str,pat:str):bit
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
 address PCREilike3;
-pattern algebra.joinPath(l:bat[:any,:any]...):bat[:oid,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 

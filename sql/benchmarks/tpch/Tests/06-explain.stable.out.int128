@@ -76,10 +76,10 @@ function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,
     (X_55,r1_69) := sql.bind(X_10,"sys","lineitem","l_extendedprice",2);
     X_57:bat[:oid,:lng] := sql.bind(X_10,"sys","lineitem","l_extendedprice",1);
     X_58 := sql.projectdelta(X_51,X_53,X_55,r1_69,X_57);
-    X_60 := sql.projectdelta(X_51,X_24,X_26,r1_29,X_28);
-    X_61:bat[:oid,:hge] := batcalc.*(X_58,X_60);
-    X_62:hge := aggr.sum(X_61);
-    sql.exportValue(1,"sys.L1","revenue","decimal",30,4,10,X_62,"");
+    X_59 := sql.projectdelta(X_51,X_24,X_26,r1_29,X_28);
+    X_60:bat[:oid,:hge] := batcalc.*(X_58,X_59);
+    X_61:hge := aggr.sum(X_60);
+    sql.exportValue(1,"sys.L1","revenue","decimal",39,4,10,X_61,"");
 end user.s2_1;
 
 # 22:53:26 >  

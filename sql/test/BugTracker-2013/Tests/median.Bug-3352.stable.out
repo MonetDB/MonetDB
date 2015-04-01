@@ -68,7 +68,7 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % decimal # type
-% 12 # length
+% 20 # length
 [ 41.18	]
 #select median(b) from t3352;
 % sys.L1 # table_name

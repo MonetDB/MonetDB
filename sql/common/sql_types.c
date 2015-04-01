@@ -442,7 +442,8 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 		/* same scale as the input */
 		if (member && (member->scale != scale ||
 			(digits != member->digits && !EC_NUMBER(member->type->eclass)))) {
-			digits = member->digits;
+			if (member->digits > digits)
+				digits = member->digits;
 			scale = member->scale;
 		}
 		/* same type as the input */

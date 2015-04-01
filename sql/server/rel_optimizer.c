@@ -5759,9 +5759,6 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel) 
 {
-	(void)sql;
-	/* TODO isnull(x) = TRUE/FALSE -> cmp_equal/notequal nil */
-	/* NOT(NOT(x)) -> X */
 	if (is_select(rel->op) && rel->exps) {
 		node *n;
 		list *exps = sa_list(sql->sa);
@@ -5769,7 +5766,6 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			/* rewrite not(x) = TRUE/FALSE => x = FALSE/TRUE */
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
@@ -5777,36 +5773,53 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				if (l->type == e_func) {
 					sql_subfunc *f = l->f;
 					
-					if (!f->func->s && !strcmp(f->func->base.name, "not")) {
+					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
+					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					     is_atom(r->type) && r->l) { /* direct literal */
+						atom *a = r->l;
+						int flag = a->data.val.bval;
+						list *args = l->l;
+
+						assert(list_length(args) == 1);
+						l = args->h->data;
+						r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
+						e = exp_compare(sql->sa, l, r, (flag)?cmp_equal:cmp_notequal);
+					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 						if (is_atom(r->type) && r->l) { /* direct literal */
 							atom *a = r->l;
 							list *args = l->l;
 							sql_exp *inner = args->h->data;
-							sql_subfunc *eqf = inner->f;
+							sql_subfunc *inf = inner->f;
 
 							assert(list_length(args) == 1);
 
-							/* first rewrite not(=(a,b)) = TRUE/FALSE => a=b of a<>b */
+							/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
 							if (inner->type == e_func && 
-							    !eqf->func->s && 
-							    (!strcmp(eqf->func->base.name, "=") ||
-							     !strcmp(eqf->func->base.name, "<>"))) {
+							    !inf->func->s && 
+							    !strcmp(inf->func->base.name, "not")) {
+								args = inner->l;
+
+								assert(list_length(args) == 1);
+								l = args->h->data;
+								e = exp_compare(sql->sa, l, r, e->flag);
+							/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
+							} else if (inner->type == e_func && 
+							    !inf->func->s && 
+							    (!strcmp(inf->func->base.name, "=") ||
+							     !strcmp(inf->func->base.name, "<>"))) {
 								int flag = a->data.val.bval;
 								args = inner->l;
 
-								if (!strcmp(eqf->func->base.name, "<>"))
+								if (!strcmp(inf->func->base.name, "<>"))
 									flag = !flag;
 								assert(list_length(args) == 2);
 								l = args->h->data;
 								r = args->h->next->data;
 								e = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
 							} else if (a && a->data.vtype == TYPE_bit) {
-								/* move not to the right */
-								sql_exp *not = l;
-
+								/* change atom's value on right */
 								l = args->h->data;
-								args->h->data = r;
-								r = not;
+								a->data.val.bval = !a->data.val.bval;
 								e = exp_compare(sql->sa, l, r, e->flag);
 								(*changes)++;
 							}

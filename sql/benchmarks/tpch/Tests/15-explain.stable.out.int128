@@ -132,7 +132,7 @@ function user.s3_1{autoCommit=true}():void;
     sql.rsColumn(X_116,"sys.supplier","s_name","char",25,0,X_100);
     sql.rsColumn(X_116,"sys.supplier","s_address","varchar",40,0,X_107);
     sql.rsColumn(X_116,"sys.supplier","s_phone","char",15,0,X_114);
-    sql.rsColumn(X_116,"sys.revenue0","total_revenue","decimal",33,4,X_115);
+    sql.rsColumn(X_116,"sys.revenue0","total_revenue","decimal",39,4,X_115);
     X_140 := io.stdout();
     sql.exportResult(X_140,X_116);
 end user.s3_1;

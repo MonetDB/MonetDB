@@ -324,7 +324,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	5	]
+[ "joinidx",	4	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -756,7 +756,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -1214,7 +1214,7 @@ Ready.
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
-% 18,	3,	5,	10,	17,	17 # length
+% 18,	3,	5,	10,	17,	41 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
 #select * from optimizer_stats() stats;
@@ -1356,7 +1356,7 @@ Ready.
 % sys.custsale,	sys.L2,	sys.L3 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % char,	wrd,	decimal # type
-% 15,	2,	17 # length
+% 15,	2,	41 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
