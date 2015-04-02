@@ -469,7 +469,7 @@ typedef struct BOX {
 	lng clkstart, clkend;
 	lng ticks;
 	lng memstart, memend;
-	lng footstart, vmmemory;
+	lng footstart, tmpspace;
 	lng inblock, oublock;
 	lng majflt, nswap, csw;
 	char *stmt;
@@ -596,7 +596,7 @@ static void dumpbox(int i)
 		fprintf(stderr,"%s ", box[i].fcn);
 	fprintf(stderr,"clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
 	fprintf(stderr,"mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
-	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].vmmemory);
+	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].tmpspace);
 	fprintf(stderr,"ticks "LLFMT" ", box[i].ticks);
 	if (box[i].stmt)
 		fprintf(stderr,"\"%s\"", box[i].stmt);
@@ -666,7 +666,7 @@ dumpboxes(void)
 
 	for (i = 0; i < topbox; i++)
 	if (box[i].clkend && box[i].fcn) {
-			fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT " " LLFMT " " LLFMT " " LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].vmmemory/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
+			fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT " " LLFMT " " LLFMT " " LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].tmpspace/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
 			written++;
 		}
 	if( written == 0){
@@ -1281,7 +1281,7 @@ update(char *line, EventRecord *ev)
 		if (ev->state == GCOLLECT)
 			box[idx].clkstart -= ev->ticks;
 		box[idx].memend = box[idx].memstart = ev->memory;
-		box[idx].footstart = box[idx].vmmemory = ev->vmmemory;
+		box[idx].footstart = box[idx].tmpspace = ev->tmpspace;
 		box[idx].inblock = ev->inblock;
 		box[idx].oublock = ev->oublock;
 		box[idx].majflt = ev->majflt;
@@ -1372,7 +1372,7 @@ update(char *line, EventRecord *ev)
 		box[idx].memend = ev->memory;
 		box[idx].numa = ev->numa;
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
-		box[idx].footstart = ev->vmmemory;
+		box[idx].footstart = ev->tmpspace;
 		box[idx].stmt = ev->stmt;
 		box[idx].fcn = ev->fcn ? ev->fcn : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
@@ -1442,7 +1442,7 @@ update(char *line, EventRecord *ev)
 		events++;
 		box[idx].clkend = ev->clkticks;
 		box[idx].memend = ev->memory;
-		box[idx].vmmemory = ev->vmmemory;
+		box[idx].tmpspace = ev->tmpspace;
 		box[idx].ticks = ev->ticks;
 		box[idx].state = ACTION;
 		box[idx].inblock = ev->inblock;

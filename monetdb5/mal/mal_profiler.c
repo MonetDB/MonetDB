@@ -67,7 +67,7 @@ offlineProfilerHeader(void)
 	logadd("state,\t");
 	logadd("usec,\t");
 	logadd("rssMB,\t");
-	logadd("vmMB,\t");
+	logadd("tmpspace,\t");
 
 #ifdef NUMAprofiling
 		logadd("numa,\t");
@@ -199,7 +199,7 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 		logadd(LLFMT ",\t", pci->ticks);
 	}
 	logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-	logadd(SZFMT ",\t", GDKvm_cursize()/1024/1024);
+	logadd(LLFMT ",\t", pci? pci->wbytes/1024/1024:0);
 
 #ifdef NUMAprofiling
 	if( alter)
@@ -430,7 +430,7 @@ static BAT *TRACE_id_ticks = 0;
 static BAT *TRACE_id_reads = 0;
 static BAT *TRACE_id_writes = 0;
 static BAT *TRACE_id_rssMB = 0;
-static BAT *TRACE_id_vmMB = 0;
+static BAT *TRACE_id_tmpspace = 0;
 static BAT *TRACE_id_minflt = 0;
 static BAT *TRACE_id_majflt = 0;
 static BAT *TRACE_id_nvcsw = 0;
@@ -448,7 +448,7 @@ TRACEtable(BAT **r)
 	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
 	r[4] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	r[5] = BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = BATcopy(TRACE_id_vmMB, TRACE_id_vmMB->htype, TRACE_id_vmMB->ttype, 0, TRANSIENT);
+	r[6] = BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
 	r[7] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
 	r[8] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0, TRANSIENT);
 	r[9] = BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
@@ -493,7 +493,7 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
 	CLEANUPprofile(TRACE_id_rssMB);
-	CLEANUPprofile(TRACE_id_vmMB);
+	CLEANUPprofile(TRACE_id_tmpspace);
 	CLEANUPprofile(TRACE_id_reads);
 	CLEANUPprofile(TRACE_id_writes);
 	CLEANUPprofile(TRACE_id_minflt);
@@ -513,7 +513,7 @@ _initTrace(void)
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
 	TRACE_id_rssMB = TRACEcreate("id", "rssMB", TYPE_lng);
-	TRACE_id_vmMB = TRACEcreate("id", "vmMB", TYPE_lng);
+	TRACE_id_tmpspace = TRACEcreate("id", "tmpspace", TYPE_lng);
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_lng);
 	TRACE_id_writes = TRACEcreate("id", "write", TYPE_lng);
 	TRACE_id_minflt = TRACEcreate("id", "minflt", TYPE_lng);
@@ -526,7 +526,7 @@ _initTrace(void)
 		TRACE_id_pc == NULL ||
 		TRACE_id_stmt == NULL ||
 		TRACE_id_rssMB == NULL ||
-		TRACE_id_vmMB == NULL ||
+		TRACE_id_tmpspace == NULL ||
 		TRACE_id_reads == NULL ||
 		TRACE_id_writes == NULL ||
 		TRACE_id_minflt == NULL ||
@@ -573,7 +573,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_thread->batCacheid);
 	BBPclear(TRACE_id_ticks->batCacheid);
 	BBPclear(TRACE_id_rssMB->batCacheid);
-	BBPclear(TRACE_id_vmMB->batCacheid);
+	BBPclear(TRACE_id_tmpspace->batCacheid);
 	BBPclear(TRACE_id_reads->batCacheid);
 	BBPclear(TRACE_id_writes->batCacheid);
 	BBPclear(TRACE_id_minflt->batCacheid);
@@ -602,8 +602,8 @@ getTrace(const char *nme)
 		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "rssMB") == 0)
 		return BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "vmMB") == 0)
-		return BATcopy(TRACE_id_vmMB, TRACE_id_vmMB->htype, TRACE_id_vmMB->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "tmpspace") == 0)
+		return BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "reads") == 0)
 		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "writes") == 0)
@@ -636,7 +636,7 @@ getTraceType(const char *nme)
 		return newColumnType( TYPE_str);
 	if (strcmp(nme, "rssMB") == 0)
 		return newColumnType( TYPE_lng);
-	if (strcmp(nme, "vmMB") == 0)
+	if (strcmp(nme, "tmpspace") == 0)
 		return newColumnType( TYPE_lng);
 	if (strcmp(nme, "reads") == 0 || strcmp(nme, "writes") == 0 || strcmp(nme,"minflt")==0 || strcmp(nme,"majflt")==0  || strcmp(nme,"nvcsw")==0  )
 		return newColumnType( TYPE_lng);
@@ -655,7 +655,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	time_t clk;
 	struct timeval clock;
 	lng rssMB = MT_getrss()/1024/1024;
-	lng vmMB = GDKvm_cursize()/1024/1024;
+	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
 
 #ifdef HAVE_TIMES
@@ -726,7 +726,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_thread, &tid, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_vmMB, &vmMB, FALSE) == GDK_FAIL;
+	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_reads, &v1, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_writes, &v2, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_minflt, &v3, FALSE) == GDK_FAIL;

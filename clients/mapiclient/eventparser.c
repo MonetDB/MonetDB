@@ -200,11 +200,11 @@ eventparser(char *row, EventRecord *ev)
 		return -7;
 	ev->memory = strtoll(c + 1, NULL, 10);
 
-	/* scan vmMB */
+	/* scan tmpMB */
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
-	ev->vmmemory = strtoll(c + 1, NULL, 10);
+	ev->tmpspace = strtoll(c + 1, NULL, 10);
 
 #ifdef NUMAPROFILING
 	for(; *c && *c !='"'; c++) ;

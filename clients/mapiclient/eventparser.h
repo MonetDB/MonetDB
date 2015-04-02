@@ -76,7 +76,7 @@ typedef struct  {
 	lng clkticks;
 	lng ticks;
 	lng memory;
-	lng vmmemory;
+	lng tmpspace;
 	lng inblock;
 	lng oublock;
 	lng majflt;
