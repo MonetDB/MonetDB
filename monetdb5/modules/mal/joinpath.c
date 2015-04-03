@@ -395,7 +395,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* detect easy left-right oid chain joins */
 	chain = BATcount(joins[0]) < BATcount(joins[top-1]) && top < MAXCHAINDEPTH;
-	//chain = 0; // disabled for the moment, because it is not robust yet
+	chain = 0; // disabled for the moment, because it is not robust yet
 
 	ALGODEBUG{
 		char *ps;
