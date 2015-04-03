@@ -162,90 +162,80 @@ static BAT *
 ALGjoinChain(Client cntxt, int top, BAT **joins)
 {
 	BAT *bn = NULL;
-	oid lo, hi, *o, oc, prevoc;
+	oid lo, hi, oc;
 	BATiter iter[MAXCHAINDEPTH];
-	int i, pcol= top -1;
-	BUN cnt=0, cap=0, empty=0, offset[MAXCHAINDEPTH], size[MAXCHAINDEPTH];
+	int i, pcol= top -1, td = 1, ts = 1;
+	BUN cnt=0, cap=0, empty=0, size[MAXCHAINDEPTH];
+       	ssize_t offset[MAXCHAINDEPTH]; 
 	const void *v;
 
-//#undef ALGODEBUG
-//#define ALGODEBUG if(1)
+	//#undef ALGODEBUG
+	//#define ALGODEBUG if(1)
 	(void) cntxt;
 
 	for ( i =0; i< top ; i++){
 		if( (cnt  = BATcount(joins[i]) ) > cap)
 			cap = BATcount(joins[i]);
-		assert(joins[i]->tseqbase != oid_nil);
 		empty += cnt == 0;
 		iter[i] = bat_iterator(joins[i]);
 		size[i] = BATcount(joins[i]);
 		offset[i] = BUNfirst(joins[i])-joins[i]->hseqbase;
 		ALGODEBUG {
-			mnstr_printf(cntxt->fdout,"#%d types [%d, %d] "BUNFMT" "BUNFMT" \n",i,  joins[i]->htype, joins[i]->ttype, size[i], offset[i]);
+			mnstr_printf(cntxt->fdout,"#%d types [%d, %d] "BUNFMT" "SSZFMT" \n",i,  joins[i]->htype, joins[i]->ttype, size[i], offset[i]);
 		}
+		if (i<(top-1))
+			td &= joins[i]->tdense;
+		if (i<(top-1))
+			ts &= joins[i]->tsorted;
 	}
 
-	bn = BATnew( TYPE_void, joins[pcol]->ttype, cap, TRANSIENT);
+	bn = BATnew( TYPE_void, joins[pcol]->ttype?joins[pcol]->ttype:TYPE_oid, cap, TRANSIENT);
 	if( bn == NULL){
 		GDKerror("joinChain" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	/* be optimistic, inherit the properties  */
-	BATseqbase(bn,0);
 	BATsettrivprop(bn);
-	if ( empty)
+	BATseqbase(bn, 0);
+	if (empty)
 		return bn;
 
-	bn->tkey = joins[pcol]->tkey;
+	bn->tkey = td&&joins[pcol]->tkey;
 	bn->tdense = 0;
-	bn->tsorted = joins[pcol]->tsorted;
-	bn->trevsorted = joins[pcol]->trevsorted;
-	bn->T->nil = joins[pcol]->T->nil;	// not sure, we may not produce them
+	bn->tsorted = ts&&joins[pcol]->tsorted;
+	bn->trevsorted = 0;
+	bn->T->nil = 0;
 	bn->T->nonil = joins[pcol]->T->nonil;
 
 	cnt = 0;
-	assert(joins[0]->tseqbase != oid_nil);
-	o = (oid *) BUNtail(iter[0], BUNfirst(joins[0]));
-	for( lo = 0, hi = lo + BATcount(joins[0]); lo < hi && o; o++, lo++)
-	{
-		oc = *o;
+	for (lo = 0, hi = lo + BATcount(joins[0]); lo < hi; lo++) {
+		oc = *(oid *) BUNtail(iter[0], lo);
 		for(i = 1; i < pcol; i++)
-		if ( oc + offset[i] < size[i]){
-			v = BUNtail(iter[i], oc + offset[i]);
-			oc = *(oid*) v;
-			if( oc == oid_nil)
-				goto bunins_failed;
-		}
-		if ( i != pcol)
+			if (oc + offset[i] < size[i]) {
+				v = BUNtail(iter[i], oc + offset[i]);
+				oc = *(oid*) v;
+				if (oc == oid_nil)
+					goto bunins_failed;
+			}
+
+		if (i != pcol)
 			continue;
 		// update the join result and keep track of properties
-		if ( oc + offset[pcol] < size[pcol]){
+		if (oc + offset[pcol] < size[pcol]){
 			v = BUNtail(iter[pcol], oc + offset[pcol]);
 			bunfastapp(bn,v);
-			// are we still sorted? beware, a new sorted list an emerge as well
-			if( joins[pcol]->tsorted){
-				if(bn->tsorted && prevoc > oc) 
-					bn->tsorted = FALSE;
-				// else we have to check the values inserted... too expensive for now
-			}
-			if( joins[pcol]->trevsorted){
-				if( bn->trevsorted && prevoc != 0 && prevoc < oc) bn->trevsorted = FALSE;
-			}
-			prevoc = oc;
 			cnt++;
 		}
 		bunins_failed:
 		;
 	}
-    BATsetcount(bn, cnt);
-	bn->hrevsorted = BATcount(bn) <=1;
+    	BATsetcount(bn, cnt);
+	bn->hrevsorted = (BATcount(bn) <=1);
 
 	// release the chain 
 	for ( i =0; i< top ; i++)
 		BBPunfix(joins[i]->batCacheid);
 		
-	BATsettrivprop(bn);
-
 	if (bn && !(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 
 	return bn;
@@ -404,8 +394,8 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	/* detect easy left-right oid chain joins */
-	//chain = BATcount(joins[0]) < BATcount(joins[top-1]) && top < MAXCHAINDEPTH;
-	chain = 0; // disabled for the moment, because it is not robust yet
+	chain = BATcount(joins[0]) < BATcount(joins[top-1]) && top < MAXCHAINDEPTH;
+	//chain = 0; // disabled for the moment, because it is not robust yet
 
 	ALGODEBUG{
 		char *ps;
@@ -423,14 +413,12 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* be optimistic, inherit the properties  */
 		BATseqbase(b,0);
 		BATsettrivprop(b);
-	} else
-	if ( getFunctionId(pci) == leftjoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 0); 
-	else{
-		if( chain && top < MAXCHAINDEPTH)
-			b= ALGjoinChain(cntxt,top,joins); 
-		else
-			b= ALGjoinPathBody(cntxt,top,joins, 3); 
+	} else if (getFunctionId(pci) == leftjoinPathRef) {
+		b = ALGjoinPathBody(cntxt,top,joins, 0); 
+	} else if (chain && top < MAXCHAINDEPTH) {
+		b = ALGjoinChain(cntxt,top,joins); 
+	} else {
+		b = ALGjoinPathBody(cntxt,top,joins, 3); 
 	}
 
 	GDKfree(joins);
