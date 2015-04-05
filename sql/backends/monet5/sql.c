@@ -1705,6 +1705,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
+				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -1787,6 +1788,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
+				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -2018,7 +2020,7 @@ DELTAproject2(bat *result, const bat *sub, const bat *col, const bat *uid, const
 str
 DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
-	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
+	BAT *c, *u_id, *u_val, *i = NULL, *res;
 
 	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2052,12 +2054,11 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	if ((u_val = BATdescriptor(*uval)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	u_id = BATdescriptor(*uid);
-	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
+	assert(BATcount(u_id) == BATcount(u_val));
+	if (BATcount(u_id))
+		BATreplace(res, u_id, u_val, TRUE);
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
-	if (BATcount(u))
-		BATreplace(res, u, TRUE);
-	BBPunfix(u->batCacheid);
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
@@ -2191,7 +2192,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 str
 DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
-	BAT *s, *c, *u_id, *u_val, *u, *i = NULL, *res, *tres;
+	BAT *s, *c, *u_id, *u_val, *i = NULL, *res, *tres;
 
 	if ((s = BATdescriptor(*sub)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2257,17 +2258,20 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
-	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
-	BBPunfix(u_id->batCacheid);
-	BBPunfix(u_val->batCacheid);
-	if (BATcount(u)) {
-		BAT *nu = BATleftjoin(s, u, BATcount(u));
+	if (BATcount(u_val)) {
+		BAT *o = BATsemijoin(u_id, s);
+		BAT *nu_id = BATproject(o, u_id);
+		BAT *nu_val = BATproject(o, u_val);
+
+		BBPunfix(o->batCacheid);
 		res = setwritable(res);
-		BATreplace(res, nu, 0);
-		BBPunfix(nu->batCacheid);
+		BATreplace(res, nu_id, nu_val, 0);
+		BBPunfix(nu_id->batCacheid);
+		BBPunfix(nu_val->batCacheid);
 	}
 	BBPunfix(s->batCacheid);
-	BBPunfix(u->batCacheid);
+	BBPunfix(u_id->batCacheid);
+	BBPunfix(u_val->batCacheid);
 
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;

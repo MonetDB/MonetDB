@@ -313,7 +313,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			}
 		}
 	}
+	assert( (ht == TYPE_void && l->flag == LOG_INSERT) ||
+		(ht == TYPE_void && l->flag == LOG_DELETE) || 
+		((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE) );
 	if (ht >= 0 && tt >= 0) {
+		BAT *uid = NULL;
 		BAT *r;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[tt].atomRead;
 		void *tv = ATOMnil(tt);
@@ -323,7 +327,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			rt = BATatoms[TYPE_int].atomRead;
 #endif
 		assert(l->nr <= (lng) BUN_MAX);
-		r = BATnew(ht, tt, (BUN) l->nr, PERSISTENT);
+		if (l->flag == LOG_UPDATE) {
+			uid = BATnew(TYPE_void, ht, (BUN) l->nr, PERSISTENT);
+			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+		} else {
+			assert(ht == TYPE_void);
+			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+		}
 
 		if (hseq)
 			BATseqbase(r, 0);
@@ -338,18 +348,37 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 					res = LOG_ERR;
 					break;
 				}
-				if (l->flag == LOG_INSERT) {
 #if SIZEOF_OID == 8
-					if (tt == TYPE_oid && lg->read32bitoid) {
-						int vi = * (int *) t;
-						if (vi == int_nil)
-							* (oid *) t = oid_nil;
-						else
-							* (oid *) t = vi;
-					}
-#endif
-					BUNappend(r, t, TRUE);
+				if (tt == TYPE_oid && lg->read32bitoid) {
+					int vi = * (int *) t;
+					if (vi == int_nil)
+						* (oid *) t = oid_nil;
+					else
+						* (oid *) t = vi;
 				}
+#endif
+				BUNappend(r, t, TRUE);
+				if (t != tv)
+					GDKfree(t);
+			}
+		} else if (ht == TYPE_void && l->flag == LOG_DELETE) {
+			for (; l->nr > 0; l->nr--) {
+				void *t = rt(tv, lg->log, 1);
+
+				if (!t) {
+					res = LOG_ERR;
+					break;
+				}
+#if SIZEOF_OID == 8
+				if (tt == TYPE_oid && lg->read32bitoid) {
+					int vi = * (int *) t;
+					if (vi == int_nil)
+						* (oid *) t = oid_nil;
+					else
+						* (oid *) t = vi;
+				}
+#endif
+				BUNappend(r, t, TRUE);
 				if (t != tv)
 					GDKfree(t);
 			}
@@ -388,9 +417,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 					}
 				}
 #endif
-				BUNins(r, h, t, TRUE);
-				if (h != hv)
-					GDKfree(h);
+				BUNappend(uid, h, TRUE);
+				BUNappend(r, t, TRUE);
 				if (t != tv)
 					GDKfree(t);
 			}
@@ -406,6 +434,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			tr->changes[tr->nr].tt = tt;
 			tr->changes[tr->nr].name = GDKstrdup(name);
 			tr->changes[tr->nr].b = r;
+			tr->changes[tr->nr].uid = uid;
 			tr->nr++;
 		}
 	} else {
@@ -447,32 +476,30 @@ la_bat_updates(logger *lg, logaction *la)
 			else if (la->type == LOG_DELETE)
 				BATdel(b, la->b, TRUE);
 			else if (la->type == LOG_UPDATE) {
-				BATiter bi = bat_iterator(la->b);
+				BATiter vi = bat_iterator(la->b);
+				BATiter ii = bat_iterator(la->uid);
 				BUN p, q;
 
 				BATloop(la->b, p, q) {
-					const void *h = BUNhead(bi, p);
-					const void *t = BUNtail(bi, p);
+					const void *h = BUNtail(ii, p);
+					const void *t = BUNtail(vi, p);
 
+					assert(b->htype == TYPE_void);
 					if (BUNfnd(BATmirror(b), h) == BUN_NONE) {
 						/* if value doesn't
 						 * exist, insert it if
 						 * b void headed,
 						 * maintain that by
 						 * inserting nils */
-						if (b->htype == TYPE_void) {
-							if (b->batCount == 0 && *(const oid *) h != oid_nil)
-								b->hseqbase = *(const oid *) h;
-							if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
-								const void *tv = ATOMnilptr(b->ttype);
+						if (b->batCount == 0 && *(const oid *) h != oid_nil)
+							b->hseqbase = *(const oid *) h;
+						if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
+							const void *tv = ATOMnilptr(b->ttype);
 
-								while (b->hseqbase + b->batCount < *(const oid *) h)
-									BUNappend(b, tv, TRUE);
-							}
-							BUNappend(b, t, TRUE);
-						} else {
-							BUNins(b, h, t, TRUE);
+							while (b->hseqbase + b->batCount < *(const oid *) h)
+								BUNappend(b, tv, TRUE);
 						}
+						BUNappend(b, t, TRUE);
 					} else {
 						BUNreplace(b, h, t, TRUE);
 					}
@@ -1779,37 +1806,39 @@ log_bat_transient(logger *lg, const char *name)
 }
 
 int
-log_delta(logger *lg, BAT *b, const char *name)
+log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 {
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
 
+	assert(uid->ttype == TYPE_oid || !uid->ttype);
 	if (lg->debug & 128) {
 		/* logging is switched off */
 		return LOG_OK;
 	}
 
 	l.tid = lg->tid;
-	l.nr = (BUNlast(b) - BUNfirst(b));
+	l.nr = (BUNlast(uval) - BUNfirst(uval));
 	lg->changes += l.nr;
 
 	if (l.nr) {
-		BATiter bi = bat_iterator(b);
-		int (*wh) (const void *, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
-		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		BATiter ii = bat_iterator(uid);
+		BATiter vi = bat_iterator(uval);
+		int (*wh) (const void *, stream *, size_t) = BATatoms[TYPE_oid].atomWrite;
+		int (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
 
 		l.flag = LOG_UPDATE;
 		if (log_write_format(lg, &l) == LOG_ERR ||
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-			const void *h = BUNhead(bi, p);
-			const void *t = BUNtail(bi, p);
+		for (p = BUNfirst(uid); p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+			const void *id = BUNtail(ii, p);
+			const void *val = BUNtail(vi, p);
 
-			ok = wh(h, lg->log, 1);
-			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
+			ok = wh(id, lg->log, 1);
+			ok = (ok == GDK_FAIL) ? ok : wt(val, lg->log, 1);
 		}
 
 		if (lg->debug & 1)

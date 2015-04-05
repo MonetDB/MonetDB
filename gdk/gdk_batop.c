@@ -911,14 +911,12 @@ BATdel(BAT *b, BAT *n, bit force)
  */
 #define BUNreplace_force(a,b,c) BUNreplace(a,b,c,force)
 gdk_return
-BATreplace(BAT *b, BAT *n, bit force)
+BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 {
-	if (b == NULL || n == NULL || BATcount(n) == 0) {
+	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	BATcompatible(b, n, GDK_FAIL, "BATreplace");
-	updateloop(b, n, BUNreplace_force);
-
+	void_replace_bat(b, p, n, force);
 	return GDK_SUCCEED;
 }
 
