@@ -168,6 +168,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 
 	/* always collect the MAL instruction execution time */
+	gettimeofday(&pci->clock,NULL);
 	prof->ticks = GDKusec();
 	/* emit the instruction upon start as well */
 	

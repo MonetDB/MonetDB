@@ -152,7 +152,10 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	if (eventstream == NULL)
 		return ;
 
-	gettimeofday(&clock, NULL);
+	if( start) // show when instruction was started
+		clock = pci->clock;
+	else 
+		gettimeofday(&clock, NULL);
 	clk = clock.tv_sec;
 
 	/* make basic profile event tuple  */
@@ -171,7 +174,7 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"%s.%06ld\",\t", tbuf+11, (long) clock.tv_usec);
+	logadd("\"%s.%06ld\",\t", tbuf+11, (long)clock.tv_usec);
 	if( alter){
 		logadd("\"user.%s[0]0\",\t",alter);
 	} else {
