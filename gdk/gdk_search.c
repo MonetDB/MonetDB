@@ -98,10 +98,13 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 1 << 8;		/* minimum size */
+	BUN m = 1 << 8;	/* minimum size; == BATTINY */
 
+	/* find largest power of 2 smaller than cnt */
 	while (m + m < cnt)
 		m += m;
+	/* if cnt is more than 1/3 into the gap between m & 2*m,
+	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
 	return m;
@@ -321,7 +324,7 @@ BAThash(BAT *b, BUN masksize)
 	if (b->T->hash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
-		BUN mask;
+		BUN mask, maxmask = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp;
@@ -369,11 +372,12 @@ BAThash(BAT *b, BUN masksize)
 			mask = HASHmask(cnt);
 		} else {
 			/* dynamic hash: we start with
-			 * HASHmask(cnt/64); if there are too many
-			 * collisions we try HASHmask(cnt/16), then
-			 * HASHmask(cnt/4), and finally
+			 * HASHmask(cnt)/64; if there are too many
+			 * collisions we try HASHmask(cnt)/16, then
+			 * HASHmask(cnt)/4, and finally
 			 * HASHmask(cnt).  */
-			mask = HASHmask(cnt >> 6);
+			maxmask = HASHmask(cnt);
+			mask = maxmask >> 6;
 			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
 				p = q;
@@ -453,7 +457,7 @@ BAThash(BAT *b, BUN masksize)
 				}
 				break;
 			}
-		} while (r < p && mask < cnt && (mask <<= 2));
+		} while (r < p && mask < maxmask && (mask <<= 2));
 
 		/* finish the hashtable with the current mask */
 		p = r;
