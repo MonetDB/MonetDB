@@ -113,8 +113,11 @@ HASHmask(BUN cnt)
 {
 	BUN m = 8;		/* minimum size */
 
+	/* find largest power of 2 smaller than cnt */
 	while (m + m < cnt)
 		m += m;
+	/* if cnt is more than 1/3 into the gap between m & 2*m,
+	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
 	return m;
