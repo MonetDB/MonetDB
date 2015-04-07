@@ -252,7 +252,7 @@ BAThash(BAT *b, BUN masksize)
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->htype);
 		BUN cnt = BATcount(b);
-		BUN mask;
+		BUN mask, maxmask = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp = NULL;
@@ -287,11 +287,12 @@ BAThash(BAT *b, BUN masksize)
 			mask = HASHmask(cnt);
 		} else {
 			/* dynamic hash: we start with
-			 * HASHmask(cnt/64); if there are too many
-			 * collisions we try HASHmask(cnt/16), then
-			 * HASHmask(cnt/4), and finally
+			 * HASHmask(cnt)/64; if there are too many
+			 * collisions we try HASHmask(cnt)/16, then
+			 * HASHmask(cnt)/4, and finally
 			 * HASHmask(cnt).  */
-			mask = HASHmask(cnt >> 6);
+			maxmask = HASHmask(cnt);
+			mask = maxmask >> 6;
 			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
 				p = q;
@@ -368,7 +369,7 @@ BAThash(BAT *b, BUN masksize)
 				}
 				break;
 			}
-		} while (r < p && mask < cnt && (mask <<= 2));
+		} while (r < p && mask < maxmask && (mask <<= 2));
 
 		/* finish the hashtable with the current mask */
 		p = r;
