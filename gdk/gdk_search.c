@@ -297,8 +297,6 @@ BAThash(BAT *b, BUN masksize)
 				p = q;
 		}
 
-		if (mask < 1024)
-			mask = 1024;
 		t0 = GDKusec();
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
