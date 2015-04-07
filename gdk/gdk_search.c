@@ -111,7 +111,7 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 8;		/* minimum size */
+	BUN m = 256;	/* minimum size; == BATTINY */
 
 	/* find largest power of 2 smaller than cnt */
 	while (m + m < cnt)
