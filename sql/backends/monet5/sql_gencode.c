@@ -1559,19 +1559,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_join:{
 			int l;
 			int r;
+			int cmp = s->flag;
+			int left = (cmp == cmp_left);
 			char *sjt = "subjoin";
 
+			if (left) {
+				cmp = cmp_equal;
+				sjt = "subleftjoin";
+			}
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
 			assert(l >= 0 && r >= 0);
 
-			if (s->flag == cmp_joined) {
+			if (cmp == cmp_joined) {
 				s->nr = l;
 				return s->nr;
 			}
-			if (s->flag == cmp_project || s->flag == cmp_reorder_project) {
+			if (cmp == cmp_project || cmp == cmp_reorder_project) {
 				int ins;
 
 				/* delta bat */
@@ -1596,7 +1602,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				if (s->flag == cmp_project)
+				if (cmp == cmp_project)
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
@@ -1609,7 +1615,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 
 
-			switch (s->flag) {
+			switch (cmp) {
 			case cmp_equal:
 				q = newStmt1(mb, algebraRef, sjt);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1656,13 +1662,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				q = pushNil(mb, q, TYPE_bat);
 				q = pushNil(mb, q, TYPE_bat);
-				if (s->flag == cmp_lt)
+				if (cmp == cmp_lt)
 					q = pushInt(mb, q, -1);
-				else if (s->flag == cmp_lte)
+				else if (cmp == cmp_lte)
 					q = pushInt(mb, q, -2);
-				else if (s->flag == cmp_gt)
+				else if (cmp == cmp_gt)
 					q = pushInt(mb, q, 1);
-				else if (s->flag == cmp_gte)
+				else if (cmp == cmp_gte)
 					q = pushInt(mb, q, 2);
 				q = pushBit(mb, q, TRUE);
 				q = pushNil(mb, q, TYPE_lng);

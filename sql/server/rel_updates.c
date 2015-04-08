@@ -668,6 +668,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
 	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
 	nnlls->exps = join_exps;
+	nnlls->flag = LEFT_JOIN;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);

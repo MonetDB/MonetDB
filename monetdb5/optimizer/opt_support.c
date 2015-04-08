@@ -673,7 +673,9 @@ int isOrderby(InstrPtr p){
 		 getFunctionId(p) == sortReverseRef);
 }
 
-int isMatJoinOp(InstrPtr p){
+int 
+isMatJoinOp(InstrPtr p)
+{
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
                  getFunctionId(p) == joinRef ||
@@ -683,6 +685,13 @@ int isMatJoinOp(InstrPtr p){
                  getFunctionId(p) == subbandjoinRef ||
                  getFunctionId(p) == subrangejoinRef)
 		));
+}
+
+int 
+isMatLeftJoinOp(InstrPtr p)
+{
+	return (getModuleId(p) == algebraRef && 
+		getFunctionId(p) == subleftjoinRef);
 }
 
 int isDelta(InstrPtr p){

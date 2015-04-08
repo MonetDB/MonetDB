@@ -1491,6 +1491,17 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 3 && p->retc == 2 &&
+				match == 1 && bats == 2) {
+		   	m = is_a_mat(getArg(p,p->retc), mat, mtop);
+			n = -1;
+
+			if (m >= 0) {
+				mtop = mat_join2(mb, p, mat, mtop, m, n);
+				actions++;
+				continue;
+			}
+		}
 		/*
 		 * Aggregate handling is a prime target for optimization.
 		 * The simple cases are dealt with first.

@@ -105,6 +105,7 @@ opt_export  str antijoinRef;
 opt_export  str bandjoinRef;
 opt_export  str thetajoinRef;
 opt_export  str subjoinRef;
+opt_export  str subleftjoinRef;
 opt_export  str subantijoinRef;
 opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;

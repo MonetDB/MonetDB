@@ -107,6 +107,7 @@ str antijoinRef;
 str bandjoinRef;
 str thetajoinRef;
 str subjoinRef;
+str subleftjoinRef;
 str subantijoinRef;
 str subbandjoinRef;
 str subrangejoinRef;
@@ -358,6 +359,7 @@ void optimizerInit(void)
 	bandjoinRef = putName("bandjoin",8);
 	thetajoinRef = putName("thetajoin",9);
 	subjoinRef = putName("subjoin",7);
+	subleftjoinRef = putName("subleftjoin",11);
 	subantijoinRef = putName("subantijoin",11);
 	subbandjoinRef = putName("subbandjoin",11);
 	subrangejoinRef = putName("subrangejoin",12);
