@@ -93,6 +93,7 @@ extern int malargtop;
 extern char *malvariables[MAXMALARGS];
 extern int malvartop;
 extern int debug;
+extern char *monet_characteristics;
 
 extern void clearArguments(void);
 extern int eventparser(char *row, EventRecord *ev);

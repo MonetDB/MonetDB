@@ -17,6 +17,7 @@ int malargtop;
 char *malvariables[MAXMALARGS];
 int malvartop;
 int debug;
+char *monet_characteristics;
 
 void
 clearArguments(void)
@@ -105,8 +106,11 @@ eventparser(char *row, EventRecord *ev)
 	struct tm stm;
 
 	/* check basic validaty first */
-	if (row[0] =='#')
+	if (row[0] =='#'){
+		if( row[1] =='{')
+			monet_characteristics = strdup(row+1);
 		return 0;
+	}
 	if (row[0] != '[')
 		return -1;
 	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)

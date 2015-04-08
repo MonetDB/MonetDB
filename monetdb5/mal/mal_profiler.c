@@ -55,9 +55,11 @@ offlineProfilerHeader(void)
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
 
-	if (eventstream == NULL) {
+	if (eventstream == NULL) 
 		return ;
-	}
+	mnstr_printf(eventstream,"%s\n", monet_characteristics);
+	mnstr_flush(eventstream);
+
 	lognew();
 	logadd("# ");
 	logadd("event,\t");
@@ -81,10 +83,8 @@ offlineProfilerHeader(void)
 #endif
 	logadd("stmt,\t");
 	logadd("# name \n");
-	if (eventstream){
-		mnstr_printf(eventstream,"%s\n", logbuffer);
-		mnstr_flush(eventstream);
-	}
+	mnstr_printf(eventstream,"%s\n", logbuffer);
+	mnstr_flush(eventstream);
 }
 
 /*
@@ -94,6 +94,7 @@ offlineProfilerHeader(void)
  * To avoid unnecessary locks we first build the event as a string
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
+
 static void logsend(char *logbuffer)
 { int error=0;
 	if (eventstream) {
@@ -205,9 +206,9 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	logadd(LLFMT ",\t", pci? pci->wbytes/1024/1024:0);
 
 #ifdef NUMAprofiling
-	if( alter)
+	if( alter){
 		logadd("\"\",\t");
-	}else {
+	} else {
 		logadd("\"");
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)

@@ -64,7 +64,7 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *basefilename = "tacho";
+static char *basefilename = "tachograph";
 static char *cache= "cache";
 static char *dbname;
 static int beat = 5000;
@@ -478,6 +478,8 @@ initFiles(void)
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
+	if( monet_characteristics)
+		fprintf(tachotrace,"%s\n",monet_characteristics);
 }
 
 static void
