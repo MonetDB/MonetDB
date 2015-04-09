@@ -1233,28 +1233,29 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	switch (ATOMtype(t)) {
-	case TYPE_bte:
-		NORMALIZE(bte);
-		break;
-	case TYPE_sht:
-		NORMALIZE(sht);
-		break;
-	case TYPE_int:
-		NORMALIZE(int);
-		break;
-	case TYPE_lng:
-		NORMALIZE(lng);
-		break;
-	case TYPE_flt:
-		NORMALIZE(flt);
-		break;
-	case TYPE_dbl:
-		NORMALIZE(dbl);
-		break;
-	case TYPE_oid:
+	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
-		break;
+	} else {
+		switch (t) {
+		case TYPE_bte:
+			NORMALIZE(bte);
+			break;
+		case TYPE_sht:
+			NORMALIZE(sht);
+			break;
+		case TYPE_int:
+			NORMALIZE(int);
+			break;
+		case TYPE_lng:
+			NORMALIZE(lng);
+			break;
+		case TYPE_flt:
+			NORMALIZE(flt);
+			break;
+		case TYPE_dbl:
+			NORMALIZE(dbl);
+			break;
+		}
 	}
 
 	if (b->tsorted || b->trevsorted) {
