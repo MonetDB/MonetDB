@@ -427,11 +427,13 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
-			buninsfix(bn, dst, cnt, o,			\
-				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
-					 * (dbl) (q-p) * 1.1 + 1024),	\
-				  BATcapacity(bn) + q - p, BUN_NONE);	\
-			cnt += (TEST);					\
+			if (TEST) {					\
+				buninsfix(bn, dst, cnt, o,		\
+					  (BUN) ((dbl) cnt / (dbl) (p-r) \
+						 * (dbl) (q-p) * 1.1 + 1024), \
+					  BATcapacity(bn) + q - p, BUN_NONE); \
+				cnt++;					\
+			}						\
 			p++;						\
 		}							\
 	} else {							\
@@ -579,11 +581,13 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -595,17 +599,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -617,17 +623,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	}
@@ -661,11 +669,13 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -677,17 +687,19 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -699,17 +711,19 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	}
