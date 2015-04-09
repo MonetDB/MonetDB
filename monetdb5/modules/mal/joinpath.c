@@ -212,7 +212,7 @@ ALGjoinChain(Client cntxt, int top, BAT **joins)
 		oc = *(oid *) BUNtail(iter[0], lo);
 		for(i = 1; i < pcol; i++)
 			if (oc + offset[i] < size[i]) {
-				v = BUNtail(iter[i], oc + offset[i]);
+				v = BUNtail(iter[i], (BUN) (oc + offset[i]));
 				oc = *(oid*) v;
 				if (oc == oid_nil)
 					goto bunins_failed;
@@ -222,7 +222,7 @@ ALGjoinChain(Client cntxt, int top, BAT **joins)
 			continue;
 		// update the join result and keep track of properties
 		if (oc + offset[pcol] < size[pcol]){
-			v = BUNtail(iter[pcol], oc + offset[pcol]);
+			v = BUNtail(iter[pcol], (BUN) (oc + offset[pcol]));
 			bunfastapp(bn,v);
 			cnt++;
 		}
