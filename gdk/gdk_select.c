@@ -716,6 +716,93 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	return cnt;
 }
 
+static BUN
+fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	     int li, int hi, int equi, int anti, int lval, int hval,
+	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	     const oid *candlist, BUN maximum, int use_imprints)
+{
+	var_t pos;
+	BUN p = r;
+	oid o = (oid) (p + off);
+
+	if (!equi || !GDK_ELIMDOUBLES(b->T->vheap))
+		return fullscan_any(b, s, bn, tl, th, li, hi, equi, anti,
+				    lval, hval, r, q, cnt, off, dst,
+				    candlist, maximum, use_imprints);
+	ALGODEBUG fprintf(stderr,
+			  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
+			  "fullscan equi strelim\n", BATgetId(b), BATcount(b),
+			  s ? BATgetId(s) : "NULL",
+			  s && BATtdense(s) ? "(dense)" : "", anti);
+	if ((pos = strLocate(b->T->vheap, tl)) == 0)
+		return 0;
+	assert(pos >= GDK_VAROFFSET);
+	switch (b->T->width) {
+	case 1: {
+		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+	case 2: {
+		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#if SIZEOF_VAR_T == 8
+	case 4: {
+		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#endif
+	default: {
+		const var_t *ptr = (const var_t *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+	}
+	return cnt;
+}
+
 /* scan select type switch */
 #define scan_sel(NAME, CAND, END)		\
 	scanfunc(NAME, bte, CAND, END)		\
@@ -851,6 +938,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			break;
 		case TYPE_lng:
 			cnt = fullscan_lng(scanargs);
+			break;
+		case TYPE_str:
+			cnt = fullscan_str(scanargs);
 			break;
 		default:
 			cnt = fullscan_any(scanargs);
