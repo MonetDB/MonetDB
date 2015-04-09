@@ -945,6 +945,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	nil	NULL	ignored	ignored	false	x = nil (only way to get nil)
  *	nil	NULL	ignored	ignored	true	x != nil
  *	nil	nil	ignored	ignored	false	x != nil
+ *	nil	nil	ignored	ignored	true	NOTHING
  *	nil	v	ignored	false	false	x < v
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
@@ -967,7 +968,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	v	v	true	true	true	x != v
  *	v1	v2	false	false	false	v1 < x < v2
  *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	1	false	v1 < x <= v2
+ *	v1	v2	false	true	false	v1 < x <= v2
  *	v1	v2	true	true	false	v1 <= x <= v2
  *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v1	v2	true	false	true	x < v1 or x >= v2
@@ -989,7 +990,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * li == !anti, hi == !anti, lval == 1, hval == 1
  * This means that all ranges that we check for are closed ranges.  If
  * a range is one-sided, we fill in the minimum resp. maximum value in
- * the domain so that we create a closed ranges. */
+ * the domain so that we create a closed range. */
 #define NORMALIZE(TYPE)							\
 	do {								\
 		if (anti && li) {					\
@@ -1264,33 +1265,34 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	switch (ATOMtype(t)) {
-	case TYPE_bte:
-		NORMALIZE(bte);
-		break;
-	case TYPE_sht:
-		NORMALIZE(sht);
-		break;
-	case TYPE_int:
-		NORMALIZE(int);
-		break;
-	case TYPE_lng:
-		NORMALIZE(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		NORMALIZE(hge);
-		break;
-#endif
-	case TYPE_flt:
-		NORMALIZE(flt);
-		break;
-	case TYPE_dbl:
-		NORMALIZE(dbl);
-		break;
-	case TYPE_oid:
+	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
-		break;
+	} else {
+		switch (t) {
+		case TYPE_bte:
+			NORMALIZE(bte);
+			break;
+		case TYPE_sht:
+			NORMALIZE(sht);
+			break;
+		case TYPE_int:
+			NORMALIZE(int);
+			break;
+		case TYPE_lng:
+			NORMALIZE(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			NORMALIZE(hge);
+			break;
+#endif
+		case TYPE_flt:
+			NORMALIZE(flt);
+			break;
+		case TYPE_dbl:
+			NORMALIZE(dbl);
+			break;
+		}
 	}
 
 	if (b->tsorted || b->trevsorted) {
