@@ -207,8 +207,8 @@ list_find_exp( list *exps, sql_exp *e)
 
 	if (e->type != e_column)
 		return NULL;
-	if ((e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
-	    ((ne=exps_bind_column(exps, e->r, NULL)) != NULL))
+	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
+	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL)) != NULL)))
 		return ne;
 	return NULL;
 }
@@ -1881,6 +1881,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				ne = exps_bind_column2(f->exps, e->l, e->r);
 			if (!ne && !e->l)
 				ne = exps_bind_column(f->exps, e->r, NULL);
+			if (ne && list_position(f->exps, ne) >= list_position(f->exps, one)) 
+				ne = NULL;
 			if (!ne || ne == one) {
 				ne = one;
 				e = oe;
