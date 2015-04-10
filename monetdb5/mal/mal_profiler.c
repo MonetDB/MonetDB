@@ -45,8 +45,7 @@ static struct rusage prevUsage;
 
 #define logadd(...) {														\
 	do {																\
-		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
-		loglen += (int) strlen(logbase+loglen);							\
+		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
 	} while (0);}
 
 static void
@@ -834,10 +833,10 @@ static struct{
 } corestat[256];
 
 static int getCPULoad(char cpuload[BUFSIZ]){
-    int cpu, len, i;
+    int cpu, len = 0, i;
 	lng user, nice, system, idle, iowait;
 	size_t n;
-    char buf[BUFSIZ+1],*s;
+    char buf[BUFSIZ+1], *s;
 	static FILE *proc= NULL;
 	lng newload;
 
@@ -887,20 +886,12 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 
 	if( cpuload == 0)
 		return 0;
-	s= cpuload;
-	len = BUFSIZ;
 	// identify core processing
-	snprintf(s, len, "[ ");
-	len -= (int)strlen(s);
-	s += (int) strlen(s);
+	len += snprintf(cpuload, BUFSIZ, "[ ");
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		snprintf(s, len, " %.2f ",corestat[cpu].load);
-		len -= (int)strlen(s);
-		s += (int) strlen(s);
+		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
 	}
-	snprintf(s, len, "]");
-	len -= (int)strlen(s);
-	s += (int) strlen(s);
+	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
 }
 
@@ -928,11 +919,11 @@ static str getIOactivity(void){
 	//MT_lock_set(&GDKthreadLock, "profiler.io");
 	for (t = GDKthreads, s = t + THREADS; t < s; t++, i++)
 		if (t->pid ){
-			snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
+			(void) snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
 			fd = fopen(fnme,"r");
 			if ( fd == NULL)
 				return buf;
-			snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
+			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
 			if ((n = fread(buf+len, 1, BUFSIZ-len-2,fd)) == 0 )
 				return  buf;
 			// extract the properties
