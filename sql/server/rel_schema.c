@@ -915,8 +915,21 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		if (!sq)
 			return NULL;
 
-		if (!create)
+		if (!create) {
+			if (column_spec) {
+				dnode *n = column_spec->h;
+				node *m = sq->exps->h;
+
+				for (; n && m; n = n->next, m = m->next)
+					;
+				if (n || m) {
+					sql_error(sql, 01, "21S02!WITH CLAUSE: number of columns does not match");
+					rel_destroy(sq);
+					return NULL;
+				}
+			}
 			rel_add_intern(sql, sq);
+		}
 
 		if (create) {
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);

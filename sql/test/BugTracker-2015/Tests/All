@@ -14,3 +14,4 @@ inet-funcs.Bug-3645
 reserved_keywords.Bug-3613
 operator-priority.Bug-3686
 incorrect_result_type.Bug-3687
+with-columns-mismatch.Bug-3697
