@@ -46,6 +46,9 @@
 #  include <time.h>
 # endif
 #endif
+#ifdef NATIVE_WIN32
+#include <direct.h>
+#endif
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -901,10 +904,11 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 	if( cache){
-		mkdir(cache,0755);
 #ifdef NATIVE_WIN32
+		_mkdir(cache);
 		snprintf(buf,BUFSIZ,"%s\\%s_%s.trace",cache,basefilename,dbname);
 #else
+		mkdir(cache,0755);
 		snprintf(buf,BUFSIZ,"%s/%s_%s.trace",cache,basefilename,dbname);
 #endif
 	} else

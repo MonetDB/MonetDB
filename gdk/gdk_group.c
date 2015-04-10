@@ -385,7 +385,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
 	assert(g == NULL || BAThdense(g));
-	assert(g == NULL || BATttype(g) == TYPE_oid);
+	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
 	assert(g == NULL || BATcount(b) == BATcount(g));
 	assert(g == NULL || BATcount(b) == 0 || b->hseqbase == g->hseqbase);
 	/* e is NULL or [oid(dense),oid] */

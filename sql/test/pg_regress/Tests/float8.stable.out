@@ -191,13 +191,6 @@ Ready.
 [ "",	1004.3,	1014.3	]
 [ "",	1.23456789e+200,	1.23456789e+200	]
 [ "",	1.23456789e-200,	10	]
-#SELECT '' AS one, f.f1 ^ '2.0' AS square_f1
-#   FROM FLOAT8_TBL f where f.f1 = '1004.3';
-% .L,	sys.L # table_name
-% one,	square_f1 # name
-% char,	decimal # type
-% 0,	40 # length
-[ "",	1006	]
 #SELECT '' AS five, f.f1, abs(f1) AS abs_f1 
 #   FROM FLOAT8_TBL f;
 % .L,	sys.f,	sys.L # table_name

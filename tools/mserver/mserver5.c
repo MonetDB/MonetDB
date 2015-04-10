@@ -155,23 +155,16 @@ monet_hello(void)
 	printf("# Visit http://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
-	snprintf(monet_characteristics, PATHLENGTH-1, "#{ MonetDBversion:\"%s\", ", VERSION);
-	len = strlen(monet_characteristics);
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "release:\"%s\", ", MONETDB_RELEASE);
-	len = strlen(monet_characteristics);
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "host:\"%s\", ", HOST);
-	len = strlen(monet_characteristics);
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "threads:\"%d\", ", GDKnr_threads);
-	len = strlen(monet_characteristics);
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "memory:\"%.3f %cB\", ", sz_mem_h, qc[qi]);
-	len = strlen(monet_characteristics);
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "oid:\""SZFMT"\", ", sizeof(oid) *8);
-	len = strlen(monet_characteristics);
+	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "#{ MonetDBversion:\"%s\", ", VERSION);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "release:\"%s\", ", MONETDB_RELEASE);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "host:\"%s\", ", HOST);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "threads:\"%d\", ", GDKnr_threads);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "memory:\"%.3f %cB\", ", sz_mem_h, qc[qi]);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "oid:\""SZFMT"\", ", sizeof(oid) *8);
 #ifdef HAVE_HGE
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "huge:\"\"");
-	len = strlen(monet_characteristics);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "huge:\"\"");
 #endif
-	snprintf(monet_characteristics + len, PATHLENGTH-1-len, "}");
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "}");
 }
 
 static str

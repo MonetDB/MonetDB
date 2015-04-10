@@ -426,11 +426,13 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
-			buninsfix(bn, dst, cnt, o,			\
-				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
-					 * (dbl) (q-p) * 1.1 + 1024),	\
-				  BATcapacity(bn) + q - p, BUN_NONE);	\
-			cnt += (TEST);					\
+			if (TEST) {					\
+				buninsfix(bn, dst, cnt, o,		\
+					  (BUN) ((dbl) cnt / (dbl) (p-r) \
+						 * (dbl) (q-p) * 1.1 + 1024), \
+					  BATcapacity(bn) + q - p, BUN_NONE); \
+				cnt++;					\
+			}						\
 			p++;						\
 		}							\
 	} else {							\
@@ -590,11 +592,13 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -606,17 +610,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -628,17 +634,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	}
@@ -672,11 +680,13 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -688,17 +698,19 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -710,19 +722,108 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
+	}
+	return cnt;
+}
+
+static BUN
+fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	     int li, int hi, int equi, int anti, int lval, int hval,
+	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	     const oid *candlist, BUN maximum, int use_imprints)
+{
+	var_t pos;
+	BUN p = r;
+	oid o = (oid) (p + off);
+
+	if (!equi || !GDK_ELIMDOUBLES(b->T->vheap))
+		return fullscan_any(b, s, bn, tl, th, li, hi, equi, anti,
+				    lval, hval, r, q, cnt, off, dst,
+				    candlist, maximum, use_imprints);
+	ALGODEBUG fprintf(stderr,
+			  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
+			  "fullscan equi strelim\n", BATgetId(b), BATcount(b),
+			  s ? BATgetId(s) : "NULL",
+			  s && BATtdense(s) ? "(dense)" : "", anti);
+	if ((pos = strLocate(b->T->vheap, tl)) == 0)
+		return 0;
+	assert(pos >= GDK_VAROFFSET);
+	switch (b->T->width) {
+	case 1: {
+		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+	case 2: {
+		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#if SIZEOF_VAR_T == 8
+	case 4: {
+		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#endif
+	default: {
+		const var_t *ptr = (const var_t *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
 	}
 	return cnt;
 }
@@ -880,6 +981,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			cnt = fullscan_hge(scanargs);
 			break;
 #endif
+		case TYPE_str:
+			cnt = fullscan_str(scanargs);
+			break;
 		default:
 			cnt = fullscan_any(scanargs);
 			break;
@@ -945,6 +1049,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	nil	NULL	ignored	ignored	false	x = nil (only way to get nil)
  *	nil	NULL	ignored	ignored	true	x != nil
  *	nil	nil	ignored	ignored	false	x != nil
+ *	nil	nil	ignored	ignored	true	NOTHING
  *	nil	v	ignored	false	false	x < v
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
@@ -967,7 +1072,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	v	v	true	true	true	x != v
  *	v1	v2	false	false	false	v1 < x < v2
  *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	1	false	v1 < x <= v2
+ *	v1	v2	false	true	false	v1 < x <= v2
  *	v1	v2	true	true	false	v1 <= x <= v2
  *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v1	v2	true	false	true	x < v1 or x >= v2
@@ -989,7 +1094,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * li == !anti, hi == !anti, lval == 1, hval == 1
  * This means that all ranges that we check for are closed ranges.  If
  * a range is one-sided, we fill in the minimum resp. maximum value in
- * the domain so that we create a closed ranges. */
+ * the domain so that we create a closed range. */
 #define NORMALIZE(TYPE)							\
 	do {								\
 		if (anti && li) {					\
@@ -1264,33 +1369,34 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	switch (ATOMtype(t)) {
-	case TYPE_bte:
-		NORMALIZE(bte);
-		break;
-	case TYPE_sht:
-		NORMALIZE(sht);
-		break;
-	case TYPE_int:
-		NORMALIZE(int);
-		break;
-	case TYPE_lng:
-		NORMALIZE(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		NORMALIZE(hge);
-		break;
-#endif
-	case TYPE_flt:
-		NORMALIZE(flt);
-		break;
-	case TYPE_dbl:
-		NORMALIZE(dbl);
-		break;
-	case TYPE_oid:
+	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
-		break;
+	} else {
+		switch (t) {
+		case TYPE_bte:
+			NORMALIZE(bte);
+			break;
+		case TYPE_sht:
+			NORMALIZE(sht);
+			break;
+		case TYPE_int:
+			NORMALIZE(int);
+			break;
+		case TYPE_lng:
+			NORMALIZE(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			NORMALIZE(hge);
+			break;
+#endif
+		case TYPE_flt:
+			NORMALIZE(flt);
+			break;
+		case TYPE_dbl:
+			NORMALIZE(dbl);
+			break;
+		}
 	}
 
 	if (b->tsorted || b->trevsorted) {
