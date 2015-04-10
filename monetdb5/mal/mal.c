@@ -12,6 +12,7 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
+char 	monet_characteristics[PATHLENGTH];
 char *mal_trace;		/* enable profile events on console */
 
 #include "mal_stack.h"

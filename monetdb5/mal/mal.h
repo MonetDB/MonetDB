@@ -42,6 +42,7 @@
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
+mal_export char 	monet_characteristics[PATHLENGTH];
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 mal_export char		*mal_trace;		/* enable profile events on console */
@@ -170,10 +171,12 @@ typedef struct {
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
-	lng ticks;					/* total micro seconds spent */
+	struct timeval clock;		/* when the last call was started */
+	lng ticks;					/* total micro seconds spent in last call */
 	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
-	lng rbytes,wbytes;			/* accumulated number of bytes touched */
+	lng rbytes;					/* accumulated number of bytes read, currently ignored */
+	lng wbytes;					/* accumulated number of bytes produced */
 	/* the core admin */
 	str modname;				/* module context */
 	str fcnname;				/* function name */

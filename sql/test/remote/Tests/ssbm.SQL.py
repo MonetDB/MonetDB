@@ -87,7 +87,7 @@ def freeport():
     return port
 
 ssbmdatapath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests/SF-0.01')
-tmpdir = os.path.join(os.environ['TMPDIR'], 'remotetest')
+tmpdir = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'remotetest')
 os.system('rm -rf ' + tmpdir)
 os.system('mkdir -p ' + tmpdir)
 

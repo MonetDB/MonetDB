@@ -333,13 +333,11 @@ Dependencies between database objects
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
 [ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
@@ -381,9 +379,8 @@ Dependencies between database objects
 % sys.f,	sys.tri,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 6,	12,	11 # length
+% 5,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 #SELECT k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id;
 % sys.k,	sys.fk,	.L # table_name
@@ -451,13 +448,11 @@ Dependencies between functions with same name
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
 [ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
@@ -514,13 +509,11 @@ Dependencies between functions with same name
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "=",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
@@ -809,8 +802,6 @@ Cleanup
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
 [ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]

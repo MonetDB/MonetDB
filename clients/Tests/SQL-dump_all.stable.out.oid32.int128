@@ -6072,7 +6072,7 @@ CREATE TABLE "sys"."dependencies" (
 	"depend_id"   INTEGER,
 	"depend_type" SMALLINT
 );
-COPY 231 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 229 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
 417	5722	7
 418	5722	7
 1023	5722	7
@@ -6105,7 +6105,6 @@ COPY 231 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 2090	6020	7
 2083	6020	7
 2079	6020	7
-36	6020	7
 5654	6025	7
 2047	6025	7
 2046	6025	7
@@ -6158,7 +6157,6 @@ COPY 231 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 2103	6050	7
 2102	6050	7
 2104	6050	7
-36	6050	7
 33	6050	7
 32	6050	7
 34	6050	7
@@ -7593,7 +7591,7 @@ COPY 1518 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5944	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog() \n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20), \t-- wallclock, no mtime in kernel\n\t\tpc varchar(50), \t-- module.function[nr]\n\t\tthread int, \t\t-- thread identifier\n\t\tticks bigint, \t\t-- time in microseconds\n\t\trrsmb bigint, \t\t-- resident memory in MB\n\t\tvmmb bigint, \t\t-- virtual size in MB\n\t\treads bigint, \t\t-- number of blocks read\n\t\twrites bigint, \t\t-- number of blocks written\n\t\tminflt bigint, \t\t-- minor page faults\n\t\tmajflt bigint, \t\t-- major page faults\n\t\tnvcsw bigint, \t\t-- non-volantary conext switch\n\t\tstmt string\t\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
 5974	"profiler_openstream"	"create procedure profiler_openstream(host string, port int) external name profiler.""openStream"";"	"profiler"	1	2	true	false	false	2000
 5978	"profiler_stethoscope"	"create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;"	"profiler"	1	2	true	false	false	2000
-5981	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function ""epoch""(sec bigint) returns timestamp\n    external name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5981	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function ""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5985	"epoch"	"create function ""epoch""(sec int) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5989	"epoch"	"create function ""epoch""(ts timestamp) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5993	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000

@@ -1675,15 +1675,16 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 }
 
 BUN
-void_replace_bat(BAT *b, BAT *u, bit force)
+void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 {
 	BUN nr = 0;
 	BUN r, s;
-	BATiter ui = bat_iterator(u);
+	BATiter uii = bat_iterator(p);
+	BATiter uvi = bat_iterator(u);
 
 	BATloop(u, r, s) {
-		oid updid = *(oid *) BUNhead(ui, r);
-		const void *val = BUNtail(ui, r);
+		oid updid = *(oid *) BUNtail(uii, r);
+		const void *val = BUNtail(uvi, r);
 
 		if (void_inplace(b, updid, val, force) == GDK_FAIL)
 			return BUN_NONE;

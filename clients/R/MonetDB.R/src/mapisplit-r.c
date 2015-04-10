@@ -1,19 +1,17 @@
 #include <assert.h>
-
 #include <R.h>
 #include <Rdefines.h>
-
-void mapi_line_split(char* line, char** out, size_t ncols);
+#include "mapisplit.h"
 
 char nullstr[] = "NULL";
-SEXP mapi_split(SEXP mapiLinesVector, SEXP numCols) {
-	assert(TYPEOF(mapiLinesVector) == CHARSXP);
 
+SEXP mapi_split(SEXP mapiLinesVector, SEXP numCols) {
 	int cols = INTEGER_POINTER(AS_INTEGER(numCols))[0];
 	int rows = LENGTH(mapiLinesVector);
 
-	assert(rows > 0);
-	assert(cols > 0);
+	if (!IS_CHARACTER(mapiLinesVector) || rows < 1 || cols < 1) {
+		error("Invalid input to mapi_split: type=%d, rows=%d, cols=%d", TYPEOF(mapiLinesVector), rows, cols);
+	}
 
 	SEXP colVec;
 	PROTECT(colVec = NEW_LIST(cols));

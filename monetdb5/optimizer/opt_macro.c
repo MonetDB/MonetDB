@@ -550,7 +550,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return msg;
 	if( mb->errors == 0)
 		actions= OPTmacroImplementation(cntxt,mb,stk,p);
-    return optimizerCheck(cntxt,mb, "optimizer.macro", actions, GDKusec() - clk, OPT_CHECK_ALL);
+    return optimizerCheck(cntxt,mb, "optimizer.macro", actions, GDKusec() - clk);
 }
 
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -578,5 +578,5 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return msg;
 	if( mb->errors == 0)
 		actions= OPTorcamImplementation(cntxt,mb,stk,p);
-    return optimizerCheck(cntxt,mb, "optimizer.orcam", actions, GDKusec() - clk, OPT_CHECK_ALL);
+    return optimizerCheck(cntxt,mb, "optimizer.orcam", actions, GDKusec() - clk);
 }

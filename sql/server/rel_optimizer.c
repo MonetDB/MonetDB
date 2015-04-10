@@ -77,6 +77,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 					return c;
 			}
 		}
+		if (t->idxs.set)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_idx *c = cn->data;
 			if (strcmp(c->base.name, name+1 /* skip % */) == 0) {
@@ -3329,8 +3330,18 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	sql_rel *r = NULL;
 	node *n;
 
-	if (rel_is_ref(rel))
+	if (rel_is_ref(rel)) {
+		if (is_select(rel->op) && rel->exps) {
+			/* add inplace empty select */
+			sql_rel *l = rel_select(sql->sa, rel->l, NULL);
+
+			l->exps = rel->exps;
+			rel->exps = NULL;
+			rel->l = l;
+			(*changes)++;
+		}
 		return rel;
+	}
 
 	/* don't make changes for empty selects */
 	if (is_select(rel->op) && (!rel->exps || list_length(rel->exps) == 0)) 
@@ -3498,7 +3509,7 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 	r = rel->l;
 
 	/* push select through join */
-	if (is_select(rel->op) && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && exps && r && r->op == op_join && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(sql->sa); 
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data;
@@ -5745,6 +5756,87 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (is_select(rel->op) && rel->exps) {
+		node *n;
+		list *exps = sa_list(sql->sa);
+			
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
+				sql_exp *l = e->l;
+				sql_exp *r = e->r;
+
+				if (l->type == e_func) {
+					sql_subfunc *f = l->f;
+					
+					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
+					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					     is_atom(r->type) && r->l) { /* direct literal */
+						atom *a = r->l;
+						int flag = a->data.val.bval;
+						list *args = l->l;
+
+						assert(list_length(args) == 1);
+						l = args->h->data;
+						r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
+						e = exp_compare(sql->sa, l, r, (flag)?cmp_equal:cmp_notequal);
+					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
+						if (is_atom(r->type) && r->l) { /* direct literal */
+							atom *a = r->l;
+							list *args = l->l;
+							sql_exp *inner = args->h->data;
+							sql_subfunc *inf = inner->f;
+
+							assert(list_length(args) == 1);
+
+							/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
+							if (inner->type == e_func && 
+							    !inf->func->s && 
+							    !strcmp(inf->func->base.name, "not")) {
+								args = inner->l;
+
+								assert(list_length(args) == 1);
+								l = args->h->data;
+								e = exp_compare(sql->sa, l, r, e->flag);
+							/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
+							} else if (inner->type == e_func && 
+							    !inf->func->s && 
+							    (!strcmp(inf->func->base.name, "=") ||
+							     !strcmp(inf->func->base.name, "<>"))) {
+								int flag = a->data.val.bval;
+								args = inner->l;
+
+								if (!strcmp(inf->func->base.name, "<>"))
+									flag = !flag;
+								assert(list_length(args) == 2);
+								l = args->h->data;
+								r = args->h->next->data;
+								e = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+							} else if (a && a->data.vtype == TYPE_bit) {
+								/* change atom's value on right */
+								l = args->h->data;
+								a->data.val.bval = !a->data.val.bval;
+								e = exp_compare(sql->sa, l, r, e->flag);
+								(*changes)++;
+							}
+						}
+					}
+				}
+				list_append(exps, e);
+			} else {
+				list_append(exps, e);
+			}
+		}
+		rel->exps = exps;
+	}
+	return rel;
+}
+
+
 static list *
 exp_merge_range(sql_allocator *sa, list *exps)
 {
@@ -7283,6 +7375,9 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
 
+	if (gp.cnt[op_select] && level <= 0)
+		rel = rewrite(sql, rel, &rel_simplify_predicates, &changes); 
+
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten 
 	 *
@@ -7416,7 +7511,6 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (changes || level == 0)
 		return _rel_optimizer(sql, rel, ++level);
 
-	/* optimize */
 	return rel;
 }
 

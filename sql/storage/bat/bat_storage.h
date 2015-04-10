@@ -17,7 +17,8 @@ typedef struct sql_delta {
 	int bid;
 	oid ibase;		/* ibase: first id of inserts */
 	int ibid;		/* bat with inserts */
-	int ubid;		/* bat with updates */
+	int uibid;		/* bat with updates */
+	int uvbid;		/* bat with updates */
 	size_t cnt;		/* number of tuples (excluding the deletes) */
 	size_t ucnt;		/* number of updates */
 	BAT *cached;		/* cached copy, used for schema bats only */

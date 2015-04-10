@@ -111,6 +111,10 @@ stderr of test '01-22` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # 12:45:27 >  
 
 
+# 17:25:22 >  
+# 17:25:22 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-22501 --port=33414 < /net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin/sql/benchmarks/tpch/LOCKED/../21.sql
+# 17:25:22 >  
+
 # 12:45:27 >  
 # 12:45:27 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=55567 --trace
 # 12:45:27 >  

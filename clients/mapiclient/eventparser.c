@@ -17,6 +17,7 @@ int malargtop;
 char *malvariables[MAXMALARGS];
 int malvartop;
 int debug;
+char *monet_characteristics;
 
 void
 clearArguments(void)
@@ -37,12 +38,14 @@ parseArguments(char *call)
 {
 	int i;
 	char  *c = call, *l, ch;
-	char *v;
+	char *v, *w;
 	
 	malargtop = 0;
 	malvartop = 0;
 	if( debug)
-		fprintf(stderr,"call:%s\n",call);
+		fprintf(stderr,"%s\n",call);
+	memset(malarguments, 0, sizeof(malarguments));
+	memset(malvariables, 0, sizeof(malvariables));
 	for( ; c && *c && malargtop < MAXMALARGS;  c++){
 		if (*c ==')')
 			break;
@@ -68,6 +71,8 @@ parseArguments(char *call)
 			*l= 0;
 			malarguments[malargtop++] = strdup(c);
 			c= l+1;
+			// we could find a type descriptor here, which we skip
+			while( *c && *c !=',' && *c !=')') c++;
 		} else if(*c) {
 			l = strchr(c, ch = ',');
 			if( l == 0){
@@ -75,6 +80,9 @@ parseArguments(char *call)
 				break;
 				}
 			*l=0;
+			// we could find a type descriptor as well, which we skip
+			w= strchr(c,':');
+			if( w) *w = 0;
 			malarguments[malargtop++] = strdup(c);
 			*l=ch;
 			c= l;
@@ -98,8 +106,11 @@ eventparser(char *row, EventRecord *ev)
 	struct tm stm;
 
 	/* check basic validaty first */
-	if (row[0] =='#')
+	if (row[0] =='#'){
+		if( row[1] =='{')
+			monet_characteristics = strdup(row+1);
 		return 0;
+	}
 	if (row[0] != '[')
 		return -1;
 	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
@@ -193,11 +204,11 @@ eventparser(char *row, EventRecord *ev)
 		return -7;
 	ev->memory = strtoll(c + 1, NULL, 10);
 
-	/* scan vmMB */
+	/* scan tmpMB */
 	c = strchr(c + 1, ',');
 	if (c == 0)
 		return -8;
-	ev->vmmemory = strtoll(c + 1, NULL, 10);
+	ev->tmpspace = strtoll(c + 1, NULL, 10);
 
 #ifdef NUMAPROFILING
 	for(; *c && *c !='"'; c++) ;

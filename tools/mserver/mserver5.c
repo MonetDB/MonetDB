@@ -104,6 +104,9 @@ usage(char *prog, int xit)
 	exit(xit);
 }
 
+/*
+ * Collect some global system properties to relate performance results later
+ */
 static void
 monet_hello(void)
 {
@@ -112,10 +115,10 @@ monet_hello(void)
 #else
 	char *linkinfo = "dynamically";
 #endif
-
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
+	size_t len;
 
 	monet_memory = MT_npages() * MT_pagesize();
 	sz_mem_h = (dbl) monet_memory;
@@ -150,6 +153,18 @@ monet_hello(void)
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
 	printf("# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved\n");
 	printf("# Visit http://www.monetdb.org/ for further information\n");
+
+	// The properties shipped through the performance profiler
+	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "#{ MonetDBversion:\"%s\", ", VERSION);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "release:\"%s\", ", MONETDB_RELEASE);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "host:\"%s\", ", HOST);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "threads:\"%d\", ", GDKnr_threads);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "memory:\"%.3f %cB\", ", sz_mem_h, qc[qi]);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "oid:\""SZFMT"\", ", sizeof(oid) *8);
+#ifdef HAVE_HGE
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "huge:\"\"");
+#endif
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "}");
 }
 
 static str

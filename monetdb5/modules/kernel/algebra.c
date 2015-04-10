@@ -1792,55 +1792,6 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 	return msg;
 }
 
-str
-ALGprojectNIL(bat *ret, const bat *bid)
-{
-    BAT *b, *bn;
-
-    if ((b = BATdescriptor(*bid)) == NULL) {
-        throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-    }
-
-    bn = BATconst(b, TYPE_void, (ptr) &oid_nil, TRANSIENT);
-    if (bn) {
-        *ret = bn->batCacheid;
-        BBPkeepref(bn->batCacheid);
-		BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
-    }
-    BBPunfix(b->batCacheid);
-    throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
-}
-
-/*
- * The constant versions are typed by the parser
- */
-str
-ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *ret = getArgReference_bat(stk, pci, 0);
-	const ValRecord *v = &stk->stk[getArg(pci, 1)];
-	bat bid = * getArgReference_bat(stk, pci, 2);
-	BAT *b, *bn;
-
-	(void) cntxt;
-	(void) mb;
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	b = BATmirror(b);
-	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
-	if (bn == NULL) {
-		*ret = bat_nil;
-		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
-	}
-	bn = BATmirror(bn);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
-	*ret= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 str
 ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1852,6 +1803,8 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if( isaBatType(getArgType(mb,pci,2)) )
+		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);

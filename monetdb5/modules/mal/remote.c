@@ -74,8 +74,8 @@ static unsigned char localtype = 0;
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
-#define newColumn(Var,Type,Tag)							\
-	Var = BATnew(TYPE_void, Type, 0, TRANSIENT);		\
+#define newColumn(Var,Type,sz,Tag)							\
+	Var = BATnew(TYPE_void, Type, sz, TRANSIENT);		\
 	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);	\
 	BATseqbase(Var,0);
 
@@ -104,7 +104,7 @@ str RMTresolve(bat *ret, str *pat) {
 		throw(MAL, "remote.resolve", "this function needs the mserver "
 				"have been started by merovingian");
 
-	newColumn(list, TYPE_str, "remote.resolve");
+	newColumn(list, TYPE_str, 0, "remote.resolve");
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
@@ -523,7 +523,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return var;
 		}
 		t = getColumnType(rtype);
-		newColumn(b,t,"remote.get");
+		newColumn(b, t, 0, "remote.get");
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
@@ -954,17 +954,14 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int s;
 	BAT *b;
 	size_t len;
-	//size_t pos;
 	char *var;
-	//bit escaped = 0, instr = 0;
 	bstream *fdin = cntxt->fdin;
 
 	v = &stk->stk[pci->argv[0]]; /* return */
 	t = getArgType(mb, pci, 1); /* tail type */
 	size = *getArgReference_int(stk, pci, 2); /* size */
 
-	newColumn(b,t,"remote.load");
-	BATextend(b,size);
+	newColumn(b, t, size, "remote.load");
 
 	/* grab the input stream and start reading */
 	fdin->eof = 0;
@@ -1168,7 +1165,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		hdr++;
 	}
 
-	newColumn(b, bb.Ttype,"remote.get");
+	newColumn(b, bb.Ttype, bb.size, "remote.get");
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */

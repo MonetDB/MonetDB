@@ -442,7 +442,8 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 		/* same scale as the input */
 		if (member && (member->scale != scale ||
 			(digits != member->digits && !EC_NUMBER(member->type->eclass)))) {
-			digits = member->digits;
+			if (member->digits > digits)
+				digits = member->digits;
 			scale = member->scale;
 		}
 		/* same type as the input */
@@ -1618,7 +1619,7 @@ sqltypeinit( sql_allocator *sa)
 				sres, FALSE, F_FUNC, SCALE_FIX);
 	}
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, TABLE, 0, 0), ARG_OUT); 
-	/* copyfrom fname (arg 6) */
+	/* copyfrom fname (arg 8) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
 	 	list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
