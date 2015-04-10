@@ -1653,7 +1653,6 @@ static list *
 sum_limit_offset(mvc *sql, list *exps )
 {
 	list *nexps = new_exp_list(sql->sa);
-	node *n;
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subfunc *add;
 
@@ -1661,8 +1660,6 @@ sum_limit_offset(mvc *sql, list *exps )
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	for (n = exps->h; n; n = n->next ) 
-		nexps = append(nexps, n->data);
 	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
 	return append(nexps, exp_op(sql->sa, exps, add));
 }
