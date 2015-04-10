@@ -17,3 +17,4 @@ incorrect_result_type.Bug-3687
 with-columns-mismatch.Bug-3697
 find_fk.Bug-3690
 is_null_limit.Bug-3684
+inf-nan-handling.Bug-3696
