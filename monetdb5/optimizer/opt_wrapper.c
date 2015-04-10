@@ -154,7 +154,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 	}
 
-	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk));
 	OPTIMIZERDEBUG {
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );

@@ -1317,7 +1317,7 @@ gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
 
 gdk_export gdk_return BUNreplace(BAT *b, const void *left, const void *right, bit force);
 gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
-gdk_export gdk_return BATreplace(BAT *b, BAT *n, bit force);
+gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
@@ -2498,7 +2498,7 @@ __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ cons
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
+gdk_export BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force);
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force);
 gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 

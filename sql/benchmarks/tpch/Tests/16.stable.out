@@ -55,8 +55,8 @@ Ready.
 #	p_size;
 % sys.part,	sys.part,	sys.part,	sys.L4 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
-% varchar,	varchar,	int,	wrd # type
-% 8,	25,	2,	1 # length
+% char,	varchar,	int,	wrd # type
+% 10,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]

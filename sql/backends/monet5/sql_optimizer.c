@@ -209,7 +209,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		}
 	}
 	GDKfree(old);
-	msg = optimizerCheck(cntxt, mb, "optimizer.SQLgetstatistics", actions, GDKusec() - clk, 0);
+	msg = optimizerCheck(cntxt, mb, "optimizer.SQLgetstatistics", actions, GDKusec() - clk);
 	if (msg)		/* what to do with an error? */
 		GDKfree(msg);
 }
@@ -303,7 +303,7 @@ addQueryToCache(Client c)
 
 	/* time to execute the optimizers */
 	if (c->debug)
-		optimizerCheck(c, mb, "sql.baseline", -1, 0, OPT_CHECK_ALL);
+		optimizerCheck(c, mb, "sql.baseline", -1, 0);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);

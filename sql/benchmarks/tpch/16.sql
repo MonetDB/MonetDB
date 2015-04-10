@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	p_brand,
 	p_type,

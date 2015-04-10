@@ -135,7 +135,8 @@ typedef enum comp_type {
 	cmp_project = 11,		/* special case for projection joins */
 	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
 	cmp_joined = 13, 		/* special case already joined */
-	cmp_equal_nil = 14 		/* special case equi join, with nil = nil */
+	cmp_equal_nil = 14, 		/* special case equi join, with nil = nil */
+	cmp_left			/* special case equi join, keep left order */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */

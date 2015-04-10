@@ -1,0 +1,183 @@
+stdout of test 'joinchain` in directory 'monetdb5/optimizer` itself:
+
+
+# 11:09:37 >  
+# 11:09:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34830" "--set" "mapi_usock=/var/tmp/mtest-29121/.s.monetdb.34830" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_optimizer" "joinchain.mal"
+# 11:09:37 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34830/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29121/.s.monetdb.34830
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.qry():void;
+    empty := bat.new(:oid,:oid);
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    d := bat.new(:oid,:str);
+    k := bat.new(:oid,:int);
+    bat.append(a,0@0);
+    bat.append(a,3@0);
+    bat.append(b,0@0);
+    bat.append(b,1@0);
+    bat.append(b,2@0);
+    bat.append(b,3@0);
+    bat.append(b,4@0);
+    bat.append(c,0@0);
+    bat.append(c,1@0);
+    bat.append(c,2@0);
+    bat.append(c,4@0);
+    bat.append(c,5@0);
+    bat.append(d,"The");
+    bat.append(d,"quick");
+    bat.append(d,"brown");
+    bat.append(d,"fox");
+    bat.append(d,"jumps");
+    bat.append(d,"over");
+    bat.append(d,"the");
+    bat.append(d,"lazy");
+    bat.append(d,"dog");
+    bat.append(k,1);
+    bat.append(k,2);
+    bat.append(k,3);
+    bat.append(k,4);
+    bat.append(k,5);
+    bat.append(k,6);
+    bat.append(k,7);
+    bat.append(k,8);
+    bat.append(k,9);
+    e := algebra.leftfetchjoin(a,b);
+    f := algebra.leftfetchjoin(e,c);
+    g := algebra.leftfetchjoin(f,d);
+    l := algebra.leftfetchjoin(f,k);
+    io.print(g);
+    io.print(l);
+    h := algebra.leftfetchjoinPath(c,d);
+    io.print(h);
+    i := algebra.leftfetchjoinPath(b,c,d);
+    io.print(i);
+    j := algebra.leftfetchjoinPath(a,b,c,d);
+    io.print(j);
+    io.print("empty sequences");
+    w := algebra.leftfetchjoinPath(empty,c,d);
+    io.print(w);
+    w := algebra.leftfetchjoinPath(c,empty,d);
+    io.print(w);
+end user.qry;
+function user.main():void;
+    mdb.list("user","qry");
+    user.qry();
+end user.main;
+function user.qry():void;
+    empty := bat.new(:oid,:oid);
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    d := bat.new(:oid,:str);
+    k := bat.new(:oid,:int);
+    bat.append(a,0@0);
+    bat.append(a,3@0);
+    bat.append(b,0@0);
+    bat.append(b,1@0);
+    bat.append(b,2@0);
+    bat.append(b,3@0);
+    bat.append(b,4@0);
+    bat.append(c,0@0);
+    bat.append(c,1@0);
+    bat.append(c,2@0);
+    bat.append(c,4@0);
+    bat.append(c,5@0);
+    bat.append(d,"The");
+    bat.append(d,"quick");
+    bat.append(d,"brown");
+    bat.append(d,"fox");
+    bat.append(d,"jumps");
+    bat.append(d,"over");
+    bat.append(d,"the");
+    bat.append(d,"lazy");
+    bat.append(d,"dog");
+    bat.append(k,1);
+    bat.append(k,2);
+    bat.append(k,3);
+    bat.append(k,4);
+    bat.append(k,5);
+    bat.append(k,6);
+    bat.append(k,7);
+    bat.append(k,8);
+    bat.append(k,9);
+    e := algebra.leftfetchjoin(a,b);
+    f:bat[:oid,:oid] := algebra.leftfetchjoinPath(a,b,c);
+    g := algebra.leftfetchjoin(f,d);
+    l := algebra.leftfetchjoin(f,k);
+    io.print(g);
+    io.print(l);
+    h := algebra.leftfetchjoinPath(c,d);
+    io.print(h);
+    i := algebra.leftfetchjoinPath(b,c,d);
+    io.print(i);
+    j := algebra.leftfetchjoinPath(a,b,c,d);
+    io.print(j);
+    io.print("empty sequences");
+    w := algebra.leftfetchjoinPath(empty,c,d);
+    io.print(w);
+    w := algebra.leftfetchjoinPath(c,empty,d);
+    io.print(w);
+end user.qry;
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"The"  ]
+[ 1@0,	"jumps"  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	5  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"The"  ]
+[ 1@0,	"quick"  ]
+[ 2@0,	"brown"  ]
+[ 3@0,	"jumps"  ]
+[ 4@0,	"over"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"The"  ]
+[ 1@0,	"quick"  ]
+[ 2@0,	"brown"  ]
+[ 3@0,	"jumps"  ]
+[ 4@0,	"over"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"The"  ]
+[ 1@0,	"jumps"  ]
+[ "empty sequences" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+
+# 11:09:37 >  
+# 11:09:37 >  "Done."
+# 11:09:37 >  
+

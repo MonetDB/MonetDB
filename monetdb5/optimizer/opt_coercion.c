@@ -70,18 +70,18 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
-		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", getArg(p,1));
+		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", varid);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
-			getArg(p,1)= varid;
+			getArg(p,1) = varid;
 	}
 	varid = getArg(p,2);
 	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
-		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", getArg(p,2));
+		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", varid);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		getArg(p,2) = coerce[varid].src;
@@ -110,7 +110,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	r = getColumnType(getVarType(mb, getArg(p,0)));
 	k = getArg(p,1);
 	if( r == TYPE_dbl &&  coerce[k].src ){
-		getArg(p,1) = coerce[getArg(p,1)].src;
+		getArg(p,1) = coerce[k].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,1)= k;
 	}

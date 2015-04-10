@@ -631,6 +631,20 @@ exp_match( sql_exp *e1, sql_exp *e2)
 			return 0;
 		return 1;
 	}
+	if (e1->type == e2->type && e1->type == e_func) {
+		if (is_identity(e1, NULL) && is_identity(e2, NULL)) {
+			list *args1 = e1->l;
+			list *args2 = e2->l;
+			
+			if (list_length(args1) == list_length(args2) && list_length(args1) == 1) {
+				sql_exp *ne1 = args1->h->data;
+				sql_exp *ne2 = args2->h->data;
+
+				if (exp_match(ne1,ne2))
+					return 1;
+			}
+		}
+	}
 	return 0;
 }
 

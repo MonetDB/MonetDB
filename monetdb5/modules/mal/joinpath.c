@@ -150,7 +150,98 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 	return cost;
 }
 
-BAT *
+/*
+ * The joinChain assumes a list of OID columns ending in a projection column.
+ * It is built from leftfetchjoin operations, which allows for easy chaining.
+ * No intermediates are needed and not multistep cost-based evaluation
+ */
+
+#define MAXCHAINDEPTH 256
+
+static BAT *
+ALGjoinChain(Client cntxt, int top, BAT **joins)
+{
+	BAT *bn = NULL;
+	oid lo, hi, oc;
+	BATiter iter[MAXCHAINDEPTH];
+	int i, pcol= top -1, td = 1, ts = 1;
+	BUN cnt=0, cap=0, empty=0, size[MAXCHAINDEPTH];
+       	ssize_t offset[MAXCHAINDEPTH]; 
+	const void *v;
+
+	//#undef ALGODEBUG
+	//#define ALGODEBUG if(1)
+	(void) cntxt;
+
+	for ( i =0; i< top ; i++){
+		if( (cnt  = BATcount(joins[i]) ) > cap)
+			cap = BATcount(joins[i]);
+		empty += cnt == 0;
+		iter[i] = bat_iterator(joins[i]);
+		size[i] = BATcount(joins[i]);
+		offset[i] = BUNfirst(joins[i])-joins[i]->hseqbase;
+		ALGODEBUG {
+			mnstr_printf(cntxt->fdout,"#%d types [%d, %d] "BUNFMT" "SSZFMT" \n",i,  joins[i]->htype, joins[i]->ttype, size[i], offset[i]);
+		}
+		if (i<(top-1))
+			td &= joins[i]->tdense;
+		if (i<(top-1))
+			ts &= joins[i]->tsorted;
+	}
+
+	bn = BATnew( TYPE_void, joins[pcol]->ttype?joins[pcol]->ttype:TYPE_oid, cap, TRANSIENT);
+	if( bn == NULL){
+		GDKerror("joinChain" MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	/* be optimistic, inherit the properties  */
+	BATsettrivprop(bn);
+	BATseqbase(bn, 0);
+	if (empty)
+		return bn;
+
+	bn->tkey = td&&joins[pcol]->tkey;
+	bn->tdense = 0;
+	bn->tsorted = ts&&joins[pcol]->tsorted;
+	bn->trevsorted = 0;
+	bn->T->nil = 0;
+	bn->T->nonil = joins[pcol]->T->nonil;
+
+	cnt = 0;
+	for (lo = 0, hi = lo + BATcount(joins[0]); lo < hi; lo++) {
+		oc = *(oid *) BUNtail(iter[0], lo);
+		for(i = 1; i < pcol; i++)
+			if (oc + offset[i] < size[i]) {
+				v = BUNtail(iter[i], oc + offset[i]);
+				oc = *(oid*) v;
+				if (oc == oid_nil)
+					goto bunins_failed;
+			}
+
+		if (i != pcol)
+			continue;
+		// update the join result and keep track of properties
+		if (oc + offset[pcol] < size[pcol]){
+			v = BUNtail(iter[pcol], oc + offset[pcol]);
+			bunfastapp(bn,v);
+			cnt++;
+		}
+		bunins_failed:
+		;
+	}
+    	BATsetcount(bn, cnt);
+	bn->hrevsorted = (BATcount(bn) <=1);
+
+	// release the chain 
+	for ( i =0; i< top ; i++)
+		BBPunfix(joins[i]->batCacheid);
+		
+	if (bn && !(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
+
+	return bn;
+}
+
+static BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 {
 	BAT *b = NULL;
@@ -163,6 +254,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		GDKerror("joinPathBody" MAL_MALLOC_FAIL);
 		return NULL;
 	}
+
 
 	/* solve the join by pairing the smallest first */
 	while (top > 1) {
@@ -195,16 +287,19 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		case 0:
 			if ( j == 0) {
 				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
+				ALGODEBUG{
+					mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+				}
 				break;
 			}
-		case 1:
-			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-			break;
-		case 2:
-			b = BATsemijoin(joins[j], joins[j + 1]);
-			break;
+        case 1:
+            b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
+            break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
+			ALGODEBUG{
+				mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+			}
 			break;
 		}
 		if (b==NULL){
@@ -267,15 +362,14 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 str
 ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,top=0;
+	int i,top=0, chain = 1, empty = 0;
 	bat *bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	int error = 0;
-	str joinPathRef = putName("joinPath",8);
-	str semijoinPathRef = putName("semijoinPath",12);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 
+	assert(pci->argc > 1);
 	if ( joins == NULL)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);
 	(void)mb;
@@ -296,24 +390,36 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(joins);
 			throw(MAL, "algebra.joinPath", "%s", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}
+		empty += BATcount(b) == 0;
 		joins[top++] = b;
 	}
+	/* detect easy left-right oid chain joins */
+	chain = BATcount(joins[0]) < BATcount(joins[top-1]) && top < MAXCHAINDEPTH;
+	chain = 0; // disabled for the moment, because it is not robust yet
+
 	ALGODEBUG{
 		char *ps;
-		ps = instruction2str(mb, 0, pci, 0);
-		fprintf(stderr,"#joinpath %s\n", ps ? ps : "");
+		ps = instruction2str(mb, 0, pci, LIST_MAL_ALL);
+		fprintf(stderr,"#joinpath [%s] %s\n", (ps ? ps : ""), chain?"chain":"diverse");
 		GDKfree(ps);
 	}
-	if ( getFunctionId(pci) == joinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 1);
-	else
-	if ( getFunctionId(pci) == leftjoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 0); 
-	else
-	if ( getFunctionId(pci) == semijoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 2);
-	else
-		b= ALGjoinPathBody(cntxt,top,joins, 3); 
+	if ( empty){
+		// any empty step produces an empty result
+		b = BATnew( TYPE_void, joins[top-1]->ttype, 0, TRANSIENT);
+		if( b == NULL){
+			GDKerror("joinChain" MAL_MALLOC_FAIL);
+			return NULL;
+		}
+		/* be optimistic, inherit the properties  */
+		BATseqbase(b,0);
+		BATsettrivprop(b);
+	} else if (getFunctionId(pci) == leftjoinPathRef) {
+		b = ALGjoinPathBody(cntxt,top,joins, 0); 
+	} else if (chain && top < MAXCHAINDEPTH) {
+		b = ALGjoinChain(cntxt,top,joins); 
+	} else {
+		b = ALGjoinPathBody(cntxt,top,joins, 3); 
+	}
 
 	GDKfree(joins);
 	if ( b)

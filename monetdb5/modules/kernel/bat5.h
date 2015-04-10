@@ -43,9 +43,9 @@ bat5_export str BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u
 bat5_export str BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force);
 bat5_export str BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force);
 bat5_export str BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t);
-bat5_export str BKCbat_inplace(bat *r, const bat *bid, const bat *rid);
+bat5_export str BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid);
 bat5_export str BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const bit *force);
-bat5_export str BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bit *force);
+bat5_export str BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, const bit *force);
 bat5_export str BKCgetCapacity(lng *res, const bat *bid);
 bat5_export str BKCgetHeadType(str *res, const bat *bid);
 bat5_export str BKCgetColumnType(str *res, const bat *bid);

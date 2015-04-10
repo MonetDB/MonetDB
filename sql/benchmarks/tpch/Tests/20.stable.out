@@ -20,8 +20,8 @@ Ready.
 
 % sys.supplier,	sys.supplier # table_name
 % s_name,	s_address # name
-% varchar,	varchar # type
-% 18,	30 # length
+% char,	varchar # type
+% 25,	30 # length
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
 % .stats,	.stats # table_name
 % rewrite,	count # name

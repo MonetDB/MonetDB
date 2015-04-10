@@ -893,9 +893,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
+	if (bn->batCount == 1 || bn->batCount == b->batCount)
+		bn->tseqbase = b->hseqbase;
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
@@ -1485,15 +1485,28 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
+	parent = VIEWtparent(b);
+	/* use hash only for equi-join, and then only if b or its
+	 * parent already has a hash, or if b or its parent is
+	 * persistent and the total size wouldn't be too large; check
+	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		(b->batPersistence == PERSISTENT ||
-		 ((parent = VIEWtparent(b)) != 0 &&
-		  BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
-		(size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
-		BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
-	if (hash && estimate == BUN_NONE && !BATcheckhash(b)) {
+		(((b->batPersistence == PERSISTENT ||
+		  (parent != 0 &&
+		   BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
+		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
+		 (BATcheckhash(b) ||
+		  (parent != 0 &&
+		   BATcheckhash(BBPdescriptor(-parent)))));
+	if (hash &&
+	    estimate == BUN_NONE &&
+	    !BATcheckhash(b) &&
+	    (parent == 0 || !BATcheckhash(BBPdescriptor(-parent)))) {
 		/* no exact result size, but we need estimate to choose
-		 * between hash- & scan-select */
+		 * between hash- & scan-select
+		 * (if we already have a hash, it's a no-brainer: we
+		 * use it) */
 		BUN cnt = BATcount(b);
 		if (s && BATcount(s) < cnt)
 			cnt = BATcount(s);
@@ -1546,7 +1559,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (bn == NULL)
 		return NULL;
 
-	if (equi && (b->T->hash || hash)) {
+	if (equi && hash) {
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 				  ",s=%s%s,anti=%d): hash select\n",
 				  BATgetId(b), BATcount(b),
@@ -1558,7 +1571,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (!equi &&
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
-		     ((parent = VIEWtparent(b)) != 0 &&
+		     (parent != 0 &&
 		      BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent

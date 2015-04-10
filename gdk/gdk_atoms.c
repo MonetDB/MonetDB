@@ -576,19 +576,6 @@ batWrite(const bat *a, stream *s, size_t cnt)
  * incorrect syntax (not a number) result in the function returning 0
  * and setting the destination to nil.
  */
-#define parseNum() \
-	do {\
-		if (base > maxdiv10 ||\
-		    (base == maxdiv10 && base10(*p) > maxmod10)) {\
-			/* overflow */\
-			memcpy(*dst, ATOMnilptr(tp), sz);\
-			return 0;\
-		}\
-		base = 10 * base + base10(*p);\
-		p++;\
-	} while (num10(*p));\
-	base *= sign;
-
 static int
 numFromStr(const char *src, int *len, void **dst, int tp)
 {
@@ -596,70 +583,88 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
-	hge maxdiv10 = 0;	/* max value / 10 */
+	const hge maxdiv10 = GDK_hge_max / 10;
 #else
 	lng base = 0;
-	lng maxdiv10 = 0;	/* max value / 10 */
+	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 #endif
-	int maxmod10 = 7;	/* max value % 10 */
+	const int maxmod10 = 7;	/* max value % 10 */
 	int sign = 1;
 
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
 	if (!num10(*p)) {
-		if (*p == '-') {
+		switch (*p) {
+		case 'n':
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			if (p[1] == 'i' && p[2] == 'l') {
+				p += 3;
+				return (int) (p - src);
+			}
+			/* not a number */
+			return 0;
+		case '-':
 			sign = -1;
 			p++;
-			if (!num10(*p)) {
-				memcpy(*dst, ATOMnilptr(tp), sz);
-				return 0;
-			}
-			goto parsenum;
-		} 
-		if (*p == '+') {
+			break;
+		case '+':
 			p++;
-			if (!num10(*p)) {
-				memcpy(*dst, ATOMnilptr(tp), sz);
-				return 0;
-			}
-			goto parsenum;
+			break;
 		}
-		memcpy(*dst, ATOMnilptr(tp), sz);
-		if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-			p += 3;
-			return (int) (p - src);
+		if (!num10(*p)) {
+			/* still not a number */
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			return 0;
 		}
-		/* not a number */
-		return 0;
 	}
-parsenum:
+	do {
+		if (base > maxdiv10 ||
+		    (base == maxdiv10 && base10(*p) > maxmod10)) {
+			/* overflow */
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			return 0;
+		}
+		base = 10 * base + base10(*p);
+		p++;
+	} while (num10(*p));
+	base *= sign;
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
-		maxdiv10 = 12/*7*/;
-		parseNum();
+		if (base <= GDK_bte_min || base > GDK_bte_max) {
+			**dstbte = bte_nil;
+			return 0;
+		}
 		**dstbte = (bte) base;
 		break;
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
-		maxdiv10 = 3276/*7*/;
-		parseNum();
+		if (base <= GDK_sht_min || base > GDK_sht_max) {
+			**dstsht = sht_nil;
+			return 0;
+		}
 		**dstsht = (sht) base;
 		break;
 	}
 	case 4: {
 		int **dstint = (int **) dst;
-		maxdiv10 = 214748364/*7*/;
-		parseNum();
+		if (base <= GDK_int_min || base > GDK_int_max) {
+			**dstint = int_nil;
+			return 0;
+		}
 		**dstint = (int) base;
 		break;
 	}
 	case 8: {
 		lng **dstlng = (lng **) dst;
-		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
-		parseNum();
+#ifdef HAVE_HGE
+		if (base <= GDK_lng_min || base > GDK_lng_max) {
+			**dstlng = lng_nil;
+			return 0;
+		}
+#endif
 		**dstlng = (lng) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
@@ -668,18 +673,12 @@ parsenum:
 #ifdef HAVE_HGE
 	case 16: {
 		hge **dsthge = (hge **) dst;
-		maxdiv10 = GDK_hge_max / 10;
-		//         17014118346046923173168730371588410572/*7*/;
-		parseNum();
 		**dsthge = (hge) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
 		break;
 	}
 #endif
-	default:
-		memcpy(*dst, ATOMnilptr(tp), sz);
-		parseNum();
 	}
 	while (GDKisspace(*p))
 		p++;
@@ -821,6 +820,7 @@ int
 dblFromStr(const char *src, int *len, dbl **dst)
 {
 	const char *p = src;
+	int n = 0;
 	double d;
 
 	/* alloc memory */
@@ -831,6 +831,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = dbl_nil;
 		p += 3;
+		n = (int) (p - src);
 	} else {
 		/* on overflow, strtod returns HUGE_VAL and sets
 		 * errno to ERANGE; on underflow, it returns a value
@@ -841,16 +842,17 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		errno = 0;
 		d = strtod(src, &pe);
 		p = pe;
-		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
+		n = (int) (p - src);
+		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))) {
 			**dst = dbl_nil; /* default return value is nil */
-			p = src;
+			n = 0;
 		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (dbl) d;
 		}
 	}
-	while (GDKisspace(*p))
-		p++;
-	return (int) (p - src);
+	return n;
 }
 
 int

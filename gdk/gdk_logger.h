@@ -20,6 +20,7 @@ typedef struct logaction {
 	lng id;
 	char *name;		/* optional */
 	BAT *b;			/* temporary bat with changes */
+	BAT *uid;		/* temporary bat with bun positions to update */
 } logaction;
 
 /* during the recover process a number of transactions could be active */
@@ -101,7 +102,7 @@ gdk_export int log_bat(logger *lg, BAT *b, const char *n);
 gdk_export int log_bat_clear(logger *lg, const char *n);
 gdk_export int log_bat_persists(logger *lg, BAT *b, const char *n);
 gdk_export int log_bat_transient(logger *lg, const char *n);
-gdk_export int log_delta(logger *lg, BAT *b, const char *n);
+gdk_export int log_delta(logger *lg, BAT *uid, BAT *uval, const char *n);
 
 gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
 gdk_export int log_tend(logger *lg);

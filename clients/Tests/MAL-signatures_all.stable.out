@@ -2320,10 +2320,6 @@ command algebra.ilike(s:str,pat:str):bit
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
 address PCREilike3;
-pattern algebra.joinPath(l:bat[:any,:any]...):bat[:oid,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
@@ -2396,17 +2392,9 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
-pattern algebra.project(b:bat[:any_2,:any_1],v:any_3):bat[:any_2,:any_3] 
+pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
-comment Fill the tail with a constant, e.g. [0~b]
-
-pattern algebra.project(v:any_3,b:bat[:any_2,:any_1]):bat[:any_3,:any_1] 
-address ALGprojecthead;
-comment Fill the head with a constant, e.g. [0~b]
-
-command algebra.project(b:bat[:any_1,:any_2]):bat[:any_1,:void] 
-address ALGprojectNIL;
-comment Extract the head of a BAT.
+comment Fill the tail with a constant
 
 command algebra.reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address ALGreuse;
@@ -31342,11 +31330,11 @@ command bat.reuse(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCreuseBAT;
 comment Shuffle the values around to restore a dense representation of buns.
 
-command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
+command bat.replace(b:bat[:oid,:any_1],rid:bat[:oid,:oid],val:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] 
 address BKCbat_inplace_force;
 comment Perform replace for all BUNs of the second BAT into the first.
 
-command bat.replace(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
+command bat.replace(b:bat[:oid,:any_1],rid:bat[:oid,:oid],val:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address BKCbat_inplace;
 comment Perform replace for all BUNs of the second BAT into the first.
 

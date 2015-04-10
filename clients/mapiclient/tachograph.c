@@ -6,7 +6,7 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-/* (c) M Kersten
+/* author: M Kersten
  * Progress indicator
  * tachograph -d demo 
  * which connects to the demo database server and presents a server progress bar.
@@ -64,7 +64,8 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *basefilename = "tacho";
+static char *basefilename = "tachograph";
+static char *cache= "cache";
 static char *dbname;
 static int beat = 5000;
 static int delay = 0; // ms
@@ -194,7 +195,12 @@ int prevprogress =0;
 int prevlevel =0; 
 size_t txtlength=0;
 
-static FILE *tachofd;
+// limit the number of separate queries in the pool
+#define QUERYPOOL 32
+int queryid= 0;
+
+static FILE *tachojson;
+static FILE *tachotrace;
 
 static void resetTachograph(void){
 	int i;
@@ -218,18 +224,18 @@ static void resetTachograph(void){
 	starttime = 0;
 	finishtime = 0;
 	duration =0;
-	fclose(tachofd);
-	tachofd = 0;
+	fclose(tachojson);
+	tachojson = 0;
+	fclose(tachotrace);
+	tachotrace = 0;
 	prevprogress = 0;
 	txtlength =0;
 	prevlevel=0;
 	lastpc = 0;
 	pccount = 0;
 	fflush(stdout);
-	if( events){
-		free(events);
-		events = 0;
-	}
+	events = 0;
+	queryid = (queryid+1) % QUERYPOOL;
 }
 
 static char stamp[BUFSIZ]={0};
@@ -304,7 +310,7 @@ static struct{
 static void
 renderArgs(char *c, int len,  char *line, char *limit, char *l)
 {
-	char varname[BUFSIZ], *v=0;
+	char varname[BUFSIZ]={0}, *v=0;
 	for(; *c && *c !=')' && l < limit-1; ){
 		if( *c == ',')*l++= *c++;
 		v= 0;
@@ -437,27 +443,57 @@ showBar(int level, lng clk, char *stmt)
 	prevlevel = level;
 }
 
-/* create the progressbar JSON file for pickup */
+/* create the progressbar JSON file for pickup.
+ * Keep the file in the pool, together with its original trace
+ */
+
 static void
-progressBarInit(char *qry)
+initFiles(void)
 {
 	char buf[BUFSIZ];
 
-	snprintf(buf,BUFSIZ,"%s_%s.json",basefilename,dbname);
-	tachofd= fopen(buf,"w");
-	if( tachofd == NULL){
+	if (cache)
+#ifdef NATIVE_WIN32
+		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.json",cache,basefilename,dbname, queryid);
+#else
+		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.json",cache,basefilename,dbname, queryid);
+#endif
+	else 
+		snprintf(buf,BUFSIZ,"%s_%s_%d.json",basefilename,dbname, queryid);
+	tachojson= fopen(buf,"w");
+	if( tachojson == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	fprintf(tachofd,"{ \"tachograph\":0.1,\n");
-	fprintf(tachofd," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachofd," \"tag\":\"%d\",\n",currenttag);
-	fprintf(tachofd," \"query\":\"%s\",\n",qry);
-	fprintf(tachofd," \"started\": "LLFMT",\n",starttime);
-	fprintf(tachofd," \"duration\":"LLFMT",\n",duration);
-	fprintf(tachofd," \"instructions\":%d\n",malsize);
-	fprintf(tachofd,"},\n");
-	fflush(tachofd);
+	if (cache)
+#ifdef NATIVE_WIN32
+		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.trace",cache,basefilename,dbname, queryid);
+#else
+		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.trace",cache,basefilename,dbname, queryid);
+#endif
+	else 
+		snprintf(buf,BUFSIZ,"%s_%s_%d.trace",basefilename,dbname, queryid);
+	tachotrace= fopen(buf,"w");
+	if( tachotrace == NULL){
+		fprintf(stderr,"Could not create %s\n",buf);
+		exit(0);
+	}
+	if( monet_characteristics)
+		fprintf(tachotrace,"%s\n",monet_characteristics);
+}
+
+static void
+progressBarInit(char *qry)
+{
+	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
+	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
+	fprintf(tachojson," \"query\":\"%s\",\n",qry);
+	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
+	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
+	fprintf(tachojson," \"instructions\":%d\n",malsize);
+	fprintf(tachojson,"},\n");
+	fflush(tachojson);
 }
 
 static void
@@ -519,6 +555,7 @@ update(EventRecord *ev)
 		}
 		if (debug)
 			fprintf(stderr, "Enter function %s capture %d\n", currentfunction, capturing);
+		initFiles();
 		return;
 	}
 	ev->clkticks -= starttime;
@@ -531,7 +568,7 @@ update(EventRecord *ev)
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
 			currentquery = malarguments[0];
-			malsize = atoi(malarguments[3]);
+			malsize = malarguments[2]? atoi(malarguments[2]): 2048;
 			events = (Event*) malloc(malsize * sizeof(Event));
 			memset((char*)events, 0, malsize * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
@@ -557,6 +594,7 @@ update(EventRecord *ev)
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
+		assert(ev->pc < malsize);
 		events[ev->pc].state = RUNNING;
 		renderCall(line,BUFSIZ, ev->stmt,0,1);
 		events[ev->pc].stmt = strdup(ev->stmt);
@@ -603,17 +641,17 @@ update(EventRecord *ev)
 			for( i=0; i< malvartop;i++)
 				addSourcePair(nme,malvariables[i]);
 		}
-		fprintf(tachofd,"{\n");
-		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachofd,"\"status\": \"start\",\n");
-		fprintf(tachofd,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachofd,"\"stmt\": \"%s\",\n",ev->stmt);
-		fprintf(tachofd,"\"beautystmt\": \"%s\",\n",line);
+		fprintf(tachojson,"{\n");
+		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
+		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
+		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
+		fprintf(tachojson,"\"status\": \"start\",\n");
+		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
+		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachojson,"\"beautystmt\": \"%s\",\n",line);
 		// collect all input producing PCs
-		fprintf(tachofd,"\"prereq\":[");
+		fprintf(tachojson,"\"prereq\":[");
 		for( i=0; i < malvartop; i++){
 			// remove duplicates
 			for(j= ev->pc-1; j>=0;j --){
@@ -623,21 +661,21 @@ update(EventRecord *ev)
 					snprintf(number,BUFSIZ,"%d",j);
 					if( strstr(prereq,number) == 0)
 						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s%d",(i?", ":""), j);
-					//fprintf(tachofd,"%s%d",(i?", ":""), j);
+					//fprintf(tachojson,"%s%d",(i?", ":""), j);
 					break;
 				}
 			}
 		}
-		fprintf(tachofd,"%s",prereq);
-		fprintf(tachofd,"]\n");
-		fprintf(tachofd,"},\n");
-		fflush(tachofd);
+		fprintf(tachojson,"%s",prereq);
+		fprintf(tachojson,"]\n");
+		fprintf(tachojson,"},\n");
+		fflush(tachojson);
 
 		clearArguments();
 		return;
 	}
-	if( tachofd == NULL){
-		if( debug) fprintf(stderr,"No tachofd available\n");
+	if( tachojson == NULL){
+		if( debug) fprintf(stderr,"No tachojson available\n");
 		return;
 	}
 	/* end the instruction box */
@@ -645,18 +683,18 @@ update(EventRecord *ev)
 			
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
-		fprintf(tachofd,"{\n");
-		fprintf(tachofd,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachofd,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachofd,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachofd,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachofd,"\"status\": \"done\",\n");
-		fprintf(tachofd,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachofd,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachojson,"{\n");
+		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
+		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
+		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
+		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
+		fprintf(tachojson,"\"status\": \"done\",\n");
+		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
+		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachofd,"\"beautystmt\": \"%s\"\n",line);
-		fprintf(tachofd,"},\n");
-		fflush(tachofd);
+		fprintf(tachojson,"\"beautystmt\": \"%s\"\n",line);
+		fprintf(tachojson,"},\n");
+		fflush(tachojson);
 
 		events[ev->pc].state= FINISHED;
 		free(ev->stmt);
@@ -720,6 +758,7 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
+		{ "cache", 1, 0, 'c' },
 		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
@@ -730,7 +769,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:w:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:c:w:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -777,6 +816,8 @@ main(int argc, char **argv)
 				*strstr(basefilename,".trace") = 0;
 			printf("-- Output directed towards %s\n", basefilename);
 			break;
+		case 'c': // cache directory
+			cache = strdup(optarg);
 			break;
 		case '?':
 			usageTachograph();
@@ -796,7 +837,7 @@ main(int argc, char **argv)
 	}
 
 	if(debug)
-		printf("tachograph -d %s -o %s\n",dbname,basefilename);
+		printf("tachograph -d %s -c %s -o %s\n",dbname,cache,basefilename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -859,7 +900,16 @@ main(int argc, char **argv)
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-	snprintf(buf,BUFSIZ,"%s_%s.trace",basefilename,dbname);
+	if( cache){
+		mkdir(cache,0755);
+#ifdef NATIVE_WIN32
+		snprintf(buf,BUFSIZ,"%s\\%s_%s.trace",cache,basefilename,dbname);
+#else
+		snprintf(buf,BUFSIZ,"%s/%s_%s.trace",cache,basefilename,dbname);
+#endif
+	} else
+		snprintf(buf,BUFSIZ,"%s_%s.trace",basefilename,dbname);
+	// keep a trace of the events received
 	trace = fopen(buf,"w");
 	if( trace == NULL)
 		fprintf(stderr,"Could not create trace file\n");
@@ -873,11 +923,13 @@ main(int argc, char **argv)
 			if(debug)
 				printf("%s\n", response);
 			i= eventparser(response, &event);
+			update(&event);
 			if (debug  )
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
 			if( trace && i >=0 && capturing) 
 				fprintf(trace,"%s\n",response);
-			update(&event);
+			if( tachotrace && i >=0 && capturing) 
+				fprintf(tachotrace,"%s\n",response);
 			response = e + 1;
 		}
 		/* handle last line in buffer */

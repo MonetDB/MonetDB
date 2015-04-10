@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	supp_nation,
 	cust_nation,

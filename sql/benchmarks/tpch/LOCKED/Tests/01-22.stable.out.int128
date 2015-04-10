@@ -51,12 +51,13 @@ Ready.
 #	l_linestatus;
 % sys.lineitem,	sys.lineitem,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% varchar,	varchar,	hugeint,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
-% 1,	1,	6,	17,	35,	41,	24,	24,	24,	5 # length
-[ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
-[ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
-[ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
-[ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.59716817,	35874.00653,	0.04982753993,	14902	]
+% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
+% 1,	1,	41,	41,	41,	41,	24,	24,	24,	5 # length
+[ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
+[ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
+[ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
+[ "R",	"F",	381449.00,	534594445.35,	507996454.4067,	528524219.358903,	25.59716817,	35874.00653,	0.04982753993,	14902	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -69,12 +70,13 @@ Ready.
 
 % sys.supplier,	sys.supplier,	sys.nation,	sys.part,	sys.part,	sys.supplier,	sys.supplier,	sys.supplier # table_name
 % s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
-% decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
-% 17,	18,	7,	4,	14,	39,	15,	93 # length
-[ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
-[ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
-[ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
-[ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
+% decimal,	char,	char,	int,	char,	varchar,	char,	varchar # type
+% 17,	25,	25,	4,	25,	39,	15,	95 # length
+[ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"the slyly final asymptotes. blithely pending theodoli"	]
+[ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"cajole furiously special, final requests: furiously spec"	]
+[ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"eep against the furiously bold ideas. fluffily bold packa"	]
+[ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly"	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -111,7 +113,7 @@ Ready.
 % sys.lineitem,	sys.L1,	sys.orders,	sys.orders # table_name
 % l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 % int,	decimal,	date,	int # type
-% 5,	35,	10,	1 # length
+% 5,	41,	10,	1 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -155,7 +157,7 @@ Ready.
 #	o_orderpriority;
 % sys.orders,	sys.L1 # table_name
 % o_orderpriority,	order_count # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 15,	3 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
@@ -198,8 +200,8 @@ Ready.
 #	revenue desc;
 % sys.nation,	sys.L1 # table_name
 % n_name,	revenue # name
-% varchar,	decimal # type
-% 9,	35 # length
+% char,	decimal # type
+% 25,	41 # length
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
@@ -209,7 +211,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	5	]
+[ "joinidx",	4	]
 
 # 11:48:05 >  
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -227,7 +229,7 @@ Ready.
 % sys.L1 # table_name
 % revenue # name
 % decimal # type
-% 32 # length
+% 41 # length
 [ 1193053.2253	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -268,8 +270,8 @@ Ready.
 #				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
 % sys.shipping,	sys.shipping,	sys.shipping,	sys.L1 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
-% varchar,	varchar,	int,	decimal # type
-% 7,	7,	4,	35 # length
+% char,	char,	int,	decimal # type
+% 25,	25,	4,	41 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
@@ -278,7 +280,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	5	]
+[ "joinidx",	4	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -315,14 +317,14 @@ Ready.
 % sys.all_nations,	sys.L3 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
-% 4,	39 # length
+% 4,	41 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	7	]
+[ "joinidx",	5	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -356,187 +358,187 @@ Ready.
 #	) as profit
 % sys.profit,	sys.profit,	sys.L1 # table_name
 % nation,	o_year,	sum_profit # name
-% varchar,	int,	decimal # type
-% 14,	4,	41 # length
-[ "ALGERIA",	1998,	386617.8283	]
-[ "ALGERIA",	1997,	401601.1258	]
-[ "ALGERIA",	1996,	156938.7971	]
-[ "ALGERIA",	1995,	486706.0631	]
-[ "ALGERIA",	1994,	426573.4415	]
-[ "ALGERIA",	1993,	448371.4336	]
-[ "ALGERIA",	1992,	285188.4503	]
-[ "ARGENTINA",	1998,	136458.3471	]
-[ "ARGENTINA",	1997,	423877.6754	]
-[ "ARGENTINA",	1996,	325019.6263	]
-[ "ARGENTINA",	1995,	399583.4009	]
-[ "ARGENTINA",	1994,	374046.7888	]
-[ "ARGENTINA",	1993,	351669.5325	]
-[ "ARGENTINA",	1992,	312412.4307	]
-[ "BRAZIL",	1998,	265032.7654	]
-[ "BRAZIL",	1997,	275700.7887	]
-[ "BRAZIL",	1996,	490362.6267	]
-[ "BRAZIL",	1995,	349754.1082	]
-[ "BRAZIL",	1994,	348798.4066	]
-[ "BRAZIL",	1993,	457273.7693	]
-[ "BRAZIL",	1992,	280563.4508	]
-[ "CANADA",	1998,	249632.9034	]
-[ "CANADA",	1997,	486581.6822	]
-[ "CANADA",	1996,	359393.5226	]
-[ "CANADA",	1995,	243051.8308	]
-[ "CANADA",	1994,	188897.4377	]
-[ "CANADA",	1993,	546007.0343	]
-[ "CANADA",	1992,	275013.2650	]
-[ "CHINA",	1998,	391223.3132	]
-[ "CHINA",	1997,	585354.2015	]
-[ "CHINA",	1996,	555841.0120	]
-[ "CHINA",	1995,	864856.4126	]
-[ "CHINA",	1994,	669658.4851	]
-[ "CHINA",	1993,	621317.0197	]
-[ "CHINA",	1992,	932500.7559	]
-[ "EGYPT",	1998,	367340.0376	]
-[ "EGYPT",	1997,	958524.1565	]
-[ "EGYPT",	1996,	417700.6911	]
-[ "EGYPT",	1995,	852185.4611	]
-[ "EGYPT",	1994,	442097.3675	]
-[ "EGYPT",	1993,	677948.0185	]
-[ "EGYPT",	1992,	666425.4212	]
-[ "ETHIOPIA",	1998,	146634.8925	]
-[ "ETHIOPIA",	1997,	264122.6167	]
-[ "ETHIOPIA",	1996,	193275.0975	]
-[ "ETHIOPIA",	1995,	220253.5131	]
-[ "ETHIOPIA",	1994,	296634.2600	]
-[ "ETHIOPIA",	1993,	304224.8129	]
-[ "ETHIOPIA",	1992,	297588.3116	]
-[ "FRANCE",	1998,	72506.5000	]
-[ "FRANCE",	1997,	237462.1240	]
-[ "FRANCE",	1996,	151017.7675	]
-[ "FRANCE",	1995,	296667.9453	]
-[ "FRANCE",	1994,	233805.7419	]
-[ "FRANCE",	1993,	168968.1550	]
-[ "FRANCE",	1992,	127349.1738	]
-[ "GERMANY",	1998,	223811.2759	]
-[ "GERMANY",	1997,	661263.7764	]
-[ "GERMANY",	1996,	482126.6721	]
-[ "GERMANY",	1995,	571466.4843	]
-[ "GERMANY",	1994,	322330.4404	]
-[ "GERMANY",	1993,	428314.7853	]
-[ "GERMANY",	1992,	273675.9499	]
-[ "INDIA",	1998,	418144.1956	]
-[ "INDIA",	1997,	859947.3428	]
-[ "INDIA",	1996,	515838.8397	]
-[ "INDIA",	1995,	631351.5802	]
-[ "INDIA",	1994,	798279.5615	]
-[ "INDIA",	1993,	767946.7017	]
-[ "INDIA",	1992,	797101.9729	]
-[ "INDONESIA",	1998,	386787.9168	]
-[ "INDONESIA",	1997,	311837.4839	]
-[ "INDONESIA",	1996,	421631.7918	]
-[ "INDONESIA",	1995,	479331.3577	]
-[ "INDONESIA",	1994,	602376.9040	]
-[ "INDONESIA",	1993,	496450.6942	]
-[ "INDONESIA",	1992,	561262.1781	]
-[ "IRAN",	1998,	8996.5540	]
-[ "IRAN",	1997,	201653.8389	]
-[ "IRAN",	1996,	281658.4382	]
-[ "IRAN",	1995,	50873.1323	]
-[ "IRAN",	1994,	53387.1992	]
-[ "IRAN",	1993,	107749.9627	]
-[ "IRAN",	1992,	67888.7176	]
-[ "IRAQ",	1998,	113434.1032	]
-[ "IRAQ",	1997,	86656.8062	]
-[ "IRAQ",	1996,	359937.8761	]
-[ "IRAQ",	1995,	218221.7756	]
-[ "IRAQ",	1994,	360489.8843	]
-[ "IRAQ",	1993,	559990.6546	]
-[ "IRAQ",	1992,	211655.9396	]
-[ "JAPAN",	1998,	278531.8011	]
-[ "JAPAN",	1997,	426945.7933	]
-[ "JAPAN",	1996,	501942.5698	]
-[ "JAPAN",	1995,	474025.8492	]
-[ "JAPAN",	1994,	706404.4339	]
-[ "JAPAN",	1993,	695412.9084	]
-[ "JAPAN",	1992,	613125.5417	]
-[ "JORDAN",	1998,	73080.7362	]
-[ "JORDAN",	1997,	117104.2978	]
-[ "JORDAN",	1996,	94740.7164	]
-[ "JORDAN",	1995,	164684.4569	]
-[ "JORDAN",	1994,	51403.2065	]
-[ "JORDAN",	1993,	38718.7839	]
-[ "JORDAN",	1992,	132028.5385	]
-[ "KENYA",	1998,	351661.8184	]
-[ "KENYA",	1997,	542347.9571	]
-[ "KENYA",	1996,	466964.0397	]
-[ "KENYA",	1995,	795396.7551	]
-[ "KENYA",	1994,	740881.7388	]
-[ "KENYA",	1993,	603341.1861	]
-[ "KENYA",	1992,	774761.2393	]
-[ "MOROCCO",	1998,	118171.3902	]
-[ "MOROCCO",	1997,	96442.7008	]
-[ "MOROCCO",	1996,	118984.8785	]
-[ "MOROCCO",	1995,	158240.6598	]
-[ "MOROCCO",	1994,	148951.6794	]
-[ "MOROCCO",	1993,	48279.6548	]
-[ "MOROCCO",	1992,	146068.2550	]
-[ "MOZAMBIQUE",	1998,	343227.8816	]
-[ "MOZAMBIQUE",	1997,	831834.1044	]
-[ "MOZAMBIQUE",	1996,	888199.0121	]
-[ "MOZAMBIQUE",	1995,	1249272.9387	]
-[ "MOZAMBIQUE",	1994,	594096.0637	]
-[ "MOZAMBIQUE",	1993,	1200185.0713	]
-[ "MOZAMBIQUE",	1992,	994120.0362	]
-[ "PERU",	1998,	352324.2789	]
-[ "PERU",	1997,	319502.2255	]
-[ "PERU",	1996,	391644.9686	]
-[ "PERU",	1995,	360028.0705	]
-[ "PERU",	1994,	460058.1291	]
-[ "PERU",	1993,	382460.0831	]
-[ "PERU",	1992,	312613.1714	]
-[ "ROMANIA",	1998,	340984.6297	]
-[ "ROMANIA",	1997,	444095.1884	]
-[ "ROMANIA",	1996,	426472.5967	]
-[ "ROMANIA",	1995,	616350.9394	]
-[ "ROMANIA",	1994,	430563.1943	]
-[ "ROMANIA",	1993,	769406.9533	]
-[ "ROMANIA",	1992,	543722.1295	]
-[ "RUSSIA",	1998,	217747.8262	]
-[ "RUSSIA",	1997,	644719.5017	]
-[ "RUSSIA",	1996,	501019.7684	]
-[ "RUSSIA",	1995,	717528.7447	]
-[ "RUSSIA",	1994,	441262.6350	]
-[ "RUSSIA",	1993,	529422.5932	]
-[ "RUSSIA",	1992,	469683.7369	]
-[ "SAUDI ARABIA",	1998,	57980.2356	]
-[ "SAUDI ARABIA",	1997,	17173.1210	]
-[ "SAUDI ARABIA",	1996,	14229.6253	]
-[ "SAUDI ARABIA",	1995,	98053.2309	]
-[ "SAUDI ARABIA",	1993,	42289.6310	]
-[ "SAUDI ARABIA",	1992,	50978.9572	]
-[ "UNITED KINGDOM",	1998,	127808.1215	]
-[ "UNITED KINGDOM",	1997,	407935.6606	]
-[ "UNITED KINGDOM",	1996,	499957.5199	]
-[ "UNITED KINGDOM",	1995,	480575.5026	]
-[ "UNITED KINGDOM",	1994,	513252.8116	]
-[ "UNITED KINGDOM",	1993,	697570.9412	]
-[ "UNITED KINGDOM",	1992,	361516.4116	]
-[ "UNITED STATES",	1998,	503864.6963	]
-[ "UNITED STATES",	1997,	649175.2847	]
-[ "UNITED STATES",	1996,	831723.1557	]
-[ "UNITED STATES",	1995,	902131.2862	]
-[ "UNITED STATES",	1994,	460768.5468	]
-[ "UNITED STATES",	1993,	656092.8661	]
-[ "UNITED STATES",	1992,	714228.6231	]
-[ "VIETNAM",	1998,	578857.0410	]
-[ "VIETNAM",	1997,	596114.8585	]
-[ "VIETNAM",	1996,	832979.0530	]
-[ "VIETNAM",	1995,	757862.0438	]
-[ "VIETNAM",	1994,	1003275.5371	]
-[ "VIETNAM",	1993,	461389.0037	]
-[ "VIETNAM",	1992,	820665.7064	]
+% char,	int,	decimal # type
+% 25,	4,	41 # length
+[ "ALGERIA",	1998,	97864.5682	]
+[ "ALGERIA",	1997,	368231.6695	]
+[ "ALGERIA",	1996,	196525.8046	]
+[ "ALGERIA",	1995,	341438.6885	]
+[ "ALGERIA",	1994,	677444.0160	]
+[ "ALGERIA",	1993,	458756.9157	]
+[ "ALGERIA",	1992,	549243.9511	]
+[ "ARGENTINA",	1998,	80448.7680	]
+[ "ARGENTINA",	1997,	186279.1618	]
+[ "ARGENTINA",	1996,	154041.8822	]
+[ "ARGENTINA",	1995,	113143.3119	]
+[ "ARGENTINA",	1994,	169680.4239	]
+[ "ARGENTINA",	1993,	116513.8141	]
+[ "ARGENTINA",	1992,	202404.7608	]
+[ "BRAZIL",	1998,	75952.5946	]
+[ "BRAZIL",	1997,	190548.1104	]
+[ "BRAZIL",	1996,	219059.0692	]
+[ "BRAZIL",	1995,	186435.2023	]
+[ "BRAZIL",	1994,	96835.1870	]
+[ "BRAZIL",	1993,	186365.4109	]
+[ "BRAZIL",	1992,	152546.4439	]
+[ "CANADA",	1998,	101030.3336	]
+[ "CANADA",	1997,	101197.3441	]
+[ "CANADA",	1996,	257697.1355	]
+[ "CANADA",	1995,	91474.8820	]
+[ "CANADA",	1994,	249182.7548	]
+[ "CANADA",	1993,	185737.8379	]
+[ "CANADA",	1992,	143371.7465	]
+[ "CHINA",	1998,	508364.5444	]
+[ "CHINA",	1997,	650235.1646	]
+[ "CHINA",	1996,	911366.0698	]
+[ "CHINA",	1995,	797268.4076	]
+[ "CHINA",	1994,	529989.3095	]
+[ "CHINA",	1993,	573864.3972	]
+[ "CHINA",	1992,	751688.7613	]
+[ "EGYPT",	1998,	306325.2842	]
+[ "EGYPT",	1997,	568461.6699	]
+[ "EGYPT",	1996,	465081.9232	]
+[ "EGYPT",	1995,	542886.5087	]
+[ "EGYPT",	1994,	745807.8123	]
+[ "EGYPT",	1993,	381503.2008	]
+[ "EGYPT",	1992,	641866.4367	]
+[ "ETHIOPIA",	1998,	226054.5716	]
+[ "ETHIOPIA",	1997,	585193.2802	]
+[ "ETHIOPIA",	1996,	405412.7741	]
+[ "ETHIOPIA",	1995,	270455.7637	]
+[ "ETHIOPIA",	1994,	567875.4279	]
+[ "ETHIOPIA",	1993,	412302.2871	]
+[ "ETHIOPIA",	1992,	551284.5821	]
+[ "FRANCE",	1998,	135723.4050	]
+[ "FRANCE",	1997,	249664.7578	]
+[ "FRANCE",	1996,	175882.8934	]
+[ "FRANCE",	1995,	116394.7866	]
+[ "FRANCE",	1994,	197695.2438	]
+[ "FRANCE",	1993,	231878.6201	]
+[ "FRANCE",	1992,	199131.2037	]
+[ "GERMANY",	1998,	172741.1024	]
+[ "GERMANY",	1997,	393833.4660	]
+[ "GERMANY",	1996,	335634.5936	]
+[ "GERMANY",	1995,	378106.0763	]
+[ "GERMANY",	1994,	250107.6653	]
+[ "GERMANY",	1993,	327154.9365	]
+[ "GERMANY",	1992,	387240.0885	]
+[ "INDIA",	1998,	347548.7604	]
+[ "INDIA",	1997,	656797.9670	]
+[ "INDIA",	1996,	522759.3529	]
+[ "INDIA",	1995,	574428.6693	]
+[ "INDIA",	1994,	741983.7846	]
+[ "INDIA",	1993,	729948.5341	]
+[ "INDIA",	1992,	661061.1415	]
+[ "INDONESIA",	1998,	91791.5096	]
+[ "INDONESIA",	1997,	183956.4613	]
+[ "INDONESIA",	1996,	415234.7848	]
+[ "INDONESIA",	1995,	427155.3804	]
+[ "INDONESIA",	1994,	286271.2875	]
+[ "INDONESIA",	1993,	551178.8823	]
+[ "INDONESIA",	1992,	274513.2685	]
+[ "IRAN",	1998,	47959.8219	]
+[ "IRAN",	1997,	184335.0615	]
+[ "IRAN",	1996,	223115.2464	]
+[ "IRAN",	1995,	125339.0927	]
+[ "IRAN",	1994,	117228.3122	]
+[ "IRAN",	1993,	208030.3229	]
+[ "IRAN",	1992,	161835.5475	]
+[ "IRAQ",	1998,	161797.4924	]
+[ "IRAQ",	1997,	224876.5436	]
+[ "IRAQ",	1996,	145277.8980	]
+[ "IRAQ",	1995,	467955.2505	]
+[ "IRAQ",	1994,	97455.2990	]
+[ "IRAQ",	1993,	114821.6440	]
+[ "IRAQ",	1992,	213307.1574	]
+[ "JAPAN",	1998,	307594.5980	]
+[ "JAPAN",	1997,	339018.1488	]
+[ "JAPAN",	1996,	649578.3368	]
+[ "JAPAN",	1995,	671644.0911	]
+[ "JAPAN",	1994,	576266.2386	]
+[ "JAPAN",	1993,	514190.8437	]
+[ "JAPAN",	1992,	534914.9339	]
+[ "JORDAN",	1996,	33460.2447	]
+[ "JORDAN",	1995,	20364.1623	]
+[ "JORDAN",	1994,	15528.6088	]
+[ "JORDAN",	1993,	14640.9889	]
+[ "JORDAN",	1992,	10904.2931	]
+[ "KENYA",	1998,	521926.5198	]
+[ "KENYA",	1997,	559632.3408	]
+[ "KENYA",	1996,	772855.7939	]
+[ "KENYA",	1995,	516452.5067	]
+[ "KENYA",	1994,	543665.8154	]
+[ "KENYA",	1993,	866924.8754	]
+[ "KENYA",	1992,	567410.5502	]
+[ "MOROCCO",	1998,	217794.4973	]
+[ "MOROCCO",	1997,	439240.9287	]
+[ "MOROCCO",	1996,	399969.4680	]
+[ "MOROCCO",	1995,	258131.9398	]
+[ "MOROCCO",	1994,	386972.1424	]
+[ "MOROCCO",	1993,	145468.0381	]
+[ "MOROCCO",	1992,	284314.2813	]
+[ "MOZAMBIQUE",	1998,	518693.2238	]
+[ "MOZAMBIQUE",	1997,	613873.2961	]
+[ "MOZAMBIQUE",	1996,	936793.5612	]
+[ "MOZAMBIQUE",	1995,	727204.7718	]
+[ "MOZAMBIQUE",	1994,	1104618.1807	]
+[ "MOZAMBIQUE",	1993,	893266.0530	]
+[ "MOZAMBIQUE",	1992,	1062432.0884	]
+[ "PERU",	1998,	287242.9797	]
+[ "PERU",	1997,	532358.3660	]
+[ "PERU",	1996,	398435.7507	]
+[ "PERU",	1995,	462031.6251	]
+[ "PERU",	1994,	304235.4118	]
+[ "PERU",	1993,	505885.4890	]
+[ "PERU",	1992,	382290.0947	]
+[ "ROMANIA",	1998,	357824.5528	]
+[ "ROMANIA",	1997,	569806.5564	]
+[ "ROMANIA",	1996,	732001.5568	]
+[ "ROMANIA",	1995,	408657.1154	]
+[ "ROMANIA",	1994,	540702.5463	]
+[ "ROMANIA",	1993,	883158.5056	]
+[ "ROMANIA",	1992,	505488.9501	]
+[ "RUSSIA",	1998,	34448.6357	]
+[ "RUSSIA",	1997,	314972.0446	]
+[ "RUSSIA",	1996,	430049.5821	]
+[ "RUSSIA",	1995,	360538.0586	]
+[ "RUSSIA",	1994,	301791.0114	]
+[ "RUSSIA",	1993,	308993.9622	]
+[ "RUSSIA",	1992,	289868.6564	]
+[ "SAUDI ARABIA",	1998,	16502.4100	]
+[ "SAUDI ARABIA",	1997,	61830.9556	]
+[ "SAUDI ARABIA",	1996,	213650.2809	]
+[ "SAUDI ARABIA",	1995,	62668.7250	]
+[ "SAUDI ARABIA",	1994,	94629.1538	]
+[ "SAUDI ARABIA",	1993,	57768.3071	]
+[ "SAUDI ARABIA",	1992,	66520.1093	]
+[ "UNITED KINGDOM",	1998,	80437.6523	]
+[ "UNITED KINGDOM",	1997,	252509.7351	]
+[ "UNITED KINGDOM",	1996,	231152.8582	]
+[ "UNITED KINGDOM",	1995,	181310.8808	]
+[ "UNITED KINGDOM",	1994,	239161.2061	]
+[ "UNITED KINGDOM",	1993,	122103.1142	]
+[ "UNITED KINGDOM",	1992,	60882.3080	]
+[ "UNITED STATES",	1998,	440347.6658	]
+[ "UNITED STATES",	1997,	652958.9371	]
+[ "UNITED STATES",	1996,	1004593.8282	]
+[ "UNITED STATES",	1995,	860144.1029	]
+[ "UNITED STATES",	1994,	807797.4877	]
+[ "UNITED STATES",	1993,	736669.4711	]
+[ "UNITED STATES",	1992,	877851.4103	]
+[ "VIETNAM",	1998,	358248.0159	]
+[ "VIETNAM",	1997,	394817.2842	]
+[ "VIETNAM",	1996,	439390.0836	]
+[ "VIETNAM",	1995,	418626.6325	]
+[ "VIETNAM",	1994,	422644.8168	]
+[ "VIETNAM",	1993,	309063.4020	]
+[ "VIETNAM",	1992,	716126.5378	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	5	]
+[ "joinidx",	2	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -576,28 +578,29 @@ Ready.
 #limit 20;
 % sys.customer,	sys.customer,	sys.L1,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
-% int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
-% 4,	18,	35,	17,	14,	40,	15,	104 # length
-[ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
-[ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"fluffily final grouches doubt. bold dependencies dazzle caref"	]
-[ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"furiously ironic asymptotes are slyly ironic, ironic requests. bold,"	]
-[ 334,	"Customer#000000334",	360370.7550,	-405.91,	"EGYPT",	"OPN1N7t4aQ23TnCpc",	"14-947-291-5002",	"packages boost blithely carefully final depend"	]
-[ 805,	"Customer#000000805",	359448.9036,	511.69,	"IRAN",	"wCKx5zcHvwpSffyc9qfi9dvqcm9LT,cLAG",	"20-732-989-5653",	"slyly ironic ideas about the regular packages cajole ironic deposits. furiously regular notornis affix b"	]
-[ 932,	"Customer#000000932",	341608.2753,	6553.37,	"JORDAN",	"HN9Ap0NsJG7Mb8O",	"23-300-708-7927",	"blithely ironic frets above the quickly even courts hagg"	]
-[ 853,	"Customer#000000853",	341236.6246,	-444.73,	"BRAZIL",	"U0 9PrwAgWK8AE0GHmnCGtH9BTexWWv87k",	"12-869-161-3468",	"special, daring packages above the care"	]
-[ 872,	"Customer#000000872",	338328.7808,	-858.61,	"PERU",	"vLP7iNZBK4B,HANFTKabVI3AO Y9O8H",	"27-357-139-7164",	"dogged accounts sleep carefully pending ep"	]
-[ 737,	"Customer#000000737",	338185.3365,	2501.74,	"CHINA",	"NdjG1k243iCLSoy1lYqMIrpvuH1Uf75",	"28-658-938-1102",	"bold theodolites are furiously. blithely express p"	]
-[ 1118,	"Customer#000001118",	319875.7280,	4130.18,	"IRAQ",	"QHg,DNvEVXaYoCdrywazjAJ",	"21-583-715-8627",	"furiously final pinto beans maintain. "	]
-[ 223,	"Customer#000000223",	319564.2750,	7476.20,	"SAUDI ARABIA",	"ftau6Pk,brboMyEl,,kFm",	"30-193-643-1517",	"carefully regular deposits boost after the even foxes. slyly even requests haggle. "	]
-[ 808,	"Customer#000000808",	314774.6167,	5561.93,	"ROMANIA",	"S2WkSKCGtnbhcFOp6MWcuB3rzFlFemVNrg ",	"29-531-319-7726",	"ironic, special gifts according to the quickly final deposits impress blith"	]
-[ 478,	"Customer#000000478",	299651.8026,	-210.40,	"ARGENTINA",	"clyq458DIkXXt4qLyHlbe,n JueoniF",	"11-655-291-2694",	"even notornis nag slyly ironic instructions. fluf"	]
-[ 1441,	"Customer#000001441",	294705.3935,	9465.15,	"UNITED KINGDOM",	"u0YYZb46w,pwKo5H9vz d6B9zK4BOHhG jx",	"33-681-334-4499",	"even theodolites nag. slyly silent requests use slyly among the ironic theodolites. blithely ironic"	]
-[ 1478,	"Customer#000001478",	294431.9178,	9701.54,	"GERMANY",	"x7HDvJDDpR3MqZ5vg2CanfQ1hF0j4",	"17-420-484-5959",	"express, ironic requests haggle carefully according to th"	]
-[ 211,	"Customer#000000211",	287905.6368,	4198.72,	"JORDAN",	"URhlVPzz4FqXem",	"23-965-335-9471",	"instructions lose carefully against the carefully expres"	]
-[ 197,	"Customer#000000197",	283190.4807,	9860.22,	"ARGENTINA",	"UeVqssepNuXmtZ38D",	"11-107-312-6585",	"regular, ironic packages about the s"	]
-[ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"carefully express asymptotes are after the blithe deposits. regular pl"	]
-[ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
-[ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
+% int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
+% 4,	18,	41,	17,	25,	40,	15,	116 # length
+[ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"ely pending frays boost carefully"	]
+[ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"lyly pending packages. special requests sleep-- platelets use blithely after the instructions. sometimes even id"	]
+[ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"eposits; furiously ironic packages accordi"	]
+[ 334,	"Customer#000000334",	360370.7550,	-405.91,	"EGYPT",	"OPN1N7t4aQ23TnCpc",	"14-947-291-5002",	"fully busily special ideas. carefully final excuses lose slyly carefully express accounts. even, ironic platelets ar"	]
+[ 805,	"Customer#000000805",	359448.9036,	511.69,	"IRAN",	"wCKx5zcHvwpSffyc9qfi9dvqcm9LT,cLAG",	"20-732-989-5653",	"busy sentiments. pending packages haggle among the express requests-- slyly regular excuses above the slyl"	]
+[ 932,	"Customer#000000932",	341608.2753,	6553.37,	"JORDAN",	"HN9Ap0NsJG7Mb8O",	"23-300-708-7927",	"packages boost slyly along the furiously express foxes. ev"	]
+[ 853,	"Customer#000000853",	341236.6246,	-444.73,	"BRAZIL",	"U0 9PrwAgWK8AE0GHmnCGtH9BTexWWv87k",	"12-869-161-3468",	"yly special deposits wake alongside of"	]
+[ 872,	"Customer#000000872",	338328.7808,	-858.61,	"PERU",	"vLP7iNZBK4B,HANFTKabVI3AO Y9O8H",	"27-357-139-7164",	" detect. packages wake slyly express foxes. even deposits ru"	]
+[ 737,	"Customer#000000737",	338185.3365,	2501.74,	"CHINA",	"NdjG1k243iCLSoy1lYqMIrpvuH1Uf75",	"28-658-938-1102",	"ding to the final platelets. regular packages against the carefully final ideas hag"	]
+[ 1118,	"Customer#000001118",	319875.7280,	4130.18,	"IRAQ",	"QHg,DNvEVXaYoCdrywazjAJ",	"21-583-715-8627",	"y regular requests above the blithely ironic accounts use slyly bold packages: regular pinto beans eat carefully spe"	]
+[ 223,	"Customer#000000223",	319564.2750,	7476.20,	"SAUDI ARABIA",	"ftau6Pk,brboMyEl,,kFm",	"30-193-643-1517",	"al, regular requests run furiously blithely silent packages. blithely ironic accounts across the furious"	]
+[ 808,	"Customer#000000808",	314774.6167,	5561.93,	"ROMANIA",	"S2WkSKCGtnbhcFOp6MWcuB3rzFlFemVNrg ",	"29-531-319-7726",	" unusual deposits. furiously even packages against the furiously even ac"	]
+[ 478,	"Customer#000000478",	299651.8026,	-210.40,	"ARGENTINA",	"clyq458DIkXXt4qLyHlbe,n JueoniF",	"11-655-291-2694",	"o the foxes. ironic requests sleep. c"	]
+[ 1441,	"Customer#000001441",	294705.3935,	9465.15,	"UNITED KINGDOM",	"u0YYZb46w,pwKo5H9vz d6B9zK4BOHhG jx",	"33-681-334-4499",	"nts haggle quietly quickly final accounts. slyly regular accounts among the sl"	]
+[ 1478,	"Customer#000001478",	294431.9178,	9701.54,	"GERMANY",	"x7HDvJDDpR3MqZ5vg2CanfQ1hF0j4",	"17-420-484-5959",	"ng the furiously bold foxes. even notornis above the unusual "	]
+[ 211,	"Customer#000000211",	287905.6368,	4198.72,	"JORDAN",	"URhlVPzz4FqXem",	"23-965-335-9471",	"furiously regular foxes boost fluffily special ideas. carefully regular dependencies are. slyly ironic "	]
+[ 197,	"Customer#000000197",	283190.4807,	9860.22,	"ARGENTINA",	"UeVqssepNuXmtZ38D",	"11-107-312-6585",	"ickly final accounts cajole. furiously re"	]
+[ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"ding to the slyly unusual accounts. even requests among the evenly"	]
+[ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"uriously according to the furiously silent packages"	]
+[ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"tes serve blithely quickly pending foxes. express, quick accounts"	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -677,8 +680,8 @@ Ready.
 #	and l_receiptdate < date '1994-01-01' + interval '1' year
 % sys.lineitem,	sys.L1,	sys.L2 # table_name
 % l_shipmode,	high_line_count,	low_line_count # name
-% varchar,	hugeint,	hugeint # type
-% 4,	2,	2 # length
+% char,	hugeint,	hugeint # type
+% 10,	2,	2 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
 % .stats,	.stats # table_name
@@ -716,37 +719,39 @@ Ready.
 % wrd,	wrd # type
 % 2,	3 # length
 [ 0,	500	]
-[ 11,	70	]
-[ 10,	70	]
+[ 11,	68	]
+[ 10,	64	]
+[ 12,	62	]
 [ 9,	62	]
-[ 12,	61	]
 [ 8,	61	]
-[ 13,	55	]
-[ 14,	52	]
+[ 14,	54	]
+[ 13,	52	]
+[ 7,	49	]
 [ 20,	48	]
-[ 19,	46	]
-[ 16,	44	]
-[ 7,	44	]
-[ 21,	42	]
-[ 15,	42	]
-[ 18,	40	]
-[ 17,	38	]
-[ 22,	35	]
-[ 6,	32	]
-[ 24,	31	]
-[ 23,	30	]
-[ 25,	20	]
-[ 26,	19	]
-[ 5,	15	]
-[ 27,	12	]
-[ 29,	8	]
-[ 4,	8	]
-[ 28,	4	]
-[ 32,	3	]
-[ 31,	3	]
+[ 21,	47	]
+[ 16,	46	]
+[ 15,	45	]
+[ 19,	44	]
+[ 17,	41	]
+[ 18,	38	]
+[ 22,	33	]
+[ 6,	33	]
+[ 24,	30	]
+[ 23,	27	]
+[ 25,	21	]
+[ 27,	17	]
+[ 26,	15	]
+[ 5,	14	]
+[ 28,	6	]
+[ 4,	6	]
+[ 32,	5	]
+[ 29,	5	]
+[ 30,	2	]
 [ 3,	2	]
-[ 2,	2	]
-[ 30,	1	]
+[ 31,	1	]
+[ 2,	1	]
+[ 1,	1	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -780,7 +785,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -788,8 +793,8 @@ Ready.
 
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
-% int,	varchar,	varchar,	varchar,	decimal # type
-% 2,	18,	36,	15,	35 # length
+% int,	char,	varchar,	char,	decimal # type
+% 2,	25,	36,	15,	41 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -833,8 +838,8 @@ Ready.
 #	p_size;
 % sys.part,	sys.part,	sys.part,	sys.L4 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
-% varchar,	varchar,	int,	wrd # type
-% 8,	25,	2,	1 # length
+% char,	varchar,	int,	wrd # type
+% 10,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]
@@ -1161,13 +1166,13 @@ Ready.
 % sys.L3 # table_name
 % avg_yearly # name
 % decimal # type
-% 20 # length
+% 41 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -1208,10 +1213,11 @@ Ready.
 #limit 100;
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
-% varchar,	int,	int,	date,	decimal,	hugeint # type
-% 18,	3,	5,	10,	17,	3 # length
-[ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
-[ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
+% varchar,	int,	int,	date,	decimal,	decimal # type
+% 18,	3,	5,	10,	17,	41 # length
+[ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
+[ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -1246,23 +1252,58 @@ Ready.
 % sys.L1 # table_name
 % revenue # name
 % decimal # type
-% 35 # length
+% 41 # length
 [ 22923.0280	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 17:17:26 >  
+# 17:17:26 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-26556 --port=38510 < /net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin/sql/benchmarks/tpch/LOCKED/../20.sql
+# 17:17:26 >  
 
+#select
+#	s_name,
+#	s_address
+#from
+#	supplier,
+#	nation
+#where
+#	s_suppkey in (
+#		select
+#			ps_suppkey
+#		from
+#			partsupp
+#		where
+#			ps_partkey in (
+#				select
+#					p_partkey
+#				from
+#					part
+#				where
+#					p_name like 'forest%'
+#			)
+#			and ps_availqty > (
+#				select
+#					0.5 * sum(l_quantity)
+#				from
+#					lineitem
+#				where
+#					l_partkey = ps_partkey
+#					and l_suppkey = ps_suppkey
+#					and l_shipdate >= date '1994-01-01'
+#					and l_shipdate < date '1994-01-01' + interval '1' year
+#			)
+#	)
+#	and s_nationkey = n_nationkey
 % sys.supplier,	sys.supplier # table_name
 % s_name,	s_address # name
-% varchar,	varchar # type
-% 18,	30 # length
+% char,	varchar # type
+% 25,	30 # length
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
+#select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
@@ -1306,14 +1347,14 @@ Ready.
 #			and l3.l_receiptdate > l3.l_commitdate
 % sys.supplier,	sys.L1 # table_name
 % s_name,	numwait # name
-% varchar,	wrd # type
-% 18,	1 # length
+% char,	wrd # type
+% 25,	1 # length
 [ "Supplier#000000074",	9	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	3	]
+[ "joinidx",	2	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -1349,8 +1390,8 @@ Ready.
 #				from
 % sys.custsale,	sys.L2,	sys.L3 # table_name
 % cntrycode,	numcust,	totacctbal # name
-% varchar,	wrd,	decimal # type
-% 2,	2,	17 # length
+% char,	wrd,	decimal # type
+% 15,	2,	41 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
