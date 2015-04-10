@@ -682,11 +682,10 @@ find_fk( mvc *sql, list *rels, list *exps)
 			r = rr->l;
 			lcols = list_map(lexps, lr, (fmap) &table_colexp);
 			rcols = list_map(rexps, rr, (fmap) &table_colexp);
-			if (list_length(lcols) != list_length(rcols)) {
-				lcols->destroy = NULL;
-				rcols->destroy = NULL;
+			lcols->destroy = NULL;
+			rcols->destroy = NULL;
+			if (list_length(lcols) != list_length(rcols)) 
 				continue;
-			}
 
 			idx = find_fk_index(l, lcols, r, rcols); 
 			if (!idx) {
@@ -712,14 +711,16 @@ find_fk( mvc *sql, list *rels, list *exps)
 
 						t = rel_find_column(sql->sa, lr, s->l, TID);
 						i = rel_find_column(sql->sa, rr, l->l, iname);
-						assert(t && i);
+						if (!t || !i) 
+							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					} else {
 						sql_exp *s = je->r, *l = je->l;
 
 						t = rel_find_column(sql->sa, rr, s->l, TID);
 						i = rel_find_column(sql->sa, lr, l->l, iname);
-						assert(t && i);
+						if (!t || !i) 
+							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
 
@@ -739,8 +740,6 @@ find_fk( mvc *sql, list *rels, list *exps)
 				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
 				p->value = idx;
 			}
-			lcols->destroy = NULL;
-			rcols->destroy = NULL;
 		}
 	}
 
