@@ -2239,8 +2239,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			}
 			if (ncnt == BUN_NONE)
 				goto bailout;
-			assert(ncnt >= cnt);
-			if (ncnt == cnt)
+			assert(ncnt >= cnt || ncnt == 0);
+			if (ncnt == cnt || ncnt == 0)
 				continue;
 			if (BATcapacity(r2) < ncnt) {
 				BATsetcount(r2, cnt);
