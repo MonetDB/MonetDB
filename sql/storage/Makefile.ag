@@ -24,7 +24,8 @@ SUBDIRS = bat
 INCLUDES = ../include ../common \
 		   ../../common/options \
 		   ../../common/stream \
-		   ../../gdk
+		   ../../gdk \
+			../server
 
 lib_store = {
 	NOINST

@@ -568,6 +568,55 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 }
 
 static int
+create_dimension(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+{
+	dlist *l = s->data.lval;
+	char *dname = l->h->data.sval;
+	sql_subtype *dtype = &l->h->next->data.typeval;
+	symbol *ranges_sym = l->h->next->next->data.sym;
+	list *range = sa_list(sql->sa);
+
+(void)ss;
+
+	assert(ranges_sym->token == SQL_RANGE);
+
+	if (dname && dtype) {
+		sql_dimension *dim = NULL;
+		dnode *range_value = NULL;
+
+		dim = find_sql_dimension(t, dname); //check whether the name has already been used
+		if (dim) {
+			sql_error(sql, 02, "42S21!CREATE ARRAY: a column named '%s' already exists\n", dname);
+			return SQL_ERR;
+		}
+
+		//if only one value is provided the dimension should be of type integer
+		if(dlist_length(ranges_sym->data.lval) == 1) {
+			if(dtype->type->localtype != TYPE_int) {
+				sql_error(sql, 02, "42S21!CREATE ARRAY: dimension named  '%s' should be of type integer to have a single argument", dname);
+				return SQL_ERR;
+			}
+		}
+
+		for(range_value = ranges_sym->data.lval->h ; range_value ; range_value = range_value->next) {
+			atom *val = NULL;
+			
+			assert(range_value->data.sym->token == SQL_COLUMN);
+			val = sql_bind_arg(sql, range_value->data.sym->data.lval->h->data.i_val);
+
+			//check whether the type of the value for the range is compatible with the type of the dimension
+			//I do not do any casting here, just making sure that the types are compatible
+			if(!rel_check_type(sql, dtype, exp_atom(sql->sa, val), type_cast))
+				return SQL_ERR;
+			list_append(range, val);
+		}
+
+		dim = mvc_create_dimension(sql, t, dname, dtype, range);
+	}
+	return SQL_OK;
+}
+
+static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
@@ -577,7 +626,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	int res = SQL_OK;
 
 (void)ss;
-	if (alter && !isTable(t)) {
+	if (alter && !(isTable(t) || isArray(t))) {
 		sql_error(sql, 02, "42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
 		return SQL_ERR;
 	}
@@ -649,7 +698,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 	switch (s->token) {
 	case SQL_DIMENSION:
-		fprintf(stderr, "table_element: Do something for dimensions\n");
+		res = create_dimension(sql, s, ss, t);
 		break;
 	case SQL_COLUMN:
 		res = create_column(sql, s, ss, t, alter);
@@ -808,6 +857,28 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	return res;
 }
 
+int compute_repeats(mvc *sql, sql_table *t) {
+	node *n;
+	sql_dimension **dims_array = SA_NEW_ARRAY(sql->sa, sql_dimension*, list_length(t->dimensions.set));
+	lng i=0;
+
+	for(n=t->dimensions.set->h ; n->next ; n = n->next) {
+		sql_dimension *currentDim = n->data;
+		sql_dimension *nextDim = n->next->data;
+		
+		nextDim->lvl1_repeatsNum = currentDim->lvl1_repeatsNum * currentDim->elementsNum;
+	
+		dims_array[i] = currentDim; 
+		i++;
+	}
+	dims_array[i] = n->data;
+
+	for(i=i-1; i>=0; i--)
+		dims_array[i]->lvl2_repeatsNum = dims_array[i+1]->lvl2_repeatsNum * dims_array[i+1]->elementsNum;
+
+	return SQL_OK;
+}
+
 sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *array_elements, int commit_action) {
 	sql_schema *s = NULL;
 //	int instantiate = (sql->emode == m_instantiate);
@@ -853,6 +924,10 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 			if (res == SQL_ERR) 
 				return NULL;
 		}
+
+		//compute the repeats of the dimensional columns
+		compute_repeats(sql, t);
+
 		temp = (tt == tt_array)?temp:SQL_PERSIST;
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
 	} 
@@ -1766,7 +1841,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname); //the name of the schema
 		char *name = qname_table(qname); //the name of the array
-		int temp = l->h->data.i_val; //the type of the array. For now there is only tt_array
+		int temp = l->h->data.i_val; //SQL_PERSIST
 
 		//if any of the following is not true there is an error in the parse tree
 		assert(l->h->type == type_int); 

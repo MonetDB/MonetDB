@@ -2650,7 +2650,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	setVarUDFtype(mb, 0);
 	setModuleId(curInstr, userRef);
 
-	if (m->argc) {
+	if (m->argc) { //it reads the literals that had been included in the query.
 		for (argc = 0; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
 			int type = atom_type(a)->type->localtype;

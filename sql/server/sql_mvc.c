@@ -1046,8 +1046,8 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	if ((isDeclaredTable(t) || isDeclaredArray(t)) && (!t->s || strcmp(t->s->base.name, dt_schema))) 
-		/* declared tables or arrays should not end up in the catalog */
+	if (isDeclaredTable(t) && (!t->s || strcmp(t->s->base.name, dt_schema))) 
+		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->sa, t, name, tpe);
 	else
 		return sql_trans_create_column(m->session->tr, t, name, tpe);
@@ -1062,6 +1062,21 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		drop_sql_column(t, col->base.id, drop_action);
 	else
 		sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+}
+
+sql_dimension *
+mvc_create_dimension(mvc *m, sql_table *t, const char *name, sql_subtype *tpe, list* dimensionRange)
+{
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_create_dimension %s %s %s\n", t->base.name, name, tpe->type->sqlname);
+	if (isDeclaredArray(t) && (!t->s || strcmp(t->s->base.name, dt_schema))) {
+		/* declared arrays should not end up in the catalog */
+		return create_sql_dimension(m->sa, t, name, tpe, dimensionRange);
+	}
+	else
+		fprintf(stderr, "sql/server/sql_mvc.c:1076 : I do not have an implementation for this case\n");
+
+	return NULL;
 }
 
 void
@@ -1562,6 +1577,12 @@ stack_get_number(mvc *sql, const char *name)
 {
 	ValRecord *v = stack_get_var(sql, name);
 	return val_get_number(v);
+}
+
+sql_dimension *
+mvc_copy_dimension( mvc *m, sql_table *t, sql_dimension *d)
+{
+	return sql_trans_copy_dimension(m->session->tr, t, d);
 }
 
 sql_column *

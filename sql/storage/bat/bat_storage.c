@@ -2157,6 +2157,7 @@ bat_storage_init( store_functions *sf)
 	sf->snapshot_table = (update_table_fptr)&snapshot_table;
 	sf->gtrans_update = (gtrans_update_fptr)&gtr_update;
 	sf->gtrans_minmax = (gtrans_update_fptr)&gtr_minmax;
+
 	return LOG_OK;
 }
 

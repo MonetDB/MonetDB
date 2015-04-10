@@ -176,6 +176,13 @@ find_sql_column(sql_table *t, const char *cname)
 	return _cs_find_name(&t->columns, cname);
 }
 
+sql_dimension *
+find_sql_dimension(sql_table *t, const char *dname)
+{
+	return _cs_find_name(&t->dimensions, dname);
+}
+
+
 sql_table *
 find_sql_table(sql_schema *s, const char *tname)
 {

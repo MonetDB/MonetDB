@@ -452,6 +452,39 @@ typedef struct sql_column {
 	void *data;
 } sql_column;
 
+//dimension needs atom. Since is stores pointers to atom there is no
+//need to find the type. The important is to know that there is a
+//type atom
+typedef struct atom atom;
+
+typedef struct sql_dimension {
+	sql_base base;
+	sql_subtype type;
+	int dimnr; //the order of the dimension
+	char *def; //I think this is for default values
+	char *storage_type;
+	size_t dcount; /* what does it do? */
+
+	bit unbounded_min;
+	bit unbounded_max;
+
+	//the range of the dimension
+	//It is void to store any type of dimensions
+	//the exact type is found through the type field of the struct
+	//Niels said to use atom. In this case do I need the information about the type?
+	//maybe I need to to check that the values when inserting a new cell are of the correct type
+	atom *min;
+	atom *step;
+	atom *max;
+	
+	lng lvl1_repeatsNum; //number of times each value of the dimension is repeated before being increased
+	lng lvl2_repeatsNum; //number of times all values of the dimension are repeated as a group (including the duplicated values defined by repeatNum)
+	lng elementsNum; //the distinct number of elements in this dimension, i.e. the nu,ber of indices
+
+	struct sql_table *t;
+//	void *data; //it does not have data since it is not materialised
+} sql_dimension;
+
 typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
@@ -486,6 +519,7 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
+	changeset dimensions; //used only when the table is an array
 	changeset columns;
 	changeset idxs;
 	changeset keys;
@@ -554,6 +588,7 @@ extern sql_key *find_sql_key(sql_table *t, const char *kname);
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
+extern sql_dimension *find_sql_dimension(sql_table *t, const char *dname);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);

@@ -29,6 +29,9 @@
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
 
+#include <sql_atom.h>
+#include <math.h>
+
 /* version 05.21.00 of catalog */
 #define CATALOG_VERSION 52200
 int catalog_version = 0;
@@ -130,7 +133,7 @@ trigger_destroy(sql_trigger *tr)
 void
 column_destroy(sql_column *c)
 {
-	if (isTable(c->t))
+	if (isTable(c->t) || isArray(c->t))
 		store_funcs.destroy_col(NULL, c);
 }
 
@@ -1126,6 +1129,21 @@ table_next_column_nr(sql_table *t)
 	return nr;
 }
 
+static int
+table_next_dimension_nr(sql_table *t)
+{
+	int nr = cs_size(&t->dimensions);
+	if (nr) {
+		node *n = cs_last_node(&t->dimensions);
+		if (n) {
+			sql_dimension *d = n->data;
+
+			nr = d->dimnr+1;
+		}
+	}
+	return nr;
+}
+
 static sql_column *
 bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, int digits)
 {
@@ -1166,6 +1184,7 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	t->access = 0;
+	cs_new(&t->dimensions, sa, NULL); //dimensions are not materialised, thus do not need to be destroyed
 	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
@@ -1427,6 +1446,14 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "_dimensions");
+        bootstrap_create_column(tr, t, "column_id", "int", 32);
+        bootstrap_create_column(tr, t, "min", "bigint", 64);
+        bootstrap_create_column(tr, t, "step", "bigint", 64);
+        bootstrap_create_column(tr, t, "max", "bigint", 64);
+        bootstrap_create_column(tr, t, "order", "int", 32);
+
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2008,6 +2035,40 @@ sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, co
 
 }
 
+//adds the dimension to the _columns table
+//it adds it also to the dimensions changeset that was created
+//in a previous step
+sql_dimension *
+sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *d )
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+	sql_table *syscolumn = find_sql_table(syss, "_columns");
+	sql_dimension *dim = SA_ZNEW(tr->sa, sql_dimension);
+	bit isnull = 0; //dimensions do not have null values
+
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, d->base.name))
+		return NULL;
+	base_init(tr->sa, &dim->base, d->base.id, TR_NEW, d->base.name);
+	dim->type = d->type;
+	dim->def = NULL;
+	if (d->def)
+		dim->def = sa_strdup(tr->sa, d->def);
+	dim->dimnr = d->dimnr;
+	dim->t = t;
+	dim->storage_type = NULL;
+	if (d->storage_type)
+		dim->storage_type = sa_strdup(tr->sa, d->storage_type);
+
+	cs_add(&t->dimensions, dim, TR_NEW);
+
+	if (!isDeclaredArray(t))
+		table_funcs.table_insert(tr, syscolumn, &dim->base.id, dim->base.name, dim->type.type->sqlname, &dim->type.digits, &dim->type.scale, &t->base.id, (dim->def) ? dim->def : ATOMnilptr(TYPE_str), &isnull, &dim->dimnr, (dim->storage_type) ? dim->storage_type : ATOMnilptr(TYPE_str));
+	dim->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	if (isGlobal(t)) 
+		tr->schema_updates ++;
+	return dim;
+}
+
 sql_column *
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
@@ -2036,7 +2097,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 		if (isTable(t) || isArray(t))
 			if (store_funcs.create_col(tr, col) == LOG_ERR)
 				return NULL;
-	if (!isDeclaredTable(t))
+	if (!(isDeclaredTable(t) || isDeclaredArray(t)))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
@@ -4163,6 +4224,89 @@ create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype
 
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
+}
+
+sql_dimension *
+create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, list* range)
+{
+	sql_dimension *dim = SA_ZNEW(sa, sql_dimension);
+	sql_subtype valuesType = ((atom*)range->h->data)->tpe;
+
+	base_init(sa, &dim->base, next_oid(), TR_NEW, name);
+	dim->type = *tpe;
+	dim->def = NULL;
+	dim->dimnr = table_next_dimension_nr(t);
+
+	
+	switch(list_length(range)) {
+	case 0:
+		dim->unbounded_min = 1;
+		dim->unbounded_max = 1;
+
+		dim->min = NULL;
+		dim->step = NULL;
+		dim->max = NULL;
+		break;	
+	case 1:
+		dim->min = atom_int(sa, &valuesType, 0);
+		dim->step = atom_int(sa, &valuesType, 1);
+		dim->max = range->h->data; 
+		dim->max->data.val.ival--;//the upper limit is one smaller than the total size (0 starting arrays)
+		dim->max->d--; //I have no idea what this is
+		break;	
+	case 2:
+		dim->unbounded_max = 1;
+		dim->min = range->h->data;
+		dim->step = range->h->next->data;
+		dim->max = NULL;
+		break;	
+	case 3:
+		dim->min = range->h->data;
+		dim->step = range->h->next->data;
+		dim->max = range->h->next->next->data;
+		break;	
+	}
+
+	if(!dim->unbounded_min && !dim->unbounded_max) {
+		switch(valuesType.type->localtype) {
+		case TYPE_bte:
+			dim->elementsNum = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1;
+			break;
+		case TYPE_sht:
+			dim->elementsNum = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1;
+			break;
+		case TYPE_int:
+			dim->elementsNum = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1;
+			break;
+		case TYPE_wrd:
+			dim->elementsNum = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1;
+			break;
+		case TYPE_oid:
+			dim->elementsNum = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1;
+			break;
+		case TYPE_lng:
+			dim->elementsNum = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1;
+			break;
+		case TYPE_dbl:
+			dim->elementsNum = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1;
+			break;
+		case TYPE_flt:
+			dim->elementsNum = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1;
+			break;
+		default:
+			fprintf(stderr, "Dimension of unknown type");
+			return NULL;
+		}
+	}
+	else
+		dim->elementsNum = 0; //unbounded does not have elements. It should be checked and updated at each insertion
+	dim->lvl1_repeatsNum = 1;
+	dim->lvl2_repeatsNum = 1;
+	dim->t = t;
+	dim->storage_type = NULL;
+
+	cs_add(&t->dimensions, dim, TR_NEW);
+	return dim;
 }
 
 void

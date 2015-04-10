@@ -119,7 +119,7 @@ typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or n
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
--- create the necessary storage resources for columns, indices and tables
+-- create the necessary storage resources for columns, indices, arrays, and tables
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c); 
@@ -243,6 +243,7 @@ typedef struct store_functions {
 	idx_upd_fptr idx_upd;
 
 	del_fptr del;
+
 } store_functions;
 
 extern store_functions store_funcs;
@@ -378,6 +379,7 @@ extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
+extern sql_dimension *create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, list *range);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
@@ -393,6 +395,7 @@ extern void drop_sql_column(sql_table *t, int id, int drop_action);
 extern void drop_sql_idx(sql_table *t, int id);
 extern void drop_sql_key(sql_table *t, int id, int drop_action);
 
+extern sql_dimension *sql_trans_copy_dimension(sql_trans*, sql_table*, sql_dimension*);
 extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c);
 extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);

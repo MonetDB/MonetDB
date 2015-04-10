@@ -185,6 +185,7 @@ extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int p
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern void mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
+extern sql_dimension *mvc_create_dimension(mvc *c, sql_table *t, const char *name, sql_subtype *type, list* dimensionRange);
 extern sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
@@ -254,6 +255,8 @@ extern lng val_get_number(ValRecord *val);
 extern lng stack_get_number(mvc *sql, const char *name);
 extern void stack_set_number(mvc *sql, const char *name, lng v);
 #endif
+
+extern sql_dimension *mvc_copy_dimension(mvc *m, sql_table *t, sql_dimension *d);
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);

@@ -2554,7 +2554,7 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				return NULL;
 		}
 	} else {
-		/* first try without current relation, too see if there
+		/* first try without current relation, to see if there
 		   are correlations with the outer relation */
 		sql_rel *r = rel_subquery(sql, NULL, ro, ek, APPLY_JOIN);
 

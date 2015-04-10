@@ -419,7 +419,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 
 	osa = sql->sa;
 	sql->sa = NULL;
-	/* first check default values */
+	/* first check default values. I should update that to deal with dimensions */
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -439,13 +439,27 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 		}
 	}
 
+	//create a copy of the table without the changesets
 	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
 
+	if(isArray(t)) {
+		assert(t->dimensions.set); //an array should always have dimensional column(s)
+
+		for (n = t->dimensions.set->h; n; n = n->next) {
+			sql_dimension *d = n->data;
+			if (mvc_copy_dimension(sql, nt, d) == NULL)
+				throw(SQL, "sql.catalog", "CREATE ARRAY: %s_%s_%s conflicts", s->base.name, t->base.name, d->base.name);
+
+		}
+	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		if (mvc_copy_column(sql, nt, c) == NULL)
-			throw(SQL, "sql.catalog", "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
-
+		if (mvc_copy_column(sql, nt, c) == NULL) {
+			if(isArray(t))
+				throw(SQL, "sql.catalog", "CREATE ARRAY: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+			else
+				throw(SQL, "sql.catalog", "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		}
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
