@@ -344,6 +344,7 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -374,6 +375,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -641,6 +643,10 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 	}
 	*r1 = result1->batCacheid;
 	*r2 = result2->batCacheid;
+	if (!(result1->batDirty&2))
+		BATsetaccess(result1, BAT_READ);
+	if (!(result2->batDirty&2))
+		BATsetaccess(result2, BAT_READ);
 	BBPkeepref(*r1);
 	BBPkeepref(*r2);
 	BBPunfix(left->batCacheid);
@@ -939,6 +945,10 @@ ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -993,6 +1003,10 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 		j2 = R;
 		rmap = NULL;
 	}
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -1018,6 +1032,10 @@ ALGthetajoin2( bat *l, bat *r, const bat *left, const bat *right, const int *opc
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -1064,6 +1082,10 @@ ALGbandjoin2(bat *l, bat *r, const bat *left, const bat *right, const void *minu
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	if (!(bn1->batDirty&2))
+		BATsetaccess(bn1, BAT_READ);
+	if (!(bn2->batDirty&2))
+		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
@@ -1094,6 +1116,10 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 	BBPunfix(RH->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
+	if (!(bn1->batDirty&2))
+		BATsetaccess(bn1, BAT_READ);
+	if (!(bn2->batDirty&2))
+		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
