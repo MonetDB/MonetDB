@@ -432,6 +432,7 @@ setMethod("dbSendUpdateAsync", signature(conn="MonetDBConnection", statement="ch
 ### MonetDBResult
 setClass("MonetDBResult", representation("DBIResult", env="environment"))
 
+.CT_INT <- 0L
 .CT_NUM <- 1L
 .CT_CHR <- 2L
 .CT_CHRR <- 3L
@@ -439,12 +440,13 @@ setClass("MonetDBResult", representation("DBIResult", env="environment"))
 .CT_RAW <- 5L
 
 # type mapping matrix
-monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(9, 4, 8, 1, 1))
-names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
-                       c("CHAR", "VARCHAR", "CLOB", "STR"), 
-                       c("INTERVAL", "DATE", "TIME", "TIMETZ", "TIMESTAMP", "TIMESTAMPTZ", "MONTH_INTERVAL", "SEC_INTERVAL"), 
-                       "BOOLEAN", 
-                       "BLOB")
+monetTypes <- rep(c("integer", "numeric", "character", "character", "logical", "raw"), c(6, 5, 4, 6, 1, 1))
+names(monetTypes) <- c(c("WRD", "TINYINT", "SMALLINT", "INT", "MONTH_INTERVAL"), # month_interval is the diff between date cols, int
+  c("BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "SEC_INTERVAL"),  # sec_interval is the difference between timestamps, float
+  c("CHAR", "VARCHAR", "CLOB", "STR"), 
+  c("INTERVAL", "DATE", "TIME", "TIMETZ", "TIMESTAMP", "TIMESTAMPTZ"), 
+  c("BOOLEAN"), 
+  c("BLOB"))
 
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
@@ -487,6 +489,10 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   
   for (i in seq.int(info$cols)) {
     rtype <- monetdbRtype(info$types[i])
+    if (rtype=="integer") {      
+      df[[i]] <- integer()
+      ct[i] <- .CT_INT
+    }
     if (rtype=="numeric") {			
       df[[i]] <- numeric()
       ct[i] <- .CT_NUM
@@ -529,6 +535,8 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # convert values column by column
   for (j in seq.int(info$cols)) {	
     col <- ct[[j]]
+    if (col == .CT_INT) 
+      df[[j]] <- as.integer(parts[[j]])
     if (col == .CT_NUM) 
       df[[j]] <- as.numeric(parts[[j]])
     if (col == .CT_CHRR) {

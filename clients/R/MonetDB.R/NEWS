@@ -1,6 +1,7 @@
 0.9.8
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
 - Cleaned up SQL to R type mapping (we had this twice)
+- Now creating actual R integers if data fits
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
