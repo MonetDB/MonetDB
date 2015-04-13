@@ -524,6 +524,84 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
 }
+/*
+static sql_dimension *
+load_dimension(sql_trans *tr, sql_table *t, oid rid)
+{
+	void *v;
+	char *def, *tpe, *st, *min, *step, *max;
+	int sz, d;
+	sql_dimension *dim = SA_ZNEW(tr->sa, sql_dimension);
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *columns = find_sql_table(syss, "_dimensions");
+	sqlid cid;
+
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
+	cid = *(sqlid *)v;			_DELETE(v);	
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "name"), rid);
+	base_init(tr->sa, &dim->base, cid, TR_OLD, v);	_DELETE(v);
+
+	tpe = table_funcs.column_find_value(tr, find_sql_column(columns, "type"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_digits"), rid);
+	sz = *(int *)v;				_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_scale"), rid);
+	d = *(int *)v;				_DELETE(v);
+	if (!sql_find_subtype(&dim->type, tpe, sz, d))
+		sql_init_subtype(&dim->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
+	_DELETE(tpe);
+
+	dim->def = NULL;
+	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
+		dim->def = def;
+	else
+		_DELETE(def);
+	dim->min = NULL;
+	min = table_funcs.column_find_value(tr, find_sql_column(columns, "min"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
+		dim->min = min;
+	else
+		_DELETE(min);
+	dim->step = NULL;
+	step = table_funcs.column_find_value(tr, find_sql_column(columns, "step"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
+		dim->step = step;
+	else
+		_DELETE(step);
+	dim->max = NULL;
+	max = table_funcs.column_find_value(tr, find_sql_column(columns, "max"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
+		dim->max = max;
+	else
+		_DELETE(max);
+
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "dimnr"), rid);
+	dim->dimnr = *(int *)v;				_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "repeats1"), rid);
+	dim->lvl1_repeatsNum = *(int *)v;				_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "repeats2"), rid);
+	dim->lvl2_repeatsNum = *(int *)v;				_DELETE(v);
+
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "umin"), rid);
+	dim->unbounded_min = *(bit *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(columns, "umax"), rid);
+	dim->unbounded_max = *(bit *)v;			_DELETE(v);
+
+	dim->storage_type = NULL;
+	st = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), st) != 0)
+		dim->storage_type = st;
+	else
+		_DELETE(st);
+	dim->t = t;
+	if (isArray(dim->t))
+		store_funcs.create_dim(tr, dim);
+	dim->dcount = 0;
+	if (bs_debug)
+		fprintf(stderr, "#\t\tload column %s\n", dim->base.name);
+
+	return dim;
+}*/
 
 static void
 load_table_parts(sql_trans *tr, sql_table *t, oid rid)
@@ -1448,12 +1526,22 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "_dimensions");
-        bootstrap_create_column(tr, t, "column_id", "int", 32);
-        bootstrap_create_column(tr, t, "min", "bigint", 64);
-        bootstrap_create_column(tr, t, "step", "bigint", 64);
-        bootstrap_create_column(tr, t, "max", "bigint", 64);
-        bootstrap_create_column(tr, t, "order", "int", 32);
-
+        bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type_digits", "int", 32);
+		bootstrap_create_column(tr, t, "type_scale", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "default", "varchar", 2048);
+        bootstrap_create_column(tr, t, "min", "varchar", 2048);
+        bootstrap_create_column(tr, t, "step", "varchar", 2048);
+        bootstrap_create_column(tr, t, "max", "varchar", 2048);
+        bootstrap_create_column(tr, t, "dimnr", "int", 32);
+		bootstrap_create_column(tr, t, "repeats1", "int", 32);
+		bootstrap_create_column(tr, t, "repeats2", "int", 32);
+		bootstrap_create_column(tr, t, "umin", "boolean", 1);
+		bootstrap_create_column(tr, t, "umax", "boolean", 1);
+		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2035,40 +2123,6 @@ sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, co
 
 }
 
-//adds the dimension to the _columns table
-//it adds it also to the dimensions changeset that was created
-//in a previous step
-sql_dimension *
-sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *d )
-{
-	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
-	sql_table *syscolumn = find_sql_table(syss, "_columns");
-	sql_dimension *dim = SA_ZNEW(tr->sa, sql_dimension);
-	bit isnull = 0; //dimensions do not have null values
-
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, d->base.name))
-		return NULL;
-	base_init(tr->sa, &dim->base, d->base.id, TR_NEW, d->base.name);
-	dim->type = d->type;
-	dim->def = NULL;
-	if (d->def)
-		dim->def = sa_strdup(tr->sa, d->def);
-	dim->dimnr = d->dimnr;
-	dim->t = t;
-	dim->storage_type = NULL;
-	if (d->storage_type)
-		dim->storage_type = sa_strdup(tr->sa, d->storage_type);
-
-	cs_add(&t->dimensions, dim, TR_NEW);
-
-	if (!isDeclaredArray(t))
-		table_funcs.table_insert(tr, syscolumn, &dim->base.id, dim->base.name, dim->type.type->sqlname, &dim->type.digits, &dim->type.scale, &t->base.id, (dim->def) ? dim->def : ATOMnilptr(TYPE_str), &isnull, &dim->dimnr, (dim->storage_type) ? dim->storage_type : ATOMnilptr(TYPE_str));
-	dim->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
-	if (isGlobal(t)) 
-		tr->schema_updates ++;
-	return dim;
-}
-
 sql_column *
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
@@ -2097,8 +2151,59 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 		if (isTable(t) || isArray(t))
 			if (store_funcs.create_col(tr, col) == LOG_ERR)
 				return NULL;
-	if (!(isDeclaredTable(t) || isDeclaredArray(t)))
+	if (!(isDeclaredTable(t) || isDeclaredArray(t))) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+	}
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	if (isGlobal(t)) 
+		tr->schema_updates ++;
+	return col;
+}
+
+sql_dimension *
+sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+	sql_table *syscolumn = find_sql_table(syss, "_dimensions");
+	sql_dimension *col = SA_ZNEW(tr->sa, sql_dimension);
+
+	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, dim->base.name))
+		return NULL;
+	base_init(tr->sa, &col->base, dim->base.id, TR_NEW, dim->base.name);
+	col->type = dim->type;
+	col->def = NULL;
+	if (dim->def)
+		col->def = sa_strdup(tr->sa, dim->def);
+	col->min = NULL;
+	if (dim->min)
+		col->min = sa_strdup(tr->sa, dim->min);
+	col->step = NULL;
+	if (dim->step)
+		col->step = sa_strdup(tr->sa, dim->step);
+	col->max = NULL;
+	if (dim->max)
+		col->max = sa_strdup(tr->sa, dim->max);
+	col->dimnr = dim->dimnr;
+	col->lvl1_repeatsNum = dim->lvl1_repeatsNum;
+	col->lvl2_repeatsNum = dim->lvl2_repeatsNum;
+	col->unbounded_min = dim->unbounded_min;
+	col->unbounded_max = dim->unbounded_max;
+	col->t = t;
+	col->storage_type = NULL;
+	if (dim->storage_type)
+		col->storage_type = sa_strdup(tr->sa, dim->storage_type);
+
+	cs_add(&t->dimensions, col, TR_NEW);
+
+/*I do not create a new BAT for dimensional columns
+	if (isDeclaredArray(c->t)) 
+		if (isArray(t))
+			if (store_funcs.create_col(tr, col) == LOG_ERR)
+				return NULL;
+*/
+	if (!isDeclaredArray(t)) {
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), col->min, col->step, col->max, &col->dimnr, &col->lvl1_repeatsNum, &col->lvl2_repeatsNum, &col->unbounded_min, &col->unbounded_max, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+	}
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -3639,6 +3744,42 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 }
 
 static void
+sys_drop_dimension(sql_trans *tr, sql_dimension *dim)
+{
+//	str seq_pos = NULL;
+//	const char *next_value_for = "next value for \"sys\".\"seq_";
+	sql_schema *syss = find_sql_schema(tr, isGlobal(dim->t)?"sys":"tmp"); 
+	sql_table *syscolumn = find_sql_table(syss, "_dimensions");
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
+				  &dim->base.id, NULL);
+
+	assert(rid != oid_nil);
+	table_funcs.table_delete(tr, syscolumn, rid);
+	sql_trans_drop_dependencies(tr, dim->base.id);
+
+#if 0
+/*in case there is a sequence associated with the dimension this should be uncommented*/
+	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+		sql_sequence * seq = NULL;
+		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+		node *n = NULL;
+		seq_name[strlen(seq_name)-1] = '\0';
+		n = cs_find_name(&syss->seqs, seq_name);
+		seq = find_sql_sequence(syss, seq_name);
+		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY)) {
+			sys_drop_sequence(tr, seq, drop_action);		
+			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
+			cs_del(&syss->seqs, n, seq->base.flag);
+		}
+		_DELETE(seq_name);
+	}
+#endif
+	
+	if (isGlobal(dim->t)) 
+		tr->schema_updates ++;
+}
+
+static void
 sys_drop_keys(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
@@ -3678,6 +3819,19 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 }
 
 static void
+sys_drop_dimensions(sql_trans *tr, sql_table *t)
+{
+	node *n;
+
+	if (cs_size(&t->dimensions))
+		for (n = t->dimensions.set->h; n; n = n->next) {
+			sql_dimension *dim = n->data;
+
+			sys_drop_dimension(tr, dim);
+		}
+}
+
+static void
 sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -3694,6 +3848,9 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	if (isKindOfTable(t) || isView(t))
 		sys_drop_columns(tr, t, drop_action);
+
+	if(isArray(t))
+		sys_drop_dimensions(tr, t);
 
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -4227,79 +4384,24 @@ create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype
 }
 
 sql_dimension *
-create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, list* range)
+create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	sql_dimension *dim = SA_ZNEW(sa, sql_dimension);
-	sql_subtype valuesType = ((atom*)range->h->data)->tpe;
 
 	base_init(sa, &dim->base, next_oid(), TR_NEW, name);
 	dim->type = *tpe;
-	dim->def = NULL;
 	dim->dimnr = table_next_dimension_nr(t);
 
-	
-	switch(list_length(range)) {
-	case 0:
-		dim->unbounded_min = 1;
-		dim->unbounded_max = 1;
+	dim->min = NULL;
+	dim->step = NULL;
+	dim->max = NULL;
+	dim->def = NULL;
 
-		dim->min = NULL;
-		dim->step = NULL;
-		dim->max = NULL;
-		break;	
-	case 1:
-		dim->min = atom_int(sa, &valuesType, 0);
-		dim->step = atom_int(sa, &valuesType, 1);
-		dim->max = range->h->data; 
-		dim->max->data.val.ival--;//the upper limit is one smaller than the total size (0 starting arrays)
-		dim->max->d--; //I have no idea what this is
-		break;	
-	case 2:
-		dim->unbounded_max = 1;
-		dim->min = range->h->data;
-		dim->step = range->h->next->data;
-		dim->max = NULL;
-		break;	
-	case 3:
-		dim->min = range->h->data;
-		dim->step = range->h->next->data;
-		dim->max = range->h->next->next->data;
-		break;	
-	}
+	dim->unbounded_min = 0;
+	dim->unbounded_max = 0;
 
-	if(!dim->unbounded_min && !dim->unbounded_max) {
-		switch(valuesType.type->localtype) {
-		case TYPE_bte:
-			dim->elementsNum = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1;
-			break;
-		case TYPE_sht:
-			dim->elementsNum = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1;
-			break;
-		case TYPE_int:
-			dim->elementsNum = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1;
-			break;
-		case TYPE_wrd:
-			dim->elementsNum = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1;
-			break;
-		case TYPE_oid:
-			dim->elementsNum = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1;
-			break;
-		case TYPE_lng:
-			dim->elementsNum = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1;
-			break;
-		case TYPE_dbl:
-			dim->elementsNum = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1;
-			break;
-		case TYPE_flt:
-			dim->elementsNum = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1;
-			break;
-		default:
-			fprintf(stderr, "Dimension of unknown type");
-			return NULL;
-		}
-	}
-	else
-		dim->elementsNum = 0; //unbounded does not have elements. It should be checked and updated at each insertion
+	dim->elementsNum = 0;
+
 	dim->lvl1_repeatsNum = 1;
 	dim->lvl2_repeatsNum = 1;
 	dim->t = t;

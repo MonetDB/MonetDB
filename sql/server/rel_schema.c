@@ -433,6 +433,117 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 	return SQL_OK;
 }
 
+static int dimension_range(mvc *sql, symbol *range, sql_dimension* dim) {
+	char *err = NULL;
+	char *r = NULL;
+
+	switch(dlist_length(range->data.lval)) {
+    case 0:
+        dim->unbounded_min = 1;
+        dim->unbounded_max = 1;
+
+        dim->min = NULL;
+        dim->step = NULL;
+        dim->max = NULL;
+        break;  
+    case 1: {
+		char *min = "0";
+		char *step = "1";
+        dim->min = min;
+        dim->step = step;
+        r = symbol2string(sql, range->data.lval->h->data.sym, &err); 
+		if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect max value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else {
+			int m = atoi(r) - 1;
+			sprintf(r, "%d", m);
+			dim->max = r;
+		}
+		break;
+	}  
+    case 2:
+        dim->unbounded_max = 1;
+        r = symbol2string(sql, range->data.lval->h->data.sym, &err);
+        if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect min value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else
+			dim->min = r;
+		r = symbol2string(sql, range->data.lval->h->next->data.sym, &err);
+        if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect step value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else
+			dim->step = r;
+		dim->max = NULL;
+        break;  
+    case 3:
+        r = symbol2string(sql, range->data.lval->h->data.sym, &err);
+        if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect min value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else
+			dim->min = r;
+		r = symbol2string(sql, range->data.lval->h->next->data.sym, &err);
+        if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect step value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else
+			dim->step = r;
+        r = symbol2string(sql, range->data.lval->h->next->next->data.sym, &err);
+        if (!r) {
+			(void) sql_error(sql, 02, "42000!incorrect max value '%s'\n", err?err:"");
+    	    if (err) _DELETE(err);
+	    	    return SQL_ERR;
+        } else
+			dim->max = r;
+		break;  
+    }
+#if 0
+    if(!dim->unbounded_min && !dim->unbounded_max) {
+        switch(dim->type->localtype) {
+        case TYPE_bte:
+            dim->elementsNum = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1;
+            break;
+        case TYPE_sht:
+            dim->elementsNum = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1;
+            break;
+        case TYPE_int:
+            dim->elementsNum = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1;
+            break;
+        case TYPE_wrd:
+            dim->elementsNum = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1;
+            break;
+        case TYPE_oid:
+            dim->elementsNum = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1;
+            break;
+        case TYPE_lng:
+            dim->elementsNum = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1;
+            break;
+        case TYPE_dbl:
+            dim->elementsNum = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1;
+            break;
+        case TYPE_flt:
+            dim->elementsNum = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1;
+            break;
+        default:
+            fprintf(stderr, "Dimension of unknown type");
+            return NULL;
+        }
+    }
+    else
+        dim->elementsNum = 0; //unbounded does not have elements. It should be checked and updated at each insertion
+#endif
+	return SQL_OK;
+}
+
+
 static int 
 table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
@@ -574,7 +685,6 @@ create_dimension(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	char *dname = l->h->data.sval;
 	sql_subtype *dtype = &l->h->next->data.typeval;
 	symbol *ranges_sym = l->h->next->next->data.sym;
-	list *range = sa_list(sql->sa);
 
 (void)ss;
 
@@ -582,7 +692,6 @@ create_dimension(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 	if (dname && dtype) {
 		sql_dimension *dim = NULL;
-		dnode *range_value = NULL;
 
 		dim = find_sql_dimension(t, dname); //check whether the name has already been used
 		if (dim) {
@@ -598,20 +707,9 @@ create_dimension(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			}
 		}
 
-		for(range_value = ranges_sym->data.lval->h ; range_value ; range_value = range_value->next) {
-			atom *val = NULL;
-			
-			assert(range_value->data.sym->token == SQL_COLUMN);
-			val = sql_bind_arg(sql, range_value->data.sym->data.lval->h->data.i_val);
+		dim = mvc_create_dimension(sql, t, dname, dtype);
 
-			//check whether the type of the value for the range is compatible with the type of the dimension
-			//I do not do any casting here, just making sure that the types are compatible
-			if(!rel_check_type(sql, dtype, exp_atom(sql->sa, val), type_cast))
-				return SQL_ERR;
-			list_append(range, val);
-		}
-
-		dim = mvc_create_dimension(sql, t, dname, dtype, range);
+		dimension_range(sql, l->h->next->next->data.sym, dim);
 	}
 	return SQL_OK;
 }
@@ -926,7 +1024,7 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		}
 
 		//compute the repeats of the dimensional columns
-		compute_repeats(sql, t);
+		//compute_repeats(sql, t);
 
 		temp = (tt == tt_array)?temp:SQL_PERSIST;
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point

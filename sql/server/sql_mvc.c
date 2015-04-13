@@ -1065,13 +1065,13 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 sql_dimension *
-mvc_create_dimension(mvc *m, sql_table *t, const char *name, sql_subtype *tpe, list* dimensionRange)
+mvc_create_dimension(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dimension %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (isDeclaredArray(t) && (!t->s || strcmp(t->s->base.name, dt_schema))) {
 		/* declared arrays should not end up in the catalog */
-		return create_sql_dimension(m->sa, t, name, tpe, dimensionRange);
+		return create_sql_dimension(m->sa, t, name, tpe);
 	}
 	else
 		fprintf(stderr, "sql/server/sql_mvc.c:1076 : I do not have an implementation for this case\n");

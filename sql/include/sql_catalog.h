@@ -452,16 +452,10 @@ typedef struct sql_column {
 	void *data;
 } sql_column;
 
-//dimension needs atom. Since is stores pointers to atom there is no
-//need to find the type. The important is to know that there is a
-//type atom
-typedef struct atom atom;
-
 typedef struct sql_dimension {
 	sql_base base;
 	sql_subtype type;
 	int dimnr; //the order of the dimension
-	char *def; //I think this is for default values
 	char *storage_type;
 	size_t dcount; /* what does it do? */
 
@@ -473,13 +467,14 @@ typedef struct sql_dimension {
 	//the exact type is found through the type field of the struct
 	//Niels said to use atom. In this case do I need the information about the type?
 	//maybe I need to to check that the values when inserting a new cell are of the correct type
-	atom *min;
-	atom *step;
-	atom *max;
-	
+	char *min;
+	char *step;
+	char *max;
+	char *def; //default value
+
 	lng lvl1_repeatsNum; //number of times each value of the dimension is repeated before being increased
 	lng lvl2_repeatsNum; //number of times all values of the dimension are repeated as a group (including the duplicated values defined by repeatNum)
-	lng elementsNum; //the distinct number of elements in this dimension, i.e. the nu,ber of indices
+	lng elementsNum; //the distinct number of elements in this dimension, i.e. the number of indices
 
 	struct sql_table *t;
 //	void *data; //it does not have data since it is not materialised

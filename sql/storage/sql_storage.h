@@ -122,6 +122,7 @@ typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 -- create the necessary storage resources for columns, indices, arrays, and tables
 -- returns LOG_OK, LOG_ERR
 */
+//typedef int (*create_dim_fptr) (sql_trans *tr, sql_dimensin *dim); 
 typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c); 
 typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i); 
 typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
@@ -196,6 +197,7 @@ typedef struct store_functions {
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 
 	create_col_fptr create_col;
+//	create_dim_fptr create_dim;
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
 	
@@ -213,6 +215,7 @@ typedef struct store_functions {
 
 	/* functions for logging */
 	create_col_fptr log_create_col;
+//	create_dim_fptr log_create_dim;
 	create_idx_fptr log_create_idx;
 	create_del_fptr log_create_del;
 
@@ -222,6 +225,7 @@ typedef struct store_functions {
 
 	/* functions for snapshots */
 	create_col_fptr snapshot_create_col;
+//	create_dim_fptr snapshot_create_dim;
 	create_idx_fptr snapshot_create_idx;
 	create_del_fptr snapshot_create_del;
 
@@ -379,7 +383,7 @@ extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
-extern sql_dimension *create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, list *range);
+extern sql_dimension *create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
