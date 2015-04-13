@@ -511,7 +511,7 @@ update(EventRecord *ev)
 	char number[BUFSIZ]={0};
  
 	/* handle a ping event, keep the current instruction in focus */
-	if (ev->state >= PING ) {
+	if (ev->state >= MDB_PING ) {
 		// All state events are ignored
 		return;
 	}
@@ -541,7 +541,7 @@ update(EventRecord *ev)
 	}
 
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
-	if (!capturing && ev->state == START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (!capturing && ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
 				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
@@ -567,7 +567,7 @@ update(EventRecord *ev)
 		return;
 
 	/* start of instruction box */
-	if (ev->state == START ) {
+	if (ev->state == MDB_START ) {
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
 			currentquery = malarguments[0];
@@ -682,7 +682,7 @@ update(EventRecord *ev)
 		return;
 	}
 	/* end the instruction box */
-	if (ev->state == DONE ){
+	if (ev->state == MDB_DONE ){
 			
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
@@ -720,7 +720,7 @@ update(EventRecord *ev)
 		events[ev->pc].actual= ev->ticks;
 		clearArguments();
 	}
-	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (ev->state == MDB_DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
 			if( capturing == 0){
 				free(currentfunction);

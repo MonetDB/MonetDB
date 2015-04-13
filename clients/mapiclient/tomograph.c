@@ -772,11 +772,11 @@ showcpu(void)
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, (endrange? endrange:lastclktick - starttime));
 	fprintf(gnudata, "set yrange [0:%d]\n", cpus);
 	for (i = 0; i < topbox; i++)
-		j+=(box[i].state == PING);
+		j+=(box[i].state == MDB_PING);
 	if( debug)
 		fprintf(stderr,"Pings for cpu heat:%d\n",j);
 	for (i = 0; i < topbox; i++)
-		if (box[i].state == PING) {
+		if (box[i].state == MDB_PING) {
 			// decode the cpu heat
 			j = 0;
 			s = box[i].stmt +1;
@@ -811,7 +811,7 @@ showio(void)
 	lng max = 0;
 
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].state >= PING) {
+		if (box[i].clkend && box[i].state >= MDB_PING) {
 			if (box[i].inblock > max)
 				max = box[i].inblock;
 			if (box[i].oublock > max)
@@ -1122,7 +1122,7 @@ createTomogram(void)
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++){
-		if (box[i].clkend && box[i].state != PING) {
+		if (box[i].clkend && box[i].state != MDB_PING) {
 			for (j = 0; j < top; j++)
 				if (rows[j] == box[i].thread)
 					break;
@@ -1132,7 +1132,7 @@ createTomogram(void)
 					fprintf(stderr,"Assign thread %d to %d\n", box[i].thread, top);
 				rows[top++] = box[i].thread;
 			}
-			if( box[i].state != WAIT)
+			if( box[i].state != MDB_WAIT)
 				updmap(i);
 		}
 	}
@@ -1178,15 +1178,11 @@ createTomogram(void)
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
 						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 				break;
-			case PING:
+			case MDB_PING:
 				break;
-			case WAIT:
+			case MDB_WAIT:
 				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %.2f,%.2f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, box[i].row * 2 * h+h/3, box[i].clkstart+ w /25.0, box[i].row *2 *h + h - 0.3 * h);
-				break;
-			case GCOLLECT:
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"green\" fillstyle solid 1.0 \n",
-					object++, box[i].clkstart, box[i].row * 2 * h +h/3, box[i].clkend, box[i].row * 2 * h + h-h/3);
 				break;
 			}
 
@@ -1252,8 +1248,8 @@ update(char *line, EventRecord *ev)
 		exit(0);
 	}
 	/* handle a ping event, keep the current instruction in focus */
-	if (ev->state >= PING ) {
-		if (cpus == 0 && ev->state == PING) {
+	if (ev->state >= MDB_PING ) {
+		if (cpus == 0 && ev->state == MDB_PING) {
 			char *s;
 			if( (s= ev->stmt,'[')) 
 				s++;
@@ -1278,8 +1274,6 @@ update(char *line, EventRecord *ev)
 		box[idx].thread = ev->thread;
 		//lastclk[thread] = clkticks-starttime;
 		box[idx].clkend = box[idx].clkstart = ev->clkticks-starttime;
-		if (ev->state == GCOLLECT)
-			box[idx].clkstart -= ev->ticks;
 		box[idx].memend = box[idx].memstart = ev->memory;
 		box[idx].footstart = box[idx].tmpspace = ev->tmpspace;
 		box[idx].inblock = ev->inblock;
@@ -1296,7 +1290,7 @@ update(char *line, EventRecord *ev)
 			ping = idx;
 			return;
 		}
-		box[idx].fcn = ev->state == PING? strdup("profiler.ping"):strdup("profiler.wait");
+		box[idx].fcn = ev->state == MDB_PING? strdup("profiler.ping"):strdup("profiler.wait");
 		threads[ev->thread] = ++topbox;
 		idx = threads[ev->thread];
 		box[idx] = b;
@@ -1330,7 +1324,7 @@ update(char *line, EventRecord *ev)
 	}
 
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
-	if (!capturing && ev->state == START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (!capturing && ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
 				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
@@ -1361,7 +1355,7 @@ update(char *line, EventRecord *ev)
 	if( tracefd)
 		fprintf(tracefd,"%s\n",line);
 	/* start of instruction box */
-	if (ev->state == START ) {
+	if (ev->state == MDB_START ) {
 		if(debug)
 			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (ev->fcn?ev->fcn:""), ev->clkticks,currentfunction, ev->thread,idx,topbox);
 		box[idx].state = ev->state;
@@ -1409,7 +1403,7 @@ update(char *line, EventRecord *ev)
 		return;
 	}
 	/* end the instruction box */
-	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (ev->state == MDB_DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
 			if( capturing == 0){
 				free(currentfunction);
@@ -1431,7 +1425,7 @@ update(char *line, EventRecord *ev)
 			return;
 		}
 	}
-	if (ev->state == DONE ){
+	if (ev->state == MDB_DONE ){
 		if( box[idx].clkstart == 0){
 			// ignore incorrect pairs
 			if(debug) fprintf(stderr, "INCORRECT START\n");
@@ -1444,7 +1438,7 @@ update(char *line, EventRecord *ev)
 		box[idx].memend = ev->memory;
 		box[idx].tmpspace = ev->tmpspace;
 		box[idx].ticks = ev->ticks;
-		box[idx].state = ACTION;
+		box[idx].state = MDB_DONE;
 		box[idx].inblock = ev->inblock;
 		box[idx].oublock = ev->oublock;
 		box[idx].majflt = ev->majflt;

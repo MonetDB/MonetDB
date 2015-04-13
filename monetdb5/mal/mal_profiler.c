@@ -22,7 +22,6 @@
 #include "mal_debugger.h"
 
 stream *eventstream = 0;
-stream *progressstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;

@@ -58,31 +58,32 @@
 #define MAXTHREADS 1048
 #define MAXBOX 32678	 /* should be > MAXTHREADS */
 
-#define START 1
-#define DONE 2
-#define ACTION 3
-#define PING 4
-#define WAIT 5
-#define IOSTAT 6
-#define GCOLLECT 7
+#define  MDB_START 1
+#define  MDB_DONE 2
+#define  MDB_PING 3
+#define  MDB_WAIT 4
+#define  MDB_SYSTEM 5
+
 extern char *statenames[];
 
+// the break down of a profiler event message
 typedef struct  {
 	int state;
-	int pc;
-	int tag;
-	lng eventnr;
-	int thread;
+	char *blk;	// name of MAL block
+	int pc;		// instruction counter in block
+	int tag;	// unique MAL block invocation tag
+	lng eventnr;// serial event number
+	int thread;	// worker thread involved
 	lng clkticks;
 	lng ticks;
 	lng memory;
-	lng tmpspace;
+	lng tmpspace;	// size of temporary produced
 	lng inblock;
 	lng oublock;
 	lng majflt;
 	lng swaps;
 	lng csw;
-	char *stmt;
+	char *stmt;	// MAL statement, cpu loads or commentary
 	char *fcn;
 	char *numa;
 } EventRecord;

@@ -10,7 +10,7 @@
 
 #include "eventparser.h"
 
-char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollect"};
+char *statenames[]= {"","start","done","action","ping","wait","system"};
 
 char *malarguments[MAXMALARGS];
 int malargtop;
@@ -148,10 +148,14 @@ eventparser(char *row, EventRecord *ev)
 		return -3;
 
 	/* skip pc tag */
-	{	// decode pc
+	{	// decode qry[pc]tag
+		char *nme = c;
 		c= strchr(c+1,'[');
 		if( c == 0)
 			return -4;
+		*c = 0;
+		ev->blk= strdup(nme);
+		*c = '[';
 		ev->pc = atoi(c+1);
 		c= strchr(c+1,']');
 		if ( c == 0)
@@ -170,19 +174,19 @@ eventparser(char *row, EventRecord *ev)
 	if (c == 0)
 		return -5;
 	if (strncmp(c + 1, "start", 5) == 0) {
-		ev->state = START;
+		ev->state = MDB_START;
 		c += 6;
 	} else if (strncmp(c + 1, "done", 4) == 0) {
-		ev->state = DONE;
+		ev->state = MDB_DONE;
 		c += 5;
 	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		ev->state = PING;
+		ev->state = MDB_PING;
 		c += 5;
-	} else if (strncmp(c + 1, "stat", 4) == 0) {
-		ev->state = IOSTAT;
-		c += 6;
+	} else if (strncmp(c + 1, "system", 6) == 0) {
+		ev->state = MDB_SYSTEM;
+		c += 5;
 	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		ev->state = WAIT;
+		ev->state = MDB_WAIT;
 		c += 5;
 	} else {
 		ev->state = 0;
