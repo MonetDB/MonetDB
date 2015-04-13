@@ -170,12 +170,17 @@ dbSendUpdate(conn, "INSERT INTO monetdbtest (a) VALUES (?)", "Роман Mühlei
 stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
 dbRollback(conn)
 
+# this returns a column with esoteric type MONTH_INTERVAL
+stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as date) - cast('2015-03-01' as date)")[[1]][[1]])))
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(!dbIsValid(conn))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
+
+
 
 #test merovingian control code
 #cannot really do this in Mtest, sorry

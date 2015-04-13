@@ -438,25 +438,21 @@ setClass("MonetDBResult", representation("DBIResult", env="environment"))
 .CT_BOOL <- 4L
 .CT_RAW <- 5L
 
+# type mapping matrix
+monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(9, 4, 8, 1, 1))
+names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
+                       c("CHAR", "VARCHAR", "CLOB", "STR"), 
+                       c("INTERVAL", "DATE", "TIME", "TIMETZ", "TIMESTAMP", "TIMESTAMPTZ", "MONTH_INTERVAL", "SEC_INTERVAL"), 
+                       "BOOLEAN", 
+                       "BLOB")
+
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
-  
-  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
-    return("numeric")
+  rtype <- monetTypes[dbType]
+  if (is.na(rtype)) {
+    stop("Unknown DB type ", dbType)
   }
-  if (dbType %in% c("CHAR", "VARCHAR", "CLOB", "STR")) {
-    return("character")		
-  }
-  if (dbType %in% c("INTERVAL", "DATE", "TIME", "TIMESTAMP")) {
-    return("date")	
-  }
-  if (dbType == "BOOLEAN") {
-    return("logical")			
-  }
-  if (dbType == "BLOB") {
-    return("raw")
-  }
-  stop("Unknown DB type ", dbType)
+  rtype
 }
 
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
@@ -498,10 +494,6 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
     if (rtype=="character") {
       df[[i]] <- character()
       ct[i] <- .CT_CHR			
-    }
-    if (rtype=="date") {
-      df[[i]] <- character()
-      ct[i] <- .CT_CHRR			
     }
     if (rtype=="logical") {
       df[[i]] <- logical()
@@ -597,17 +589,10 @@ setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...
   return(invisible(TRUE))
 })
 
-monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(9, 3, 4, 1, 1))
-names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
-                       c("CHAR", "VARCHAR", "CLOB"), 
-                       c("INTERVAL", "DATE", "TIME", "TIMESTAMP"), 
-                       "BOOLEAN", 
-                       "BLOB")
-
-
 setMethod("dbColumnInfo", "MonetDBResult", def = function(res, ...) {
   return(data.frame(field.name=res@env$info$names, field.type=res@env$info$types, 
-                    data.type=monetTypes[res@env$info$types]))	
+                    data.type=monetTypes[res@env$info$types], r.data.type=monetTypes[res@env$info$types], 
+                    monetdb.data.type=res@env$info$types))	
 }, 
 valueClass = "data.frame")
 
