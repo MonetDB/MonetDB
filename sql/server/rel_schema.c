@@ -433,9 +433,24 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 	return SQL_OK;
 }
 
-static int dimension_range(mvc *sql, symbol *range, sql_dimension* dim) {
+static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dimension* dim) {
 	char *err = NULL;
 	char *r = NULL;
+	dnode *range_value;
+
+//check if this is necessary. Find a type that cannot be casted
+	//check the types of the ranges
+	for(range_value = range->data.lval->h ; range_value ; range_value = range_value->next) {
+		atom *val = NULL;
+
+		assert(range_value->data.sym->token == SQL_COLUMN);
+		val = sql_bind_arg(sql, range_value->data.sym->data.lval->h->data.i_val);
+
+		//check whether the type of the value for the range is compatible with the type of the dimension
+		//I do not do any casting here, just making sure that the types are compatible
+		if(!rel_check_type(sql, dtype, exp_atom(sql->sa, val), type_cast))
+			return SQL_ERR;
+	}
 
 	switch(dlist_length(range->data.lval)) {
     case 0:
@@ -709,7 +724,7 @@ create_dimension(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 		dim = mvc_create_dimension(sql, t, dname, dtype);
 
-		dimension_range(sql, l->h->next->next->data.sym, dim);
+		dimension_range(sql, dtype, l->h->next->next->data.sym, dim);
 	}
 	return SQL_OK;
 }
