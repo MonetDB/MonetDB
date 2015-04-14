@@ -2105,7 +2105,8 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 				*uses &= used;
 				return 0;
 			}
-			if (ne && ne != e) /* maybe ne refers to a local complex exp */
+			if (ne && ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne))) 
+				/* maybe ne refers to a local complex exp */
 				return exp_shares_exps( ne, shared, uses);
 			return 0;
 		}
@@ -5764,6 +5765,14 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
+			if (is_atom(e) && e->l) { /* direct literal */
+				atom *a = e->l;
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag)
+					break;
+			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
