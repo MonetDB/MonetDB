@@ -452,6 +452,8 @@ typedef struct sql_column {
 	void *data;
 } sql_column;
 
+typedef struct atom atom;
+
 typedef struct sql_dimension {
 	sql_base base;
 	sql_subtype type;
@@ -462,15 +464,10 @@ typedef struct sql_dimension {
 	bit unbounded_min;
 	bit unbounded_max;
 
-	//the range of the dimension
-	//It is void to store any type of dimensions
-	//the exact type is found through the type field of the struct
-	//Niels said to use atom. In this case do I need the information about the type?
-	//maybe I need to to check that the values when inserting a new cell are of the correct type
-	char *min;
-	char *step;
-	char *max;
-	char *def; //default value
+	atom *min;
+	atom *step;
+	atom *max;
+	atom *def; //default value
 
 	lng lvl1_repeatsNum; //number of times each value of the dimension is repeated before being increased
 	lng lvl2_repeatsNum; //number of times all values of the dimension are repeated as a group (including the duplicated values defined by repeatNum)

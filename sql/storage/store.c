@@ -1532,16 +1532,21 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "type_digits", "int", 32);
 		bootstrap_create_column(tr, t, "type_scale", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "default", "varchar", 2048);
-        bootstrap_create_column(tr, t, "min", "varchar", 2048);
-        bootstrap_create_column(tr, t, "step", "varchar", 2048);
-        bootstrap_create_column(tr, t, "max", "varchar", 2048);
         bootstrap_create_column(tr, t, "dimnr", "int", 32);
 		bootstrap_create_column(tr, t, "repeats1", "int", 32);
 		bootstrap_create_column(tr, t, "repeats2", "int", 32);
 		bootstrap_create_column(tr, t, "umin", "boolean", 1);
 		bootstrap_create_column(tr, t, "umax", "boolean", 1);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "_ranges");
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type_digits", "int", 32);
+		bootstrap_create_column(tr, t, "type_scale", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+        bootstrap_create_column(tr, t, "column_id", "int", 32);
+		bootstrap_create_column(tr, t, "value", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2165,24 +2170,17 @@ sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(syss, "_dimensions");
+	sql_table *syscolumn2 = find_sql_table(syss, "_ranges");
 	sql_dimension *col = SA_ZNEW(tr->sa, sql_dimension);
 
 	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, dim->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, dim->base.id, TR_NEW, dim->base.name);
 	col->type = dim->type;
-	col->def = NULL;
-	if (dim->def)
-		col->def = sa_strdup(tr->sa, dim->def);
-	col->min = NULL;
-	if (dim->min)
-		col->min = sa_strdup(tr->sa, dim->min);
-	col->step = NULL;
-	if (dim->step)
-		col->step = sa_strdup(tr->sa, dim->step);
-	col->max = NULL;
-	if (dim->max)
-		col->max = sa_strdup(tr->sa, dim->max);
+	col->def = dim->def;
+	col->min = dim->min;
+	col->step = dim->step;
+	col->max = dim->max;
 	col->dimnr = dim->dimnr;
 	col->lvl1_repeatsNum = dim->lvl1_repeatsNum;
 	col->lvl2_repeatsNum = dim->lvl2_repeatsNum;
@@ -2202,7 +2200,29 @@ sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
 				return NULL;
 */
 	if (!isDeclaredArray(t)) {
-		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), col->min, col->step, col->max, &col->dimnr, &col->lvl1_repeatsNum, &col->lvl2_repeatsNum, &col->unbounded_min, &col->unbounded_max, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, &col->dimnr, &col->lvl1_repeatsNum, &col->lvl2_repeatsNum, &col->unbounded_min, &col->unbounded_max, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+
+		//store the info about the range
+		if(col->min) {
+			char *name = "min";
+			table_funcs.table_insert(tr, syscolumn2, name, col->min->tpe.type->sqlname, &col->min->tpe.digits, &col->min->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->min));
+		}
+
+		if(col->step) {
+			char *name = "step";
+			table_funcs.table_insert(tr, syscolumn2, name, col->step->tpe.type->sqlname, &col->step->tpe.digits, &col->step->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->step));
+		}
+
+		if(col->max) {
+			char *name = "max";
+			table_funcs.table_insert(tr, syscolumn2, name, col->max->tpe.type->sqlname, &col->max->tpe.digits, &col->max->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->max));
+		}
+
+		if(col->def) {
+			char *name = "def";
+			table_funcs.table_insert(tr, syscolumn2, name, col->def->tpe.type->sqlname, &col->def->tpe.digits, &col->def->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->def));
+		}
+
 	}
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
