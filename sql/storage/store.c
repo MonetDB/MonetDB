@@ -485,6 +485,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	sql_table *columns = find_sql_table(syss, "_columns");
 	sqlid cid;
 
+
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
 	cid = *(sqlid *)v;			_DELETE(v);	
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "name"), rid);
@@ -524,84 +525,107 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
 }
-/*
+
 static sql_dimension *
 load_dimension(sql_trans *tr, sql_table *t, oid rid)
 {
 	void *v;
-	char *def, *tpe, *st, *min, *step, *max;
+	char *tpe, *st;
 	int sz, d;
-	sql_dimension *dim = SA_ZNEW(tr->sa, sql_dimension);
+	sql_dimension *c = SA_ZNEW(tr->sa, sql_dimension);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *columns = find_sql_table(syss, "_dimensions");
+	sql_table *dimensions = find_sql_table(syss, "_dimensions");
+	
+	sql_table *ranges = find_sql_table(syss, "_ranges");
+	sql_column *range_dimension_id;
+	rids *rs;
+	oid rng_rid;
+
 	sqlid cid;
 
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "id"), rid);
 	cid = *(sqlid *)v;			_DELETE(v);	
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "name"), rid);
-	base_init(tr->sa, &dim->base, cid, TR_OLD, v);	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "name"), rid);
+	base_init(tr->sa, &c->base, cid, TR_OLD, v);	_DELETE(v);
 
-	tpe = table_funcs.column_find_value(tr, find_sql_column(columns, "type"), rid);
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_digits"), rid);
+	tpe = table_funcs.column_find_value(tr, find_sql_column(dimensions, "type"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "type_digits"), rid);
 	sz = *(int *)v;				_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_scale"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "type_scale"), rid);
 	d = *(int *)v;				_DELETE(v);
-	if (!sql_find_subtype(&dim->type, tpe, sz, d))
-		sql_init_subtype(&dim->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
+	if (!sql_find_subtype(&c->type, tpe, sz, d))
+		sql_init_subtype(&c->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
 	_DELETE(tpe);
-
-	dim->def = NULL;
-	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		dim->def = def;
-	else
-		_DELETE(def);
-	dim->min = NULL;
-	min = table_funcs.column_find_value(tr, find_sql_column(columns, "min"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		dim->min = min;
-	else
-		_DELETE(min);
-	dim->step = NULL;
-	step = table_funcs.column_find_value(tr, find_sql_column(columns, "step"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		dim->step = step;
-	else
-		_DELETE(step);
-	dim->max = NULL;
-	max = table_funcs.column_find_value(tr, find_sql_column(columns, "max"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		dim->max = max;
-	else
-		_DELETE(max);
-
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "dimnr"), rid);
-	dim->dimnr = *(int *)v;				_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "repeats1"), rid);
-	dim->lvl1_repeatsNum = *(int *)v;				_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "repeats2"), rid);
-	dim->lvl2_repeatsNum = *(int *)v;				_DELETE(v);
-
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "umin"), rid);
-	dim->unbounded_min = *(bit *)v;			_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "umax"), rid);
-	dim->unbounded_max = *(bit *)v;			_DELETE(v);
-
-	dim->storage_type = NULL;
-	st = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "dimnr"), rid);
+	c->dimnr = *(int *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "repeats1"), rid);
+	c->lvl1_repeatsNum = *(int *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "repeats2"), rid);
+	c->lvl2_repeatsNum = *(int *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "umin"), rid);
+	c->unbounded_min = *(bit *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "umax"), rid);
+	c->unbounded_max = *(bit *)v;			_DELETE(v);
+	c->storage_type = NULL;
+	st = table_funcs.column_find_value(tr, find_sql_column(dimensions, "storage"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), st) != 0)
-		dim->storage_type = st;
+		c->storage_type = st;
 	else
 		_DELETE(st);
-	dim->t = t;
-	if (isArray(dim->t))
-		store_funcs.create_dim(tr, dim);
-	dim->dcount = 0;
-	if (bs_debug)
-		fprintf(stderr, "#\t\tload column %s\n", dim->base.name);
+	c->t = t;
 
-	return dim;
-}*/
+	
+	//query the ranges for the dimensions
+	range_dimension_id = find_sql_column(ranges, "dimension_id");
+	//get the rowids in ranges that are relevant to the dimension
+	rs = table_funcs.rids_select(tr, range_dimension_id, &c->base.id, &c->base.id, NULL);
+
+	//iterate over the rs and find the ranges that are relevant to this dimension
+	for(rng_rid = table_funcs.rids_next(rs); rng_rid != oid_nil; rng_rid = table_funcs.rids_next(rs)) {
+		char *name = NULL, *value = NULL;
+		sql_subtype rangeType;
+
+		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "name"), rng_rid);
+		name = (char *)v;
+		
+		tpe = table_funcs.column_find_value(tr, find_sql_column(ranges, "type"), rng_rid);
+		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "type_digits"), rng_rid);
+		sz = *(int *)v;				_DELETE(v);
+		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "type_scale"), rng_rid);
+		d = *(int *)v;				_DELETE(v);
+		if (!sql_find_subtype(&rangeType, tpe, sz, d))
+			sql_init_subtype(&rangeType, sql_trans_bind_type(tr, t->s, tpe), sz, d);
+		_DELETE(tpe);
+
+		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "value"), rng_rid);
+		value = (char *)v;
+
+		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), name) != 0) { //this should always be true
+			char *min = "min";
+			char *max = "max";
+			char *step = "step";
+			char *def = "def";
+
+			if(!strcmp(name, min))
+				c->min = atom_general(tr->sa, &rangeType, value);
+			else if(!strcmp(name, step))
+				c->step = atom_general(tr->sa, &rangeType, value);
+			else if(!strcmp(name, max))
+				c->max = atom_general(tr->sa, &rangeType, value);
+			else if(!strcmp(name, def))
+				c->def = atom_general(tr->sa, &rangeType, value);
+		}
+		_DELETE(name);
+	}
+
+//	if (isArray(c->t))
+//		store_funcs.create_col(tr, c);
+	if (bs_debug)
+		fprintf(stderr, "#\t\tload dimension %s\n", c->base.name);
+
+
+	return c;
+}
 
 static void
 load_table_parts(sql_trans *tr, sql_table *t, oid rid)
@@ -690,6 +714,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->sz = COLSIZE;
 
 	cs_new(&t->columns, tr->sa, (fdestroy) &column_destroy);
+	cs_new(&t->dimensions, tr->sa, NULL);
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
@@ -711,9 +736,23 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	rs = table_funcs.rids_select(tr, column_table_id, &t->base.id, &t->base.id, NULL);
 	rs = table_funcs.rids_orderby(tr, rs, column_number); 
 	
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs))
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
+
+	if(isArray(t)) {
+		sql_table *dimensions = find_sql_table(syss, "_dimensions");
+		sql_column *dimension_table_id, *dimension_number;
+			
+		dimension_table_id = find_sql_column(dimensions, "table_id");
+		dimension_number = find_sql_column(dimensions, "dimnr");
+		rs = table_funcs.rids_select(tr, dimension_table_id, &t->base.id, &t->base.id, NULL);
+		rs = table_funcs.rids_orderby(tr, rs, dimension_number); 
+	
+		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs))
+			cs_add(&t->dimensions, load_dimension(tr, t, rid), TR_OLD);
+		table_funcs.rids_destroy(rs);	
+	}
 
 	if (!isKindOfTable(t))
 		return t;
@@ -1545,7 +1584,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "type_digits", "int", 32);
 		bootstrap_create_column(tr, t, "type_scale", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
-        bootstrap_create_column(tr, t, "column_id", "int", 32);
+        bootstrap_create_column(tr, t, "dimension_id", "int", 32);
 		bootstrap_create_column(tr, t, "value", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "keys");
