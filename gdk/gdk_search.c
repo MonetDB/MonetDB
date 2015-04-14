@@ -404,7 +404,7 @@ BAThash(BAT *b, BUN masksize)
 				h = NULL;
 			}
 			/* create the hash structures */
-			if ((h = HASHnew(hp, ATOMtype(b->ttype), (b->S->restricted==BAT_READ)?BATcount(b):BATcapacity(b), mask, BATcount(b))) == NULL) {
+			if ((h = HASHnew(hp, ATOMtype(b->ttype), BATcapacity(b), mask, BATcount(b))) == NULL) {
 
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				GDKfree(hp->filename);
