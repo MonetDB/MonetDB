@@ -5765,7 +5765,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (is_atom(e) && e->l) { /* direct literal */
+			if (is_atom(e->type) && e->l) { /* direct literal */
 				atom *a = e->l;
 				int flag = a->data.val.bval;
 
