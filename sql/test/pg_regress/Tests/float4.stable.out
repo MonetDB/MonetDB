@@ -42,36 +42,6 @@ Ready.
 [ 1	]
 #INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
 [ 1	]
-#SELECT cast('NaN' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('nan' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('   NAN  ' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('          -INFINiTY   ' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ -inf	]
-#SELECT cast('nan' as real) / cast('nan' as real);
-% .L2 # table_name
-% sql_div_single_value # name
-% real # type
-% 15 # length
-[ NULL	]
 #SELECT '' AS five, * FROM FLOAT4_TBL;
 % .L,	sys.float4_tbl # table_name
 % five,	f1 # name
