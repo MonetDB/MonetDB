@@ -55,8 +55,6 @@ offlineProfilerHeader(void)
 
 	if (eventstream == NULL) 
 		return ;
-	mnstr_printf(eventstream,"%s\n", monet_characteristics);
-	mnstr_flush(eventstream);
 
 	lognew();
 	logadd("# ");
@@ -94,15 +92,20 @@ offlineProfilerHeader(void)
  */
 
 static void logsend(char *logbuffer)
-{ int error=0;
+{	int error=0;
+	int showsystem = 0;
 	if (eventstream) {
 		MT_lock_set(&mal_profileLock, "logsend");
-		if( eventcounter == 0)
+		if( eventcounter == 0){
 			offlineProfilerHeader();
+			showsystem++;
+		}
 		eventcounter++;
 		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
+		if( showsystem)
+			offlineProfilerEvent(0, 0, 0, 0, "system", monet_characteristics);
 		if ( error) stopProfiler();
 	}
 }

@@ -481,14 +481,13 @@ initFiles(void)
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	if( monet_characteristics)
-		fprintf(tachotrace,"%s\n",monet_characteristics);
 }
 
 static void
 progressBarInit(char *qry)
 {
 	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
+	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
 	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
 	fprintf(tachojson," \"query\":\"%s\",\n",qry);
@@ -930,7 +929,7 @@ main(int argc, char **argv)
 			update(&event);
 			if (debug  )
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			if( trace && i >=0 && capturing) 
+			if( trace && i >=0 && (capturing || event.state == MDB_SYSTEM)) 
 				fprintf(trace,"%s\n",response);
 			if( tachotrace && i >=0 && capturing) 
 				fprintf(tachotrace,"%s\n",response);

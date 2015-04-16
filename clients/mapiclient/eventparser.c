@@ -17,7 +17,7 @@ int malargtop;
 char *malvariables[MAXMALARGS];
 int malvartop;
 int debug;
-char *monet_characteristics;
+char *monetdb_characteristics;
 
 void
 clearArguments(void)
@@ -107,8 +107,6 @@ eventparser(char *row, EventRecord *ev)
 
 	/* check basic validaty first */
 	if (row[0] =='#'){
-		if( row[1] =='{')
-			monet_characteristics = strdup(row+1);
 		return 0;
 	}
 	if (row[0] != '[')
@@ -264,6 +262,9 @@ eventparser(char *row, EventRecord *ev)
 	ev->fcn = strdup(c);
 	ev->stmt = strdup(ev->fcn);
 	c= ev->fcn;
+	if( ev->state == MDB_SYSTEM){
+		monetdb_characteristics = strdup(ev->stmt);
+	} else
 	if( *c != '[')
 	{
 		c = strstr(c + 1, ":=");
