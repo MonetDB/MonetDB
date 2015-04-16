@@ -95,7 +95,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				len++;
 			}
 			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || 
-				(isaBatType(getVarType(mb,varid) && idx < p->retc));
+				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && abs(stk->stk[varid].val.ival) ){
 				BAT *d= BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);

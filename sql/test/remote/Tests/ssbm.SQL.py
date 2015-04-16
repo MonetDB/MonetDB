@@ -1,4 +1,4 @@
-import os, sys, socket, glob, monetdb.sql, threading, time
+import os, sys, socket, glob, monetdb.sql, threading, time, codecs
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -86,7 +86,8 @@ def freeport():
     sock.close()
     return port
 
-ssbmdatapath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests/SF-0.01')
+ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests')
+ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
 tmpdir = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'remotetest')
 os.system('rm -rf ' + tmpdir)
 os.system('mkdir -p ' + tmpdir)
@@ -172,29 +173,9 @@ for workerrec in workers:
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 
-# q1
-c.execute("""
-    select sum(lo_extendedprice*lo_discount) as revenue
-    from lineorder, dwdate
-    where lo_orderdate = d_datekey
-        and d_year = 1993
-        and lo_discount between 1 and 3
-        and lo_quantity < 25;
-    """)
-print c.fetchall()
-
-# q4 (2 & 3 are boring)
-c.execute("""
-select sum(lo_revenue), d_year, p_brand1
-    from lineorder, dwdate, part, supplier
-    where lo_orderdate = d_datekey
-        and lo_partkey = p_partkey
-        and lo_suppkey = s_suppkey
-        and p_category = 'MFGR#12'
-        and s_region = 'AMERICA'
-    group by d_year, p_brand1
-    order by d_year, p_brand1;
-    """)
-print c.fetchall()
-
-# TODO: add more queries
+# run queries
+queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
+for q in queries:
+    print os.path.basename(q).replace('.sql','')
+    c.execute(codecs.open(q, 'r', encoding='utf8').read())
+    print c.fetchall()
