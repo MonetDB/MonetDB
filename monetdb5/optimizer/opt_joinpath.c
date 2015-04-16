@@ -258,7 +258,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* perform a second phase, trial code, many TPCH queries have subpaths of interest.
  * The count is meant to illustrate the impact
  */
-	if ( actions )
+	if (0 &&  actions )
 		actions = 10000*actions+ OPTjoinSubPath(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
