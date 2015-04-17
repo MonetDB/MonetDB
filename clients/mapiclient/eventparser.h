@@ -90,7 +90,11 @@ typedef struct  {
 
 #define MAXMALARGS 1024
 extern char *malarguments[MAXMALARGS];
-extern int malargtop;
+extern char *maltypes[MAXMALARGS];
+extern int malpc[MAXMALARGS];
+extern int malcount[MAXMALARGS];
+extern int malargc;
+extern int malretc;
 extern char *malvariables[MAXMALARGS];
 extern int malvartop;
 extern int debug;
