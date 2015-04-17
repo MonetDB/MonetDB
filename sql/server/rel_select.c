@@ -169,7 +169,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 	if (!tname)
 		tname = old->rname;
 
-	if (!tname && old->type == e_column)
+	if (!tname && (old->type == e_column || old->type == e_dimension))
 		tname = old->l;
 
 	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
@@ -187,7 +187,10 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 	} else if (cname && !old->name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+	if(old->type == e_dimension)
+		ne = exp_dimension(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, is_intern(old));
+	else
+		ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 	ne->p = prop_copy(sql->sa, old->p);
 	return ne;
 }
@@ -461,6 +464,14 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 	rel->op = op_basetable;
 	rel->exps = new_exp_list(sa);
 
+	if(isArray(t)) {
+		for (cn = t->dimensions.set->h; cn; cn = cn->next) {
+			sql_dimension *dim = cn->data;
+			sql_exp *e = exp_dimension_alias(sa, atname, dim->base.name, tname, dim->base.name, &dim->type, CARD_MULTI, 0);
+
+			append(rel->exps, e);
+		}
+	}
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
@@ -472,7 +483,7 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 		append(rel->exps, e);
 	}
 	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
-
+	
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_exp *e;
@@ -498,7 +509,7 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 	}
 
 	rel->card = CARD_MULTI;
-	rel->nrcols = list_length(t->columns.set);
+	rel->nrcols = list_length(t->columns.set) + list_length(t->dimensions.set);
 	return rel;
 }
 
@@ -4618,6 +4629,9 @@ exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r)
 	}	
 	case e_atom:
 	case e_psm:
+		return e;
+	case e_dimension:
+		fprintf(stderr, "exp_rewrite with e_dimension\n");
 		return e;
 	}
 	return ne;

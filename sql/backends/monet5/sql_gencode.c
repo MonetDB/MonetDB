@@ -2508,6 +2508,38 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 		} break;
+		case st_dimension: {
+			int ht = TYPE_oid;
+			int tt = s->op4.dval->type.type->localtype;
+			sql_table *t = s->op4.dval->t;
+/*
+			int min=0, step=0, max=0;
+
+			if ((min = _dumpstmt(sql, mb, s->op1)) < 0)
+				return -1;
+			if ((step = _dumpstmt(sql, mb, s->op2)) < 0)
+				return -1;
+			if ((max = _dumpstmt(sql, mb, s->op3)) < 0)
+				return -1;
+			assert(min >= 0 && step >= 0 && max >= 0);
+
+				
+			q = newStmt2(mb, sqlRef, "dimension_bat");
+*/
+			q = newStmt2(mb, sqlRef, createDimRef);
+			if (q == NULL)
+				return -1;
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarUDFtype(mb, getArg(q, 0));
+	
+			q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
+			q = pushStr(mb, q, s->op4.dval->base.name);
+			if (q == NULL)
+				return -1;
+			s->nr = getDestVar(q);
+		} break;
 		}
 		if (mb->errors)
 			return -1;

@@ -55,6 +55,7 @@ str projectdeltaRef;
 str binddbatRef;
 str bindidxRef;
 str bindRef;
+str createDimRef;
 str bpmRef;
 str bstreamRef;
 str calcRef;
@@ -310,6 +311,7 @@ void optimizerInit(void)
 	binddbatRef = putName("bind_dbat",9);
 	bindidxRef = putName("bind_idxbat",11);
 	bindRef = putName("bind",4);
+	createDimRef = putName("create_dimension",16);
 	bpmRef = putName("bpm",3);
 	bstreamRef = putName("bstream",7);
 	calcRef = putName("calc",4);

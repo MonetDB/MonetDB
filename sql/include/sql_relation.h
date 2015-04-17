@@ -32,7 +32,8 @@ typedef enum expression_type {
 	e_func,
 	e_aggr,
 	e_convert,
-	e_psm
+	e_psm,
+	e_dimension
 } expression_type;
 
 #define CARD_ATOM 1

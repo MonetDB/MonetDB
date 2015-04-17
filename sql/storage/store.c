@@ -604,7 +604,6 @@ load_dimension(sql_trans *tr, sql_table *t, oid rid)
 			char *min = "min";
 			char *max = "max";
 			char *step = "step";
-			char *def = "def";
 
 			if(!strcmp(name, min))
 				c->min = atom_general(tr->sa, &rangeType, value);
@@ -612,8 +611,6 @@ load_dimension(sql_trans *tr, sql_table *t, oid rid)
 				c->step = atom_general(tr->sa, &rangeType, value);
 			else if(!strcmp(name, max))
 				c->max = atom_general(tr->sa, &rangeType, value);
-			else if(!strcmp(name, def))
-				c->def = atom_general(tr->sa, &rangeType, value);
 		}
 		_DELETE(name);
 	}
@@ -2097,6 +2094,46 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	return c;
 }
 
+static sql_dimension *
+dimension_dup(sql_trans *tr, int flag, sql_dimension *odim, sql_table *t)
+{
+	sql_allocator *sa = (flag == TR_NEW)?tr->parent->sa:tr->sa;
+	sql_dimension *dim = SA_ZNEW(sa, sql_dimension);
+
+	base_init(sa, &dim->base, odim->base.id, tr_flag(&odim->base, flag), odim->base.name);
+	dim->type = odim->type;
+	dim->dimnr = odim->dimnr;
+	dim->storage_type = NULL;
+	if (odim->storage_type)
+		dim->storage_type = sa_strdup(sa, odim->storage_type);
+
+	dim->unbounded_min = odim->unbounded_min;
+	dim->unbounded_max = odim->unbounded_max;
+
+	dim->min = odim->min;
+	dim->step = odim->step;
+	dim->max = odim->max;
+
+	dim->lvl1_repeatsNum = odim->lvl1_repeatsNum; 
+	dim->lvl2_repeatsNum = odim->lvl2_repeatsNum; 
+	dim->elementsNum = odim->elementsNum; 
+
+	dim->t = t;
+
+	/* Needs copy when committing (ie from tr to gtrans) and 
+	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+//Uncomment the following if dimension is materialised
+// if ((isNew(odim) && flag == TR_NEW && tr->parent == gtrans) ||
+//	    (oc->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+//		if (isArray(dim->t)) 
+//			store_funcs.dup_dim(tr, odim, dim);
+	if (isNew(odim) && flag == TR_NEW && tr->parent == gtrans) {
+		odim->base.flag = TR_OLD;
+		dim->base.flag = TR_OLD;
+	}
+	return dim;
+}
+
 static int
 sql_trans_cname_conflict( sql_trans *tr, sql_table *t, const char *extra, const char *cname)
 {
@@ -2216,7 +2253,6 @@ sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
 		return NULL;
 	base_init(tr->sa, &col->base, dim->base.id, TR_NEW, dim->base.name);
 	col->type = dim->type;
-	col->def = dim->def;
 	col->min = dim->min;
 	col->step = dim->step;
 	col->max = dim->max;
@@ -2256,12 +2292,6 @@ sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
 			char *name = "max";
 			table_funcs.table_insert(tr, syscolumn2, name, col->max->tpe.type->sqlname, &col->max->tpe.digits, &col->max->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->max));
 		}
-
-		if(col->def) {
-			char *name = "def";
-			table_funcs.table_insert(tr, syscolumn2, name, col->def->tpe.type->sqlname, &col->def->tpe.digits, &col->def->tpe.scale, &t->base.id, &col->base.id, atom2string(tr->sa, col->def));
-		}
-
 	}
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
@@ -2318,6 +2348,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
 
 	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	cs_new(&t->dimensions, sa, NULL);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
@@ -2340,6 +2371,14 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 			sql_column *c = n->data;
 
 			cs_add(&t->columns, column_dup(tr, flag, c, t), tr_flag(&c->base, flag));
+		}
+		ot->columns.nelm = NULL;
+	}
+	if (ot->dimensions.set) {
+		for (n = ot->dimensions.set->h; n; n = n->next) {
+			sql_dimension *dim = n->data;
+
+			cs_add(&t->dimensions, dimension_dup(tr, flag, dim, t), tr_flag(&dim->base, flag));
 		}
 		ot->columns.nelm = NULL;
 	}
@@ -4454,7 +4493,6 @@ create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subt
 	dim->min = NULL;
 	dim->step = NULL;
 	dim->max = NULL;
-	dim->def = NULL;
 
 	dim->unbounded_min = 0;
 	dim->unbounded_max = 0;

@@ -654,6 +654,20 @@ mvc_bind_column(mvc *m, sql_table *t, const char *cname)
 	return c;
 }
 
+sql_dimension *
+mvc_bind_dimension(mvc *m, sql_table *t, const char *dname)
+{
+	sql_dimension *dim;
+
+	(void)m;
+	dim = find_sql_dimension(t, dname);
+	if (!dim)
+		return NULL;
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_bind_dimension %s.%s\n", t->base.name, dname);
+	return dim;
+}
+
 static sql_column *
 first_column(sql_table *t)
 {

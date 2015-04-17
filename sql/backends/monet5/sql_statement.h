@@ -32,6 +32,7 @@ typedef union stmtdata {
 	struct stmt *stval;
 
 	struct sql_column *cval;
+	struct sql_dimension *dval;
 	struct sql_idx *idxval;
 	struct sql_table *tval;
 
@@ -107,7 +108,9 @@ typedef enum stmt_type {
 	st_cond,
 	st_control_end,
 	st_return,
-	st_assign
+	st_assign,
+
+	st_dimension
 } st_type;
 
 /* flag to indicate anti join/select */
@@ -179,6 +182,8 @@ extern stmt *stmt_atom_int(sql_allocator *sa, int i);
 extern stmt *stmt_atom_wrd(sql_allocator *sa, wrd i);
 extern stmt *stmt_atom_wrd_nil(sql_allocator *sa);
 extern stmt *stmt_bool(sql_allocator *sa, int b);
+
+extern stmt *stmt_dimension(sql_allocator *sa, sql_dimension *dim);
 
 extern stmt *stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);
 /* cmp

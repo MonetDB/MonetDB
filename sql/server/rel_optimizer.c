@@ -1090,6 +1090,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		if (e->l) { 
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 			/* if relation name matches expressions relation name, find column based on column name alone */
@@ -1199,6 +1200,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		if (is_union(f->op)) {
 			int p = list_position(f->exps, rel_find_exp(f, e));
 
@@ -1887,6 +1889,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		if (e->l) 
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 		if (!ne && !e->l)
@@ -2090,6 +2093,7 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 	case e_atom:
 		return 0;
 	case e_column: 
+	case e_dimension:
 		{
 			sql_exp *ne = NULL;
 			if (e->l) 
@@ -4485,6 +4489,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_atom:
 	case e_psm:
+	case e_dimension:
 		return e;
 	}
 	return NULL;
@@ -4580,6 +4585,9 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	}	
 	case e_atom:
 	case e_psm:
+		return e;
+	case e_dimension:
+		fprintf(stderr, "exp_use_consts with e_dimension");
 		return e;
 	}
 	return NULL;
@@ -4901,6 +4909,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		ne = rel_find_exp(subrel, e);
 		break;
 	case e_convert:
@@ -6530,6 +6539,9 @@ exp_uses_exps(sql_exp *e, list *exps)
 		return 0;
 	case e_atom:
 		return 0;
+	case e_dimension:
+		fprintf(stderr, "exp_uses_exps with e_dimension\n");
+		return 0;
 	}
 	return 0;
 }
@@ -6622,6 +6634,7 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		ne = exps_bind_alias(aliases, e->l, e->r);
 		if (ne)
 			ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));

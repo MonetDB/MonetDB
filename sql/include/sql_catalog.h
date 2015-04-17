@@ -467,7 +467,6 @@ typedef struct sql_dimension {
 	atom *min;
 	atom *step;
 	atom *max;
-	atom *def; //default value
 
 	lng lvl1_repeatsNum; //number of times each value of the dimension is repeated before being increased
 	lng lvl2_repeatsNum; //number of times all values of the dimension are repeated as a group (including the duplicated values defined by repeatNum)

@@ -546,6 +546,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (exp_card(e) > CARD_AGGR)
 			s->nrcols = 2;
 	} 	break;
+	case e_dimension: //not sure what the result is used for
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(sql->sa, right, e->l, e->r);
@@ -758,7 +759,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
+	if ((isTable(c->t) || isArray(c->t)) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(sql->sa, c, RD_INS);
@@ -1208,9 +1209,13 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 
 			s = stmt_idx(sql, i, dels);
 		} else {
-			sql_column *c = find_sql_column(t, oname);
-
-			s = stmt_col(sql, c, dels);
+			if(exp->type == e_dimension) {
+				sql_dimension *dim = find_sql_dimension(t, oname);
+				s = stmt_dimension(sql->sa, dim);
+			} else {
+				sql_column *c = find_sql_column(t, oname);
+				s = stmt_col(sql, c, dels);
+			}
 		}
 		s->tname = rname;
 		s->cname = exp->name;

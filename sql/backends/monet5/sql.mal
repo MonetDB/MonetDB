@@ -218,6 +218,10 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid,:any_1]
+address mvc_create_dimension_bat_wrap
+comment "Bind the 'schema.table.dimension' BAT;
+
 command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
 		:bat[:oid,:any_3] 
 address DELTAbat

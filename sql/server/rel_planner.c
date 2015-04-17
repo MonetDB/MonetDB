@@ -212,6 +212,9 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 	case e_aggr:
 	case e_atom:
 	case e_psm:
+		return count;
+	case e_dimension:
+		fprintf(stderr, "exp_getdcount with e_dimension\n");
 	 	return count;
 	}
 	return count;
@@ -239,6 +242,9 @@ exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
 	case e_aggr:
 	case e_atom:
 	case e_psm:
+		return 0;
+	case e_dimension:
+		fprintf(stderr, "exp_getranges with e_dimension\n");
 	 	return 0;
 	}
 	return 0;

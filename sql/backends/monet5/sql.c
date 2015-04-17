@@ -1636,6 +1636,92 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 }
 
 static BAT *
+mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
+{
+	BAT *b = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_dimension *dim = NULL;
+	long repeat1 = 0, repeat2 =0, totalElements =0;
+	long  i=0, j=0;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		return NULL;
+	dim = mvc_bind_dimension(m, t, dname);
+	if (dim == NULL)
+		return NULL;
+
+	repeat1 = dim->lvl1_repeatsNum;
+	repeat2 = dim->lvl2_repeatsNum;
+
+#define materialiseDim(TPE, min, step, max)                     \
+    do {                                \
+			TPE it, *elements; \
+			totalElements = floor((max - min )/ step)+1; \
+\
+        	if((b = BATnew(TYPE_void, TYPE_##TPE, totalElements*repeat1*repeat2, TRANSIENT)) == NULL)   \
+        		return NULL;                   \
+\
+        	elements = (TPE*) Tloc(b, BUNfirst(b));          \
+\
+			totalElements = 0; \
+			for(j=0; j<repeat2; j++) { \
+        		for(it = min ; it <= max ; it += step) { \
+            		for(i=0; i<repeat1; i++) { \
+                		*elements = (TPE) it; \
+                		elements++; \
+                		totalElements++; \
+            		} \
+        		} \
+    		} \
+\
+        	b->tsorted = 0;              \
+        	b->trevsorted = 0;           \
+    } while (0)
+
+	atom_cast(dim->min, &dim->type);
+	atom_cast(dim->step, &dim->type);
+	atom_cast(dim->max, &dim->type);
+
+	switch (dim->type.type->localtype) {
+    	case TYPE_bte:
+    	    materialiseDim(bte, dim->min->data.val.btval, dim->step->data.val.btval, dim->max->data.val.btval);
+        	break;
+    	case TYPE_sht:
+        	materialiseDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
+        	break;
+    	case TYPE_int:
+        	materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
+        	break;
+    	case TYPE_lng:
+        	materialiseDim(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);
+        	break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	materialiseDim(hge, dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval);
+        	break;
+#endif
+		case TYPE_flt:
+        	materialiseDim(flt, dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval);
+        	break;
+    	case TYPE_dbl:
+        	materialiseDim(dbl, dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval);
+        	break;
+	    default:
+			fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
+	}
+
+	BATsetcount(b,totalElements);
+    BATderiveProps(b,FALSE);
+
+	return b;
+}
+
+static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
 	sql_trans *tr = m->session->tr;
@@ -1756,6 +1842,33 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 	throw(SQL, "sql.bind", "unable to find %s(%s)", *tname, *cname);
 }
+
+str
+mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int upd = (pci->argc == 7 || pci->argc == 9);
+	BAT *b = NULL;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	str *sname = getArgReference_str(stk, pci, 2 + upd);
+	str *tname = getArgReference_str(stk, pci, 3 + upd);
+	str *dname = getArgReference_str(stk, pci, 4 + upd);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	b = mvc_create_dimension_bat(m, *sname, *tname, *dname);
+	if(b) {
+		BBPkeepref(*bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (*sname && strcmp(*sname, str_nil) != 0)
+		throw(SQL, "sql.create_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+	throw(SQL, "sql.create_dimension", "unable to find %s(%s)", *tname, *dname);
+
+	}
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str

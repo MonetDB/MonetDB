@@ -370,6 +370,25 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 }
 
 sql_exp * 
+exp_dimension_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int intern) 
+{
+	sql_exp *e = exp_create(sa, e_dimension);
+
+	assert(acname && org_cname);
+	e->card = card;
+	e->rname = (arname)?arname:org_rname;
+	e->name = acname;
+	e->l = org_rname;
+	e->r = org_cname;
+	if (t)
+		e->tpe = *t;
+	set_has_no_nil(e);
+	if (intern)
+		set_intern(e);
+	return e;
+}
+
+sql_exp * 
 exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
@@ -384,6 +403,25 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 		e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
+	if (intern)
+		set_intern(e);
+	return e;
+}
+
+sql_exp * 
+exp_dimension(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int intern) 
+{
+	sql_exp *e = exp_create(sa, e_dimension);
+
+	assert(cname);
+	e->card = card;
+	e->name = cname;
+	e->rname = rname;
+	e->r = e->name;
+	e->l = e->rname;
+	if (t)
+		e->tpe = *t;
+	set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
 	return e;
@@ -541,6 +579,7 @@ exp_subtype( sql_exp *e )
 	}
 	case e_convert:
 	case e_column:
+	case e_dimension:
 		if (e->tpe.type)
 			return &e->tpe;
 		break;
@@ -1036,6 +1075,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 		return NULL;
 	switch(e->type) {
 	case e_column:
+	case e_dimension:
 		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
@@ -1158,6 +1198,7 @@ exp_is_atom( sql_exp *e )
 	case e_column:
 	case e_cmp:
 	case e_psm:
+	case e_dimension:
 		return 0;
 	}
 	return 0;
@@ -1207,6 +1248,7 @@ exp_has_func( sql_exp *e )
 		}
 	case e_column:
 	case e_psm:
+	case e_dimension:
 		return 0;
 	}
 	return 0;
@@ -1521,6 +1563,10 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 	switch(e->type){
 	case e_column:
 		ne = exp_column(sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		ne->flag = e->flag;
+		break;
+	case e_dimension:
+		ne = exp_dimension(sa, e->l, e->r, exp_subtype(e), e->card, is_intern(e));
 		ne->flag = e->flag;
 		break;
 	case e_cmp:

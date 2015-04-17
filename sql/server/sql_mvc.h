@@ -165,6 +165,7 @@ extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, int ty
 extern sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
 extern sql_column *mvc_bind_column(mvc *c, sql_table *t, const char *cname);
+extern sql_dimension *mvc_bind_dimension(mvc *c, sql_table *t, const char *dname);
 extern sql_column *mvc_first_column(mvc *c, sql_table *t);
 extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, const char *iname);
 extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, const char *kname);

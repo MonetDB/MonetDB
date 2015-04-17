@@ -412,6 +412,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_atom:
 			case st_trans:
 			case st_catalog:
+			case st_dimension:
 				break;
 			}
 		}
@@ -826,6 +827,14 @@ stmt_atom(sql_allocator *sa, atom *op1)
 
 	s->op4.aval = op1;
 	s->key = 1;		/* values are also unique */
+	return s;
+}
+
+stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim) {
+	stmt *s = stmt_create(sa, st_dimension);
+	s->op4.dval = dim;
+	s->nrcols = 1;
+
 	return s;
 }
 
@@ -1314,6 +1323,8 @@ tail_type(stmt *st)
 		return NULL;
 	case st_table:
 		return sql_bind_localtype("bat");
+	case st_dimension:
+		return &st->op4.dval->type;
 	default:
 		fprintf(stderr, "missing tail type %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);

@@ -26,6 +26,8 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 
+#include <math.h>
+
 #define qname_index(qname) qname_table(qname)
 #define qname_func(qname) qname_table(qname)
 
@@ -434,8 +436,6 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 }
 
 static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dimension* dim) {
-//	char *err = NULL;
-//	char *r = NULL;
 	dnode *range_value;
 	list *range_lst = sa_list(sql->sa);
 
@@ -483,9 +483,9 @@ static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dime
         dim->max = range_lst->h->next->next->data;
 		break;  
     }
-#if 0
+
     if(!dim->unbounded_min && !dim->unbounded_max) {
-        switch(dim->type->localtype) {
+        switch(dim->type.type->localtype) {
         case TYPE_bte:
             dim->elementsNum = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1;
             break;
@@ -512,12 +512,12 @@ static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dime
             break;
         default:
             fprintf(stderr, "Dimension of unknown type");
-            return NULL;
+            return SQL_ERR;
         }
     }
     else
         dim->elementsNum = 0; //unbounded does not have elements. It should be checked and updated at each insertion
-#endif
+
 	return SQL_OK;
 }
 
@@ -1002,7 +1002,7 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		}
 
 		//compute the repeats of the dimensional columns
-		//compute_repeats(sql, t);
+		compute_repeats(sql, t);
 
 		temp = (tt == tt_array)?temp:SQL_PERSIST;
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
