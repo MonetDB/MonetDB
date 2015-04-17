@@ -18,6 +18,9 @@
 #include "rel_planner.h"
 #include "rel_psm.h"
 #include "sql_env.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 #define new_func_list(sa) sa_list(sa)
 #define new_col_list(sa) sa_list(sa)
@@ -6131,7 +6134,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 								}
 								append(args, re);
 #ifdef HAVE_HGE
-								append(args, exp_atom_hge(sql->sa, v));
+								append(args, have_hge ? exp_atom_hge(sql->sa, v) : exp_atom_lng(sql->sa, (lng) v));
 #else
 								append(args, exp_atom_lng(sql->sa, v));
 #endif

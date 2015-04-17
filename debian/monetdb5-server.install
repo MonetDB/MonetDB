@@ -8,17 +8,21 @@ debian/tmp/usr/lib/monetdb5/lib_opt_sql_append.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_udf.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 
-# usr/lib/monetdb5/*.mal EXCEPT: bam.mal, geom.mal, gsl.mal, sql*.mal
-debian/tmp/usr/lib/monetdb5/[!bgs]*.mal usr/lib/monetdb5
+# usr/lib/monetdb5/*.mal EXCEPT: bam.mal, geom.mal, gsl.mal, sql*.mal *_hge.mal
+debian/tmp/usr/lib/monetdb5/[!bgsu]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/ba[!m]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/b[!a]*.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/ge[!o]*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/generator.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/g[!es]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/s[!q]*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/udf.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/u[!d]*.mal usr/lib/monetdb5
 
-# usr/lib/monetdb5/autoload/*.mal EXCEPT: *_bam.mal, *_geom.mal, *_gsl.mal, *_sql.mal
-debian/tmp/usr/lib/monetdb5/autoload/*_generator.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/autoload/*_lsst.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/autoload/*_opt_sql_append.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/autoload/*_udf*.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/autoload/*_vault.mal usr/lib/monetdb5/autoload
+# usr/lib/monetdb5/autoload/*.mal EXCEPT: *_bam.mal, *_geom.mal, *_gsl.mal, *_hge.mal *_sql.mal
+debian/tmp/usr/lib/monetdb5/autoload/??_batcalc.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_calc.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_generator.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_lsst.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_opt_sql_append.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_udf.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/??_vault.mal usr/lib/monetdb5/autoload
