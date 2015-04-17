@@ -1739,16 +1739,16 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (hb >= (lo) && hb < (hi) &&		\
+		if (misses += hb >= (hi), (hb >= (lo) && hb < (hi) &&	\
 		    (cmp == NULL ||			\
-		     (*cmp)(v, BUNtail(bi, hb)) == 0))
+		     (*cmp)(v, BUNtail(bi, hb)) == 0)))
 
 #define HASHloop_bound_TYPE(bi, h, hb, v, lo, hi, TYPE)		\
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (hb >= (lo) && hb < (hi) &&			\
-		    simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		if (misses += hb >= (hi), (hb >= (lo) && hb < (hi) &&	\
+					   simple_EQ(v, BUNtloc(bi, hb), TYPE)))
 
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, int nil_on_miss, int semi, int must_match)
@@ -1771,6 +1771,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	oid lval = oid_nil;	/* hold value if l has dense tail */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
+	BUN misses = 0;
 
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
@@ -2049,6 +2050,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 				r1->trevsorted = 0;
 		}
 	}
+	fprintf(stderr, "#hashjoin: misses = "BUNFMT"\n", misses);
 	assert(BATcount(r1) == BATcount(r2));
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
