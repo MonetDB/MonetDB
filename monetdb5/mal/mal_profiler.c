@@ -400,7 +400,7 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
-	if (mal_trace)
+	if (mal_trace) // already traced on console
 		return;
 	MT_lock_set(&mal_profileLock, "MPresetProfiler");
 	eventstream = 0;

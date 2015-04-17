@@ -96,7 +96,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
-	fprintf(stderr, "     --trace[=<stethoscope flags>]\n");
+	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --recycler\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
@@ -391,7 +391,7 @@ main(int argc, char **av)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				mal_trace = optarg? optarg:"ISTest";
+				mal_trace = 1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "heaps") == 0) {
@@ -433,7 +433,7 @@ main(int argc, char **av)
 			}
 			break;
 		case 't':
-			mal_trace = optarg? optarg:"ISTest";
+			mal_trace = 1;
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
