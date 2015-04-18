@@ -57,10 +57,13 @@ typedef struct logger {
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_nme;	/* str name column */
+	BAT *dcatalog;		/* deleted from catalog table */
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
+	BAT *dseqs;		/* deleted from seqs table */
 	BAT *snapshots_bid;	/* int bid column */
 	BAT *snapshots_tid;	/* int tid column */
+	BAT *dsnapshots;	/* deleted from snapshots table */
 	BAT *freed;		/* snapshots can be created and destroyed,
 				   in a single logger transaction.
 				   These snapshot bats should be freed
