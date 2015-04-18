@@ -333,6 +333,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "INSERT INTO: cannot insert into merge table '%s'", tname);
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
 	}
@@ -828,6 +830,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "UPDATE: cannot update merge table '%s'", tname);
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "UPDATE: cannot update read only table '%s'", tname);
 	} else {
@@ -1012,6 +1016,8 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "DELETE FROM: cannot delete from merge table '%s'", tname);
 	} else if (t->readonly) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from read only table '%s'", tname);
 	}

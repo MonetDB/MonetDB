@@ -1184,6 +1184,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
+			MT_lock_set(&sq->exps->ht_lock, "rel_table_optname");
+			sq->exps->ht = NULL;
+			MT_lock_unset(&sq->exps->ht_lock, "rel_table_optname");
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 
