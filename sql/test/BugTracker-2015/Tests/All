@@ -20,3 +20,4 @@ is_null_limit.Bug-3684
 inf-nan-handling.Bug-3696
 project_rewrite.Bug-3693
 alias.Bug-3704
+case_aggr.Bug-3705

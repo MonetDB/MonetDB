@@ -2667,8 +2667,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				if (!l) {
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					rel_project_add_exp(sql, l, ls);
-				} else if (f == sql_sel) /* allways add left side in case of selections phase */
+				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
+					if (!l->exps || list_empty(l->exps)) /* add all expressions to the project */
+						l->exps = rel_projections(sql, l->l, NULL, 0, 1);
 					rel_project_add_exp(sql, l, ls);
+				}
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
 				if (r->card > CARD_ATOM) {
