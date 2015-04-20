@@ -1867,8 +1867,7 @@ mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.create_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 	throw(SQL, "sql.create_dimension", "unable to find %s(%s)", *tname, *dname);
-
-	}
+}
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
