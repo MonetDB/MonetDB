@@ -24,3 +24,4 @@ alias.Bug-3704
 case_aggr.Bug-3705
 assertHead.Bug-3706
 ifthenelse.Bug-3699
+readonly.Bug-3709
