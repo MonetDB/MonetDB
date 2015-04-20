@@ -168,10 +168,10 @@ int chooseVictims(Client cntxt, int *leaves, int ltop)
 {
 	int i,j,l;
 	lng freed, sz;
-	lng target = (lng) MT_getrss() - (lng) (MEMORY_THRESHOLD * monet_memory);
+	lng target = (lng) MT_getrss() - (lng) (MEMORY_THRESHOLD );
 
 #ifdef _DEBUG_CACHE_
-	mnstr_printf(cntxt->fdout,"#chooseVictims %d mem "LLFMT, ltop, (lng) (MEMORY_THRESHOLD * monet_memory));
+	mnstr_printf(cntxt->fdout,"#chooseVictims %d mem "LLFMT, ltop, (lng) (MEMORY_THRESHOLD ));
 	mnstr_printf(cntxt->fdout," RSS "LLFMT, (lng) MT_getrss());
 	mnstr_printf(cntxt->fdout," " LLFMT" srch %5.2f\n",
 		target, ((double)recycleSearchTime)/recycleSearchCalls);
@@ -382,7 +382,7 @@ newpass:
 
 	GDKfree(dmask);
 	/* check if a new pass of cache cleaning is needed */
-	if ( recyclerMemoryUsed > (lng) (MEMORY_THRESHOLD * monet_memory) )
+	if ( recyclerMemoryUsed > (lng) (MEMORY_THRESHOLD ) )
 	goto newpass;
 }
 
@@ -399,7 +399,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 
 	if ( recycleBlk->stop >= recycleCacheLimit)
 		return ; /* no more caching */
-	if ( recyclerMemoryUsed + p->wbytes > (lng) (MEMORY_THRESHOLD * monet_memory))
+	if ( recyclerMemoryUsed + p->wbytes > (lng) (MEMORY_THRESHOLD ))
 		return ; /* no more caching */
 
 	rd = 0;
@@ -859,7 +859,7 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfil
 	assert(recyclerMemoryUsed >=0);
 	MT_lock_set(&recycleLock, "recycle");
 	clk = GDKusec();
-	if ( recyclerMemoryUsed >  (lng) (MEMORY_THRESHOLD * monet_memory)  || recycleBlk->stop >= recycleCacheLimit)
+	if ( recyclerMemoryUsed >  (lng) (MEMORY_THRESHOLD )  || recycleBlk->stop >= recycleCacheLimit)
 		RECYCLEcleanCache(cntxt);
 
 	/* infinite case, admit all new instructions */
