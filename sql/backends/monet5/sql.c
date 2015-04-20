@@ -1713,7 +1713,8 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 	}
 
 	BATsetcount(b,t->cellsNum);
-    BATderiveProps(b,FALSE);
+	BATseqbase(b,0);    
+	BATderiveProps(b,FALSE);
 
 	return b;
 }
