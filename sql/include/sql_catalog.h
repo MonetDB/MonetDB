@@ -470,7 +470,7 @@ typedef struct sql_dimension {
 
 	lng lvl1_repeatsNum; //number of times each value of the dimension is repeated before being increased
 	lng lvl2_repeatsNum; //number of times all values of the dimension are repeated as a group (including the duplicated values defined by repeatNum)
-	lng elementsNum; //the distinct number of elements in this dimension, i.e. the number of indices
+	lng elementsNum;
 
 	struct sql_table *t;
 //	void *data; //it does not have data since it is not materialised
@@ -508,6 +508,8 @@ typedef struct sql_table {
 	ca_t commit_action;  	/* on commit action */
 	char *query;		/* views may require some query */
 	int  sz;
+	
+	lng cellsNum; //It is used when having an array. It helps when creating empty cells
 
 	sql_ukey *pkey;
 	changeset dimensions; //used only when the table is an array

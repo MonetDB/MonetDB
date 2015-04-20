@@ -710,6 +710,9 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->s = s;
 	t->sz = COLSIZE;
 
+	v = table_funcs.column_find_value(tr, find_sql_column(tables, "cells"),rid);
+	t->cellsNum = *(long*)v;	_DELETE(v);
+
 	cs_new(&t->columns, tr->sa, (fdestroy) &column_destroy);
 	cs_new(&t->dimensions, tr->sa, NULL);
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
@@ -1121,7 +1124,7 @@ insert_schemas(sql_trans *tr)
 			sql_table *t = m->data;
 			sht ca = t->commit_action;
 
-			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->access);
+			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->access, &t->cellsNum);
 			for (o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
@@ -1298,6 +1301,36 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	t->access = 0;
+	t->cellsNum = 0;
+	cs_new(&t->dimensions, sa, NULL); //dimensions are not materialised, thus do not need to be destroyed
+	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
+	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	t->pkey = NULL;
+	t->sz = COLSIZE;
+	t->cleared = 0;
+	t->s = NULL;
+	return t;
+}
+
+sql_table *
+create_sql_array(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, long cellsNum)
+{
+	sql_table *t = SA_ZNEW(sa, sql_table);
+
+	assert(sa);
+	assert((persistence==SQL_PERSIST ||
+		persistence==SQL_DECLARED_TABLE || persistence==SQL_DECLARED_ARRAY || 
+		commit_action) && commit_action>=0);
+	base_init(sa, &t->base, next_oid(), TR_NEW, name);
+	t->type = type;
+	t->system = system;
+	t->persistence = (temp_t)persistence;
+	t->commit_action = (ca_t)commit_action;
+	t->query = NULL;
+	t->access = 0;
+	t->cellsNum = cellsNum;
 	cs_new(&t->dimensions, sa, NULL); //dimensions are not materialised, thus do not need to be destroyed
 	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
@@ -1343,6 +1376,8 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 
 	nt->access = t->access;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+
+	nt->cellsNum = t->cellsNum;
 
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
@@ -1548,6 +1583,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
 		bootstrap_create_column(tr, t, "access", "smallint", 16);
+		bootstrap_create_column(tr, t, "cells", "bigint", 64);
 
 		t = bootstrap_create_table(tr, s, "_columns");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2116,7 +2152,6 @@ dimension_dup(sql_trans *tr, int flag, sql_dimension *odim, sql_table *t)
 
 	dim->lvl1_repeatsNum = odim->lvl1_repeatsNum; 
 	dim->lvl2_repeatsNum = odim->lvl2_repeatsNum; 
-	dim->elementsNum = odim->elementsNum; 
 
 	dim->t = t;
 
@@ -2346,6 +2381,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
 	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
+	t->cellsNum = ot->cellsNum;
 
 	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
 	cs_new(&t->dimensions, sa, NULL);
@@ -4316,7 +4352,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, long cellsNum)
 {
 	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -4333,6 +4369,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	t->sz = sz;
 	if (sz < 0)
 		t->sz = COLSIZE;
+	t->cellsNum = cellsNum;
+
 	cs_add(&s->tables, t, TR_NEW);
 	if (isStream(t))
 		t->persistence = SQL_STREAM;
@@ -4351,7 +4389,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (!isDeclaredTable(t) && !isDeclaredArray(t))
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
-			&t->system, &ca, &t->access);
+			&t->system, &ca, &t->access, &t->cellsNum);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
@@ -4496,8 +4534,6 @@ create_sql_dimension(sql_allocator *sa, sql_table *t, const char *name, sql_subt
 
 	dim->unbounded_min = 0;
 	dim->unbounded_max = 0;
-
-	dim->elementsNum = 0;
 
 	dim->lvl1_repeatsNum = 1;
 	dim->lvl2_repeatsNum = 1;

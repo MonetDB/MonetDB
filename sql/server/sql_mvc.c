@@ -977,6 +977,23 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 }
 
 sql_table *
+mvc_create_array(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, long cellsNum)
+{
+	sql_table *t = NULL;
+
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
+
+	if ((persistence == SQL_DECLARED_TABLE || persistence == SQL_DECLARED_ARRAY) && (!s || strcmp(s->base.name, dt_schema))) {
+		t = create_sql_array(m->sa, name, tt, system, persistence, commit_action, cellsNum);
+		t->s = s;
+	} else {
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, cellsNum);
+	}
+	return t;
+}
+
+sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
 {
 	sql_table *t = NULL;
@@ -988,7 +1005,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, 0);
 	}
 	return t;
 }
@@ -1006,7 +1023,7 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
 	return t;
 }
@@ -1024,7 +1041,7 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return t;
 }

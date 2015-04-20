@@ -440,7 +440,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 	}
 
 	//create a copy of the table without the changesets
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->cellsNum);
 
 	if(isArray(t)) {
 		assert(t->dimensions.set); //an array should always have dimensional column(s)
@@ -1642,7 +1642,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_dimension *dim = NULL;
-	long repeat1 = 0, repeat2 =0, totalElements =0;
+	long repeat1 = 0, repeat2 =0;
 	long  i=0, j=0;
 
 	s = mvc_bind_schema(m, sname);
@@ -1660,21 +1660,18 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 
 #define materialiseDim(TPE, min, step, max)                     \
     do {                                \
-			TPE it, *elements; \
-			totalElements = floor((max - min )/ step)+1; \
+			TPE it, *elements = NULL; \
 \
-        	if((b = BATnew(TYPE_void, TYPE_##TPE, totalElements*repeat1*repeat2, TRANSIENT)) == NULL)   \
+        	if((b = BATnew(TYPE_void, TYPE_##TPE, t->cellsNum, TRANSIENT)) == NULL)   \
         		return NULL;                   \
 \
         	elements = (TPE*) Tloc(b, BUNfirst(b));          \
 \
-			totalElements = 0; \
 			for(j=0; j<repeat2; j++) { \
         		for(it = min ; it <= max ; it += step) { \
             		for(i=0; i<repeat1; i++) { \
                 		*elements = (TPE) it; \
                 		elements++; \
-                		totalElements++; \
             		} \
         		} \
     		} \
@@ -1715,7 +1712,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 			fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
 	}
 
-	BATsetcount(b,totalElements);
+	BATsetcount(b,t->cellsNum);
     BATderiveProps(b,FALSE);
 
 	return b;

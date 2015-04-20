@@ -952,6 +952,8 @@ int compute_repeats(mvc *sql, sql_table *t) {
 	for(i=i-1; i>=0; i--)
 		dims_array[i]->lvl2_repeatsNum = dims_array[i+1]->lvl2_repeatsNum * dims_array[i+1]->elementsNum;
 
+	//number of cells in table
+	t->cellsNum = dims_array[0]->elementsNum*dims_array[0]->lvl1_repeatsNum*dims_array[0]->lvl2_repeatsNum;
 	return SQL_OK;
 }
 
@@ -988,7 +990,7 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 	} else if (temp != SQL_DECLARED_ARRAY && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "42000!CREATE ARRAY: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (array_elements->token == SQL_CREATE_ARRAY) { 
-		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_ARRAY, commit_action, -1);
+		sql_table *t = mvc_create_array(sql, s, name, tt, 0, SQL_DECLARED_ARRAY, commit_action, -1, 0);
 
 		dlist *columns = array_elements->data.lval;
 		dnode *n;
