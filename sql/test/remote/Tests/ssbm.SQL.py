@@ -175,6 +175,7 @@ print str(c.fetchall()[0][0]) + ' rows in mergetable'
 
 # run queries
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
+queries.sort()
 for q in queries:
     print os.path.basename(q).replace('.sql','')
     c.execute(codecs.open(q, 'r', encoding='utf8').read())

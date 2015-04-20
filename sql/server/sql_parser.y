@@ -109,6 +109,7 @@ int yydebug=1;
 	table_def
 	view_def
 	query_expression
+	with_query_expression
 	role_def
 	type_def
 	func_def
@@ -1764,6 +1765,7 @@ view_def:
 
 query_expression:
 	select_no_parens_orderby
+  |	with_query
   ;
 
 opt_with_check_option:
@@ -2035,9 +2037,9 @@ return_statement:
    ;
 
 return_value:
-      select_no_parens_orderby
+      query_expression
    |  search_condition
-   |  TABLE '(' select_no_parens_orderby ')'	
+   |  TABLE '(' query_expression ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
@@ -2541,14 +2543,14 @@ copyfrom_stmt:
 	  append_list(l, $7);
 	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY select_no_parens_orderby INTO string opt_seps opt_null_string 
+  | COPY query_expression INTO string opt_seps opt_null_string 
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
 	  append_list(l, $5);
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
-  | COPY select_no_parens_orderby INTO STDOUT opt_seps opt_null_string
+  | COPY query_expression INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, NULL);
@@ -2719,7 +2721,7 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
- |  select_no_parens_orderby
+ |  query_expression
  ;
 
 
@@ -2898,7 +2900,7 @@ sql: with_query
 	;
 
 with_query:
-	WITH with_list query_expression
+	WITH with_list with_query_expression
 	{
 		dlist *l = L();
 	  	append_list(l, $2);
@@ -2913,7 +2915,7 @@ with_list:
  ;
 
 with_list_element: 
-    ident opt_column_list AS '(' query_expression ')'
+    ident opt_column_list AS '(' with_query_expression ')'
 	{  dlist *l = L();
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
@@ -2923,6 +2925,11 @@ with_list_element:
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;
+
+with_query_expression:
+	select_no_parens_orderby
+  ;
+
 
 sql:
     select_statement_single_row
