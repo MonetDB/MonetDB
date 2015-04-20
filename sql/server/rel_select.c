@@ -1176,6 +1176,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
+			MT_lock_set(&sq->exps->ht_lock, "rel_table_optname");
+			sq->exps->ht = NULL;
+			MT_lock_unset(&sq->exps->ht_lock, "rel_table_optname");
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 
@@ -2767,8 +2770,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				if (!l) {
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					rel_project_add_exp(sql, l, ls);
-				} else if (f == sql_sel) /* allways add left side in case of selections phase */
+				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
+					if (!l->exps || list_empty(l->exps)) /* add all expressions to the project */
+						l->exps = rel_projections(sql, l->l, NULL, 0, 1);
 					rel_project_add_exp(sql, l, ls);
+				}
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
 				if (r->card > CARD_ATOM) {
