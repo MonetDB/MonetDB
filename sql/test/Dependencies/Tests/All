@@ -1,3 +1,2 @@
-!HAVE_SAMTOOLS?Dependencies
 HAVE_SAMTOOLS?Dependencies_bam
 dependency_loop
