@@ -1,4 +1,4 @@
-stdout of test '17` in directory 'sql/benchmarks/tpch/LOCKED` itself:
+stdout of test '17` in directory 'sql/benchmarks/tpch` itself:
 
 
 # 15:44:33 >  
@@ -23,9 +23,9 @@ Ready.
 # 11:48:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 17.sql
 # 11:48:03 >  
 
-# 14:36:42 >  
-# 14:36:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
-# 14:36:42 >  
+# 14:36:25 >  
+# 14:36:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:25 >  
 
 #select
 #	sum(l_extendedprice) / 7.0 as avg_yearly
@@ -47,7 +47,7 @@ Ready.
 % sys.L3 # table_name
 % avg_yearly # name
 % decimal # type
-% 21 # length
+% 41 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
