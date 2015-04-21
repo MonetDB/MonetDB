@@ -118,7 +118,6 @@ MAPI  = (monetdb) /var/tmp/mtest-21889/.s.monetdb.34286
 QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
 ERROR = !too many digits (22 > 18)
 
-
 # 15:52:24 >  
 # 15:52:24 >  "Done."
 # 15:52:24 >  
