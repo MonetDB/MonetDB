@@ -73,6 +73,7 @@ static lng startrange = 0, endrange = 0;
 static int systemcall = 1; // attempt system call
 static char *inputfile = NULL;
 static char *title = 0;
+static char *query = 0;
 static int beat = 5000;
 static int cpus = 0;
 static int atlas= 1;
@@ -442,8 +443,8 @@ static void
 stopListening(int i)
 {
 #define BSIZE 64*1024
-	char buf[BUFSIZ];
-	char pages[BSIZE];
+	char buf[BSIZE + BUFSIZ]={0};
+	char pages[BSIZE]={0};
 	int error =0, plen =0;
 	if( i)
 		fprintf(stderr,"signal %d received\n",i);
@@ -1506,7 +1507,7 @@ main(int argc, char **argv)
 	int colormap=0;
 	EventRecord event;
 
-	static struct option long_options[16] = {
+	static struct option long_options[17] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -1517,6 +1518,7 @@ main(int argc, char **argv)
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
 		{ "system", 1, 0, 's' },
+		{ "query", 1, 0, 'q' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
@@ -1530,7 +1532,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:o:Db:A:m",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:Db:A:m",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1549,6 +1551,10 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dbname = optarg;
+			break;
+		case 'q':
+			query = optarg;
+			atlas = 1;
 			break;
 		case 'i':
 			inputfile = optarg;
@@ -1741,6 +1747,12 @@ main(int argc, char **argv)
 		if( tracefd == NULL)
 			fprintf(stderr,"Could not create trace file\n");
 
+		if(query){
+			// fork and execute mclient session (TODO)
+			snprintf(buf, BUFSIZ,"mclient -d %s -s \"%s\"",dbname,query);
+			fprintf(stderr,"%s\n",buf);
+			fprintf(stderr,"Not yet implemented\n");
+		}
 		len = 0;
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
