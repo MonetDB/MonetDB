@@ -179,13 +179,13 @@ log_abort_wrap(logger *L )
 	return GDK_FAIL;
 }
 
-logger_export int log_delta_wrap(logger *L, BAT *b, str nme );
+logger_export int log_delta_wrap(logger *L, BAT *uid, BAT *b, str nme );
 
 int
-log_delta_wrap(logger *L, BAT *b, str nme )
+log_delta_wrap(logger *L, BAT *uid, BAT *b, str nme )
 {
 	logger *l = *(logger**)L;
-	if (l && log_delta(l, b, nme) == LOG_OK)
+	if (l && log_delta(l, uid, b, nme) == LOG_OK)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }

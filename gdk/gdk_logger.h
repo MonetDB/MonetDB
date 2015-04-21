@@ -23,6 +23,7 @@ typedef struct logaction {
 	lng id;
 	char *name;		/* optional */
 	BAT *b;			/* temporary bat with changes */
+	BAT *uid;		/* temporary bat with bun positions to update */
 } logaction;
 
 /* during the recover process a number of transactions could be active */
@@ -63,10 +64,13 @@ typedef struct logger {
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_nme;	/* str name column */
+	BAT *dcatalog;		/* deleted from catalog table */
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
+	BAT *dseqs;		/* deleted from seqs table */
 	BAT *snapshots_bid;	/* int bid column */
 	BAT *snapshots_tid;	/* int tid column */
+	BAT *dsnapshots;	/* deleted from snapshots table */
 	BAT *freed;		/* snapshots can be created and destroyed,
 				   in a single logger transaction.
 				   These snapshot bats should be freed
@@ -121,7 +125,7 @@ gdk_export int log_bat(logger *lg, BAT *b, const char *n);
 gdk_export int log_bat_clear(logger *lg, const char *n);
 gdk_export int log_bat_persists(logger *lg, BAT *b, const char *n);
 gdk_export int log_bat_transient(logger *lg, const char *n);
-gdk_export int log_delta(logger *lg, BAT *b, const char *n);
+gdk_export int log_delta(logger *lg, BAT *uid, BAT *uval, const char *n);
 
 gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
 gdk_export int log_tend(logger *lg);

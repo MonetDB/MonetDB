@@ -1501,7 +1501,7 @@ BBPdir(int cnt, bat *subcommit)
 	}
 	if (fclose(fp) == EOF) {
 		GDKsyserror("BBPdir: Closing BBP.dir file failed\n");
-		goto bailout;
+		return -1;
 	}
 
 	IODEBUG fprintf(stderr, "#BBPdir end\n");
@@ -3840,10 +3840,10 @@ BBPdiskscan(const char *parent)
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
 			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->H->hash);
+			delete = b == NULL;
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->T->hash);
+			delete = b == NULL;
 		} else if (strncmp(p + 1, "himprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;

@@ -52,10 +52,13 @@ typedef struct expression {
 #define NO_NIL		2
 #define TOPN_INCLUDING	4
 
+#define LEFT_JOIN	4
+
 #define APPLY_JOIN 	8
 #define APPLY_LOJ 	16
 #define APPLY_EXISTS	32
 #define APPLY_NOTEXISTS	64
+
 
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16

@@ -41,7 +41,7 @@ function user.qry():void;               	#
     bat.append(b:bat[:oid,:int],20:int);	# BKCappend_val_wrap
     X_16:int := 213:int;                	# 
     r:bat[:oid,:int]{inline} := algebra.project(b:bat[:oid,:int],X_16:int);	# ALGprojecttail
-    io.print(r:bat[:oid,:int]{inline}); 	# IOprint_val
+    io.print(r:bat[:oid,:int]);         	# IOprint_val
 end user.qry;                           	# 
 
 # 20:07:33 >  

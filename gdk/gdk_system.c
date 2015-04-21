@@ -90,11 +90,11 @@ sortlocklist(MT_Lock *l)
 	 * start of unprocessed part of left and right lists */
 	t = ll = NULL;
 	while (l && r) {
-		if (l->contention < r->contention ||
-		    (l->contention == r->contention &&
-		     l->sleep < r->sleep) ||
-		    (l->contention == r->contention &&
-		     l->sleep == r->sleep &&
+		if (l->sleep < r->sleep ||
+		    (l->sleep == r->sleep &&
+		     l->contention < r->contention) ||
+		    (l->sleep == r->sleep &&
+		     l->contention == r->contention &&
 		     l->count <= r->count)) {
 			/* l is smaller */
 			if (ll == NULL) {

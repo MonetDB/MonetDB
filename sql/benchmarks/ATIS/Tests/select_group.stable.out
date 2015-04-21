@@ -67,7 +67,7 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % decimal # type
-% 2 # length
+% 20 # length
 [ 278	]
 #select avg(engines) from aircraft;
 % sys.L1 # table_name

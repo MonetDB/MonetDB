@@ -17,7 +17,7 @@ stdout of test 'ADT_not_available.SF-850137` in directory 'monetdb5/tests/BugDay
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17200/.s.monetdb.32363
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!TypeException:user.main[1]:'url.new' undefined in: u := url.new(:oid,:url);
+!TypeException:user.main[1]:'url.new' undefined in:     u:any := url.new(:oid,:url);
 function user.main():void;
     u := url.new(:oid,:url);
 end user.main;

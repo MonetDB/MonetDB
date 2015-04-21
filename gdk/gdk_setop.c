@@ -130,7 +130,7 @@
 		BATiter ri = bat_iterator(BATmirror(r));		\
 									\
 		ALGODEBUG fprintf(stderr, "#BATins_%s%s: hashcheck[%s, %s, %s, %s, k];\n", #a1, #a2, #a1, #a2, #a3, #a4); \
-		if (BATprepareHash(BATmirror(r))) {			\
+		if (BAThash(BATmirror(r), 0) == GDK_FAIL) {		\
 			goto bunins_failed;				\
 		}							\
 		BATloop(l, p1, q1) {					\

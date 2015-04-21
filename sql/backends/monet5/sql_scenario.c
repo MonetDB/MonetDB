@@ -888,9 +888,11 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 				 * supplied values */
 				if (strcmp(s, "time") == 0 || strcmp(s, "pc") == 0 || strcmp(s, "stmt") == 0) {
 					coltype[i] = TYPE_str;
-				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "vmMB") == 0 || strcmp(s, "reads") == 0 || strcmp(s, "writes") == 0) {
+				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "tmpspace") == 0 || 
+						   strcmp(s, "inblock") == 0 || strcmp(s, "oublock") == 0 || strcmp(s,"minflt") == 0 ||
+						   strcmp(s,"majflt") ==0  || strcmp(s,"nvcsw") == 0) {
 					coltype[i] = TYPE_lng;
-				} else if (strcmp(s, "thread") == 0) {
+				} else if ( strcmp(s,"event") == 0 || strcmp(s, "thread") == 0) {
 					coltype[i] = TYPE_int;
 				}
 				i++;

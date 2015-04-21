@@ -45,7 +45,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 239 # length
+% 225 # length
 project (
 | group by (
 | | select (
@@ -55,18 +55,18 @@ project (
 | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L4.l_partkey, lineitem.l_quantity NOT NULL as L4.l_quantity ] COUNT ,
 | | | | | | project (
 | | | | | | | join (
-| | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.%lineitem_l_partkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey ] COUNT ,
 | | | | | | | | select (
-| | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_brand NOT NULL, part.p_container NOT NULL, part.%TID% NOT NULL ] COUNT 
-| | | | | | | | ) [ part.p_brand NOT NULL = varchar(10)[char(8) "Brand#23"], part.p_container NOT NULL = varchar(10)[char(7) "MED BOX"] ]
-| | | | | | | ) [ lineitem.%lineitem_l_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_fkey ]
+| | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_brand NOT NULL, part.p_container NOT NULL ] COUNT 
+| | | | | | | | ) [ part.p_brand NOT NULL = char(10)[char(8) "Brand#23"], part.p_container NOT NULL = char(10)[char(7) "MED BOX"] ],
+| | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_partkey NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL ] COUNT 
+| | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ]
 | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, part.p_partkey NOT NULL HASHCOL , sys.identity(lineitem.l_orderkey NOT NULL HASHCOL ) HASHCOL  as L5.L5 ]
 | | | | | ) [ L4.l_partkey NOT NULL = part.p_partkey NOT NULL ]
 | | | | ) [ L5.L5 ] [ lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, L5.L5 HASHCOL , sys.avg no nil (double[L4.l_quantity NOT NULL] as lineitem.l_quantity) as L1.L1 ]
 | | | ) [ lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, sys.sql_mul(double(53,1)[decimal(2,1) "2"], L1) as L2.L2 ]
-| | ) [ double(53,1)[lineitem.l_quantity NOT NULL] < L2.L2 ]
+| | ) [ double(53,2)[lineitem.l_quantity NOT NULL] < L2.L2 ]
 | ) [  ] [ sys.sum no nil (lineitem.l_extendedprice NOT NULL) NOT NULL as L3.L3 ]
-) [ sys.sql_div(decimal(18,5)[decimal(15,2)[L3 NOT NULL]] as L3, decimal(15,2)[decimal(2,1) "70"]) as L3.avg_yearly ]
+) [ sys.sql_div(decimal(39,5)[L3 NOT NULL] as L3, decimal(39,2)[decimal(2,1) "70"]) as L3.avg_yearly ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

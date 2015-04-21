@@ -1,0 +1,38 @@
+stdout of test 'operator-priority.Bug-3686` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 14:43:24 >  
+# 14:43:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33094" "--set" "mapi_usock=/var/tmp/mtest-27065/.s.monetdb.33094" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:43:24 >  
+
+# MonetDB 5 server v11.19.10 (hg id: 5af76f2a3564+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33094/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27065/.s.monetdb.33094
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:43:25 >  
+# 14:43:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27065" "--port=33094"
+# 14:43:25 >  
+
+#select 12*5/3;
+% .L # table_name
+% sql_mul_single_value # name
+% smallint # type
+% 2 # length
+[ 20	]
+
+# 14:43:25 >  
+# 14:43:25 >  "Done."
+# 14:43:25 >  
+

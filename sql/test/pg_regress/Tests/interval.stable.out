@@ -102,7 +102,7 @@ Ready.
 % sys.L2 # table_name
 % L2 # name
 % decimal # type
-% 24 # length
+% 41 # length
 [ -7034318805200352350.000	]
 #select count(f1) from interval_tbl;
 % sys.L1 # table_name

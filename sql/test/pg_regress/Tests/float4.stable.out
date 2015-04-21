@@ -42,38 +42,6 @@ Ready.
 [ 1	]
 #INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
 [ 1	]
-#INSERT INTO FLOAT4_TBL(f1) VALUES ('       ');
-[ 1	]
-#SELECT cast('NaN' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('nan' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('   NAN  ' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ NULL	]
-#SELECT cast('          -INFINiTY   ' as real);
-% .L1 # table_name
-% L1 # name
-% real # type
-% 15 # length
-[ -inf	]
-#SELECT cast('nan' as real) / cast('nan' as real);
-% .L2 # table_name
-% sql_div_single_value # name
-% real # type
-% 15 # length
-[ NULL	]
 #SELECT '' AS five, * FROM FLOAT4_TBL;
 % .L,	sys.float4_tbl # table_name
 % five,	f1 # name
@@ -86,7 +54,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
 % .L,	sys.f # table_name
 % four,	f1 # name
@@ -98,7 +65,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
 % .L,	sys.f # table_name
 % one,	f1 # name
@@ -115,7 +81,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
 % .L,	sys.f # table_name
 % three,	f1 # name
@@ -126,7 +91,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
 % .L,	sys.f # table_name
 % four,	f1 # name
@@ -138,7 +102,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
 % .L,	sys.f # table_name
 % four,	f1 # name
@@ -150,7 +113,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
 % .L,	sys.f,	sys.L # table_name
@@ -203,7 +165,6 @@ Ready.
 [ "",	1.2346e-20	]
 [ "",	1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #UPDATE FLOAT4_TBL
 #   SET f1 = FLOAT4_TBL.f1 * '-1'
 #   WHERE FLOAT4_TBL.f1 > '0.0';
@@ -220,7 +181,6 @@ Ready.
 [ "",	-1.2346e-20	]
 [ "",	-1e-39	]
 [ "",	-1e-39	]
-[ "",	0	]
 #DROP TABLE FLOAT4_TBL;
 
 # 18:17:19 >  

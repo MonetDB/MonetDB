@@ -16,6 +16,9 @@
 #include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
 #include "sql_env.h"
 #include "rel_sequence.h"	/* for sql_next_seq_name() */
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 #include <unistd.h>
 #include <string.h>
@@ -47,9 +50,11 @@
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
 #ifdef HAVE_HGE
-#define MAX_DEC_DIGITS 38
+#define MAX_DEC_DIGITS (have_hge ? 38 : 18)
+#define MAX_HEX_DIGITS (have_hge ? 32 : 16)
 #else
 #define MAX_DEC_DIGITS 18
+#define MAX_HEX_DIGITS 16
 #endif
 
 %}
@@ -104,6 +109,7 @@ int yydebug=1;
 	table_def
 	view_def
 	query_expression
+	with_query_expression
 	role_def
 	type_def
 	func_def
@@ -1759,6 +1765,7 @@ view_def:
 
 query_expression:
 	select_no_parens_orderby
+  |	with_query
   ;
 
 opt_with_check_option:
@@ -2030,9 +2037,9 @@ return_statement:
    ;
 
 return_value:
-      select_no_parens_orderby
+      query_expression
    |  search_condition
-   |  TABLE '(' select_no_parens_orderby ')'	
+   |  TABLE '(' query_expression ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
@@ -2536,14 +2543,14 @@ copyfrom_stmt:
 	  append_list(l, $7);
 	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY select_no_parens_orderby INTO string opt_seps opt_null_string 
+  | COPY query_expression INTO string opt_seps opt_null_string 
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
 	  append_list(l, $5);
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
-  | COPY select_no_parens_orderby INTO STDOUT opt_seps opt_null_string
+  | COPY query_expression INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, NULL);
@@ -2714,7 +2721,7 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
- |  select_no_parens_orderby
+ |  query_expression
  ;
 
 
@@ -2893,7 +2900,7 @@ sql: with_query
 	;
 
 with_query:
-	WITH with_list query_expression
+	WITH with_list with_query_expression
 	{
 		dlist *l = L();
 	  	append_list(l, $2);
@@ -2908,7 +2915,7 @@ with_list:
  ;
 
 with_list_element: 
-    ident opt_column_list AS '(' query_expression ')'
+    ident opt_column_list AS '(' with_query_expression ')'
 	{  dlist *l = L();
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
@@ -2918,6 +2925,11 @@ with_list_element:
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;
+
+with_query_expression:
+	select_no_parens_orderby
+  ;
+
 
 sql:
     select_statement_single_row
@@ -4119,19 +4131,11 @@ literal:
 		  while (i < len && hexa[i] == '0')
 		  	i++;
 
-#ifdef HAVE_HGE
 		  /* we only support positive values that fit in a signed 128-bit type,
-		   * i.e., max. 127 bit => < 2^127 => < 0x80000000000000000000000000000000
+		   * i.e., max. 63/127 bit => < 2^63/2^127 => < 0x800...
 		   * (leading sign (-0x...) is handled separately elsewhere)
 		   */
-		  if (len - i < 32 || (len - i == 32 && hexa[i] < '8'))
-#else
-		  /* we only support positive values that fit in a signed 64-bit type,
-		   * i.e., max. 63 bit => < 2^63 => < 0x8000000000000000
-		   * (leading sign (-0x...) is handled separately elsewhere)
-		   */
-		  if (len - i < 16 || (len - i == 16 && hexa[i] < '8'))
-#endif
+		  if (len - i < MAX_HEX_DIGITS || (len - i == MAX_HEX_DIGITS && hexa[i] < '8'))
 		  	while (err == 0 && i < len)
 		  	{
 				res <<= 4;
@@ -4161,7 +4165,7 @@ literal:
 			else if (res <= GDK_lng_max)
 				sql_find_subtype(&t, "bigint", 64, 0 );
 #ifdef HAVE_HGE
-			else if (res <= GDK_hge_max)
+			else if (res <= GDK_hge_max && have_hge)
 				sql_find_subtype(&t, "hugeint", 128, 0 );
 #endif
 			else
@@ -4240,10 +4244,10 @@ literal:
 		  	  sql_find_subtype(&t, "smallint", bits, 0 );
 		    else if (value > GDK_int_min && value <= GDK_int_max)
 		  	  sql_find_subtype(&t, "int", bits, 0 );
-		    else if ((value > GDK_lng_min && value <= GDK_lng_max))
+		    else if (value > GDK_lng_min && value <= GDK_lng_max)
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 #ifdef HAVE_HGE
-		    else if ((value > GDK_hge_min && value <= GDK_hge_max))
+		    else if (value > GDK_hge_min && value <= GDK_hge_max && have_hge)
 		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
 #endif
 		    else
