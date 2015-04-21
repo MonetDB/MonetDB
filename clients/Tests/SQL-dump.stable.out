@@ -42,7 +42,7 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
-# loading sql script: 41_jsonstore.sql
+# loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
@@ -809,7 +809,6 @@ create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mb
 -- Copyright 2008-2015 MonetDB B.V.
 
 -- (co) Arjen de Rijke
--- Functions supporting jsonstore
 
 create function sys.md5(v string)
 returns string external name clients.md5sum;
