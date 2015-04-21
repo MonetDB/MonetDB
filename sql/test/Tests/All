@@ -1,7 +1,4 @@
-HAVE_FITS&HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions
-HAVE_FITS&HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_gsl
-!HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions_bam
-!HAVE_FITS&!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS?systemfunctions_nogeom
+!HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions
 example
 example-queries
 example-drop
@@ -54,8 +51,7 @@ decimal2
 null
 joins
 default
-!HAVE_SAMTOOLS?keys
-HAVE_SAMTOOLS?keys_bam
+HAVE_SAMTOOLS?keys
 
 like_tests
 
@@ -99,6 +95,5 @@ antiselect
 median_stdev
 
 HAVE_GEOM?trace
-!HAVE_GEOM?trace_nogeom
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys

@@ -221,9 +221,6 @@
 #define HAVE_ISINF 1
 #endif
 
-/* Define that you want to build the jsonstore library */
-/* #undef HAVE_JSONSTORE */
-
 /* Define to 1 if you have the `kill' function. */
 /* #undef HAVE_KILL */
 

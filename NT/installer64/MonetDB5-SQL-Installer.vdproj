@@ -2030,8 +2030,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4EB618ABA45B48A2B358D8F899B302FC"
             {
-            "SourcePath" = "8:lib\\monetdb5\\createdb\\41_jsonstore.sql"
-            "TargetName" = "8:41_jsonstore.sql"
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\41_md5sum.sql"
+            "TargetName" = "8:41_md5sum.sql"
             "Tag" = "8:"
             "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
             "Condition" = "8:"
