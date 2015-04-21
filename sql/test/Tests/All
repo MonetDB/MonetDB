@@ -1,7 +1,4 @@
-HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!ENABLE_DATACELL?systemfunctions
-HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS&!ENABLE_DATACELL?systemfunctions_gsl
 HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS&!ENABLE_DATACELL?systemfunctions_bam
-!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!ENABLE_DATACELL?systemfunctions_nogeom
 example
 example-queries
 example-drop
@@ -54,7 +51,6 @@ decimal2
 null
 joins
 default
-!HAVE_SAMTOOLS?keys
 HAVE_SAMTOOLS?keys_bam
 
 like_tests
@@ -99,6 +95,5 @@ antiselect
 median_stdev
 
 HAVE_GEOM?trace
-!HAVE_GEOM?trace_nogeom
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
