@@ -1,4 +1,4 @@
-!HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions_bam
+!HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions
 example
 example-queries
 example-drop
@@ -51,7 +51,7 @@ decimal2
 null
 joins
 default
-HAVE_SAMTOOLS?keys_bam
+HAVE_SAMTOOLS?keys
 
 like_tests
 
