@@ -5,7 +5,6 @@
 -- Copyright 2008-2015 MonetDB B.V.
 
 -- (co) Arjen de Rijke
--- Functions supporting jsonstore
 
 create function sys.md5(v string)
 returns string external name clients.md5sum;
