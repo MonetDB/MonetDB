@@ -374,7 +374,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						sql_exp *vals = exp_values(sql->sa, sa_list(sql->sa));
 						sql_column *c = m->data;
 	
-					        vals->tpe = c->type;
+				        vals->tpe = c->type;
 						exp_label(sql->sa, vals, ++sql->label);
 						list_append(exps, vals);
 					}

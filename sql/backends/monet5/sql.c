@@ -1692,7 +1692,30 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
         	materialiseDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
         	break;
     	case TYPE_int:
-        	materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
+ {   			int it, *elements = NULL;
+				int min = dim->min->data.val.ival;
+				int step = dim->step->data.val.ival;
+				int max = dim->max->data.val.ival;
+
+        	if((b = BATnew(TYPE_void, TYPE_int, t->cellsNum, TRANSIENT)) == NULL) 
+        		return NULL;
+
+        	elements = (int*) Tloc(b, BUNfirst(b));
+
+			for(j=0; j<repeat2; j++) {
+        		for(it = min ; it <= max ; it += step) {
+            		for(i=0; i<repeat1; i++) {
+                		*elements = (int) it;
+                		elements++; \
+fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *elements, it);
+            		} 
+        		}
+    		}
+
+        	b->tsorted = 0;
+        	b->trevsorted = 0;
+}
+    //	materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
         	break;
     	case TYPE_lng:
         	materialiseDim(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);
@@ -1700,7 +1723,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 #ifdef HAVE_HGE
     	case TYPE_hge:
         	materialiseDim(hge, dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval);
-        	break;
+       	break;
 #endif
 		case TYPE_flt:
         	materialiseDim(flt, dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval);

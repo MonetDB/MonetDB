@@ -375,6 +375,11 @@ column_option(
 	case SQL_DEFAULT: {
 		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
 
+		if(isArray(cs->t)) {
+			//I do not need to set the default value in the column
+			res = SQL_OK;
+			break;
+		}
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -957,14 +962,27 @@ int compute_repeats(mvc *sql, sql_table *t) {
 	return SQL_OK;
 }
 
+static sql_exp *
+insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
+{
+    if (s->token == SQL_NULL) {
+        return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+    } else {
+        int is_last = 0;
+        exp_kind ek = {type_value, card_value, FALSE};
+        sql_exp *e = rel_value_exp2(sql, r, s, sql_sel, ek, &is_last);
+
+        if (!e)
+            return(NULL);
+        return rel_check_type(sql, &c->type, e, type_equal); 
+    }
+}
+
+
 sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *array_elements, int commit_action) {
 	sql_schema *s = NULL;
-//	int instantiate = (sql->emode == m_instantiate);
-//	int deps = (sql->emode == m_deps);
-//	int create = (!instantiate && !deps);
 	int tt = tt_array;
 
-//	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "3F000!CREATE ARRAY: no such schema '%s'", sname);
 
@@ -991,9 +1009,12 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		return sql_error(sql, 02, "42000!CREATE ARRAY: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (array_elements->token == SQL_CREATE_ARRAY) { 
 		sql_table *t = mvc_create_array(sql, s, name, tt, 0, SQL_DECLARED_ARRAY, commit_action, -1, 0);
+		sql_rel *creation, *ins;
 
 		dlist *columns = array_elements->data.lval;
 		dnode *n;
+		node *columnNode = NULL;
+		list *exps = new_exp_list(sql->sa);
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1007,7 +1028,46 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		compute_repeats(sql, t);
 
 		temp = (tt == tt_array)?temp:SQL_PERSIST;
-		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
+		creation = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
+		
+		//create empty cells for all non-dimensional columns
+		for (n = columns->h, columnNode = t->columns.set->h; n && columnNode; n = n->next) {
+			if(n->data.sym->token == SQL_COLUMN) {
+				//add the default values (NULL values if not provided by the user)
+				symbol *defaultSym = n->data.sym->data.lval->h->next->next->data.lval->h->data.sym;
+				
+				sql_exp *vals = NULL;
+				//the list with the values for the column
+				list *vals_list = sa_list(sql->sa);
+
+				sql_column *c = columnNode->data;
+				sql_rel *r = NULL;
+
+				//create the values as a copy of the default one
+				int i;
+				for(i=0; i<t->cellsNum; i++) {
+					sql_exp *ins = insert_value(sql, c, &r, defaultSym->data.sym);
+					if (!ins || r)
+                        return NULL;
+                    list_append(vals_list, ins);
+				}
+
+				vals = exp_values(sql->sa, vals_list);
+				
+				//add the type of the column
+            	vals->tpe = c->type;
+            	exp_label(sql->sa, vals, ++sql->label);
+				//store the list with the values or the column
+				list_append(exps, vals);
+
+				//go to the next column		
+				columnNode = columnNode->next;
+			}
+		}
+
+		ins = rel_project(sql->sa, NULL, exps);
+
+		return rel_insert(sql, creation, ins);
 	} 
 #if 0
 	else { /* [col name list] as subquery with or without data */

@@ -169,6 +169,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 		bat_set_access(b, BAT_READ);
 	}
 	assert(b);
+
 	return b;
 }
 

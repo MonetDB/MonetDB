@@ -1077,7 +1077,7 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	if (isDeclaredTable(t) && (!t->s || strcmp(t->s->base.name, dt_schema))) 
+	if ((isDeclaredTable(t) || isDeclaredArray(t)) && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->sa, t, name, tpe);
 	else
