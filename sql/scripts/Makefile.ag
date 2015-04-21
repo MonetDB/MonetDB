@@ -40,7 +40,7 @@ headers_sql = {
 	27_rejects.sql \
 	39_analytics.sql \
 	40_json.sql \
-	41_jsonstore.sql \
+		41_md5sum.sql \
 	45_uuid.sql \
 	75_storagemodel.sql \
 	80_statistics.sql \

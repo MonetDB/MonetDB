@@ -909,7 +909,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
-	--enable-jsonstore=no \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -942,36 +941,31 @@ developer, but if you do want to test, this is the package you need.
 make
 
 %install
-rm -rf $RPM_BUILD_ROOT
+%make_install
 
-%makeinstall
-
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
-mkdir -p $RPM_BUILD_ROOT%{perl_vendorlib}
-if [ ! $RPM_BUILD_ROOT%{_prefix}/lib/perl5 -ef $RPM_BUILD_ROOT%{perl_vendorlib} ]; then
-    mv $RPM_BUILD_ROOT%{_prefix}/lib/perl5/* $RPM_BUILD_ROOT%{perl_vendorlib}
+mkdir -p %{buildroot}%{_localstatedir}/MonetDB
+mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
+mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+mkdir -p %{buildroot}%{perl_vendorlib}
+if [ ! %{buildroot}%{_prefix}/lib/perl5 -ef %{buildroot}%{perl_vendorlib} ]; then
+    mv %{buildroot}%{_prefix}/lib/perl5/* %{buildroot}%{perl_vendorlib}
 fi
 
 # remove unwanted stuff
 # .la files
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
+rm -f %{buildroot}%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
+rm -f %{buildroot}%{_bindir}/Maddlog
 
 %if 0%{?fedora} >= 20
-mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL
+mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
 %endif
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
-
-%clean
-rm -fr $RPM_BUILD_ROOT
 
 %changelog
 * Fri Jan 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.9-20150123

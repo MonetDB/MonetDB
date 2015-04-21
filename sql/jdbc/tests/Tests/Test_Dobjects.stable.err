@@ -1,15 +1,13 @@
 stderr of test 'Test_Dobjects` in directory 'sql/jdbc/tests` itself:
 
 
-# 20:09:14 >  
-# 20:09:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=35456" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_jdbc_tests" "--set" "mal_listing=0"
-# 20:09:14 >  
+# 15:28:55 >  
+# 15:28:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37247" "--set" "mapi_usock=/var/tmp/mtest-21432/.s.monetdb.37247" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_jdbc_tests" "--set" "mal_listing=0"
+# 15:28:55 >  
 
-# builtin opt 	gdk_dbname = demo
-# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Dec2011/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_alloc_map = no
-# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_daemon = no
 # builtin opt 	mapi_port = 50000
@@ -18,25 +16,25 @@ stderr of test 'Test_Dobjects` in directory 'sql/jdbc/tests` itself:
 # builtin opt 	sql_optimizer = default_pipe
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	gdk_dbfarm = /net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 35456
+# cmdline opt 	mapi_port = 37247
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21432/.s.monetdb.37247
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_jdbc_tests
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_jdbc_tests
 # cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
 
-# 20:09:14 >  
-# 20:09:14 >  "./Test_Dobjects.SQL.sh" "Test_Dobjects"
-# 20:09:14 >  
-
-
-# 20:09:14 >  
-# 20:09:14 >  java Test_Dobjects "jdbc:monetdb://sofia:35456/mTests_jdbc_tests?user=monetdb&password=monetdb"
-# 20:09:14 >  
+# 15:28:56 >  
+# 15:28:56 >  "./Test_Dobjects.SQL.sh" "Test_Dobjects"
+# 15:28:56 >  
 
 
-# 20:09:14 >  
-# 20:09:14 >  "Done."
-# 20:09:14 >  
+# 15:28:56 >  
+# 15:28:56 >  java Test_Dobjects "jdbc:monetdb://robin-xps13:37247/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 15:28:56 >  
 
+
+# 15:28:56 >  
+# 15:28:56 >  "Done."
+# 15:28:56 >  

@@ -833,7 +833,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('output', 'tojsonarray') and f.type = %d and f.schema_id = s.id and s.name = 'json');\n",
 			F_AGGR);
 
-	/* new file 41_jsonstore.sql */
+	/* new file 41_md5sum.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
 
 	/* new file 45_uuid.sql */
