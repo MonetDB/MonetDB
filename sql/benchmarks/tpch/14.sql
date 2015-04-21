@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	100.00 * sum(case
 		when p_type like 'PROMO%'

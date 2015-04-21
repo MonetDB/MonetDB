@@ -98,10 +98,13 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 1 << 8;		/* minimum size */
+	BUN m = 1 << 8;	/* minimum size; == BATTINY */
 
+	/* find largest power of 2 smaller than cnt */
 	while (m + m < cnt)
 		m += m;
+	/* if cnt is more than 1/3 into the gap between m & 2*m,
+	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
 	return m;
@@ -119,7 +122,8 @@ HASHclear(Hash *h)
 	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
-#define HASH_VERSION	1
+#define HASH_VERSION		1
+#define HASH_HEADER_SIZE	5 /* nr of size_t fields in header */
 
 Hash *
 HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
@@ -127,9 +131,9 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	Hash *h = NULL;
 	int width = HASHwidth(size);
 
-	if (HEAPalloc(hp, mask + size + 5 * SIZEOF_SIZE_T / width, width) < 0)
+	if (HEAPalloc(hp, mask + size + HASH_HEADER_SIZE * SIZEOF_SIZE_T / width, width) < 0)
 		return NULL;
-	hp->free = (mask + size) * width + 5 * SIZEOF_SIZE_T;
+	hp->free = (mask + size) * width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h = GDKmalloc(sizeof(Hash));
 	if (h == NULL)
 		return NULL;
@@ -143,7 +147,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	case BUN4:
 		h->nil = (BUN) BUN4_NONE;
 		break;
-#if SIZEOF_BUN > 4
+#ifdef BUN8
 	case BUN8:
 		h->nil = (BUN) BUN8_NONE;
 		break;
@@ -151,7 +155,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	default:
 		assert(0);
 	}
-	h->Link = hp->base + 5 * SIZEOF_SIZE_T;
+	h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->Hash = (void *) ((char *) h->Link + h->lim * width);
 	h->type = tpe;
 	h->heap = hp;
@@ -234,7 +238,7 @@ BATcheckhash(BAT *b)
 
 			/* check whether a persisted hash can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
-				size_t hdata[5];
+				size_t hdata[HASH_HEADER_SIZE];
 				struct stat st;
 
 				if ((h = GDKmalloc(sizeof(*h))) != NULL &&
@@ -242,13 +246,13 @@ BATcheckhash(BAT *b)
 				    hdata[0] == (((size_t) 1 << 24) | HASH_VERSION) &&
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
-				    st.st_size >= (off_t) ((hdata[1] + hdata[2]) * hdata[3] + 5 * SIZEOF_SIZE_T) &&
+				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
 				    HEAPload(hp, nme, ext, 0) >= 0) {
-					h->lim = hdata[1];
+					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
-					h->mask = hdata[2] - 1;
+					h->mask = (BUN) (hdata[2] - 1);
 					h->heap = hp;
-					h->width = hdata[3];
+					h->width = (int) hdata[3];
 					switch (h->width) {
 					case BUN2:
 						h->nil = (BUN) BUN2_NONE;
@@ -256,7 +260,7 @@ BATcheckhash(BAT *b)
 					case BUN4:
 						h->nil = (BUN) BUN4_NONE;
 						break;
-#if SIZEOF_BUN > 4
+#ifdef BUN8
 					case BUN8:
 						h->nil = (BUN) BUN8_NONE;
 						break;
@@ -264,7 +268,7 @@ BATcheckhash(BAT *b)
 					default:
 						assert(0);
 					}
-					h->Link = hp->base + 5 * SIZEOF_SIZE_T;
+					h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
 					b->T->hash = h;
@@ -320,7 +324,7 @@ BAThash(BAT *b, BUN masksize)
 	if (b->T->hash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
-		BUN mask;
+		BUN mask, maxmask = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp;
@@ -368,11 +372,12 @@ BAThash(BAT *b, BUN masksize)
 			mask = HASHmask(cnt);
 		} else {
 			/* dynamic hash: we start with
-			 * HASHmask(cnt/64); if there are too many
-			 * collisions we try HASHmask(cnt/16), then
-			 * HASHmask(cnt/4), and finally
+			 * HASHmask(cnt)/64; if there are too many
+			 * collisions we try HASHmask(cnt)/16, then
+			 * HASHmask(cnt)/4, and finally
 			 * HASHmask(cnt).  */
-			mask = HASHmask(cnt >> 6);
+			maxmask = HASHmask(cnt);
+			mask = maxmask >> 6;
 			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
 				p = q;
@@ -452,7 +457,7 @@ BAThash(BAT *b, BUN masksize)
 				}
 				break;
 			}
-		} while (r < p && mask < cnt && (mask <<= 2));
+		} while (r < p && mask < maxmask && (mask <<= 2));
 
 		/* finish the hashtable with the current mask */
 		p = r;

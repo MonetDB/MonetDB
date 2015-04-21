@@ -12,7 +12,11 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
-char *mal_trace;		/* enable profile events on console */
+char 	monet_characteristics[PATHLENGTH];
+int mal_trace;		/* enable profile events on console */
+#ifdef HAVE_HGE
+int have_hge;
+#endif
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -95,10 +99,10 @@ int mal_init(void){
 		return -1;
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace && *mal_trace) {
+	if ( mal_trace ) {
 		openProfilerStream(mal_clients[0].fdout);
 		startProfiler(1,0);
-	} else mal_trace =0;
+	} 
 	return 0;
 }
 /*

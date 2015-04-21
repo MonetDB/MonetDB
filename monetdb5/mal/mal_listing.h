@@ -22,7 +22,6 @@ mal_export str instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t
 mal_export void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);
 mal_export str mal2str(MalBlkPtr mb, int first, int last);
-mal_export str function2str(MalBlkPtr mb);
 mal_export void showMalBlkHistory(stream *out, MalBlkPtr mb);
 
 #endif /*  _MAL_LIST_H */

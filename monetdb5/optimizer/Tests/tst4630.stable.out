@@ -34,10 +34,9 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     z:any := algebra.join(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3]);	# 
     zz:any := algebra.join(z:any,c:bat[:any_3,:any_4]);	# 
     ww:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);	# 
-    X_12:any := algebra.join(z:any,a1:bat[:any_1,:any_2]);	# 
-    yy:bat[:void,:any] := algebra.join(X_12:any,b1:bat[:any_2,:any_3]);	# 
-    xx:bat[:void,:any] := algebra.joinPath(X_12:any,b1:bat[:any_2,:any_3],c1:bat[:any_3,:any_4]);	# 
-    return qry:bat[:any_1,:any_4] := xx:bat[:void,:any];	# 
+    yy:any := algebra.join(ww:any,b1:bat[:any_2,:any_3]);	# 
+    xx:any := algebra.join(yy:any,c1:bat[:any_3,:any_4]);	# 
+    return qry:bat[:any_1,:any_4] := xx:any;	# 
 end user.qry;                           	# 
 
 # 12:56:30 >  

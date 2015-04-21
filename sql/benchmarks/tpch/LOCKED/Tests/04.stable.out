@@ -50,7 +50,7 @@ Ready.
 #	o_orderpriority;
 % sys.orders,	sys.L1 # table_name
 % o_orderpriority,	order_count # name
-% varchar,	wrd # type
+% char,	wrd # type
 % 15,	3 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]

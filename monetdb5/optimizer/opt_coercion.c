@@ -18,10 +18,6 @@ typedef struct{
 	int fromtype;
 	int totype;
 	int src;
-/* not used, yet !??
-	int digits;
-	int scale;
-*/
 } Coercion;
 
 static int
@@ -47,50 +43,65 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	return 0;
 }
 
-/* Check coercions for numeric types that can be handled with smaller ones.
+/* Check coercions for numeric types towards :hge that can be handled with smaller ones.
  * For now, limit to +,-,/,*,% hge expressions
- * To be extended to deal with math calls as well.
+ * Not every combination may be available in the MAL layer, which calls
+ * for a separate type check before fixing it.
+ * Superflous coercion statements will be garbagecollected later on in the pipeline
  */
 static void
-coercionOptimizerCalcStep(MalBlkPtr mb, int i, Coercion *coerce)
+coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 {
 	InstrPtr p = getInstrPtr(mb,i);
-	int r, a, b;
+	int r, a, b, varid;
 
+	r = getColumnType(getVarType(mb, getArg(p,0)));
+#ifdef HAVE_HGE
+	if ( r != TYPE_hge)
+		return;
+#endif
 	if( getModuleId(p) != batcalcRef || getFunctionId(p) == 0) return;
 	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || *getFunctionId(p) =='%') || p->argc !=3)
 		return;
 
-	r = getColumnType(getVarType(mb, getArg(p,0)));
-	switch(r){
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-		break;
-	case TYPE_dbl:
-	case TYPE_flt:
-		/* to be determined */
-	default:
-		return;
-	}
 	a = getColumnType(getVarType(mb, getArg(p,1)));
 	b = getColumnType(getVarType(mb, getArg(p,2)));
-	if ( a == r && coerce[getArg(p,1)].src && coerce[getArg(p,1)].fromtype < r ) /*digit/scale test as well*/
-		getArg(p,1) = coerce[getArg(p,1)].src;
-	if ( b == r && coerce[getArg(p,2)].src &&  coerce[getArg(p,2)].fromtype < r ) /*digit/scale test as well*/
-		getArg(p,2) = coerce[getArg(p,2)].src;
+	varid = getArg(p,1);
+	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
+	{
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", varid);
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+		getArg(p,1) = coerce[varid].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,1) = varid;
+	}
+	varid = getArg(p,2);
+	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
+	{
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", varid);
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+		getArg(p,2) = coerce[varid].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,2) = varid;
+	}
+#ifdef _DEBUG_COERCION_
+		mnstr_printf(cntxt->fdout,"#final instruction\n");
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
 	return;
 }
 
 static void
-coercionOptimizerAggrStep(MalBlkPtr mb, int i, Coercion *coerce)
+coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 {
 	InstrPtr p = getInstrPtr(mb,i);
 	int r, k;
+
+	(void) cntxt;
 
 	if( getModuleId(p) != aggrRef || getFunctionId(p) == 0) return;
 	if( ! (getFunctionId(p) == subavgRef ) || p->argc !=6)
@@ -98,9 +109,11 @@ coercionOptimizerAggrStep(MalBlkPtr mb, int i, Coercion *coerce)
 
 	r = getColumnType(getVarType(mb, getArg(p,0)));
 	k = getArg(p,1);
-	// check the digits/scale
-	if( r == TYPE_dbl &&  coerce[k].src )
-		getArg(p,1) = coerce[getArg(p,1)].src;
+	if( r == TYPE_dbl &&  coerce[k].src ){
+		getArg(p,1) = coerce[k].src;
+		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
+			getArg(p,1)= k;
+	}
 	return;
 }
 
@@ -124,33 +137,25 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if (getModuleId(p) == NULL)
 			continue;
 /* Downscale the type, avoiding hge storage when lng would be sufficient.
- * The code template can be extended to handle other downscale options as well
  */
 #ifdef HAVE_HGE
 		if ( getModuleId(p) == batcalcRef
 		     && getFunctionId(p) == hgeRef
 		     && p->retc == 1
-		     && ( p->argc == 2
-		          || ( p->argc == 5
-		               && isVarConstant(mb,getArg(p,1))
-		               && getArgType(mb,p,1) == TYPE_int
-		               && isVarConstant(mb,getArg(p,3))
-		               && getArgType(mb,p,3) == TYPE_int
-		               && isVarConstant(mb,getArg(p,4))
-		               && getArgType(mb,p,4) == TYPE_int
-		               /* from-scale == to-scale, i.e., no scale change */
-		               && *(int*) getVarValue(mb, getArg(p,1)) == *(int*) getVarValue(mb, getArg(p,4)) ) ) ){
+		     && ( p->argc == 5
+				   && isVarConstant(mb,getArg(p,1))
+				   && getArgType(mb,p,1) == TYPE_int
+				   && isVarConstant(mb,getArg(p,3))
+				   && getArgType(mb,p,3) == TYPE_int
+				   && isVarConstant(mb,getArg(p,4))
+				   && getArgType(mb,p,4) == TYPE_int
+				   /* from-scale == to-scale, i.e., no scale change */
+				   && *(int*) getVarValue(mb, getArg(p,1)) == *(int*) getVarValue(mb, getArg(p,4)) ) ){
 			k = getArg(p,0);
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
 			coerce[k].src= getArg(p,2);
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
-/* not used, yet !??
-			if (p->argc == 5) {
-				coerce[k].digits= getVarConstant(mb,getArg(p,3)).val.ival;
-				coerce[k].scale= getVarConstant(mb,getArg(p,4)).val.ival;
-			}
-*/
 		}
 #endif
 		if ( getModuleId(p) == batcalcRef
@@ -160,7 +165,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		          || ( p->argc == 3
 		               && isVarConstant(mb,getArg(p,1))
 		               && getArgType(mb,p,1) == TYPE_int
-		               /* to-scale == 0, i.e., no scale change */
+		               //to-scale == 0, i.e., no scale change 
 		               && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
@@ -168,8 +173,8 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].src= getArg(p,1 + (p->argc ==3));
 			coerce[k].fromtype= getColumnType(getArgType(mb,p,1 + (p->argc ==3)));
 		}
-		coercionOptimizerAggrStep(mb, i, coerce);
-		coercionOptimizerCalcStep(mb, i, coerce);
+		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
+		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {
 			k= coercionOptimizerStep(mb, i, p);
 			actions += k;

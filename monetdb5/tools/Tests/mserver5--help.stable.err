@@ -32,7 +32,7 @@ The debug, testing & trace options:
      --algorithms
      --performance
      --optimizers
-     --trace[=<stethoscope flags>]
+     --trace
      --forcemito
      --recycler
      --debug=<bitmask>

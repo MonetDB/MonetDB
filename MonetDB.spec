@@ -637,6 +637,7 @@ fi
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
+%exclude %{_libdir}/monetdb5/*_hge.mal
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -662,6 +663,26 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+
+%package -n MonetDB5-server-hugeint
+Summary: MonetDB - 128-bit integer support for MonetDB5-server
+Group: Application/Databases
+Requires: MonetDB5-server
+
+%description -n MonetDB5-server-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the
+MonetDB5-server component.
+
+%files -n MonetDB5-server-hugeint
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
+%{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/autoload/*_hge.mal
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -723,7 +744,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_libdir}/monetdb5/autoload/??_sql*.mal
+%{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
@@ -734,7 +755,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-%{_libdir}/monetdb5/createdb/*
+%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/createdb/*.sql
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
@@ -747,6 +770,27 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
 %endif
+
+%package SQL-server5-hugeint
+Summary: MonetDB5 128 bit integer (hugeint) support for SQL
+Group: Applications/Databases
+Requires: MonetDB5-server-hugeint = %{version}-%{release}
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description SQL-server5-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the SQL
+frontend of MonetDB.
+
+%files SQL-server5-hugeint
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/sql*_hge.mal
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API

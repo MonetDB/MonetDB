@@ -29,6 +29,7 @@ static str idCopy(Client cntxt, int len);
 static str strCopy(Client cntxt, int len);
 
 
+
 /* Before a line is parsed we check for a request to echo it.
  * This command should be executed at the beginning of a parse
  * request and each time we encounter EOL.
@@ -446,11 +447,6 @@ cstToken(Client cntxt, ValPtr cst)
 				GDKfree(pval);
 			} else
 				cst->val.dval = 0;
-
-			if (cst->val.dval > FLT_MIN && cst->val.dval <= FLT_MAX) {
-				cst->vtype = TYPE_flt;
-				cst->val.fval = (flt) cst->val.dval;
-			}
 		}
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
@@ -918,9 +914,14 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	malType tpe = TYPE_any;
 
 	if ((i = cstToken(cntxt, &cst))) {
+		advance(cntxt, i);
+		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+			cst.vtype = TYPE_flt;
+			cst.val.fval = (flt) cst.val.dval;
+		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
-			advance(cntxt, i);
+
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
@@ -945,7 +946,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant */
-			advance(cntxt, i);
 			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0)
@@ -1453,6 +1453,10 @@ parseCommandPattern(Client cntxt, int kind)
 	showErrors(cntxt);
 	if (curBlk && cntxt->listing > 1)
 		printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
+#ifdef HAVE_HGE
+	if (!have_hge)
+		have_hge = strcmp(modnme, "calc") == 0 && strcmp(getFunctionId(curInstr), "hge") == 0;
+#endif
 	return curBlk;
 }
 

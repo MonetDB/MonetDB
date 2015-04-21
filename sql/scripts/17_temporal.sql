@@ -6,7 +6,7 @@
 
 -- assume milliseconds when converted to TIMESTAMP
 create function "epoch"(sec BIGINT) returns TIMESTAMP
-    external name timestamp."epoch";
+	external name timestamp."epoch";
 
 create function "epoch"(sec INT) returns TIMESTAMP
 	external name timestamp."epoch";

@@ -50,8 +50,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
-		snprintf(buf, maxlen, "%s", nme);
-		len = strlen(buf);
+		len +=snprintf(buf, maxlen, "%s", nme);
 		nameused =1;
 	} 
 	// show the value when required or being a constant
@@ -68,7 +67,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			val = &stk->stk[varid];
 
 		VALformat(&cv, val);
-		if (strlen(cv) >= len)
+		if (len + strlen(cv) >= maxlen)
 			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
 		if( buf == 0){
@@ -96,13 +95,12 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				len++;
 			}
 			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || 
-				(isaBatType(getVarType(mb,varid) && idx < p->retc));
+				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && abs(stk->stk[varid].val.ival) ){
 				BAT *d= BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
 				if( d)
-					snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
-				len += strlen(buf+len);
+					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
 		}
 	}
@@ -113,17 +111,15 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
-		snprintf(buf+len,maxlen-len,"%s",tpe);
-		len += strlen(buf+len);
+		len += snprintf(buf+len,maxlen-len,"%s",tpe);
 		GDKfree(tpe);
 	}
 
 	// show the properties when required 
-	if (flg & LIST_MAL_PROPS){
+	if ( (flg & LIST_MAL_PROPS) && (idx < p->retc || getInstrPtr(mb,0) == p)) {
 		pstring = varGetPropStr(mb,varid);
 		if( pstring)
-			snprintf(buf+len,maxlen-len,"%s",pstring);
-		len += strlen(buf + len);
+			len +=snprintf(buf+len,maxlen-len,"%s",pstring);
 		GDKfree(pstring);
 	}
 	if( len >= maxlen)
@@ -399,7 +395,11 @@ mal2str(MalBlkPtr mb, int first, int last)
 		if( i == 0)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
-			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL );
+			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS );
+#ifdef _DEBUG_LISTING_
+		mnstr_printf(GDKout,"%s\n",txt[i]);
+#endif
+
 		if ( txt[i])
 			totlen += len[i] = (int)strlen(txt[i]);
 	}
@@ -424,13 +424,8 @@ mal2str(MalBlkPtr mb, int first, int last)
 	return ps;
 }
 
-str
-function2str(MalBlkPtr mb){
-	return mal2str(mb, 0,mb->stop);
-}
-
 void
-promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
 
@@ -442,12 +437,6 @@ promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	}
-}
-
-void
-printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
-{
-	promptInstruction(fd, mb, stk, p, flg);
 	mnstr_printf(fd, "\n");
 }
 

@@ -569,16 +569,16 @@ HEAPfree(Heap *h, int remove)
 					  "size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
 					  h->size, ret);
-			if (remove) {
-				char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-				if (path && unlink(path) < 0 && errno != ENOENT)
-					perror(path);
-				GDKfree(path);
-			}
 		}
 	}
 	h->base = NULL;
 	if (h->filename) {
+		if (remove) {
+			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+			if (path && unlink(path) < 0 && errno != ENOENT)
+				perror(path);
+			GDKfree(path);
+		}
 		GDKfree(h->filename);
 		h->filename = NULL;
 	}

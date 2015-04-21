@@ -1,0 +1,133 @@
+stderr of test 'inf-nan-handling.Bug-3696` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 13:40:22 >  
+# 13:40:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35671" "--set" "mapi_usock=/var/tmp/mtest-16694/.s.monetdb.35671" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:40:22 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35671
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16694/.s.monetdb.35671
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:40:22 >  
+# 13:40:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16694" "--port=35671"
+# 13:40:22 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('NaN');
+ERROR = !conversion of string 'NaN' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('-NaN');
+ERROR = !conversion of string '-NaN' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('Inf');
+ERROR = !conversion of string 'Inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('Infinity');
+ERROR = !conversion of string 'Infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('inf');
+ERROR = !conversion of string 'inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('infinity');
+ERROR = !conversion of string 'infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('-Inf');
+ERROR = !conversion of string '-Inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('-Infinity');
+ERROR = !conversion of string '-Infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('-inf');
+ERROR = !conversion of string '-inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO DOUBLE_TBL(x) VALUES ('-infinity');
+ERROR = !conversion of string '-infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('NaN');
+ERROR = !conversion of string 'NaN' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-NaN');
+ERROR = !conversion of string '-NaN' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('Inf');
+ERROR = !conversion of string 'Inf' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('Infinity');
+ERROR = !conversion of string 'Infinity' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('inf');
+ERROR = !conversion of string 'inf' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('infinity');
+ERROR = !conversion of string 'infinity' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-Inf');
+ERROR = !conversion of string '-Inf' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-Infinity');
+ERROR = !conversion of string '-Infinity' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-inf');
+ERROR = !conversion of string '-inf' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-infinity');
+ERROR = !conversion of string '-infinity' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('1e+39');
+ERROR = !conversion of string '1e+39' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO REAL_TBL(x) VALUES ('-1e+39');
+ERROR = !conversion of string '-1e+39' to type flt failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('NaN');
+ERROR = !conversion of string 'NaN' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('-NaN');
+ERROR = !conversion of string '-NaN' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('Inf');
+ERROR = !conversion of string 'Inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('Infinity');
+ERROR = !conversion of string 'Infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('inf');
+ERROR = !conversion of string 'inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('infinity');
+ERROR = !conversion of string 'infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('-Inf');
+ERROR = !conversion of string '-Inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('-Infinity');
+ERROR = !conversion of string '-Infinity' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('-inf');
+ERROR = !conversion of string '-inf' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-19227/.s.monetdb.37614
+QUERY = INSERT INTO FLOAT_TBL(x) VALUES ('-infinity');
+ERROR = !conversion of string '-infinity' to type dbl failed.
+
+# 13:40:23 >  
+# 13:40:23 >  "Done."
+# 13:40:23 >  
+

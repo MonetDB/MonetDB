@@ -13,7 +13,7 @@ stdout of test 'tst804` in directory 'monetdb5/mal` itself:
 ## test definiton of a function in a unknown module
 #function wrong.message():void;
 !SyntaxException:parseError:function wrong.message():void;
-
+!SyntaxException:parseError:                      ^<module> name not defined
 !SyntaxException:parseError:	io.print("shouldn't come here");
 !SyntaxException:parseError:^';' expected
 !SyntaxException:parseError:end message;

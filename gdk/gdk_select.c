@@ -156,9 +156,9 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (hb >= (lo) && hb < (hi) &&		\
+		if (misses += hb >= (hi), (hb >= (lo) && hb < (hi) &&	\
 		    (cmp == NULL ||			\
-		     (*cmp)(v, BUNtail(bi, hb)) == 0))
+		     (*cmp)(v, BUNtail(bi, hb)) == 0)))
 
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
@@ -169,6 +169,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	BUN l, h;
 	oid seq;
 	int (*cmp)(const void *, const void *);
+	BUN misses = 0;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
@@ -230,6 +231,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			cnt++;
 		}
 	}
+	fprintf(stderr, "#BAT_hashselect: misses = "BUNFMT"\n", misses);
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
 	if (cnt > 1) {
@@ -426,11 +428,13 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			v = src[o-off];					\
-			buninsfix(bn, dst, cnt, o,			\
-				  (BUN) ((dbl) cnt / (dbl) (p-r)	\
-					 * (dbl) (q-p) * 1.1 + 1024),	\
-				  BATcapacity(bn) + q - p, BUN_NONE);	\
-			cnt += (TEST);					\
+			if (TEST) {					\
+				buninsfix(bn, dst, cnt, o,		\
+					  (BUN) ((dbl) cnt / (dbl) (p-r) \
+						 * (dbl) (q-p) * 1.1 + 1024), \
+					  BATcapacity(bn) + q - p, BUN_NONE); \
+				cnt++;					\
+			}						\
 			p++;						\
 		}							\
 	} else {							\
@@ -590,11 +594,13 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -606,17 +612,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -628,17 +636,19 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = *candlist++;
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	}
@@ -672,11 +682,13 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((*cmp)(tl, v) == 0);
+			if ((*cmp)(tl, v) == 0) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else if (anti) {
@@ -688,17 +700,19 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((lval &&
-			       ((c = (*cmp)(tl, v)) > 0 ||
-				(!li && c == 0))) ||
-			      (hval &&
-			       ((c = (*cmp)(th, v)) < 0 ||
-				(!hi && c == 0)))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((lval &&
+			      ((c = (*cmp)(tl, v)) > 0 ||
+			       (!li && c == 0))) ||
+			     (hval &&
+			      ((c = (*cmp)(th, v)) < 0 ||
+			       (!hi && c == 0))))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
 	} else {
@@ -710,19 +724,108 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			o = (oid)(p + off);
 			v = BUNtail(bi,(BUN)(o-off));
-			buninsfix(bn, dst, cnt, o,
-				  (BUN) ((dbl) cnt / (dbl) (p-r)
-					 * (dbl) (q-p) * 1.1 + 1024),
-				  BATcapacity(bn) + q - p, BUN_NONE);
-			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			     ((!lval ||
-			       (c = cmp(tl, v)) < 0 ||
-			       (li && c == 0)) &&
-			      (!hval ||
-			       (c = cmp(th, v)) > 0 ||
-			       (hi && c == 0))));
+			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			    ((!lval ||
+			      (c = cmp(tl, v)) < 0 ||
+			      (li && c == 0)) &&
+			     (!hval ||
+			      (c = cmp(th, v)) > 0 ||
+			      (hi && c == 0)))) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
 			p++;
 		}
+	}
+	return cnt;
+}
+
+static BUN
+fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	     int li, int hi, int equi, int anti, int lval, int hval,
+	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	     const oid *candlist, BUN maximum, int use_imprints)
+{
+	var_t pos;
+	BUN p = r;
+	oid o = (oid) (p + off);
+
+	if (!equi || !GDK_ELIMDOUBLES(b->T->vheap))
+		return fullscan_any(b, s, bn, tl, th, li, hi, equi, anti,
+				    lval, hval, r, q, cnt, off, dst,
+				    candlist, maximum, use_imprints);
+	ALGODEBUG fprintf(stderr,
+			  "#BATsubselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
+			  "fullscan equi strelim\n", BATgetId(b), BATcount(b),
+			  s ? BATgetId(s) : "NULL",
+			  s && BATtdense(s) ? "(dense)" : "", anti);
+	if ((pos = strLocate(b->T->vheap, tl)) == 0)
+		return 0;
+	assert(pos >= GDK_VAROFFSET);
+	switch (b->T->width) {
+	case 1: {
+		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+	case 2: {
+		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
+		pos -= GDK_VAROFFSET;
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#if SIZEOF_VAR_T == 8
+	case 4: {
+		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
+#endif
+	default: {
+		const var_t *ptr = (const var_t *) Tloc(b, 0);
+		while (p < q) {
+			if (ptr[p++] == pos) {
+				buninsfix(bn, dst, cnt, o,
+					  (BUN) ((dbl) cnt / (dbl) (p-r)
+						 * (dbl) (q-p) * 1.1 + 1024),
+					  BATcapacity(bn) + q - p, BUN_NONE);
+				cnt++;
+			}
+			o++;
+		}
+		break;
+	}
 	}
 	return cnt;
 }
@@ -880,6 +983,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			cnt = fullscan_hge(scanargs);
 			break;
 #endif
+		case TYPE_str:
+			cnt = fullscan_str(scanargs);
+			break;
 		default:
 			cnt = fullscan_any(scanargs);
 			break;
@@ -893,9 +999,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
+	if (bn->batCount == 1 || bn->batCount == b->batCount)
+		bn->tseqbase = b->hseqbase;
 	bn->hsorted = 1;
 	bn->hdense = 1;
 	bn->hseqbase = 0;
@@ -945,6 +1051,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	nil	NULL	ignored	ignored	false	x = nil (only way to get nil)
  *	nil	NULL	ignored	ignored	true	x != nil
  *	nil	nil	ignored	ignored	false	x != nil
+ *	nil	nil	ignored	ignored	true	NOTHING
  *	nil	v	ignored	false	false	x < v
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
@@ -967,7 +1074,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	v	v	true	true	true	x != v
  *	v1	v2	false	false	false	v1 < x < v2
  *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	1	false	v1 < x <= v2
+ *	v1	v2	false	true	false	v1 < x <= v2
  *	v1	v2	true	true	false	v1 <= x <= v2
  *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v1	v2	true	false	true	x < v1 or x >= v2
@@ -989,7 +1096,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * li == !anti, hi == !anti, lval == 1, hval == 1
  * This means that all ranges that we check for are closed ranges.  If
  * a range is one-sided, we fill in the minimum resp. maximum value in
- * the domain so that we create a closed ranges. */
+ * the domain so that we create a closed range. */
 #define NORMALIZE(TYPE)							\
 	do {								\
 		if (anti && li) {					\
@@ -1264,33 +1371,34 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	switch (ATOMtype(t)) {
-	case TYPE_bte:
-		NORMALIZE(bte);
-		break;
-	case TYPE_sht:
-		NORMALIZE(sht);
-		break;
-	case TYPE_int:
-		NORMALIZE(int);
-		break;
-	case TYPE_lng:
-		NORMALIZE(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		NORMALIZE(hge);
-		break;
-#endif
-	case TYPE_flt:
-		NORMALIZE(flt);
-		break;
-	case TYPE_dbl:
-		NORMALIZE(dbl);
-		break;
-	case TYPE_oid:
+	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
-		break;
+	} else {
+		switch (t) {
+		case TYPE_bte:
+			NORMALIZE(bte);
+			break;
+		case TYPE_sht:
+			NORMALIZE(sht);
+			break;
+		case TYPE_int:
+			NORMALIZE(int);
+			break;
+		case TYPE_lng:
+			NORMALIZE(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			NORMALIZE(hge);
+			break;
+#endif
+		case TYPE_flt:
+			NORMALIZE(flt);
+			break;
+		case TYPE_dbl:
+			NORMALIZE(dbl);
+			break;
+		}
 	}
 
 	if (b->tsorted || b->trevsorted) {
@@ -1485,15 +1593,28 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
+	parent = VIEWtparent(b);
+	/* use hash only for equi-join, and then only if b or its
+	 * parent already has a hash, or if b or its parent is
+	 * persistent and the total size wouldn't be too large; check
+	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		(b->batPersistence == PERSISTENT ||
-		 ((parent = VIEWtparent(b)) != 0 &&
-		  BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
-		(size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
-		BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
-	if (hash && estimate == BUN_NONE && !BATcheckhash(b)) {
+		(((b->batPersistence == PERSISTENT ||
+		  (parent != 0 &&
+		   BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
+		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
+		 (BATcheckhash(b) ||
+		  (parent != 0 &&
+		   BATcheckhash(BBPdescriptor(-parent)))));
+	if (hash &&
+	    estimate == BUN_NONE &&
+	    !BATcheckhash(b) &&
+	    (parent == 0 || !BATcheckhash(BBPdescriptor(-parent)))) {
 		/* no exact result size, but we need estimate to choose
-		 * between hash- & scan-select */
+		 * between hash- & scan-select
+		 * (if we already have a hash, it's a no-brainer: we
+		 * use it) */
 		BUN cnt = BATcount(b);
 		if (s && BATcount(s) < cnt)
 			cnt = BATcount(s);
@@ -1546,7 +1667,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (bn == NULL)
 		return NULL;
 
-	if (equi && (b->T->hash || hash)) {
+	if (equi && hash) {
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 				  ",s=%s%s,anti=%d): hash select\n",
 				  BATgetId(b), BATcount(b),
@@ -1558,7 +1679,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (!equi &&
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
-		     ((parent = VIEWtparent(b)) != 0 &&
+		     (parent != 0 &&
 		      BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
@@ -2208,8 +2329,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			}
 			if (ncnt == BUN_NONE)
 				goto bailout;
-			assert(ncnt >= cnt);
-			if (ncnt == cnt)
+			assert(ncnt >= cnt || ncnt == 0);
+			if (ncnt == cnt || ncnt == 0)
 				continue;
 			if (BATcapacity(r2) < ncnt) {
 				BATsetcount(r2, cnt);

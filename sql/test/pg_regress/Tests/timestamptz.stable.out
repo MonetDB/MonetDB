@@ -181,6 +181,7 @@ Ready.
 [ "",	1997-06-11 01:32:01.00+01:00	]
 [ "",	2001-09-22 19:19:20.00+01:00	]
 [ "",	1997-02-11 02:32:01.00+01:00	]
+[ "",	NULL	]
 #SELECT '' AS "16", d1 FROM TIMESTAMPTZ_TBL
 #   WHERE d1 <= cast('1997-01-02' as timestamptz);
 % .L1,	sys.timestamptz_tbl # table_name

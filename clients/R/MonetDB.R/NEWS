@@ -1,3 +1,11 @@
+0.9.8
+- Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
+- Cleaned up SQL to R type mapping (we had this twice)
+- Now creating actual R integers if data fits
+
+0.9.7
+- Fixed crash on Windows (Sorry, everyone)
+
 0.9.6
 - monetdb.read.csv new create= parameter (Thanks, Duncan)
 - deprecated nrows parameter to monetdb.read.csv, not neccessary any more because of changes to MonetDB

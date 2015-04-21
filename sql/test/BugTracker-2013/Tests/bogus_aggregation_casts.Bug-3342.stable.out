@@ -43,7 +43,7 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % decimal # type
-% 14 # length
+% 20 # length
 [ 903.00	]
 #drop table part;
 

@@ -811,47 +811,41 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 	return MAL_SUCCEED;
 }
 
+
 str
-BKCbat_inplace(bat *r, const bat *bid, const bat *rid)
+BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, const bit *force)
 {
-	BAT *b, *d;
+	BAT *b, *p, *u;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
-	if ((d = BATdescriptor(*rid)) == NULL) {
+	if ((p = BATdescriptor(*rid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
-	if (void_replace_bat(b, d, FALSE) == BUN_NONE) {
+	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		BBPunfix(d->batCacheid);
+		BBPunfix(p->batCacheid);
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
+	}
+	if (void_replace_bat(b, p, u, *force) == BUN_NONE) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(p->batCacheid);
+		BBPunfix(u->batCacheid);
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r = b->batCacheid);
-	BBPunfix(d->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bit *force)
+BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid)
 {
-	BAT *b, *d;
+	bit F = FALSE;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
-	}
-	if ((d = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
-	}
-	if (void_replace_bat(b, d, *force) == BUN_NONE) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(d->batCacheid);
-		throw(MAL, "bat.inplace", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	BBPunfix(d->batCacheid);
-	return MAL_SUCCEED;
+	return BKCbat_inplace_force(r, bid, rid, uid, &F);
 }
 
 /*end of SQL enhancement */
