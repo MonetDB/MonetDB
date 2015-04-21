@@ -9,7 +9,6 @@ INCLUDES = ../../common/options \
 		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
-		   #../../sql/backends/monet5/rest \
 		   $(READLINE_INCS) \
 		   $(libmicrohttpd_CFLAGS)
 MTSAFE

@@ -10,49 +10,65 @@
 
 #include "eventparser.h"
 
-char *statenames[]= {"","start","done","action","ping","wait","iostat","gccollect"};
+char *statenames[]= {"","start","done","action","ping","wait","system"};
 
 char *malarguments[MAXMALARGS];
-int malargtop;
+char *maltypes[MAXMALARGS];
+int malpc[MAXMALARGS];
+int malcount[MAXMALARGS];
+int malargc;
+int malretc;
 char *malvariables[MAXMALARGS];
 int malvartop;
-int debug;
-char *monet_characteristics;
+int debug=0;
+char *monetdb_characteristics;
 
 void
 clearArguments(void)
 {
 	int i;
-	for(i = 0; i < malargtop; i++)
-	if( malarguments[i])
+	for(i = 0; i < malargc; i++)
+	if( malarguments[i]){
 		free(malarguments[i]);
-	malargtop = 0;
+		malarguments[i] = 0;
+	}
+	malargc = 0;
+	malretc = 0;
 	for(i = 0; i < malvartop; i++)
-	if( malvariables[i])
+	if( malvariables[i]){
 		free(malvariables[i]);
+		malvariables[i] = 0;
+		free(maltypes[i]);
+		maltypes[i] = 0;
+	}
 	malvartop = 0;
 }
 
 static void
-parseArguments(char *call)
+parseArguments(char *call, int m)
 {
-	int i;
+	int i, argc= m < 0? -1:0;
 	char  *c = call, *l, ch;
 	char *v, *w;
 	
-	malargtop = 0;
-	malvartop = 0;
 	if( debug)
 		fprintf(stderr,"%s\n",call);
-	memset(malarguments, 0, sizeof(malarguments));
-	memset(malvariables, 0, sizeof(malvariables));
-	for( ; c && *c && malargtop < MAXMALARGS;  c++){
-		if (*c ==')')
-			break;
-		if (*c == ',')
-			continue;
+	// also skip keywords
+	if( strncmp(c,"function ",10) == 0 ) c +=10;
+	if( strncmp(c,"end ",4) == 0 ) c +=4;
+	if( strncmp(c,"barrier ",8) == 0 ) c +=8;
+	if( strncmp(c,"redo ",5) == 0 ) c +=5;
+	if( strncmp(c,"leave ",6) == 0 ) c +=6;
+	if( strncmp(c,"return ",7) == 0 ) c +=7;
+	if( strncmp(c,"yield ",6) == 0 ) c +=6;
+	if( strncmp(c,"catch ",6) == 0 ) c +=6;
+	if( strncmp(c,"raise ",6) == 0 ) c +=6;
+
+	if( *c == '(') c++;
+	if (*c !=')')
+	for( ; c && *c && malargc < MAXMALARGS;  c++){
 		if(isalpha((int)*c) &&  strncmp(c,"nil",3) && strncmp(c,"true",4) && strncmp(c,"false",5) ){
-			// remember variable in its own structure
+			// remember variable in its own structure, it ends with :=
 			v=  c;
 			c= strchr(c,'=');
 			if( c == 0)
@@ -61,6 +77,7 @@ parseArguments(char *call)
 			malvariables[malvartop++] = strdup(v);
 			c++;
 		}
+		// all arguments have a value
 		if (*c && *c== '\\' && *(c+1) =='"'){
 			c++; c++;
 			// parse string skipping escapes
@@ -69,31 +86,58 @@ parseArguments(char *call)
 				if( *l == '\\') l++;
 			}
 			*l= 0;
-			malarguments[malargtop++] = strdup(c);
+			malarguments[malargc] = strdup(c);
 			c= l+1;
-			// we could find a type descriptor here, which we skip
-			while( *c && *c !=',' && *c !=')') c++;
+			// we skip to the type or end of term
+			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
+		} else if(*c =='<') {
+			// extract BAT count
+			l=c;
+			while(*c && *c != '>') c++;
+			c++;
+			*c =0;
+			malarguments[malargc] = strdup(l);
+			*c = '[';
+			malcount[malargc]=atoi(c+1);
+			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
+			if( *c == ';') break;
 		} else if(*c) {
-			l = strchr(c, ch = ',');
-			if( l == 0){
-				l = strchr(c, ch = ')');
-				break;
-				}
-			*l=0;
-			// we could find a type descriptor as well, which we skip
-			w= strchr(c,':');
-			if( w) *w = 0;
-			malarguments[malargtop++] = strdup(c);
-			*l=ch;
-			c= l;
-			l = strchr(malarguments[malargtop-1],')');
-			if(l)
-				*l =0;
+			l=c;
+			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
+			ch = *c;
+			*c=0;
+			malarguments[malargc] = strdup(l);
+			*c = ch;
+			if( ch == ';') break;
 		}
+		// consume the type and bat count
+		if (*c == ':'){
+			if( strncmp(c,":bat[:oid,:",11) == 0){
+				c+= 10;
+				*c = '[';
+				w=c;
+				while(*c && *c != ']') c++;
+			} else
+				w= c+1;
+			while(*c && *c != ';' && *c != '{' && *c != ',' && *c != ')' ) c++;
+			ch = *c;
+			*c =0;
+			malpc[malargc] = argc;
+			argc+= m;
+			maltypes[malargc++] = strdup(w);
+			*c = ch;
+			if( ch == ';') break;
+		} else malargc++;
+		if( *c == '{') {
+			while(*c && *c != '}') c++;
+			c++;
+		}
+		if (*c == 0 || *c ==')' )
+			break;
 	}
 	if( debug){
-		for(i=0; i < malargtop; i++)
-			fprintf(stderr,"arg[%d] %s\n",i,malarguments[i]);
+		for(i=0; i < malargc; i++)
+			fprintf(stderr,"arg[%d] %s %s %d\n",i,malarguments[i], maltypes[i], malcount[i]);
 		for(i=0; i < malvartop; i++)
 			fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
 	}
@@ -105,10 +149,12 @@ eventparser(char *row, EventRecord *ev)
 	char *c, *cc, *v =0;
 	struct tm stm;
 
+	malargc = 0;
+	malvartop = 0;
+	memset(malarguments, 0, sizeof(malarguments));
+	memset(malvariables, 0, sizeof(malvariables));
 	/* check basic validaty first */
 	if (row[0] =='#'){
-		if( row[1] =='{')
-			monet_characteristics = strdup(row+1);
 		return 0;
 	}
 	if (row[0] != '[')
@@ -148,10 +194,14 @@ eventparser(char *row, EventRecord *ev)
 		return -3;
 
 	/* skip pc tag */
-	{	// decode pc
+	{	// decode qry[pc]tag
+		char *nme = c;
 		c= strchr(c+1,'[');
 		if( c == 0)
 			return -4;
+		*c = 0;
+		ev->blk= strdup(nme);
+		*c = '[';
 		ev->pc = atoi(c+1);
 		c= strchr(c+1,']');
 		if ( c == 0)
@@ -170,19 +220,19 @@ eventparser(char *row, EventRecord *ev)
 	if (c == 0)
 		return -5;
 	if (strncmp(c + 1, "start", 5) == 0) {
-		ev->state = START;
+		ev->state = MDB_START;
 		c += 6;
 	} else if (strncmp(c + 1, "done", 4) == 0) {
-		ev->state = DONE;
+		ev->state = MDB_DONE;
 		c += 5;
 	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		ev->state = PING;
+		ev->state = MDB_PING;
 		c += 5;
-	} else if (strncmp(c + 1, "stat", 4) == 0) {
-		ev->state = IOSTAT;
-		c += 6;
+	} else if (strncmp(c + 1, "system", 6) == 0) {
+		ev->state = MDB_SYSTEM;
+		c += 5;
 	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		ev->state = WAIT;
+		ev->state = MDB_WAIT;
 		c += 5;
 	} else {
 		ev->state = 0;
@@ -260,10 +310,18 @@ eventparser(char *row, EventRecord *ev)
 	ev->fcn = strdup(c);
 	ev->stmt = strdup(ev->fcn);
 	c= ev->fcn;
+	if( ev->state == MDB_SYSTEM){
+		monetdb_characteristics = strdup(ev->stmt);
+	} else
 	if( *c != '[')
 	{
-		c = strstr(c + 1, ":=");
+		v=c;
+		c = strstr(c + 1, ":= ");
 		if (c) {
+			*c = 0;
+			parseArguments( (*v == '('? v++:v),-1);
+			malretc =malargc;
+			*c=':';
 			ev->fcn = c + 2;
 			/* find genuine function calls */
 			while (isspace((int) *ev->fcn) && *ev->fcn)
@@ -277,10 +335,16 @@ eventparser(char *row, EventRecord *ev)
 		}
 	}
 
-	if (ev->fcn && (v=strchr(ev->fcn, '(')))
+	if (ev->fcn && (v=strchr(ev->fcn, '('))){
 		*v = 0;
-	if( v)
-		parseArguments(v+1);
+		if( v)
+			parseArguments(v+1,1);
+	 } else { //assigment statements
+		v= ev->stmt;
+		v = strstr(ev->stmt, ":= ");
+		if( v)
+			parseArguments(v+3,1);
+	}
 	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
 		*v = 0;
 #else

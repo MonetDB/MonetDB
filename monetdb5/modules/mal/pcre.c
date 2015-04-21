@@ -1336,6 +1336,7 @@ PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 		return res;
 	assert(bn);
 	*ret = bn->batCacheid;
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -45,7 +45,10 @@ mal_export size_t	monet_memory;
 mal_export char 	monet_characteristics[PATHLENGTH];
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
-mal_export char		*mal_trace;		/* enable profile events on console */
+mal_export int		mal_trace;		/* enable profile events on console */
+#ifdef HAVE_HGE
+mal_export int have_hge;
+#endif
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.

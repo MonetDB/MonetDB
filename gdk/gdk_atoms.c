@@ -23,7 +23,13 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <math.h>		/* for INFINITY and NAN */
+#include <math.h>		/* for isfinite macro */
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>		/* for Solaris */
+#ifndef isfinite
+#define isfinite(f)	finite(f)
+#endif
+#endif
 
 static int
 bteCmp(const bte *l, const bte *r)
@@ -815,6 +821,10 @@ atom_io(ptr, Int, int)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 atom_io(ptr, Lng, lng)
 #endif
+#if defined(_MSC_VER) && !defined(isfinite)
+/* with more recent Visual Studio, isfinite is defined */
+#define isfinite(x)	_finite(x)
+#endif
 
 int
 dblFromStr(const char *src, int *len, dbl **dst)
@@ -843,7 +853,11 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		d = strtod(src, &pe);
 		p = pe;
 		n = (int) (p - src);
-		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))) {
+		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
+#ifdef isfinite
+		    || !isfinite(d) /* no NaN or Infinte */
+#endif
+		    ) {
 			**dst = dbl_nil; /* default return value is nil */
 			n = 0;
 		} else {
@@ -874,10 +888,6 @@ dblToStr(char **dst, int *len, const dbl *src)
 
 atom_io(dbl, Lng, lng)
 
-#ifdef _MSC_VER
-/* don't warn about overflow in INFINITY and NAN */
-#pragma warning(disable : 4756)
-#endif
 int
 fltFromStr(const char *src, int *len, flt **dst)
 {
@@ -907,28 +917,13 @@ fltFromStr(const char *src, int *len, flt **dst)
 		p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
-#ifdef INFINITY
-		    || f == INFINITY
-#endif
-#ifdef NAN
-#ifndef __PGI
-		    || f == NAN
-#endif
-#endif
-		    )
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
-#ifdef INFINITY
-		    || f == INFINITY
 #endif
-#ifdef NAN
-#ifndef __PGI
-		    || f == NAN
+#ifdef isfinite
+		    || !isfinite(f) /* no NaN or infinite */
 #endif
-#endif
-		    )
-#endif
-		{
+		    ) {
 			**dst = flt_nil; /* default return value is nil */
 			n = 0;
 		} else {

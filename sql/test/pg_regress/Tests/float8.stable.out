@@ -50,49 +50,7 @@ Ready.
 % double # type
 % 24 # length
 [ -0	]
-#SELECT cast('NaN' as double);
-% .L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ NULL	]
-#SELECT cast('nan' as double);
-% .L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ NULL	]
-#SELECT cast('   NAN  ' as double);
-% .L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ NULL	]
-#SELECT cast('infinity' as double);
-% .L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ inf	]
-#SELECT cast('          -INFINiTY   ' as double);
-% .L1 # table_name
-% L1 # name
-% double # type
-% 24 # length
-[ -inf	]
-#SELECT cast('Infinity' as double) / cast('Infinity' as double);
-% .L2 # table_name
-% sql_div_single_value # name
-% double # type
-% 24 # length
-[ NULL	]
-#SELECT cast('nan' as double) / cast('nan' as double);
-% .L2 # table_name
-% sql_div_single_value # name
-% double # type
-% 24 # length
-[ NULL	]
-#SELECT '' AS five, * FROM FLOAT8_TBL;
+#SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
 % .L,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type

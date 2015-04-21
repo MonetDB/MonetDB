@@ -122,6 +122,9 @@ addSourcePair(char *varname, char *name)
 {
 	int i;
 
+	if( name ==0 ) return;
+	if( varname ==0 ) return;
+
 	if(srctop == srcmax){
 		if( srcmax == 0)
 			sources = (Source *) malloc(1024 * sizeof(Source));
@@ -204,6 +207,8 @@ int queryid= 0;
 
 static FILE *tachojson;
 static FILE *tachotrace;
+static FILE *tachomal;
+static FILE *tachoprof;
 
 static void resetTachograph(void){
 	int i;
@@ -220,7 +225,6 @@ static void resetTachograph(void){
 	}
 	srctop=0;
 	malsize= 0;
-	malargtop =0;
 	currentfunction = 0;
 	currenttag = 0;
 	currentquery = 0;
@@ -231,6 +235,10 @@ static void resetTachograph(void){
 	tachojson = 0;
 	fclose(tachotrace);
 	tachotrace = 0;
+	fclose(tachomal);
+	tachomal = 0;
+	fclose(tachoprof);
+	tachoprof = 0;
 	prevprogress = 0;
 	txtlength =0;
 	prevlevel=0;
@@ -470,6 +478,32 @@ initFiles(void)
 	}
 	if (cache)
 #ifdef NATIVE_WIN32
+		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
+#else
+		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
+#endif
+	else 
+		snprintf(buf,BUFSIZ,"%s_%s_%d_mal.csv",basefilename,dbname, queryid);
+	tachomal= fopen(buf,"w");
+	if( tachomal == NULL){
+		fprintf(stderr,"Could not create %s\n",buf);
+		exit(0);
+	}
+	if (cache)
+#ifdef NATIVE_WIN32
+		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_prof.csv",cache,basefilename,dbname, queryid);
+#else
+		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_prof.csv",cache,basefilename,dbname, queryid);
+#endif
+	else 
+		snprintf(buf,BUFSIZ,"%s_%s_%d_prof.csv",basefilename,dbname, queryid);
+	tachoprof= fopen(buf,"w");
+	if( tachoprof == NULL){
+		fprintf(stderr,"Could not create %s\n",buf);
+		exit(0);
+	}
+	if (cache)
+#ifdef NATIVE_WIN32
 		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.trace",cache,basefilename,dbname, queryid);
 #else
 		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.trace",cache,basefilename,dbname, queryid);
@@ -481,14 +515,13 @@ initFiles(void)
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	if( monet_characteristics)
-		fprintf(tachotrace,"%s\n",monet_characteristics);
 }
 
 static void
 progressBarInit(char *qry)
 {
 	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
+	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
 	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
 	fprintf(tachojson," \"query\":\"%s\",\n",qry);
@@ -511,7 +544,7 @@ update(EventRecord *ev)
 	char number[BUFSIZ]={0};
  
 	/* handle a ping event, keep the current instruction in focus */
-	if (ev->state >= PING ) {
+	if (ev->state >= MDB_PING ) {
 		// All state events are ignored
 		return;
 	}
@@ -541,7 +574,7 @@ update(EventRecord *ev)
 	}
 
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
-	if (!capturing && ev->state == START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (!capturing && ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
 				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
@@ -567,11 +600,11 @@ update(EventRecord *ev)
 		return;
 
 	/* start of instruction box */
-	if (ev->state == START ) {
+	if (ev->state == MDB_START ) {
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
-			currentquery = malarguments[0];
-			malsize = malarguments[2]? atoi(malarguments[2]): 2048;
+			currentquery = malarguments[malretc];
+			malsize = malarguments[malretc + 2]? atoi(malarguments[malretc + 2]): 2048;
 			events = (Event*) malloc(malsize * sizeof(Event));
 			memset((char*)events, 0, malsize * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
@@ -610,13 +643,13 @@ update(EventRecord *ev)
 			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
 			while(*s && *s != '=') *n++ = *s++;
 			*n = 0;
-			addSource(nme, malarguments[2], "");
+			addSource(nme, malarguments[malretc + 2], "");
 		} else 
 		if ( strstr(ev->stmt,"sql.bind") && *ev->stmt != '('){
 			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
 			while(*s && *s != '=') *n++ = *s++;
 			*n = 0;
-			addSource(nme, malarguments[2], malarguments[3]);
+			addSource(nme, malarguments[malretc + 2], malarguments[malretc + 3]);
 		} else
 		if ( strstr(ev->stmt,"sql.projectdelta") && *ev->stmt != '(' ){
 			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
@@ -682,7 +715,7 @@ update(EventRecord *ev)
 		return;
 	}
 	/* end the instruction box */
-	if (ev->state == DONE ){
+	if (ev->state == MDB_DONE ){
 			
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
@@ -700,11 +733,25 @@ update(EventRecord *ev)
 		fflush(tachojson);
 
 		events[ev->pc].state= FINISHED;
+
+		// collect MAL statistics
+		for(j=0; j < malargc; j++)
+			fprintf(tachomal,"%d\t%d\t%d\t%s\t%s\t%d\t%s\n", ev->tag, ev->pc, malpc[j], (ev->fcn?ev->fcn:""), maltypes[j], malcount[j],malarguments[j] );
+		// collect profile information for MonetDB as well
+		fprintf(tachoprof,"%d\t",ev->tag);
+		fprintf(tachoprof,"%d\t",ev->pc);
+		fprintf(tachoprof,"%d\t",ev->thread);
+		fprintf(tachoprof,LLFMT"\t",ev->clkticks);
+		fprintf(tachoprof,LLFMT"\t",ev->ticks);
+		fprintf(tachoprof,LLFMT"\t",ev->memory);
+		fprintf(tachoprof,LLFMT"\t",ev->tmpspace);
+		fprintf(tachoprof,LLFMT"\t",ev->inblock);
+		fprintf(tachoprof,LLFMT"\t",ev->oublock);
+		fprintf(tachoprof,"%s\t",ev->stmt);
+		fprintf(tachoprof, "%s\n",line);
+
 		free(ev->stmt);
-		//if( duration)
-			//progress = (int)(ev->clkticks / (duration/100.0));
-		//else
-			progress = (int)(pccount++ / (malsize/100.0));
+		progress = (int)(pccount++ / (malsize/100.0));
 		if( progress > prevprogress ){
 			// pick up last unfinished instruction
 			for(i= lastpc; i >0; i--)
@@ -720,7 +767,7 @@ update(EventRecord *ev)
 		events[ev->pc].actual= ev->ticks;
 		clearArguments();
 	}
-	if (ev->state == DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (ev->state == MDB_DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
 			if( capturing == 0){
 				free(currentfunction);
@@ -930,7 +977,7 @@ main(int argc, char **argv)
 			update(&event);
 			if (debug  )
 				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			if( trace && i >=0 && capturing) 
+			if( trace && i >=0 && (capturing || event.state == MDB_SYSTEM)) 
 				fprintf(trace,"%s\n",response);
 			if( tachotrace && i >=0 && capturing) 
 				fprintf(tachotrace,"%s\n",response);

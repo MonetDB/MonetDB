@@ -14,3 +14,14 @@ inet-funcs.Bug-3645
 reserved_keywords.Bug-3613
 operator-priority.Bug-3686
 incorrect_result_type.Bug-3687
+with-columns-mismatch.Bug-3697
+find_fk.Bug-3690
+is_null_limit.Bug-3684
+inf-nan-handling.Bug-3696
+project_rewrite.Bug-3693
+project_rewrite.Bug-3693_2
+alias.Bug-3704
+case_aggr.Bug-3705
+assertHead.Bug-3706
+ifthenelse.Bug-3699
+readonly.Bug-3709

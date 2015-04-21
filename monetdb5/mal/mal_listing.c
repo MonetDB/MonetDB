@@ -50,8 +50,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
-		snprintf(buf, maxlen, "%s", nme);
-		len = strlen(buf);
+		len +=snprintf(buf, maxlen, "%s", nme);
 		nameused =1;
 	} 
 	// show the value when required or being a constant
@@ -96,13 +95,12 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				len++;
 			}
 			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || 
-				(isaBatType(getVarType(mb,varid) && idx < p->retc));
+				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && abs(stk->stk[varid].val.ival) ){
 				BAT *d= BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
 				if( d)
-					snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
-				len += strlen(buf+len);
+					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
 		}
 	}
@@ -113,8 +111,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
-		snprintf(buf+len,maxlen-len,"%s",tpe);
-		len += strlen(buf+len);
+		len += snprintf(buf+len,maxlen-len,"%s",tpe);
 		GDKfree(tpe);
 	}
 
@@ -122,8 +119,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	if ( (flg & LIST_MAL_PROPS) && (idx < p->retc || getInstrPtr(mb,0) == p)) {
 		pstring = varGetPropStr(mb,varid);
 		if( pstring)
-			snprintf(buf+len,maxlen-len,"%s",pstring);
-		len += strlen(buf + len);
+			len +=snprintf(buf+len,maxlen-len,"%s",pstring);
 		GDKfree(pstring);
 	}
 	if( len >= maxlen)

@@ -80,8 +80,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if ( QRYqueue[i].mb == mb)
 			break;
 
-	if ( stk->tag == 0)
-		stk->tag = calltag++;
+	stk->tag = calltag++;
 	if ( i == qtop ) {
 		QRYqueue[i].mb = mb;	// for detecting duplicates
 		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'

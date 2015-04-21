@@ -1480,11 +1480,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
-		if ((err = sql_update_hugeint(c)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+	if (have_hge) {
+		sql_find_subtype(&tp, "hugeint", 0, 0);
+		if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
+			if ((err = sql_update_hugeint(c)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 	}
 #endif

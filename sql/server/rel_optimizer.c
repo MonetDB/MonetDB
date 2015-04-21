@@ -18,6 +18,9 @@
 #include "rel_planner.h"
 #include "rel_psm.h"
 #include "sql_env.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 #define new_func_list(sa) sa_list(sa)
 #define new_col_list(sa) sa_list(sa)
@@ -197,8 +200,8 @@ list_find_exp( list *exps, sql_exp *e)
 
 	if (e->type != e_column)
 		return NULL;
-	if ((e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
-	    ((ne=exps_bind_column(exps, e->r, NULL)) != NULL))
+	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
+	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL)) != NULL)))
 		return ne;
 	return NULL;
 }
@@ -683,11 +686,10 @@ find_fk( mvc *sql, list *rels, list *exps)
 			r = rr->l;
 			lcols = list_map(lexps, lr, (fmap) &table_colexp);
 			rcols = list_map(rexps, rr, (fmap) &table_colexp);
-			if (list_length(lcols) != list_length(rcols)) {
-				lcols->destroy = NULL;
-				rcols->destroy = NULL;
+			lcols->destroy = NULL;
+			rcols->destroy = NULL;
+			if (list_length(lcols) != list_length(rcols)) 
 				continue;
-			}
 
 			idx = find_fk_index(l, lcols, r, rcols); 
 			if (!idx) {
@@ -713,14 +715,16 @@ find_fk( mvc *sql, list *rels, list *exps)
 
 						t = rel_find_column(sql->sa, lr, s->l, TID);
 						i = rel_find_column(sql->sa, rr, l->l, iname);
-						assert(t && i);
+						if (!t || !i) 
+							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					} else {
 						sql_exp *s = je->r, *l = je->l;
 
 						t = rel_find_column(sql->sa, rr, s->l, TID);
 						i = rel_find_column(sql->sa, lr, l->l, iname);
-						assert(t && i);
+						if (!t || !i) 
+							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
 
@@ -740,8 +744,6 @@ find_fk( mvc *sql, list *rels, list *exps)
 				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
 				p->value = idx;
 			}
-			lcols->destroy = NULL;
-			rcols->destroy = NULL;
 		}
 	}
 
@@ -1673,7 +1675,6 @@ static list *
 sum_limit_offset(mvc *sql, list *exps )
 {
 	list *nexps = new_exp_list(sql->sa);
-	node *n;
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subfunc *add;
 
@@ -1681,8 +1682,6 @@ sum_limit_offset(mvc *sql, list *exps )
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	for (n = exps->h; n; n = n->next ) 
-		nexps = append(nexps, n->data);
 	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
 	return append(nexps, exp_op(sql->sa, exps, add));
 }
@@ -1895,6 +1894,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
+		if (ne && list_position(f->exps, ne) >= list_position(f->exps, e)) 
+			return NULL;
 		while (ne && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
@@ -1904,6 +1905,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				ne = exps_bind_column2(f->exps, e->l, e->r);
 			if (!ne && !e->l)
 				ne = exps_bind_column(f->exps, e->r, NULL);
+			if (ne && ne != one && list_position(f->exps, ne) >= list_position(f->exps, one)) 
+				ne = NULL;
 			if (!ne || ne == one) {
 				ne = one;
 				e = oe;
@@ -2107,7 +2110,8 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 				*uses &= used;
 				return 0;
 			}
-			if (ne && ne != e) /* maybe ne refers to a local complex exp */
+			if (ne && ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne))) 
+				/* maybe ne refers to a local complex exp */
 				return exp_shares_exps( ne, shared, uses);
 			return 0;
 		}
@@ -2171,7 +2175,32 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 		for (n = exps->h; n && all; n = n->next) { 
 			sql_exp *e = n->data, *ne = NULL;
 
+			/* We do not handle expressions pointing back in the list */
+			if (e->type == e_column) {
+				if (e->l) 
+					ne = exps_bind_column2(exps, e->l, e->r);
+				if (!ne && !e->l)
+					ne = exps_bind_column(exps, e->r, NULL);
+				if (ne && e != ne) {
+					all = 0;
+					break;
+				} else {
+					ne = NULL;
+				}
+			}
 			ne = exp_push_down_prj(sql, e, prj, prj->l);
+			if (ne && ne->type == e_column) { /* check if the refered alias name isn't used twice */
+				sql_exp *nne = NULL;
+
+				if (ne->l)
+					nne = exps_bind_column2(rel->exps, ne->l, ne->r);
+				if (!nne && !ne->l)
+					nne = exps_bind_column(rel->exps, ne->r, NULL);
+				if (nne && ne != nne && nne != e) {
+					all = 0;
+					break;
+				}
+			}
 			if (ne) {
 				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 				list_append(rel->exps, ne);
@@ -5766,6 +5795,14 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
+			if (is_atom(e->type) && e->l) { /* direct literal */
+				atom *a = e->l;
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag)
+					break;
+			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
@@ -6124,7 +6161,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 								}
 								append(args, re);
 #ifdef HAVE_HGE
-								append(args, exp_atom_hge(sql->sa, v));
+								append(args, have_hge ? exp_atom_hge(sql->sa, v) : exp_atom_lng(sql->sa, (lng) v));
 #else
 								append(args, exp_atom_lng(sql->sa, v));
 #endif

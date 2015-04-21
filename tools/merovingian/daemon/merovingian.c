@@ -229,7 +229,7 @@ logListener(void *x)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		fflush(_mero_logfile);
-	} while (1);
+	} while (_mero_keep_logging);
 }
 
 /**
