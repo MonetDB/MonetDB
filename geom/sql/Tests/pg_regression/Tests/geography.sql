@@ -74,4 +74,3 @@ SELECT 'geog_precision_pazafir', _ST_DistanceUnCached(pt.point, ply.polygon), ST
 
 -- Clean up spatial_ref_sys
 DELETE FROM spatial_ref_sys WHERE srid = 4326;
-    
