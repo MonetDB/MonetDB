@@ -4,7 +4,8 @@ Gem::Specification.new do |s|
    s.version = "0.1"
    s.date = %q{2009-05-18}
    s.authors = ["G Modena"]
-   s.email = %q{gm@cwi.nl}
+   s.email = "info@monetdb.org"
+   s.licenses = ["MPL-1.1"]
    s.summary = %q{ActiveRecord Connector for MonetDB}
    s.homepage = %q{http://www.monetdb.org/}
    s.description = %q{ActiveRecord Connector for MonetDB built on top of the pure Ruby database driver}
