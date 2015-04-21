@@ -1,84 +1,58 @@
 stdout of test 'Dependencies` in directory 'sql/test/Dependencies` itself:
 
 
-# 20:37:54 >  
-# 20:37:54 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31333 --set xrpc_port=43851 --set monet_prompt= --trace  "--dbname=mTests_src_test_Dependencies" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 20:37:54 >  
+# 09:38:22 >  
+# 09:38:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38541" "--set" "mapi_usock=/var/tmp/mtest-6347/.s.monetdb.38541" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_test_Dependencies" "--set" "mal_listing=0"
+# 09:38:22 >  
 
-# MonetDB server v5.9.0, based on kernel v1.27.0
-# Serving database 'mTests_src_test_Dependencies', using 4 threads
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dependencies', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31333/
-# MonetDB/SQL module v2.27.0 loaded
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:38541/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6347/.s.monetdb.38541
+# MonetDB/SQL module loaded
 
 Ready.
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 99_system.sql
 
-
-# 20:37:54 >  
-# 20:37:54 >  /usr/bin/python Dependencies.SQL.py Dependencies 
-# 20:37:54 >  
+# 09:38:22 >  
+# 09:38:22 >  "/usr/bin/python2" "Dependencies.SQL.py" "Dependencies"
+# 09:38:22 >  
 
 Dependencies between User and Schema
+#CREATE USER "monet_test" WITH PASSWORD 'pass_test' NAME 'TEST_USER' SCHEMA "sys";
+#CREATE SCHEMA "test" AUTHORIZATION "monet_test";
+#ALTER USER "monet_test" SET SCHEMA "test";
 done
 done
 Dependencies between database objects
@@ -92,26 +66,6 @@ Dependencies between database objects
 #		THEN RETURN 1;
 #		ELSE RETURN 0;
 #	END IF;
-#END;
-#CREATE FUNCTION f2()
-#RETURNS TABLE(id int)
-#BEGIN
-#	DECLARE TABLE f1_t1(id int);
-#	DECLARE x int;
-#	
-#	SET x = 3;	
-#
-#	IF f1(x) > 0
-#		THEN RETURN f1_t1;
-#	END IF;
-#
-#	INSERT INTO f1_t1 VALUES(1);
-#
-#	IF f1(x) < 0
-#		THEN RETURN f1_t1;
-#	END IF;
-#
-#	RETURN TABLE (SELECT t1.id FROM v1, t1 WHERE v1.age > 10 AND t1.name LIKE 'monet');
 #END;
 #CREATE INDEX id_index ON t1(id);
 #CREATE TABLE t2 (id_t1 int, age_v1 int);
@@ -136,6 +90,7 @@ Dependencies between database objects
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	.L # table_name
@@ -163,7 +118,10 @@ Dependencies between database objects
 % .t,	.fk,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 2,	13,	8 # length
+% 5,	15,	8 # length
+[ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
+[ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
+[ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
 % .t,	.f,	.L1 # table_name
@@ -215,7 +173,14 @@ Dependencies between database objects
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 2,	10,	7 # length
+% 7,	18,	7 # length
+[ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
+[ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
+[ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
+[ "id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
+[ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
+[ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
+[ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	.L4 # table_name
@@ -368,15 +333,15 @@ Dependencies between database objects
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
+[ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
+[ "or",	"f1",	"DEP_FUNC"	]
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
@@ -390,8 +355,10 @@ Dependencies between database objects
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -413,16 +380,28 @@ Dependencies between database objects
 % sys.f,	sys.tri,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 6,	12,	11 # length
+% 5,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 #SELECT k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id;
 % sys.k,	sys.fk,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 10,	13,	8 # length
+% 18,	15,	8 # length
+[ "files_pkey_file_id",	"sq_fkey_file_id",	"DEP_FKEY"	]
+[ "files_pkey_file_id",	"rg_fkey_file_id",	"DEP_FKEY"	]
+[ "files_pkey_file_id",	"pg_fkey_file_id",	"DEP_FKEY"	]
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
+#DROP FUNCTION f2;
+#DROP TRIGGER trigger_test;
+#DROP INDEX id_index;
+#DROP TABLE t2; 
+#DROP FUNCTION f1;
+#DROP VIEW v2;
+#DROP VIEW v1;
+#DROP TRIGGER trigger_test_4;
+#DROP TABLE t1;
+#DROP TABLE t3;
 done
 Dependencies between functions with same name
 #CREATE FUNCTION f1(num int)
@@ -470,15 +449,15 @@ Dependencies between functions with same name
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"f1",	"DEP_FUNC"	]
+[ "isnull",	"f1",	"DEP_FUNC"	]
 [ "not",	"f1",	"DEP_FUNC"	]
+[ "or",	"f1",	"DEP_FUNC"	]
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
@@ -495,8 +474,10 @@ Dependencies between functions with same name
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -530,13 +511,11 @@ Dependencies between functions with same name
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "=",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "=",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
@@ -547,8 +526,10 @@ Dependencies between functions with same name
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "sql_mul",	"imprintsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "round",	"ms_round",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
@@ -594,6 +575,7 @@ Cleanup
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"bam",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	.L # table_name
 % name,	name,	single_value # name
@@ -613,7 +595,10 @@ Cleanup
 % .t,	.fk,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 0,	0,	8 # length
+% 5,	15,	8 # length
+[ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
+[ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
+[ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
 % .t,	.f,	.L1 # table_name
 % name,	name,	L1 # name
@@ -660,7 +645,14 @@ Cleanup
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 0,	0,	7 # length
+% 7,	18,	7 # length
+[ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
+[ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
+[ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
+[ "id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
+[ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
+[ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
+[ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	.L4 # table_name
 % name,	name,	L4 # name
@@ -813,13 +805,13 @@ Cleanup
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
 [ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "isnull",	"ms_round",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
 [ "or",	"imprintsize",	"DEP_FUNC"	]
+[ "or",	"ms_round",	"DEP_FUNC"	]
 [ "or",	"ms_stuff",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "pi",	"radians",	"DEP_FUNC"	]
@@ -849,10 +841,12 @@ Cleanup
 % sys.k,	sys.fk,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 0,	0,	8 # length
+% 18,	15,	8 # length
+[ "files_pkey_file_id",	"sq_fkey_file_id",	"DEP_FKEY"	]
+[ "files_pkey_file_id",	"rg_fkey_file_id",	"DEP_FKEY"	]
+[ "files_pkey_file_id",	"pg_fkey_file_id",	"DEP_FKEY"	]
 done
 
-# 20:37:54 >  
-# 20:37:54 >  Done.
-# 20:37:54 >  
-
+# 09:38:23 >  
+# 09:38:23 >  "Done."
+# 09:38:23 >  
