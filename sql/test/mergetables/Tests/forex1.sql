@@ -5,8 +5,9 @@ ALTER TABLE forex ADD TABLE forex1;
 
 PLAN SELECT X.clk FROM forex AS X;
 
--- did not show a plan
+-- did not show a plan nor resultset
 EXPLAIN SELECT X.clk FROM forex AS X;
+SELECT X.clk FROM forex AS X;
 
 -- drop the single partition
 DROP TABLE forex1;
