@@ -60,6 +60,8 @@ int ATOMunknown_find(const char *nme)
 	__attribute__((__visibility__("hidden")));
 str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
+int BATcheckimprints(BAT *b)
+	__attribute__((__visibility__("hidden")));
 int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
