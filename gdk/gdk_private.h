@@ -49,6 +49,8 @@ __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckimprints(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
