@@ -6535,7 +6535,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		if (isMergeTable(t)) {
 			/* instantiate merge tabel */
 			sql_rel *nrel = NULL;
-			char *tname = exp_find_rel_name(rel->exps->h->data);
+			char *tname = t->base.name;
 			list *cols = NULL, *low = NULL, *high = NULL;
 
 			if (list_empty(t->tables.set)) 
@@ -6591,10 +6591,10 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						continue;
 					}
 
-					/* rename (mostly the idxs) */
 					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
 					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
+					/* rename (mostly the idxs) */
 					for (n = rel->exps->h, m = prel->exps->h; n && m && !skip; n = n->next, m = m->next ) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;
@@ -6616,7 +6616,8 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 									skip = 1;
 							}
 						}
-						exp_setname(sql->sa, ne, e->rname, e->name);
+						assert(e->type == e_column);
+						exp_setname(sql->sa, ne, e->l, e->r);
 					}
 					if (!skip) {
 						append(tables, prel);
