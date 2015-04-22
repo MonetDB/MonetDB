@@ -38,7 +38,13 @@
  * for additional system variable settings.
  */
 #define MAXSCRIPT 64
-#define MEMORY_THRESHOLD  0.8
+
+/*
+ * MonetDB assumes it can use most of the machines memory,
+ * leaving a small portion for other programs.
+ */
+#define GB (((lng)1024)*1024*1024)
+#define MEMORY_THRESHOLD  (0.2 * monet_memory > 8 * GB?  monet_memory - 8 * GB: 0.8 * monet_memory)
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;

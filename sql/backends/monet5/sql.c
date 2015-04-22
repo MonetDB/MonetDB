@@ -481,7 +481,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		cnt |= BATcount(b) > 0;
 		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
 	    	    t->persistence == SQL_PERSIST && !t->commit_action)
-			cnt += store_funcs.count_col(tr, c, 0);
+			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
 	}
 	return cnt;
