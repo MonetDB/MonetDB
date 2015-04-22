@@ -971,7 +971,9 @@ def am_gem(fd, var, gem, am):
                         dirs.append(d)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
         fd.write("\tgem build '%s'\n" % f)
-        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --document=ri,rdoc %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
+        # use deprecated --rdoc and --ri options instead of --document=rdoc,ri
+        # since we're still building on systems with old gem
+        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --rdoc --ri %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
         fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
         fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
         fd.write('mostlyclean-local-%s:\n' % sf)
