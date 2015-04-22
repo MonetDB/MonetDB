@@ -1171,13 +1171,14 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) == NULL)
 			return NULL;
 	} else {
+		size_t hsize = 0, tsize = 0;
+
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
 			GDKerror("BUNins: bat too large\n");
 			return NULL;
 		}
 
-		HASHdestroy(b);
 		if (unshare_string_heap(b) == GDK_FAIL) {
 			GDKerror("BUNins: failed to unshare string heap\n");
 			return NULL;
@@ -1185,6 +1186,10 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		ALIGNins(b, "BUNins", force);
 		b->batDirty = 1;
+		if (b->H->hash && b->H->vheap)
+			hsize = b->H->vheap->size;
+		if (b->T->hash && b->T->vheap)
+			tsize = b->T->vheap->size;
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);
@@ -1193,6 +1198,17 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			bunfastins(b, h, t);
 		} else {
 			BATsetcount(b, b->batCount + 1);
+		}
+
+		if (b->H->hash) {
+			HASHins(bm, p, h);
+			if (hsize && hsize != b->H->vheap->size)
+				HEAPwarm(b->H->vheap);
+		}
+		if (b->T->hash) {
+			HASHins(b, p, t);
+			if (tsize && tsize != b->T->vheap->size)
+				HEAPwarm(b->T->vheap);
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
