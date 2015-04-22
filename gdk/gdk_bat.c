@@ -1200,12 +1200,12 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 
 		if (b->H->hash) {
-			HASHins(b, p, h);
+			HASHins(bm, p, h);
 			if (hsize && hsize != b->H->vheap->size)
 				HEAPwarm(b->H->vheap);
 		}
 		if (b->T->hash) {
-			HASHins(bm, p, t);
+			HASHins(b, p, t);
 			if (tsize && tsize != b->T->vheap->size)
 				HEAPwarm(b->T->vheap);
 		}
