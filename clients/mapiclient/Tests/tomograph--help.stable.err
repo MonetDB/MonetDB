@@ -20,8 +20,9 @@ tomograph [options]
   -r | --range=<starttime>-<endtime>[ms,s] 
   -i | --input=<profiler event file > 
   -o | --output=<file prefix > (default 'tomograph'
+  -s | --system=# (on= 1(default) off=0
   -b | --beat=<delay> in milliseconds (default 5000)
-  -A | --atlas=<number> maximum number of pages
+  -A | --atlas=<number> maximum number of queries (default 1)
   -D | --debug
   -? | --help
 
