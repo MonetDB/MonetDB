@@ -326,9 +326,9 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		bn->T->hash = NULL;
 	else
 		bn->T->hash = t->T->hash;
-	/* imprints can and must be shared */
-	bn->H->imprints = h->H->imprints;
-	bn->T->imprints = t->T->imprints;
+	/* imprints are shared, but the check is dynamic */
+	bn->H->imprints = NULL;
+	bn->T->imprints = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
