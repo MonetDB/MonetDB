@@ -1181,135 +1181,6 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 	GDKexit(1);
 }
 
-static int
-logger_create_catalog_file(int debug, logger *lg, const char *fn, FILE *fp, const char *filename, char *bak) {
-	log_bid bid = 0;
-	/* catalog does not exist, so the log file also
-	 * shouldn't exist */
-	if (fp != NULL) {
-		logger_fatal(
-				"logger_create_catalog_file: there is no logger catalog, but there is a log file.\n"
-						"Are you sure you are using the correct combination of database\n"
-						"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
-		return LOG_ERR;
-	}
-
-	lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
-	lg->catalog_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-	lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
-	if (lg->catalog_bid == NULL || lg->catalog_nme == NULL || lg->dcatalog == NULL)
-		logger_fatal("logger_create_catalog_file: cannot create catalog bats",
-			     0, 0, 0);
-	if (debug & 1)
-		fprintf(stderr, "#create %s catalog\n", fn);
-
-	/* Make persistent */
-	bid = lg->catalog_bid->batCacheid;
-	BBPincref(bid, TRUE);
-	snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
-	if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
-		logger_fatal("logger_create_catalog_file: BBPrename to %s failed",
-			     bak, 0, 0);
-
-	/* Make persistent */
-	bid = lg->catalog_nme->batCacheid;
-	BBPincref(bid, TRUE);
-	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-	if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
-		logger_fatal("logger_create_catalog_file: BBPrename to %s failed",
-			     bak, 0, 0);
-
-	bid = lg->dcatalog->batCacheid;
-	BBPincref(bid, TRUE);
-	snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
-	if (BBPrename(lg->dcatalog->batCacheid, bak) < 0)
-		logger_fatal("logger_create_catalog_file: BBPrename to %s failed",
-			     bak, 0, 0);
-
-	if (GDKcreatedir(filename) == GDK_FAIL) {
-		logger_fatal("logger_create_catalog_file: cannot create directory for log file %s\n",
-			     filename, 0, 0);
-		return LOG_ERR;
-	}
-	if ((fp = fopen(filename, "w")) == NULL) {
-		logger_fatal("logger_create_catalog_file: cannot create log file %s\n",
-			     filename, 0, 0);
-		return LOG_ERR;
-	}
-	lg->id ++;
-	if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
-		fclose(fp);
-		unlink(filename);
-		logger_fatal("logger_create_catalog_file: writing log file %s failed",
-			     filename, 0, 0);
-	}
-	if (fclose(fp) < 0) {
-		unlink(filename);
-		logger_fatal("logger_create_catalog_file: closing log file %s failed",
-			     filename, 0, 0);
-	}
-	fp = NULL;
-
-	if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != 0) {
-		/* cannot commit catalog, so remove log */
-		unlink(filename);
-		return LOG_ERR;
-    }
-	return LOG_OK;
-}
-
-/* find the persistent catalog. As non persistent bats
- * require a logical reference we also add a logical
- * reference for the persistent bats */
-static int
-logger_find_persistent_catalog(logger *lg, const char *fn, FILE *fp, char *bak, bat *catalog_bid, bat *catalog_nme, bat *dcatalog) {
-	BUN p, q;
-	BAT *b = BATdescriptor(*catalog_bid), *n, *d;
-
-	if (b == 0)
-		logger_fatal("logger_find_persistent_catalog: inconsistent database, catalog does not exist", 0, 0, 0);
-
-	snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
-	*catalog_nme = BBPindex(bak);
-	n = BATdescriptor(*catalog_nme);
-	if (n == 0)
-		logger_fatal("logger_find_persistent_catalog: inconsistent database, catalog_nme does not exist", 0, 0, 0);
-
-	snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
-	*dcatalog = BBPindex(bak);
-	d = BATdescriptor(*dcatalog);
-	if (d == 0) {
-		d = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
-		BBPincref(d->batCacheid, TRUE);
-		snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
-		if (BBPrename(d->batCacheid, bak) < 0)
-			logger_fatal("logger_find_persistent_catalog: BBPrename to %s failed", bak, 0, 0);
-	}
-
-	/* the catalog exists, and so should the log file */
-	if (fp == NULL) {
-		logger_fatal("logger_find_persistent_catalog: there is a logger catalog, but no log file.\n"
-			     "Are you sure you are using the correct combination of database\n"
-			     "(--dbpath) and log directory (--set %s_logdir)?\n"
-			     "If you have done a recent update of the server, it may be that your\n"
-			     "logs are in an old location.  You should then either use\n"
-			     "--set %s_logdir=<path to old log directory> or move the old log\n"
-			     "directory to the new location (%s).\n",
-			     fn, fn, lg->dir);
-		return LOG_ERR;
-	}
-	lg->catalog_bid = b;
-	lg->catalog_nme = n;
-	lg->dcatalog = d;
-	BATloop(b, p, q) {
-		bat bid = *(log_bid *) Tloc(b, p);
-		if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
-			BBPincref(bid, TRUE);
-	}
-
-	return LOG_OK;
-}
-
 /* Set the logdir path, add a dbfarm if needed.
  * Returns the role of the dbfarm containing the logdir.
  */
@@ -1381,18 +1252,131 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 	catalog_bid = BBPindex(bak);
 
 	if (bid != 0 && catalog_bid == 0)
-		logger_fatal("Logger_new: ancient database, please upgrade "
+		logger_fatal("logger_load: ancient database, please upgrade "
 			     "first to Jan2014 (11.17.X) release", 0, 0, 0);
 
 	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
 	 * force it to find the persistent catalog */
 	if (catalog_bid == 0 &&	!lg->shared) {
-		if (logger_create_catalog_file(debug, lg, fn, fp, filename, bak) == LOG_ERR) {
+		log_bid bid = 0;
+
+		/* catalog does not exist, so the log file also
+		 * shouldn't exist */
+		if (fp != NULL) {
+			logger_fatal(
+					"logger_load: there is no logger catalog, but there is a log file.\n"
+							"Are you sure you are using the correct combination of database\n"
+							"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
 			goto error;
 		}
-	} else {
-		if (logger_find_persistent_catalog(lg, fn, fp, bak, &catalog_bid, &catalog_nme, &dcatalog) == LOG_ERR) {
+
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		lg->catalog_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
+		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+		if (lg->catalog_bid == NULL || lg->catalog_nme == NULL || lg->dcatalog == NULL)
+			logger_fatal("logger_load: cannot create catalog bats",
+				     0, 0, 0);
+		if (debug & 1)
+			fprintf(stderr, "#create %s catalog\n", fn);
+
+		/* Make persistent */
+		bid = lg->catalog_bid->batCacheid;
+		BBPincref(bid, TRUE);
+		snprintf(bak, BUFSIZ, "%s_catalog_bid", fn);
+		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
+
+		/* Make persistent */
+		bid = lg->catalog_nme->batCacheid;
+		BBPincref(bid, TRUE);
+		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
+		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
+
+		bid = lg->dcatalog->batCacheid;
+		BBPincref(bid, TRUE);
+		snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
+		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0)
+			logger_fatal("logger_load: BBPrename to %s failed",
+				     bak, 0, 0);
+
+		if (GDKcreatedir(filename) == GDK_FAIL) {
+			logger_fatal("logger_load: cannot create directory for log file %s\n",
+				     filename, 0, 0);
 			goto error;
+		}
+		if ((fp = fopen(filename, "w")) == NULL) {
+			logger_fatal("logger_load: cannot create log file %s\n",
+				     filename, 0, 0);
+			goto error;
+		}
+		lg->id ++;
+		if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
+			fclose(fp);
+			unlink(filename);
+			logger_fatal("logger_load: writing log file %s failed",
+				     filename, 0, 0);
+		}
+		if (fclose(fp) < 0) {
+			unlink(filename);
+			logger_fatal("logger_load: closing log file %s failed",
+				     filename, 0, 0);
+		}
+		fp = NULL;
+
+		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != 0) {
+			/* cannot commit catalog, so remove log */
+			unlink(filename);
+			goto error;
+	    }
+	} else {
+		/* find the persistent catalog. As non persistent bats
+		 * require a logical reference we also add a logical
+		 * reference for the persistent bats */
+		BUN p, q;
+		BAT *b = BATdescriptor(catalog_bid), *n, *d;
+
+		if (b == 0)
+			logger_fatal("logger_load: inconsistent database, catalog does not exist", 0, 0, 0);
+
+		snprintf(bak, BUFSIZ, "%s_catalog_nme", fn);
+		catalog_nme = BBPindex(bak);
+		n = BATdescriptor(catalog_nme);
+		if (n == 0)
+			logger_fatal("logger_load: inconsistent database, catalog_nme does not exist", 0, 0, 0);
+
+		snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
+		dcatalog = BBPindex(bak);
+		d = BATdescriptor(dcatalog);
+		if (d == 0) {
+			d = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+			BBPincref(d->batCacheid, TRUE);
+			snprintf(bak, BUFSIZ, "%s_dcatalog", fn);
+			if (BBPrename(d->batCacheid, bak) < 0)
+				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
+		}
+
+		/* the catalog exists, and so should the log file */
+		if (fp == NULL) {
+			logger_fatal("logger_load: there is a logger catalog, but no log file.\n"
+				     "Are you sure you are using the correct combination of database\n"
+				     "(--dbpath) and log directory (--set %s_logdir)?\n"
+				     "If you have done a recent update of the server, it may be that your\n"
+				     "logs are in an old location.  You should then either use\n"
+				     "--set %s_logdir=<path to old log directory> or move the old log\n"
+				     "directory to the new location (%s).\n",
+				     fn, fn, lg->dir);
+			goto error;
+		}
+		lg->catalog_bid = b;
+		lg->catalog_nme = n;
+		lg->dcatalog = d;
+		BATloop(b, p, q) {
+			bat bid = *(log_bid *) Tloc(b, p);
+			if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
+				BBPincref(bid, TRUE);
 		}
 	}
 
