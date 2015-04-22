@@ -375,11 +375,6 @@ column_option(
 	case SQL_DEFAULT: {
 		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
 
-		if(isArray(cs->t)) {
-			//I do not need to set the default value in the column
-			res = SQL_OK;
-			break;
-		}
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -962,6 +957,7 @@ int compute_repeats(mvc *sql, sql_table *t) {
 	return SQL_OK;
 }
 
+#if 0
 static sql_exp *
 insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 {
@@ -977,7 +973,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
         return rel_check_type(sql, &c->type, e, type_equal); 
     }
 }
-
+#endif
 
 sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *array_elements, int commit_action) {
 	sql_schema *s = NULL;
@@ -1009,12 +1005,12 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		return sql_error(sql, 02, "42000!CREATE ARRAY: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (array_elements->token == SQL_CREATE_ARRAY) { 
 		sql_table *t = mvc_create_array(sql, s, name, tt, 0, SQL_DECLARED_ARRAY, commit_action, -1, 0);
-		sql_rel *creation, *ins;
+		sql_rel *creation; //, *ins;
 
 		dlist *columns = array_elements->data.lval;
 		dnode *n;
-		node *columnNode = NULL;
-		list *exps = new_exp_list(sql->sa);
+//		node *columnNode = NULL;
+//		list *exps = new_exp_list(sql->sa);
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1029,7 +1025,9 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 
 		temp = (tt == tt_array)?temp:SQL_PERSIST;
 		creation = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp); //the array does not differ from a table at least until this point
-		
+
+		return creation;
+#if 0	
 		//create empty cells for all non-dimensional columns
 		for (n = columns->h, columnNode = t->columns.set->h; n && columnNode; n = n->next) {
 			if(n->data.sym->token == SQL_COLUMN) {
@@ -1068,6 +1066,7 @@ sql_rel* rel_create_array(mvc *sql, sql_schema *ss, int temp, char *sname, char 
 		ins = rel_project(sql->sa, NULL, exps);
 
 		return rel_insert(sql, creation, ins);
+#endif
 	} 
 #if 0
 	else { /* [col name list] as subquery with or without data */

@@ -1612,6 +1612,75 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.restart", "sequence %s not found", *sname);
 }
 
+//when the column belongs to an array extra values shoulb be added in order to 
+//have values for all cells int he array
+static BAT*
+mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum) {
+	BAT *b = NULL;
+
+#define fillVals(TPE)                     \
+    do {                                \
+			TPE *elements_in = NULL, *elements = NULL; \
+			BUN i; \
+\
+        	if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
+        		return NULL;                   \
+\
+        	elements = (TPE*) Tloc(b, BUNfirst(b));          \
+			elements_in = (TPE*) Tloc(b_in, BUNfirst(b_in)); \
+\
+			/*Add the elements that have been inserted into the cells*/ \
+			for(i=0; i<BATcount(b_in); i++) { \
+                elements[i] = elements_in[i]; \
+    		} \
+			/*Fill the rest of the cells with the default value or NULL if no \
+ 			* default values is provided*/ \
+			for(;i<cellsNum; i++) { \
+				if(!c->def) \
+					elements[i] = TPE##_nil; \
+				else \
+					fprintf(stderr, "DEFAULT value is provided but not handled\n"); \
+			}	\
+\
+        	b->tsorted = 0;              \
+        	b->trevsorted = 0;           \
+    } while (0)
+
+	switch (c->type.type->localtype) {
+    	case TYPE_bte:
+    	    fillVals(bte);
+        	break;
+    	case TYPE_sht:
+        	fillVals(sht);
+			break;
+    	case TYPE_int:
+        	fillVals(int);
+			break;
+    	case TYPE_lng:
+        	fillVals(lng);
+			break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+       		fillVals(hge);
+			break;
+#endif
+		case TYPE_flt:
+        	fillVals(flt);
+			break;
+    	case TYPE_dbl:
+        	fillVals(dbl);
+			break;
+	    default:
+			fprintf(stderr, "mvc_fill_values: dimension type not handled\n");
+	}
+
+	BATsetcount(b,cellsNum);
+	BATseqbase(b,0);    
+	BATderiveProps(b,FALSE);
+
+	return b;
+}
+
 static BAT *
 mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
@@ -1632,18 +1701,19 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
+
+	if(isArray(t))
+		return mvc_fill_values(c, b, t->cellsNum);
+
 	return b;
 }
 
-static BAT *
-mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
-{
+static BAT*
+mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 	BAT *b = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_dimension *dim = NULL;
-	long repeat1 = 0, repeat2 =0;
-	long  i=0, j=0;
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
@@ -1654,19 +1724,19 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
 	dim = mvc_bind_dimension(m, t, dname);
 	if (dim == NULL)
 		return NULL;
-
-	repeat1 = dim->lvl1_repeatsNum;
-	repeat2 = dim->lvl2_repeatsNum;
-
+	
 #define materialiseDim(TPE, min, step, max)                     \
     do {                                \
 			TPE it, *elements = NULL; \
+			long repeat1, repeat2, i, j; \
+\
+			repeat1 = dim->lvl1_repeatsNum; \
+			repeat2 = dim->lvl2_repeatsNum; \
 \
         	if((b = BATnew(TYPE_void, TYPE_##TPE, t->cellsNum, TRANSIENT)) == NULL)   \
         		return NULL;                   \
 \
-        	elements = (TPE*) Tloc(b, BUNfirst(b));          \
-\
+ 	      	elements = (TPE*) Tloc(b, BUNfirst(b));          \
 			for(j=0; j<repeat2; j++) { \
         		for(it = min ; it <= max ; it += step) { \
             		for(i=0; i<repeat1; i++) { \
@@ -1692,7 +1762,8 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname)
         	materialiseDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
         	break;
     	case TYPE_int:
- {   			int it, *elements = NULL;
+#if 0
+{   			int it, *elements = NULL;
 				int min = dim->min->data.val.ival;
 				int step = dim->step->data.val.ival;
 				int max = dim->max->data.val.ival;
@@ -1715,7 +1786,8 @@ fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *eleme
         	b->tsorted = 0;
         	b->trevsorted = 0;
 }
-    //	materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
+#endif
+    		materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
         	break;
     	case TYPE_lng:
         	materialiseDim(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);

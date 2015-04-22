@@ -449,7 +449,7 @@ typedef struct sql_column {
 	size_t dcount;
 
 	struct sql_table *t;
-	void *data;
+	void *data; //sql_delta*
 } sql_column;
 
 typedef struct atom atom;
@@ -509,7 +509,7 @@ typedef struct sql_table {
 	char *query;		/* views may require some query */
 	int  sz;
 	
-	lng cellsNum; //It is used when having an array. It helps when creating empty cells
+	unsigned int cellsNum; //It is used when having an array. It helps when creating empty cells
 
 	sql_ukey *pkey;
 	changeset dimensions; //used only when the table is an array

@@ -1225,7 +1225,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_default %s %s\n", col->base.name, val);
 
-	if (col->t->persistence == SQL_DECLARED_TABLE) {
+	if (col->t->persistence == SQL_DECLARED_TABLE || col->t->persistence == SQL_DECLARED_ARRAY) {
 		col->def = val?sa_strdup(m->sa, val):NULL;
 		return col;
 	} else {
