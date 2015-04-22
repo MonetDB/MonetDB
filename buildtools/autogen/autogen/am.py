@@ -960,6 +960,7 @@ def am_gem(fd, var, gem, am):
                         dirs.append(d)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
         fd.write("\tgem build '%s'\n" % f)
+        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --document=ri,rdoc %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
         fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
         fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
         fd.write('mostlyclean-local-%s:\n' % sf)
@@ -969,7 +970,7 @@ def am_gem(fd, var, gem, am):
             fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rmdir '%s'\n" % (d, d))
         fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
         fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
-        fd.write("\tgem install --local --install-dir $(DESTDIR)'%s' --force --rdoc '%s'\n" % (rd, f[:-4]))
+        fd.write("\tcp -a ./'%s'/* $(DESTDIR)'%s'\n" % (rd, rd))
         fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
         # remove "-0.1.gemspec" from end of `f'
         fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-12]))
