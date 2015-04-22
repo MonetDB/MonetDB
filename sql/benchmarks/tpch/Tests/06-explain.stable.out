@@ -40,38 +40,38 @@ Ready.
 % clob # type
 % 326 # length
 function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
-    X_70:void := querylog.define("explain select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date \\'1994-01-01\\'\n\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;","sequential_pipe",42);
+    X_69:void := querylog.define("explain select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date \\'1994-01-01\\'\n\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;","sequential_pipe",42);
     X_10 := sql.mvc();
     X_14:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_quantity",0);
     X_24:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_discount",0);
     X_36:bat[:oid,:date]  := sql.bind(X_10,"sys","lineitem","l_shipdate",0);
     X_11:bat[:oid,:oid]  := sql.tid(X_10,"sys","lineitem");
     X_46 := mtime.addmonths(A1,A2);
-    X_86 := algebra.subselect(X_36,X_11,A0,X_46,true,false,false);
+    X_85 := algebra.subselect(X_36,X_11,A0,X_46,true,false,false);
     (X_41,r1_50) := sql.bind(X_10,"sys","lineitem","l_shipdate",2);
-    X_87 := algebra.subselect(r1_50,nil:bat[:oid,:oid],A0,X_46,true,false,false);
+    X_86 := algebra.subselect(r1_50,nil:bat[:oid,:oid],A0,X_46,true,false,false);
     X_44:bat[:oid,:date]  := sql.bind(X_10,"sys","lineitem","l_shipdate",1);
-    X_89 := algebra.subselect(X_44,X_11,A0,X_46,true,false,false);
-    X_47 := sql.subdelta(X_86,X_11,X_41,X_87,X_89);
+    X_88 := algebra.subselect(X_44,X_11,A0,X_46,true,false,false);
+    X_47 := sql.subdelta(X_85,X_11,X_41,X_86,X_88);
     X_29 := calc.sht(2,A3,3,2);
     X_31 := calc.-(X_29,A4);
     X_32 := calc.lng(2,X_31,15,2);
     X_33 := calc.sht(2,A5,3,2);
     X_34 := calc.+(X_33,A6);
     X_35 := calc.lng(2,X_34,15,2);
-    X_90 := algebra.subselect(X_24,X_47,X_32,X_35,true,true,false);
+    X_89 := algebra.subselect(X_24,X_47,X_32,X_35,true,true,false);
     (X_26,r1_29) := sql.bind(X_10,"sys","lineitem","l_discount",2);
-    X_91 := algebra.subselect(r1_29,nil:bat[:oid,:oid],X_32,X_35,true,true,false);
+    X_90 := algebra.subselect(r1_29,nil:bat[:oid,:oid],X_32,X_35,true,true,false);
     X_28:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_discount",1);
-    X_93 := algebra.subselect(X_28,X_47,X_32,X_35,true,true,false);
-    X_50 := sql.subdelta(X_90,X_47,X_26,X_91,X_93);
+    X_92 := algebra.subselect(X_28,X_47,X_32,X_35,true,true,false);
+    X_50 := sql.subdelta(X_89,X_47,X_26,X_90,X_92);
     X_22 := calc.lng(A7,15,2);
-    X_94 := algebra.thetasubselect(X_14,X_50,X_22,"<");
+    X_93 := algebra.thetasubselect(X_14,X_50,X_22,"<");
     (X_17,r1_17) := sql.bind(X_10,"sys","lineitem","l_quantity",2);
-    X_95 := algebra.thetasubselect(r1_17,nil:bat[:oid,:oid],X_22,"<");
+    X_94 := algebra.thetasubselect(r1_17,nil:bat[:oid,:oid],X_22,"<");
     X_20:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_quantity",1);
-    X_97 := algebra.thetasubselect(X_20,X_50,X_22,"<");
-    X_51 := sql.subdelta(X_94,X_50,X_17,X_95,X_97);
+    X_96 := algebra.thetasubselect(X_20,X_50,X_22,"<");
+    X_51 := sql.subdelta(X_93,X_50,X_17,X_94,X_96);
     X_53:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_extendedprice",0);
     (X_55,r1_69) := sql.bind(X_10,"sys","lineitem","l_extendedprice",2);
     X_57:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_extendedprice",1);
@@ -79,7 +79,7 @@ function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,
     X_59 := sql.projectdelta(X_51,X_24,X_26,r1_29,X_28);
     X_60:bat[:oid,:lng]  := batcalc.*(X_58,X_59);
     X_61:lng  := aggr.sum(X_60);
-    sql.exportValue(1,"sys.L1","revenue","decimal",19,4,10,X_61,"");
+    sql.resultSet("sys.L1","revenue","decimal",19,4,10,X_61);
 end user.s2_1;
 
 # 22:53:26 >  

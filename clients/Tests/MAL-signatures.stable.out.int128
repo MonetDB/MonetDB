@@ -51408,11 +51408,11 @@ pattern sql.current_time():daytime
 address SQLcurrent_daytime;
 comment Get the clients current daytime
 
-pattern sql.copyfrom(t:ptr,sep:str,rsep:str,ssep:str,ns:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
-address mvc_import_table_stdin;
-comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
-
-pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
+pattern sql.copy_rejects_clear():void 
+address COPYrejects_clear;
+pattern sql.copy_rejects() (rowid:bat[:oid,:lng],fldid:bat[:oid,:int],msg:bat[:oid,:str],inp:bat[:oid,:str]) 
+address COPYrejects;
+pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int,best:int):bat[:oid,:any]... 
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
@@ -51564,10 +51564,6 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportValue{unsafe}(qtype:int,tname:str,name:str,typename:str,digits:int,scale:int,eclass:int,val:any_1,w:str):void 
-address mvc_export_value_wrap;
-comment export a single value onto the stream s
-
 pattern sql.exportOperation{unsafe}(w:str):void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
@@ -51587,6 +51583,14 @@ comment Export a result (in order) to stream s
 pattern sql.exportHead{unsafe}(s:streams,res_id:int):void 
 address mvc_export_head_wrap;
 comment Export a result (in order) to stream s
+
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_export_table_wrap;
+comment Prepare a table result set for the COPY INTO stream
+
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_export_row_wrap;
+comment Prepare a table result set for the COPY INTO stream
 
 pattern sql.evalAlgebra(cmd:str,optimize:bit):void 
 address RAstatement;
@@ -51732,29 +51736,17 @@ command sql.round(v:bte,d:int,s:int,r:bte):bte
 address bte_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,col:bat[:oid,:any_1]):void 
-address mvc_result_column_wrap;
-comment Add the column to the table query result
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_table_result_wrap;
+comment Prepare a table result set for the client in default CSV format
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,val:any_1):void 
-address mvc_result_value_wrap;
-comment Add the value to the row query result
-
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:bat[:oid,:any_1]):int 
-address mvc_result_table_wrap;
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_row_result_wrap;
 comment Prepare a table result set
 
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:any_1):int 
-address mvc_result_row_wrap;
-comment Prepare a row result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:bat[:oid,:any_1]):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:any_1):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
+pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
+address mvc_scalar_value_wrap;
+comment Prepare a table result set
 
 pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng 
 address mvc_restart_seq;

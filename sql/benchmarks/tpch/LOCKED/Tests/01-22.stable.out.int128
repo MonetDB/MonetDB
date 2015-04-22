@@ -538,7 +538,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	2	]
+[ "joinidx",	3	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
