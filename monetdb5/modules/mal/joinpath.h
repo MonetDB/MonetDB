@@ -23,6 +23,5 @@
 #endif
 
 join_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-join_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 
 #endif

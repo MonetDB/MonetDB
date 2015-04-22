@@ -186,7 +186,6 @@
 	/* KEEP   */	pv = v					\
 	)
 
-
 /* If a hash table exists on b we use it.
  *
  * The algorithm is simple.  We go through b and for each value we
@@ -283,7 +282,7 @@
 				     hb != HASHnil(hs) &&		\
 				      grps[hb - r] == grps[p - r];	\
 				     hb = HASHgetlink(hs,hb)) {		\
-					assert( HASHgetlink(hs,hb) == HASHnil(hs) \
+					assert(HASHgetlink(hs,hb) == HASHnil(hs) \
 					       || HASHgetlink(hs,hb) < hb); \
 					if (COMP) {		\
 						oid grp = ngrps[hb - r]; \
@@ -302,7 +301,7 @@
 					hb = HASHnil(hs);		\
 				}					\
 			} else if (grps) {				\
-				prb = ((prb << bits) ^ (BUN) grps[p-r]) & hs->mask; \
+				prb = (prb ^ (BUN) grps[p-r] << bits) & hs->mask; \
 				for (hb = HASHget(hs,prb);		\
 				     hb != HASHnil(hs);			\
 				     hb = HASHgetlink(hs,hb)) {		\
@@ -386,7 +385,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
 	assert(g == NULL || BAThdense(g));
-	assert(g == NULL || BATttype(g) == TYPE_oid);
+	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
 	assert(g == NULL || BATcount(b) == BATcount(g));
 	assert(g == NULL || BATcount(b) == 0 || b->hseqbase == g->hseqbase);
 	/* e is NULL or [oid(dense),oid] */
@@ -552,6 +551,27 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* figure out if we can use the storage type also for
 	 * comparing values */
 	t = ATOMbasetype(b->ttype);
+	/* for strings we can use the offset instead of the actual
+	 * string values if we know that the strings in the string
+	 * heap are unique */
+	if (t == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
+		switch (b->T->width) {
+		case 1:
+			t = TYPE_bte;
+			break;
+		case 2:
+			t = TYPE_sht;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			t = TYPE_int;
+			break;
+#endif
+		default:
+			t = TYPE_var;
+			break;
+		}
+	}
 
 	if (((b->tsorted || b->trevsorted) &&
 	     (g == NULL || g->tsorted || g->trevsorted)) ||
@@ -683,7 +703,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 
 		GDKfree(pgrp);
-	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_bte) {
+	} else if (g == NULL && t == TYPE_bte) {
 		/* byte-sized values, use 256 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 256 groups, so the group id
@@ -709,7 +729,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(bgrps);
-	} else if (g == NULL && ATOMbasetype(b->ttype) == TYPE_sht) {
+	} else if (g == NULL && t == TYPE_sht) {
 		/* short-sized values, use 65536 entry array to keep
 		 * track of doled out group ids; note that we can't
 		 * possibly have more than 65536 groups, so the group
@@ -735,11 +755,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				cnts[v]++;
 		}
 		GDKfree(sgrps);
-	} else if (b->T->hash ||
+	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    !BATprepareHash(b)) ||
+		    BAThash(b, 0) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
-		    BBPdescriptor(-parent)->T->hash)) {
+		    BATcheckhash(BBPdescriptor(-parent)))) {
 		BUN lo, hi;
 
 		/* we already have a hash table on b, or b is
@@ -833,6 +853,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(t) == 1) {
+			mask = 1 << 16;
+			bits = 8;
+		} else if (ATOMsize(t) == 2) {
+			mask = 1 << 16;
+			bits = 8;
+		} else {
+			mask = HASHmask(b->batCount);
+			bits = 0;
+		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
@@ -840,7 +870,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+				  MAX(HASHmask(b->batCount), 1 << 16), BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

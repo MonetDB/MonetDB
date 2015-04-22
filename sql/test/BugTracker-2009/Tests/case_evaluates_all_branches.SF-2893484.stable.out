@@ -33,10 +33,10 @@ Ready.
 % 1 # length
 [ 0	]
 #SELECT CASE SUM(payout_units_cpc) WHEN 0 THEN 0 ELSE cast(SUM(payout_units_cpc * payout_cpc) as numeric(12,4)) / SUM(payout_units_cpc) END AS avg_cost_cpc FROM stats_2009_week_31;
-% sys.L3 # table_name
+% sys.L4 # table_name
 % avg_cost_cpc # name
 % decimal # type
-% 20 # length
+% 21 # length
 [ 0.0000	]
 
 # 18:09:40 >  

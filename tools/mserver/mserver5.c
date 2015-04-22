@@ -96,7 +96,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
-	fprintf(stderr, "     --trace[=<stethoscope flags>]\n");
+	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --recycler\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
@@ -104,6 +104,9 @@ usage(char *prog, int xit)
 	exit(xit);
 }
 
+/*
+ * Collect some global system properties to relate performance results later
+ */
 static void
 monet_hello(void)
 {
@@ -112,10 +115,10 @@ monet_hello(void)
 #else
 	char *linkinfo = "dynamically";
 #endif
-
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
+	size_t len;
 
 	monet_memory = MT_npages() * MT_pagesize();
 	sz_mem_h = (dbl) monet_memory;
@@ -150,6 +153,20 @@ monet_hello(void)
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
 	printf("# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved\n");
 	printf("# Visit http://www.monetdb.org/ for further information\n");
+
+	// The properties shipped through the performance profiler
+	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "{ MonetDBversion:\"%s\", ", VERSION);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "release:\"%s\", ", MONETDB_RELEASE);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "host:\"%s\", ", HOST);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "threads:\"%d\", ", GDKnr_threads);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "memory:\"%.3f %cB\", ", sz_mem_h, qc[qi]);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "oid:\""SZFMT"\", ", sizeof(oid) *8);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "packages:[");
+	// add the compiled in package names
+#ifdef HAVE_HGE
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"%s\"","huge");
+#endif
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "]}");
 }
 
 static str
@@ -374,7 +391,7 @@ main(int argc, char **av)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				mal_trace = optarg? optarg:"ISTest";
+				mal_trace = 1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "heaps") == 0) {
@@ -416,7 +433,7 @@ main(int argc, char **av)
 			}
 			break;
 		case 't':
-			mal_trace = optarg? optarg:"ISTest";
+			mal_trace = 1;
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the

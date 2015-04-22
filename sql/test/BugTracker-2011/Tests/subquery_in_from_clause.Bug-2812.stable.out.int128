@@ -1,0 +1,98 @@
+stdout of test 'subquery_in_from_clause.Bug-2812` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 14:00:30 >  
+# 14:00:30 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=31068 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 14:00:30 >  
+
+# MonetDB 5 server v11.3.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31068/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+
+# 14:00:30 >  
+# 14:00:30 >  mclient -lsql -ftest -i -e --host=alf --port=31068 
+# 14:00:30 >  
+
+#CREATE TABLE SALESMART (
+#    --ID BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+#    ITEM VARCHAR(100),
+#    CATEGORY VARCHAR(100),
+#    PRICE NUMERIC(10,2),
+#    CITY VARCHAR(100),
+#    REGION VARCHAR(100),
+#    COUNTRY VARCHAR(100)
+#);
+#COPY 1000 RECORDS INTO SALESMART FROM STDIN USING DELIMITERS ';', '\n', '"';
+#L'Oven Fresh white bread;Baked goods;0.59;San Francisco;California;United States
+#Texas cheese toast;Frozen;1.49;Paris;Ile-De-France;France
+#Broccoli stir fry mixture;Frozen;0.89;Bluff City;Kansas;United States
+#Sausage, brown/serve;Frozen;0.99;Plymouth;Tobago;Trinidad and Tobago
+#Peppers, tricolor pack;Produce;1.99;Glendale;Arizona;United States
+#Cinnamon Grahams;Snack;0.99;London;Ontario;Canada
+#Mushrooms;Produce;0.99;Blountsville;Alab
+[ 1000	]
+#SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+#FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
+#WHERE T.MAXPRICE = S.PRICE
+#GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
+% sys.L2,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
+% price,	item,	category,	city,	region,	country # name
+% decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 41,	21,	4,	16,	25,	19 # length
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Jose Leon Suarez",	"Buenos Aires",	"Argentina"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"West Long Branch",	"New Jersey",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Athens",	"Attiki",	"Greece"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Franklin Springs",	"New York",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Jerusalem",	"Yerushalayim  (Jerusalem)",	"Israel"	]
+[ 7.98,	"Tyson roasted chicken",	"Meat",	"Cairo",	"Illinois",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Plymouth",	"Tobago",	"Trinidad and Tobago"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Molodesjnaja",	"Enderby Land",	"Antarctica"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Scarborough",	"Tobago",	"Trinidad and Tobago"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Crooks",	"South Dakota",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Mill Creek",	"Oklahoma",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Davos",	"Graubunden",	"Switzerland"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Roma",	"Texas",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Fengjie",	"Sichuan",	"China"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Cattaraugus",	"New York",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Eau Galle",	"Wisconsin",	"United States"	]
+#SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+#FROM  SALESMART S
+#WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
+#GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
+% sys.L6,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
+% price,	item,	category,	city,	region,	country # name
+% decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 41,	21,	4,	16,	25,	19 # length
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Jose Leon Suarez",	"Buenos Aires",	"Argentina"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"West Long Branch",	"New Jersey",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Athens",	"Attiki",	"Greece"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Franklin Springs",	"New York",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Jerusalem",	"Yerushalayim  (Jerusalem)",	"Israel"	]
+[ 7.98,	"Tyson roasted chicken",	"Meat",	"Cairo",	"Illinois",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Plymouth",	"Tobago",	"Trinidad and Tobago"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Molodesjnaja",	"Enderby Land",	"Antarctica"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Scarborough",	"Tobago",	"Trinidad and Tobago"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Crooks",	"South Dakota",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Mill Creek",	"Oklahoma",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Davos",	"Graubunden",	"Switzerland"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Roma",	"Texas",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Fengjie",	"Sichuan",	"China"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Cattaraugus",	"New York",	"United States"	]
+[ 3.99,	"Tyson roasted chicken",	"Meat",	"Eau Galle",	"Wisconsin",	"United States"	]
+#DROP TABLE SALESMART;
+
+# 14:00:30 >  
+# 14:00:30 >  Done.
+# 14:00:30 >  
+

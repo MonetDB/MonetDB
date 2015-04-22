@@ -36,8 +36,8 @@ function user.q():void;                 	#
     r:bat[:oid,:int]{rows=100} := bat.new(:oid,:int);	# CMDBATnew
     s:bat[:oid,:int]{rows=1000} := bat.new(:oid,:int);	# CMDBATnew
     x:bat[:oid,:oid]{rows=300} := bat.new(:oid,:oid);	# CMDBATnew
-    rs:bat[:oid,:oid]{rows=151} := algebra.subselect(s:bat[:oid,:int]{rows=1000},x:bat[:oid,:oid]{rows=300},1:int,1:int,true:bit,true:bit,false:bit);	# ALGsubselect2
-    j:bat[:oid,:int]{rows=100} := algebra.leftfetchjoin(rs:bat[:oid,:oid]{rows=151},r:bat[:oid,:int]{rows=100});	# ALGleftfetchjoin
+    rs:bat[:oid,:oid]{rows=151} := algebra.subselect(s:bat[:oid,:int],x:bat[:oid,:oid],1:int,1:int,true:bit,true:bit,false:bit);	# ALGsubselect2
+    j:bat[:oid,:int]{rows=100} := algebra.leftfetchjoin(rs:bat[:oid,:oid],r:bat[:oid,:int]);	# ALGleftfetchjoin
 end user.q;                             	# 
 
 # 08:55:26 >  

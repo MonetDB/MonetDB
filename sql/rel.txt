@@ -33,6 +33,7 @@ JOIN 	(card MULTI)
 	-> exps		join expressions (ie all e_cmp)
 	-> l		is left relation
 	-> r		is rigth relation
+	-> flag		LEFT (keep left order, only used during code generation)
 
 SEMI/ANTI 
 	(card MULTI)

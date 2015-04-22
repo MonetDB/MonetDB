@@ -1387,7 +1387,7 @@ convertConstant(int type, ValPtr vr)
 		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 		   (*BATatoms[type].atomFromStr) (buf, &ll, &d);
 		   if( d==0 ){
-		   VALinit(vr, type, BATatoms[type].atomNull);
+		   VALinit(vr, type, ATOMnilptr(type));
 		   throw(SYNTAX, "convertConstant", "conversion error");
 		   }
 		   VALset(vr, type, d);

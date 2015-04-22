@@ -960,11 +960,11 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		bn->tdense = bn->T->nonil = 0;
 	}
 	if (BATcount(bn) <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->hrevsorted = ATOMlinear(b->htype);
 		bn->hkey = 1;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = 1;
 	}
 	if (writable != TRUE)
@@ -1059,7 +1059,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	assert(x != NULL || col->type == TYPE_void);
 	if (b->batCount == 0) {
 		/* first value */
-		col->sorted = col->revsorted = BATatoms[col->type].linear != 0;
+		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
 		col->key |= 1;
 		if (col->type == TYPE_void) {
 			if (x) {
@@ -1170,13 +1170,14 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) == GDK_FAIL)
 			return GDK_FAIL;
 	} else {
+		size_t hsize = 0, tsize = 0;
+
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
 			GDKerror("BUNins: bat too large\n");
 			return GDK_FAIL;
 		}
 
-		HASHdestroy(b);
 		if (unshare_string_heap(b) == GDK_FAIL) {
 			GDKerror("BUNins: failed to unshare string heap\n");
 			return GDK_FAIL;
@@ -1184,6 +1185,10 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
+		if (b->H->hash && b->H->vheap)
+			hsize = b->H->vheap->size;
+		if (b->T->hash && b->T->vheap)
+			tsize = b->T->vheap->size;
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);
@@ -1192,6 +1197,17 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			bunfastins(b, h, t);
 		} else {
 			BATsetcount(b, b->batCount + 1);
+		}
+
+		if (b->H->hash) {
+			HASHins(bm, p, h);
+			if (hsize && hsize != b->H->vheap->size)
+				HEAPwarm(b->H->vheap);
+		}
+		if (b->T->hash) {
+			HASHins(b, p, t);
+			if (tsize && tsize != b->T->vheap->size)
+				HEAPwarm(b->T->vheap);
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1566,7 +1582,7 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 			 * property, so we must clear it */
 			b->T->nil = 0;
 		}
-		HASHremove(BATmirror(b));
+		HASHremove(b);
 		Treplacevalue(b, BUNtloc(bi, p), t);
 
 		tt = b->ttype;
@@ -1675,15 +1691,16 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 }
 
 BUN
-void_replace_bat(BAT *b, BAT *u, bit force)
+void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 {
 	BUN nr = 0;
 	BUN r, s;
-	BATiter ui = bat_iterator(u);
+	BATiter uii = bat_iterator(p);
+	BATiter uvi = bat_iterator(u);
 
 	BATloop(u, r, s) {
-		oid updid = *(oid *) BUNhead(ui, r);
-		const void *val = BUNtail(ui, r);
+		oid updid = *(oid *) BUNtail(uii, r);
+		const void *val = BUNtail(uvi, r);
 
 		if (void_inplace(b, updid, val, force) == GDK_FAIL)
 			return BUN_NONE;
@@ -1869,9 +1886,9 @@ BUNlocate(BAT *b, const void *x, const void *y)
 			 * BUNlocate). Other threads might then crash.
 			 */
 			if (dohash(v->H))
-				(void) BATprepareHash(BATmirror(v));
+				(void) BAThash(BATmirror(v), 0);
 			if (dohash(v->T))
-				(void) BATprepareHash(v);
+				(void) BAThash(v, 0);
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -2067,8 +2084,8 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
-		b->hsorted = b->hrevsorted = BATatoms[b->htype].linear != 0;
-		b->tsorted = b->trevsorted = BATatoms[b->ttype].linear != 0;
+		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
+		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 	}
 	assert(b->batCapacity >= cnt);
 }
@@ -2821,8 +2838,8 @@ BATassertHeadProps(BAT *b)
 		}
 	}
 	/* only linear atoms can be sorted */
-	assert(!b->hsorted || BATatoms[b->htype].linear);
-	assert(!b->hrevsorted || BATatoms[b->htype].linear);
+	assert(!b->hsorted || ATOMlinear(b->htype));
+	assert(!b->hrevsorted || ATOMlinear(b->htype));
 
 	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
 	    !b->H->nonil && !b->H->nil) {
@@ -2879,6 +2896,7 @@ BATassertHeadProps(BAT *b)
 			size_t nmelen = strlen(nme);
 			Heap *hp;
 			Hash *hs = NULL;
+			BUN mask;
 
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
@@ -2892,10 +2910,16 @@ BATassertHeadProps(BAT *b)
 			snprintf(hp->filename, nmelen + 30,
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
+			if (ATOMsize(b->htype) == 1)
+				mask = 1 << 8;
+			else if (ATOMsize(b->htype) == 2)
+				mask = 1 << 16;
+			else
+				mask = HASHmask(b->batCount);
 			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
 							hashheap)) < 0 ||
 			    (hs = HASHnew(hp, b->htype, BUNlast(b),
-					  HASHmask(b->batCount))) == NULL) {
+					  mask, BUN_NONE)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3041,7 +3065,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	}
 	/* tentatively set until proven otherwise */
 	key = 1;
-	sorted = revsorted = (BATatoms[b->htype].linear != 0);
+	sorted = revsorted = (ATOMlinear(b->htype) != 0);
 	dense = (b->htype == TYPE_oid);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
@@ -3093,16 +3117,23 @@ BATderiveHeadProps(BAT *b, int expensive)
 		b->H->nodense = 0;
 	}
 	if (expensive) {
+		BUN mask;
+
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		if (ATOMsize(b->htype) == 1)
+			mask = 1 << 8;
+		else if (ATOMsize(b->htype) == 2)
+			mask = 1 << 16;
+		else
+			mask = HASHmask(b->batCount);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->htype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

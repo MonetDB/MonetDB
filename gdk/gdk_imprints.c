@@ -19,6 +19,7 @@
 #include "gdk_imprints.h"
 
 #define IMPRINTS_VERSION	2
+#define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
 #define BINSIZE(B, FUNC, T) do {		\
 	switch (B) {				\
@@ -631,7 +632,7 @@ BATimprints(BAT *b)
 							   imprintsheap);
 		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
-			size_t hdata[4];
+			size_t hdata[IMPRINTS_HEADER_SIZE];
 			struct stat st;
 			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
 			    hdata[0] & ((size_t) 1 << 16) &&
@@ -646,18 +647,19 @@ BATimprints(BAT *b)
 						   pages * ((bte) hdata[0] / 8) +
 						   hdata[2] * sizeof(cchdc_t) +
 						   sizeof(uint64_t) /* padding for alignment */
-						   + 4 * SIZEOF_SIZE_T) &&
+						   + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T) &&
 			    HEAPload(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) >= 0) {
 				/* usable */
 				imprints->bits = (bte) (hdata[0] & 0xFF);
 				imprints->impcnt = (BUN) hdata[1];
 				imprints->dictcnt = (BUN) hdata[2];
-				imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
+				imprints->bins = imprints->imprints->base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
 				imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
 				imprints->imps = (void *) (imprints->stats + 64 * 3);
 				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 				b->T->imprints = imprints;
 				close(fd);
+				ALGODEBUG fprintf(stderr, "#BATimprints: reusing persisted imprints\n");
 				goto do_return;
 			}
 			close(fd);
@@ -726,7 +728,7 @@ BATimprints(BAT *b)
 			      pages * (imprints->bits / 8) +
 			      pages * sizeof(cchdc_t) +
 			      sizeof(uint64_t) /* padding for alignment */
-			      + 4 * SIZEOF_SIZE_T, /* extra info */
+			      + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T, /* extra info */
 			      1) < 0) {
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
@@ -735,7 +737,7 @@ BATimprints(BAT *b)
 				      "BATimprints");
 			return GDK_FAIL;
 		}
-		imprints->bins = imprints->imprints->base + 4 * SIZEOF_SIZE_T;
+		imprints->bins = imprints->imprints->base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
 		imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
@@ -795,23 +797,26 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
-		if (b->batRole == PERSISTENT &&
+		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+			ALGODEBUG fprintf(stderr, "#BATimprints: persisting imprints\n");
 			/* add version number */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 			/* sync-on-disk checked bit */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints->base, sizeof(size_t)) < 0)
 				perror("write imprints");
+			if (!(GDKdebug & FORCEMITOMASK)) {
 #if defined(NATIVE_WIN32)
-			_commit(fd);
+				_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-			fdatasync(fd);
+				fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-			fsync(fd);
+				fsync(fd);
 #endif
+			}
 			close(fd);
 		}
 		b->T->imprints = imprints;
@@ -918,6 +923,8 @@ IMPSremove(BAT *b)
 	if ((imprints = b->T->imprints) != NULL) {
 		b->T->imprints = NULL;
 
+		if (* (size_t *) imprints->imprints->base & (1 << 16))
+			ALGODEBUG fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
 			       b->batCacheid > 0 ? "timprints" : "himprints"))
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));

@@ -126,12 +126,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
 
-  if (getOption("monetdb.profile", T)) {
-    .profiler_enable(conn)
-  }
-  
+  # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
   return(conn)
-
 }, 
 valueClass="MonetDBConnection")
 
@@ -234,7 +230,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   env <- NULL
   if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
   # make the progress bar wait for querylog.define
-  if (getOption("monetdb.profile", T))  .profiler_arm()
+  # if (getOption("monetdb.profile", T))  .profiler_arm()
 
   # the actual request
   mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
@@ -436,31 +432,29 @@ setMethod("dbSendUpdateAsync", signature(conn="MonetDBConnection", statement="ch
 ### MonetDBResult
 setClass("MonetDBResult", representation("DBIResult", env="environment"))
 
+.CT_INT <- 0L
 .CT_NUM <- 1L
 .CT_CHR <- 2L
 .CT_CHRR <- 3L
 .CT_BOOL <- 4L
 .CT_RAW <- 5L
 
+# type mapping matrix
+monetTypes <- rep(c("integer", "numeric", "character", "character", "logical", "raw"), c(6, 5, 4, 6, 1, 1))
+names(monetTypes) <- c(c("WRD", "TINYINT", "SMALLINT", "INT", "MONTH_INTERVAL"), # month_interval is the diff between date cols, int
+  c("BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "SEC_INTERVAL"),  # sec_interval is the difference between timestamps, float
+  c("CHAR", "VARCHAR", "CLOB", "STR"), 
+  c("INTERVAL", "DATE", "TIME", "TIMETZ", "TIMESTAMP", "TIMESTAMPTZ"), 
+  c("BOOLEAN"), 
+  c("BLOB"))
+
 monetdbRtype <- function(dbType) {
   dbType <- toupper(dbType)
-  
-  if (dbType %in% c("TINYINT", "SMALLINT", "INT", "BIGINT", "REAL", "DOUBLE", "DECIMAL", "WRD")) {			
-    return("numeric")
+  rtype <- monetTypes[dbType]
+  if (is.na(rtype)) {
+    stop("Unknown DB type ", dbType)
   }
-  if (dbType %in% c("CHAR", "VARCHAR", "CLOB", "STR")) {
-    return("character")		
-  }
-  if (dbType %in% c("INTERVAL", "DATE", "TIME", "TIMESTAMP")) {
-    return("date")	
-  }
-  if (dbType == "BOOLEAN") {
-    return("logical")			
-  }
-  if (dbType == "BLOB") {
-    return("raw")
-  }
-  stop("Unknown DB type ", dbType)
+  rtype
 }
 
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
@@ -495,6 +489,10 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   
   for (i in seq.int(info$cols)) {
     rtype <- monetdbRtype(info$types[i])
+    if (rtype=="integer") {      
+      df[[i]] <- integer()
+      ct[i] <- .CT_INT
+    }
     if (rtype=="numeric") {			
       df[[i]] <- numeric()
       ct[i] <- .CT_NUM
@@ -502,10 +500,6 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
     if (rtype=="character") {
       df[[i]] <- character()
       ct[i] <- .CT_CHR			
-    }
-    if (rtype=="date") {
-      df[[i]] <- character()
-      ct[i] <- .CT_CHRR			
     }
     if (rtype=="logical") {
       df[[i]] <- logical()
@@ -526,13 +520,12 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
   while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(min(10000,n-length(res@env$data))))))
+                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
     info$index <- info$index + cresp$rows
-    #print(paste0(length(res@env$data), " of ", info$rows));
-    if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
+    # if (getOption("monetdb.profile", T))  .profiler_progress(length(res@env$data), n)
   }
   
   # convert tuple string vector into matrix so we can access a single column efficiently
@@ -542,6 +535,8 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # convert values column by column
   for (j in seq.int(info$cols)) {	
     col <- ct[[j]]
+    if (col == .CT_INT) 
+      df[[j]] <- as.integer(parts[[j]])
     if (col == .CT_NUM) 
       df[[j]] <- as.numeric(parts[[j]])
     if (col == .CT_CHRR) {
@@ -571,7 +566,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   attr(df, "row.names") <- c(NA_integer_, length(df[[1]]))
   class(df) <- "data.frame"
   
-  if (getOption("monetdb.profile", T))  .profiler_clear()
+  # if (getOption("monetdb.profile", T))  .profiler_clear()
 
   return(df)
 })
@@ -602,17 +597,10 @@ setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...
   return(invisible(TRUE))
 })
 
-monetTypes <- rep(c("numeric", "character", "character", "logical", "raw"), c(9, 3, 4, 1, 1))
-names(monetTypes) <- c(c("TINYINT", "SMALLINT", "INT", "BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "WRD"), 
-                       c("CHAR", "VARCHAR", "CLOB"), 
-                       c("INTERVAL", "DATE", "TIME", "TIMESTAMP"), 
-                       "BOOLEAN", 
-                       "BLOB")
-
-
 setMethod("dbColumnInfo", "MonetDBResult", def = function(res, ...) {
   return(data.frame(field.name=res@env$info$names, field.type=res@env$info$types, 
-                    data.type=monetTypes[res@env$info$types]))	
+                    data.type=monetTypes[res@env$info$types], r.data.type=monetTypes[res@env$info$types], 
+                    monetdb.data.type=res@env$info$types))	
 }, 
 valueClass = "data.frame")
 
@@ -623,7 +611,8 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
-                                               locked=FALSE, na.strings="", nrow.check=500, delim=",", newline="\\n", quote="\"", ...){
+                                               locked=FALSE, na.strings="", nrow.check=500, 
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
@@ -642,7 +631,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
   
-  dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   

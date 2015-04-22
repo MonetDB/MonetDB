@@ -13,6 +13,9 @@
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 static sql_exp * 
 exp_create(sql_allocator *sa, int type ) 
@@ -196,7 +199,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", 18, 0);
+	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -220,7 +223,7 @@ exp_atom_wrd(sql_allocator *sa, wrd w)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "wrd", 18, 0);
+	sql_find_subtype(&it, "wrd", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "wrd", 19, 0);
 #endif
@@ -630,6 +633,20 @@ exp_match( sql_exp *e1, sql_exp *e2)
 		if (!e1->r || !e2->r || strcmp(e1->r, e2->r) != 0)
 			return 0;
 		return 1;
+	}
+	if (e1->type == e2->type && e1->type == e_func) {
+		if (is_identity(e1, NULL) && is_identity(e2, NULL)) {
+			list *args1 = e1->l;
+			list *args2 = e2->l;
+			
+			if (list_length(args1) == list_length(args2) && list_length(args1) == 1) {
+				sql_exp *ne1 = args1->h->data;
+				sql_exp *ne2 = args2->h->data;
+
+				if (exp_match(ne1,ne2))
+					return 1;
+			}
+		}
 	}
 	return 0;
 }

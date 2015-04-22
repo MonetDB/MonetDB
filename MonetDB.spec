@@ -636,7 +636,8 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
-%exclude %{_libdir}/monetdb5/sql.mal
+%exclude %{_libdir}/monetdb5/sql*.mal
+%exclude %{_libdir}/monetdb5/*_hge.mal
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -645,7 +646,7 @@ fi
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
-%exclude %{_libdir}/monetdb5/autoload/*_sql.mal
+%exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
@@ -662,6 +663,26 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+
+%package -n MonetDB5-server-hugeint
+Summary: MonetDB - 128-bit integer support for MonetDB5-server
+Group: Application/Databases
+Requires: MonetDB5-server
+
+%description -n MonetDB5-server-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the
+MonetDB5-server component.
+
+%files -n MonetDB5-server-hugeint
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
+%{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/autoload/*_hge.mal
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -723,7 +744,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_libdir}/monetdb5/autoload/*_sql*.mal
+%{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
@@ -734,7 +755,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-%{_libdir}/monetdb5/createdb/*
+%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/createdb/*.sql
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
@@ -747,6 +770,27 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
 %endif
+
+%package SQL-server5-hugeint
+Summary: MonetDB5 128 bit integer (hugeint) support for SQL
+Group: Applications/Databases
+Requires: MonetDB5-server-hugeint = %{version}-%{release}
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description SQL-server5-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the SQL
+frontend of MonetDB.
+
+%files SQL-server5-hugeint
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/sql*_hge.mal
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
@@ -865,7 +909,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
-	--enable-jsonstore=no \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -898,36 +941,31 @@ developer, but if you do want to test, this is the package you need.
 make
 
 %install
-rm -rf $RPM_BUILD_ROOT
+%make_install
 
-%makeinstall
-
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
-mkdir -p $RPM_BUILD_ROOT%{perl_vendorlib}
-if [ ! $RPM_BUILD_ROOT%{_prefix}/lib/perl5 -ef $RPM_BUILD_ROOT%{perl_vendorlib} ]; then
-    mv $RPM_BUILD_ROOT%{_prefix}/lib/perl5/* $RPM_BUILD_ROOT%{perl_vendorlib}
+mkdir -p %{buildroot}%{_localstatedir}/MonetDB
+mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
+mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+mkdir -p %{buildroot}%{perl_vendorlib}
+if [ ! %{buildroot}%{_prefix}/lib/perl5 -ef %{buildroot}%{perl_vendorlib} ]; then
+    mv %{buildroot}%{_prefix}/lib/perl5/* %{buildroot}%{perl_vendorlib}
 fi
 
 # remove unwanted stuff
 # .la files
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
+rm -f %{buildroot}%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
+rm -f %{buildroot}%{_bindir}/Maddlog
 
 %if 0%{?fedora} >= 20
-mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL
+mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
 %endif
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
-
-%clean
-rm -fr $RPM_BUILD_ROOT
 
 %changelog
 * Fri Jan 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.9-20150123

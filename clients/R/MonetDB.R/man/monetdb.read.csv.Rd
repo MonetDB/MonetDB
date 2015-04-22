@@ -11,7 +11,7 @@
 \usage{
    monetdb.read.csv (conn, files, tablename, nrows, header=TRUE, 
   locked=FALSE, na.strings="", nrow.check=500, delim=",",
-  newline = "\\\\n", quote = "\"", ...)
+  newline = "\\\\n", quote = "\"", create=TRUE, ...)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} with the 
@@ -29,6 +29,7 @@
    \item{delim}{Field separator in CSV file.}
    \item{newline}{Newline in CSV file, usually \\n for UNIX-like systems and \\r\\r on Windows.}
    \item{quote}{Quote character(s) in CSV file.}
+  \item{create}{Create table before importing?}
  }
  
 \value{

@@ -11765,7 +11765,7 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	default:
 		assert(tp != TYPE_oid);
 		assert(tp != TYPE_wrd);
-		if (!BATatoms[tp].linear ||
+		if (!ATOMlinear(tp) ||
 		    (atomcmp = ATOMcompare(tp)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			GDKerror("%s: bad input type %s.\n",
@@ -11981,7 +11981,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 		GDKerror("VARcalcbetween: incompatible input types.\n");
 		return GDK_FAIL;
 	}
-	if (!BATatoms[t].linear) {
+	if (!ATOMlinear(t)) {
 		GDKerror("VARcalcbetween: non-linear input type.\n");
 		return GDK_FAIL;
 	}
@@ -13309,7 +13309,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		} else {
 			int len;
 			p = VALget(ret);
-			ret->len = BATatoms[ret->vtype].size;
+			ret->len = ATOMsize(ret->vtype);
 			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &ret->len, &p)) <= 0 ||
 			    len < (int) strlen(v->val.sval)) {

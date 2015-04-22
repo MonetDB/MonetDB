@@ -98,10 +98,13 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 8;		/* minimum size */
+	BUN m = 1 << 8;	/* minimum size; == BATTINY */
 
+	/* find largest power of 2 smaller than cnt */
 	while (m + m < cnt)
 		m += m;
+	/* if cnt is more than 1/3 into the gap between m & 2*m,
+	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
 	return m;
@@ -119,18 +122,21 @@ HASHclear(Hash *h)
 	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
+#define HASH_VERSION		1
+#define HASH_HEADER_SIZE	5 /* nr of size_t fields in header */
+
 Hash *
-HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
+HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 {
 	Hash *h = NULL;
 	int width = HASHwidth(size);
 
-	if (HEAPalloc(hp, mask + size, width) < 0)
+	if (HEAPalloc(hp, mask + size + HASH_HEADER_SIZE * SIZEOF_SIZE_T / width, width) < 0)
 		return NULL;
-	hp->free = (mask + size) * width;
-	h = (Hash *) GDKmalloc(sizeof(Hash));
-	if (!h)
-		return h;
+	hp->free = (mask + size) * width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+	h = GDKmalloc(sizeof(Hash));
+	if (h == NULL)
+		return NULL;
 	h->lim = size;
 	h->mask = mask - 1;
 	h->width = width;
@@ -141,7 +147,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	case BUN4:
 		h->nil = (BUN) BUN4_NONE;
 		break;
-#if SIZEOF_BUN > 4
+#ifdef BUN8
 	case BUN8:
 		h->nil = (BUN) BUN8_NONE;
 		break;
@@ -149,11 +155,16 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	default:
 		assert(0);
 	}
-	h->Link = (void *) hp->base;
+	h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->Hash = (void *) ((char *) h->Link + h->lim * width);
 	h->type = tpe;
 	h->heap = hp;
 	HASHclear(h);		/* zero the mask */
+	((size_t *) hp->base)[0] = HASH_VERSION;
+	((size_t *) hp->base)[1] = size;
+	((size_t *) hp->base)[2] = mask;
+	((size_t *) hp->base)[3] = width;
+	((size_t *) hp->base)[4] = count;
 	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ",width %d, nil " BUNFMT ", total " BUNFMT " bytes);\n", size, mask, width, h->nil, (size + mask) * width);
 	return h;
 }
@@ -205,6 +216,81 @@ HASHcollisions(BAT *b, Hash *h)
 	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total / entries);
 }
 
+/* return TRUE if we have a hash on the tail, even if we need to read
+ * one from disk */
+int
+BATcheckhash(BAT *b)
+{
+	int ret;
+
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+	if (b->T->hash == NULL) {
+		Hash *h;
+		Heap *hp;
+		const char *nme = BBP_physical(b->batCacheid);
+		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
+		int fd;
+
+		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
+		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
+			sprintf(hp->filename, "%s.%s", nme, ext);
+
+			/* check whether a persisted hash can be found */
+			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
+				size_t hdata[HASH_HEADER_SIZE];
+				struct stat st;
+
+				if ((h = GDKmalloc(sizeof(*h))) != NULL &&
+				    read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
+				    hdata[0] == (((size_t) 1 << 24) | HASH_VERSION) &&
+				    hdata[4] == (size_t) BATcount(b) &&
+				    fstat(fd, &st) == 0 &&
+				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
+				    HEAPload(hp, nme, ext, 0) >= 0) {
+					h->lim = (BUN) hdata[1];
+					h->type = ATOMtype(b->ttype);
+					h->mask = (BUN) (hdata[2] - 1);
+					h->heap = hp;
+					h->width = (int) hdata[3];
+					switch (h->width) {
+					case BUN2:
+						h->nil = (BUN) BUN2_NONE;
+						break;
+					case BUN4:
+						h->nil = (BUN) BUN4_NONE;
+						break;
+#ifdef BUN8
+					case BUN8:
+						h->nil = (BUN) BUN8_NONE;
+						break;
+#endif
+					default:
+						assert(0);
+					}
+					h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
+					close(fd);
+					b->T->hash = h;
+					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %d\n", b->batCacheid);
+					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+					return 1;
+				}
+				GDKfree(h);
+				close(fd);
+				/* unlink unusable file */
+				GDKunlink(hp->farmid, BATDIR, nme, ext);
+			}
+			GDKfree(hp->filename);
+		}
+		GDKfree(hp);
+	}
+	ret = b->T->hash != NULL;
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d\n", b->batCacheid);
+	return ret;
+}
+
 /*
  * The prime routine for the BAT layer is to create a new hash index.
  * Its argument is the element type and the maximum number of BUNs be
@@ -215,8 +301,6 @@ BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
 	lng t0 = 0, t1 = 0;
-	(void) t0;
-	(void) t1;
 
 	if (VIEWtparent(b)) {
 		bat p = -VIEWtparent(b);
@@ -229,18 +313,36 @@ BAThash(BAT *b, BUN masksize)
 			o = NULL;
 		}
 	}
+	if (BATcheckhash(b)) {
+		if (o != NULL) {
+			o->T->hash = b->T->hash;
+			BBPunfix(b->batCacheid);
+		}
+		return GDK_SUCCEED;
+	}
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 	if (b->T->hash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
-		BUN mask;
+		BUN mask, maxmask = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
-		Heap *hp = NULL;
-		str nme = BBP_physical(b->batCacheid);
+		Heap *hp;
+		const char *nme = BBP_physical(b->batCacheid);
+		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		BATiter bi = bat_iterator(b);
+		int fd;
 
 		ALGODEBUG fprintf(stderr, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
+		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
+		    (hp->filename = GDKmalloc(strlen(nme) + 12)) == NULL) {
+			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+			GDKfree(hp);
+			return GDK_FAIL;
+		}
+		sprintf(hp->filename, "%s.%s", nme, ext);
+
 		/* cnt = 0, hopefully there is a proper capacity from
 		 * which we can derive enough information */
 		if (!cnt)
@@ -250,6 +352,8 @@ BAThash(BAT *b, BUN masksize)
 			if (b->tseqbase == oid_nil) {
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
+				GDKfree(hp->filename);
+				GDKfree(hp);
 				return GDK_FAIL;
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
@@ -263,51 +367,48 @@ BAThash(BAT *b, BUN masksize)
 		} else if (ATOMsize(tpe) == 1) {
 			mask = (1 << 8);
 		} else if (ATOMsize(tpe) == 2) {
-			mask = (1 << 12);
+			mask = (1 << 16);
 		} else if (b->tkey) {
 			mask = HASHmask(cnt);
 		} else {
 			/* dynamic hash: we start with
-			 * HASHmask(cnt/64); if there are too many
-			 * collisions we try HASHmask(cnt/16), then
-			 * HASHmask(cnt/4), and finally
+			 * HASHmask(cnt)/64; if there are too many
+			 * collisions we try HASHmask(cnt)/16, then
+			 * HASHmask(cnt)/4, and finally
 			 * HASHmask(cnt).  */
-			mask = HASHmask(cnt >> 6);
+			maxmask = HASHmask(cnt);
+			mask = maxmask >> 6;
 			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
 				p = q;
 		}
 
-		if (mask < 1024)
-			mask = 1024;
 		t0 = GDKusec();
+
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
 
 			r = BUNfirst(b);
-			if (hp) {
-				HEAPfree(hp, 1);
-				GDKfree(hp);
-			}
 			if (h) {
+				char *fnme;
+				bte farmid;
+
 				ALGODEBUG fprintf(stderr, "#BAThash: retry hash construction\n");
+				fnme = GDKstrdup(hp->filename);
+				farmid = hp->farmid;
+				HEAPfree(hp, 1);
+				memset(hp, 0, sizeof(*hp));
+				hp->filename = fnme;
+				hp->farmid = farmid;
 				GDKfree(h);
+				h = NULL;
 			}
 			/* create the hash structures */
-			hp = (Heap *) GDKzalloc(sizeof(Heap));
-			if (hp &&
-			    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL)
-				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 't' : 'h');
-			if (hp == NULL ||
-			    hp->filename == NULL ||
-			    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-			    (h = HASHnew(hp, ATOMtype(b->ttype), BATcapacity(b), mask)) == NULL) {
+			if ((h = HASHnew(hp, ATOMtype(b->ttype), BATcapacity(b), mask, BATcount(b))) == NULL) {
 
 				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
-				if (hp != NULL) {
-					GDKfree(hp->filename);
-					GDKfree(hp);
-				}
+				GDKfree(hp->filename);
+				GDKfree(hp);
 				return GDK_FAIL;
 			}
 
@@ -356,7 +457,7 @@ BAThash(BAT *b, BUN masksize)
 				}
 				break;
 			}
-		} while (r < p && mask < cnt && (mask <<= 2));
+		} while (r < p && mask < maxmask && (mask <<= 2));
 
 		/* finish the hashtable with the current mask */
 		p = r;
@@ -402,6 +503,25 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
+		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
+		    HEAPsave(hp, nme, ext) == 0 &&
+		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
+			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %d\n", b->batCacheid);
+			((size_t *) hp->base)[0] |= 1 << 24;
+			if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+				perror("write hash");
+			if (!(GDKdebug & FORCEMITOMASK)) {
+#if defined(NATIVE_WIN32)
+				_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+				fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+				fsync(fd);
+#endif
+			}
+			close(fd);
+		} else
+			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 		b->T->hash = h;
 		t1 = GDKusec();
 		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
@@ -468,6 +588,8 @@ HASHremove(BAT *b)
 			hp = BBP_cache(p);
 
 		if ((!hp || b->T->hash != hp->T->hash) && b->T->hash != (Hash *) -1) {
+			ALGODEBUG if (*(size_t *) b->T->hash->heap->base & (1 << 24))
+				fprintf(stderr, "#HASHremove: removing persisted hash %d\n", b->batCacheid);
 			HEAPfree(b->T->hash->heap, 1);
 			GDKfree(b->T->hash->heap);
 			GDKfree(b->T->hash);
@@ -498,7 +620,7 @@ HASHgonebad(BAT *b, const void *v)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = BATatoms[b->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
 		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);

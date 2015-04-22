@@ -79,7 +79,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		if (idcmp("heap", name) == 0 && pci->argc == 1) {
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[tpe].size), BATatoms[tpe].size);
+			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
 			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
@@ -190,7 +190,7 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		BATatoms[i] = BATatoms[tpe];
 		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 		BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0; /* make coverity happy */
-		BATatoms[i].storage = BATatoms[tpe].storage;
+		BATatoms[i].storage = ATOMstorage(tpe);
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
 		BATatoms[i].linear = 0;
@@ -207,7 +207,7 @@ int malAtomSize(int size, int align, char *name)
 	i = ATOMindex(name);
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
+	assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
 	BATatoms[i].align = align;
 	return i;
 }

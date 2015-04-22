@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	c_custkey,
 	c_name,

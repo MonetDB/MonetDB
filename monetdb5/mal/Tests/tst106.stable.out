@@ -13,7 +13,7 @@ stdout of test 'tst106` in directory 'monetdb5/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.f(a:any_1,b:any_2,c:any_1):bat[:any_1,:any_2] address f;
-!TypeException:user.main[2]:'user.f' undefined in: b := user.f(1,2,"help");
+!TypeException:user.main[2]:'user.f' undefined in:     b:any := user.f(1:int,2:int,"help":str);
 function user.main():void;
 # check in-compatible polmorphic types 
     b := user.f(1,2,"help");

@@ -81,13 +81,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			break;
 		}
 		/*
-		 * @-
 		 * Any non-empty barrier block signals the end of this optimizer,
 		 * the impact of the block can affect the common code.
 		 */
 		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) && old[i+1]->barrier!=EXITsymbol;
 		/*
-		 * @-
 		 * Also block further optimization when you have seen an assert().
 		 * This works particularly for SQL, because it is not easy to track
 		 * the BAT identifier aliases to look for updates. The sql.assert
@@ -129,7 +127,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					isLinearFlow(p));
 #endif
 				/*
-				 * @-
 				 * Simple assignments are not replaced either. They should be
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.

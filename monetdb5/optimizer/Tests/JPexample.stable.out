@@ -21,8 +21,7 @@ function user.main():void;
     j1 := algebra.leftfetchjoin(a,b);
     j2:bat[:oid,:str]  := algebra.leftfetchjoinPath(a,b,c);
     j3 := algebra.leftfetchjoin(b,b);
-    X_13 := algebra.leftfetchjoin(b,b);
-    j4:bat[:oid,:oid]  := algebra.leftfetchjoin(X_13,b);
+    j4:bat[:oid,:oid] := algebra.leftfetchjoinPath(b,b,b);
     mdb.List();
 end user.main;
 function user.main():void;              	# 
@@ -33,8 +32,7 @@ function user.main():void;              	#
     j1:bat[:oid,:oid] := algebra.leftfetchjoin(a:bat[:oid,:oid],b:bat[:oid,:oid]);	# ALGleftfetchjoin
     j2:bat[:oid,:str] := algebra.leftfetchjoinPath(a:bat[:oid,:oid],b:bat[:oid,:oid],c:bat[:oid,:str]);	# ALGjoinPath
     j3:bat[:oid,:oid] := algebra.leftfetchjoin(b:bat[:oid,:oid],b:bat[:oid,:oid]);	# ALGleftfetchjoin
-    X_13:bat[:oid,:oid] := algebra.leftfetchjoin(b:bat[:oid,:oid],b:bat[:oid,:oid]);	# ALGleftfetchjoin
-    j4:bat[:oid,:oid] := algebra.leftfetchjoin(X_13:bat[:oid,:oid],b:bat[:oid,:oid]);	# ALGleftfetchjoin
+    j4:bat[:oid,:oid] := algebra.leftfetchjoinPath(b:bat[:oid,:oid],b:bat[:oid,:oid],b:bat[:oid,:oid]);	# ALGjoinPath
     mdb.List();                         	# MDBlistDetail
 end user.main;                          	# 
 

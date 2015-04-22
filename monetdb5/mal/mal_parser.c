@@ -29,6 +29,7 @@ static str idCopy(Client cntxt, int len);
 static str strCopy(Client cntxt, int len);
 
 
+
 /* Before a line is parsed we check for a request to echo it.
  * This command should be executed at the beginning of a parse
  * request and each time we encounter EOL.
@@ -920,6 +921,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
+
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
@@ -1210,7 +1212,7 @@ fcnHeader(Client cntxt, int kind)
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
 		}
-		parseError(cntxt, "<module> not defined\n");
+		parseError(cntxt, "<module> name not defined\n");
 		return curBlk;
 	}
 
@@ -1451,6 +1453,10 @@ parseCommandPattern(Client cntxt, int kind)
 	showErrors(cntxt);
 	if (curBlk && cntxt->listing > 1)
 		printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
+#ifdef HAVE_HGE
+	if (!have_hge)
+		have_hge = strcmp(modnme, "calc") == 0 && strcmp(getFunctionId(curInstr), "hge") == 0;
+#endif
 	return curBlk;
 }
 

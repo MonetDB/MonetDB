@@ -45,7 +45,7 @@ Ready.
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
 % double,	decimal # type
-% 24,	7 # length
+% 24,	21 # length
 [ 14.952,	14.952	]
 #drop table type_test;
 

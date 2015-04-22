@@ -42,7 +42,7 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
-# loading sql script: 41_jsonstore.sql
+# loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
@@ -59,6 +59,27 @@ Ready.
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 4,	35,	2,	15,	1336 # length
+[ "bam",	"bam_drop_file",	0,	"bigint",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	]
+[ "bam",	"bam_drop_file",	1,	"smallint",	""	]
+[ "bam",	"bam_export",	0,	"clob",	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	]
+[ "bam",	"bam_flag",	0,	"boolean",	"create function bam.bam_flag(flag smallint, name string)\nreturns boolean external name bam.bam_flag;"	]
+[ "bam",	"bam_flag",	1,	"smallint",	""	]
+[ "bam",	"bam_flag",	2,	"clob",	""	]
+[ "bam",	"bam_loader_file",	0,	"clob",	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint)\nexternal name bam.bam_loader_file;"	]
+[ "bam",	"bam_loader_file",	1,	"smallint",	""	]
+[ "bam",	"bam_loader_files",	0,	"clob",	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint, nr_threads smallint)\nexternal name bam.bam_loader_files;"	]
+[ "bam",	"bam_loader_files",	1,	"smallint",	""	]
+[ "bam",	"bam_loader_files",	2,	"smallint",	""	]
+[ "bam",	"bam_loader_repos",	0,	"clob",	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint, nr_threads smallint)\nexternal name bam.bam_loader_repos;"	]
+[ "bam",	"bam_loader_repos",	1,	"smallint",	""	]
+[ "bam",	"bam_loader_repos",	2,	"smallint",	""	]
+[ "bam",	"reverse_qual",	0,	"clob",	"create function bam.reverse_qual(qual string)\nreturns string external name bam.reverse_qual;"	]
+[ "bam",	"reverse_qual",	1,	"clob",	""	]
+[ "bam",	"reverse_seq",	0,	"clob",	"create function bam.reverse_seq(seq string)\nreturns string external name bam.reverse_seq;"	]
+[ "bam",	"reverse_seq",	1,	"clob",	""	]
+[ "bam",	"sam_export",	0,	"clob",	"create procedure bam.sam_export(output_path string)\nexternal name bam.sam_export;"	]
+[ "bam",	"seq_length",	0,	"int",	"create function bam.seq_length(cigar string)\nreturns int external name bam.seq_length;"	]
+[ "bam",	"seq_length",	1,	"clob",	""	]
 [ "json",	"filter",	0,	"json",	"-- access the top level key by name, return its value\ncreate function json.filter(js json, pathexpr string)\nreturns json external name json.filter;"	]
 [ "json",	"filter",	1,	"json",	""	]
 [ "json",	"filter",	2,	"clob",	""	]
@@ -158,6 +179,9 @@ Ready.
 [ "sys",	"buffer",	0,	"geometry",	"create function buffer(a geometry, distance float) returns geometry external name geom.\"Buffer\";"	]
 [ "sys",	"buffer",	1,	"geometry",	""	]
 [ "sys",	"buffer",	2,	"double",	""	]
+[ "sys",	"chi2prob",	0,	"double",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.\"chi2prob\";"	]
+[ "sys",	"chi2prob",	1,	"double",	""	]
+[ "sys",	"chi2prob",	2,	"double",	""	]
 [ "sys",	"columnsize",	0,	"bigint",	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int'\t then return 4 * i;\n\twhen nme = 'bigint'\t then return 8 * i;\n\twhen nme = 'hugeint'\t then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	]
 [ "sys",	"columnsize",	1,	"clob",	""	]
 [ "sys",	"columnsize",	2,	"bigint",	""	]
@@ -268,7 +292,7 @@ Ready.
 [ "sys",	"envelope",	1,	"geometry",	""	]
 [ "sys",	"environment",	0,	"clob",	"-- The environment table\ncreate function sys.environment()\n\treturns table (\"name\" string, value string)\n\texternal name sql.sql_environment;"	]
 [ "sys",	"environment",	1,	"clob",	""	]
-[ "sys",	"epoch",	0,	"timestamp",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function \"epoch\"(sec bigint) returns timestamp\n    external name timestamp.\"epoch\";"	]
+[ "sys",	"epoch",	0,	"timestamp",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function \"epoch\"(sec bigint) returns timestamp\n\texternal name timestamp.\"epoch\";"	]
 [ "sys",	"epoch",	1,	"bigint",	""	]
 [ "sys",	"epoch",	0,	"timestamp",	"create function \"epoch\"(sec int) returns timestamp\n\texternal name timestamp.\"epoch\";"	]
 [ "sys",	"epoch",	1,	"int",	""	]
@@ -426,7 +450,7 @@ Ready.
 [ "sys",	"mbroverlaps",	0,	"boolean",	"create function mbroverlaps(a mbr, b mbr) returns boolean external name geom.\"mbroverlaps\";"	]
 [ "sys",	"mbroverlaps",	1,	"mbr",	""	]
 [ "sys",	"mbroverlaps",	2,	"mbr",	""	]
-[ "sys",	"md5",	0,	"clob",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n-- Functions supporting jsonstore\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	]
+[ "sys",	"md5",	0,	"clob",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	]
 [ "sys",	"md5",	1,	"clob",	""	]
 [ "sys",	"median",	0,	"tinyint",	"create aggregate median(val tinyint) returns tinyint\n\texternal name \"aggr\".\"median\";"	]
 [ "sys",	"median",	1,	"tinyint",	""	]
