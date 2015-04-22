@@ -30,10 +30,10 @@ stderr of test 'readonly.Bug-3709` in directory 'sql/test/BugTracker-2015` itsel
 # 21:17:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5516" "--port=31025"
 # 21:17:25 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5516/.s.monetdb.31025
+MAPI  = (monetdb) /var/tmp/mtest-15194/.s.monetdb.36528
 QUERY = alter table s10 set read only; 
-ERROR = !ALTER TABLE: set READONLY not possible with outstanding updates (wait until updates are flushed)
-MAPI  = (monetdb) /var/tmp/mtest-5516/.s.monetdb.31025
+ERROR = !ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)
+MAPI  = (monetdb) /var/tmp/mtest-15194/.s.monetdb.36528
 QUERY = trace select * from s10; 
 ERROR = !current transaction is aborted (please ROLLBACK)
 
