@@ -786,7 +786,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->frstr(fmt, fmt->adt, s);
 
 	if (adt == NULL) {
-		BUN row = task->cnt + idx+1;
+		lng row = task->cnt + idx+1;
 		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
 		err = SQLload_error(task,idx);
 		if( task->rowerror){
@@ -796,10 +796,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			BUNappend(task->cntxt->error_fld, &col, FALSE);
 			BUNappend(task->cntxt->error_msg, buf, FALSE);
 			BUNappend(task->cntxt->error_input, err, FALSE);
-			snprintf(buf, BUFSIZ, "line "BUNFMT" field %d '%s' expected in '%s'",row, col, fmt->type, s);
+			snprintf(buf, BUFSIZ, "line "LLFMT" field %d '%s' expected in '%s'",row, col, fmt->type, s);
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
-			task->rowerror[(int)idx]++;
+			task->rowerror[idx]++;
 			task->errorcnt++;
 			MT_lock_unset(&errorlock, "insert_val");
 		}
@@ -814,7 +814,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	return ret;
   bunins_failed:
 	if( task->rowerror){
-		BUN row = BATcount(fmt->c);
+		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock, "insert_val");
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
@@ -822,7 +822,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		err = SQLload_error(task,idx);
 		BUNappend(task->cntxt->error_input, err, FALSE);
 		GDKfree(err);
-		task->rowerror[(int)row -1]++;
+		task->rowerror[row -1]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock, "insert_val");
 	}
