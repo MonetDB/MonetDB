@@ -1457,7 +1457,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	BUN i, attr;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS ? GDKnr_threads-1 : MAXWORKERS-1) : 1;
+	int threads = (!maxrow || maxrow > (1 << 16)) ? ( GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads-1 : MAXWORKERS-1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	int vmtrim = GDK_vm_trim;
 
