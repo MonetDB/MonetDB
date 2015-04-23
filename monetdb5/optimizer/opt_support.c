@@ -647,7 +647,7 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) &&
-		(strncmp(getModuleId(p), "batgeom", 6) == 0 && strncmp(getFunctionId(p), "pbsmIndex", 9) != 0) &&
+		(strncmp(getModuleId(p), "batgeom", 7) == 0 && strncmp(getFunctionId(p), "pbsmIndex", 9) != 0) &&
 		 getModuleId(p) != rapiRef;
 }
 
