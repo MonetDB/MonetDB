@@ -167,6 +167,8 @@ usageTachograph(void)
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -i | --interactive=<o | 1> show trace on stdout\n");
     fprintf(stderr, "  -o | --output=<webfile>\n");
+    fprintf(stderr, "  -c | --cache=<query pool location>\n");
+    fprintf(stderr, "  -q | --queries=<query pool capacity>\n");
     fprintf(stderr, "  -w | --wait=<delay time> in milliseconds\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
@@ -202,6 +204,7 @@ size_t txtlength=0;
 
 // limit the number of separate queries in the pool
 #define QUERYPOOL 32
+static int querypool = QUERYPOOL;
 int queryid= 0;
 
 static FILE *tachojson;
@@ -245,7 +248,7 @@ static void resetTachograph(void){
 	pccount = 0;
 	fflush(stdout);
 	events = 0;
-	queryid = (queryid+1) % QUERYPOOL;
+	queryid = (queryid+1) % querypool;
 }
 
 static char stamp[BUFSIZ]={0};
@@ -318,7 +321,7 @@ static struct{
 	{0,0,0,0,0}};
 
 static void
-renderArgs(char *c,  char *l, int len)
+renderArgs(char *c,  char *l, size_t len)
 {
 	char varname[BUFSIZ]={0}, *v=0;
 	char *limit = l + len-1;
@@ -373,16 +376,6 @@ renderArgs(char *c,  char *l, int len)
 		// copy the literals
 		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
 			for(v = varname; *v; ) *l++ = *v++;
-/*
-		else
-		// show variable in assignment only
-		if (v && varname[0] && strstr(c,":=") && !strchr(c,')') ){
-                v= fndSource(varname);
-                snprintf(l, len -strlen(line)-2,"%s",v);
-                while(*l) l++;
-                free(v);
-            }
-*/
 		// drop the properties
 		if( *c == '{'){
 			while(*c && *c !='}') c++;
@@ -846,6 +839,7 @@ main(int argc, char **argv)
 		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
 		{ "cache", 1, 0, 'c' },
+		{ "queries", 1, 0, 'q' },
 		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
@@ -856,7 +850,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:c:w:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:c:q:w:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -893,6 +887,10 @@ main(int argc, char **argv)
 		case 'p':
 			if (optarg)
 				portnr = atoi(optarg);
+			break;
+		case 'q':
+			if (optarg)
+				querypool = atoi(optarg) > 0? atoi(optarg):1;
 			break;
 		case 'h':
 			host = optarg;
