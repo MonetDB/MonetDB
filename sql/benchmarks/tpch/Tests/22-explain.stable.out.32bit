@@ -73,7 +73,7 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6
     X_173 := bat.append(X_164,"decimal");
     X_147 := bat.new(nil:oid,nil:int);
     X_156 := bat.append(X_147,15);
-    X_166 := bat.append(X_156,64);
+    X_166 := bat.append(X_156,32);
     X_175 := bat.append(X_166,19);
     X_149 := bat.new(nil:oid,nil:int);
     X_158 := bat.append(X_149,0);
@@ -154,14 +154,9 @@ function user.s2_1{autoCommit=true}(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6
     X_138:bat[:oid,:lng] := aggr.subsum(X_137,X_127,r1_178,true,true);
     (X_131,r1_182,r2_182) := algebra.subsort(X_130,false,false);
     X_134 := algebra.leftfetchjoin(r1_182,X_130);
-    X_140 := algebra.leftfetchjoin(r1_182,X_138);
     X_136 := algebra.leftfetchjoin(r1_182,X_135);
-    X_141 := sql.resultSet(3,1,X_134);
-    sql.rsColumn(X_141,"sys.custsale","cntrycode","char",15,0,X_134);
-    sql.rsColumn(X_141,"sys.L2","numcust","wrd",32,0,X_136);
-    sql.rsColumn(X_141,"sys.L3","totacctbal","decimal",19,2,X_140);
-    X_161 := io.stdout();
-    sql.exportResult(X_161,X_141);
+    X_140 := algebra.leftfetchjoin(r1_182,X_138);
+    sql.resultSet(X_169,X_171,X_173,X_175,X_177,X_134,X_136,X_140);
 end user.s2_1;
 
 # 22:53:31 >  
