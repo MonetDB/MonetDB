@@ -173,10 +173,15 @@ for workerrec in workers:
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 
-# run queries
+# run queries, use mclient so output is comparable
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()
 for q in queries:
-    print os.path.basename(q).replace('.sql','')
-    c.execute(codecs.open(q, 'r', encoding='utf8').read())
-    print c.fetchall()
+    print '# Running Q' +os.path.basename(q).replace('.sql','')
+    mc = process.client('sql', stdin=open(q), dbname='master', host='localhost', port=masterport, stdout=process.PIPE, stderr=process.PIPE, log=1)
+    out, err = mc.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    # old way
+    # c.execute(codecs.open(q, 'r', encoding='utf8').read())
+    # print c.fetchall()
