@@ -1,3 +1,79 @@
+monetdb (11.19.11-20150423) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"
+  * BZ#3602: Surprising overload resolution of generate_series
+  * BZ#3613: SQL data dictionary contains columns names which are also
+    special keywords. This causes unexpected/unneeded SQL query errors
+  * BZ#3645: Network address operators such as << and <<= do not work
+  * BZ#3647: missing BAT for a column leads to crash in gtr_update_delta
+  * BZ#3648: memory corruption on unclean connection shutdown with local
+    temporary tables
+  * BZ#3650: Naming of persistent BATs is fragile
+  * BZ#3653: PREPARE crashes mserver if unbound variable is function
+    parameter
+  * BZ#3655: SQL WHERE -1 in (-1) issue?
+  * BZ#3656: error message after calling fitsload()
+  * BZ#3660: Incorrect Results for Comparison Operators on inet Datatype
+  * BZ#3661: Ship debug symbols for pre-built binaries
+  * BZ#3662: UPDATE row with row value constructor crashes monetdb server
+  * BZ#3663: Incorrect result ROW_NUMBER in subquery
+  * BZ#3664: SQLstatementIntern missing parameter when using jsonstore
+  * BZ#3665: inter-session starvation issue, particularly affects sys.queue
+  * BZ#3666: casting text column to inet truncating text column and
+    resulting inet for first occurrence only
+  * BZ#3667: insert of negative value for oid column aborts mserver5
+    process with assertion failure
+  * BZ#3669: ALTER TABLE <tbl_nm> ADD CONSTRAINT <tbl_uc1> UNIQUE (col1,
+    col2, col3) causes Assertion failure and abort
+  * BZ#3671: ODBC-Access on Windows 2012 does not work - E_FAIL
+  * BZ#3672: libbat_la-gdk_utils.o: relocation R_X86_64_PC32 against
+    `MT_global_exit' can not be used when making a shared object
+  * BZ#3676: merovingian hangs trying to exit
+  * BZ#3677: Crash in BATgroup_internal (caused by 87379087770d?)
+  * BZ#3678: Ruby driver installation ignores prefix
+  * BZ#3680: Prepared statements fail on execution with message 'Symbol
+    type not found'
+  * BZ#3684: Wrong query result set WHERE "IS NULL" or "NOT IN" clauses
+    uses in combination with ORDER, LIMIT and OFFSET
+  * BZ#3687: 'bat.insert' undefined
+  * BZ#3688: Crash at exit (overrun THRerrorcount?)
+  * BZ#3689: No more connections accepted if a single client misbehaves
+  * BZ#3690: find_fk: Assertion `t && i' failed.
+  * BZ#3691: conversion of whitespaces string to double or float is accepted
+    without an error during insert
+  * BZ#3693: algebra.join undefined (caused by non-existing variables in
+    the plan)
+  * BZ#3696: Inconsistent behavior between dbl (SQL double) and flt (SQL
+    real) data types and across platforms
+  * BZ#3697: mserver5[26946]: segfault at 0 ip 00007f3d0e1ab808 sp
+    00007f3cefbfcad0 error 4 in lib_sql.so[7f3d0e180000+16c000]
+  * BZ#3699: segfault again! (during last week I found 3 segfault bugs
+    already)
+  * BZ#3703: INSERT INTO a MERGE TABLE crashes mserver5
+  * BZ#3704: Unknown identifier from subquery
+  * BZ#3705: Assertion failure in rel_bin.c:2274: rel2bin_project: Assertion
+    `0' failed.
+  * BZ#3706: Assertion failure in gdk_bat.c: BATassertHeadProps: Assertion
+    `!b->H->sorted || cmp <= 0' failed.
+  * BZ#3709: "BATproject: does not match always" on abusive use of ALTER
+    TABLE SET READ ONLY
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Apr 2015 09:17:39 +0200
+
+monetdb (11.19.11-20150423) unstable; urgency=low
+
+  * buildtools: We now also create debug packages for Debian and Ubuntu.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Feb 2015 09:17:39 +0200
+
+monetdb (11.19.11-20150423) unstable; urgency=low
+
+  * gdk: Replaced the rangejoin implementation with one that uses imprints if
+    it can.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 27 Jan 2015 09:17:39 +0200
+
 monetdb (11.19.9-20150123) unstable; urgency=low
 
   * Rebuilt.
