@@ -98,7 +98,7 @@ Source *sources;	// original column name
 int srctop, srcmax;
 
 static void
-addSource(char *varname, char *tbl, char *col)
+addSource(char *varname, char *sch, char *tbl, char *col)
 {
 	char buf[BUFSIZ];
 
@@ -111,7 +111,7 @@ addSource(char *varname, char *tbl, char *col)
 	}
 	assert(sources);
 	sources[srctop].varname = strdup(varname);
-	snprintf(buf,BUFSIZ,"%s%s%s",tbl,(col?".":""),col?col:"");
+	snprintf(buf,BUFSIZ,"%s%s%s%s%s", (strcmp(sch,"sys")== 0? "": sch), (strcmp(sch,"sys")== 0? "": "."), tbl,(col?".":""),col?col:"");
 	sources[srctop].source = strdup(buf);
 	//fprintf(stderr,"addSource %s at %d  %s\n",varname, srctop, buf);
 	srctop++;
@@ -136,7 +136,6 @@ addSourcePair(char *varname, char *name)
 	if( strcmp(name, sources[i].varname)==0){
 		sources[srctop].varname = strdup(varname);
 		sources[srctop].source = strdup(sources[i].source);
-		//fprintf(stderr,"addSourcePair %s  %s\n",varname,sources[i].source);
 		srctop++;
 		return;
 	}
@@ -291,9 +290,9 @@ static struct{
 	{"algebra.subselect", 17, "select",6, 0},
 	{"sql.projectdelta", 16, "project",7, 0},
 	{"algebra.subjoin", 15, "join",4, 0},
-	{"language.pass(nil)", 18,	"pass", 4, 0},
+	{"language.pass(nil)", 18,	"release", 7, 0},
 	{"mat.packIncrement", 17, "pack",4, 0},
-	{"language.pass", 13,	"pass", 4, 0},
+	{"language.pass", 13,	"release", 7, 0},
 	{"aggr.subcount", 13,	"count", 5, 0},
 	{"sql.subdelta", 12, "project",7, 0},
 	{"bat.append", 10,	"append", 6, 0},
@@ -319,49 +318,76 @@ static struct{
 	{0,0,0,0,0}};
 
 static void
-renderArgs(char *c, int len,  char *line, char *limit, char *l)
+renderArgs(char *c,  char *l, int len)
 {
 	char varname[BUFSIZ]={0}, *v=0;
-	for(; *c && *c !=')' && l < limit-1; ){
-		if( *c == ',')*l++= *c++;
-		v= 0;
+	char *limit = l + len-1;
+	int i;
+
+	// we always start at a parameter list
+	for(; *c && *c !=')' && l < limit; ){
+		varname[0] = 0;
+		if( *c == ',')*l++ = *c++;
+		// take out the variable name
 		if(isalpha((int)*c) || *c == '_' ){ 
-			v= varname;
-			while(*c && (isalnum((int)*c) || *c=='_')) *v++ = *c++;
-			*v=0;
+			for( i = 0; i < BUFSIZ-1 && *c && (isalnum((int)*c) || *c=='_') ; i++)
+				varname[i] = *c++;
+			varname[i]=0;
 		}
+		// handle value part
 		if( *c == '=') c++;
+		// BAT result
 		if( *c == '<'){
 			while(*c && *c !='>') c++;
 			if(*c) c++;
-			if (v && varname[0]){
+			if (varname[0]){
 				v= fndSource(varname);
-				snprintf(l, len -strlen(line)-2,"%s",v);
-				while(*l) l++;
+				l+= snprintf(l, limit - l-2,"%s",v);
 				free(v);
 			}
+			// copy the count
 			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
 			while(*c && *c != ']') c++;
 			if( *c == ']' ) *l++ = *c++;
-		}
+			while(*c && *c != ':') c++;
+		} else
+		// string constant
 		if (*c == '"' ) {
 			*l++ = *c++;
 			while(*c && *c !='"' && *(c-1) !='\\' && l < limit-2 ) *l++ =*c++;
 			while(*c && *c !='"') c++;
 		}  else{
+		// all else
 			while(*c && *c !=':' && *c !=',' && l < limit-2) *l++ = *c++;
 			while(*c && *c !=':' && *c !=',' )  c++;
 		}
+		// skip type descriptor
 		if (*c == ':'){
 			if( strncmp(c,":bat",4)== 0){
 				while(*c && *c !=']') c++;
 				if( *c == ']') c++;
-			} else
-				while(*c && *c != ',' && *c != ')') c++;
+			} 
+			while(*c && *c != ',' && *c != '{' && *c != ')') c++;
 		}
-		// literals
+
+		// copy the literals
 		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
 			for(v = varname; *v; ) *l++ = *v++;
+/*
+		else
+		// show variable in assignment only
+		if (v && varname[0] && strstr(c,":=") && !strchr(c,')') ){
+                v= fndSource(varname);
+                snprintf(l, len -strlen(line)-2,"%s",v);
+                while(*l) l++;
+                free(v);
+            }
+*/
+		// drop the properties
+		if( *c == '{'){
+			while(*c && *c !='}') c++;
+			if(*c) c++;
+		}
 	}
 	if(*c) *l++ = *c;
 	*l=0;
@@ -374,19 +400,39 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 	int i;
 
 	(void) state;
+	// skip MAL keywords
+	if( strncmp(c,"function ",10) == 0 ) {
+		while( *c && l < limit -1) *l++ = *c++;
+		*l = 0;
+		return;
+	}
+	if( strncmp(c,"end ",4) == 0 ) {
+		while( *c && l < limit -1) *l++ = *c++;
+		*l = 0;
+		return;
+	}
+	if( strncmp(c,"barrier ",8) == 0 ) c +=8;
+	if( strncmp(c,"redo ",5) == 0 ) c +=5;
+	if( strncmp(c,"leave ",6) == 0 ) c +=6;
+	if( strncmp(c,"return ",7) == 0 ) c +=7;
+	if( strncmp(c,"yield ",6) == 0 ) c +=6;
+	if( strncmp(c,"catch ",6) == 0 ) c +=6;
+	if( strncmp(c,"raise ",6) == 0 ) c +=6;
+	stmt = c;
 	// look for assignment
 	c = strstr(c," :=");
 	if( c) {
 		if(state){
-			// for finished instructions show the result too
+			// for finished instructions show the result targets too
 			*c =0;
 			s = stmt;
 			while(*s && isspace((int) *s)) s++;
 			if( *s == '(') *l++ = *s++;
-			renderArgs(s, len, line, limit, l);
+			renderArgs(s, l, limit - l);
 			while(*l) l++;
 			sprintf(l," := ");
 			while(*l) l++;
+			*c=' ';
 		}
 		c+=3;
 	 } else c=stmt;
@@ -402,12 +448,15 @@ renderCall(char *line, int len, char *stmt, int state, int mode)
 				*l=0;
 				break;
 			}
-		while(*c && *c !='(') *l++= *c++;
-	}  else
-		while(*c && *c !='(') *l++= *c++;
+		if( strchr(c,'(') )
+			while(*c && *c !='(') *l++= *c++;
+	}  else{
+		if( strchr(c,'(') )
+			while(*c && *c !='(') *l++= *c++;
+	}
 	// handle argument list
 	if( *c == '(') *l++ = *c++;
-	renderArgs(c, len, line, limit, l);
+	renderArgs(c, l, limit- l);
 }
 
 static void
@@ -640,42 +689,30 @@ update(EventRecord *ev)
 		// keep track of sources, pick first variable only
 		// We should use the MAL semantics to pick to proper heritage path
 		if ( strstr(ev->stmt,"sql.tid") && *ev->stmt != '('){
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
-			addSource(nme, malarguments[malretc + 2], "");
+			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], 0);
 		} else 
 		if ( strstr(ev->stmt,"sql.bind") && *ev->stmt != '('){
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
-			addSource(nme, malarguments[malretc + 2], malarguments[malretc + 3]);
+			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], malarguments[malretc + 3]);
+		} else
+		if ( strstr(ev->stmt,"sql.bind") && *ev->stmt == '('){
+			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], 0);
+			addSource(malvariables[1], malarguments[malretc + 1], malarguments[malretc + 2], malarguments[malretc + 3]);
 		} else
 		if ( strstr(ev->stmt,"sql.projectdelta") && *ev->stmt != '(' ){
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
-			addSourcePair(nme, malvariables[1]);
+			addSourcePair(malvariables[0], malvariables[1]);
 		} else
 		if ( strstr(ev->stmt,"algebra.leftfetchjoin") && *ev->stmt != '(' ){
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
-			addSourcePair(nme, malvariables[malvartop-1]);
+			addSourcePair(malvariables[0], malvariables[malvartop - 1]);
 		} else
 		if ( strstr(ev->stmt,"algebra.subjoin") && *ev->stmt != '(' ){
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
-			addSourcePair(nme, malvariables[malvartop-1]);
-		} else {
-			char nme[BUFSIZ],*n=nme, *s= ev->stmt;
-			if( *s =='(') s++;
-			while(*s && *s != '=') *n++ = *s++;
-			*n = 0;
+			addSourcePair(malvariables[0], malvariables[malvartop - 1]);
+		} else 
+		if ( malvariables[0] ){
 			// update the source direction
-			for( i=0; i< malvartop;i++)
-				addSourcePair(nme,malvariables[i]);
+			char *v= fndSource(malvariables[0]);
+			//for( i=malretc; i< malvartop;i++)
+				addSourcePair(v, malvariables[malretc]);
+			free(v);
 		}
 		fprintf(tachojson,"{\n");
 		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
