@@ -942,9 +942,11 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
 			next = scanner_getc(lc);
-			if(next == '|')
+			if (next == '=') {
+				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
+			} else if (next == '|') {
 				return scanner_token(lc, GEOM_BELOW);
-			else {
+			} else {
 				utf8_putchar(lc, next); //put the char back
 				return scanner_token( lc, LEFT_SHIFT);
 			}
