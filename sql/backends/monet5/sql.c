@@ -1615,10 +1615,10 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 //when the column belongs to an array extra values shoulb be added in order to 
 //have values for all cells int he array
 static BAT*
-mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum) {
+mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum, void* defVal) {
 	BAT *b = NULL;
 
-#define fillVals(TPE)                     \
+#define fillVals(TPE, def)                     \
     do {                                \
 			TPE *elements_in = NULL, *elements = NULL; \
 			BUN i; \
@@ -1636,10 +1636,7 @@ mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum) {
 			/*Fill the rest of the cells with the default value or NULL if no \
  			* default values is provided*/ \
 			for(;i<cellsNum; i++) { \
-				if(!c->def) \
-					elements[i] = TPE##_nil; \
-				else \
-					fprintf(stderr, "DEFAULT value is provided but not handled\n"); \
+				elements[i] = def; \
 			}	\
 \
         	b->tsorted = 0;              \
@@ -1648,30 +1645,80 @@ mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum) {
 
 	switch (c->type.type->localtype) {
     	case TYPE_bte:
-    	    fillVals(bte);
+			if(!defVal)
+    	    	fillVals(bte, bte_nil);
+			else
+				fillVals(bte, *(bte*)defVal);
         	break;
     	case TYPE_sht:
-        	fillVals(sht);
+			if(!defVal)
+				fillVals(sht, sht_nil);
+			else
+        		fillVals(sht, *(sht*)defVal);
 			break;
     	case TYPE_int:
-        	fillVals(int);
+			if(!defVal)
+				fillVals(int, int_nil);
+			else
+        		fillVals(int, *(int*)defVal);
 			break;
     	case TYPE_lng:
-        	fillVals(lng);
+			if(!defVal)
+				fillVals(lng, lng_nil);
+			else
+        		fillVals(lng, *(lng*)defVal);
 			break;
 #ifdef HAVE_HGE
     	case TYPE_hge:
-       		fillVals(hge);
+			if(!defVal)
+				fillVals(hge, hge_nil);
+			else
+       			fillVals(hge, *(hge*)defVal);
 			break;
 #endif
 		case TYPE_flt:
-        	fillVals(flt);
+			if(!defVal)
+				fillVals(flt, flt_nil);
+			else
+        		fillVals(flt, *(flt*)defVal);
 			break;
     	case TYPE_dbl:
-        	fillVals(dbl);
+#if 0
+     {
+			dbl *elements_in = NULL, *elements = NULL;
+			BUN i;
+
+        	if((b = BATnew(TYPE_void, TYPE_dbl, cellsNum, TRANSIENT)) == NULL)
+        		return NULL;
+
+        	elements = (dbl*) Tloc(b, BUNfirst(b));
+			elements_in = (dbl*) Tloc(b_in, BUNfirst(b_in));
+
+			/*Add the elements that have been inserted into the cells*/
+			for(i=0; i<BATcount(b_in); i++) {
+                elements[i] = elements_in[i];
+    		}
+			/*Fill the rest of the cells with the default value or NULL if no \
+ 			* default values is provided*/
+			for(;i<cellsNum; i++) {
+				if(!c->def)
+					elements[i] = dbl_nil;
+				else 
+					elements[i] = defVal->data.val.dval;
+			}
+
+        	b->tsorted = 0;
+        	b->trevsorted = 0;
+    }
+#endif
+			if(!defVal)
+				fillVals(dbl, dbl_nil);
+			else
+   				fillVals(dbl, *(dbl*)defVal);
 			break;
 	    default:
-			fprintf(stderr, "mvc_fill_values: dimension type not handled\n");
+			fprintf(stderr, "mvc_fill_values: non-dimensional column type not handled\n");
+			return NULL;
 	}
 
 	BATsetcount(b,cellsNum);
@@ -1703,7 +1750,34 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	b = store_funcs.bind_col(tr, c, access);
 
 	if(isArray(t))
-		return mvc_fill_values(c, b, t->cellsNum);
+		return mvc_fill_values(c, b, t->cellsNum, NULL);
+
+	return b;
+}
+
+static BAT *
+mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal, int tpe)
+{
+	sql_trans *tr = m->session->tr;
+	BAT *b = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		return NULL;
+	c = mvc_bind_column(m, t, cname);
+	if (c == NULL)
+		return NULL;
+
+	b = store_funcs.bind_col(tr, c, 0);
+
+	(void)tpe;
+	return mvc_fill_values(c, b, t->cellsNum, defVal);
 
 	return b;
 }
@@ -1805,6 +1879,7 @@ fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *eleme
         	break;
 	    default:
 			fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
+			return NULL;
 	}
 
 	BATsetcount(b,t->cellsNum);
@@ -1937,16 +2012,46 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	str *sname = getArgReference_str(stk, pci, 2 + upd);
-	str *tname = getArgReference_str(stk, pci, 3 + upd);
-	str *dname = getArgReference_str(stk, pci, 4 + upd);
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+	str *cname = getArgReference_str(stk, pci, 4);
+	ptr def = getArgReference(stk, pci, 5);
+	int tpe = getArgType(mb, pci, 5);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if (ATOMextern(tpe))
+		def = *(ptr *) def;
+
+	b = mvc_create_cells_bat(m, *sname, *tname, *cname, def, tpe);
+	if(b) {
+		BBPkeepref(*bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (*sname && strcmp(*sname, str_nil) != 0)
+		throw(SQL, "sql.create_celss", "unable to find %s.%s(%s)", *sname, *tname, *cname);
+	throw(SQL, "sql.create_cells", "unable to find %s(%s)", *tname, *cname);
+}
+
+str
+mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b = NULL;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+	str *dname = getArgReference_str(stk, pci, 4);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;

@@ -559,6 +559,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 		}
+
+		if(e->f) { //it is the default value
+			s->op1 = exp_bin(sql, e->f, NULL, NULL, NULL, NULL, NULL, NULL);
+		}
 	 }	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;

@@ -906,32 +906,57 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		}
 			break;
-		case st_bat:{
-			int ht = TYPE_oid;
-			int tt = s->op4.cval->type.type->localtype;
-			sql_table *t = s->op4.cval->t;
+		case st_bat: {
+			sql_column *c = s->op4.cval;
 
-			q = newStmt2(mb, sqlRef, bindRef);
-			if (q == NULL)
-				return -1;
-			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
-			} else {
+			int ht = TYPE_oid;
+			int tt = c->type.type->localtype;
+								
+			if(c->def) {
+				int def = 0;
+				if ((def = _dumpstmt(sql, mb, s->op1)) < 0)
+					return -1;	
+
+				q = newStmt2(mb, sqlRef, "create_cells");
+				if(q == NULL)
+					return -1;
+
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 				setVarUDFtype(mb, getArg(q, 0));
-			}
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, t);
-			q = pushStr(mb, q, t->base.name);
-			q = pushStr(mb, q, s->op4.cval->base.name);
-			q = pushInt(mb, q, s->flag);
-			if (q == NULL)
-				return -1;
-			s->nr = getDestVar(q);
+				
+				q = pushArgument(mb, q, sql->mvc_var);
+				q = pushSchema(mb, q, c->t);
+				q = pushStr(mb, q, c->t->base.name);
+				q = pushStr(mb, q, c->base.name);
+				q = pushArgument(mb, q, def);
 
-			if (s->flag == RD_UPD_ID) {
-				/* rename second result */
-				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+				if (q == NULL)
+					return -1;
+				s->nr = getDestVar(q);
+
+			} else {
+				q = newStmt2(mb, sqlRef, bindRef);
+				if (q == NULL)
+					return -1;
+				if (s->flag == RD_UPD_ID) {
+					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
+				} else {
+					setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+					setVarUDFtype(mb, getArg(q, 0));
+				}
+				q = pushArgument(mb, q, sql->mvc_var);
+				q = pushSchema(mb, q, c->t);
+				q = pushStr(mb, q, c->t->base.name);
+				q = pushStr(mb, q, c->base.name);
+				q = pushInt(mb, q, s->flag);
+				if (q == NULL)
+					return -1;
+				s->nr = getDestVar(q);
+
+				if (s->flag == RD_UPD_ID) {
+					/* rename second result */
+					renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+				}
 			}
 		}
 			break;

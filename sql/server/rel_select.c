@@ -30,6 +30,7 @@
 #include "rel_psm.h"
 #include "rel_schema.h"
 #include "rel_sequence.h"
+#include "rel_updates.h"
 
 #define ERR_AMBIGUOUS		050000
 
@@ -189,8 +190,25 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 	}
 	if(old->type == e_dimension)
 		ne = exp_dimension(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, is_intern(old));
-	else
+	else {
+		sql_table *t = NULL;
 		ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+
+		//if the column belongs to an array I need to carry along the default value (if provided)
+		t = mvc_bind_table(sql, cur_schema(sql), tname);
+		if(t && isArray(t)) {
+			sql_column *c = mvc_bind_column(sql, t, cname);
+		
+			if(c->def) {
+				char *q = sa_message(sql->sa, "select %s;", c->def);
+				sql_exp* e = rel_parse_val(sql, q, sql->emode);
+				if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+					ne->f = NULL;
+				else
+					ne->f = e;
+			}
+		}
+	}
 	ne->p = prop_copy(sql->sa, old->p);
 	return ne;
 }
