@@ -647,7 +647,16 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) &&
+#if 0
+/* Stefan.Manegold@cwi.nl:
+ * This line causes many tests, including several TPCH tests to fail with "b and g must be aligned",
+ * regardless of whether GEOM is enabled or disabled;
+ * cf., http://monetdb.cwi.nl/testweb/web/testgrid.php?serial=55448:034f684eacfe&order=platform,arch,compiler
+ * Hence, we disable this line until we understand what this is for and why it causes these problems.
+*/
+
 		(strncmp(getModuleId(p), "batgeom", 7) == 0 && strncmp(getFunctionId(p), "pbsmIndex", 9) != 0) &&
+#endif
 		 getModuleId(p) != rapiRef;
 }
 
