@@ -321,7 +321,7 @@ static struct{
 	{0,0,0,0,0}};
 
 static void
-renderArgs(char *c,  char *l, int len)
+renderArgs(char *c,  char *l, size_t len)
 {
 	char varname[BUFSIZ]={0}, *v=0;
 	char *limit = l + len-1;
