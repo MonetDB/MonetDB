@@ -30,7 +30,7 @@ Ready.
 #BEGIN
 #	RETURN 1;
 #END;
-#CREATE TABLE "bam"."alignments_2" (
+#CREATE TABLE "alignments_2" (
 #    "virtual_offset" BIGINT        NOT NULL,
 #    "qname"          CHARACTER LARGE OBJECT NOT NULL,
 #    "flag"           SMALLINT      NOT NULL,
@@ -41,13 +41,13 @@ Ready.
 #    "cigar"          CHARACTER LARGE OBJECT NOT NULL,
 #    "rnext"          CHARACTER LARGE OBJECT NOT NULL,
 #    "pnext"          INTEGER       NOT NULL,
-#ALTER TABLE bam.alignments_2 SET READ ONLY;
+#ALTER TABLE alignments_2 SET READ ONLY;
 #SELECT s.value AS refpos, COUNT(*) AS cnt
 #FROM 
 #    generate_series(128, 18960) AS s
 #    JOIN (
 #        SELECT epos, pos, seq, cigar
-#        FROM bam.alignments_2
+#        FROM alignments_2
 #        WHERE pos > 0 
 #    ) AS al
 #    ON (
@@ -61,7 +61,7 @@ Ready.
 % refpos,	cnt # name
 % smallint,	wrd # type
 % 1,	1 # length
-#DROP TABLE bam.alignments_2;
+#DROP TABLE alignments_2;
 #DROP FUNCTION seq_char;
 
 # 16:59:10 >  
