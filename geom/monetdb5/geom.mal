@@ -755,7 +755,7 @@ end YMaxFromMBR;
 
 module calc;
 
-#command mbr{unsafe}(v:str) :mbr address mbrFromString;
+command mbr(v:str) :mbr address mbrFromString;
 #It is needed to add a new mbr colum to an existing table
 command mbr(v:mbr) :mbr address mbrFromMBR;
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;

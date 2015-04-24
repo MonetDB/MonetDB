@@ -86,7 +86,7 @@ geom_export int wkbaLENGTH(wkba *p);
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export void wkbaHEAP(Heap *heap, size_t capacity);
 
-//geom_export str mbrFromString(mbr **w, str *src);
+geom_export str mbrFromString(mbr **w, str *src);
 geom_export str wkbIsnil(bit *r, wkb **v);
 
 /* functions that are used when a column is added to an existing table */

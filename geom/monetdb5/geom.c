@@ -4160,6 +4160,12 @@ str wkbMBR(mbr **geomMBR, wkb **geomWKB) {
 	str ret = MAL_SUCCEED;
 	bit empty;
 
+	//check if the geometry is nill
+	if(wkb_isnil(*geomWKB)) {
+		*geomMBR = mbr_nil;
+		return MAL_SUCCEED;
+	}
+
 	//check if the geometry is empty
 	if((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.wkbMBR", "%s", ret);
@@ -4738,7 +4744,7 @@ str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx
 	return ret;
 }
 
-/*str
+str
 mbrFromString(mbr **w, str *src)
 {
 	size_t len = *w ? sizeof(mbr) : 0;
@@ -4761,7 +4767,7 @@ mbrFromString(mbr **w, str *src)
 		GDKerrbuf[0] = '\0';
 
 	return ex;
-}*/
+}
 
 str
 wkbIsnil(bit *r, wkb **v)
@@ -5057,10 +5063,10 @@ size_t mbrFROMSTR(char *src, size_t *len, mbr **atom) {
 	if (strcmp(src, str_nil) == 0)
 		nil = 1;
 
-	if (!nil && strstr(src,"BOX") ==  src && (c = strstr(src,"(")) != NULL) {
+	if (!nil && (strstr(src,"mbr") ==  src || strstr(src,"MBR") == src) && (c = strstr(src,"(")) != NULL) {
 		/* Parse the mbr */
 		if ((c - src) != 3 && (c - src) != 4) {
-			GDKerror("ParseException: Expected a string like 'BOX(0 0,1 1)' or 'BOX (0 0,1 1)'\n");
+			GDKerror("ParseException: Expected a string like 'MBR(0 0,1 1)' or 'MBR (0 0,1 1)'\n");
 			return 0;
 		}
 
