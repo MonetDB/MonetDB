@@ -628,8 +628,8 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nc_type vtype;
 	int ncid;   /* dataset id */
 	size_t dlen;
-	bat vbatid, *dim_bids;
-	BAT *vbat, *dimbat;
+	bat vbatid = 0, *dim_bids;
+	BAT *vbat = NULL, *dimbat;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 	if (msg)
