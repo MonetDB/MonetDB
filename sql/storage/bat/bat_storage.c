@@ -620,6 +620,18 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		delta_append_bat(bat, i);
 	else
 		delta_append_val(bat, i);
+	if (!c->t->data || !c->t->base.allocated) {
+		sql_table *ot = tr_find_table(tr->parent, c->t);
+		sql_dbat *bat = c->t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(c->t)); 
+		c->t->base.allocated = 1;
+	}
+	if (c->t && c->t->data && ((sql_dbat*)c->t->data)->cached) {
+		sql_dbat *bat = c->t->data;
+
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 }
 
 static void
@@ -645,6 +657,18 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		delta_append_bat(bat, ib);
 	else
 		delta_append_val(bat, ib);
+	if (!i->t->data || !i->t->base.allocated) {
+		sql_table *ot = tr_find_table(tr->parent, i->t);
+		sql_dbat *bat = i->t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t)); 
+		i->t->base.allocated = 1;
+	}
+	if (i->t && i->t->data && ((sql_dbat*)i->t->data)->cached) {
+		sql_dbat *bat = i->t->data;
+
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 }
 
 static void
@@ -1379,6 +1403,10 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	BAT *b;
 	BUN sz = 0;
 
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	if (bat->ibid) {
 		b = temp_descriptor(bat->ibid);
 		sz += BATcount(b);
@@ -1523,6 +1551,11 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 	BUN sz = 0;
 
 	(void)tr;
+
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	if (bat->dbid) {
 		BAT *b = temp_descriptor(bat->dbid);
 
@@ -1565,7 +1598,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 
 	(void)tr;
 	assert(store_nr_active==0);
-
+	
 	cur = temp_descriptor(cbat->bid);
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
@@ -1925,6 +1958,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			b->next = tt->data;
 			tt->data = b;
 
+			if (b->cached) {
+				bat_destroy(b->cached);
+				b->cached = NULL;
+			}
 			while (b && b->wtime >= oldest->stime)
 				b = b->next;
 			if (b && b->wtime < oldest->stime) {
@@ -1949,6 +1986,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
+				if (b->cached) {
+					bat_destroy(b->cached);
+					b->cached = NULL;
+				}
 				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
 				if (b && b->wtime < oldest->stime) {
@@ -1998,6 +2039,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ci->data = NULL;
 				b->next = oi->data;
 				oi->data = b;
+				if (b->cached) {
+					bat_destroy(b->cached);
+					b->cached = NULL;
+				}
 				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
 				if (b && b->wtime < oldest->stime) {
