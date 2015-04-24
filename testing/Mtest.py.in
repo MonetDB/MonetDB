@@ -296,6 +296,7 @@ CONDITIONALS = {
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
+    'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GSL'             : "@HAVE_GSL_FALSE@",

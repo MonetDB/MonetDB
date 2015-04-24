@@ -68,6 +68,11 @@ SYSTEM TABLE  sys.dependencies
 SYSTEM TABLE  sys.functions
 SYSTEM TABLE  sys.idxs
 SYSTEM TABLE  sys.keys
+SYSTEM TABLE  sys.netcdf_attrs
+SYSTEM TABLE  sys.netcdf_dims
+SYSTEM TABLE  sys.netcdf_files
+SYSTEM TABLE  sys.netcdf_vardim
+SYSTEM TABLE  sys.netcdf_vars
 SYSTEM TABLE  sys.objects
 SYSTEM TABLE  sys.privileges
 SYSTEM TABLE  sys.schemas
@@ -190,6 +195,8 @@ SYSTEM FUNCTION  sys.ms_round
 SYSTEM FUNCTION  sys.ms_str
 SYSTEM FUNCTION  sys.ms_stuff
 SYSTEM FUNCTION  sys.ms_trunc
+SYSTEM FUNCTION  sys.netcdf_attach
+SYSTEM FUNCTION  sys.netcdf_importvar
 SYSTEM FUNCTION  sys.netmask
 SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
@@ -1330,7 +1337,7 @@ CREATE TABLE "sys"."_columns" (
 	"number"      INTEGER,
 	"storage"     VARCHAR(2048)
 );
-COPY 329 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 351 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
 2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
 2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
 2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
@@ -1672,7 +1679,7 @@ CREATE TABLE "sys"."_tables" (
 	"commit_action" SMALLINT,
 	"access"        SMALLINT
 );
-COPY 45 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 50 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	"schemas"	2000	NULL	0	true	0	0
 2007	"types"	2000	NULL	0	true	0	0
 2016	"functions"	2000	NULL	0	true	0	0
