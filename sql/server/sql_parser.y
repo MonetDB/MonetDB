@@ -5143,6 +5143,7 @@ non_reserved_word:
 |  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
 |  TEMP		{ $$ = sa_strdup(SA, "temp"); }
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 ;
 
