@@ -6610,7 +6610,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				int *pos = NULL, nr = list_length(rel->exps), first = 1;
 
 				/* rename (mostly the idxs) */
-				pos = (int*)alloca(sizeof(int)*nr);
+				pos = SA_NEW_ARRAY(sql->sa, int, nr);
 				memset(pos, 0, sizeof(int)*nr);
 				for (nt = t->tables.set->h; nt; nt = nt->next) {
 					sql_table *pt = nt->data;
