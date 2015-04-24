@@ -210,7 +210,7 @@ int queryid= 0;
 static FILE *tachojson;
 static FILE *tachotrace;
 static FILE *tachomal;
-static FILE *tachoprof;
+static FILE *tachostmt;
 
 static void resetTachograph(void){
 	int i;
@@ -225,6 +225,7 @@ static void resetTachograph(void){
 		free(sources[i].varname);
 		free(sources[i].source);
 	}
+	capturing = 0;
 	srctop=0;
 	malsize= 0;
 	currentfunction = 0;
@@ -239,8 +240,8 @@ static void resetTachograph(void){
 	tachotrace = 0;
 	fclose(tachomal);
 	tachomal = 0;
-	fclose(tachoprof);
-	tachoprof = 0;
+	fclose(tachostmt);
+	tachostmt = 0;
 	prevprogress = 0;
 	txtlength =0;
 	prevlevel=0;
@@ -533,14 +534,14 @@ initFiles(void)
 	}
 	if (cache)
 #ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_prof.csv",cache,basefilename,dbname, queryid);
+		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
 #else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_prof.csv",cache,basefilename,dbname, queryid);
+		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
 #endif
 	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d_prof.csv",basefilename,dbname, queryid);
-	tachoprof= fopen(buf,"w");
-	if( tachoprof == NULL){
+		snprintf(buf,BUFSIZ,"%s_%s_%d_stmt.csv",basefilename,dbname, queryid);
+	tachostmt= fopen(buf,"w");
+	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
@@ -616,7 +617,12 @@ update(EventRecord *ev)
 	}
 
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
-	if (!capturing && ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+	if (ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
+		if( capturing){
+			fprintf(stderr,"We lost some events\n");
+			resetTachograph();
+			capturing = 0;
+		}
 		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
 				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
@@ -666,7 +672,7 @@ update(EventRecord *ev)
 			*q =0;
 			currentquery = qry;
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
-				printf("%s\n",qry);
+				printf("CACHE ID:%d\n%s\n",queryid, qry);
 			prevquery = currentquery;
 			progressBarInit(qry);
 		}
@@ -768,17 +774,17 @@ update(EventRecord *ev)
 		for(j=0; j < malargc; j++)
 			fprintf(tachomal,"%d\t%d\t%d\t%s\t%s\t%d\t%s\n", ev->tag, ev->pc, malpc[j], (ev->fcn?ev->fcn:""), maltypes[j], malcount[j],malarguments[j] );
 		// collect profile information for MonetDB as well
-		fprintf(tachoprof,"%d\t",ev->tag);
-		fprintf(tachoprof,"%d\t",ev->pc);
-		fprintf(tachoprof,"%d\t",ev->thread);
-		fprintf(tachoprof,LLFMT"\t",ev->clkticks);
-		fprintf(tachoprof,LLFMT"\t",ev->ticks);
-		fprintf(tachoprof,LLFMT"\t",ev->memory);
-		fprintf(tachoprof,LLFMT"\t",ev->tmpspace);
-		fprintf(tachoprof,LLFMT"\t",ev->inblock);
-		fprintf(tachoprof,LLFMT"\t",ev->oublock);
-		fprintf(tachoprof,"%s\t",ev->stmt);
-		fprintf(tachoprof, "%s\n",line);
+		fprintf(tachostmt,"%d\t",ev->tag);
+		fprintf(tachostmt,"%d\t",ev->pc);
+		fprintf(tachostmt,"%d\t",ev->thread);
+		fprintf(tachostmt,LLFMT"\t",ev->clkticks);
+		fprintf(tachostmt,LLFMT"\t",ev->ticks);
+		fprintf(tachostmt,LLFMT"\t",ev->memory);
+		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
+		fprintf(tachostmt,LLFMT"\t",ev->inblock);
+		fprintf(tachostmt,LLFMT"\t",ev->oublock);
+		fprintf(tachostmt,"%s\t",ev->stmt);
+		fprintf(tachostmt, "%s\n",line);
 
 		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));
@@ -803,12 +809,13 @@ update(EventRecord *ev)
 				free(currentfunction);
 				currentfunction = 0;
 			}
+			
 			if( ev->clkticks >delay * 1000 && interactive)
 				showBar(100,ev->clkticks, 0);
-			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			resetTachograph();
+			initFiles();
 		} 
 	}
 }
