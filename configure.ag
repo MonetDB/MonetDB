@@ -938,7 +938,7 @@ if test "x$enable_optimize" = xyes; then
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	case "$GCC-$CC_ver" in
 	yes-clang-*)
-	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
+	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer" # -finline-functions is no longer supported in llvm 3.6 
 	  ;;
 	yes-*)
 	  dnl -fomit-frame-pointer crashes memprof
