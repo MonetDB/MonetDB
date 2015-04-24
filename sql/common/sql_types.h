@@ -39,8 +39,6 @@
 #define EC_TIMESTAMP	14
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
 #define EC_GEOM		15
-#define EC_GEOMA	15
-#define EC_MBR		16
 #define EC_EXTERNAL	17
 
 #define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
