@@ -1,0 +1,61 @@
+stdout of test '17` in directory 'sql/benchmarks/tpch/LOCKED` itself:
+
+
+# 15:44:33 >  
+# 15:44:33 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38978 --set xrpc_port=42914 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:44:33 >  
+
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_benchmarks_tpch'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:38978/
+# MonetDB/SQL module v2.22.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:48:03 >  
+# 11:48:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 17.sql
+# 11:48:03 >  
+
+# 14:36:42 >  
+# 14:36:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:42 >  
+
+#select
+#	sum(l_extendedprice) / 7.0 as avg_yearly
+#from
+#	lineitem,
+#	part
+#where
+#	p_partkey = l_partkey
+#	and p_brand = 'Brand#23'
+#	and p_container = 'MED BOX'
+#	and l_quantity < (
+#		select
+#			0.2 * avg(l_quantity)
+#		from
+#			lineitem
+#		where
+#			l_partkey = p_partkey
+#	);
+% sys.L3 # table_name
+% avg_yearly # name
+% decimal # type
+% 41 # length
+[ NULL	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:17:19 >  
+# 09:17:19 >  Done.
+# 09:17:19 >  
+

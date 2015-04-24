@@ -1,0 +1,227 @@
+stdout of test 'forex` in directory 'sql/test/mergetables` itself:
+
+
+# 20:39:01 >  
+# 20:39:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37490" "--set" "mapi_usock=/var/tmp/mtest-23657/.s.monetdb.37490" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:39:01 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37490/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23657/.s.monetdb.37490
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 20:39:01 >  
+# 20:39:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23657" "--port=37490"
+# 20:39:01 >  
+
+#CREATE TABLE day1 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#CREATE TABLE day1stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#COPY 10 RECORDS INTO day1stage FROM STDIN USING DELIMITERS '|','\n';
+#1413267171000|EUR/USD|1413267158643|1.271810|1.271890|0.000080
+#1413267171000|USD/JPY|1413267171225|107.121000|107.127000|0.006000
+#1413267171000|GBP/USD|1413267161304|1.606820|1.606930|0.000110
+#1413267171000|EUR/GBP|1413267150417|0.791460|0.791570|0.000110
+#1413267171000|USD/CHF|1413267158643|0.950420|0.950550|0.000130
+#1413267171000|EUR/JPY|1413267171318|136.240000|136.253000|0.013000
+#1413267171000|EUR/CHF|1413267158643|1.208760|1.208950|0.000190
+[ 10	]
+#SELECT * FROM day1stage;
+% sys.day1stage,	sys.day1stage,	sys.day1stage,	sys.day1stage,	sys.day1stage,	sys.day1stage # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% bigint,	clob,	bigint,	decimal,	decimal,	decimal # type
+% 13,	7,	13,	14,	14,	14 # length
+[ 1413267171000,	"EUR/USD",	1413267158643,	1.271810,	1.271890,	0.000080	]
+[ 1413267171000,	"USD/JPY",	1413267171225,	107.121000,	107.127000,	0.006000	]
+[ 1413267171000,	"GBP/USD",	1413267161304,	1.606820,	1.606930,	0.000110	]
+[ 1413267171000,	"EUR/GBP",	1413267150417,	0.791460,	0.791570,	0.000110	]
+[ 1413267171000,	"USD/CHF",	1413267158643,	0.950420,	0.950550,	0.000130	]
+[ 1413267171000,	"EUR/JPY",	1413267171318,	136.240000,	136.253000,	0.013000	]
+[ 1413267171000,	"EUR/CHF",	1413267158643,	1.208760,	1.208950,	0.000190	]
+[ 1413267171000,	"USD/CAD",	1413267171318,	1.121180,	1.121270,	0.000090	]
+[ 1413267171000,	"AUD/USD",	1413267162803,	0.878680,	0.878780,	0.000100	]
+[ 1413267171000,	"GBP/JPY",	1413267171239,	172.126000,	172.146000,	0.020000	]
+#INSERT INTO day1
+#SELECT epoch(clk), currency, epoch(ts), bid, offer,spread 
+#FROM day1stage;
+[ 10	]
+#DROP TABLE day1stage;
+#SELECT * from day1;
+% sys.day1,	sys.day1,	sys.day1,	sys.day1,	sys.day1,	sys.day1 # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
+% 26,	7,	26,	14,	14,	14 # length
+[ 2014-10-14 06:12:51.000000,	"EUR/USD",	2014-10-14 06:12:38.643000,	1.271810,	1.271890,	0.000080	]
+[ 2014-10-14 06:12:51.000000,	"USD/JPY",	2014-10-14 06:12:51.225000,	107.121000,	107.127000,	0.006000	]
+[ 2014-10-14 06:12:51.000000,	"GBP/USD",	2014-10-14 06:12:41.304000,	1.606820,	1.606930,	0.000110	]
+[ 2014-10-14 06:12:51.000000,	"EUR/GBP",	2014-10-14 06:12:30.417000,	0.791460,	0.791570,	0.000110	]
+[ 2014-10-14 06:12:51.000000,	"USD/CHF",	2014-10-14 06:12:38.643000,	0.950420,	0.950550,	0.000130	]
+[ 2014-10-14 06:12:51.000000,	"EUR/JPY",	2014-10-14 06:12:51.318000,	136.240000,	136.253000,	0.013000	]
+[ 2014-10-14 06:12:51.000000,	"EUR/CHF",	2014-10-14 06:12:38.643000,	1.208760,	1.208950,	0.000190	]
+[ 2014-10-14 06:12:51.000000,	"USD/CAD",	2014-10-14 06:12:51.318000,	1.121180,	1.121270,	0.000090	]
+[ 2014-10-14 06:12:51.000000,	"AUD/USD",	2014-10-14 06:12:42.803000,	0.878680,	0.878780,	0.000100	]
+[ 2014-10-14 06:12:51.000000,	"GBP/JPY",	2014-10-14 06:12:51.239000,	172.126000,	172.146000,	0.020000	]
+#ALTER TABLE day1 SET READ ONLY;
+#CREATE TABLE day2 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#CREATE TABLE day2stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#COPY 10 RECORDS INTO day2stage FROM STDIN USING DELIMITERS '|','\n';
+#1413267176000|EUR/USD|1413267177168|1.271780|1.271880|0.000100
+#1413267176000|USD/JPY|1413267177168|107.120000|107.125000|0.005000
+#1413267176000|GBP/USD|1413267175356|1.606820|1.606950|0.000130
+#1413267176000|EUR/GBP|1413267175336|0.791440|0.791550|0.000110
+#1413267176000|USD/CHF|1413267175367|0.950430|0.950560|0.000130
+#1413267176000|EUR/JPY|1413267177033|136.235000|136.248000|0.013000
+#1413267176000|EUR/CHF|1413267158643|1.208760|1.208950|0.000190
+[ 10	]
+#INSERT INTO day2
+#SELECT epoch(clk), currency, epoch(ts), bid, offer,spread 
+#FROM day2stage;
+[ 10	]
+#DROP TABLE day2stage;
+#SELECT * from day2;
+% sys.day2,	sys.day2,	sys.day2,	sys.day2,	sys.day2,	sys.day2 # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
+% 26,	7,	26,	14,	14,	14 # length
+[ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
+[ 2014-10-14 06:12:56.000000,	"USD/JPY",	2014-10-14 06:12:57.168000,	107.120000,	107.125000,	0.005000	]
+[ 2014-10-14 06:12:56.000000,	"GBP/USD",	2014-10-14 06:12:55.356000,	1.606820,	1.606950,	0.000130	]
+[ 2014-10-14 06:12:56.000000,	"EUR/GBP",	2014-10-14 06:12:55.336000,	0.791440,	0.791550,	0.000110	]
+[ 2014-10-14 06:12:56.000000,	"USD/CHF",	2014-10-14 06:12:55.367000,	0.950430,	0.950560,	0.000130	]
+[ 2014-10-14 06:12:56.000000,	"EUR/JPY",	2014-10-14 06:12:57.033000,	136.235000,	136.248000,	0.013000	]
+[ 2014-10-14 06:12:56.000000,	"EUR/CHF",	2014-10-14 06:12:38.643000,	1.208760,	1.208950,	0.000190	]
+[ 2014-10-14 06:12:56.000000,	"USD/CAD",	2014-10-14 06:12:53.063000,	1.121150,	1.121260,	0.000110	]
+[ 2014-10-14 06:12:56.000000,	"AUD/USD",	2014-10-14 06:12:56.076000,	0.878680,	0.878760,	0.000080	]
+[ 2014-10-14 06:12:56.000000,	"GBP/JPY",	2014-10-14 06:12:56.950000,	172.122000,	172.142000,	0.020000	]
+#ALTER TABLE day2 SET READ ONLY;
+#CREATE TABLE day3 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'EUR/USD', epoch(1413267182327), 1.271910, 1.271990, 0.000080);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'USD/JPY', epoch(1413267181647), 107.114000,107.121000,0.007000);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'GBP/USD', epoch(1413267182048), 1.606870, 1.606980, 0.000110);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'EUR/GBP', epoch(1413267181968), 0.791490, 0.791600, 0.000110);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'USD/CHF', epoch(1413267182041), 0.950350, 0.950460, 0.000110);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'EUR/JPY', epoch(1413267182406), 136.241000,136.253000,0.012000);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'EUR/CHF', epoch(1413267181950), 1.208770, 1.208950, 0.000180);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'USD/CAD', epoch(1413267181830), 1.121120, 1.121230, 0.000110);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'AUD/USD', epoch(1413267181549), 0.878730, 0.878810, 0.000080);
+[ 1	]
+#INSERT INTO day3 VALUES( epoch(1413267181000), 'GBP/JPY', epoch(1413267181618), 172.116000,172.138000,0.022000);
+[ 1	]
+#SELECT * from day3;
+% sys.day3,	sys.day3,	sys.day3,	sys.day3,	sys.day3,	sys.day3 # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
+% 26,	7,	26,	14,	14,	14 # length
+[ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
+[ 2014-10-14 06:13:01.000000,	"USD/JPY",	2014-10-14 06:13:01.647000,	107.114000,	107.121000,	0.007000	]
+[ 2014-10-14 06:13:01.000000,	"GBP/USD",	2014-10-14 06:13:02.048000,	1.606870,	1.606980,	0.000110	]
+[ 2014-10-14 06:13:01.000000,	"EUR/GBP",	2014-10-14 06:13:01.968000,	0.791490,	0.791600,	0.000110	]
+[ 2014-10-14 06:13:01.000000,	"USD/CHF",	2014-10-14 06:13:02.041000,	0.950350,	0.950460,	0.000110	]
+[ 2014-10-14 06:13:01.000000,	"EUR/JPY",	2014-10-14 06:13:02.406000,	136.241000,	136.253000,	0.012000	]
+[ 2014-10-14 06:13:01.000000,	"EUR/CHF",	2014-10-14 06:13:01.950000,	1.208770,	1.208950,	0.000180	]
+[ 2014-10-14 06:13:01.000000,	"USD/CAD",	2014-10-14 06:13:01.830000,	1.121120,	1.121230,	0.000110	]
+[ 2014-10-14 06:13:01.000000,	"AUD/USD",	2014-10-14 06:13:01.549000,	0.878730,	0.878810,	0.000080	]
+[ 2014-10-14 06:13:01.000000,	"GBP/JPY",	2014-10-14 06:13:01.618000,	172.116000,	172.138000,	0.022000	]
+#ALTER TABLE day3 SET READ ONLY;
+#CREATE MERGE TABLE forex ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#ALTER TABLE forex ADD TABLE day1;
+#ALTER TABLE forex ADD TABLE day2;
+#ALTER TABLE forex ADD TABLE day3;
+#SELECT * FROM forex WHERE currency = 'EUR/USD';
+% .forex,	.forex,	.forex,	.forex,	.forex,	.forex # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
+% 26,	7,	26,	14,	14,	14 # length
+[ 2014-10-14 06:12:51.000000,	"EUR/USD",	2014-10-14 06:12:38.643000,	1.271810,	1.271890,	0.000080	]
+[ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
+[ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
+#SELECT avg(bid), sum(bid) FROM forex;
+% .L1,	.L2 # table_name
+% L1,	L2 # name
+% double,	decimal # type
+% 24,	41 # length
+[ 42.33074767,	1269.922430	]
+#SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
+% .forex,	.L2,	.L3 # table_name
+% currency,	L2,	L3 # name
+% clob,	decimal,	decimal # type
+% 7,	14,	41 # length
+[ "EUR/USD",	1.271833,	3.815500	]
+[ "USD/JPY",	107.118333,	321.355000	]
+[ "GBP/USD",	1.606836,	4.820510	]
+[ "EUR/GBP",	0.791463,	2.374390	]
+[ "USD/CHF",	0.950400,	2.851200	]
+[ "EUR/JPY",	136.238666,	408.716000	]
+[ "EUR/CHF",	1.208763,	3.626290	]
+[ "USD/CAD",	1.121149,	3.363450	]
+[ "AUD/USD",	0.878696,	2.636090	]
+[ "GBP/JPY",	172.121333,	516.364000	]
+#ALTER TABLE forex DROP TABLE day1;
+#SELECT * FROM forex WHERE currency = 'EUR/USD';
+% .forex,	.forex,	.forex,	.forex,	.forex,	.forex # table_name
+% clk,	currency,	ts,	bid,	offer,	spread # name
+% timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
+% 26,	7,	26,	14,	14,	14 # length
+[ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
+[ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
+#DROP TABLE forex;
+#DROP TABLE day1;
+#DROP TABLE day2;
+#DROP TABLE day3;
+
+# 20:39:01 >  
+# 20:39:01 >  "Done."
+# 20:39:01 >  
+

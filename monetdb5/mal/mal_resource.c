@@ -78,7 +78,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		heapinfo(&b->T->heap); total += vol;
 		heapinfo(b->T->vheap); total += vol;
 		hashinfo(b->T->hash); total += vol;
-		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
+		total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 	}
 	return total;
@@ -127,7 +127,7 @@ MALadmission(lng argclaim, lng hotclaim)
 	if (memoryclaims < 0)
 		memoryclaims = 0;
 	if (memorypool <= 0 && memoryclaims == 0)
-		memorypool = (lng)(MEMORY_THRESHOLD * monet_memory);
+		memorypool = (lng)(MEMORY_THRESHOLD );
 
 	if (argclaim > 0) {
 		if (memoryclaims == 0 || memorypool > argclaim + hotclaim) {
@@ -182,7 +182,7 @@ MALresourceFairness(lng usec)
 	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
-	if ( rss < MEMORY_THRESHOLD * monet_memory && usec <= TIMESLICE)
+	if ( rss < MEMORY_THRESHOLD && usec <= TIMESLICE)
 		return;
 
 	/* worker reporting time spent  in usec! */
@@ -194,13 +194,13 @@ MALresourceFairness(lng usec)
 		/* always keep one running to avoid all waiting  */
 		while (clk > 0 && running >= 2 && delayed < MAX_DELAYS) {
 			/* speed up wake up when we have memory */
-			if (rss < MEMORY_THRESHOLD * monet_memory)
+			if (rss < MEMORY_THRESHOLD )
 				break;
 			threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
 			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);

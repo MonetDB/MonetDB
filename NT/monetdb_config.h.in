@@ -221,9 +221,6 @@
 #define HAVE_ISINF 1
 #endif
 
-/* Define that you want to build the jsonstore library */
-/* #undef HAVE_JSONSTORE */
-
 /* Define to 1 if you have the `kill' function. */
 /* #undef HAVE_KILL */
 
@@ -348,6 +345,9 @@
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
+
+/* Define if you have netcdf installed */
+/* #undef HAVE_NETCDF */
 
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */

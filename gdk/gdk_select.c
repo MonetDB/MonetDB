@@ -1985,10 +1985,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		cnt = BATcount(r1);
 		assert(BATcount(r1) == BATcount(r2));
 	} else if ((BATcount(rl) > 2 ||
-		    l->T->imprints ||
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
-		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT)) &&
+		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT) ||
+		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column
 		 *

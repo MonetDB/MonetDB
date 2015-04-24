@@ -1,0 +1,78 @@
+stdout of test '22` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 16:02:06 >  
+# 16:02:06 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34442 --set xrpc_port=47029 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_tpch" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:02:06 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_benchmarks_tpch', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
+# MonetDB/SQL module v2.25.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 11:48:05 >  
+# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 22.sql
+# 11:48:05 >  
+
+# 14:36:28 >  
+# 14:36:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"
+# 14:36:28 >  
+
+#select
+#	cntrycode,
+#	count(*) as numcust,
+#	sum(c_acctbal) as totacctbal
+#from
+#	(
+#		select
+#			substring(c_phone from 1 for 2) as cntrycode,
+#			c_acctbal
+#		from
+#			customer
+#		where
+#			substring(c_phone from 1 for 2) in
+#				('13', '31', '23', '29', '30', '18', '17')
+#			and c_acctbal > (
+#				select
+#					avg(c_acctbal)
+#				from
+#					customer
+#				where
+#					c_acctbal > 0.00
+#					and substring(c_phone from 1 for 2) in
+#						('13', '31', '23', '29', '30', '18', '17')
+#			)
+#			and not exists (
+#				select
+#					*
+#				from
+% sys.custsale,	sys.L2,	sys.L3 # table_name
+% cntrycode,	numcust,	totacctbal # name
+% char,	wrd,	decimal # type
+% 15,	2,	41 # length
+[ "13",	10,	75359.29	]
+[ "17",	8,	62288.98	]
+[ "18",	14,	111072.45	]
+[ "23",	5,	40458.86	]
+[ "29",	11,	88722.85	]
+[ "30",	17,	122189.33	]
+[ "31",	8,	66313.16	]
+% .stats,	.stats # table_name
+% rewrite,	count # name
+% clob,	int # type
+% 7,	1 # length
+[ "joinidx",	0	]
+
+# 09:17:21 >  
+# 09:17:21 >  Done.
+# 09:17:21 >  
+

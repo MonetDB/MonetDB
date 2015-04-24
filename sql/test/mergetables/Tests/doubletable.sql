@@ -10,6 +10,6 @@ ALTER TABLE complete ADD TABLE part2;
 ALTER TABLE complete ADD TABLE part1;
 ALTER TABLE complete ADD TABLE part2;
 
+DROP TABLE complete;
 DROP TABLE part1;
 DROP TABLE part2;
-DROP TABLE complete;

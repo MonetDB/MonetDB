@@ -373,6 +373,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_NETCDF
+	$(ECHO) HAVE_NETCDF_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_NETCDF_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_ODBC
 	$(ECHO) HAVE_ODBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -422,11 +427,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_SQL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_JSONSTORE
-	$(ECHO) HAVE_JSONSTORE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JSONSTORE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_TESTING
 	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

@@ -33,18 +33,18 @@ Ready.
 #select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
 % .L5,	.L5 # table_name
 % L2,	v # name
-% bigint,	decimal # type
-% 13,	20 # length
-[ 1412467200000,	42.000000000	]
-[ 1412467200000,	43.000000000	]
-[ 1412467200000,	NULL	]
-[ 1412467200000,	NULL	]
+% sec_interval,	decimal # type
+% 0,	20 # length
+[ 1412467200.000,	42.000000000	]
+[ 1412467200.000,	43.000000000	]
+[ 1412467200.000,	NULL	]
 #explain select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
 % .explain # table_name
 % mal # name
 % clob # type
-% 187 # length
+% 206 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
+    X_63:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",34);
     X_6:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
     X_5 := sql.mvc();
     X_9:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec");
@@ -68,16 +68,15 @@ function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
     X_45 := sql.delta(X_35,X_40,r1_51,X_43);
     X_46 := algebra.leftfetchjoin(X_9,X_45);
     X_47 := bat.append(X_32,X_46,true);
-    X_48 := algebra.project(X_21,A2);
-    X_49:bat[:oid,:lng]  := mal.manifold("calc","lng",X_48,18,9);
-    X_54 := bat.append(X_47,X_49,true);
-    X_55 := sql.resultSet(2,1,X_30);
-    sql.rsColumn(X_55,".L5","L2","bigint",64,0,X_30);
-    sql.rsColumn(X_55,".L5","v","decimal",18,9,X_54);
-    X_63 := io.stdout();
-    sql.exportResult(X_63,X_55);
-end s5_1;
-# querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe")
+    X_48 := sql.single(nil:lng);
+    X_49:bat[:oid,:lng] := batcalc.lng(X_48,18,9);
+    X_52 := bat.append(X_47,X_49,true);
+    X_53 := sql.resultSet(2,1,X_30);
+    sql.rsColumn(X_53,".L5","L2","sec_interval",19,0,X_30);
+    sql.rsColumn(X_53,".L5","v","decimal",18,9,X_52);
+    X_61 := io.stdout();
+    sql.exportResult(X_61,X_53);
+end user.s5_1;
 
 # 23:28:04 >  
 # 23:28:04 >  "Done."

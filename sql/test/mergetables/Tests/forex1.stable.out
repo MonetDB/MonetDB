@@ -1,0 +1,44 @@
+stdout of test 'forex1` in directory 'sql/test/mergetables` itself:
+
+
+# 15:41:07 >  
+# 15:41:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37150" "--set" "mapi_usock=/var/tmp/mtest-2742/.s.monetdb.37150" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:41:07 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37150/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2742/.s.monetdb.37150
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:41:08 >  
+# 15:41:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2742" "--port=37150"
+# 15:41:08 >  
+
+#CREATE MERGE TABLE forex ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#CREATE TABLE forex1 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
+#ALTER TABLE forex1 SET READ ONLY;
+#ALTER TABLE forex ADD TABLE forex1;
+#SELECT X.clk FROM forex AS X;
+% sys.x # table_name
+% clk # name
+% timestamp # type
+% 26 # length
+#ALTER TABLE forex DROP TABLE forex1;
+#DROP TABLE forex1;
+#DROP TABLE forex;
+
+# 15:41:08 >  
+# 15:41:08 >  "Done."
+# 15:41:08 >  
+

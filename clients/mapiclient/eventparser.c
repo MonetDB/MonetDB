@@ -53,7 +53,7 @@ parseArguments(char *call, int m)
 	
 	if( debug)
 		fprintf(stderr,"%s\n",call);
-	// also skip keywords
+	// skip MAL keywords
 	if( strncmp(c,"function ",10) == 0 ) c +=10;
 	if( strncmp(c,"end ",4) == 0 ) c +=4;
 	if( strncmp(c,"barrier ",8) == 0 ) c +=8;
@@ -68,13 +68,14 @@ parseArguments(char *call, int m)
 	if (*c !=')')
 	for( ; c && *c && malargc < MAXMALARGS;  c++){
 		if(isalpha((int)*c) &&  strncmp(c,"nil",3) && strncmp(c,"true",4) && strncmp(c,"false",5) ){
-			// remember variable in its own structure, it ends with :=
+			// remember variable in its own structure, it ends with =
 			v=  c;
 			c= strchr(c,'=');
 			if( c == 0)
 				break;
 			*c = 0;
 			malvariables[malvartop++] = strdup(v);
+			*c = '=';
 			c++;
 		}
 		// all arguments have a value
@@ -128,7 +129,8 @@ parseArguments(char *call, int m)
 			*c = ch;
 			if( ch == ';') break;
 		} else malargc++;
-		if( *c == '{') {
+
+		if( *c == '{') { // skip property lists
 			while(*c && *c != '}') c++;
 			c++;
 		}
@@ -142,6 +144,7 @@ parseArguments(char *call, int m)
 			fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
 	}
 }
+
 int
 eventparser(char *row, EventRecord *ev)
 {

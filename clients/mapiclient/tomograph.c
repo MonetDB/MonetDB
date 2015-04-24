@@ -70,8 +70,10 @@ static char hostname[128];
 static char *basefilename = "tomograph";
 static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
+static int systemcall = 1; // attempt system call
 static char *inputfile = NULL;
 static char *title = 0;
+static char *query = 0;
 static int beat = 5000;
 static int cpus = 0;
 static int atlas= 1;
@@ -83,10 +85,6 @@ static MapiHdl hdl = NULL;
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
  */
-#define MAXMALARGS 1024
-char *malarguments[MAXMALARGS];
-int malargtop;
-
 static int capturing=0;
 
 #define MAXTHREADS 1048
@@ -429,8 +427,9 @@ usageTomograph(void)
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
+	fprintf(stderr, "  -s | --system=# (on= 1(default) off=0\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
-	fprintf(stderr, "  -A | --atlas=<number> maximum number of pages\n");
+	fprintf(stderr, "  -A | --atlas=<number> maximum number of queries (default 1)\n");
 	fprintf(stderr, "  -D | --debug\n");
 	fprintf(stderr, "  -? | --help\n");
 	exit(-1);
@@ -443,7 +442,12 @@ static void createTomogram(void);
 static void
 stopListening(int i)
 {
-	fprintf(stderr,"signal %d received\n",i);
+#define BSIZE 64*1024
+	char buf[BSIZE + BUFSIZ]={0};
+	char pages[BSIZE]={0};
+	int error =0, plen =0;
+	if( i)
+		fprintf(stderr,"signal %d received\n",i);
 	if( dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
@@ -451,10 +455,29 @@ stop_disconnect:
 		createTomogram();
 	// show follow up action only once
 	if(atlaspage >= 1){
-		fprintf(stderr, "To create the atlas run:\n");
-		for (i = 0; i< atlaspage;  i++)
+		for (i = 0; systemcall && error == 0 && i< atlaspage;  i++){
+			snprintf(buf, BUFSIZ, "gnuplot %s_%02d.gpl;",basefilename,i);
+			plen += snprintf(pages, BSIZE -plen,"%s_%02d.pdf;",basefilename,i);
+			if ( plen >= BSIZE-1){
+				error = -1;
+				break;
+			} 
+			error = system(buf);
+		}
+
+		if( i < atlaspage)
+			fprintf(stderr, "To finish the atlas run:\n");
+		for (; i< atlaspage;  i++)
 			fprintf(stderr, "gnuplot %s_%02d.gpl;",basefilename,i);
-		fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s_??.pdf\n",basefilename,basefilename);
+
+		if( systemcall && error == 0) {
+			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s",basefilename,pages);
+			error = system(buf);
+		}
+		if( error == 0) 
+			fprintf(stderr,"-- done: %s.pdf\n", basefilename);
+		else
+			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s\n",basefilename,pages);
 	}
 
 	if(dbh)
@@ -513,7 +536,6 @@ static void resetTomograph(void){
 		lastclk[i]=0;
 	topbox =0;
 	events = 0;
-	malargtop =0;
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
 	memset((char*) box, 0, sizeof(Box) * MAXBOX);
@@ -1371,7 +1393,7 @@ update(char *line, EventRecord *ev)
 		box[idx].fcn = ev->fcn ? ev->fcn : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument
-			currentquery = malarguments[0];
+			currentquery = malarguments[malretc + 0];
 			// use the truncated query text, beware the the \ is already escaped in the call argument.
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
 			for (c= currentquery; *c; )
@@ -1398,7 +1420,7 @@ update(char *line, EventRecord *ev)
 				qry[93]= 0;
 			}
 			currentquery = qry;
-			fprintf(stderr,"-- page %d %s:%s\n",atlaspage, (title?title:""), currentquery);
+			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
 		}
 		return;
 	}
@@ -1485,7 +1507,7 @@ main(int argc, char **argv)
 	int colormap=0;
 	EventRecord event;
 
-	static struct option long_options[15] = {
+	static struct option long_options[17] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -1495,6 +1517,8 @@ main(int argc, char **argv)
 		{ "title", 1, 0, 'T' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
+		{ "system", 1, 0, 's' },
+		{ "query", 1, 0, 'q' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
@@ -1508,7 +1532,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:o:Db:A:m",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:Db:A:m",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1527,6 +1551,10 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dbname = optarg;
+			break;
+		case 'q':
+			query = optarg;
+			atlas = 1;
 			break;
 		case 'i':
 			inputfile = optarg;
@@ -1554,6 +1582,9 @@ main(int argc, char **argv)
 			break;
 		case 'T':
 			title = optarg;
+			break;
+		case 's':
+			systemcall = atoi(optarg?optarg:0);
 			break;
 		case 'o':
 			basefilename = strdup(optarg);
@@ -1716,6 +1747,12 @@ main(int argc, char **argv)
 		if( tracefd == NULL)
 			fprintf(stderr,"Could not create trace file\n");
 
+		if(query){
+			// fork and execute mclient session (TODO)
+			snprintf(buf, BUFSIZ,"mclient -d %s -s \"%s\"",dbname,query);
+			fprintf(stderr,"%s\n",buf);
+			fprintf(stderr,"Not yet implemented\n");
+		}
 		len = 0;
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
