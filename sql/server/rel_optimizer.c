@@ -6642,6 +6642,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 
 							if (first)
 								pos[j] = i + 1;
+							i = pos[j] - 1;
 							col = name_find_column(prel, e->l, e->r, -2, &bt);
 							assert(col);
 							if (sql_trans_ranges(sql->session->tr, col, &min, &max)) {
