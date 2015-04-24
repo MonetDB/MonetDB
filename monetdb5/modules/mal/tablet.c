@@ -1684,10 +1684,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
 		/* trim the BATs discarding error tuples */
 #define trimerrors(TYPE) \
-{	unsigned long *src, *dst;\
+{	TYPE *src, *dst;\
 	BUN leftover= BATcount(task->as->format[attr].c);\
 	limit = leftover - cntstart;\
-	dst =src= (unsigned long *) BUNtloc(task->as->format[attr].ci,cntstart);\
+	dst =src= (TYPE *) BUNtloc(task->as->format[attr].ci,cntstart);\
 	for(j = 0; j < (int) limit; j++, src++){\
 		if ( task->rowerror[j]){\
 			leftover--;\
@@ -1705,7 +1705,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			BUN limit;
 			for( attr=0; attr < as->nr_attrs; attr++){
 				switch(ATOMsize(as->format[attr].c->ttype)){
-				case 1: trimerrors(unsigned bte); break;
+				case 1: trimerrors(unsigned char); break;
 				case 2: trimerrors(unsigned short); break;
 				case 4:
 					{	unsigned int *src, *dst;
