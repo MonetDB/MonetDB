@@ -2306,14 +2306,14 @@ log_bid
 logger_find_bat(logger *lg, const char *name)
 {
 	BATiter cni = bat_iterator(lg->catalog_nme);
-	BUN p, q;
+	BUN p;
 
-	BATloop(lg->catalog_bid, p, q) {
-		const str n = BUNtail(cni, p);
-
-		if (strcmp(n, name) == 0 && BUNfnd(lg->dcatalog, &p) == BUN_NONE)
-			return *(log_bid *) Tloc(lg->catalog_bid, p);
-	}
+	if (lg->catalog_nme->T->hash || BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
+		HASHloop_str(cni, cni.b->T->hash, p, name) {
+			if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
+				return *(log_bid *) Tloc(lg->catalog_bid, p);
+		}
+	} 
 	return 0;
 }
 

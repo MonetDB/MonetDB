@@ -83,6 +83,11 @@ mTests_sql_jdbc_tests	sys	dependencies	SYSTEM TABLE	null	null	null	null	rowid	SY
 mTests_sql_jdbc_tests	sys	functions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	idxs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	netcdf_attrs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	netcdf_dims	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	netcdf_files	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	netcdf_vardim	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	netcdf_vars	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	privileges	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	schemas	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
