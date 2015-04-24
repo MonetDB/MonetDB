@@ -50709,6 +50709,22 @@ command mtime.year(d:date):int
 address MTIMEdate_extract_year;
 comment extracts year from date (nonzero	value between -5867411 and +5867411).
 
+pattern netcdf.attach(filename:str):void 
+address NCDFattach;
+comment Register a NetCDF file in the vault
+
+pattern netcdf.importvariable(fileid:int,varname:str):void 
+address NCDFimportVariable;
+comment Import variable: create array and load data from variable varname of file fileid
+
+command netcdf.importvar(filename:str,varid:int):str 
+address NCDFimportVarStmt;
+comment Import variable: compose create array string
+
+command netcdf.test(filename:str):int 
+address NCDFtest;
+comment Returns number of variables in a given NetCDF dataset (file)
+
 pattern optimizer.aliases(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Alias removal optimizer
