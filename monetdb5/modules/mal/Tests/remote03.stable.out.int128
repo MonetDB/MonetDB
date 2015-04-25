@@ -111,6 +111,7 @@ SyntaxException:parseError:                       ^'(' expected
 [ 30@0,	"pcre"  ]
 [ 31@0,	"mbr"  ]
 [ 32@0,	"wkb"  ]
+[ 33@0, "wkba"  ]
 [ "rmt2_X_8_void" ]
 [ nil ]
 
