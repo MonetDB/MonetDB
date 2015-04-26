@@ -517,8 +517,8 @@ static int
 output_file_default(Tablet *as, BAT *order, stream *fd)
 {
 	int len = BUFSIZ, locallen = BUFSIZ, res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	char *buf = GDKzalloc(len);
+	char *localbuf = GDKzalloc(len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = BUNfirst(order) + as->offset;
@@ -554,8 +554,8 @@ static int
 output_file_dense(Tablet *as, stream *fd)
 {
 	int len = BUFSIZ, locallen = BUFSIZ, res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	char *buf = GDKzalloc(len);
+	char *localbuf = GDKzalloc(len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
@@ -585,7 +585,7 @@ static int
 output_file_ordered(Tablet *as, BAT *order, stream *fd, oid base)
 {
 	int len = BUFSIZ, res = 0;
-	char *buf = GDKmalloc(len);
+	char *buf = GDKzalloc(len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = BUNfirst(order) + as->offset;
@@ -751,7 +751,7 @@ SQLload_error(READERtask *task, lng idx)
 		else
 			sz += task->seplen;
 
-	line = (str) GDKmalloc(sz + task->rseplen + 1);
+	line = (str) GDKzalloc(sz + task->rseplen + 1);
 	if (line == 0) {
 		tablet_error(task, idx, int_nil, "SQLload malloc error", "SQLload_error");
 		return 0;
@@ -1012,7 +1012,7 @@ SQLworker(void *arg)
 	Thread thr;
 
 	thr = THRnew("SQLworker");
-	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKerrbuf[0] = 0;
 	task->errbuf = GDKerrbuf;
 #ifdef _DEBUG_TABLET_

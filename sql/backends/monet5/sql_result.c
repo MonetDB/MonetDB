@@ -36,7 +36,7 @@
 				if (*Buf)				\
 					GDKfree(*Buf);			\
 				*len = 5;				\
-				*Buf = GDKmalloc(*len);			\
+				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
 					GDKerror("Allocation failed\n"); \
 					return 0;			\
@@ -69,7 +69,7 @@
 			if (*Buf)					\
 				GDKfree(*Buf);				\
 			*len = l+1;					\
-			*Buf = GDKmalloc(*len);				\
+			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
 				GDKerror("Allocation failed\n");	\
 				return 0;				\
@@ -134,7 +134,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		if (*len < 4 || *buf == NULL) {
 			if (*buf)
 				GDKfree(*buf);
-			*buf = (str) GDKmalloc(*len = 4);
+			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -152,7 +152,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -203,7 +203,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + len2 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + len2 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -454,7 +454,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-		    (r = GDKmalloc(sizeof(X))) == NULL)			\
+		    (r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -536,7 +536,7 @@ sec_frstr(Column *c, int type, const char *s)
 	if (*s)
 		return NULL;
 	r = c->data;
-	if (r == NULL && (r = (lng *) GDKmalloc(sizeof(lng))) == NULL)
+	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
 		return NULL;
 	c->data = r;
 	if (neg)
@@ -634,7 +634,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		if (l + 3 > *len) {
 			GDKfree(*buf);
 			*len = 2 * l + 3;
-			*buf = GDKmalloc(*len);
+			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -683,6 +683,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	BUN cnt = 0;
 	str msg = MAL_SUCCEED;
 
+	*bats =0;	// initialize the receiver
+
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
 		m->type = -1;
@@ -719,7 +721,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		as.tryall = 0;
 		as.complaints = NULL;
 		as.filename = "";
-		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
@@ -740,7 +742,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
 			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-			fmt[i].data = GDKmalloc(fmt[i].len);
+			fmt[i].data = GDKzalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep ? ssep[0] : 0;
@@ -1246,7 +1248,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	as.nr = nr;
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
+	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";
