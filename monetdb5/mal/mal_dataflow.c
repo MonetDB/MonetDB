@@ -126,7 +126,6 @@ q_create(int sz, const char *name)
 	}
 	q->exitcount = 0;
 
-	(void) name; /* in case MT_LOCK_TRACE is not enabled in gdk_system.h */
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
 	return q;
