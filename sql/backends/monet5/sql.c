@@ -1683,38 +1683,19 @@ mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum, void* defVal) {
         		fillVals(flt, *(flt*)defVal);
 			break;
     	case TYPE_dbl:
-#if 0
-     {
-			dbl *elements_in = NULL, *elements = NULL;
-			BUN i;
-
-        	if((b = BATnew(TYPE_void, TYPE_dbl, cellsNum, TRANSIENT)) == NULL)
-        		return NULL;
-
-        	elements = (dbl*) Tloc(b, BUNfirst(b));
-			elements_in = (dbl*) Tloc(b_in, BUNfirst(b_in));
-
-			/*Add the elements that have been inserted into the cells*/
-			for(i=0; i<BATcount(b_in); i++) {
-                elements[i] = elements_in[i];
-    		}
-			/*Fill the rest of the cells with the default value or NULL if no \
- 			* default values is provided*/
-			for(;i<cellsNum; i++) {
-				if(!c->def)
-					elements[i] = dbl_nil;
-				else 
-					elements[i] = defVal->data.val.dval;
-			}
-
-        	b->tsorted = 0;
-        	b->trevsorted = 0;
-    }
-#endif
 			if(!defVal)
 				fillVals(dbl, dbl_nil);
 			else
    				fillVals(dbl, *(dbl*)defVal);
+			break;
+		case TYPE_str:
+			if(!defVal) {
+				char str_nil_2[2];
+				strcpy(str_nil_2, str_nil);
+				fillVals(str, str_nil_2);
+			}
+			else
+   				fillVals(str, *(str*)defVal);
 			break;
 	    default:
 			fprintf(stderr, "mvc_fill_values: non-dimensional column type not handled\n");
@@ -1877,6 +1858,9 @@ fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *eleme
     	case TYPE_dbl:
         	materialiseDim(dbl, dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval);
         	break;
+    	case TYPE_str:
+			fprintf(stderr, "mvc_create_dimension_bat: str dimension needs special handling\n");
+        	return NULL;
 	    default:
 			fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
 			return NULL;
