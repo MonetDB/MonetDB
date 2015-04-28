@@ -278,18 +278,14 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 	char *params[1024];  // one for each parameter
 	char *loc;
 	char *str;
-	size_t slen;
 	projPJ result;
 
 
 	if (projStr == NULL) return NULL;
 
-	slen = strlen(projStr);
-
-	if (slen == 0) return NULL;
-
-	str = GDKmalloc(slen+1);
-	strcpy(str, projStr);
+	str = GDKstrdup(projStr);
+	if (str == NULL)
+		return NULL;
 
 	// first we split the string into a bunch of smaller strings,
 	// based on the " " separator
@@ -1362,7 +1358,7 @@ static str dumpGeometriesSingle(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* ge
 	wkb* singleWKB = geos2wkb(geosGeometry);
 
 	//change the path only if it is empty
-	if(strlen(path) == 0) {
+	if(pathLength == 0) {
 		int lvlDigitsNum = 10; //MAX_UNIT = 4,294,967,295
 
 		(*lvl)++;
@@ -1846,10 +1842,9 @@ str geoGetType(char** res, int* info, int* flag) {
 	int type = (*info >> 2);
 	const char* typeStr=geom_type2str(type, *flag) ;
 
-	*res=GDKmalloc(strlen(typeStr));
+	*res=GDKstrdup(typeStr);
 	if (*res == NULL)
 		throw(MAL, "geo.getType", MAL_MALLOC_FAIL);
-	strcpy(*res, typeStr);
 	return MAL_SUCCEED;
 }
 
@@ -2145,7 +2140,7 @@ str wkbFromWKB(wkb **w, wkb **src) {
 /*int* tpe is needed to verify that the type of the FromText function used is the
  * same with the type of the geometry created from the wkt representation */
 str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
-	size_t len=0; 
+	int len=0; 
 	int te = 0;
 	char *errbuf = NULL;
 	str ex;
@@ -2180,17 +2175,16 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 /*create textual representation of the wkb */
 str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
-	size_t len =0;
-	char* wkt;
+	int len =0;
+	char* wkt = NULL;
 
 	if(wkbTOSTR(&wkt, &len, *geomWKB)) {
 		if(!withSRID || *withSRID == 0) { //accepting NULL withSRID to make easier the internal use of it
-			*txt = GDKmalloc(strlen(wkt));
+			*txt = GDKstrdup(wkt);
 			if(*txt == NULL) {
 				GDKfree(wkt);
 				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
 			}
-			strcpy(*txt, wkt);
 		} else {
 			char* sridTxt = "SRID:";
 			char* sridIntToString = NULL;
@@ -2350,7 +2344,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	//print areas
 	for(i=0; i<itemsNum; i++) {
 		char* toStr = NULL;
-		size_t len = 0;
+		int len = 0;
 		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
 		GDKfree(toStr);
 	}
@@ -4747,7 +4741,7 @@ str wkbCoordinateFromWKB(dbl* coordinateValue, wkb** geomWKB, int* coordinateIdx
 str
 mbrFromString(mbr **w, str *src)
 {
-	size_t len = *w ? sizeof(mbr) : 0;
+	int len = *w ? (int) sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
@@ -4804,7 +4798,7 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
-size_t wkbTOSTR(char **geomWKT, size_t* len, wkb *geomWKB) {
+int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 	char *wkt = NULL;
 	size_t dstStrLen = 5;			/* "nil" */
 
@@ -4826,23 +4820,28 @@ size_t wkbTOSTR(char **geomWKT, size_t* len, wkb *geomWKB) {
 	}
 
 	if (wkt) {
-	//	if (*len < (int) dstStrLen + 1) 
-			*len = dstStrLen+1;
-		
-		*geomWKT = GDKmalloc(*len);
+		if (*len < (int) dstStrLen + 1) {
+			*len = (int) dstStrLen + 1;
+			GDKfree(*geomWKT);
+			*geomWKT = GDKmalloc(*len);
+		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
 		GEOSFree(wkt);
 	} else {
+		if (*len < 4) {
+			GDKfree(*geomWKT);
+			*geomWKT = GDKmalloc(*len = 4);
+		}
 		strcpy(*geomWKT, "nil");
 	}
 
 	assert(dstStrLen <= GDK_int_max);
-	return dstStrLen;
+	return (int) dstStrLen;
 }
 
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
-size_t wkbFROMSTR(char* geomWKT, size_t* len, wkb **geomWKB, int srid) {
+int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	char *polyhedralSurface = "POLYHEDRALSURFACE";
@@ -4918,7 +4917,7 @@ size_t wkbFROMSTR(char* geomWKT, size_t* len, wkb **geomWKB, int srid) {
 
 	parsedCharacters =  strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
-	return parsedCharacters;
+	return (int) parsedCharacters;
 }
 
 BUN wkbHASH(wkb *w) {
@@ -5026,7 +5025,7 @@ void wkbHEAP(Heap *heap, size_t capacity) {
 
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
-size_t mbrTOSTR(char **dst, size_t *len, mbr *atom) {
+int mbrTOSTR(char **dst, int *len, mbr *atom) {
 	static char tempWkt[MBR_WKTLEN];
 	size_t dstStrLen = 3;
 
@@ -5037,23 +5036,21 @@ size_t mbrTOSTR(char **dst, size_t *len, mbr *atom) {
 		assert(dstStrLen < GDK_int_max);
 	}
 
-//	if (*len < dstStrLen + 1) {
-//		if (*dst)
-//			GDKfree(*dst);
-//		*dst = GDKmalloc(*len = dstStrLen + 1);
-//	}
-	*dst = GDKmalloc(*len = dstStrLen + 1);
+	if (*len < dstStrLen + 1 || *dst == NULL) {
+		GDKfree(*dst);
+		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
+	}
 
 	if (dstStrLen > 3)
 		snprintf(*dst, *len, "\"%s\"", tempWkt);
 	else
 		strcpy(*dst, "nil");
-	return dstStrLen;
+	return (int) dstStrLen;
 }
 
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
-size_t mbrFROMSTR(char *src, size_t *len, mbr **atom) {
+int mbrFROMSTR(char *src, int *len, mbr **atom) {
 	int nil = 0;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL; /* The geometry object that is parsed from the src string. */
@@ -5099,7 +5096,7 @@ size_t mbrFROMSTR(char *src, size_t *len, mbr **atom) {
 	if (geosMbr)
 		GEOSGeom_destroy(geosMbr);
 	assert(nchars <= GDK_int_max);
-	return nchars;
+	return (int) nchars;
 }
 
 /* HASH: compute a hash value. */
@@ -5186,7 +5183,7 @@ int mbrWRITE(mbr *c, stream *s, size_t cnt) {
  * while the rerurned length (correctly!) is of type size_t ?
  * (not only here, but also elsewhere in this file / the geom code)
  */
-size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
+int wkbaTOSTR(char **toStr, int *len, wkba *fromArray) {
 	int items = fromArray->itemsNum, i;
 	int itemsNumDigits = (int)ceil(log10(items));
 	size_t dataSize;//, skipBytes=0;
@@ -5199,17 +5196,19 @@ size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
 
 	
 	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
-	partialStrs = (char**)GDKmalloc(sizeof(char**));
-	*partialStrs = (char*) GDKmalloc(items*sizeof(char*));
+	partialStrs = (char**)GDKzalloc(items*sizeof(char**));
 	//create the string version of each wkb
 	for(i=0; i<items; i++) {
-		dataSize += wkbTOSTR(&partialStrs[i], len, fromArray->data[i])-2; //remove quotes
+		int llen = 0;
+		dataSize += wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i])-2; //remove quotes
 		
 		if(strcmp(partialStrs[i], nilStr) == 0) {
-			*len = 6;
-			*toStr = GDKmalloc(6);
+			if (*len < 4 || *toStr == NULL) {
+				GDKfree(*toStr);
+				*toStr = GDKmalloc(*len = 4);
+			}
 			strcpy(*toStr, "nil");
-			return 5;
+			return 3;
 		}
 	}
 
@@ -5219,40 +5218,42 @@ size_t wkbaTOSTR(char **toStr, size_t *len, wkba *fromArray) {
 	dataSize += 2*sizeof(char)*items;
 
 	//copy all partial strings to a single one
-	*toStr = GDKmalloc(dataSize+3); //plus quotes+termination character
+	if (*len < dataSize + 3 || *toStr == NULL) {
+		GDKfree(*toStr);
+		*toStr = GDKmalloc(*len = (int) dataSize + 3); /* plus quotes + termination character */
+	}
 	toStrPtr=*toStr;
-	*(toStrPtr++) = '\"';
-	*(toStrPtr++) = '[';
+	*toStrPtr++ = '\"';
+	*toStrPtr++ = '[';
 	strcpy(toStrPtr, itemsNumStr);
 	toStrPtr+=strlen(itemsNumStr);
-	*(toStrPtr++) = ']';
+	*toStrPtr++ = ']';
 	for(i=0; i<items; i++) {
 		if(i==0)
-			*(toStrPtr++) = ':';
+			*toStrPtr++ = ':';
 		else
-			*(toStrPtr++) = ',';
-		*(toStrPtr++) = ' ';	
+			*toStrPtr++ = ',';
+		*toStrPtr++ = ' ';	
 
 		//strcpy(toStrPtr, partialStrs[i]);
 		memcpy(toStrPtr, &partialStrs[i][1], strlen(partialStrs[i])-2);
 		toStrPtr+=strlen(partialStrs[i])-2;
 		GDKfree(partialStrs[i]);
-		
 	}
 
-	*(toStrPtr++) = '\"';
+	*toStrPtr++ = '\"';
 	*toStrPtr='\0';
 
 	GDKfree(partialStrs);
 	GDKfree(itemsNumStr);
 
-	*len = strlen(*toStr)+1;
+	*len = (int) strlen(*toStr)+1;
 	assert(*len < (size_t) GDK_int_max);
-	return (size_t)(toStrPtr-*toStr);
+	return (int)(toStrPtr-*toStr);
 }
 
 /* return number of parsed characters. */
-size_t wkbaFROMSTR(char *fromStr, size_t *len, wkba **toArray, int srid) {
+int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray, int srid) {
 	int items, i;
 	size_t skipBytes=0;
 
@@ -5270,7 +5271,7 @@ size_t wkbaFROMSTR(char *fromStr, size_t *len, wkba **toArray, int srid) {
 	}
 	
 	assert(skipBytes <= GDK_int_max);
-	return skipBytes;
+	return (int) skipBytes;
 }
 
 /* returns a pointer to a null wkba */
