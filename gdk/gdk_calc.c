@@ -1979,9 +1979,9 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	/* if both inputs are sorted the same way, and no overflow
 	 * occurred (we only know for sure if abort_on_error is set),
 	 * the result is also sorted */
-	bn->T->sorted = (abort_on_error && b1->T->sorted & b2->T->sorted) ||
+	bn->T->sorted = (abort_on_error && b1->T->sorted & b2->T->sorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
-	bn->T->revsorted = (abort_on_error && b1->T->revsorted & b2->T->revsorted) ||
+	bn->T->revsorted = (abort_on_error && b1->T->revsorted & b2->T->revsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
@@ -2032,9 +2032,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+	bn->T->sorted = (abort_on_error && b->T->sorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
-	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+	bn->T->revsorted = (abort_on_error && b->T->revsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
@@ -2085,9 +2085,9 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+	bn->T->sorted = (abort_on_error && b->T->sorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
-	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+	bn->T->revsorted = (abort_on_error && b->T->revsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
@@ -3257,9 +3257,9 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	/* if the input is sorted, and no overflow occurred (we only
 	 * know for sure if abort_on_error is set), the result is also
 	 * sorted */
-	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+	bn->T->sorted = (abort_on_error && b->T->sorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
-	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+	bn->T->revsorted = (abort_on_error && b->T->revsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->T->key = cnt <= 1;
 	bn->T->nil = nils != 0;
@@ -4572,10 +4572,10 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
+		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted && nils == 0) ||
 			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
-		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
+		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted && nils == 0) ||
 			(sign.val.btval <= 0 && b->T->sorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
 	} else {
@@ -4630,10 +4630,10 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
+		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted && nils == 0) ||
 			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
-		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
+		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted && nils == 0) ||
 			(sign.val.btval <= 0 && b->T->sorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
 	} else {
@@ -5819,10 +5819,10 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 		ValRecord sign;
 
 		VARcalcsign(&sign, v);
-		bn->T->sorted = (sign.val.btval > 0 && b->T->sorted) ||
+		bn->T->sorted = (sign.val.btval > 0 && b->T->sorted && nils == 0) ||
 			(sign.val.btval < 0 && b->T->revsorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
-		bn->T->revsorted = (sign.val.btval > 0 && b->T->revsorted) ||
+		bn->T->revsorted = (sign.val.btval > 0 && b->T->revsorted && nils == 0) ||
 			(sign.val.btval < 0 && b->T->sorted && nils == 0) ||
 			cnt <= 1 || nils == cnt;
 	} else {
