@@ -77,6 +77,7 @@ SYSTEM TABLE  sys.objects
 SYSTEM TABLE  sys.privileges
 SYSTEM TABLE  sys.schemas
 SYSTEM TABLE  sys.sequences
+SYSTEM TABLE  sys.spatial_ref_sys
 SYSTEM TABLE  sys.statistics
 SYSTEM TABLE  sys.storagemodelinput
 SYSTEM TABLE  sys.systemfunctions
@@ -85,6 +86,7 @@ SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
 SYSTEM VIEW  sys.columns
 SYSTEM VIEW  sys.environment
+SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.optimizers
 SYSTEM VIEW  sys.querylog_calls
 SYSTEM VIEW  sys.querylog_catalog
@@ -97,24 +99,15 @@ SYSTEM VIEW  sys.tables
 SYSTEM VIEW  sys.tablestoragemodel
 SYSTEM VIEW  sys.tracelog
 SYSTEM VIEW  sys.users
-SYSTEM FUNCTION  sys.Intersect
-SYSTEM FUNCTION  sys.Union
 SYSTEM FUNCTION  sys.abbrev
 SYSTEM FUNCTION  sys.alpha
 SYSTEM FUNCTION  sys.analyze
-SYSTEM FUNCTION  sys.area
-SYSTEM FUNCTION  sys.astext
 SYSTEM FUNCTION  sys.bbp
-SYSTEM FUNCTION  sys.boundary
 SYSTEM FUNCTION  sys.broadcast
-SYSTEM FUNCTION  sys.buffer
 SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.columnsize
-SYSTEM FUNCTION  sys.contains
 SYSTEM FUNCTION  sys.convert
-SYSTEM FUNCTION  sys.convexhull
 SYSTEM FUNCTION  sys.corr
-SYSTEM FUNCTION  sys.crosses
 SYSTEM FUNCTION  sys.date_to_str
 SYSTEM FUNCTION  sys.db_users
 SYSTEM FUNCTION  sys.degrees
@@ -135,23 +128,16 @@ SYSTEM FUNCTION  sys.dependencies_tables_on_triggers
 SYSTEM FUNCTION  sys.dependencies_tables_on_views
 SYSTEM FUNCTION  sys.dependencies_views_on_functions
 SYSTEM FUNCTION  sys.dependencies_views_on_triggers
-SYSTEM FUNCTION  sys.difference
-SYSTEM FUNCTION  sys.dimension
-SYSTEM FUNCTION  sys.disjoint
-SYSTEM FUNCTION  sys.distance
 SYSTEM FUNCTION  sys.env
-SYSTEM FUNCTION  sys.envelope
 SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
-SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
 SYSTEM FUNCTION  sys.fitsattach
 SYSTEM FUNCTION  sys.fitsload
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
-SYSTEM FUNCTION  sys.geomcollectionfromtext
-SYSTEM FUNCTION  sys.geometrytypeid
-SYSTEM FUNCTION  sys.geomfromtext
+SYSTEM FUNCTION  sys.geometrytype
+SYSTEM FUNCTION  sys.get_type
 SYSTEM FUNCTION  sys.getanchor
 SYSTEM FUNCTION  sys.getbasename
 SYSTEM FUNCTION  sys.getcontent
@@ -161,36 +147,31 @@ SYSTEM FUNCTION  sys.getextension
 SYSTEM FUNCTION  sys.getfile
 SYSTEM FUNCTION  sys.gethost
 SYSTEM FUNCTION  sys.getport
+SYSTEM FUNCTION  sys.getproj4
 SYSTEM FUNCTION  sys.getprotocol
 SYSTEM FUNCTION  sys.getquery
 SYSTEM FUNCTION  sys.getroboturl
 SYSTEM FUNCTION  sys.getuser
+SYSTEM FUNCTION  sys.has_m
+SYSTEM FUNCTION  sys.has_z
 SYSTEM FUNCTION  sys.hashsize
 SYSTEM FUNCTION  sys.heapsize
 SYSTEM FUNCTION  sys.host
 SYSTEM FUNCTION  sys.hostmask
 SYSTEM FUNCTION  sys.ilike
 SYSTEM FUNCTION  sys.imprintsize
-SYSTEM FUNCTION  sys.intersection
+SYSTEM FUNCTION  sys.internaltransform
 SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
-SYSTEM FUNCTION  sys.isempty
-SYSTEM FUNCTION  sys.issimple
 SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
-SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.like
-SYSTEM FUNCTION  sys.linefromtext
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
 SYSTEM FUNCTION  sys.masklen
 SYSTEM FUNCTION  sys.mbr
-SYSTEM FUNCTION  sys.mbroverlaps
 SYSTEM FUNCTION  sys.md5
 SYSTEM FUNCTION  sys.median
-SYSTEM FUNCTION  sys.mlinefromtext
-SYSTEM FUNCTION  sys.mpointfromtext
-SYSTEM FUNCTION  sys.mpolyfromtext
 SYSTEM FUNCTION  sys.ms_round
 SYSTEM FUNCTION  sys.ms_str
 SYSTEM FUNCTION  sys.ms_stuff
@@ -202,13 +183,8 @@ SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
 SYSTEM FUNCTION  sys.optimizer_stats
 SYSTEM FUNCTION  sys.optimizers
-SYSTEM FUNCTION  sys.overlaps
 SYSTEM FUNCTION  sys.password_hash
 SYSTEM FUNCTION  sys.pause
-SYSTEM FUNCTION  sys.point
-SYSTEM FUNCTION  sys.pointfromtext
-SYSTEM FUNCTION  sys.polyfromtext
-SYSTEM FUNCTION  sys.polygonfromtext
 SYSTEM FUNCTION  sys.profiler_openstream
 SYSTEM FUNCTION  sys.profiler_stethoscope
 SYSTEM FUNCTION  sys.quantile
@@ -221,7 +197,6 @@ SYSTEM FUNCTION  sys.querylog_empty
 SYSTEM FUNCTION  sys.querylog_enable
 SYSTEM FUNCTION  sys.queue
 SYSTEM FUNCTION  sys.radians
-SYSTEM FUNCTION  sys.relate
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
@@ -233,7 +208,99 @@ SYSTEM FUNCTION  sys.setsession
 SYSTEM FUNCTION  sys.settimeout
 SYSTEM FUNCTION  sys.shrink
 SYSTEM FUNCTION  sys.shutdown
-SYSTEM FUNCTION  sys.srid
+SYSTEM FUNCTION  sys.st_area
+SYSTEM FUNCTION  sys.st_asbinary
+SYSTEM FUNCTION  sys.st_asewkt
+SYSTEM FUNCTION  sys.st_astext
+SYSTEM FUNCTION  sys.st_bdmpolyfromtext
+SYSTEM FUNCTION  sys.st_bdpolyfromtext
+SYSTEM FUNCTION  sys.st_boundary
+SYSTEM FUNCTION  sys.st_buffer
+SYSTEM FUNCTION  sys.st_centroid
+SYSTEM FUNCTION  sys.st_collect
+SYSTEM FUNCTION  sys.st_contains
+SYSTEM FUNCTION  sys.st_convexhull
+SYSTEM FUNCTION  sys.st_coorddim
+SYSTEM FUNCTION  sys.st_coveredby
+SYSTEM FUNCTION  sys.st_covers
+SYSTEM FUNCTION  sys.st_crosses
+SYSTEM FUNCTION  sys.st_delaunaytriangles
+SYSTEM FUNCTION  sys.st_difference
+SYSTEM FUNCTION  sys.st_dimension
+SYSTEM FUNCTION  sys.st_disjoint
+SYSTEM FUNCTION  sys.st_distance
+SYSTEM FUNCTION  sys.st_dump
+SYSTEM FUNCTION  sys.st_dumppoints
+SYSTEM FUNCTION  sys.st_dwithin
+SYSTEM FUNCTION  sys.st_endpoint
+SYSTEM FUNCTION  sys.st_envelope
+SYSTEM FUNCTION  sys.st_equals
+SYSTEM FUNCTION  sys.st_exteriorring
+SYSTEM FUNCTION  sys.st_force2d
+SYSTEM FUNCTION  sys.st_force3d
+SYSTEM FUNCTION  sys.st_geomcollfromtext
+SYSTEM FUNCTION  sys.st_geometryfromtext
+SYSTEM FUNCTION  sys.st_geometryn
+SYSTEM FUNCTION  sys.st_geometrytype
+SYSTEM FUNCTION  sys.st_geomfromtext
+SYSTEM FUNCTION  sys.st_interiorringn
+SYSTEM FUNCTION  sys.st_interiorrings
+SYSTEM FUNCTION  sys.st_intersection
+SYSTEM FUNCTION  sys.st_intersects
+SYSTEM FUNCTION  sys.st_isclosed
+SYSTEM FUNCTION  sys.st_isempty
+SYSTEM FUNCTION  sys.st_isring
+SYSTEM FUNCTION  sys.st_issimple
+SYSTEM FUNCTION  sys.st_isvalid
+SYSTEM FUNCTION  sys.st_isvalidreason
+SYSTEM FUNCTION  sys.st_length
+SYSTEM FUNCTION  sys.st_length2d
+SYSTEM FUNCTION  sys.st_linefromtext
+SYSTEM FUNCTION  sys.st_makebox2d
+SYSTEM FUNCTION  sys.st_makeenvelope
+SYSTEM FUNCTION  sys.st_makeline
+SYSTEM FUNCTION  sys.st_makepoint
+SYSTEM FUNCTION  sys.st_makepointm
+SYSTEM FUNCTION  sys.st_makepolygon
+SYSTEM FUNCTION  sys.st_mlinefromtext
+SYSTEM FUNCTION  sys.st_mpointfromtext
+SYSTEM FUNCTION  sys.st_mpolyfromtext
+SYSTEM FUNCTION  sys.st_npoints
+SYSTEM FUNCTION  sys.st_nrings
+SYSTEM FUNCTION  sys.st_numgeometries
+SYSTEM FUNCTION  sys.st_numinteriorring
+SYSTEM FUNCTION  sys.st_numinteriorrings
+SYSTEM FUNCTION  sys.st_numpatches
+SYSTEM FUNCTION  sys.st_numpoints
+SYSTEM FUNCTION  sys.st_overlaps
+SYSTEM FUNCTION  sys.st_patchn
+SYSTEM FUNCTION  sys.st_point
+SYSTEM FUNCTION  sys.st_pointfromtext
+SYSTEM FUNCTION  sys.st_pointn
+SYSTEM FUNCTION  sys.st_pointonsurface
+SYSTEM FUNCTION  sys.st_polygon
+SYSTEM FUNCTION  sys.st_polygonfromtext
+SYSTEM FUNCTION  sys.st_relate
+SYSTEM FUNCTION  sys.st_segmentize
+SYSTEM FUNCTION  sys.st_setexteriorring
+SYSTEM FUNCTION  sys.st_setsrid
+SYSTEM FUNCTION  sys.st_srid
+SYSTEM FUNCTION  sys.st_startpoint
+SYSTEM FUNCTION  sys.st_symdifference
+SYSTEM FUNCTION  sys.st_touches
+SYSTEM FUNCTION  sys.st_transform
+SYSTEM FUNCTION  sys.st_translate
+SYSTEM FUNCTION  sys.st_union
+SYSTEM FUNCTION  sys.st_within
+SYSTEM FUNCTION  sys.st_wkbtosql
+SYSTEM FUNCTION  sys.st_wkttosql
+SYSTEM FUNCTION  sys.st_x
+SYSTEM FUNCTION  sys.st_xmax
+SYSTEM FUNCTION  sys.st_xmin
+SYSTEM FUNCTION  sys.st_y
+SYSTEM FUNCTION  sys.st_ymax
+SYSTEM FUNCTION  sys.st_ymin
+SYSTEM FUNCTION  sys.st_z
 SYSTEM FUNCTION  sys.stddev_pop
 SYSTEM FUNCTION  sys.stddev_samp
 SYSTEM FUNCTION  sys.stop
@@ -241,19 +308,14 @@ SYSTEM FUNCTION  sys.storage
 SYSTEM FUNCTION  sys.storagemodel
 SYSTEM FUNCTION  sys.storagemodelinit
 SYSTEM FUNCTION  sys.str_to_date
-SYSTEM FUNCTION  sys.symdifference
 SYSTEM FUNCTION  sys.text
 SYSTEM FUNCTION  sys.times
-SYSTEM FUNCTION  sys.touches
 SYSTEM FUNCTION  sys.tracelog
 SYSTEM FUNCTION  sys.uuid
 SYSTEM FUNCTION  sys.vacuum
 SYSTEM FUNCTION  sys.var
 SYSTEM FUNCTION  sys.var_pop
 SYSTEM FUNCTION  sys.var_samp
-SYSTEM FUNCTION  sys.within
-SYSTEM FUNCTION  sys.x
-SYSTEM FUNCTION  sys.y
 SYSTEM FUNCTION  sys.zorder_decode_x
 SYSTEM FUNCTION  sys.zorder_decode_y
 SYSTEM FUNCTION  sys.zorder_encode
@@ -477,10 +539,7 @@ create procedure analyze(sch string, tbl string, "sample" bigint)
 external name sql.analyze;
 create procedure analyze(sch string, tbl string, col string, "sample" bigint)
 external name sql.analyze;
--- ogc Spatial Analysis methods
 
-create function area(g geometry) returns float external name geom."Area";
-create function astext(g geometry) returns string external name geom."AsText";
 -- The BAT buffer pool overview
 create function sys.bbp () 
 	returns table (id int, name string, htype string, 
@@ -488,10 +547,8 @@ create function sys.bbp ()
 		location string, heat int, dirty string, 
 		status string, kind string) 
 	external name bbp.get;
-create function boundary(g geometry) returns geometry external name geom."Boundary";
 create function "broadcast" (p inet) returns inet 
 	external name inet."broadcast";
-create function buffer(a geometry, distance float) returns geometry external name geom."Buffer";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -530,8 +587,6 @@ begin
 	else return 8 * i;
 	end case;
 end;
-create function contains(a geometry, b geometry) returns boolean external name geom."Contains";
-create function convexhull(a geometry) returns geometry external name geom."ConvexHull";
 create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint
 	external name "aggr"."corr";
 create aggregate corr(e1 smallint, e2 smallint) returns smallint
@@ -546,7 +601,6 @@ create aggregate corr(e1 real, e2 real) returns real
 	external name "aggr"."corr";
 create aggregate corr(e1 double, e2 double) returns double
 	external name "aggr"."corr";
-create function crosses(a geometry, b geometry) returns boolean external name geom."Crosses";
 create function date_to_str(d date, format string) returns string
 	external name mtime."date_to_str";
 CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;
@@ -634,25 +688,11 @@ return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v
 create function dependencies_views_on_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
-create function difference(a geometry, b geometry) returns geometry external name geom."Difference";
--- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
--- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;
--- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
--- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
--- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
--- ogc basic methods
-create function dimension(g geometry) returns integer external name geom."Dimension";
-create function disjoint(a geometry, b geometry) returns boolean external name geom."Disjoint";
-create function distance(a geometry, b geometry) returns float external name geom."Distance";
 CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
-create function envelope(g geometry) returns geometry external name geom."Envelope";
 -- The environment table
 create function sys.environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
--- ogc spatial relation methods
-create function equals(a geometry, b geometry) returns boolean external name geom."Equals";
 create procedure sys.evalalgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
 -- fuse two (1-byte) tinyint values into one (2-byte) smallint value
@@ -708,10 +748,6 @@ external name generator.series;
 create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
 returns table (value timestamp)
 external name generator.series;
-create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
-create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
--- The srid in the *FromText Functions is currently not used
-create function geomfromtext(wkt string, srid smallint) returns geometry external name geom."GeomFromText";
 create function getanchor( theurl url ) returns string 
 	external name url."getAnchor";
 create function getbasename(theurl url) returns string       
@@ -782,16 +818,12 @@ begin
 	end if ;
 	return 0;
 end;
-create function intersection(a geometry, b geometry) returns geometry external name geom."Intersection";
 create function isaurl(theurl url) returns bool
 	external name url."isaURL";
 create function sys.isauuid(u uuid)
 returns uuid external name uuid."isaUUID";
 create function sys.isauuid(u string)
 returns uuid external name uuid."isaUUID";
-create function isempty(g geometry) returns boolean external name geom."IsEmpty";
-create function issimple(g geometry) returns boolean external name geom."IsSimple";
-create function length(g geometry) returns float external name geom."Length";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -800,15 +832,13 @@ create function length(g geometry) returns float external name geom."Length";
 
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
-create function linefromtext(wkt string, srid smallint) returns linestring external name geom."LineFromText";
 create function "masklen" (p inet) returns int
 	external name inet."masklen";
 -- currently we only use mbr instead of
 -- Envelope():Geometry
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
-create function mbr (g geometry) returns mbr external name geom.mbr;
-create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mbroverlaps";
+create function mbr(geom geometry) returns mbr external name geom."mbr";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -841,9 +871,6 @@ create aggregate median(val time) returns time
 	external name "aggr"."median";
 create aggregate median(val timestamp) returns timestamp
 	external name "aggr"."median";
-create function mlinefromtext(wkt string, srid smallint) returns multilinestring external name geom."MultiLineFromText";
-create function mpointfromtext(wkt string, srid smallint) returns multipoint external name geom."MultiPointFromText";
-create function mpolyfromtext(wkt string, srid smallint) returns multipolygon external name geom."MultiPolyFromText";
 create function ms_round(num double, prc int, truncat int)
 returns double
 begin
@@ -909,7 +936,6 @@ create function sys.optimizer_stats ()
 create function sys.optimizers () 
 	returns table (name string, def string, status string)
 	external name sql.optimizers;
-create function overlaps(a geometry, b geometry) returns boolean external name geom."Overlaps";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -924,11 +950,6 @@ create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.pause(tag bigint)
 external name sql.sysmon_pause;
-create function point(x double,y double) returns point external name geom.point;
-create function pointfromtext(wkt string, srid smallint) returns point external name geom."PointFromText";
-create function polyfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
--- alias
-create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 create aggregate quantile(val tinyint, q double) returns tinyint
  	external name "aggr"."quantile";
 create aggregate quantile(val smallint, q double) returns smallint
@@ -1044,7 +1065,6 @@ external name sql.sysmon_queue;
 create function radians(d double) 
 returns double
 	return d*pi()/180;
-create function relate(a geometry, b geometry, pattern string) returns boolean external name geom."Relate";
 create procedure sys.resume(tag int)
 external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint)
@@ -1094,7 +1114,6 @@ create procedure sys.shutdown(delay tinyint)
 external name sql.shutdown;
 create procedure sys.shutdown(delay tinyint, force bool) 
 external name sql.shutdown;
-create function srid(g geometry) returns integer external name geom."SRID";
 create aggregate stddev_pop(val tinyint) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val smallint) returns double
@@ -1224,7 +1243,6 @@ end;
 
 create function str_to_date(s string, format string) returns date
 	external name mtime."str_to_date";
-create function symdifference(a geometry, b geometry) returns geometry external name geom."SymDifference";
 create function "text" (p inet) returns clob
 	external name inet."text";
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -1238,7 +1256,6 @@ create function "text" (p inet) returns clob
 
 create procedure times()
 external name sql.times;
-create function touches(a geometry, b geometry) returns boolean external name geom."Touches";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1309,9 +1326,6 @@ create aggregate var_samp(val time) returns double
 	external name "aggr"."variance";
 create aggregate var_samp(val timestamp) returns double
 	external name "aggr"."variance";
-create function within(a geometry, b geometry) returns boolean external name geom."Within";
-create function x(g geometry) returns double external name geom."X";
-create function y(g geometry) returns double external name geom."Y";
 create function zorder_decode_x(z oid) returns integer
     external name zorder.decode_x;
 create function zorder_decode_y(z oid) returns integer
@@ -1337,7 +1351,7 @@ CREATE TABLE "sys"."_columns" (
 	"number"      INTEGER,
 	"storage"     VARCHAR(2048)
 );
-COPY 351 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 363 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
 2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
 2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
 2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
@@ -1701,7 +1715,7 @@ CREATE TABLE "sys"."_tables" (
 	"commit_action" SMALLINT,
 	"access"        SMALLINT
 );
-COPY 50 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 52 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	"schemas"	2000	NULL	0	true	0	0
 2007	"types"	2000	NULL	0	true	0	0
 2016	"functions"	2000	NULL	0	true	0	0
@@ -1736,6 +1750,8 @@ COPY 50 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 5735	"optimizers"	2000	"create view sys.optimizers as select * from sys.optimizers();"	1	true	0	0
 5743	"environment"	2000	"create view sys.environment as select * from sys.environment();"	1	true	0	0
 5781	"queue"	2000	"create view sys.queue as select * from sys.queue();"	1	true	0	0
+7099    "spatial_ref_sys"       2000    NULL    0       true    0       0
+7108    "geometry_columns"      2000    "-- create geometry_columns metadata view\ncreate view geometry_columns as\n\tselect e.value as f_table_catalog,\n\t\ts.name as f_table_schema,\n\t\ty.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type\n\tfrom schemas s, environment e, (\n\t\tselect t.schema_id,\n\t\t\tt.name as f_table_name,\n\t\t\tx.name as f_geometry_column,\n\t\t\thas_z(info)+has_m(info)+2 as coord_dimension,\n\t\t\tsrid, get_type(info, 0) as type\n\t\tfrom tables t, (\n\t\t\tselect name, table_id, type_digits as info, type_scale as srid\n\t\t\tfrom columns\n\t\t\twhere type in ( select distinct sqlname from types where systemname='wkb')\n\t\t\t) as x\n\t\twhere t.id=x.table_id\n\t\t) y\n\twhere y.schema_id=s.id and e.name='gdk_dbname';" 1       true    0       0
 6426	"netcdf_files"	2000	NULL	0	true	0	0
 6432	"netcdf_dims"	2000	NULL	0	true	0	0
 6440	"netcdf_vars"	2000	NULL	0	true	0	0
@@ -1764,7 +1780,85 @@ CREATE TABLE "sys"."args" (
 	"inout"       TINYINT,
 	"number"      INTEGER
 );
-COPY 3776 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 3854 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+2155    32 "res_0" "boolean"  1  0  0  0
+2156    32 "arg_1" "geometry" 0  0  1  1
+2157    32 "arg_2" "geometry" 0  0  1  2
+2158    33 "res_0" "boolean"  1  0  0  0
+2159    33 "arg_1" "mbr"   0  0  1  1
+2160    33 "arg_2" "mbr"   0  0  1  2
+2161    34 "res_0" "boolean"  1  0  0  0
+2162    34 "arg_1" "geometry" 0  0  1  1
+2163    34 "arg_2" "geometry" 0  0  1  2
+2164    35 "res_0" "boolean"  1  0  0  0
+2165    35 "arg_1" "mbr"   0  0  1  1
+2166    35 "arg_2" "mbr"   0  0  1  2
+2167    36 "res_0" "boolean"  1  0  0  0
+2168    36 "arg_1" "geometry" 0  0  1  1
+2169    36 "arg_2" "geometry" 0  0  1  2
+2170    37 "res_0" "boolean"  1  0  0  0
+2171    37 "arg_1" "mbr"   0  0  1  1
+2172    37 "arg_2" "mbr"   0  0  1  2
+2173    38 "res_0" "boolean"  1  0  0  0
+2174    38 "arg_1" "geometry" 0  0  1  1
+2175    38 "arg_2" "geometry" 0  0  1  2
+2176    39 "res_0" "boolean"  1  0  0  0
+2177    39 "arg_1" "mbr"   0  0  1  1
+2178    39 "arg_2" "mbr"   0  0  1  2
+2179    40 "res_0" "boolean"  1  0  0  0
+2180    40 "arg_1" "geometry" 0  0  1  1
+2181    40 "arg_2" "geometry" 0  0  1  2
+2182    41 "res_0" "boolean"  1  0  0  0
+2183    41 "arg_1" "mbr"   0  0  1  1
+2184    41 "arg_2" "mbr"   0  0  1  2
+2185    42 "res_0" "boolean"  1  0  0  0
+2186    42 "arg_1" "geometry" 0  0  1  1
+2187    42 "arg_2" "geometry" 0  0  1  2
+2188    43 "res_0" "boolean"  1  0  0  0
+2189    43 "arg_1" "mbr"   0  0  1  1
+2190    43 "arg_2" "mbr"   0  0  1  2
+2191    44 "res_0" "boolean"  1  0  0  0
+2192    44 "arg_1" "geometry" 0  0  1  1
+2193    44 "arg_2" "geometry" 0  0  1  2
+2194    45 "res_0" "boolean"  1  0  0  0
+2195    45 "arg_1" "mbr"   0  0  1  1
+2196    45 "arg_2" "mbr"   0  0  1  2
+2197    46 "res_0" "boolean"  1  0  0  0
+2198    46 "arg_1" "geometry" 0  0  1  1
+2199    46 "arg_2" "geometry" 0  0  1  2
+2200    47 "res_0" "boolean"  1  0  0  0
+2201    47 "arg_1" "mbr"   0  0  1  1
+2202    47 "arg_2" "mbr"   0  0  1  2
+2203    48 "res_0" "boolean"  1  0  0  0
+2204    48 "arg_1" "geometry" 0  0  1  1
+2205    48 "arg_2" "geometry" 0  0  1  2
+2206    49 "res_0" "boolean"  1  0  0  0
+2207    49 "arg_1" "mbr"   0  0  1  1
+2208    49 "arg_2" "mbr"   0  0  1  2
+2209    50 "res_0" "boolean"  1  0  0  0
+2210    50 "arg_1" "geometry" 0  0  1  1
+2211    50 "arg_2" "geometry" 0  0  1  2
+2212    51 "res_0" "boolean"  1  0  0  0
+2213    51 "arg_1" "mbr"   0  0  1  1
+2214    51 "arg_2" "mbr"   0  0  1  2
+2215    52 "res_0" "boolean"  1  0  0  0
+2216    52 "arg_1" "geometry" 0  0  1  1
+2217    52 "arg_2" "geometry" 0  0  1  2
+2218    53 "res_0" "boolean"  1  0  0  0
+2219    53 "arg_1" "mbr"   0  0  1  1
+2220    53 "arg_2" "mbr"   0  0  1  2
+2221    54 "res_0" "boolean"  1  0  0  0
+2222    54 "arg_1" "geometry" 0  0  1  1
+2223    54 "arg_2" "geometry" 0  0  1  2
+2224    55 "res_0" "boolean"  1  0  0  0
+2225    55 "arg_1" "mbr"   0  0  1  1
+2226    55 "arg_2" "mbr"   0  0  1  2
+2227    56 "res_0" "boolean"  1  0  0  0
+2228    56 "arg_1" "geometry" 0  0  1  1
+2229    56 "arg_2" "geometry" 0  0  1  2
+2230    57 "res_0" "boolean"  1  0  0  0
+2231    57 "arg_1" "mbr"   0  0  1  1
+2232    57 "arg_2" "mbr"   0  0  1  2
 2155	28	"res_0"	"oid"	63	0	0	0
 2156	28	"arg_1"	"wrd"	64	0	1	1
 2157	29	"res_0"	"oid"	63	0	0	0
@@ -7390,13 +7484,6 @@ COPY 1354 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 114
 115
 116
-117
-118
-119
-120
-121
-122
-123
 124
 125
 126
