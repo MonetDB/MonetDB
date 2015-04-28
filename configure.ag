@@ -156,6 +156,13 @@ AC_ARG_ENABLE(fits,
 	enable_fits=$enableval,
 	enable_fits=$dft_fits)
 
+dft_netcdf=auto
+AC_ARG_ENABLE(netcdf,
+	AS_HELP_STRING([--enable-netcdf],
+		[enable support for netcdf (default=auto)]),
+	enable_netcdf=$enableval,
+	enable_netcdf=$dft_netcdf)
+
 dft_sql=yes
 AC_ARG_ENABLE(sql,
 	AS_HELP_STRING([--enable-sql],
@@ -188,29 +195,12 @@ no-auto)
 	;;
 esac
 
-dft_jsonstore=no
-AC_ARG_ENABLE(jsonstore,
-	AS_HELP_STRING([--enable-jsonstore],
-		[enable support for MonetDB/jsonstore (default=no)]),
-	enable_jsonstore=$enableval,
-	enable_jsonstore=$dft_jsonstore)
-
-dft_microhttpd=$enable_jsonstore
+dft_microhttpd=no
 AC_ARG_ENABLE(microhttpd,
 	AS_HELP_STRING([--enable-microhttpd],
-		[enable support for the builtin MircoHTTPD daemon (default: implied by --enable-jsonstore)]),
+		[enable support for the builtin MircoHTTPD daemon]),
 	enable_microhttpd=$enableval,
 	enable_microhttpd=$dft_microhttpd)
-
-case "$enable_jsonstore-$enable_microhttpd" in
-yes-no)
-	AC_MSG_ERROR([jsonstore require microhttpd])
-	;;
-auto-no)
-	enable_jsonstore=no
-	disable_jsonstore="(jsonstore requires microhttpd)"
-	;;
-esac
 
 dft_gsl=auto
 AC_ARG_ENABLE(gsl,
@@ -948,7 +938,7 @@ if test "x$enable_optimize" = xyes; then
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	case "$GCC-$CC_ver" in
 	yes-clang-*)
-	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
+	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer" # -finline-functions is no longer supported in llvm 3.6 
 	  ;;
 	yes-*)
 	  dnl -fomit-frame-pointer crashes memprof
@@ -2476,6 +2466,19 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_FITS, test x"$have_cfitsio" != xno)
 
+org_have_netcdf=no
+have_netcdf=$org_have_netcdf
+if test "x$enable_netcdf" != xno; then
+	req_netcdf='4.2'
+	PKG_CHECK_MODULES([netcdf], [netcdf],
+		[have_netcdf="yes"; AC_DEFINE(HAVE_NETCDF, 1, [Define if the netcdf module is to be enabled])],
+		[have_netcdf="no"; why_have_netcdf="(netcdf library not found)"
+		 if test "x$enable_netcdf" = xyes; then AC_MSG_ERROR([netcdf library required for NetCDF support]); fi
+		 enable_netcdf=no; disable_netcdf="(netcdf library not found)"])
+fi
+AM_CONDITIONAL(HAVE_NETCDF, test x"$have_netcdf" != xno)
+
+
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
 if test x"$have_atomic_ops" = x"yes" ; then
@@ -2508,7 +2511,7 @@ if test x"$have_atomic_ops" = x"yes" ; then
 fi
 
 dnl MicroHTTPD library
-dnl required for MonetDB5 SQL jsonstore, optional otherwise
+dnl optional
 org_have_libmicrohttpd=auto
 have_libmicrohttpd=$org_have_libmicrohttpd
 if test "x$enable_microhttpd" != xno; then
@@ -2524,24 +2527,6 @@ if test "x$enable_microhttpd" != xno; then
 fi
 if test x$enable_microhttpd != xno; then
 	AC_DEFINE(HAVE_MICROHTTPD, 1, [Define if the microhttpd server is to be enabled])
-fi
-
-org_have_liburiparser=auto
-have_liburiparser=$org_have_liburiparser
-if test "x$enable_jsonstore" != xno; then
-	dnl Uriparser library
-	dnl required for MonetDB5 SQL jsonstore, optional otherwise
-	PKG_CHECK_MODULES([liburiparser], [liburiparser],
-		[have_liburiparser=yes],
-		[have_liburiparser=no; disable_jsonstore="(liburiparser not found)"; if test "x$enable_jsonstore" = xyes; then AC_MSG_ERROR([LibUriParser library not found but required for jsonstore]); fi])
-
-	if test "$have_libmicrohttpd-$have_liburiparser" = yes-yes; then
-		AC_DEFINE(HAVE_JSONSTORE, 1, [Define that you want to build the jsonstore library])
-	elif test "x$enable_jsonstore" = xyes; then
-		AC_MSG_ERROR([cannot enable jsonstore $why_have_libmicrohttpd$why_have_liburiparser])
-	else
-		enable_jsonstore=no
-	fi
 fi
 
 dnl Check for gsl library for statistical functions
@@ -2920,7 +2905,6 @@ AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
-AM_CONDITIONAL(HAVE_JSONSTORE, test "x$enable_jsonstore" = xyes -o "x$enable_jsonstore" = xauto)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
 AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
@@ -3277,7 +3261,7 @@ for comp in \
 	'console     ' \
 	'gsl         ' \
 	'fits        ' \
-	'jsonstore   ' \
+	'netcdf      ' \
 	'microhttpd  ' \
 	'rintegration' \
 	'odbc        ' \

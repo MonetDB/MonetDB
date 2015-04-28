@@ -50,7 +50,7 @@ Ready.
 % double # type
 % 24 # length
 [ -0	]
-#SELECT '' AS five, * FROM FLOAT8_TBL;
+#SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
 % .L,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type

@@ -19,6 +19,9 @@
 #include "rel_psm.h"
 #include "rel_schema.h"
 #include "rel_sequence.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 #define ERR_AMBIGUOUS		050000
 
@@ -1173,6 +1176,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
+			MT_lock_set(&sq->exps->ht_lock, "rel_table_optname");
+			sq->exps->ht = NULL;
+			MT_lock_unset(&sq->exps->ht_lock, "rel_table_optname");
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 
@@ -2047,7 +2053,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param, int upcast)
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM) 
 #ifdef HAVE_HGE
-		type = sql_bind_localtype("hge");
+		type = sql_bind_localtype(have_hge ? "hge" : "lng");
 #else
 		type = sql_bind_localtype("lng");
 #endif
@@ -2120,7 +2126,7 @@ rel_numeric_supertype(mvc *sql, sql_exp *e )
 	}
 	if (tp->type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype("hge");
+		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
 #else
 		sql_subtype *ltp = sql_bind_localtype("lng");
 #endif
@@ -2188,16 +2194,20 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (ares->type.type->radix == 10 && res->digits > 39)
-			res->digits = 39;
-		if (ares->type.type->radix == 2 && res->digits > 128)
-			res->digits = 128;
-#else
-		if (ares->type.type->radix == 10 && res->digits > 19)
-			res->digits = 19;
-		if (ares->type.type->radix == 2 && res->digits > 64)
-			res->digits = 64;
+		if (have_hge) {
+			if (ares->type.type->radix == 10 && res->digits > 39)
+				res->digits = 39;
+			if (ares->type.type->radix == 2 && res->digits > 128)
+				res->digits = 128;
+		} else
 #endif
+		{
+
+			if (ares->type.type->radix == 10 && res->digits > 19)
+				res->digits = 19;
+			if (ares->type.type->radix == 2 && res->digits > 64)
+				res->digits = 64;
+		}
 
 		/* sum of digits may mean we need a bigger result type
 		 * as the function don't support this we need to
@@ -2246,16 +2256,19 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (res->type->radix == 10 && digits > 39)
-			digits = 39;
-		if (res->type->radix == 2 && digits > 128)
-			digits = 128;
-#else
-		if (res->type->radix == 10 && digits > 19)
-			digits = 19;
-		if (res->type->radix == 2 && digits > 64)
-			digits = 64;
+		if (have_hge) {
+			if (res->type->radix == 10 && digits > 39)
+				digits = 39;
+			if (res->type->radix == 2 && digits > 128)
+				digits = 128;
+		} else
 #endif
+		{
+			if (res->type->radix == 10 && digits > 19)
+				digits = 19;
+			if (res->type->radix == 2 && digits > 64)
+				digits = 64;
+		}
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = rel_check_type( sql, &nlt, l, type_equal );
@@ -2757,8 +2770,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				if (!l) {
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					rel_project_add_exp(sql, l, ls);
-				} else if (f == sql_sel) /* allways add left side in case of selections phase */
+				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
+					if (!l->exps || list_empty(l->exps)) /* add all expressions to the project */
+						l->exps = rel_projections(sql, l->l, NULL, 0, 1);
 					rel_project_add_exp(sql, l, ls);
+				}
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
 				if (r->card > CARD_ATOM) {

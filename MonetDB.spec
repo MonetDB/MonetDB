@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -637,6 +637,7 @@ fi
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
+%exclude %{_libdir}/monetdb5/*_hge.mal
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -662,6 +663,26 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+
+%package -n MonetDB5-server-hugeint
+Summary: MonetDB - 128-bit integer support for MonetDB5-server
+Group: Application/Databases
+Requires: MonetDB5-server
+
+%description -n MonetDB5-server-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the
+MonetDB5-server component.
+
+%files -n MonetDB5-server-hugeint
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
+%{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/autoload/*_hge.mal
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -723,7 +744,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_libdir}/monetdb5/autoload/??_sql*.mal
+%{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
@@ -734,7 +755,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-%{_libdir}/monetdb5/createdb/*
+%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/createdb/*.sql
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
@@ -747,6 +770,27 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
 %endif
+
+%package SQL-server5-hugeint
+Summary: MonetDB5 128 bit integer (hugeint) support for SQL
+Group: Applications/Databases
+Requires: MonetDB5-server-hugeint = %{version}-%{release}
+Requires: MonetDB-SQL-server5 = %{version}-%{release}
+
+%description SQL-server5-hugeint
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package provides HUGEINT (128-bit integer) support for the SQL
+frontend of MonetDB.
+
+%files SQL-server5-hugeint
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/??_sql_hge.mal
+%{_libdir}/monetdb5/createdb/*_hge.sql
+%{_libdir}/monetdb5/sql*_hge.mal
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
@@ -865,7 +909,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
-	--enable-jsonstore=no \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -898,38 +941,100 @@ developer, but if you do want to test, this is the package you need.
 make
 
 %install
-rm -rf $RPM_BUILD_ROOT
+%make_install
 
-%makeinstall
-
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
-mkdir -p $RPM_BUILD_ROOT%{perl_vendorlib}
-if [ ! $RPM_BUILD_ROOT%{_prefix}/lib/perl5 -ef $RPM_BUILD_ROOT%{perl_vendorlib} ]; then
-    mv $RPM_BUILD_ROOT%{_prefix}/lib/perl5/* $RPM_BUILD_ROOT%{perl_vendorlib}
+mkdir -p %{buildroot}%{_localstatedir}/MonetDB
+mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
+mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+mkdir -p %{buildroot}%{perl_vendorlib}
+if [ ! %{buildroot}%{_prefix}/lib/perl5 -ef %{buildroot}%{perl_vendorlib} ]; then
+    mv %{buildroot}%{_prefix}/lib/perl5/* %{buildroot}%{perl_vendorlib}
 fi
 
 # remove unwanted stuff
 # .la files
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/*.la
+rm -f %{buildroot}%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
+rm -f %{buildroot}%{_bindir}/Maddlog
 
 %if 0%{?fedora} >= 20
-mv $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL-%{version} $RPM_BUILD_ROOT%{_datadir}/doc/MonetDB-SQL
+mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
 %endif
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
-%clean
-rm -fr $RPM_BUILD_ROOT
-
 %changelog
+* Thu Apr 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
+- Rebuilt.
+- BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"
+- BZ#3602: Surprising overload resolution of generate_series
+- BZ#3613: SQL data dictionary contains columns names which are also
+  special keywords. This causes unexpected/unneeded SQL query errors
+- BZ#3645: Network address operators such as << and <<= do not work
+- BZ#3647: missing BAT for a column leads to crash in gtr_update_delta
+- BZ#3648: memory corruption on unclean connection shutdown with local
+  temporary tables
+- BZ#3650: Naming of persistent BATs is fragile
+- BZ#3653: PREPARE crashes mserver if unbound variable is function
+  parameter
+- BZ#3655: SQL WHERE -1 in (-1) issue?
+- BZ#3656: error message after calling fitsload()
+- BZ#3660: Incorrect Results for Comparison Operators on inet Datatype
+- BZ#3661: Ship debug symbols for pre-built binaries
+- BZ#3662: UPDATE row with row value constructor crashes monetdb server
+- BZ#3663: Incorrect result ROW_NUMBER in subquery
+- BZ#3664: SQLstatementIntern missing parameter when using jsonstore
+- BZ#3665: inter-session starvation issue, particularly affects sys.queue
+- BZ#3666: casting text column to inet truncating text column and
+  resulting inet for first occurrence only
+- BZ#3667: insert of negative value for oid column aborts mserver5
+  process with assertion failure
+- BZ#3669: ALTER TABLE <tbl_nm> ADD CONSTRAINT <tbl_uc1> UNIQUE (col1,
+  col2, col3) causes Assertion failure and abort
+- BZ#3671: ODBC-Access on Windows 2012 does not work - E_FAIL
+- BZ#3672: libbat_la-gdk_utils.o: relocation R_X86_64_PC32 against
+  `MT_global_exit' can not be used when making a shared object
+- BZ#3676: merovingian hangs trying to exit
+- BZ#3677: Crash in BATgroup_internal (caused by 87379087770d?)
+- BZ#3678: Ruby driver installation ignores prefix
+- BZ#3680: Prepared statements fail on execution with message 'Symbol
+  type not found'
+- BZ#3684: Wrong query result set WHERE "IS NULL" or "NOT IN" clauses
+  uses in combination with ORDER, LIMIT and OFFSET
+- BZ#3687: 'bat.insert' undefined
+- BZ#3688: Crash at exit (overrun THRerrorcount?)
+- BZ#3689: No more connections accepted if a single client misbehaves
+- BZ#3690: find_fk: Assertion `t && i' failed.
+- BZ#3691: conversion of whitespaces string to double or float is accepted
+  without an error during insert
+- BZ#3693: algebra.join undefined (caused by non-existing variables in
+  the plan)
+- BZ#3696: Inconsistent behavior between dbl (SQL double) and flt (SQL
+  real) data types and across platforms
+- BZ#3697: mserver5[26946]: segfault at 0 ip 00007f3d0e1ab808 sp
+  00007f3cefbfcad0 error 4 in lib_sql.so[7f3d0e180000+16c000]
+- BZ#3699: segfault again! (during last week I found 3 segfault bugs
+  already)
+- BZ#3703: INSERT INTO a MERGE TABLE crashes mserver5
+- BZ#3704: Unknown identifier from subquery
+- BZ#3705: Assertion failure in rel_bin.c:2274: rel2bin_project: Assertion
+  `0' failed.
+- BZ#3706: Assertion failure in gdk_bat.c: BATassertHeadProps: Assertion
+  `!b->H->sorted || cmp <= 0' failed.
+- BZ#3709: "BATproject: does not match always" on abusive use of ALTER
+  TABLE SET READ ONLY
+
+* Tue Feb  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
+- buildtools: We now also create debug packages for Debian and Ubuntu.
+
+* Tue Jan 27 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
+- gdk: Replaced the rangejoin implementation with one that uses imprints if
+  it can.
+
 * Fri Jan 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.9-20150123
 - Rebuilt.
 - BZ#3467: Field aliases with '#' character excise field names in

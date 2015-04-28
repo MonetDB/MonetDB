@@ -172,7 +172,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
    support for LEAVE and ITERATE (sql multi-level break and continue)
  */
 static sql_exp * 
-rel_psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
+rel_psm_while_do( mvc *sql, sql_subtype *res, list *restypelist, dnode *w, int is_func )
 {
 	if (!w)
 		return NULL;
@@ -184,7 +184,7 @@ rel_psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
 
 		cond = rel_logical_value_exp(sql, &rel, n->data.sym, sql_sel); 
 		n = n->next;
-		whilestmts = sequential_block(sql, res, NULL, n->data.lval, n->next->data.sval, is_func);
+		whilestmts = sequential_block(sql, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
 		if (sql->session->status || !cond || !whilestmts || rel) 
 			return NULL;
@@ -200,7 +200,7 @@ rel_psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
    end if
  */
 static list * 
-psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
+psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *elseif, int is_func)
 {
 	if (!elseif)
 		return NULL;
@@ -213,9 +213,9 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 
 		cond = rel_logical_value_exp(sql, &rel, n->data.sym, sql_sel); 
 		n = n->next;
-		ifstmts = sequential_block(sql, res, NULL, n->data.lval, NULL, is_func);
+		ifstmts = sequential_block(sql, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
-		elsestmts = psm_if_then_else( sql, res, n, is_func);
+		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
 
 		if (sql->session->status || !cond || !ifstmts || rel) {
 			if (rel)
@@ -228,12 +228,12 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 
 		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
-		return sequential_block( sql, res, NULL, e->data.lval, NULL, is_func);
+		return sequential_block( sql, res, restypelist, e->data.lval, NULL, is_func);
 	}
 }
 
 static sql_exp * 
-rel_psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
+rel_psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *elseif, int is_func)
 {
 	if (!elseif)
 		return NULL;
@@ -245,9 +245,9 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 
 		cond = rel_logical_value_exp(sql, &rel, n->data.sym, sql_sel); 
 		n = n->next;
-		ifstmts = sequential_block(sql, res, NULL, n->data.lval, NULL, is_func);
+		ifstmts = sequential_block(sql, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
-		elsestmts = psm_if_then_else( sql, res, n, is_func);
+		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
 		if (sql->session->status || !cond || !ifstmts || rel) {
 			if (rel)
 				return sql_error(sql, 02, "IF THEN ELSE: No SELECT statements allowed within the IF condition");
@@ -273,7 +273,7 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 	END CASE
  */
 static list * 
-rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
+rel_psm_case( mvc *sql, sql_subtype *res, list *restypelist, dnode *case_when, int is_func )
 {
 	list *case_stmts = sa_list(sql->sa);
 
@@ -296,7 +296,7 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		if (rel)
 			return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 		if (else_statements) {
-			else_stmt = sequential_block( sql, res, NULL, else_statements, NULL, is_func);
+			else_stmt = sequential_block( sql, res, restypelist, else_statements, NULL, is_func);
 			if (!else_stmt) 
 				return NULL;
 		}
@@ -309,7 +309,7 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 
 			if (!when_value || rel ||
 			   (cond = rel_binop_(sql, v, when_value, NULL, "=", card_value)) == NULL || 
-			   (if_stmts = sequential_block( sql, res, NULL, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (if_stmts = sequential_block( sql, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -329,7 +329,7 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		list *else_stmt = NULL;
 
 		if (else_statements) {
-			else_stmt = sequential_block( sql, res, NULL, else_statements, NULL, is_func);
+			else_stmt = sequential_block( sql, res, restypelist, else_statements, NULL, is_func);
 			if (!else_stmt) 
 				return NULL;
 		}
@@ -342,7 +342,7 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			sql_exp *case_stmt = NULL;
 
 			if (!cond || rel ||
-			   (if_stmts = sequential_block( sql, res, NULL, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (if_stmts = sequential_block( sql, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -373,9 +373,9 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 	res = rel_value_exp2(sql, &rel, return_sym, sql_sel, ek, &is_last);
 	if (!res)
 		return NULL;
-	if (ek.card != card_relation && (!res || 
+	if (ek.card != card_relation && (!res || !restype ||
            	(res = rel_check_type(sql, restype, res, type_equal)) == NULL))
-		return NULL;
+		return (!restype)?sql_error(sql, 02, "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
 	
@@ -542,13 +542,13 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
 		case SQL_WHILE:
-			res = rel_psm_while_do(sql, restype, s->data.lval->h, is_func);
+			res = rel_psm_while_do(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_IF:
-			res = rel_psm_if_then_else(sql, restype, s->data.lval->h, is_func);
+			res = rel_psm_if_then_else(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CASE:
-			reslist = rel_psm_case(sql, restype, s->data.lval->h, is_func);
+			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
 			res = rel_psm_call(sql, s->data.sym);
@@ -564,6 +564,7 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 					res = sql_error(sql, 01, 
 						"Statement after return");
 				} else {
+					res = NULL;
 					reslist = rel_psm_return(sql, restype, restypelist, s->data.sym);
 				}
 			}

@@ -553,6 +553,87 @@ do {									\
 	}								\
 } while (0)
 
+/* Check whether we have imprints on b (and return true if we do).  It
+ * may be that the imprints were made persistent, but we hadn't seen
+ * that yet, so check the file system.  This also returns true if b is
+ * a view and there are imprints on b's parent. */
+int
+BATcheckimprints(BAT *b)
+{
+	int ret;
+
+	if (VIEWtparent(b)) {
+		assert(b->T->imprints == NULL);
+		b = BBPdescriptor(-VIEWtparent(b));
+	}
+
+	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATcheckimprints");
+	if (b->T->imprints == NULL) {
+		Imprints *imprints;
+		Heap *hp;
+		str nme = BBP_physical(b->batCacheid);
+		const char *ext = b->batCacheid > 0 ? "timprints" : "himprints";
+
+		if ((hp = GDKzalloc(sizeof(Heap))) != NULL &&
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0 &&
+		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
+			int fd;
+
+			sprintf(hp->filename, "%s.%s", nme, ext);
+			/* check whether a persisted imprints index
+			 * can be found */
+			if ((fd = GDKfdlocate(hp->farmid, nme, "rb", ext)) >= 0) {
+				size_t hdata[4];
+				struct stat st;
+				size_t pages;
+
+				pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
+				if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
+				    read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
+				    hdata[0] & ((size_t) 1 << 16) &&
+				    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
+				    hdata[3] == (size_t) BATcount(b) &&
+				    fstat(fd, &st) == 0 &&
+				    st.st_size >= (off_t) (hp->size =
+							   hp->free =
+							   64 * b->T->width +
+							   64 * 2 * SIZEOF_OID +
+							   64 * SIZEOF_BUN +
+							   pages * ((bte) hdata[0] / 8) +
+							   hdata[2] * sizeof(cchdc_t) +
+							   sizeof(uint64_t) /* padding for alignment */
+							   + 4 * SIZEOF_SIZE_T) &&
+				    HEAPload(hp, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) >= 0) {
+					/* usable */
+					imprints->imprints = hp;
+					imprints->bits = (bte) (hdata[0] & 0xFF);
+					imprints->impcnt = (BUN) hdata[1];
+					imprints->dictcnt = (BUN) hdata[2];
+					imprints->bins = hp->base + 4 * SIZEOF_SIZE_T;
+					imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
+					imprints->imps = (void *) (imprints->stats + 64 * 3);
+					imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+					close(fd);
+					b->T->imprints = imprints;
+					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
+					MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATcheckimprints");
+					return 1;
+				}
+				GDKfree(imprints);
+				close(fd);
+				/* unlink unusable file */
+				GDKunlink(hp->farmid, BATDIR, nme, ext);
+			}
+			GDKfree(hp->filename);
+		}
+		GDKfree(hp);
+	}
+	ret = b->T->imprints != NULL;
+	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATcheckimprints");
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckimprints: already has imprints %d\n", b->batCacheid);
+	return ret;
+}
+
 gdk_return
 BATimprints(BAT *b)
 {
@@ -581,6 +662,9 @@ BATimprints(BAT *b)
 
 	BATcheck(b, "BATimprints", GDK_FAIL);
 
+	if (BATcheckimprints(b))
+		return GDK_SUCCEED;
+
 	if (VIEWtparent(b)) {
 		bat p = VIEWtparent(b);
 		o = b;
@@ -593,9 +677,8 @@ BATimprints(BAT *b)
 			BBPunfix(b->batCacheid);
 		return GDK_FAIL;
 	}
-
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-	t0= GDKusec();
+	t0 = GDKusec();
 	if (b->T->imprints == NULL) {
 		BAT *smp, *s;
 		BUN cnt;
@@ -630,43 +713,6 @@ BATimprints(BAT *b)
 		pages = (((size_t) BATcount(b) * b->T->width) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints->farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
-		if ((fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb",
-				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
-			size_t hdata[IMPRINTS_HEADER_SIZE];
-			struct stat st;
-			if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-			    hdata[0] & ((size_t) 1 << 16) &&
-			    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
-			    hdata[3] == (size_t) BATcount(b) &&
-			    fstat(fd, &st) == 0 &&
-			    st.st_size >= (off_t) (imprints->imprints->size =
-						   imprints->imprints->free =
-						   64 * b->T->width +
-						   64 * 2 * SIZEOF_OID +
-						   64 * SIZEOF_BUN +
-						   pages * ((bte) hdata[0] / 8) +
-						   hdata[2] * sizeof(cchdc_t) +
-						   sizeof(uint64_t) /* padding for alignment */
-						   + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T) &&
-			    HEAPload(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) >= 0) {
-				/* usable */
-				imprints->bits = (bte) (hdata[0] & 0xFF);
-				imprints->impcnt = (BUN) hdata[1];
-				imprints->dictcnt = (BUN) hdata[2];
-				imprints->bins = imprints->imprints->base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
-				imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->T->width);
-				imprints->imps = (void *) (imprints->stats + 64 * 3);
-				imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
-				b->T->imprints = imprints;
-				close(fd);
-				ALGODEBUG fprintf(stderr, "#BATimprints: reusing persisted imprints\n");
-				goto do_return;
-			}
-			close(fd);
-			/* file exists, but can't be used: delete it */
-			GDKunlink(imprints->imprints->farmid, BATDIR, nme,
-				  b->batCacheid > 0 ? "timprints" : "himprints");
-		}
 
 #define SMP_SIZE 2048
 		s = BATsample(b, SMP_SIZE);
@@ -825,7 +871,6 @@ BATimprints(BAT *b)
 	t1 = GDKusec();
 	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
-  do_return:
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 
 	if (o != NULL) {

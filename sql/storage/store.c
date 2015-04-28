@@ -1139,8 +1139,8 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	return col;
 }
 
-sql_table *
-create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action)
+static sql_table *
+create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, bit system, int persistence, int commit_action)
 {
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
@@ -1148,7 +1148,8 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	assert((persistence==SQL_PERSIST ||
 		persistence==SQL_DECLARED_TABLE || 
 		commit_action) && commit_action>=0);
-	base_init(sa, &t->base, next_oid(), TR_NEW, name);
+	assert(id);
+	base_init(sa, &t->base, id, TR_NEW, name);
 	t->type = type;
 	t->system = system;
 	t->persistence = (temp_t)persistence;
@@ -1164,6 +1165,12 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	t->cleared = 0;
 	t->s = NULL;
 	return t;
+}
+
+sql_table *
+create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action)
+{
+	return create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action);
 }
 
 static sql_column *
@@ -1189,11 +1196,11 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	return col;
 }
 
-sql_table *
-dup_sql_table(sql_allocator *sa, sql_table *t)
+static sql_table *
+dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
 {
 	node *n;
-	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
 
 	nt->base.flag = t->base.flag;
 
@@ -1204,6 +1211,33 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
+	cs_add(&mt->tables, nt, TR_NEW);
+	/* we need a valid schema */
+	nt->s = t->s;
+	return nt;
+}
+
+sql_table *
+dup_sql_table(sql_allocator *sa, sql_table *t)
+{
+	node *n;
+	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+
+	nt->base.flag = t->base.flag;
+
+	nt->access = t->access;
+	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+
+	for (n = t->columns.set->h; n; n = n->next) 
+		dup_sql_column(sa, nt, n->data);
+	nt->columns.dset = NULL;
+	nt->columns.nelm = NULL;
+
+	if (t->tables.set)
+		for (n = t->tables.set->h; n; n = n->next) 
+			dup_sql_ptable(sa, nt, n->data);
+	nt->tables.dset = NULL;
+	nt->tables.nelm = NULL;
 	return nt;
 }
 
@@ -3113,8 +3147,6 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->cleared = 0;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
-			ok = reset_changeset( tr, &ft->tables, &pft->tables, &ft->base, (resetf) NULL, (dupfunc) &table_find);
-		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
@@ -3953,7 +3985,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 		
 }
 
- sql_table *
+sql_table *
 sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
@@ -3978,7 +4010,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "name"), pt->base.name, NULL);
 
 	/* merge table depends on part table */
-	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	cs_del(&mt->tables, n, pt->base.flag);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_delete(tr, sysobj, rid);

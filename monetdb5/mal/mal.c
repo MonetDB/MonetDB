@@ -13,7 +13,10 @@
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
 char 	monet_characteristics[PATHLENGTH];
-char *mal_trace;		/* enable profile events on console */
+int mal_trace;		/* enable profile events on console */
+#ifdef HAVE_HGE
+int have_hge;
+#endif
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -88,18 +91,15 @@ int mal_init(void){
 	initParser();
 	initHeartbeat();
 	initResource();
-#ifdef HAVE_JSONSTORE
-	startHttpdaemon();
-#endif
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace && *mal_trace) {
+	if ( mal_trace ) {
 		openProfilerStream(mal_clients[0].fdout);
 		startProfiler(1,0);
-	} else mal_trace =0;
+	} 
 	return 0;
 }
 /*
@@ -137,9 +137,6 @@ void mal_exit(void){
 }
 #endif
 	setHeartbeat(0);
-#ifdef HAVE_JSONSTORE
-	stopHttpdaemon();
-#endif
 	stopMALdataflow();
 	stopProfiler();
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */

@@ -13,6 +13,9 @@
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 static sql_exp * 
 exp_create(sql_allocator *sa, int type ) 
@@ -196,7 +199,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", 18, 0);
+	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -220,7 +223,7 @@ exp_atom_wrd(sql_allocator *sa, wrd w)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "wrd", 18, 0);
+	sql_find_subtype(&it, "wrd", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "wrd", 19, 0);
 #endif

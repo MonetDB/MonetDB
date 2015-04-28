@@ -43,7 +43,7 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 # loading sql script: 40_json_hge.sql
-# loading sql script: 41_jsonstore.sql
+# loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
@@ -191,13 +191,13 @@ Ready.
 % .L1,	.L2 # table_name
 % L1,	L2 # name
 % double,	decimal # type
-% 24,	41 # length
+% 24,	21 # length
 [ 42.33074767,	1269.922430	]
 #SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
 % .forex,	.L2,	.L3 # table_name
 % currency,	L2,	L3 # name
 % clob,	decimal,	decimal # type
-% 7,	14,	41 # length
+% 7,	14,	21 # length
 [ "EUR/USD",	1.271833,	3.815500	]
 [ "USD/JPY",	107.118333,	321.355000	]
 [ "GBP/USD",	1.606836,	4.820510	]
@@ -214,7 +214,6 @@ Ready.
 % clk,	currency,	ts,	bid,	offer,	spread # name
 % timestamp,	clob,	timestamp,	decimal,	decimal,	decimal # type
 % 26,	7,	26,	14,	14,	14 # length
-[ 2014-10-14 06:12:51.000000,	"EUR/USD",	2014-10-14 06:12:38.643000,	1.271810,	1.271890,	0.000080	]
 [ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
 [ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
 #DROP TABLE forex;

@@ -23,6 +23,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <sql_keyword.h>
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 void
 scanner_init_keywords(void)
@@ -92,7 +95,8 @@ scanner_init_keywords(void)
 	keywords_insert("MEDIUMINT", sqlINTEGER);
 	keywords_insert("BIGINT", BIGINT);
 #ifdef HAVE_HGE
-	keywords_insert("HUGEINT", HUGEINT);
+	if (have_hge)
+		keywords_insert("HUGEINT", HUGEINT);
 #endif
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);

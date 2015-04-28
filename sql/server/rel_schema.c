@@ -921,8 +921,21 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		if (!sq)
 			return NULL;
 
-		if (!create)
+		if (!create) {
+			if (column_spec) {
+				dnode *n = column_spec->h;
+				node *m = sq->exps->h;
+
+				for (; n && m; n = n->next, m = m->next)
+					;
+				if (n || m) {
+					sql_error(sql, 01, "21S02!WITH CLAUSE: number of columns does not match");
+					rel_destroy(sq);
+					return NULL;
+				}
+			}
 			rel_add_intern(sql, sq);
+		}
 
 		if (create) {
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
@@ -935,7 +948,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( sql, name, sq, column_spec);
-		if (sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
+		if (sq && sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
 			exps_setcard(sq->exps, CARD_MULTI);
 			sq->card = CARD_MULTI;
 		}
@@ -1169,6 +1182,10 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 			/* check tables */
 			if (nnt) {
+				node *n = cs_find_id(&nt->tables, nnt->base.id);
+			
+				if (n)
+					return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' is already part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
 				if (rel_check_tables(sql, t, nnt) < 0)
 					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
@@ -1177,15 +1194,15 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		/* table drop table */
 		if (te->token == SQL_DROP_TABLE) {
 			char *ntname = te->data.lval->h->data.sval;
+			sql_table *ntt = mvc_bind_table(sql, s, ntname);
 			int drop_action = te->data.lval->h->next->data.i_val;
-			node *n = cs_find_name(&nt->tables, ntname);
+			node *n = NULL;
+		       
+			if (!ntt || (n = cs_find_id(&nt->tables, ntt->base.id)) == NULL)
+				return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' isn't part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
 
-			if (n) {
-				sql_table *ntt = n->data;
-
-				ntt->drop_action = drop_action;
-				cs_del(&nt->tables, n, ntt->base.flag); 
-			}
+			ntt->drop_action = drop_action;
+			cs_del(&nt->tables, n, ntt->base.flag); 
 		}
 
 		if (!isTable(nt))

@@ -64,7 +64,7 @@ Ready.
 % clob # type
 % 566 # length
 function user.s2_1{autoCommit=true}(A0:sht):void;
-    X_202:void := querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe",100);
+    X_203:void := querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe",100);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","orders");
     X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","orders","o_orderkey",0);
@@ -86,7 +86,7 @@ function user.s2_1{autoCommit=true}(A0:sht):void;
     X_33 := algebra.leftfetchjoin(X_18,X_32);
     (X_34,r1_34,r2_34) := group.subgroupdone(X_33);
     X_37:bat[:oid,:lng]  := aggr.subsum(X_26,X_34,r1_34,true,true);
-    X_39 := calc.lng(A0,15,2);
+    X_39 := calc.lng(A0,19,2);
     X_41 := algebra.thetasubselect(X_37,X_39,">");
     X_43:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_41,r1_34,X_33);
     (X_44,r1_46) := algebra.subjoin(X_16,X_43,nil:BAT,nil:BAT,false,nil:lng);
@@ -159,9 +159,9 @@ function user.s2_1{autoCommit=true}(A0:sht):void;
     sql.rsColumn(X_174,"sys.orders","o_orderkey","int",32,0,X_156);
     sql.rsColumn(X_174,"sys.orders","o_orderdate","date",0,0,X_157);
     sql.rsColumn(X_174,"sys.orders","o_totalprice","decimal",15,2,X_158);
-    sql.rsColumn(X_174,"sys.L6","L6","decimal",15,2,X_173);
-    X_200 := io.stdout();
-    sql.exportResult(X_200,X_174);
+    sql.rsColumn(X_174,"sys.L6","L6","decimal",19,2,X_173);
+    X_201 := io.stdout();
+    sql.exportResult(X_201,X_174);
 end user.s2_1;
 
 # 22:53:30 >  

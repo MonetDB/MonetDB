@@ -481,6 +481,9 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		sql_column *c = n->data;
 		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
 		cnt |= BATcount(b) > 0;
+		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
+	    	    t->persistence == SQL_PERSIST && !t->commit_action)
+			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
 	}
 	return cnt;
@@ -2102,6 +2105,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		BBPunfix(i->batCacheid);
 	}
 
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2221,6 +2225,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = u;
 	}
 	BATkey(BATmirror(res), TRUE);
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2309,6 +2314,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2385,6 +2391,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(diff->batCacheid);
 		BBPunfix(d->batCacheid);
 	}
+	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -4321,26 +4328,28 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints, *mode, *compress;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *compress;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
 	node *nsch, *ntab, *ncol;
 	int w;
-	bat *rsch = (bat *) getArgReference_bat(stk, pci, 0);
-	bat *rtab = (bat *) getArgReference_bat(stk, pci, 1);
-	bat *rcol = (bat *) getArgReference_bat(stk, pci, 2);
-	bat *rtype = (bat *) getArgReference_bat(stk, pci, 3);
-	bat *rmode = (bat *) getArgReference_bat(stk, pci, 4);
-	bat *rloc = (bat *) getArgReference_bat(stk, pci, 5);
-	bat *rcnt = (bat *) getArgReference_bat(stk, pci, 6);
-	bat *ratom = (bat *) getArgReference_bat(stk, pci, 7);
-	bat *rsize = (bat *) getArgReference_bat(stk, pci, 8);
-	bat *rheap = (bat *) getArgReference_bat(stk, pci, 9);
-	bat *rindices = (bat *) getArgReference_bat(stk, pci, 10);
-	bat *rimprints = (bat *) getArgReference_bat(stk, pci, 11);
-	bat *rsort = (bat *) getArgReference_bat(stk, pci, 12);
-	bat *rcompress = (bat *) getArgReference_bat(stk, pci, 13);
+	bit bitval;
+	bat *rsch = getArgReference_bat(stk, pci, 0);
+	bat *rtab = getArgReference_bat(stk, pci, 1);
+	bat *rcol = getArgReference_bat(stk, pci, 2);
+	bat *rtype = getArgReference_bat(stk, pci, 3);
+	bat *rmode = getArgReference_bat(stk, pci, 4);
+	bat *rloc = getArgReference_bat(stk, pci, 5);
+	bat *rcnt = getArgReference_bat(stk, pci, 6);
+	bat *ratom = getArgReference_bat(stk, pci, 7);
+	bat *rsize = getArgReference_bat(stk, pci, 8);
+	bat *rheap = getArgReference_bat(stk, pci, 9);
+	bat *rindices = getArgReference_bat(stk, pci, 10);
+	bat *rphash = getArgReference_bat(stk, pci, 11);
+	bat *rimprints = getArgReference_bat(stk, pci, 12);
+	bat *rsort = getArgReference_bat(stk, pci, 13);
+	bat *rcompress = getArgReference_bat(stk, pci, 13);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4370,6 +4379,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(heap, 0);
 	indices = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(indices, 0);
+	phash = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
+	BATseqbase(phash, 0);
 	imprints = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
@@ -4377,7 +4388,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	compress = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(compress, 0);
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
-		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || compress == NULL) {
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL || compress == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4400,6 +4411,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(heap->batCacheid);
 		if (indices)
 			BBPunfix(indices->batCacheid);
+		if (phash)
+			BBPunfix(phash->batCacheid);
 		if (imprints)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
@@ -4478,9 +4491,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
-								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+								sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize(bn)
+								sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize(bn)
 								BUNappend(indices, &sz, FALSE);
+								bitval = 0; // HASHispersistent(bn);
+								BUNappend(phash, &bitval, FALSE);
+
 								sz = IMPSimprintsize(bn);
 								BUNappend(imprints, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
@@ -4547,6 +4563,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											w = (int) (sum / cnt2);
 									}
 									BUNappend(atom, &w, FALSE);
+									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
 									sz += headsize(bn, BATcount(bn));
 									BUNappend(size, &sz, FALSE);
@@ -4555,9 +4572,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+									sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize()
+									sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize()
 									BUNappend(indices, &sz, FALSE);
+									bitval = 0; // HASHispersistent(bn);
+									BUNappend(phash, &bitval, FALSE);
+
 									sz = IMPSimprintsize(bn);
 									BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
@@ -4585,6 +4605,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsize = size->batCacheid);
 	BBPkeepref(*rheap = heap->batCacheid);
 	BBPkeepref(*rindices = indices->batCacheid);
+	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	BBPkeepref(*rcompress = compress->batCacheid);

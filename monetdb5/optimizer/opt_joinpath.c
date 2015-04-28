@@ -255,9 +255,11 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
-	/* perform a second phase, trial code, effect is not convincing and for the time ignored */
-	if ( 0 && actions )
-		actions += OPTjoinSubPath(cntxt, mb);
+/* perform a second phase, trial code, many TPCH queries have subpaths of interest.
+ * The count is meant to illustrate the impact
+ */
+	if (0 &&  actions )
+		actions = 10000*actions+ OPTjoinSubPath(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
