@@ -1395,6 +1395,15 @@ where qd.id = ql.id and qd.owner = user;\n");
 	}
 	assert(pos < bufsize);
 
+	/* update the 75_storagemodel script */
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
+	pos += snprintf(buf + pos, bufsize - pos, 
+		"create function sys.\"storage\"()"
+		"returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string,"
+		"\"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, "
+		"heapsize bigint, hashes bigint, phash boolean, imprints bigint, sorted boolean)"
+		"external name sql.\"storage\";\n"
+	);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
