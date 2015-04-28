@@ -292,6 +292,7 @@ CONDITIONALS = {
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
+    'BITS64OID32'          : "@BITS64OID32_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
