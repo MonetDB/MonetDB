@@ -30950,6 +30950,10 @@ command batcalc.wrd(v:bat[:oid,:oid],digits:int):bat[:oid,:wrd]
 address batnil_2num_wrd;
 comment cast to wrd and check for overflow
 
+command batcalc.wkb(geo:bat[:oid,:wkb],columnType:int,columnSRID:int):bat[:oid,:wkb] 
+address geom_2_geom_bat;
+comment Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition
+
 pattern batcalc.wrd_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
 comment cast from str to wrd with candidates list
@@ -30965,10 +30969,6 @@ comment cast from str to wrd with candidates list, signal error on overflow
 pattern batcalc.wrd(b:bat[:oid,:str]):bat[:oid,:wrd] 
 address CMDconvertsignal_wrd;
 comment cast from str to wrd, signal error on overflow
-
-command batcalc.wkb(geo:bat[:oid,:wkb],columnType:int,columnSRID:int):bat[:oid,:wkb] 
-address geom_2_geom_bat;
-comment Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition
 
 pattern batcalc.wrd_noerror(b:bat[:oid,:oid],s:bat[:oid,:oid]):bat[:oid,:wrd] 
 address CMDconvert_wrd;
@@ -35202,6 +35202,7 @@ command calc.blob(s:str):blob
 address BLOBblob_fromstr;
 command calc.blob(b:blob):blob 
 address BLOBblob_blob;
+pattern calc.cmp(v1:dbl,v2:dbl):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
 
@@ -41294,7 +41295,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],phash:bat[:oid,:bit],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
 address sql_storage;
 comment return a table with storage information 
 

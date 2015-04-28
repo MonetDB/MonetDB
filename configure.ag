@@ -441,6 +441,7 @@ case $bits-$enable_oid32 in
 	oids=32
 	;;
 esac
+AM_CONDITIONAL(BITS64OID32, test x"$bits-$enable_oid32" = x64-yes)
 AC_SUBST(oids)
 AC_MSG_RESULT($oids bits)
 
