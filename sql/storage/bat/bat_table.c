@@ -77,8 +77,6 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 	if (temp) 
 		return r;
 	b = temp_descriptor(bat->bid);
-	ui = temp_descriptor(bat->uibid);
-	uv = temp_descriptor(bat->uvbid);
 	if (!b) {
 		b = i;
 	} else {
@@ -91,16 +89,20 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		}
 		bat_destroy(i); 
 	}
-	if (BATcount(ui)) {
-		if (needcopy) {
-			r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
-			bat_destroy(b); 
-			b = r;
+	if (bat->uibid && bat->ucnt) {
+		ui = temp_descriptor(bat->uibid);
+		uv = temp_descriptor(bat->uvbid);
+		if (BATcount(ui)) {
+			if (needcopy) {
+				r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+				bat_destroy(b); 
+				b = r;
+			}
+			void_replace_bat(b, ui, uv, TRUE);
 		}
-		void_replace_bat(b, ui, uv, TRUE);
+		bat_destroy(ui); 
+		bat_destroy(uv); 
 	}
-	bat_destroy(ui); 
-	bat_destroy(uv); 
 	(void)c;
 	if (!bat->cached /*&& !tr->parent*/) 
 		bat->cached = temp_descriptor(b->batCacheid);
