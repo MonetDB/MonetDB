@@ -51,40 +51,31 @@ def process(f):
     data = open(f).read()
     if f.endswith('.mal'):
         data = re.sub(r'[ \t]*#.*', '', data) # remove comments
-        res = comreg.search(data)
-        while res is not None:
+        for res in comreg.finditer(data):
             malf, args, rets, func = res.groups()
             if malf not in ('del', 'cmp', 'fromstr', 'fix', 'heap', 'hash', 'length', 'null', 'nequal', 'put', 'storage', 'tostr', 'unfix', 'read', 'write') or args.strip():
                 rtypes = []
                 atypes = []
                 if not rets:
                     rets = ':void'
-                tres = treg.search(rets)
-                while tres is not None:
+                for tres in treg.finditer(rets):
                     typ = tres.group(1)
                     if typ.startswith('bat['):
                         typ = 'bat'
                     rtypes.append(mappings.get(typ, typ))
-                    tres = treg.search(rets, tres.end(0))
-                tres = treg.search(args)
-                while tres is not None:
+                for tres in treg.finditer(args):
                     typ = tres.group(1)
                     if typ.startswith('bat['):
                         typ = 'bat'
                     atypes.append(mappings.get(typ, typ))
-                    tres = treg.search(args, tres.end(0))
                 malfuncs.append((tuple(rtypes), tuple(atypes), malf, func, f))
-            res = comreg.search(data, res.end(0))
-        res = patreg.search(data)
-        while res is not None:
+        for res in patreg.finditer(data):
             malf, args, rets, func = res.groups()
             malpats.append((malf, func, f))
-            res = patreg.search(data, res.end(0))
     elif f.endswith('.h') or f.endswith('.c'):
         data = exportutils.preprocess(data)
 
-        res = expre.search(data)
-        while res is not None:
+        for res in expre.finditer(data):
             pos = res.end(0)
             decl = exportutils.normalize(res.group('decl'))
             res = nmere.search(decl)
@@ -122,7 +113,6 @@ def process(f):
                             a.append((cmappings.get(typ, typ), rdonly))
                         else:
                             decls[name] = (tuple(a), f)
-            res = expre.search(data, pos)
 
 report_const = False
 coverage = False
