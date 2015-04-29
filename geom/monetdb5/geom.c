@@ -5218,7 +5218,7 @@ int wkbaTOSTR(char **toStr, int *len, wkba *fromArray) {
 	dataSize += 2*sizeof(char)*items;
 
 	//copy all partial strings to a single one
-	if (*len < dataSize + 3 || *toStr == NULL) {
+	if (*len < (int) dataSize + 3 || *toStr == NULL) {
 		GDKfree(*toStr);
 		*toStr = GDKmalloc(*len = (int) dataSize + 3); /* plus quotes + termination character */
 	}
@@ -5247,8 +5247,8 @@ int wkbaTOSTR(char **toStr, int *len, wkba *fromArray) {
 	GDKfree(partialStrs);
 	GDKfree(itemsNumStr);
 
+	assert(strlen(*toStr) + 1 < (size_t) GDK_int_max);
 	*len = (int) strlen(*toStr)+1;
-	assert(*len < (size_t) GDK_int_max);
 	return (int)(toStrPtr-*toStr);
 }
 
