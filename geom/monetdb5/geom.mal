@@ -7,11 +7,11 @@
 # @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 atom mbr:lng;
 
-command tostr() :str		address mbrTOSTR;
-command fromstr() :mbr		address mbrFROMSTR;
-command hash() :int		address mbrHASH;
-command null() :int		address mbrNULL;
-command cmp() :int		address mbrCOMP;
+command tostr()			address mbrTOSTR;
+command fromstr()		address mbrFROMSTR;
+command hash()			address mbrHASH;
+command null()			address mbrNULL;
+command cmp()			address mbrCOMP;
 command read()			address mbrREAD;
 command write()			address mbrWRITE;
 
@@ -19,32 +19,32 @@ command write()			address mbrWRITE;
 
 atom wkb;
 
-command tostr() :str		address wkbTOSTR;
-command fromstr() :wkb		address wkbFROMSTR;
-command hash() :int		address wkbHASH;
-command null() :int		address wkbNULL;
-command cmp() :int		address wkbCOMP; #used in selections
+command tostr()			address wkbTOSTR;
+command fromstr()		address wkbFROMSTR;
+command hash()			address wkbHASH;
+command null()			address wkbNULL;
+command cmp()			address wkbCOMP; #used in selections
 command read()			address wkbREAD; #read from log
 command write()			address wkbWRITE; #write on log
-command put() :int		address wkbPUT; #put in heap
-command del() :int		address wkbDEL; #delete from heap
-command length() :int		address wkbLENGTH; 
-command heap() :int		address wkbHEAP; #create heap
+command put()			address wkbPUT; #put in heap
+command del()			address wkbDEL; #delete from heap
+command length()		address wkbLENGTH; 
+command heap()			address wkbHEAP; #create heap
 
 #command wkb{unsafe}(v:str) :wkb address wkbFromString;
 
 atom wkba;
-command tostr() :str address wkbaTOSTR;
-command fromstr() :wkba address wkbaFROMSTR;
-command null() :int address wkbaNULL;
-command hash() :int address wkbaHASH;
-command cmp() :int address wkbaCOMP; #used in selections
+command tostr() address wkbaTOSTR;
+command fromstr() address wkbaFROMSTR;
+command null() address wkbaNULL;
+command hash() address wkbaHASH;
+command cmp() address wkbaCOMP; #used in selections
 command read() address wkbaREAD; #read from log
 command write() address wkbaWRITE; #write on log
-command put() :int address wkbaPUT; #put in heap
-command del() :int address wkbaDEL; #delete from heap
-command length() :int address wkbaLENGTH; 
-command heap() :int address wkbaHEAP; #create heap
+command put() address wkbaPUT; #put in heap
+command del() address wkbaDEL; #delete from heap
+command length() address wkbaLENGTH; 
+command heap() address wkbaHEAP; #create heap
 
 module geom;
 

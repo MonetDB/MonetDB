@@ -89,10 +89,10 @@ command new(prot:str, host:str, fnme:str) :url
 address URLnew3
 comment "Construct URL from protocol, host,and file";
 
-command fromstr() :url
+command fromstr()
 address URLfromString
 comment "Convert a string to an url. ";
 
-command tostr() :str
+command tostr()
 address URLtoString
 comment "Convert url to string equivalent";
