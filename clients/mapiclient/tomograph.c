@@ -49,6 +49,9 @@
 #  include <time.h>
 # endif
 #endif
+#ifdef NATIVE_WIN32
+#include <direct.h>
+#endif
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -1669,12 +1672,13 @@ main(int argc, char **argv)
 	close(0);
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
-	if (cache)
+	if (cache) {
 #ifdef NATIVE_WIN32
 		_mkdir(cache);
 #else
 		mkdir(cache,0755);
 #endif
+	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, dbname, atlaspage);
 	if (inputfile==0 || strcmp(buf, inputfile) ){
 		// avoid overwriting yourself
