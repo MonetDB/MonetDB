@@ -1891,6 +1891,110 @@ static var_t wkba_size(int items) {
 	return size;
 }
 
+/* Creates WKB representation (including srid) from WKT representation */
+/* return number of parsed characters. */
+static int wkbFROMSTR_withSRID(char* geomWKT, int* len, wkb **geomWKB, int srid) {
+	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
+	GEOSWKTReader *WKT_reader;
+	char *polyhedralSurface = "POLYHEDRALSURFACE";
+	char *multiPolygon = "MULTIPOLYGON";
+	char *geoType;
+	size_t typeSize = 0;
+	char *geomWKT_original = NULL;
+	size_t parsedCharacters = 0;
+
+	if (strcmp(geomWKT, str_nil) == 0) {
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+	//check whether the represenattion is binary (hex)
+	if(geomWKT[0] == '0'){
+				str ret = wkbFromBinary(geomWKB, &geomWKT);
+
+		if(ret != MAL_SUCCEED)
+			return 0;
+		return (int)strlen(geomWKT);
+	}
+	
+	//check whether the geometry type is polyhedral surface
+	//geos cannot handle this type of geometry but since it is 
+	//a special type of multipolygon I just change the type before 
+	//continuing. Of course this means that isValid for example does
+	//not work correctly.
+	typeSize = strlen(polyhedralSurface);
+	geoType = (char*)GDKmalloc((typeSize+1)*sizeof(char));
+	memcpy(geoType, geomWKT, typeSize);
+	geoType[typeSize] = '\0';
+	if(strcasecmp(geoType, polyhedralSurface) == 0) {
+		size_t sizeOfInfo = strlen(geomWKT)-strlen(polyhedralSurface);
+		geomWKT_original = geomWKT;
+		geomWKT = (char*)GDKmalloc((sizeOfInfo+strlen(multiPolygon)+1)*sizeof(char));
+		strcpy(geomWKT, multiPolygon);
+		memcpy(geomWKT+strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
+		geomWKT[sizeOfInfo+strlen(multiPolygon)] = '\0';
+	}
+	GDKfree(geoType);
+	////////////////////////// UP TO HERE ///////////////////////////
+
+	WKT_reader = GEOSWKTReader_create();
+	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
+	GEOSWKTReader_destroy(WKT_reader);
+
+	if(geosGeometry == NULL){
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+
+	if (GEOSGeomTypeId(geosGeometry) == -1) {
+		GEOSGeom_destroy(geosGeometry);
+		*geomWKB = wkb_nil;
+		return 0;
+	}
+
+	GEOSSetSRID(geosGeometry, srid);
+	/* the srid was lost with the transformation of the GEOSGeom to wkb
+	* so we decided to store it in the wkb */ 
+		
+	/* we have a GEOSGeometry with number of coordinates and SRID and we 
+ 	* want to get the wkb out of it */
+	*geomWKB = geos2wkb(geosGeometry);
+	GEOSGeom_destroy(geosGeometry);
+
+	*len = (int) wkb_size((*geomWKB)->len);
+
+	if(geomWKT_original) {
+		GDKfree(geomWKT);
+		geomWKT = geomWKT_original;	
+	}
+
+	parsedCharacters =  strlen(geomWKT);
+	assert(parsedCharacters <= GDK_int_max);
+	return (int) parsedCharacters;
+}
+
+static int wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid) {
+	int items, i;
+	size_t skipBytes=0;
+
+//IS THERE SPACE OR SOME OTHER CHARACTER?
+
+	//read the number of items from the begining of the string
+	memcpy(&items, fromStr, sizeof(int));
+	skipBytes += sizeof(int);
+
+	*toArray = (wkba*)GDKmalloc(wkba_size(items));
+
+	for(i=0; i<items; i++) {
+		size_t parsedBytes = wkbFROMSTR_withSRID(fromStr+skipBytes, len, &((*toArray)->data[i]), srid);
+		skipBytes+=parsedBytes;
+	}
+	
+	assert(skipBytes <= GDK_int_max);
+	return (int) skipBytes;
+}
+
+
+
 /* create the WKB out of the GEOSGeometry 
  * It makes sure to make all checks before returning 
  * the input geosGeometry should not be altered by this function*/
@@ -2146,7 +2250,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	str ex;
 
 	*geomWKB = NULL;
-	if (wkbFROMSTR(*geomWKT, &len, geomWKB, *srid) && 
+	if (wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid) && 
 			(wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || ((te = ((*((*geomWKB)->data + 1) & 0x0f)))+(*tpe>2)) == *tpe)) {
 		return MAL_SUCCEED;
 	}
@@ -4839,85 +4943,9 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 	return (int) dstStrLen;
 }
 
-/* Creates WKB representation (including srid) from WKT representation */
-/* return number of parsed characters. */
-int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid) {
-	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-	GEOSWKTReader *WKT_reader;
-	char *polyhedralSurface = "POLYHEDRALSURFACE";
-	char *multiPolygon = "MULTIPOLYGON";
-	char *geoType;
-	size_t typeSize = 0;
-	char *geomWKT_original = NULL;
-	size_t parsedCharacters = 0;
 
-	if (strcmp(geomWKT, str_nil) == 0) {
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-	//check whether the represenattion is binary (hex)
-	if(geomWKT[0] == '0'){
-				str ret = wkbFromBinary(geomWKB, &geomWKT);
-
-		if(ret != MAL_SUCCEED)
-			return 0;
-		return (int)strlen(geomWKT);
-	}
-	
-	//check whether the geometry type is polyhedral surface
-	//geos cannot handle this type of geometry but since it is 
-	//a special type of multipolygon I just change the type before 
-	//continuing. Of course this means that isValid for example does
-	//not work correctly.
-	typeSize = strlen(polyhedralSurface);
-	geoType = (char*)GDKmalloc((typeSize+1)*sizeof(char));
-	memcpy(geoType, geomWKT, typeSize);
-	geoType[typeSize] = '\0';
-	if(strcasecmp(geoType, polyhedralSurface) == 0) {
-		size_t sizeOfInfo = strlen(geomWKT)-strlen(polyhedralSurface);
-		geomWKT_original = geomWKT;
-		geomWKT = (char*)GDKmalloc((sizeOfInfo+strlen(multiPolygon)+1)*sizeof(char));
-		strcpy(geomWKT, multiPolygon);
-		memcpy(geomWKT+strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
-		geomWKT[sizeOfInfo+strlen(multiPolygon)] = '\0';
-	}
-	GDKfree(geoType);
-	////////////////////////// UP TO HERE ///////////////////////////
-
-	WKT_reader = GEOSWKTReader_create();
-	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT); 
-	GEOSWKTReader_destroy(WKT_reader);
-
-	if(geosGeometry == NULL){
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-
-	if (GEOSGeomTypeId(geosGeometry) == -1) {
-		GEOSGeom_destroy(geosGeometry);
-		*geomWKB = wkb_nil;
-		return 0;
-	}
-
-	GEOSSetSRID(geosGeometry, srid);
-	/* the srid was lost with the transformation of the GEOSGeom to wkb
-	* so we decided to store it in the wkb */ 
-		
-	/* we have a GEOSGeometry with number of coordinates and SRID and we 
- 	* want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-
-	*len = (int) wkb_size((*geomWKB)->len);
-
-	if(geomWKT_original) {
-		GDKfree(geomWKT);
-		geomWKT = geomWKT_original;	
-	}
-
-	parsedCharacters =  strlen(geomWKT);
-	assert(parsedCharacters <= GDK_int_max);
-	return (int) parsedCharacters;
+int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB) {
+	return wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0);
 }
 
 BUN wkbHASH(wkb *w) {
@@ -5253,25 +5281,8 @@ int wkbaTOSTR(char **toStr, int *len, wkba *fromArray) {
 }
 
 /* return number of parsed characters. */
-int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray, int srid) {
-	int items, i;
-	size_t skipBytes=0;
-
-//IS THERE SPACE OR SOME OTHER CHARACTER?
-
-	//read the number of items from the begining of the string
-	memcpy(&items, fromStr, sizeof(int));
-	skipBytes += sizeof(int);
-
-	*toArray = (wkba*)GDKmalloc(wkba_size(items));
-
-	for(i=0; i<items; i++) {
-		size_t parsedBytes = wkbFROMSTR(fromStr+skipBytes, len, &((*toArray)->data[i]), srid);
-		skipBytes+=parsedBytes;
-	}
-	
-	assert(skipBytes <= GDK_int_max);
-	return (int) skipBytes;
+int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray) {
+	return wkbaFROMSTR_withSRID(fromStr, len, toArray, 0);
 }
 
 /* returns a pointer to a null wkba */

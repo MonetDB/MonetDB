@@ -49,9 +49,9 @@ geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
 geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
 geom_export int wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
 
-geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB, int srid);
+geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB);
 geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
-geom_export int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray, int srid);
+geom_export int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray);
 
 geom_export wkb *wkbNULL(void);
 geom_export mbr *mbrNULL(void);
