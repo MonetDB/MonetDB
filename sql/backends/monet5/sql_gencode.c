@@ -1329,15 +1329,44 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				switch (s->flag) {
 				case cmp_equal:{
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, FALSE);
+					if(s->op1->type == st_dimension) {
+						char *dimStr = "dimension_";
+						char *dimension_cmp = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
+						sql_dimension *dim = s->op1->op4.dval;
+					
+						strcpy(dimension_cmp, dimStr);
+						strcpy(dimension_cmp+strlen(dimStr), cmd);
+						
+						q = newStmt2(mb, sqlRef, dimension_cmp);
+
+						//I need the following 4 algorithms in order to get the information 
+						//for the dimension
+						q = pushArgument(mb, q, sql->mvc_var);
+						q = pushSchema(mb, q, dim->t);
+						q = pushStr(mb, q, dim->t->base.name);
+						q = pushStr(mb, q, dim->base.name);
+
+						//I need the following arguments in order to get the correct 
+						//results for the dimension
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
+						q = pushArgument(mb, q, r);
+						q = pushArgument(mb, q, r);
+						q = pushBit(mb, q, TRUE);
+						q = pushBit(mb, q, TRUE);
+						q = pushBit(mb, q, FALSE);
+
+					} else {
+						q = newStmt2(mb, algebraRef, cmd);
+						q = pushArgument(mb, q, l);
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
+						q = pushArgument(mb, q, r);
+						q = pushArgument(mb, q, r);
+						q = pushBit(mb, q, TRUE);
+						q = pushBit(mb, q, TRUE);
+						q = pushBit(mb, q, FALSE);
+					}
 					if (q == NULL)
 						return -1;
 					break;
@@ -2537,20 +2566,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_oid;
 			int tt = s->op4.dval->type.type->localtype;
 			sql_table *t = s->op4.dval->t;
-/*
-			int min=0, step=0, max=0;
 
-			if ((min = _dumpstmt(sql, mb, s->op1)) < 0)
-				return -1;
-			if ((step = _dumpstmt(sql, mb, s->op2)) < 0)
-				return -1;
-			if ((max = _dumpstmt(sql, mb, s->op3)) < 0)
-				return -1;
-			assert(min >= 0 && step >= 0 && max >= 0);
-
-				
-			q = newStmt2(mb, sqlRef, "dimension_bat");
-*/
 			q = newStmt2(mb, sqlRef, createDimRef);
 			if (q == NULL)
 				return -1;

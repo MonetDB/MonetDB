@@ -1737,7 +1737,7 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 }
 
 static BAT *
-mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal, int tpe)
+mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
@@ -1757,7 +1757,6 @@ mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal
 
 	b = store_funcs.bind_col(tr, c, 0);
 
-	(void)tpe;
 	return mvc_fill_values(c, b, t->cellsNum, defVal);
 
 	return b;
@@ -1817,31 +1816,6 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
         	materialiseDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
         	break;
     	case TYPE_int:
-#if 0
-{   			int it, *elements = NULL;
-				int min = dim->min->data.val.ival;
-				int step = dim->step->data.val.ival;
-				int max = dim->max->data.val.ival;
-
-        	if((b = BATnew(TYPE_void, TYPE_int, t->cellsNum, TRANSIENT)) == NULL) 
-        		return NULL;
-
-        	elements = (int*) Tloc(b, BUNfirst(b));
-
-			for(j=0; j<repeat2; j++) {
-        		for(it = min ; it <= max ; it += step) {
-            		for(i=0; i<repeat1; i++) {
-                		*elements = (int) it;
-                		elements++; \
-fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *elements, it);
-            		} 
-        		}
-    		}
-
-        	b->tsorted = 0;
-        	b->trevsorted = 0;
-}
-#endif
     		materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
         	break;
     	case TYPE_lng:
@@ -1871,6 +1845,190 @@ fprintf(stderr, "(%ld,%ld)-(%ld,%ld): %d - %d\n", repeat1, i, repeat2, j, *eleme
 	BATderiveProps(b,FALSE);
 
 	return b;
+}
+
+static BAT* mvc_subselect_dimension_bat(mvc *m, char* sname, char* tname, char* dname, bat* cand, void* low, void* high, bit li, bit hi, bit anti) {
+	BAT *b = NULL, *candBAT, *b_tmp;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_dimension *dim = NULL;
+	long elements_in_result = 0;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		return NULL;
+	dim = mvc_bind_dimension(m, t, dname);
+	if (dim == NULL)
+		return NULL;
+
+(void)li;
+(void)hi;
+(void)anti;
+(void)*cand;
+
+#define indices(min, step, max) dim->elementsNum = floor((max-min)/step) +1;
+
+	switch (dim->type.type->localtype) {
+    	case TYPE_bte:
+    	    indices(dim->min->data.val.btval, dim->step->data.val.btval, dim->max->data.val.btval);
+        	break;
+    	case TYPE_sht:
+        	indices(dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
+        	break;
+    	case TYPE_int:
+    		indices(dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
+        	break;
+    	case TYPE_lng:
+        	indices(dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);
+        	break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	indices(dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval);
+       	break;
+#endif
+		case TYPE_flt:
+        	indices(dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval);
+        	break;
+    	case TYPE_dbl:
+        	indices(dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval);
+        	break;
+    	case TYPE_str:
+			fprintf(stderr, "mvc_create_dimension_bat: str dimension needs special handling\n");
+        	return NULL;
+	    default:
+			fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
+			return NULL;
+	}
+	
+
+	if(ATOMcmp(dim->type.type->localtype, low, high) == 0) { //point select
+		long element_id, elements_per_group;
+		oid *res = NULL;
+		long i, j;
+
+		fprintf(stderr, "point select\n");
+
+#define element(TPE, min, step, max, el) \
+	do { \
+			TPE it; \
+			element_id = 0; \
+			for(it = min ; it <= max ; it += step) { \
+				if(it != el) \
+					element_id++; \
+				else \
+					break; \
+            } \
+			element_id *= dim->lvl1_repeatsNum; \
+		} while(0)
+
+
+		switch (dim->type.type->localtype) {
+        case TYPE_bte:
+            element(bte, dim->min->data.val.btval, dim->step->data.val.btval, dim->max->data.val.btval, *(bte*)low);
+            break;
+        case TYPE_sht:
+            element(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval, *(sht*)low);
+            break;
+        case TYPE_int:
+            element(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival, *(int*)low);
+            break;
+        case TYPE_lng:
+            element(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval, *(lng*)low);
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            element(hge, dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval, *(hge*)low);
+        break;
+#endif
+        case TYPE_flt:
+            element(flt, dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval, *(flt*)low);
+            break;
+        case TYPE_dbl:
+            element(dbl, dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval, *(dbl*)low);
+            break;
+        case TYPE_str:
+            fprintf(stderr, "mvc_create_dimension_bat: str dimension needs special handling\n");
+            return NULL;
+        default:
+            fprintf(stderr, "mvc_create_dimension_bat: dimension type not handled\n");
+            return NULL;
+    	}		
+	
+		elements_per_group = dim->elementsNum * dim->lvl1_repeatsNum;
+		fprintf(stderr, "elements per group  %ld\n", elements_per_group);	
+
+		elements_in_result = dim->lvl1_repeatsNum*dim->lvl2_repeatsNum;
+		//create new BAT
+		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+            return NULL; 
+
+		res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp)); 
+		//add the oids in the result
+		for(j=0; j<dim->lvl2_repeatsNum; j++) {
+			for(i=0; i<dim->lvl1_repeatsNum; i++) {
+fprintf(stderr, "Added oid: %ld\n", element_id);
+				*res = element_id;
+				res++;
+				element_id++;
+			}
+
+			element_id += (elements_per_group-dim->lvl1_repeatsNum);
+		}
+		
+		BATsetcount(b_tmp,elements_in_result);
+
+	} else {
+		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+            return NULL; 
+
+	}
+
+	
+	if(cand) {
+		oid *current_elements, *cand_elements, *elements;
+		oid i, j;
+
+		if ((candBAT = BATdescriptor(*cand)) == NULL) {
+			return NULL;
+    	}
+		
+		elements_in_result = (BATcount(b_tmp) > BATcount(candBAT))?BATcount(candBAT):BATcount(b_tmp);
+
+		if((b = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+            return NULL;
+
+		cand_elements = (oid*)Tloc(candBAT, BUNfirst(candBAT));
+		current_elements = (oid*)Tloc(b_tmp, BUNfirst(b_tmp));
+		elements = (oid*)Tloc(b, BUNfirst(b));
+		elements_in_result = 0;
+
+		//compare the results in the two BATs and keep only the common ones
+		for(i=0,j=0; i<BATcount(b_tmp) && j<BATcount(candBAT); ) {
+			if(cand_elements[j] == current_elements[i]) {		
+				elements[elements_in_result] = current_elements[i];
+fprintf(stderr, "Final element: %ld\n", current_elements[i]);
+
+				elements_in_result++;
+				i++;
+				j++;
+			} else if(cand_elements[j] < current_elements[i]) 
+				j++;
+			else
+				i++;
+		}
+	} else
+		b = b_tmp;
+
+
+	BATsetcount(b,elements_in_result);
+	BATseqbase(b,0);    
+	BATderiveProps(b,FALSE);
+
+	return b;
+
 }
 
 static BAT *
@@ -2016,7 +2174,7 @@ mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (ATOMextern(tpe))
 		def = *(ptr *) def;
 
-	b = mvc_create_cells_bat(m, *sname, *tname, *cname, def, tpe);
+	b = mvc_create_cells_bat(m, *sname, *tname, *cname, def);
 	if(b) {
 		BBPkeepref(*bid = b->batCacheid);
 		return MAL_SUCCEED;
@@ -2049,6 +2207,69 @@ mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.create_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 	throw(SQL, "sql.create_dimension", "unable to find %s(%s)", *tname, *dname);
+}
+
+str
+mvc_dimension_subselect_with_cand_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b = NULL;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+	str *dname = getArgReference_str(stk, pci, 4);
+	bat* cand = getArgReference(stk, pci, 5);
+	ptr low = getArgReference(stk, pci, 6);
+	ptr high = getArgReference(stk, pci, 7);
+	bit* li = getArgReference_bit(stk, pci, 8);
+	bit* hi = getArgReference_bit(stk, pci, 9);
+	bit* anti = getArgReference_bit(stk, pci, 10);
+
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	b = mvc_subselect_dimension_bat(m, *sname, *tname, *dname, cand, low, high, *li, *hi, *anti);
+	if(b) {
+		BBPkeepref(*bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (*sname && strcmp(*sname, str_nil) != 0)
+		throw(SQL, "sql.dimension_subselect", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+	throw(SQL, "sql.dimension_subselect", "unable to find %s(%s)", *tname, *dname);
+}
+
+str
+mvc_dimension_subselect_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b = NULL;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+	str *dname = getArgReference_str(stk, pci, 4);
+	ptr low = getArgReference(stk, pci, 5);
+	ptr high = getArgReference(stk, pci, 6);
+	bit* li = getArgReference_bit(stk, pci, 7);
+	bit* hi = getArgReference_bit(stk, pci, 8);
+	bit* anti = getArgReference_bit(stk, pci, 9);
+
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	b = mvc_subselect_dimension_bat(m, *sname, *tname, *dname, NULL, low, high, *li, *hi, *anti);
+	if(b) {
+		BBPkeepref(*bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (*sname && strcmp(*sname, str_nil) != 0)
+		throw(SQL, "sql.dimension_subselect", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+	throw(SQL, "sql.dimension_subselect", "unable to find %s(%s)", *tname, *dname);
 }
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
