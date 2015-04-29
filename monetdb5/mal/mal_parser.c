@@ -629,7 +629,7 @@ handleInts:
  * The type variable are defined within the context of a function
  * scope.
  * Additional information, such as a repetition factor,
- * encoding tables, or type dependency should be modelled as properties.
+ * encoding tables, or type dependency should be modeled as properties.
  */
 static int
 typeAlias(Client cntxt, int tpe)
