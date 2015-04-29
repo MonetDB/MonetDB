@@ -6,11 +6,11 @@
 
 atom json:str;
 
-command fromstr():json
+command fromstr()
 address JSONfromString
 comment "Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.";
 
-command tostr():str
+command tostr()
 address JSONtoString
 comment "Convert JSON to its string equivalent. Dealing with escape characters";
 
