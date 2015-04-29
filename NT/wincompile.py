@@ -65,6 +65,7 @@ def process(args, recursive = False):
                 dirname = os.path.dirname(arg)
                 p = subprocess.Popen(['lib', '/nologo', '/list', arg],
                                      shell = False,
+                                     universal_newlines = True,
                                      stdout = subprocess.PIPE)
                 for f in p.stdout:
                     argv.append(os.path.join(dirname, f.strip()))
@@ -78,10 +79,11 @@ argv = process(sys.argv[1:])
 if verbose:
     sys.stdout.write('EXECUTE: %s\n' % ' '.join(argv))
     sys.stdout.flush()
-p = subprocess.Popen(argv, shell = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+p = subprocess.Popen(argv, shell = False, universal_newlines = True,
+                     stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 out, err = p.communicate()
-sys.stdout.write(out.replace('\r\n', '\n'))
-sys.stderr.write(err.replace('\r\n', '\n'))
+sys.stdout.write(out)
+sys.stderr.write(err)
 if p.returncode and not verbose:
     sys.stderr.write('failed invocation: %s\n' % ' '.join(argv))
     sys.stderr.flush()
