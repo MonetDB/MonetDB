@@ -1193,11 +1193,11 @@ GDKexiting(void)
 {
 	int stopped;
 #ifdef ATOMIC_LOCK
-	pthread_mutex_lock(&GDKstoppedLock);
+	pthread_mutex_lock(&GDKstoppedLock.lock);
 #endif
 	stopped = GDKstopped != 0;
 #ifdef ATOMIC_LOCK
-	pthread_mutex_unlock(&GDKstoppedLock);
+	pthread_mutex_unlock(&GDKstoppedLock.lock);
 #endif
 	return stopped;
 }
