@@ -5036,7 +5036,7 @@ int mbrTOSTR(char **dst, int *len, mbr *atom) {
 		assert(dstStrLen < GDK_int_max);
 	}
 
-	if (*len < dstStrLen + 1 || *dst == NULL) {
+	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
 		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
 	}
