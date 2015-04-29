@@ -1182,6 +1182,10 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 			/* check tables */
 			if (nnt) {
+				node *n = cs_find_id(&nt->tables, nnt->base.id);
+			
+				if (n)
+					return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' is already part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
 				if (rel_check_tables(sql, t, nnt) < 0)
 					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
@@ -1190,15 +1194,15 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		/* table drop table */
 		if (te->token == SQL_DROP_TABLE) {
 			char *ntname = te->data.lval->h->data.sval;
+			sql_table *ntt = mvc_bind_table(sql, s, ntname);
 			int drop_action = te->data.lval->h->next->data.i_val;
-			node *n = cs_find_name(&nt->tables, ntname);
+			node *n = NULL;
+		       
+			if (!ntt || (n = cs_find_id(&nt->tables, ntt->base.id)) == NULL)
+				return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' isn't part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
 
-			if (n) {
-				sql_table *ntt = n->data;
-
-				ntt->drop_action = drop_action;
-				cs_del(&nt->tables, n, ntt->base.flag); 
-			}
+			ntt->drop_action = drop_action;
+			cs_del(&nt->tables, n, ntt->base.flag); 
 		}
 
 		if (!isTable(nt))

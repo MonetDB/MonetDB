@@ -169,7 +169,7 @@ __ATOMIC_GET(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_GET(var, lck, fcn)	__ATOMIC_GET(&var, &(lck))
+#define ATOMIC_GET(var, lck, fcn)	__ATOMIC_GET(&var, &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_SET(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
@@ -181,7 +181,7 @@ __ATOMIC_SET(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET(var, val, lck, fcn)	__ATOMIC_SET(&var, (val), &(lck))
+#define ATOMIC_SET(var, val, lck, fcn)	__ATOMIC_SET(&var, (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_ADD(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
@@ -193,7 +193,7 @@ __ATOMIC_ADD(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD(var, val, lck, fcn)	__ATOMIC_ADD(&var, (val), &(lck))
+#define ATOMIC_ADD(var, val, lck, fcn)	__ATOMIC_ADD(&var, (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_SUB(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
@@ -205,7 +205,7 @@ __ATOMIC_SUB(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB(var, val, lck, fcn)	__ATOMIC_SUB(&var, (val), &(lck))
+#define ATOMIC_SUB(var, val, lck, fcn)	__ATOMIC_SUB(&var, (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_INC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
@@ -216,7 +216,7 @@ __ATOMIC_INC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_INC(var, lck, fcn)		__ATOMIC_INC(&var, &(lck))
+#define ATOMIC_INC(var, lck, fcn)		__ATOMIC_INC(&var, &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_DEC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
@@ -227,7 +227,7 @@ __ATOMIC_DEC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_DEC(var, lck, fcn)		__ATOMIC_DEC(&var, &(lck))
+#define ATOMIC_DEC(var, lck, fcn)		__ATOMIC_DEC(&var, &(lck).lock)
 
 #define USE_PTHREAD_LOCKS	/* must use pthread locks */
 #define ATOMIC_LOCK		/* must use locks for atomic access */
@@ -245,7 +245,7 @@ __ATOMIC_TAS(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return orig;
 }
-#define ATOMIC_TAS(var, lck, fcn)		__ATOMIC_TAS(&var, &(lck))
+#define ATOMIC_TAS(var, lck, fcn)		__ATOMIC_TAS(&var, &(lck).lock)
 
 static inline void
 __ATOMIC_CLEAR(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
@@ -254,7 +254,7 @@ __ATOMIC_CLEAR(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
 	*var = 0;
 	pthread_mutex_unlock(lck);
 }
-#define ATOMIC_CLEAR(var, lck, fcn)		__ATOMIC_CLEAR(&var, &(lck))
+#define ATOMIC_CLEAR(var, lck, fcn)		__ATOMIC_CLEAR(&var, &(lck).lock)
 
 #endif
 

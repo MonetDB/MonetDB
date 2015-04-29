@@ -8,8 +8,8 @@ module color;
 
 atom color:int;
 
-command tostr():str address color_tostr;
-command fromstr():color address color_fromstr;
+command tostr() address color_tostr;
+command fromstr() address color_fromstr;
 
 command str(s:color):str
 address CLRstr

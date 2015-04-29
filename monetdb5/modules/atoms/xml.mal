@@ -6,11 +6,11 @@
 
 atom xml :str;
 
-command fromstr():xml
+command fromstr()
 address XMLfromString
 comment "Convert a string to an xml.";
 
-command tostr():str
+command tostr()
 address XMLtoString
 comment "Convert xml to string equivalent";
 
