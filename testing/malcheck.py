@@ -13,15 +13,18 @@ comreg = re.compile(r'\bcommand\s+' + malfre + r'\(\s*(?P<args>[^()]*)\)\s*(?P<r
 # recognize MAL "pattern" declarations
 patreg = re.compile(r'\bpattern\s+' + malfre + r'\(\s*(?P<args>[^()]*)\)\s*(?P<rets>\([^()]*\)|:\s*bat\[[^]]*\](?:\.\.\.)?|:\s*[a-zA-Z_][a-zA-Z_0-9]*(?:\.\.\.)?|)\s+' + addrre + r'\b')
 
+atmreg = re.compile(r'\batom\s+(?P<atom>[a-zA-Z_][a-zA-Z0-9_]*)(?:\s*[:=]\s*(?P<base>[a-zA-Z_][a-zA-Z0-9_]*))?\s*;')
+
 treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
 
-freg = re.compile(r'str (?P<name>\w+)\((?P<args>[^()]*)\)')
+freg = re.compile(r'(?P<rtype>\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
 creg = re.compile(r'\bconst\b')
 sreg = re.compile(r'\bchar\s*\*')
 areg = re.compile(r'\w+')
+argreg = re.compile(r'\s*\w+$')
 
 mappings = {
     'zrule': 'rule',
@@ -37,6 +40,25 @@ mappings = {
 cmappings = {
     'sqlblob': 'blob',
 }
+atomfunctypes = {
+    # MAL name: (return type, (argument...))
+    # where each argument is (type, const)
+    'cmp': ('int', (('void *', True), ('void *', True))),
+    'del': ('void', (('Heap *', False), ('var_t *', False))),
+    'fix': ('int', (('void *', True),)),
+    'fromstr': ('int', (('char *', True), ('int *', False), ('ptr *', False))),
+    'hash': ('BUN', (('void *', True),)),
+    'heap': ('void', (('Heap *', False), ('size_t', False))),
+    'length': ('int', (('void *', False),)),
+    'nequal': ('int', (('void *', True), ('void *', True))),
+    'null': ('void *', (('void', False),)),
+    'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
+    'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
+    'storage': ('long', (('void', False),)),
+    'tostr': ('int', (('str *', False), ('int *', False), ('void *', True))),
+    'unfix': ('int', (('void *', True),)),
+    'write': ('int', (('void *', True), ('stream *', False), ('size_t', False))),
+    }
 
 defre = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\((?P<args>[a-zA-Z0-9_, \t]*)\)[ \t]*(?P<def>.*)$', re.MULTILINE)
 
@@ -44,64 +66,72 @@ cldef = re.compile(r'^[ \t]*#', re.MULTILINE)
 
 malfuncs = []
 malpats = []
+atomfuncs = []
 decls = {}
+odecls = {}
 pdecls = {}
 
 def process(f):
     data = open(f).read()
     if f.endswith('.mal'):
         data = re.sub(r'[ \t]*#.*', '', data) # remove comments
-        res = comreg.search(data)
-        while res is not None:
+        for res in comreg.finditer(data):
             malf, args, rets, func = res.groups()
-            if malf not in ('del', 'cmp', 'fromstr', 'fix', 'heap', 'hash', 'length', 'null', 'nequal', 'put', 'storage', 'tostr', 'unfix', 'read', 'write') or args.strip():
+            if not atomfunctypes.has_key(malf) or args.strip():
                 rtypes = []
                 atypes = []
                 if not rets:
                     rets = ':void'
-                tres = treg.search(rets)
-                while tres is not None:
+                for tres in treg.finditer(rets):
                     typ = tres.group(1)
                     if typ.startswith('bat['):
                         typ = 'bat'
                     rtypes.append(mappings.get(typ, typ))
-                    tres = treg.search(rets, tres.end(0))
-                tres = treg.search(args)
-                while tres is not None:
+                for tres in treg.finditer(args):
                     typ = tres.group(1)
                     if typ.startswith('bat['):
                         typ = 'bat'
                     atypes.append(mappings.get(typ, typ))
-                    tres = treg.search(args, tres.end(0))
                 malfuncs.append((tuple(rtypes), tuple(atypes), malf, func, f))
-            res = comreg.search(data, res.end(0))
-        res = patreg.search(data)
-        while res is not None:
+            elif args.strip():
+                print 'atom function %s should be declared without arguments in %s' % (malf, f)
+            else:
+                if rets:
+                    print 'atom function %s should be declared without return type in %s' % (malf, f)
+                atom = None
+                base = None
+                for ares in atmreg.finditer(data, 0, res.start(0)):
+                    atom = ares.group('atom')
+                    base = ares.group('base')
+                if not atom:
+                    print 'atom function %s declared without known atom name in %s' % (malf, f)
+                    continue
+                atomfuncs.append((malf, atom, base, func, f))
+        for res in patreg.finditer(data):
             malf, args, rets, func = res.groups()
             malpats.append((malf, func, f))
-            res = patreg.search(data, res.end(0))
     elif f.endswith('.h') or f.endswith('.c'):
         data = exportutils.preprocess(data)
 
-        res = expre.search(data)
-        while res is not None:
+        for res in expre.finditer(data):
             pos = res.end(0)
             decl = exportutils.normalize(res.group('decl'))
             res = nmere.search(decl)
             if decl.startswith('char *'):
                 decl = 'str ' + decl[6:]
-            if '(' in decl and decl.startswith('str '):
+            if '(' in decl:
                 res = freg.match(decl)
                 if res is not None:
-                    name, args = res.groups()
+                    rtype, name, args = res.groups()
                     args = map(lambda x: x.strip(), args.split(','))
                     if len(args) == 4 and \
                        args[0].startswith('Client ') and \
                        args[1].startswith('MalBlkPtr ') and \
                        args[2].startswith('MalStkPtr ') and \
-                       args[3].startswith('InstrPtr '):
+                       args[3].startswith('InstrPtr ') and \
+                       rtype == 'str':
                         pdecls[name] = f
-                    else:
+                    elif rtype == 'str':
                         a = []
                         for arg in args:
                             if '(' in arg:
@@ -115,14 +145,42 @@ def process(f):
                             arg = arg.strip()
                             if arg.startswith('ptr ') and not '*' in arg:
                                 arg = 'void *' + arg[4:]
+                            # normalize "char *" to "str"
+                            if arg.startswith('char **'):
+                                arg = 'str ' + arg[6:]
+                            elif arg.startswith('char *'):
+                                arg = 'str' + arg[6:]
+                            if '*' in arg or ' ' in arg:
+                                # remove argument name (just keeping type)
+                                arg = argreg.sub('', arg)
                             if '*' not in arg:
                                 break
-                            arg = sreg.sub('str', arg)
                             typ = areg.match(arg).group(0)
                             a.append((cmappings.get(typ, typ), rdonly))
                         else:
                             decls[name] = (tuple(a), f)
-            res = expre.search(data, pos)
+                    else:
+                        if rtype == 'ptr':
+                            rtype = 'void *'
+                        a = []
+                        for arg in args:
+                            if '(' in arg:
+                                # complicated (function pointer) argument
+                                break
+                            if creg.search(arg) is not None:
+                                rdonly = True
+                                arg = creg.sub('', arg)
+                            else:
+                                rdonly = False
+                            arg = arg.strip()
+                            if '*' in arg or ' ' in arg:
+                                # remove argument name (just keeping type)
+                                arg = argreg.sub('', arg)
+                            if arg == 'str':
+                                arg = 'char *'
+                            a.append((arg, rdonly))
+                        else:
+                            odecls[name] = (rtype, tuple(a), f)
 
 report_const = False
 coverage = False
@@ -187,3 +245,24 @@ else:
     for malf, func, f in malpats:
         if not pdecls.has_key(func):
             print '%s: missing for MAL pattern %s in %s' % (func, malf, f)
+
+    for malf, atom, base, func, f in atomfuncs:
+        if not odecls.has_key(func):
+            print '%s: missing for MAL atom command %s in %s' % (func, malf, f)
+        else:
+            atm = mappings.get(atom, atom)
+            rtype, args = atomfunctypes[malf]
+            crtype, cargs, funcf = odecls[func]
+            if len(args) != len(cargs):
+                print '%s in %s: argument count mismatch for command %s for atom %s in %s' % (func, funcf, malf, atom, f)
+            elif rtype != crtype and rtype == 'void *' and crtype != atm + ' *' and (base != 'str' or (crtype != atm and crtype != 'char *')):
+                print '%s in %s: return type mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, malf, atom, f, rtype, crtype)
+            else:
+                for i in range(len(args)):
+                    a1, r1 = args[i]
+                    a2, r2 = cargs[i]
+                    if r2 and not r1:
+                        print 'argument %d of %s in %s incorrectly declared const for atom command %s in %s' % (i+1, func, funcf, malf, f)
+                    if a1 != a2 and a1 == 'void *' and a2 != atm + ' *' and (base != 'str' or (a2 != atm and a2 != 'char *')):
+                        print (a1,a2,atom,base)
+                        print '%s in %s: argument %d mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, i+1, malf, atom, f, a1, a2)

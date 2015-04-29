@@ -1,13 +1,13 @@
 atom uuid;
 
 # the atom functions
-command cmp() :int address UUIDcompare;
-command fromstr() :uuid address UUIDfromString;
-command hash() :int address UUIDhash;
-command null() :uuid address UUIDnull;
-command read() :uuid address UUIDread;
-command tostr() :str address UUIDtoString;
-command write() :int address UUIDwrite;
+command cmp() address UUIDcompare;
+command fromstr() address UUIDfromString;
+command hash() address UUIDhash;
+command null() address UUIDnull;
+command read() address UUIDread;
+command tostr() address UUIDtoString;
+command write() address UUIDwrite;
 
 # fix up the rest of the atom definition
 command prelude():void address UUIDprelude;

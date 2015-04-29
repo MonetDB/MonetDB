@@ -9,30 +9,30 @@ module geom;
 # @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 atom mbr:lng;
 
-command tostr() :str		address mbrTOSTR;
-command fromstr() :mbr		address mbrFROMSTR;
-command hash() :int		address mbrHASH;
-command null() :int		address mbrNULL;
-command cmp() :int		address mbrCOMP;
+command tostr()			address mbrTOSTR;
+command fromstr()		address mbrFROMSTR;
+command hash()			address mbrHASH;
+command null()			address mbrNULL;
+command cmp()			address mbrCOMP;
 command read()			address mbrREAD;
 command write()			address mbrWRITE;
 
-command mbr(v:str) :mbr address mbrFromString;
+command mbr(v:str) :mbr		address mbrFromString;
 
 atom wkb;
 
-command tostr() :str		address wkbTOSTR;
-command fromstr() :wkb		address wkbFROMSTR;
-command hash() :int		address wkbHASH;
-command null() :int		address wkbNULL;
-command cmp() :int		address wkbCOMP;
+command tostr()			address wkbTOSTR;
+command fromstr()		address wkbFROMSTR;
+command hash()			address wkbHASH;
+command null()			address wkbNULL;
+command cmp()			address wkbCOMP;
 command read()			address wkbREAD;
 command write()			address wkbWRITE;
 
-command put() :int		address wkbPUT;
-command del() :int		address wkbDEL;
-command length() :int		address wkbLENGTH;
-command heap() :int		address wkbHEAP;
+command put()			address wkbPUT;
+command del()			address wkbDEL;
+command length()		address wkbLENGTH;
+command heap()			address wkbHEAP;
 
 command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command FromText{unsafe}(w:str, type:int) :wkb	address wkbFromText;
