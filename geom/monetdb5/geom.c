@@ -2250,6 +2250,10 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	str ex;
 
 	*geomWKB = NULL;
+	if (strcmp(*geomWKT, str_nil) == 0) {
+		*geomWKB = wkb_nil;
+		return MAL_SUCCEED;
+	}
 	if (wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid) && 
 			(wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || ((te = ((*((*geomWKB)->data + 1) & 0x0f)))+(*tpe>2)) == *tpe)) {
 		return MAL_SUCCEED;

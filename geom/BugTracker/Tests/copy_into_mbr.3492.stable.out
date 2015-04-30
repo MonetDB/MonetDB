@@ -51,7 +51,7 @@ Ready.
 [ 4,	NULL,	NULL	]
 [ 5,	NULL,	NULL	]
 #UPDATE geom SET b = MBR(g);
-[ 4	]
+[ 5	]
 #SELECT * FROM geom ORDER BY id;
 % sys.geom,	sys.geom,	sys.geom # table_name
 % id,	g,	b # name
