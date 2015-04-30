@@ -69,6 +69,7 @@ static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tachograph";
 static char *cache= "cache";
+static char cachebuf[BUFSIZ]={0};
 static char *dbname;
 static int beat = 5000;
 static int delay = 0; // ms
@@ -506,53 +507,25 @@ initFiles(void)
 {
 	char buf[BUFSIZ];
 
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.json",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.json",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d.json",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%d.json", cachebuf, basefilename, dbname, queryid);
 	tachojson= fopen(buf,"w");
 	if( tachojson == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d_mal.csv",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%d_mal.csv",cachebuf, basefilename, dbname, queryid);
 	tachomal= fopen(buf,"w");
 	if( tachomal == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d_stmt.csv",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%d_stmt.csv", cachebuf, basefilename, dbname, queryid);
 	tachostmt= fopen(buf,"w");
 	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(0);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.trace",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.trace",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d.trace",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%d.trace", cachebuf, basefilename, dbname, queryid);
 	tachotrace= fopen(buf,"w");
 	if( tachotrace == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
@@ -580,7 +553,7 @@ update(EventRecord *ev)
 {
 	int progress=0;
 	int i,j;
-	char *v, *qry, *q = 0, *c;
+	char *v;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
 	char prereq[BUFSIZ]={0};
@@ -656,25 +629,11 @@ update(EventRecord *ev)
 			events = (Event*) malloc(malsize * sizeof(Event));
 			memset((char*)events, 0, malsize * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
-			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			for (c= currentquery; *c; ){
-				if ( strncmp(c,"\\\\t",3) == 0){
-					*q++ = '\t';
-					c+=3;
-				} else
-				if ( strncmp(c,"\\\\n",3) == 0){
-					*q++ = '\n';
-					c+=3;
-				} else if ( strncmp(c,"\\\\",2) == 0){
-					c+= 2;
-				} else *q++ = *c++;
-			}
-			*q =0;
-			currentquery = qry;
+			currentquery = stripQuotes(malarguments[malretc]);
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
-				printf("CACHE ID:%d\n%s\n",queryid, qry);
+				printf("CACHE ID:%d\n%s\n",queryid, currentquery);
 			prevquery = currentquery;
-			progressBarInit(qry);
+			progressBarInit(currentquery);
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
@@ -923,6 +882,12 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (cache)
+#ifdef NATIVE_WIN32
+		snprintf(cachebuf,BUFSIZ,"%s\\",cache);
+#else
+		snprintf(cachebuf,BUFSIZ,"%s/",cache);
+#endif
 	if(dbname == NULL){
 		usageTachograph();
 		exit(-1);
@@ -995,13 +960,11 @@ main(int argc, char **argv)
 	if( cache){
 #ifdef NATIVE_WIN32
 		_mkdir(cache);
-		snprintf(buf,BUFSIZ,"%s\\%s_%s.trace",cache,basefilename,dbname);
 #else
 		mkdir(cache,0755);
-		snprintf(buf,BUFSIZ,"%s/%s_%s.trace",cache,basefilename,dbname);
 #endif
-	} else
-		snprintf(buf,BUFSIZ,"%s_%s.trace",basefilename,dbname);
+	} 
+	snprintf(buf,BUFSIZ,"%s%s_%s.trace", cachebuf, basefilename,dbname);
 	// keep a trace of the events received
 	trace = fopen(buf,"w");
 	if( trace == NULL)
