@@ -44,6 +44,29 @@ clearArguments(void)
 	malvartop = 0;
 }
 
+char * 
+stripQuotes(char *currentquery)
+{	char *q, *c, *qry;
+			q = qry = (char *) malloc(strlen(currentquery) * 2);
+			for (c= currentquery; *c; ){
+				if ( strncmp(c,"\\\\t",3) == 0){
+					*q++ = '\t';
+					c+=3;
+				} else
+				if ( strncmp(c,"\\\\n",3) == 0){
+					*q++ = '\n';
+					c+=3;
+				} else if ( strncmp(c,"\\\"",2) == 0){
+					*q++= '"';
+					c+=2;
+				} else if ( strncmp(c,"\\\\",2) == 0){
+					c+= 2;
+				} else *q++ = *c++;
+			}
+			*q =0;
+	return qry;
+}
+
 static void
 parseArguments(char *call, int m)
 {
@@ -83,8 +106,11 @@ parseArguments(char *call, int m)
 			c++; c++;
 			// parse string skipping escapes
 			for(l=c; *l; l++){
+				if( *l =='\\' &&  *(l+1) =='\\' && *(l+2) =='\\' &&  *(l+3) =='"') { l+=3; continue;}
+				if( *l =='\\' &&  *(l+1) =='\\') { l++; continue;}
+				if( *l =='\\' &&  *(l+1) =='n') { l++; continue;}
+				if( *l =='\\' &&  *(l+1) =='t') { l++; continue;}
 				if( *l =='\\' &&  *(l+1) =='"') break;
-				if( *l == '\\') l++;
 			}
 			*l= 0;
 			malarguments[malargc] = strdup(c);

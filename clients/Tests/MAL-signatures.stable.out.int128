@@ -48605,7 +48605,7 @@ command color.color(s:str):color
 address CLRcolor;
 comment Converts string to color
 
-command color.#fromstr():color 
+command color.#fromstr():void 
 address color_fromstr;
 command color.green(c:color):int 
 address CLRgreen;
@@ -48647,7 +48647,7 @@ command color.str(s:color):str
 address CLRstr;
 comment Converts color to string 
 
-command color.#tostr():str 
+command color.#tostr():void 
 address color_tostr;
 command color.value(c:color):flt 
 address CLRvalue;
@@ -48685,13 +48685,13 @@ pattern daytime.>(v:daytime,w:daytime):bit
 address CMDvarGT;
 comment Equality of two daytimes
 
-command daytime.#fromstr():daytime 
+command daytime.#fromstr():void 
 address daytime_tz_fromstr;
 pattern daytime.isnil(v:daytime):bit 
 address CMDvarISNIL;
 comment Nil test for daytime value
 
-command daytime.#tostr():str 
+command daytime.#tostr():void 
 address daytime_tostr;
 pattern date.!=(v:date,w:date):bit 
 address CMDvarNE;
@@ -48721,13 +48721,13 @@ command date.date(s:date):date
 address MTIMEdate_date;
 comment Noop routine.
 
-command date.#fromstr():date 
+command date.#fromstr():void 
 address date_fromstr;
 pattern date.isnil(v:date):bit 
 address CMDvarISNIL;
 comment Nil test for date value
 
-command date.#tostr():str 
+command date.#tostr():void 
 address date_tostr;
 command factories.getDeparture():bat[:oid,:timestamp] 
 address FCTgetDeparture;
@@ -49283,7 +49283,7 @@ command inet.broadcast(X_1:inet):inet
 address INETbroadcast;
 comment Returns the broadcast address for network
 
-command inet.#cmp():int 
+command inet.#cmp():void 
 address INETcompare;
 command inet.#fromstr():void 
 address INETfromString;
@@ -49317,7 +49317,7 @@ command inet.new(s:str):inet
 address INETnew;
 comment Create an inet from a string literal
 
-command inet.#null():inet 
+command inet.#null():void 
 address INETnull;
 command inet.setmasklen(X_1:inet,X_2:int):inet 
 address INETsetmasklen;
@@ -49487,7 +49487,7 @@ command json.filter(name:json,pathexpr:str):json
 address JSONfilter;
 comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.
 
-command json.#fromstr():json 
+command json.#fromstr():void 
 address JSONfromString;
 comment Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.
 
@@ -49569,7 +49569,7 @@ command json.text(j:json):str
 address JSONjson2text;
 comment Convert JSON values to their plain string equivalent.
 
-command json.#tostr():str 
+command json.#tostr():void 
 address JSONtoString;
 comment Convert JSON to its string equivalent. Dealing with escape characters
 
@@ -49965,19 +49965,19 @@ pattern mal.manifold(mod:str,fcn:str,a:any...):bat[:oid,:any]
 address MANIFOLDevaluate;
 pattern mal.multiplex(mod:str,fcn:str,a:any...):any... 
 address MANIFOLDremapMultiplex;
-command mbr.#cmp():int 
+command mbr.#cmp():void 
 address mbrCOMP;
-command mbr.#fromstr():mbr 
+command mbr.#fromstr():void 
 address mbrFROMSTR;
-command mbr.#hash():int 
+command mbr.#hash():void 
 address mbrHASH;
 command mbr.mbr(v:str):mbr 
 address mbrFromString;
-command mbr.#null():int 
+command mbr.#null():void 
 address mbrNULL;
 command mbr.#read():void 
 address mbrREAD;
-command mbr.#tostr():str 
+command mbr.#tostr():void 
 address mbrTOSTR;
 command mbr.#write():void 
 address mbrWRITE;
@@ -52230,7 +52230,7 @@ pattern sysmon.stop(id:int):void
 address SYSMONstop;
 pattern sysmon.stop(id:sht):void 
 address SYSMONstop;
-command timezone.#fromstr():timezone 
+command timezone.#fromstr():void 
 address tzone_fromstr;
 command timezone.str(z:timezone):str 
 address MTIMEtzone_tostr;
@@ -52240,7 +52240,7 @@ comment Utility function to create a timestamp from a number of seconds since th
 
 command timezone.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
-command timezone.#tostr():str 
+command timezone.#tostr():void 
 address tzone_tostr;
 pattern timestamp.!=(v:timestamp,w:timestamp):bit 
 address CMDvarNE;
@@ -52282,13 +52282,13 @@ command timestamp.epoch{unsafe}():timestamp
 address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
-command timestamp.#fromstr():timestamp 
+command timestamp.#fromstr():void 
 address timestamp_fromstr;
 pattern timestamp.isnil(v:timestamp):bit 
 address CMDvarISNIL;
 comment Nil test for timestamp value
 
-command timestamp.#tostr():str 
+command timestamp.#tostr():void 
 address timestamp_tostr;
 command timestamp.unix_epoch{unsafe}():timestamp 
 address MTIMEunix_epoch;
@@ -52398,7 +52398,7 @@ command udf.reverse(ra1:str):str
 address UDFreverse;
 comment Reverse a string
 
-command url.#fromstr():url 
+command url.#fromstr():void 
 address URLfromString;
 comment Convert a string to an url. 
 
@@ -52466,7 +52466,7 @@ command url.new(p:str,h:str,prt:int,f:str):url
 address URLnew4;
 comment Construct URL from protocol, host, port, and file
 
-command url.#tostr():str 
+command url.#tostr():void 
 address URLtoString;
 comment Convert url to string equivalent
 
@@ -52478,11 +52478,11 @@ command url.url(s:str):url
 address URLnew;
 comment Create an URL from a string literal
 
-command uuid.#cmp():int 
+command uuid.#cmp():void 
 address UUIDcompare;
-command uuid.#fromstr():uuid 
+command uuid.#fromstr():void 
 address UUIDfromString;
-command uuid.#hash():int 
+command uuid.#hash():void 
 address UUIDhash;
 command uuid.isaUUID(u:str):bit 
 address UUIDisaUUID;
@@ -52492,45 +52492,45 @@ command uuid.new():uuid
 address UUIDgenerateUuid;
 comment Generate a new uuid
 
-command uuid.#null():uuid 
+command uuid.#null():void 
 address UUIDnull;
 command uuid.prelude():void 
 address UUIDprelude;
-command uuid.#read():uuid 
+command uuid.#read():void 
 address UUIDread;
 command uuid.str(u:uuid):str 
 address UUIDuuid2str;
 comment Coerce a uuid to its string type
 
-command uuid.#tostr():str 
+command uuid.#tostr():void 
 address UUIDtoString;
 command uuid.uuid(s:str):uuid 
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
 
-command uuid.#write():int 
+command uuid.#write():void 
 address UUIDwrite;
 command wkb.FromText{unsafe}(w:str,type:int):wkb 
 address wkbFromText;
-command wkb.#cmp():int 
+command wkb.#cmp():void 
 address wkbCOMP;
-command wkb.#del():int 
+command wkb.#del():void 
 address wkbDEL;
-command wkb.#fromstr():wkb 
+command wkb.#fromstr():void 
 address wkbFROMSTR;
-command wkb.#heap():int 
+command wkb.#heap():void 
 address wkbHEAP;
-command wkb.#hash():int 
+command wkb.#hash():void 
 address wkbHASH;
-command wkb.#length():int 
+command wkb.#length():void 
 address wkbLENGTH;
-command wkb.#null():int 
+command wkb.#null():void 
 address wkbNULL;
-command wkb.#put():int 
+command wkb.#put():void 
 address wkbPUT;
 command wkb.#read():void 
 address wkbREAD;
-command wkb.#tostr():str 
+command wkb.#tostr():void 
 address wkbTOSTR;
 command wkb.wkb{unsafe}(v:str):wkb 
 address wkbFromString;
@@ -52584,7 +52584,7 @@ pattern xml.forest(val:xml...):xml
 address XMLforest;
 comment Construct an element list
 
-command xml.#fromstr():xml 
+command xml.#fromstr():void 
 address XMLfromString;
 comment Convert a string to an xml.
 
@@ -52622,7 +52622,7 @@ command xml.text(src:xml):str
 address XMLxmltext;
 comment Extract text from an xml atom
 
-command xml.#tostr():str 
+command xml.#tostr():void 
 address XMLtoString;
 comment Convert xml to string equivalent
 
@@ -52678,9 +52678,9 @@ command zrule.define(m:int,d:int,w:int,h:int,min:int):zrule
 address MTIMEruleDef0;
 comment Introduce a synomym timezone rule.
 
-command zrule.#fromstr():zrule 
+command zrule.#fromstr():void 
 address rule_fromstr;
-command zrule.#tostr():str 
+command zrule.#tostr():void 
 address rule_tostr;
 
 # 15:15:16 >  
