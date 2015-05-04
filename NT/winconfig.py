@@ -42,7 +42,7 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@DIRSEP@", '\\'),
         ("@PATHSEP@", ';')]
 
-if len(sys.argv) > 1 and sys.argv[1][-19:] == '\\winconfig_conds.py':
+if len(sys.argv) > 1 and sys.argv[1].endswith(r'\winconfig_conds.py'):
     conds = {}
     for line in fileinput.input(sys.argv[1]):
         exec(line, None, conds)
