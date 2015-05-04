@@ -61,8 +61,11 @@ while len(sys.argv) > 2 and '=' in sys.argv[1]:
 subs.append(('@SOURCE@', os.path.abspath(os.path.dirname(os.path.dirname(sys.argv[0])))))
 
 for key, val in subs[:]:
+    # X prefix for execution-time value
     subs.insert(0, ('@X'+key[1:], val))
+    # Q prefix for quoted value (i.e. \ needs to be scaped)
     subs.insert(0, ('@Q'+key[1:], val.replace('\\', r'\\')))
+    # QX prefix for quoted execution-time value
     subs.insert(0, ('@QX'+key[1:], val.replace('\\', r'\\')))
 
 def substitute(line):
