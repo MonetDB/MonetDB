@@ -1091,12 +1091,12 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	if (extra) {
 		iter = bat_iterator(extra);
 		BATloop(extra, p, q) {
-			str name = (str) BUNtail(iter, p);
+			str name = (str) BUNtvar(iter, p);
 
 			if (debug & 1)
 				fprintf(stderr, "#commit extra %s %s\n",
 					name,
-					(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
+					(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
 			assert(BBPindex(name));
 			n[i++] = abs(BBPindex(name));
 		}
@@ -2188,8 +2188,8 @@ log_sequence_nrs(logger *lg)
 	int ok = LOG_OK;
 
 	BATloop(lg->seqs_id, p, q) {
-		const int *id = (const int *) BUNtail(sii, p);
-		const lng *val = (const lng *) BUNtail(svi, p);
+		const int *id = (const int *) BUNtloc(sii, p);
+		const lng *val = (const lng *) BUNtloc(svi, p);
 		oid pos = p;
 
 		if (BUNfnd(lg->dseqs, &pos) == BUN_NONE)
