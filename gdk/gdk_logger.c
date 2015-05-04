@@ -2257,11 +2257,12 @@ bm_commit(logger *lg)
 		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE)
 			continue;
 
+		if (bid == lg->dsnapshots->batCacheid)
+			continue;
+
 	       	lb = BATdescriptor(bid);
 
 		assert(lb);
-		if (lb == lg->dsnapshots)
-			continue;
 		BATmode(lb, PERSISTENT);
 		assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
