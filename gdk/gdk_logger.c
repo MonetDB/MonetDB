@@ -2260,6 +2260,8 @@ bm_commit(logger *lg)
 	       	lb = BATdescriptor(bid);
 
 		assert(lb);
+		if (lb == lg->dsnapshots)
+			continue;
 		BATmode(lb, PERSISTENT);
 		assert(lb->batRestricted > BAT_WRITE);
 		logbat_destroy(lb);
