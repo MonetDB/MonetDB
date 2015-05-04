@@ -837,8 +837,7 @@ logger_close(logger *lg)
 	stream *log = lg->log;
 
 	if (log) {
-		mnstr_close(log);
-		mnstr_destroy(log);
+		close_stream(log);
 	}
 	lg->log = NULL;
 }
