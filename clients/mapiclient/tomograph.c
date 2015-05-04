@@ -776,10 +776,11 @@ showmemory(void)
 static char *
 getHeatColor(double load)
 {
-	if ( load > 0.75 ) return "yellow";
+	if ( load > 0.9 ) return "red";
+	if ( load > 0.75 ) return "orangered";
 	if ( load > 0.5 ) return "orange";
-	if ( load > 0.25 ) return "red";
-	if ( load > 0.02 ) return "blue";
+	if ( load > 0.25 ) return "gold";
+	if ( load > 0.02 ) return "yellow";
 	return "white";
 }
 
@@ -796,7 +797,7 @@ showcpu(void)
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.%02d\n", cpus?cpus:1);
-	fprintf(gnudata, "set origin 0.0, 0.%d\n", 89 - cpus);
+	fprintf(gnudata, "set origin 0.0, 0.%d\n", 88 - cpus);
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
@@ -949,18 +950,23 @@ fprintf_time(FILE *f, lng time)
 }
 
 /* produce a legenda image for the color map */
-#define COLUMNS 5
+#define COLUMNS 3
 
 static void
 showcolormap(char *filename, int all)
 {
 	FILE *f = 0;
 	char buf[BUFSIZ];
-	int i, k = 0;
+	int i, k = 0,nl;
 	int w = 380; // 600 for 3 columns
-	int h = 590;
+	int h = 590, h1=h;
 	lng totfreq = 0, tottime = 0;
 	Color *clrs = colors, *_clrs_ = NULL;
+	char *c;
+
+	// count size of query text
+	for (nl=0, c= currentquery; c && *c; c++)
+		nl += *c == '\n';
 
 	if (all) {
 		snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename, dbname, atlaspage);
@@ -989,7 +995,7 @@ showcolormap(char *filename, int all)
 		fprintf(f, "set lmarg 10\n");
 		fprintf(f, "set rmarg 10\n");
 		fprintf(f, "set size 1,0.4\n");
-		fprintf(f, "set origin 0.0,%s\n", "-0.05");
+		fprintf(f, "set origin 0.0,%s\n", "-0.04");
 		fprintf(f, "set xrange [0:1800]\n");
 		fprintf(f, "set yrange [0:600]\n");
 		fprintf(f, "unset xtics\n");
@@ -1016,17 +1022,15 @@ showcolormap(char *filename, int all)
 				tottime += clrs[i].timeused;
 				totfreq += clrs[i].freq;
 
-				if (k % COLUMNS == 0)
-					h -= 45;
+				if (k % COLUMNS == 0 && i)
+					h -= 35;
 				fprintf(f, "set object %d rectangle from %.2f, %.2f to %.2f, %.2f fillcolor rgb \"%s\" fillstyle solid 1.0\n",
-					object++, (double) (k % COLUMNS) * w, (double) h - 40, (double) ((k % COLUMNS) * w + 0.05 * w), (double) h - 5, clrs[i].col);
+					object++, (double) (k % COLUMNS) * w, (double) h - 40, (double) ((k % COLUMNS) * w + 0.09 * w), (double) h - 15, clrs[i].col);
 				fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
-					object++, (clrs[i].mod?clrs[i].mod:""), clrs[i].fcn, (int) ((k % COLUMNS) * w + 0.07 * w), h - 15);
-				fprintf(f, "set label %d \"%d call%s: ",
-					object++, clrs[i].freq, clrs[i].freq>1?"s":"");
+					object++, (clrs[i].mod?clrs[i].mod:""), clrs[i].fcn, (int) ((k % COLUMNS) * w + 0.1 * w), h - 20);
+				fprintf(f, "set label %d \"%d call%s: ", object++, clrs[i].freq, clrs[i].freq>1?"s":"");
 				fprintf_time(f, clrs[i].timeused);
-				fprintf(f, "\" at %f,%f\n",
-					(double) ((k % COLUMNS) * w + 0.07 * w), (double) h - 35);
+				fprintf(f, "\" at %f,%f\n", (double) ((k % COLUMNS) * w + 0.1 * w), (double) h - 35);
 				k++;
 			} else {
 				clrs[0].timeused += clrs[i].timeused;
@@ -1039,13 +1043,35 @@ showcolormap(char *filename, int all)
 		_clrs_ = NULL;
 	}
 
-	h -= 45;
-	fprintf(f, "set label %d \" "LLFMT" MAL instructions executed; total CPU core time: ",
-		object++, totfreq);
+	h -= 30;
+	fprintf(f, "set label %d \"MAL instructions executed: "LLFMT, object++, totfreq);
+	fprintf(f, "\" at 0,%d\n", h - 30);
+
+	fprintf(f, "set label %d \"Total CPU core time: ", object++);
 	fprintf_time(f, tottime);
-	fprintf(f, "; parallelism usage %.1f %%", totalclkticks / (totalticks / 100.0));
-	fprintf(f, "\" at %d,%d\n",
-		(int) (0.2 * w), h - 35);
+	fprintf(f, "\" at 0,%d\n", h - 50);
+
+	fprintf(f, "set label %d \"Parallelism used: %.1f %%", object++, totalclkticks / (totalticks / 100.0));
+	fprintf(f, "\" at 0,%d\n", h - 70);
+	// show complete query text
+	if( currentquery ){
+		h = h1-30;
+		//fprintf(gnudata, "set object %d rectangle from %d.0, 250.0 to %d.0,%d.0\n", object++, 3 * w, 5 *w , h -5);
+		fprintf(f, "set label %d \"", object++);
+		k=0;
+		for (c= currentquery; *c; c++){
+			if (*c == '"') fprintf(gnudata,"\\"); else
+			if (*c == '\t') fprintf(gnudata,"  "); else
+			if (*c == '\n') { fprintf(gnudata,"\\n"); k=0; continue;} else
+			if( ++k >60 && (*c == ' ' || *c =='\t')){
+				fprintf(gnudata,"\\n");
+				k = 1;
+			}
+			fputc(*c,gnudata);
+		}
+		fprintf(f, "\" at %d,%d\n", (int) ( 3 * w ), h - 17);
+		h-= 17;
+	}
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
 		fclose(f);
@@ -1114,21 +1140,8 @@ gnuplotheader(char *filename)
 		ch= *c; *c =0;
 		fprintf(gnudata, "set title \"%s\t%s%s\"\n", date, title, *c? "...":"");
 		*c =ch;
-	} else 
-	if( currentquery ){
-		fprintf(gnudata, "set title \"%s\t", date);
-		for (c= currentquery; *c && i <100; c++, i++)
-			if( *c =='"')
-				fprintf(gnudata,"\\\"");
-			else 
-			if( *c != '\n' && *c != '\t')
-				fputc(*c,gnudata);
-		if(*c)
-			fprintf(gnudata, "...");
-		fprintf(gnudata, "\"\n");
-	}
-	else
-		fprintf(gnudata, "set title \"%s\tTomogram\"\n", date);
+	}  else
+		fprintf(gnudata, "set title \"%s\tMonetDB %s tomogram\"\n", date, dbname);
 	fprintf(gnudata, "set multiplot\n");
 }
 
@@ -1167,7 +1180,7 @@ createTomogram(void)
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.48\n");
-	fprintf(gnudata, "set origin 0.0,%s\n", "0.32");
+	fprintf(gnudata, "set origin 0.0,%s\n", "0.33");
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
