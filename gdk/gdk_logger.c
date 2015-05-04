@@ -108,7 +108,7 @@ log_find_int(BAT *b, BAT *d, int val)
 	int *t = (int *) Tloc(b, BUNfirst(b));
 
 	for (p = 0, q = BATcount(b); p < q; p++) {
-		BUN pos = p + BUNfirst(b);
+		oid pos = p + BUNfirst(b);
 
 		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
 			return pos;
@@ -123,7 +123,7 @@ log_find_bid(BAT *b, BAT *d, log_bid val)
 	log_bid *t = (log_bid *) Tloc(b, BUNfirst(b));
 
 	for (p = 0, q = BATcount(b); p < q; p++) {
-		BUN pos = p + BUNfirst(b);
+		oid pos = p + BUNfirst(b);
 
 		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
 			return pos;
@@ -282,9 +282,14 @@ log_read_seq(logger *lg, logformat *l)
 		return LOG_ERR;
 	}
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE) {
-		BUNinplace(lg->seqs_val, p, &seq, &val, FALSE);
+	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	    p >= lg->seqs_id->batInserted) {
+		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
+		if (p != BUN_NONE) {
+			oid pos = p;
+			BUNappend(lg->dseqs, &pos, FALSE);
+		}
 		BUNappend(lg->seqs_id, &seq, FALSE);
 		BUNappend(lg->seqs_val, &val, FALSE);
 	}
@@ -648,8 +653,6 @@ la_bat_use(logger *lg, logaction *la)
 		return;
 	}
 	logger_add_bat(lg, b, la->name);
-	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE) 
-		BUNinplace(lg->snapshots_tid, p, &b->batCacheid, &lg->tid, FALSE);
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
 	assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
@@ -665,8 +668,16 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
-	/* move to the dirty new part of the snapshots list, new snapshots will get flushed to disk */
-	if (p == BUN_NONE) {
+	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+	    p >= lg->snapshots_bid->batInserted) {
+		BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
+	} else {
+		if (p != BUN_NONE) {
+			oid pos = p;
+			BUNappend(lg->dsnapshots, &pos, FALSE);
+		}
+		/* move to the dirty new part of the snapshots list,
+		 * new snapshots will get flushed to disk */
 		BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE);
 		BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 	}
@@ -1004,7 +1015,14 @@ logger_commit(logger *lg)
 		fprintf(stderr, "#logger_commit\n");
 
 	p = log_find_int(lg->seqs_id, lg->dseqs, id);
-	BUNinplace(lg->seqs_val, p, &id, &lg->id, FALSE);
+	if (p >= lg->seqs_val->batInserted) {
+		BUNinplace(lg->seqs_val, p, NULL, &lg->id, FALSE);
+	} else {
+		oid pos = p;
+		BUNappend(lg->dseqs, &pos, FALSE);
+		BUNappend(lg->seqs_id, &id, FALSE);
+		BUNappend(lg->seqs_val, &lg->id, FALSE);
+	}
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots_bid)) {
@@ -1757,9 +1775,14 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
-		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE){
-			BUNinplace(lg->snapshots_tid, p, &b->batCacheid, &lg->tid, FALSE);
+		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+		    p >= lg->snapshots_tid->batInserted) {
+			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 		} else {
+			if (p != BUN_NONE) {
+				oid pos = p;
+				BUNappend(lg->dsnapshots, &pos, FALSE);
+			}
 			BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE);
 			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 		}
@@ -1819,8 +1842,15 @@ log_bat_transient(logger *lg, const char *name)
 			assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
-	//	if (lg->tid == tid) 
-			BUNinplace(lg->snapshots_tid, p, &bid, &lg->tid, FALSE);
+	//	if (lg->tid == tid)
+		if (p >= lg->snapshots_tid->batInserted) {
+			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
+		} else {
+			oid pos = p;
+			BUNappend(lg->dsnapshots, &pos, FALSE);
+			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
+			BUNappend(lg->snapshots_bid, &bid, FALSE);
+		}
 	//	else
 	//		printf("%d != %d\n", lg->tid, tid);
 	//	assert(lg->tid == tid);
@@ -2175,9 +2205,14 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE) {
-		BUNinplace(lg->seqs_val, p, &seq, &val, FALSE);
+	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	    p >= lg->seqs_id->batInserted) {
+		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
+		if (p != BUN_NONE) {
+			oid pos = p;
+			BUNappend(lg->dseqs, &pos, FALSE);
+		}
 		BUNappend(lg->seqs_id, &seq, FALSE);
 		BUNappend(lg->seqs_val, &val, FALSE);
 	}
