@@ -1077,8 +1077,9 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	n[i++] = 0;		/* n[0] is not used */
 	BATloop(list_bid, p, q) {
 		bat col = *(log_bid *) Tloc(list_bid, p);
+		oid pos = p;
 
-		if (list_bid == catalog_bid && BUNfnd(dcatalog, &p) != BUN_NONE)
+		if (list_bid == catalog_bid && BUNfnd(dcatalog, &pos) != BUN_NONE)
 			continue;
 		if (debug & 1)
 			fprintf(stderr, "#commit new %s (%d) %s\n",
@@ -1330,8 +1331,9 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		lg->dcatalog = d;
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) Tloc(b, p);
+			oid pos = p;
 
-			if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				BBPincref(bid, TRUE);
 		}
 	}
@@ -1577,8 +1579,9 @@ logger_destroy(logger *lg)
 		/* free resources */
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) Tloc(b, p);
+			oid pos = p;
 
-			if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				BBPdecref(bid, TRUE);
 		}
 
@@ -2185,11 +2188,12 @@ log_sequence_nrs(logger *lg)
 	int ok = LOG_OK;
 
 	BATloop(lg->seqs_id, p, q) {
-		const void *id = BUNtail(sii, p);
-		const void *val = BUNtail(svi, p);
+		const int *id = (const int *) BUNtail(sii, p);
+		const lng *val = (const lng *) BUNtail(svi, p);
+		oid pos = p;
 
-		if (BUNfnd(lg->dseqs, &p) == BUN_NONE)
-			ok &= log_sequence_(lg, *(int*)id, *(lng*)val);
+		if (BUNfnd(lg->dseqs, &pos) == BUN_NONE)
+			ok &= log_sequence_(lg, *id, *val);
 	}
 	return ok;
 }
@@ -2248,8 +2252,9 @@ bm_commit(logger *lg)
 	for (p = b->batInserted; p < BUNlast(b); p++) {
 		log_bid bid = *(log_bid *) Tloc(b, p);
 		BAT *lb;
+		oid pos = p;
 
-		if (BUNfnd(lg->dcatalog, &p) != BUN_NONE)
+		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE)
 			continue;
 
 	       	lb = BATdescriptor(bid);
@@ -2343,7 +2348,8 @@ logger_find_bat(logger *lg, const char *name)
 
 	if (lg->catalog_nme->T->hash || BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->T->hash, p, name) {
-			if (BUNfnd(lg->dcatalog, &p) == BUN_NONE)
+			oid pos = p;
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
 		}
 	} 
