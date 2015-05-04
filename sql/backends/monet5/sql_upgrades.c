@@ -1215,10 +1215,16 @@ sql_update_feb2015(Client c)
 	/* change to 75_storagemodel */
 	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.storagemodel;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.tablestoragemodel;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.storage;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.storagemodel;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.imprintsize;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.columnsize;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.storage;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "\
+create function sys.storage()\n\
+returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\n\
+external name sql.storage;\n\
+create view sys.storage as select * from sys.storage();\n\
 create function sys.columnsize(nme string, i bigint, d bigint)\n\
 returns bigint\n\
 begin\n\
@@ -1353,9 +1359,9 @@ where qd.id = ql.id and qd.owner = user;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
 
 
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from systemfunctions where function_id not in (select id from functions);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1369,6 +1375,8 @@ where qd.id = ql.id and qd.owner = user;\n");
 			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
 				sql_table *t;
 
+				if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
+					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
@@ -1395,15 +1403,6 @@ where qd.id = ql.id and qd.owner = user;\n");
 	}
 	assert(pos < bufsize);
 
-	/* update the 75_storagemodel script */
-	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.storage();\n");
-	pos += snprintf(buf + pos, bufsize - pos, 
-		"create function sys.\"storage\"()"
-		"returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string,"
-		"\"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, "
-		"heapsize bigint, hashes bigint, phash boolean, imprints bigint, sorted boolean)"
-		"external name sql.\"storage\";\n"
-	);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
