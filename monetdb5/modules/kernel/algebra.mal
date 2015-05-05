@@ -48,6 +48,9 @@ command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
+command dimension_leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
+address ALGdimensionLeftfetchjoin;
+
 command revert( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address ALGrevert
 comment "Returns a BAT copy with buns in reverse order";
@@ -94,6 +97,14 @@ comment "Select all head values of the first input BAT for which the tail value
 	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
 	Note that the output is suitable as second input for this
 	function.";
+
+
+command dimension_subselect(b:bat[:oid, :any], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+address ALGdimensionSubselect1;
+
+command dimension_subselect(b:bat[:oid,:any], cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+address ALGdimensionSubselect2;
+
 
 command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
 address ALGthetasubselect1

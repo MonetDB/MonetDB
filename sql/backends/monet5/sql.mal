@@ -226,10 +226,10 @@ pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid
 address mvc_create_dimension_bat_wrap
 comment "Create the 'schema.table.dimension' BAT";
 
-pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-address mvc_dimension_subselect_with_cand_bat_wrap;
-pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-address mvc_dimension_subselect_bat_wrap;
+#pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+#address mvc_dimension_subselect_with_cand_bat_wrap;
+#pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+#address mvc_dimension_subselect_bat_wrap;
 
 command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
 		:bat[:oid,:any_3] 

@@ -546,7 +546,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (exp_card(e) > CARD_AGGR)
 			s->nrcols = 2;
 	} 	break;
-	case e_dimension: //not sure what the result is used for
+	case e_dimension: 
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(sql->sa, right, e->l, e->r);

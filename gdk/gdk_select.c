@@ -1552,6 +1552,160 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	return virtualize(bn);
 }
 
+BAT *
+BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *high, int li, int hi, int anti) {
+	int type;
+	const void *nil;
+	oid elements_in_result =0;
+	BAT *b_tmp, *resBAT;
+
+	type = inBAT->ttype;
+	nil = ATOMnilptr(type);
+	type = ATOMbasetype(type);
+
+
+(void)li;
+(void)hi;
+(void)anti;
+(void)*(int*)nil;
+
+	if(ATOMcmp(type, low, high) == 0) { //point selection
+		long repeat1, repeat2, elementsNum;
+		long element_oid =0, i, j;
+		oid *res = NULL;
+
+#define elements(TPE, el) \
+	do { \
+		TPE min, max, step, it; \
+		TPE *el_in; \
+		oid i; \
+\
+		el_in = (TPE*)Tloc(inBAT, BUNfirst(inBAT)); \
+		min = el_in[0]; \
+		step = el_in[BATcount(inBAT)-1]; \
+\
+		repeat1 = 1; \
+		for(i=1; i<BATcount(inBAT); i++) { \
+			if(min == el_in[i]) \
+				repeat1++; \
+			else { \
+				max = el_in[i]; \
+				break; \
+			} \
+		} \
+\
+		repeat2 = BATcount(inBAT) - i -1; \
+\
+		elementsNum = floor((max-min)/step) + 1; \
+\
+		element_oid = 0; \
+        for(it = min ; it <= max ; it += step) { \
+			if(it != el) \
+            	element_oid++; \
+            else \
+                break; \
+        } \
+\
+		element_oid *= repeat1; \
+	} while(0)
+		
+		switch (ATOMtype(type)) {
+		case TYPE_bte:
+        	elements(bte, *(bte*)low);
+	        break;
+	    case TYPE_sht:
+    	    elements(sht, *(sht*)low);
+	        break;
+    	case TYPE_int:
+        	elements(int, *(int*)low);
+	        break;
+    	case TYPE_lng:
+        	elements(lng, *(lng*)low);
+	       break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	elements(hge, *(hge*)low);
+	        break;
+#endif
+    	case TYPE_flt:
+        	elements(flt, *(flt*)low);
+	        break;
+    	case TYPE_dbl:
+        	elements(dbl, *(dbl*)low);
+	        break;
+    	case TYPE_oid:
+        	elements(oid, *(oid*)low);
+	        break;
+		default:
+			fprintf(stderr, "BATdimensionSubselect: dimension type not handled\n");
+            return NULL;
+    	}
+
+		elements_in_result = repeat1*repeat2;
+
+		//create new BAT
+		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+			return NULL;
+		
+		res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
+		//add the oids in the result
+		for(j=0; j<repeat2; j++) {
+			for(i=0; i<repeat1; i++) {
+				fprintf(stderr, "Added oid: %ld\n", element_oid);
+				*res = element_oid;
+				res++;
+				element_oid++;
+			}
+		
+			element_oid += ((elementsNum*repeat1) - repeat1);
+		}
+		
+		BATsetcount(b_tmp,elements_in_result);
+		
+	} else {
+		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+            return NULL;
+	}
+
+	if(candBAT) {
+        oid *current_elements, *cand_elements, *elements;
+        oid i, j;
+
+        elements_in_result = (BATcount(b_tmp) > BATcount(candBAT))?BATcount(candBAT):BATcount(b_tmp);
+
+        if((resBAT = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+            return NULL;
+
+        cand_elements = (oid*)Tloc(candBAT, BUNfirst(candBAT));
+        current_elements = (oid*)Tloc(b_tmp, BUNfirst(b_tmp));
+        elements = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+        elements_in_result = 0;
+
+        //compare the results in the two BATs and keep only the common ones
+        for(i=0,j=0; i<BATcount(b_tmp) && j<BATcount(candBAT); ) {
+        	if(cand_elements[j] == current_elements[i]) {
+	        	elements[elements_in_result] = current_elements[i];
+	    	    fprintf(stderr, "Final element: %ld\n", current_elements[i]);
+        
+    	    	elements_in_result++;
+        		i++;
+        		j++;
+    		} else if(cand_elements[j] < current_elements[i])
+	        	j++;
+       		else
+    	    	i++;
+        }
+    } else
+        resBAT = b_tmp;
+        
+        
+        BATsetcount(resBAT,elements_in_result);
+        BATseqbase(resBAT,0);
+        BATderiveProps(resBAT,FALSE);
+        
+        return resBAT;
+}
+
 /* theta select
  *
  * Returns a dense-headed BAT with the OID values of b in the tail for

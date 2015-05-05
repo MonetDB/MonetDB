@@ -3216,6 +3216,7 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 #define JOIN_NE		(-3)
 
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
+gdk_export BAT *BATdimensionSubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
@@ -3244,6 +3245,7 @@ gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, 
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
 gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);
+gdk_export BAT *BATdimensionProject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);

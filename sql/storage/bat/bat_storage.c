@@ -26,6 +26,8 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
+static void delta_append_bat( sql_delta *bat, BAT *i ) ;
+
 sql_delta *
 timestamp_delta( sql_delta *d, int ts)
 {
@@ -369,6 +371,97 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 	return dup_delta( tr, obat, bat, type, oc_isnew, c_isnew, isTempTable(t), t->sz);
 }
 
+
+static BAT*
+materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, void* defVal) {
+    BAT *b = NULL;
+
+#define fillVals(TPE, def)                     \
+    do {                                \
+            TPE *elements = NULL; \
+            BUN i; \
+\
+            if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
+                return NULL;                   \
+\
+            elements = (TPE*) Tloc(b, BUNfirst(b));          \
+\
+            /*Fill the rest of the cells with the default value or NULL if no \
+ *             * default values is provided*/ \
+            for(i=0;i<cellsNum; i++) { \
+                elements[i] = def; \
+            }   \
+\
+            b->tsorted = 0;              \
+            b->trevsorted = 0;           \
+    } while (0)
+
+	switch (c->type.type->localtype) {
+        case TYPE_bte:
+            if(!defVal)
+                fillVals(bte, bte_nil);
+            else
+                fillVals(bte, *(bte*)defVal);
+            break;
+        case TYPE_sht:
+            if(!defVal)
+                fillVals(sht, sht_nil);
+            else
+                fillVals(sht, *(sht*)defVal);
+            break;
+        case TYPE_int:
+            if(!defVal)
+                fillVals(int, int_nil);
+            else
+                fillVals(int, *(int*)defVal);
+            break;
+        case TYPE_lng:
+            if(!defVal)
+                fillVals(lng, lng_nil);
+            else
+                fillVals(lng, *(lng*)defVal);
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            if(!defVal)
+                fillVals(hge, hge_nil);
+            else
+                fillVals(hge, *(hge*)defVal);
+            break;
+#endif
+        case TYPE_flt:
+            if(!defVal)
+                fillVals(flt, flt_nil);
+            else
+                fillVals(flt, *(flt*)defVal);
+            break;
+        case TYPE_dbl:
+            if(!defVal)
+                fillVals(dbl, dbl_nil);
+            else
+                fillVals(dbl, *(dbl*)defVal);
+            break;
+        case TYPE_str:
+            if(!defVal) {
+                char str_nil_2[2];
+                strcpy(str_nil_2, str_nil);
+                fillVals(str, str_nil_2);
+			}
+            else
+                fillVals(str, *(str*)defVal);
+            break;
+        default:
+            fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");
+            return NULL;
+    }
+
+    BATsetcount(b,cellsNum);
+    BATseqbase(b,0);
+    BATderiveProps(b,FALSE);
+
+    return b;
+}
+
 static void
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
@@ -388,9 +481,33 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
        	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
-	if (tpe == TYPE_bat)
+	
+	if (tpe == TYPE_bat) {
+		if(isArray(c->t)) {
+			//In arrays the updated column might not have values
+			//In this case we need to create the values
+			oid neededCells = 0;
+			oid existingCells;
+			oid* updatedOids;
+			BAT *b_in;
+			
+			updatedOids = (oid*)Tloc(b, BUNfirst(b));
+			if(updatedOids)
+				neededCells = updatedOids[BATcount(b)-1]; //we do not need to create more than the maximum updated oid
+			else
+				neededCells = b->tseqbase;
+			neededCells++; //the previous is oid and oids start from 0
+			b_in = temp_descriptor(bat->ibid); //the BAT of the updated column
+
+			existingCells = BATcount(b_in) + bat->cnt;
+			if(existingCells < neededCells) {
+				BAT *extra = materialise_nonDimensional_column(c, neededCells-existingCells, c->def);
+				delta_append_bat(bat, extra); //append the values to the column
+			}
+		}
+
 		delta_update_bat(bat, tids, upd, isNew(c));
-	else 
+	} else 
 		delta_update_val(bat, *(oid*)tids, upd);
 }
 

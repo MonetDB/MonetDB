@@ -1758,8 +1758,6 @@ mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal
 	b = store_funcs.bind_col(tr, c, 0);
 
 	return mvc_fill_values(c, b, t->cellsNum, defVal);
-
-	return b;
 }
 
 static BAT*
@@ -1781,24 +1779,37 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 	
 #define materialiseDim(TPE, min, step, max)                     \
     do {                                \
-			TPE it, *elements = NULL; \
+			TPE /*it,*/ *elements = NULL; \
 			long repeat1, repeat2, i, j; \
 \
 			repeat1 = dim->lvl1_repeatsNum; \
 			repeat2 = dim->lvl2_repeatsNum; \
 \
-        	if((b = BATnew(TYPE_void, TYPE_##TPE, t->cellsNum, TRANSIENT)) == NULL)   \
+/*        	if((b = BATnew(TYPE_void, TYPE_##TPE, t->cellsNum, TRANSIENT)) == NULL)*/   \
+			if((b = BATnew(TYPE_void, TYPE_##TPE, repeat1+repeat2+1, TRANSIENT)) == NULL) \
         		return NULL;                   \
 \
  	      	elements = (TPE*) Tloc(b, BUNfirst(b));          \
+			for(i=0; i<repeat1; i++) { \
+				*elements = min; \
+				elements++; \
+			} \
+\
 			for(j=0; j<repeat2; j++) { \
+				*elements = max; \
+				elements++; \
+			} \
+\
+			*elements = step; \
+\
+			/*for(j=0; j<repeat2; j++) { \
         		for(it = min ; it <= max ; it += step) { \
             		for(i=0; i<repeat1; i++) { \
                 		*elements = (TPE) it; \
                 		elements++; \
             		} \
         		} \
-    		} \
+    		} */\
 \
         	b->tsorted = 0;              \
         	b->trevsorted = 0;           \
@@ -1840,13 +1851,14 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 			return NULL;
 	}
 
-	BATsetcount(b,t->cellsNum);
+//	BATsetcount(b,t->cellsNum);
+	BATsetcount(b,dim->lvl1_repeatsNum+dim->lvl2_repeatsNum+1); 
 	BATseqbase(b,0);    
 	BATderiveProps(b,FALSE);
 
 	return b;
 }
-
+/*
 static BAT* mvc_subselect_dimension_bat(mvc *m, char* sname, char* tname, char* dname, bat* cand, void* low, void* high, bit li, bit hi, bit anti) {
 	BAT *b = NULL, *candBAT, *b_tmp;
 	sql_schema *s = NULL;
@@ -2029,7 +2041,7 @@ fprintf(stderr, "Final element: %ld\n", current_elements[i]);
 
 	return b;
 
-}
+}*/
 
 static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
@@ -2209,6 +2221,7 @@ mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	throw(SQL, "sql.create_dimension", "unable to find %s(%s)", *tname, *dname);
 }
 
+/*
 str
 mvc_dimension_subselect_with_cand_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2270,7 +2283,7 @@ mvc_dimension_subselect_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.dimension_subselect", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 	throw(SQL, "sql.dimension_subselect", "unable to find %s(%s)", *tname, *dname);
-}
+}*/
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
@@ -2847,9 +2860,13 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.tid", "42S02!Table missing");
-	c = t->columns.set->h->data;
+	
+	if(isTable(t)) {
+		c = t->columns.set->h->data;
 
-	nr = store_funcs.count_col(tr, c, 1);
+		nr = store_funcs.count_col(tr, c, 1);
+	} else
+		nr = t->cellsNum;
 
 	if (isTable(t) && t->access == TABLE_WRITABLE && (t->base.flag != TR_NEW /* alter */ ) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)

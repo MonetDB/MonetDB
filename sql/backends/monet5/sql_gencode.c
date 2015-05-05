@@ -1331,42 +1331,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				case cmp_equal:{
 					if(s->op1->type == st_dimension) {
 						char *dimStr = "dimension_";
-						char *dimension_cmp = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
-						sql_dimension *dim = s->op1->op4.dval;
+						char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
 					
-						strcpy(dimension_cmp, dimStr);
-						strcpy(dimension_cmp+strlen(dimStr), cmd);
+						strcpy(dimension_cmd, dimStr);
+						strcpy(dimension_cmd+strlen(dimStr), cmd);
 						
-						q = newStmt2(mb, sqlRef, dimension_cmp);
-
-						//I need the following 4 algorithms in order to get the information 
-						//for the dimension
-						q = pushArgument(mb, q, sql->mvc_var);
-						q = pushSchema(mb, q, dim->t);
-						q = pushStr(mb, q, dim->t->base.name);
-						q = pushStr(mb, q, dim->base.name);
-
-						//I need the following arguments in order to get the correct 
-						//results for the dimension
-						if (sub > 0)
-							q = pushArgument(mb, q, sub);
-						q = pushArgument(mb, q, r);
-						q = pushArgument(mb, q, r);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, FALSE);
-
+						q = newStmt2(mb, algebraRef, dimension_cmd);
 					} else {
 						q = newStmt2(mb, algebraRef, cmd);
-						q = pushArgument(mb, q, l);
-						if (sub > 0)
-							q = pushArgument(mb, q, sub);
-						q = pushArgument(mb, q, r);
-						q = pushArgument(mb, q, r);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, FALSE);
 					}
+				
+					q = pushArgument(mb, q, l);
+					if (sub > 0)
+						q = pushArgument(mb, q, sub);
+					q = pushArgument(mb, q, r);
+					q = pushArgument(mb, q, r);
+					q = pushBit(mb, q, TRUE);
+					q = pushBit(mb, q, TRUE);
+					q = pushBit(mb, q, FALSE);
+					
 					if (q == NULL)
 						return -1;
 					break;
@@ -1664,10 +1647,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				if (s->flag == cmp_project)
-					q = newStmt1(mb, algebraRef, "leftfetchjoin");
-				else
-					q = newStmt2(mb, algebraRef, leftjoinRef);
+				if(s->op2->type == st_dimension) {
+					q = newStmt1(mb, algebraRef, "dimension_leftfetchjoin");
+				} else {
+					if (s->flag == cmp_project)
+						q = newStmt1(mb, algebraRef, "leftfetchjoin");
+					else
+						q = newStmt2(mb, algebraRef, leftjoinRef);
+				}
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)

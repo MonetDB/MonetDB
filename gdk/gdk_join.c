@@ -22,6 +22,7 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
+#include <math.h>
 /*
  * All "sub" join variants produce some sort of join on two input
  * BATs, optionally subject to up to two candidate lists.  Only values
@@ -2880,4 +2881,107 @@ BATproject(BAT *l, BAT *r)
   bailout:
 	BBPreclaim(bn);
 	return NULL;
+}
+
+BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
+	BAT *resBAT;
+	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
+//	BUN lcount = BATcount(l), rcount = BATcount(r);
+	
+	assert(BAThdense(oidsBAT));
+    assert(BAThdense(dimensionBAT));
+    assert(ATOMtype(oidsBAT->ttype) == TYPE_oid);
+	
+#define project(TYPE) \
+	do { \
+		oid lo, hi;                         \
+    	TYPE *bt;                      \
+    	const oid *o;                           \
+\
+		/*find the min, max, step in the dimension*/ \
+		long repeat1, elementsNum; \
+		TYPE min, max, step; \
+        oid i; \
+		TYPE *el_in; \
+\
+		el_in = (TYPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+        min = el_in[0]; \
+        step = el_in[BATcount(dimensionBAT)-1]; \
+\
+        repeat1 = 1; \
+        for(i=1; i<BATcount(dimensionBAT); i++) { \
+            if(min == el_in[i]) \
+                repeat1++; \
+            else { \
+                max = el_in[i]; \
+                break; \
+            } \
+        } \
+\
+        elementsNum = floor((max-min)/step) + 1; \
+\
+	    o = (const oid *) Tloc(oidsBAT, BUNfirst(oidsBAT));             \
+	    bt = (TYPE *) Tloc(resBAT, BUNfirst(resBAT));               \
+	    for (lo = 0, hi = lo + BATcount(oidsBAT); lo < hi; lo++, o++, bt++) { \
+    	    if (*o == oid_nil) {                \
+        	    *bt = TYPE##_nil;               \
+	            resBAT->T->nonil = 0;               \
+    	        resBAT->T->nil = 1;                 \
+        	    resBAT->tsorted = 0;                \
+            	resBAT->trevsorted = 0;             \
+	            resBAT->tkey = 0;                   \
+    	    } else {                        \
+				long el = (*o%(repeat1*elementsNum))/repeat1; \
+				fprintf(stderr, "element: %ld\n", el); \
+        	    *bt = min+el*step;           \
+	        }                           \
+    	}                               \
+	    assert((BUN) lo == BATcount(oidsBAT));                \
+		BATseqbase(resBAT,0); \
+    	BATsetcount(resBAT, (BUN) lo);                  \
+\
+	} while(0)
+
+	if((resBAT = BATnew(TYPE_void, tpe, BATcount(oidsBAT), TRANSIENT)) == NULL)
+		return NULL;
+
+	switch (tpe) {
+    case TYPE_bte:
+        project(bte);
+        break;
+    case TYPE_sht:
+        project(sht);//, l, r, nilcheck, sortcheck);
+        break;
+    case TYPE_int:
+        project(int);//, l, r, nilcheck, sortcheck);
+        break;
+    case TYPE_flt:
+        project(flt);//, l, r, nilcheck, sortcheck);
+        break;
+    case TYPE_dbl:
+        project(dbl);//, l, r, nilcheck, sortcheck);
+        break;
+    case TYPE_lng:
+        project(lng);//, l, r, nilcheck, sortcheck);
+        break;
+#ifdef HAVE_HGE
+    case TYPE_hge:
+        project(hge);//, l, r, nilcheck, sortcheck);
+        break;
+#endif
+    case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+        project(int);//, l, r, nilcheck, sortcheck);
+#else
+        project(lng);//, l, r, nilcheck, sortcheck);
+#endif
+        break;
+    default:
+		fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
+		return NULL;
+        //res = project_any(bn, l, r, nilcheck);
+        //break;
+    }
+
+	return resBAT;
 }
