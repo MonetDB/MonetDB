@@ -1,0 +1,118 @@
+stdout of test 'loadTestGeometries` in directory 'geom/sql/functions` itself:
+
+
+# 15:39:25 >  
+# 15:39:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34786" "--set" "mapi_usock=/var/tmp/mtest-16626/.s.monetdb.34786" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:39:25 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:34786/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16626/.s.monetdb.34786
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 15:39:26 >  
+# 15:39:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16626" "--port=34786"
+# 15:39:26 >  
+
+#CREATE TABLE geometries(id serial, geom geometry);
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POINT(10 20)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20, 30 40, 50 60)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20, 30 40, 50 60, 80 60, 60 40, 10 20)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 10, 50 50, 30 80, 25 5)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POLYGON((10 10, 10 20, 20 20, 20 10, 10 10))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOINT(10 20, 30 40)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40, 40 50), (50 60, 60 70))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40, 40 50, 30 40), (50 60, 60 70))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOLYGON(((10 10, 10 20, 20 20, 20 10, 10 10),(30 30, 30 40, 40 40, 40 30, 30 30)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOLYGON EMPTY'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('GEOMETRYCOLLECTION(POINT(10 20),LINESTRING(10 20, 30 40),POLYGON((10 10, 10 20, 20 20, 20 10, 10 10)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('GEOMETRYCOLLECTION(POINT(10 20),LINESTRING(10 20, 30 40, 10 20),POLYGON((10 10, 10 20, 20 20, 20 10, 10 10)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POINT(10 20 30)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20 10, 30 40 10, 50 60 10)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 20 10, 30 40 10, 50 60 10, 80 60 10, 60 40 10, 10 20 10)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('LINESTRING(10 10 20, 50 50 30, 30 80 40, 25 5 50)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POLYGON((10 10 5, 10 20 10, 20 20 15, 20 10 20, 10 10 25))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOINT(10 20 10, 30 40 30)'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40 10, 40 50 20), (50 60 30, 60 70 40))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40 10, 40 50 20, 30 40 30), (50 60 40, 60 70 50))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTILINESTRING((30 40 100, 40 50 90, 30 40 80), (50 60 70, 40 50 60, 20 30 50, 50 60 40))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOLYGON(((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5),(30 30 10, 30 40 10, 40 40 10, 40 30 10, 30 30 10)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('GEOMETRYCOLLECTION(POINT(10 20 30),LINESTRING(10 20 10, 30 40 20),POLYGON((10 10 30, 10 20 30, 20 20 30, 20 10 30, 10 10 30)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('GEOMETRYCOLLECTION(POINT(10 20 30),LINESTRING(10 20 10, 30 40 20, 10 20 10),POLYGON((10 10 30, 10 20 30, 20 20 30, 20 10 30, 10 10 30)))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('POLYGON((100 100, 100 200, 200 200, 200 100, 100 100),(10 10, 10 20, 20 20, 20 10, 10 10))'));
+[ 1	]
+#INSERT INTO geometries(geom) VALUES(ST_WKTToSQL('MULTIPOLYGON(((100 100, 100 200, 200 200, 200 100, 100 100),(10 10, 10 20, 20 20, 20 10, 10 10),(1 1, 1 2, 2 2, 2 1, 1 1)), ((100 100, 100 200, 200 200, 200 100, 100 100),(10 10, 10 20, 20 20, 20 10, 10 10)))'));
+[ 1	]
+
+# 15:39:26 >  
+# 15:39:26 >  "Done."
+# 15:39:26 >  
+
