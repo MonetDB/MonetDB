@@ -600,18 +600,21 @@ DESCclean(BAT *b)
 
 #define MSYNC_BACKGROUND
 
-typedef struct{
-	char *adr;
-	size_t len;
-} Msyncjob;
-
 static void
 BATmsyncImplementation(void *arg)
 {
-	Msyncjob job =  *(Msyncjob *) arg;
+	Heap *h = arg;
+	char *adr;
+	size_t len;
+	size_t offset;
 
-	GDKfree(arg);
-	(void) MT_msync(job.adr, job.len);
+	adr = h->base;
+	offset = ((size_t) adr % MT_pagesize());
+	len = MT_pagesize() * (1 + ((h->base + h->free - adr) / MT_pagesize()));
+	if (offset)
+		adr -= MT_pagesize() - offset;
+	if (len)
+		(void) MT_msync(adr, len);
 }
 
 void
@@ -621,46 +624,20 @@ BATmsync(BAT *b)
 	MT_Id tid;
 #endif
 
-	Msyncjob *job;
-	size_t offset;
-
 	if (b->T->heap.storage == STORE_MMAP) {
-		job = GDKmalloc(sizeof(*job));
-
-		if (job) {
-			job->adr = b->T->heap.base;
-			offset = ((size_t) job->adr % MT_pagesize());
-			job->len = MT_pagesize() * (1 + ((b->T->heap.base + b->T->heap.free - job->adr) / MT_pagesize()));
-			if (offset)
-				job->adr -= (MT_pagesize() - offset);
-			if (job->len) {
 #ifdef MSYNC_BACKGROUND
-				MT_create_thread(&tid, BATmsyncImplementation, (void *) job, MT_THR_DETACHED);
+		MT_create_thread(&tid, BATmsyncImplementation, (void *) &b->T->heap, MT_THR_DETACHED);
 #else
-				BATmsyncImplementation((void*) job);
+		BATmsyncImplementation((void*) &b->T->heap);
 #endif
-			}
-		}
 	}
 
 	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP) {
-		job = GDKmalloc(sizeof(*job));
-
-		if (job) {
-			job->adr = b->T->vheap->base;
-			offset = ((size_t)job->adr % MT_pagesize());
-			job->len = MT_pagesize() * (1 + ((b->T->vheap->base + b->T->vheap->free - job->adr) / MT_pagesize()));
-
-			if (offset)
-				job->adr -= (MT_pagesize() - offset);
-			if (job->len) {
 #ifdef MSYNC_BACKGROUND
-				MT_create_thread(&tid, BATmsyncImplementation, (void *) job, MT_THR_DETACHED);
+		MT_create_thread(&tid, BATmsyncImplementation, (void *) b->T->vheap, MT_THR_DETACHED);
 #else
-				BATmsyncImplementation((void*) job);
+		BATmsyncImplementation((void*) b->T->vheap);
 #endif
-			}
-		}
 	}
 }
 
