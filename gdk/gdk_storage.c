@@ -606,9 +606,12 @@ typedef struct{
 } Msyncjob;
 
 static void
-BATmsyncImplementation( void *arg){
-	Msyncjob job =  *(Msyncjob*) arg;
-	(void) MT_msync(job.adr,  job.len);
+BATmsyncImplementation(void *arg)
+{
+	Msyncjob job =  *(Msyncjob *) arg;
+
+	GDKfree(arg);
+	(void) MT_msync(job.adr, job.len);
 }
 
 void
@@ -617,36 +620,47 @@ BATmsync(BAT *b)
 #ifdef MSYNC_BACKGROUND
 	MT_Id tid;
 #endif
-	
-	Msyncjob job;
-	Msyncjob jobv;
+
+	Msyncjob *job;
 	size_t offset;
 
-	job.adr = b->T->heap.base;
-	offset =  ((size_t)job.adr % (size_t)MT_pagesize());
-	job.len = MT_pagesize() * (1+((b->T->heap.base + b->T->heap.free - job.adr)/MT_pagesize()));
-	if( offset )
-		job.adr -= (MT_pagesize() - offset);
-	if( job.len)
-#ifdef MSYNC_BACKGROUND
-		MT_create_thread(&tid, BATmsyncImplementation, (void *) &job, MT_THR_DETACHED);
-#else
-		BATmsyncImplementation((void*) &job);
-#endif
-	
-	if( b->T->vheap){
-		jobv.adr = b->T->vheap->base;
-		offset =  ((size_t)jobv.adr % (size_t)MT_pagesize());
-		jobv.len = MT_pagesize() * (1+((b->T->vheap->base + b->T->vheap->free - jobv.adr)/MT_pagesize()));
+	if (b->T->heap.storage == STORE_MMAP) {
+		job = GDKmalloc(sizeof(*job));
 
-		if( offset )
-			jobv.adr -= (MT_pagesize() - offset);
-		if( jobv.len)
+		if (job) {
+			job->adr = b->T->heap.base;
+			offset = ((size_t) job->adr % MT_pagesize());
+			job->len = MT_pagesize() * (1 + ((b->T->heap.base + b->T->heap.free - job->adr) / MT_pagesize()));
+			if (offset)
+				job->adr -= (MT_pagesize() - offset);
+			if (job->len) {
 #ifdef MSYNC_BACKGROUND
-			MT_create_thread(&tid, BATmsyncImplementation, (void *) &jobv, MT_THR_DETACHED);
+				MT_create_thread(&tid, BATmsyncImplementation, (void *) job, MT_THR_DETACHED);
 #else
-			BATmsyncImplementation((void*) &job);
+				BATmsyncImplementation((void*) job);
 #endif
+			}
+		}
+	}
+
+	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP) {
+		job = GDKmalloc(sizeof(*job));
+
+		if (job) {
+			job->adr = b->T->vheap->base;
+			offset = ((size_t)job->adr % MT_pagesize());
+			job->len = MT_pagesize() * (1 + ((b->T->vheap->base + b->T->vheap->free - job->adr) / MT_pagesize()));
+
+			if (offset)
+				job->adr -= (MT_pagesize() - offset);
+			if (job->len) {
+#ifdef MSYNC_BACKGROUND
+				MT_create_thread(&tid, BATmsyncImplementation, (void *) job, MT_THR_DETACHED);
+#else
+				BATmsyncImplementation((void*) job);
+#endif
+			}
+		}
 	}
 }
 
