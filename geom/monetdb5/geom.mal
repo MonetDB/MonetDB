@@ -330,7 +330,7 @@ comment "Transforms a geometry from one srid to another";
 #postGIS has also flag=2 and then it returns a TIN
 command DelaunayTriangles(a:wkb, tolerance:dbl, flag:int) :wkb address wkbDelaunayTriangles
 comment "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring";
-command Dump(a:wkb) (id:bat[:oid, :int], geom:bat[:oid, :wkb]) address wkbDump
+command Dump(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDump
 comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";

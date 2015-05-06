@@ -49162,7 +49162,7 @@ command geom.DumpPoints(a:wkb) (id:bat[:oid,:str],geom:bat[:oid,:wkb])
 address wkbDumpPoints;
 comment Gets a Geometry and returns the Points in it
 
-command geom.Dump(a:wkb) (id:bat[:oid,:int],geom:bat[:oid,:wkb]) 
+command geom.Dump(a:wkb) (id:bat[:oid,:str],geom:bat[:oid,:wkb]) 
 address wkbDump;
 comment Gets a MultiPolygon and returns the Polygons in it
 
