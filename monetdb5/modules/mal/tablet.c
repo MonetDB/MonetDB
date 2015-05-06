@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -210,6 +199,8 @@ TABLETcreate_bats(Tablet *as, BUN est)
 	char errbuf[42];
 
 	for (i = 0; i < as->nr_attrs; i++) {
+		if (fmt[i].skip)
+			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
@@ -229,15 +220,20 @@ TABLETcollect(Tablet *as)
 {
 	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
-	BUN i;
-	BUN cnt = BATcount(fmt[0].c);
+	BUN i, j;
+	BUN cnt = 0;
 	char errbuf[42];
 
 	if (bats == NULL)
 		return NULL;
-	for (i = 0; i < as->nr_attrs; i++) {
-		bats[i] = fmt[i].c;
-		BBPfix(bats[i]->batCacheid);
+	for (i = 0; i < as->nr_attrs && !cnt; i++) 
+		if (!fmt[i].skip)
+			cnt = BATcount(fmt[i].c);
+	for (i = 0, j = 0; i < as->nr_attrs; i++) {
+		if (fmt[i].skip)
+			continue;
+		bats[j] = fmt[i].c;
+		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		BATderiveProps(fmt[i].c, 0);
 
@@ -250,6 +246,7 @@ TABLETcollect(Tablet *as)
 			GDKfree(bats);
 			return NULL;
 		}
+		j++;
 	}
 	return bats;
 }
@@ -259,19 +256,23 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 {
 	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
-	BUN i;
-	BUN cnt = BATcount(fmt[0].c);
+	BUN i, j;
+	BUN cnt = 0;
 	char errbuf[42];
 
 	if (bats == NULL)
 		return NULL;
-	for (i = 0; i < as->nr_attrs; i++) {
-		BAT *b = fmt[i].c;
-		BAT *bv = NULL;
-
+	for (i = 0; i < as->nr_attrs && !cnt; i++) 
+		if (!fmt[i].skip)
+			cnt = BATcount(fmt[i].c);
+	for (i = 0, j = 0; i < as->nr_attrs; i++) {
+		BAT *b, *bv = NULL;
+		if (fmt[i].skip)
+			continue;
+		b = fmt[i].c;
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset>0)?offset-1:0, BATcount(b));
-		bats[i] = bv;
+		bats[j] = bv;
 		BATderiveProps(bv, 0);
 
 		b->tkey = (offset>0)?FALSE:bv->tkey; 
@@ -287,7 +288,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 
 		if (offset>0) {
 			BBPunfix(bv->batCacheid);
-			bats[i] = BATslice(b, offset, BATcount(b));
+			bats[j] = BATslice(b, offset, BATcount(b));
 		}
 		if (cnt != BATcount(b)) {
 			snprintf(errbuf, sizeof(errbuf), "Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
@@ -298,6 +299,7 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 			GDKfree(bats);
 			return NULL;
 		}
+		j++;
 	}
 	return bats;
 }
@@ -833,7 +835,7 @@ SQLworker_column(READERtask *task, int col)
 
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
-	if (BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
+	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) == GDK_FAIL) {
 			MT_lock_set(&errorlock, "SQLworker_column");
 			if (task->as->error == NULL)
@@ -848,7 +850,7 @@ SQLworker_column(READERtask *task, int col)
 
 	for (i = 0; i < task->next; i++)
 		if (task->fields[col][i]) {	/* no errors */
-			if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col + 1)) {
+			if (!fmt[col].skip && SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col + 1)) {
 				assert(err != NULL);
 				MT_lock_set(&mal_copyLock, "tablet insert value");
 				if (!task->as->tryall) {

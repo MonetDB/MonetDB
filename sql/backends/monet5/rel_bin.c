@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -995,7 +984,7 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC)) != NULL) {
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);
@@ -1448,7 +1437,7 @@ join_hash_key( mvc *sql, list *l )
 }
 
 static stmt *
-releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op )
+releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op, int need_left )
 {
 	node *n1 = l1->h, *n2 = l2->h;
 	stmt *l, *r, *res;
@@ -1456,7 +1445,10 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op )
 	if (list_length(l1) <= 1) {
 		l = l1->h->data;
 		r = l2->h->data;
-		return stmt_join(sql->sa, l, r, cmp_op);
+		r =  stmt_join(sql->sa, l, r, cmp_op);
+		if (need_left)
+			r->flag = cmp_left;
+		return r;
 	}
 	if (used_hash) {
 		l = n1->data;
@@ -1469,6 +1461,8 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op )
 		r = join_hash_key(sql, l2);
 		res = stmt_join(sql->sa, l, r, cmp_op);
 	}
+	if (need_left) 
+		res->flag = cmp_left;
 	l = stmt_result(sql->sa, res, 0);
 	r = stmt_result(sql->sa, res, 1);
 	for (; n1 && n2; n1 = n1->next, n2 = n2->next) {
@@ -1502,6 +1496,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 	stmt *ld = NULL, *rd = NULL;
+	int need_left = (rel->flag == LEFT_JOIN);
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l, refs);
@@ -1606,9 +1601,11 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			list_append(rje, s->op2);
 		}
 		if (list_length(lje) > 1) {
-			join = releqjoin(sql, lje, rje, used_hash, cmp_equal);
+			join = releqjoin(sql, lje, rje, used_hash, cmp_equal, need_left);
 		} else if (!join) {
 			join = stmt_join(sql->sa, lje->h->data, rje->h->data, cmp_equal);
+			if (need_left)
+				join->flag = cmp_left;
 		}
 	} else {
 		stmt *l = bin_first_column(sql->sa, left);
@@ -1764,7 +1761,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 			}
 		}
 		if (list_length(lje) > 1) {
-			join = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal);
+			join = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal, 0);
 		} else if (!join) {
 			join = stmt_join(sql->sa, lje->h->data, rje->h->data, cmp_equal);
 		}
@@ -2013,7 +2010,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil);
+	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 
@@ -2123,7 +2120,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil);
+	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 		
@@ -2368,11 +2365,6 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *sel = NULL;
 	stmt *predicate = NULL;
 
-	if (!rel->exps) {
-		assert(0);
-		return NULL;
-	}
-
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
 		if (!sub) 
@@ -2383,7 +2375,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		predicate = rel2bin_predicate(sql);
 	else if (!predicate)
 		predicate = stmt_const(sql->sa, bin_first_column(sql->sa, sub), stmt_bool(sql->sa, 1));
-	if (!rel->exps->h) {
+	if (!rel->exps || !rel->exps->h) {
 		if (sub)
 			return sub;
 		return predicate;
@@ -2785,7 +2777,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 				list_append(lje, col);
 				list_append(rje, cs->op1);
 			}
-			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
+			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal, 0);
 			s = stmt_result(sql->sa, s, 0);
 		}
 		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
@@ -3191,7 +3183,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				list_append(lje, stmt_col(sql, c->c, nu_tids));
 				list_append(rje, upd);
 			}
-			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
+			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal, 0);
 			s = stmt_result(sql->sa, s, 0);
 			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
 		}
@@ -3423,7 +3415,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal);
+	s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal, 0);
 	s = stmt_result(sql->sa, s, 0);
 
 	/* add missing nulls */
@@ -3727,7 +3719,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 		list_append(lje, check_types(sql, &rc->c->type, upd, type_equal));
 		list_append(rje, stmt_col(sql, rc->c, ptids));
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal);
+	s = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal, 0);
 	l = stmt_result(sql->sa, s, 0);
 	r = stmt_result(sql->sa, s, 1);
 

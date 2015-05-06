@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -78,14 +67,12 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
 	 "optimizer.pushselect();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -113,13 +100,11 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
 	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -147,13 +132,11 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
 	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -174,14 +157,12 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
 	 "optimizer.pushselect();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
@@ -194,63 +175,6 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
-/*
- * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
- */
-#ifndef WIN32
-	{"octopus_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.costModel();"
-	 "optimizer.octopus();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPToctopus", NULL, 1},
-/*
- * The centipede pipe line aims at a map-reduce style of query processing
- */
-	{"centipede_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.centipede();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 //"optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.garbageCollector();",
-	 "experimental", NULL, NULL, 1},
-#endif
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -404,13 +328,6 @@ validatePipe(MalBlkPtr mb)
 				multiplex = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0 && i == mb->stop - 2)
 				garbage = TRUE;
-
-#ifdef WIN32
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "octopus") == 0)
-				throw(MAL, "optimizer.validate", "'octopus' needs monetdbd\n");
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "centipede") == 0)
-				throw(MAL, "optimizer.validate", "'octopus' needs monetdbd\n");
-#endif
 		} else
 			throw(MAL, "optimizer.validate", "Missing optimizer call\n");
 

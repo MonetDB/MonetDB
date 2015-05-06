@@ -47,13 +47,13 @@ Ready.
 % sys.L3 # table_name
 % avg_yearly # name
 % decimal # type
-% 20 # length
+% 21 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 09:17:19 >  
 # 09:17:19 >  Done.

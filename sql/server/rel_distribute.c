@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -84,7 +73,7 @@ has_remote_or_replica( sql_rel *rel )
 }
 
 static sql_rel *
-rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p) 
+rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p, int remote_prop)
 {
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
@@ -96,6 +85,14 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p)
 		exp_setname(sql->sa, ne, e->rname, e->name);
 	}
 	rel_destroy(rel);
+
+	/* set_remote() */
+	if (remote_prop && p && isRemote(p)) {
+		char *uri = p->query;
+		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p); 
+
+		p->value = uri;
+	}
 	return r;
 }
 
@@ -130,7 +127,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 					sql_table *p = n->data;
 	
 					if (isRemote(p) && strcmp(uri, p->query) == 0) {
-						rel = rewrite_replica(sql, rel, t, p);
+						rel = rewrite_replica(sql, rel, t, p, 0);
 						break;
 					}
 				}
@@ -139,7 +136,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 				if (t->tables.set) {
 					p = t->tables.set->h->data;
-					rel = rewrite_replica(sql, rel, t, p);
+					rel = rewrite_replica(sql, rel, t, p, 1);
 				} else {
 					rel = NULL;
 				}

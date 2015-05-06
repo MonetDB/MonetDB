@@ -1,0 +1,90 @@
+stdout of test 'project_rewrite.Bug-3693` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 15:21:50 >  
+# 15:21:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31745" "--set" "mapi_usock=/var/tmp/mtest-15212/.s.monetdb.31745" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:21:50 >  
+
+# MonetDB 5 server v11.19.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15212/.s.monetdb.31745
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:21:50 >  
+# 15:21:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15212" "--port=31745"
+# 15:21:50 >  
+
+#START TRANSACTION;
+#CREATE TABLE "naturalis_obj_dict" (
+#	"idstr" CHARACTER LARGE OBJECT NOT NULL,
+#	"id"    INTEGER       NOT NULL,
+#	"type"  CHARACTER LARGE OBJECT NOT NULL,
+#	"prob"  FLOAT(51)     NOT NULL,
+#	CONSTRAINT "naturalis_obj_dict_id_pkey" PRIMARY KEY ("id"),
+#	CONSTRAINT "naturalis_obj_dict_idstr_unique" UNIQUE ("idstr")
+#);
+#CREATE TABLE "naturalis_materialized_1" (
+#	"id"    INTEGER       NOT NULL,
+#	"pid"   CHARACTER LARGE OBJECT NOT NULL,
+#	"level" INTEGER,
+#	"class" CHARACTER LARGE OBJECT NOT NULL,
+#	"json"  CHARACTER LARGE OBJECT,
+#	"xml"   CHARACTER LARGE OBJECT,
+#	CONSTRAINT "naturalis_materialized_1_id_pkey" PRIMARY KEY ("id"),
+#	CONSTRAINT "naturalis_materialized_1_pid_unique" UNIQUE ("pid")
+#);
+#CREATE TABLE "naturalis_all_termdict_snowball" (
+#	"termid" INTEGER       NOT NULL,
+#	"term"   CHARACTER LARGE OBJECT NOT NULL,
+#	"prob"   FLOAT(51)     NOT NULL,
+#	CONSTRAINT "naturalis_all_termdict_snowball_termid_pkey" PRIMARY KEY ("termid"),
+#	CONSTRAINT "naturalis_all_termdict_snowball_term_unique" UNIQUE ("term")
+#);
+#CREATE TABLE "naturalis_all_termdict_unstemmed" (
+#	"termid" INTEGER       NOT NULL,
+#	"term"   CHARACTER LARGE OBJECT NOT NULL,
+#	"sb"     INTEGER       NOT NULL,
+#	"prob"   DOUBLE        NOT NULL,
+#	CONSTRAINT "naturalis_all_termdict_unstemmed_termid_pkey" PRIMARY KEY ("termid"),
+#	CONSTRAINT "naturalis_all_termdict_unstemmed_term_unique" UNIQUE ("term"),
+#	CONSTRAINT "naturalis_all_termdict_unstemmed_sb_fkey" FOREIGN KEY ("sb") REFERENCES "naturalis_all_termdict_snowball" ("termid")
+#);
+#CREATE TABLE "naturalis_all_tf_bm25_unstemmed" (
+#	"termid" INTEGER       NOT NULL,
+#	"objid"  INTEGER       NOT NULL,
+#	"prob"   DOUBLE        NOT NULL,
+#	CONSTRAINT "naturalis_all_tf_bm25_unstemmed_objid_fkey" FOREIGN KEY ("objid") REFERENCES "naturalis_obj_dict" ("id"),
+#	CONSTRAINT "naturalis_all_tf_bm25_unstemmed_termid_fkey" FOREIGN KEY ("termid") REFERENCES "naturalis_all_termdict_unstemmed" ("termid")
+#);
+#CREATE VIEW output_1427727864562_8628476569578157143 AS SELECT naturalis_all_tf_bm25_unstemmed.termID AS a1, naturalis_all_tf_bm25_unstemmed.objID AS a2, naturalis_all_termdict_unstemmed.termID AS a3, naturalis_all_termdict_unstemmed.term AS a4, naturalis_all_termdict_unstemmed.sb AS a5, naturalis_all_tf_bm25_unstemmed.prob * naturalis_all_termdict_unstemmed.prob AS prob FROM naturalis_all_tf_bm25_unstemmed,naturalis_all_termdict_unstemmed WHERE naturalis_all_tf_bm25_unstemmed.termID = naturalis_all_termdict_unstemmed.termID;
+#CREATE VIEW output_1427727864562_5257959729065684465 AS SELECT id AS a1, prob AS prob FROM naturalis_obj_dict;
+#CREATE VIEW output_1427727864562__3867191803197065991 AS SELECT output_1427727864562_8628476569578157143.a1 AS a1, output_1427727864562_8628476569578157143.a2 AS a2, output_1427727864562_8628476569578157143.a3 AS a3, output_1427727864562_8628476569578157143.a4 AS a4, output_1427727864562_8628476569578157143.a5 AS a5, output_1427727864562_5257959729065684465.a1 AS a6, output_1427727864562_8628476569578157143.prob * output_1427727864562_5257959729065684465.prob AS prob FROM output_1427727864562_8628476569578157143,output_1427727864562_5257959729065684465 WHERE output_1427727864562_8628476569578157143.a2 = output_1427727864562_5257959729065684465.a1;
+#CREATE VIEW output_1427727864562_7461402036329501989 AS SELECT a2 AS a1, a4 AS a2, prob AS prob FROM output_1427727864562__3867191803197065991;
+#CREATE VIEW output_1427727864562_664384226664078002 AS SELECT output_1427727864562_7461402036329501989.a1 AS a1, output_1427727864562_7461402036329501989.a2 AS a2, output_1427727864562_7461402036329501989.a1 AS a3, output_1427727864562_7461402036329501989.a2 AS a4, output_1427727864562_7461402036329501989.prob * output_1427727864562_7461402036329501989.prob AS prob FROM output_1427727864562_7461402036329501989,output_1427727864562_7461402036329501989 WHERE output_1427727864562_7461402036329501989.a2 = output_1427727864562_7461402036329501989.a2;
+#CREATE VIEW output_1427727864562_8055303038742365054 AS SELECT a1 AS a1, a3 AS a2, sum(prob) AS prob FROM output_1427727864562_664384226664078002 GROUP BY a1, a3;
+#CREATE VIEW output_1427727864562 AS SELECT a1 AS a1, a2 AS a2, prob AS prob FROM (SELECT a1 AS a1, a2 AS a2, prob AS prob FROM (SELECT output_1427727864562_8055303038742365054.a1 AS a1, output_1427727864562_8055303038742365054.a2 AS a2, output_1427727864562_8055303038742365054.prob / tmp_3083417802646904664.prob AS prob FROM output_1427727864562_8055303038742365054,(SELECT max(prob) AS prob FROM output_1427727864562_8055303038742365054) AS tmp_3083417802646904664) AS tmp_6705425488457746005) AS tmp__3265950636919299731 WHERE prob >= 0.5;
+#CREATE VIEW source AS SELECT a.*, prob as rownum FROM output_1427727864562_7461402036329501989 as a;
+#SELECT source.prob
+#FROM source,
+# naturalis_materialized_1 as t1
+#WHERE t1.id=source.a1 and source.rownum > 0 AND source.rownum <= 10;
+% sys.source # table_name
+% prob # name
+% double # type
+% 24 # length
+
+# 15:21:51 >  
+# 15:21:51 >  "Done."
+# 15:21:51 >  
+

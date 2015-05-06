@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include <monetdb_config.h>
@@ -24,6 +13,9 @@
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 static sql_exp * 
 exp_create(sql_allocator *sa, int type ) 
@@ -207,7 +199,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", 18, 0);
+	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -231,7 +223,7 @@ exp_atom_wrd(sql_allocator *sa, wrd w)
 	sql_subtype it; 
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "wrd", 18, 0);
+	sql_find_subtype(&it, "wrd", have_hge ? 18 : 19, 0);
 #else
 	sql_find_subtype(&it, "wrd", 19, 0);
 #endif
@@ -680,6 +672,20 @@ exp_match( sql_exp *e1, sql_exp *e2)
 		if (!e1->r || !e2->r || strcmp(e1->r, e2->r) != 0)
 			return 0;
 		return 1;
+	}
+	if (e1->type == e2->type && e1->type == e_func) {
+		if (is_identity(e1, NULL) && is_identity(e2, NULL)) {
+			list *args1 = e1->l;
+			list *args2 = e2->l;
+			
+			if (list_length(args1) == list_length(args2) && list_length(args1) == 1) {
+				sql_exp *ne1 = args1->h->data;
+				sql_exp *ne2 = args2->h->data;
+
+				if (exp_match(ne1,ne2))
+					return 1;
+			}
+		}
 	}
 	return 0;
 }

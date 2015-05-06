@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -92,13 +81,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			break;
 		}
 		/*
-		 * @-
 		 * Any non-empty barrier block signals the end of this optimizer,
 		 * the impact of the block can affect the common code.
 		 */
 		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) && old[i+1]->barrier!=EXITsymbol;
 		/*
-		 * @-
 		 * Also block further optimization when you have seen an assert().
 		 * This works particularly for SQL, because it is not easy to track
 		 * the BAT identifier aliases to look for updates. The sql.assert
@@ -140,7 +127,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					isLinearFlow(p));
 #endif
 				/*
-				 * @-
 				 * Simple assignments are not replaced either. They should be
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.

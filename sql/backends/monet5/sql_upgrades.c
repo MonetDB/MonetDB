@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -844,7 +833,7 @@ create aggregate json.tojsonarray( x double ) returns string external name aggr.
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('output', 'tojsonarray') and f.type = %d and f.schema_id = s.id and s.name = 'json');\n",
 			F_AGGR);
 
-	/* new file 41_jsonstore.sql */
+	/* new file 41_md5sum.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "create function sys.md5(v string) returns string external name clients.md5sum;\n");
 
 	/* new file 45_uuid.sql */
@@ -1081,6 +1070,7 @@ CREATE FUNCTION \"left_shift\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME i
 CREATE FUNCTION \"right_shift\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\">>\";\n\
 CREATE FUNCTION \"left_shift_assign\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\"<<=\";\n\
 CREATE FUNCTION \"right_shift_assign\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\">>=\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('left_shift', 'right_shift', 'left_shift_assign', 'right_shift_assign') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -1225,10 +1215,16 @@ sql_update_feb2015(Client c)
 	/* change to 75_storagemodel */
 	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.storagemodel;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.tablestoragemodel;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.storage;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.storagemodel;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.imprintsize;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.columnsize;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.storage;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "\
+create function sys.storage()\n\
+returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\n\
+external name sql.storage;\n\
+create view sys.storage as select * from sys.storage();\n\
 create function sys.columnsize(nme string, i bigint, d bigint)\n\
 returns bigint\n\
 begin\n\
@@ -1319,6 +1315,8 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tsorted boolean);\n");
 
 	/* 15_querylog update the querylog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.querylog_history;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.querylog_calls;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.querylog_calls;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function sys.querylog_calls()\
 \treturns table(\
@@ -1332,9 +1330,15 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \t    cpu int,\n\
 \t    io int \n\
 \t) external name sql.querylog_calls;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.querylog_calls as select * from sys.querylog_calls();\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.querylog_history as\n\
+select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n\
+from sys.querylog_catalog() qd, sys.querylog_calls() ql\n\
+where qd.id = ql.id and qd.owner = user;\n");
 
 
 	/* 16_tracelog update the tracelog table definition */
+	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.tracelog;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "drop function sys.tracelog;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create function sys.tracelog()\n\
 \treturns table (\n\
@@ -1352,10 +1356,12 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 \tnvcsw bigint,  \n\
 \tstmt string         \n\
 \t) external name sql.dump_trace;\n");
+	pos += snprintf(buf+pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
 
 
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls','tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "delete from systemfunctions where function_id not in (select id from functions);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1369,15 +1375,27 @@ from sys.storagemodel() group by \"schema\",\"table\";\n");
 			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
 				sql_table *t;
 
+				if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
+					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
 					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
+					t->system = 0;
 			}
 		}
 	}
+
+	/* remove code from 19_cluster.sql script */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.cluster1;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.cluster2;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -1470,11 +1488,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
-		if ((err = sql_update_hugeint(c)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+	if (have_hge) {
+		sql_find_subtype(&tp, "hugeint", 0, 0);
+		if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
+			if ((err = sql_update_hugeint(c)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 	}
 #endif

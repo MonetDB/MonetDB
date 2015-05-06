@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -55,8 +44,7 @@ static struct rusage prevUsage;
 
 #define logadd(...) {														\
 	do {																\
-		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
-		loglen += (int) strlen(logbase+loglen);							\
+		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
 	} while (0);}
 
 static void
@@ -65,19 +53,19 @@ offlineProfilerHeader(void)
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
 
-	if (eventstream == NULL) {
+	if (eventstream == NULL) 
 		return ;
-	}
+
 	lognew();
 	logadd("# ");
 	logadd("event,\t");
-	logadd("\ttime,\t");
+	logadd("time,\t");
 	logadd("pc,\t");
 	logadd("thread,\t");
 	logadd("state,\t");
 	logadd("usec,\t");
 	logadd("rssMB,\t");
-	logadd("vmMB,\t");
+	logadd("tmpspace,\t");
 
 #ifdef NUMAprofiling
 		logadd("numa,\t");
@@ -91,10 +79,8 @@ offlineProfilerHeader(void)
 #endif
 	logadd("stmt,\t");
 	logadd("# name \n");
-	if (eventstream){
-		mnstr_printf(eventstream,"%s\n", logbuffer);
-		mnstr_flush(eventstream);
-	}
+	mnstr_printf(eventstream,"%s\n", logbuffer);
+	mnstr_flush(eventstream);
 }
 
 /*
@@ -104,16 +90,22 @@ offlineProfilerHeader(void)
  * To avoid unnecessary locks we first build the event as a string
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
+
 static void logsend(char *logbuffer)
-{ int error=0;
+{	int error=0;
+	int showsystem = 0;
 	if (eventstream) {
 		MT_lock_set(&mal_profileLock, "logsend");
-		if( eventcounter == 0)
+		if( eventcounter == 0){
 			offlineProfilerHeader();
+			showsystem++;
+		}
 		eventcounter++;
 		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
+		if( showsystem)
+			offlineProfilerEvent(0, 0, 0, 0, "system", monet_characteristics);
 		if ( error) stopProfiler();
 	}
 }
@@ -162,7 +154,10 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	if (eventstream == NULL)
 		return ;
 
-	gettimeofday(&clock, NULL);
+	if( start) // show when instruction was started
+		clock = pci->clock;
+	else 
+		gettimeofday(&clock, NULL);
 	clk = clock.tv_sec;
 
 	/* make basic profile event tuple  */
@@ -181,7 +176,7 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"%s.%06ld\",\t", tbuf+11, (long) clock.tv_usec);
+	logadd("\"%s.%06ld\",\t", tbuf+11, (long)clock.tv_usec);
 	if( alter){
 		logadd("\"user.%s[0]0\",\t",alter);
 	} else {
@@ -198,18 +193,23 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	} else 
 	if( start){
 		logadd("\"start\",\t");
-		logadd(LLFMT ",\t", pci->ticks);
+		// determine the Estimated Time of Completion
+		if ( pci->calls){
+			logadd(LLFMT ",\t", pci->totticks/pci->calls);
+		} else{
+			logadd(LLFMT ",\t", pci->ticks);
+		}
 	} else {
 		logadd("\"done \",\t");
 		logadd(LLFMT ",\t", pci->ticks);
 	}
 	logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-	logadd(SZFMT ",\t", GDKvm_cursize()/1024/1024);
+	logadd(LLFMT ",\t", pci? pci->wbytes/1024/1024:0);
 
 #ifdef NUMAprofiling
-	if( alter)
+	if( alter){
 		logadd("\"\",\t");
-	}else {
+	} else {
 		logadd("\"");
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
@@ -233,8 +233,10 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	if ( msg){
 		logadd("\"%s\",\t",msg);
 	} else {
+		// TODO Obfusate instructions unless administrator calls for it.
+		
 		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 		c = stmt;
 
 		while (c && *c && isspace((int)*c))
@@ -398,7 +400,7 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
-	if (mal_trace)
+	if (mal_trace) // already traced on console
 		return;
 	MT_lock_set(&mal_profileLock, "MPresetProfiler");
 	eventstream = 0;
@@ -430,10 +432,10 @@ static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_pc = 0;
 static BAT *TRACE_id_thread = 0;
 static BAT *TRACE_id_ticks = 0;
-static BAT *TRACE_id_reads = 0;
-static BAT *TRACE_id_writes = 0;
+static BAT *TRACE_id_inblock = 0;
+static BAT *TRACE_id_oublock = 0;
 static BAT *TRACE_id_rssMB = 0;
-static BAT *TRACE_id_vmMB = 0;
+static BAT *TRACE_id_tmpspace = 0;
 static BAT *TRACE_id_minflt = 0;
 static BAT *TRACE_id_majflt = 0;
 static BAT *TRACE_id_nvcsw = 0;
@@ -451,9 +453,9 @@ TRACEtable(BAT **r)
 	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
 	r[4] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	r[5] = BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = BATcopy(TRACE_id_vmMB, TRACE_id_vmMB->htype, TRACE_id_vmMB->ttype, 0, TRANSIENT);
-	r[7] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
-	r[8] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0, TRANSIENT);
+	r[6] = BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+	r[7] = BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
+	r[8] = BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
 	r[9] = BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
 	r[10] = BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
 	r[11] = BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
@@ -496,9 +498,9 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
 	CLEANUPprofile(TRACE_id_rssMB);
-	CLEANUPprofile(TRACE_id_vmMB);
-	CLEANUPprofile(TRACE_id_reads);
-	CLEANUPprofile(TRACE_id_writes);
+	CLEANUPprofile(TRACE_id_tmpspace);
+	CLEANUPprofile(TRACE_id_inblock);
+	CLEANUPprofile(TRACE_id_oublock);
 	CLEANUPprofile(TRACE_id_minflt);
 	CLEANUPprofile(TRACE_id_majflt);
 	CLEANUPprofile(TRACE_id_nvcsw);
@@ -516,9 +518,9 @@ _initTrace(void)
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
 	TRACE_id_rssMB = TRACEcreate("id", "rssMB", TYPE_lng);
-	TRACE_id_vmMB = TRACEcreate("id", "vmMB", TYPE_lng);
-	TRACE_id_reads = TRACEcreate("id", "read", TYPE_lng);
-	TRACE_id_writes = TRACEcreate("id", "write", TYPE_lng);
+	TRACE_id_tmpspace = TRACEcreate("id", "tmpspace", TYPE_lng);
+	TRACE_id_inblock = TRACEcreate("id", "read", TYPE_lng);
+	TRACE_id_oublock = TRACEcreate("id", "write", TYPE_lng);
 	TRACE_id_minflt = TRACEcreate("id", "minflt", TYPE_lng);
 	TRACE_id_majflt = TRACEcreate("id", "majflt", TYPE_lng);
 	TRACE_id_nvcsw = TRACEcreate("id", "nvcsw", TYPE_lng);
@@ -529,9 +531,9 @@ _initTrace(void)
 		TRACE_id_pc == NULL ||
 		TRACE_id_stmt == NULL ||
 		TRACE_id_rssMB == NULL ||
-		TRACE_id_vmMB == NULL ||
-		TRACE_id_reads == NULL ||
-		TRACE_id_writes == NULL ||
+		TRACE_id_tmpspace == NULL ||
+		TRACE_id_inblock == NULL ||
+		TRACE_id_oublock == NULL ||
 		TRACE_id_minflt == NULL ||
 		TRACE_id_majflt == NULL ||
 		TRACE_id_nvcsw == NULL ||
@@ -576,9 +578,9 @@ clearTrace(void)
 	BBPclear(TRACE_id_thread->batCacheid);
 	BBPclear(TRACE_id_ticks->batCacheid);
 	BBPclear(TRACE_id_rssMB->batCacheid);
-	BBPclear(TRACE_id_vmMB->batCacheid);
-	BBPclear(TRACE_id_reads->batCacheid);
-	BBPclear(TRACE_id_writes->batCacheid);
+	BBPclear(TRACE_id_tmpspace->batCacheid);
+	BBPclear(TRACE_id_inblock->batCacheid);
+	BBPclear(TRACE_id_oublock->batCacheid);
 	BBPclear(TRACE_id_minflt->batCacheid);
 	BBPclear(TRACE_id_majflt->batCacheid);
 	BBPclear(TRACE_id_nvcsw->batCacheid);
@@ -605,12 +607,12 @@ getTrace(const char *nme)
 		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "rssMB") == 0)
 		return BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "vmMB") == 0)
-		return BATcopy(TRACE_id_vmMB, TRACE_id_vmMB->htype, TRACE_id_vmMB->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "tmpspace") == 0)
+		return BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "reads") == 0)
-		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "writes") == 0)
-		return BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "minflt") == 0)
 		return BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "majflt") == 0)
@@ -639,7 +641,7 @@ getTraceType(const char *nme)
 		return newColumnType( TYPE_str);
 	if (strcmp(nme, "rssMB") == 0)
 		return newColumnType( TYPE_lng);
-	if (strcmp(nme, "vmMB") == 0)
+	if (strcmp(nme, "tmpspace") == 0)
 		return newColumnType( TYPE_lng);
 	if (strcmp(nme, "reads") == 0 || strcmp(nme, "writes") == 0 || strcmp(nme,"minflt")==0 || strcmp(nme,"majflt")==0  || strcmp(nme,"nvcsw")==0  )
 		return newColumnType( TYPE_lng);
@@ -658,7 +660,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	time_t clk;
 	struct timeval clock;
 	lng rssMB = MT_getrss()/1024/1024;
-	lng vmMB = GDKvm_cursize()/1024/1024;
+	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
 
 #ifdef HAVE_TIMES
@@ -705,7 +707,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(ctm + 19, 6, ".%03d", (int)(clock.tv_usec / 1000));
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_CALL);
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	c = stmt;
 
 	while (c && *c && (isspace((int)*c) || *c == '!'))
@@ -729,9 +731,9 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_thread, &tid, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_vmMB, &vmMB, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_reads, &v1, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_writes, &v2, FALSE) == GDK_FAIL;
+	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, FALSE) == GDK_FAIL;
+	errors += BUNappend(TRACE_id_inblock, &v1, FALSE) == GDK_FAIL;
+	errors += BUNappend(TRACE_id_oublock, &v2, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_minflt, &v3, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) == GDK_FAIL;
 	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) == GDK_FAIL;
@@ -805,15 +807,10 @@ getDiskSpace(void)
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += headsize(b, cnt);
 					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
-					if (b->H->vheap)
-						size += b->H->vheap->size;
 					if (b->T->vheap)
 						size += b->T->vheap->size;
-					if (b->H->hash)
-						size += sizeof(BUN) * cnt;
 					if (b->T->hash)
 						size += sizeof(BUN) * cnt;
 				}
@@ -838,10 +835,10 @@ static struct{
 } corestat[256];
 
 static int getCPULoad(char cpuload[BUFSIZ]){
-    int cpu, len, i;
+    int cpu, len = 0, i;
 	lng user, nice, system, idle, iowait;
 	size_t n;
-    char buf[BUFSIZ+1],*s;
+    char buf[BUFSIZ+1], *s;
 	static FILE *proc= NULL;
 	lng newload;
 
@@ -891,20 +888,12 @@ static int getCPULoad(char cpuload[BUFSIZ]){
 
 	if( cpuload == 0)
 		return 0;
-	s= cpuload;
-	len = BUFSIZ;
 	// identify core processing
-	snprintf(s, len, "[ ");
-	len -= (int)strlen(s);
-	s += (int) strlen(s);
+	len += snprintf(cpuload, BUFSIZ, "[ ");
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		snprintf(s, len, " %.2f ",corestat[cpu].load);
-		len -= (int)strlen(s);
-		s += (int) strlen(s);
+		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
 	}
-	snprintf(s, len, "]");
-	len -= (int)strlen(s);
-	s += (int) strlen(s);
+	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
 }
 
@@ -932,11 +921,11 @@ static str getIOactivity(void){
 	//MT_lock_set(&GDKthreadLock, "profiler.io");
 	for (t = GDKthreads, s = t + THREADS; t < s; t++, i++)
 		if (t->pid ){
-			snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
+			(void) snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
 			fd = fopen(fnme,"r");
 			if ( fd == NULL)
 				return buf;
-			snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
+			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
 			if ((n = fread(buf+len, 1, BUFSIZ-len-2,fd)) == 0 )
 				return  buf;
 			// extract the properties
@@ -983,14 +972,14 @@ static void profilerHeartbeat(void *dummy)
 	while (ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat")) {
 		/* wait until you need this info */
 		while (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0; t -= 15) {
-				MT_sleep_ms(15);
+			for (t = 1000; t > 0; t -= 25) {
+				MT_sleep_ms(25);
 				if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 15) {
-			MT_sleep_ms(t > 15 ? 15 : t);
+		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 25) {
+			MT_sleep_ms(t > 25 ? 25 : t);
 			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
 				return;
 		}

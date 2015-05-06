@@ -33,27 +33,27 @@ function user.main():void;
 #checking proper handling of scopes for the garbage collector 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b:bat[:oid,:int]  := bat.new(:oid,:int);#  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    c:bat[:oid,:int]  := bat.new(:oid,:int);#  2 c:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    d:bat[:oid,:int]  := bat.new(:oid,:int);#  3 d:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  4 _6:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
-barrier (x,z) := iterator.new(b);       #  5 (x:oid, z:int) := ITRbunIterator(b:bat[:oid,:int]) {GJ7}
-    io.print(x);                        #  6 _10:void := IOprint_val(x:oid) 
-exit (x,z);                             #  7 (x:oid, z:int) 
-    b:bat[:oid,:int]  := nil:bat[:oid,:int];#  8 b:bat[:oid,:int] := _17:bat[:oid,:int] {G}
-barrier (x,z) := iterator.new(c);       #  9 (x:oid, z:int) := ITRbunIterator(c:bat[:oid,:int]) {GJ12}
-    io.print(x);                        # 10 _11:void := IOprint_val(x:oid) 
-    redo (x,z) := iterator.next(c);     # 11 (x:oid, z:int) := ITRbunNext(c:bat[:oid,:int]) {GJ10}
-exit (x,z);                             # 12 (x:oid, z:int) 
-    c:bat[:oid,:int]  := nil:bat[:oid,:int];# 13 c:bat[:oid,:int] := _19:bat[:oid,:int] {G}
-# do not close d, it may be reused 
-barrier go := true;                     # 15 go:bit := _14:bit {J18}
-    io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:oid,:int]) {G}
-    redo go := true;                    # 17 go:bit := _14:bit {J16}
-exit go;                                # 18 go:bit 
-    d:bat[:oid,:int]  := nil:bat[:oid,:int];# 19 d:bat[:oid,:int] := _21:bat[:oid,:int] {G}
-end user.qry;                           # 20  
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    c:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    d:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+barrier (x:oid,z:int) := iterator.new(b:bat[:oid,:int]);	# ITRbunIterator
+    io.print(x:oid);                    	# IOprint_val
+exit (x:oid,z:int);                     	# 
+    b:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);	# ITRbunIterator
+    io.print(x:oid);                    	# IOprint_val
+    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);	# ITRbunNext
+exit (x:oid,z:int);                     	# 
+    c:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+# do not close d, it may be reused      	# 
+barrier go:bit := true:bit;             	# 
+    io.print(d:bat[:oid,:int]);         	# IOprint_val
+    redo go:bit := true:bit;            	# 
+exit go:bit;                            	# 
+    d:bat[:oid,:int] := nil:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

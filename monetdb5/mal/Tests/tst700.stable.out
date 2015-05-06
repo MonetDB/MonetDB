@@ -38,7 +38,7 @@ function user.main():void;
     io.print(1:lng);
     io.print(2:bte);
     io.print(true);
-    pi := 3.14700007;
+    pi := 3.147;
     x := 1;
     io.print(x);
     io.print(pi);
@@ -56,7 +56,7 @@ end user.main;
 [ 2 ]
 [ true ]
 [ 1 ]
-[ 3.14700007 ]
+[ 3.147 ]
 hello
     0
     1

@@ -1,3 +1,2 @@
-!HAVE_SAMTOOLS&!HAVE_DATACELL?Dependencies
-HAVE_SAMTOOLS&!HAVE_DATACELL?Dependencies_bam
+HAVE_SAMTOOLS?Dependencies
 dependency_loop

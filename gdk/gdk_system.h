@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -74,50 +63,6 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict,
 /* debug and errno integers */
 gdk_export int GDKdebug;
 
-/* lock performance tracing */
-/* #define MT_LOCK_TRACE 1 */
-#ifdef MT_LOCK_TRACE
-gdk_export MT_Id MT_locktrace;
-gdk_export void MT_locktrace_start(void);
-gdk_export void MT_locktrace_end(void);
-gdk_export unsigned long long MT_locktrace_cnt[65536];
-gdk_export char *MT_locktrace_nme[65536];
-gdk_export unsigned long long MT_clock(void);
-
-#define MT_locktrace_hash(_id)	((int) (((lng) ((size_t) (_id))) ^ (((lng) ((size_t) (_id))) >> 16)) & 65535)
-#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat)	\
-	do {								\
-		unsigned long long _c=0;				\
-		if (MT_locktrace)					\
-			_c = MT_getpid() == MT_locktrace ? MT_clock() : 0; \
-		MT_log(_impl, _object, _action, _caller, _fp);		\
-		if (_c)						\
-			MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; \
-	} while(0)
-#define MT_locktrace_set(s, n)						\
-	do {								\
-		int _i = MT_locktrace_hash(s);				\
-		if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
-			fprintf(stderr, "MT_locktrace: name collision %s hides %s\n", \
-			       MT_locktrace_nme[_i], (n));		\
-		} else							\
-			MT_locktrace_nme[_i] = (n);			\
-	} while (0)
-#else
-#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) MT_log(_impl, _object, _action, _caller, _fp)
-#define MT_locktrace_set(s, n)
-#endif
-
-#define MT_log(_impl, _object, _action, _caller, _fp)			\
-	do {								\
-		TEMDEBUG {						\
-			fprintf(_fp, "%s: " _action "(" PTRFMT ")\n",	\
-				_caller, PTRFMTCAST(void*) _object);	\
-			fflush(_fp);					\
-		}							\
-		_impl;							\
-	} while (0)
-
 /* API */
 
 /*
@@ -162,23 +107,40 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 #include "gdk_atomic.h"
 
-#ifdef ATOMIC_LOCK
+/* define this if you want to use pthread (or Windows) locks instead
+ * of atomic instructions for locking (latching) */
+/* #define USE_PTHREAD_LOCKS */
 
-typedef pthread_mutex_t MT_Lock;
+#ifdef USE_PTHREAD_LOCKS
 
-#define MT_lock_init(l, n)					\
-	do {							\
-		pthread_mutex_init((pthread_mutex_t*) (l), 0);	\
-		MT_locktrace_set(l, n);				\
+typedef struct {
+	pthread_mutex_t lock;
+	const char *name;
+} MT_Lock;
+
+#define MT_lock_init(l, n)				\
+	do {						\
+		(l)->name = (n);			\
+		pthread_mutex_init(&(l)->lock, 0);	\
 	} while (0)
-#define MT_lock_destroy(l)	pthread_mutex_destroy((pthread_mutex_t*) (l))
-#define MT_lock_set(l, n)	MT_log_trace(pthread_mutex_lock((pthread_mutex_t *) (l)), (l), "MT_set_lock", n, stderr, (l))
-#define MT_lock_unset(l, n)	MT_log(pthread_mutex_unlock((pthread_mutex_t *) (l)), (l), "MT_unset_lock", n, stderr)
-#define MT_lock_try(l)		pthread_mutex_trylock((pthread_mutex_t *) (l))
-#define MT_lock_dump(l, fp, n)	MT_log(/*nothing*/, &(l), "MT_dump_lock", n, fp)
+#define MT_lock_destroy(l)	pthread_mutex_destroy(&(l)->lock)
+#define MT_lock_set(l, n)						\
+	do {								\
+		TEMDEBUG fprintf(stderr, "#%s: locking %s...\n",	\
+				 (n), (l)->name);			\
+		pthread_mutex_lock(&(l)->lock);				\
+		TEMDEBUG fprintf(stderr, "#%s: locking %s complete\n",	\
+				 (n), (l)->name);			\
+	} while (0)
+#define MT_lock_unset(l, n)						\
+	do {								\
+		TEMDEBUG fprintf(stderr, "#%s: unlocking %s\n",		\
+				 (n), (l)->name);			\
+		pthread_mutex_unlock(&(l)->lock);			\
+	} while (0)
 
 #ifdef PTHREAD_MUTEX_INITIALIZER
-#define MT_LOCK_INITIALIZER(name)	= PTHREAD_MUTEX_INITIALIZER
+#define MT_LOCK_INITIALIZER(name)	= { PTHREAD_MUTEX_INITIALIZER, name }
 #else
 /* no static initialization possible, so we need dynamic initialization */
 #define MT_LOCK_INITIALIZER(name)
@@ -215,18 +177,16 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
-		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", (l)->name, n); \
+		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", \
+				 (l)->name, n);				\
 		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
+		(l)->contention++;					\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l, n)						\
 	do {								\
 		if (_spincnt == 1024)					\
 			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
-	} while (0)
-#define _DBG_LOCK_COUNT_1(l)			\
-	do {					\
-		(l)->contention++;		\
-		(l)->sleep += _spincnt >= 1024;	\
+		(l)->sleep++;						\
 	} while (0)
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -289,7 +249,6 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		((void) (n))
 #define _DBG_LOCK_CONTENTION(l, n)	((void) (n))
 #define _DBG_LOCK_SLEEP(l, n)		((void) (n))
-#define _DBG_LOCK_COUNT_1(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l, n)		((void) (n))
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
@@ -307,10 +266,9 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			do {						\
 				if (++_spincnt >= 1024) {		\
 					_DBG_LOCK_SLEEP(l, n);		\
-					MT_sleep_ms(_spincnt >> 10);	\
+					MT_sleep_ms(1);			\
 				}					\
 			} while (ATOMIC_TAS((l)->lock, dummy, n) != 0); \
-			_DBG_LOCK_COUNT_1(l);				\
 		}							\
 		_DBG_LOCK_LOCKER(l, n);					\
 		_DBG_LOCK_COUNT_2(l);					\
@@ -326,8 +284,6 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			ATOMIC_CLEAR((l)->lock, dummy, n);	\
 		} while (0)
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
-/* return 0 on success, -1 on failure to get the lock */
-#define MT_lock_try(l)		((ATOMIC_TAS((l)->lock, dummy, dummy) == 0) - 1)
 
 #endif
 
@@ -365,16 +321,31 @@ gdk_export void pthread_sema_down(pthread_sema_t *s);
 
 #endif
 
-typedef pthread_sema_t MT_Sema;
+typedef struct {
+	pthread_sema_t sema;
+	const char *name;
+} MT_Sema;
 
-#define MT_sema_init(s, nr, n)			\
-	do {					\
-		pthread_sema_init((s), 0, nr);	\
-		MT_locktrace_set((s), n);	\
+#define MT_sema_init(s, nr, n)				\
+	do {						\
+		(s)->name = (n);			\
+		pthread_sema_init(&(s)->sema, 0, nr);	\
 	} while (0)
-#define MT_sema_destroy(s)	pthread_sema_destroy(s)
-#define MT_sema_up(s, n)	MT_log(pthread_sema_up(s), (s), "MT_up_sema", n, stderr)
-#define MT_sema_down(s, n)	MT_log_trace(pthread_sema_down(s), (s), "MT_down_sema", n, stderr, s)
+#define MT_sema_destroy(s)	pthread_sema_destroy(&(s)->sema)
+#define MT_sema_up(s, n)					\
+	do {							\
+		TEMDEBUG fprintf(stderr, "#%s: sema %s up\n",	\
+				 (n), (s)->name);		\
+		pthread_sema_up(&(s)->sema);			\
+	} while (0)
+#define MT_sema_down(s, n)						\
+	do {								\
+		TEMDEBUG fprintf(stderr, "#%s: sema %s down...\n",	\
+				 (n), (s)->name);			\
+		pthread_sema_down(&(s)->sema);				\
+		TEMDEBUG fprintf(stderr, "#%s: sema %s down complete\n", \
+				 (n), (s)->name);			\
+	} while (0)
 
 gdk_export int MT_check_nr_cores(void);
 

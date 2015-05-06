@@ -17,9 +17,9 @@ function user.main():void;
 # this should fail, the monetdb user is already there 
     pw := clients.backendsum("Pmonetdb");
     id := clients.addUser("monetdb",pw);
-catch MALException:str ;
+catch MALException:str;
     io.printf("%s\n",MALException);
-exit MALException:str ;
+exit MALException:str;
 # should print 1@0 or something 
     id := clients.addUser("test",pw);
     io.print(id);
@@ -38,34 +38,34 @@ exit MALException:str ;
     clients.setPassword("test",pw);
 # now try to set the password for ourself, should fail 
     clients.setPassword("monetdb",pw);
-catch InvalidCredentialsException:str ;
+catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
-exit InvalidCredentialsException:str ;
+exit InvalidCredentialsException:str;
 # change our own password 
     mypw := clients.backendsum("monetdb");
     clients.changePassword(mypw,pw);
 # try it again, should fail... 
     clients.changePassword(mypw,pw);
-catch InvalidCredentialsException:str ;
+catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
     InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str ;
+exit InvalidCredentialsException:str;
 # all should fail 
     clients.checkPermission("monetdb","Pmonetdb");
-catch InvalidCredentialsException:str ;
+catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
     InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str ;
+exit InvalidCredentialsException:str;
     clients.checkPermission("monetdb","x");
-catch InvalidCredentialsException:str ;
+catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
     InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str ;
+exit InvalidCredentialsException:str;
     clients.checkPermission("x","Pmonetdb");
-catch InvalidCredentialsException:str ;
+catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
     InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str ;
+exit InvalidCredentialsException:str;
 end user.main;
 MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -69,7 +58,7 @@ polyInit(void)
 				p->token = CMDcall;									\
 				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
 				if (p->fcn == NULL) {								\
-					showScriptException(out, mb, getPC(mb, p), TYPE, \
+					if(!silent) showScriptException(out, mb, getPC(mb, p), TYPE, \
 										"object code for command %s.%s missing", \
 										p->modname, p->fcnname);	\
 					p->typechk = TYPE_UNKNOWN;						\
@@ -126,7 +115,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	Symbol s;
 	InstrPtr sig;
 	int i, k, unmatched = 0, s1;
-	/* int foundbutwrong=0; */
 	int polytype[MAXTYPEVAR];
 	int returns[256];
 	int *returntype = NULL;
@@ -407,7 +395,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				}
 			}
 		if (s1 < 0) {
-			/* if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++; */
 			s = s->peer;
 			continue;
 		}
@@ -424,7 +411,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-				showScriptException(out, mb, getPC(mb, p), TYPE, "Assignment to constant");
+				if( !silent) showScriptException(out, mb, getPC(mb, p), TYPE, "Assignment to constant");
 				p->typechk = TYPE_UNKNOWN;
 				mb->errors++;
 				goto wrapup;
@@ -456,7 +443,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		 * typed. This should be reflected in the symbol table.
 		 */
 		s1 = returntype[0];		/* for those interested */
-		/* foundbutwrong = 0; */
 		/*
 		 * If the call refers to a polymorphic function, we clone it
 		 * to arrive at a bounded instance. Polymorphic patterns and
@@ -496,12 +482,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	/* foundbutwrong has not been changed, commented out code above
-		if (foundbutwrong && !silent) {
-			showScriptException(out, mb, getPC(mb, p), TYPE,
-								"type conflict in assignment");
-		}
-	 */
 	if (returntype && returntype != returns)
 		GDKfree(returntype);
 	return -3;
@@ -678,14 +658,15 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			mb->errors++;
 			if (!silent) {
-				char errsig[4 * PATHLENGTH] = "";
+				char *errsig;
 
-				instructionCall(mb, p, errsig, errsig, sizeof(errsig) - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) - strlen(errsig));
+				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
 				showScriptException(out, mb, getPC(mb, p), TYPE,
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),
 									(getModuleId(p) ? "." : ""),
 									getFunctionId(p), errsig);
+				GDKfree(errsig);
 			} else
 				mb->errors = olderrors;
 			p->typechk = TYPE_UNKNOWN;
@@ -694,7 +675,6 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		return;
 	}
 	/*
-	 * @- Assignment
 	 * When we arrive here the operator is an assignment.
 	 * The language should also recognize (a,b):=(1,2);
 	 * This is achieved by propagation of the rhs types to the lhs
@@ -755,7 +735,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 }
 
 /*
- * @- Function binder
+ * Function binder
  * In some cases the front-end may already assure type correctness
  * of the MAL instruction generated (e.g. the SQL front-end)
  * In that case we merely have to locate the function address and
@@ -829,13 +809,17 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 
 /*
  * Type checking an individual instruction is dangerous,
- * because it ignores data flow and declarations issues.
- * It is only to be used in isolated cases.
+ * because it ignores data flow and variable declarations.
  */
-void
+int
 chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p)
 {
-	typeChecker(out, s, mb, p, FALSE);
+	int olderrors= mb->errors;
+	int error;
+	typeChecker(out, s, mb, p, TRUE);
+	error = mb->errors;
+	mb->errors = olderrors;
+	return error;
 }
 
 void
@@ -856,7 +840,7 @@ chkProgram(stream *out, Module s, MalBlkPtr mb)
 }
 
 /*
- * @- Polymorphic type analysis
+ * Polymorphic type analysis
  * MAL provides for type variables of the form any$N. This feature
  * supports polymorphic types, but also complicates the subsequent
  * analysis. A variable typed with any$N not occuring in the function

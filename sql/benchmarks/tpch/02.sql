@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	s_acctbal,
 	s_name,

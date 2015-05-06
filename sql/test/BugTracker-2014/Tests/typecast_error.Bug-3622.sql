@@ -4,7 +4,7 @@ BEGIN
 	RETURN 1;
 END;
 
-CREATE TABLE "bam"."alignments_2" (
+CREATE TABLE "alignments_2" (
     "virtual_offset" BIGINT        NOT NULL,
     "qname"          CHARACTER LARGE OBJECT NOT NULL,
     "flag"           SMALLINT      NOT NULL,
@@ -20,14 +20,14 @@ CREATE TABLE "bam"."alignments_2" (
     "qual"           CHARACTER LARGE OBJECT NOT NULL,
     CONSTRAINT "alignments_2_pkey_virtual_offset" PRIMARY KEY ("virtual_offset")
 );
-ALTER TABLE bam.alignments_2 SET READ ONLY;
+ALTER TABLE alignments_2 SET READ ONLY;
 
 SELECT s.value AS refpos, COUNT(*) AS cnt
 FROM 
     generate_series(128, 18960) AS s
     JOIN (
         SELECT epos, pos, seq, cigar
-        FROM bam.alignments_2
+        FROM alignments_2
         WHERE pos > 0 
     ) AS al
     ON (
@@ -38,6 +38,6 @@ GROUP BY refpos
 ORDER BY cnt DESC
 LIMIT 10;
 
-DROP TABLE bam.alignments_2;
+DROP TABLE alignments_2;
 DROP FUNCTION seq_char;
 

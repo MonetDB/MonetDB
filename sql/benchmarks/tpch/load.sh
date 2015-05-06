@@ -1,21 +1,10 @@
 #!/bin/sh
 
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 set -x
 
@@ -35,8 +24,8 @@ SF='sf-0.01'
 #SF='sf-5'
 
 dir=`echo $SF | tr '[a-z]' '[A-Z]'`
-$SQL < c.sql-dec-primary-foreign
-#$SQL < c.sql-dec
+#$SQL < c.sql
+$SQL < c.sql-primary-foreign
 #cat load-$SF-LOCKED.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL 
 cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL
 #$SQL < alter.sql

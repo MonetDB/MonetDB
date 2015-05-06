@@ -30,7 +30,6 @@ stderr of test 'case-sqrt.Bug-3627` in directory 'sql/test/BugTracker-2014` itse
 # 15:36:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29576" "--port=33717"
 # 15:36:03 >  
 
-
 # 15:36:03 >  
 # 15:36:03 >  "Done."
 # 15:36:03 >  

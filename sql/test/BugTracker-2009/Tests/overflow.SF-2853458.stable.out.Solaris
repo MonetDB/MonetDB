@@ -25,8 +25,8 @@ Ready.
 # 22:26:13 >  
 
 #select cast(power(2,63) as bigint);
-% . # table_name
-% power_single_value # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 19 # length
 [ 9223372036854775807	]

@@ -1,10 +1,8 @@
 # test octopus framework
-include sql;
+#include sql;
 # The script occassionally showed parallism errors.
-#profiler.activate("statement");
-#profiler.setFilter("*","*");
-#profiler.openStream("console");
-#profiler.start();
+
+module octopus;
 
 function octopus.bind(v:int):bat[:oid,:int];
 	b:= bat.new(:oid,:int);
@@ -38,13 +36,14 @@ function octopus.exec(uri:str, query:str, version:int):bat[:oid,:int];
 	# this works with uri, because head and tentacle are the same */
 	v:= remote.exec(conn,"octopus", query, m, u);
 	res:bat[:oid,:int]:= remote.get(conn,v);
+	io.print(res);
 	remote.disconnect(conn);
 	return exec:=res;
 end exec;
 
 uri := sabaoth.getLocalConnectionURI();
 
-barrier (k,v):= language.newRange(0:int);
+barrier v:= 0:int;
 	io.print(v);
 barrier go:= language.dataflow();
 	v1:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
@@ -52,8 +51,10 @@ barrier go:= language.dataflow();
 	v3:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
 	v4:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
 	res:= mat.pack(v1,v2,v3,v4);
+	language.pass(uri);
+	language.pass(v);
 exit go;
-	redo (k,v) := language.nextElement(1:int,25:int);
-exit (k,v);
+	redo v := iterator.next(1:int,25:int);
+exit v;
 z:=clients.getUsers();
 io.print(z);

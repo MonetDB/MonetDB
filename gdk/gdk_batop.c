@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -524,7 +513,7 @@ BATins(BAT *b, BAT *n, bit force)
 			}
 			if (b->htype != TYPE_void && b->hsorted && b->hdense &&
 			    (BAThdense(n) == 0 ||
-			     *(oid *) BUNhloc(bi, last) != 1 + *(oid *) BUNhead(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNhloc(bi, last) != *(oid *) BUNhead(ni, BUNfirst(n)))) {
 				b->hdense = FALSE;
 				b->H->nodense = r;
 			}
@@ -550,7 +539,7 @@ BATins(BAT *b, BAT *n, bit force)
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 			    (BATtdense(n) == 0 ||
-			     *(oid *) BUNtloc(bi, last) != 1 + *(oid *) BUNtail(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, BUNfirst(n)))) {
 				b->tdense = FALSE;
 				b->T->nodense = r;
 			}
@@ -761,7 +750,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 			    (BATtdense(n) == 0 ||
-			     *(oid *) BUNtloc(bi, last) != 1 + *(oid *) BUNtail(ni, BUNfirst(n)))) {
+			     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, BUNfirst(n)))) {
 				b->tdense = FALSE;
 				b->T->nodense = r;
 			}
@@ -922,14 +911,12 @@ BATdel(BAT *b, BAT *n, bit force)
  */
 #define BUNreplace_force(a,b,c) BUNreplace(a,b,c,force)
 gdk_return
-BATreplace(BAT *b, BAT *n, bit force)
+BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 {
-	if (b == NULL || n == NULL || BATcount(n) == 0) {
+	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	BATcompatible(b, n, GDK_FAIL, "BATreplace");
-	updateloop(b, n, BUNreplace_force);
-
+	void_replace_bat(b, p, n, force);
 	return GDK_SUCCEED;
 }
 
@@ -1069,10 +1056,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 	}
 	if (bn->batCount <= 1) {
-		bn->hsorted = BATatoms[b->htype].linear;
-		bn->tsorted = BATatoms[b->ttype].linear;
-		bn->hrevsorted = BATatoms[b->htype].linear;
-		bn->trevsorted = BATatoms[b->ttype].linear;
+		bn->hsorted = ATOMlinear(b->htype);
+		bn->tsorted = ATOMlinear(b->ttype);
+		bn->hrevsorted = ATOMlinear(b->htype);
+		bn->trevsorted = ATOMlinear(b->ttype);
 		BATkey(bn, 1);
 		BATkey(BATmirror(bn), 1);
 	} else {
@@ -1339,8 +1326,8 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			if (on == NULL)
 				goto error;
 			BATsetcount(on, BATcount(b));
-			BATseqbase(on, 0);
-			BATseqbase(BATmirror(on), 0);
+			BATseqbase(on, b->hseqbase);
+			BATseqbase(BATmirror(on), b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
@@ -1398,13 +1385,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
 			for (p = 0, q = BATcount(bn); p < q; p++)
-				grps[p] = p;
+				grps[p] = p + b->hseqbase;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 			on->T->nil = 0;
 			on->T->nonil = 1;
 		}
-		BATseqbase(on, 0);
+		BATseqbase(on, b->hseqbase);
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
 		*order = on;
@@ -1758,7 +1745,7 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 		n -= BUNfirst(bn);
 		break;
 	}
-	bn->T->nil = n >= 1 && (*BATatoms[tailtype].atomCmp)(v, BATatoms[tailtype].atomNull) == 0;
+	bn->T->nil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;

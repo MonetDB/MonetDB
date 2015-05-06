@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -45,8 +34,20 @@
 #include "controlrunner.h"
 #include "client.h"
 
-static err
-handleClient(int sock, char isusock)
+struct threads {
+	struct threads *next;
+	pthread_t tid;
+	volatile char dead;
+};
+struct clientdata {
+	int sock;
+	int isusock;
+	struct threads *self;
+};
+
+static void *
+handleClient(void *data)
+
 {
 	stream *fdin, *fout;
 	char buf[8096];
@@ -65,15 +66,25 @@ handleClient(int sock, char isusock)
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
 	char *algos;
+	int sock;
+	char isusock;
+	struct threads *self;
 
+	sock = ((struct clientdata *) data)->sock;
+	isusock = ((struct clientdata *) data)->isusock;
+	self = ((struct clientdata *) data)->self;
+	free(data);
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
-	if (fdin == 0)
+	if (fdin == 0) {
+		self->dead = 1;
 		return(newErr("merovingian-client inputstream problems"));
+	}
 	fdin = block_stream(fdin);
 
 	fout = socket_wastream(sock, "merovingian->client (write)");
 	if (fout == 0) {
 		close_stream(fdin);
+		self->dead = 1;
 		return(newErr("merovingian-client outputstream problems"));
 	}
 	fout = block_stream(fout);
@@ -128,6 +139,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 	buf[sizeof(buf) - 1] = '\0';
@@ -149,6 +161,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -165,6 +178,7 @@ handleClient(int sock, char isusock)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		}
 		algo = passwd + 1;
@@ -176,6 +190,7 @@ handleClient(int sock, char isusock)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		}
 		*s = 0;
@@ -187,6 +202,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -202,6 +218,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -220,6 +237,7 @@ handleClient(int sock, char isusock)
 			close_stream(fout);
 			close_stream(fdin);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		} else {
 			*s = '\0';
@@ -234,6 +252,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(newErr("client %s specified no database", host));
 	}
 
@@ -244,6 +263,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(NO_ERR);
 	}
 
@@ -273,6 +293,7 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 	stat = top;
@@ -285,6 +306,7 @@ handleClient(int sock, char isusock)
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
 		free(algos);
+		self->dead = 1;
 		return(NO_ERR);
 	}
 
@@ -314,6 +336,7 @@ handleClient(int sock, char isusock)
 		close_stream(fdin);
 		msab_freeStatus(&top);
 		free(algos);
+		self->dead = 1;
 		return(e);
 	}
 
@@ -384,12 +407,14 @@ handleClient(int sock, char isusock)
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
 			free(algos);
+			self->dead = 1;
 			return(e);
 		};
 	}
 
 	msab_freeStatus(&top);
 	free(algos);
+	self->dead = 1;
 	return(NO_ERR);
 }
 
@@ -400,8 +425,10 @@ acceptConnections(int sock, int usock)
 	int retval;
 	fd_set fds;
 	int msgsock;
-	err e;
+	void *e;
 	struct timeval tv;
+	struct clientdata *data;
+	struct threads *threads = NULL, **threadp, *p;
 
 	do {
 		/* handle socket connections */
@@ -414,6 +441,23 @@ acceptConnections(int sock, int usock)
 		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+		/* join any handleClient threads that we started and that may
+		 * have finished by now */
+		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
+			if ((*threadp)->dead &&
+				pthread_join((*threadp)->tid, &e) == 0) {
+				p = *threadp;
+				*threadp = p->next;
+				free(p);
+				if (e != NO_ERR) {
+					Mfprintf(stderr, "client error: %s\n",
+							 getErrMsg((char *) e));
+					freeErr(e);
+				}
+				if (*threadp == NULL)
+					break;
+			}
+		}
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -499,13 +543,23 @@ acceptConnections(int sock, int usock)
 					close(msgsock);
 					Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
-			}	
+			}
 		} else
 			continue;
-		e = handleClient(msgsock, FD_ISSET(usock, &fds));
-		if (e != NO_ERR) {
-			Mfprintf(stderr, "client error: %s\n", getErrMsg(e));
-			freeErr(e);
+		/* start handleClient as a thread so that we're not blocked by
+		 * a slow client */
+		data = malloc(sizeof(*data));
+		data->sock = msgsock;
+		data->isusock = FD_ISSET(usock, &fds);
+		p = malloc(sizeof(*p));	/* freed by handleClient */
+		p->dead = 0;
+		data->self = p;
+		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
+			p->next = threads;
+			threads = p;
+		} else {
+			free(data);
+			free(p);
 		}
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);

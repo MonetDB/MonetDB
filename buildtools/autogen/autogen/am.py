@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 import os
 import posixpath
@@ -971,6 +960,9 @@ def am_gem(fd, var, gem, am):
                         dirs.append(d)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
         fd.write("\tgem build '%s'\n" % f)
+        # use deprecated --rdoc and --ri options instead of --document=rdoc,ri
+        # since we're still building on systems with old gem
+        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --rdoc --ri %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
         fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
         fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
         fd.write('mostlyclean-local-%s:\n' % sf)
@@ -980,7 +972,7 @@ def am_gem(fd, var, gem, am):
             fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rmdir '%s'\n" % (d, d))
         fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
         fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
-        fd.write("\tgem install --local --install-dir $(DESTDIR)'%s' --force --rdoc '%s'\n" % (rd, f[:-4]))
+        fd.write("\tcp -a ./'%s'/* $(DESTDIR)'%s'\n" % (rd, rd))
         fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
         # remove "-0.1.gemspec" from end of `f'
         fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-12]))

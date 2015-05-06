@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -428,15 +417,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	int i;
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
- 
-	/*
-	 * Control the level of parallelism. The maximum number of
-	 * concurrent MAL plans is determined by an environment
-	 * variable. It is initially set equal to the number of cores,
-	 * which may be too coarse.
-	 */
+
 	cntxt->lastcmd= time(0);
-	MT_sema_down(&mal_parallelism,"callMAL");
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -471,10 +453,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	case PATcall:
 	case CMDcall:
 	default:
-		MT_sema_up(&mal_parallelism,"callMAL");
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	MT_sema_up(&mal_parallelism,"callMAL");
 	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
@@ -1344,7 +1324,7 @@ str catchKernelException(Client cntxt, str ret)
 			/* trap hidden (GDK) exception */
 			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
 			if (z)
-				sprintf(z, "GDKerror:%s\n", errbuf);
+				sprintf(z, "GDKerror:%s", errbuf);
 		}
 		/* did we eat the error away of not */
 		if (z)

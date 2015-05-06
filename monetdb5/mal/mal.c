@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -23,7 +12,11 @@
 
 char monet_cwd[PATHLENGTH] = { 0 };
 size_t monet_memory;
-char *mal_trace;		/* enable profile events on console */
+char 	monet_characteristics[PATHLENGTH];
+int mal_trace;		/* enable profile events on console */
+#ifdef HAVE_HGE
+int have_hge;
+#endif
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -45,7 +38,6 @@ MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
 MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
-MT_Sema		mal_parallelism;
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -88,11 +80,6 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 #endif
-	/* "/2" is arbitrarily used / chosen, as on systems with
-	 * hyper-threading enabled, using all hardware threads rather than
-	 * "only" all physical cores does not necessarily yield a linear
-	 * performance benefit */
-	MT_sema_init( &mal_parallelism, (GDKnr_threads > 1 ? GDKnr_threads/2: 1), "mal_parallelism");
 
 	tstAligned();
 	MCinit();
@@ -104,18 +91,15 @@ int mal_init(void){
 	initParser();
 	initHeartbeat();
 	initResource();
-#ifdef HAVE_JSONSTORE
-	startHttpdaemon();
-#endif
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace && *mal_trace) {
+	if ( mal_trace ) {
 		openProfilerStream(mal_clients[0].fdout);
 		startProfiler(1,0);
-	} else mal_trace =0;
+	} 
 	return 0;
 }
 /*
@@ -153,9 +137,6 @@ void mal_exit(void){
 }
 #endif
 	setHeartbeat(0);
-#ifdef HAVE_JSONSTORE
-	stopHttpdaemon();
-#endif
 	stopMALdataflow();
 	stopProfiler();
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */

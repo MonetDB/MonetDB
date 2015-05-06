@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -49,13 +38,23 @@
  * for additional system variable settings.
  */
 #define MAXSCRIPT 64
-#define MEMORY_THRESHOLD  0.8
+
+/*
+ * MonetDB assumes it can use most of the machines memory,
+ * leaving a small portion for other programs.
+ */
+#define GB (((lng)1024)*1024*1024)
+#define MEMORY_THRESHOLD  (0.2 * monet_memory > 8 * GB?  monet_memory - 8 * GB: 0.8 * monet_memory)
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
+mal_export char 	monet_characteristics[PATHLENGTH];
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
-mal_export char		*mal_trace;		/* enable profile events on console */
+mal_export int		mal_trace;		/* enable profile events on console */
+#ifdef HAVE_HGE
+mal_export int have_hge;
+#endif
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.
@@ -94,19 +93,14 @@ mal_export void mal_exit(void);
 
 /* Listing modes are globally known */
 #define LIST_INPUT      1       /* echo original input */
-#define LIST_MAL_STMT  2       /* show mal instruction */
+#define LIST_MAL_NAME   2       /* show variable name */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_UDF    8       /* show type resolutoin */
-#define LIST_MAL_PROPS    16       /* show line numbers */
-#define LIST_MAL_DETAIL 32		/* type details */
-#define LIST_MAL_VALUE  64		/* list bat tuple count */
-#define LIST_MAL_MAPI  128       /* output Mapi compatible output */
-#define LIST_MAL_ARG 256		/* show the formal argument name */
-#define LIST_MAL_LNR    512       /* show line numbers */
-#define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
-#define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG | LIST_MAL_TYPE)
-#define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_ARG)
-#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR | LIST_MAL_MAPI)
+#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_PROPS 16       /* show variable properties */
+#define LIST_MAL_MAPI  32       /* output Mapi compatible output */
+#define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
+#define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
+#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
 
 #ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED
@@ -186,10 +180,12 @@ typedef struct {
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
-	lng ticks;					/* total micro seconds spent */
+	struct timeval clock;		/* when the last call was started */
+	lng ticks;					/* total micro seconds spent in last call */
 	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
-	lng rbytes,wbytes;			/* accumulated number of bytes touched */
+	lng rbytes;					/* accumulated number of bytes read, currently ignored */
+	lng wbytes;					/* accumulated number of bytes produced */
 	/* the core admin */
 	str modname;				/* module context */
 	str fcnname;				/* function name */
@@ -228,6 +224,7 @@ typedef struct MALBLK {
 	lng runtime;				/* average execution time of block in ticks */
 	int calls;					/* number of calls */
 	lng optimize;				/* total optimizer time */
+	int activeClients;			/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128

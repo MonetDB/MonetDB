@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 # @+ Date atom
 # Monet atoms can have multiple @emph{parse formats}. One of these formats is
@@ -51,9 +40,9 @@ command date(s:date):date
 address MTIMEdate_date
 comment "Noop routine.";
 
-command fromstr() :date
+command fromstr()
 address date_fromstr;
-command tostr() :str
+command tostr()
 address date_tostr;
 
 
@@ -117,9 +106,9 @@ comment "Equality of two dates";
 #        SEP = '.' or ':'
 # @end verbatim
 atom daytime :int;
-command fromstr():daytime
+command fromstr()
 address daytime_tz_fromstr;
-command tostr():str
+command tostr()
 address daytime_tostr;
 
 
@@ -191,10 +180,10 @@ comment "Equality of two daytimes";
 # timezone. The default local timezone is just GMT+00, but it can be set
 # arbitrarily.
 atom timestamp :lng;
-command fromstr():timestamp
+command fromstr()
 address timestamp_fromstr;
 
-command tostr():str
+command tostr()
 address timestamp_tostr;
 
 command unix_epoch{unsafe}():timestamp
@@ -307,9 +296,9 @@ comment "Equality of two timestamps";
 # Other values of the rule parameters on creating a timezone will produce a
 # nil-timezone.
 atom timezone :lng;
-command fromstr():timezone
+command fromstr()
 address tzone_fromstr;
-command tostr():str
+command tostr()
 address tzone_tostr;
 command str(z:timezone):str
 address MTIMEtzone_tostr;
@@ -320,9 +309,9 @@ address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
 
 atom zrule :int;
-command fromstr():zrule
+command fromstr()
 address rule_fromstr;
-command tostr():str
+command tostr()
 address rule_tostr;
 command define(m:int,d:int,w:int,h:int,min:int):zrule
 address MTIMEruleDef0
@@ -379,6 +368,10 @@ comment "Subtract seconds from a time";
 command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval_wrap
 comment "Add seconds to a time";
+
+command diff(val1:daytime, val2:daytime) :lng
+address MTIMEdaytime_diff
+comment "returns the number of msec between 'val1' and 'val2'.";
 
 command date_add_month_interval(t:date,s:int):date
 address MTIMEdate_addmonths

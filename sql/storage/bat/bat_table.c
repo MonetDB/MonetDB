@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -64,10 +53,10 @@ delta_cands(sql_trans *tr, sql_table *t)
 		t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	d = t->data;
-	if (d->cached && !tr->parent) 
+	if (d->cached /*&& !tr->parent*/) 
 		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
-	if (!d->cached && !tr->parent) /* only cache during catalog loading */
+	if (!d->cached /*&& !tr->parent*/) /* only cache during catalog loading */
 		d->cached = temp_descriptor(tids->batCacheid);
 	return tids;
 }
@@ -80,14 +69,14 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		b := b.append(i);
 		b := b.replace(u);
 	*/
-	BAT *r, *b, *u, *i = temp_descriptor(bat->ibid);
+	BAT *r, *b, *ui, *uv, *i = temp_descriptor(bat->ibid);
 	int needcopy = 1;
 
+(void)tr;
 	r = i; 
 	if (temp) 
 		return r;
 	b = temp_descriptor(bat->bid);
-	u = temp_descriptor(bat->ubid);
 	if (!b) {
 		b = i;
 	} else {
@@ -100,17 +89,22 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		}
 		bat_destroy(i); 
 	}
-	if (BATcount(u)) {
-		if (needcopy) {
-			r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
-			bat_destroy(b); 
-			b = r;
+	if (bat->uibid && bat->ucnt) {
+		ui = temp_descriptor(bat->uibid);
+		uv = temp_descriptor(bat->uvbid);
+		if (BATcount(ui)) {
+			if (needcopy) {
+				r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+				bat_destroy(b); 
+				b = r;
+			}
+			void_replace_bat(b, ui, uv, TRUE);
 		}
-		BATreplace(b, u, TRUE);
+		bat_destroy(ui); 
+		bat_destroy(uv); 
 	}
-	bat_destroy(u); 
 	(void)c;
-	if (!bat->cached && !tr->parent) 
+	if (!bat->cached /*&& !tr->parent*/) 
 		bat->cached = temp_descriptor(b->batCacheid);
 	return b;
 }
@@ -118,7 +112,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 static BAT *
 delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 {
-	if (bat->cached && !tr->parent) 
+	if (bat->cached /*&& !tr->parent*/) 
 		return temp_descriptor(bat->cached->batCacheid);
 	return delta_full_bat_( tr, c, bat, temp);
 }

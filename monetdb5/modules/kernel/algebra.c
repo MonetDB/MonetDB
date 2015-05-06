@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -355,6 +344,7 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -424,6 +414,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -691,6 +682,10 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 	}
 	*r1 = result1->batCacheid;
 	*r2 = result2->batCacheid;
+	if (!(result1->batDirty&2))
+		BATsetaccess(result1, BAT_READ);
+	if (!(result2->batDirty&2))
+		BATsetaccess(result2, BAT_READ);
 	BBPkeepref(*r1);
 	BBPkeepref(*r2);
 	BBPunfix(left->batCacheid);
@@ -989,6 +984,10 @@ ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -1043,6 +1042,10 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 		j2 = R;
 		rmap = NULL;
 	}
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -1068,6 +1071,10 @@ ALGthetajoin2( bat *l, bat *r, const bat *left, const bat *right, const int *opc
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
+	if (!(j1->batDirty&2))
+		BATsetaccess(j1, BAT_READ);
+	if (!(j2->batDirty&2))
+		BATsetaccess(j2, BAT_READ);
 	BBPkeepref(*l = j1->batCacheid);
 	BBPkeepref(*r = j2->batCacheid);
 	return MAL_SUCCEED;
@@ -1114,6 +1121,10 @@ ALGbandjoin2(bat *l, bat *r, const bat *left, const bat *right, const void *minu
 	BBPunfix(R->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	if (!(bn1->batDirty&2))
+		BATsetaccess(bn1, BAT_READ);
+	if (!(bn2->batDirty&2))
+		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
@@ -1144,6 +1155,10 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 	BBPunfix(RH->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
+	if (!(bn1->batDirty&2))
+		BATsetaccess(bn1, BAT_READ);
+	if (!(bn2->batDirty&2))
+		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
@@ -1848,55 +1863,6 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 	return msg;
 }
 
-str
-ALGprojectNIL(bat *ret, const bat *bid)
-{
-    BAT *b, *bn;
-
-    if ((b = BATdescriptor(*bid)) == NULL) {
-        throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-    }
-
-    bn = BATconst(b, TYPE_void, (ptr) &oid_nil, TRANSIENT);
-    if (bn) {
-        *ret = bn->batCacheid;
-        BBPkeepref(bn->batCacheid);
-		BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
-    }
-    BBPunfix(b->batCacheid);
-    throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
-}
-
-/*
- * The constant versions are typed by the parser
- */
-str
-ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *ret = getArgReference_bat(stk, pci, 0);
-	const ValRecord *v = &stk->stk[getArg(pci, 1)];
-	bat bid = * getArgReference_bat(stk, pci, 2);
-	BAT *b, *bn;
-
-	(void) cntxt;
-	(void) mb;
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	b = BATmirror(b);
-	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
-	if (bn == NULL) {
-		*ret = bat_nil;
-		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
-	}
-	bn = BATmirror(bn);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
-	*ret= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 str
 ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1908,6 +1874,8 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if( isaBatType(getArgType(mb,pci,2)) )
+		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);

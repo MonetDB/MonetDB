@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -53,7 +42,7 @@
 
 
 static SQLRETURN
-SQLBrowseConnect_(ODBCDbc *dbc,
+MNDBBrowseConnect(ODBCDbc *dbc,
 		  SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
 		  SQLCHAR *OutConnectionString,
@@ -66,8 +55,10 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	SQLSMALLINT len = 0;
 	char buf[256];
 	int n;
-	int allocated = 0;
 	SQLRETURN rc;
+#ifdef ODBCDEBUG
+	int allocated = 0;
+#endif
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 
@@ -82,32 +73,37 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 		return SQL_ERROR;
 	}
 
-	dsn = dbc->dsn;
-	uid = dbc->uid;
-	pwd = dbc->pwd;
-	host = dbc->host;
+	dsn = dbc->dsn ? strdup(dbc->dsn) : NULL;
+	uid = dbc->uid ? strdup(dbc->uid) : NULL;
+	pwd = dbc->pwd ? strdup(dbc->pwd) : NULL;
+	host = dbc->host ? strdup(dbc->host) : NULL;
 	port = dbc->port;
-	dbname = dbc->dbname;
+	dbname = dbc->dbname ? strdup(dbc->dbname) : NULL;
 
 	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
+			if (dsn)
+				free(dsn);
 			dsn = attr;
-			allocated |= 1;
 		} else if (strcasecmp(key, "uid") == 0 && uid == NULL) {
+			if (uid)
+				free(uid);
 			uid = attr;
-			allocated |= 2;
 		} else if (strcasecmp(key, "pwd") == 0 && pwd == NULL) {
+			if (pwd)
+				free(pwd);
 			pwd = attr;
-			allocated |= 4;
 		} else if (strcasecmp(key, "host") == 0 && host == NULL) {
+			if (host)
+				free(host);
 			host = attr;
-			allocated |= 8;
 		} else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
 		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
+			if (dbname)
+				free(dbname);
 			dbname = attr;
-			allocated |= 16;
 #ifdef ODBCDEBUG
 		} else if (strcasecmp(key, "logfile") == 0 &&
 			   getenv("ODBCDEBUG") == NULL) {
@@ -115,7 +111,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
 			ODBCdebug = attr;
-			allocated |= 32;
+			allocated = 1;
 #endif
 		} else
 			free(attr);
@@ -131,7 +127,6 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				uid = strdup(buf);
 				if (uid == NULL)
 					goto nomem;
-				allocated |= 2;
 			}
 		}
 		if (pwd == NULL) {
@@ -140,7 +135,6 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				pwd = strdup(buf);
 				if (pwd == NULL)
 					goto nomem;
-				allocated |= 4;
 			}
 		}
 		if (host == NULL) {
@@ -149,7 +143,6 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				host = strdup(buf);
 				if (host == NULL)
 					goto nomem;
-				allocated |= 8;
 			}
 		}
 		if (port == 0) {
@@ -164,11 +157,10 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				dbname = strdup(buf);
 				if (dbname == NULL)
 					goto nomem;
-				allocated |= 16;
 			}
 		}
 #ifdef ODBCDEBUG
-		if ((allocated & 32) == 0 && getenv("ODBCDEBUG") == NULL) {
+		if (!allocated && getenv("ODBCDEBUG") == NULL) {
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
@@ -179,7 +171,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	}
 
 	if (uid != NULL && pwd != NULL) {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
 		if (SQL_SUCCEEDED(rc)) {
 			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 						  BufferLength,
@@ -240,15 +232,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	}
 
   bailout:
-	if (allocated & 1)
+	if (dsn)
 		free(dsn);
-	if (allocated & 2)
+	if (uid)
 		free(uid);
-	if (allocated & 4)
+	if (pwd)
 		free(pwd);
-	if (allocated & 8)
+	if (host)
 		free(host);
-	if (allocated & 16)
+	if (dbname)
 		free(dbname);
 	return rc;
 
@@ -278,7 +270,7 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	return SQLBrowseConnect_(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
+	return MNDBBrowseConnect(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
 SQLRETURN SQL_API
@@ -322,7 +314,7 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
+	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 1024, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
 			    StringLength2Ptr, 1, addDbcError, dbc);

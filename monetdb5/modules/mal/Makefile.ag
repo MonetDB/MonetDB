@@ -1,19 +1,8 @@
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.monetdb.org/Legal/MonetDBLicense
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2015 MonetDB B.V.
-# All Rights Reserved.
+# Copyright 2008-2015 MonetDB B.V.
 
 INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
@@ -55,7 +44,6 @@ lib_mal = {
 		sysmon.c sysmon.h \
 		tablet.c tablet.h \
 		tokenizer.c tokenizer.h \
-		trader.c trader.h \
 		transaction.c \
 		txtsim.c txtsim.h \
 		zorder.c zorder.h \
@@ -75,7 +63,7 @@ headers_mal = {
 		transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		cluster.mal trader.mal \
+		cluster.mal \
 		tokenizer.mal zorder.mal sample.mal json_util.mal \
 		batmtime.mal querylog.mal sysmon.mal
 }
@@ -97,7 +85,7 @@ headers_hge = {
 
 EXTRA_DIST = batExtensions.mal iterator.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal manifold.mal pcre.mal \
-	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
+	profiler.mal recycle.mal remote.mal sabaoth.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
 	mal_mapi.mal mat.mal tokenizer.mal \
 	batmtime.mal querylog.mal sysmon.mal \

@@ -1,24 +1,13 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* Author(s) M.Ivanova, M.Kersten
- * The srvpool abstracts away specifics from octopus and centipede
+ * The srvpool abstracts away specifics from the experimental octopus and centipede
  * to reach a re-useable framework for ochestrating multiple mservers
  * an execute distributed queries.
 */
@@ -31,11 +20,7 @@
 #define DEBUG_RUN_SRVPOOL 	/* to trace processing */
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define octopus_export extern __declspec(dllimport)
-#else
 #define mpool_export extern __declspec(dllexport)
-#endif
 #else
 #define mpool_export extern
 #endif

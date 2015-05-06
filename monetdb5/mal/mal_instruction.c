@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -143,6 +132,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->calls = 0;
 	mb->optimize = 0;
 	mb->stmt = NULL;
+	mb->activeClients = 1;
 	if (newMalBlkStmt(mb, maxstmts) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb->stmt);
@@ -246,6 +236,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->dotfile = old->dotfile;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
+	mb->activeClients = 1;
 
 	if (mb->var == NULL) {
 		GDKfree(mb);
@@ -661,8 +652,8 @@ getVarName(MalBlkPtr mb, int i)
 
 	nme = mb->var[i]->name;
 
-	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+	if (nme == 0 || *nme =='_') {
+		snprintf(buf, PATHLENGTH, "%c_%d", REFMARKER, mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
 	return nme;
@@ -699,21 +690,6 @@ resetVarName(MalBlkPtr mb, int i)
 		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
 		mb->var[i]->name = GDKstrdup(buf);
 	}
-}
-
-inline str
-getRefName(MalBlkPtr mb, int i)
-{
-	str nme;
-	char buf[PATHLENGTH];
-
-	nme = mb->var[i]->name;
-
-	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", REFMARKER, mb->var[i]->tmpindex);
-		nme = mb->var[i]->name = GDKstrdup(buf);
-	}
-	return nme;
 }
 
 int
@@ -1411,7 +1387,7 @@ convertConstant(int type, ValPtr vr)
 		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 		   (*BATatoms[type].atomFromStr) (buf, &ll, &d);
 		   if( d==0 ){
-		   VALinit(vr, type, BATatoms[type].atomNull);
+		   VALinit(vr, type, ATOMnilptr(type));
 		   throw(SYNTAX, "convertConstant", "conversion error");
 		   }
 		   VALset(vr, type, d);
@@ -1920,7 +1896,6 @@ varGetPropStr(MalBlkPtr mb, int var)
 	if (v->propc == 0)
 		return NULL;
 
-	*s++ = '{';
 	for (i = 0; i < v->propc; i++) {
 		char *t = NULL;
 		MalProp *p = mb->prps + v->prps[i];
@@ -1929,7 +1904,8 @@ varGetPropStr(MalBlkPtr mb, int var)
 		if (!first) {
 			*s++ = ',';
 			*s++ = ' ';
-		}
+		} else
+			*s++ = '{';
 		if (p->var) {
 			VarPtr v = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t) p->op);
@@ -1963,7 +1939,8 @@ varGetPropStr(MalBlkPtr mb, int var)
 			s++;
 		first = 0;
 	}
-	*s++ = '}';
+	if( !first)
+		*s++ = '}';
 	*s = 0;
 	return GDKstrdup(buf);
 }

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -36,7 +25,7 @@
 #include "mal_instruction.h"
 
 str
-batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
+batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -59,7 +48,7 @@ batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			lng l;
 			timestamp r;
 		} u;
-		msg = str_2time_timestamp(&u.r, &v, digits);
+		msg = str_2time_timestamptz(&u.r, &v, digits, tz);
 		if (msg)
 			break;
 		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
@@ -67,6 +56,13 @@ batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
+{
+	int zero = 0;
+	return batstr_2time_timestamptz( res, bid, digits, &zero);
 }
 
 str
@@ -138,7 +134,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 }
 
 str
-batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
+batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -161,7 +157,7 @@ batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 			lng l;
 			daytime r;
 		} u;
-		msg = str_2time_daytime(&u.r, &v, digits);
+		msg = str_2time_daytimetz(&u.r, &v, digits, tz);
 		if (msg)
 			break;
 		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
@@ -169,6 +165,13 @@ batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
+{
+	int zero = 0;
+	return batstr_2time_daytimetz( res, bid, digits, &zero);
 }
 
 str

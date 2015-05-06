@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -161,7 +150,8 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 	return cost;
 }
 
-BAT *
+
+static BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 {
 	BAT *b = NULL;
@@ -174,6 +164,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		GDKerror("joinPathBody" MAL_MALLOC_FAIL);
 		return NULL;
 	}
+
 
 	/* solve the join by pairing the smallest first */
 	while (top > 1) {
@@ -206,16 +197,19 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		case 0:
 			if ( j == 0) {
 				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
+				ALGODEBUG{
+					mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+				}
 				break;
 			}
-		case 1:
-			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-			break;
-		case 2:
-			b = BATsemijoin(joins[j], joins[j + 1]);
-			break;
+        case 1:
+            b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
+            break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
+			ALGODEBUG{
+				mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+			}
 			break;
 		}
 		if (b==NULL){
@@ -278,15 +272,14 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 str
 ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,top=0;
+	int i,top=0, empty = 0;
 	bat *bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	int error = 0;
-	str joinPathRef = putName("joinPath",8);
-	str semijoinPathRef = putName("semijoinPath",12);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 
+	assert(pci->argc > 1);
 	if ( joins == NULL)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);
 	(void)mb;
@@ -307,24 +300,31 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(joins);
 			throw(MAL, "algebra.joinPath", "%s", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}
+		empty += BATcount(b) == 0;
 		joins[top++] = b;
 	}
+
 	ALGODEBUG{
 		char *ps;
-		ps = instruction2str(mb, 0, pci, 0);
-		fprintf(stderr,"#joinpath %s\n", ps ? ps : "");
+		ps = instruction2str(mb, 0, pci, LIST_MAL_ALL);
+		fprintf(stderr,"#joinpath %s\n", (ps ? ps : ""));
 		GDKfree(ps);
 	}
-	if ( getFunctionId(pci) == joinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 1);
-	else
-	if ( getFunctionId(pci) == leftjoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 0); 
-	else
-	if ( getFunctionId(pci) == semijoinPathRef)
-		b= ALGjoinPathBody(cntxt,top,joins, 2);
-	else
-		b= ALGjoinPathBody(cntxt,top,joins, 3); 
+	if ( empty){
+		// any empty step produces an empty result
+		b = BATnew( TYPE_void, joins[top-1]->ttype, 0, TRANSIENT);
+		if( b == NULL){
+			GDKerror("joinChain" MAL_MALLOC_FAIL);
+			return NULL;
+		}
+		/* be optimistic, inherit the properties  */
+		BATseqbase(b,0);
+		BATsettrivprop(b);
+	} else if (getFunctionId(pci) == leftjoinPathRef) {
+		b = ALGjoinPathBody(cntxt,top,joins, 0); 
+	} else {
+		b = ALGjoinPathBody(cntxt,top,joins, 3); 
+	}
 
 	GDKfree(joins);
 	if ( b)

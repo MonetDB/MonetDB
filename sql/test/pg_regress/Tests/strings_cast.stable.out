@@ -37,7 +37,7 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 # loading sql script: 40_json_hge.sql
-# loading sql script: 41_jsonstore.sql
+# loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
 # loading sql script: 75_storagemodel.sql
@@ -87,9 +87,6 @@ Ready.
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]
-[ "a"	]
-[ "ab"	]
-[ "abcd"	]
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % .L1 # table_name
 % text(name) # name
@@ -115,9 +112,6 @@ Ready.
 % char(varchar) # name
 % char # type
 % 10 # length
-[ "a"	]
-[ "ab"	]
-[ "abcd"	]
 [ "a"	]
 [ "ab"	]
 [ "abcd"	]

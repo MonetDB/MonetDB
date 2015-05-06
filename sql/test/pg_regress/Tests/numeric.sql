@@ -2,7 +2,7 @@
 -- NUMERIC
 --
 
-CREATE TABLE num_data (id integer, val numeric(38,20));
+CREATE TABLE num_data (id integer, val numeric(18,9));
 CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,20));
 CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,20));
 CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,20));
@@ -543,7 +543,7 @@ SELECT t1.id1, t1.id2, t1.result, t2.expected
 DELETE FROM num_result;
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
     FROM num_data t1, num_data t2;
-SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40)
+SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40) as expected
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
     AND t1.result <> round(t2.expected, 40);

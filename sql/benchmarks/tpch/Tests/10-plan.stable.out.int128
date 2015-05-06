@@ -71,7 +71,7 @@ top N (
 | | | | | | | join (
 | | | | | | | | select (
 | | | | | | | | | table(sys.lineitem) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
-| | | | | | | | ) [ lineitem.l_returnflag NOT NULL = varchar(1)[char(1) "R"] ],
+| | | | | | | | ) [ lineitem.l_returnflag NOT NULL = char(1) "R" ],
 | | | | | | | | select (
 | | | | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
 | | | | | | | | ) [ date "1993-10-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1993-10-01", month_interval "3") ]

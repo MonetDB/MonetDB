@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef _H_ODBCDESC
@@ -45,9 +34,9 @@ typedef struct {
 	SQLCHAR *sql_desc_name;
 	SQLSMALLINT sql_desc_nullable;
 	SQLINTEGER sql_desc_num_prec_radix;
-	SQLULEN sql_desc_octet_length;
+	SQLLEN sql_desc_octet_length;
 	SQLLEN *sql_desc_octet_length_ptr;
-	SQLINTEGER sql_desc_parameter_type;
+	SQLSMALLINT sql_desc_parameter_type;
 	SQLSMALLINT sql_desc_precision;
 	SQLSMALLINT sql_desc_rowver;
 	SQLSMALLINT sql_desc_scale;
@@ -74,8 +63,8 @@ typedef struct {
 	SQLSMALLINT sql_desc_alloc_type;
 	SQLULEN sql_desc_array_size;
 	SQLUSMALLINT *sql_desc_array_status_ptr;
-	SQLINTEGER *sql_desc_bind_offset_ptr;
-	SQLUINTEGER sql_desc_bind_type;
+	SQLLEN *sql_desc_bind_offset_ptr;
+	SQLINTEGER sql_desc_bind_type;
 	SQLSMALLINT sql_desc_count;
 	SQLULEN *sql_desc_rows_processed_ptr;
 } ODBCDesc;
@@ -103,7 +92,7 @@ ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 
 SQLULEN ODBCLength(ODBCDescRec *rec, int lengthtype);
 
-SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
-SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);
+SQLRETURN MNDBGetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
+SQLRETURN MNDBSetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);
 
 #endif

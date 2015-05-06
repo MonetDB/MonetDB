@@ -1,7 +1,4 @@
-HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions
-HAVE_GEOM&HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_gsl
-HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_bam
-!HAVE_GEOM&!HAVE_GSL&!HAVE_SAMTOOLS&!HAVE_DATACELL?systemfunctions_nogeom
+HAVE_NETCDF&HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_SAMTOOLS?systemfunctions
 example
 example-queries
 example-drop
@@ -54,8 +51,7 @@ decimal2
 null
 joins
 default
-!HAVE_SAMTOOLS?keys
-HAVE_SAMTOOLS?keys_bam
+HAVE_SAMTOOLS?keys
 
 like_tests
 
@@ -89,7 +85,7 @@ procedure_syntax
 order_by_simple_exp
 order_by_complex_exp
 
-!HAVE_DATACELL?setoptimizer
+setoptimizer
 string
 #NOT_WIN32?crashme   bug #1825
 50ways
@@ -99,6 +95,5 @@ antiselect
 median_stdev
 
 HAVE_GEOM?trace
-!HAVE_GEOM?trace_nogeom
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys

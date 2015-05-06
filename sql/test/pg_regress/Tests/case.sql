@@ -59,7 +59,7 @@ SELECT '6' AS "One",
   END AS "Two WHEN with default";
 
 -- Test for cases involving untyped literals in test expression
-SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 COMMIT;
+SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 END;
 
 --
 -- Examples of targets involving tables
@@ -109,16 +109,16 @@ SELECT * FROM CASE_TBL WHERE COALESCE(f,i) = 4;
 
 SELECT * FROM CASE_TBL WHERE NULLIF(f,i) = 2;
 
-SELECT COALESCE(a.f, b.i, b.j)
-  FROM CASE_TBL a, CASE2_TBL b;
+SELECT distinct COALESCE(a.f, b.i, b.j)
+  FROM CASE_TBL a, CASE2_TBL b  Order By COALESCE(a.f, b.i, b.j);
 
 SELECT *
   FROM CASE_TBL a, CASE2_TBL b
   WHERE COALESCE(a.f, b.i, b.j) = 2;
 
-SELECT '' AS Five, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
+SELECT distinct '' AS Siksteen, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
   NULLIF(b.i, 4) AS "NULLIF(b.i,4)"
-  FROM CASE_TBL a, CASE2_TBL b;
+  FROM CASE_TBL a, CASE2_TBL b  Order By 2,3;
 
 SELECT '' AS "Two", *
   FROM CASE_TBL a, CASE2_TBL b
@@ -130,21 +130,21 @@ SELECT '' AS "Two", *
 
 UPDATE CASE_TBL
   SET i = CASE WHEN i >= 3 THEN (- i)
-                ELSE (2 * i) COMMIT;
+                ELSE (2 * i) END;
 
 SELECT * FROM CASE_TBL;
 
 UPDATE CASE_TBL
   SET i = CASE WHEN i >= 2 THEN (2 * i)
-                ELSE (3 * i) COMMIT;
+                ELSE (3 * i) END;
 
 SELECT * FROM CASE_TBL;
 
 UPDATE CASE_TBL
-  SET i = CASE WHEN b.i >= 2 THEN (2 * j)
-                ELSE (3 * j) END
-  FROM CASE2_TBL b
-  WHERE j = -CASE_TBL.i;
+  SET i = CASE WHEN i >= 2 THEN (2 * i)
+                ELSE (3 * i) END
+--  FROM CASE2_TBL b
+  WHERE i = -CASE_TBL.i;
 
 SELECT * FROM CASE_TBL;
 
@@ -154,4 +154,3 @@ SELECT * FROM CASE_TBL;
 
 DROP TABLE CASE_TBL;
 DROP TABLE CASE2_TBL;
-

@@ -21,7 +21,6 @@ exit V27;
 end getz;
 #optimizer.costModel("user","getz");
 #optimizer.coercions("user","getz");
-#optimizer.emptySet("user","getz");
 #optimizer.modes("user","getz");
 optimizer.aliases("user","getz");
 #optimizer.commonTerms("user","getz");

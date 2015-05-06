@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -34,7 +23,13 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <math.h>		/* for INFINITY and NAN */
+#include <math.h>		/* for isfinite macro */
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>		/* for Solaris */
+#ifndef isfinite
+#define isfinite(f)	finite(f)
+#endif
+#endif
 
 static int
 bteCmp(const bte *l, const bte *r)
@@ -93,7 +88,7 @@ bteHash(const bte *v)
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) mix_sht(*(const unsigned short *) v);
+	return (BUN) *(const unsigned short *) v;
 }
 
 static BUN
@@ -229,7 +224,7 @@ ATOMisdescendant(int tpe, int parent)
 		cur = tpe;
 		if (cur == parent)
 			return TRUE;
-		tpe = BATatoms[tpe].storage;
+		tpe = ATOMstorage(tpe);
 	}
 	return FALSE;
 }
@@ -594,56 +589,46 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
-	hge maxdiv10 = 0;	/* max value / 10 */
+	const hge maxdiv10 = GDK_hge_max / 10;
 #else
 	lng base = 0;
-	lng maxdiv10 = 0;	/* max value / 10 */
+	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 #endif
-	int maxmod10 = 7;	/* max value % 10 */
+	const int maxmod10 = 7;	/* max value % 10 */
 	int sign = 1;
 
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	memcpy(*dst, ATOMnilptr(tp), sz);
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		p += 3;
-		return (int) (p - src);
-	}
-	if (*p == '-') {
-		sign = -1;
-		p++;
-	} else if (*p == '+') {
-		p++;
-	}
 	if (!num10(*p)) {
-		/* not a number */
-		return 0;
-	}
-	switch (sz) {
-	case 1:
-		maxdiv10 = 12/*7*/;
-		break;
-	case 2:
-		maxdiv10 = 3276/*7*/;
-		break;
-	case 4:
-		maxdiv10 = 214748364/*7*/;
-		break;
-	case 8:
-		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
-		break;
-#ifdef HAVE_HGE
-	case 16:
-		maxdiv10 = GDK_hge_max / 10;
-		//         17014118346046923173168730371588410572/*7*/;
-		break;
-#endif
+		switch (*p) {
+		case 'n':
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			if (p[1] == 'i' && p[2] == 'l') {
+				p += 3;
+				return (int) (p - src);
+			}
+			/* not a number */
+			return 0;
+		case '-':
+			sign = -1;
+			p++;
+			break;
+		case '+':
+			p++;
+			break;
+		}
+		if (!num10(*p)) {
+			/* still not a number */
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			return 0;
+		}
 	}
 	do {
 		if (base > maxdiv10 ||
 		    (base == maxdiv10 && base10(*p) > maxmod10)) {
 			/* overflow */
+			memcpy(*dst, ATOMnilptr(tp), sz);
 			return 0;
 		}
 		base = 10 * base + base10(*p);
@@ -653,21 +638,39 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
+		if (base <= GDK_bte_min || base > GDK_bte_max) {
+			**dstbte = bte_nil;
+			return 0;
+		}
 		**dstbte = (bte) base;
 		break;
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
+		if (base <= GDK_sht_min || base > GDK_sht_max) {
+			**dstsht = sht_nil;
+			return 0;
+		}
 		**dstsht = (sht) base;
 		break;
 	}
 	case 4: {
 		int **dstint = (int **) dst;
+		if (base <= GDK_int_min || base > GDK_int_max) {
+			**dstint = int_nil;
+			return 0;
+		}
 		**dstint = (int) base;
 		break;
 	}
 	case 8: {
 		lng **dstlng = (lng **) dst;
+#ifdef HAVE_HGE
+		if (base <= GDK_lng_min || base > GDK_lng_max) {
+			**dstlng = lng_nil;
+			return 0;
+		}
+#endif
 		**dstlng = (lng) base;
 		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
@@ -818,11 +821,16 @@ atom_io(ptr, Int, int)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 atom_io(ptr, Lng, lng)
 #endif
+#if defined(_MSC_VER) && !defined(isfinite)
+/* with more recent Visual Studio, isfinite is defined */
+#define isfinite(x)	_finite(x)
+#endif
 
 int
 dblFromStr(const char *src, int *len, dbl **dst)
 {
 	const char *p = src;
+	int n = 0;
 	double d;
 
 	/* alloc memory */
@@ -833,6 +841,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = dbl_nil;
 		p += 3;
+		n = (int) (p - src);
 	} else {
 		/* on overflow, strtod returns HUGE_VAL and sets
 		 * errno to ERANGE; on underflow, it returns a value
@@ -843,25 +852,42 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		errno = 0;
 		d = strtod(src, &pe);
 		p = pe;
-		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
+		n = (int) (p - src);
+		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
+#ifdef isfinite
+		    || !isfinite(d) /* no NaN or Infinte */
+#endif
+		    ) {
 			**dst = dbl_nil; /* default return value is nil */
-			p = src;
+			n = 0;
 		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (dbl) d;
 		}
 	}
-	while (GDKisspace(*p))
-		p++;
-	return (int) (p - src);
+	return n;
 }
 
-atomtostr(dbl, "%.17g", (double))
+int
+dblToStr(char **dst, int *len, const dbl *src)
+{
+	int i;
+
+	atommem(char, dblStrlen);
+	if (*src == dbl_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 18; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtod(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(dbl, Lng, lng)
 
-#ifdef _MSC_VER
-/* don't warn about overflow in INFINITY and NAN */
-#pragma warning(disable : 4756)
-#endif
 int
 fltFromStr(const char *src, int *len, flt **dst)
 {
@@ -889,41 +915,48 @@ fltFromStr(const char *src, int *len, flt **dst)
 		errno = 0;
 		f = strtof(src, &pe);
 		p = pe;
-		while (GDKisspace(*p))
-			p++;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
-#ifdef INFINITY
-		    || f == INFINITY
-#endif
-#ifdef NAN
-#ifndef __PGI
-		    || f == NAN
-#endif
-#endif
-		    )
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
-#ifdef INFINITY
-		    || f == INFINITY
 #endif
-#ifdef NAN
-#ifndef __PGI
-		    || f == NAN
+#ifdef isfinite
+		    || !isfinite(f) /* no NaN or infinite */
 #endif
-#endif
-		    )
-#endif
-		{
+		    ) {
 			**dst = flt_nil; /* default return value is nil */
 			n = 0;
-		} else
+		} else {
+			while (src[n] && GDKisspace(src[n]))
+				n++;
 			**dst = (flt) f;
+		}
 	}
 	return n;
 }
 
-atomtostr(flt, "%.9g", (float))
+int
+fltToStr(char **dst, int *len, const flt *src)
+{
+	int i;
+
+	atommem(char, fltStrlen);
+	if (*src == flt_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 10; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+#ifdef HAVE_STRTOF
+		if (strtof(*dst, NULL) == *src)
+			break;
+#else
+		if ((float) strtod(*dst, NULL) == *src)
+			break;
+#endif
+	}
+	return (int) strlen(*dst);
+}
+
 atom_io(flt, Int, int)
 
 

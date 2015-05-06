@@ -1,0 +1,311 @@
+stdout of test 'crash-with-huge-query.Bug-2647` in directory 'sql/test/BugTracker-2010` itself:
+
+
+# 15:46:04 >  
+# 15:46:04 >   mserver5 "--config=/home/manegold/MonetDB/HG/tst/Oct2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/home/manegold/MonetDB/HG/tst/Oct2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/home/manegold/MonetDB/HG/tst/Oct2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/home/manegold/MonetDB/HG/tst/Oct2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/home/manegold/MonetDB/HG/tst/Oct2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30859 --set xrpc_port=49966 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 15:46:04 >  
+
+# MonetDB server v5.22.0, based on kernel v1.40.0
+# Not released
+# Serving database 'mTests_src_test_BugTracker-2010', using 2 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 5.777 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://mane-3:30859/
+# MonetDB/SQL module v2.40.0 loaded
+
+Ready.
+
+
+# 19:47:18 >  
+# 19:47:18 >  mclient -lsql -ftest -i -e --host=alf --port=31197 
+# 19:47:18 >  
+
+#CREATE TABLE payments (
+#  id integer,
+#  order_id integer default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  amount decimal(8,2) NOT NULL default '0.00',
+#  creditcard_id integer default NULL,
+#  paytype varchar(255) default NULL
+#);
+#CREATE TABLE addresses (
+#  id integer,
+#  firstname varchar(255) default NULL,
+#  lastname varchar(255) default NULL,
+#  address1 varchar(255) default NULL,
+#  address2 varchar(255) default NULL,
+#  city varchar(255) default NULL,
+#  state_id integer default NULL,
+#  zipcode varchar(255) default NULL,
+#  country_id integer default NULL,
+#  phone varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  state_name varchar(255) default NULL
+#);
+#CREATE TABLE countries (
+#  id integer,
+#  iso_name varchar(255) default NULL,
+#  iso varchar(255) default NULL,
+#  name varchar(255) default NULL,
+#  iso3 varchar(255) default NULL,
+#  numcode integer default NULL
+#);
+#CREATE TABLE line_items (
+#  id integer,
+#  order_id integer default NULL,
+#  variant_id integer default NULL,
+#  quantity integer NOT NULL,
+#  price decimal(8,2) NOT NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL
+#);
+#CREATE TABLE orders (
+#  id integer default NULL,
+#  user_id integer default NULL,
+#  number varchar(255) default NULL,
+#  ship_amount decimal(8,2) NOT NULL default '0.00',
+#  tax_amount decimal(8,2) NOT NULL default '0.00',
+#  item_total decimal(8,2) NOT NULL default '0.00',
+#  total decimal(8,2) NOT NULL default '0.00',
+#  ip_address varchar(255) default NULL,
+#  special_instructions text,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  state varchar(255) default NULL,
+#  checkout_comple
+#CREATE TABLE products (
+#  id integer default NULL,
+#  name varchar(255) NOT NULL default '',
+#  description text,
+#  master_price decimal(8,2) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  permalink varchar(255) default NULL,
+#  available_on timestamp default NULL,
+#  tax_category_id integer default NULL,
+#  shipping_category integer default NULL,
+#  deleted_at timestamp default NULL,
+#  meta_description varchar(255) default NULL,
+#  meta_keywords varchar(255) default NULL
+#CREATE TABLE schema_migrations (
+#  version varchar(255) NOT NULL
+#);
+#CREATE TABLE shipments (
+#  id integer,
+#  order_id integer default NULL,
+#  shipping_method_id integer default NULL,
+#  tracking varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  number varchar(255) default NULL,
+#  cost decimal(8,2) default NULL,
+#  shipped_at timestamp default NULL,
+#  address_id integer default NULL
+#);
+#CREATE TABLE shipping_methods (
+#  id integer,
+#  zone_id integer default NULL,
+#  shipping_calculator varchar(255) default NULL,
+#  name varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL
+#);
+#CREATE TABLE states (
+#  id integer,
+#  name varchar(255) default NULL,
+#  abbr varchar(255) default NULL,
+#  country_id integer default NULL
+#);
+#CREATE TABLE tax_categories (
+#  id integer,
+#  name varchar(255) default NULL,
+#  description varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL
+#);
+#CREATE TABLE tax_rates (
+#  id integer default NULL,
+#  zone_id integer default NULL,
+#  amount decimal(8,4) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL,
+#  tax_type integer default NULL,
+#  tax_category_id integer default NULL
+#);
+#CREATE TABLE variants (
+#  id integer default NULL,
+#  product_id integer default NULL,
+#  sku varchar(255) default NULL,
+#  price decimal(8,2) NOT NULL,
+#  weight decimal(8,2) default NULL,
+#  height decimal(8,2) default NULL,
+#  width decimal(8,2) default NULL,
+#  depth decimal(8,2) default NULL,
+#  deleted_at timestamp default NULL
+#);
+#CREATE TABLE zone_members (
+#  id integer default NULL,
+#  zone_id integer default NULL,
+#  country_id integer default NULL,
+#  zoneable_type varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL
+#);
+#CREATE TABLE zones (
+#  id integer default NULL,
+#  name varchar(255) default NULL,
+#  description varchar(255) default NULL,
+#  created_at timestamp default NULL,
+#  updated_at timestamp default NULL
+#);
+#ALTER TABLE zones
+#  ADD CONSTRAINT prim_zones_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE zones
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE orders
+#  ADD CONSTRAINT prim_orders_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE orders
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE addresses
+#  ADD CONSTRAINT prim_addresses_id 
+#  PRIMARY KEY(id);
+#ALTER TABLE addresses
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE countries
+#  ADD CONSTRAINT prim_countries_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE countries
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE states
+#  ADD CONSTRAINT prim_states_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE states
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE states
+#  ADD CONSTRAINT for_key_states_country_id
+#  FOREIGN KEY (country_id) REFERENCES states(id);
+#ALTER TABLE payments
+#  ADD CONSTRAINT prim_payments_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE payments
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE payments
+#  ADD CONSTRAINT for_key_payments_order_id
+#  FOREIGN KEY (order_id) REFERENCES orders(id);
+#ALTER TABLE products
+#  ADD CONSTRAINT prim_products_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE products
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE schema_migrations
+#  ADD CONSTRAINT prim_schema_migrations_id 
+#    PRIMARY KEY(version);
+#ALTER TABLE schema_migrations
+#  ALTER COLUMN version SET NOT NULL;
+#ALTER TABLE shipping_methods
+#  ADD CONSTRAINT prim_shipping_methods_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE shipping_methods
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE shipments
+#  ADD CONSTRAINT prim_shipments_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE shipments
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE shipments
+#  ADD CONSTRAINT for_key_shipments_order_id
+#  FOREIGN KEY (order_id) REFERENCES orders(id);
+#ALTER TABLE shipments
+#  ADD CONSTRAINT for_key_shipments_shipping_method_id
+#  FOREIGN KEY (shipping_method_id) REFERENCES shipping_methods(id);
+#ALTER TABLE tax_categories
+#  ADD CONSTRAINT prim_tax_categories_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE tax_categories
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE tax_rates
+#  ADD CONSTRAINT prim_tax_rates_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE tax_rates
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE tax_rates
+#  ADD CONSTRAINT for_key_tax_rates_zone_id
+#  FOREIGN KEY (zone_id) REFERENCES zones(id);
+#ALTER TABLE variants
+#  ADD CONSTRAINT prim_variants_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE variants
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE variants
+#  ADD CONSTRAINT for_key_variants_on_product_id
+#  FOREIGN KEY (product_id) REFERENCES variants(id);
+#ALTER TABLE zone_members
+#  ADD CONSTRAINT prim_zone_members_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE zone_members
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE zone_members
+#  ADD CONSTRAINT for_key_zone_members_country_id
+#  FOREIGN KEY (country_id) REFERENCES countries(id);
+#ALTER TABLE zone_members
+#  ADD CONSTRAINT for_key_zone_members_zone_id
+#  FOREIGN KEY (zone_id) REFERENCES zones(id);
+#ALTER TABLE line_items
+#  ADD CONSTRAINT prim_line_items_id 
+#    PRIMARY KEY(id);
+#ALTER TABLE line_items
+#  ALTER COLUMN id SET NOT NULL;
+#ALTER TABLE line_items
+#  ADD CONSTRAINT for_key_line_items_on_order_id
+#  FOREIGN KEY (order_id) REFERENCES orders(id);
+#ALTER TABLE line_items
+#  ADD CONSTRAINT for_key_line_items_on_variant_id
+#  FOREIGN KEY (variant_id) REFERENCES variants(id);
+#WITH
+#
+#yv(id, product_id, sku, price, weight,
+#   height, width, depth, deleted_at,
+#   line_item_id, order_id) AS
+#  (SELECT v.id, v.product_id, v.sku,
+#          v.price, v.weight, v.height,
+#          v.width, v.depth, v.deleted_at, li.id, o.id
+#     FROM Orders o, Line_Items li, Variants v
+#    WHERE o.id = li.order_id
+#      AND li.variant_id = v.id
+#      AND o.user_id = 20),
+#
+#Cheapest_Price(product_id, price) AS
+#  (SELECT product_id, MIN(price)
+#     FROM Variants v
+#    WHERE v.product_id IN (SELECT product_id 
+% sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sav # table_name
+% sugg_id,	sugg_product_id,	sugg_sku,	sugg_price,	sugg_weight,	sugg_height,	sugg_width,	sugg_depth,	sugg_deleted_at,	id,	product_id,	sku,	price,	weight,	height,	width,	depth,	deleted_at,	line_item_id,	order_id,	amount # name
+% int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	decimal # type
+% 1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	41 # length
+#DROP TABLE payments; -- dep: orders
+#DROP TABLE shipments; -- dep: orders
+#DROP TABLE line_items; -- dep:  orders
+#DROP TABLE orders; -- dep: addresses
+#DROP TABLE addresses; -- dep: states, countries
+#DROP TABLE zone_members; -- dep: zones, countries
+#DROP TABLE countries; -- dep:
+#DROP TABLE variants; -- dep: products
+#DROP TABLE products; -- dep:
+#DROP TABLE schema_migrations; -- dep: 
+#DROP TABLE shipping_methods; -- dep: zones
+#DROP TABLE states; -- dep: states
+#DROP TABLE tax_categories; -- dep:
+#DROP TABLE tax_rates; -- dep: zones
+#DROP TABLE zones; -- dep:
+
+# 19:47:18 >  
+# 19:47:18 >  Done.
+# 19:47:18 >  
+

@@ -13,6 +13,7 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 options(monetdb.insert.splitsize=10)
+options(monetdb.profile=F)
 
 tname <- "monetdbtest"
 
@@ -40,7 +41,7 @@ dbSendUpdate(con,"CREATE TABLE monetdbtest (a varchar(10),b integer,c blob)")
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('one',1,'1111')")
 dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('two',2,'22222222')")
-stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2))
+stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2L))
 stopifnot(identical(dbReadTable(con,tname)[[3]],list(charToRaw("1111"),charToRaw("22222222"))))
 dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
@@ -93,7 +94,7 @@ stopifnot(identical(dbExistsTable(con,tname),FALSE))
 # test csv import
 file <- tempfile()
 write.table(iris,file,sep=",")
-monetdb.read.csv(con,file,tname,150)
+monetdb.read.csv(con,file,tname)
 unlink(file)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 iris3 <- dbReadTable(con,tname)
@@ -169,12 +170,17 @@ dbSendUpdate(conn, "INSERT INTO monetdbtest (a) VALUES (?)", "Роман Mühlei
 stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
 dbRollback(conn)
 
+# this returns a column with esoteric type MONTH_INTERVAL
+stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as date) - cast('2015-03-01' as date)")[[1]][[1]])))
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(!dbIsValid(conn))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
+
+
 
 #test merovingian control code
 #cannot really do this in Mtest, sorry

@@ -42,7 +42,7 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
-# loading sql script: 41_jsonstore.sql
+# loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
@@ -103,7 +103,7 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % decimal # type
-% 17 # length
+% 20 # length
 [ 36724.50	]
 #select quantile(l_extendedprice,0.0) from lit;
 % sys.L1 # table_name
@@ -135,7 +135,7 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % decimal # type
-% 17 # length
+% 20 # length
 [ 36960.68	]
 [ 37144.20	]
 [ 35937.88	]

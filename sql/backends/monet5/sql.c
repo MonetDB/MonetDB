@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -40,12 +29,8 @@
 #include <rel_dump.h>
 #include <rel_bin.h>
 #include <bbp.h>
-#include <cluster.h>
 #include <opt_pipes.h>
 #include "clients.h"
-#ifdef HAVE_RAPTOR
-# include <rdf.h>
-#endif
 #include "mal_instruction.h"
 
 static int
@@ -508,6 +493,9 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		sql_column *c = n->data;
 		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
 		cnt |= BATcount(b) > 0;
+		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
+	    	    t->persistence == SQL_PERSIST && !t->commit_action)
+			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
 	}
 	return cnt;
@@ -2142,6 +2130,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind(m, *sname, *tname, *cname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
+				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -2344,6 +2333,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
 				BAT *id = BATproject(b, ui); 
 				BAT *vl = BATproject(b, uv);
+				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
 				BBPkeepref(*bid = id->batCacheid);
@@ -2575,7 +2565,7 @@ DELTAproject2(bat *result, const bat *sub, const bat *col, const bat *uid, const
 str
 DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
-	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
+	BAT *c, *u_id, *u_val, *i = NULL, *res;
 
 	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2609,12 +2599,11 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	if ((u_val = BATdescriptor(*uval)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	u_id = BATdescriptor(*uid);
-	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
+	assert(BATcount(u_id) == BATcount(u_val));
+	if (BATcount(u_id))
+		BATreplace(res, u_id, u_val, TRUE);
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
-	if (BATcount(u))
-		BATreplace(res, u, TRUE);
-	BBPunfix(u->batCacheid);
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
@@ -2622,6 +2611,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		BBPunfix(i->batCacheid);
 	}
 
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2741,6 +2731,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = u;
 	}
 	BATkey(BATmirror(res), TRUE);
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2748,7 +2739,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 str
 DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval, const bat *ins)
 {
-	BAT *s, *c, *u_id, *u_val, *u, *i = NULL, *res, *tres;
+	BAT *s, *c, *u_id, *u_val, *i = NULL, *res, *tres;
 
 	if ((s = BATdescriptor(*sub)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2814,18 +2805,22 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
-	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
-	BBPunfix(u_id->batCacheid);
-	BBPunfix(u_val->batCacheid);
-	if (BATcount(u)) {
-		BAT *nu = BATleftjoin(s, u, BATcount(u));
+	if (BATcount(u_val)) {
+		BAT *o = BATsemijoin(u_id, s);
+		BAT *nu_id = BATproject(o, u_id);
+		BAT *nu_val = BATproject(o, u_val);
+
+		BBPunfix(o->batCacheid);
 		res = setwritable(res);
-		BATreplace(res, nu, 0);
-		BBPunfix(nu->batCacheid);
+		BATreplace(res, nu_id, nu_val, 0);
+		BBPunfix(nu_id->batCacheid);
+		BBPunfix(nu_val->batCacheid);
 	}
 	BBPunfix(s->batCacheid);
-	BBPunfix(u->batCacheid);
+	BBPunfix(u_id->batCacheid);
+	BBPunfix(u_val->batCacheid);
 
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2906,6 +2901,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(diff->batCacheid);
 		BBPunfix(d->batCacheid);
 	}
+	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3340,17 +3336,16 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **b = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str filename, cs;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
-	str *fname = getArgReference_str(stk, pci, pci->retc + 6), msg;
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 7);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 8);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 9);
+	str filename = NULL, cs;
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	str *fname = getArgReference_str(stk, pci, pci->retc + 5), msg;
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 	bstream *s;
 	stream *ss;
 	str utf8 = "UTF-8";
@@ -3433,7 +3428,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fix_windows_newline(ssep);
 #endif
 	if (s != NULL) {
-		b = mvc_import_table(cntxt, be->mvc, s, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+		b = mvc_import_table(cntxt, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 		bstream_destroy(s);
 	}
 	GDKfree(filename);
@@ -3460,15 +3455,14 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str *sname = getArgReference_str(stk, pci, pci->retc + 0);
-	str *tname = getArgReference_str(stk, pci, pci->retc + 1);
-	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
-	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
-	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
-	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 5);
-	lng *sz = getArgReference_lng(stk, pci, pci->retc + 6);
-	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
-	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
+	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
+	unsigned char **S = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 3);
+	unsigned char **N = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 4);
+	lng *sz = getArgReference_lng(stk, pci, pci->retc + 5);
+	lng *offset = getArgReference_lng(stk, pci, pci->retc + 6);
+	int *locked = getArgReference_int(stk, pci, pci->retc + 7);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -3505,7 +3499,7 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKstrFromStr(ns, *N, len);
 	len = 0;
-	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
+	b = mvc_import_table(cntxt, m, m->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if (ssep)
@@ -3772,7 +3766,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-		if (BATprepareHash(b))
+		if (BAThash(b, 0) == GDK_FAIL)
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
@@ -3876,7 +3870,7 @@ nil_2time_daytime(daytime *res, const void *v, const int *digits)
 }
 
 str
-str_2time_daytime(daytime *res, const str *v, const int *digits)
+str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(daytime), pos;
 
@@ -3884,10 +3878,20 @@ str_2time_daytime(daytime *res, const str *v, const int *digits)
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	pos = daytime_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = daytime_tz_fromstr(*v, &len, &res);
+	else
+		pos = daytime_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "daytime", "22007!daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime(res, res, digits);
+}
+
+str
+str_2time_daytime(daytime *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_daytimetz(res, v, digits, &zero);
 }
 
 str
@@ -3942,7 +3946,7 @@ nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 }
 
 str
-str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 {
 	int len = sizeof(timestamp), pos;
 
@@ -3950,10 +3954,20 @@ str_2time_timestamp(timestamp *res, const str *v, const int *digits)
 		*res = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos)
+	if (*tz)
+		pos = timestamp_tz_fromstr(*v, &len, &res);
+	else
+		pos = timestamp_fromstr(*v, &len, &res);
+	if (!pos || pos < (int)strlen(*v))
 		throw(SQL, "timestamp", "22007!timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);
+}
+
+str
+str_2time_timestamp(timestamp *res, const str *v, const int *digits)
+{
+	int zero = 0;
+	return str_2time_timestamptz(res, v, digits, &zero);
 }
 
 str
@@ -4454,8 +4468,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
-	ocmp = BATatoms[b->ttype].atomCmp;
-	gcmp = BATatoms[g->ttype].atomCmp;
+	ocmp = ATOMcompare(b->ttype);
+	gcmp = ATOMcompare(g->ttype);
 	oc = BUNtail(bi, BUNfirst(b));
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g)) {
@@ -4512,7 +4526,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, "bat not sorted");
 
 	bi = bat_iterator(b);
-	cmp = BATatoms[b->ttype].atomCmp;
+	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
@@ -4572,172 +4586,10 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_DEBUG);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
-	return MAL_SUCCEED;
-}
-
-/*
- * The table is searched for all columns and they are
- * re-clustered on the hash value over the  primary key.
- * Initially the first column
- */
-
-str
-SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *map = NULL, *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-
-	/* actually build the hash on the multi-column primary key */
-
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			msg = CLUSTER_key(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLUSTER_map(&mid, &hid);
-			BBPdecref(hid, TRUE);
-			if (msg)
-				return msg;
-			map = BATdescriptor(mid);
-			if (map == NULL)
-				throw(SQL, "sql.cluster", "Can not access descriptor");
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
-		msg = CLUSTER_apply(&bid, b, map);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(map->batCacheid);
-			return msg;
-		}
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
-	if (map) {
-		BBPunfix(map->batCacheid);
-		BBPdecref(mid, TRUE);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *sch = getArgReference_str(stk, pci, 1);
-	str *tbl = getArgReference_str(stk, pci, 2);
-	sql_trans *tr;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-	mvc *m = NULL;
-	str msg;
-	int first = 1;
-	bat mid, hid, bid;
-	BAT *b;
-	node *o;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, *sch);
-	if (s == NULL)
-		throw(SQL, "sql.cluster", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, *tbl);
-	if (t == NULL)
-		throw(SQL, "sql.cluster", "42S02!Table missing");
-	tr = m->session->tr;
-
-	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
-		c = o->data;
-		if (first) {
-			bat psum;
-			int bits = 10, off = 0;
-			first = 0;
-			b = store_funcs.bind_col(tr, c, RDONLY);
-			msg = MKEYbathash(&hid, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			msg = CLS_create_wrd(&psum, &mid, &hid, &bits, &off);
-			BBPdecref(hid, TRUE);
-			BBPdecref(psum, TRUE);
-			if (msg)
-				return msg;
-		}
-
-		b = store_funcs.bind_col(tr, c, RDONLY);
-		if (b == NULL)
-			throw(SQL, "sql.cluster", "Can not access descriptor");
-		msg = CLS_map(&bid, &mid, &b->batCacheid);
-		BBPunfix(b->batCacheid);
-		if (msg) {
-			BBPunfix(bid);
-			return msg;
-		}
-
-		d = c->data;
-		if (d->bid)
-			BBPdecref(d->bid, TRUE);
-		if (d->ibid)
-			BBPdecref(d->ibid, TRUE);
-		d->bid = 0;
-		d->ibase = 0;
-		d->ibid = bid;	/* use the insert bat */
-
-		c->base.wtime = tr->wstime;
-		c->base.rtime = tr->stime;
-	}
-	/* bat was cleared */
-	t->cleared = 1;
 	return MAL_SUCCEED;
 }
 
@@ -4982,12 +4834,13 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort, *imprints, *mode;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
 	node *nsch, *ntab, *ncol;
 	int w;
+	bit bitval;
 	bat *rsch = getArgReference_bat(stk, pci, 0);
 	bat *rtab = getArgReference_bat(stk, pci, 1);
 	bat *rcol = getArgReference_bat(stk, pci, 2);
@@ -4999,8 +4852,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rsize = getArgReference_bat(stk, pci, 8);
 	bat *rheap = getArgReference_bat(stk, pci, 9);
 	bat *rindices = getArgReference_bat(stk, pci, 10);
-	bat *rimprints = getArgReference_bat(stk, pci, 11);
-	bat *rsort = getArgReference_bat(stk, pci, 12);
+	bat *rphash = getArgReference_bat(stk, pci, 11);
+	bat *rimprints = getArgReference_bat(stk, pci, 12);
+	bat *rsort = getArgReference_bat(stk, pci, 13);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5030,6 +4884,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(heap, 0);
 	indices = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(indices, 0);
+	phash = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
+	BATseqbase(phash, 0);
 	imprints = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
@@ -5037,7 +4893,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
-		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL) {
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -5060,6 +4916,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(heap->batCacheid);
 		if (indices)
 			BBPunfix(indices->batCacheid);
+		if (phash)
+			BBPunfix(phash->batCacheid);
 		if (imprints)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
@@ -5136,9 +4994,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash ? bn->T->hash->heap->size : 0;
-								sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+								sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize(bn)
+								sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize(bn)
 								BUNappend(indices, &sz, FALSE);
+								bitval = 0; // HASHispersistent(bn);
+								BUNappend(phash, &bitval, FALSE);
+
 								sz = IMPSimprintsize(bn);
 								BUNappend(imprints, &sz, FALSE);
 								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
@@ -5211,9 +5072,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0;
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0;
+									sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize()
+									sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize()
 									BUNappend(indices, &sz, FALSE);
+									bitval = 0; // HASHispersistent(bn);
+									BUNappend(phash, &bitval, FALSE);
+
 									sz = IMPSimprintsize(bn);
 									BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
@@ -5238,6 +5102,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rsize = size->batCacheid);
 	BBPkeepref(*rheap = heap->batCacheid);
 	BBPkeepref(*rindices = indices->batCacheid);
+	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	return MAL_SUCCEED;

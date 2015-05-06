@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -91,8 +80,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if ( QRYqueue[i].mb == mb)
 			break;
 
-	if ( stk->tag == 0)
-		stk->tag = calltag++;
+	stk->tag = calltag++;
 	if ( i == qtop ) {
 		QRYqueue[i].mb = mb;	// for detecting duplicates
 		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
@@ -179,6 +167,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 
 	/* always collect the MAL instruction execution time */
+	gettimeofday(&pci->clock,NULL);
 	prof->ticks = GDKusec();
 	/* emit the instruction upon start as well */
 	
@@ -204,15 +193,13 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->ticks = GDKusec() - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
-
-	// it is a potential expensive operation
-	if (pci->recycle){
-		pci->rbytes += getVolume(stk, pci, 0);
-		pci->wbytes += getVolume(stk, pci, 1);
-	}
 	
-	if(malProfileMode > 0)
-			profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
+	if(malProfileMode > 0){
+		pci->wbytes += getVolume(stk, pci, 1);
+		if (pci->recycle)
+			pci->rbytes += getVolume(stk, pci, 0);
+		profilerEvent(cntxt->idx, mb, stk, pci, FALSE);
+	}
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */
 		if( getInstrPtr(mb,0) == pci)
@@ -222,28 +209,23 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 }
 
 /*
- * For performance evaluation it is handy to know the
- * maximal amount of bytes read/written. The actual
- * amount is harder to guess, because it too much
- * depends on the operation.
+ * For performance evaluation it is handy to estimate the
+ * amount of bytes produced by an instruction.
+ * The actual amount is harder to guess, because an instruction
+ * may trigger a side effect, such as creating a hash-index.
+ * Side effects are ignored.
  */
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
 	lng vol = 0;
 	BAT *b;
-	int isview = 0;
 
 	if( stk == NULL)
 		return 0;
-	limit = rd == 0 ? pci->retc : pci->argc;
+	limit = rd ? pci->argc : pci->retc;
 	i = rd ? pci->retc : 0;
 
-	if (stk->stk[getArg(pci, 0)].vtype == TYPE_bat) {
-		b = BBPquickdesc(abs(stk->stk[getArg(pci, 0)].val.bval), TRUE);
-		if (b)
-			isview = isVIEW(b);
-	}
 	for (; i < limit; i++) {
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
@@ -254,8 +236,11 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			cnt = BATcount(b);
 			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
-			vol += ((rd && !isview) || !VIEWhparent(b)) ? headsize(b, cnt) : 0;
-			vol += ((rd && !isview) || !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
+			if( rd)
+				vol += (!isVIEW(b) && !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
+			else
+			if( !isVIEW(b))
+				vol += tailsize(b, cnt);
 		}
 	}
 	return vol;
@@ -289,12 +274,8 @@ updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
         if (b == NULL || isVIEW(b) || b->batPersistence == PERSISTENT)
             return;
 		cnt = BATcount(b);
-		total += heapinfo(&b->H->heap);
-		total += heapinfo(b->H->vheap);
-
 		total += heapinfo(&b->T->heap);
 		total += heapinfo(b->T->vheap);
-		total += hashinfo(b->H->hash);
 		total += hashinfo(b->T->hash);
 		BBPunfix(b->batCacheid);
 		// no concurrency protection (yet)

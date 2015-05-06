@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #ifndef ALGEBRA_H
@@ -129,11 +118,7 @@ algebra_export str ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, c
 algebra_export str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 algebra_export str ALGexist(bit *ret, const bat *bid, const void *val);
 algebra_export str ALGfind(oid *ret, const bat *bid, ptr val);
-algebra_export str ALGprojectNIL(bat *ret, const bat *bid);
 algebra_export str ALGselectNotNil(bat *result, const bat *bid);
-
-algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 algebra_export str ALGreuse(bat *ret, const bat *bid);
 #endif

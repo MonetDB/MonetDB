@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -68,7 +57,7 @@
 
 MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
-#if !defined(ATOMIC_LOCK) && !defined(NDEBUG)
+#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;
 ATOMIC_TYPE volatile GDKlocksleepcnt;
@@ -101,11 +90,11 @@ sortlocklist(MT_Lock *l)
 	 * start of unprocessed part of left and right lists */
 	t = ll = NULL;
 	while (l && r) {
-		if (l->contention < r->contention ||
-		    (l->contention == r->contention &&
-		     l->sleep < r->sleep) ||
-		    (l->contention == r->contention &&
-		     l->sleep == r->sleep &&
+		if (l->sleep < r->sleep ||
+		    (l->sleep == r->sleep &&
+		     l->contention < r->contention) ||
+		    (l->sleep == r->sleep &&
+		     l->contention == r->contention &&
 		     l->count <= r->count)) {
 			/* l is smaller */
 			if (ll == NULL) {
@@ -160,74 +149,6 @@ GDKlockstatistics(int what)
 	ATOMIC_CLEAR(GDKlocklistlock, dummy, "");
 }
 #endif
-
-#ifdef MT_LOCK_TRACE
-unsigned long long MT_locktrace_cnt[65536] = { 0 };
-char *MT_locktrace_nme[65536] = { NULL };
-
-#if defined(ia64) && !defined(__GNUC__)
-#include "ia64regs.h"
-#endif
-
-unsigned long long
-MT_clock()
-{
-	unsigned long long tsc;
-
-#if defined(__x86_64__) && !defined(__PGI)
-	unsigned long long a, d;
-	__asm__ __volatile__("rdtsc":"=a"(a), "=d"(d));
-
-	tsc = ((unsigned long) a) | (((unsigned long) d) << 32);
-#define TICKNAME "rdtsc "
-#elif defined(__i386__) && !defined(__PGI)
-	__asm__ __volatile__("rdtsc":"=A"(tsc));
-
-#define TICKNAME "rdtsc "
-#elif !defined(ia64)
-	tsc = (unsigned long long) clock();
-#define TICKNAME "clock "
-#elif defined(__GNUC__)
-	__asm__ __volatile__("mov %0=ar.itc":"=r"(tsc)::"memory");
-
-#define TICKNAME "ar.itc"
-#else
-	tsc = (unsigned long long) __getReg(_IA64_REG_AR_ITC);
-#define TICKNAME "AR_ITC"
-#endif /* defined(i386) */
-	return tsc;
-}
-MT_Id MT_locktrace = 0;
-
-void
-MT_locktrace_start()
-{
-	memset(MT_locktrace_cnt, 0, 65536 * sizeof(unsigned long long));
-	MT_locktrace = MT_getpid();
-}
-
-void
-MT_locktrace_end()
-{
-	unsigned long long my_cnt[65536];
-	memset(my_cnt, 0, 65536 * sizeof(unsigned long long));
-	for (int i = 0; i < 65536; i++)
-		if (MT_locktrace_cnt[i]) {
-			int idx = MT_locktrace_hash(MT_locktrace_nme[i]);
-
-			my_cnt[idx] += MT_locktrace_cnt[i];
-		}
-	for (int i = 0; i < 65536; i++)
-		if (MT_locktrace_cnt[i]) {
-			int idx = MT_locktrace_hash(MT_locktrace_nme[i]);
-
-			if (my_cnt[idx])
-				fprintf(stderr, "%s " ULLFMT "\n", MT_locktrace_nme[i], my_cnt[idx]);
-			my_cnt[idx] = 0;
-		}
-	MT_locktrace = 0;
-}
-#endif	/* MT_LOCK_TRACE */
 
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 static struct winthread {
@@ -401,7 +322,7 @@ MT_kill_thread(MT_Id t)
 	return -1;
 }
 
-#ifdef ATOMIC_LOCK
+#ifdef USE_PTHREAD_LOCKS
 
 void
 pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)

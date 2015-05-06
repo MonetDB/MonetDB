@@ -28,7 +28,7 @@ function user.doitTwice(i:int):int;
     i := calc.+(j,k);
     return doitTwice := i;
 end user.doitTwice;
-!TypeException:user.main[7]:'user.doitTwice' undefined in: d:int := user.doitTwice(_9:str)
+!TypeException:user.main[7]:'user.doitTwice' undefined in:     d:int := user.doitTwice("wrong":str);
 function user.main():void;
 # the next step is to trace the call of a mal function call 
     a := 1;

@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -111,6 +100,20 @@ subselect_find_subselect( subselect_t *subselects, int tid)
 	return -1;
 }
 
+static int
+lastbat_arg(MalBlkPtr mb, InstrPtr p)
+{
+	int i = 0;
+	for (i=p->retc; i<p->argc; i++) {
+		int type = getArgType(mb, p, i);
+		if (!isaBatType(type) && type != TYPE_bat)
+			break;
+	}
+	if (i < p->argc)
+		return i-1;
+	return 0;
+}
+
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -136,6 +139,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	/* check for bailout conditions */
 	for (i = 1; i < limit; i++) {
+		int lastbat;
 		p = old[i];
 
 		for (j = 0; j<p->retc; j++) {
@@ -177,8 +181,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 			}
 		}
+		lastbat = lastbat_arg(mb, p);
 		if (isSubSelect(p) && p->retc == 1 &&
-		   /* no cand list */ getArgType(mb, p, 2) != newBatType(TYPE_oid, TYPE_oid)) {
+		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid, TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
 
@@ -320,10 +325,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int tid = 0;
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
-				if (getArgType(mb, p, 2) == TYPE_bat) /* empty candidate list bat_nil */
-					getArg(p,2) = tid;
+				int lastbat = lastbat_arg(mb, p);
+				if (getArgType(mb, p, lastbat) == TYPE_bat) /* empty candidate list bat_nil */
+					getArg(p, lastbat) = tid;
 				else
-					p = PushArgument(mb, p, tid, 2);
+					p = PushArgument(mb, p, tid, lastbat+1);
 				/* make sure to resolve again */
 				p->token = ASSIGNsymbol; 
 				p->typechk = TYPE_UNKNOWN;
@@ -457,6 +463,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pushInstruction(mb,old[0]);
 
 	for (i = 1; i < limit; i++) {
+		int lastbat;
 		p = old[i];
 
 		for (j = 0; j<p->retc; j++) {
@@ -496,8 +503,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * ni = subselect(ins, C1..)
 		 * nu = subselect(uvl, C1..)
 		 * s = subdelta(nc, uid, nu, ni);
+		 *
+		 * doesn't handle Xsubselect(x, .. z, C1.. cases) ie multicolumn selects
 		 */
-		if (isSubSelect(p) && p->retc == 1) {
+		lastbat = lastbat_arg(mb, p);
+		if (isSubSelect(p) && p->retc == 1 && lastbat == 2) {
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 

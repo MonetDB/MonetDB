@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -42,7 +31,7 @@
 
 
 static SQLRETURN
-SQLDescribeCol_(ODBCStmt *stmt,
+MNDBDescribeCol(ODBCStmt *stmt,
 		SQLUSMALLINT ColumnNumber,
 		SQLCHAR *ColumnName,
 		SQLSMALLINT BufferLength,
@@ -143,8 +132,12 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeCol " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
+	ODBCLOG("SQLDescribeCol " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
+		PTRFMTCAST ColumnName, (int) BufferLength,
+		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
+		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
+		PTRFMTCAST NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -152,7 +145,7 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	return SQLDescribeCol_(stmt,
+	return MNDBDescribeCol(stmt,
 			       ColumnNumber,
 			       ColumnName,
 			       BufferLength,
@@ -202,8 +195,12 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeColW " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
+	ODBCLOG("SQLDescribeColW " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
+		PTRFMTCAST ColumnName, (int) BufferLength,
+		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
+		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
+		PTRFMTCAST NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -211,7 +208,7 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 
 	clearStmtErrors(stmt);
 
-	rc = SQLDescribeCol_(stmt, ColumnNumber, NULL, 0, &n, DataTypePtr,
+	rc = MNDBDescribeCol(stmt, ColumnNumber, NULL, 0, &n, DataTypePtr,
 			     ColumnSizePtr, DecimalDigitsPtr, NullablePtr);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
@@ -223,7 +220,7 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = SQLDescribeCol_(stmt,
+	rc = MNDBDescribeCol(stmt,
 			     ColumnNumber,
 			     colname,
 			     n,

@@ -34,26 +34,26 @@ function user.main():void;
 # just multiplex callable functions. 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    X_13 := batcalc.+(b,b);             #  3 _13:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    X_14 := 1;                          #  4 _14:int := _5:int 
-barrier X_15 := true;                   #  5 _15:bit := _16:bit {J9}
-    X_13 := batcalc.*(X_13,X_13);       #  6 _13:bat[:oid,:int] := CMDbatMULsignal(_13:bat[:oid,:int], _13:bat[:oid,:int]) {G}
-    X_14 := calc.+(X_14,1);             #  7 _14:int := CMDvarADDsignal(_14:int, _5:int) 
-    redo X_15 := calc.<(X_14,3);        #  8 _15:bit := CMDvarLT(_14:int, _17:int) {J6}
-exit X_15;                              #  9 _15:bit 
-    z:bat[:oid,:int] {inline} := X_13;  # 10 z:bat[:oid,:int] := _13:bat[:oid,:int] {G}
-    X_21 := batcalc.+(b,2);             # 11 _21:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _9:int) {G}
-    X_22 := 1;                          # 12 _22:int := _5:int 
-barrier X_23 := true;                   # 13 _23:bit := _16:bit {J17}
-    X_21 := batcalc.*(X_21,X_21);       # 14 _21:bat[:oid,:int] := CMDbatMULsignal(_21:bat[:oid,:int], _21:bat[:oid,:int]) {G}
-    X_22 := calc.+(X_22,1);             # 15 _22:int := CMDvarADDsignal(_22:int, _5:int) 
-    redo X_23 := calc.<(X_22,3);        # 16 _23:bit := CMDvarLT(_22:int, _17:int) {J14}
-exit X_23;                              # 17 _23:bit 
-    z:bat[:oid,:int] {inline} := X_21;  # 18 z:bat[:oid,:int] := _21:bat[:oid,:int] {G}
-end user.qry;                           # 19  
+function user.qry():void;               	# 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
+    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
+    X_13:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	# CMDbatADDsignal
+    X_14:int := 1:int;                  	# 
+barrier X_15:bit := true:bit;           	# 
+    X_13:bat[:oid,:int] := batcalc.*(X_13:bat[:oid,:int],X_13:bat[:oid,:int]);	# CMDbatMULsignal
+    X_14:int := calc.+(X_14:int,1:int); 	# CMDvarADDsignal
+    redo X_15:bit := calc.<(X_14:int,3:int);	# CMDvarLT
+exit X_15:bit;                          	# 
+    z:bat[:oid,:int]{inline} := X_13:bat[:oid,:int];	# 
+    X_21:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	# CMDbatADDsignal
+    X_22:int := 1:int;                  	# 
+barrier X_23:bit := true:bit;           	# 
+    X_21:bat[:oid,:int] := batcalc.*(X_21:bat[:oid,:int],X_21:bat[:oid,:int]);	# CMDbatMULsignal
+    X_22:int := calc.+(X_22:int,1:int); 	# CMDvarADDsignal
+    redo X_23:bit := calc.<(X_22:int,3:int);	# CMDvarLT
+exit X_23:bit;                          	# 
+    z:bat[:oid,:int]{inline} := X_21:bat[:oid,:int];	# 
+end user.qry;                           	# 
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

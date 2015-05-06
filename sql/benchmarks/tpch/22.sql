@@ -1,3 +1,6 @@
+-- using default substitutions
+
+
 select
 	cntrycode,
 	count(*) as numcust,

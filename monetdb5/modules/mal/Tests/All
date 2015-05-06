@@ -36,6 +36,7 @@ remote02
 HAVE_GEOM?remote03
 remote04
 remote06
+remote07
 remote08
 remote09
 remote11
@@ -61,15 +62,12 @@ mapi06
 mapi07
 mapi01
 
-cluster00
 tokenizer00
 zorder
 
 manifold
 manifoldstr
 #manifoldaggr
-
-#HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2
 # support

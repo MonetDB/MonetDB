@@ -1,20 +1,9 @@
 /*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.monetdb.org/Legal/MonetDBLicense
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2015 MonetDB B.V.
- * All Rights Reserved.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /*
@@ -397,7 +386,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_STMT);
+			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_NAME );
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
 				char *bn;
@@ -487,7 +476,7 @@ INSPECTatom_sup_names(bat *ret)
 	BATseqbase(b,0);
 
 	for (i = 0; i < GDKatomcnt; i++) {
-		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)
+		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
 			;
 		BUNappend(b, ATOMname(k), FALSE);
 	}

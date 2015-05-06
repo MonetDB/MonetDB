@@ -2,7 +2,6 @@ bat_replace
 between
 casts
 cross
-str_heap
 scanselect
 selecttst
 firstn
