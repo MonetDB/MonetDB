@@ -1,4 +1,4 @@
-import os, sys, socket, glob, monetdb.sql, threading, time, codecs
+import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -89,8 +89,10 @@ def freeport():
 ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
 tmpdir = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'remotetest')
-os.system('rm -rf ' + tmpdir)
-os.system('mkdir -p ' + tmpdir)
+if os.path.exists(tmpdir):
+    shutil.rmtree(tmpdir)
+if not os.path.exists(tmpdir):
+    os.makedirs(tmpdir)
 
 masterport = freeport()
 masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
@@ -98,10 +100,25 @@ masterconn = monetdb.sql.connect(database='', port=masterport, autocommit=True)
 
 # split lineorder table into one file for each worker
 # this is as portable as an anvil
-lineorder = os.path.join(ssbmdatapath, 'lineorder.tbl')
-os.system('rm -rf ' + tmpdir + '/lineorder-split-*')
-os.system('split -l $(( $( wc -l < ' + lineorder + ' ) / ' + str(nworkers) + ' + 1 )) ' + lineorder + ' ' + tmpdir + '/lineorder-split-')
-loadsplits =  glob.glob(os.path.join(tmpdir, 'lineorder-split-*'))
+lineordertbl = os.path.join(ssbmdatapath, 'lineorder.tbl')
+lineorderdir = os.path.join(tmpdir, 'lineorder')
+if os.path.exists(lineorderdir):
+    shutil.rmtree(lineorderdir)
+if not os.path.exists(lineorderdir):
+    os.makedirs(lineorderdir)
+inputData = open(lineordertbl, 'r').read().split('\n')
+linesperslice = len(inputData) / nworkers + 1
+i = 1
+for lines in range(0, len(inputData), linesperslice):
+    outputData = inputData[lines:lines+linesperslice]
+    outputStr = '\n'.join(outputData)
+    if outputStr[-1] != '\n':
+        outputStr += '\n'
+    outputFile = open(os.path.join(lineorderdir, 'split-' + str(i)), 'w')
+    outputFile.write(outputStr)
+    outputFile.close()
+    i += 1
+loadsplits =  glob.glob(os.path.join(lineorderdir, 'split-*'))
 
 # load data (in parallel)
 def worker_load(workerrec):

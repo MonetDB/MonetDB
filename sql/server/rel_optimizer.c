@@ -6516,6 +6516,34 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 		if (emax->d < cmin->data.val.dval || emin->d > cmax->data.val.dval)
 			return 0;
 	}
+	if (t->type->localtype == TYPE_bte) {
+		atom *cmin = atom_general(sql->sa, t, min);
+		atom *cmax = atom_general(sql->sa, t, max);
+
+		if (emax->data.val.btval < cmin->data.val.btval || emin->data.val.btval > cmax->data.val.btval)
+			return 0;
+	}
+	if (t->type->localtype == TYPE_sht) {
+		atom *cmin = atom_general(sql->sa, t, min);
+		atom *cmax = atom_general(sql->sa, t, max);
+
+		if (emax->data.val.shval < cmin->data.val.shval || emin->data.val.shval > cmax->data.val.shval)
+			return 0;
+	}
+	if (t->type->localtype == TYPE_int) {
+		atom *cmin = atom_general(sql->sa, t, min);
+		atom *cmax = atom_general(sql->sa, t, max);
+
+		if (emax->data.val.ival < cmin->data.val.ival || emin->data.val.ival > cmax->data.val.ival)
+			return 0;
+	}
+	if (t->type->localtype == TYPE_lng) {
+		atom *cmin = atom_general(sql->sa, t, min);
+		atom *cmax = atom_general(sql->sa, t, max);
+
+		if (emax->data.val.lval < cmin->data.val.lval || emin->data.val.lval > cmax->data.val.lval)
+			return 0;
+	}
 	return 1;
 }
 
@@ -6554,8 +6582,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					sql_exp *e = n->data;	
 					atom *lval = NULL, *hval = NULL;
 
-					/* only ranges */
-					if (e->type == e_cmp && e->f) {
+					if (e->type == e_cmp && (e->flag == cmp_equal || e->f )) {
 						sql_exp *l = e->r;
 						sql_exp *h = e->f;
 						sql_exp *c = e->l;
@@ -6563,7 +6590,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						c = rel_find_exp(rel, c);
 						if (l->type == e_atom && !l->l)
 							lval = sql->args[l->flag];
-						if (h->type == e_atom && !h->l)
+						if (!h)
+							hval = lval;
+						else if (h && h->type == e_atom && !h->l)
 							hval = sql->args[h->flag];
 						if (c && lval && hval) {
 							append(cols, c);
@@ -6578,12 +6607,16 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			if (t->tables.set) {
 				list *tables = sa_list(sql->sa);
 				node *nt;
+				int *pos = NULL, nr = list_length(rel->exps), first = 1;
 
+				/* rename (mostly the idxs) */
+				pos = SA_NEW_ARRAY(sql->sa, int, nr);
+				memset(pos, 0, sizeof(int)*nr);
 				for (nt = t->tables.set->h; nt; nt = nt->next) {
 					sql_table *pt = nt->data;
 					sql_rel *prel = rel_basetable(sql, pt, tname);
 					node *n, *m;
-					int skip = 0;
+					int skip = 0, j;
 
 					/* do not include empty partitions */
 					if ((nrel || nt->next) && 
@@ -6594,18 +6627,22 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
 					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
-					/* rename (mostly the idxs) */
-					for (n = rel->exps->h, m = prel->exps->h; n && m && !skip; n = n->next, m = m->next ) {
+					for (n = rel->exps->h, m = prel->exps->h, j=0; n && m && !skip; n = n->next, m = m->next, j++) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;
 						int i;
 
-						if (pt && isTable(pt) && pt->access == TABLE_READONLY && sel && (nrel || nt->next) && (i=find_col_exp(cols, e)) != -1) {
-							/* check if incase of an expression if the part falls within the bounds else skip this (keep at least on part-table) */
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && sel && (nrel || nt->next) && 
+							((first && (i=find_col_exp(cols, e)) != -1) ||
+							(!first && pos[j] > 0))) {
+							/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
 							void *min, *max;
 							sql_column *col = NULL;
 							sql_rel *bt = NULL;
 
+							if (first)
+								pos[j] = i + 1;
+							i = pos[j] - 1;
 							col = name_find_column(prel, e->l, e->r, -2, &bt);
 							assert(col);
 							if (sql_trans_ranges(sql->session->tr, col, &min, &max)) {
@@ -6619,9 +6656,12 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						assert(e->type == e_column);
 						exp_setname(sql->sa, ne, e->l, e->r);
 					}
+					first = 0;
 					if (!skip) {
 						append(tables, prel);
 						nrel = prel;
+					} else {
+						sql->caching = 0;
 					}
 				}
 				while (list_length(tables) > 1) {
