@@ -88,14 +88,6 @@ comment "Select all head values of the first input BAT for which the tail value
 	Note that the output is suitable as second input for this
 	function.";
 
-
-command dimension_subselect(b:bat[:oid, :any], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-address ALGdimensionSubselect1;
-
-command dimension_subselect(b:bat[:oid,:any], cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-address ALGdimensionSubselect2;
-
-
 command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
 address ALGthetasubselect1
 comment "Select all head values for which the tail value obeys the relation
@@ -112,6 +104,18 @@ comment "Select all head values of the first input BAT for which the tail value
 	Input is a dense-headed BAT, output is a dense-headed BAT with in
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
+
+command dimension_subselect(b:bat[:oid, :any], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+address ALGdimensionSubselect1;
+
+command dimension_subselect(b:bat[:oid,:any], cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+address ALGdimensionSubselect2;
+
+command dimension_thetasubselect(b:bat[:oid,:any], val:any, op:str) :bat[:oid,:oid]
+address ALGdimensionThetasubselect1;
+
+command dimension_thetasubselect(b:bat[:oid,:any], s:bat[:oid,:oid], val:any, op:str) :bat[:oid,:oid]
+address ALGdimensionThetasubselect2;
 
 
 command select(b:bat[:oid,:any_2], low:any_2, high:any_2):bat[:oid,:any_2]

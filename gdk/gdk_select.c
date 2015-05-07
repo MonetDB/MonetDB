@@ -1697,9 +1697,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 BAT *
 BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *high, int li, int hi, int anti) {
+	oid elements_in_result =0;
 	int type;
 	const void *nil;
-	oid elements_in_result =0;
 	BAT *b_tmp, *resBAT;
 
 	type = inBAT->ttype;
@@ -1749,7 +1749,6 @@ BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *hig
                 break; \
         } \
 \
-		element_oid *= repeat1; \
 	} while(0)
 		
 		switch (ATOMtype(type)) {
@@ -1784,39 +1783,86 @@ BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *hig
             return NULL;
     	}
 
-		elements_in_result = repeat1*repeat2;
+		if(element_oid >= elementsNum) { //the element dows not exist
+			elements_in_result = 0;
 
-		//create new BAT
-		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
-			return NULL;
+			//create new empty BAT
+			if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+				return NULL;
+
+		} else {
+			element_oid *= repeat1;
+
+			elements_in_result = repeat1*repeat2;
+
+			//create new BAT
+			if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+				return NULL;
 		
-		res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
-		//add the oids in the result
-		for(j=0; j<repeat2; j++) {
-			for(i=0; i<repeat1; i++) {
-				fprintf(stderr, "Added oid: %ld\n", element_oid);
-				*res = element_oid;
-				res++;
-				element_oid++;
+			res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
+			//add the oids in the result
+			for(j=0; j<repeat2; j++) {
+				for(i=0; i<repeat1; i++) {
+					fprintf(stderr, "Added oid: %ld\n", element_oid);
+					*res = element_oid;
+					res++;
+					element_oid++;
+				}
+		
+				element_oid += ((elementsNum*repeat1) - repeat1);
 			}
+		}
 		
-			element_oid += ((elementsNum*repeat1) - repeat1);
+		if(anti) { //the oids that do not qualify are those that should be returned
+			oid io, jo;
+			oid endOid = elementsNum*repeat1*repeat2;
+			oid* res_anti;
+			BAT *b_anti = BATnew(TYPE_void, TYPE_oid, endOid-elements_in_result, TRANSIENT);
+
+			if(!b_anti)
+				return NULL;
+
+			res_anti = (oid*)Tloc(b_anti, BUNfirst(b_anti));
+			res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
+
+			for(io=0, jo=0; io<endOid && jo<elements_in_result; io++) {
+				if(io == res[jo]) { //the oid is in the result -> skip it
+					jo++;
+				} else {
+					fprintf(stderr, "Added anti oid: %ld\n", io);
+					*res_anti = io;
+					res_anti++;	
+				}
+			}
+
+			//add any oids that are greater than the last qualifying
+			for(; io<endOid; io++) {
+				fprintf(stderr, "Added anti oid: %ld\n", io);
+				*res_anti=io;
+				res_anti++;
+			}
+
+			elements_in_result = endOid-elements_in_result;
+			b_tmp = b_anti;
 		}
 		
 		BATsetcount(b_tmp,elements_in_result);
-		
+
 	} else {
-		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)
             return NULL;
+
+		BATsetcount(b_tmp, elements_in_result);
 	}
 
+	//if the result should be 
 	if(candBAT) {
         oid *current_elements, *cand_elements, *elements;
         oid i, j;
 
         elements_in_result = (BATcount(b_tmp) > BATcount(candBAT))?BATcount(candBAT):BATcount(b_tmp);
 
-        if((resBAT = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+        if((resBAT = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)
             return NULL;
 
         cand_elements = (oid*)Tloc(candBAT, BUNfirst(candBAT));
@@ -1878,6 +1924,57 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
 		return newempty("BATthetasubselect");
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+		/* "=" or "==" */
+		//equality => call simple subselect
+		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 0);
+	}
+	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		//not equal to => simple subselect that returns all but the oids
+		//of the qualifying value
+		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 1);
+	}
+	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+			return BATsubselect(b, s, nil, val, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			return BATsubselect(b, s, nil, val, 0, 1, 0);
+		}
+		if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			return BATsubselect(b, s, val, NULL, 1, 1, 1);
+		}
+	}
+	if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			return BATsubselect(b, s, val, nil, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			return BATsubselect(b, s, val, nil, 1, 0, 0);
+		}
+	}
+	GDKerror("BATthetasubselect: unknown operator.\n");
+	return NULL;
+}
+
+BAT *
+BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
+{
+	const void *nil;
+
+	BATcheck(b, "BATdimensionThetasubselect", NULL);
+	BATcheck(val, "BATdimensionThetasubselect", NULL);
+	BATcheck(op, "BATdimensoinThetasubselect", NULL);
+
+	nil = ATOMnilptr(b->ttype);
+	if (ATOMcmp(b->ttype, val, nil) == 0)
+		return newempty("BATdimensionThetasubselect");
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
 		/* "=" or "==" */
 		return BATsubselect(b, s, val, NULL, 1, 1, 0);

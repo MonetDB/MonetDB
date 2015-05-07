@@ -3445,6 +3445,7 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
                 break; \
             } \
         } \
+fprintf(stderr, "repeat1 = %ld\n", repeat1); \
 \
         elementsNum = floor((max-min)/step) + 1; \
 \
@@ -3460,7 +3461,7 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	            resBAT->tkey = 0;                   \
     	    } else {                        \
 				long el = (*o%(repeat1*elementsNum))/repeat1; \
-				fprintf(stderr, "element: %ld\n", el); \
+				fprintf(stderr, "oid=%u : element: %ld\n", *(int*)o, el); \
         	    *bt = min+el*step;           \
 	        }                           \
     	}                               \

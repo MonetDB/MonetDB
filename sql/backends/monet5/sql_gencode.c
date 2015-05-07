@@ -1341,7 +1341,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_notequal:{
-					q = newStmt2(mb, algebraRef, cmd);
+					if(s->op1->type == st_dimension) {
+						char *dimStr = "dimension_";
+						char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
+					
+						strcpy(dimension_cmd, dimStr);
+						strcpy(dimension_cmd+strlen(dimStr), cmd);
+						
+						q = newStmt2(mb, algebraRef, dimension_cmd);
+					} else {
+						q = newStmt2(mb, algebraRef, cmd);
+					}
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
