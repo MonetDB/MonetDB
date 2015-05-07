@@ -123,7 +123,7 @@ address MDBgetStackFrameN;
 pattern getStackFrame()(:bat[:oid,:str] ,:bat[:oid,:str])
 address MDBgetStackFrame
 comment "Collect variable binding of current (n-th) stack frame.";
-pattern getStackTrace()(:bat[:oid,:str], :bat[:oid,:str])
+pattern getStackTrace()(:bat[:oid,:int], :bat[:oid,:str])
 address MDBStkTrace;
 
 pattern dump()
