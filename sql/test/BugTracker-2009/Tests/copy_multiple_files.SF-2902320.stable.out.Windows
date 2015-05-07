@@ -28,12 +28,12 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 173 # length
+% 182 # length
 insert(
 | table(sys.cm_tmp) [ cm_tmp.i, cm_tmp.%TID% NOT NULL ]
 | union (
-| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\file1", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT ,
-| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ] COUNT 
+| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\file1", bigint "-1", bigint "0", int "0", int "0"),  [ cm_tmp.i ] COUNT ,
+| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0"),  [ cm_tmp.i ] COUNT 
 | ) [ int "NULL" ]
 )
 
