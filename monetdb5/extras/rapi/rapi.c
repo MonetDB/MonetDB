@@ -645,7 +645,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
-			SXP_TO_BAT(bte, LOGICAL_POINTER, *p==NA_LOGICAL);
+			SXP_TO_BAT(bit, LOGICAL_POINTER, *p==NA_LOGICAL);
 			break;
 		}
 		case TYPE_dbl: {

@@ -39090,7 +39090,7 @@ pattern mdb.getDefinition():bat[:oid,:str]
 address MDBgetDefinition;
 comment Returns a string representation of the current function 	with typing information attached
 
-pattern mdb.getStackTrace() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
+pattern mdb.getStackTrace() (X_1:bat[:oid,:int],X_2:bat[:oid,:str]) 
 address MDBStkTrace;
 pattern mdb.getStackFrame() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
 address MDBgetStackFrame;
