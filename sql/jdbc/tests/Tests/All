@@ -5,7 +5,7 @@ HAVE_JDBCTESTS?Test_Creplysize
 HAVE_JDBCTESTS?Test_Csavepoints
 HAVE_JDBCTESTS?Test_Ctransaction
 #HAVE_JDBCTESTS?Test_Csendthread  # unfortunately has runtime-dependant output
-HAVE_JDBCTESTS&HAVE_SAMTOOLS&HAVE_NETCDF?Test_Dobjects
+HAVE_JDBCTESTS&HAVE_SAMTOOLS&HAVE_NETCDF&HAVE_GEOM?Test_Dobjects
 HAVE_JDBCTESTS?Test_PSgeneratedkeys
 HAVE_JDBCTESTS?Test_PSsomeamount
 HAVE_JDBCTESTS?Test_PSlargebatchval
