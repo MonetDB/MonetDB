@@ -651,7 +651,7 @@ Ready.
 [ "sys",	"st_distance",	0,	"double",	"--Distance between Geometries\ncreate function st_distance(geom1 geometry, geom2 geometry) returns double external name geom.\"Distance\";"	]
 [ "sys",	"st_distance",	1,	"geometry",	""	]
 [ "sys",	"st_distance",	2,	"geometry",	""	]
-[ "sys",	"st_dump",	0,	"int",	"create function st_dump(geom geometry) returns table(id integer, polygonwkb geometry) external name geom.\"Dump\";"	]
+[ "sys",	"st_dump",	0,	"clob",	"create function st_dump(geom geometry) returns table(id string, polygonwkb geometry) external name geom.\"Dump\";"	]
 [ "sys",	"st_dump",	1,	"geometry",	""	]
 [ "sys",	"st_dump",	2,	"geometry",	""	]
 [ "sys",	"st_dumppoints",	0,	"clob",	"create function st_dumppoints(geom geometry) returns table(path string, pointg geometry) external name geom.\"DumpPoints\";"	]
