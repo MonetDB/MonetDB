@@ -61,12 +61,12 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 134 # length
+% 136 # length
 function user.s4_1{autoCommit=true}():void;
     X_26:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe",12);
 barrier X_35 := language.dataflow();
     X_2 := sql.mvc();
-    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1,0,0);
+    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1,0,0,0);
 exit X_35;
     X_15 := sql.append(X_2,"sys","ttt","a",X_12);
     X_19 := sql.append(X_15,"sys","ttt","b",X_13);
@@ -95,12 +95,12 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 133 # length
+% 135 # length
 function user.s12_1{autoCommit=true}():void;
     X_26:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1",12);
 barrier X_36 := language.dataflow();
     X_2 := sql.mvc();
-    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1,0,0);
+    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1,0,0,0);
 exit X_36;
     X_15 := sql.append(X_2,"sys","ttt","a",X_12);
     X_19 := sql.append(X_15,"sys","ttt","b",X_13);
