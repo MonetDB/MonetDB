@@ -27,7 +27,7 @@ CREATE TABLE "_attributesDouble" (
 CREATE TABLE "_attributesPoint" (
 	"subject"   INTEGER,
 	"attribute" CHARACTER LARGE OBJECT,
-	"value"     POINT,
+	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE        DEFAULT 1.000000
 );
 CREATE TABLE "_attributes" (
@@ -104,7 +104,7 @@ CREATE TABLE "params_double" (
 );
 CREATE TABLE "params_point" (
 	"paramname" CHARACTER LARGE OBJECT,
-	"value"     POINT,
+	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE
 );
 CREATE TABLE "termdict" (
@@ -147,7 +147,7 @@ CREATE TABLE "obj_date" (
 CREATE TABLE "obj_point" (
 	"subject"   INTEGER,
 	"attribute" CHARACTER LARGE OBJECT,
-	"value"     POINT,
+	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE
 );
 CREATE TABLE "obj_relation" (
