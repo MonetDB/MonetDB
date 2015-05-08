@@ -390,15 +390,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisprint(c)	isprint((int) (unsigned char) (c))
 #define GDKisspace(c)	isspace((int) (unsigned char) (c))
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisgraph(c)	isgraph((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
-#define GDKisxcntrl(c)  (((unsigned char) (c)) >= 128 && ((unsigned char) (c)) <= 160)
-#define GDKisspecial(c) (((unsigned char) (c)) >= 161 && ((unsigned char) (c)) <= 191)
-#define GDKisupperl(c)  (((unsigned char) (c)) >= 192 && ((unsigned char) (c)) <= 223)
-#define GDKislowerl(c)  (((unsigned char) (c)) >= 224 && ((unsigned char) (c)) <= 255)
 
 #define GDKPROP		6	/* use one spare! */
 #define MONETHOME	"MONETHOME"
