@@ -10,3 +10,4 @@ load_stdin_incorrect_line_nr
 overflow_error
 format_date
 key_copy
+nonutf8
