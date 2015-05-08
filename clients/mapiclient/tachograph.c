@@ -888,7 +888,8 @@ main(int argc, char **argv)
 #else
 		snprintf(cachebuf,BUFSIZ,"%s/",cache);
 #endif
-	if(dbname == NULL){
+	if ( dbname == NULL){
+		fprintf(stderr,"Database name missing\n");
 		usageTachograph();
 		exit(-1);
 	}
