@@ -156,9 +156,9 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (misses += hb >= (hi), (hb >= (lo) && hb < (hi) &&	\
+		if (hb >= (lo) && hb < (hi) &&		\
 		    (cmp == NULL ||			\
-		     (*cmp)(v, BUNtail(bi, hb)) == 0)))
+		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
@@ -169,7 +169,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	BUN l, h;
 	oid seq;
 	int (*cmp)(const void *, const void *);
-	BUN misses = 0;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
@@ -231,7 +230,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			cnt++;
 		}
 	}
-	fprintf(stderr, "#BAT_hashselect: misses = "BUNFMT"\n", misses);
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
 	if (cnt > 1) {

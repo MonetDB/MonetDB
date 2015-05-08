@@ -888,7 +888,8 @@ main(int argc, char **argv)
 #else
 		snprintf(cachebuf,BUFSIZ,"%s/",cache);
 #endif
-	if(dbname == NULL){
+	if ( dbname == NULL){
+		fprintf(stderr,"Database name missing\n");
 		usageTachograph();
 		exit(-1);
 	}
@@ -959,10 +960,13 @@ main(int argc, char **argv)
 	doQ(buf);
 	if( cache){
 #ifdef NATIVE_WIN32
-		_mkdir(cache);
+		if( access(cache,F_OK) && _mkdir(cache)){
 #else
-		mkdir(cache,0755);
+		if( access(cache,F_OK) && mkdir(cache,0755) ) {
 #endif
+			fprintf(stderr,"Failed to create cache '%s'\n",cache);
+			exit(-1);
+		}
 	} 
 	snprintf(buf,BUFSIZ,"%s%s_%s.trace", cachebuf, basefilename,dbname);
 	// keep a trace of the events received

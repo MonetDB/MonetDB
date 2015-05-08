@@ -469,7 +469,7 @@ stopListening(int i)
 #define BSIZE 64*1024
 	char buf[BSIZE + BUFSIZ]={0};
 	char pages[BSIZE]={0};
-	int error =0, plen =0;
+	int j, error =0, plen =0;
 	if( i)
 		fprintf(stderr,"signal %d received\n",i);
 	if( dbh)
@@ -479,10 +479,17 @@ stop_disconnect:
 		createTomogram();
 	// show follow up action only once
 	if(atlaspage >= 1){
-		for (i = 0; systemcall && error == 0 && i< atlaspage;  i++){
+		for (i = 0; systemcall && i< atlaspage;  i++){
 			snprintf(buf, BUFSIZ, "gnuplot %s%s_%s_%02d.gpl;", cachebuf, basefilename, dbname, i);
-			fprintf(stderr,"-- exec:%s\n",buf);
-			error = system(buf);
+			if( error == 0){
+				fprintf(stderr,"-- exec:%s\n",buf);
+				error = system(buf);
+				if( error){
+					fprintf(stderr, "To finish the atlas make sure gnuplot is available and run:\n");
+					for (j=i; j< atlaspage;  j++)
+						fprintf(stderr, "gnuplot %s%s_%s_%02d.gpl\n", cachebuf, basefilename, dbname,j);
+				}
+			}
 
 			snprintf(buf, BUFSIZ, "%s%s_%s_%02d.pdf ", cachebuf, basefilename, dbname, i);
 			plen += snprintf(pages + plen, BSIZE -plen,"%s",buf);
@@ -492,10 +499,6 @@ stop_disconnect:
 			} 
 		}
 
-		if( i < atlaspage)
-			fprintf(stderr, "To finish the atlas run:\n");
-		for (; i< atlaspage;  i++)
-			fprintf(stderr, "gnuplot %s%s_%s_%02d.gpl;", cachebuf, basefilename, dbname,i);
 
 		if( systemcall && error == 0) {
 			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s_%s.pdf -dBATCH %s",cachebuf,basefilename,dbname,pages);
@@ -531,8 +534,9 @@ typedef struct BOX {
 
 int threads[MAXTHREADS];
 lng lastclk[MAXTHREADS];
-Box box[MAXBOX];
+Box *box= 0;
 int topbox = 0;
+int maxbox = 0;
 int events = 0;
 
 lng totalclkticks = 0; /* number of clock ticks reported */
@@ -568,7 +572,7 @@ static void resetTomograph(void){
 	events = 0;
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
-	memset((char*) box, 0, sizeof(Box) * MAXBOX);
+	memset((char*) box, 0, sizeof(Box) * maxbox);
 
 	totalclkticks = 0; 
 	totalexecticks = 0;
@@ -1331,10 +1335,18 @@ update(char *line, EventRecord *ev)
 	char *s;
 	int uid = 0,qid = 0;
  
-	if (topbox == MAXBOX) {
-		fprintf(stderr, "Out of space for trace");
-		createTomogram();
-		exit(0);
+	if (topbox == maxbox || maxbox < topbox) {
+	
+		if( box == 0)
+			box = (Box*) malloc(MAXBOX * sizeof(Box)); 
+		else
+			box = (Box*) realloc((void*)box, (maxbox + MAXBOX) * sizeof(Box)); 
+		if( box == NULL){
+			fprintf(stderr, "Out of space for trace, exceeds max entries %d\n", maxbox);
+			fprintf(stderr, "Restart with a slower beat might help, e.g. --beat=5000  or --beat=0\n");
+			exit(0);
+		}
+		maxbox += MAXBOX;
 	}
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= MDB_PING ) {
@@ -1570,6 +1582,10 @@ main(int argc, char **argv)
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
 
+	if( argc == 1){
+		usageTomograph();
+		exit(-1);
+	}
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:c:Db:A:m",
@@ -1670,6 +1686,16 @@ main(int argc, char **argv)
 		}
 	}
 
+	if ( dbname == NULL && inputfile == NULL){
+		fprintf(stderr,"Database name and inputfile missing\n");
+		usageTomograph();
+		exit(-1);
+	}
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		uri = dbname;
+		dbname = NULL;
+	}
+
 	fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
 	if (cache)
 #ifdef NATIVE_WIN32
@@ -1685,11 +1711,6 @@ main(int argc, char **argv)
 			printf("tomograph -d %s --output=%s\n",dbname,basefilename);
 		if(inputfile)
 			printf("tomograph --input=%s --output=%s\n",inputfile,basefilename);
-	}
-
-	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
-		uri = dbname;
-		dbname = NULL;
 	}
 
 	if (colormap) {
@@ -1714,10 +1735,13 @@ main(int argc, char **argv)
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
 	if (cache) {
 #ifdef NATIVE_WIN32
-		_mkdir(cache);
+		if( access(cache, F_OK) && _mkdir(cache)){
 #else
-		mkdir(cache,0755);
+		if( access(cache, F_OK) &&  mkdir(cache,0755) ) {
 #endif
+			fprintf(stderr,"Failed to create cache '%s'\n",cache);
+			exit(-1);
+		}
 	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, dbname, atlaspage);
 	if (inputfile==0 || strcmp(buf, inputfile) ){
