@@ -161,6 +161,8 @@ more client packages.
 Summary: MonetDB development files
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
+Requires: %{name}-stream-devel = %{version}-%{release}
+Requires: libatomic_ops-devel
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -688,6 +690,7 @@ MonetDB5-server component.
 Summary: MonetDB development files
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
+Requires: %{name}-devel = %{version}-%{release}
 
 %description -n MonetDB5-server-devel
 MonetDB is a database management system that is developed from a
