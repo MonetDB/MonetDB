@@ -149,7 +149,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'w':
 		if (idcmp("write", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomWrite = (int (*)(const void *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomWrite = (gdk_return (*)(const void *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}

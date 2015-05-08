@@ -70,9 +70,9 @@ geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
 geom_export wkba* wkbaREAD(wkba *a, stream *s, size_t cnt);
 
-geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
-geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
-geom_export int wkbaWRITE(wkba *c, stream *s, size_t cnt);
+geom_export gdk_return wkbWRITE(wkb *a, stream *s, size_t cnt);
+geom_export gdk_return mbrWRITE(mbr *c, stream *s, size_t cnt);
+geom_export gdk_return wkbaWRITE(wkba *c, stream *s, size_t cnt);
 
 geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
 geom_export var_t wkbaPUT(Heap *h, var_t *bun, wkba *val);

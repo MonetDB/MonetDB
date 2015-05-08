@@ -1001,7 +1001,7 @@ BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int p
 			goto bailout;
 		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(r->batCacheid);
-		if (ret == GDK_FAIL)
+		if (ret != GDK_SUCCEED)
 			goto bailout;
 		if ((t = BATproject(a, bats[0])) == NULL) {
 			BBPunfix(a->batCacheid);

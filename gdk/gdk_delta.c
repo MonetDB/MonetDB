@@ -226,7 +226,7 @@ BATprev(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batInserted; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -255,7 +255,7 @@ BATalpha(BAT *b)
 		return bn;
 	}
 	for (p = b->batInserted; p < BUNlast(b); p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -284,7 +284,7 @@ BATdelta(BAT *b)
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batFirst; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) == GDK_FAIL) {
+		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}

@@ -390,15 +390,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisprint(c)	isprint((int) (unsigned char) (c))
 #define GDKisspace(c)	isspace((int) (unsigned char) (c))
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisgraph(c)	isgraph((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
-#define GDKisxcntrl(c)  (((unsigned char) (c)) >= 128 && ((unsigned char) (c)) <= 160)
-#define GDKisspecial(c) (((unsigned char) (c)) >= 161 && ((unsigned char) (c)) <= 191)
-#define GDKisupperl(c)  (((unsigned char) (c)) >= 192 && ((unsigned char) (c)) <= 223)
-#define GDKislowerl(c)  (((unsigned char) (c)) >= 224 && ((unsigned char) (c)) <= 255)
 
 #define GDKPROP		6	/* use one spare! */
 #define MONETHOME	"MONETHOME"
@@ -1169,7 +1163,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1217,7 +1211,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1271,7 +1265,7 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
@@ -1298,7 +1292,7 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
@@ -2012,7 +2006,7 @@ typedef struct {
 	int (*atomFromStr) (const char *src, int *len, ptr *dst);
 	int (*atomToStr) (str *dst, int *len, const void *src);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
-	int (*atomWrite) (const void *src, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */

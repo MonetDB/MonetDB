@@ -1989,7 +1989,7 @@ setwritable(BAT *b)
 {
 	BAT *bn = b;
 
-	if (BATsetaccess(b, BAT_WRITE) == GDK_FAIL) {
+	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
 			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
@@ -2149,7 +2149,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (ret == GDK_FAIL) {
+		if (ret != GDK_SUCCEED) {
 			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
@@ -2184,7 +2184,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (ret == GDK_FAIL)
+		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = u;
 	}
@@ -3220,7 +3220,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-		if (BAThash(b, 0) == GDK_FAIL)
+		if (BAThash(b, 0) != GDK_SUCCEED)
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {

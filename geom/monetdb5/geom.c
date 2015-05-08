@@ -5006,7 +5006,7 @@ wkb* wkbREAD(wkb *a, stream *s, size_t cnt) {
 }
 
 /* write wkb to log */
-int wkbWRITE(wkb *a, stream *s, size_t cnt) {
+gdk_return wkbWRITE(wkb *a, stream *s, size_t cnt) {
 	int len = a->len;
 	int srid = a->srid;
 
@@ -5186,7 +5186,7 @@ mbr* mbrREAD(mbr *a, stream *s, size_t cnt) {
 }
 
 /* write mbr to log */
-int mbrWRITE(mbr *c, stream *s, size_t cnt) {
+gdk_return mbrWRITE(mbr *c, stream *s, size_t cnt) {
 	size_t i;
 	flt vals[4];
 	int v[4];
@@ -5350,9 +5350,9 @@ wkba* wkbaREAD(wkba *a, stream *s, size_t cnt) {
 }
 
 /* write wkb to log */
-int wkbaWRITE(wkba *a, stream *s, size_t cnt) {
+gdk_return wkbaWRITE(wkba *a, stream *s, size_t cnt) {
 	int i, items = a->itemsNum;
-	int ret = GDK_SUCCEED;
+	gdk_return ret = GDK_SUCCEED;
 
 	(void) cnt;
 	assert(cnt == 1);

@@ -130,7 +130,7 @@
 		BATiter ri = bat_iterator(BATmirror(r));		\
 									\
 		ALGODEBUG fprintf(stderr, "#BATins_%s%s: hashcheck[%s, %s, %s, %s, k];\n", #a1, #a2, #a1, #a2, #a3, #a4); \
-		if (BAThash(BATmirror(r), 0) == GDK_FAIL) {		\
+		if (BAThash(BATmirror(r), 0) != GDK_SUCCEED) {		\
 			goto bunins_failed;				\
 		}							\
 		BATloop(l, p1, q1) {					\
@@ -210,7 +210,7 @@
 					BUN r1;				\
 					if (p1 + 1 > BATcapacity(bn)){	\
 						BATsetcount(bn, o);	\
-						if (BATextend(bn, BATgrows(bn)) == GDK_FAIL) \
+						if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \
@@ -238,7 +238,7 @@
 				while(p1 < q1) {			\
 					BUN r1;				\
 					if (BUNlast(bn) + 1 > BATcapacity(bn)){	\
-						if (BATextend(bn, BATcapacity(bn)+65536) == GDK_FAIL) \
+						if (BATextend(bn, BATcapacity(bn)+65536) != GDK_SUCCEED) \
 							goto bunins_failed; \
 					}				\
 					r1 = p1 + BATcapacity(bn) - BUNlast(bn); \
