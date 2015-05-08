@@ -725,19 +725,19 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
-	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_time, ct, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_pc, buf, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_thread, &tid, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_inblock, &v1, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_oublock, &v2, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_minflt, &v3, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) == GDK_FAIL;
-	errors += BUNappend(TRACE_id_stmt, c, FALSE) == GDK_FAIL;
+	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_time, ct, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_pc, buf, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_thread, &tid, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_inblock, &v1, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_oublock, &v2, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_minflt, &v3, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
 	TRACE_event++;
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");

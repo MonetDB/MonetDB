@@ -57,7 +57,7 @@ void_bat_create(int adt, BUN nr)
 	if (BATmirror(b))
 		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
-	if (nr > BATTINY && adt && BATextend(b, nr) == GDK_FAIL) {
+	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
 	}
@@ -836,7 +836,7 @@ SQLworker_column(READERtask *task, int col)
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
-		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) == GDK_FAIL) {
+		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) != GDK_SUCCEED) {
 			MT_lock_set(&errorlock, "SQLworker_column");
 			if (task->as->error == NULL)
 				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full\n");

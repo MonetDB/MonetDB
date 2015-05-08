@@ -64,7 +64,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 {
 	BAT *bn1, *bn2, *t;
 
-	if (BATcross1(&bn1, &bn2, sl ? sl : l, sr ? sr : r) == GDK_FAIL)
+	if (BATcross1(&bn1, &bn2, sl ? sl : l, sr ? sr : r) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (sl) {
 		t = BATproject(bn1, sl);

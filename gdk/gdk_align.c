@@ -484,7 +484,7 @@ BATmaterializet(BAT *b)
 gdk_return
 BATmaterialize(BAT *b)
 {
-	if (BATmaterializeh(b) == GDK_FAIL)
+	if (BATmaterializeh(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return BATmaterializet(b);
 }

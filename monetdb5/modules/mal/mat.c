@@ -347,7 +347,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
-	if (BATextend(bn, cap) == GDK_FAIL) {
+	if (BATextend(bn, cap) != GDK_SUCCEED) {
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 	}
