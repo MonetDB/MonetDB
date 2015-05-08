@@ -473,6 +473,10 @@ static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dime
 		break;  
     }
 
+	atom_cast(dim->min, &dim->type);
+    atom_cast(dim->step, &dim->type);
+    atom_cast(dim->max, &dim->type);
+
     if(!dim->unbounded_min && !dim->unbounded_max) {
         switch(dim->type.type->localtype) {
         case TYPE_bte:

@@ -488,14 +488,26 @@ materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, void* de
             else
                 fillVals(dbl, *(dbl*)defVal);
             break;
-        case TYPE_str:
-            if(!defVal) {
-                char str_nil_2[2];
-                strcpy(str_nil_2, str_nil);
-                fillVals(str, str_nil_2);
+        case TYPE_str: {
+            BUN i; 
+
+            if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)
+                return NULL;
+
+            /*Fill the rest of the cells with the default value or NULL if no \
+             * default values is provided*/
+			for(i=BATcount(b_in); i<cellsNum; i++) {
+                if(!defVal)
+                    BUNappend(b,str_nil, TRUE);
+                else
+                    BUNappend(b, (char*)defVal, TRUE);
+            }
+            
+
+            b->tsorted = 0;
+            b->trevsorted = 0;    
 			}
-            else
-                fillVals(str, *(str*)defVal);
+
             break;
         default:
             fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");

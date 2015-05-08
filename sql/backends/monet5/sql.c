@@ -1676,14 +1676,35 @@ mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum, void* defVal) {
 			else
    				fillVals(dbl, *(dbl*)defVal);
 			break;
-		case TYPE_str:
-			if(!defVal) {
-				char str_nil_2[2];
-				strcpy(str_nil_2, str_nil);
-				fillVals(str, str_nil_2);
+		case TYPE_str: {
+			BATiter iter;
+			BUN p = 0, q = 0;
+
+			if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)   
+                return NULL;                   
+			
+			/* create BAT iterator over the existing vals*/
+			iter = bat_iterator(b_in);
+
+			BATloop(b_in, p, q) {
+        		char *t = (char *) BUNtail(iter, p);
+
+        		/* insert original head and tail in result BAT */
+        		BUNappend(b, t, TRUE);
 			}
-			else
-   				fillVals(str, *(str*)defVal);
+
+			for(p=BATcount(b_in); p<cellsNum; p++) {
+				if(!defVal)
+					BUNappend(b,str_nil, TRUE);
+				else
+					BUNappend(b, (char*)defVal, TRUE);
+			}
+
+            b->tsorted = 0;              
+            b->trevsorted = 0;           
+
+			}
+
 			break;
 	    default:
 			fprintf(stderr, "mvc_fill_values: non-dimensional column type not handled\n");
