@@ -422,7 +422,7 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 	return SQL_OK;
 }
 
-static int 
+static int
 table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	dnode *n = s->data.lval->h;
@@ -484,7 +484,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	return SQL_OK;
 }
 
-static int 
+static int
 table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	int res = SQL_OK;
@@ -525,14 +525,14 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
 	}
-	if (!res) {
+	if (res != SQL_OK) {
 		sql_error(sql, 02, "M0M03!table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
 }
 
-static int 
+static int
 table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	int res = SQL_OK;
@@ -549,7 +549,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			free(opt_name);
 	}
 
-	if (!res) {
+	if (res != SQL_OK) {
 		sql_error(sql, 02, "M0M03!table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
@@ -588,7 +588,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	return res;
 }
 
-static int 
+static int
 table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;

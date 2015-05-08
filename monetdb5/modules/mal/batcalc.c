@@ -989,7 +989,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN vals;
 	bat *bid;
 	BAT *b, *s = NULL, *t;
-	int ret;
+	gdk_return ret;
 
 	(void) cntxt;
 	(void) mb;
@@ -1015,7 +1015,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	* getArgReference_dbl(stk, pci, 0) = avg;
 	if (pci->retc == 2)

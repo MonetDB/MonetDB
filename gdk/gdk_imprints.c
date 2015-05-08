@@ -739,7 +739,7 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		s->tkey = 1;	/* we know is unique on tail now */
-		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) == GDK_FAIL) {
+		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			BBPunfix(s->batCacheid);
@@ -1022,7 +1022,7 @@ IMPSprint(BAT *b)
 	bte j;
 	int i;
 
-	if (BATimprints(b) == GDK_FAIL)
+	if (BATimprints(b) != GDK_SUCCEED)
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;

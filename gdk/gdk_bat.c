@@ -1133,7 +1133,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 			if (* (oid *) x == oid_nil ||			\
 			    ((b)->batCount > 0 &&			\
 			     (b)->x##seqbase + (b)->batCount != *(oid *) x)) { \
-				if (BATmaterialize##x(b) == GDK_FAIL)	\
+				if (BATmaterialize##x(b) != GDK_SUCCEED)	\
 					return GDK_FAIL;		\
 				countonly = 0;				\
 			} else if ((b)->batCount == 0) {		\
@@ -1164,10 +1164,10 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 	void_materialize(b, t);
 
 	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(bm, h)) != BUN_NONE) {
-		if (BUNinplace(b, p, h, t, force) == GDK_FAIL)
+		if (BUNinplace(b, p, h, t, force) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(b, t)) != BUN_NONE) {
-		if (BUNinplace(bm, p, t, h, force) == GDK_FAIL)
+		if (BUNinplace(bm, p, t, h, force) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else {
 		size_t hsize = 0, tsize = 0;
@@ -1178,7 +1178,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 			return GDK_FAIL;
 		}
 
-		if (unshare_string_heap(b) == GDK_FAIL) {
+		if (unshare_string_heap(b) != GDK_SUCCEED) {
 			GDKerror("BUNins: failed to unshare string heap\n");
 			return GDK_FAIL;
 		}
@@ -1288,7 +1288,7 @@ BUNappend(BAT *b, const void *t, bit force)
 	}
 	void_materialize(b, t);
 
-	if (unshare_string_heap(b) == GDK_FAIL) {
+	if (unshare_string_heap(b) != GDK_SUCCEED) {
 		GDKerror("BUNappend: failed to unshare string heap\n");
 		return GDK_FAIL;
 	}
@@ -1495,7 +1495,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 		BUN last = BUNlast(b) - 1;
 
 		if ((p < b->batInserted || p != last) && !force) {
-			if (BATmaterialize(b) == GDK_FAIL)
+			if (BATmaterialize(b) != GDK_SUCCEED)
 				return BUN_NONE;
 		}
 	}
@@ -1629,7 +1629,7 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 	} else {
 		/* committed BUN */
 		BUNdelete(b, p, force);
-		if (BUNins(b, h, t, force) == GDK_FAIL) {
+		if (BUNins(b, h, t, force) != GDK_SUCCEED) {
 		      bunins_failed:
 			return GDK_FAIL;
 		}
@@ -1659,7 +1659,7 @@ BUNreplace(BAT *b, const void *h, const void *t, bit force)
 		if (b->tseqbase == oid_nil || (b->hseqbase + p) == *(oid *) t)
 			return GDK_SUCCEED;
 		i = p;
-		if (BATmaterializet(b) == GDK_FAIL)
+		if (BATmaterializet(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		p = i;
 	}
@@ -1702,7 +1702,7 @@ void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 		oid updid = *(oid *) BUNtail(uii, r);
 		const void *val = BUNtail(uvi, r);
 
-		if (void_inplace(b, updid, val, force) == GDK_FAIL)
+		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)
 			return BUN_NONE;
 		nr++;
 	}
@@ -2578,7 +2578,7 @@ BATsetaccess(BAT *b, int newmode)
 	int bakmode, bakdirty;
 	BATcheck(b, "BATsetaccess", GDK_FAIL);
 	if (isVIEW(b) && newmode != BAT_READ) {
-		if (VIEWreset(b) == GDK_FAIL)
+		if (VIEWreset(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	bakmode = b->batRestricted;
@@ -2706,7 +2706,7 @@ BATmode(BAT *b, int mode)
 		BBPdirty(1);
 
 		if (mode == PERSISTENT && isVIEW(b)) {
-			if (VIEWreset(b) == GDK_FAIL) {
+			if (VIEWreset(b) != GDK_SUCCEED) {
 				GDKerror("BATmode: cannot allocate memory.\n");
 				return GDK_FAIL;
 			}
