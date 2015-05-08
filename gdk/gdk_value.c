@@ -215,7 +215,7 @@ VALconvert(int typ, ValPtr t)
 		dst.vtype = TYPE_oid;
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, 0) == GDK_FAIL)
+	if (VARconvert(&dst, t, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */

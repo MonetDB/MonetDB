@@ -11,8 +11,8 @@
 
 #include <gdk.h>
 
-#define SQL_OK 	GDK_SUCCEED
-#define SQL_ERR GDK_FAIL
+#define SQL_OK 	1
+#define SQL_ERR 0
 
 #ifdef WIN32
 #ifndef LIBSQLSERVER

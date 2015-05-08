@@ -110,7 +110,7 @@ static int BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, int unloaddesc);
 static int BBPprepare(bit subcommit);
 static BAT *getBBPdescriptor(bat i, int lock);
-static int BBPbackup(BAT *b, bit subcommit);
+static gdk_return BBPbackup(BAT *b, bit subcommit);
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
@@ -2512,7 +2512,7 @@ BBPsave(BAT *b)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
 	bat bid = abs(b->batCacheid);
-	int ret = 0;
+	gdk_return ret = GDK_SUCCEED;
 
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
 		/* do nothing */
@@ -2546,14 +2546,14 @@ BBPsave(BAT *b)
 		/* do the time-consuming work unlocked */
 		if (BBP_status(bid) & BBPEXISTING)
 			ret = BBPbackup(b, FALSE);
-		if (ret == 0) {
+		if (ret == GDK_SUCCEED) {
 			BBPout++;
-			ret = (BATsave(b) == GDK_FAIL);
+			ret = BATsave(b);
 		}
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPSAVING, "BBPsave");
 	}
-	return ret;
+	return ret == GDK_SUCCEED ? 0 : -1;
 }
 
 /*
@@ -3378,7 +3378,7 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	return 0;
 }
 
-static int
+static gdk_return
 BBPbackup(BAT *b, bit subcommit)
 {
 	char *srcdir;
@@ -3386,10 +3386,10 @@ BBPbackup(BAT *b, bit subcommit)
 	const char *s = BBP_physical(b->batCacheid);
 
 	if (BBPprepare(subcommit)) {
-		return -1;
+		return GDK_FAIL;
 	}
 	if (b->batCopiedtodisk == 0 || b->batPersistence != PERSISTENT) {
-		return 0;
+		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
 	srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL);
@@ -3417,10 +3417,10 @@ BBPbackup(BAT *b, bit subcommit)
 		      b->batDirty || b->T->vheap->dirty, subcommit) < 0)
 		goto fail;
 	GDKfree(srcdir);
-	return 0;
+	return GDK_SUCCEED;
   fail:
 	GDKfree(srcdir);
-	return -1;
+	return GDK_FAIL;
 }
 
 /*
@@ -3458,7 +3458,7 @@ BBPsync(int cnt, bat *subcommit)
 			if (i <= 0)
 				break;
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL && BBPbackup(b, subcommit != NULL))
+				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)
 					break;
 			}
 		}
@@ -3477,7 +3477,7 @@ BBPsync(int cnt, bat *subcommit)
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0)
 					break;
-				if (b != NULL && BATsave(b) == GDK_FAIL)
+				if (b != NULL && BATsave(b) != GDK_SUCCEED)
 					break;	/* write error */
 			}
 		}

@@ -25,3 +25,4 @@ case_aggr.Bug-3705
 assertHead.Bug-3706
 ifthenelse.Bug-3699
 readonly.Bug-3709
+convert-to-bit.Bug-3719

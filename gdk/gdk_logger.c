@@ -1259,7 +1259,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("Logger_new: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		if (GDKcreatedir(filename) == GDK_FAIL) {
+		if (GDKcreatedir(filename) != GDK_SUCCEED) {
 			logger_fatal("logger_new: cannot create directory for log file %s\n",
 				     filename, 0, 0);
 			goto error;
@@ -1344,8 +1344,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
 
 		/* create LOG_SID sequence number */
-		if (BUNappend(lg->seqs_id, &id, FALSE) == GDK_FAIL ||
-		    BUNappend(lg->seqs_val, &lg->id, FALSE) == GDK_FAIL)
+		if (BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &lg->id, FALSE) != GDK_SUCCEED)
 			logger_fatal("Logger_new: failed to append value to "
 				     "sequences bat", 0, 0, 0);
 
@@ -1871,7 +1871,7 @@ log_bat_transient(logger *lg, const char *name)
 int
 log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 {
-	int ok = GDK_SUCCEED;
+	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
 
@@ -1888,8 +1888,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 	if (l.nr) {
 		BATiter ii = bat_iterator(uid);
 		BATiter vi = bat_iterator(uval);
-		int (*wh) (const void *, stream *, size_t) = BATatoms[TYPE_oid].atomWrite;
-		int (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
+		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[TYPE_oid].atomWrite;
+		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
 
 		l.flag = LOG_UPDATE;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1901,13 +1901,13 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 			const void *val = BUNtail(vi, p);
 
 			ok = wh(id, lg->log, 1);
-			ok = (ok == GDK_FAIL) ? ok : wt(val, lg->log, 1);
+			ok = (ok != GDK_SUCCEED) ? ok : wt(val, lg->log, 1);
 		}
 
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	if (ok == GDK_FAIL)
+	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_delta: write failed\n");
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
@@ -1915,7 +1915,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 int
 log_bat(logger *lg, BAT *b, const char *name)
 {
-	int ok = GDK_SUCCEED;
+	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
 
@@ -1930,8 +1930,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		int (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
-		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1951,7 +1951,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 				const void *t = BUNtail(bi, p);
 
 				ok = wh(h, lg->log, 1);
-				ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
+				ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
 			}
 		}
 
@@ -1963,8 +1963,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 
 	if (l.nr && ok == GDK_SUCCEED) {
 		BATiter bi = bat_iterator(b);
-		int (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
-		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_DELETE;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1976,13 +1976,13 @@ log_bat(logger *lg, BAT *b, const char *name)
 			const void *t = BUNtail(bi, p);
 
 			ok = wh(h, lg->log, 1);
-			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
+			ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
 		}
 
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " deletes\n", name, l.nr);
 	}
-	if (ok == GDK_FAIL)
+	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }

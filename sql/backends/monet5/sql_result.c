@@ -769,7 +769,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				fmt[i].c = b;
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
-					if (BATextend(fmt[i].c, (BUN) sz) == GDK_FAIL) {
+					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
 						for (i--; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
 						sql_error(m, 500, "failed to allocate space for column");

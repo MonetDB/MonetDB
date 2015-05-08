@@ -1300,7 +1300,7 @@ GDKlockHome(void)
 		/* The DIR_SEP at the end of the path is needed for a
 		 * successful call to GDKcreatedir */
 		snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
-		if (GDKcreatedir(GDKdirStr) == GDK_FAIL)
+		if (GDKcreatedir(GDKdirStr) != GDK_SUCCEED)
 			GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
 		if (chdir(GDKdbpathStr) < 0)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
