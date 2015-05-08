@@ -470,6 +470,16 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
+        //if the column belongs to an array I need to carry along the default value (if provided)
+        if(isArray(t) && c->def) {
+            char *q = sa_message(sql->sa, "select %s;", c->def);
+            sql_exp* edef = rel_parse_val(sql, q, sql->emode);
+            if (!edef || (edef = rel_check_type(sql, &c->type, edef, type_equal)) == NULL)
+                e->f = NULL;
+            else
+                e->f = edef;
+        }
+
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
