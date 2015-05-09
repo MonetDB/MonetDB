@@ -960,9 +960,9 @@ main(int argc, char **argv)
 	doQ(buf);
 	if( cache){
 #ifdef NATIVE_WIN32
-		if( access(cache,F_OK) && _mkdir(cache)){
+		if( _mkdir(cache) < 0 && errno != EEXIST){
 #else
-		if( access(cache,F_OK) && mkdir(cache,0755) ) {
+		if( mkdir(cache,0755)  < 0 && errno != EEXIST) {
 #endif
 			fprintf(stderr,"Failed to create cache '%s'\n",cache);
 			exit(-1);
