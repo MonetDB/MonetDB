@@ -6,9 +6,9 @@
 
 atom inet:lng;
 
-command null() :inet
+command null()
 address INETnull;
-command cmp() :int
+command cmp()
 address INETcompare;
 command fromstr()
 address INETfromString

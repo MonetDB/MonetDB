@@ -503,7 +503,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * missing values */
 				BATsetcount(r1, cnt);
 				BATseqbase(BATmirror(r1), seq);
-				if (BATextend(r2, cnt) == GDK_FAIL)
+				if (BATextend(r2, cnt) != GDK_SUCCEED)
 					goto bailout;
 				for (o = seq - l->hseqbase + l->tseqbase; o < lo; o++)
 					APPEND(r2, oid_nil);
@@ -576,8 +576,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r2->tkey = 1;
 		r2->tsorted = 1;
 		cnt = BATcount(sl);
-		if (BATextend(r1, cnt) == GDK_FAIL ||
-		    BATextend(r2, cnt) == GDK_FAIL) {
+		if (BATextend(r1, cnt) != GDK_SUCCEED ||
+		    BATextend(r2, cnt) != GDK_SUCCEED) {
 			goto bailout;
 		}
 		if (nil_on_miss) {
@@ -672,8 +672,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
 			cnt -= i;
 
-			if (BATextend(r1, cnt) == GDK_FAIL ||
-			    BATextend(r2, cnt) == GDK_FAIL) {
+			if (BATextend(r1, cnt) != GDK_SUCCEED ||
+			    BATextend(r2, cnt) != GDK_SUCCEED) {
 				goto bailout;
 			}
 			r2->T->nil = 0;
@@ -719,8 +719,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			return GDK_SUCCEED;
 		}
 	}
-	if (BATextend(r1, cnt) == GDK_FAIL ||
-	    BATextend(r2, cnt) == GDK_FAIL) {
+	if (BATextend(r1, cnt) != GDK_SUCCEED ||
+	    BATextend(r2, cnt) != GDK_SUCCEED) {
 		goto bailout;
 	}
 	r1->tdense = 1;
@@ -1538,8 +1538,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
-			if (BATextend(r1, newcap) == GDK_FAIL ||
-			    BATextend(r2, newcap) == GDK_FAIL) {
+			if (BATextend(r1, newcap) != GDK_SUCCEED ||
+			    BATextend(r2, newcap) != GDK_SUCCEED) {
 				goto bailout;
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
@@ -1725,8 +1725,8 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			newcap = BATgrows(r1);				\
 			BATsetcount(r1, BATcount(r1));			\
 			BATsetcount(r2, BATcount(r2));			\
-			if (BATextend(r1, newcap) == GDK_FAIL ||	\
-			    BATextend(r2, newcap) == GDK_FAIL)		\
+			if (BATextend(r1, newcap) != GDK_SUCCEED ||	\
+			    BATextend(r2, newcap) != GDK_SUCCEED)		\
 				goto bailout;				\
 			assert(BATcapacity(r1) == BATcapacity(r2));	\
 		}							\
@@ -1854,7 +1854,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	rl += rstart;
 	rseq += rstart;
 
-	if (BAThash(r, 0) == GDK_FAIL)
+	if (BAThash(r, 0) != GDK_SUCCEED)
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
@@ -1900,8 +1900,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) == GDK_FAIL ||
-						    BATextend(r2, newcap) == GDK_FAIL)
+						if (BATextend(r1, newcap) != GDK_SUCCEED ||
+						    BATextend(r2, newcap) != GDK_SUCCEED)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -2018,8 +2018,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) == GDK_FAIL ||
-						    BATextend(r2, newcap) == GDK_FAIL)
+						if (BATextend(r1, newcap) != GDK_SUCCEED ||
+						    BATextend(r2, newcap) != GDK_SUCCEED)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -2256,8 +2256,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) == GDK_FAIL ||
-				    BATextend(r2, newcap) == GDK_FAIL)
+				if (BATextend(r1, newcap) != GDK_SUCCEED ||
+				    BATextend(r2, newcap) != GDK_SUCCEED)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2659,8 +2659,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) == GDK_FAIL ||
-				    BATextend(r2, newcap) == GDK_FAIL)
+				if (BATextend(r1, newcap) != GDK_SUCCEED ||
+				    BATextend(r2, newcap) != GDK_SUCCEED)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2731,7 +2731,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, name) == GDK_FAIL)
+	if (joinparamcheck(l, r, NULL, sl, sr, name) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	lcount = BATcount(l);
@@ -2757,7 +2757,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 		return GDK_SUCCEED;
 	}
 
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), name) == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), name) != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -2852,11 +2852,11 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") == GDK_FAIL)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubthetajoin") == GDK_FAIL)
+			    "BATsubthetajoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -2877,7 +2877,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubjoin") == GDK_FAIL)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	lcount = BATcount(l);
 	if (sl)
@@ -2901,7 +2901,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") == GDK_FAIL)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3001,11 +3001,11 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") == GDK_FAIL)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubbandjoin") == GDK_FAIL)
+			    "BATsubbandjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3021,11 +3021,11 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") == GDK_FAIL)
+	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubrangejoin") == GDK_FAIL)
+			    "BATsubrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3036,7 +3036,7 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 }
 
 #define project_loop(TYPE)						\
-static int								\
+static gdk_return							\
 project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 {									\
 	oid lo, hi;							\
@@ -3110,7 +3110,7 @@ project_loop(lng)
 project_loop(hge)
 #endif
 
-static int
+static gdk_return
 project_void(BAT *bn, BAT *l, BAT *r)
 {
 	oid lo, hi;
@@ -3150,7 +3150,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 {
 	BUN n;
@@ -3220,7 +3220,8 @@ BATproject(BAT *l, BAT *r)
 {
 	BAT *bn;
 	oid lo, hi;
-	int res, tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
+	gdk_return res;
+	int tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s,"
@@ -3349,7 +3350,7 @@ BATproject(BAT *l, BAT *r)
 		break;
 	}
 
-	if (res == GDK_FAIL)
+	if (res != GDK_SUCCEED)
 		goto bailout;
 
 	/* handle string trick */

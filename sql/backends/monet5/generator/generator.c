@@ -128,7 +128,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			lng s;
 			ValRecord ret;
 			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
-				       &stk->stk[pci->argv[2]]) == GDK_FAIL)
+				       &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
 				throw(MAL, "generator.table",
 				      "Illegal generator expression range");
 			f = *getArgReference_TYPE(stk, pci, 1, timestamp);
@@ -960,14 +960,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define VLTrangeExpand() \
 {	limit+= cnt * (limit/(done?done:1)+1);\
-	if (BATextend(bln, limit) == GDK_FAIL) {	\
+	if (BATextend(bln, limit) != GDK_SUCCEED) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\
 		BBPunfix(brn->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
-	if (BATextend(brn, limit) == GDK_FAIL) {	\
+	if (BATextend(brn, limit) != GDK_SUCCEED) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\

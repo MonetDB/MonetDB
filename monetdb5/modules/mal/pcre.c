@@ -1545,8 +1545,8 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) == GDK_FAIL ||
-					BATextend(r2, newcap) == GDK_FAIL) {
+				if (BATextend(r1, newcap) != GDK_SUCCEED ||
+					BATextend(r2, newcap) != GDK_SUCCEED) {
 					msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 					goto bailout;
 				}

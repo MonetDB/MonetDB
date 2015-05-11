@@ -52,7 +52,7 @@
  * is large enough to prevent overflow.
  */
 
-static int
+static gdk_return
 CMDselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *h_in)
 {
 	int tt = b->ttype;
@@ -69,7 +69,7 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *
 	return (*result = BATselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-static int
+static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
@@ -84,7 +84,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		for(j = 0; j < gcnt; j++) {
 			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNappend(r, &id, FALSE) == GDK_FAIL) {
+				if (BUNappend(r, &id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
@@ -97,7 +97,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		for(j = 0; j < gcnt; j++) {
 			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNappend(r, id, FALSE) == GDK_FAIL) {
+				if (BUNappend(r, id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
@@ -145,7 +145,7 @@ like(const char *x, const char *y, BUN ylen)
 	return 0;
 }
 
-static int
+static gdk_return
 CMDlike(BAT **ret, BAT *b, const char *s)
 {
 	BATiter bi = bat_iterator(b);
@@ -163,7 +163,7 @@ CMDlike(BAT **ret, BAT *b, const char *s)
 	BATloop(b, u, v) {
 		p = BUNtvar(bi, u);
 		if (like(p, t, yy) &&
-			BUNfastins(c, BUNhead(bi, u), p) == GDK_FAIL) {
+			BUNfastins(c, BUNhead(bi, u), p) != GDK_SUCCEED) {
 			BBPreclaim(c);
 			GDKfree(t);
 			return GDK_FAIL;
@@ -180,7 +180,7 @@ CMDlike(BAT **ret, BAT *b, const char *s)
 	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 slice(BAT **retval, BAT *b, lng start, lng end)
 {
 	/* the internal BATslice requires exclusive end */
@@ -279,7 +279,7 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 		BBPunfix(g->batCacheid);
 		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
 	}
-	if( CMDgen_group(&bn, g, c) == GDK_FAIL){
+	if( CMDgen_group(&bn, g, c) != GDK_SUCCEED){
 		BBPunfix(g->batCacheid);
 		BBPunfix(c->batCacheid);
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
@@ -623,21 +623,21 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		assert(joinfunc == NULL);
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
-		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) == GDK_FAIL)
+		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (joinfunc) {
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
-		if ((*joinfunc)(&result1, &result2, left, right, candleft, candright, *nil_matches, est) == GDK_FAIL)
+		if ((*joinfunc)(&result1, &result2, left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
-		if ((*bandfunc)(&result1, &result2, left, right, candleft, candright, c1, c2, li, hi, est) == GDK_FAIL)
+		if ((*bandfunc)(&result1, &result2, left, right, candleft, candright, c1, c2, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 	} else {
 		if ((right2 = BATdescriptor(*r2id)) == NULL)
 			goto fail;
-		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) == GDK_FAIL)
+		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
 	}
@@ -782,7 +782,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(s->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
-	if (rc == GDK_FAIL)
+	if (rc != GDK_SUCCEED)
 		throw(MAL, "algebra.firstn", MAL_MALLOC_FAIL);
 	BBPkeepref(*ret1 = bn->batCacheid);
 	if (ret2)
@@ -943,7 +943,7 @@ ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, JOIN_NE, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
 	if (!(j1->batDirty&2))
 		BATsetaccess(j1, BAT_READ);
@@ -984,7 +984,7 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 	ret = BATsubjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret == GDK_FAIL) {
+	if (ret != GDK_SUCCEED) {
 		if (lmap)
 			BBPunfix(lmap->batCacheid);
 		if (rmap)
@@ -1030,7 +1030,7 @@ ALGthetajoin2( bat *l, bat *r, const bat *left, const bat *right, const int *opc
 
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
 	if (!(j1->batDirty&2))
 		BATsetaccess(j1, BAT_READ);
@@ -1057,7 +1057,7 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 	ret = BATcross1(&bn1, &bn2, L, R);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
@@ -1080,7 +1080,7 @@ ALGbandjoin2(bat *l, bat *r, const bat *left, const bat *right, const void *minu
 	ret = BATsubbandjoin(&bn1, &bn2, L, R, NULL, NULL, minus, plus, *li, *hi, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
 	if (!(bn1->batDirty&2))
 		BATsetaccess(bn1, BAT_READ);
@@ -1114,7 +1114,7 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 	BBPunfix(L->batCacheid);
 	BBPunfix(RL->batCacheid);
 	BBPunfix(RH->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
 	if (!(bn1->batDirty&2))
 		BATsetaccess(bn1, BAT_READ);
@@ -1390,7 +1390,7 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 	if (BATsubsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
-				   b, o, g, *reverse, *stable) == GDK_FAIL) {
+				   b, o, g, *reverse, *stable) != GDK_SUCCEED) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		if (g)

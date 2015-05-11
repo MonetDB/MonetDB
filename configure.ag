@@ -1183,6 +1183,10 @@ fi
 AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
 AC_SUBST(PERL_LIBDIR)
+QPERL_LIBDIR="$PERL_LIBDIR"
+XPERL_LIBDIR="`$translatepath "$QPERL_LIBDIR"`"
+QXPERL_LIBDIR="`echo "$XPERL_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPERL_LIBDIR)
 
 # check major version of python
 # check if python2 and python3 exist
@@ -1306,8 +1310,16 @@ else
 fi
 
 AC_SUBST(PYTHON2)
+QPYTHON2="$PYTHON2"
+XPYTHON2="`$translatepath "$QPYTHON2"`"
+QXPYTHON2="`echo "$XPYTHON2" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON2)
 AM_CONDITIONAL(HAVE_PYTHON2, test x"$have_python2" != xno)
 AC_SUBST(PYTHON2_LIBDIR)
+QPYTHON2_LIBDIR="$PYTHON2_LIBDIR"
+XPYTHON2_LIBDIR="`$translatepath "$QPYTHON2_LIBDIR"`"
+QXPYTHON2_LIBDIR="`echo "$XPYTHON2_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON2_LIBDIR)
 
 if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
@@ -1361,8 +1373,16 @@ else
 fi
 
 AC_SUBST(PYTHON3)
+QPYTHON3="$PYTHON3"
+XPYTHON3="`$translatepath "$QPYTHON3"`"
+QXPYTHON3="`echo "$XPYTHON3" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON3)
 AM_CONDITIONAL(HAVE_PYTHON3, test x"$have_python3" != xno)
 AC_SUBST(PYTHON3_LIBDIR)
+QPYTHON3_LIBDIR="$PYTHON3_LIBDIR"
+XPYTHON3_LIBDIR="`$translatepath "$QPYTHON3_LIBDIR"`"
+QXPYTHON3_LIBDIR="`echo "$XPYTHON3_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON3_LIBDIR)
 
 AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python2" != xno -o x"$have_python3" != xno)
 

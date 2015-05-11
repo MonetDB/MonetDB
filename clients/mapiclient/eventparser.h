@@ -55,9 +55,6 @@
 #define US_HH (US_MM * 60)
 #define US_DD (US_HH * 24)
 
-#define MAXTHREADS 1048
-#define MAXBOX 32678	 /* should be > MAXTHREADS */
-
 #define  MDB_START 1
 #define  MDB_DONE 2
 #define  MDB_PING 3
@@ -102,4 +99,5 @@ extern char *monetdb_characteristics;
 
 extern void clearArguments(void);
 extern int eventparser(char *row, EventRecord *ev);
+extern char *stripQuotes(char *currentquery);
 #endif /*_EVENT_PARSER_*/

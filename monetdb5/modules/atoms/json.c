@@ -115,8 +115,15 @@ JSONtoString(str *s, int *len, json src)
 	char *c, *dst;
 
 	if (GDK_STRNIL(src)) {
-		*s = GDKstrdup("null");
-		return 0;
+		if (*s == NULL || *len < 4) {
+			GDKfree(*s);
+			*len = 4;
+			*s = GDKmalloc(4);
+			if (*s == NULL)
+				return -1;
+		}
+		strncpy(*s, "nil", 4);
+		return 3;
 	}
 	/* count how much space we need for the output string */
 	cnt = 3;		/* two times " plus \0 */
@@ -1287,7 +1294,7 @@ JSONvalueTable(bat *ret, json *js)
 	JSON *jt;
 
 	jt = JSONparse(*js, TRUE);	// already validated
-	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.values", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
@@ -1873,7 +1880,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bi = bat_iterator(b);
 	if (g) {
 		/* stable sort g */
-		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) == GDK_FAIL) {
+		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			bn = NULL;
 			err = "internal sort failed";

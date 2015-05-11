@@ -44,7 +44,7 @@ geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
 geom_export BUN mbrHASH(mbr *atom);
 geom_export int mbrCOMP(mbr *l, mbr *r);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
-geom_export int mbrWRITE(mbr *c, stream *s, size_t cnt);
+geom_export gdk_return mbrWRITE(mbr *c, stream *s, size_t cnt);
 geom_export str mbrFromString(mbr **w, const str *src);
 geom_export str mbrFromMBR(mbr **w, mbr **src);
 geom_export int wkbTOSTR(char **dst, int *len, wkb *atom);
@@ -58,7 +58,7 @@ geom_export wkb *wkbNULL(void);
 geom_export str wkbAsText(str *r, wkb **w);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
-geom_export int wkbWRITE(wkb *a, stream *s, size_t cnt);
+geom_export gdk_return wkbWRITE(wkb *a, stream *s, size_t cnt);
 geom_export int wkbLENGTH(wkb *p);
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
@@ -279,7 +279,7 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 	return a;
 }
 
-int
+gdk_return
 mbrWRITE(mbr *c, stream *s, size_t cnt)
 {
 	size_t i;
@@ -576,7 +576,7 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 	return a;
 }
 
-int
+gdk_return
 wkbWRITE(wkb *a, stream *s, size_t cnt)
 {
 	int len = a->len;

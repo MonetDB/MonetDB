@@ -127,7 +127,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			} else if (b->T->vheap->parentid == n->T->vheap->parentid) {
 				toff = 0;
 			} else if (b->T->vheap->parentid != bid &&
-				   unshare_string_heap(b) == GDK_FAIL) {
+				   unshare_string_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
@@ -192,7 +192,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
-				if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) == GDK_FAIL) {
+				if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
@@ -335,7 +335,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
-					if (GDKupgradevarheap(b->T, v, 0, force) == GDK_FAIL) {
+					if (GDKupgradevarheap(b->T, v, 0, force) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -387,7 +387,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
  * The content of a BAT can be appended to (removed from) another
  * using BATins (BATdel).
  */
-#define bunins(b,h,t) if (BUNins(b,h,t,force) == GDK_FAIL) return GDK_FAIL;
+#define bunins(b,h,t) if (BUNins(b,h,t,force) != GDK_SUCCEED) return GDK_FAIL;
 gdk_return
 BATins(BAT *b, BAT *n, bit force)
 {
@@ -428,7 +428,7 @@ BATins(BAT *b, BAT *n, bit force)
 
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(b, grows) == GDK_FAIL)
+		if (BATextend(b, grows) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 
@@ -440,7 +440,7 @@ BATins(BAT *b, BAT *n, bit force)
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BAThdense(n))) {
 			b->hseqbase = h;
 		} else if (t + 1 != (BUN) h || !BAThdense(n)) {
-			if (BATmaterializeh(b) == GDK_FAIL)
+			if (BATmaterializeh(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 			countonly = 0;
 		}
@@ -453,7 +453,7 @@ BATins(BAT *b, BAT *n, bit force)
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BATtdense(n))) {
 			b->tseqbase = h;
 		} else if (t + 1 != (BUN) h || !BATtdense(n)) {
-			if (BATmaterializet(b) == GDK_FAIL)
+			if (BATmaterializet(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 			countonly = 0;
 		}
@@ -551,7 +551,7 @@ BATins(BAT *b, BAT *n, bit force)
 			   !GDK_ELIMDOUBLES(n->T->vheap) &&
 			   b->T->vheap->hashash == n->T->vheap->hashash &&
 			   VIEWtparent(n) == 0) {
-			if (insert_string_bat(b, n, 0, force) == GDK_FAIL)
+			if (insert_string_bat(b, n, 0, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
@@ -653,7 +653,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 		if (ncap > grows)
 			grows = ncap;
-		if (BATextend(b, grows) == GDK_FAIL)
+		if (BATextend(b, grows) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 
@@ -690,7 +690,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			return GDK_SUCCEED;
 		}
 		/* we need to materialize the tail */
-		if (BATmaterializet(b) == GDK_FAIL)
+		if (BATmaterializet(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 
@@ -759,7 +759,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash) {
-			if (insert_string_bat(b, n, 1, force) == GDK_FAIL)
+			if (insert_string_bat(b, n, 1, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else if (b->htype == TYPE_void) {
 			if (!ATOMvarsized(b->ttype) &&
@@ -889,7 +889,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		}							\
 	} while (0)
 
-#define bundel(b,h,t) do { if (BUNdel(b,h,t,force) == GDK_FAIL) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
+#define bundel(b,h,t) do { if (BUNdel(b,h,t,force) != GDK_SUCCEED) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
 gdk_return
 BATdel(BAT *b, BAT *n, bit force)
 {
@@ -1158,7 +1158,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		 * if it is void, either we didn't get here (already
 		 * sorted correctly), or we will fall into BATrevert
 		 * below which does the materialization for us */
-		if (BATmaterializet(b) == GDK_FAIL)
+		if (BATmaterializet(b) != GDK_SUCCEED)
 			return NULL;
 	}
 
@@ -1172,7 +1172,7 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
 		    b->H->vheap ? b->H->vheap->base : NULL,
 		    BATcount(b), Hsize(b), Tsize(b), b->htype,
-		    reverse, stable) == GDK_FAIL) {
+		    reverse, stable) != GDK_SUCCEED) {
 		if (copy)
 			BBPreclaim(b);
 		return NULL;
@@ -1441,7 +1441,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 					    on ? Tloc(on, BUNfirst(on) + r) : NULL,
 					    bn->T->vheap ? bn->T->vheap->base : NULL,
 					    p - r, Tsize(bn), on ? Tsize(on) : 0,
-					    bn->ttype, reverse, stable) == GDK_FAIL)
+					    bn->ttype, reverse, stable) != GDK_SUCCEED)
 					goto error;
 				r = p;
 				prev = grps[p];
@@ -1452,7 +1452,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			    on ? Tloc(on, BUNfirst(on) + r) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,
 			    p - r, Tsize(bn), on ? Tsize(on) : 0,
-			    bn->ttype, reverse, stable) == GDK_FAIL)
+			    bn->ttype, reverse, stable) != GDK_SUCCEED)
 			goto error;
 		/* if single group (r==0) the result is (rev)sorted,
 		 * otherwise not */
@@ -1471,13 +1471,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
 			    bn->T->vheap ? bn->T->vheap->base : NULL,
 			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
-			    bn->ttype, reverse, stable) == GDK_FAIL)
+			    bn->ttype, reverse, stable) != GDK_SUCCEED)
 			goto error;
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 	}
 	if (groups) {
-		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) == GDK_FAIL)
+		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
 		if ((*groups)->tkey && (bn->tsorted || bn->trevsorted)) {
 			/* if new groups bat is key and the result bat
@@ -1526,7 +1526,7 @@ BATrevert(BAT *b)
 	BATcheck(b, "BATrevert", GDK_FAIL);
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		/* materialize void columns in-place */
-		if (BATmaterialize(b) == GDK_FAIL)
+		if (BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	ALIGNdel(b, "BATrevert", FALSE, GDK_FAIL);

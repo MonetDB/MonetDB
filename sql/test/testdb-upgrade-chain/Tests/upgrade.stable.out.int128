@@ -90,9 +90,15 @@ create filter function sys."ilike"(val string, pat string, esc string) external 
 create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
 drop view sys.storagemodel;
 drop view sys.tablestoragemodel;
+drop view sys.storage;
 drop function sys.storagemodel;
 drop function sys.imprintsize;
 drop function sys.columnsize;
+drop function sys.storage;
+create function sys.storage()
+returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
+external name sql.storage;
+create view sys.storage as select * from sys.storage();
 create function sys.columnsize(nme string, i bigint, d bigint)
 returns bigint
 begin
@@ -213,9 +219,9 @@ create function sys.tracelog()
 	stmt string         
 	) external name sql.dump_trace;
 create view sys.tracelog as select * from sys.tracelog();
-insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 delete from systemfunctions where function_id not in (select id from functions);
-update sys._tables set system = true where name in ('statistics', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
 drop procedure sys.cluster1;
 drop procedure sys.cluster2;
 set schema "testschema";

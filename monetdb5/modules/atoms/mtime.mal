@@ -40,9 +40,9 @@ command date(s:date):date
 address MTIMEdate_date
 comment "Noop routine.";
 
-command fromstr() :date
+command fromstr()
 address date_fromstr;
-command tostr() :str
+command tostr()
 address date_tostr;
 
 
@@ -106,9 +106,9 @@ comment "Equality of two dates";
 #        SEP = '.' or ':'
 # @end verbatim
 atom daytime :int;
-command fromstr():daytime
+command fromstr()
 address daytime_tz_fromstr;
-command tostr():str
+command tostr()
 address daytime_tostr;
 
 
@@ -180,10 +180,10 @@ comment "Equality of two daytimes";
 # timezone. The default local timezone is just GMT+00, but it can be set
 # arbitrarily.
 atom timestamp :lng;
-command fromstr():timestamp
+command fromstr()
 address timestamp_fromstr;
 
-command tostr():str
+command tostr()
 address timestamp_tostr;
 
 command unix_epoch{unsafe}():timestamp
@@ -296,9 +296,9 @@ comment "Equality of two timestamps";
 # Other values of the rule parameters on creating a timezone will produce a
 # nil-timezone.
 atom timezone :lng;
-command fromstr():timezone
+command fromstr()
 address tzone_fromstr;
-command tostr():str
+command tostr()
 address tzone_tostr;
 command str(z:timezone):str
 address MTIMEtzone_tostr;
@@ -309,9 +309,9 @@ address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
 
 atom zrule :int;
-command fromstr():zrule
+command fromstr()
 address rule_fromstr;
-command tostr():str
+command tostr()
 address rule_tostr;
 command define(m:int,d:int,w:int,h:int,min:int):zrule
 address MTIMEruleDef0
