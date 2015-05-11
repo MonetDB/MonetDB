@@ -420,7 +420,7 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 
 
 static BAT*
-materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, void* defVal) {
+materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, char* defVal) {
     BAT *b = NULL;
 
 #define fillVals(TPE, def)                     \
@@ -444,50 +444,50 @@ materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, void* de
     } while (0)
 
 	switch (c->type.type->localtype) {
-        case TYPE_bte:
-            if(!defVal)
-                fillVals(bte, bte_nil);
-            else
-                fillVals(bte, *(bte*)defVal);
-            break;
-        case TYPE_sht:
-            if(!defVal)
-                fillVals(sht, sht_nil);
-            else
-                fillVals(sht, *(sht*)defVal);
-            break;
-        case TYPE_int:
-            if(!defVal)
-                fillVals(int, int_nil);
-            else
-                fillVals(int, *(int*)defVal);
-            break;
-        case TYPE_lng:
-            if(!defVal)
-                fillVals(lng, lng_nil);
-            else
-                fillVals(lng, *(lng*)defVal);
-            break;
+        case TYPE_bte: {
+			bte val = bte_nil;
+            if(defVal)
+            	val = atoi(defVal);
+			fillVals(bte, val);
+        }	break;
+        case TYPE_sht: {
+			short val = sht_nil;
+            if(defVal)
+				val = atoi(defVal);
+            fillVals(sht, val);
+        }	break;
+        case TYPE_int: {
+			int val = int_nil;
+            if(defVal)
+				val = atoi(defVal);
+            fillVals(int, val);
+        }	break;
+        case TYPE_lng: {
+			long val = lng_nil;
+            if(defVal)
+				val = atol(defVal);
+            fillVals(lng, val);
+        }	break;
 #ifdef HAVE_HGE
-        case TYPE_hge:
-            if(!defVal)
-                fillVals(hge, hge_nil);
-            else
-                fillVals(hge, *(hge*)defVal);
-            break;
+        case TYPE_hge: {
+			hge val = hge_nil;
+            if(defVal)
+				val = atol(defVal);
+            fillVals(hge, val);
+		}	break;
 #endif
-        case TYPE_flt:
-            if(!defVal)
-                fillVals(flt, flt_nil);
-            else
-                fillVals(flt, *(flt*)defVal);
-            break;
-        case TYPE_dbl:
-            if(!defVal)
-                fillVals(dbl, dbl_nil);
-            else
-                fillVals(dbl, *(dbl*)defVal);
-            break;
+        case TYPE_flt: {
+			float val = flt_nil;
+            if(defVal)
+				val = atof(defVal);
+            fillVals(flt, val);
+        }    break;
+        case TYPE_dbl: {
+			double val = dbl_nil;
+            if(defVal)
+				val = atof(defVal);
+            fillVals(dbl, val);
+        }    break;
         case TYPE_str: {
             BUN i; 
 
@@ -496,7 +496,7 @@ materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, void* de
 
             /*Fill the rest of the cells with the default value or NULL if no \
              * default values is provided*/
-			for(i=BATcount(b_in); i<cellsNum; i++) {
+			for(i=0; i<cellsNum; i++) {
                 if(!defVal)
                     BUNappend(b,str_nil, TRUE);
                 else
@@ -553,9 +553,10 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			updatedOids = (oid*)Tloc(b, BUNfirst(b));
 			if(updatedOids)
 				neededCells = updatedOids[BATcount(b)-1]; //we do not need to create more than the maximum updated oid
-			else
+			else {
 				neededCells = b->tseqbase;
-			neededCells++; //the previous is oid and oids start from 0
+				neededCells+=BATcount(b);
+			}
 			b_in = temp_descriptor(bat->ibid); //the BAT of the updated column
 
 			existingCells = BATcount(b_in) + bat->cnt;
