@@ -815,12 +815,12 @@ showcpu(void)
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,0.%02d\n", cpus?cpus:1);
-	fprintf(gnudata, "set origin 0.0, 0.%d\n", 88 - cpus);
+	fprintf(gnudata, "set size 1,0.084\n");
+	fprintf(gnudata, "set origin 0.0, 0.8\n");
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
-	fprintf(gnudata, "set ytics 0, %d\n",4);
+	fprintf(gnudata, "set ytics 0, %d\n",cpus <=8 ?4:8);
 	fprintf(gnudata, "set grid ytics\n");
 
 	fprintf(gnudata, "set border\n");
