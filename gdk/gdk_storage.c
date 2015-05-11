@@ -271,7 +271,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_FALLOCATE
-		if (fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size) < 0 &&
+		if ((rt = fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size)) < 0 &&
 		    errno == EOPNOTSUPP)
 			/* on Linux, posix_fallocate uses a slow
 			 * method to allocate blocks if the underlying
@@ -287,6 +287,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 			 * the operation, so just resize the file */
 #endif
 #endif
+		/* we get here when (posix_)fallocate fails because it
+		 * is not supported on the file system, or if neither
+		 * function exists */
 		rt = ftruncate(fd, (off_t) size);
 	}
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",

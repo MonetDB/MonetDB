@@ -3279,10 +3279,17 @@ BATproject(BAT *l, BAT *r)
 	}
 	assert(l->ttype == TYPE_oid);
 
-	if (ATOMstorage(tpe) == TYPE_str && l->T->nonil &&
-	    (rcount == 0 || lcount > (rcount >> 3))) {
+	if (ATOMstorage(tpe) == TYPE_str &&
+	    l->T->nonil &&
+	    (rcount == 0 ||
+	     lcount > (rcount >> 3) ||
+	     r->batRestricted == BAT_READ)) {
 		/* insert strings as ints, we need to copy the string
-		 * heap whole sale */
+		 * heap whole sale; we can not do this if there are
+		 * nils in the left column, and we will not do it if
+		 * the left is much smaller than the right and the
+		 * right is writable (meaning we have to actually copy
+		 * the right string heap) */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
