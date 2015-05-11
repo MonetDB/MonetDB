@@ -17,8 +17,13 @@ static int
 bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_OCT2014 52100
+#define CATALOG_OCT2014SP3 52101
 
 	(void)newversion;
+	if (oldversion == CATALOG_OCT2014SP3) {
+		catalog_version = oldversion;
+		return 0;
+	}
 	if (oldversion == CATALOG_OCT2014) {
 		catalog_version = oldversion;
 		return 0;
@@ -73,8 +78,39 @@ bl_postversion( void *lg)
 		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
 		bat_destroy(te);
 		bat_destroy(tn);
+	} else if (catalog_version == CATALOG_OCT2014SP3) {
+		BAT *te, *tn, *tne;
+		BATiter tei, tni;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_sqlname")));
+		if (!te || !tn)
+			return;
+		tei = bat_iterator(te);
+		tni = bat_iterator(tn);
+		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		if (!tne)
+			return;
+        	BATseqbase(tne, te->hseqbase);
+		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+			int eclass = *(int*)BUNtail(tei, p);
+			char *name = BUNtail(tni, p);
+
+			if (eclass == EC_MONTH)		/* old EC_INTERVAL */
+				eclass = strcmp(name, "sec_interval") == 0 ? EC_SEC : EC_MONTH;
+			else if (eclass >= EC_SEC)	/* old EC_DEC */
+				eclass += 1;
+			BUNappend(tne, &eclass, TRUE);
+		}
+		BATsetaccess(tne, BAT_READ);
+		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
+		bat_destroy(te);
+		bat_destroy(tn);
 	}
-	if (catalog_version == CATALOG_OCT2014) {
+	if (catalog_version == CATALOG_OCT2014 ||
+	    catalog_version == CATALOG_OCT2014SP3) {
 		/* we need to replace tables.readonly by tables.access column */
 		BAT *b, *b1;
 		BATiter bi;

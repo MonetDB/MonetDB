@@ -69,12 +69,14 @@
 			maxgrps = BATcount(b);				\
 			if (extents) {					\
 				BATsetcount(en, ngrp);			\
-				BATextend(en, maxgrps);			\
+				if (BATextend(en, maxgrps) != GDK_SUCCEED) \
+					goto error;			\
 				exts = (oid *) Tloc(en, BUNfirst(en));	\
 			}						\
 			if (histo) {					\
 				BATsetcount(hn, ngrp);			\
-				BATextend(hn, maxgrps);			\
+				if (BATextend(hn, maxgrps) != GDK_SUCCEED) \
+					goto error;			\
 				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
 			}						\
 		}							\
