@@ -1537,9 +1537,8 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL) {
+				if (BATextend(r1, newcap) == NULL ||
+					BATextend(r2, newcap) == NULL) {
 					msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 					goto bailout;
 				}

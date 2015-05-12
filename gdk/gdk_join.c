@@ -1063,9 +1063,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
-			r1 = BATextend(r1, newcap);
-			r2 = BATextend(r2, newcap);
-			if (r1 == NULL || r2 == NULL) {
+			if (BATextend(r1, newcap) == NULL ||
+			    BATextend(r2, newcap) == NULL) {
 				goto bailout;
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
@@ -1217,10 +1216,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -1251,9 +1248,8 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			newcap = BATgrows(r1);				\
 			BATsetcount(r1, BATcount(r1));			\
 			BATsetcount(r2, BATcount(r2));			\
-			r1 = BATextend(r1, newcap);			\
-			r2 = BATextend(r2, newcap);			\
-			if (r1 == NULL || r2 == NULL)			\
+			if (BATextend(r1, newcap) == NULL ||		\
+			    BATextend(r2, newcap) == NULL)		\
 				goto bailout;				\
 			assert(BATcapacity(r1) == BATcapacity(r2));	\
 		}							\
@@ -1405,9 +1401,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
+						if (BATextend(r1, newcap) == NULL ||
+						    BATextend(r2, newcap) == NULL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -1519,9 +1514,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						r1 = BATextend(r1, newcap);
-						r2 = BATextend(r2, newcap);
-						if (r1 == NULL || r2 == NULL)
+						if (BATextend(r1, newcap) == NULL ||
+						    BATextend(r2, newcap) == NULL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -1758,9 +1752,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL)
+				if (BATextend(r1, newcap) == NULL ||
+				    BATextend(r2, newcap) == NULL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2106,9 +2099,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				r1 = BATextend(r1, newcap);
-				r2 = BATextend(r2, newcap);
-				if (r1 == NULL || r2 == NULL)
+				if (BATextend(r1, newcap) == NULL ||
+				    BATextend(r2, newcap) == NULL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}

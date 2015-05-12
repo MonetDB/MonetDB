@@ -735,8 +735,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				fmt[i].c = b;
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
-					if ((fmt[i].c = BATextend(fmt[i].c, (BUN) sz)) == NULL) {
-						for (i--; i >= 0; i--)
+					if (BATextend(fmt[i].c, (BUN) sz) == NULL) {
+						for (; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
 						sql_error(m, 500, "failed to allocate result table sizes ");
 						return NULL;
