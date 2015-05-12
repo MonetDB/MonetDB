@@ -1786,7 +1786,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 	if (dim == NULL)
 		return NULL;
 	
-#define materialiseDim(TPE, min, step, max)                     \
+#define createDim(TPE, min, step, max)                     \
     do {                                \
 			TPE /*it,*/ *elements = NULL; \
 			long repeat1, repeat2, i, j; \
@@ -1794,7 +1794,6 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 			repeat1 = dim->lvl1_repeatsNum; \
 			repeat2 = dim->lvl2_repeatsNum; \
 \
-/*        	if((b = BATnew(TYPE_void, TYPE_##TPE, t->cellsNum, TRANSIENT)) == NULL)*/   \
 			if((b = BATnew(TYPE_void, TYPE_##TPE, repeat1+repeat2+1, TRANSIENT)) == NULL) \
         		return NULL;                   \
 \
@@ -1811,15 +1810,6 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 \
 			*elements = step; \
 \
-			/*for(j=0; j<repeat2; j++) { \
-        		for(it = min ; it <= max ; it += step) { \
-            		for(i=0; i<repeat1; i++) { \
-                		*elements = (TPE) it; \
-                		elements++; \
-            		} \
-        		} \
-    		} */\
-\
         	b->tsorted = 0;              \
         	b->trevsorted = 0;           \
     } while (0)
@@ -1830,27 +1820,27 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 
 	switch (dim->type.type->localtype) {
     	case TYPE_bte:
-    	    materialiseDim(bte, dim->min->data.val.btval, dim->step->data.val.btval, dim->max->data.val.btval);
+    	    createDim(bte, dim->min->data.val.btval, dim->step->data.val.btval, dim->max->data.val.btval);
         	break;
     	case TYPE_sht:
-        	materialiseDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
+        	createDim(sht, dim->min->data.val.shval, dim->step->data.val.shval, dim->max->data.val.shval);
         	break;
     	case TYPE_int:
-    		materialiseDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
+    		createDim(int, dim->min->data.val.ival, dim->step->data.val.ival, dim->max->data.val.ival);
         	break;
     	case TYPE_lng:
-        	materialiseDim(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);
+        	createDim(lng, dim->min->data.val.lval, dim->step->data.val.lval, dim->max->data.val.lval);
         	break;
 #ifdef HAVE_HGE
     	case TYPE_hge:
-        	materialiseDim(hge, dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval);
+        	createDim(hge, dim->min->data.val.hval, dim->step->data.val.hval, dim->max->data.val.hval);
        	break;
 #endif
 		case TYPE_flt:
-        	materialiseDim(flt, dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval);
+        	createDim(flt, dim->min->data.val.fval, dim->step->data.val.fval, dim->max->data.val.fval);
         	break;
     	case TYPE_dbl:
-        	materialiseDim(dbl, dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval);
+        	createDim(dbl, dim->min->data.val.dval, dim->step->data.val.dval, dim->max->data.val.dval);
         	break;
     	case TYPE_str:
 			fprintf(stderr, "mvc_create_dimension_bat: str dimension needs special handling\n");
@@ -2229,6 +2219,115 @@ mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.create_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 	throw(SQL, "sql.create_dimension", "unable to find %s(%s)", *tname, *dname);
+}
+
+str materialiseDimension(bat* res, bat* in) {
+	BAT *dimensionBAT, *resBAT;
+	int tpe;
+
+ 	if ((dimensionBAT = BATdescriptor(*in)) == NULL) {
+		throw(MAL, "sql.materialise_dimension", RUNTIME_OBJECT_MISSING);
+	}
+
+	tpe = ATOMtype(dimensionBAT->ttype);
+
+
+#define materialise(TPE) \
+    do { \
+        /*find the min, max, step in the dimension*/ \
+        long repeat1, repeat2, elementsNum; \
+        TPE min, max, step; \
+        oid i, j; \
+        TPE *el_in, *el_out, el; \
+\
+        el_in = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+        min = el_in[0]; \
+        step = el_in[BATcount(dimensionBAT)-1]; \
+\
+        repeat1 = 1; \
+        for(i=1; i<BATcount(dimensionBAT); i++) { \
+            if(min == el_in[i]) \
+                repeat1++; \
+            else { \
+                max = el_in[i]; \
+                break; \
+            } \
+        } \
+\
+		repeat2 = 1; \
+        for(; i<BATcount(dimensionBAT); i++) { \
+            if(max == el_in[i]) \
+                repeat2++; \
+            else { \
+                break; \
+            } \
+        } \
+fprintf(stderr, "materialise repeat1 = %ld\n", repeat1); \
+fprintf(stderr, "materialise repeat2 = %ld\n", repeat2); \
+\
+        elementsNum = floor((max-min)/step) + 1; \
+fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
+\
+		if((resBAT = BATnew(TYPE_void, TYPE_##TPE, repeat1*elementsNum*repeat2, TRANSIENT)) == NULL) \
+        	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT"); \
+\
+		el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+		for(j=0; j<(unsigned long)repeat2; j++) { \
+			for(el=min; el<=max; el+=step) { \
+				for(i=0; i<(unsigned long)repeat1; i++) { \
+					*el_out = el; \
+					el_out++; \
+				} \
+			} \
+		} \
+\
+        BATseqbase(resBAT,0); \
+        BATsetcount(resBAT, repeat1*elementsNum*repeat2);                  \
+\
+    } while(0)
+
+	
+    switch (tpe) {
+    case TYPE_bte:
+        materialise(bte);
+        break;
+    case TYPE_sht:
+        materialise(sht);
+        break;
+    case TYPE_int:
+        materialise(int);
+        break;
+    case TYPE_flt:
+        materialise(flt);
+        break;
+    case TYPE_dbl:
+        materialise(dbl);
+        break;
+    case TYPE_lng:
+        materialise(lng);
+        break;
+#ifdef HAVE_HGE
+    case TYPE_hge:
+        materialise(hge);
+        break;
+#endif
+    case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+        materialise(int);
+#else
+        materialise(lng);
+#endif
+        break;
+    default:
+        fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
+        return NULL;
+	}
+	
+	BBPunfix(dimensionBAT->batCacheid);
+
+	BBPkeepref(*res = resBAT->batCacheid);
+    return MAL_SUCCEED;
+
 }
 
 /*

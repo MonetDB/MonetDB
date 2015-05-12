@@ -1927,13 +1927,13 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
 		/* "=" or "==" */
 		//equality => call simple subselect
-		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 0);
+		return BATsubselect(b, s, val, NULL, 1, 1, 0);
 	}
 	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
 		/* "!=" (equivalent to "<>") */
 		//not equal to => simple subselect that returns all but the oids
 		//of the qualifying value
-		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 1);
+		return BATsubselect(b, s, val, NULL, 1, 1, 1);
 	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {
@@ -1977,11 +1977,11 @@ BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 		return newempty("BATdimensionThetasubselect");
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
 		/* "=" or "==" */
-		return BATsubselect(b, s, val, NULL, 1, 1, 0);
+		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 0);
 	}
 	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
 		/* "!=" (equivalent to "<>") */
-		return BATsubselect(b, s, val, NULL, 1, 1, 1);
+		return BATdimensionSubselect(b, s, val, NULL, 1, 1, 1);
 	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {

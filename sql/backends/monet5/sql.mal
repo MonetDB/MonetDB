@@ -215,6 +215,8 @@ pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid
 address mvc_create_dimension_bat_wrap
 comment "Create the 'schema.table.dimension' BAT";
 
+command materialise_dimension(:bat[:oid,:any]):bat[:oid,:any]
+address materialiseDimension;
 #pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
 #address mvc_dimension_subselect_with_cand_bat_wrap;
 #pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]

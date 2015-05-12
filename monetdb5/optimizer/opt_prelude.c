@@ -45,6 +45,7 @@ str binddbatRef;
 str bindidxRef;
 str bindRef;
 str createDimRef;
+str materialiseDimRef;
 str bpmRef;
 str bstreamRef;
 str calcRef;
@@ -298,6 +299,7 @@ void optimizerInit(void)
 	bindidxRef = putName("bind_idxbat",11);
 	bindRef = putName("bind",4);
 	createDimRef = putName("create_dimension",16);
+	materialiseDimRef = putName("materialise_dimension",21);
 	bpmRef = putName("bpm",3);
 	bstreamRef = putName("bstream",7);
 	calcRef = putName("calc",4);

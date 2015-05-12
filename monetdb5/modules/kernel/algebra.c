@@ -413,7 +413,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+		throw(MAL, "algebra.thetasubselect", GDK_EXCEPTION);
 	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -432,11 +432,11 @@ ALGdimensionThetasubselect2(bat *result, const bat *bid, const bat *sid, const v
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.dimension_thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.dimension_thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, t, val);
 	bn = BATdimensionThetasubselect(b, s, val, *op);
@@ -444,7 +444,7 @@ ALGdimensionThetasubselect2(bat *result, const bat *bid, const bat *sid, const v
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+		throw(MAL, "algebra.dimension_thetasubselect", GDK_EXCEPTION);
 	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);

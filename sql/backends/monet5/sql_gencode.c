@@ -774,6 +774,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			(void) pushInt(mb, q, 1);
 		} break;
+		case st_materialise: { 
+			int l;
+			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
+				return -1;
+
+			q = newStmt1(mb, sqlRef, materialiseDimRef);
+			q = pushArgument(mb, q, l);
+			if (q == NULL)
+				return -1;
+			s->nr = getDestVar(q);
+			return s->nr;
+		}
 		case st_var:{
 			if (s->op1) {
 				if (VAR_GLOBAL(s->flag)) {	/* globals */
@@ -1323,13 +1335,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						strcpy(dimension_cmd+strlen(dimStr), cmd);
 						
 						q = newStmt2(mb, algebraRef, dimension_cmd);
+						q = pushArgument(mb, q, l);
 					} else {
 						q = newStmt2(mb, algebraRef, cmd);
+						q = pushArgument(mb, q, l);
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
 					}
 				
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, r);
 					q = pushBit(mb, q, TRUE);

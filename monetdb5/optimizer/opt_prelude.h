@@ -43,6 +43,7 @@ opt_export  str binddbatRef;
 opt_export  str bindidxRef;
 opt_export  str bindRef;
 opt_export  str createDimRef;
+opt_export  str materialiseDimRef;
 opt_export  str bpmRef;
 opt_export  str bstreamRef;
 opt_export  str calcRef;
