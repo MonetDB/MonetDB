@@ -120,7 +120,7 @@ GDKcreatedir(const char *dir)
 	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
-int
+gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
 	DIR *dirp = opendir(dirname);
@@ -131,7 +131,7 @@ GDKremovedir(int farmid, const char *dirname)
 	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirname);
 
 	if (dirp == NULL)
-		return 0;
+		return GDK_SUCCEED;
 	while ((dent = readdir(dirp)) != NULL) {
 		if ((dent->d_name[0] == '.') && ((dent->d_name[1] == 0) || (dent->d_name[1] == '.' && dent->d_name[2] == 0))) {
 			continue;
@@ -148,7 +148,7 @@ GDKremovedir(int farmid, const char *dirname)
 	}
 	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirname, ret);
 
-	return ret;
+	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
 #define _FUNBUF		0x040000
@@ -161,9 +161,9 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	char *path;
 	int fd, flags = 0;
 
-	if ((nme == NULL) || (*nme == 0)) {
-		return 0;
-	}
+	if (nme == NULL || *nme == 0)
+		return -1;
+
 	path = GDKfilepath(farmid, BATDIR, nme, extension);
 
 	if (*mode == 'm') {	/* file open for mmap? */
@@ -198,18 +198,25 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 FILE *
 GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
-	int fd = GDKfdlocate(farmid, nme, mode, extension);
+	int fd;
+	FILE *f;
 
+	if ((fd = GDKfdlocate(farmid, nme, mode, extension)) < 0)
+		return NULL;
 	if (*mode == 'm')
 		mode++;
-	return (fd < 0) ? NULL : fdopen(fd, mode);
+	if ((f = fdopen(fd, mode)) == NULL) {
+		close(fd);
+		return NULL;
+	}
+	return f;
 }
 
 
 /*
  * Unlink the file.
  */
-int
+gdk_return
 GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 {
 	if (nme && *nme) {
@@ -221,18 +228,18 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 			GDKsyserror("GDKunlink(%s)\n", path);
 			IODEBUG fprintf(stderr, "#unlink %s = -1\n", path);
 			GDKfree(path);
-			return -1;
+			return GDK_FAIL;
 		}
 		GDKfree(path);
-		return 0;
+		return GDK_SUCCEED;
 	}
-	return -1;
+	return GDK_FAIL;
 }
 
 /*
  * A move routine is overloaded to deal with extensions.
  */
-int
+gdk_return
 GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 {
 	char *path1;
@@ -243,7 +250,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
 		errno = EFAULT;
-		return -1;
+		return GDK_FAIL;
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
 	path2 = GDKfilepath(farmid, dir2, nme2, ext2);
@@ -253,10 +260,10 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 
 	GDKfree(path1);
 	GDKfree(path2);
-	return ret;
+	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
-int
+gdk_return
 GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
@@ -265,7 +272,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 
 	if (fstat(fd, &stb) < 0) {
 		/* shouldn't happen */
-		return -1;
+		return GDK_FAIL;
 	}
 	/* if necessary, extend the underlying file */
 	IODEBUG t0 = GDKms();
@@ -296,13 +303,15 @@ GDKextendf(int fd, size_t size, const char *fn)
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt < 0 ? " (failed)" : "");
 	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
-	return -(rt != 0);
+	return rt != 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
-int
+gdk_return
 GDKextend(const char *fn, size_t size)
 {
-	int fd, rt = -1, flags = O_RDWR;
+	int fd, flags = O_RDWR;
+	gdk_return rt = GDK_FAIL;
+
 #ifdef WIN32
 	/* On Windows, open() fails if the file is bigger than 2^32 bytes without O_BINARY. */
 	flags |= O_BINARY;
@@ -324,7 +333,7 @@ GDKextend(const char *fn, size_t size)
  * These modes indicates the disk-layout and the intended mapping.
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
-int
+gdk_return
 GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
 {
 	int err = 0;
@@ -332,8 +341,8 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MMAP) {
-		if (size)
-			err = MT_msync(buf, size);
+		if (size && MT_msync(buf, size) < 0)
+			err = -1;
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
 				    "mode=%d\n", nme, ext ? ext : "",
@@ -391,7 +400,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				err = -1;
 			}
 			err |= close(fd);
-			if (err && GDKunlink(farmid, BATDIR, nme, ext)) {
+			if (err && GDKunlink(farmid, BATDIR, nme, ext) != GDK_SUCCEED) {
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
@@ -405,7 +414,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				 nme, ext ? ext : "", (int) mode);
 		}
 	}
-	return err;
+	return err ? GDK_FAIL : GDK_SUCCEED;
 }
 
 /*
@@ -475,7 +484,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 		if (size == 0)
 			size = GDK_mmap_pagesize;
 		path = GDKfilepath(farmid, BATDIR, nme, ext);
-		if (path != NULL && GDKextend(path, size) == 0) {
+		if (path != NULL && GDKextend(path, size) == GDK_SUCCEED) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			if (mode == STORE_PRIV)
@@ -598,7 +607,7 @@ DESCclean(BAT *b)
 gdk_return
 BATsave(BAT *bd)
 {
-	int err = 0;
+	gdk_return err = GDK_SUCCEED;
 	char *nme;
 	BATstore bs;
 	BAT *b = bd;
@@ -659,19 +668,19 @@ BATsave(BAT *bd)
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->H->heap.dirty)
-		if (err == 0 && b->htype)
+		if (err == GDK_SUCCEED && b->htype)
 			err = HEAPsave(&b->H->heap, nme, "head");
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty)
-		if (err == 0 && b->ttype)
+		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->T->heap, nme, "tail");
 	if (b->H->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
 		if (b->htype && b->hvarsized) {
-			if (err == 0)
+			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->H->vheap, nme, "hheap");
 		}
 	if (b->T->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
 		if (b->ttype && b->tvarsized) {
-			if (err == 0)
+			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->T->vheap, nme, "theap");
 		}
 
@@ -680,7 +689,7 @@ BATsave(BAT *bd)
 	if (b->T->vheap)
 		GDKfree(b->T->vheap);
 
-	if (err == 0) {
+	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = 1;
 		DESCclean(bd);
 		if (bd->htype && bd->H->heap.storage == STORE_MMAP) {
@@ -699,7 +708,7 @@ BATsave(BAT *bd)
 			HEAPshrink(bd->T->vheap, bd->T->vheap->free);
 		return GDK_SUCCEED;
 	}
-	return GDK_FAIL;
+	return err;
 }
 
 
@@ -723,7 +732,7 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void) {
-		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			return NULL;
 		}
 		assert(b->H->heap.size >> b->H->shift <= BUN_MAX);
@@ -732,7 +741,7 @@ BATload_intern(bat i, int lock)
 		b->H->heap.base = NULL;
 	}
 	if (b->ttype != TYPE_void) {
-		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(&b->H->heap, 0);
 			return NULL;
 		}
@@ -742,7 +751,7 @@ BATload_intern(bat i, int lock)
 		}
 		if (b->batCapacity != (b->T->heap.size >> b->T->shift)) {
 			BUN cap = b->batCapacity;
-			int h;
+			gdk_return h;
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
@@ -752,7 +761,7 @@ BATload_intern(bat i, int lock)
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
 				h = HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
 			}
-			if (h < 0) {
+			if (h != GDK_SUCCEED) {
 				HEAPfree(&b->H->heap, 0);
 				HEAPfree(&b->T->heap, 0);
 				return NULL;
@@ -764,7 +773,7 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype)) {
-		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(&b->H->heap, 0);
 			HEAPfree(&b->T->heap, 0);
 			return NULL;

@@ -48,7 +48,7 @@ unshare_string_heap(BAT *b)
 				return GDK_FAIL;
 			}
 		}
-		if (HEAPcopy(h, b->T->vheap) < 0) {
+		if (HEAPcopy(h, b->T->vheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
 			return GDK_FAIL;
@@ -170,7 +170,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
 				/* if in "force" mode, the heap may be shared when
 				 * memory mapped */
-				if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) < 0) {
+				if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}

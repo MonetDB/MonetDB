@@ -3378,7 +3378,7 @@ BATproject(BAT *l, BAT *r)
 				if (bn->T->vheap->filename == NULL)
 					goto bailout;
 			}
-			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0)
+			if (HEAPcopy(bn->T->vheap, r->T->vheap) != GDK_SUCCEED)
 				goto bailout;
 		}
 		bn->ttype = r->ttype;

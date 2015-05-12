@@ -412,7 +412,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): open() failed\n", __FILE__, __LINE__, path, PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
 		}
-		if (GDKextendf(fd, *new_size, path) < 0) {
+		if (GDKextendf(fd, *new_size, path) != GDK_SUCCEED) {
 			close(fd);
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): GDKextendf() failed\n", __FILE__, __LINE__, path, PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
@@ -793,7 +793,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		*new_size = old_size;
 		return old_address;	/* don't bother shrinking */
 	}
-	if (GDKextend(path, *new_size) < 0) {
+	if (GDKextend(path, *new_size) != GDK_SUCCEED) {
 		fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): GDKextend() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 		return NULL;
 	}

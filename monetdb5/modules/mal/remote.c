@@ -1175,13 +1175,13 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) < 0 ||
+		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) != GDK_SUCCEED ||
 			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
 			goto bailout;
 		b->T->heap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->T->vheap, bb.theapsize, TRUE) < 0 ||
+		if (HEAPextend(b->T->vheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
 			mnstr_read(in, b->T->vheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->T->vheap->free = bb.theapsize;

@@ -997,7 +997,7 @@ typedef int (*GDKfcn) ();
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
+gdk_export gdk_return HEAPextend(Heap *h, size_t size, int mayshare);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -2472,9 +2472,9 @@ free_debug(void *ptr, const char *filename, int lineno)
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-gdk_export int GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
+gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-gdk_export int GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
+gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)))
@@ -2692,10 +2692,10 @@ BATmirror(register BAT *b)
  * you try to partially commit an already committed persistent BAT (it
  * needs the rollback mechanism).
  */
-gdk_export int TMcommit(void);
-gdk_export int TMabort(void);
-gdk_export int TMsubcommit(BAT *bl);
-gdk_export int TMsubcommit_list(bat *subcommit, int cnt);
+gdk_export gdk_return TMcommit(void);
+gdk_export gdk_return TMabort(void);
+gdk_export gdk_return TMsubcommit(BAT *bl);
+gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
 
 /*
  * @- Delta Management
