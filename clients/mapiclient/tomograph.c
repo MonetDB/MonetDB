@@ -563,9 +563,10 @@ static void resetTomograph(void){
 	}
 	if( inputfile == 0 ){
 		tracefd = fopen(buf,"w");
-		if( tracefd == NULL)
+		if( tracefd == NULL){
 			fprintf(stderr,"Could not create trace file '%s'\n",buf);
 			exit(-1);
+		}
 	}
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
