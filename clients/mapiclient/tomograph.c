@@ -414,7 +414,7 @@ showNumaHeatmap(void){
 	f= fopen(buf,"a");
 	if( f == NULL){
 		fprintf(stderr,"Can not create %s\n",buf);
-		return;
+		exit(-1);
 	}
 	for( i=0; i< MAXTHREADS; i++){
 		if( target[i])
@@ -557,10 +557,15 @@ static void resetTomograph(void){
 
 	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename,DBNAME,atlaspage);
 
-	if( inputfile == 0 || strcmp(inputfile,buf) ){
+	if( inputfile && strcmp(inputfile,buf) == 0 ){
+		fprintf(stderr,"Should not overwrite existing trace file '%s'\n",buf);
+		exit(-1);
+	}
+	if( inputfile == 0 ){
 		tracefd = fopen(buf,"w");
 		if( tracefd == NULL)
-			fprintf(stderr,"Could not create file %s\n",buf);
+			fprintf(stderr,"Could not create trace file '%s'\n",buf);
+			exit(-1);
 	}
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
@@ -574,6 +579,12 @@ static void resetTomograph(void){
 	events = 0;
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
+	for ( i=MAXTHREADS; i< maxbox; i++){
+		if( box[i].fcn ){
+			free(box[i].fcn);
+			box[i].fcn=0;
+		}
+	}
 	memset((char*) box, 0, sizeof(Box) * maxbox);
 
 	totalclkticks = 0; 
@@ -718,8 +729,8 @@ dumpboxes(void)
 	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.dat", cachebuf, basefilename,DBNAME, atlaspage);
 	f = fopen(buf, "w");
 	if(f == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		fprintf(stderr,"Could not create file '%s'\n",buf);
+		exit(-1);
 	}
 
 	for (i = 0; i < topbox; i++)
@@ -997,12 +1008,12 @@ showcolormap(char *filename, int all)
 	for (nl=0, c= currentquery; c && *c; c++)
 		nl += *c == '\n';
 
+	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename, DBNAME, atlaspage);
 	if (all) {
-		snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename, DBNAME, atlaspage);
 		f = fopen(buf, "w");
 		if (f == NULL) {
-			fprintf(stderr, "Creating file %s failed\n", buf);
-			exit(1);
+			fprintf(stderr, "Could not create file '%s'\n", buf);
+			exit(-1);
 		}
 		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
@@ -1102,6 +1113,7 @@ showcolormap(char *filename, int all)
 		h-= 17;
 	}
 	fprintf(f, "set label %d \"%d\" at 1750.0, 100.00\n", object++, atlaspage + 1);
+	fprintf(f, "set label %d \"%s\" at 500.0, 100.00\n", object++, buf);
 	fprintf(f, "set label %d \"%s\" at 0.0, 100.00\n", object++, date);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
@@ -1182,7 +1194,7 @@ createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
-	int top = 0;
+	int top = 0, rowoffset = 0;
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
@@ -1196,7 +1208,7 @@ createTomogram(void)
 	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename,DBNAME,atlaspage);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
-		printf("Could not create of %s\n", buf);
+		printf("Could not create file '%s'\n", buf);
 		exit(-1);
 	}
 	if( strrchr(buf,'.'))
@@ -1234,7 +1246,9 @@ createTomogram(void)
 	}
 
 
-	height = (top < cpus? cpus : top) * 20;
+	h = 10; /* unit height of bars */
+	height = (top < cpus? cpus : top) * 2 * h;
+	rowoffset = top<cpus ? cpus-top:0;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"threads\"\n");
 	fprintf(gnudata, "set key right \n");
@@ -1245,19 +1259,21 @@ createTomogram(void)
 
 	/* calculate the effective use of parallelism */
 	totalticks = 0;
+	if( top < cpus)
+		for(i=0; i < topbox; i++)
+			box[i].row += rowoffset;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
 
-	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "\"%d\" %d%c", rows[i], i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
+		fprintf(gnudata, "\"%d\" %d%c", rows[i], (rowoffset + i) * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
 	fprintf(gnudata, ")\n");
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
+			object++, 0, (rowoffset + i) * 2 * h + h/3, lastclk[rows[i]], (rowoffset + i) * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
@@ -1339,14 +1355,15 @@ update(char *line, EventRecord *ev)
  
 	if (topbox == maxbox || maxbox < topbox) {
 	
-		if( box == 0)
+		if( box == 0){
 			box = (Box*) malloc(MAXBOX * sizeof(Box)); 
-		else
+			memset((char*) box, 0, sizeof(Box) * MAXBOX);
+		} else
 			box = (Box*) realloc((void*)box, (maxbox + MAXBOX) * sizeof(Box)); 
 		if( box == NULL){
 			fprintf(stderr, "Out of space for trace, exceeds max entries %d\n", maxbox);
 			fprintf(stderr, "Restart with a slower beat might help, e.g. --beat=5000  or --beat=0\n");
-			exit(0);
+			exit(-1);
 		}
 		maxbox += MAXBOX;
 	}
@@ -1394,6 +1411,10 @@ update(char *line, EventRecord *ev)
 			return;
 		}
 		box[idx].fcn = ev->state == MDB_PING? strdup("profiler.ping"):strdup("profiler.wait");
+		if( box[idx].fcn == NULL){
+			fprintf(stderr,"Could not allocate blk->fcn\n");
+			exit(-1);
+		}
 		threads[ev->thread] = ++topbox;
 		idx = threads[ev->thread];
 		box[idx] = b;
@@ -1471,9 +1492,9 @@ update(char *line, EventRecord *ev)
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
 		box[idx].footstart = ev->tmpspace;
 		box[idx].stmt = ev->stmt;
-		box[idx].fcn = ev->fcn ? ev->fcn : strdup("");
+		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			currentquery = stripQuotes(malarguments[malretc]);
+			currentquery = stripQuotes(strdup(malarguments[malretc]));
 			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
 		}
 		return;
@@ -1750,14 +1771,16 @@ main(int argc, char **argv)
 	if (inputfile==0 || strcmp(buf, inputfile) ){
 		// avoid overwriting yourself
 		tracefd = fopen(buf,"w");
-		if( tracefd == NULL)
-			fprintf(stderr,"Could not create trace file\n");
+		if( tracefd == NULL){
+			fprintf(stderr,"Could not create trace file '%s'\n",buf);
+			exit(0);
+		}
 	}
 	if (inputfile) {
 		inpfd = fopen(inputfile,"r");
 		if (inpfd == NULL ){
-			fprintf(stderr,"ERROR Can not access '%s'\n",inputfile);
-			exit(0);
+			fprintf(stderr,"Can not access '%s'\n",inputfile);
+			exit(-1);
 		}
 		if( strstr(inputfile,".trace"))
 			*strstr(inputfile,".trace") = 0;
@@ -1832,7 +1855,7 @@ main(int argc, char **argv)
 		snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace",cachebuf, basefilename, DBNAME, atlaspage);
 		tracefd = fopen(buf,"w");
 		if( tracefd == NULL)
-			fprintf(stderr,"Could not create file:%s\n",buf);
+			fprintf(stderr,"Could not create file '%s'\n",buf);
 
 		if(query){
 			// fork and execute mclient session (TODO)

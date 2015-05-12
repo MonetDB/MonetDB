@@ -48,6 +48,10 @@ char *
 stripQuotes(char *currentquery)
 {	char *q, *c, *qry;
 			q = qry = (char *) malloc(strlen(currentquery) * 2);
+			if( q == NULL){
+				fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
+				exit(-1);
+			}
 			for (c= currentquery; *c; ){
 				if ( strncmp(c,"\\\\t",3) == 0){
 					*q++ = '\t';
@@ -98,6 +102,10 @@ parseArguments(char *call, int m)
 				break;
 			*c = 0;
 			malvariables[malvartop++] = strdup(v);
+			if( malvariables[malvartop-1] == NULL){
+				fprintf(stderr,"Could not allocate memory\n");
+				exit(-1);
+			}
 			*c = '=';
 			c++;
 		}
@@ -114,6 +122,10 @@ parseArguments(char *call, int m)
 			}
 			*l= 0;
 			malarguments[malargc] = strdup(c);
+			if( malarguments[malargc] == NULL){
+				fprintf(stderr,"Could not allocate memory\n");
+				exit(-1);
+			}
 			c= l+1;
 			// we skip to the type or end of term
 			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
@@ -124,6 +136,10 @@ parseArguments(char *call, int m)
 			c++;
 			*c =0;
 			malarguments[malargc] = strdup(l);
+			if( malarguments[malargc] == NULL){
+				fprintf(stderr,"Could not allocate memory\n");
+				exit(-1);
+			}
 			*c = '[';
 			malcount[malargc]=atoi(c+1);
 			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
@@ -134,6 +150,10 @@ parseArguments(char *call, int m)
 			ch = *c;
 			*c=0;
 			malarguments[malargc] = strdup(l);
+			if( malarguments[malargc] == NULL){
+				fprintf(stderr,"Could not allocate memory\n");
+				exit(-1);
+			}
 			*c = ch;
 			if( ch == ';') break;
 		}
@@ -152,6 +172,10 @@ parseArguments(char *call, int m)
 			malpc[malargc] = argc;
 			argc+= m;
 			maltypes[malargc++] = strdup(w);
+			if( malarguments[malargc-1] == NULL){
+				fprintf(stderr,"Could not allocate memory\n");
+				exit(-1);
+			}
 			*c = ch;
 			if( ch == ';') break;
 		} else malargc++;
@@ -230,6 +254,10 @@ eventparser(char *row, EventRecord *ev)
 			return -4;
 		*c = 0;
 		ev->blk= strdup(nme);
+		if( ev->blk == NULL){
+			fprintf(stderr,"Could not allocate blk memory\n");
+			exit(-1);
+		}
 		*c = '[';
 		ev->pc = atoi(c+1);
 		c= strchr(c+1,']');
@@ -298,6 +326,10 @@ eventparser(char *row, EventRecord *ev)
 		return -1;
 	*c = 0;
 	ev->numa= strdup(numa);
+	if( ev->num == NULL){
+		fprintf(stderr,"Could not allocate numa memory\n");
+		exit(-1);
+	}
 	*c = '"';
 #endif
 
@@ -337,10 +369,22 @@ eventparser(char *row, EventRecord *ev)
 		return -15;
 	c++;
 	ev->fcn = strdup(c);
+	if( ev->fcn == NULL){
+		fprintf(stderr,"Could not allocate fcn memory\n");
+		exit(-1);
+	}
 	ev->stmt = strdup(ev->fcn);
+	if( ev->stmt == NULL){
+		fprintf(stderr,"Could not allocate stmt memory\n");
+		exit(-1);
+	}
 	c= ev->fcn;
 	if( ev->state == MDB_SYSTEM){
 		monetdb_characteristics = strdup(ev->stmt);
+		if( ev->stmt == NULL){
+			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
+			exit(-1);
+		}
 	} else
 	if( *c != '[')
 	{
