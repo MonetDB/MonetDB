@@ -1691,10 +1691,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -1726,7 +1724,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			BATsetcount(r1, BATcount(r1));			\
 			BATsetcount(r2, BATcount(r2));			\
 			if (BATextend(r1, newcap) != GDK_SUCCEED ||	\
-			    BATextend(r2, newcap) != GDK_SUCCEED)		\
+			    BATextend(r2, newcap) != GDK_SUCCEED)	\
 				goto bailout;				\
 			assert(BATcapacity(r1) == BATcapacity(r2));	\
 		}							\

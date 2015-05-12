@@ -2511,9 +2511,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
