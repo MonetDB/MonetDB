@@ -544,12 +544,9 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	batsT = (BUN*)GDKmalloc(sizeof(BUN) * len);
 	bats_i = (BATiter*)GDKmalloc(sizeof(BATiter) * len);
 	if (res == NULL || batsT == NULL || bats_i == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
-		if (bats_i)
-			GDKfree(bats_i);
+		BBPreclaim(res);
+		GDKfree(batsT);
+		GDKfree(bats_i);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
@@ -578,10 +575,8 @@ MATproject_bte( BAT *map, BAT **bats, int len, int ttpe )
 	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (bte**)GDKmalloc(sizeof(bte*) * len);
 	if (res == NULL || batsT == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
+		BBPreclaim(res);
+		GDKfree(batsT);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
@@ -609,10 +604,8 @@ MATproject_sht( BAT *map, BAT **bats, int len, int ttpe )
 	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (sht**)GDKmalloc(sizeof(sht*) * len);
 	if (res == NULL || batsT == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
+		BBPreclaim(res);
+		GDKfree(batsT);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
@@ -640,10 +633,8 @@ MATproject_int( BAT *map, BAT **bats, int len, int ttpe )
 	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (int**)GDKmalloc(sizeof(int*) * len);
 	if (res == NULL || batsT == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
+		BBPreclaim(res);
+		GDKfree(batsT);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
@@ -671,10 +662,8 @@ MATproject_lng( BAT *map, BAT **bats, int len, int ttpe )
 	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (lng**)GDKmalloc(sizeof(lng*) * len);
 	if (res == NULL || batsT == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
+		BBPreclaim(res);
+		GDKfree(batsT);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
@@ -703,10 +692,8 @@ MATproject_hge( BAT *map, BAT **bats, int len, int ttpe )
 	res = BATnew(TYPE_void, ttpe, cnt, TRANSIENT);
 	batsT = (hge**)GDKmalloc(sizeof(hge*) * len);
 	if (res == NULL || batsT == NULL) {
-		if (res)
-			BBPreclaim(res);
-		if (batsT)
-			GDKfree(batsT);
+		BBPreclaim(res);
+		GDKfree(batsT);
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);

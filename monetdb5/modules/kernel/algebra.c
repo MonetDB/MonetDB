@@ -659,15 +659,15 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 
   fail:
 	if (left)
-		BBPreclaim(left);
+		BBPunfix(left->batCacheid);
 	if (right)
-		BBPreclaim(right);
+		BBPunfix(right->batCacheid);
 	if (right2)
-		BBPreclaim(right2);
+		BBPunfix(right2->batCacheid);
 	if (candleft)
-		BBPreclaim(candleft);
+		BBPunfix(candleft->batCacheid);
 	if (candright)
-		BBPreclaim(candright);
+		BBPunfix(candright->batCacheid);
 	throw(MAL, funcname, RUNTIME_OBJECT_MISSING);
 }
 

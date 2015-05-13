@@ -8,11 +8,11 @@
 
 /* (c) M Kersten, S Manegold
  * The easiest calling method is something like:
- * tomograph -d demo --atlast=10
+ * tomograph -d demo --atlas=10
  * which connects to the demo database server and
  * will collect the tomograph pages for at most 10 SQL queries
  * For each page a gnuplot file, a data file, and the event trace
- * are collected for more focussed analysis.
+ * are collected for more focused analysis.
  * 
 */
 
@@ -68,7 +68,7 @@
 			die(dbh, hdl);			\
 	} while (0)
 
-#define DBNAME (dbname?dbname:(inputfile?inputfile:"unkown"))
+#define DBNAME (dbname?dbname:(inputfile?inputfile:"unknown"))
 
 static stream *conn = NULL;
 static char hostname[128];
@@ -104,7 +104,7 @@ static int source[MAXTHREADS];
 
 /* color map management, fixed */
 /* see http://www.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm */
-/* The initial dictionary is geared towars TPCH-use */
+/* The initial dictionary is geared towards TPCH-use */
 typedef struct COLOR {
 	int freq;
 	lng timeused;
@@ -452,7 +452,7 @@ usageTomograph(void)
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -i | --input=<profiler event file > \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
-    fprintf(stderr, "  -c | --cache=<query pool location>\n");
+	fprintf(stderr, "  -c | --cache=<query pool location>\n");
 	fprintf(stderr, "  -s | --system=# (on= 1(default) off=0\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -A | --atlas=<number> maximum number of queries (default 1)\n");
@@ -1722,12 +1722,16 @@ main(int argc, char **argv)
 	}
 
 	fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
-	if (cache)
+	if (cache) {
+		snprintf(cachebuf,BUFSIZ,"%s%c",cache, DIR_SEP);
 #ifdef NATIVE_WIN32
-		snprintf(cachebuf,BUFSIZ,"%s\\",cache);
-#else
-		snprintf(cachebuf,BUFSIZ,"%s/",cache);
+#define mkdir(d,m)	_mkdir(d)
 #endif
+		if( mkdir(cache,0755) < 0 && errno != EEXIST) {
+			fprintf(stderr,"Failed to create cache '%s'\n",cache);
+			exit(-1);
+		}
+	}
 	initcolors();
 	resetTomograph();
 
@@ -1758,16 +1762,6 @@ main(int argc, char **argv)
 	close(0);
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
-	if (cache) {
-#ifdef NATIVE_WIN32
-		if( _mkdir(cache) < 0 && errno != EEXIST){
-#else
-		if( mkdir(cache,0755)  < 0 && errno != EEXIST) {
-#endif
-			fprintf(stderr,"Failed to create cache '%s'\n",cache);
-			exit(-1);
-		}
-	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, DBNAME, atlaspage);
 	if (inputfile==0 || strcmp(buf, inputfile) ){
 		// avoid overwriting yourself
