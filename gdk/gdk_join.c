@@ -3410,8 +3410,14 @@ BATproject(BAT *l, BAT *r)
 	BBPreclaim(bn);
 	return NULL;
 }
-
 BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
+	(void)*oidsBAT;
+	(void)*dimensionBAT;
+
+	return NULL;
+}
+
+BAT* BATnonDimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	BAT *resBAT;
 	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
 	

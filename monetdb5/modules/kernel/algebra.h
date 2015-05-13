@@ -76,6 +76,7 @@ algebra_export str ALGjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGleftjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid);
+algebra_export str ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGouterjoin(bat *result, const bat *lid, const bat *rid);

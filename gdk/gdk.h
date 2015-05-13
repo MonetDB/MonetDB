@@ -3226,6 +3226,7 @@ gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *
 gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATdimensionProject(BAT *l, BAT *r);
+gdk_export BAT *BATnonDimensionProject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);

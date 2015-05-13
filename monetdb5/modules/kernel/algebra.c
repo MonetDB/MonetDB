@@ -1226,6 +1226,12 @@ ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
+ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid)
+{
+	return ALGbinary(result, lid, rid, BATnonDimensionProject, "algebra.non-dimension_leftfetchjoin");
+}
+
+str
 ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATdimensionProject, "algebra.dimension_leftfetchjoin");

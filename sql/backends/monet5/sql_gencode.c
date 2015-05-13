@@ -1663,7 +1663,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 				/* projections, ie left is void headed */
 				if(s->op2->type == st_dimension) {
-					q = newStmt1(mb, algebraRef, "dimension_leftfetchjoin");
+					if(s->op1->type == st_uselect && s->op1->op1->type == st_bat)
+						q = newStmt1(mb, algebraRef, "non_dimension_leftfetchjoin");
+					else
+						q = newStmt1(mb, algebraRef, "dimension_leftfetchjoin");
 				} else {
 					if (cmp == cmp_project)
 						q = newStmt1(mb, algebraRef, "leftfetchjoin");

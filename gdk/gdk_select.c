@@ -1970,7 +1970,7 @@ BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 
 	BATcheck(b, "BATdimensionThetasubselect", NULL);
 	BATcheck(val, "BATdimensionThetasubselect", NULL);
-	BATcheck(op, "BATdimensoinThetasubselect", NULL);
+	BATcheck(op, "BATdimensionThetasubselect", NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
