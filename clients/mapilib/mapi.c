@@ -1490,6 +1490,8 @@ new_result(MapiHdl hdl)
 		printf("allocating new result set\n");
 	/* append a newly allocated struct to the end of the linked list */
 	result = malloc(sizeof(*result));
+	if (result == NULL)
+		return NULL;
 	result->next = NULL;
 	if (hdl->lastresult == NULL)
 		hdl->result = hdl->lastresult = result;
@@ -1735,7 +1737,6 @@ mapi_new_handle(Mapi mid)
 	mapi_check0(mid, "mapi_new_handle");
 
 	hdl = malloc(sizeof(*hdl));
-	assert(hdl);
 	if (hdl == NULL) {
 		mapi_setError(mid, "Memory allocation failure", "mapi_new_handle", MERROR);
 		return NULL;
@@ -1893,6 +1894,10 @@ mapi_new(void)
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
+	if (mid->blk.buf == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
 	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
 	mid->blk.nxt = 0;

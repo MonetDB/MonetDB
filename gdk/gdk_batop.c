@@ -1272,7 +1272,7 @@ gdk_return
 BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
-	BAT *bn = NULL, *on = NULL, *gn = NULL;
+	BAT *bn = NULL, *on = NULL, *gn;
 	oid *restrict grps, prev;
 	BUN p, q, r;
 
@@ -1499,8 +1499,6 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		BBPunfix(bn->batCacheid);
 	if (on)
 		BBPreclaim(on);
-	if (gn)
-		BBPreclaim(gn);
 	if (sorted)
 		*sorted = NULL;
 	if (order)

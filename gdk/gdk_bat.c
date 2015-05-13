@@ -236,10 +236,12 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 	BATstore *bs;
 	BAT *bn;
 
-	assert(cap <= BUN_MAX);
 	/* and in case we don't have assertions enabled: limit the size */
-	if (cap > BUN_MAX)
+	if (cap > BUN_MAX) {
+		/* shouldn't happen, but if it does... */
+		assert(0);
 		cap = BUN_MAX;
+	}
 	bs = BATcreatedesc(ht, tt, (ht || tt), role);
 	if (bs == NULL)
 		return NULL;
@@ -3040,9 +3042,10 @@ BATderiveHeadProps(BAT *b, int expensive)
 	BUN hb, prb;
 	oid sqbs = oid_nil;
 
-	assert(b != NULL);
-	if (b == NULL)
+	if (b == NULL) {
+		assert(0);
 		return;
+	}
 	assert((b->hkey & BOUND2BTRUE) == 0);
 	COLsettrivprop(b, b->H);
 	cmpf = ATOMcompare(b->htype);
@@ -3242,10 +3245,10 @@ BATderiveHeadProps(BAT *b, int expensive)
 void
 BATderiveProps(BAT *b, int expensive)
 {
-	assert(b != NULL);
-
-	if (b == NULL)
+	if (b == NULL) {
+		assert(0);
 		return;
+	}
 	BATderiveHeadProps(b, expensive);
 	if (b->H != b->T)
 		BATderiveHeadProps(BATmirror(b), expensive);

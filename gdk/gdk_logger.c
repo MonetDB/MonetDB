@@ -1617,6 +1617,7 @@ logger_exit(logger *lg)
 		char ext[BUFSIZ];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
+			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
 				filename);
 			return LOG_ERR;
@@ -1624,13 +1625,20 @@ logger_exit(logger *lg)
 		lg->id ++;
 
 		if (logger_commit(lg) != LOG_OK) {
+			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: logger_commit failed\n");
 			return LOG_ERR;
 		}
 
-		if (fprintf(fp, LLFMT "\n", lg->id) < 0 ||
-		    fclose(fp) < 0) {
-			fprintf(stderr, "!ERROR: logger_exit: write/flush to %s failed\n",
+		if (fprintf(fp, LLFMT "\n", lg->id) < 0) {
+			(void) fclose(fp);
+			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
+				filename);
+			return LOG_ERR;
+		}
+
+		if (fclose(fp) < 0) {
+			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
 			return LOG_ERR;
 		}
