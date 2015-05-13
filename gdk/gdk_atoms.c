@@ -267,7 +267,7 @@ ATOMlen(int t, const void *src)
 	return l ? (*l) (src) : ATOMsize(t);
 }
 
-int
+gdk_return
 ATOMheap(int t, Heap *hp, size_t cap)
 {
 	void (*h) (Heap *, size_t) = BATatoms[t].atomHeap;
@@ -275,9 +275,9 @@ ATOMheap(int t, Heap *hp, size_t cap)
 	if (h) {
 		(*h) (hp, cap);
 		if (hp->base == NULL)
-			return -1;
+			return GDK_FAIL;
 	}
-	return 0;
+	return GDK_SUCCEED;
 }
 
 int
@@ -1062,7 +1062,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1) == 0) {
+	if (HEAPalloc(d, size, 1) == GDK_SUCCEED) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
@@ -1238,7 +1238,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, TRUE) < 0) {
+		if (HEAPextend(h, newsize, TRUE) != GDK_SUCCEED) {
 			return 0;
 		}
 #ifndef NDEBUG

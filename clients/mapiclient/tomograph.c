@@ -68,6 +68,8 @@
 			die(dbh, hdl);			\
 	} while (0)
 
+#define DBNAME (dbname?dbname:(inputfile?inputfile:"unkown"))
+
 static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "tomograph";
@@ -408,11 +410,11 @@ showNumaHeatmap(void){
 	char buf[BUFSIZ];
 
 	
-	snprintf(buf,BUFSIZ,"%stomograph_%s_heatmap.csv",cachebuf,dbname);
+	snprintf(buf,BUFSIZ,"%stomograph_%s_heatmap.csv",cachebuf,DBNAME);
 	f= fopen(buf,"a");
 	if( f == NULL){
 		fprintf(stderr,"Can not create %s\n",buf);
-		return;
+		exit(-1);
 	}
 	for( i=0; i< MAXTHREADS; i++){
 		if( target[i])
@@ -480,18 +482,18 @@ stop_disconnect:
 	// show follow up action only once
 	if(atlaspage >= 1){
 		for (i = 0; systemcall && i< atlaspage;  i++){
-			snprintf(buf, BUFSIZ, "gnuplot %s%s_%s_%02d.gpl;", cachebuf, basefilename, dbname, i);
+			snprintf(buf, BUFSIZ, "gnuplot %s%s_%s_%02d.gpl;", cachebuf, basefilename, DBNAME, i);
 			if( error == 0){
 				fprintf(stderr,"-- exec:%s\n",buf);
 				error = system(buf);
 				if( error){
 					fprintf(stderr, "To finish the atlas make sure gnuplot is available and run:\n");
 					for (j=i; j< atlaspage;  j++)
-						fprintf(stderr, "gnuplot %s%s_%s_%02d.gpl\n", cachebuf, basefilename, dbname,j);
+						fprintf(stderr, "gnuplot %s%s_%s_%02d.gpl\n", cachebuf, basefilename, DBNAME,j);
 				}
 			}
 
-			snprintf(buf, BUFSIZ, "%s%s_%s_%02d.pdf ", cachebuf, basefilename, dbname, i);
+			snprintf(buf, BUFSIZ, "%s%s_%s_%02d.pdf ", cachebuf, basefilename, DBNAME, i);
 			plen += snprintf(pages + plen, BSIZE -plen,"%s",buf);
 			if ( plen >= BSIZE-1){
 				error = -1;
@@ -501,14 +503,14 @@ stop_disconnect:
 
 
 		if( systemcall && error == 0) {
-			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s_%s.pdf -dBATCH %s",cachebuf,basefilename,dbname,pages);
+			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s_%s.pdf -dBATCH %s",cachebuf,basefilename,DBNAME,pages);
 			fprintf(stderr,"-- exec:%s\n",buf);
 			error = system(buf);
 		}
 		if( error == 0) 
-			fprintf(stderr,"-- done: %s%s_%s.pdf\n", cachebuf, basefilename,dbname);
+			fprintf(stderr,"-- done: %s%s_%s.pdf\n", cachebuf, basefilename,DBNAME);
 		else
-			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s_%s.pdf -dBATCH %s\n", cachebuf, basefilename,dbname,pages);
+			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s_%s.pdf -dBATCH %s\n", cachebuf, basefilename,DBNAME,pages);
 	}
 
 	if(dbh)
@@ -553,12 +555,18 @@ static void resetTomograph(void){
 	static char buf[BUFSIZ];
 	int i;
 
-	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename,dbname,atlaspage);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename,DBNAME,atlaspage);
 
-	if( inputfile == 0 || strcmp(inputfile,buf) ){
+	if( inputfile && strcmp(inputfile,buf) == 0 ){
+		fprintf(stderr,"Should not overwrite existing trace file '%s'\n",buf);
+		exit(-1);
+	}
+	if( inputfile == 0 ){
 		tracefd = fopen(buf,"w");
-		if( tracefd == NULL)
-			fprintf(stderr,"Could not create file %s\n",buf);
+		if( tracefd == NULL){
+			fprintf(stderr,"Could not create trace file '%s'\n",buf);
+			exit(-1);
+		}
 	}
 	if (debug)
 		fprintf(stderr, "RESET tomograph %d\n", atlaspage);
@@ -572,6 +580,12 @@ static void resetTomograph(void){
 	events = 0;
 	for (i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
+	for ( i=MAXTHREADS; i< maxbox; i++){
+		if( box[i].fcn ){
+			free(box[i].fcn);
+			box[i].fcn=0;
+		}
+	}
 	memset((char*) box, 0, sizeof(Box) * maxbox);
 
 	totalclkticks = 0; 
@@ -713,11 +727,11 @@ dumpboxes(void)
 	int i;
 	int written = 0;
 
-	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.dat", cachebuf, basefilename,dbname, atlaspage);
+	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.dat", cachebuf, basefilename,DBNAME, atlaspage);
 	f = fopen(buf, "w");
 	if(f == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		fprintf(stderr,"Could not create file '%s'\n",buf);
+		exit(-1);
 	}
 
 	for (i = 0; i < topbox; i++)
@@ -788,7 +802,7 @@ showmemory(void)
 	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
 	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
 	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
-	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", cachebuf, basefilename,dbname,atlaspage);
+	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", cachebuf, basefilename,DBNAME,atlaspage);
 	fprintf(gnudata, "unset yrange\n");
 }
 
@@ -815,12 +829,12 @@ showcpu(void)
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
 	fprintf(gnudata, "set rmarg 10\n");
-	fprintf(gnudata, "set size 1,0.%02d\n", cpus?cpus:1);
-	fprintf(gnudata, "set origin 0.0, 0.%d\n", 88 - cpus);
+	fprintf(gnudata, "set size 1,0.084\n");
+	fprintf(gnudata, "set origin 0.0, 0.8\n");
 	fprintf(gnudata, "set ylabel \"CPU\"\n");
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
-	fprintf(gnudata, "set ytics 0, %d\n",4);
+	fprintf(gnudata, "set ytics 0, %d\n",cpus <=8 ?4:8);
 	fprintf(gnudata, "set grid ytics\n");
 
 	fprintf(gnudata, "set border\n");
@@ -899,17 +913,17 @@ showio(void)
 /* this is the original version, but on Fedora 20 with
  * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
  * the page */
-	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" dots fs solid linecolor rgb \"gray\" ,\\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots solid linecolor rgb \"red\", \\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", cachebuf, basefilename, dbname, atlaspage, b);
+	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" dots fs solid linecolor rgb \"gray\" ,\\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots solid linecolor rgb \"red\", \\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", cachebuf, basefilename, DBNAME, atlaspage, b);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
-	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" with dots linecolor rgb \"gray\" ,\\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots linecolor rgb \"red\", \\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", cachebuf, basefilename, dbname, atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", cachebuf, basefilename, dbname, atlaspage, b);
+	fprintf(gnudata, "plot \"%s%s_%s_%02d.dat\" using 1:($4/%d.0) title \"inblock\" with dots linecolor rgb \"gray\" ,\\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+4):($5/%d.0) title \"oublock\" with dots linecolor rgb \"red\", \\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+8):($6/%d.0) title \"majflt\" with dots linecolor rgb \"green\", \\\n", cachebuf, basefilename, DBNAME, atlaspage, b);
+	fprintf(gnudata, "\"%s%s_%s_%02d.dat\" using ($1+12):($7/%d.0) title \"nswap\" with dots linecolor rgb \"purple\"  \n", cachebuf, basefilename, DBNAME, atlaspage, b);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
@@ -995,12 +1009,12 @@ showcolormap(char *filename, int all)
 	for (nl=0, c= currentquery; c && *c; c++)
 		nl += *c == '\n';
 
+	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename, DBNAME, atlaspage);
 	if (all) {
-		snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename, dbname, atlaspage);
 		f = fopen(buf, "w");
 		if (f == NULL) {
-			fprintf(stderr, "Creating file %s failed\n", buf);
-			exit(1);
+			fprintf(stderr, "Could not create file '%s'\n", buf);
+			exit(-1);
 		}
 		fprintf(f, "set terminal pdfcairo noenhanced color solid size 8.3, 11.7\n");
 		fprintf(f, "set output \"%s.pdf\"\n", filename);
@@ -1100,6 +1114,7 @@ showcolormap(char *filename, int all)
 		h-= 17;
 	}
 	fprintf(f, "set label %d \"%d\" at 1750.0, 100.00\n", object++, atlaspage + 1);
+	fprintf(f, "set label %d \"%s\" at 500.0, 100.00\n", object++, buf);
 	fprintf(f, "set label %d \"%s\" at 0.0, 100.00\n", object++, date);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
@@ -1170,7 +1185,7 @@ gnuplotheader(char *filename)
 		fprintf(gnudata, "set title \"%s%s\"\n", title, (*c? "...":""));
 		*c =ch;
 	}  else
-		fprintf(gnudata, "set title \"MonetDB tomogram for database %s\"\n", dbname);
+		fprintf(gnudata, "set title \"MonetDB tomogram for database %s\"\n", DBNAME);
 	fprintf(gnudata, "set multiplot\n");
 
 }
@@ -1180,7 +1195,7 @@ createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
-	int top = 0;
+	int top = 0, rowoffset = 0;
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
@@ -1188,17 +1203,17 @@ createTomogram(void)
 	if( debug)
 		fprintf(stderr,"create tomogram\n");
 	if( events == 0){
-		fprintf(stderr,"No events found\n");
+		fprintf(stderr,"No further events found\n");
 		return;
 	}
-	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename,dbname,atlaspage);
+	snprintf(buf, BUFSIZ, "%s%s_%s_%02d.gpl", cachebuf, basefilename,DBNAME,atlaspage);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
-		printf("Could not create of %s\n", buf);
+		printf("Could not create file '%s'\n", buf);
 		exit(-1);
 	}
-	if( strchr(buf,'.'))
-		*strchr(buf, '.') = 0;
+	if( strrchr(buf,'.'))
+		*strrchr(buf, '.') = 0;
 	gnuplotheader(buf);
 	object=1;
 	dumpboxes();
@@ -1232,7 +1247,9 @@ createTomogram(void)
 	}
 
 
-	height = (top < cpus? cpus : top) * 20;
+	h = 10; /* unit height of bars */
+	height = (top < cpus? cpus : top) * 2 * h;
+	rowoffset = top<cpus ? cpus-top:0;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"threads\"\n");
 	fprintf(gnudata, "set key right \n");
@@ -1243,19 +1260,21 @@ createTomogram(void)
 
 	/* calculate the effective use of parallelism */
 	totalticks = 0;
+	if( top < cpus)
+		for(i=0; i < topbox; i++)
+			box[i].row += rowoffset;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
 
-	h = 10; /* unit height of bars */
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "\"%d\" %d%c", rows[i], i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
+		fprintf(gnudata, "\"%d\" %d%c", rows[i], (rowoffset + i) * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
 	fprintf(gnudata, ")\n");
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
+			object++, 0, (rowoffset + i) * 2 * h + h/3, lastclk[rows[i]], (rowoffset + i) * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
@@ -1337,14 +1356,15 @@ update(char *line, EventRecord *ev)
  
 	if (topbox == maxbox || maxbox < topbox) {
 	
-		if( box == 0)
+		if( box == 0){
 			box = (Box*) malloc(MAXBOX * sizeof(Box)); 
-		else
+			memset((char*) box, 0, sizeof(Box) * MAXBOX);
+		} else
 			box = (Box*) realloc((void*)box, (maxbox + MAXBOX) * sizeof(Box)); 
 		if( box == NULL){
 			fprintf(stderr, "Out of space for trace, exceeds max entries %d\n", maxbox);
 			fprintf(stderr, "Restart with a slower beat might help, e.g. --beat=5000  or --beat=0\n");
-			exit(0);
+			exit(-1);
 		}
 		maxbox += MAXBOX;
 	}
@@ -1392,6 +1412,10 @@ update(char *line, EventRecord *ev)
 			return;
 		}
 		box[idx].fcn = ev->state == MDB_PING? strdup("profiler.ping"):strdup("profiler.wait");
+		if( box[idx].fcn == NULL){
+			fprintf(stderr,"Could not allocate blk->fcn\n");
+			exit(-1);
+		}
 		threads[ev->thread] = ++topbox;
 		idx = threads[ev->thread];
 		box[idx] = b;
@@ -1469,9 +1493,9 @@ update(char *line, EventRecord *ev)
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
 		box[idx].footstart = ev->tmpspace;
 		box[idx].stmt = ev->stmt;
-		box[idx].fcn = ev->fcn ? ev->fcn : strdup("");
+		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			currentquery = stripQuotes(malarguments[malretc]);
+			currentquery = stripQuotes(strdup(malarguments[malretc]));
 			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
 		}
 		return;
@@ -1617,6 +1641,7 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			inputfile = optarg;
+			basefilename = strdup("");
 			break;
 		case 'u':
 			if (user)
@@ -1708,7 +1733,7 @@ main(int argc, char **argv)
 
 	if(debug){
 		if( dbname)
-			printf("tomograph -d %s --output=%s\n",dbname,basefilename);
+			printf("tomograph -d %s --output=%s\n",DBNAME,basefilename);
 		if(inputfile)
 			printf("tomograph --input=%s --output=%s\n",inputfile,basefilename);
 	}
@@ -1743,26 +1768,30 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, dbname, atlaspage);
+	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, DBNAME, atlaspage);
 	if (inputfile==0 || strcmp(buf, inputfile) ){
 		// avoid overwriting yourself
 		tracefd = fopen(buf,"w");
-		if( tracefd == NULL)
-			fprintf(stderr,"Could not create trace file\n");
+		if( tracefd == NULL){
+			fprintf(stderr,"Could not create trace file '%s'\n",buf);
+			exit(0);
+		}
 	}
 	if (inputfile) {
 		inpfd = fopen(inputfile,"r");
 		if (inpfd == NULL ){
-			fprintf(stderr,"ERROR Can not access '%s'\n",inputfile);
-			exit(0);
+			fprintf(stderr,"Can not access '%s'\n",inputfile);
+			exit(-1);
 		}
+		if( strstr(inputfile,".trace"))
+			*strstr(inputfile,".trace") = 0;
+		snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, DBNAME, atlaspage);
 		len = 0;
 		while ((n = fread(buf + len, 1, BUFSIZ - len, inpfd)) > 0) {
 			buf[len + n] = 0;
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				//i = parser(response);
 				i = eventparser(response, &event);
 				update(response, &event);
 				if (debug  )
@@ -1824,10 +1853,10 @@ main(int argc, char **argv)
 			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
 	
-		snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace",cachebuf, basefilename, dbname, atlaspage);
+		snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace",cachebuf, basefilename, DBNAME, atlaspage);
 		tracefd = fopen(buf,"w");
 		if( tracefd == NULL)
-			fprintf(stderr,"Could not create file:%s\n",buf);
+			fprintf(stderr,"Could not create file '%s'\n",buf);
 
 		if(query){
 			// fork and execute mclient session (TODO)
