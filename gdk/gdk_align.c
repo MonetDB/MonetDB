@@ -441,7 +441,7 @@ BATmaterializeh(BAT *b)
 	IMPSdestroy(b);
 
 	b->H->heap.filename = NULL;
-	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
+	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->H->heap = head;
 		return GDK_FAIL;
 	}
@@ -597,7 +597,7 @@ VIEWreset(BAT *b)
 			if (head.filename == NULL)
 				goto bailout;
 			snprintf(head.filename, nmelen + 12, "%s.head", nme);
-			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0)
+			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) != GDK_SUCCEED)
 				goto bailout;
 		}
 		if (n->ttype) {
@@ -605,7 +605,7 @@ VIEWreset(BAT *b)
 			if (tail.filename == NULL)
 				goto bailout;
 			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
-			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0)
+			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) != GDK_SUCCEED)
 				goto bailout;
 		}
 		if (n->H->vheap) {
@@ -614,7 +614,7 @@ VIEWreset(BAT *b)
 			if (hh.filename == NULL)
 				goto bailout;
 			snprintf(hh.filename, nmelen + 12, "%s.hheap", nme);
-			if (ATOMheap(n->htype, &hh, cnt) < 0)
+			if (ATOMheap(n->htype, &hh, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 		if (n->T->vheap) {
@@ -623,7 +623,7 @@ VIEWreset(BAT *b)
 			if (th.filename == NULL)
 				goto bailout;
 			snprintf(th.filename, nmelen + 12, "%s.theap", nme);
-			if (ATOMheap(n->ttype, &th, cnt) < 0)
+			if (ATOMheap(n->ttype, &th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 
