@@ -2544,7 +2544,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				__int128 v1 = (__int128) *(const lng *) vr, v2;
 
 				if (v1 == lng_nil)
-					continue;
+					;
 				v2 = v1;
 				v1 -= *(const lng *)c1;
 				if (*(const lng *)vl <= v1 &&
@@ -3414,7 +3414,6 @@ BATproject(BAT *l, BAT *r)
 BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	BAT *resBAT;
 	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
-//	BUN lcount = BATcount(l), rcount = BATcount(r);
 	
 	assert(BAThdense(oidsBAT));
     assert(BAThdense(dimensionBAT));
@@ -3422,94 +3421,158 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	
 #define project(TYPE) \
 	do { \
-		oid lo, hi;                         \
     	TYPE *bt;                      \
-    	const oid *o;                           \
 \
-		/*find the min, max, step in the dimension*/ \
-		long repeat1, elementsNum; \
-		TYPE min, max, step; \
-        oid i; \
+		long repeat1, elementsNum, elementsPerGroup; \
+		TYPE min_orig, max_orig, step; \
+		TYPE min_new, max_new; /*the step remains the same*/ \
+        oid i, previous_oid, jj; \
 		TYPE *el_in; \
+		long repeat1_new, repeat2_new, j; \
+		long currentRepeat; \
+		TYPE currentEl; \
+		long startGroup, endGroup, currentGroup; \
+		BUN p, q; \
+		oid currentOid; \
+		BATiter oidsBAT_iter;\
+		bool first = true; \
 \
+		/*find the min, max step of the input BAT*/ \
 		el_in = (TYPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-        min = el_in[0]; \
+        min_orig = el_in[0]; \
         step = el_in[BATcount(dimensionBAT)-1]; \
 \
         repeat1 = 1; \
         for(i=1; i<BATcount(dimensionBAT); i++) { \
-            if(min == el_in[i]) \
+            if(min_orig == el_in[i]) \
                 repeat1++; \
             else { \
-                max = el_in[i]; \
+                max_orig = el_in[i]; \
                 break; \
             } \
         } \
-fprintf(stderr, "repeat1 = %ld\n", repeat1); \
+fprintf(stderr, "BATdimensionProject: original repeat1 = %ld\n", repeat1); \
 \
-        elementsNum = floor((max-min)/step) + 1; \
+        elementsNum = floor((max_orig-min_orig)/step) + 1; \
+		elementsPerGroup = repeat1*elementsNum; \
+fprintf(stderr, "BATdimensionProject: original elements per group = %ld\n", elementsPerGroup); \
 \
-	    o = (const oid *) Tloc(oidsBAT, BUNfirst(oidsBAT));             \
-	    bt = (TYPE *) Tloc(resBAT, BUNfirst(resBAT));               \
-	    for (lo = 0, hi = lo + BATcount(oidsBAT); lo < hi; lo++, o++, bt++) { \
-    	    if (*o == oid_nil) {                \
-        	    *bt = TYPE##_nil;               \
-	            resBAT->T->nonil = 0;               \
-    	        resBAT->T->nil = 1;                 \
-        	    resBAT->tsorted = 0;                \
-            	resBAT->trevsorted = 0;             \
-	            resBAT->tkey = 0;                   \
-    	    } else {                        \
-				long el = (*o%(repeat1*elementsNum))/repeat1; \
-				fprintf(stderr, "oid=%u : element: %ld\n", *(int*)o, el); \
-        	    *bt = min+el*step;           \
-	        }                           \
-    	}                               \
-	    assert((BUN) lo == BATcount(oidsBAT));                \
-		BATseqbase(resBAT,0); \
-    	BATsetcount(resBAT, (BUN) lo);                  \
+		oidsBAT_iter = bat_iterator(oidsBAT); \
+		BATloop(oidsBAT, p, q) { \
+			currentOid = *((oid*) BUNtail(oidsBAT_iter, p)); \
+			if(first) { \
+fprintf(stderr, "BATdimensionProject: original elements per group = %u\n", (unsigned int)currentOid); \
+				startGroup = floor(currentOid/elementsPerGroup); \
+fprintf(stderr, "start group = %ld\n", startGroup); \
+\
+				/*check the elements per group*/ \
+				currentGroup = floor(currentOid/elementsPerGroup); \
+				min_new = max_new = currentEl = (currentOid%(repeat1*elementsNum))/repeat1; \
+				repeat1_new = currentRepeat = 1; \
+fprintf(stderr, "BATdimensionProject: (first) group %ld -> original[%u]\n", currentGroup, (unsigned int)currentOid); \
+				first = false; \
+			} else { \
+				TYPE el = (currentOid%(repeat1*elementsNum))/repeat1; \
+				long grp = floor(currentOid/elementsPerGroup); \
+\
+				if(currentGroup == grp) { /*still in the same group*/\
+					/*there should not be any missing oids inside the same element of the same group*/ \
+					if(currentEl == el) { /*same group, same element*/\
+						for(jj=previous_oid+1; jj<=currentOid; jj++) { \
+fprintf(stderr, "BATdimensionProject: (same-same) group %ld -> original[%u]\n", grp, (unsigned int)jj); \
+							currentRepeat++; \
+						} \
+					} else {/*same group but other element*/ \
+fprintf(stderr, "BATdimensionProject: (same-new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+						if(currentRepeat > repeat1_new) \
+							repeat1_new = currentRepeat; \
+						currentEl = el; \
+						currentRepeat = 1; \
+						if(min_new > el) \
+							min_new = el; \
+						if(max_new < el) \
+							max_new = el; \
+					} \
+				} else { /*new group*/ \
+fprintf(stderr, "BATdimensionProject: (new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+					if(currentRepeat > repeat1_new) \
+						repeat1_new = currentRepeat; \
+					currentEl = el; \
+					currentRepeat = 1; \
+					currentGroup = grp; \
+					if(min_new > el) \
+						min_new = el; \
+					if(max_new < el) \
+						max_new = el; \
+				} \
+			} \
+			previous_oid = currentOid; \
+			if(currentRepeat>repeat1_new) \
+				repeat1_new = currentRepeat; \
+fprintf(stderr, "BATdimensionProject: new repeat1 = %ld\n", repeat1_new); \
+		} \
+\
+		endGroup = floor(currentOid/elementsPerGroup); \
+fprintf(stderr, "end group = %ld\n", endGroup); \
+		repeat2_new = endGroup - startGroup +1; \
+fprintf(stderr, "BATdimensionProject: new repeat2 = %ld\n", repeat2_new); \
+\
+		/*create the resBAT*/ \
+		if((resBAT = BATnew(TYPE_void, tpe, repeat1_new+repeat2_new+1, TRANSIENT)) == NULL) \
+			return NULL; \
+\
+		bt = (TYPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+		for(j=0; j<repeat1_new; j++) { \
+			*bt = min_new; \
+			bt++; \
+		} \
+		for(j=0; j<repeat2_new; j++) { \
+			*bt = max_new; \
+			bt++; \
+		} \
+		*bt = step; \
+\
+		BATsetcount(resBAT,repeat1_new+repeat2_new+1); \
+        BATseqbase(resBAT,0); \
+        BATderiveProps(resBAT,FALSE); \
 \
 	} while(0)
 
-	if((resBAT = BATnew(TYPE_void, tpe, BATcount(oidsBAT), TRANSIENT)) == NULL)
-		return NULL;
-
+	
 	switch (tpe) {
     case TYPE_bte:
         project(bte);
         break;
     case TYPE_sht:
-        project(sht);//, l, r, nilcheck, sortcheck);
+        project(sht);
         break;
     case TYPE_int:
-        project(int);//, l, r, nilcheck, sortcheck);
+        project(int);
         break;
     case TYPE_flt:
-        project(flt);//, l, r, nilcheck, sortcheck);
+        project(flt);
         break;
     case TYPE_dbl:
-        project(dbl);//, l, r, nilcheck, sortcheck);
+        project(dbl);
         break;
     case TYPE_lng:
-        project(lng);//, l, r, nilcheck, sortcheck);
+        project(lng);
         break;
 #ifdef HAVE_HGE
     case TYPE_hge:
-        project(hge);//, l, r, nilcheck, sortcheck);
+        project(hge);
         break;
 #endif
     case TYPE_oid:
 #if SIZEOF_OID == SIZEOF_INT
-        project(int);//, l, r, nilcheck, sortcheck);
+        project(int);
 #else
-        project(lng);//, l, r, nilcheck, sortcheck);
+        project(lng);
 #endif
         break;
     default:
 		fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
 		return NULL;
-        //res = project_any(bn, l, r, nilcheck);
-        //break;
     }
 
 	return resBAT;

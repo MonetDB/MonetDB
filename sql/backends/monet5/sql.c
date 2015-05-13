@@ -2243,19 +2243,20 @@ str materialiseDimension(bat* res, bat* in) {
         el_in = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
         min = el_in[0]; \
         step = el_in[BATcount(dimensionBAT)-1]; \
+		max = el_in[BATcount(dimensionBAT)-2]; \
 \
         repeat1 = 1; \
-        for(i=1; i<BATcount(dimensionBAT); i++) { \
-            if(min == el_in[i]) \
+        for(i=1; i<BATcount(dimensionBAT)-1; i++) { \
+            if(max != el_in[i]) \
                 repeat1++; \
             else { \
-                max = el_in[i]; \
+				repeat2 = 0; \
                 break; \
             } \
         } \
 \
-		repeat2 = 1; \
-        for(; i<BATcount(dimensionBAT); i++) { \
+        for(; i<BATcount(dimensionBAT)-1; i++) { \
+fprintf(stderr, "%u\n", (unsigned int)i); \
             if(max == el_in[i]) \
                 repeat2++; \
             else { \
