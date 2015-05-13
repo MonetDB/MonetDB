@@ -1638,8 +1638,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	return err;
 
   bunins_failed:
-	if (bn)
-		BBPreclaim(bn);
+	BBPreclaim(bn);
 	bn = NULL;
 	if (err == NULL)
 		err = MAL_MALLOC_FAIL;	/* insertion into result BAT failed */

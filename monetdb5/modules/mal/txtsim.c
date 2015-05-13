@@ -950,8 +950,8 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
 	if (bn == NULL || bn2 == NULL){
-		if (bn) BBPreclaim(bn);
-		if (bn2) BBPreclaim(bn2);
+		BBPreclaim(bn);
+		BBPreclaim(bn2);
 		BBPunfix(qgram->batCacheid);
 		BBPunfix(id->batCacheid);
 		BBPunfix(pos->batCacheid);

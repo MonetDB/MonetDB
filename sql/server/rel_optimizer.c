@@ -3247,10 +3247,14 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 				ge->r = exp_name(pe);
 				exp_setname(sql->sa, ge, exp_relname(pe), exp_name(pe));
 
+				/* zap both project and groupby name hash tables (as we changed names above) */
+				rel->exps->ht = NULL;
+				((list*)rel->r)->ht = NULL;
+				p->exps->ht = NULL;
+				
 				/* add join */
 				j->l = rel;
-				rel = j;
-				rel = rel_project(sql->sa, rel, npexps);
+				rel = rel_project(sql->sa, j, npexps);
 				(*changes)++;
 			}
 		}
@@ -6572,7 +6576,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				node *n;
 
 				/* no need to reduce the tables list */
-				if (list_length(t->tables.set) < 100) 
+				if (list_length(t->tables.set) <= 1) 
 					return sel;
 
 				cols = sa_list(sql->sa);
