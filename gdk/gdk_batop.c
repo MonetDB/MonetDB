@@ -611,8 +611,7 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	res = GDK_SUCCEED;
       bunins_failed:
-	if (tmp)
-		BBPreclaim(tmp);
+	BBPreclaim(tmp);
 	return res;
 }
 
@@ -1497,8 +1496,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
   error:
 	if (bn)
 		BBPunfix(bn->batCacheid);
-	if (on)
-		BBPreclaim(on);
+	BBPreclaim(on);
 	if (sorted)
 		*sorted = NULL;
 	if (order)
