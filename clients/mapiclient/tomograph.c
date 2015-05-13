@@ -1722,12 +1722,16 @@ main(int argc, char **argv)
 	}
 
 	fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
-	if (cache)
+	if (cache) {
+		snprintf(cachebuf,BUFSIZ,"%s%c",cache, DIR_SEP);
 #ifdef NATIVE_WIN32
-		snprintf(cachebuf,BUFSIZ,"%s\\",cache);
-#else
-		snprintf(cachebuf,BUFSIZ,"%s/",cache);
+#define mkdir(d,m)	_mkdir(d)
 #endif
+		if( mkdir(cache,0755) < 0 && errno != EEXIST) {
+			fprintf(stderr,"Failed to create cache '%s'\n",cache);
+			exit(-1);
+		}
+	}
 	initcolors();
 	resetTomograph();
 
@@ -1758,16 +1762,6 @@ main(int argc, char **argv)
 	close(0);
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
-	if (cache) {
-#ifdef NATIVE_WIN32
-		if( _mkdir(cache) < 0 && errno != EEXIST){
-#else
-		if( mkdir(cache,0755)  < 0 && errno != EEXIST) {
-#endif
-			fprintf(stderr,"Failed to create cache '%s'\n",cache);
-			exit(-1);
-		}
-	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%02d.trace", cachebuf, basefilename, DBNAME, atlaspage);
 	if (inputfile==0 || strcmp(buf, inputfile) ){
 		// avoid overwriting yourself
