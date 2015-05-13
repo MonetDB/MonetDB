@@ -302,7 +302,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt < 0 ? " (failed)" : "");
-	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
+	/* posix_fallocate returns != 0 on failure, fallocate and
+	 * ftruncate return -1 on failure, but all three return 0 on
+	 * success */
 	return rt != 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
