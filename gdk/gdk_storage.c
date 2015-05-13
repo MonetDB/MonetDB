@@ -785,7 +785,7 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
-		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			if (b->H->vheap)
 				HEAPfree(b->H->vheap, 0);
 			HEAPfree(&b->H->heap, 0);
