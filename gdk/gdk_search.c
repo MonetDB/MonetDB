@@ -222,8 +222,11 @@ int
 BATcheckhash(BAT *b)
 {
 	int ret;
+	lng t;
 
+	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+	t = GDKusec() - t;
 	if (b->T->hash == NULL) {
 		Hash *h;
 		Heap *hp;
@@ -287,7 +290,7 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->T->hash != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d\n", b->batCacheid);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
 	return ret;
 }
 
