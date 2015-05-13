@@ -1732,6 +1732,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			rname = e2->rname;
 		exp_setname(sql->sa, e2, rname, e1->name );
 	}
+	MT_lock_set(&exps2->ht_lock, "rel_rename_exps");
+	exps2->ht = NULL;
+	MT_lock_unset(&exps2->ht_lock, "rel_rename_exps");
 }
 
 static sql_rel *
