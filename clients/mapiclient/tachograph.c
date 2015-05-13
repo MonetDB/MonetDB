@@ -511,25 +511,25 @@ initFiles(void)
 	tachojson= fopen(buf,"w");
 	if( tachojson == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%d_mal.csv",cachebuf, basefilename, dbname, queryid);
 	tachomal= fopen(buf,"w");
 	if( tachomal == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%d_stmt.csv", cachebuf, basefilename, dbname, queryid);
 	tachostmt= fopen(buf,"w");
 	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
 	snprintf(buf,BUFSIZ,"%s%s_%s_%d.trace", cachebuf, basefilename, dbname, queryid);
 	tachotrace= fopen(buf,"w");
 	if( tachotrace == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
 }
 
@@ -971,8 +971,10 @@ main(int argc, char **argv)
 	snprintf(buf,BUFSIZ,"%s%s_%s.trace", cachebuf, basefilename,dbname);
 	// keep a trace of the events received
 	trace = fopen(buf,"w");
-	if( trace == NULL)
+	if( trace == NULL){
 		fprintf(stderr,"Could not create trace file\n");
+		exit(-1);
+	}
 
 	len = 0;
 	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {

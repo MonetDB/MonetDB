@@ -931,7 +931,7 @@ GDKmmap(const char *path, int mode, size_t len)
 }
 
 #undef GDKmunmap
-int
+gdk_return
 GDKmunmap(void *addr, size_t size)
 {
 	int ret;
@@ -940,7 +940,7 @@ GDKmunmap(void *addr, size_t size)
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0)
 		memdec(size, "GDKunmap");
-	return ret;
+	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
 
@@ -1472,7 +1472,7 @@ GDKaddbuf(const char *message)
 
 #define GDKERRLEN	(1024+512)
 
-int
+void
 GDKerror(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -1489,11 +1489,9 @@ GDKerror(const char *format, ...)
 	va_end(ap);
 
 	GDKaddbuf(message);
-
-	return 0;
 }
 
-int
+void
 GDKsyserror(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -1543,7 +1541,6 @@ GDKsyserror(const char *format, ...)
 	GDKaddbuf(message);
 
 	errno = 0;
-	return err;
 }
 
 void

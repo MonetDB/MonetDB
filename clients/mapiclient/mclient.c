@@ -1897,6 +1897,7 @@ doFileBulk(Mapi mid, FILE *fp)
 			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
+			buf[0] = 0;
 		} else {
 			if (first &&
 			    length >= UTF8BOMLENGTH &&
