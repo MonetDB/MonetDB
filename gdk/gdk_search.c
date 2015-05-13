@@ -131,7 +131,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	Hash *h = NULL;
 	int width = HASHwidth(size);
 
-	if (HEAPalloc(hp, mask + size + HASH_HEADER_SIZE * SIZEOF_SIZE_T / width, width) < 0)
+	if (HEAPalloc(hp, mask + size + HASH_HEADER_SIZE * SIZEOF_SIZE_T / width, width) != GDK_SUCCEED)
 		return NULL;
 	hp->free = (mask + size) * width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h = GDKmalloc(sizeof(Hash));
@@ -247,7 +247,7 @@ BATcheckhash(BAT *b)
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
-				    HEAPload(hp, nme, ext, 0) >= 0) {
+				    HEAPload(hp, nme, ext, 0) == GDK_SUCCEED) {
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
 					h->mask = (BUN) (hdata[2] - 1);
@@ -504,7 +504,7 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		}
 		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-		    HEAPsave(hp, nme, ext) == 0 &&
+		    HEAPsave(hp, nme, ext) == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
 			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %d\n", b->batCacheid);
 			((size_t *) hp->base)[0] |= 1 << 24;

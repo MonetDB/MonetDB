@@ -367,7 +367,7 @@ CMDsave(bit *res, const char *input)
 		BBPfix(bid);
 		b = BBP_cache(bid);
 		if (b && BATdirty(b)) {
-			if (BBPsave(b) == 0)
+			if (BBPsave(b) == GDK_SUCCEED)
 				*res = TRUE;
 		}
 		BBPunfix(bid);
