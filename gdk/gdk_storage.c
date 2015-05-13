@@ -302,7 +302,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt < 0 ? " (failed)" : "");
-	/* return 0 or -1 (posix_fallocate returns != 0 on failure) */
+	/* posix_fallocate returns != 0 on failure, fallocate and
+	 * ftruncate return -1 on failure, but all three return 0 on
+	 * success */
 	return rt != 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -785,7 +787,7 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
-		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			if (b->H->vheap)
 				HEAPfree(b->H->vheap, 0);
 			HEAPfree(&b->H->heap, 0);

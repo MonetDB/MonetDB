@@ -724,8 +724,7 @@ VIEWreset(BAT *b)
 	}
 	return GDK_SUCCEED;
       bailout:
-	if (v != NULL)
-		BBPreclaim(v);
+	BBPreclaim(v);
 	if (n != NULL)
 		BBPunfix(n->batCacheid);
 	HEAPfree(&head, 0);

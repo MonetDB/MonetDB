@@ -1586,8 +1586,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		BBPunfix(bn->batCacheid);
 	GDKfree(rems);
 	if (cntsp) {
-		if (*cntsp)
-			BBPreclaim(*cntsp);
+		BBPreclaim(*cntsp);
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
@@ -2947,8 +2946,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		BBPreclaim(*avgb);
 	else
 		GDKfree(mean);
-	if (bn)
-		BBPreclaim(bn);
+	BBPreclaim(bn);
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);

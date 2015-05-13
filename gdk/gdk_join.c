@@ -116,10 +116,8 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 	r1 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	r2 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	if (r1 == NULL || r2 == NULL) {
-		if (r1)
-			BBPreclaim(r1);
-		if (r2)
-			BBPreclaim(r2);
+		BBPreclaim(r1);
+		BBPreclaim(r2);
 		*r1p = *r2p = NULL;
 		GDKerror("%s: cannot create output BATs.\n", func);
 		return GDK_FAIL;
@@ -2078,10 +2076,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -2310,10 +2306,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -2713,10 +2707,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }
 

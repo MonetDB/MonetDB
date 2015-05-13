@@ -852,10 +852,10 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
 			hhp.farmid = BBPselectfarm(role, b->htype, varheap);
 			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
-			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap) < 0) ||
-			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) < 0) ||
-			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) < 0) ||
-			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap) < 0)) {
+			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap) != GDK_SUCCEED) ||
+			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) != GDK_SUCCEED) ||
+			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) != GDK_SUCCEED) ||
+			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, 1);
 				HEAPfree(&hhp, 1);
 				HEAPfree(&bthp, 1);
