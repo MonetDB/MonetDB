@@ -794,6 +794,7 @@ showmemory(void)
 	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
+	fprintf(gnudata, "set border\n");
 	gnuXtics(0);
 	mn = min / 1024.0;
 	mx = max / 1024.0;
@@ -866,6 +867,7 @@ showcpu(void)
 		}
 	if( cpus)
 		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
+	fprintf(gnudata, "set border\n");
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset grid\n");
@@ -878,6 +880,7 @@ showio(void)
 {
 	int i,b = (beat? beat:1);
 	lng max = 0;
+	char *c, ch;
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].state >= MDB_PING) {
@@ -908,6 +911,15 @@ showio(void)
 	fprintf(gnudata, "set y2label \"in/oublock\"\n");
 	fprintf(gnudata, "set key font \",8\"\n");
 	fprintf(gnudata, "set key bottom right horizontal\n");
+	if( title){
+		for (c = title; c && *c && i <100; c++, i++)
+			if (*c == '_')// for gnuplot
+				*c = '-';
+		ch= *c; *c =0;
+		fprintf(gnudata, "set title \"%s%s\"\n", title, (*c? "...":""));
+		*c =ch;
+	}  else
+		fprintf(gnudata, "set title \"Database %s\"\n", dbname);
 #ifdef GNUPLOT_463_BUG_ON_FEDORA_20
 /* this is the original version, but on Fedora 20 with
  * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
@@ -1087,15 +1099,16 @@ showcolormap(char *filename, int all)
 
 	h -= 30;
 	fprintf(f, "set label %d \"MAL instructions executed: "LLFMT, object++, totfreq);
-	fprintf(f, "\" at 0,%d\n", h - 30);
+	fprintf(f, "\" at 0.0,120\n");
 
 	fprintf(f, "set label %d \"Total CPU core time: ", object++);
 	fprintf_time(f, tottime);
-	fprintf(f, "\" at 0,%d\n", h - 50);
+	fprintf(f, "\" at 750.0,120.0\n");
 
 	perc = (totalclkticks-longest) / ((cpus * longest) / 100.0);
-	fprintf(f, "set label %d \"Parallelism %.1f %% of maximum available", object++, perc>100.0 ? 100.0:perc);
-	fprintf(f, "\" at 0,%d\n", h - 70);
+	perc = perc <0?0.0:perc;
+	fprintf(f, "set label %d \"Parallelism %.2f %% of maximum", object++, perc>100.0 ? 100.0:perc);
+	fprintf(f, "\" at 1400.0,120.0\n");
 	// show complete query text
 	if( currentquery ){
 		h = h1-40;
@@ -1116,7 +1129,7 @@ showcolormap(char *filename, int all)
 		h-= 17;
 	}
 	fprintf(f, "set label %d \"%d\" at 1750.0, 100.00\n", object++, atlaspage + 1);
-	fprintf(f, "set label %d \"%s\" at 500.0, 100.00\n", object++, buf);
+	fprintf(f, "set label %d \"%s\" at 750.0, 100.00\n", object++, buf);
 	fprintf(f, "set label %d \"%s\" at 0.0, 100.00\n", object++, date);
 	fprintf(f, "plot 0 notitle with lines linecolor rgb \"white\"\n");
 	if (all) {
@@ -1171,25 +1184,26 @@ static int height = 160;
 static void
 gnuplotheader(char *filename)
 {
-	char *c,ch;
-	int i=0;
-
 	fprintf(gnudata, "set terminal pdfcairo noenhanced font 'verdana,10' color solid size 8.3,11.7\n");
 	fprintf(gnudata, "set output \"%s.pdf\"\n", filename);
 	fprintf(gnudata, "set size 1,1\n");
 	fprintf(gnudata, "set tics front\n");
-
-	if( title){
-		for (c = title; c && *c && i <100; c++, i++)
-			if (*c == '_')// for gnuplot
-				*c = '-';
-		ch= *c; *c =0;
-		fprintf(gnudata, "set title \"%s%s\"\n", title, (*c? "...":""));
-		*c =ch;
-	}  else
-		fprintf(gnudata, "set title \"Database %s\"\n", dbname);
 	fprintf(gnudata, "set multiplot\n");
 	// try to inject the MonetDB logo and documentation
+	fprintf(gnudata,"set tmarg 1\n");
+	fprintf(gnudata,"set bmarg 1\n");
+	fprintf(gnudata,"set lmarg 10\n");
+	fprintf(gnudata,"set rmarg 10\n");
+	fprintf(gnudata,"set size 0.450,0.11\n");
+	fprintf(gnudata,"set origin 0.0,0.945\n");
+	fprintf(gnudata,"set xrange [0.0:1125.0]\n");
+	fprintf(gnudata,"set yrange [0:581.0]\n");
+	fprintf(gnudata,"unset border\n");
+	fprintf(gnudata,"unset xtics\n");
+	fprintf(gnudata,"unset ytics\n");
+	// REPLACE THE HARDCODED NAME
+	fprintf(gnudata,"plot \"/ufs/mk/monetdb-final.png\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n");
+	fprintf(gnudata,"unset title\n");
 
 }
 
