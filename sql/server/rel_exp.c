@@ -13,6 +13,7 @@
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
+#include "rel_distribute.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
@@ -453,6 +454,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
 	rel = rel_optimizer(sql, rel);
+	rel = rel_distribute(sql, rel);
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;
