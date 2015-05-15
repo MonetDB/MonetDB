@@ -1133,8 +1133,11 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			char *ntname = te->data.lval->h->data.sval;
 			sql_table *nnt = mvc_bind_table(sql, s, ntname);
 
-			if (nnt)
+			if (nnt) {
 				cs_add(&nt->tables, nnt, TR_NEW); 
+			} else {
+				return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", ntname, s->base.name);
+			}
 		}
 		/* table drop table */
 		if (te->token == SQL_DROP_TABLE) {
