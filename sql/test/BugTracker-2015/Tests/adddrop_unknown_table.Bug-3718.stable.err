@@ -30,9 +30,12 @@ stderr of test 'adddrop_unknown_table.Bug-3718` in directory 'sql/test/BugTracke
 # 12:45:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2012" "--port=36769"
 # 12:45:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-2012/.s.monetdb.36769
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
 QUERY = ALTER TABLE mt ADD TABLE blablah;
 ERROR = !ALTER TABLE: no such table 'blablah' in schema 'sys'
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
+QUERY = ALTER TABLE mt DROP TABLE blablah;
+ERROR = !ALTER TABLE: table 'blablah' isn't part of the MERGE TABLE 'sys.mt'
 
 # 12:45:38 >  
 # 12:45:38 >  "Done."
