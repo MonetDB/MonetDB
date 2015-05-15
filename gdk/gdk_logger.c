@@ -2095,7 +2095,6 @@ bm_tids(BAT *b, BAT *d)
 		logbat_destroy(tids);
 		tids = BATmirror(BATmark(diff, 0));
 		logbat_destroy(diff);
-		logbat_destroy(d);
 	}
 	return tids;
 }
