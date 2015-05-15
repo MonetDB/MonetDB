@@ -4596,7 +4596,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MSinitClientPrg(cntxt, "user", "test");
 
 		/* generate MAL code */
-		backend_callinline(b, cntxt, s);
+		backend_callinline(b, cntxt, s, 1);
 		addQueryToCache(cntxt);
 
 		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);

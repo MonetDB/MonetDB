@@ -179,7 +179,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		if (backend_callinline(sql, c, s) == 0)
+		if (backend_callinline(sql, c, s, 1) == 0)
 			addQueryToCache(c);
 		else
 			err = 1;
