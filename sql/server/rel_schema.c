@@ -1189,6 +1189,8 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 				if (rel_check_tables(sql, t, nnt) < 0)
 					return NULL;
 				cs_add(&nt->tables, nnt, TR_NEW); 
+			} else {
+				return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", ntname, s->base.name);
 			}
 		}
 		/* table drop table */
