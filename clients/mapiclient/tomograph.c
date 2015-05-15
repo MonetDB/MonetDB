@@ -1107,8 +1107,8 @@ showcolormap(char *filename, int all)
 
 	perc = (totalclkticks-longest) / ((cpus * longest) / 100.0);
 	perc = perc <0?0.0:perc;
-	fprintf(f, "set label %d \"Parallelism %.2f %% of maximum", object++, perc>100.0 ? 100.0:perc);
-	fprintf(f, "\" at 1400.0,120.0\n");
+	fprintf(f, "set label %d \"Parallelism %.2f %%", object++, perc>100.0 ? 100.0:perc);
+	fprintf(f, "\" at 1550.0,120.0\n");
 	// show complete query text
 	if( currentquery ){
 		h = h1-40;
@@ -1267,7 +1267,7 @@ createTomogram(void)
 
 	//h = top <= cpus/2 ? 20: 10; /* unit height of bars */
 	h =10;
-	height = cpus * 2 * h;
+	height = (top<cpus? cpus:top) * 2 * h;
 	rowoffset = top<cpus ? cpus-top:0;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"worker threads\"\n");
