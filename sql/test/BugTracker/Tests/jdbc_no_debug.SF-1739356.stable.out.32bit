@@ -29,14 +29,14 @@ Ready.
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type ] COUNT  |
-| | | | | | ) [ p.type != smallint[tinyint "2"] ]                                      |
+| | | | | | ) [ p.type != smallint "2" ]                                               |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ],                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type ] COUNT  |
-| | | | | | ) [ t.type != smallint[tinyint "2"] ]                                      |
+| | | | | | ) [ t.type != smallint "2" ]                                               |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
 | | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ]                                       |
 | | | ) [ L1.L1 ]                                                                      |

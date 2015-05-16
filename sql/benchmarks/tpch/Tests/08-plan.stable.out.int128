@@ -56,7 +56,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 541 # length
+% 523 # length
 project (
 | group by (
 | | project (
@@ -74,7 +74,7 @@ project (
 | | | | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
 | | | | | | | | | select (
 | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
-| | | | | | | | | ) [ part.p_type NOT NULL = varchar(25)[char(22) "ECONOMY ANODIZED STEEL"] ]
+| | | | | | | | | ) [ part.p_type NOT NULL = varchar(25) "ECONOMY ANODIZED STEEL" ]
 | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ],
 | | | | | | | | table(sys.customer) [ customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
 | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
@@ -82,13 +82,13 @@ project (
 | | | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = n1.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ],
 | | | | | | select (
 | | | | | | | table(sys.region) [ region.r_name NOT NULL, region.%TID% NOT NULL ] COUNT 
-| | | | | | ) [ region.r_name NOT NULL = char(25)[char(7) "AMERICA"] ]
+| | | | | | ) [ region.r_name NOT NULL = char(25) "AMERICA" ]
 | | | | | ) [ n1.%nation_n_regionkey_fkey NOT NULL = region.%TID% NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ],
 | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
 | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  = lineitem.l_suppkey NOT NULL ],
 | | | | table(sys.nation) [ nation.n_name NOT NULL as n2.n_name, nation.%TID% NOT NULL as n2.%TID% ] COUNT 
 | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = n2.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
-| | ) [ sys.year(orders.o_orderdate NOT NULL) as all_nations.o_year, sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)) as all_nations.volume, n2.n_name NOT NULL as all_nations.nation, sys.ifthenelse(sys.ifthenelse(sys.isnull(sys.=(all_nations.nation NOT NULL, char(25)[char(6) "BRAZIL"])), boolean "false", sys.=(all_nations.nation NOT NULL, char(25)[char(6) "BRAZIL"])), all_nations.volume, decimal(33,4)[tinyint "0"]) as L1.L1 ]
+| | ) [ sys.year(orders.o_orderdate NOT NULL) as all_nations.o_year, sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)) as all_nations.volume, n2.n_name NOT NULL as all_nations.nation, sys.ifthenelse(sys.ifthenelse(sys.isnull(sys.=(all_nations.nation NOT NULL, char(25) "BRAZIL")), boolean "false", sys.=(all_nations.nation NOT NULL, char(25) "BRAZIL")), all_nations.volume, decimal(33,4)[tinyint "0"]) as L1.L1 ]
 | ) [ all_nations.o_year ] [ all_nations.o_year, sys.sum no nil (L1.L1) as L2.L2, sys.sum no nil (all_nations.volume) as L3.L3 ]
 ) [ all_nations.o_year, sys.sql_div(decimal(39,8)[L2] as L2, L3) as L3.mkt_share ] [ all_nations.o_year ASC ]
 

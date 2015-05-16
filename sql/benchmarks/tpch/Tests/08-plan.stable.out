@@ -74,7 +74,7 @@ project (
 | | | | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
 | | | | | | | | | select (
 | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
-| | | | | | | | | ) [ part.p_type NOT NULL = varchar(25)[char(22) "ECONOMY ANODIZED STEEL"] ]
+| | | | | | | | | ) [ part.p_type NOT NULL = varchar(25) "ECONOMY ANODIZED STEEL" ]
 | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ],
 | | | | | | | | table(sys.customer) [ customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
 | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],

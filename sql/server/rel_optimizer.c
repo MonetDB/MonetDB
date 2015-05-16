@@ -6597,10 +6597,14 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						c = rel_find_exp(rel, c);
 						if (l->type == e_atom && !l->l)
 							lval = sql->args[l->flag];
+						else if (l->type == e_atom && l->l)
+							lval = l->l;
 						if (!h)
 							hval = lval;
 						else if (h && h->type == e_atom && !h->l)
 							hval = sql->args[h->flag];
+						else if (h && h->type == e_atom && h->l)
+							hval = h->l;
 						if (c && lval && hval) {
 							append(cols, c);
 							append(low, lval);
@@ -6626,7 +6630,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
-					if ((nrel || nt->next) && 
+					if (0 && (nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
