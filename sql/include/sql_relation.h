@@ -117,6 +117,10 @@ typedef struct expression {
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
 
+#define DDL_ALTER_TABLE_ADD_TABLE  61
+#define DDL_ALTER_TABLE_DEL_TABLE  62
+#define DDL_ALTER_TABLE_SET_ACCESS  63
+
 #define MAXOPS 21
 
 typedef enum operator_type {
