@@ -1076,7 +1076,7 @@ static char *
 alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, int drop_action)
 {
 	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
-	sql_table *mt, *pt; 
+	sql_table *mt = NULL, *pt = NULL; 
 
 	if (ms)
 		mt = mvc_bind_table(sql, ms, mtname);
@@ -1101,7 +1101,7 @@ static char *
 alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
-	sql_table *t; 
+	sql_table *t = NULL; 
 
 	if (s)
 		t = mvc_bind_table(sql, s, tname);
