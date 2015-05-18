@@ -224,6 +224,9 @@ BATcheckhash(BAT *b)
 	int ret;
 	lng t;
 
+	if (b->T->hash == NULL)
+		return 0;
+
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
 	t = GDKusec() - t;
