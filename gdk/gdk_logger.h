@@ -70,7 +70,7 @@ typedef struct logger {
 				   directly (on transaction
 				   commit). */
 	void *buf;
-	void *bufsize;
+	size_t bufsize;
 } logger;
 
 #define BATSIZE 0
