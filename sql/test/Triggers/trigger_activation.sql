@@ -24,7 +24,7 @@ create trigger test_5_4
 	after update on t_5_1
 	insert into t_5_1 values(30, 'update_from_test_5_4');
 
-explain update t_5_1 set name = 'mo' where id = 11;
+update t_5_1 set name = 'mo' where id = 11;
 
 select * from t_5_1;
 
