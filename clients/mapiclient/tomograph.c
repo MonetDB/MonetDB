@@ -1214,7 +1214,7 @@ createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
-	int top = 0;
+	int top = 0, rowoffset = 0;
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
@@ -1282,15 +1282,18 @@ createTomogram(void)
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
 
+	/* fill the page from top to bottom */
+	rowoffset = top <= cpus+1 ? cpus+1 - top: 0;
+
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "\"%d\" %d%c", rows[i],  i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
+		fprintf(gnudata, "\"%d\" %d%c", rows[i],  (rowoffset + i) * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
 	fprintf(gnudata, ")\n");
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
+			object++, 0, (rowoffset +i) * 2 * h + h/3, lastclk[rows[i]], (rowoffset +i) * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
@@ -1302,15 +1305,15 @@ createTomogram(void)
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, box[i].row  * 2 * h, box[i].clkstart+2.0, box[i].row * 2 * h + h, colors[box[i].color].col);
+						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2.0, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, box[i].row  * 2 * h, box[i].clkend, box[i].row  * 2 * h + h, colors[box[i].color].col);
+						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkend, (rowoffset + box[i].row)  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:
 				break;
 			case MDB_WAIT:
 				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %.2f,%.2f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h/3, box[i].clkstart+ w /25.0, box[i].row *2 *h + h - 0.3 * h);
+					object++, box[i].clkstart, (rowoffset + box[i].row) * 2 * h+h/3, box[i].clkstart+ w /25.0, (rowoffset + box[i].row) *2 *h + h - 0.3 * h);
 				break;
 			}
 
