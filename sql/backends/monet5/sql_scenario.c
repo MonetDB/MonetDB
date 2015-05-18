@@ -37,6 +37,7 @@
 #include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
+#include "sql_optimizer.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -1207,7 +1208,7 @@ recompilequery:
 
 			trimMalBlk(mb);
 			chkProgram(c->fdout, c->nspace, mb);
-			addOptimizerPipe(c, mb, "default_pipe");
+			addOptimizers(c, mb, "default_pipe");
 			msg = optimizeMALBlock(c, mb);
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);
