@@ -1385,7 +1385,7 @@ parseCommandPattern(Client cntxt, int kind)
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
 	str modnme = NULL;
-	int l = 0;
+	size_t l = 0;
 
 	curBlk = fcnHeader(cntxt, kind);
 	if (curBlk == NULL) 
