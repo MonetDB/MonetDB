@@ -921,6 +921,7 @@ showio(void)
 		fprintf(gnudata, "set title \"%s%s\"\n", title, (*c? "...":""));
 		*c =ch;
 	}  else
+	if( dbname)
 		fprintf(gnudata, "set title \"Database %s\"\n", dbname);
 #ifdef GNUPLOT_463_BUG_ON_FEDORA_20
 /* this is the original version, but on Fedora 20 with
@@ -1283,7 +1284,14 @@ createTomogram(void)
 		totalticks += lastclk[rows[i]];
 
 	/* fill the page from top to bottom */
-	rowoffset = top <= cpus+1 ? cpus+1 - top: 0;
+	if( top <= cpus +1){
+			rowoffset = cpus+1 - top;
+		if ( top <= cpus/2+1){
+			h *= 2;
+			rowoffset = (cpus+2)/2 - top;
+		}
+		
+	}
 
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
