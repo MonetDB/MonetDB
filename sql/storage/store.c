@@ -2075,15 +2075,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 static sql_table *
 schema_table_find(sql_schema *s, sql_table *ot)
 {
-	node *n;
-
 	if (s) 
-	for (n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-
-		if (t->base.id == ot->base.id)
-			return t;
-	}
+		return find_sql_table(s, ot->base.name);
 	assert(NULL);
 	return NULL;
 }
