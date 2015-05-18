@@ -224,9 +224,6 @@ BATcheckhash(BAT *b)
 	int ret;
 	lng t;
 
-	if (b->T->hash == NULL)
-		return 0;
-
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
 	t = GDKusec() - t;
@@ -510,6 +507,7 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		}
 		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
+		    b->batInserted == b->batCount &&
 		    HEAPsave(hp, nme, ext) == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
 			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %d\n", b->batCacheid);
