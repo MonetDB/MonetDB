@@ -1197,6 +1197,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	return col;
 }
 
+#if 0
 static sql_table *
 dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
 {
@@ -1217,6 +1218,7 @@ dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
 	nt->s = t->s;
 	return nt;
 }
+#endif
 
 sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
@@ -1234,9 +1236,11 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
 
+	/*
 	if (t->tables.set)
 		for (n = t->tables.set->h; n; n = n->next) 
 			dup_sql_ptable(sa, nt, n->data);
+			*/
 	nt->tables.dset = NULL;
 	nt->tables.nelm = NULL;
 	return nt;
@@ -1588,7 +1592,7 @@ store_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (GDKexiting() || logger_funcs.changes() < 1000) {
+		if (GDKexiting() || logger_funcs.changes() < 1000000) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}
