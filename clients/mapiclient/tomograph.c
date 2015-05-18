@@ -77,6 +77,7 @@ static char *dirpath= "cache\\";
 static char *dirpath= "cache/";
 #endif
 static char *prefix = "tomograph";
+static char basefile[BUFSIZ];
 static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
@@ -410,7 +411,7 @@ showNumaHeatmap(void){
 	char buf[BUFSIZ];
 
 	
-	snprintf(buf,BUFSIZ,"%s%s_heatmap.csv",dirpath,prefix);
+	snprintf(buf,BUFSIZ,"%s_heatmap.csv",basefile);
 	f= fopen(buf,"a");
 	if( f == NULL){
 		fprintf(stderr,"Can not create %s\n",buf);
@@ -480,18 +481,18 @@ stop_disconnect:
 	// show follow up action only once
 	if(atlaspage >= 1){
 		for (i = 0; i < atlaspage;  i++){
-			snprintf(buf, BUFSIZ, "gnuplot %s%s_%02d.gpl;", dirpath, prefix, i);
+			snprintf(buf, BUFSIZ, "gnuplot %s_%02d.gpl;", basefile, i);
 			if( error == 0){
 				fprintf(stderr,"-- exec:%s\n",buf);
 				error = system(buf);
 				if( error){
 					fprintf(stderr, "To finish the atlas make sure gnuplot is available and run:\n");
 					for (j=i; j< atlaspage;  j++)
-						fprintf(stderr, "gnuplot %s%s_%02d.gpl\n", dirpath, prefix, j);
+						fprintf(stderr, "gnuplot %s_%02d.gpl\n", basefile, j);
 				}
 			}
 
-			snprintf(buf, BUFSIZ, "%s%s_%02d.pdf ", dirpath, prefix, i);
+			snprintf(buf, BUFSIZ, "%s_%02d.pdf ", basefile, i);
 			plen += snprintf(pages + plen, BSIZE -plen,"%s",buf);
 			if ( plen >= BSIZE-1){
 				error = -1;
@@ -501,14 +502,14 @@ stop_disconnect:
 
 
 		if( error == 0) {
-			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s.pdf -dBATCH %s",dirpath,prefix,pages);
+			snprintf(buf, BSIZE, "gs -q -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s",basefile,pages);
 			fprintf(stderr,"-- exec:%s\n",buf);
 			error = system(buf);
 		}
 		if( error == 0) 
-			fprintf(stderr,"-- done: %s%s.pdf\n", dirpath, prefix);
+			fprintf(stderr,"-- done: %s.pdf\n", basefile);
 		else
-			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s%s.pdf -dBATCH %s\n", dirpath, prefix,pages);
+			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s\n", basefile, pages);
 	}
 
 	if(dbh)
@@ -553,13 +554,14 @@ static void resetTomograph(void){
 	static char buf[BUFSIZ];
 	int i;
 
-	snprintf(buf,BUFSIZ,"%s%s_%02d.trace", dirpath, prefix,atlaspage);
+	snprintf(buf,BUFSIZ,"%s_%02d.trace", basefile, atlaspage);
 
 	if( inputfile && strcmp(inputfile,buf) == 0 ){
 		fprintf(stderr,"Should not overwrite existing trace file '%s'\n",buf);
 		exit(-1);
 	}
 	if( inputfile == 0 ){
+		// don't create another tracefile when input is given
 		tracefd = fopen(buf,"w");
 		if( tracefd == NULL){
 			fprintf(stderr,"Could not create trace file '%s'\n",buf);
@@ -725,7 +727,7 @@ dumpboxes(void)
 	int i;
 	int written = 0;
 
-	snprintf(buf, BUFSIZ, "%s%s_%02d.dat", dirpath, prefix,atlaspage);
+	snprintf(buf, BUFSIZ, "%s_%02d.dat", basefile,atlaspage);
 	f = fopen(buf, "w");
 	if(f == NULL){
 		fprintf(stderr,"Could not create file '%s'\n",buf);
@@ -801,7 +803,7 @@ showmemory(void)
 	mm = (mx - mn) / 50.0; /* 2% top & bottom margin */
 	fprintf(gnudata, "set yrange [%f:%f]\n", mn - mm, mx + mm);
 	fprintf(gnudata, "set ytics (\"%.*f\" %f, \"%.*f\" %f) nomirror\n", digits, min / scale, mn, digits, max / scale, mx);
-	fprintf(gnudata, "plot \"%s%s_%02d.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", dirpath, prefix,atlaspage);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", basefile, atlaspage);
 	fprintf(gnudata, "unset yrange\n");
 }
 
@@ -833,7 +835,7 @@ showcpu(void)
 	fprintf(gnudata, "set ylabel \"%d cores\"\n",cpus);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
-	fprintf(gnudata, "set ytics 0, %d\n",cpus <=8 ?4:8);
+	fprintf(gnudata, "set ytics 0, %d\n",cpus <48?(cpus <=8 ?4:8):12);
 	fprintf(gnudata, "set grid ytics\n");
 
 	fprintf(gnudata, "set border\n");
@@ -924,17 +926,17 @@ showio(void)
 /* this is the original version, but on Fedora 20 with
  * gnuplot-4.6.3-6.fc20.x86_64 it produces a red background on most of
  * the page */
-	fprintf(gnudata, "plot \"%s%s_%02d.dat\" using 1:($4/%d.0) notitle with dots fs solid linecolor rgb \"gray\" ,\\\n", dirpath, prefix,  atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots solid linecolor rgb \"red\"\n", dirpath, prefix,  atlaspage, b);
-	//fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", dirpath, prefix,  atlaspage, b);
-	//fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", dirpath, prefix,  atlaspage, b);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots fs solid linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots solid linecolor rgb \"red\"\n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
-	fprintf(gnudata, "plot \"%s%s_%02d.dat\" using 1:($4/%d.0) notitle with dots linecolor rgb \"gray\" ,\\\n", dirpath, prefix,  atlaspage, b);
-	fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots linecolor rgb \"red\"\n", dirpath, prefix,  atlaspage, b);
-	//fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", dirpath, prefix,  atlaspage, b);
-	//fprintf(gnudata, "\"%s%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", dirpath, prefix,  atlaspage, b);
+	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
+	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots linecolor rgb \"red\"\n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
@@ -1022,7 +1024,7 @@ showcolormap(char *filename, int all)
 	for (nl=0, c= currentquery; c && *c; c++)
 		nl += *c == '\n';
 
-	snprintf(buf, BUFSIZ, "%s%s_%02d.gpl", dirpath, prefix, atlaspage);
+	snprintf(buf, BUFSIZ, "%s_%02d.gpl", basefile, atlaspage);
 	if (all) {
 		f = fopen(buf, "w");
 		if (f == NULL) {
@@ -1212,7 +1214,7 @@ createTomogram(void)
 {
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS] = {0};
-	int top = 0, rowoffset = 0;
+	int top = 0;
 	int i, j;
 	int h, prevobject = 1;
 	lng w = lastclktick - starttime;
@@ -1224,7 +1226,7 @@ createTomogram(void)
 			fprintf(stderr,"No further events found\n");
 		return;
 	}
-	snprintf(buf, BUFSIZ, "%s%s_%02d.gpl", dirpath, prefix,atlaspage);
+	snprintf(buf, BUFSIZ, "%s_%02d.gpl", basefile, atlaspage);
 	gnudata = fopen(buf, "w");
 	if (gnudata == 0) {
 		printf("Could not create file '%s'\n", buf);
@@ -1265,10 +1267,8 @@ createTomogram(void)
 	}
 
 
-	//h = top <= cpus/2 ? 20: 10; /* unit height of bars */
-	h =10;
-	height = (top<cpus? cpus:top) * 2 * h;
-	rowoffset = top<cpus ? cpus-top:0;
+	h = 10; /* unit height of bars */
+	height = (cpus+1) * 2 * h;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"worker threads\"\n");
 	fprintf(gnudata, "set key right \n");
@@ -1279,21 +1279,18 @@ createTomogram(void)
 
 	/* calculate the effective use of parallelism */
 	totalticks = 0;
-	if( top < cpus)
-		for(i=0; i < topbox; i++)
-			box[i].row += rowoffset;
 	for (i = 0; i < top; i++)
 		totalticks += lastclk[rows[i]];
 
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "\"%d\" %d%c", rows[i], (rowoffset + i) * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
+		fprintf(gnudata, "\"%d\" %d%c", rows[i],  i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
 	fprintf(gnudata, ")\n");
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
-			object++, 0, (rowoffset + i) * 2 * h + h/3, lastclk[rows[i]], (rowoffset + i) * 2 * h + h - h/3);
+			object++, 0, i * 2 * h + h/3, lastclk[rows[i]], i * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
@@ -1304,11 +1301,10 @@ createTomogram(void)
 					dumpbox(i);
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkstart+(w/200.0>1?w/200.0:1), box[i].row * 2 * h + h, colors[box[i].color].col);
-				else
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+						object++, box[i].clkstart, box[i].row  * 2 * h, box[i].clkstart+2.0, box[i].row * 2 * h + h, colors[box[i].color].col);
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
+						object++, box[i].clkstart, box[i].row  * 2 * h, box[i].clkend, box[i].row  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:
 				break;
@@ -1754,7 +1750,6 @@ main(int argc, char **argv)
 	}
 
 	initcolors();
-	resetTomograph();
 
 	if (colormap) {
 		showcolormap(prefix, 1);
@@ -1775,15 +1770,6 @@ main(int argc, char **argv)
 	signal(SIGTERM, stopListening);
 	close(0);
 
-	snprintf(buf,BUFSIZ,"%s%s_%02d.trace", dirpath, prefix, atlaspage);
-	if (inputfile==0 || strcmp(buf, inputfile) ){
-		// avoid overwriting yourself
-		tracefd = fopen(buf,"w");
-		if( tracefd == NULL){
-			fprintf(stderr,"Could not create trace file '%s'\n",buf);
-			exit(0);
-		}
-	}
 	if (inputfile) {
 		inpfd = fopen(inputfile,"r");
 		if (inpfd == NULL ){
@@ -1792,8 +1778,9 @@ main(int argc, char **argv)
 		}
 		if( strstr(inputfile,".trace"))
 			*strstr(inputfile,".trace") = 0;
-		snprintf(buf,BUFSIZ,"%s%s_%02d.trace", dirpath, prefix, atlaspage);
+		snprintf(basefile,BUFSIZ,"%s",inputfile);
 		len = 0;
+		resetTomograph();
 		while ((n = fread(buf + len, 1, BUFSIZ - len, inpfd)) > 0) {
 			buf[len + n] = 0;
 			response = buf;
@@ -1814,6 +1801,8 @@ main(int argc, char **argv)
 			} else
 				len = 0;
 		}
+		createTomogram();
+		stopListening(0);
 	} else {
 		if (user == NULL)
 			user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -1860,7 +1849,8 @@ main(int argc, char **argv)
 			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
 	
-		snprintf(buf,BUFSIZ,"%s%s_%02d.trace",dirpath, prefix, atlaspage);
+		snprintf(basefile,BUFSIZ,"%s%s",dirpath, prefix);
+		snprintf(buf,BUFSIZ,"%s_%02d.trace",basefile, atlaspage);
 		tracefd = fopen(buf,"w");
 		if( tracefd == NULL)
 			fprintf(stderr,"Could not create file '%s'\n",buf);
@@ -1872,6 +1862,7 @@ main(int argc, char **argv)
 			fprintf(stderr,"Not yet implemented\n");
 		}
 		len = 0;
+		resetTomograph();
 		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
 			buf[len + m] = 0;
 			response = buf;
@@ -1895,8 +1886,6 @@ main(int argc, char **argv)
 				len = 0;
 		}
 	}
-	if( inputfile && atlas >= atlaspage)
-		createTomogram();
 
 	if( !inputfile) 
 		doQ("profiler.stop();");
