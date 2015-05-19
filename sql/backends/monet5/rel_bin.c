@@ -4371,7 +4371,7 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(sql, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_DROP_ROLE) {
+	} else if (rel->flag <= DDL_ALTER_TABLE_SET_ACCESS) {
 		s = rel2bin_catalog2(sql, rel, refs);
 		sql->type = Q_SCHEMA;
 	}

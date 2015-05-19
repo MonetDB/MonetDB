@@ -55,34 +55,38 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 250 # length
+% 253 # length
 project (
-| semijoin (
-| | group by (
-| | | join (
-| | | | join (
-| | | | | table(sys.supplier) [ supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT ,
-| | | | | select (
-| | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
-| | | | | ) [ nation.n_name NOT NULL = char(25)[char(7) "GERMANY"] ]
-| | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
-| | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
-| | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L1.L1, L1.L1 as L2.L2 ],
-| | project (
-| | | group by (
-| | | | join (
+| project (
+| | semijoin (
+| | | project (
+| | | | group by (
 | | | | | join (
-| | | | | | table(sys.supplier) [ supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT ,
-| | | | | | select (
-| | | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
-| | | | | | ) [ nation.n_name NOT NULL = char(25)[char(7) "GERMANY"] ]
-| | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
-| | | | | table(sys.partsupp) [ partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
-| | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
-| | ) [ sys.sql_mul(L3, decimal(4,3) "1") as L4.L4 ]
-| ) [ L2 > sys.scale_down(L4.L4, hugeint "100") ]
+| | | | | | join (
+| | | | | | | table(sys.supplier) [ supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT ,
+| | | | | | | select (
+| | | | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
+| | | | | | | ) [ nation.n_name NOT NULL = char(25) "GERMANY" ]
+| | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
+| | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
+| | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
+| | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L1.L1, L1.L1 as L2.L2 ]
+| | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L2.L2, L2 as L5.L5 ],
+| | | project (
+| | | | group by (
+| | | | | join (
+| | | | | | join (
+| | | | | | | table(sys.supplier) [ supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT ,
+| | | | | | | select (
+| | | | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
+| | | | | | | ) [ nation.n_name NOT NULL = char(25) "GERMANY" ]
+| | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
+| | | | | | table(sys.partsupp) [ partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
+| | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
+| | | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
+| | | ) [ sys.sql_mul(L3, decimal(4,3) "1") as L4.L4, sys.scale_down(L4.L4, hugeint "100") as L6.L6 ]
+| | ) [ L5.L5 > L6.L6 ]
+| ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L2.L2 ]
 ) [ partsupp.ps_partkey NOT NULL, L1 as L1.value ] [ L1.value ]
 
 # 22:46:31 >  

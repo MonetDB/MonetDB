@@ -62,7 +62,7 @@ top N (
 | | | | | ) [ orders.o_orderdate NOT NULL < date "1995-03-15" ],
 | | | | | select (
 | | | | | | table(sys.customer) [ customer.c_mktsegment NOT NULL, customer.%TID% NOT NULL ] COUNT 
-| | | | | ) [ customer.c_mktsegment NOT NULL = char(10)[char(8) "BUILDING"] ]
+| | | | | ) [ customer.c_mktsegment NOT NULL = char(10) "BUILDING" ]
 | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
 | | | | select (
 | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 

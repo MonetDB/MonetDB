@@ -240,7 +240,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	if (msg)
 		GDKfree(msg);	/* what to do with an error? */
 	/* point queries do not require mitosis and dataflow */
-	if (be->mvc->point_query)
+	if (be->mvc->point_query) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
 			if (q->token == ENDsymbol)
@@ -248,13 +248,16 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 			if (getFunctionId(q) == mitosisRef || getFunctionId(q) == dataflowRef)
 				q->token = REMsymbol;	/* they are ignored */
 		}
+	}
+	SQLgetStatistics(c, be->mvc, mb);
+	if (be->mvc->emod & mod_debug)
+		addtoMalBlkHistory(mb, "getStatistics");
 }
 
 void
 addQueryToCache(Client c)
 {
 	MalBlkPtr mb;
-	mvc *m;
 	backend *be;
 	str msg = 0, pipe;
 
@@ -267,7 +270,6 @@ addQueryToCache(Client c)
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);
-	m = ((backend *) c->sqlcontext)->mvc;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
@@ -282,7 +284,7 @@ addQueryToCache(Client c)
 
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
-		if (m->debug) {
+		if (be->mvc->debug) {
 			msg = runMALDebugger(c, c->curprg);
 			if (msg != MAL_SUCCEED)
 				GDKfree(msg); /* ignore error */
@@ -290,10 +292,6 @@ addQueryToCache(Client c)
 		return;
 	}
 	addOptimizers(c, mb, pipe);
-	SQLgetStatistics(c, m, mb);
-	if (m->emod & mod_debug)
-		addtoMalBlkHistory(mb, "getStatistics");
-
 	msg = optimizeMALBlock(c, mb);
 	if (msg != MAL_SUCCEED) {
 		showScriptException(c->fdout, mb, 0, MAL, "%s", msg);

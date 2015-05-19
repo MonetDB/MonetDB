@@ -406,7 +406,7 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 	gdk_return res = GDKmunmap(ptr, len);
 	ALLOCDEBUG fprintf(stderr,
 			   "#GDKmunmap(" PTRFMT "," SZFMT ") -> %d [%s:%d]\n",
-			   PTRFMTCAST ptr, len, res, filename, lineno);
+			   PTRFMTCAST ptr, len, (int) res, filename, lineno);
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)

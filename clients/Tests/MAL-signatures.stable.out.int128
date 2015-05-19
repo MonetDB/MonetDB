@@ -51444,6 +51444,14 @@ pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd
 address mvc_clear_table_wrap;
 comment Clear table
 
+pattern sql.catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void 
+address SQLcatalog;
+comment a alter table add/del table catalog statement
+
+pattern sql.catalog(type:int,sname:str,tname:str,access:int):void 
+address SQLcatalog;
+comment a alter table access statement
+
 pattern sql.catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void 
 address SQLcatalog;
 comment a create index catalog statement

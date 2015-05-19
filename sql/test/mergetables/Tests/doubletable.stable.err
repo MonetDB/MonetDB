@@ -30,12 +30,12 @@ stderr of test 'doubletable` in directory 'sql/test/mergetables` itself:
 # 15:50:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7383" "--port=38170"
 # 15:50:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11712/.s.monetdb.35451
+MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = ALTER TABLE complete ADD TABLE part1;
-ERROR = !ALTER TABLE: table 'part1' is already part of the MERGE TABLE 'sys.complete'
-MAPI  = (monetdb) /var/tmp/mtest-11712/.s.monetdb.35451
+ERROR = !ALTER TABLE: table 'sys.part1' is already part of the MERGE TABLE 'sys.complete'
+MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = ALTER TABLE complete ADD TABLE part2;
-ERROR = !ALTER TABLE: table 'part2' is already part of the MERGE TABLE 'sys.complete'
+ERROR = !ALTER TABLE: table 'sys.part2' is already part of the MERGE TABLE 'sys.complete'
 
 
 # 15:50:39 >  

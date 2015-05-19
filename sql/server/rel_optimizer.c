@@ -1381,7 +1381,7 @@ exps_can_push_func(list *exps, sql_rel *rel)
 		sql_exp *e = n->data;
 		int must = 0, mustl = 0, mustr = 0;
 
-		if (is_join(rel->op) && ((can_push_func(e, rel->l, &mustl) && mustl) || (can_push_func(e, rel->r, &mustr) && mustr)))
+		if (is_joinop(rel->op) && ((can_push_func(e, rel->l, &mustl) && mustl) || (can_push_func(e, rel->r, &mustr) && mustr)))
 			return 1;
 		else if (is_select(rel->op) && can_push_func(e, NULL, &must) && must)
 			return 1;
@@ -1424,7 +1424,7 @@ exps_need_push_down( list *exps )
 static sql_rel *
 rel_push_func_down(int *changes, mvc *sql, sql_rel *rel) 
 {
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
+	if ((is_select(rel->op) || is_joinop(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
 		list *exps = rel->exps;
 
 		if (is_select(rel->op) &&  list_length(rel->exps) <= 1)  /* only push down when thats useful */
@@ -1443,7 +1443,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 				rel->l = l = rel_project(sql->sa, l, 
 					rel_projections(sql, l, NULL, 1, 1));
 			}
-			if (is_join(rel->op) && r->op != op_project) {
+			if (is_joinop(rel->op) && r->op != op_project) {
 				if (is_subquery(r))
 					return rel;
 				rel->r = r = rel_project(sql->sa, r, 
@@ -1456,11 +1456,11 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 
 				if (e->type == e_column)
 					continue;
-				if ((is_join(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
+				if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
 				    (is_select(rel->op) && can_push_func(e, NULL, &must) && must)) {
 					must = 0; mustl = 0; mustr = 0;
 					if (e->type != e_cmp) { /* predicate */
-						if ((is_join(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
+						if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
 					    	    (is_select(rel->op) && can_push_func(e, NULL, &must) && must)) {
 							exp_label(sql->sa, e, ++sql->label);
 							if (mustr)
@@ -1473,7 +1473,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 						}
 					} else {
 						ne = e->l;
-						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+						if ((is_joinop(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					    	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
 							exp_label(sql->sa, ne, ++sql->label);
 							if (mustr)
@@ -1487,7 +1487,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 
 						must = 0; mustl = 0; mustr = 0;
 						ne = e->r;
-						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+						if ((is_joinop(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					    	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
 							exp_label(sql->sa, ne, ++sql->label);
 							if (mustr)
@@ -1502,7 +1502,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 						if (e->f) {
 							must = 0; mustl = 0; mustr = 0;
 							ne = e->f;
-							if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+							if ((is_joinop(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					            	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
 								exp_label(sql->sa, ne, ++sql->label);
 								if (mustr)
@@ -1522,7 +1522,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 			} else {
 				if (l != ol)
 					rel->l = ol;
-				if (is_join(rel->op) && r != or)
+				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
 		}
@@ -1530,7 +1530,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && rel->exps) {
 		sql_rel *pl = rel->l;
 
-		if (is_join(pl->op) && exps_can_push_func(rel->exps, rel)) {
+		if (is_joinop(pl->op) && exps_can_push_func(rel->exps, rel)) {
 			node *n;
 			sql_rel *l = pl->l, *r = pl->r;
 			list *nexps;
@@ -1541,7 +1541,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 				pl->l = l = rel_project(sql->sa, l, 
 					rel_projections(sql, l, NULL, 1, 1));
 			}
-			if (is_join(rel->op) && r->op != op_project) {
+			if (is_joinop(rel->op) && r->op != op_project) {
 				if (is_subquery(r))
 					return rel;
 				pl->r = r = rel_project(sql->sa, r, 
@@ -1732,6 +1732,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			rname = e2->rname;
 		exp_setname(sql->sa, e2, rname, e1->name );
 	}
+	MT_lock_set(&exps2->ht_lock, "rel_rename_exps");
+	exps2->ht = NULL;
+	MT_lock_unset(&exps2->ht_lock, "rel_rename_exps");
 }
 
 static sql_rel *
@@ -6594,10 +6597,14 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						c = rel_find_exp(rel, c);
 						if (l->type == e_atom && !l->l)
 							lval = sql->args[l->flag];
+						else if (l->type == e_atom && l->l)
+							lval = l->l;
 						if (!h)
 							hval = lval;
 						else if (h && h->type == e_atom && !h->l)
 							hval = sql->args[h->flag];
+						else if (h && h->type == e_atom && h->l)
+							hval = h->l;
 						if (c && lval && hval) {
 							append(cols, c);
 							append(low, lval);
@@ -6623,7 +6630,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
-					if ((nrel || nt->next) && 
+					if (0 && (nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
