@@ -19,9 +19,7 @@ tomograph [options]
   -T | --title=<plot title>
   -r | --range=<starttime>-<endtime>[ms,s] 
   -i | --input=<profiler event file > 
-  -o | --output=<file prefix > (default 'tomograph'
-  -c | --cache=<query pool location>
-  -s | --system=# (on= 1(default) off=0
+  -o | --output=<dir/file prefix > (default 'cache/<dbname>'
   -b | --beat=<delay> in milliseconds (default 5000)
   -A | --atlas=<number> maximum number of queries (default 1)
   -D | --debug

@@ -37,6 +37,7 @@
 #include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
+#include "sql_optimizer.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -950,7 +951,7 @@ SQLparser(Client c)
 	mvc *m;
 	int oldvtop, oldstop;
 	int pstatus = 0;
-	int err = 0;
+	int err = 0, opt = 0;
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -1143,20 +1144,9 @@ recompilequery:
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (!caching(m) || !cachable(m, s)) {
-			MalBlkPtr mb;
-
 			scanner_query_processed(&(m->scanner));
-			if (backend_callinline(be, c, s) == 0) {
-				trimMalBlk(c->curprg->def);
-				mb = c->curprg->def;
-				chkProgram(c->fdout, c->nspace, mb);
-				addOptimizerPipe(c, mb, "default_pipe");
-				msg = optimizeMALBlock(c, mb);
-				if (msg != MAL_SUCCEED) {
-					sqlcleanup(m, err);
-					goto finalize;
-				}
-				c->curprg->def = mb;
+			if (backend_callinline(be, c, s, 0) == 0) {
+				opt = 1;
 			} else {
 				err = 1;
 			}
@@ -1209,10 +1199,23 @@ recompilequery:
 		 * The default action is to print them out at the end of the
 		 * query block.
 		 */
-		if (be->q)
+		//if (be->q || opt)
 			pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
+		if (opt) {
+			MalBlkPtr mb = c->curprg->def;
+
+			trimMalBlk(mb);
+			chkProgram(c->fdout, c->nspace, mb);
+			addOptimizers(c, mb, "default_pipe");
+			msg = optimizeMALBlock(c, mb);
+			if (msg != MAL_SUCCEED) {
+				sqlcleanup(m, err);
+				goto finalize;
+			}
+			c->curprg->def = mb;
+		}
 		/* we know more in this case than
 		   chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {

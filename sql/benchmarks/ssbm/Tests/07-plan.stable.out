@@ -48,15 +48,15 @@ project (
 | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ] COUNT ,
 | | | | | select (
 | | | | | | table(sys.customer) [ customer.c_nation, customer.c_region, customer.%TID% NOT NULL ] COUNT 
-| | | | | ) [ customer.c_region = clob[char(4) "ASIA"] ]
+| | | | | ) [ customer.c_region = clob "ASIA" ]
 | | | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ],
 | | | | select (
 | | | | | table(sys.supplier) [ supplier.s_nation, supplier.s_region, supplier.%TID% NOT NULL ] COUNT 
-| | | | ) [ supplier.s_region = clob[char(4) "ASIA"] ]
+| | | | ) [ supplier.s_region = clob "ASIA" ]
 | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | select (
 | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
-| | | ) [ int[smallint "1992"] <= dwdate.d_year <= int[smallint "1997"] ]
+| | | ) [ int "1992" <= dwdate.d_year <= int "1997" ]
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [ dwdate.d_year, customer.c_nation, supplier.s_nation ] [ customer.c_nation, supplier.s_nation, dwdate.d_year, sys.sum no nil (lineorder.lo_revenue) as L1.L1 ]
 ) [ customer.c_nation, supplier.s_nation, dwdate.d_year, L1 as L1.revenue ] [ dwdate.d_year ASC, L1.revenue ]

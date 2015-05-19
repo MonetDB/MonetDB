@@ -13,7 +13,7 @@
 #include "mal_private.h"
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int); else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
 
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */
@@ -66,7 +66,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
-		b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+		b = BATdescriptor( stk->stk[getArg(pci, i)].val.bval);
 		if (b == NULL)
 			return 0;
 		if (flag && isVIEW(b)) {
@@ -76,7 +76,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		cnt = BATcount(b);
 
 		heapinfo(&b->T->heap); total += vol;
-		heapinfo(b->T->vheap); total += vol;
+		// string heaps can be shared, consider them as space-less views
+		if ( b->T->vheap && b->T->vheap->parentid ){
+			heapinfo(b->T->vheap); total += vol;
+		}
 		hashinfo(b->T->hash); total += vol;
 		total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
