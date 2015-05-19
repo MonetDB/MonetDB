@@ -30,7 +30,16 @@ stderr of test 'alter` in directory 'sql/test/mergetables` itself:
 # 12:41:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31544" "--port=34450"
 # 12:41:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-31544/.s.monetdb.34450
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
+QUERY = alter table smalltable add table unknowntable;
+ERROR = !ALTER TABLE: no such table 'unknowntable' in schema 'sys'
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
+QUERY = alter table mys.smalltable add table part1;
+ERROR = !ALTER TABLE: no such table 'part1' in schema 'mys'
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
+QUERY = alter table mys.smalltable add table mys.part1;
+ERROR = !ALTER TABLE: no such table 'mys' in schema 'mys'
+MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
 QUERY = select * from mys.smalltable;
 ERROR = !MERGE or REPLICA TABLE should have at least one table associated
 

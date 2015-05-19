@@ -25,4 +25,8 @@ case_aggr.Bug-3705
 assertHead.Bug-3706
 ifthenelse.Bug-3699
 readonly.Bug-3709
+crash_on_alter_set_not_null.Bug-3715
 convert-to-bit.Bug-3719
+union_project.Bug-3723
+leftjoin.Bug-3720
+adddrop_unknown_table.Bug-3718

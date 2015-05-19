@@ -102,6 +102,7 @@ static int tr_grow(trans *tr);
 static BUN
 log_find_int(BAT *b, BAT *d, int val)
 {
+#if 0
 	BUN p, q;
 	int *t = (int *) Tloc(b, BUNfirst(b));
 
@@ -112,11 +113,25 @@ log_find_int(BAT *b, BAT *d, int val)
 			return pos;
 	}
 	return BUN_NONE;
+#else
+	BATiter cni = bat_iterator(b);
+	BUN p;
+
+	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+		HASHloop_int(cni, cni.b->T->hash, p, &val) {
+			oid pos = p;
+			if (BUNfnd(d, &pos) == BUN_NONE)
+				return p;
+		}
+	} 
+	return BUN_NONE;
+#endif
 }
 
 static BUN
 log_find_bid(BAT *b, BAT *d, log_bid val)
 {
+#if 0
 	BUN p, q;
 	log_bid *t = (log_bid *) Tloc(b, BUNfirst(b));
 
@@ -127,6 +142,19 @@ log_find_bid(BAT *b, BAT *d, log_bid val)
 			return pos;
 	}
 	return BUN_NONE;
+#else
+	BATiter cni = bat_iterator(b);
+	BUN p;
+
+	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+		HASHloop_int(cni, cni.b->T->hash, p, &val) {
+			oid pos = p;
+			if (BUNfnd(d, &pos) == BUN_NONE)
+				return p;
+		}
+	} 
+	return BUN_NONE;
+#endif
 }
 
 static void
@@ -338,8 +366,12 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		BAT *uid = NULL;
 		BAT *r;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[tt].atomRead;
-		void *tv = ATOMnil(tt);
+		void *tv = NULL;
 
+		if (tt < TYPE_str)
+			tv = lg->buf;
+		else if (tt > TYPE_str)
+			tv = ATOMnil(tt);
 #if SIZEOF_OID == 8
 		if (tt == TYPE_oid && lg->read32bitoid)
 			rt = BATatoms[TYPE_int].atomRead;
@@ -442,7 +474,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			}
 			GDKfree(hv);
 		}
-		GDKfree(tv);
+		if (tv != lg->buf) 
+			GDKfree(tv);
 		logbat_destroy(b);
 
 		if (tr_grow(tr)) {
@@ -1709,6 +1742,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
+	lg->buf = GDKmalloc(lg->bufsize = 64*1024);
 
 	if (logger_load(debug, fn, filename, lg) == LOG_OK) {
 		return lg;
@@ -2390,7 +2424,6 @@ bm_tids(BAT *b, BAT *d)
 		logbat_destroy(tids);
 		tids = BATmirror(BATmark(diff, 0));
 		logbat_destroy(diff);
-		logbat_destroy(d);
 	}
 	return tids;
 }

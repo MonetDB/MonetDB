@@ -56,7 +56,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 359 # length
+% 278 # length
 project (
 | group by (
 | | project (
@@ -65,19 +65,19 @@ project (
 | | | | | semijoin (
 | | | | | | select (
 | | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ] COUNT 
-| | | | | | ) [ sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int[tinyint "1"], int[tinyint "2"]) in (char(15)[char(2) "13"], char(15)[char(2) "31"], char(15)[char(2) "23"], char(15)[char(2) "29"], char(15)[char(2) "30"], char(15)[char(2) "18"], char(15)[char(2) "17"]) ],
+| | | | | | ) [ sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int "1", int "2") in (char(15) "13", char(15) "31", char(15) "23", char(15) "29", char(15) "30", char(15) "18", char(15) "17") ],
 | | | | | | project (
 | | | | | | | group by (
 | | | | | | | | select (
 | | | | | | | | | table(sys.customer) [ customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ] COUNT 
-| | | | | | | | ) [ customer.c_acctbal NOT NULL > decimal(15,2)[decimal(2,1) "0"], sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int[tinyint "1"], int[tinyint "2"]) in (char(15)[char(2) "13"], char(15)[char(2) "31"], char(15)[char(2) "23"], char(15)[char(2) "29"], char(15)[char(2) "30"], char(15)[char(2) "18"], char(15)[char(2) "17"]) ]
+| | | | | | | | ) [ customer.c_acctbal NOT NULL > decimal(15,2)[decimal(2,1) "0"], sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int "1", int "2") in (char(15) "13", char(15) "31", char(15) "23", char(15) "29", char(15) "30", char(15) "18", char(15) "17") ]
 | | | | | | | ) [  ] [ sys.avg no nil (double[customer.c_acctbal NOT NULL] as customer.c_acctbal) as L1.L1 ]
 | | | | | | ) [ L1 as L1.L1 ]
 | | | | | ) [ double(53,2)[customer.c_acctbal NOT NULL] > L1.L1 ]
 | | | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ],
 | | | | table(sys.orders) [ orders.o_custkey NOT NULL as L4.o_custkey ] COUNT 
 | | | ) [ L4.o_custkey NOT NULL = customer.c_custkey NOT NULL ]
-| | ) [ sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int[tinyint "1"], int[tinyint "2"]) as custsale.cntrycode, customer.c_acctbal NOT NULL as custsale.c_acctbal ]
+| | ) [ sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int "1", int "2") as custsale.cntrycode, customer.c_acctbal NOT NULL as custsale.c_acctbal ]
 | ) [ custsale.cntrycode ] [ custsale.cntrycode, sys.count() NOT NULL as L2.L2, sys.sum no nil (custsale.c_acctbal NOT NULL) NOT NULL as L3.L3 ]
 ) [ custsale.cntrycode, L2 NOT NULL as L2.numcust, L3 NOT NULL as L3.totacctbal ] [ custsale.cntrycode ASC ]
 

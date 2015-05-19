@@ -3289,14 +3289,14 @@ BBPprepare(bit subcommit)
 			if (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST)
 				ret = GDK_FAIL;
 			/* if BAKDIR already exists, don't signal error */
-			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", BAKDIR, ret);
+			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", BAKDIR, (int) ret);
 		}
 	}
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
 		if (mkdir(SUBDIR, 0755) < 0)
 			ret = GDK_FAIL;
-		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", SUBDIR, ret);
+		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", SUBDIR, (int) ret);
 	}
 	if (ret == GDK_SUCCEED && backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
@@ -3520,7 +3520,7 @@ BBPsync(int cnt, bat *subcommit)
 				ret = GDK_FAIL;
 			if (ret != GDK_SUCCEED)
 				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, DELDIR);
-			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, DELDIR, ret);
+			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, DELDIR, (int) ret);
 		}
 
 		/* AFTERMATH */
@@ -3592,14 +3592,14 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		srcpath = GDKfilepath(farmid, srcdir, name, NULL);
 		if (unlink(dstpath) < 0)	/* clear destination */
 			ret = GDK_FAIL;
-		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, ret);
+		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, (int) ret);
 
 		if (GDKcreatedir(dstdir) == GDK_SUCCEED)
 			ret = GDK_SUCCEED;
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
 		if (ret != GDK_SUCCEED)
-			GDKsyserror("force_move: link(%s,%s)=%d\n", srcpath, dstpath, ret);
-		IODEBUG fprintf(stderr, "#link %s %s = %d\n", srcpath, dstpath, ret);
+			GDKsyserror("force_move: link(%s,%s)=%d\n", srcpath, dstpath, (int) ret);
+		IODEBUG fprintf(stderr, "#link %s %s = %d\n", srcpath, dstpath, (int) ret);
 		GDKfree(dstpath);
 		GDKfree(srcpath);
 	}
@@ -3689,7 +3689,7 @@ BBPrecover(int farmid)
 	if (ret == GDK_SUCCEED) {
 		if (rmdir(BAKDIR) < 0)
 			ret = GDK_FAIL;
-		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", BAKDIR, ret);
+		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", BAKDIR, (int) ret);
 	}
 	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover: recovery failed. Please check whether your disk is full or write-protected.\n");
@@ -3736,7 +3736,7 @@ BBPrecover_subdir(void)
 			backup_dir = 0;
 		}
 	}
-	IODEBUG fprintf(stderr, "#BBPrecover_subdir(end) = %d\n", ret);
+	IODEBUG fprintf(stderr, "#BBPrecover_subdir(end) = %d\n", (int) ret);
 
 	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover_subdir: recovery failed. Please check whether your disk is full or write-protected.\n");

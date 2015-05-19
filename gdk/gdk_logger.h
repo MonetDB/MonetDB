@@ -76,6 +76,8 @@ typedef struct logger {
 				   These snapshot bats should be freed
 				   directly (on transaction
 				   commit). */
+	void *buf;
+	size_t bufsize;
 } logger;
 
 /* Holds logger settings

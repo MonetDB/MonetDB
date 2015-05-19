@@ -51,6 +51,30 @@ rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
 	return rel;
 }
 
+static sql_rel *
+rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, tname));
+	assert((sname2 && tname2) || (!sname2 && !tname2));
+	if (sname2) {
+		append(exps, exp_atom_clob(sa, sname2));
+		append(exps, exp_atom_clob(sa, tname2));
+	}
+	append(exps, exp_atom_int(sa, action));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cattype;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r) 
 {
@@ -1073,44 +1097,8 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 	return sname;
 }
 
-static int
-rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt)
-{
-	node *n, *m;
-
-	if (cs_size(&nt->columns) != cs_size(&nnt->columns)) {
-		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
-		return -1;
-	}
-	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
-		sql_column *nc = n->data;
-		sql_column *mc = m->data;
-
-		if (subtype_cmp(&nc->type, &mc->type) != 0) {
-			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
-			return -2;
-		}
-	}
-	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs)) {
-		(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
-		return -1;
-	}
-	if (cs_size(&nt->idxs))
-	for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
-		sql_idx *ni = n->data;
-		sql_idx *mi = m->data;
-
-		/* todo check def */
-		if (ni->type != mi->type) {
-			(void) sql_error(sql, 02, "3F000!ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
-			return -2;
-		}
-	}
-	return 0;
-}
-
 static sql_rel *
-rel_alter_table(mvc *sql, dlist *qname, symbol *te)
+sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1131,11 +1119,11 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
-		sql_table *nt = dup_sql_table(sql->sa, t);
+		sql_table *nt = NULL;
 		sql_exp ** updates, *e;
 
 		assert(te);
-		if (nt && te && te->token == SQL_DROP_CONSTRAINT) {
+		if (t && te && te->token == SQL_DROP_CONSTRAINT) {
 			dlist *l = te->data.lval;
 			char *kname = l->h->data.sval;
 			int drop_action = l->h->next->data.i_val;
@@ -1147,26 +1135,33 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		if (t->persistence != SQL_DECLARED_TABLE)
 			sname = s->base.name;
 
-		/* read only or read write */
-		if (nt && te && te->token == SQL_ALTER_TABLE) {
-			int state = te->data.i_val;
+		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
+			char *ntname = te->data.lval->h->data.sval;
 
-			if (t->s && !nt->s)
-				nt->s = t->s;
-
-			if (nt->type == tt_merge_table)
-				return sql_error(sql, 02, "42S02!ALTER TABLE: read only MERGE TABLES are not supported");
-
-			if (state == tr_readonly) {
-				nt = mvc_access(sql, nt, TABLE_READONLY);
-			} else if (state == tr_append) {
-				nt = mvc_access(sql, nt, TABLE_APPENDONLY);
+			/* TODO partition sname */
+			if (te->token == SQL_TABLE) {
+				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 			} else {
-				nt = mvc_access(sql, nt, TABLE_WRITABLE);
+				int drop_action = te->data.lval->h->next->data.i_val;
+
+				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, sname, ntname, drop_action);
 			}
-			return rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
 		}
 
+		/* read only or read write */
+		if (te && te->token == SQL_ALTER_TABLE) {
+			int state = te->data.i_val;
+
+			if (state == tr_readonly) 
+				state = TABLE_READONLY;
+			else if (state == tr_append) 
+				state = TABLE_APPENDONLY;
+			else
+				state = TABLE_WRITABLE;
+			return rel_alter_table(sql->sa, DDL_ALTER_TABLE_SET_ACCESS, sname, tname, NULL, NULL, state);
+		}
+
+	       	nt = dup_sql_table(sql->sa, t);
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
 
@@ -1174,36 +1169,6 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			nt->s = t->s;
 
 		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
-
-		/* table add table */
-		if (te->token == SQL_TABLE) {
-			char *ntname = te->data.lval->h->data.sval;
-			sql_table *nnt = mvc_bind_table(sql, s, ntname);
-
-			/* check tables */
-			if (nnt) {
-				node *n = cs_find_id(&nt->tables, nnt->base.id);
-			
-				if (n)
-					return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' is already part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
-				if (rel_check_tables(sql, t, nnt) < 0)
-					return NULL;
-				cs_add(&nt->tables, nnt, TR_NEW); 
-			}
-		}
-		/* table drop table */
-		if (te->token == SQL_DROP_TABLE) {
-			char *ntname = te->data.lval->h->data.sval;
-			sql_table *ntt = mvc_bind_table(sql, s, ntname);
-			int drop_action = te->data.lval->h->next->data.i_val;
-			node *n = NULL;
-		       
-			if (!ntt || (n = cs_find_id(&nt->tables, ntt->base.id)) == NULL)
-				return sql_error(sql, 02, "42S02!ALTER TABLE: table '%s' isn't part of the MERGE TABLE '%s.%s'", ntname, sname, tname);
-
-			ntt->drop_action = drop_action;
-			cs_del(&nt->tables, n, ntt->base.flag); 
-		}
 
 		if (!isTable(nt))
 			return res;
@@ -1726,7 +1691,7 @@ rel_schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = rel_alter_table(sql, 
+		ret = sql_alter_table(sql, 
 			l->h->data.lval,      /* table name */
 		  	l->h->next->data.sym);/* table element */
 	} 	break;

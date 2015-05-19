@@ -43,7 +43,7 @@
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top);
+static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
 
 /*
  * @+ MAL code support
@@ -362,7 +362,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	}
 
 	be->mvc->argc = 0;
-	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
 		return -1;
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
@@ -2535,7 +2535,7 @@ setCommitProperty(MalBlkPtr mb)
 }
 
 static int
-backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
+backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 {
 	mvc *c = be->mvc;
 	stmt **stmts = stmt_array(c->sa, s);
@@ -2575,12 +2575,13 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top)
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 		q->barrier = RETURNsymbol;
 	}
-	pushEndInstruction(mb);
+	if (add_end)
+		pushEndInstruction(mb);
 	return 0;
 }
 
 int
-backend_callinline(backend *be, Client c, stmt *s)
+backend_callinline(backend *be, Client c, stmt *s, int add_end)
 {
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
@@ -2612,7 +2613,7 @@ backend_callinline(backend *be, Client c, stmt *s)
 			}
 		}
 	}
-	if (backend_dumpstmt(be, curBlk, s, 1) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 1, add_end) < 0)
 		return -1;
 	c->curprg->def = curBlk;
 	return 0;
@@ -2679,7 +2680,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, s, 1) < 0)
+	if (backend_dumpstmt(be, mb, s, 1, 1) < 0)
 		return NULL;
 
 	// Always keep the SQL query around for monitoring
@@ -2909,7 +2910,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (m->session->auto_commit)
 		setCommitProperty(curBlk);
 
-	if (backend_dumpstmt(be, curBlk, s, 0) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
 		return -1;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */

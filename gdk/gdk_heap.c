@@ -568,7 +568,7 @@ HEAPfree(Heap *h, int remove)
 			HEAPDEBUG fprintf(stderr, "#munmap(base=" PTRFMT ", "
 					  "size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
-					  h->size, ret);
+					  h->size, (int) ret);
 		}
 	}
 	h->base = NULL;

@@ -2094,8 +2094,8 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;
 
-	/* exclude named variables */
-	if (exp->type != e_atom || (exp->l && !atom_null(exp->l)) /* atoms */ || exp->r /* named */ || exp->f /* list */) 
+	/* exclude named variables and variable lists */
+	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */) 
 		return NULL;
 
 	if (exp->l)
@@ -2103,7 +2103,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	else
 		a = sql_bind_arg(sql, exp->flag);
 
-	if ((!exp->l || !atom_null(a)) && (t->scale && t->type->eclass != EC_FLT))
+	if (t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
 	if (a && atom_cast(a, t)) {
