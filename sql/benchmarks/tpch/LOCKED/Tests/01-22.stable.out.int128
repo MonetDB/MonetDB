@@ -779,7 +779,7 @@ Ready.
 % promo_revenue # name
 % decimal # type
 % 41 # length
-[ 15.48	]
+[ 15.48654	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name
