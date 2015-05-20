@@ -1199,8 +1199,7 @@ recompilequery:
 		 * The default action is to print them out at the end of the
 		 * query block.
 		 */
-		//if (be->q || opt)
-			pushEndInstruction(c->curprg->def);
+		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {
