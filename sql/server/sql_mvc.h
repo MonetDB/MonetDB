@@ -113,7 +113,6 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
-	lng Tparse;
 } mvc;
 
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
