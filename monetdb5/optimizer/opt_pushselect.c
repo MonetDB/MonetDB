@@ -114,6 +114,20 @@ lastbat_arg(MalBlkPtr mb, InstrPtr p)
 	return 0;
 }
 
+/* check for updates inbetween assignment to variables newv and oldv */
+static int 
+no_updates(InstrPtr *old, int *vars, int oldv, int newv) 
+{
+	while(newv > oldv) {
+		InstrPtr q = old[vars[newv]];
+
+		if (isUpdateInstruction(q)) 
+			return 0;
+		newv = getArg(q, 1);
+	}
+	return 1;
+}
+
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -170,9 +184,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = old[vars[subselects.tid[s]]];
 				int Qsname = getArg(q, 2), Qtname = getArg(q, 3);
 
-				if ((sname == Qsname && tname == Qtname) ||
+				if (no_updates(old, vars, getArg(q,1), getArg(p,1)) &&
+				    ((sname == Qsname && tname == Qtname) ||
 				    (0 && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
-				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0)) {
+				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0))) {
 					clrFunction(p);
 					p->retc = 1;
 					p->argc = 2;

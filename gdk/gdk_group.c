@@ -81,7 +81,7 @@
 			}						\
 		}							\
 		if (extents)						\
-			exts[ngrp] = b->hseqbase + (oid) (p - r);	\
+			exts[ngrp] = hseqb + (oid) (p - r);		\
 		if (histo)						\
 			cnts[ngrp] = 1;					\
 		ngrps[p - r] = ngrp;					\
@@ -369,7 +369,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	int t;
 	int (*cmp)(const void *, const void *);
 	const oid *grps = NULL;
-	oid *restrict ngrps, ngrp, prev = 0;
+	oid *restrict ngrps, ngrp, prev = 0, hseqb = 0;
 	oid *restrict exts = NULL;
 	wrd *restrict cnts = NULL;
 	BUN p, q, r;
@@ -402,6 +402,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* we want our output to go somewhere */
 	assert(groups != NULL);
 
+	hseqb = b->hseqbase;
 	if (b->tkey || BATcount(b) <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
@@ -784,6 +785,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			BAT *b2 = BBPdescriptor(-parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			hi = lo + BATcount(b);
+			hseqb = b->hseqbase;
 			b = b2;
 			bi = bat_iterator(b);
 		} else {
