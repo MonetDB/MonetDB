@@ -6516,6 +6516,8 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 {
 	sql_subtype *t = exp_subtype(e);
 
+	if (!min || !max || !emin || !emax)
+		return 0;
 	if (t->type->localtype == TYPE_dbl) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
