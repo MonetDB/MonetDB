@@ -242,8 +242,12 @@ mtime_export int rule_fromstr(const char *buf, int *len, rule **d);
 mtime_export int rule_tostr(str *buf, int *len, const rule *r);
 mtime_export int tzone_fromstr(const char *buf, int *len, tzone **d);
 
-mtime_export str MTIMEstrptime(date *d, const char * const *s, const char * const *format);
-mtime_export str MTIMEstrftime(str *s, const date *d, const char * const *format);
+mtime_export str MTIMEstr_to_date(date *d, const char * const *s, const char * const *format);
+mtime_export str MTIMEdate_to_str(str *s, const date *d, const char * const *format);
+mtime_export str MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format);
+mtime_export str MTIMEtime_to_str(str *s, const daytime *d, const char * const *format);
+mtime_export str MTIMEstr_to_timestamp(timestamp *d, const char * const *s, const char * const *format);
+mtime_export str MTIMEtimestamp_to_str(str *s, const timestamp *d, const char * const *format);
 
 mtime_export str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
 

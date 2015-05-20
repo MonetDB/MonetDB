@@ -111,7 +111,6 @@ SYSTEM FUNCTION  sys.buffer
 SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION  sys.contains
-SYSTEM FUNCTION  sys.convert
 SYSTEM FUNCTION  sys.convexhull
 SYSTEM FUNCTION  sys.corr
 SYSTEM FUNCTION  sys.crosses
@@ -241,9 +240,13 @@ SYSTEM FUNCTION  sys.storage
 SYSTEM FUNCTION  sys.storagemodel
 SYSTEM FUNCTION  sys.storagemodelinit
 SYSTEM FUNCTION  sys.str_to_date
+SYSTEM FUNCTION  sys.str_to_time
+SYSTEM FUNCTION  sys.str_to_timestamp
 SYSTEM FUNCTION  sys.symdifference
 SYSTEM FUNCTION  sys.text
+SYSTEM FUNCTION  sys.time_to_str
 SYSTEM FUNCTION  sys.times
+SYSTEM FUNCTION  sys.timestamp_to_str
 SYSTEM FUNCTION  sys.touches
 SYSTEM FUNCTION  sys.tracelog
 SYSTEM FUNCTION  sys.uuid
