@@ -823,7 +823,7 @@ stmt_atom(sql_allocator *sa, atom *op1)
 stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim) {
 	stmt *s = stmt_create(sa, st_dimension);
 	s->op4.dval = dim;
-	s->nrcols = 1;
+	s->nrcols = 2; //the cardinality is always greated than 1
 
 	return s;
 }
@@ -1237,6 +1237,7 @@ stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 stmt* stmt_materialise(sql_allocator *sa, stmt *op1) {
 	stmt *s = stmt_create(sa, st_materialise);
 	s->op1 = op1;
+	s->nrcols = op1->nrcols;
 	return s;
 }
 

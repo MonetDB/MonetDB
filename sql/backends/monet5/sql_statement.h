@@ -116,7 +116,7 @@ typedef struct stmt {
 	struct stmt *op3;
 	stmtdata op4;		/* only op4 will hold other types */
 
-	char nrcols;
+	char nrcols; /*number of columns OR cardinality of results*/
 	char key;		/* key (aka all values are unique) */
 	char aggr;		/* aggregated */
 

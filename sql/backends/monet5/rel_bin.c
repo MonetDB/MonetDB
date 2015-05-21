@@ -747,11 +747,13 @@ static stmt *
 stmt_col( mvc *sql, sql_column *c, stmt *del) 
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
-	//when having arrays there is no need to do 
-	//the rest of the bats since the size is always fixed
-	if(isArray(c->t))
+
+	//when having arrays deltas are handled later inside the code
+	//thus, I do not need to join at this moment
+	if(isArray(c->t)) {
 		return sc;
-		
+	}	
+	
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {

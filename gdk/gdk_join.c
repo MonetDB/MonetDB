@@ -3544,42 +3544,51 @@ fprintf(stderr, "BATdimensionProject: new repeat2 = %ld\n", repeat2_new); \
 \
 	} while(0)
 
-	
-	switch (tpe) {
-    case TYPE_bte:
-        project(bte);
-        break;
-    case TYPE_sht:
-        project(sht);
-        break;
-    case TYPE_int:
-        project(int);
-        break;
-    case TYPE_flt:
-        project(flt);
-        break;
-    case TYPE_dbl:
-        project(dbl);
-        break;
-    case TYPE_lng:
-        project(lng);
-        break;
+	if(BATcount(oidsBAT)) {	
+		switch (tpe) {
+    	case TYPE_bte:
+        	project(bte);
+	        break;
+    	case TYPE_sht:
+        	project(sht);
+	        break;
+    	case TYPE_int:
+        	project(int);
+	        break;
+    	case TYPE_flt:
+        	project(flt);
+	        break;
+    	case TYPE_dbl:
+        	project(dbl);
+	        break;
+    	case TYPE_lng:
+        	project(lng);
+	        break;
 #ifdef HAVE_HGE
-    case TYPE_hge:
-        project(hge);
-        break;
+    	case TYPE_hge:
+        	project(hge);
+	        break;
 #endif
-    case TYPE_oid:
+    	case TYPE_oid:
 #if SIZEOF_OID == SIZEOF_INT
-        project(int);
+        	project(int);
 #else
-        project(lng);
+        	project(lng);
 #endif
         break;
-    default:
-		fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
-		return NULL;
-    }
+    	default:
+			fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
+			return NULL;
+	    }
+	} else {
+		//no oids. Empty BAT
+		if((resBAT = BATnew(TYPE_void, tpe, 0, TRANSIENT)) == NULL) 
+			return NULL;
+
+		BATsetcount(resBAT,0);
+        BATseqbase(resBAT,0);
+        BATderiveProps(resBAT,FALSE);
+	}
 
 	return resBAT;
 }

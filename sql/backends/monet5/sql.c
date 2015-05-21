@@ -2284,44 +2284,51 @@ fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
 \
         BATseqbase(resBAT,0); \
         BATsetcount(resBAT, repeat1*elementsNum*repeat2);                  \
-\
+		BATderiveProps(resBAT,FALSE); \
     } while(0)
 
-	
-    switch (tpe) {
-    case TYPE_bte:
-        materialise(bte);
-        break;
-    case TYPE_sht:
-        materialise(sht);
-        break;
-    case TYPE_int:
-        materialise(int);
-        break;
-    case TYPE_flt:
-        materialise(flt);
-        break;
-    case TYPE_dbl:
-        materialise(dbl);
-        break;
-    case TYPE_lng:
-        materialise(lng);
-        break;
+	if(BATcount(dimensionBAT)) {
+	    switch (tpe) {
+    	case TYPE_bte:
+        	materialise(bte);
+	        break;
+    	case TYPE_sht:
+        	materialise(sht);
+	        break;
+    	case TYPE_int:
+        	materialise(int);
+	        break;
+    	case TYPE_flt:
+        	materialise(flt);
+	        break;
+    	case TYPE_dbl:
+        	materialise(dbl);
+	        break;
+    	case TYPE_lng:
+        	materialise(lng);
+	        break;
 #ifdef HAVE_HGE
-    case TYPE_hge:
-        materialise(hge);
-        break;
+    	case TYPE_hge:
+        	materialise(hge);
+	        break;
 #endif
-    case TYPE_oid:
+    	case TYPE_oid:
 #if SIZEOF_OID == SIZEOF_INT
-        materialise(int);
+        	materialise(int);
 #else
-        materialise(lng);
+	        materialise(lng);
 #endif
-        break;
-    default:
-        fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
-        return NULL;
+    	    break;
+	    default:
+    	    fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
+        	return NULL;
+		}
+	} else {
+		if((resBAT = BATnew(TYPE_void, dimensionBAT->ttype, 0, TRANSIENT)) == NULL)
+        	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT");
+        BATseqbase(resBAT,0);
+        BATsetcount(resBAT,0);
+		BATderiveProps(resBAT, FALSE);
 	}
 	
 	BBPunfix(dimensionBAT->batCacheid);
