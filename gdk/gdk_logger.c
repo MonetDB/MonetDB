@@ -862,7 +862,7 @@ logger_update_catalog_file(logger *lg, const char *dir, const char *filename, in
 	if (access(filename, 0) != -1) {
 #endif
 		bak_exists = 1;
-		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") < 0) {
+		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") == GDK_FAIL) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
 			return LOG_ERR;
 		}
