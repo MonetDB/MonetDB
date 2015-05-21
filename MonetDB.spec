@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP4/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -970,6 +970,18 @@ mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/do
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue May 19 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.13-20150519
+- Rebuilt.
+- BZ#3712: Concurrency issue on querying the SQL catalog
+- BZ#3713: Long startup cost for simple session
+- BZ#3715: Crash with two ALTER TABLE statements in a transaction
+- BZ#3718: Adding and dropping a non existing tablename to/from a merge
+  table is accepted without an error
+- BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+  BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+- BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+  `0' failed.
+
 * Thu Apr 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
 - Rebuilt.
 - BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"

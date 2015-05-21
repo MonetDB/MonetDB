@@ -112,7 +112,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 
 		       	t = mvc_bind_table(m, s, tname);
-			/* skip alter on remote statements */
+
 			if (t && (!isRemote(t) && !isMergeTable(t)) && t->p) {
 				int k = getArg(p, 0), mt_member = t->p->base.id;
 
@@ -142,7 +142,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				/* skip alter on remote statements */
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 					cnt = store_funcs.count_idx(tr, i, 1);
 					assert(cnt <= (size_t) GDK_oid_max);

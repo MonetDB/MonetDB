@@ -3477,7 +3477,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 }
 
 str
-MTIMEstrptime(date *d, const char * const *s, const char * const *format)
+MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 {
 #ifdef HAVE_STRPTIME
 	struct tm t;
@@ -3497,7 +3497,7 @@ MTIMEstrptime(date *d, const char * const *s, const char * const *format)
 }
 
 str
-MTIMEstrftime(str *s, const date *d, const char * const *format)
+MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 {
 #ifdef HAVE_STRFTIME
 	struct tm t;
@@ -3517,10 +3517,110 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.str_to_date", "memory allocation failure");
+		throw(MAL, "mtime.date_to_str", "memory allocation failure");
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
-	throw(MAL, "mtime.str_to_date", "strftime support missing");
+	throw(MAL, "mtime.date_to_str", "strftime support missing");
+#endif
+}
+
+str
+MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
+{
+#ifdef HAVE_STRPTIME
+	struct tm t;
+
+	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
+		*d = daytime_nil;
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	if (strptime(*s, *format, &t) == NULL)
+		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'\n", *format, *s);
+	*d = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.str_to_time", "strptime support missing");
+#endif
+}
+
+str
+MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
+{
+#ifdef HAVE_STRFTIME
+	struct tm t;
+	char buf[BUFSIZ + 1];
+	size_t sz;
+	int msec;
+
+	if (daytime_isnil(*d) || strcmp(*format, str_nil) == 0) {
+		*s = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	(void)msec;
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
+	*s = GDKmalloc(sz + 1);
+	if (*s == NULL)
+		throw(MAL, "mtime.time_to_str", "memory allocation failure");
+	strncpy(*s, buf, sz + 1);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.time_to_str", "strftime support missing");
+#endif
+}
+
+str
+MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *format)
+{
+#ifdef HAVE_STRPTIME
+	struct tm t;
+
+	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
+		*ts = *timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	if (strptime(*s, *format, &t) == NULL)
+		throw(MAL, "mtime.str_to_timestamp", "format '%s', doesn't match timestamp '%s'\n", *format, *s);
+	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+	ts->msecs = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.str_to_timestamp", "strptime support missing");
+#endif
+}
+
+str
+MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
+{
+#ifdef HAVE_STRFTIME
+	struct tm t;
+	char buf[BUFSIZ + 1];
+	size_t sz;
+	int mon, year, msec;
+
+	if (timestamp_isnil(*ts) || strcmp(*format, str_nil) == 0) {
+		*s = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	fromdate(ts->days, &t.tm_mday, &mon, &year);
+	t.tm_mon = mon - 1;
+	t.tm_year = year - 1900;
+	fromtime(ts->msecs, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	(void)msec;
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
+	*s = GDKmalloc(sz + 1);
+	if (*s == NULL)
+		throw(MAL, "mtime.timestamp_to_str", "memory allocation failure");
+	strncpy(*s, buf, sz + 1);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.timestamp_to_str", "strftime support missing");
 #endif
 }

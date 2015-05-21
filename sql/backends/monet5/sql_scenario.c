@@ -800,7 +800,7 @@ SQLreader(Client c)
 #endif
 		}
 	}
-	if ( (c->stimeout &&  GDKusec()- c->session > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return NULL;
@@ -1001,8 +1001,6 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
-	if (m->history)
-		be->mvc->Tparse = GDKusec();
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (be->language == 'X') {
@@ -1218,8 +1216,7 @@ recompilequery:
 		 * The default action is to print them out at the end of the
 		 * query block.
 		 */
-		//if (be->q || opt)
-			pushEndInstruction(c->curprg->def);
+		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {

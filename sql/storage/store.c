@@ -3735,6 +3735,22 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 }
 
 static void
+sys_table_del_tables(sql_trans *tr, sql_table *t, int drop_action)
+{
+	node *n;
+
+	if (cs_size(&t->tables)) {
+		for (n = t->tables.set->h; n; ) {
+			sql_table *pt = n->data;
+
+			n = n->next;
+			sql_trans_del_table(tr, t, pt, drop_action);
+		}
+	}
+}
+
+
+static void
 sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -3746,6 +3762,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	table_funcs.table_delete(tr, systable, rid);
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
+	if (isMergeTable(t) || isReplicaTable(t))
+		sys_table_del_tables(tr, t, drop_action);
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 

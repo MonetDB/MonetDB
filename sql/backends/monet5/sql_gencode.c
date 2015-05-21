@@ -2708,7 +2708,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = pushStr(mb, q, t);
 		GDKfree(tt);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
-		m->Tparse = 0;
 	}
 	if (cq)
 		addQueryToCache(c);
