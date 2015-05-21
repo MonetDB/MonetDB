@@ -1265,7 +1265,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				sql_subtype st;
 				sql_subfunc *f;
 				list *args = sa_list(sql->sa);
-				int l = strlen(cs->type.type->sqlname);
+				size_t l = strlen(cs->type.type->sqlname);
 				char *fname = sa_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
