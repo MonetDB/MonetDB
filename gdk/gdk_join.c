@@ -3455,16 +3455,18 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 					resGroupRepeats++; \
 					cnt = 1; \
 				} \
-			} else if(el_cur == resMax) { \
+			} \
+			/*max and min can be the same. Thus they should be checked in different ifs and not in an if-else*/\
+			if(el_cur == resMax) { \
 				flg--; \
 				foundMax = 1; \
 			} \
 		} \
 		if(flg>0) { \
-			GDKerror("BATdimensionProject: dimension not regular (max more times than min)\n"); \
+			GDKerror("BATdimensionProject: dimension not regular (max %ld more times than min)\n", flg); \
 			return NULL; \
 		} else if(flg<0) { \
-			GDKerror("BATdimensionProject: dimension not regular (min more times than max)\n"); \
+			GDKerror("BATdimensionProject: dimension not regular (min %ld more times than max)\n", flg); \
 			return NULL; \
 		} \
 		/*check the last group*/ \
@@ -3481,7 +3483,8 @@ fprintf(stderr, "dimensionise: groupRepeats = %ld, elementsInGroup = %ld\n", res
 		for(i=0; i<BATcount(oidsBAT); i++) { \
 			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMax) \
 				foundMax = 1; \
-			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMin && foundMax) {\
+			else if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMin && foundMax) {\
+				/*if there is only one element then it will never enter this block, element will be equal to max*/ \
 				/*iterate over the elements in the group*/ \
 				foundMax =0 ; \
 				r=0; \
@@ -3497,7 +3500,7 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
 					} \
 					else { \
 						if(resElementRepeats >=0 && resElementRepeats != r) { \
-							GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+							GDKerror("BATdimensionProject: dimension not regular (different number of repetitions %ld vs %ld)\n", resElementRepeats, r); \
 							return NULL; \
 						} else if(resElementRepeats <0) { \
 							resElementRepeats = r; \
@@ -3513,9 +3516,10 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
 				} \
 				/*check the last element in the group*/ \
 				if(resElementRepeats >=0 && resElementRepeats != r) { \
-					GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+					GDKerror("BATdimensionProject: dimension not regular (different number of repetitions %ld vs %ld)\n", resElementRepeats, r); \
 					return NULL; \
 				} else if(resElementRepeats <0) { \
+					/*It should never reach this*/ \
 					resElementRepeats = r; \
 					resStep = 0; /*if here then there is only one element in the group*/\
 				} \
@@ -3535,7 +3539,7 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
 			} \
 			else { \
 				if(resElementRepeats >=0 && resElementRepeats != r) { \
-					GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+					GDKerror("BATdimensionProject: dimension not regular (different number of repetitionsi %ld vs %ld)\n", resElementRepeats, r); \
 					return NULL; \
 				} else if(resElementRepeats <0) { \
 					resElementRepeats = r; \
@@ -3551,7 +3555,7 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
 		} \
 		/*check the last element in the group*/ \
 		if(resElementRepeats >=0 && resElementRepeats != r) { \
-			GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+			GDKerror("BATdimensionProject: dimension not regular (different number of repetitions %ld vs %ld)\n", resElementRepeats, r); \
 			return NULL; \
 		} else if(resElementRepeats <0) { \
 			resElementRepeats = r; \
