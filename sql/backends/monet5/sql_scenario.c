@@ -291,7 +291,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	if (!opt)
 		opt = "default_pipe";
 	SQLglobal("optimizer", opt);
-	SQLglobal("trace", "show,ticks,stmt");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
