@@ -466,22 +466,13 @@ create function "abbrev" (p inet) returns clob
 	external name inet."abbrev";
 create function alpha(pdec double, pradius double)
 returns double external name sql.alpha;
-create procedure analyze()
+create procedure analyze(minmax int, "sample" bigint)
 external name sql.analyze;
-create procedure analyze(tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string)
 external name sql.analyze;
-create procedure analyze(sch string, tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string)
 external name sql.analyze;
-create procedure analyze(sch string, tbl string, col string)
-external name sql.analyze;
--- control the sample size
-create procedure analyze("sample" bigint)
-external name sql.analyze;
-create procedure analyze(tbl string, "sample" bigint)
-external name sql.analyze;
-create procedure analyze(sch string, tbl string, "sample" bigint)
-external name sql.analyze;
-create procedure analyze(sch string, tbl string, col string, "sample" bigint)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;
 -- ogc Spatial Analysis methods
 

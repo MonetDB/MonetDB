@@ -51344,25 +51344,15 @@ command sql.alpha(dec:dbl,theta:dbl):dbl
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
 
-pattern sql.analyze(sch:str,tbl:str,col:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str,col:str):void 
 address sql_analyze;
 comment Update the database statistics table
 
-pattern sql.analyze(sch:str,tbl:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str):void 
 address sql_analyze;
-pattern sql.analyze(sch:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str):void 
 address sql_analyze;
-pattern sql.analyze(sample:lng):void 
-address sql_analyze;
-pattern sql.analyze(sch:str,tbl:str,col:str):void 
-address sql_analyze;
-comment Update the database statistics table
-
-pattern sql.analyze(sch:str,tbl:str):void 
-address sql_analyze;
-pattern sql.analyze(sch:str):void 
-address sql_analyze;
-pattern sql.analyze():void 
+pattern sql.analyze(minmax:int,sample:lng):void 
 address sql_analyze;
 pattern sql.argRecord(a:any...):str 
 address SQLargRecord;

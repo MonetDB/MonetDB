@@ -41,9 +41,9 @@ SELECT count(oid) FROM wi;
 SELECT count(oid) FROM wo;-- should fail
 SELECT count(i) FROM wo;
 
--- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');" and "call analyze('sys', 'my_table');"
-call vacuum('sys', 'wi'); call analyze('sys', 'wi');
-call vacuum('sys', 'wo'); call analyze('sys', 'wo');
+-- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');" and analyze sys.my_table;"
+call vacuum('sys', 'wi'); analyze sys.wi;
+call vacuum('sys', 'wo'); analyze sys.wo;
 
 /*
 SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)

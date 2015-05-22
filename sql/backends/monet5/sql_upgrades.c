@@ -1432,7 +1432,21 @@ sql_update_feb2015(Client c)
 			"  \"nils\" bigint,\n"
 			"  minval string,\n"
 			"  maxval string,\n"
-			"  sorted boolean);\n");
+			"  sorted boolean);\n"
+			"drop all procedure sys.analyze;\n"
+			"create procedure analyze(minmax int, \"sample\" bigint)\n"
+			"external name sql.analyze;\n"
+
+			"create procedure analyze(minmax int, \"sample\" bigint,sch string)\n"
+			"external name sql.analyze;\n"
+
+			"create procedure analyze(minmax int, \"sample\" bigint,sch string, tbl string)\n"
+			"external name sql.analyze;\n"
+
+			"create procedure analyze(minmax int, \"sample\" bigint,sch string, tbl string, col string)\n"
+			"external name sql.analyze;\n"
+
+			);
 
 	/* 15_querylog update the querylog table definition */
 	pos += snprintf(buf + pos, bufsize - pos,

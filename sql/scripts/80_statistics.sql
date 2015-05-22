@@ -22,27 +22,14 @@ CREATE TABLE sys.statistics(
 	maxval string,
 	sorted boolean);
 
-create procedure analyze()
+create procedure analyze(minmax int, "sample" bigint)
 external name sql.analyze;
 
-create procedure analyze(tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string)
 external name sql.analyze;
 
-create procedure analyze(sch string, tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string)
 external name sql.analyze;
 
-create procedure analyze(sch string, tbl string, col string)
-external name sql.analyze;
-
--- control the sample size
-create procedure analyze("sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(tbl string, "sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(sch string, tbl string, "sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(sch string, tbl string, col string, "sample" bigint)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;
