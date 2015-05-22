@@ -1194,7 +1194,7 @@ sql_update_hugeint(Client c)
 static str
 sql_update_feb2015(Client c)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
@@ -1205,12 +1205,67 @@ sql_update_feb2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* change to 09_like */
-	pos += snprintf(buf+pos, bufsize - pos, "drop filter function sys.\"like\";\n");
-	pos += snprintf(buf+pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name algebra.\"like\";\n");
-	pos += snprintf(buf+pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string) external name algebra.\"like\";\n");
-	pos += snprintf(buf+pos, bufsize - pos, "drop filter function sys.\"ilike\";\n");
-	pos += snprintf(buf+pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";\n");
-	pos += snprintf(buf+pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string) external name algebra.\"ilike\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"like\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name algebra.\"like\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"like\"(val string, pat string) external name algebra.\"like\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop filter function sys.\"ilike\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create filter function sys.\"ilike\"(val string, pat string) external name algebra.\"ilike\";\n");
+
+	/* new file 51_sys_schema_extension.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "CREATE TABLE sys.keywords (\n\
+    keyword VARCHAR(40) NOT NULL PRIMARY KEY);\n\
+\n\
+INSERT INTO sys.keywords (keyword) VALUES\n\
+('ADMIN'), ('AFTER'), ('AGGREGATE'), ('ALWAYS'), ('ASYMMETRIC'), ('ATOMIC'), ('AUTO_INCREMENT'),\n\
+('BEFORE'), ('BIGINT'), ('BIGSERIAL'), ('BINARY'), ('BLOB'),\n\
+('CALL'), ('CHAIN'), ('CLOB'), ('COMMITTED'), ('COPY'), ('CORR'), ('CUME_DIST'), ('CURRENT_ROLE'), ('CYCLE'),\n\
+('DATABASE'), ('DELIMITERS'), ('DENSE_RANK'), ('DO'),\n\
+('EACH'), ('ELSEIF'), ('ENCRYPTED'), ('EVERY'), ('EXCLUDE'),\n\
+('FOLLOWING'), ('FUNCTION'),\n\
+('GENERATED'),\n\
+('IF'), ('ILIKE'), ('INCREMENT'),\n\
+('LAG'), ('LEAD'), ('LIMIT'), ('LOCALTIME'), ('LOCALTIMESTAMP'), ('LOCKED'),\n\
+('MAXVALUE'), ('MEDIAN'), ('MEDIUMINT'), ('MERGE'), ('MINVALUE'),\n\
+('NEW'), ('NOCYCLE'), ('NOMAXVALUE'), ('NOMINVALUE'), ('NOW'),\n\
+('OFFSET'), ('OLD'), ('OTHERS'), ('OVER'),\n\
+('PARTITION'), ('PERCENT_RANK'), ('PLAN'), ('PRECEDING'), ('PROD'),\n\
+('QUANTILE'),\n\
+('RANGE'), ('RANK'), ('RECORDS'), ('REFERENCING'), ('REMOTE'), ('RENAME'), ('REPEATABLE'), ('REPLICA'),\n\
+('RESTART'), ('RETURN'), ('RETURNS'), ('ROWS'), ('ROW_NUMBER'),\n\
+('SAMPLE'), ('SAVEPOINT'), ('SCHEMA'), ('SEQUENCE'), ('SERIAL'), ('SERIALIZABLE'), ('SIMPLE'),\n\
+('START'), ('STATEMENT'), ('STDIN'), ('STDOUT'), ('STREAM'), ('STRING'), ('SYMMETRIC'),\n\
+('TIES'), ('TINYINT'), ('TRIGGER'),\n\
+('UNBOUNDED'), ('UNCOMMITTED'), ('UNENCRYPTED'),\n\
+('WHILE'),\n\
+('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'),\n\
+('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');\n\
+\n\
+\n\
+CREATE TABLE sys.table_types (\n\
+    table_type_id   SMALLINT NOT NULL PRIMARY KEY,\n\
+    table_type_name VARCHAR(25) NOT NULL UNIQUE);\n\
+\n\
+INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES\n\
+-- values from sys._tables.type:  0=Table, 1=View, 2=Generated, 3=Merge, etc.\n\
+  (0, 'TABLE'), (1, 'VIEW'), /* (2, 'GENERATED'), */ (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'),\n\
+-- synthetically constructed system obj variants (added 10 to sys._tables.type value when sys._tables.system is true).\n\
+  (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'),\n\
+-- synthetically constructed temporary variants (added 20 or 30 to sys._tables.type value depending on values of temporary and commit_action).\n\
+  (20, 'GLOBAL TEMPORARY TABLE'),\n\
+  (30, 'LOCAL TEMPORARY TABLE');\n\
+\n\
+\n\
+CREATE TABLE sys.dependency_types (\n\
+    dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,\n\
+    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);\n\
+\n\
+INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES\n\
+-- values taken from sql_catalog.h\n\
+  (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),\n\
+  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop view sys.tables;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create view sys.tables as SELECT * FROM (SELECT p.*, 0 AS \"temporary\", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;\n");
 
 	/* change to 75_storagemodel */
 	pos += snprintf(buf+pos, bufsize - pos, "drop view sys.storagemodel;\n");
@@ -1359,9 +1414,9 @@ where qd.id = ql.id and qd.owner = user;\n");
 	pos += snprintf(buf+pos, bufsize - pos, "create view sys.tracelog as select * from sys.tracelog();\n");
 
 
-	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from systemfunctions where function_id not in (select id from functions);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_history', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1386,6 +1441,8 @@ where qd.id = ql.id and qd.owner = user;\n");
 				if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "tables")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
 					t->system = 0;

@@ -60,7 +60,12 @@ Ready.
 % .idxs,	.idxs,	.keys,	.keys # table_name
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
-% 27,	1,	18,	1 # length
+% 44,	1,	44,	1 # length
+[ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
+[ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
+[ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "files_pkey_file_id",	0,	"files_pkey_file_id",	0	]
 [ "sq_pkey_sn_file_id",	0,	"sq_pkey_sn_file_id",	0	]
 [ "sq_fkey_file_id",	1,	"sq_fkey_file_id",	2	]
@@ -77,7 +82,12 @@ Ready.
 % sys.idxs,	sys.idxs,	sys.keys,	sys.keys # table_name
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
-% 18,	1,	18,	1 # length
+% 44,	1,	44,	1 # length
+[ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
+[ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
+[ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "files_pkey_file_id",	0,	"files_pkey_file_id",	0	]
 [ "sq_pkey_sn_file_id",	0,	"sq_pkey_sn_file_id",	0	]
 [ "sq_fkey_file_id",	1,	"sq_fkey_file_id",	2	]

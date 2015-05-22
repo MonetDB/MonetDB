@@ -31,17 +31,17 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type ] COUNT  |
 | | | | | | ) [ p.type != smallint "2" ]                                               |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ],                                      |
+| | | | ) [  ] [ sys.count() NOT NULL as L3.L3 ],                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type ] COUNT  |
 | | | | | | ) [ t.type != smallint "2" ]                                               |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
-| | | | ) [  ] [ sys.count() NOT NULL as L1.L1 ]                                       |
-| | | ) [ L1.L1 ]                                                                      |
-| | ) [  ] [ sys.sum no nil (L1.L1) as L1.L1 ]                                         |
-| ) [ L1 NOT NULL as L1.L1 ]                                                                                                                                                                                                                                                                                        |
+| | | | ) [  ] [ sys.count() NOT NULL as L3.L3 ]                                       |
+| | | ) [ L3.L3 ]                                                                      |
+| | ) [  ] [ sys.sum no nil (L3.L3) as L3.L3 ]                                         |
+| ) [ L3 NOT NULL as L3.L3 ]                                                           |
 +--------------------------------------------------------------------------------------+
 20 rows
 
@@ -79,7 +79,7 @@ Operation successful
 |     X_38 := aggr.count(X_37);                                        |
 |     X_39 := bat.append(X_27,X_38,true);                                                          |
 |     X_40:wrd  := aggr.sum(X_39);                                            |
-|     sql.exportValue(1,".L1","L1","wrd",64,0,7,X_40,"");                                        |
+|     sql.exportValue(1,".L3","L3","wrd",64,0,7,X_40,"");                                          |
 | end user.s3_1;                                                                                 |
 +--------------------------------------------------------------------------------------------------+
 31 rows
