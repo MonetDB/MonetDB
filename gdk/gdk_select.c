@@ -1875,6 +1875,58 @@ BATdimensionSubselect(BAT *dimensionBAT, BAT *candBAT, const void *low, const vo
 			return newempty("BATdimensionSubselect");
 		qualifyingElementsNum = element_oid+1;
 		element_oid=0; //it should add qualifying elementsNum from the beginning
+	} else if(ATOMcmp(type, low, nil) && ATOMcmp(type, high, nil)) { //values greater than low and lower than high 
+		switch (ATOMtype(type)) {
+		case TYPE_bte:
+        	lower(bte, *(bte*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(bte, *(bte*)low);
+	        break;
+	    case TYPE_sht:
+    	    lower(sht, *(sht*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(sht, *(sht*)low);
+	        break;
+    	case TYPE_int:
+        	lower(int, *(int*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(int, *(int*)low);
+			break;
+    	case TYPE_lng:
+        	lower(lng, *(lng*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(lng, *(lng*)low);
+	       break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	lower(hge, *(hge*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(hge, *(hge*)low);
+	        break;
+#endif
+    	case TYPE_flt:
+        	lower(flt, *(flt*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(flt, *(flt*)low);
+	        break;
+    	case TYPE_dbl:
+        	lower(dbl, *(dbl*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(dbl, *(dbl*)low);
+	        break;
+    	case TYPE_oid:
+        	lower(oid, *(oid*)high);
+			qualifyingElementsNum = element_oid+1;
+        	greater(oid, *(oid*)low);
+	        break;
+		default:
+			fprintf(stderr, "BATdimensionSubselect: dimension type not handled\n");
+            return NULL;
+    	}
+
+		if(qualifyingElementsNum == 0 || element_oid >= elementsNum) //high lower than min or low greater than max
+			return newempty("BATdimensionSubselect");
+		qualifyingElementsNum -= element_oid;
 	} else
 		return newempty("BATdimensionSubselect");
 
