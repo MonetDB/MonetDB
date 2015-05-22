@@ -11,14 +11,14 @@
 
 CREATE TABLE sys.statistics(
 	"column_id" integer,
-	"type" string, 
+	"type" string,
 	width integer,
-	stamp timestamp, 
-	"sample" bigint, 
-	"count" bigint, 
-	"unique" bigint, 
-	"nils" bigint, 
-	minval string, 
+	stamp timestamp,
+	"sample" bigint,
+	"count" bigint,
+	"unique" bigint,
+	"nils" bigint,
+	minval string,
 	maxval string,
 	sorted boolean);
 

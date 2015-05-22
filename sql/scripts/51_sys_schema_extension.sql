@@ -57,4 +57,3 @@ INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALU
 -- values taken from sql_catalog.h
   (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),
   (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');
-
