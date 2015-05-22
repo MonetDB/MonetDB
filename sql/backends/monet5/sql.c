@@ -2250,6 +2250,19 @@ do {\
     *groupRepeats = BATcount(dimensionBAT)-i-1; \
 } while(0)
 
+#define dimensionElementsNum(min, max, step)\
+	({\
+		long num =1; \
+		if(!step) { \
+			if(min!=max) { \
+				GDKerror("dimensionElementsNum: step is 0 but min and max are not equal\n"); \
+				return NULL; \
+			} \
+		} else \
+        	num = floor((max-min)/step) + 1; \
+		num; \
+	})
+
 #define materialise(TPE) \
     do { \
         /*find the min, max, step in the dimension*/ \
@@ -2260,17 +2273,10 @@ do {\
 \
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
 fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); \
-\
-		if(!step) { \
-			if(min!=max) { \
-				fprintf(stderr, "materialise: step is 0 but min and max are not equal\n"); \
-				return NULL; \
-			} \
-			elementsNum = 1; \
-			step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
-		} else \
-        	elementsNum = floor((max-min)/step) + 1; \
+		elementsNum = dimensionElementsNum(min, max, step); \
 fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
+if(!step) \
+	step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
 \
 		if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
         	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT"); \

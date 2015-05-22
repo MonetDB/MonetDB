@@ -1696,50 +1696,31 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 }
 
 BAT *
-BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *high, int li, int hi, int anti) {
+BATdimensionSubselect(BAT *dimensionBAT, BAT *candBAT, const void *low, const void *high, int li, int hi, int anti) {
 	oid elements_in_result =0;
 	int type;
 	const void *nil;
 	BAT *b_tmp, *resBAT;
 
-	type = inBAT->ttype;
+	long elementRepeats, groupRepeats, elementsNum, qualifyingElementsNum;
+	long element_oid =0;
+	long i,j;
+	oid *res = NULL;
+
+	type = dimensionBAT->ttype;
 	nil = ATOMnilptr(type);
 	type = ATOMbasetype(type);
 
 
-(void)li;
 (void)hi;
-(void)anti;
-(void)*(int*)nil;
 
-	if(ATOMcmp(type, low, high) == 0) { //point selection
-		long repeat1, repeat2, elementsNum;
-		long element_oid =0, i, j;
-		oid *res = NULL;
-
-#define elements(TPE, el) \
+	if(ATOMcmp(type, low, high) == 0) { //point selection	
+#define equal(TPE, el) \
 	do { \
 		TPE min, max, step, it; \
-		TPE *el_in; \
-		oid i; \
 \
-		el_in = (TPE*)Tloc(inBAT, BUNfirst(inBAT)); \
-		min = el_in[0]; \
-		step = el_in[BATcount(inBAT)-1]; \
-\
-		repeat1 = 1; \
-		for(i=1; i<BATcount(inBAT); i++) { \
-			if(min == el_in[i]) \
-				repeat1++; \
-			else { \
-				max = el_in[i]; \
-				break; \
-			} \
-		} \
-\
-		repeat2 = BATcount(inBAT) - i -1; \
-\
-		elementsNum = floor((max-min)/step) + 1; \
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+		elementsNum = dimensionElementsNum(min, max, step); \
 \
 		element_oid = 0; \
         for(it = min ; it <= max ; it += step) { \
@@ -1748,113 +1729,211 @@ BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *hig
             else \
                 break; \
         } \
-\
 	} while(0)
 		
 		switch (ATOMtype(type)) {
 		case TYPE_bte:
-        	elements(bte, *(bte*)low);
+        	equal(bte, *(bte*)low);
 	        break;
 	    case TYPE_sht:
-    	    elements(sht, *(sht*)low);
+    	    equal(sht, *(sht*)low);
 	        break;
     	case TYPE_int:
-        	elements(int, *(int*)low);
+        	equal(int, *(int*)low);
 	        break;
     	case TYPE_lng:
-        	elements(lng, *(lng*)low);
+        	equal(lng, *(lng*)low);
 	       break;
 #ifdef HAVE_HGE
     	case TYPE_hge:
-        	elements(hge, *(hge*)low);
+        	equal(hge, *(hge*)low);
 	        break;
 #endif
     	case TYPE_flt:
-        	elements(flt, *(flt*)low);
+        	equal(flt, *(flt*)low);
 	        break;
     	case TYPE_dbl:
-        	elements(dbl, *(dbl*)low);
+        	equal(dbl, *(dbl*)low);
 	        break;
     	case TYPE_oid:
-        	elements(oid, *(oid*)low);
+        	equal(oid, *(oid*)low);
 	        break;
 		default:
 			fprintf(stderr, "BATdimensionSubselect: dimension type not handled\n");
             return NULL;
     	}
 
-		if(element_oid >= elementsNum) { //the element dows not exist
-			elements_in_result = 0;
-
-			//create new empty BAT
-			if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
-				return NULL;
-
-		} else {
-			element_oid *= repeat1;
-
-			elements_in_result = repeat1*repeat2;
-
-			//create new BAT
-			if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
-				return NULL;
+		if(element_oid >= elementsNum)//the element does not exist
+			return newempty("BATdimensionSubselect");
+		qualifyingElementsNum = 1;	
+	} else if(ATOMcmp(type, high, nil) == 0) { //find values greater than low
+#define greater(TPE, el) \
+	do { \
+		TPE min, max, step, it; \
+\
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+		elementsNum = dimensionElementsNum(min, max, step); \
+\
+		element_oid = elementsNum; \
+        for(it = max ; it >= min ; it -= step) { \
+			if(li && it >= el) \
+            	element_oid--; \
+			else if(!li && it > el) \
+				element_oid--; \
+            else \
+                break; \
+        } \
+	} while(0)
 		
-			res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
-			//add the oids in the result
-			for(j=0; j<repeat2; j++) {
-				for(i=0; i<repeat1; i++) {
-					fprintf(stderr, "Added oid: %ld\n", element_oid);
-					*res = element_oid;
-					res++;
-					element_oid++;
-				}
-		
-				element_oid += ((elementsNum*repeat1) - repeat1);
-			}
-		}
-		
-		if(anti) { //the oids that do not qualify are those that should be returned
-			oid io, jo;
-			oid endOid = elementsNum*repeat1*repeat2;
-			oid* res_anti;
-			BAT *b_anti = BATnew(TYPE_void, TYPE_oid, endOid-elements_in_result, TRANSIENT);
-
-			if(!b_anti)
-				return NULL;
-
-			res_anti = (oid*)Tloc(b_anti, BUNfirst(b_anti));
-			res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
-
-			for(io=0, jo=0; io<endOid && jo<elements_in_result; io++) {
-				if(io == res[jo]) { //the oid is in the result -> skip it
-					jo++;
-				} else {
-					fprintf(stderr, "Added anti oid: %ld\n", io);
-					*res_anti = io;
-					res_anti++;	
-				}
-			}
-
-			//add any oids that are greater than the last qualifying
-			for(; io<endOid; io++) {
-				fprintf(stderr, "Added anti oid: %ld\n", io);
-				*res_anti=io;
-				res_anti++;
-			}
-
-			elements_in_result = endOid-elements_in_result;
-			b_tmp = b_anti;
-		}
-		
-		BATsetcount(b_tmp,elements_in_result);
-
-	} else {
-		if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)
+		switch (ATOMtype(type)) {
+		case TYPE_bte:
+        	greater(bte, *(bte*)low);
+	        break;
+	    case TYPE_sht:
+    	    greater(sht, *(sht*)low);
+	        break;
+    	case TYPE_int:
+        	greater(int, *(int*)low);
+	        break;
+    	case TYPE_lng:
+        	greater(lng, *(lng*)low);
+	       break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	greater(hge, *(hge*)low);
+	        break;
+#endif
+    	case TYPE_flt:
+        	greater(flt, *(flt*)low);
+	        break;
+    	case TYPE_dbl:
+        	greater(dbl, *(dbl*)low);
+	        break;
+    	case TYPE_oid:
+        	greater(oid, *(oid*)low);
+	        break;
+		default:
+			fprintf(stderr, "BATdimensionSubselect: dimension type not handled\n");
             return NULL;
+    	}
 
-		BATsetcount(b_tmp, elements_in_result);
+		if(element_oid >= elementsNum) //low greater than max
+			return newempty("BATdimensionSubselect");
+		qualifyingElementsNum = (elementsNum-element_oid);
+	} else if(ATOMcmp(type, low, nil) == 0) { //find values lower than high
+#define lower(TPE, el) \
+	do { \
+		TPE min, max, step, it; \
+\
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+		elementsNum = dimensionElementsNum(min, max, step); \
+\
+		element_oid = -1; \
+        for(it = min ; it <= max ; it += step) { \
+			if(hi && it <= el) \
+            	element_oid++; \
+			else if(!hi && it < el) \
+				element_oid++; \
+            else \
+                break; \
+        } \
+	} while(0)
+		
+		switch (ATOMtype(type)) {
+		case TYPE_bte:
+        	lower(bte, *(bte*)high);
+	        break;
+	    case TYPE_sht:
+    	    lower(sht, *(sht*)high);
+	        break;
+    	case TYPE_int:
+        	lower(int, *(int*)high);
+	        break;
+    	case TYPE_lng:
+        	lower(lng, *(lng*)high);
+	       break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	lower(hge, *(hge*)high);
+	        break;
+#endif
+    	case TYPE_flt:
+        	lower(flt, *(flt*)high);
+	        break;
+    	case TYPE_dbl:
+        	lower(dbl, *(dbl*)high);
+	        break;
+    	case TYPE_oid:
+        	lower(oid, *(oid*)high);
+	        break;
+		default:
+			fprintf(stderr, "BATdimensionSubselect: dimension type not handled\n");
+            return NULL;
+    	}
+
+		if(element_oid < 0) //high lower than min
+			return newempty("BATdimensionSubselect");
+		qualifyingElementsNum = element_oid+1;
+		element_oid=0; //it should add qualifying elementsNum from the beginning
+	} else
+		return newempty("BATdimensionSubselect");
+
+	/*Add the qualifying oids to a BAT*/	
+	elements_in_result = qualifyingElementsNum*elementRepeats*groupRepeats;
+	element_oid *= elementRepeats;
+
+	//create new BAT
+	if((b_tmp = BATnew(TYPE_void, TYPE_oid, elements_in_result, TRANSIENT)) == NULL)   \
+		return NULL;
+		
+	res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
+	//add the oids in the result
+	for(j=0; j<groupRepeats; j++) {
+		for(i=0; i<qualifyingElementsNum*elementRepeats; i++) {
+			fprintf(stderr, "Added oid: %ld\n", element_oid);
+			*res = element_oid;
+			res++;
+			element_oid++;
+		}
+		//skip the non-qualifying elements
+		element_oid += (elementsNum-qualifyingElementsNum)*elementRepeats;
 	}
+	BATsetcount(b_tmp,elements_in_result);
 
+	if(ATOMcmp(type, low, high) == 0 && anti) { //the oids that do not qualify are those that should be kept
+		oid io, jo;
+		oid endOid = elementsNum*elementRepeats*groupRepeats;
+		oid* res_anti;
+		BAT *b_anti = BATnew(TYPE_void, TYPE_oid, endOid-elements_in_result, TRANSIENT);
+
+		if(!b_anti)
+			return NULL;
+
+		res_anti = (oid*)Tloc(b_anti, BUNfirst(b_anti));
+		res = (oid*) Tloc(b_tmp, BUNfirst(b_tmp));
+
+		for(io=0, jo=0; io<endOid && jo<elements_in_result; io++) {
+			if(io == res[jo]) { //the oid is in the result -> skip it
+				jo++;
+			} else {
+				fprintf(stderr, "Added anti oid: %ld\n", io);
+				*res_anti = io;
+				res_anti++;	
+			}
+		}
+
+		//add any oids that are greater than the last qualifying
+		for(; io<endOid; io++) {
+			fprintf(stderr, "Added anti oid: %ld\n", io);
+			*res_anti=io;
+			res_anti++;
+		}
+
+		elements_in_result = endOid-elements_in_result;
+		b_tmp = b_anti;
+		BATsetcount(b_tmp,elements_in_result);
+	}
+			
 	//if the result should be 
 	if(candBAT) {
         oid *current_elements, *cand_elements, *elements;
@@ -1885,8 +1964,7 @@ BATdimensionSubselect(BAT *inBAT, BAT *candBAT, const void *low, const void *hig
     	    	i++;
         }
     } else
-        resBAT = b_tmp;
-        
+        resBAT = b_tmp;       
         
         BATsetcount(resBAT,elements_in_result);
         BATseqbase(resBAT,0);
@@ -1986,28 +2064,28 @@ BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
-			return BATsubselect(b, s, nil, val, 0, 0, 0);
+			return BATdimensionSubselect(b, s, nil, val, 0, 0, 0);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* "<=" */
-			return BATsubselect(b, s, nil, val, 0, 1, 0);
+			return BATdimensionSubselect(b, s, nil, val, 0, 1, 0);
 		}
 		if (op[1] == '>' && op[2] == 0) {
 			/* "<>" (equivalent to "!=") */
-			return BATsubselect(b, s, val, NULL, 1, 1, 1);
+			return BATdimensionSubselect(b, s, val, NULL, 1, 1, 1);
 		}
 	}
 	if (op[0] == '>') {
 		if (op[1] == 0) {
 			/* ">" */
-			return BATsubselect(b, s, val, nil, 0, 0, 0);
+			return BATdimensionSubselect(b, s, val, nil, 0, 0, 0);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* ">=" */
-			return BATsubselect(b, s, val, nil, 1, 0, 0);
+			return BATdimensionSubselect(b, s, val, nil, 1, 0, 0);
 		}
 	}
-	GDKerror("BATthetasubselect: unknown operator.\n");
+	GDKerror("BATdimensionThetasubselect: unknown operator.\n");
 	return NULL;
 }
 

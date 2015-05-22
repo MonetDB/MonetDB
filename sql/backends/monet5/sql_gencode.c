@@ -1324,20 +1324,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					s->nr = getDestVar(q);
 					break;
 				}
+				//if dimension call the versions for the dimensions
+				if(s->op1->type == st_dimension) {
+					char *dimStr = "dimension_";
+					char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
+					
+					strcpy(dimension_cmd, dimStr);
+					strcat(dimension_cmd, cmd);
+					cmd = dimension_cmd;
+				}
 
 				switch (s->flag) {
 				case cmp_equal:{
-					if(s->op1->type == st_dimension) {
-						char *dimStr = "dimension_";
-						char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
-					
-						strcpy(dimension_cmd, dimStr);
-						strcpy(dimension_cmd+strlen(dimStr), cmd);
-						
-						q = newStmt2(mb, algebraRef, dimension_cmd);
+					q = newStmt2(mb, algebraRef, cmd);
+					if(s->op1->type == st_dimension) {						
 						q = pushArgument(mb, q, l);
 					} else {
-						q = newStmt2(mb, algebraRef, cmd);
 						q = pushArgument(mb, q, l);
 						if (sub > 0)
 							q = pushArgument(mb, q, sub);
@@ -1354,17 +1356,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_notequal:{
-					if(s->op1->type == st_dimension) {
-						char *dimStr = "dimension_";
-						char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
-					
-						strcpy(dimension_cmd, dimStr);
-						strcpy(dimension_cmd+strlen(dimStr), cmd);
-						
-						q = newStmt2(mb, algebraRef, dimension_cmd);
-					} else {
-						q = newStmt2(mb, algebraRef, cmd);
-					}
+					q = newStmt2(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);

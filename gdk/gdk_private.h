@@ -431,6 +431,7 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 #define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
 do {\
 	TPE *vls; \
+	BUN i; \
 	vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
 	*min = vls[0]; \
 	*step = vls[BATcount(dimensionBAT)-1]; \
@@ -480,3 +481,16 @@ fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRe
         BATderiveProps(resBAT,FALSE); \
 		resBAT; \
 	})
+
+#define dimensionElementsNum(min, max, step)\
+    ({\
+		long num = 1; \
+        if(!step) { \
+            if(min!=max) { \
+                GDKerror("dimensionElementsNum: step is 0 but min and max are not equal\n"); \
+                return NULL; \
+            } \
+        } else \
+            num = floor((max-min)/step) + 1; \
+		num; \
+    })
