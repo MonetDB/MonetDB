@@ -425,3 +425,58 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
 #endif
 #endif
+
+
+/*Dimensional Columns*/
+#define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
+do {\
+	TPE *vls; \
+	vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+	*min = vls[0]; \
+	*step = vls[BATcount(dimensionBAT)-1]; \
+	*max = vls[BATcount(dimensionBAT)-2]; \
+\
+	*elementRepeats = *groupRepeats = 0; \
+	vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+\
+	for(i=0; i<BATcount(dimensionBAT)-2; i++) { /*last element is the step and at least one element is max*/\
+		if(vls[i] != *min) \
+			break; \
+		(*elementRepeats)++; \
+	} \
+	*groupRepeats = BATcount(dimensionBAT)-i-1; \
+} while(0)
+
+#define dimensionElement(min, max, step, elementRepeats, oid) \
+	({ \
+		long elementsNum = floor((max-min)/step) + 1; \
+		long elementsPerGroup = elementsNum*elementRepeats; \
+		long elementInGroup = floor((oid%elementsPerGroup)/elementRepeats); \
+		min+elementInGroup*step; \
+	})
+
+#define createDimension(TPE, min, max, step, elementRepeats, groupRepeats) \
+	({ \
+		long i; \
+		TPE* vls; \
+		BAT *resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats+groupRepeats+1, TRANSIENT); \
+		if(!resBAT) \
+            return NULL; \
+\
+fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRepeats+1)); \
+        vls = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+        for(i=0; i<elementRepeats; i++) { \
+            *vls = min; \
+            vls++; \
+        } \
+        for(i=0; i<groupRepeats; i++) { \
+            *vls = max; \
+            vls++; \
+        } \
+        *vls = step; \
+\
+        BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
+        BATseqbase(resBAT,0); \
+        BATderiveProps(resBAT,FALSE); \
+		resBAT; \
+	})

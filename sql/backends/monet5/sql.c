@@ -2231,51 +2231,56 @@ str materialiseDimension(bat* res, bat* in) {
 
 	tpe = ATOMtype(dimensionBAT->ttype);
 
+#define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
+do {\
+    TPE *vls; \
+    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+    *min = vls[0]; \
+    *step = vls[BATcount(dimensionBAT)-1]; \
+    *max = vls[BATcount(dimensionBAT)-2]; \
+\
+    *elementRepeats = *groupRepeats = 0; \
+    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+\
+    for(i=0; i<BATcount(dimensionBAT)-2; i++) { /*last element is the step and at least one element is max*/\
+        if(vls[i] != *min) \
+            break; \
+        (*elementRepeats)++; \
+    } \
+    *groupRepeats = BATcount(dimensionBAT)-i-1; \
+} while(0)
 
 #define materialise(TPE) \
     do { \
         /*find the min, max, step in the dimension*/ \
-        long repeat1, repeat2, elementsNum; \
+        long elementRepeats, groupRepeats, elementsNum; \
         TPE min, max, step; \
         oid i, j; \
-        TPE *el_in, *el_out, el; \
+        TPE *el_out, el; \
 \
-        el_in = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-        min = el_in[0]; \
-        step = el_in[BATcount(dimensionBAT)-1]; \
-		max = el_in[BATcount(dimensionBAT)-2]; \
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); \
 \
-        repeat1 = 1; \
-        for(i=1; i<BATcount(dimensionBAT)-1; i++) { \
-            if(max != el_in[i]) \
-                repeat1++; \
-            else { \
-				repeat2 = 0; \
-                break; \
-            } \
-        } \
-\
-        for(; i<BATcount(dimensionBAT)-1; i++) { \
-fprintf(stderr, "%u\n", (unsigned int)i); \
-            if(max == el_in[i]) \
-                repeat2++; \
-            else { \
-                break; \
-            } \
-        } \
-fprintf(stderr, "materialise repeat1 = %ld\n", repeat1); \
-fprintf(stderr, "materialise repeat2 = %ld\n", repeat2); \
-\
-        elementsNum = floor((max-min)/step) + 1; \
+		if(!step) { \
+			if(min!=max) { \
+				fprintf(stderr, "materialise: step is 0 but min and max are not equal\n"); \
+				return NULL; \
+			} \
+			elementsNum = 1; \
+			step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
+		} else \
+        	elementsNum = floor((max-min)/step) + 1; \
 fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
 \
-		if((resBAT = BATnew(TYPE_void, TYPE_##TPE, repeat1*elementsNum*repeat2, TRANSIENT)) == NULL) \
+		if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
         	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT"); \
 \
 		el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-		for(j=0; j<(unsigned long)repeat2; j++) { \
+		for(j=0; j<(unsigned long)groupRepeats; j++) { \
+fprintf(stderr, "materialise: group repetition %ld\n", j); \
 			for(el=min; el<=max; el+=step) { \
-				for(i=0; i<(unsigned long)repeat1; i++) { \
+				for(i=0; i<(unsigned long)elementRepeats; i++) { \
+fprintf(stderr, "materialise: element repetition %ld\n", i); \
 					*el_out = el; \
 					el_out++; \
 				} \
@@ -2283,7 +2288,7 @@ fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
 		} \
 \
         BATseqbase(resBAT,0); \
-        BATsetcount(resBAT, repeat1*elementsNum*repeat2);                  \
+        BATsetcount(resBAT, elementRepeats*elementsNum*groupRepeats);                  \
 		BATderiveProps(resBAT,FALSE); \
     } while(0)
 
