@@ -3420,13 +3420,15 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 
 #define dimensionise(TYPE) \
 	do { \
-		long flg=0, cnt=0, elementsInGroup=-1; \
+		long flg=0, cnt=0, elementsInGroup=-1, r=0; \
 		oid *oids; \
-		BUN i=0; \
+		BUN i=0, j=0, groupStart; \
 		TYPE dimMin, dimMax, dimStep; \
 		TYPE resMin, resMax, resStep; \
 		long dimGroupRepeats, dimElementRepeats; \
 		long resGroupRepeats, resElementRepeats; \
+		bool foundMax =0; \
+		TYPE el_cur, el_prev; \
 \
 		dimensionCharacteristics(TYPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
 		/*min, step, max implied by oids*/ \
@@ -3435,47 +3437,58 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 		resMax = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[BATcount(oidsBAT)-1]); \
 \
 		/*min and max should appear the same number of times*/ \
-		resGroupRepeats = 0; \
+		resGroupRepeats = 1; /*there is at least one group*/ \
+		cnt = 0; \
 		for(i=0; i<BATcount(oidsBAT); i++) { \
-			TYPE el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]); \
+			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]); \
 			cnt++; \
 			if(el_cur == resMin) { \
-				if(flg>0) { \
-					fprintf(stderr, "BATdimensionProject: dimension not regular (max more than min)\n"); \
-					return NULL; \
-				} \
 				flg++; \
-				cnt = 1; \
-			} \
-			if(el_cur == resMax) { \
-				if(flg<1) { \
-					fprintf(stderr, "BATdimensionProject: dimension not regular (min more than max)\n"); \
-					return NULL; \
-				} \
-				flg--; \
-				resGroupRepeats++; \
+				if(foundMax) { /*a groups has been completed*/ \
+					foundMax=0; \
 \
-				if(elementsInGroup >= 0 && elementsInGroup != cnt) { \
-					fprintf(stderr, "BATdimensionProject: dimension not regular (different number of elements among groups)\n"); \
-					return NULL; \
+					if(elementsInGroup >= 0 && elementsInGroup != (cnt-1)) { \
+						GDKerror("BATdimensionProject: dimension not regular (different number of elements among groups %ld vs %ld)\n", elementsInGroup, cnt); \
+						return NULL; \
+					} \
+					elementsInGroup = cnt-1; /*the current element does not belong in the group*/\
+					resGroupRepeats++; \
+					cnt = 1; \
 				} \
-				elementsInGroup = cnt; \
-				cnt = 0; \
+			} else if(el_cur == resMax) { \
+				flg--; \
+				foundMax = 1; \
 			} \
 		} \
+		if(flg>0) { \
+			GDKerror("BATdimensionProject: dimension not regular (max more times than min)\n"); \
+			return NULL; \
+		} else if(flg<0) { \
+			GDKerror("BATdimensionProject: dimension not regular (min more times than max)\n"); \
+			return NULL; \
+		} \
+		/*check the last group*/ \
+		if(elementsInGroup >= 0 && elementsInGroup != cnt) { \
+			GDKerror("BATdimensionProject: dimension not regular (different number of elements among groups %ld vs %ld)\n", elementsInGroup, cnt); \
+			return NULL; \
+		} \
+		elementsInGroup = cnt; \
 \
 fprintf(stderr, "dimensionise: groupRepeats = %ld, elementsInGroup = %ld\n", resGroupRepeats, elementsInGroup); \
 		/*check that the step is the same between the elements and each element is repeated the same number of times*/ \
 		resElementRepeats = -1; \
+		foundMax = 0; \
 		for(i=0; i<BATcount(oidsBAT); i++) { \
-			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMax) { \
+			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMax) \
+				foundMax = 1; \
+			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMin && foundMax) {\
 				/*iterate over the elements in the group*/ \
-				BUN j; \
-				long r=0; \
-				BUN groupStart = i-elementsInGroup+1; \
-				TYPE el_cur, el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[groupStart]); \
-fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i); \
-				for(j=groupStart; j<=i; j++) { \
+				foundMax =0 ; \
+				r=0; \
+				groupStart = i-elementsInGroup; \
+				el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[groupStart]); \
+fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
+				for(j=groupStart; j<i; j++) { \
 					el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[j]); \
 /*fprintf(stderr, "dimensionise: In group element %ld\n", j); */\
 					if(el_prev == el_cur)  {\
@@ -3484,14 +3497,14 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i); \
 					} \
 					else { \
 						if(resElementRepeats >=0 && resElementRepeats != r) { \
-							fprintf(stderr, "BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+							GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
 							return NULL; \
 						} else if(resElementRepeats <0) { \
 							resElementRepeats = r; \
 							resStep = el_cur - el_prev; \
 						} \
 						if(resStep != (el_cur - el_prev)) { \
-							fprintf(stderr, "BATdimensionProject: dimension not regular (not equal steps)\n"); \
+							GDKerror("BATdimensionProject: dimension not regular (not equal steps)\n"); \
 							return NULL; \
 						} \
 						el_prev=el_cur; \
@@ -3500,13 +3513,49 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i); \
 				} \
 				/*check the last element in the group*/ \
 				if(resElementRepeats >=0 && resElementRepeats != r) { \
-					fprintf(stderr, "BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+					GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
 					return NULL; \
 				} else if(resElementRepeats <0) { \
 					resElementRepeats = r; \
 					resStep = 0; /*if here then there is only one element in the group*/\
 				} \
 			} \
+		} \
+		/*check the last group*/ \
+		r=0; \
+		groupStart = i-elementsInGroup; \
+		el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[groupStart]); \
+fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
+		for(j=groupStart; j<i; j++) { \
+			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[j]); \
+/*fprintf(stderr, "dimensionise: In group element %ld\n", j); */\
+			if(el_prev == el_cur)  {\
+				r++; \
+/*fprintf(stderr, "dimensionise: same element %ld\n", r); */\
+			} \
+			else { \
+				if(resElementRepeats >=0 && resElementRepeats != r) { \
+					GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+					return NULL; \
+				} else if(resElementRepeats <0) { \
+					resElementRepeats = r; \
+					resStep = el_cur - el_prev; \
+				} \
+				if(resStep != (el_cur - el_prev)) { \
+					GDKerror("BATdimensionProject: dimension not regular (not equal steps)\n"); \
+					return NULL; \
+				} \
+				el_prev=el_cur; \
+				r=1; \
+			} \
+		} \
+		/*check the last element in the group*/ \
+		if(resElementRepeats >=0 && resElementRepeats != r) { \
+			GDKerror("BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+			return NULL; \
+		} else if(resElementRepeats <0) { \
+			resElementRepeats = r; \
+			resStep = 0; /*if here then there is only one element in the group*/\
 		} \
 \
 fprintf(stderr, "dimensionise: elementRepeats=%ld\n", resElementRepeats); \
@@ -3603,17 +3652,17 @@ BAT* BATnonDimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
                 break; \
             } \
         } \
-fprintf(stderr, "BATdimensionProject: original repeat1 = %ld\n", repeat1); \
+fprintf(stderr, "BATnondimensionProject: original repeat1 = %ld\n", repeat1); \
 \
         elementsNum = floor((max_orig-min_orig)/step) + 1; \
 		elementsPerGroup = repeat1*elementsNum; \
-fprintf(stderr, "BATdimensionProject: original elements per group = %ld\n", elementsPerGroup); \
+fprintf(stderr, "BATnondimensionProject: original elements per group = %ld\n", elementsPerGroup); \
 \
 		oidsBAT_iter = bat_iterator(oidsBAT); \
 		BATloop(oidsBAT, p, q) { \
 			currentOid = *((oid*) BUNtail(oidsBAT_iter, p)); \
 			if(first) { \
-fprintf(stderr, "BATdimensionProject: original elements per group = %u\n", (unsigned int)currentOid); \
+fprintf(stderr, "BATnondimensionProject: original elements per group = %u\n", (unsigned int)currentOid); \
 				startGroup = floor(currentOid/elementsPerGroup); \
 fprintf(stderr, "start group = %ld\n", startGroup); \
 \
@@ -3621,7 +3670,7 @@ fprintf(stderr, "start group = %ld\n", startGroup); \
 				currentGroup = floor(currentOid/elementsPerGroup); \
 				min_new = max_new = currentEl = (currentOid%(repeat1*elementsNum))/repeat1; \
 				repeat1_new = currentRepeat = 1; \
-fprintf(stderr, "BATdimensionProject: (first) group %ld -> original[%u]\n", currentGroup, (unsigned int)currentOid); \
+fprintf(stderr, "BATnondimensionProject: (first) group %ld -> original[%u]\n", currentGroup, (unsigned int)currentOid); \
 				first = false; \
 			} else { \
 				TYPE el = (currentOid%(repeat1*elementsNum))/repeat1; \
@@ -3631,11 +3680,11 @@ fprintf(stderr, "BATdimensionProject: (first) group %ld -> original[%u]\n", curr
 					/*there should not be any missing oids inside the same element of the same group*/ \
 					if(currentEl == el) { /*same group, same element*/\
 						for(jj=previous_oid+1; jj<=currentOid; jj++) { \
-fprintf(stderr, "BATdimensionProject: (same-same) group %ld -> original[%u]\n", grp, (unsigned int)jj); \
+fprintf(stderr, "BATnondimensionProject: (same-same) group %ld -> original[%u]\n", grp, (unsigned int)jj); \
 							currentRepeat++; \
 						} \
 					} else {/*same group but other element*/ \
-fprintf(stderr, "BATdimensionProject: (same-new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+fprintf(stderr, "BATnondimensionProject: (same-new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
 						if(currentRepeat > repeat1_new) \
 							repeat1_new = currentRepeat; \
 						currentEl = el; \
@@ -3646,7 +3695,7 @@ fprintf(stderr, "BATdimensionProject: (same-new) group %ld -> original[%u]\n", g
 							max_new = el; \
 					} \
 				} else { /*new group*/ \
-fprintf(stderr, "BATdimensionProject: (new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+fprintf(stderr, "BATnondimensionProject: (new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
 					if(currentRepeat > repeat1_new) \
 						repeat1_new = currentRepeat; \
 					currentEl = el; \
@@ -3661,13 +3710,13 @@ fprintf(stderr, "BATdimensionProject: (new) group %ld -> original[%u]\n", grp, (
 			previous_oid = currentOid; \
 			if(currentRepeat>repeat1_new) \
 				repeat1_new = currentRepeat; \
-fprintf(stderr, "BATdimensionProject: new repeat1 = %ld\n", repeat1_new); \
+fprintf(stderr, "BATnondimensionProject: new repeat1 = %ld\n", repeat1_new); \
 		} \
 \
 		endGroup = floor(currentOid/elementsPerGroup); \
 fprintf(stderr, "end group = %ld\n", endGroup); \
 		repeat2_new = endGroup - startGroup +1; \
-fprintf(stderr, "BATdimensionProject: new repeat2 = %ld\n", repeat2_new); \
+fprintf(stderr, "BATnondimensionProject: new repeat2 = %ld\n", repeat2_new); \
 \
 		/*create the resBAT*/ \
 		if((resBAT = BATnew(TYPE_void, tpe, repeat1_new+repeat2_new+1, TRANSIENT)) == NULL) \
