@@ -46,7 +46,7 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
-	if (catalog_version == CATALOG_OCT2014) {
+	if (catalog_version <= CATALOG_OCT2014) {
 		BAT *te, *tn, *tne;
 		BATiter tei, tni;
 		char *s = "sys", n[64];
