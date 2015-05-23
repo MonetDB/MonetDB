@@ -416,7 +416,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
-			r = rel_parse(sql, buf, m_deps);
+			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			rel_destroy(r);
@@ -451,7 +451,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
-		r = rel_parse(sql, nt->query, m_deps);
+		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
@@ -851,7 +851,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, nf->query);
-		r = rel_parse(sql, buf, m_deps);
+		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
@@ -981,7 +981,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, query);
-		r = rel_parse(sql, buf, m_deps);
+		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		/* TODO use relational part to find dependencies */

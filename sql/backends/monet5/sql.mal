@@ -438,23 +438,13 @@ pattern dump_trace()(
 address dump_trace
 comment "dump the trace statistics";
 
-pattern analyze():void
+pattern analyze(minmax:int, sample:lng):void
 address sql_analyze;
-pattern analyze(sch:str):void
+pattern analyze(minmax:int, sample:lng, sch:str):void
 address sql_analyze;
-pattern analyze(sch:str,tbl:str):void
+pattern analyze(minmax:int, sample:lng, sch:str, tbl:str):void
 address sql_analyze;
-pattern analyze(sch:str,tbl:str,col:str):void
-address sql_analyze
-comment "Update the database statistics table";
-
-pattern analyze(sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,tbl:str,sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,tbl:str,col:str,sample:lng):void
+pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 

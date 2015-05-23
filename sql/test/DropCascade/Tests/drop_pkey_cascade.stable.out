@@ -32,7 +32,12 @@ Ready.
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 10 # length
+% 44 # length
+[ "keywords_keyword_pkey"	]
+[ "table_types_table_type_id_pkey"	]
+[ "table_types_table_type_name_unique"	]
+[ "dependency_types_dependency_type_id_pkey"	]
+[ "dependency_types_dependency_type_name_unique"	]
 [ "t2_id_pkey"	]
 
 # 18:05:38 >  

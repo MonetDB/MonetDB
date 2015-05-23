@@ -6516,6 +6516,8 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 {
 	sql_subtype *t = exp_subtype(e);
 
+	if (!min || !max || !emin || !emax)
+		return 0;
 	if (t->type->localtype == TYPE_dbl) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
@@ -6630,7 +6632,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
-					if (0 && (nrel || nt->next) && 
+					if ((nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
@@ -6638,7 +6640,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
 					prel->exps->ht = NULL;
 					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
-					for (n = rel->exps->h, m = prel->exps->h, j=0; n && m && !skip; n = n->next, m = m->next, j++) {
+					for (n = rel->exps->h, m = prel->exps->h, j=0; n && m && (!skip || first); n = n->next, m = m->next, j++) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;
 						int i;

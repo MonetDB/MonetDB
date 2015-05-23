@@ -69,7 +69,7 @@ returns string external name json.text;
 create function json.text(js int)
 returns string external name json.text;
 
--- The remainder awaits the implementation 
+-- The remainder awaits the implementation
 
 create aggregate json.output(js json)
 returns string external name json.output;

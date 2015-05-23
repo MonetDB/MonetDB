@@ -261,7 +261,7 @@ SQLexit(Client c)
 	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 9
+#define NR_GLOBAL_VARS 8
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -291,7 +291,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	if (!opt)
 		opt = "default_pipe";
 	SQLglobal("optimizer", opt);
-	SQLglobal("trace", "show,ticks,stmt");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
@@ -781,7 +780,7 @@ SQLreader(Client c)
 #endif
 		}
 	}
-	if ( (c->stimeout &&  GDKusec()- c->session > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return NULL;
@@ -982,8 +981,6 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
-	if (m->history)
-		be->mvc->Tparse = GDKusec();
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (be->language == 'X') {
@@ -1199,8 +1196,7 @@ recompilequery:
 		 * The default action is to print them out at the end of the
 		 * query block.
 		 */
-		//if (be->q || opt)
-			pushEndInstruction(c->curprg->def);
+		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {

@@ -65,9 +65,11 @@ SYSTEM TABLE  sys.auths
 SYSTEM TABLE  sys.connections
 SYSTEM TABLE  sys.db_user_info
 SYSTEM TABLE  sys.dependencies
+SYSTEM TABLE  sys.dependency_types
 SYSTEM TABLE  sys.functions
 SYSTEM TABLE  sys.idxs
 SYSTEM TABLE  sys.keys
+SYSTEM TABLE  sys.keywords
 SYSTEM TABLE  sys.netcdf_attrs
 SYSTEM TABLE  sys.netcdf_dims
 SYSTEM TABLE  sys.netcdf_files
@@ -80,6 +82,7 @@ SYSTEM TABLE  sys.sequences
 SYSTEM TABLE  sys.statistics
 SYSTEM TABLE  sys.storagemodelinput
 SYSTEM TABLE  sys.systemfunctions
+SYSTEM TABLE  sys.table_types
 SYSTEM TABLE  sys.triggers
 SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
@@ -113,7 +116,6 @@ SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.clearrejects
 SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION  sys.contains
-SYSTEM FUNCTION  sys.convert
 SYSTEM FUNCTION  sys.convexhull
 SYSTEM FUNCTION  sys.corr
 SYSTEM FUNCTION  sys.crosses
@@ -244,9 +246,13 @@ SYSTEM FUNCTION  sys.storage
 SYSTEM FUNCTION  sys.storagemodel
 SYSTEM FUNCTION  sys.storagemodelinit
 SYSTEM FUNCTION  sys.str_to_date
+SYSTEM FUNCTION  sys.str_to_time
+SYSTEM FUNCTION  sys.str_to_timestamp
 SYSTEM FUNCTION  sys.symdifference
 SYSTEM FUNCTION  sys.text
+SYSTEM FUNCTION  sys.time_to_str
 SYSTEM FUNCTION  sys.times
+SYSTEM FUNCTION  sys.timestamp_to_str
 SYSTEM FUNCTION  sys.touches
 SYSTEM FUNCTION  sys.tracelog
 SYSTEM FUNCTION  sys.uuid
@@ -445,7 +451,7 @@ create view sys.queue as select * from sys.queue();
 create view sys.sessions as select * from sys.sessions();
 create view sys."storage" as select * from sys."storage"();
 create view sys.storagemodel as select * from sys.storagemodel();
-SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
+SELECT * FROM (SELECT p.*, 0 AS "temporary", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
 -- A summary of the table storage requirement is is available as a table view.
 -- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)
@@ -463,22 +469,13 @@ create function "abbrev" (p inet) returns clob
 	external name inet."abbrev";
 create function alpha(pdec double, pradius double)
 returns double external name sql.alpha;
-create procedure analyze()
+create procedure analyze(minmax int, "sample" bigint)
 external name sql.analyze;
-create procedure analyze(tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string)
 external name sql.analyze;
-create procedure analyze(sch string, tbl string)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string)
 external name sql.analyze;
-create procedure analyze(sch string, tbl string, col string)
-external name sql.analyze;
--- control the sample size
-create procedure analyze("sample" bigint)
-external name sql.analyze;
-create procedure analyze(tbl string, "sample" bigint)
-external name sql.analyze;
-create procedure analyze(sch string, tbl string, "sample" bigint)
-external name sql.analyze;
-create procedure analyze(sch string, tbl string, col string, "sample" bigint)
+create procedure analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;
 -- ogc Spatial Analysis methods
 
@@ -1340,7 +1337,7 @@ CREATE TABLE "sys"."_columns" (
 	"number"      INTEGER,
 	"storage"     VARCHAR(2048)
 );
-COPY 356 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 362 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"';
 2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
 2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
 2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
@@ -1709,7 +1706,7 @@ CREATE TABLE "sys"."_tables" (
 	"commit_action" SMALLINT,
 	"access"        SMALLINT
 );
-COPY 51 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 54 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	"schemas"	2000	NULL	0	true	0	0
 2007	"types"	2000	NULL	0	true	0	0
 2016	"functions"	2000	NULL	0	true	0	0

@@ -1812,7 +1812,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			if (sql->emode == m_deps)
 				rel = rel_basetable(sql, t, tname);
 			else
-				rel = rel_parse(sql, t->query, m_instantiate);
+				rel = rel_parse(sql, t->s, t->query, m_instantiate);
 
 			if (!rel)
 				return rel;

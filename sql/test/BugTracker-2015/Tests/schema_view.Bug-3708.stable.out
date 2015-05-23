@@ -1,0 +1,77 @@
+stdout of test 'schema_view.Bug-3708` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 20:32:53 >  
+# 20:32:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35225" "--set" "mapi_usock=/var/tmp/mtest-26961/.s.monetdb.35225" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:32:53 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35225/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26961/.s.monetdb.35225
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:32:53 >  
+# 20:32:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26961" "--port=35225"
+# 20:32:53 >  
+
+#create schema s1;
+#create schema s2;
+#set schema s1;
+#create table s3 (x int);
+#create view s4 as select * from s3;
+#select * from s1.s4;
+% s1.s4 # table_name
+% x # name
+% int # type
+% 1 # length
+#set schema s2;
+#select * from s1.s4;
+% s1.s4 # table_name
+% x # name
+% int # type
+% 1 # length
+#set schema sys;
+#drop schema s1;
+#drop schema s2;
+#create schema s1;
+#create schema s2;
+#create table s1.s3 (x int);
+#create table s2.s3 (x int);
+#set schema s1;
+#create view s4 as select * from s3;
+#plan select * from s1.s4;
+% .plan # table_name
+% rel # name
+% clob # type
+% 30 # length
+project (
+| table(s1.s3) [ s3.x ] COUNT 
+) [ s3.x as s4.x ]
+#set schema s2;
+#plan select * from s1.s4;
+% .plan # table_name
+% rel # name
+% clob # type
+% 30 # length
+project (
+| table(s1.s3) [ s3.x ] COUNT 
+) [ s3.x as s4.x ]
+#set schema sys;
+#drop schema s1;
+#drop schema s2;
+
+# 20:32:54 >  
+# 20:32:54 >  "Done."
+# 20:32:54 >  
+
