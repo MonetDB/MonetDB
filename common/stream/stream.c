@@ -762,10 +762,11 @@ open_stream(const char *filename, const char *flags)
 	s->fgetpos = file_fgetpos;
 	s->fsetpos = file_fsetpos;
 	s->stream_data.p = (void *) fp;
-	/* if file is opened for reading, and it starts with the UTF-8
-	 * encoding of the Unicode Byte Order Mark, skip the mark, and
-	 * mark the stream as being a UTF-8 stream */
+	/* if a text file is opened for reading, and it starts with
+	 * the UTF-8 encoding of the Unicode Byte Order Mark, skip the
+	 * mark, and mark the stream as being a UTF-8 stream */
 	if (flags[0] == 'r' &&
+	    flags[1] != 'b' &&
 	    file_fgetpos(s, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
@@ -886,7 +887,7 @@ open_gzstream(const char *filename, const char *flags)
 	s->close = stream_gzclose;
 	s->flush = stream_gzflush;
 	s->stream_data.p = (void *) fp;
-	if (flags[0] == 'r') {
+	if (flags[0] == 'r' && flags[1] != 'b') {
 		char buf[UTF8BOMLENGTH];
 		if (gzread(fp, buf, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
@@ -1090,7 +1091,7 @@ open_bzstream(const char *filename, const char *flags)
 	s->close = stream_bzclose;
 	s->flush = NULL;
 	s->stream_data.p = (void *) bzp;
-	if (strchr(flags, 'r') != NULL) {
+	if (flags[0] == 'r' && flags[1] != 'b') {
 		s->access = ST_READ;
 		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		if (err == BZ_STREAM_END) {

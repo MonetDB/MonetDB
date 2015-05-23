@@ -24,6 +24,59 @@ create filter function sys."like"(val string, pat string) external name algebra.
 drop filter function sys."ilike";
 create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
 create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
+CREATE TABLE sys.keywords (
+    keyword VARCHAR(40) NOT NULL PRIMARY KEY);
+
+INSERT INTO sys.keywords (keyword) VALUES
+('ADMIN'), ('AFTER'), ('AGGREGATE'), ('ALWAYS'), ('ASYMMETRIC'), ('ATOMIC'), ('AUTO_INCREMENT'),
+('BEFORE'), ('BIGINT'), ('BIGSERIAL'), ('BINARY'), ('BLOB'),
+('CALL'), ('CHAIN'), ('CLOB'), ('COMMITTED'), ('COPY'), ('CORR'), ('CUME_DIST'), ('CURRENT_ROLE'), ('CYCLE'),
+('DATABASE'), ('DELIMITERS'), ('DENSE_RANK'), ('DO'),
+('EACH'), ('ELSEIF'), ('ENCRYPTED'), ('EVERY'), ('EXCLUDE'),
+('FOLLOWING'), ('FUNCTION'),
+('GENERATED'),
+('IF'), ('ILIKE'), ('INCREMENT'),
+('LAG'), ('LEAD'), ('LIMIT'), ('LOCALTIME'), ('LOCALTIMESTAMP'), ('LOCKED'),
+('MAXVALUE'), ('MEDIAN'), ('MEDIUMINT'), ('MERGE'), ('MINVALUE'),
+('NEW'), ('NOCYCLE'), ('NOMAXVALUE'), ('NOMINVALUE'), ('NOW'),
+('OFFSET'), ('OLD'), ('OTHERS'), ('OVER'),
+('PARTITION'), ('PERCENT_RANK'), ('PLAN'), ('PRECEDING'), ('PROD'),
+('QUANTILE'),
+('RANGE'), ('RANK'), ('RECORDS'), ('REFERENCING'), ('REMOTE'), ('RENAME'), ('REPEATABLE'), ('REPLICA'),
+('RESTART'), ('RETURN'), ('RETURNS'), ('ROWS'), ('ROW_NUMBER'),
+('SAMPLE'), ('SAVEPOINT'), ('SCHEMA'), ('SEQUENCE'), ('SERIAL'), ('SERIALIZABLE'), ('SIMPLE'),
+('START'), ('STATEMENT'), ('STDIN'), ('STDOUT'), ('STREAM'), ('STRING'), ('SYMMETRIC'),
+('TIES'), ('TINYINT'), ('TRIGGER'),
+('UNBOUNDED'), ('UNCOMMITTED'), ('UNENCRYPTED'),
+('WHILE'),
+('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'),
+('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');
+
+
+CREATE TABLE sys.table_types (
+    table_type_id   SMALLINT NOT NULL PRIMARY KEY,
+    table_type_name VARCHAR(25) NOT NULL UNIQUE);
+
+INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
+-- values from sys._tables.type:  0=Table, 1=View, 2=Generated, 3=Merge, etc.
+  (0, 'TABLE'), (1, 'VIEW'), /* (2, 'GENERATED'), */ (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'),
+-- synthetically constructed system obj variants (added 10 to sys._tables.type value when sys._tables.system is true).
+  (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'),
+-- synthetically constructed temporary variants (added 20 or 30 to sys._tables.type value depending on values of temporary and commit_action).
+  (20, 'GLOBAL TEMPORARY TABLE'),
+  (30, 'LOCAL TEMPORARY TABLE');
+
+
+CREATE TABLE sys.dependency_types (
+    dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
+    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
+
+INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
+-- values taken from sql_catalog.h
+  (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),
+  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');
+drop view sys.tables;
+create view sys.tables as SELECT * FROM (SELECT p.*, 0 AS "temporary", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;
 drop view sys.storagemodel;
 drop view sys.tablestoragemodel;
 drop view sys.storage;
@@ -118,19 +171,30 @@ create table sys.statistics(
 	minval string,
 	maxval string,
 	sorted boolean);
+drop all procedure sys.analyze;
+create procedure analyze(minmax int, "sample" bigint)
+external name sql.analyze;
+create procedure analyze(minmax int, "sample" bigint,sch string)
+external name sql.analyze;
+create procedure analyze(minmax int, "sample" bigint,sch string, tbl string)
+external name sql.analyze;
+create procedure analyze(minmax int, "sample" bigint,sch string, tbl string, col string)
+external name sql.analyze;
 drop view sys.querylog_history;
 drop view sys.querylog_calls;
 drop function sys.querylog_calls;
-create function sys.querylog_calls()	returns table(	    id oid,
-	    "start" timestamp,
-	    "stop" timestamp,
-	    arguments string,
-	    tuples wrd,
-	    run bigint,
-	    ship bigint,
-	    cpu int,
-	    io int 
-	) external name sql.querylog_calls;
+create function sys.querylog_calls()
+returns table(
+    id oid,
+    "start" timestamp,
+    "stop" timestamp,
+    arguments string,
+    tuples wrd,
+    run bigint,
+    ship bigint,
+    cpu int,
+    io int
+) external name sql.querylog_calls;
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_history as
 select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
@@ -139,25 +203,25 @@ where qd.id = ql.id and qd.owner = user;
 drop view sys.tracelog;
 drop function sys.tracelog;
 create function sys.tracelog()
-	returns table (
-	event integer,      
-	clk varchar(20),    
-	pc varchar(50),     
-	thread int,         
-	ticks bigint,       
-	rrsMB bigint,       
-	vmMB bigint,        
-	reads bigint,       
-	writes bigint,  
-	minflt bigint,  
-	majflt bigint,  
-	nvcsw bigint,  
-	stmt string         
+returns table (
+	event integer,
+	clk varchar(20),
+	pc varchar(50),
+	thread int,
+	ticks bigint,
+	rrsMB bigint,
+	vmMB bigint,
+	reads bigint,
+	writes bigint,
+	minflt bigint,
+	majflt bigint,
+	nvcsw bigint,
+	stmt string
 	) external name sql.dump_trace;
 create view sys.tracelog as select * from sys.tracelog();
-insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 delete from systemfunctions where function_id not in (select id from functions);
-update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_history', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
 drop procedure sys.cluster1;
 drop procedure sys.cluster2;
 set schema "testschema";

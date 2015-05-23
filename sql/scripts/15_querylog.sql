@@ -7,7 +7,7 @@
 -- QUERY HISTORY
 -- The query history mechanism of MonetDB/SQL relies on a few hooks.
 -- The most important one is a global system variable which controls
---  monitoring of all sessions. 
+--  monitoring of all sessions.
 
 create function sys.querylog_catalog()
 returns table(
@@ -17,8 +17,8 @@ returns table(
 	query string,
 	pipe string,
 	"plan" string,		-- Name of MAL plan
-	mal int,			-- size of MAL plan
-	optimize bigint 	-- time in usec
+	mal int,		-- size of MAL plan
+	optimize bigint	-- time in usec
 )
 external name sql.querylog_catalog;
 
@@ -28,8 +28,8 @@ external name sql.querylog_catalog;
 -- in the keepQuery and keepCall upon need.
 -- The parameters are geared at understanding the resource claims
 -- They reflect the effect of the total workload mix during execution.
--- The 'cpu' gives the average cpu load percentage over all cores on the 
--- server during execution phase. 
+-- The 'cpu' gives the average cpu load percentage over all cores on the
+-- server during execution phase.
 -- increasing cpu load indicates better use of multi-cores.
 -- The 'io' indicate IOs during complete query run.
 -- The 'space' is the total amount of intermediates created in MB.
@@ -38,15 +38,15 @@ external name sql.querylog_catalog;
 
 create function sys.querylog_calls()
 returns table(
-	id oid,				 -- references query plan
+	id oid,		 -- references query plan
 	"start" timestamp,	-- time the statement was started
 	"stop" timestamp,	-- time the statement was completely finished
 	arguments string,	-- actual call structure
-	tuples wrd,			-- number of tuples in the result set
+	tuples wrd,		-- number of tuples in the result set
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
-	cpu int,  		-- average cpu load percentage during execution
-	io int			-- percentage time waiting for IO to finish 
+	cpu int,		-- average cpu load percentage during execution
+	io int			-- percentage time waiting for IO to finish
 )
 external name sql.querylog_calls;
 
@@ -54,7 +54,7 @@ external name sql.querylog_calls;
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 

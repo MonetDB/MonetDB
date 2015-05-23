@@ -668,7 +668,7 @@ analyze atacc1("........pg.dropped.1........");
 vacuum analyze atacc1(a);
 vacuum analyze atacc1("........pg.dropped.1........");
 call vacuum('sys', 'atacc1');
-call analyze('sys', 'atacc1');
+call analyze(0, 0, 'sys', 'atacc1');
 
 
 alter table atacc1 alter a set storage plain;

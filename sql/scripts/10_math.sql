@@ -4,11 +4,11 @@
 --
 -- Copyright 2008-2015 MonetDB B.V.
 
-CREATE FUNCTION degrees(r double) 
+CREATE FUNCTION degrees(r double)
 RETURNS double
 	RETURN r*180/pi();
 
-CREATE FUNCTION radians(d double) 
+CREATE FUNCTION radians(d double)
 RETURNS double
 	RETURN d*pi()/180;
 
