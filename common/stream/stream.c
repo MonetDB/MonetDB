@@ -1110,6 +1110,9 @@ open_bzstream(const char *filename, const char *flags)
 				bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 			}
 		}
+	} else if (flags[0] == 'r') {
+		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
+		s->access = ST_READ;
 	} else {
 		bzp->b = BZ2_bzWriteOpen(&err, bzp->f, 9, 0, 30);
 		s->access = ST_WRITE;
