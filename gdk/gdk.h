@@ -858,6 +858,8 @@ typedef struct {
 	char map_hheap;		/* mmap mode for head atom heap */
 	char map_theap;		/* mmap mode for tail atom heap */
 
+	int array; /*the BAT represents an array*/
+
 	/* delta status administration */
 	BUN deleted;		/* start of deleted elements */
 	BUN first;		/* to store next deletion */
@@ -967,6 +969,8 @@ typedef int (*GDKfcn) ();
 #define batMaptail	S->map_tail
 #define batMaphheap	S->map_hheap
 #define batMaptheap	S->map_theap
+
+#define batArray S->array
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in

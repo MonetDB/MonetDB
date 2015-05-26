@@ -479,6 +479,7 @@ fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRe
         BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
         BATseqbase(resBAT,0); \
         BATderiveProps(resBAT,FALSE); \
+		resBAT->batArray=1; \
 		resBAT; \
 	})
 

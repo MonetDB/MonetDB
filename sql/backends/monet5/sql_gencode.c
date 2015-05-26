@@ -1337,14 +1337,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				switch (s->flag) {
 				case cmp_equal:{
 					q = newStmt2(mb, algebraRef, cmd);
-					if(s->op1->type == st_dimension) {						
-						q = pushArgument(mb, q, l);
-					} else {
-						q = pushArgument(mb, q, l);
-						if (sub > 0)
-							q = pushArgument(mb, q, sub);
-					}
-				
+					q = pushArgument(mb, q, l);
+					if (sub > 0)
+						q = pushArgument(mb, q, sub);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, r);
 					q = pushBit(mb, q, TRUE);
@@ -1655,9 +1650,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 				/* projections, ie left is void headed */
 				if(s->op2->type == st_dimension) {
-					if(s->op1->type == st_uselect && s->op1->op1->type == st_bat)
-						q = newStmt1(mb, algebraRef, "non_dimension_leftfetchjoin");
-					else
+//					if(s->op1->type == st_uselect && s->op1->op1->type == st_bat)
+//						q = newStmt1(mb, algebraRef, "non_dimension_leftfetchjoin");
+//					else
 						q = newStmt1(mb, algebraRef, "dimension_leftfetchjoin");
 				} else {
 					if (cmp == cmp_project)

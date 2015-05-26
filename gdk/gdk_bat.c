@@ -247,6 +247,7 @@ BATnewstorage(int ht, int tt, BUN cap, int role)
 
 	BATsetdims(bn);
 	bn->batCapacity = cap;
+	bn->batArray = 0; /*by default is not an aray*/
 
 	/* alloc the main heaps */
 	if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
