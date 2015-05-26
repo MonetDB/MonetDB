@@ -552,7 +552,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			
 			updatedOids = (oid*)Tloc(b, BUNfirst(b));
 			if(updatedOids)
-				neededCells = updatedOids[BATcount(b)-1]; //we do not need to create more than the maximum updated oid
+				neededCells = updatedOids[BATcount(b)-1]+1; //we do not need to create more than the maximum updated oid
 			else {
 				neededCells = b->tseqbase;
 				neededCells+=BATcount(b);

@@ -367,7 +367,6 @@ scanner_init_keywords(void)
 	keywords_insert("URI", URI);
 	keywords_insert("XMLAGG", XMLAGG);
 
-	/*SciQL*/
 	keywords_insert("ARRAY", ARRAY);
 	keywords_insert("DIMENSION", DIMENSION);
 }

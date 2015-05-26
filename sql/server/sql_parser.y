@@ -108,7 +108,7 @@ int yydebug=1;
 	copyfrom_stmt
 	table_def
 	view_def
-/*SciQL*/ array_def
+	array_def
 	query_expression
 	with_query_expression
 	role_def
@@ -161,7 +161,7 @@ int yydebug=1;
 	revoke
 	operation
 	table_content_source
-/*SciQL*/array_content_source
+	array_content_source
 	table_element
 	add_table_element
 	alter_table_element
@@ -259,8 +259,8 @@ int yydebug=1;
 	XML_value_expression
 	XML_primary
 	opt_comma_string_value_expression
-/*SciQL*/ dimension
-/*SciQL*/ range_term	
+	dimension
+	range_term	
 
 %type <type>
 	data_type
@@ -337,7 +337,7 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
-/*SciQL*/ range_exp
+	range_exp
 	as_subquery_clause
 	column_exp_commalist
 	column_option_list
@@ -571,7 +571,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token X_BODY 
 
-/* SciQL tokens */
+/* arrays tokens */
 %token ARRAY DIMENSION
 
 %%
@@ -5716,7 +5716,7 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
-	/*SciQL*/SQL(ARRAY);
+	SQL(ARRAY);
 	SQL(TYPE);
 	SQL(CASE);
 	SQL(CAST);
@@ -5816,8 +5816,8 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
-	/*SciQL*/SQL(DIMENSION);
-	/*SciQL*/SQL(RANGE);
+	SQL(DIMENSION);
+	SQL(RANGE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
