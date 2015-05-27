@@ -213,31 +213,6 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 	return !(c == kc->c);
 }
 
-static int
-join_properties(mvc *sql, sql_rel *rel) 
-{
-	if (rel->exps) {
-		list *join_cols = new_col_list(sql->sa);
-		node *en;
-
-		/* simply using the expressions should also work ! */
-		for ( en = rel->exps->h; en; en = en->next ) {
-			sql_exp *e = en->data;
-
-			if (e->type == e_cmp && e->flag == cmp_equal) {
-				sql_column *lc = exp_find_column(rel, e->l, -2);
-				sql_column *rc = exp_find_column(rel, e->r, -2);
-
-				if (lc && rc) {
-					append(join_cols, lc);
-					append(join_cols, rc);
-				}
-			}
-		}
-	}
-	return 0;
-}
-
 static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
@@ -285,8 +260,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
 		break;
 	case op_join: 
-		join_properties(sql, rel);
-		break;
 	case op_left: 
 	case op_right: 
 	case op_full: 
@@ -6597,16 +6570,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						sql_exp *c = e->l;
 
 						c = rel_find_exp(rel, c);
-						if (l->type == e_atom && !l->l)
-							lval = sql->args[l->flag];
-						else if (l->type == e_atom && l->l)
-							lval = l->l;
+						lval = exp_flatten(sql, l);
 						if (!h)
 							hval = lval;
-						else if (h && h->type == e_atom && !h->l)
-							hval = sql->args[h->flag];
-						else if (h && h->type == e_atom && h->l)
-							hval = h->l;
+						else if (h) 
+							hval = exp_flatten(sql, h);
 						if (c && lval && hval) {
 							append(cols, c);
 							append(low, lval);
