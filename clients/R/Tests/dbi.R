@@ -180,6 +180,12 @@ stopifnot(!dbIsValid(conn))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
 
+# reserved words in data frame column names
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+dbWriteTable(conn, "evilt", data.frame(year=42,month=12, day=24), transaction=F)
+stopifnot(dbExistsTable(conn, "evilt"))
+dbRollback(conn)
 
 
 #test merovingian control code
