@@ -30,3 +30,4 @@ convert-to-bit.Bug-3719
 union_project.Bug-3723
 leftjoin.Bug-3720
 adddrop_unknown_table.Bug-3718
+outerjoin_project.Bug-3725
