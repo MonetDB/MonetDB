@@ -126,12 +126,13 @@ rel_name( sql_rel *r )
 }
 
 sql_rel *
-rel_label( mvc *sql, sql_rel *r)
+rel_label( mvc *sql, sql_rel *r, int all)
 {
 	int nr = ++sql->label;
-	char name[16], *nme;
+	char tname[16], *tnme;
+	char cname[16], *cnme = NULL;
 
-	nme = number2name(name, 16, nr);
+	tnme = number2name(tname, 16, nr);
 	if (!is_project(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		set_processed(r);
@@ -139,16 +140,26 @@ rel_label( mvc *sql, sql_rel *r)
 	if (is_project(r->op) && r->exps) {
 		node *ne = r->exps->h;
 
-		for (; ne; ne = ne->next)
-			exp_setname(sql->sa, ne->data, nme, NULL );
+		for (; ne; ne = ne->next) {
+			if (all) {
+				nr = ++sql->label;
+				cnme = number2name(cname, 16, nr);
+			}
+			exp_setname(sql->sa, ne->data, tnme, cnme );
+		}
 	}
 	/* op_projects can have a order by list */
 	if (r->op == op_project && r->r) {
 		list *exps = r->r;
 		node *ne = exps->h;
 
-		for (; ne; ne = ne->next)
-			exp_setname(sql->sa, ne->data, nme, NULL );
+		for (; ne; ne = ne->next) {
+			if (all) {
+				nr = ++sql->label;
+				cnme = number2name(cname, 16, nr);
+			}
+			exp_setname(sql->sa, ne->data, tnme, cnme );
+		}
 	}
 	return r;
 }
@@ -2846,7 +2857,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				right = rl;
 			}
 			if (right->processed)
-				right = rel_label(sql, right);
+				right = rel_label(sql, right, 0);
 			right = rel_distinct(right);
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
@@ -3293,7 +3304,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			if (!correlated) {
 				if (right->processed)
-					right = rel_label(sql, right);
+					right = rel_label(sql, right, 0);
 				/*
 				right = rel_distinct(right);
 				*/

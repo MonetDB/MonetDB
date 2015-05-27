@@ -7118,7 +7118,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		rel->l = nrel;
 		ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
 
-		rel = rel_label(sql, rel);
+		rel = rel_label(sql, rel, 0);
 
 		/* look up the identity columns and label these */
 		le = rel_bind_column(sql, rel, ident->name, 0);
