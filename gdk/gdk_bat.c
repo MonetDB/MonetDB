@@ -3318,11 +3318,11 @@ BATderiveProps(BAT *b, int expensive)
 		BATderiveHeadProps(BATmirror(b), expensive);
 }
 
-BAT* arrayBATmaterialise(BAT *dimensionBAT) {
+BAT* materialiseDimensionBAT(BAT *dimensionBAT) {
 	if(!isBATarray(dimensionBAT))
 		return dimensionBAT;
 
-	 switch(ATOMtype(ATOMbasetype(dimensionBAT->ttype))) {
+	 switch(ATOMtype(dimensionBAT->ttype)) {
 		case TYPE_bte:
             return materialiseDimensionTPE(bte, dimensionBAT);
         case TYPE_sht:
@@ -3347,8 +3347,42 @@ BAT* arrayBATmaterialise(BAT *dimensionBAT) {
 #endif
         break;
         default:
-            fprintf(stderr, "arrayBATmaterialise: dimension type not handled\n");
+            fprintf(stderr, "materialiseDimensionBAT: dimension type not handled\n");
             return NULL;
 	}
 	return NULL;
+}
+
+BUN dimensionBATsize(BAT *dimensionBAT) {
+	if(!isBATarray(dimensionBAT))
+		return BATcount(dimensionBAT);
+
+	 switch(ATOMtype(dimensionBAT->ttype)) {
+		case TYPE_bte:
+            return dimensionBATsizeTPE(bte, dimensionBAT);
+        case TYPE_sht:
+            return dimensionBATsizeTPE(sht, dimensionBAT);
+        case TYPE_int:
+            return dimensionBATsizeTPE(int, dimensionBAT);
+        case TYPE_flt:
+            return dimensionBATsizeTPE(flt, dimensionBAT);
+        case TYPE_dbl:
+            return dimensionBATsizeTPE(dbl, dimensionBAT);
+        case TYPE_lng:
+            return dimensionBATsizeTPE(lng, dimensionBAT);
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            return dimensionBATsizeTPE(hge, dimensionBAT);
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            return dimensionBATsizeTPE(int, dimensionBAT);
+#else
+            return dimensionBATsizeTPE(lng, dimensionBAT);
+#endif
+        break;
+        default:
+            fprintf(stderr, "dimensionBATsize: dimension type not handled\n");
+	}
+	return 0;
 }
