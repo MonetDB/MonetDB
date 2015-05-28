@@ -19,6 +19,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include <math.h>
 
 #define updateloop(bn, b, func)						\
 	do {								\
@@ -1765,9 +1766,15 @@ BAT *
 BATconst(BAT *b, int tailtype, const void *v, int role)
 {
 	BAT *bn;
+	BUN batSize;
 
 	BATcheck(b, "BATconst", NULL);
-	bn = BATconstant(tailtype, v, BATcount(b), role);
+	if(b->batArray)
+		batSize = dimensionBATsize(b);
+	else		
+		batSize = BATcount(b);
+	bn = BATconstant(tailtype, v, batSize, role);
+
 	if (bn == NULL)
 		return NULL;
 	if (b->H->type != bn->H->type) {

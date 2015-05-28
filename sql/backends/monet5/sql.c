@@ -1812,6 +1812,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 \
         	b->tsorted = 0;              \
         	b->trevsorted = 0;           \
+			b->batArray =1; \
     } while (0)
 
 	atom_cast(dim->min, &dim->type);
@@ -2223,117 +2224,13 @@ mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 str materialiseDimension(bat* res, bat* in) {
 	BAT *dimensionBAT, *resBAT;
-	int tpe;
 
  	if ((dimensionBAT = BATdescriptor(*in)) == NULL) {
 		throw(MAL, "sql.materialise_dimension", RUNTIME_OBJECT_MISSING);
 	}
 
-	tpe = ATOMtype(dimensionBAT->ttype);
-
-#define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
-do {\
-    TPE *vls; \
-    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-    *min = vls[0]; \
-    *step = vls[BATcount(dimensionBAT)-1]; \
-    *max = vls[BATcount(dimensionBAT)-2]; \
-\
-    *elementRepeats = *groupRepeats = 0; \
-    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-\
-    for(i=0; i<BATcount(dimensionBAT)-2; i++) { /*last element is the step and at least one element is max*/\
-        if(vls[i] != *min) \
-            break; \
-        (*elementRepeats)++; \
-    } \
-    *groupRepeats = BATcount(dimensionBAT)-i-1; \
-} while(0)
-
-#define dimensionElementsNum(min, max, step)\
-	({\
-		long num =1; \
-		if(!step) { \
-			if(min!=max) { \
-				GDKerror("dimensionElementsNum: step is 0 but min and max are not equal\n"); \
-				return NULL; \
-			} \
-		} else \
-        	num = floor((max-min)/step) + 1; \
-		num; \
-	})
-
-#define materialise(TPE) \
-    do { \
-        /*find the min, max, step in the dimension*/ \
-        long elementRepeats, groupRepeats, elementsNum; \
-        TPE min, max, step; \
-        oid i, j; \
-        TPE *el_out, el; \
-\
-		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); \
-		elementsNum = dimensionElementsNum(min, max, step); \
-fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
-if(!step) \
-	step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
-\
-		if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
-        	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT"); \
-\
-		el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-		for(j=0; j<(unsigned long)groupRepeats; j++) { \
-fprintf(stderr, "materialise: group repetition %ld\n", j); \
-			for(el=min; el<=max; el+=step) { \
-				for(i=0; i<(unsigned long)elementRepeats; i++) { \
-fprintf(stderr, "materialise: element repetition %ld\n", i); \
-					*el_out = el; \
-					el_out++; \
-				} \
-			} \
-		} \
-\
-        BATseqbase(resBAT,0); \
-        BATsetcount(resBAT, elementRepeats*elementsNum*groupRepeats);                  \
-		BATderiveProps(resBAT,FALSE); \
-    } while(0)
-
 	if(BATcount(dimensionBAT)) {
-	    switch (tpe) {
-    	case TYPE_bte:
-        	materialise(bte);
-	        break;
-    	case TYPE_sht:
-        	materialise(sht);
-	        break;
-    	case TYPE_int:
-        	materialise(int);
-	        break;
-    	case TYPE_flt:
-        	materialise(flt);
-	        break;
-    	case TYPE_dbl:
-        	materialise(dbl);
-	        break;
-    	case TYPE_lng:
-        	materialise(lng);
-	        break;
-#ifdef HAVE_HGE
-    	case TYPE_hge:
-        	materialise(hge);
-	        break;
-#endif
-    	case TYPE_oid:
-#if SIZEOF_OID == SIZEOF_INT
-        	materialise(int);
-#else
-	        materialise(lng);
-#endif
-    	    break;
-	    default:
-    	    fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
-        	return NULL;
-		}
+			resBAT=materialiseDimensionBAT(dimensionBAT);
 	} else {
 		if((resBAT = BATnew(TYPE_void, dimensionBAT->ttype, 0, TRANSIENT)) == NULL)
         	throw(MAL, "sql.materialise_dimension", "Unable to create output BAT");

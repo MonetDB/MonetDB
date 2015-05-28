@@ -42,6 +42,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include <math.h>
 
 #ifdef ALIGN
 #undef ALIGN
@@ -1691,6 +1692,69 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	return res;
 }
 
+
+static BUN
+dimension_void_replace_bat(BAT *b, BAT *p, BAT *dimensionBAT, bit force)
+{
+	BUN nr = 0;
+	BUN r, s;
+	BATiter uii = bat_iterator(p);
+
+#define replace(TPE) \
+	do {\
+		TPE dimMin, dimMax, dimStep; \
+		long dimGroupRepeats, dimElementRepeats; \
+		dimensionCharacteristics(TPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
+\
+fprintf(stderr, "%d-%d-%d, %ld, %ld\n", (int)dimMin, (int)dimStep, (int)dimMax, dimElementRepeats, dimGroupRepeats); \
+		BATloop(p, r, s) { \
+			oid updid = *(oid *) BUNtail(uii, r); \
+			TPE val = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, r); \
+\
+			if (void_inplace(b, updid, &val, force) == GDK_FAIL) \
+				return BUN_NONE; \
+			nr++; \
+		} \
+	} while(0)
+
+	switch (ATOMtype(ATOMbasetype(dimensionBAT->ttype))) {
+        case TYPE_bte:
+            replace(bte);
+            break;
+        case TYPE_sht:
+            replace(sht);
+            break;
+        case TYPE_int:
+            replace(int);
+            break;
+        case TYPE_flt:
+            replace(flt);
+            break;
+        case TYPE_dbl:
+            replace(dbl);
+            break;
+        case TYPE_lng:
+            replace(lng);
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            replace(hge);
+            break;
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            replace(int);
+#else
+            replace(lng);
+#endif
+        break;
+        default:
+            fprintf(stderr, "dimension_void_replace_bat: dimension type not handled\n");
+            return BUN_NONE;
+    }	
+	return nr;
+}
+
 BUN
 void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 {
@@ -1698,6 +1762,9 @@ void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 	BUN r, s;
 	BATiter uii = bat_iterator(p);
 	BATiter uvi = bat_iterator(u);
+
+	if(isBATarray(u))
+		return dimension_void_replace_bat(b, p, u, force);
 
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNtail(uii, r);
@@ -1709,7 +1776,6 @@ void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 	}
 	return nr;
 }
-
 /*
  * @- BUN Lookup
  * Location of a BUN using a value should use the available indexes to
@@ -3250,4 +3316,39 @@ BATderiveProps(BAT *b, int expensive)
 	BATderiveHeadProps(b, expensive);
 	if (b->H != b->T)
 		BATderiveHeadProps(BATmirror(b), expensive);
+}
+
+BAT* arrayBATmaterialise(BAT *dimensionBAT) {
+	if(!isBATarray(dimensionBAT))
+		return dimensionBAT;
+
+	 switch(ATOMtype(ATOMbasetype(dimensionBAT->ttype))) {
+		case TYPE_bte:
+            return materialiseDimensionTPE(bte, dimensionBAT);
+        case TYPE_sht:
+            return materialiseDimensionTPE(sht, dimensionBAT);
+        case TYPE_int:
+            return materialiseDimensionTPE(int, dimensionBAT);
+        case TYPE_flt:
+            return materialiseDimensionTPE(flt, dimensionBAT);
+        case TYPE_dbl:
+            return materialiseDimensionTPE(dbl, dimensionBAT);
+        case TYPE_lng:
+            return materialiseDimensionTPE(lng, dimensionBAT);
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            return materialiseDimensionTPE(hge, dimensionBAT);
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            return materialiseDimensionTPE(int, dimensionBAT);
+#else
+            return materialiseDimensionTPE(lng, dimensionBAT);
+#endif
+        break;
+        default:
+            fprintf(stderr, "arrayBATmaterialise: dimension type not handled\n");
+            return NULL;
+	}
+	return NULL;
 }

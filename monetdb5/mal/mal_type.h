@@ -38,6 +38,7 @@
 #define getColumnIndex(X)  (((X)>>18) & 017)
 
 #define isPolyType(X) (isAnyExpression(X) && (getHeadIndex(X)>0 ||getColumnIndex(X)>0))
+
 /*
  * The symbol/instruction kinds are introduced here instead of reusing the defines
  * derived from the parser to avoid a loop in the define-structure.

@@ -971,6 +971,261 @@ typedef int (*GDKfcn) ();
 #define batMaptheap	S->map_theap
 
 #define batArray S->array
+#define BATsetArray(X, n) X->batArray=n
+#define isBATarray(X) X->batArray>0
+
+/*Dimensional Columns*/
+#define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
+do {\
+    TPE *vls; \
+    BUN i; \
+    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+    *min = vls[0]; \
+    *step = vls[BATcount(dimensionBAT)-1]; \
+    *max = vls[BATcount(dimensionBAT)-2]; \
+\
+    *elementRepeats = *groupRepeats = 0; \
+    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+\
+    for(i=0; i<BATcount(dimensionBAT)-2; i++) { /*last element is the step and at least one element is max*/\
+        if(vls[i] != *min) \
+            break; \
+        (*elementRepeats)++; \
+    } \
+    *groupRepeats = BATcount(dimensionBAT)-i-1; \
+} while(0)
+
+#define dimensionElement(min, max, step, elementRepeats, oid) \
+    ({ \
+        long elementsNum = floor((max-min)/step) + 1; \
+        long elementsPerGroup = elementsNum*elementRepeats; \
+        long elementInGroup = floor((oid%elementsPerGroup)/elementRepeats); \
+/*fprintf(stderr, "dimension element at %d is %d\n", (int)oid, (int)(min+elementInGroup*step)); */\
+        min+elementInGroup*step; \
+    })
+
+#define createDimension(TPE, min, max, step, elementRepeats, groupRepeats) \
+    ({ \
+        long i; \
+        TPE* vls; \
+        BAT *resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats+groupRepeats+1, TRANSIENT); \
+        if(!resBAT) \
+            return NULL; \
+\
+fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRepeats+1)); \
+        vls = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+        for(i=0; i<elementRepeats; i++) { \
+            *vls = min; \
+            vls++; \
+        } \
+        for(i=0; i<groupRepeats; i++) { \
+            *vls = max; \
+            vls++; \
+        } \
+        *vls = step; \
+\
+        BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
+        BATseqbase(resBAT,0); \
+        BATderiveProps(resBAT,FALSE); \
+        resBAT->batArray=1; \
+        resBAT; \
+    })
+
+#define dimensionElementsNum(min, max, step)\
+    ({\
+        long num = 1; \
+        if(!step) { \
+            if(min!=max) { \
+                GDKerror("dimensionElementsNum: step is 0 but min and max are not equal\n"); \
+                return NULL; \
+            } \
+        } else \
+            num = floor((max-min)/step) + 1; \
+        num; \
+    })
+
+#define dimensionBATsizeTPE(TPE, dimensionBAT) \
+    ({\
+        TPE min, max, step; \
+        long elementRepeats, groupRepeats; \
+        BUN elementsNum; \
+        dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+        elementsNum = dimensionElementsNum(min, max, step); \
+        elementsNum*elementRepeats*groupRepeats; \
+    })
+
+#ifdef HAVE_HGE 
+#define dimensionBATsize(dimensionBAT) \
+    ({\
+        BUN sz = 0; \
+        switch(ATOMtype(dimensionBAT->ttype)) {\
+        case TYPE_bte: \
+            sz = dimensionBATsizeTPE(bte, dimensionBAT); \
+            break; \
+        case TYPE_sht: \
+            sz = dimensionBATsizeTPE(sht, dimensionBAT); \
+            break; \
+        case TYPE_int: \
+            sz = dimensionBATsizeTPE(int, dimensionBAT); \
+            break; \
+        case TYPE_lng: \
+            sz = dimensionBATsizeTPE(lng, dimensionBAT); \
+            break; \
+        case TYPE_hge: \
+            sz = dimensionBATsizeTPE(hge, dimensionBAT); \
+            break; \
+        case TYPE_flt: \
+            sz = dimensionBATsizeTPE(flt, dimensionBAT); \
+            break; \
+        case TYPE_dbl: \
+            sz = dimensionBATsizeTPE(dbl, dimensionBAT); \
+            break; \
+        case TYPE_oid: \
+            sz = dimensionBATsizeTPE(oid, dimensionBAT); \
+            break; \
+        default: \
+            fprintf(stderr, "dimensionBATsize: dimension type not handled\n"); \
+        } \
+        sz; \
+    })
+#else
+#define dimensionBATsize(dimensionBAT) \
+    ({\
+        BUN sz = 0; \
+        switch(ATOMtype(dimensionBAT->ttype)) {\
+        case TYPE_bte: \
+            sz = dimensionBATsizeTPE(bte, dimensionBAT); \
+            break; \
+        case TYPE_sht: \
+            sz = dimensionBATsizeTPE(sht, dimensionBAT); \
+            break; \
+        case TYPE_int: \
+            sz = dimensionBATsizeTPE(int, dimensionBAT); \
+            break; \
+        case TYPE_lng: \
+            sz = dimensionBATsizeTPE(lng, dimensionBAT); \
+            break; \
+        case TYPE_flt: \
+            sz = dimensionBATsizeTPE(flt, dimensionBAT); \
+            break; \
+        case TYPE_dbl: \
+            sz = dimensionBATsizeTPE(dbl, dimensionBAT); \
+            break; \
+        case TYPE_oid: \
+            sz = dimensionBATsizeTPE(oid, dimensionBAT); \
+            break; \
+        default: \
+            fprintf(stderr, "dimensionBATsize: dimension type not handled\n"); \
+        } \
+        sz; \
+    })
+#endif
+
+#define materialiseDimensionTPE(TPE, dimensionBAT) \
+    ({ \
+        /*find the min, max, step in the dimension*/ \
+        long elementRepeats, groupRepeats, elementsNum; \
+        TPE min, max, step; \
+        oid i, j; \
+        TPE *el_out, el; \
+        BAT *resBAT; \
+\
+        dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); \
+        elementsNum = dimensionElementsNum(min, max, step); \
+fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
+        if(!step) \
+            step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
+\
+        if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
+            GDKerror("materialiseDimensionTPE: Unable to create output BAT"); \
+\
+        el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+        for(j=0; j<(unsigned long)groupRepeats; j++) { \
+fprintf(stderr, "materialise: group repetition %ld\n", j); \
+            for(el=min; el<=max; el+=step) { \
+                for(i=0; i<(unsigned long)elementRepeats; i++) { \
+fprintf(stderr, "materialise: element repetition %ld\n", i); \
+                    *el_out = el; \
+                    el_out++; \
+                } \
+            } \
+        } \
+\
+        BATseqbase(resBAT,0); \
+        BATsetcount(resBAT, elementRepeats*elementsNum*groupRepeats);                  \
+        BATderiveProps(resBAT,FALSE); \
+        resBAT; \
+    })
+
+#ifdef HAVE_HGE 
+#define materialiseDimensionBAT(dimensionBAT) \
+    ({\
+        BAT* resBAT = NULL; \
+        switch(ATOMtype(dimensionBAT->ttype)) {\
+        case TYPE_bte: \
+            materialiseDimensionTPE(bte, dimensionBAT); \
+        case TYPE_sht: \
+            resBAT = materialiseDimensionTPE(sht, dimensionBAT); \
+            break; \
+        case TYPE_int: \
+            resBAT = materialiseDimensionTPE(int, dimensionBAT); \
+            break; \
+        case TYPE_lng: \
+            resBAT = materialiseDimensionTPE(lng, dimensionBAT); \
+            break; \
+        case TYPE_hge: \
+            resBAT = materialiseDimensionTPE(hge, dimensionBAT); \
+            break; \
+        case TYPE_flt: \
+            resBAT = materialiseDimensionTPE(flt, dimensionBAT); \
+            break; \
+        case TYPE_dbl: \
+            resBAT = materialiseDimensionTPE(dbl, dimensionBAT); \
+            break; \
+        case TYPE_oid: \
+            resBAT = materialiseDimensionTPE(oid, dimensionBAT); \
+            break; \
+        default: \
+            fprintf(stderr, "materialiseDimension: dimension type not handled\n"); \
+        } \
+        resBAT; \
+    })
+#else
+#define materialiseDimension(dimensionBAT) \
+    ({\
+        BAT* resBAT = NULL; \
+        switch(ATOMtype(dimensionBAT->ttype)) {\
+        case TYPE_bte: \
+            resBAT = materialiseDimensionTPE(bte, dimensionBAT); \
+            break; \
+        case TYPE_sht: \
+            resBAT = materialiseDimensionTPE(sht, dimensionBAT); \
+            break; \
+        case TYPE_int: \
+            resBAT = materialiseDimensionTPE(int, dimensionBAT); \
+            break; \
+        case TYPE_lng: \
+            resBAT = materialiseDimensionTPE(lng, dimensionBAT); \
+            break; \
+        case TYPE_flt: \
+            resBAT = materialiseDimensionTPE(flt, dimensionBAT); \
+            break; \
+        case TYPE_dbl: \
+            resBAT = materialiseDimensionTPE(dbl, dimensionBAT); \
+            break; \
+        case TYPE_oid: \
+            resBAT = materialiseDimensionTPE(oid, dimensionBAT); \
+            break; \
+        default: \
+            fprintf(stderr, "materialiseDimension: dimension type not handled\n"); \
+        } \
+        resBAT; \
+    })
+#endif
+
+
+
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in
@@ -3261,6 +3516,7 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
 
+gdk_export BAT* arrayBATmaterialise(BAT *dimensionBAT);
 /*
  *
  */
@@ -3480,3 +3736,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 #endif
 
 #endif /* _GDK_H_ */
+
+
+

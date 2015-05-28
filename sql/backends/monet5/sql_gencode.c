@@ -1324,15 +1324,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					s->nr = getDestVar(q);
 					break;
 				}
-				//if dimension call the versions for the dimensions
-				if(s->op1->type == st_dimension) {
-					char *dimStr = "dimension_";
-					char *dimension_cmd = GDKmalloc(strlen(cmd)+strlen(dimStr)+1);
-					
-					strcpy(dimension_cmd, dimStr);
-					strcat(dimension_cmd, cmd);
-					cmd = dimension_cmd;
-				}
 
 				switch (s->flag) {
 				case cmp_equal:{
@@ -1649,17 +1640,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				if(s->op2->type == st_dimension) {
-//					if(s->op1->type == st_uselect && s->op1->op1->type == st_bat)
-//						q = newStmt1(mb, algebraRef, "non_dimension_leftfetchjoin");
-//					else
-						q = newStmt1(mb, algebraRef, "dimension_leftfetchjoin");
-				} else {
-					if (cmp == cmp_project)
-						q = newStmt1(mb, algebraRef, "leftfetchjoin");
-					else
-						q = newStmt2(mb, algebraRef, leftjoinRef);
-				}
+				if (cmp == cmp_project)
+					q = newStmt1(mb, algebraRef, "leftfetchjoin");
+				else
+					q = newStmt2(mb, algebraRef, leftjoinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)

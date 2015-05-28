@@ -3237,6 +3237,9 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
+	if(isBATarray(r))
+		return BATdimensionProject(l, r);
+
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + BATcount(l);
@@ -3410,6 +3413,7 @@ BATproject(BAT *l, BAT *r)
 	BBPreclaim(bn);
 	return NULL;
 }
+
 BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	BAT *resBAT;
 	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
@@ -3421,26 +3425,25 @@ BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 #define dimensionise(TYPE) \
 	do { \
 		long flg=0, cnt=0, elementsInGroup=-1, r=0; \
-		oid *oids; \
-		BUN i=0, j=0, groupStart; \
 		TYPE dimMin, dimMax, dimStep; \
 		TYPE resMin, resMax, resStep; \
 		long dimGroupRepeats, dimElementRepeats; \
 		long resGroupRepeats, resElementRepeats; \
 		bool foundMax =0; \
 		TYPE el_cur, el_prev; \
+		BATiter oidsIter = bat_iterator(oidsBAT); \
+		BUN p, q, j, groupStart; \
 \
 		dimensionCharacteristics(TYPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
 		/*min, step, max implied by oids*/ \
-		oids = (oid*)Tloc(oidsBAT, BUNfirst(oidsBAT)); \
-		resMin = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[0]); \
-		resMax = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[BATcount(oidsBAT)-1]); \
+		resMin = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, BUNfirst(oidsBAT))); \
+		resMax = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, BUNlast(oidsBAT)-1)); \
 \
 		/*min and max should appear the same number of times*/ \
 		resGroupRepeats = 1; /*there is at least one group*/ \
 		cnt = 0; \
-		for(i=0; i<BATcount(oidsBAT); i++) { \
-			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]); \
+		BATloop(oidsBAT, p, q) { \
+			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, p)); \
 			cnt++; \
 			if(el_cur == resMin) { \
 				flg++; \
@@ -3480,19 +3483,19 @@ fprintf(stderr, "dimensionise: groupRepeats = %ld, elementsInGroup = %ld\n", res
 		/*check that the step is the same between the elements and each element is repeated the same number of times*/ \
 		resElementRepeats = -1; \
 		foundMax = 0; \
-		for(i=0; i<BATcount(oidsBAT); i++) { \
-			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMax) \
+		BATloop(oidsBAT, p, q) { \
+			if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, p)) == resMax) \
 				foundMax = 1; \
-			else if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[i]) == resMin && foundMax) {\
+			else if(dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, p)) == resMin && foundMax) {\
 				/*if there is only one element then it will never enter this block, element will be equal to max*/ \
 				/*iterate over the elements in the group*/ \
 				foundMax =0 ; \
 				r=0; \
-				groupStart = i-elementsInGroup; \
-				el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[groupStart]); \
-fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
-				for(j=groupStart; j<i; j++) { \
-					el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[j]); \
+				groupStart = p-elementsInGroup; \
+				el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, groupStart)); \
+fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, p-1); \
+				for(j=groupStart; j<p; j++) { \
+					el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, j)); \
 /*fprintf(stderr, "dimensionise: In group element %ld\n", j); */\
 					if(el_prev == el_cur)  {\
 						r++; \
@@ -3527,11 +3530,11 @@ fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
 		} \
 		/*check the last group*/ \
 		r=0; \
-		groupStart = i-elementsInGroup; \
-		el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[groupStart]); \
-fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, i-1); \
-		for(j=groupStart; j<i; j++) { \
-			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, oids[j]); \
+		groupStart = p-elementsInGroup; \
+		el_prev = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, groupStart)); \
+fprintf(stderr, "dimensionise: Group:[%ld, %ld]\n", groupStart, p-1); \
+		for(j=groupStart; j<p; j++) { \
+			el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, j)); \
 /*fprintf(stderr, "dimensionise: In group element %ld\n", j); */\
 			if(el_prev == el_cur)  {\
 				r++; \

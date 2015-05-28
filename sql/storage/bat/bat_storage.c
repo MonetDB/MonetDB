@@ -212,6 +212,11 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+
+	//materialise the dimension
+	if(isBATarray(updates))
+		updates = arrayBATmaterialise(updates);
+
 	if (!is_new && bat->uibid && bat->uvbid) {
 		BAT *ib = temp_descriptor(bat->ibid), *otids = tids;
 
@@ -221,7 +226,10 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			o = BATthetasubselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
+			if(BATcount(nui) != BATcount(nuv)) {
+				GDKerror("delta_update_bat: nuv and nui do not have the same number of elements");
+				return;
+			}
 			bat_destroy(o);
 			void_replace_bat(ib, nui, nuv, TRUE);
 			bat_destroy(nui);
@@ -241,13 +249,13 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		ui = temp_descriptor(bat->uibid);
 		uv = temp_descriptor(bat->uvbid);
 		assert(ui && uv);
-		if (isEbat(ui)){
+		if (isEbat(ui)){ //check if the BAT with the updates is empty
 			temp_destroy(bat->uibid);
 			bat->uibid = temp_copy(ui->batCacheid, FALSE);
 			bat_destroy(ui);
 			ui = temp_descriptor(bat->uibid);
 		}
-		if (isEbat(uv)){
+		if (isEbat(uv)){ //check if the BAT with the updates is empty
 			temp_destroy(bat->uvbid);
 			bat->uvbid = temp_copy(uv->batCacheid, FALSE);
 			bat_destroy(uv);
@@ -255,7 +263,10 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		}
 		BATappend(ui, tids, TRUE);
 		BATappend(uv, updates, TRUE);
-		assert(BATcount(tids) == BATcount(updates));
+		if(BATcount(tids) != BATcount(updates)) {
+				GDKerror("delta_update_bat: tids and updates do not have the same number of elements");
+				return;
+		}
 		bat_destroy(ui);
 		bat_destroy(uv);
 		if (tids != otids) {
@@ -273,7 +284,10 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			o = BATthetasubselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
+			if(BATcount(nui) != BATcount(nuv)) {
+				GDKerror("delta_update_bat: nuv and nui do not have the same number of elements");
+				return;
+			}
 			bat_destroy(o);
 			void_replace_bat(ib, nui, nuv, TRUE);
 			bat_destroy(nui);
@@ -537,7 +551,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
 		c->base.allocated = 1;
 	}
-       	bat = c->data;
+    bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	
@@ -545,27 +559,15 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		if(isArray(c->t)) {
 			//In arrays the updated column might not have values
 			//In this case we need to create the values
-			oid neededCells = 0;
-			oid existingCells;
-			oid* updatedOids;
-			BAT *b_in;
-			
-			updatedOids = (oid*)Tloc(b, BUNfirst(b));
-			if(updatedOids)
-				neededCells = updatedOids[BATcount(b)-1]+1; //we do not need to create more than the maximum updated oid
-			else {
-				neededCells = b->tseqbase;
-				neededCells+=BATcount(b);
-			}
-			b_in = temp_descriptor(bat->ibid); //the BAT of the updated column
-
-			existingCells = BATcount(b_in) + bat->cnt;
+			BATiter oidsIter = bat_iterator(b);
+			BUN neededCells = *(oid*)BUNtail(oidsIter, BUNlast(b)-1)+1;
+			BAT *b_in = temp_descriptor(bat->ibid); //the BAT of the updated column
+			BUN existingCells = BATcount(b_in) + bat->cnt;
 			if(existingCells < neededCells) {
 				BAT *extra = materialise_nonDimensional_column(c, neededCells-existingCells, c->def);
 				delta_append_bat(bat, extra); //append the values to the column
 			}
 		}
-
 		delta_update_bat(bat, tids, upd, isNew(c));
 	} else 
 		delta_update_val(bat, *(oid*)tids, upd);

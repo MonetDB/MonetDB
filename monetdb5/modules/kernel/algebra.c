@@ -356,6 +356,7 @@ ALGsubselect1(bat *res_in, const bat *in_id, const void *low, const void *high, 
 	return ALGsubselect2(res_in, in_id, NULL, low, high, li, hi, anti);
 }
 
+#if 0
 str
 ALGdimensionSubselect2(bat *res_id, const bat *in_id, const bat *cand_id, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	BAT *inBAT, *resBAT, *candBAT=NULL;
@@ -394,6 +395,7 @@ str
 ALGdimensionSubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	return ALGdimensionSubselect2(result, bid, NULL, low, high, li, hi, anti);
 }
+#endif
 
 str
 ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
@@ -426,6 +428,7 @@ ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op
 	return ALGthetasubselect2(result, bid, NULL, val, op);
 }
 
+#if 0
 str
 ALGdimensionThetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
 {
@@ -456,6 +459,7 @@ ALGdimensionThetasubselect1(bat *result, const bat *bid, const void *val, const 
 {
 	return ALGdimensionThetasubselect2(result, bid, NULL, val, op);
 }
+#endif
 
 str
 ALGselect1(bat *result, const bat *bid, ptr value)

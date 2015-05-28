@@ -331,6 +331,8 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
+		if(isBATarray(b))
+			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
@@ -341,6 +343,8 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 					BBPunfix(s->batCacheid);
 				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 			}
+			if(isBATarray(b2))
+				b2 = materialiseDimensionBAT(b2);
 			assert(BAThdense(b2));
 		}
 		if (b2) {
@@ -361,6 +365,8 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
+		if(isBATarray(b))
+			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s,
 						 (*typefunc)(tp1, b->T->type), abort_on_error);
