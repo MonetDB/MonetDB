@@ -202,9 +202,9 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 				}
 				break;
 			}
-        case 1:
-            b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-            break;
+		case 1:
+			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
+			break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
 			ALGODEBUG{
