@@ -320,6 +320,9 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* be optimistic, inherit the properties  */
 		BATseqbase(b,0);
 		BATsettrivprop(b);
+
+		for( --top; top>=0; top--)
+			BBPunfix(joins[top]->batCacheid);
 	} else if (getFunctionId(pci) == leftjoinPathRef) {
 		b = ALGjoinPathBody(cntxt,top,joins, 0); 
 	} else {
