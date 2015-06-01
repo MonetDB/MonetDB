@@ -1292,6 +1292,7 @@ exp2bin_args( mvc *sql, sql_exp *e, list *args)
 	switch(e->type){
 	case e_column:
 	case e_psm:
+	case e_dimension:
 		return args;
 	case e_cmp:
 		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
@@ -1308,6 +1309,7 @@ exp2bin_args( mvc *sql, sql_exp *e, list *args)
 		}
 		return args;
 	case e_convert:
+	case e_mbr:
 		if (e->l)
 			return exp2bin_args(sql, e->l, args);
 		break;

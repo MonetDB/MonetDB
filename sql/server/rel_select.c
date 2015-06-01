@@ -5399,9 +5399,6 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 								}
 							}
 //						}
-					} else {
-						fprintf(stderr, "Unrecognised exp->type\n");
-						return NULL;
 					}
 					if(newFilters->cnt)
 						break;
