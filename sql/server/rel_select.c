@@ -2782,9 +2782,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					rel_project_add_exp(sql, l, ls);
 				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
-					if (!l->exps || list_empty(l->exps)) /* add all expressions to the project */
-						l->exps = rel_projections(sql, l->l, NULL, 0, 1);
-					rel_project_add_exp(sql, l, ls);
+					if (!l->processed) { /* add all expressions to the project */
+						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
+						set_processed(l);
+					}
+					if (!rel_find_exp(l, ls))
+						rel_project_add_exp(sql, l, ls);
 				}
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
