@@ -58,6 +58,7 @@ static stmt* find_e_column_uselect(sql_allocator *sa, stmt *joins, stmt *col )
 	switch(joins->type) {
 		case st_mbrselect:
 			return find_e_column_uselect(sa, joins->op3, col);
+		case st_tunion:
 		case st_uselect:
 			//only the cells that qualify for the uselect shoudl have values
 //			if(joins->op1->type == st_bat) {

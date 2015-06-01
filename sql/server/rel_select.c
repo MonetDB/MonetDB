@@ -5331,6 +5331,14 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+static bool isColumn(sql_exp* exp) {
+	if(exp->type == e_cmp && ((sql_exp*)exp->l)->type == e_column)
+		return true;
+	if(exp->f)
+		return isColumn(exp->f);
+	return false;
+}
+
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 {
@@ -5362,9 +5370,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				list *newFilters = new_exp_list(sql->sa);
 				for(whereExpNode=r->exps->h; whereExpNode; whereExpNode=whereExpNode->next) {
 					sql_exp *whereExp = whereExpNode->data;
-					if(whereExp->type == e_cmp) {
-						sql_exp *innerExp = whereExp->l;
-						if(innerExp->type == e_column) {
+					if(isColumn(whereExp)) {
+//						sql_exp *innerExp = whereExp->l;
+//						if(innerExp->type == e_column) {
 							if(!newFilters->cnt) {
 								//found a filter on a non-dimensinal column	
 								/*Assuming a single array add all dimensions of it to the filtering condition*/
@@ -5376,7 +5384,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 									}
 								}
 							}
-						}
+//						}
 					} else {
 						fprintf(stderr, "Unrecognised exp->type\n");
 						return NULL;

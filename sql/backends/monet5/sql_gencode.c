@@ -755,7 +755,7 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 static int find_uselect(stmt *s){
 	if(!s)
 		return -1;
-	if(s->type == st_uselect)
+	if(s->type == st_uselect || s->type == st_tunion)
 		return s->nr;
 	return find_uselect(s->op3);
 }
@@ -1217,7 +1217,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt2(mb, "algebra", "mbrsubselect");
 			q = pushArgument(mb, q, l);
-			if(s->op3->type == st_uselect)
+			if(s->op3->type == st_uselect || s->op3->type == st_tunion)
 				q = pushArgument(mb, q, sub);
 			else {
 				int cand = find_uselect(s->op3);
