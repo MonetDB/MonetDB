@@ -22,7 +22,8 @@ typedef enum expression_type {
 	e_aggr,
 	e_convert,
 	e_psm,
-	e_dimension
+	e_dimension,
+	e_mbr
 } expression_type;
 
 #define CARD_ATOM 1

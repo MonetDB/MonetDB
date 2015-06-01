@@ -350,6 +350,31 @@ list_match(list *l1, list *l2, fcmp cmp)
 	return 0;
 }
 
+list *list_mbrpush(list *l, int* pos, int pos_sz) {
+	list *res = list_new_(l);
+	node *n = NULL;
+	int i, j, cnt = list_length(l);
+
+	//first put it the list whatever is not in pos
+	for(n=l->h, i=0, j=0; j<pos_sz; j++, n=n->next, i++) {
+		for(; i<pos[j]; n=n->next, i++){
+			list_append(res, n->data);
+		}
+	}
+	for(; i<cnt; n=n->next, i++){
+		list_append(res, n->data);
+	}
+	//finally add those that are in pos
+	for(n=l->h, i=0, j=0; j<pos_sz && i<cnt; n=n->next, i++){
+		if(i == pos[j]) {
+			list_append(res, n->data);
+			j++;
+		}
+	}
+
+	return res;
+}
+
 list *
 list_keysort(list *l, int *keys, fdup dup)
 {

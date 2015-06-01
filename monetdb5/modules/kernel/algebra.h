@@ -124,4 +124,9 @@ algebra_export str ALGfind(oid *ret, const bat *bid, ptr val);
 algebra_export str ALGselectNotNil(bat *result, const bat *bid);
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 algebra_export str ALGreuse(bat *ret, const bat *bid);
+
+algebra_export str ALGmbrsubselect(bat *result, const bat *bid, const bat *sid, const bat *cid);
+algebra_export str ALGmbrsubselect2(bat *result, const bat *bid, const bat *sid);
+algebra_export str ALGmbrproject(bat *result, const bat *bid, const bat *sid, const bat *rid);
+
 #endif

@@ -1153,6 +1153,8 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom:
 	case e_psm:
 		return e;
+	case e_mbr:
+		return exp_rename(sql, e->l, f, t);
 	}
 	if (ne && e->p)
 		ne->p = prop_copy(sql->sa, e->p);
@@ -1280,6 +1282,9 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom:
 	case e_psm:
 		return e;
+	case e_mbr:
+		return _exp_push_down(sql, e->l, f, t);
+
 	}
 	return NULL;
 }
@@ -1993,6 +1998,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_atom:
 	case e_psm:
 		return e;
+	case e_mbr:
+		return exp_push_down_prj(sql, e->l, f, t);
 	}
 	return NULL;
 }
@@ -2096,6 +2103,7 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 	case e_psm:
 		assert(0);
 	case e_atom:
+	case e_mbr:
 		return 0;
 	case e_column: 
 	case e_dimension:
@@ -4563,6 +4571,8 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 	case e_psm:
 	case e_dimension:
 		return e;
+	case e_mbr:
+		return split_aggr_and_project(sql, aexps, e->l);
 	}
 	return NULL;
 }
@@ -4659,7 +4669,8 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	case e_psm:
 		return e;
 	case e_dimension:
-		fprintf(stderr, "exp_use_consts with e_dimension");
+	case e_mbr:
+		fprintf(stderr, "exp_use_consts with e_dimension OR e_mbr");
 		return e;
 	}
 	return NULL;
@@ -5037,6 +5048,8 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 	case e_psm:
 		e->used = 1;
 		break;
+	case e_mbr:
+		return exp_mark_used(subrel, e->l);
 	}
 	if (ne) {
 		ne->used = 1;
@@ -5706,6 +5719,24 @@ score_se( mvc *sql, sql_rel *rel, sql_exp *e)
 	return score;
 }
 
+static list *mbrpush(list *l) {
+	list *res ;
+	node *n = NULL;
+    int i, j, *pos, cnt = list_length(l);
+
+    pos = (int*)malloc(cnt*sizeof(int));
+    for (n = l->h, i = 0, j=0; n; n = n->next, i++) {
+        sql_exp *exp = n->data;
+        if(exp->type == e_mbr) {
+            pos[j] = i;
+            j++;
+        }
+    }
+    res = list_mbrpush(l, pos, j);
+	free(pos);
+	return res;
+}
+
 static sql_rel *
 rel_select_order(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -5718,6 +5749,9 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) 
 			scores[i] = score_se(sql, rel, n->data);
 		rel->exps = list_keysort(rel->exps, scores, (fdup)NULL);
+		/*mbr should be the last expression because they 
+ 		 * cannot be evaluated before the cmp*/
+		rel->exps = mbrpush(rel->exps);
 		free(scores);
 	}
 	return rel;
@@ -6742,7 +6776,8 @@ exp_uses_exps(sql_exp *e, list *exps)
 	case e_atom:
 		return 0;
 	case e_dimension:
-		fprintf(stderr, "exp_uses_exps with e_dimension\n");
+	case e_mbr:
+		fprintf(stderr, "exp_uses_exps with e_dimension OR e_mbr\n");
 		return 0;
 	}
 	return 0;
@@ -6904,6 +6939,8 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 	case e_atom:
 	case e_psm:
 		return e;
+	case e_mbr:
+		return  exp_rename_up(sql, e->l, aliases);
 	}
 	if (ne && e->p)
 		ne->p = prop_copy(sql->sa, e->p);

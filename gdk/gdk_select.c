@@ -2028,6 +2028,72 @@ BATdimensionSubselect(BAT *dimensionBAT, BAT *candBAT, const void *low, const vo
         return resBAT;
 }
 
+BAT *
+BATmbrsubselect(BAT *dimensionBAT, BAT *oidsBAT, BAT *candsBAT) {
+	BAT *resBAT = NULL;
+	(void)*candsBAT;
+
+#define mbr(TPE) \
+    do { \
+        TPE dimMin, dimMax, dimStep; \
+		long dimElementRepeats, dimGroupRepeats; \
+        TPE resMin, resMax; \
+        BATiter oidsIter = bat_iterator(oidsBAT); \
+        BUN p, q; \
+\
+        dimensionCharacteristics(TPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
+        /*loop over the elemets corresponding to the oids and find min and max*/ \
+        /*check also the number of groups*/ \
+        resMax = resMin = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, BUNfirst(oidsBAT))); \
+        BATloop(oidsBAT, p, q) { \
+            TPE el_cur = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, *(oid*)BUNtail(oidsIter, p)); \
+            resMax = (el_cur > resMax)?el_cur:resMax; \
+            resMin = (el_cur < resMin)?el_cur:resMin; \
+		} \
+fprintf(stderr, "resMin = %d - resMax = %d\n", (int)resMin, (int)resMax); \
+\
+    /*find the oids that satisfy the min max values*/ \
+    resBAT = BATdimensionSubselect(dimensionBAT, candsBAT, &resMin, &resMax, 1, 1, 0); \
+    } while(0) 
+
+	switch (ATOMtype(dimensionBAT->ttype)) {
+        case TYPE_bte:
+            mbr(bte);
+            break;
+        case TYPE_sht:
+            mbr(sht);
+            break;
+        case TYPE_int:
+            mbr(int);
+            break;
+        case TYPE_flt:
+            mbr(flt);
+            break;
+        case TYPE_dbl:
+            mbr(dbl);
+            break;
+        case TYPE_lng:
+            mbr(lng);
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            mbr(hge);
+            break;
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            mbr(int);
+#else
+            mbr(lng);
+#endif
+        break;
+        default:
+            fprintf(stderr, "BATmbrsubselect: dimension type not handled\n");
+            return NULL;
+    }
+	return resBAT;
+}
+
 /* theta select
  *
  * Returns a dense-headed BAT with the OID values of b in the tail for

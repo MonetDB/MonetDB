@@ -83,7 +83,7 @@ extern list *list_sort(list *l, fkeyvalue key, fdup dup);
 /* sometimes more complex functions are needed to compute a key, then
  * we can pass the keys via an array, to keysort */
 extern list *list_keysort(list *l, int *key, fdup dup);
-
+extern list *list_mbrpush(list *l, int* pos, int pos_sz);
 extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
 extern list *list_merge_destroy(list *l, list *data, fdup dup);

@@ -60,6 +60,7 @@ typedef enum stmt_type {
 
 	st_atom,
 	st_uselect,
+	st_mbrselect,
 	st_uselect2,
 	st_tunion,
 	st_tdiff,
@@ -176,6 +177,7 @@ extern stmt *stmt_bool(sql_allocator *sa, int b);
 
 extern stmt *stmt_dimension(sql_allocator *sa, sql_dimension *dim);
 
+extern stmt *stmt_mbrselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);
 extern stmt *stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);
 /* cmp
        0 ==   l <  x <  h

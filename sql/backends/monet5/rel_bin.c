@@ -50,6 +50,31 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 	}
 }
 
+static stmt* find_e_column_uselect(sql_allocator *sa, stmt *joins, stmt *col ) 
+{
+	if(!joins)
+		return NULL;
+
+	switch(joins->type) {
+		case st_mbrselect:
+			return find_e_column_uselect(sa, joins->op3, col);
+		case st_uselect:
+			//only the cells that qualify for the uselect shoudl have values
+//			if(joins->op1->type == st_bat) {
+//				if(strcmp(joins->op1->tname, col->tname) == 0 && 
+//					strcmp(joins->op1->cname, col->cname) == 0)
+					return joins;
+//			}		
+//			return find_e_column_uselect(sa, joins->op3, col);	
+		case st_join:
+			return find_e_column_uselect(sa, joins->op1, col);
+		default:
+			fprintf(stderr, "find_e_column_uselect: Not handled type\n");
+			return NULL;
+	}
+	return NULL;
+}
+
 static stmt *
 list_find_column(sql_allocator *sa, list *l, char *rname, char *name ) 
 {
@@ -535,7 +560,19 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (exp_card(e) > CARD_AGGR)
 			s->nrcols = 2;
 	} 	break;
-	case e_dimension: 
+	case e_dimension: {
+		if (right) /* check relation names */
+			s = bin_find_column(sql->sa, right, e->l, e->r);
+		if (!s && left) 
+			s = bin_find_column(sql->sa, left, e->l, e->r);
+		if (s && grp)
+			s = stmt_project(sql->sa, ext, s);
+		if (!s && right) {
+			printf("could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			print_stmtlist(sql->sa, left);
+			print_stmtlist(sql->sa, right);
+		}	
+	 }	break;
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(sql->sa, right, e->l, e->r);
@@ -548,6 +585,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 		}	
+		//if array then check if there is mbr requirement
+		if(left && s->type == st_join && s->op1->type == st_mbrselect ) {
+			s->op3 = find_e_column_uselect(sql->sa, s->op1, s->op2); 
+		}
 	 }	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
@@ -735,6 +776,17 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (is_anti(e))
 			s->flag |= ANTI;
 	 }	break;
+	case e_mbr:
+	{
+		stmt *l = NULL;
+		stmt *r = NULL;
+
+		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
+		if(e->r)
+			r = exp_bin(sql, e->r, left, right, grp, ext, cnt, sel);
+		
+		s = stmt_mbrselect(sql->sa, l, r, (comp_type)e->flag, sel);
+	} break;
 	default:
 		;
 	}
@@ -2411,7 +2463,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		}
 		if (s->nrcols == 0){
 			sel = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel);
-		} else if (e->type != e_cmp) {
+		} else if (e->type != e_cmp && e->type != e_mbr) {
 			sel = stmt_uselect(sql->sa, s, stmt_bool(sql->sa, 1), cmp_equal, NULL);
 		} else {
 			sel = s;

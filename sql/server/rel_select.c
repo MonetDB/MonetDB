@@ -4733,6 +4733,8 @@ exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r)
 	case e_dimension:
 		fprintf(stderr, "exp_rewrite with e_dimension\n");
 		return e;
+	case e_mbr:
+		return exp_rewrite(sql, e->l, r);
 	}
 	return ne;
 }
@@ -5349,6 +5351,49 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			if (sql->errstr[0] == 0)
 				return sql_error(sql, 02, "Subquery result missing");
 			return NULL;
+		}
+		if(rel->op == op_basetable) {
+			sql_table *t = (sql_table*)rel->l;
+			if(isArray(t)) {
+			/* if it is an array we need to add filtering condition on the dimensional columns 
+	 		 * so that we can create a bounding box over the qualifying values. We do not need
+ 			 * to add something in case filter conditions are on dimensional columns. */
+				node *whereExpNode;
+				list *newFilters = new_exp_list(sql->sa);
+				for(whereExpNode=r->exps->h; whereExpNode; whereExpNode=whereExpNode->next) {
+					sql_exp *whereExp = whereExpNode->data;
+					if(whereExp->type == e_cmp) {
+						sql_exp *innerExp = whereExp->l;
+						if(innerExp->type == e_column) {
+							if(!newFilters->cnt) {
+								//found a filter on a non-dimensinal column	
+								/*Assuming a single array add all dimensions of it to the filtering condition*/
+								node *basetableExps;
+								for(basetableExps = rel->exps->h ; basetableExps; basetableExps = basetableExps->next) {
+									sql_exp* dimExp = basetableExps->data;
+									if(dimExp->type == e_dimension) {
+										append(newFilters, exp_mbr(sql->sa, dimExp));
+									}
+								}
+							}
+						}
+					} else {
+						fprintf(stderr, "Unrecognised exp->type\n");
+						return NULL;
+					}
+					if(newFilters->cnt)
+						break;
+				}
+
+				//add the newFilters to the where conditions
+				for(whereExpNode=newFilters->h; whereExpNode; whereExpNode=whereExpNode->next) {
+					sql_exp *exp = whereExpNode->data;
+					append(r->exps, exp);
+				}
+			} else {
+				fprintf(stderr, "Array but not basetable\n");
+				return NULL;
+			}
 		}
 		rel = r;
 	}

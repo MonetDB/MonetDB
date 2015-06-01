@@ -419,6 +419,20 @@ exp_dimension(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int c
 	return e;
 }
 
+sql_exp* exp_mbr(sql_allocator *sa, sql_exp *exp) {
+	sql_exp *e = exp_create(sa, e_mbr);
+	e->card = exp->card; 
+	if(exp->type == e_cmp) {
+		e->l = exp->l;
+		e->r = exp->r;
+	} else {
+		e->l = exp;
+		e->r = NULL;
+	}
+	e->flag = exp->flag;
+	return e;
+}
+ 
 sql_exp *
 exp_set(sql_allocator *sa, char *name, sql_exp *val, int level)
 {
@@ -1110,6 +1124,8 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 		return NULL;
 	case e_atom:
 		return e;
+	case e_mbr:
+		return rel_find_exp_(rel, e->l);
 	}
 	return ne;
 }
@@ -1206,6 +1222,8 @@ exp_is_atom( sql_exp *e )
 	case e_psm:
 	case e_dimension:
 		return 0;
+	case e_mbr:
+		return exp_is_atom(e->l);
 	}
 	return 0;
 }
@@ -1256,6 +1274,8 @@ exp_has_func( sql_exp *e )
 	case e_psm:
 	case e_dimension:
 		return 0;
+	case e_mbr:
+		return exp_has_func(e->l);
 	}
 	return 0;
 }
@@ -1638,6 +1658,8 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		if (e->flag == PSM_SET) 
 			ne = exp_set(sa, e->name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
+	case e_mbr:
+		return exp_copy(sa, e->l);
 	}
 	if (!ne)
 		return ne;

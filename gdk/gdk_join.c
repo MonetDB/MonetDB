@@ -3619,6 +3619,115 @@ fprintf(stderr, "dimensionise: elementRepeats=%ld\n", resElementRepeats); \
 	return resBAT;
 }
 
+BAT *
+BATmbrproject(BAT *b, BAT *oidsToProjectBAT, BAT *subselectBAT) {
+	BUN c, l, subC, subL;
+	//execute the projection using the subselection result
+	BAT *projectBAT = BATproject(subselectBAT, b);
+
+	BATiter oidsToProjectBAT_iter = bat_iterator(oidsToProjectBAT);    
+	BATiter sub_iter = bat_iterator(subselectBAT);
+	BATiter proj_iter = bat_iterator(projectBAT);
+
+    //set NULL to all values  in s but not is subselectBAT
+    BAT *resBAT = BATnew(TYPE_void, b->ttype, BATcount(oidsToProjectBAT), TRANSIENT);
+    if(!resBAT)
+	    return NULL;
+
+	subC = BUNfirst(subselectBAT);
+	subL = BUNlast(subselectBAT);
+	BATloop(oidsToProjectBAT, c, l) {
+		oid oid_pr = *(oid*)BUNtail(oidsToProjectBAT_iter, c);
+		//check if the oid_ptr exists in subselectBAT
+		if(subC < subL) {
+			oid oid_sub = *(oid*)BUNtail(sub_iter, subC);
+			while(oid_pr<oid_sub && subC<subL){
+					switch (ATOMtype(b->ttype)) {
+				        case TYPE_bte:
+							BUNappend(resBAT, &bte_nil, 1);	
+				            break;
+				        case TYPE_sht:
+				            BUNappend(resBAT, &sht_nil, 1);	
+				            break;
+				        case TYPE_int:
+				            BUNappend(resBAT, &int_nil, 1);	
+				            break;
+				        case TYPE_flt:
+				            BUNappend(resBAT, &flt_nil, 1);	
+				            break;
+				        case TYPE_dbl:
+				            BUNappend(resBAT, &dbl_nil, 1);	
+				            break;
+				        case TYPE_lng:
+				            BUNappend(resBAT, &lng_nil, 1);	
+				            break;
+#ifdef HAVE_HGE
+				        case TYPE_hge:
+				            BUNappend(resBAT, &hge_nil, 1);	
+				            break;
+#endif
+				        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+				            BUNappend(resBAT, &int_nil, 1);	
+#else
+				            BUNappend(resBAT, &lng_nil, 1);
+#endif
+					        break;
+				        default:
+				            fprintf(stderr, "BATmbrProject: type not handled\n");
+				            return NULL;
+        			}
+					c++;
+					oid_pr = *(oid*)BUNtail(oidsToProjectBAT_iter, c);
+				//BUNappend(resBAT, NULL, 1);
+			}
+			BUNappend(resBAT, BUNtail(proj_iter, subC), 1);
+			subC++;
+		} else { //put null values at the end
+			switch (ATOMtype(b->ttype)) {
+		        case TYPE_bte:
+					BUNappend(resBAT, &bte_nil, 1);	
+		            break;
+		        case TYPE_sht:
+		            BUNappend(resBAT, &sht_nil, 1);	
+		            break;
+		        case TYPE_int:
+		            BUNappend(resBAT, &int_nil, 1);	
+		            break;
+		        case TYPE_flt:
+		            BUNappend(resBAT, &flt_nil, 1);	
+		            break;
+		        case TYPE_dbl:
+		            BUNappend(resBAT, &dbl_nil, 1);	
+		            break;
+		        case TYPE_lng:
+		            BUNappend(resBAT, &lng_nil, 1);	
+		            break;
+#ifdef HAVE_HGE
+		        case TYPE_hge:
+		            BUNappend(resBAT, &hge_nil, 1);	
+		            break;
+#endif
+		        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+		            BUNappend(resBAT, &int_nil, 1);	
+#else
+		            BUNappend(resBAT, &lng_nil, 1);
+#endif
+			        break;
+		        default:
+		            fprintf(stderr, "BATmbrProject: type not handled\n");
+				            return NULL;
+    		}
+		}
+	}
+	BATsetcount(resBAT,BATcount(b));
+    BATseqbase(resBAT,0);
+    BATderiveProps(resBAT,FALSE);
+	return resBAT;
+}
+
+#if 0
 BAT* BATnonDimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	BAT *resBAT;
 	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
@@ -3794,3 +3903,4 @@ fprintf(stderr, "BATnondimensionProject: new repeat2 = %ld\n", repeat2_new); \
 
 	return resBAT;
 }
+#endif

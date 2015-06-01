@@ -337,6 +337,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 
 			case st_group:
 
+			case st_mbrselect:
 			case st_uselect:
 			case st_uselect2:
 				if (s->op1)
@@ -839,6 +840,19 @@ stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *
 	s->op4.funcval = dup_subfunc(sa, f);
 	s->flag = cmp_filter;
 	s->nrcols = (lops->nrcols == 2) ? 2 : 1;
+	return s;
+}
+
+stmt *
+stmt_mbrselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub)
+{
+	stmt *s = stmt_create(sa, st_mbrselect);
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->op3 = sub;
+	s->flag = cmptype;
+	s->nrcols = (op1->nrcols == 2) ? 2 : 1;
 	return s;
 }
 
@@ -1714,11 +1728,10 @@ stack_push_children(sql_stack *stk, stmt *s)
 	default:
 		if ((s->type == st_uselect2 || s->type == st_group) && s->op4.stval)
 			stack_push_stmt(stk, s->op4.stval, 1);
-		if (s->op2) {
-			if (s->op3)
-				stack_push_stmt(stk, s->op3, 1);
+		if (s->op3)
+			stack_push_stmt(stk, s->op3, 1);
+		if (s->op2) 
 			stack_push_stmt(stk, s->op2, 1);
-		}
 		if (s->op1)
 			stack_push_stmt(stk, s->op1, 1);
 	}
