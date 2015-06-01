@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP4/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -160,7 +160,9 @@ more client packages.
 %package devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
+Requires: %{name}%{?_isa} = %{version}-%{release}
+Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
+Requires: libatomic_ops-devel
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -199,7 +201,7 @@ various other components.
 %package stream-devel
 Summary: MonetDB stream library
 Group: Applications/Databases
-Requires: %{name}-stream = %{version}-%{release}
+Requires: %{name}-stream%{?_isa} = %{version}-%{release}
 Requires: bzip2-devel
 Requires: libcurl-devel
 Requires: zlib-devel
@@ -247,7 +249,7 @@ MonetDB, you will very likely need this package.
 %package client-tools
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 
 %description client-tools
 MonetDB is a database management system that is developed from a
@@ -267,8 +269,8 @@ tools can be used to monitor the MonetDB database server.
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-stream-devel = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
 Requires: openssl-devel
 
 %description client-devel
@@ -290,7 +292,7 @@ This package contains the files needed to develop with the
 %package client-odbc
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires(pre): unixODBC
 
 %description client-odbc
@@ -347,7 +349,6 @@ program.
 %package client-perl
 Summary: MonetDB perl interface
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires: perl(DBI)
 Requires: perl(Digest::SHA)
@@ -426,12 +427,12 @@ This package contains the activerecord adapter for MonetDB.
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
-Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-client-odbc = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
 Requires: %{name}-client-php = %{version}-%{release}
-Requires: %{name}-SQL-server5 = %{version}-%{release}
+Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb = %{version}-%{release}
 
 %description client-tests
@@ -464,7 +465,7 @@ developer.
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Obsoletes: %{name}-geom
 Obsoletes: %{name}-geom-devel
 
@@ -488,7 +489,7 @@ extensions for %{name}-SQL-server5.
 %package gsl-MonetDB5
 Summary: MonetDB5 SQL interface to the gsl library
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description gsl-MonetDB5
 MonetDB is a database management system that is developed from a
@@ -510,7 +511,7 @@ numerical analysis (gsl).
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description bam-MonetDB5
 MonetDB is a database management system that is developed from a
@@ -533,7 +534,7 @@ version of Sequence Alignment/Map) data.
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -559,7 +560,7 @@ install it.
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -582,7 +583,7 @@ format.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-rdf
 
 %description -n MonetDB5-server
@@ -667,7 +668,7 @@ fi
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Application/Databases
-Requires: MonetDB5-server
+Requires: MonetDB5-server%{?_isa}
 
 %description -n MonetDB5-server-hugeint
 MonetDB is a database management system that is developed from a
@@ -687,7 +688,8 @@ MonetDB5-server component.
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description -n MonetDB5-server-devel
 MonetDB is a database management system that is developed from a
@@ -708,7 +710,7 @@ used from the MAL level.
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 Requires: %{_bindir}/systemd-tmpfiles
@@ -774,8 +776,8 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
-Requires: MonetDB5-server-hugeint = %{version}-%{release}
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description SQL-server5-hugeint
 MonetDB is a database management system that is developed from a
@@ -968,6 +970,18 @@ mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/do
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue May 19 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.13-20150519
+- Rebuilt.
+- BZ#3712: Concurrency issue on querying the SQL catalog
+- BZ#3713: Long startup cost for simple session
+- BZ#3715: Crash with two ALTER TABLE statements in a transaction
+- BZ#3718: Adding and dropping a non existing tablename to/from a merge
+  table is accepted without an error
+- BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+  BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+- BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+  `0' failed.
+
 * Thu Apr 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
 - Rebuilt.
 - BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"

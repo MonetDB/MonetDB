@@ -83,18 +83,21 @@ compare2range( int l, int r )
 
 
 sql_rel *
-rel_parse(mvc *m, char *query, char emode)
+rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 {
 	mvc o = *m;
 	sql_rel *rel;
 	buffer *b;
 	char *n;
 	int len = _strlen(query);
+	sql_schema *c = cur_schema(m);
 
 	m->qc = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
+	if (s)
+		m->session->schema = s;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -139,6 +142,7 @@ rel_parse(mvc *m, char *query, char emode)
 		*m = o;
 		m->label = label;
 	}
+	m->session->schema = c;
 	return rel;
 }
 

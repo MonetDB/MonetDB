@@ -50,15 +50,15 @@ project (
 | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ] COUNT ,
 | | | | | select (
 | | | | | | table(sys.customer) [ customer.c_city, customer.c_nation, customer.%TID% NOT NULL ] COUNT 
-| | | | | ) [ customer.c_nation = clob[char(14) "UNITED KINGDOM"], customer.c_city in (clob[char(10) "UNITED KI1"], clob[char(10) "UNITED KI5"]) ]
+| | | | | ) [ customer.c_nation = clob "UNITED KINGDOM", customer.c_city in (clob "UNITED KI1", clob "UNITED KI5") ]
 | | | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ],
 | | | | select (
 | | | | | table(sys.supplier) [ supplier.s_city, supplier.s_nation, supplier.%TID% NOT NULL ] COUNT 
-| | | | ) [ supplier.s_nation = clob[char(14) "UNITED KINGDOM"], supplier.s_city in (clob[char(10) "UNITED KI1"], clob[char(10) "UNITED KI5"]) ]
+| | | | ) [ supplier.s_nation = clob "UNITED KINGDOM", supplier.s_city in (clob "UNITED KI1", clob "UNITED KI5") ]
 | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | select (
 | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.d_yearmonth, dwdate.%TID% NOT NULL ] COUNT 
-| | | ) [ dwdate.d_yearmonth = clob[char(7) "Dec1997"] ]
+| | | ) [ dwdate.d_yearmonth = clob "Dec1997" ]
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [ dwdate.d_year, customer.c_city, supplier.s_city ] [ customer.c_city, supplier.s_city, dwdate.d_year, sys.sum no nil (lineorder.lo_revenue) as L1.L1 ]
 ) [ customer.c_city, supplier.s_city, dwdate.d_year, L1 as L1.revenue ] [ dwdate.d_year ASC, L1.revenue ]

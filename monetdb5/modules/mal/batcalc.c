@@ -303,7 +303,7 @@ calcmodtype(int tp1, int tp2)
 }
 
 static str
-CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
+CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int),
 			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, int),
 			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, int),
@@ -312,10 +312,13 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
-	int tp1, tp2;
+	int tp1, tp2, tp3;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
+	tp3 = getArgType(mb, pci, 0);
+	assert(isaBatType(tp3));
+	tp3 = getColumnType(tp3);
 	if (pci->argc == 4) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
@@ -348,12 +351,15 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 			assert(BAThdense(b2));
 		}
 		if (b2) {
-			bn = (*batfunc)(b, b2, s, (*typefunc)(b->T->type, b2->T->type),
-							abort_on_error);
+			if (tp3 == TYPE_any)
+				tp3 = (*typefunc)(b->ttype, b2->ttype);
+			bn = (*batfunc)(b, b2, s, tp3, abort_on_error);
 			BBPunfix(b2->batCacheid);
 		} else {
+			if (tp3 == TYPE_any)
+				tp3 = (*typefunc)(b->T->type, tp2);
 			bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], s,
-							 (*typefunc)(b->T->type, tp2), abort_on_error);
+							 tp3, abort_on_error);
 		}
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
@@ -368,8 +374,9 @@ CMDbatBINARY2(MalStkPtr stk, InstrPtr pci,
 		if(isBATarray(b))
 			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s,
-						 (*typefunc)(tp1, b->T->type), abort_on_error);
+		if (tp3 == TYPE_any)
+			tp3 = (*typefunc)(tp1, b->T->type);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s, tp3, abort_on_error);
 	}
 	BBPunfix(b->batCacheid);
 	if (bn == NULL) {
@@ -578,9 +585,8 @@ str
 CMDbatADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
 						 calctype, 0, "batcalc.add_noerror");
 }
 
@@ -590,9 +596,8 @@ str
 CMDbatADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
 						 calctype, 1, "batcalc.+");
 }
 
@@ -602,9 +607,8 @@ str
 CMDbatADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcadd, BATcalcaddcst, BATcalccstadd,
 						 calctypeenlarge, 1, "batcalc.add_enlarge");
 }
 
@@ -614,9 +618,8 @@ str
 CMDbatSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
 						 calctype, 0, "batcalc.sub_noerror");
 }
 
@@ -626,9 +629,8 @@ str
 CMDbatSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
 						 calctype, 1, "batcalc.-");
 }
 
@@ -638,9 +640,8 @@ str
 CMDbatSUBenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcsub, BATcalcsubcst, BATcalccstsub,
 						 calctypeenlarge, 1, "batcalc.sub_enlarge");
 }
 
@@ -650,9 +651,8 @@ str
 CMDbatMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
 						 calctype, 0, "batcalc.mul_noerror");
 }
 
@@ -662,9 +662,8 @@ str
 CMDbatMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
 						 calctype, 1, "batcalc.*");
 }
 
@@ -674,9 +673,8 @@ str
 CMDbatMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcmul, BATcalcmulcst, BATcalccstmul,
 						 calctypeenlarge, 1, "batcalc.mul_enlarge");
 }
 
@@ -686,9 +684,8 @@ str
 CMDbatDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
 						 calcdivtype, 0, "batcalc.div_noerror");
 }
 
@@ -698,9 +695,8 @@ str
 CMDbatDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcdiv, BATcalcdivcst, BATcalccstdiv,
 						 calcdivtype, 1, "batcalc./");
 }
 
@@ -710,9 +706,8 @@ str
 CMDbatMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
 						 calcmodtype, 0, "batcalc.mod_noerror");
 }
 
@@ -722,9 +717,8 @@ str
 CMDbatMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
 
-	return CMDbatBINARY2(stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
+	return CMDbatBINARY2(mb, stk, pci, BATcalcmod, BATcalcmodcst, BATcalccstmod,
 						 calcmodtype, 1, "batcalc.%");
 }
 
@@ -1001,7 +995,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN vals;
 	bat *bid;
 	BAT *b, *s = NULL, *t;
-	int ret;
+	gdk_return ret;
 
 	(void) cntxt;
 	(void) mb;
@@ -1027,7 +1021,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	* getArgReference_dbl(stk, pci, 0) = avg;
 	if (pci->retc == 2)

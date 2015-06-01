@@ -95,6 +95,14 @@ pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
 address SQLcatalog
 comment "a create index catalog statement";
 
+pattern catalog(type:int,sname:str,tname:str,access:int):void
+address SQLcatalog
+comment "a alter table access statement";
+
+pattern catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void
+address SQLcatalog
+comment "a alter table add/del table catalog statement";
+
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
@@ -445,23 +453,13 @@ pattern dump_trace()(
 address dump_trace
 comment "dump the trace statistics";
 
-pattern analyze():void
+pattern analyze(minmax:int, sample:lng):void
 address sql_analyze;
-pattern analyze(sch:str):void
+pattern analyze(minmax:int, sample:lng, sch:str):void
 address sql_analyze;
-pattern analyze(sch:str,tbl:str):void
+pattern analyze(minmax:int, sample:lng, sch:str, tbl:str):void
 address sql_analyze;
-pattern analyze(sch:str,tbl:str,col:str):void
-address sql_analyze
-comment "Update the database statistics table";
-
-pattern analyze(sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,tbl:str,sample:lng):void
-address sql_analyze;
-pattern analyze(sch:str,tbl:str,col:str,sample:lng):void
+pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 

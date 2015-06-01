@@ -16,7 +16,7 @@
 #include <stdarg.h>
 
 extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
-extern sql_rel *rel_parse(mvc *m, char *query, char emode);
+extern sql_rel *rel_parse(mvc *m, sql_schema *s, char *query, char emode);
 
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );

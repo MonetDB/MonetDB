@@ -61,6 +61,9 @@ extern lng atom_get_int(atom *a);
 
 extern int atom_cmp(atom *a1, atom *a2);
 
+extern atom *atom_add(atom *a1, atom *a2);
+extern atom *atom_sub(atom *a1, atom *a2);
+
 #ifdef HAVE_HGE
 extern hge scales[39];
 #else

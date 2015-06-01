@@ -6,7 +6,7 @@
 
 CREATE TYPE inet EXTERNAL NAME inet;
 
-CREATE FUNCTION "broadcast" (p inet) RETURNS inet 
+CREATE FUNCTION "broadcast" (p inet) RETURNS inet
 	EXTERNAL NAME inet."broadcast";
 CREATE FUNCTION "host" (p inet) RETURNS clob
 	EXTERNAL NAME inet."host";

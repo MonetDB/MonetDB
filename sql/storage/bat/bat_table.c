@@ -105,7 +105,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 	}
 	(void)c;
 	if (!bat->cached /*&& !tr->parent*/) 
-		bat->cached = temp_descriptor(b->batCacheid);
+		bat->cached = b;
 	return b;
 }
 
@@ -113,7 +113,7 @@ static BAT *
 delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 {
 	if (bat->cached /*&& !tr->parent*/) 
-		return temp_descriptor(bat->cached->batCacheid);
+		return bat->cached;
 	return delta_full_bat_( tr, c, bat, temp);
 }
 
@@ -125,6 +125,15 @@ full_column(sql_trans *tr, sql_column *c)
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
 	return delta_full_bat(tr, c, c->data, isTemp(c));
+}
+
+static void
+full_destroy(sql_column *c, BAT *b)
+{
+	sql_delta *d = c->data;
+	assert(d);
+	if (d->cached != b)
+		bat_destroy(b);
 }
 
 static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
@@ -141,7 +150,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	r = BATsubselect(b, s, value, NULL, 1, 0, 0);
 	bat_destroy(s);
 	s = r;
-	bat_destroy(b);
+	full_destroy(c, b);
 	while ((c = va_arg(va, sql_column *)) != NULL) {
 		value = va_arg(va, void *);
 
@@ -149,7 +158,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		r = BATsubselect(b, s, value, NULL, 1, 0, 0);
 		bat_destroy(s);
 		s = r;
-		bat_destroy(b);
+		full_destroy(c, b);
 	}
 	va_end(va);
 	if (BATcount(s) == 1) {
@@ -176,11 +185,11 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 
 		res = BUNtail(bi, q);
 		sz = ATOMlen(b->ttype, res);
-		r = GDKzalloc(sz);
+		r = GDKmalloc(sz);
 		memcpy(r,res,sz);
 		res = r;
 	}
-	bat_destroy(b);
+	full_destroy(c, b);
 	return res;
 }
 
@@ -290,10 +299,12 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	if (!kvh && key_value_low != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	hi = (kvl == kvh);
+	if (!b->T->hash)
+		BAThash(b, 0);
 	r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
 	bat_destroy(s);
 	s = r;
-	bat_destroy(b);
+	full_destroy(key, b);
 	if (key_value_low || key_value_high) {
 		va_start(va, key_value_high);
 		while ((key = va_arg(va, sql_column *)) != NULL) {
@@ -309,7 +320,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
 			bat_destroy(s);
 			s = r;
-			bat_destroy(b);
+			full_destroy(key, b);
 		}
 		va_end(va);
 	}
@@ -326,7 +337,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
-	bat_destroy(b);
+	full_destroy(orderby_col, b);
 	BATsubsort(NULL, &o, NULL, s, NULL, NULL, 0, 0);
 	bat_destroy(s);
 	s = BATproject(o, r->data);

@@ -632,7 +632,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, BATcalcop_name, NULL);
 	BATcheck(b2, BATcalcop_name, NULL);
 
-	if (checkbats(b1, b2, BATcalcop_name) == GDK_FAIL)
+	if (checkbats(b1, b2, BATcalcop_name) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -672,7 +672,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	BATcheck(b, BATcalcopcst_name, NULL);
 
-	if (checkbats(b, NULL, BATcalcopcst_name) == GDK_FAIL)
+	if (checkbats(b, NULL, BATcalcopcst_name) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -698,7 +698,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	BATcheck(b, BATcalccstop_name, NULL);
 
-	if (checkbats(b, NULL, BATcalccstop_name) == GDK_FAIL)
+	if (checkbats(b, NULL, BATcalccstop_name) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -715,7 +715,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_TPE;

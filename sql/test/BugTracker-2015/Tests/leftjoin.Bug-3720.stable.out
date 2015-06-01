@@ -1,0 +1,71 @@
+stdout of test 'leftjoin.Bug-3720` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 12:46:42 >  
+# 12:46:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37706" "--set" "mapi_usock=/var/tmp/mtest-2742/.s.monetdb.37706" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:46:42 >  
+
+# MonetDB 5 server v11.19.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37706/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2742/.s.monetdb.37706
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:46:43 >  
+# 12:46:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2742" "--port=37706"
+# 12:46:43 >  
+
+#create table two (
+#	id int,
+#	name string,
+#	istrue boolean,
+#	joindate date,
+#	jointime timestamp,
+#	count int
+#);
+#copy 6 records into two from stdin using delimiters ',','\n';
+#1,null,false,2017-12-08,2014-06-30 14:05:31.000000,2
+#2,vijay,false,2017-12-08,2014-06-30 14:05:59.000000,3
+#3,krish,true,2017-12-08,2014-06-30 14:06:17.000000,5
+#4,bat,true,null,null,null
+#5,gotham,false,null,null,null
+#6,wayne,false,null,null,3
+[ 6	]
+#select * from two;
+% sys.two,	sys.two,	sys.two,	sys.two,	sys.two,	sys.two # table_name
+% id,	name,	istrue,	joindate,	jointime,	count # name
+% int,	clob,	boolean,	date,	timestamp,	int # type
+% 1,	6,	5,	10,	26,	1 # length
+[ 1,	NULL,	false,	2017-12-08,	2014-06-30 14:05:31.000000,	2	]
+[ 2,	"vijay",	false,	2017-12-08,	2014-06-30 14:05:59.000000,	3	]
+[ 3,	"krish",	true,	2017-12-08,	2014-06-30 14:06:17.000000,	5	]
+[ 4,	"bat",	true,	NULL,	NULL,	NULL	]
+[ 5,	"gotham",	false,	NULL,	NULL,	NULL	]
+[ 6,	"wayne",	false,	NULL,	NULL,	3	]
+#select two.id, two.name, two.count, twoAlias.id as id2, twoAlias.name as name2 from two left join two as twoAlias on two.count=twoAlias.id; 
+% .two,	.two,	.two,	.L,	.L # table_name
+% id,	name,	count,	id2,	name2 # name
+% int,	clob,	int,	int,	clob # type
+% 1,	6,	1,	1,	6 # length
+[ 1,	NULL,	2,	2,	"vijay"	]
+[ 2,	"vijay",	3,	3,	"krish"	]
+[ 3,	"krish",	5,	5,	"gotham"	]
+[ 6,	"wayne",	3,	3,	"krish"	]
+[ 4,	"bat",	NULL,	NULL,	NULL	]
+[ 5,	"gotham",	NULL,	NULL,	NULL	]
+#drop table two;
+
+# 12:46:43 >  
+# 12:46:43 >  "Done."
+# 12:46:43 >  
+

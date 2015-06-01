@@ -411,30 +411,18 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 	kind = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
 
 	if (!id || !ns || !ht || !tt || !cnt || !refcnt || !lrefcnt || !location || !heat || !dirty || !status || !kind) {
-		if (id)
-			BBPreclaim(id);
-		if (ns)
-			BBPreclaim(ns);
-		if (ht)
-			BBPreclaim(ht);
-		if (tt)
-			BBPreclaim(tt);
-		if (cnt)
-			BBPreclaim(cnt);
-		if (refcnt)
-			BBPreclaim(refcnt);
-		if (lrefcnt)
-			BBPreclaim(lrefcnt);
-		if (location)
-			BBPreclaim(location);
-		if (heat)
-			BBPreclaim(heat);
-		if (dirty)
-			BBPreclaim(dirty);
-		if (status)
-			BBPreclaim(status);
-		if (kind)
-			BBPreclaim(kind);
+		BBPreclaim(id);
+		BBPreclaim(ns);
+		BBPreclaim(ht);
+		BBPreclaim(tt);
+		BBPreclaim(cnt);
+		BBPreclaim(refcnt);
+		BBPreclaim(lrefcnt);
+		BBPreclaim(location);
+		BBPreclaim(heat);
+		BBPreclaim(dirty);
+		BBPreclaim(status);
+		BBPreclaim(kind);
 		throw(MAL, "catalog.bbp", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(id, 0);

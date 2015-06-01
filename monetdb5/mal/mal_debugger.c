@@ -367,7 +367,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 		if (h)
 			*h = '[';
 		if (fsym == 0) {
-			mnstr_printf(out, "'%s.%s' not found\n", b, fcnname + 1);
+			mnstr_printf(out, "#'%s.%s' not found\n", b, fcnname + 1);
 			return NULL;
 		}
 		m = fsym->def;
@@ -530,7 +530,7 @@ retryRead:
 				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 
 				if (fsym == cntxt->nspace && strcmp(modname, "user")) {
-					mnstr_printf(out, "module '%s' not found\n", modname);
+					mnstr_printf(out, "#module '%s' not found\n", modname);
 					continue;
 				}
 				for (i = 0; i < MAXSCOPE; i++) {
@@ -546,6 +546,7 @@ retryRead:
 				continue;
 			} else{
 				Module s;
+				mnstr_printf(out,"#");
 				for( s= cntxt->nspace; s; s= s->outer) {
 					mnstr_printf(out,"%s",s->name);
 					if( s->subscope==0) mnstr_printf(out,"?");
@@ -601,7 +602,7 @@ retryRead:
 				if (fcnname == NULL) {
 					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 					if (fsym == 0) {
-						mnstr_printf(out, "%s module not found\n", modname);
+						mnstr_printf(out, "#%s module not found\n", modname);
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
@@ -617,7 +618,7 @@ retryRead:
 				fcnname++;
 				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 				if (fsym == 0) {
-					mnstr_printf(out, "%s module not found\n", modname);
+					mnstr_printf(out, "#%s module not found\n", modname);
 					continue;
 				}
 				/* display the overloaded symbol definition */
@@ -679,7 +680,7 @@ retryRead:
 						mnstr_printf(out, "\n");
 					}
 
-				mnstr_printf(out, "Entries displayed %d\n", inuse);
+				mnstr_printf(out, "#Entries displayed %d\n", inuse);
 				continue;
 			}
 			if (strncmp(b, "breakpoints", 11) == 0) {
@@ -706,7 +707,7 @@ retryRead:
 			if (strncmp(b, "debug", 5) == 0) {
 				skipWord(cntxt, b);
 				GDKdebug = atol(b);
-				mnstr_printf(out, "Set debug mask to %d\n", GDKdebug);
+				mnstr_printf(out, "#Set debug mask to %d\n", GDKdebug);
 				break;
 			}
 			if (strncmp(b, "down", 4) == 0) {
@@ -715,7 +716,7 @@ retryRead:
 				stk = stkbase;
 				while (stk != ref && stk->up && stk->up != ref)
 					stk = stk->up;
-				mnstr_printf(out, "%sgo down the stack\n", "#mdb ");
+				mnstr_printf(out, "#%sgo down the stack\n", "#mdb ");
 				mb = stk->blk;
 				break;
 			}
@@ -787,7 +788,7 @@ retryRead:
 				if (i != 0)
 					printBatDetails(out, i);
 				else
-					mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
+					mnstr_printf(out, "#%s Symbol not found\n", "#mdb ");
 			} else {
 				printBatInfo(out, getVar(mb, i), stk->stk + i);
 			}
@@ -830,7 +831,7 @@ retryRead:
 					if (i>-0 || *b == '0')
 						printStackElm(out, mb, stk->stk + i, i, size, first);
 					else
-						mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
+						mnstr_printf(out, "#%s Symbol not found\n", "#mdb ");
 				}
 				continue;
 			}
@@ -844,7 +845,7 @@ retryRead:
 		case 'u':
 			if (stk->up == NULL)
 				break;
-			mnstr_printf(out, "%s go up the stack\n", "#mdb ");
+			mnstr_printf(out, "#%s go up the stack\n", "#mdb ");
 			stk = stk->up;
 			mb = stk->blk;
 			printCall(cntxt, mb, stk, pc);
@@ -871,6 +872,7 @@ retryRead:
 			if(*b == 'L')
 				lstng = LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS;
 			skipWord(cntxt, b);
+			skipBlanc(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b, out);
 				if (m && strchr(b, '*')) {
@@ -897,7 +899,7 @@ retryRead:
 					/* optionally dump the complete module */
 					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
 					if (fsym == 0) {
-						mnstr_printf(out, "'%s' not found\n", b);
+						mnstr_printf(out, "#'%s' not found\n", b);
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
@@ -908,7 +910,8 @@ retryRead:
 						}
 					}
 					continue;
-				} else if (isdigit((int) *b) || *b == '-' || *b == '+')
+				} 
+				if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
 				if (m)
 					debugFunction(out, m, 0, lstng, 0,m->stop);
@@ -933,8 +936,13 @@ partial:
 				*b = 0;
 				if (stepsize < 0)
 					first -= stepsize;
-				debugFunction(out, mb, 0, lstng, first, stepsize);
-				first = first + stepsize > mb->stop ? first : first + stepsize;
+				if( first > mb->stop ) {
+					mnstr_printf(out, "#line %d out of range (<=%d)\n", first, mb->stop);
+					first = pc;
+				} else {
+					debugFunction(out, mb, 0, lstng, first, stepsize);
+					first = first + stepsize > mb->stop ? first : first + stepsize;
+				}
 			}
 			continue;
 		}
@@ -961,11 +969,11 @@ partial:
 			break;
 		}
 		case 'r':   /* reset program counter */
-			mnstr_printf(out, "%s restart with current stack\n", "#mdb ");
+			mnstr_printf(out, "#%s restart with current stack\n", "#mdb ");
 			stk->cmd = 'r';
 			break;
 		default:
-			mnstr_printf(out, "%s debugger command expected\n", "#mdb ");
+			mnstr_printf(out, "#%s debugger command expected\n", "#mdb ");
 			mdbHelp(out);
 		}
 	} while (m);

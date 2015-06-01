@@ -390,15 +390,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisprint(c)	isprint((int) (unsigned char) (c))
 #define GDKisspace(c)	isspace((int) (unsigned char) (c))
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisgraph(c)	isgraph((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
-#define GDKisxcntrl(c)  (((unsigned char) (c)) >= 128 && ((unsigned char) (c)) <= 160)
-#define GDKisspecial(c) (((unsigned char) (c)) >= 161 && ((unsigned char) (c)) <= 191)
-#define GDKisupperl(c)  (((unsigned char) (c)) >= 192 && ((unsigned char) (c)) <= 223)
-#define GDKislowerl(c)  (((unsigned char) (c)) >= 224 && ((unsigned char) (c)) <= 255)
 
 #define GDKPROP		6	/* use one spare! */
 #define MONETHOME	"MONETHOME"
@@ -1130,7 +1124,7 @@ gdk_export BUN dimensionBATsize(BAT* dimensionBAT);
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPextend(Heap *h, size_t size, int mayshare);
+gdk_export gdk_return HEAPextend(Heap *h, size_t size, int mayshare);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1296,7 +1290,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1344,7 +1338,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) == GDK_FAIL) \
+				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1398,7 +1392,7 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
@@ -1425,7 +1419,7 @@ gdk_export bte ATOMelmshift(int sz);
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
-			if (BATextend((b), BATgrows(b)) == GDK_FAIL)	\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
@@ -2139,7 +2133,7 @@ typedef struct {
 	int (*atomFromStr) (const char *src, int *len, ptr *dst);
 	int (*atomToStr) (str *dst, int *len, const void *src);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
-	int (*atomWrite) (const void *src, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
@@ -2605,9 +2599,9 @@ free_debug(void *ptr, const char *filename, int lineno)
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-gdk_export int GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
+gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-gdk_export int GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
+gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)))
@@ -2825,10 +2819,10 @@ BATmirror(register BAT *b)
  * you try to partially commit an already committed persistent BAT (it
  * needs the rollback mechanism).
  */
-gdk_export int TMcommit(void);
-gdk_export int TMabort(void);
-gdk_export int TMsubcommit(BAT *bl);
-gdk_export int TMsubcommit_list(bat *subcommit, int cnt);
+gdk_export gdk_return TMcommit(void);
+gdk_export gdk_return TMabort(void);
+gdk_export gdk_return TMsubcommit(BAT *bl);
+gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
 
 /*
  * @- Delta Management

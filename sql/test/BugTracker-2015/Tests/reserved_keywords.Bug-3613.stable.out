@@ -39,86 +39,86 @@ Ready.
 #);
 #insert into keywords values (1, 2, 3, 4, 5, 6);
 [ 1	]
-#select distinct action from sys.keywords;
-% sys.keywords # table_name
+#select distinct action from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % action # name
 % int # type
 % 1 # length
 [ 1	]
-#select distinct as from sys.keywords;
-% sys.keywords # table_name
+#select distinct as from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % as # name
 % int # type
 % 1 # length
 [ 2	]
-#select distinct authorization from sys.keywords;
-% sys.keywords # table_name
+#select distinct authorization from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % authorization # name
 % int # type
 % 1 # length
 [ 3	]
-#select distinct column from sys.keywords;
-% sys.keywords # table_name
+#select distinct column from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % column # name
 % int # type
 % 1 # length
 [ 4	]
-#select distinct cycle from sys.keywords;
-% sys.keywords # table_name
+#select distinct cycle from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % cycle # name
 % int # type
 % 1 # length
 [ 5	]
-#select distinct distinct from sys.keywords;
-% sys.keywords # table_name
+#select distinct distinct from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % distinct # name
 % int # type
 % 1 # length
 [ 6	]
-#SELECT action FROM sys.keywords;
-% sys.keywords # table_name
+#select distinct increment from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % increment # name
 % int # type
 % 1 # length
 [ 7	]
-#select distinct maxvalue from sys.keywords;
-% sys.keywords # table_name
+#select distinct maxvalue from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % maxvalue # name
 % int # type
 % 1 # length
 [ 8	]
-#select distinct minvalue from sys.keywords;
-% sys.keywords # table_name
+#select distinct minvalue from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % minvalue # name
 % int # type
 % 1 # length
 [ 9	]
-#select distinct plan from sys.keywords;
-% sys.keywords # table_name
+#select distinct plan from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % plan # name
 % int # type
 % 2 # length
 [ 10	]
-#select distinct schema from sys.keywords;
-% sys.keywords # table_name
+#select distinct schema from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % schema # name
 % int # type
 % 2 # length
 [ 11	]
-#select distinct start from sys.keywords;
-% sys.keywords # table_name
+#select distinct start from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % start # name
 % int # type
 % 2 # length
 [ 12	]
-#select distinct statement from sys.keywords;
-% sys.keywords # table_name
+#select distinct statement from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % statement # name
 % int # type
 % 2 # length
 [ 13	]
-#select distinct table from sys.keywords;
-% sys.keywords # table_name
+#select distinct table from sys.sql_keywords;
+% sys.sql_keywords # table_name
 % table # name
 % int # type
 % 2 # length

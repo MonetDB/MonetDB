@@ -42,14 +42,14 @@ transaction_export str TRNtrans_prev(bat *ret, bat *bid);
 str
 TRNglobal_sync(bit *ret)
 {
-	*ret = BBPsync(getBBPsize(),NULL)?FALSE:TRUE;
+	*ret = BBPsync(getBBPsize(), NULL) == GDK_SUCCEED;
 	return MAL_SUCCEED;
 }
 
 str
 TRNglobal_abort(bit *ret)
 {
-	*ret = TMabort()?FALSE:TRUE;
+	*ret = TMabort() == GDK_SUCCEED;
 	return MAL_SUCCEED;
 }
 
@@ -66,7 +66,7 @@ TRNsubcommit(bit *ret, bat *bid)
 	b= BATdescriptor(*bid);
 	if( b == NULL)
 		throw(MAL, "transaction.subcommit", RUNTIME_OBJECT_MISSING);
-	*ret = TMsubcommit(b)?FALSE:TRUE;
+	*ret = TMsubcommit(b) == GDK_SUCCEED;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

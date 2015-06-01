@@ -233,7 +233,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 	if (!t->idxs.set)
 		return inserts;
 
-	inserts->r = rel_label(sql, inserts->r); 
+	inserts->r = rel_label(sql, inserts->r, 1); 
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;
@@ -1265,11 +1265,14 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				sql_subtype st;
 				sql_subfunc *f;
 				list *args = sa_list(sql->sa);
+				size_t l = strlen(cs->type.type->sqlname);
+				char *fname = sa_alloc(sql->sa, l+8);
 
+				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
-				f = sql_bind_func_result(sql->sa, sys, "convert", &st, &st, &cs->type); 
+				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type); 
 				if (!f)
-					return sql_error(sql, 02, "COPY INTO: 'convert' missing for type %s", cs->type.type->sqlname);
+					return sql_error(sql, 02, "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
 				e = exp_op(sql->sa, args, f);

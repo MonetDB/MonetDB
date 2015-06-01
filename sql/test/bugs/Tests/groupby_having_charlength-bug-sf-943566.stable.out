@@ -31,8 +31,8 @@ Ready.
 #	where t.name IN ('args', 'columns', 'functions', 'idxs',
 #		'objects', 'keys', 'modules', 'sequences')
 #	group by s.name having count(*) > char_length(s.name);
-% .s,	.L1,	.L2 # table_name
-% name,	L1,	L2 # name
+% .s,	.L3,	.L4 # table_name
+% name,	L3,	L4 # name
 % varchar,	int,	wrd # type
 % 4,	1,	2 # length
 [ "sys",	3,	10	]

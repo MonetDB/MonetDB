@@ -603,7 +603,7 @@ BATcheckimprints(BAT *b)
 							   hdata[2] * sizeof(cchdc_t) +
 							   sizeof(uint64_t) /* padding for alignment */
 							   + 4 * SIZEOF_SIZE_T) &&
-				    HEAPload(hp, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) >= 0) {
+				    HEAPload(hp, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) == GDK_SUCCEED) {
 					/* usable */
 					imprints->imprints = hp;
 					imprints->bits = (bte) (hdata[0] & 0xFF);
@@ -739,7 +739,7 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		s->tkey = 1;	/* we know is unique on tail now */
-		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) == GDK_FAIL) {
+		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			BBPunfix(s->batCacheid);
@@ -775,7 +775,7 @@ BATimprints(BAT *b)
 			      pages * sizeof(cchdc_t) +
 			      sizeof(uint64_t) /* padding for alignment */
 			      + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T, /* extra info */
-			      1) < 0) {
+			      1) != GDK_SUCCEED) {
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			GDKerror("#BATimprints: memory allocation error");
@@ -844,7 +844,7 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
 		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == 0 &&
+		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
 				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
 			ALGODEBUG fprintf(stderr, "#BATimprints: persisting imprints\n");
@@ -1022,7 +1022,7 @@ IMPSprint(BAT *b)
 	bte j;
 	int i;
 
-	if (BATimprints(b) == GDK_FAIL)
+	if (BATimprints(b) != GDK_SUCCEED)
 		return;
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;

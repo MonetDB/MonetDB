@@ -50021,7 +50021,7 @@ pattern mdb.getDefinition():bat[:oid,:str]
 address MDBgetDefinition;
 comment Returns a string representation of the current function 	with typing information attached
 
-pattern mdb.getStackTrace() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
+pattern mdb.getStackTrace() (X_1:bat[:oid,:int],X_2:bat[:oid,:str]) 
 address MDBStkTrace;
 pattern mdb.getStackFrame() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
 address MDBgetStackFrame;
@@ -50412,7 +50412,7 @@ address MTIMEdaytime1;
 comment default time with zeroed components
 
 command mtime.date_to_str(d:date,format:str):str 
-address MTIMEstrftime;
+address MTIMEdate_to_str;
 comment create a string from the date, using the specified format (see man strftime)
 
 command mtime.dayname(day:int):str 
@@ -50603,8 +50603,16 @@ command mtime.sql_seconds(t:timestamp):int
 address MTIMEtimestamp_sql_seconds;
 command mtime.seconds(t:timestamp):int 
 address MTIMEtimestamp_seconds;
+command mtime.str_to_timestamp(s:str,format:str):timestamp 
+address MTIMEstr_to_timestamp;
+comment create a timestamp from the string, using the specified format (see man strptime)
+
+command mtime.str_to_time(s:str,format:str):daytime 
+address MTIMEstr_to_time;
+comment create a time from the string, using the specified format (see man strptime)
+
 command mtime.str_to_date(s:str,format:str):date 
-address MTIMEstrptime;
+address MTIMEstr_to_date;
 comment create a date from the string, using the specified format (see man strptime)
 
 command mtime.start_dst(t:timezone):zrule 
@@ -50622,6 +50630,14 @@ comment extracts seconds (with fractional milliseconds) from daytime
 command mtime.seconds(d:daytime):int 
 address MTIMEdaytime_extract_seconds;
 comment extracts seconds from daytime
+
+command mtime.timestamp_to_str(d:timestamp,format:str):str 
+address MTIMEtimestamp_to_str;
+comment create a string from the time, using the specified format (see man strftime)
+
+command mtime.time_to_str(d:daytime,format:str):str 
+address MTIMEtime_to_str;
+comment create a string from the time, using the specified format (see man strftime)
 
 command mtime.time_synonyms(allow:bit):void 
 address MTIMEsynonyms;
@@ -51328,25 +51344,15 @@ command sql.alpha(dec:dbl,theta:dbl):dbl
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
 
-pattern sql.analyze(sch:str,tbl:str,col:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str,col:str):void 
 address sql_analyze;
 comment Update the database statistics table
 
-pattern sql.analyze(sch:str,tbl:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str):void 
 address sql_analyze;
-pattern sql.analyze(sch:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str):void 
 address sql_analyze;
-pattern sql.analyze(sample:lng):void 
-address sql_analyze;
-pattern sql.analyze(sch:str,tbl:str,col:str):void 
-address sql_analyze;
-comment Update the database statistics table
-
-pattern sql.analyze(sch:str,tbl:str):void 
-address sql_analyze;
-pattern sql.analyze(sch:str):void 
-address sql_analyze;
-pattern sql.analyze():void 
+pattern sql.analyze(minmax:int,sample:lng):void 
 address sql_analyze;
 pattern sql.argRecord(a:any...):str 
 address SQLargRecord;
@@ -51443,6 +51449,14 @@ comment Create the function described by f, needed for the Oct2014 upgrade
 pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd 
 address mvc_clear_table_wrap;
 comment Clear table
+
+pattern sql.catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void 
+address SQLcatalog;
+comment a alter table add/del table catalog statement
+
+pattern sql.catalog(type:int,sname:str,tname:str,access:int):void 
+address SQLcatalog;
+comment a alter table access statement
 
 pattern sql.catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void 
 address SQLcatalog;

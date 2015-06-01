@@ -127,12 +127,13 @@ rel_name( sql_rel *r )
 }
 
 sql_rel *
-rel_label( mvc *sql, sql_rel *r)
+rel_label( mvc *sql, sql_rel *r, int all)
 {
 	int nr = ++sql->label;
-	char name[16], *nme;
+	char tname[16], *tnme;
+	char cname[16], *cnme = NULL;
 
-	nme = number2name(name, 16, nr);
+	tnme = number2name(tname, 16, nr);
 	if (!is_project(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		set_processed(r);
@@ -140,16 +141,26 @@ rel_label( mvc *sql, sql_rel *r)
 	if (is_project(r->op) && r->exps) {
 		node *ne = r->exps->h;
 
-		for (; ne; ne = ne->next)
-			exp_setname(sql->sa, ne->data, nme, NULL );
+		for (; ne; ne = ne->next) {
+			if (all) {
+				nr = ++sql->label;
+				cnme = number2name(cname, 16, nr);
+			}
+			exp_setname(sql->sa, ne->data, tnme, cnme );
+		}
 	}
 	/* op_projects can have a order by list */
 	if (r->op == op_project && r->r) {
 		list *exps = r->r;
 		node *ne = exps->h;
 
-		for (; ne; ne = ne->next)
-			exp_setname(sql->sa, ne->data, nme, NULL );
+		for (; ne; ne = ne->next) {
+			if (all) {
+				nr = ++sql->label;
+				cnme = number2name(cname, 16, nr);
+			}
+			exp_setname(sql->sa, ne->data, tnme, cnme );
+		}
 	}
 	return r;
 }
@@ -1835,7 +1846,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			if (sql->emode == m_deps)
 				rel = rel_basetable(sql, t, tname);
 			else
-				rel = rel_parse(sql, t->query, m_instantiate);
+				rel = rel_parse(sql, t->s, t->query, m_instantiate);
 
 			if (!rel)
 				return rel;
@@ -2117,8 +2128,8 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;
 
-	/* exclude named variables */
-	if (exp->type != e_atom || (exp->l && !atom_null(exp->l)) /* atoms */ || exp->r /* named */ || exp->f /* list */) 
+	/* exclude named variables and variable lists */
+	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */) 
 		return NULL;
 
 	if (exp->l)
@@ -2126,7 +2137,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	else
 		a = sql_bind_arg(sql, exp->flag);
 
-	if ((!exp->l || !atom_null(a)) && (t->scale && t->type->eclass != EC_FLT))
+	if (t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
 	if (a && atom_cast(a, t)) {
@@ -2794,9 +2805,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					rel_project_add_exp(sql, l, ls);
 				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
-					if (!l->exps || list_empty(l->exps)) /* add all expressions to the project */
-						l->exps = rel_projections(sql, l->l, NULL, 0, 1);
-					rel_project_add_exp(sql, l, ls);
+					if (!l->processed) { /* add all expressions to the project */
+						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
+						set_processed(l);
+					}
+					if (!rel_find_exp(l, ls))
+						rel_project_add_exp(sql, l, ls);
 				}
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
@@ -2869,7 +2883,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				right = rl;
 			}
 			if (right->processed)
-				right = rel_label(sql, right);
+				right = rel_label(sql, right, 0);
 			right = rel_distinct(right);
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
@@ -3316,7 +3330,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			if (!correlated) {
 				if (right->processed)
-					right = rel_label(sql, right);
+					right = rel_label(sql, right, 0);
 				/*
 				right = rel_distinct(right);
 				*/

@@ -607,7 +607,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt) == GDK_FAIL)
+			if (BATcalcavg(b, s, &avg, &cnt) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -880,7 +880,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
 		GDKerror("%s: cannot allocate enough memory\n", func);
-		return GDK_FAIL;
+		return BUN_NONE;
 	}
 
 	switch (tp2) {
@@ -1586,8 +1586,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		BBPunfix(bn->batCacheid);
 	GDKfree(rems);
 	if (cntsp) {
-		if (*cntsp)
-			BBPreclaim(*cntsp);
+		BBPreclaim(*cntsp);
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
@@ -1699,7 +1698,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		*avg = n > 0 ? a : dbl_nil;			\
 	} while (0)
 
-int
+gdk_return
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 {
 	BUN n = 0, r = 0, i = 0;
@@ -2947,8 +2946,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		BBPreclaim(*avgb);
 	else
 		GDKfree(mean);
-	if (bn)
-		BBPreclaim(bn);
+	BBPreclaim(bn);
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);

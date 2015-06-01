@@ -75,7 +75,7 @@ BATsemijoin(BAT *l, BAT *r)
 		/* r is [dense2,any_1] */
 		BBPfix(r->batCacheid);
 	}
-	if (BATsubsemijoin(&res1, &res2, l, r, NULL, NULL, 0, BATcount(l)) == GDK_FAIL) {
+	if (BATsubsemijoin(&res1, &res2, l, r, NULL, NULL, 0, BATcount(l)) != GDK_SUCCEED) {
 		if (lmap)
 			BBPunfix(lmap->batCacheid);
 		BBPunfix(l->batCacheid);
@@ -212,7 +212,7 @@ do_batjoin(BAT *l, BAT *r, BAT *r2, int op,
 		assert(c2 == NULL);
 		ret = (*rangejoin)(&res1, &res2, l, r, r2, NULL, NULL, li, hi, estimate);
 	}
-	if (ret == GDK_FAIL) {
+	if (ret != GDK_SUCCEED) {
 		BBPunfix(l->batCacheid);
 		BBPunfix(r->batCacheid);
 		if (lmap)

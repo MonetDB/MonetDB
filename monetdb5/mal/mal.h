@@ -98,6 +98,7 @@ mal_export void mal_exit(void);
 #define LIST_MAL_VALUE  8		/* list bat tuple count */
 #define LIST_MAL_PROPS 16       /* show variable properties */
 #define LIST_MAL_MAPI  32       /* output Mapi compatible output */
+#define LIST_MAL_REMOTE  64       /* output MAL for remote execution */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)

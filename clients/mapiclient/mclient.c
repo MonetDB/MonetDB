@@ -1817,6 +1817,9 @@ doRequest(Mapi mid, const char *buf)
 		return 1;
 	}
 
+	if (mapi_needmore(hdl) == MMORE)
+		return 0;
+
 	format_result(mid, hdl, 0);
 
 	if (mapi_get_active(mid) == NULL)
@@ -1881,7 +1884,7 @@ doFileBulk(Mapi mid, FILE *fp)
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		if (fp != stdin)
+		if (fp != stdin && fp != NULL)
 			fclose(fp);
 		return 1;
 	}
@@ -1889,7 +1892,12 @@ doFileBulk(Mapi mid, FILE *fp)
 	timerStart();
 	do {
 		timerPause();
-		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+		if (fp == NULL) {
+			if (hdl == NULL)
+				break;
+			length = 0;
+			buf[0] = 0;
+		} else if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (fp != stdin) {
 				fclose(fp);
@@ -1897,6 +1905,7 @@ doFileBulk(Mapi mid, FILE *fp)
 			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
+			buf[0] = 0;
 		} else {
 			if (first &&
 			    length >= UTF8BOMLENGTH &&
@@ -1961,8 +1970,9 @@ doFileBulk(Mapi mid, FILE *fp)
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
-		/*  make sure there is a newline in the buffer */
-		if (strchr(buf, '\n') == NULL)
+		/* if not at EOF, make sure there is a newline in the
+		 * buffer */
+		if (length > 0 && strchr(buf, '\n') == NULL)
 			continue;
 
 		assert(hdl != NULL);
@@ -2860,7 +2870,7 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive[=tm] interpret \\ commands on stdin, use time formatting {ms,s,m}\n");
+	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -3344,7 +3354,8 @@ main(int argc, char **argv)
 			c |= doFile(mid, argv[optind], useinserts, interactive, save_history);
 			optind++;
 		}
-	}
+	} else if (command && mapi_get_active(mid))
+		c = doFileBulk(mid, NULL);
 
 	if (!has_fileargs && command == NULL)
 		c = doFile(mid, "-", useinserts, interactive, save_history);

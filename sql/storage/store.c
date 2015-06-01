@@ -707,7 +707,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->tables, tr->sa, (fdestroy) &table_destroy);
+	cs_new(&t->tables, tr->sa, (fdestroy) NULL);
 
 	if (isTable(t) || isArray(t)) { //create the deltas
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
@@ -1326,6 +1326,7 @@ create_sql_array(sql_allocator *sa, const char *name, sht type, bit system, int 
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	cs_new(&t->tables, sa, (fdestroy) NULL);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
@@ -1362,6 +1363,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	return col;
 }
 
+#if 0
 static sql_table *
 dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
 {
@@ -1382,6 +1384,7 @@ dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
 	nt->s = t->s;
 	return nt;
 }
+#endif
 
 sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
@@ -1401,9 +1404,11 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
 
+	/*
 	if (t->tables.set)
 		for (n = t->tables.set->h; n; n = n->next) 
 			dup_sql_ptable(sa, nt, n->data);
+			*/
 	nt->tables.dset = NULL;
 	nt->tables.nelm = NULL;
 	return nt;
@@ -1779,7 +1784,7 @@ store_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (GDKexiting() || logger_funcs.changes() < 1000) {
+		if (GDKexiting() || logger_funcs.changes() < 1000000) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}
@@ -2360,15 +2365,8 @@ sql_trans_copy_dimension( sql_trans *tr, sql_table *t, sql_dimension *dim )
 static sql_table *
 schema_table_find(sql_schema *s, sql_table *ot)
 {
-	node *n;
-
 	if (s) 
-	for (n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-
-		if (t->base.id == ot->base.id)
-			return t;
-	}
+		return find_sql_table(s, ot->base.name);
 	assert(NULL);
 	return NULL;
 }
@@ -2411,6 +2409,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	cs_new(&t->tables, sa, (fdestroy) NULL);
 
 	t->pkey = NULL;
 
@@ -3987,6 +3986,21 @@ sys_drop_dimensions(sql_trans *tr, sql_table *t)
 }
 
 static void
+sys_table_del_tables(sql_trans *tr, sql_table *t, int drop_action)
+{
+	node *n;
+
+	if (cs_size(&t->tables)) {
+		for (n = t->tables.set->h; n; ) {
+			sql_table *pt = n->data;
+
+			n = n->next;
+			sql_trans_del_table(tr, t, pt, drop_action);
+		}
+	}
+}
+
+static void
 sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -3998,6 +4012,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	table_funcs.table_delete(tr, systable, rid);
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
+	if (isMergeTable(t) || isReplicaTable(t))
+		sys_table_del_tables(tr, t, drop_action);
 
 	sql_trans_drop_dependencies(tr, t->base.id);
 

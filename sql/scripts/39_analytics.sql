@@ -103,7 +103,7 @@ create aggregate median(val WRD) returns WRD
 create aggregate median(val BIGINT) returns BIGINT
 	external name "aggr"."median";
 create aggregate median(val DECIMAL) returns DECIMAL
- 	external name "aggr"."median";
+	external name "aggr"."median";
 create aggregate median(val REAL) returns REAL
 	external name "aggr"."median";
 create aggregate median(val DOUBLE) returns DOUBLE
@@ -115,24 +115,24 @@ create aggregate median(val TIME) returns TIME
 	external name "aggr"."median";
 create aggregate median(val TIMESTAMP) returns TIMESTAMP
 	external name "aggr"."median";
-	
+
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val WRD, q DOUBLE) returns WRD
 	external name "aggr"."quantile";
 create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT
 	external name "aggr"."quantile";
 create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val REAL, q DOUBLE) returns REAL
 	external name "aggr"."quantile";
 create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile";
-	
+
 
 create aggregate quantile(val DATE, q DOUBLE) returns DATE
 	external name "aggr"."quantile";

@@ -25,7 +25,7 @@
 #define rand()		0
 #endif
 
-static int
+static gdk_return
 BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 {
 	BUN n = (BUN) * size;
@@ -92,7 +92,7 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 {
 	BUN n = (BUN) * size, i, r;
@@ -160,7 +160,7 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 {
 	BUN n = (BUN) * size, i, r;
@@ -250,7 +250,7 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 # define M_E		2.7182818284590452354	/* e */
 #endif
 
-static int
+static gdk_return
 BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 {
 	BUN n = (BUN) * size, i;

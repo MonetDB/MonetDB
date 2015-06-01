@@ -49,11 +49,11 @@ project (
 | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
 | | | | | select (
 | | | | | | table(sys.part) [ part.p_brand1, part.%TID% NOT NULL ] COUNT 
-| | | | | ) [ clob[char(9) "MFGR#2221"] <= part.p_brand1 <= clob[char(9) "MFGR#2228"] ]
+| | | | | ) [ clob "MFGR#2221" <= part.p_brand1 <= clob "MFGR#2228" ]
 | | | | ) [ lineorder.%lineorder_lo_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
 | | | | select (
 | | | | | table(sys.supplier) [ supplier.s_region, supplier.%TID% NOT NULL ] COUNT 
-| | | | ) [ supplier.s_region = clob[char(4) "ASIA"] ]
+| | | | ) [ supplier.s_region = clob "ASIA" ]
 | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]

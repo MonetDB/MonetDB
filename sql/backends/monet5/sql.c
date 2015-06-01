@@ -415,7 +415,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
-			r = rel_parse(sql, buf, m_deps);
+			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			rel_destroy(r);
@@ -464,7 +464,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
-		r = rel_parse(sql, nt->query, m_deps);
+		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
@@ -528,29 +528,6 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 					return sql_message("40000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
-	}
-
-	if (t->access != nt->access) {
-		if (t->access && table_has_updates(sql->session->tr, nt)) 
-			return sql_message("40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
-		mvc_access(sql, nt, t->access);
-	}
-
-	/* check for changes */
-	if (t->tables.dset)
-		for (n = t->tables.dset->h; n; n = n->next) {
-			/* propagate alter table .. drop table */
-			sql_table *at = n->data;
-			sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
-
-			sql_trans_del_table(sql->session->tr, nt, pt, at->drop_action);
-		}
-	for (n = t->tables.nelm; n; n = n->next) {
-		/* propagate alter table .. add table */
-		sql_table *at = n->data;
-		sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
-
-		sql_trans_add_table(sql->session->tr, nt, pt);
 	}
 
 	/* check for changes */
@@ -885,7 +862,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, nf->query);
-		r = rel_parse(sql, buf, m_deps);
+		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
@@ -1015,7 +992,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 
 		sql->sa = sa_create();
 		buf = sa_strdup(sql->sa, query);
-		r = rel_parse(sql, buf, m_deps);
+		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
 		/* TODO use relational part to find dependencies */
@@ -1052,6 +1029,108 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
 		return sql_message("3F000!DROP TRIGGER: unknown trigger %s\n", tname);
 	mvc_drop_trigger(sql, s, tri);
+	return MAL_SUCCEED;
+}
+
+static char *
+rel_check_tables(sql_table *nt, sql_table *nnt)
+{
+	node *n, *m;
+
+	if (cs_size(&nt->columns) != cs_size(&nnt->columns)) 
+		return sql_message("3F000!ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
+	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
+		sql_column *nc = n->data;
+		sql_column *mc = m->data;
+
+		if (subtype_cmp(&nc->type, &mc->type) != 0) 
+			return sql_message("3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+	}
+	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs)) 
+		return sql_message("3F000!ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+	if (cs_size(&nt->idxs))
+	for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
+		sql_idx *ni = n->data;
+		sql_idx *mi = m->data;
+
+		if (ni->type != mi->type) 
+			return sql_message("3F000!ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
+{
+	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
+	sql_table *mt = NULL, *pt = NULL; 
+
+	if (ms)
+		mt = mvc_bind_table(sql, ms, mtname);
+	if (ps)
+		pt = mvc_bind_table(sql, ps, ptname);
+	if (mt && pt) {
+		char *msg;
+		node *n = cs_find_id(&mt->tables, pt->base.id);
+			
+		if (n)
+			return sql_message("42S02!ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+		if ((msg = rel_check_tables(mt, pt)) != NULL)
+			return msg;
+		sql_trans_add_table(sql->session->tr, mt, pt);
+	} else if (mt) {
+		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
+	} else {
+		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, int drop_action)
+{
+	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
+	sql_table *mt = NULL, *pt = NULL; 
+
+	if (ms)
+		mt = mvc_bind_table(sql, ms, mtname);
+	if (ps)
+		pt = mvc_bind_table(sql, ps, ptname);
+	if (mt && pt) {
+		node *n = NULL;
+	      
+		if (!pt || (n = cs_find_id(&mt->tables, pt->base.id)) == NULL)
+			return sql_message("42S02!ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+
+		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
+	} else if (mt) {
+		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
+	} else {
+		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
+{
+	sql_schema *s = mvc_bind_schema(sql, sname);
+	sql_table *t = NULL; 
+
+	if (s)
+		t = mvc_bind_table(sql, s, tname);
+	if (t) {
+		if (t->type == tt_merge_table)
+			return sql_message("42S02!ALTER TABLE: read only MERGE TABLES are not supported");
+		if (t->access != access) {
+			if (access && table_has_updates(sql->session->tr, t)) 
+				return sql_message("40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
+
+			mvc_access(sql, t, access);
+		}
+	} else {
+		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1292,6 +1371,27 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		msg = drop_trigger(sql, sname, triggername);
 		break;
+	}
+	case DDL_ALTER_TABLE_ADD_TABLE:{
+		char *mtname = SaveArgReference(stk, pci, 3);
+		char *psname = SaveArgReference(stk, pci, 4);
+		char *ptname = SaveArgReference(stk, pci, 5);
+
+		return alter_table_add_table(sql, sname, mtname, psname, ptname);
+	}
+	case DDL_ALTER_TABLE_DEL_TABLE:{
+		char *mtname = SaveArgReference(stk, pci, 3);
+		char *psname = SaveArgReference(stk, pci, 4);
+		char *ptname = SaveArgReference(stk, pci, 5);
+		int drop_action = *getArgReference_int(stk, pci, 6);
+
+		return alter_table_del_table(sql, sname, mtname, psname, ptname, drop_action);
+	}
+	case DDL_ALTER_TABLE_SET_ACCESS:{
+		char *tname = SaveArgReference(stk, pci, 3);
+		int access = *getArgReference_int(stk, pci, 4);
+
+		return alter_table_set_access(sql, sname, tname, access);
 	}
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
@@ -2567,7 +2667,7 @@ setwritable(BAT *b)
 {
 	BAT *bn = b;
 
-	if (BATsetaccess(b, BAT_WRITE) == GDK_FAIL) {
+	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
 			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
@@ -2727,7 +2827,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (ret == GDK_FAIL) {
+		if (ret != GDK_SUCCEED) {
 			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
@@ -2762,7 +2862,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
-		if (ret == GDK_FAIL)
+		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = u;
 	}
@@ -3802,7 +3902,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		oid *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 
-		if (BAThash(b, 0) == GDK_FAIL)
+		if (BAThash(b, 0) != GDK_SUCCEED)
 			 throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
@@ -5178,7 +5278,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MSinitClientPrg(cntxt, "user", "test");
 
 		/* generate MAL code */
-		backend_callinline(b, cntxt, s);
+		backend_callinline(b, cntxt, s, 1);
 		addQueryToCache(cntxt);
 
 		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
