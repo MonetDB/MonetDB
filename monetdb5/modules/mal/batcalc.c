@@ -313,6 +313,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
 	int tp1, tp2, tp3;
+	int isArray = 0;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
@@ -334,9 +335,8 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
 			b2 = BATdescriptor(*bid);
@@ -346,8 +346,11 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					BBPunfix(s->batCacheid);
 				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 			}
+			if(isBATarray(b))
+				b = materialiseDimensionBAT(b);
 			if(isBATarray(b2))
 				b2 = materialiseDimensionBAT(b2);
+			isArray = 0;
 			assert(BAThdense(b2));
 		}
 		if (b2) {
@@ -371,19 +374,26 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(tp1, b->T->type);
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s, tp3, abort_on_error);
 	}
-	BBPunfix(b->batCacheid);
 	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
 	bid = getArgReference_bat(stk, pci, 0);
+	BATsetArray(bn, isArray);
+	if(isBATarray(bn) && (strchr(malfunc, '+') || strchr(malfunc, '-'))) {
+		//the step has changed and we should put it back to its correct value
+		BATiter b_iter = bat_iterator(b);
+		oid lastOid = BUNlast(b)-1;
+		BUNreplace(bn, &lastOid, BUNtail(b_iter, lastOid), 1); 
+	}
 	BBPkeepref(*bid = bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -398,6 +408,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
 	int tp1, tp2;
+	int isArray =0 ;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
@@ -416,9 +427,8 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
 			b2 = BATdescriptor(*bid);
@@ -428,8 +438,11 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 					BBPunfix(s->batCacheid);
 				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 			}
+			if(isBATarray(b))
+				b = materialiseDimensionBAT(b);
 			if(isBATarray(b2))
 				b2 = materialiseDimensionBAT(b2);
+			isArray = 0;
 			assert(BAThdense(b2));
 		}
 		if (b2) {
@@ -448,19 +461,27 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s, abort_on_error);
 	}
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
 	bid = getArgReference_bat(stk, pci, 0);
-	BBPkeepref(*bid = bn->batCacheid);
+	BATsetArray(bn, isArray);
+	if(isBATarray(bn) && (strchr(malfunc, '+') || strchr(malfunc, '-'))) {
+		//the step has changed and we should put it back to its correct value
+		BATiter b_iter = bat_iterator(b);
+		oid lastOid = BUNlast(b)-1;
+		BUNreplace(bn, &lastOid, BUNtail(b_iter, lastOid), 1); 
+	}	BBPkeepref(*bid = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -474,6 +495,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
 	int tp1, tp2;
+	int isArray = 0;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
@@ -492,9 +514,8 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
 			b2 = BATdescriptor(*bid);
@@ -504,8 +525,11 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 					BBPunfix(s->batCacheid);
 				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 			}
+			if(isBATarray(b))
+				b = materialiseDimensionBAT(b);
 			if(isBATarray(b2))
 				b2 = materialiseDimensionBAT(b2);
+			isArray = 0;
 			assert(BAThdense(b2));
 		}
 		if (b2) {
@@ -531,19 +555,27 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-		if(isBATarray(b))
-			b = materialiseDimensionBAT(b);
 		assert(BAThdense(b));
+		isArray = isBATarray(b);
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s);
 	}
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
 	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
 	bid = getArgReference_bat(stk, pci, 0);
-	BBPkeepref(*bid = bn->batCacheid);
+	BATsetArray(bn, isArray);
+	if(isBATarray(bn) && (strchr(malfunc, '+') || strchr(malfunc, '-'))) {
+		//the step has changed and we should put it back to its correct value
+		BATiter b_iter = bat_iterator(b);
+		oid lastOid = BUNlast(b)-1;
+		BUNreplace(bn, &lastOid, BUNtail(b_iter, lastOid), 1); 
+	}	BBPkeepref(*bid = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 }
 
