@@ -863,9 +863,10 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 	
 		/* first create the project */
-		e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		exps = new_exp_list(sql->sa);
+		e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		append(exps, e);
+	
 		updates = table_update_array(sql, t);
 		for (n = assignmentlist->h; n; n = n->next) {
 			symbol *a = NULL;

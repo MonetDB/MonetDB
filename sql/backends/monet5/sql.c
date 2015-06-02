@@ -2329,6 +2329,13 @@ str materialiseDimension(bat* res, bat* in) {
 		throw(MAL, "sql.materialise_dimension", RUNTIME_OBJECT_MISSING);
 	}
 
+	if(!isBATarray(dimensionBAT)) {
+		//ti was planned to be a dimension but somewhere the rules were not
+		//suttisfied and it was treated as a normal BAT
+		resBAT = dimensionBAT;
+		BBPkeepref(*res = resBAT->batCacheid);
+    	return MAL_SUCCEED;
+	}
 	if(BATcount(dimensionBAT)) {
 			resBAT=materialiseDimensionBAT(dimensionBAT);
 	} else {

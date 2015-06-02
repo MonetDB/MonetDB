@@ -5385,10 +5385,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				for(whereExpNode=r->exps->h; whereExpNode; whereExpNode=whereExpNode->next) {
 					sql_exp *whereExp = whereExpNode->data;
 					if(isColumn(whereExp)) {
-//						sql_exp *innerExp = whereExp->l;
-//						if(innerExp->type == e_column) {
 							if(!newFilters->cnt) {
-								//found a filter on a non-dimensinal column	
 								/*Assuming a single array add all dimensions of it to the filtering condition*/
 								node *basetableExps;
 								for(basetableExps = rel->exps->h ; basetableExps; basetableExps = basetableExps->next) {
@@ -5398,7 +5395,6 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 									}
 								}
 							}
-//						}
 					}
 					if(newFilters->cnt)
 						break;

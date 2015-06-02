@@ -4107,7 +4107,6 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 
 	updates = table_update_stmts(sql, t, &nr_cols);
 	tids = update->op4.lval->h->data;
-
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
 		sql_column *c = find_sql_column(t, ce->name);
