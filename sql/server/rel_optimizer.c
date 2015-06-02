@@ -4773,6 +4773,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		if (!l || rel_is_ref(l) || 
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
+		   /* we cannot rewrite projection from outer joins */
+		   ((is_left(rel->op) || is_full(rel->op)) && r->op == op_project) ||
+		   ((is_right(rel->op) || is_full(rel->op)) && l->op == op_project) ||
 		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
