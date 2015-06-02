@@ -3395,90 +3395,90 @@ simple_scalar_exp:
  |  scalar_exp '+' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_add")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_add")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_sub")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_sub")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_mul")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_mul")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '/' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_div")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_div")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '%' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "mod")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "mod")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '^' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_xor")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_xor")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '&' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_and")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_and")));
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '|' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_or")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_not")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_not")));
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "left_shift")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "right_shift")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "left_shift_assign")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift_assign")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "right_shift_assign")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift_assign")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3496,7 +3496,7 @@ simple_scalar_exp:
 			  if (!$$) {
 				dlist *l = L();
 			  	append_list(l, 
-			  		append_string(L(), sa_strdup(SA, "sql_neg")));
+			  		append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_neg")));
 	  		  	append_symbol(l, $2);
 	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
 			  }
