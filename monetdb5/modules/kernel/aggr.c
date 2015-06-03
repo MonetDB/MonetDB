@@ -601,13 +601,13 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 	BAT *b, *g, *e, *s, *bn = NULL, *cnts, *q = NULL;
 	double qvalue;
 
-   /* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
-	assert((grpfunc1 && grpfunc2 == NULL && quantilefunc == NULL) ||
-			(grpfunc1 == NULL && grpfunc2 && quantilefunc == NULL) ||
-			(grpfunc1 == NULL && grpfunc2 == NULL && quantilefunc) );
+   	/* one of grpfunc1, grpfunc2 and quantilefunc is non-NULL and the others are */
+	if( (grpfunc1 && (grpfunc2 || quantilefunc))  || (grpfunc2 && (grpfunc1 || quantilefunc)) || ((grpfunc1 || grpfunc2) && quantilefunc) ) 
+		throw(MAL, "AGGRsubgroupedExt:", "more than one of grpfunc1, grpfunc2 and quantilefunc is non-NULL");
 
 	/* if retval2 is non-NULL, we must have grpfunc2 */
-	assert(retval2 == NULL || grpfunc2 != NULL);
+	if(retval2 != NULL && grpfunc2 == NULL)
+		throw(MAL, "AGGRsubgroupedExt:", "retval is not NULL and grpfunc2 is");
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
