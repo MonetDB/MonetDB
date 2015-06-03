@@ -364,6 +364,7 @@ static gdk_return
 BATdimensionGroup_internal(BAT **groups, BAT **extents, BAT *dimensionBAT, BAT *g, BAT *e, BAT *h) {
 	BAT* resBAT;
 	BAT* bordersBAT;
+	BUN resSize = 0;
 
 if(g || e || h) {
 	GDKerror("BATdimensionGroup_internal: Unhandled BATs\n");
@@ -373,36 +374,24 @@ if(g || e || h) {
 #define groups(TPE) \
 	do { \
 		TPE min, max, step, it; \
-		long elementsNum, elementRepeats, groupRepeats, i, j; \
-		BUN resSize = 0; \
-		oid groupNum, pos; \
-		oid* groupsArray; \
+		long elementRepeats, groupRepeats; \
+		oid pos; \
 \
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-		elementsNum = dimensionElementsNum(min, max, step); \
-		resSize = elementsNum*elementRepeats*groupRepeats; \
+		resSize = dimensionElementsNum(min, max, step); \
 fprintf(stderr, "elementRepeats = %ld, groupRepeats = %ld - size = %ld\n", elementRepeats, groupRepeats, resSize); \
-		if((resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)) && (bordersBAT = BATnew(TYPE_void, TYPE_oid, elementsNum, TRANSIENT))) { \
-			groupsArray = (oid*)Tloc(resBAT, BUNfirst(resBAT)); \
+		if((bordersBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT))) { \
+fprintf(stderr, "resSize = %d - eR = %ld - gR = %ld\n", (unsigned int)resSize, elementRepeats, groupRepeats); \
+			/*groups have the same repeats with the dimensionBAT*/ \
+			resBAT = createDimension(oid, 0, resSize-1, 1, elementRepeats, groupRepeats); \
 			/*create the groups*/ \
-			for(pos=0, j=0; j<groupRepeats; j++) { \
-				for(it = min, groupNum=0; it<=max; it+=step, groupNum++) { \
-					if(j == 0) \
-						BUNappend(bordersBAT, &pos, 1); \
-					for(i=0; i<elementRepeats; i++) { \
-						groupsArray[pos] = groupNum; \
-						pos++; \
-					} \
-				} \
+			for(it = min, pos=0; it<=max; it+=step, pos+=elementRepeats) { \
+				BUNappend(bordersBAT, &pos, 1); \
 			} \
 \
-		BATsetcount(resBAT, resSize); \
-		BATseqbase(resBAT, 0); \
-		BATderiveProps(resBAT, false); \
-\
-		BATsetcount(bordersBAT, elementsNum); \
-		BATseqbase(bordersBAT, 0); \
-		BATderiveProps(bordersBAT, false); \
+			BATsetcount(bordersBAT, resSize); \
+			BATseqbase(bordersBAT, 0); \
+			BATderiveProps(bordersBAT, false); \
 		} \
 	} while(0)
 
@@ -478,7 +467,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKerror("BATgroup_internal: g tail not of type oid\n");
 		return GDK_FAIL;
 	}
-	if(g && BATcount(b) != BATcount(g)) {
+	if(g && BATcount(b) != BATcount(g) && !isBATarray(b)) {
 		GDKerror("BATgroup_internal: g and b have different size\n");
 		return GDK_FAIL;
 	}

@@ -1003,25 +1003,24 @@ do {\
         long i; \
         TPE* vls; \
         BAT *resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats+groupRepeats+1, TRANSIENT); \
-        if(!resBAT) \
-            return NULL; \
-\
+        if(resBAT) { \
 fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRepeats+1)); \
-        vls = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-        for(i=0; i<elementRepeats; i++) { \
-            *vls = min; \
-            vls++; \
-        } \
-        for(i=0; i<groupRepeats; i++) { \
-            *vls = max; \
-            vls++; \
-        } \
-        *vls = step; \
+	        vls = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+	        for(i=0; i<elementRepeats; i++) { \
+	            *vls = min; \
+	            vls++; \
+	        } \
+	        for(i=0; i<groupRepeats; i++) { \
+	            *vls = max; \
+	            vls++; \
+	        } \
+	        *vls = step; \
 \
-        BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
-        BATseqbase(resBAT,0); \
-        BATderiveProps(resBAT,FALSE); \
-        resBAT->batArray=1; \
+	        BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
+	        BATseqbase(resBAT,0); \
+	        BATderiveProps(resBAT,FALSE); \
+	        resBAT->batArray=1; \
+		} \
         resBAT; \
     })
 
