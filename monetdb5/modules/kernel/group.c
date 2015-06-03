@@ -37,10 +37,15 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 	if ((r = BATgroup(&gn, &en, &hn, b, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
 		*next = en->batCacheid;
-		*nhis = hn->batCacheid;
 		BBPkeepref(*ngid);
 		BBPkeepref(*next);
-		BBPkeepref(*nhis);
+		if(isBATarray(b)) {//when array histograms are not used
+			*nhis = 0;
+		} else {
+			*nhis = hn->batCacheid;
+			BBPkeepref(*nhis);
+		}
+
 	}
 	BBPunfix(b->batCacheid);
 	if (g)

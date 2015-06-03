@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
+#include <math.h>
 /* how much to extend the extent and histo bats when we run out of space */
 #define GROUPBATINCR	8192
 
@@ -360,6 +360,90 @@
 	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
+static gdk_return
+BATdimensionGroup_internal(BAT **groups, BAT **extents, BAT *dimensionBAT, BAT *g, BAT *e, BAT *h) {
+	BAT* resBAT;
+	BAT* bordersBAT;
+
+if(g || e || h) {
+	GDKerror("BATdimensionGroup_internal: Unhandled BATs\n");
+	return GDK_FAIL;
+}
+
+#define groups(TPE) \
+	do { \
+		TPE min, max, step, it; \
+		long elementsNum, elementRepeats, groupRepeats, i, j; \
+		BUN resSize = 0; \
+		oid groupNum, pos; \
+		oid* groupsArray; \
+\
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+		elementsNum = dimensionElementsNum(min, max, step); \
+		resSize = elementsNum*elementRepeats*groupRepeats; \
+fprintf(stderr, "elementRepeats = %ld, groupRepeats = %ld - size = %ld\n", elementRepeats, groupRepeats, resSize); \
+		if((resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)) && (bordersBAT = BATnew(TYPE_void, TYPE_oid, elementsNum, TRANSIENT))) { \
+			groupsArray = (oid*)Tloc(resBAT, BUNfirst(resBAT)); \
+			/*create the groups*/ \
+			for(pos=0, j=0; j<groupRepeats; j++) { \
+				for(it = min, groupNum=0; it<=max; it+=step, groupNum++) { \
+					if(j == 0) \
+						BUNappend(bordersBAT, &pos, 1); \
+					for(i=0; i<elementRepeats; i++) { \
+						groupsArray[pos] = groupNum; \
+						pos++; \
+					} \
+				} \
+			} \
+\
+		BATsetcount(resBAT, resSize); \
+		BATseqbase(resBAT, 0); \
+		BATderiveProps(resBAT, false); \
+\
+		BATsetcount(bordersBAT, elementsNum); \
+		BATseqbase(bordersBAT, 0); \
+		BATderiveProps(bordersBAT, false); \
+		} \
+	} while(0)
+
+	switch (ATOMtype(BATttype(dimensionBAT))) {
+        case TYPE_bte:
+            groups(bte);
+            break;
+        case TYPE_sht:
+            groups(sht);
+            break;
+        case TYPE_int:
+            groups(int);
+            break;
+        case TYPE_lng:
+            groups(lng);
+           break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            groups(hge);
+            break;
+#endif
+        case TYPE_flt:
+            groups(flt);
+            break;
+        case TYPE_dbl:
+            groups(dbl);
+            break;
+        case TYPE_oid:
+            groups(oid);
+            break;
+        default:
+        	GDKerror("BATdimensionGroup_internal: dimension type not handled\n");
+            return GDK_FAIL;
+        }
+
+	if(!resBAT || !bordersBAT)
+		return GDK_FAIL;
+	*groups = resBAT;
+	*extents = bordersBAT;
+	return GDK_SUCCEED;
+}
 
 gdk_return
 BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
@@ -382,7 +466,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bat parent;
 
 	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroup: b must be dense-headed\n");
+		GDKerror("BATgroup_internal: b must be dense-headed\n");
 		return GDK_FAIL;
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
@@ -400,7 +484,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(e == NULL || h == NULL || BATcount(e) == BATcount(h));
 	assert(e == NULL || h == NULL || e->hseqbase == h->hseqbase);
 	/* we want our output to go somewhere */
-	assert(groups != NULL);
+	if(!groups) {
+		GDKerror("BATgroup_internal: groups is NULL\n");
+		return GDK_FAIL;
+	}
+
+	if(isBATarray(b))
+		return BATdimensionGroup_internal(groups, extents, b, g, e, h);
 
 	hseqb = b->hseqbase;
 	if (b->tkey || BATcount(b) <= 1 || (g && (g->tkey || BATtdense(g)))) {
