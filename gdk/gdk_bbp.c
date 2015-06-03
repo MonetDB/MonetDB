@@ -2399,7 +2399,10 @@ BBPkeepref(bat i)
 		}
 
 		incref(i, TRUE, lock);
-		assert(BBP_refs(i));
+		if(!BBP_refs(i)) {
+        	GDKerror("BBPkeepref: BAT does not have any references\n");
+			return;
+    	}	
 		decref(i, FALSE, FALSE, lock);
 	}
 }
@@ -2454,11 +2457,14 @@ getBBPdescriptor(bat i, int lock)
 	int load = FALSE;
 	bat j = abs(i);
 	BAT *b = NULL;
-
 	if (!BBPcheck(i, "BBPdescriptor")) {
 		return NULL;
 	}
-	assert(BBP_refs(i));
+	
+	if(!BBP_refs(i)) {
+		GDKerror("getBBPdesriptor: BAT does not have any references\n");
+		return NULL;
+	}
 	if ((b = BBP_cache(i)) == NULL) {
 
 		if (lock)
