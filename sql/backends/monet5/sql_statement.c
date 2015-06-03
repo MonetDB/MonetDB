@@ -303,7 +303,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 				break;
 				/* simple case of statements of only statements */
 			case st_alias:
-			case st_materialise:
+		//	case st_materialise:
 			case st_tunion:
 			case st_tdiff:
 			case st_tinter:
@@ -1248,12 +1248,14 @@ stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 	return s;
 }
 
+#if 0
 stmt* stmt_materialise(sql_allocator *sa, stmt *op1) {
 	stmt *s = stmt_create(sa, st_materialise);
 	s->op1 = op1;
 	s->nrcols = op1->nrcols;
 	return s;
 }
+#endif
 
 sql_subtype *
 tail_type(stmt *st)
@@ -1336,8 +1338,8 @@ tail_type(stmt *st)
 		return sql_bind_localtype("bat");
 	case st_dimension:
 		return &st->op4.dval->type;
-	case st_materialise:
-		return tail_type(st->op1);
+//	case st_materialise:
+//		return tail_type(st->op1);
 	default:
 		fprintf(stderr, "missing tail type %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);

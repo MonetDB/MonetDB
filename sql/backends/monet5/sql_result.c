@@ -1614,6 +1614,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 				return -1;
 
 			count = BATcount(order);
+			if(isBATarray(order))
+				count = dimensionBATsize(order);			
 		} else
 			count = 1;
 	}
@@ -1774,6 +1776,8 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	count = m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
 		count = BATcount(order);
+		if(isBATarray(order))
+			count = dimensionBATsize(order);			
 		clean = 1;
 	}
 	if (json) {

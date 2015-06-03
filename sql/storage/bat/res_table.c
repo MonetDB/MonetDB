@@ -62,6 +62,9 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->mtype = mtype;
 	if (mtype == TYPE_bat) {
 		BAT *b = (BAT*)val;
+		
+		if(isBATarray(b))
+			b = materialiseDimensionBAT(b);
 
 		c->b = b->batCacheid;
 		bat_incref(c->b);

@@ -629,6 +629,9 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	BUN maxnr = BATcount(order);
 	int ret = 0;
 
+	if(isBATarray(order))
+		maxnr = dimensionBATsize(order);
+
 	/* only set nr if it is zero or lower (bogus) to the maximum value
 	 * possible (BATcount), if already set within BATcount range,
 	 * preserve value such that for instance SQL's reply_size still

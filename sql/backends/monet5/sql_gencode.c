@@ -782,6 +782,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			(void) pushInt(mb, q, 1);
 		} break;
+#if 0
 		case st_materialise: { 
 			int l;
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
@@ -794,6 +795,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			return s->nr;
 		}
+#endif
 		case st_var:{
 			if (s->op1) {
 				if (VAR_GLOBAL(s->flag)) {	/* globals */

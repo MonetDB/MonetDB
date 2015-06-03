@@ -2428,8 +2428,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(sql->sa, bin_first_column(sql->sa, sub), s);
 	
-		if(exp->type == e_dimension)
-			s = stmt_materialise(sql->sa, s);	
+//		if(exp->type == e_dimension)
+//			s = stmt_materialise(sql->sa, s);	
 		s = stmt_rename(sql, rel, exp, s);
 		column_name(sql->sa, s); /* save column name */
 		list_append(pl, s);
