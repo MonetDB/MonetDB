@@ -470,19 +470,37 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		return GDK_FAIL;
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
-	assert(g == NULL || BAThdense(g));
-	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
-	assert(g == NULL || BATcount(b) == BATcount(g));
-	assert(g == NULL || BATcount(b) == 0 || b->hseqbase == g->hseqbase);
+	if(g && !BAThdense(g)) {
+		GDKerror("BATgroup_internal: Head of g is not dense\n");
+		return GDK_FAIL;
+	}
+	if(g && BATttype(g) != TYPE_oid && BATcount(g) > 0) {
+		GDKerror("BATgroup_internal: g tail not of type oid\n");
+		return GDK_FAIL;
+	}
+	if(g && BATcount(b) != BATcount(g)) {
+		GDKerror("BATgroup_internal: g and b have different size\n");
+		return GDK_FAIL;
+	}
+	if(g && BATcount(b) > 0 && b->hseqbase != g->hseqbase) {
+		GDKerror("BATgroup_internal: g and b are not aligned\n");
+		return GDK_FAIL;
+	}
 	/* e is NULL or [oid(dense),oid] */
-	assert(e == NULL || BAThdense(e));
-	assert(e == NULL || BATttype(e) == TYPE_oid);
+	if(e && (!BAThdense(e) || BATttype(e) != TYPE_oid)) {
+		GDKerror("BATgroup_internal: Head of e not dense or the tail type of it is not TYPE_oid\n");
+		return GDK_FAIL;
+	}
 	/* h is NULL or [oid(dense),wrd] */
-	assert(h == NULL || BAThdense(h));
-	assert(h == NULL || h->ttype == TYPE_wrd);
+	if(h && (!BAThdense(e) || BATttype(h) != TYPE_wrd)) {
+		GDKerror("BATgroup_internal: Head of w not dense or the tail type of it is not TYPE_wrd\n");
+		return GDK_FAIL;
+	}
 	/* e and h are aligned */
-	assert(e == NULL || h == NULL || BATcount(e) == BATcount(h));
-	assert(e == NULL || h == NULL || e->hseqbase == h->hseqbase);
+	if(e && h && (BATcount(e) != BATcount(h) || e->hseqbase != h->hseqbase)) {
+		GDKerror("BATgroup_internal: e and h are not aligned\n");
+		return GDK_FAIL;
+	}
 	/* we want our output to go somewhere */
 	if(!groups) {
 		GDKerror("BATgroup_internal: groups is NULL\n");
@@ -606,7 +624,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			return GDK_SUCCEED;
 		}
 	}
-	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
+	if(g && BATtdense(g)) { /* i.e. g->ttype == TYPE_oid */
+		GDKerror("BATgroup_internal: g has dense tail\n");
+		goto error;
+	}
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
