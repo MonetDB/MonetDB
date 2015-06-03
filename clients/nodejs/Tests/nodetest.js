@@ -112,6 +112,20 @@ conn.query("SELECT '\\\\asdf','\"', '\\\"', '\\\\\"', '\\''", function(err, res)
 	assert.equal("'", res.data[0][4]);
 });
 
+/* Retrieving escaped characters from the database */
+conn.query('start transaction').
+	query('create table foo(a string)').
+	query("insert into foo values ('\t\n\r\n\tlalala\t\n\r')");
+
+conn.query("select * from foo", function(err, res) {
+	assert.equal(null, err);
+	assert.equal(1, res.rows);
+	assert.equal('\t\n\r\n\tlalala\t\n\r', res.data[0][0]);
+});	
+
+conn.query('delete from foo; drop table foo; rollback');
+
+
 /* prepared statements can also be re-used  */
 conn.prepare('SELECT id from tables where name=? and type=? and temporary=?', function(err, res){
 	assert.equal(null, err);
