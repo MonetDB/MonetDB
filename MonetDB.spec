@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.19.14
+%define version 11.19.15
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
