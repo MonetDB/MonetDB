@@ -3389,3 +3389,42 @@ BUN dimensionBATsize(BAT *dimensionBAT) {
 	}
 	return 0;
 }
+
+BUN dimensionBATelementsNum(BAT* dimensionBAT) {
+#define num(TPE) \
+	({ \
+		TPE min, max, step; \
+		long elementRepeats, groupRepeats; \
+		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
+		dimensionElementsNum(min, max, step); \
+	})
+	switch(ATOMtype(BATttype(dimensionBAT))) {
+		case TYPE_bte:
+            return num(bte);
+        case TYPE_sht:
+            return num(sht);
+        case TYPE_int:
+            return num(int);
+        case TYPE_flt:
+            return num(flt);
+        case TYPE_dbl:
+            return num(dbl);
+        case TYPE_lng:
+            return num(lng);
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            return num(hge);
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            return num(int);
+#else
+            return num(lng);
+#endif
+        break;
+        default:
+            fprintf(stderr, "dimensionBATelementsNum: dimension type not handled\n");
+	}
+
+	return 0;
+}

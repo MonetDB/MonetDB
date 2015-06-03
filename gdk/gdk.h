@@ -1087,7 +1087,7 @@ fprintf(stderr, "materialise: element repetition %ld\n", i); \
 
 gdk_export BAT* materialiseDimensionBAT(BAT* dimensionBAT);
 gdk_export BUN dimensionBATsize(BAT* dimensionBAT);
-
+gdk_export BUN dimensionBATelementsNum(BAT* dimensionBAT);
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in
