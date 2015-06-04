@@ -587,7 +587,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			print_stmtlist(sql->sa, right);
 		}	
 		//if array then check if there is mbr requirement
-		if(left && s->type == st_join && s->op1->type == st_mbrselect ) {
+		if(s && left && s->type == st_join && s->op1->type == st_mbrselect ) {
 			s->op3 = find_e_column_uselect(sql->sa, s->op1, s->op2); 
 		}
 	 }	break;
