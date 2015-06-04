@@ -660,7 +660,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			if (!silent) {
 				char *errsig;
 
-				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+				errsig = instruction2str(mb,0,p,LIST_MAL_ALL );
 				showScriptException(out, mb, getPC(mb, p), TYPE,
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),

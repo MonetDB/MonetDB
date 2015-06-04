@@ -38,10 +38,13 @@ end user.main;
 # t	t	t	t	t  # name
 # str	str	str	str	str  # type
 #--------------------------#
+[ "append",	"pattern",	"bat",	"(bv:bat[:oid,:any_1],l:bat[:oid,:oid]...):void ",	"ARNGmerge;"  ]
+[ "append",	"pattern",	"bat",	"(bv:bat[:oid,:any_1],pieces:int):bat[:oid,:any_1] ",	"ARNGcreate;"  ]
+[ "append",	"pattern",	"bat",	"(bv:bat[:oid,:any_1]):void ",	"ARNGcreate;"  ]
 [ "append",	"command",	"bat",	"(i:bat[:oid,:any_1],u:any_1):bat[:oid,:any_1] ",	"BKCappend_val_wrap;"  ]
-[ "append",	"command",	"bat",	"(tt:int,heapfile:str):bat[:oid,:any_1] ",	"BKCattach;"  ]
-[ "append",	"command",	"bat",	"(i:bat[:oid,:any_1],u:any_1,force:bit):bat[:oid,:any_1] ",	"BKCappend_val_force_wrap;"  ]
-[ "append",	"command",	"bat",	"(i:bat[:oid,:any_1],u:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] ",	"BKCappend_force_wrap;"  ]
+[ "arrange",	"command",	"bat",	"(tt:int,heapfile:str):bat[:oid,:any_1] ",	"BKCattach;"  ]
+[ "arrange",	"command",	"bat",	"(i:bat[:oid,:any_1],u:any_1,force:bit):bat[:oid,:any_1] ",	"BKCappend_val_force_wrap;"  ]
+[ "arrange",	"command",	"bat",	"(i:bat[:oid,:any_1],u:bat[:oid,:any_1],force:bit):bat[:oid,:any_1] ",	"BKCappend_force_wrap;"  ]
 [ "attach",	"command",	"bat",	"(i:bat[:oid,:any_1],u:bat[:oid,:any_1]):bat[:oid,:any_1] ",	"BKCappend_wrap;"  ]
 [ "delete",	"command",	"bat",	"(sz:wrd):bat[:oid,:oid] ",	"BKCdensebat;"  ]
 [ "delete",	"command",	"bat",	"(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] ",	"BKCdelete_bat_bun;"  ]

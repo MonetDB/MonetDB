@@ -805,6 +805,8 @@ str ALGtsort_rev(bat *result, const bat *bid);
 str ALGtunion(bat *result, const bat *lid, const bat *rid);
 str ALGvariance(dbl *res, const bat *bid);
 str ALGvariancep(dbl *res, const bat *bid);
+str ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str AUTHaddUser(oid *ret, Client *c, str *user, str *pass);
 str AUTHchangePassword(Client *c, str *oldpass, str *passwd);
 str AUTHchangeUsername(Client *c, str *olduser, str *newuser);
