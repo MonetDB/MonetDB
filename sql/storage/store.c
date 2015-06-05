@@ -3898,6 +3898,21 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 }
 
 static void
+sql_trans_drop_ranges(sql_trans* tr, sqlid depend_id)
+{
+    oid rid;
+    sql_schema * s = find_sql_schema(tr, "sys");
+    sql_table* ranges = find_sql_table(s, "_ranges");
+    sql_column * dep_dep_id = find_sql_column(ranges, "dimension_id");
+    rids *rs;
+
+    rs = table_funcs.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
+    for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs))
+        table_funcs.table_delete(tr, ranges, rid);
+    table_funcs.rids_destroy(rs);
+}
+
+static void
 sys_drop_dimension(sql_trans *tr, sql_dimension *dim)
 {
 //	str seq_pos = NULL;
@@ -3909,6 +3924,8 @@ sys_drop_dimension(sql_trans *tr, sql_dimension *dim)
 
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syscolumn, rid);
+
+	sql_trans_drop_ranges(tr, dim->base.id);	
 	sql_trans_drop_dependencies(tr, dim->base.id);
 
 #if 0
