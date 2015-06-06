@@ -71,8 +71,9 @@ geom_export str wkbcreatepoint(wkb **out, const dbl *x, const dbl *y);
 geom_export str wkbcreatepoint_bat(bat *out, const bat *x, const bat *y);
 geom_export str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y);
 geom_export double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
-geom_export str pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, int *point_x, int *point_y);
-geom_export str wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y);
+geom_export str pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, bat *point_x, bat *point_y);
+geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
+geom_export str wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 geom_export str wkbDimension(int *out, wkb **geom);
 geom_export str wkbGeometryTypeId(int *out, wkb **geom);
@@ -888,7 +889,7 @@ pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 }
 
 str
-pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, int *point_x, int *point_y)
+pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, bat *point_x, bat *point_y)
 {
 	BAT *bo = NULL, *bpx = NULL, *bpy;
 	dbl *px = NULL, *py = NULL;
@@ -984,7 +985,7 @@ pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 #define POLY_NUM_HOLE 10
 
 str
-wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y) {
+wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y) {
 	double *vert_x, *vert_y, **holes_x = NULL, **holes_y= NULL;
 	int *holes_n= NULL, j;
 	wkb *geom = NULL;
@@ -1000,7 +1001,7 @@ wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y) {
 	geom = (wkb*) *a;
 
 	if ((err = wkbAsText(&geom_str, &geom)) != MAL_SUCCEED) {
-		msg = createException(MAL, "geom.Contain_bat", "%s", err);
+		msg = createException(MAL, "geom.Contain_point_bat", "%s", err);
 		GDKfree(err);
 		return msg;
 	}
@@ -1086,6 +1087,15 @@ wkbContains_bat(int *out, wkb **a, int *point_x, int *point_y) {
 	return msg;
 }
 
+str
+wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y) 
+{
+	(void)a;
+	(void)point_x;
+	(void)point_y;
+	*out = TRUE;
+	return MAL_SUCCEED;
+}
 
 str
 mbroverlaps(bit *out, mbr **b1, mbr **b2)
