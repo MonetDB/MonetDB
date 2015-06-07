@@ -1054,7 +1054,7 @@ BBPinit(void)
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() != GDK_SUCCEED)
-		GDKfatal("BBPinit: cannot properly process %s.", SUBDIR);
+		GDKfatal("BBPinit: cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
 
 	/* try to obtain a BBP.dir from bakdir */
 	snprintf(buf, sizeof(buf), "%s%cBBP.dir", BAKDIR, DIR_SEP);
@@ -1112,7 +1112,7 @@ BBPinit(void)
 
 	/* will call BBPrecover if needed */
 	if (BBPprepare(FALSE) != GDK_SUCCEED)
-		GDKfatal("BBPinit: cannot properly process %s.", BAKDIR);
+		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	BBPdiskscan(BATDIR);
@@ -1130,7 +1130,7 @@ BBPinit(void)
 
       bailout:
 	/* now it is time for real panic */
-	GDKfatal("BBPinit: could not write %s%cBBP.dir", BATDIR, DIR_SEP);
+	GDKfatal("BBPinit: could not write %s%cBBP.dir. Please check whether your disk is full or write-protected", BATDIR, DIR_SEP);
 }
 
 /*
