@@ -961,6 +961,9 @@ address STRsubstringTail;
 command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
 
+command calc.splitstring(s:str,needle:str,field:int):str
+address STRsplitstring;
+
 command calc.month_interval( v:str, ek:int, sk:int ) :int
 address month_interval_str
 comment "cast str to a month_interval and check for overflow";
