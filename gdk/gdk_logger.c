@@ -124,6 +124,8 @@ log_find_int(BAT *b, BAT *d, int val)
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
+//MK So, if the BAThash construction fails, the BAT b still could have information
+//?? protect against failing BAThash() with non-empty b required
 		}
 	} 
 	return BUN_NONE;
@@ -210,6 +212,7 @@ log_read_string(logger *l)
 
 	if (mnstr_readInt(l->log, &len) != 1) {
 		fprintf(stderr, "!ERROR: log_read_string: read failed\n");
+//MK This leads to non-repeatable log structure?
 		return NULL;
 	}
 	if (len == 0)
@@ -901,6 +904,8 @@ logger_readlog(logger *lg, char *filename)
 		return 0;
 	}
 	t0 = time(NULL);
+	printf("# Start reading the write-ahead log '%s'\n", filename);
+	fflush(stdout);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
@@ -1000,6 +1005,9 @@ logger_readlog(logger *lg, char *filename)
 	/* remaining transactions are not committed, ie abort */
 	while (tr)
 		tr = tr_abort(lg, tr);
+	t0 = time(NULL);
+	printf("# Finished reading the write-ahead log '%s'\n", filename);
+	fflush(stdout);
 	return 0;
 }
 
@@ -1625,7 +1633,11 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
+	logger *lg;
+
+	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
+	fflush(stdout);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;
@@ -1634,6 +1646,9 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 
 		return NULL;
 	}
+	printf("# Finished processing logs %s/%s\n",fn,logdir);
+	GDKsetenv("recovery","finished");
+	fflush(stdout);
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
 	     logger_cleanup(lg) != LOG_OK)) {
@@ -2414,4 +2429,3 @@ logger_find_bat(logger *lg, const char *name)
 	} 
 	return 0;
 }
-
