@@ -37,6 +37,3 @@ SELECT * FROM widetolong( (SELECT * FROM observations AS o) );
 DROP FUNCTION widetolong;
 DROP TABLE observations;
 ROLLBACK;
-
-
-# hooray for breakpoint set --file opt_remap.c --line 350 --condition 'p->modname > 0 && (int)strcmp(p->modname,"batmal") == 0'
