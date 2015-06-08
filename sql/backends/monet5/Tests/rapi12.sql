@@ -7,6 +7,7 @@ SELECT * FROM observations;
 
 CREATE FUNCTION widetolong(subject int, age int, height int, weight int) RETURNS TABLE (subject int, key string, value int) LANGUAGE R {
 	dd <- data.frame(subject, age, height, weight)
+	if (length(subject) < 2) stop("What do we want? Vectorization! When do we want it? Now!")
 	do.call(rbind, 
 		lapply(split(dd, dd$subject), 
 			function(split) data.frame(
@@ -36,3 +37,6 @@ SELECT * FROM widetolong( (SELECT * FROM observations AS o) );
 DROP FUNCTION widetolong;
 DROP TABLE observations;
 ROLLBACK;
+
+
+# hooray for breakpoint set --file opt_remap.c --line 350 --condition 'p->modname > 0 && (int)strcmp(p->modname,"batmal") == 0'
