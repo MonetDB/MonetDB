@@ -1,16 +1,16 @@
 pattern bat.arrange(bv:bat[:oid,:any_1]):void
 address ARNGcreate
-comment "Introduces the sorted OID index arrangement";
+comment "Introduces the OID index arrangement of ordered values";
 
-pattern bat.arrange(bv:bat[:oid,:any_1], pieces:int):bat[:oid,:any_1]
+pattern bat.arrange(bv:bat[:oid,:any_1], pieces:int):bat[:oid,:oid]
 address ARNGcreate
-comment "Intreoduce the sorted OID index arrangement";
+comment "Introduces the OID index arrangement of ordered values";
 
 pattern bat.arrange(bv:bat[:oid,:any_1], l:bat[:oid,:oid]...):void
 address ARNGmerge
-comment "Consolidates the sorted OID index arrangement";
+comment "Consolidates the OID index arrangement";
 
-function algebra.sortorder(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
+function algebra.arrangeorder(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
 	(v,o):= algebra.subsort(bv,reverse,stable);
 	return sortorder:= o;
 end sortorder;

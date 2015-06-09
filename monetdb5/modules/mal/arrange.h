@@ -6,8 +6,8 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-#ifndef _INDEX_H
-#define _INDEX_H
+#ifndef _ARNG_H
+#define _ARNG_H
 
 #include "mal.h"
 #include "mal_builder.h"
@@ -17,15 +17,15 @@
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define index_export extern __declspec(dllimport)
+#define arrange_export extern __declspec(dllimport)
 #else
-#define index_export extern __declspec(dllexport)
+#define arrange_export extern __declspec(dllexport)
 #endif
 #else
-#define index_export extern
+#define arrange_export extern
 #endif
 
-#define _DEBUG_INDEX_
-index_export str ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-index_export str ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _INDEX_H */
+#define _DEBUG_ARNG_
+arrange_export str ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+arrange_export str ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* _ARNG_H */
