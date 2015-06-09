@@ -970,6 +970,13 @@ mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/do
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Jun 03 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.15-20150603
+- Rebuilt.
+- BZ#3707: var() possibly not working in debug builds
+- BZ#3720: Incorrect results on joining with same table
+- BZ#3725: LEFT JOIN bug with CONST value
+- BZ#3731: left shift for IP addresses not available to non-system users
+
 * Tue May 19 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.13-20150519
 - Rebuilt.
 - BZ#3712: Concurrency issue on querying the SQL catalog

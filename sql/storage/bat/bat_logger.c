@@ -42,7 +42,6 @@ N( char *buf, char *pre, char *schema, char *post)
 	return buf;
 }
 
-
 static void 
 bl_postversion( void *lg) 
 {

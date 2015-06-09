@@ -1,3 +1,6 @@
+0.9.9
+- dbWriteTable now quotes column names
+
 0.9.8
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
 - Cleaned up SQL to R type mapping (we had this twice)

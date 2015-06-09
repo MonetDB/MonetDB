@@ -96,6 +96,8 @@ str
 SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
+	str logmsg;
+	int cnt=0;
 
 	(void) mb;
 	(void) stk;
@@ -103,6 +105,13 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
+	// Wait for any recovery process to be finished
+	do {
+		MT_sleep_ms(1000);
+		logmsg = GDKgetenv("recovery");
+		if( logmsg== NULL && ++cnt  == 5)
+			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+    }while (logmsg == NULL);
 	return msg;
 }
 
@@ -110,6 +119,8 @@ str
 SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
+	str logmsg;
+	int cnt=0;
 
 	(void) mb;
 	(void) stk;
@@ -117,6 +128,13 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "msql");
+	// Wait for any recovery process to be finished
+	do {
+		MT_sleep_ms(1000);
+		logmsg = GDKgetenv("recovery");
+		if( logmsg== NULL && ++cnt  == 5)
+			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+    }while (logmsg == NULL);
 	return msg;
 }
 

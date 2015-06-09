@@ -98,15 +98,25 @@ HASHwidth(BUN hashsize)
 BUN
 HASHmask(BUN cnt)
 {
-	BUN m = 1 << 8;	/* minimum size; == BATTINY */
+	BUN m = cnt;
 
-	/* find largest power of 2 smaller than cnt */
-	while (m + m < cnt)
-		m += m;
-	/* if cnt is more than 1/3 into the gap between m & 2*m,
+	/* find largest power of 2 smaller than or equal to cnt */
+	m |= m >> 1;
+	m |= m >> 2;
+	m |= m >> 4;
+	m |= m >> 8;
+	m |= m >> 16;
+#if SIZEOF_BUN == 8
+	m |= m >> 32;
+#endif
+	m -= m >> 1;
+
+	/* if cnt is more than 1/3 into the gap between m and 2*m,
 	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
+	if (m < BATTINY)
+		m = BATTINY;
 	return m;
 }
 

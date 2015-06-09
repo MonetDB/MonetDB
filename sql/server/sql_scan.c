@@ -233,6 +233,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("POSITION", POSITION);
 	keywords_insert("SUBSTRING", SUBSTRING);
+	keywords_insert("SPLIT_PART", SPLIT_PART);
 
 	keywords_insert("CASE", CASE);
 	keywords_insert("WHEN", WHEN);

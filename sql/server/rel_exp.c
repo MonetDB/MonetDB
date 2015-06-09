@@ -1604,3 +1604,38 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 	return ne;
 }
 
+atom *
+exp_flatten(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		atom *v =  exp_value(e, sql->args, sql->argc);
+
+		if (v)
+			return atom_dup(sql->sa, v);
+	} else if (e->type == e_convert) {
+		atom *v = exp_flatten(sql, e->l); 
+
+		if (v && atom_cast(v, &e->tpe))
+			return v;
+		return NULL;
+	} else if (e->type == e_func) {
+		sql_subfunc *f = e->f;
+		list *l = e->l;
+		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
+
+		/* TODO handle date + x months */
+		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, l->h->data);
+			atom *l2 = exp_flatten(sql, l->h->next->data);
+			if (l1 && l2)
+				return atom_add(l1,l2);
+		} else if (strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, l->h->data);
+			atom *l2 = exp_flatten(sql, l->h->next->data);
+			if (l1 && l2)
+				return atom_sub(l1,l2);
+		}
+	}
+	return NULL;
+}
+
