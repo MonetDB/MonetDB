@@ -18,7 +18,8 @@ enum heaptype {
 	offheap,
 	varheap,
 	hashheap,
-	imprintsheap
+	imprintsheap,
+	arngmentheap
 };
 
 /*
@@ -220,10 +221,15 @@ struct Imprints {
 	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
+struct Arngment {
+	Heap *arngment;
+};
+
 typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
+	MT_Lock arngment;
 } batlock_t;
 
 typedef struct {
@@ -298,6 +304,7 @@ extern MT_Lock MT_system_lock;
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
 #define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
+#define GDKarngmentLock(x)  GDKbatLock[(x)&BBP_BATMASK].arngment
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
 #else

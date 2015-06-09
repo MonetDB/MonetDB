@@ -329,6 +329,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	/* imprints are shared, but the check is dynamic */
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
+	/* OID index arrangement */
+	/* TODO: what is the correct step here? slice the OID index? */
+	bn->H->arngment = NULL;
+	bn->T->arngment = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
@@ -544,6 +548,13 @@ VIEWunlink(BAT *b)
 			b->H->imprints = NULL;
 		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
 			b->T->imprints = NULL;
+
+		/* unlink OID index arrangement */
+		if (hpb && b->H->arngment && b->H->arngment == hpb->H->arngment)
+			b->H->arngment = NULL;
+		if (tpb && b->T->arngment && b->T->arngment == tpb->H->arngment)
+			b->T->arngment = NULL;
+
 	}
 }
 
