@@ -526,7 +526,7 @@ int yydebug=1;
 %left <operation> AND
 %left <operation> NOT
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
 %right UMINUS
 %left <operation> '*' '/'
 %left <operation> '%'
@@ -3879,6 +3879,16 @@ string_funcs:
   		  	  append_symbol(l, $1);
   		  	  append_symbol(l, $3);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  | SPLIT_PART '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
+			{ dlist *l = L();
+			  dlist *ops = L();
+  		  	  append_list(l,
+				append_string(L(), sa_strdup(SA, "splitpart")));
+  		  	  append_symbol(ops, $3);
+  		  	  append_symbol(ops, $5);
+  		  	  append_symbol(ops, $7);
+			  append_list(l, ops);
+		  	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
 column_exp_commalist:

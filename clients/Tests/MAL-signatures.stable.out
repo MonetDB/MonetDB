@@ -2735,6 +2735,10 @@ command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte]
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command batgeom.Contains(a:wkb,px:bat[:oid,:dbl],py:bat[:oid,:dbl]):bat[:oid,:bit] 
+address wkbContains_point_bat;
+comment Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b
+
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
 comment Construct a point-BAT from two geometry-BATs
@@ -38075,6 +38079,10 @@ comment Returns the closure of the combinatorial boundary of this Geometry.
 command geom.ConvexHull(a:wkb):wkb 
 address wkbConvexHull;
 comment Returns a geometry that represents the convex hull of this geometry.
+
+command geom.Contains(a:wkb,x:dbl,y:dbl):bit 
+address wkbContains_point;
+comment Returns true if the Geometry a 'spatially contains' Geometry b
 
 command geom.Contains(a:wkb,b:wkb):bit 
 address wkbContains;
