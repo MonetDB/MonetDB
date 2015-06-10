@@ -2156,7 +2156,9 @@ BATsetcount(BAT *b, BUN cnt)
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 	}
-	assert(b->batCapacity >= cnt);
+	if(b->batCapacity < cnt) {
+		GDKerror("BATsetcount: batCapacity < batCount");
+	}
 }
 
 size_t

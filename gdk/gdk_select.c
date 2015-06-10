@@ -1943,7 +1943,7 @@ BATdimensionSubselect(BAT *dimensionBAT, BAT *candBAT, const void *low, const vo
 	//add the oids in the result
 	for(j=0; j<groupRepeats; j++) {
 		for(i=0; i<qualifyingElementsNum*elementRepeats; i++) {
-			fprintf(stderr, "Added oid: %ld\n", element_oid);
+			//fprintf(stderr, "Added oid: %ld\n", element_oid);
 			*res = element_oid;
 			res++;
 			element_oid++;

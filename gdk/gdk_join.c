@@ -3724,7 +3724,7 @@ BATmbrproject(BAT *b, BAT *oidsToProjectBAT, BAT *subselectBAT) {
     		}
 		}
 	}
-	BATsetcount(resBAT,BATcount(b));
+	BATsetcount(resBAT,BATcount(oidsToProjectBAT));
     BATseqbase(resBAT,0);
     BATderiveProps(resBAT,FALSE);
 	return resBAT;

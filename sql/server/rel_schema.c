@@ -504,42 +504,45 @@ static int dimension_range(mvc *sql, sql_subtype *dtype, symbol *range, sql_dime
 
 
     if(!dim->unbounded_min && !dim->unbounded_max) {
-#define maxElement(min, step, elementsNum) \
+#define maxElement(min, max, step, elementsNum) \
 	({ \
-		min+(elementsNum-1)*step; \
+		/*make sure the upper bound is included*/ \
+		if(min+(*elementsNum-1)*step < max) \
+			(*elementsNum)++; \
+		min+(*elementsNum-1)*step;\
     })
        switch(dim->type.type->localtype) {
         case TYPE_bte:
 			dim->elementsNum = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1;
-            dim->max->data.val.btval = maxElement(dim->min->data.val.btval, dim->step->data.val.btval, dim->elementsNum);
+            dim->max->data.val.btval = maxElement(dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval, &dim->elementsNum);
             break;
         case TYPE_sht:
             dim->elementsNum = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1;
-            dim->max->data.val.shval = maxElement(dim->min->data.val.shval, dim->step->data.val.shval, dim->elementsNum);
+            dim->max->data.val.shval = maxElement(dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval, &dim->elementsNum);
             break;
         case TYPE_int:
             dim->elementsNum = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1;
-            dim->max->data.val.ival = maxElement(dim->min->data.val.ival, dim->step->data.val.ival, dim->elementsNum);
+            dim->max->data.val.ival = maxElement(dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival, &dim->elementsNum);
             break;
         case TYPE_wrd:
             dim->elementsNum = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1;
-            dim->max->data.val.wval = maxElement(dim->min->data.val.wval, dim->step->data.val.wval, dim->elementsNum);
+            dim->max->data.val.wval = maxElement(dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval, &dim->elementsNum);
             break;
         case TYPE_oid:
             dim->elementsNum = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1;
-            dim->max->data.val.oval = maxElement(dim->min->data.val.oval, dim->step->data.val.oval, dim->elementsNum);
+            dim->max->data.val.oval = maxElement(dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval, &dim->elementsNum);
             break;
         case TYPE_lng:
             dim->elementsNum = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1;
-            dim->max->data.val.lval = maxElement(dim->min->data.val.lval, dim->step->data.val.lval, dim->elementsNum);
+            dim->max->data.val.lval = maxElement(dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval, &dim->elementsNum);
             break;
         case TYPE_dbl:
             dim->elementsNum = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1;
-            dim->max->data.val.dval = maxElement(dim->min->data.val.dval, dim->step->data.val.dval, dim->elementsNum);
+            dim->max->data.val.dval = maxElement(dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval, &dim->elementsNum);
             break;
         case TYPE_flt:
             dim->elementsNum = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1;
-            dim->max->data.val.fval = maxElement(dim->min->data.val.fval, dim->step->data.val.fval, dim->elementsNum);
+            dim->max->data.val.fval = maxElement(dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval, &dim->elementsNum);
             break;
         default:
             fprintf(stderr, "Dimension of unknown type");

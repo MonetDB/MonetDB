@@ -5405,7 +5405,10 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 					sql_exp *exp = whereExpNode->data;
 					append(r->exps, exp);
 				}
-			} else {
+			}
+		} else {
+			sql_table *t = (sql_table*)rel->l;
+			if(t && isArray(t)) {
 				fprintf(stderr, "Array but not basetable\n");
 				return NULL;
 			}
