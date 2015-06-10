@@ -33,3 +33,4 @@ adddrop_unknown_table.Bug-3718
 outerjoin_project.Bug-3725
 left_shift_inet.Bug-3730
 true_or_predicate.Bug-3733
+crash.Bug-3736
