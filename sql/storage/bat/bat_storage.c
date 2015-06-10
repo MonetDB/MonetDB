@@ -788,6 +788,39 @@ count_col(sql_trans *tr, sql_column *c, int all)
 }
 
 static size_t
+dcount_col(sql_trans *tr, sql_column *c)
+{
+	sql_delta *b;
+
+	if (!c->data) {
+		sql_column *oc = tr_find_column(tr->parent, c);
+		c->data = timestamp_delta(oc->data, tr->stime);
+	}
+        b = c->data;
+	if (!b)
+		return 1;
+	if (b->cnt > 1024) {
+		size_t dcnt = 0;
+		dbl f = 1.0;
+		BAT *v = delta_bind_bat(b, RDONLY, 0), *o = v, *u;
+
+		if ((dcnt = BATcount(v)) > 1024*1024) {
+			v = BATsample(v, 1024);
+			f = dcnt/1024.0;
+		}
+		u = BATsubunique(v, NULL);
+		bat_destroy(o);
+		if (v!=o)
+			bat_destroy(v);
+		dcnt = BATcount(u)*f;
+		bat_destroy(u);
+		return dcnt;
+	} else {
+		return 64;
+	}
+}
+
+static size_t
 count_idx(sql_trans *tr, sql_idx *i, int all)
 {
 	sql_delta *b;
@@ -2234,6 +2267,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
+	sf->dcount_col = (dcount_col_fptr)&dcount_col;
 	sf->sorted_col = (prop_col_fptr)&sorted_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 

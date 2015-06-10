@@ -4464,6 +4464,8 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 
 				col->dcount = *(size_t*)v; 
 				_DELETE(v);
+			} else { /* sample and put in statistics */
+				col->dcount = store_funcs.dcount_col(tr, col);
 			}
 		}
 		return col->dcount;
@@ -4478,6 +4480,12 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 		/* get from statistics */
 		sql_schema *sys = find_sql_schema(tr, "sys");
 		sql_table *stats = find_sql_table(sys, "statistics");
+
+		if (col->min && col->max) {
+			*min = col->min;
+			*max = col->max;
+			return 1;
+		}
 		if (stats) {
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
@@ -4487,6 +4495,8 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 
 				*min = table_funcs.column_find_value(tr, stats_min, rid);
 				*max = table_funcs.column_find_value(tr, stats_max, rid);
+				col->min = *min;
+				col->max = *max;
 				return 1;
 			}
 		}
