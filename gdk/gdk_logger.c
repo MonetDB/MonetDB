@@ -1397,6 +1397,60 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
+			if (!BAThdense(b) || !BAThdense(n)) {
+				/* we need to convert catalog_bid and
+				 * catalog_nme to be dense-headed; we
+				 * do this by replacing the two with
+				 * new, dense versions */
+				BATiter bi, ni;
+				BUN r;
+				const oid *o;
+				BAT *b2, *n2;
+				bat list[5];
+
+				list[0] = 0;
+				list[1] = b->batCacheid;
+				list[2] = n->batCacheid;
+				if ((b2 = logbat_new(b->ttype, BATSIZE, PERSISTENT)) == NULL)
+					logger_fatal("Logger_new: cannot create BAT", 0, 0, 0);
+				if ((n2 = logbat_new(n->ttype, BATSIZE, PERSISTENT)) == NULL)
+					logger_fatal("Logger_new: cannot create BAT", 0, 0, 0);
+				list[3] = b2->batCacheid;
+				list[4] = n2->batCacheid;
+				if (BATmode(b, TRANSIENT) != GDK_SUCCEED)
+					logger_fatal("Logger_new: cannot convert old catalog_bid to transient", 0, 0, 0);
+				if (BATmode(n, TRANSIENT) != GDK_SUCCEED)
+					logger_fatal("Logger_new: cannot convert old catalog_nme to transient", 0, 0, 0);
+				snprintf(bak, sizeof(bak), "tmp_%o", b->batCacheid);
+				if (BBPrename(b->batCacheid, bak) != 0)
+					logger_fatal("Logger_new: cannot rename old catalog_bid", 0, 0, 0);
+				snprintf(bak, sizeof(bak), "tmp_%o", n->batCacheid);
+				if (BBPrename(n->batCacheid, bak) != 0)
+					logger_fatal("Logger_new: cannot rename old catalog_nme", 0, 0, 0);
+				snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
+				if (BBPrename(b2->batCacheid, bak) != 0)
+					logger_fatal("Logger_new: cannot rename new catalog_bid", 0, 0, 0);
+				snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
+				if (BBPrename(n2->batCacheid, bak) != 0)
+					logger_fatal("Logger_new: cannot rename new catalog_nme", 0, 0, 0);
+				bi = bat_iterator(b);
+				ni = bat_iterator(n);
+				BATloop(b, p, q) {
+					o = (const oid *) BUNhloc(bi, p);
+					r = BUNfnd(BATmirror(n), o);
+					if (r != BUN_NONE) {
+						if (BUNappend(b2, BUNtloc(bi, p), 0) != GDK_SUCCEED ||
+						    BUNappend(n2, BUNtvar(ni, r), 0) != GDK_SUCCEED)
+							logger_fatal("Logger_new: cannot append to new catalog BATs", 0, 0, 0);
+					}
+				}
+				BBPunfix(b->batCacheid);
+				BBPunfix(n->batCacheid);
+				b = b2;
+				n = n2;
+				if (TMsubcommit_list(list, 5) != GDK_SUCCEED)
+					logger_fatal("Logger_new: committing new catalog_bid/catalog_nme failed", 0, 0, 0);
+			}
 		}
 
 		/* the catalog exists, and so should the log file */
