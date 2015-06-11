@@ -1068,7 +1068,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1076,8 +1076,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	int len = 7 + (filename != NULL);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 9, F_UNION, NULL); 
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1090,15 +1089,16 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		exp_atom_str(sql->sa, ssep, &tpe)), 
 		exp_atom_str(sql->sa, ns, &tpe));
 
-	if (filename)
-		append( args, exp_atom_str(sql->sa, filename, &tpe)); 
+	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
 	import = exp_op(sql->sa,  
+	append(
 		append(
 			append( 
 				append( args, 
 					exp_atom_lng(sql->sa, nr)), 
 					exp_atom_lng(sql->sa, offset)), 
-					exp_atom_int(sql->sa, locked)), f); 
+					exp_atom_int(sql->sa, locked)),
+					exp_atom_int(sql->sa, best_effort)), f); 
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1111,7 +1111,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1232,7 +1232,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort);
 
 			if (!rel)
 				rel = nrel;
@@ -1242,7 +1242,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort);
 	}
 	if (headers) {
 		dnode *n;
@@ -1506,7 +1506,17 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, 
+				l->h->data.lval, 
+				l->h->next->data.lval, 
+				l->h->next->next->data.lval, 
+				l->h->next->next->next->data.lval, 
+				l->h->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->next->data.sval, 
+				l->h->next->next->next->next->next->next->next->data.i_val, 
+				l->h->next->next->next->next->next->next->next->next->data.i_val, 
+				l->h->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

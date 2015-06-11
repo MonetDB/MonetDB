@@ -69,12 +69,11 @@ stderr of test 'load_stdin_incorrect_line_nr` in directory 'sql/test/copy` itsel
 # 17:35:33 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33038 
 # 17:35:33 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', '\n';
         1
         bla
-ERROR = !value 'bla' from line 2 field 1 not inserted, expecting type int
-        !failed to import table
+ERROR = !Failed to import table line 2 field 1 'int' expected in 'bla'
 
 # 17:35:33 >  
 # 17:35:33 >  Done.

@@ -58,7 +58,32 @@ Ready.
 % clob # type
 % 988 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A6:date):void;
-    X_205:void := querylog.define("explain select\n\tsupp_nation,\n\tcust_nation,\n\tl_year,\n\tsum(volume) as revenue\nfrom\n\t(\n\t\tselect\n\t\t\tn1.n_name as supp_nation,\n\t\t\tn2.n_name as cust_nation,\n\t\t\textract(year from l_shipdate) as l_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume\n\t\tfrom\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand c_custkey = o_custkey\n\t\t\tand s_nationkey = n1.n_nationkey\n\t\t\tand c_nationkey = n2.n_nationkey\n\t\t\tand (\n\t\t\t\t(n1.n_name = \\'FRANCE\\' and n2.n_name = \\'GERMANY\\')\n\t\t\t\tor (n1.n_name = \\'GERMANY\\' and n2.n_name = \\'FRANCE\\')\n\t\t\t)\n\t\t\tand l_shipdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t) as shipping\ngroup by\n\tsupp_nation,\n\tcust_nation,\n\tl_year\norder by\n\tsupp_nation,\n\tcust_nation,\n\tl_year;","sequential_pipe",108);
+    X_226:void := querylog.define("explain select\n\tsupp_nation,\n\tcust_nation,\n\tl_year,\n\tsum(volume) as revenue\nfrom\n\t(\n\t\tselect\n\t\t\tn1.n_name as supp_nation,\n\t\t\tn2.n_name as cust_nation,\n\t\t\textract(year from l_shipdate) as l_year,\n\t\t\tl_extendedprice * (1 - l_discount) as volume\n\t\tfrom\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\torders,\n\t\t\tcustomer,\n\t\t\tnation n1,\n\t\t\tnation n2\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand c_custkey = o_custkey\n\t\t\tand s_nationkey = n1.n_nationkey\n\t\t\tand c_nationkey = n2.n_nationkey\n\t\t\tand (\n\t\t\t\t(n1.n_name = \\'FRANCE\\' and n2.n_name = \\'GERMANY\\')\n\t\t\t\tor (n1.n_name = \\'GERMANY\\' and n2.n_name = \\'FRANCE\\')\n\t\t\t)\n\t\t\tand l_shipdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n\t) as shipping\ngroup by\n\tsupp_nation,\n\tcust_nation,\n\tl_year\norder by\n\tsupp_nation,\n\tcust_nation,\n\tl_year;","sequential_pipe",127);
+    X_184 := bat.new(nil:oid,nil:str);
+    X_192 := bat.append(X_184,"sys.shipping");
+    X_202 := bat.append(X_192,"sys.shipping");
+    X_208 := bat.append(X_202,"sys.shipping");
+    X_216 := bat.append(X_208,"sys.L1");
+    X_187 := bat.new(nil:oid,nil:str);
+    X_194 := bat.append(X_187,"supp_nation");
+    X_203 := bat.append(X_194,"cust_nation");
+    X_209 := bat.append(X_203,"l_year");
+    X_218 := bat.append(X_209,"revenue");
+    X_188 := bat.new(nil:oid,nil:str);
+    X_196 := bat.append(X_188,"char");
+    X_205 := bat.append(X_196,"char");
+    X_211 := bat.append(X_205,"int");
+    X_220 := bat.append(X_211,"decimal");
+    X_189 := bat.new(nil:oid,nil:int);
+    X_198 := bat.append(X_189,25);
+    X_206 := bat.append(X_198,25);
+    X_213 := bat.append(X_206,32);
+    X_222 := bat.append(X_213,19);
+    X_191 := bat.new(nil:oid,nil:int);
+    X_200 := bat.append(X_191,0);
+    X_207 := bat.append(X_200,0);
+    X_215 := bat.append(X_207,0);
+    X_224 := bat.append(X_215,4);
     X_9 := sql.mvc();
     X_10:bat[:oid,:oid]  := sql.tid(X_9,"sys","supplier");
     X_13:bat[:oid,:int]  := sql.bind(X_9,"sys","supplier","s_suppkey",0);
@@ -154,16 +179,10 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:date,A
     (X_148,r1_187,r2_187) := algebra.subsort(X_142,r1_183,r2_183,false,false);
     (X_151,r1_190,r2_190) := algebra.subsort(X_141,r1_187,r2_187,false,false);
     X_154 := algebra.leftfetchjoin(r1_190,X_143);
-    X_182 := algebra.leftfetchjoin(r1_190,X_180);
-    X_156 := algebra.leftfetchjoin(r1_190,X_141);
     X_155 := algebra.leftfetchjoin(r1_190,X_142);
-    X_183 := sql.resultSet(4,1,X_154);
-    sql.rsColumn(X_183,"sys.shipping","supp_nation","char",25,0,X_154);
-    sql.rsColumn(X_183,"sys.shipping","cust_nation","char",25,0,X_155);
-    sql.rsColumn(X_183,"sys.shipping","l_year","int",32,0,X_156);
-    sql.rsColumn(X_183,"sys.L1","revenue","decimal",19,4,X_182);
-    X_203 := io.stdout();
-    sql.exportResult(X_203,X_183);
+    X_156 := algebra.leftfetchjoin(r1_190,X_141);
+    X_182 := algebra.leftfetchjoin(r1_190,X_180);
+    sql.resultSet(X_216,X_218,X_220,X_222,X_224,X_154,X_155,X_156,X_182);
 end user.s2_1;
 
 # 22:53:27 >  

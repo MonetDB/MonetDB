@@ -55,7 +55,7 @@ typedef struct Column_t {
 	int fieldwidth;
 	int scale, precision;
 	int (*tostr)(void *extra, char **buf, int *len, int type, const void *a);
-	void *(*frstr)(struct Column_t *fmt, int type, const char *s, const char *e, char quote);
+	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
 	int skip;					/* only skip to the next field */
@@ -80,16 +80,19 @@ typedef struct Table_t {
 	Column *format;				/* remove later */
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
+	str filename;				/* source */
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-tablet_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
-tablet_export int TABLETcreate_bats(Tablet *as, BUN est);
-tablet_export BAT **TABLETcollect(Tablet *as);
-tablet_export BAT **TABLETcollect_parts(Tablet *as, BUN offset);
+tablet_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best);
+tablet_export str TABLETcreate_bats(Tablet *as, BUN est);
+tablet_export str TABLETcollect(BAT **bats, Tablet *as);
+tablet_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet *as);
 tablet_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
 tablet_export void *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+tablet_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

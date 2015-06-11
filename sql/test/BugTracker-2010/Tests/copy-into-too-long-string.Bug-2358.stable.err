@@ -70,12 +70,11 @@ stderr of test 'copy-into-too-long-string.Bug-2358` in directory 'sql/test/BugTr
 # 15:34:26 >  mclient -lsql -ftest -i -e --host=volund --port=32555 
 # 15:34:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
         ','"' NULL AS '';
         "abcd"
-ERROR = !value 'abcd' from line 1 field 1 not inserted, expecting type varchar(3)
-        !failed to import table
+ERROR = !Failed to import table line 1 field 1 'varchar(3)' expected in 'abcd'
 
 # 15:34:26 >  
 # 15:34:26 >  Done.

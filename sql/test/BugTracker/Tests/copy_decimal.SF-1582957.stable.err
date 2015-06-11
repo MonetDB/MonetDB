@@ -30,11 +30,11 @@ stderr of test 'copy_decimal.SF-1582957` in directory 'sql/test/BugTracker` itse
 # 11:45:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=39182"
 # 11:45:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 1 RECORDS INTO LINEITEM FROM stdin USING DELIMITERS '|','|\n';
         1|156|4|1|17.000|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|blithely regular ideas caj|
-ERROR = !value '17.000' from line 1 field 5 not inserted, expecting type decimal(15,2)
-        !failed to import table
+ERROR = !Failed to import table line 1 field 5 'decimal(15,2)' expected in '17.000'
+
 
 # 21:06:21 >  
 # 21:06:21 >  Done.

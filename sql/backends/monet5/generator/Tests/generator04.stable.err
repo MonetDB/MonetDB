@@ -29,22 +29,22 @@ stderr of test 'generator04` in directory 'sql/backends/monet5/generator` itself
 # 21:38:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14305" "--port=36294"
 # 21:38:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series('a','a','c');
-ERROR = !conversion of string 'a' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+ERROR = !conversion of string 'c' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series(false,true,false) ;
 ERROR = !zero step size not allowed
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series(null,null,1);
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series(10,null,1);
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series(null,10,1);
 ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-23578/.s.monetdb.35972
+MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series(
         	timestamp '2008-03-01 00:00',
         	timestamp '2008-03-04 12:00');
