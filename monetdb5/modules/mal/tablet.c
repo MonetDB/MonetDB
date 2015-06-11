@@ -738,30 +738,123 @@ tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
  * Furthermore, it assume a uniform (SQL) pattern, without whitespace skipping, but with quote and separator.
  */
 
+static size_t
+mystrlen(const char *s)
+{
+	/* Calculate and return the space that is needed for the function
+	 * mycpstr below to do its work. */
+	size_t len = 0;
+	const char *s0 = s;
+
+	while (*s) {
+		if ((*s & 0x80) == 0) {
+			;
+		} else if ((*s & 0xC0) == 0x80) {
+			/* continuation byte */
+			len += 3;
+		} else if ((*s & 0xE0) == 0xC0) {
+			/* two-byte sequence */
+			if ((s[1] & 0xC0) != 0x80)
+				len += 3;
+			else
+				s += 2;
+		} else if ((*s & 0xF0) == 0xE0) {
+			/* three-byte sequence */
+			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80)
+				len += 3;
+			else
+				s += 3;
+		} else if ((*s & 0xF8) == 0xF0) {
+			/* four-byte sequence */
+			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80 || (s[3] & 0xC0) != 0x80)
+				len += 3;
+			else
+				s += 4;
+		} else {
+			/* not a valid start byte */
+			len += 3;
+		}
+		s++;
+	}
+	len += s - s0;
+	return len;
+}
+
+static char *
+mycpstr(char *t, const char *s)
+{
+	/* Copy the string pointed to by s into the buffer pointed to by
+	 * t, and return a pointer to the NULL byte at the end.  During
+	 * the copy we translate incorrect UTF-8 sequences to escapes
+	 * looking like <XX> where XX is the hexadecimal representation of
+	 * the incorrect byte.  The buffer t needs to be large enough to
+	 * hold the result, but the correct length can be calculated by
+	 * the function mystrlen above.*/
+	while (*s) {
+		if ((*s & 0x80) == 0) {
+			*t++ = *s++;
+		} else if ((*s & 0xC0) == 0x80) {
+			t += sprintf(t, "<%02X>", *s++ & 0xFF);
+		} else if ((*s & 0xE0) == 0xC0) {
+			/* two-byte sequence */
+			if ((s[1] & 0xC0) != 0x80)
+				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+			else {
+				*t++ = *s++;
+				*t++ = *s++;
+			}
+		} else if ((*s & 0xF0) == 0xE0) {
+			/* three-byte sequence */
+			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80)
+				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+			else {
+				*t++ = *s++;
+				*t++ = *s++;
+				*t++ = *s++;
+			}
+		} else if ((*s & 0xF8) == 0xF0) {
+			/* four-byte sequence */
+			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80 || (s[3] & 0xC0) != 0x80)
+				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+			else {
+				*t++ = *s++;
+				*t++ = *s++;
+				*t++ = *s++;
+				*t++ = *s++;
+			}
+		} else {
+			/* not a valid start byte */
+			t += sprintf(t, "<%02X>", *s++ & 0xFF);
+		}
+	}
+	*t = 0;
+	return t;
+}
+
 static str
 SQLload_error(READERtask *task, lng idx)
 {
 	str line;
+	char *s;
 	size_t sz = 0;
 	unsigned int i;
 
-	for (i = 0; i < task->as->nr_attrs; i++)
+	for (i = 0; i < task->as->nr_attrs; i++) {
 		if (task->fields[i][idx])
-			sz += strlen(task->fields[i][idx]) + task->seplen;
-		else
-			sz += task->seplen;
+			sz += mystrlen(task->fields[i][idx]);
+		sz += task->seplen;
+	}
 
-	line = (str) GDKzalloc(sz + task->rseplen + 1);
+	s = line = GDKmalloc(sz + task->rseplen + 1);
 	if (line == 0) {
 		tablet_error(task, idx, int_nil, "SQLload malloc error", "SQLload_error");
 		return 0;
 	}
-	line[0] = 0;
 	for (i = 0; i < task->as->nr_attrs; i++) {
 		if (task->fields[i][idx])
-			strcat(line, task->fields[i][idx]);
+			s = mycpstr(s, task->fields[i][idx]);
 		if (i < task->as->nr_attrs - 1)
-			strcat(line, task->csep);
+			s = mycpstr(s, task->csep);
 	}
 	strcat(line, task->rsep);
 	return line;
