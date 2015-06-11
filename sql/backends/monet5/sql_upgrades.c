@@ -1259,7 +1259,7 @@ sql_update_hugeint(Client c)
 #endif
 
 static str
-sql_update_feb2015(Client c)
+sql_update_jul2015(Client c)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
@@ -1642,7 +1642,7 @@ SQLupgrades(Client c, mvc *m)
 	/* add missing features needed beyond Oct 2014 */
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "like", &tp, &tp, F_FILT)) {
-		if ((err = sql_update_feb2015(c)) !=NULL) {
+		if ((err = sql_update_jul2015(c)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
