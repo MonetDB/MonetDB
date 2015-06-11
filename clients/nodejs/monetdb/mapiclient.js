@@ -386,7 +386,12 @@ exports.parsetuples =  _parsetuples = function(types, lines) {
 				break;
 			case 'ESCAPED':
 				state = 'INQUOTES';
-				curtok += chr;
+                switch(chr) {
+                    case 't': curtok += '\t'; break;
+                    case 'n': curtok += '\n'; break;
+                    case 'r': curtok += '\r'; break;
+                    default: curtok += chr;
+                }
 				break;
 			case 'INQUOTES':
 				if (chr == '"') {

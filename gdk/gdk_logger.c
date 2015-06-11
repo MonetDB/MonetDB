@@ -124,6 +124,8 @@ log_find_int(BAT *b, BAT *d, int val)
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
+//MK So, if the BAThash construction fails, the BAT b still could have information
+//?? protect against failing BAThash() with non-empty b required
 		}
 	} 
 	return BUN_NONE;
@@ -210,6 +212,7 @@ log_read_string(logger *l)
 
 	if (mnstr_readInt(l->log, &len) != 1) {
 		fprintf(stderr, "!ERROR: log_read_string: read failed\n");
+//MK This leads to non-repeatable log structure?
 		return NULL;
 	}
 	if (len == 0)
@@ -901,6 +904,8 @@ logger_readlog(logger *lg, char *filename)
 		return 0;
 	}
 	t0 = time(NULL);
+	printf("# Start reading the write-ahead log '%s'\n", filename);
+	fflush(stdout);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
@@ -1000,6 +1005,9 @@ logger_readlog(logger *lg, char *filename)
 	/* remaining transactions are not committed, ie abort */
 	while (tr)
 		tr = tr_abort(lg, tr);
+	t0 = time(NULL);
+	printf("# Finished reading the write-ahead log '%s'\n", filename);
+	fflush(stdout);
 	return 0;
 }
 
@@ -1058,9 +1066,9 @@ logger_commit(logger *lg)
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots_bid)) {
-		BATclear(lg->snapshots_bid, FALSE);
-		BATclear(lg->snapshots_tid, FALSE);
-		BATclear(lg->dsnapshots, FALSE);
+		BATclear(lg->snapshots_bid, TRUE);
+		BATclear(lg->snapshots_tid, TRUE);
+		BATclear(lg->dsnapshots, TRUE);
 		BATcommit(lg->snapshots_bid);
 		BATcommit(lg->snapshots_tid);
 		BATcommit(lg->dsnapshots);
@@ -1096,6 +1104,34 @@ check_version(logger *lg, FILE *fp)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+static BAT *
+bm_tids(BAT *b, BAT *d) 
+{
+	BUN sz = BATcount(b);
+	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+
+	tids->H->seq = 0;
+	tids->T->seq = 0;
+	BATsetcount(tids, sz);
+	tids->H->revsorted = 0;
+	tids->T->revsorted = 0;
+
+	tids->T->key = 1;
+	tids->T->dense = 1;
+	tids->H->key = 1;
+	tids->H->dense = 1;
+
+	if (BATcount(d)) {
+		BAT *diff = BATkdiff(tids, BATmirror(d));
+
+		logbat_destroy(tids);
+		tids = BATmirror(BATmark(diff, 0));
+		logbat_destroy(diff);
+	}
+	return tids;
+}
+
 
 static gdk_return
 bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *dcatalog, BAT *extra, int debug)
@@ -1139,6 +1175,21 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	n[i++] = abs(catalog_nme->batCacheid);
 	n[i++] = abs(dcatalog->batCacheid);
 	assert((BUN) i <= nn);
+	if (BATcount(dcatalog) && catalog_bid == list_bid && catalog_nme == list_nme) {
+		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog);
+
+		bids = BATproject(tids, catalog_bid);
+		nmes = BATproject(tids, catalog_nme);
+		logbat_destroy(tids);
+		BATclear(catalog_bid, TRUE);
+		BATclear(catalog_nme, TRUE);
+		BATclear(dcatalog, TRUE);
+
+		BATappend(catalog_bid, bids, FALSE);
+		BATappend(catalog_nme, nmes, FALSE);
+		logbat_destroy(bids);
+		logbat_destroy(nmes);
+	}
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
 	BATcommit(dcatalog);
@@ -1582,7 +1633,11 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
+	logger *lg;
+
+	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
+	fflush(stdout);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;
@@ -1591,6 +1646,9 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 
 		return NULL;
 	}
+	printf("# Finished processing logs %s/%s\n",fn,logdir);
+	GDKsetenv("recovery","finished");
+	fflush(stdout);
 	if (lg->changes &&
 	    (logger_restart(lg) != LOG_OK ||
 	     logger_cleanup(lg) != LOG_OK)) {
@@ -2106,34 +2164,6 @@ pre_allocate(logger *lg)
 	return GDK_SUCCEED;
 }
 
-static BAT *
-bm_tids(BAT *b, BAT *d) 
-{
-	BUN sz = BATcount(b);
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-
-	tids->H->seq = 0;
-	tids->T->seq = 0;
-	BATsetcount(tids, sz);
-	tids->H->revsorted = 0;
-	tids->T->revsorted = 0;
-
-	tids->T->key = 1;
-	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
-
-	if (BATcount(d)) {
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
-		logbat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		logbat_destroy(diff);
-	}
-	return tids;
-}
-
-
 int
 log_tend(logger *lg)
 {
@@ -2399,4 +2429,3 @@ logger_find_bat(logger *lg, const char *name)
 	} 
 	return 0;
 }
-

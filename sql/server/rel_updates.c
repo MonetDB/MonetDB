@@ -233,7 +233,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 	if (!t->idxs.set)
 		return inserts;
 
-	inserts->r = rel_label(sql, inserts->r); 
+	inserts->r = rel_label(sql, inserts->r, 1); 
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;

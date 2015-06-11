@@ -34,6 +34,24 @@ Ready.
 % bigint # type
 % 4 # length
 [ 1000	]
+#SELECT abs(b-c) FROM t1;
+% sys.L # table_name
+% abs_sql_sub_b # name
+% bigint # type
+% 1 # length
+[ 2	]
+#SELECT abs(b-c), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1;
+% sys.L1,	sys.L2 # table_name
+% L1,	ifthenelse_isnull_>_c # name
+% bigint,	bigint # type
+% 1,	4 # length
+[ 2,	1000	]
+#SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c) FROM t1;
+% sys.L2,	sys.L2 # table_name
+% L2,	abs_sql_sub_b # name
+% bigint,	bigint # type
+% 4,	1 # length
+[ 1000,	2	]
 #drop table t1;
 
 # 12:40:01 >  

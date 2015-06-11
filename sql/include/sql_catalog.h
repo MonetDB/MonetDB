@@ -435,6 +435,8 @@ typedef struct sql_column {
 	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
+	char *min;
+	char *max;
 
 	struct sql_table *t;
 	void *data;

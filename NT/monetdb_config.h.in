@@ -1036,19 +1036,23 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;
+typedef unsigned long long ulng;
 # define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 typedef __int64 lng;
+typedef unsigned __int64 ulng;
 # define SIZEOF_LNG SIZEOF___INT64
 #endif
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
+typedef unsigned __int128 uhge;
 # define HAVE_HGE 1
 # define SIZEOF_HGE SIZEOF___INT128
 #else
 # if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
+typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif

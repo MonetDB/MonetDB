@@ -2735,6 +2735,10 @@ command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte]
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command batgeom.Contains(a:wkb,px:bat[:oid,:dbl],py:bat[:oid,:dbl]):bat[:oid,:bit] 
+address wkbContains_point_bat;
+comment Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b
+
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
 comment Construct a point-BAT from two geometry-BATs
@@ -38076,6 +38080,10 @@ command geom.ConvexHull(a:wkb):wkb
 address wkbConvexHull;
 comment Returns a geometry that represents the convex hull of this geometry.
 
+command geom.Contains(a:wkb,x:dbl,y:dbl):bit 
+address wkbContains_point;
+comment Returns true if the Geometry a 'spatially contains' Geometry b
+
 command geom.Contains(a:wkb,b:wkb):bit 
 address wkbContains;
 comment Returns true if the Geometry a 'spatially contains' Geometry b
@@ -41098,6 +41106,10 @@ comment Extract the tail of a string
 command str.substitute(s:str,src:str,dst:str,rep:bit):str 
 address STRSubstitute;
 comment Substitute first occurrence of 'src' by	'dst'.  Iff repeated = true this is	repeated while 'src' can be found in the	result string. In order to prevent	recursion and result strings of unlimited	size, repeating is only done iff src is	not a substring of dst.
+
+command str.splitpart(s:str,needle:str,field:int):str 
+address STRsplitpart;
+comment Split string on delimiter. Returns	 given field (counting from one.)
 
 command str.search(s:str,c:str):int 
 address STRstrSearch;

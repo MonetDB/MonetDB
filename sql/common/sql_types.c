@@ -1573,6 +1573,7 @@ sqltypeinit( sql_allocator *sa)
 
 		sql_create_func(sa, "locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3(sa, "locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
+		sql_create_func3(sa, "splitpart", "str", "splitpart", *t, *t, INT, *t, INOUT);
 		sql_create_func(sa, "substring", "str", "substring", *t, INT, *t, INOUT);
 		sql_create_func3(sa, "substring", "str", "substring", *t, INT, INT, *t, INOUT);
 		sql_create_func(sa, "like", "algebra", "like", *t, *t, BIT, SCALE_NONE);
