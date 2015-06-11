@@ -105,10 +105,10 @@ INSERT INTO "bidder" ("id", "open_auction_id", "date", "time", "personref", "inc
 (59, 'open_auction11', '05/08/2000', '06:44:20', 'person3', 4.5),
 (60, 'open_auction11', '10/22/2001', '15:34:49', 'person4', 15);
 
-Select b.* FROM open_auctions o, b bidder WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
+Select b.* FROM open_auctions o, b bidder WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
 
 plan Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
-Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
+Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
 
 drop table bidder;
 drop table open_auctions;
