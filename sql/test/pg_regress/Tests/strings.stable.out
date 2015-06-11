@@ -689,30 +689,36 @@ Ready.
 % char # type
 % 0 # length
 [ "yaoo" ]
-#select substring('joeuser@mydatabase', 0, locate('@','joeuser@mydatabase', 0) -1) AS "joeuser";
-% .L # table_name
+
+#select split_part('joeuser@mydatabase','@',1) AS "joeuser";
+% . # table_name
+# .L # table_name
 % joeuser # name
 % char # type
 % 18 # length
-[ "joeuser"	]
-#select substring('joeuser@mydatabase', locate('@','joeuser@mydatabase', 0) +1) AS "mydatabase";
-% .L # table_name
+[ "joeuser"     ]
+#select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
+% . # table_name
+# .L # table_name
 % mydatabase # name
 % char # type
 % 18 # length
-[ "mydatabase"	]
-#select substring('joeuser@mydatabase', locate('@','joeuser@mydatabase', 1) +1, locate('@','joeuser@mydatabase', 2) -1) AS "empty string";
-% .L # table_name
+[ "mydatabase"  ]
+#select split_part('joeuser@mydatabase','@',3) AS "empty string";
+% . # table_name
+# .L # table_name
 % empty string # name
 % char # type
 % 18 # length
-[ "mydatab"	]
-#select substring('@joeuser@mydatabase@', locate('@','@joeuser@mydatabase@', 0) +1, locate('@','@joeuser@mydatabase@', 1) -1) AS "joeuser";
-% .L # table_name
+[ ""    ]
+#select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
+% . # table_name
+# .L # table_name
 % joeuser # name
 % char # type
-% 20 # length
-[ ""	]
+% 18 # length
+[ "joeuser"     ]
+
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
 % .L # table_name
 % TRUE # name
