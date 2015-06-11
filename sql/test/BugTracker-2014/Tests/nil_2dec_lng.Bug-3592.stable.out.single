@@ -44,7 +44,22 @@ Ready.
 % clob # type
 % 206 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
-    X_63:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",34);
+    X_78:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",45);
+    X_54 := bat.new(nil:oid,nil:str);
+    X_61 := bat.append(X_54,".L5");
+    X_71 := bat.append(X_61,".L5");
+    X_56 := bat.new(nil:oid,nil:str);
+    X_63 := bat.append(X_56,"L2");
+    X_72 := bat.append(X_63,"v");
+    X_57 := bat.new(nil:oid,nil:str);
+    X_65 := bat.append(X_57,"sec_interval");
+    X_74 := bat.append(X_65,"decimal");
+    X_58 := bat.new(nil:oid,nil:int);
+    X_67 := bat.append(X_58,19);
+    X_76 := bat.append(X_67,18);
+    X_60 := bat.new(nil:oid,nil:int);
+    X_69 := bat.append(X_60,0);
+    X_77 := bat.append(X_69,9);
     X_6:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
     X_5 := sql.mvc();
     X_9:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec");
@@ -71,11 +86,7 @@ function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
     X_48 := sql.single(nil:lng);
     X_49:bat[:oid,:lng] := batcalc.lng(X_48,18,9);
     X_52 := bat.append(X_47,X_49,true);
-    X_53 := sql.resultSet(2,1,X_30);
-    sql.rsColumn(X_53,".L5","L2","sec_interval",19,0,X_30);
-    sql.rsColumn(X_53,".L5","v","decimal",18,9,X_52);
-    X_61 := io.stdout();
-    sql.exportResult(X_61,X_53);
+    sql.resultSet(X_71,X_72,X_74,X_76,X_77,X_30,X_52);
 end user.s5_1;
 
 # 23:28:04 >  

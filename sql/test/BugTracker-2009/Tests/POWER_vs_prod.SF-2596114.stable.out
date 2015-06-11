@@ -29,7 +29,17 @@ Ready.
 % clob # type
 % 100 # length
 function user.s3_1{autoCommit=true}(A0:dbl):void;
-    X_26:void  := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",15);
+    X_36:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",22);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.L");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"power_x");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_31 := bat.append(X_23,"double");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_24,53);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_26,0);
     X_3 := sql.mvc();
     X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","sf_2596114");
     X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
@@ -38,10 +48,7 @@ function user.s3_1{autoCommit=true}(A0:dbl):void;
     X_15 := sql.delta(X_7,X_10,r1_10,X_13);
     X_16 := algebra.leftfetchjoin(X_4,X_15);
     X_17:bat[:oid,:dbl]  := batmmath.pow(X_16,A0);
-    X_18 := sql.resultSet(1,1,X_17);
-    sql.rsColumn(X_18,"sys.L","power_x","double",53,0,X_17);
-    X_24 := io.stdout();
-    sql.exportResult(X_24,X_18);
+    sql.resultSet(X_27,X_29,X_31,X_33,X_35,X_17);
 end user.s3_1;
 #explain select x*x from SF_2596114;
 % .explain # table_name
@@ -49,7 +56,17 @@ end user.s3_1;
 % clob # type
 % 93 # length
 function user.s4_1{autoCommit=true}():void;
-    X_25:void  := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",15);
+    X_35:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22);
+    X_18 := bat.new(nil:oid,nil:str);
+    X_26 := bat.append(X_18,"sys.L");
+    X_21 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_21,"sql_mul_x");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_22,"double");
+    X_23 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_23,53);
+    X_25 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_25,0);
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","sf_2596114");
     X_6:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
@@ -58,10 +75,7 @@ function user.s4_1{autoCommit=true}():void;
     X_14 := sql.delta(X_6,X_9,r1_9,X_12);
     X_15 := algebra.leftfetchjoin(X_3,X_14);
     X_16:bat[:oid,:dbl]  := batcalc.*(X_15,X_15);
-    X_17 := sql.resultSet(1,1,X_16);
-    sql.rsColumn(X_17,"sys.L","sql_mul_x","double",53,0,X_16);
-    X_23 := io.stdout();
-    sql.exportResult(X_23,X_17);
+    sql.resultSet(X_26,X_28,X_30,X_32,X_34,X_16);
 end user.s4_1;
 #drop table SF_2596114;
 

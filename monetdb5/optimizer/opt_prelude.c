@@ -59,6 +59,7 @@ str countRef;
 str subcountRef;
 str copyRef;
 str copy_fromRef;
+str export_tableRef;
 str count_no_nilRef;
 str crossRef;
 str createRef;
@@ -311,6 +312,7 @@ void optimizerInit(void)
 	subcountRef = putName("subcount",8);
 	copyRef = putName("copy",4);
 	copy_fromRef = putName("copy_from",9);
+	export_tableRef = putName("export_table",12);
 	count_no_nilRef = putName("count_no_nil",12);
 	crossRef = putName("crossproduct",12);
 	createRef = putName("create",6);

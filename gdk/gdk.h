@@ -1563,6 +1563,8 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
+gdk_export void BATmsync(BAT *b);
+
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
