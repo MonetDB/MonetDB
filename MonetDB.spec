@@ -265,6 +265,9 @@ tools can be used to monitor the MonetDB database server.
 %{_bindir}/stethoscope
 %{_bindir}/tachograph
 %{_bindir}/tomograph
+%dir %{_datadir}/doc/MonetDB-client-tools
+%docdir %{_datadir}/doc/MonetDB-client-tools
+%{_datadir}/doc/MonetDB-client-tools/*
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -664,6 +667,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+%dir %{_datadir}/doc/MonetDB
+%docdir %{_datadir}/doc/MonetDB
+%{_datadir}/doc/MonetDB/*
 
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
@@ -763,15 +769,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
-%if (0%{?fedora} >= 20)
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
-%else
-%dir %{_datadir}/doc/MonetDB-SQL-%{version}
-%docdir %{_datadir}/doc/MonetDB-SQL-%{version}
-%{_datadir}/doc/MonetDB-SQL-%{version}/*
-%endif
 
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
@@ -960,10 +960,6 @@ rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
-
-%if 0%{?fedora} >= 20
-mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
-%endif
 
 %post -p /sbin/ldconfig
 
