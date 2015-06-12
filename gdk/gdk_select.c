@@ -2006,7 +2006,7 @@ BATdimensionSubselect(BAT *dimensionBAT, BAT *candBAT, const void *low, const vo
         for(i=0,j=0; i<BATcount(b_tmp) && j<BATcount(candBAT); ) {
         	if(cand_elements[j] == current_elements[i]) {
 	        	elements[elements_in_result] = current_elements[i];
-	    	    fprintf(stderr, "Final element: %ld\n", current_elements[i]);
+//	    	    fprintf(stderr, "Final element: %ld\n", current_elements[i]);
         
     	    	elements_in_result++;
         		i++;

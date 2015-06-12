@@ -1057,9 +1057,9 @@ fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRe
         BAT *resBAT; \
 \
         dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); \
+/*fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); */\
         elementsNum = dimensionElementsNum(min, max, step); \
-fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
+/*fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); */\
         if(!step) \
             step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
 \
@@ -1068,10 +1068,10 @@ fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); \
 \
         el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
         for(j=0; j<(unsigned long)groupRepeats; j++) { \
-fprintf(stderr, "materialise: group repetition %ld\n", j); \
+/*fprintf(stderr, "materialise: group repetition %ld\n", j); */\
             for(el=min; el<=max; el+=step) { \
                 for(i=0; i<(unsigned long)elementRepeats; i++) { \
-fprintf(stderr, "materialise: element repetition %ld\n", i); \
+/*fprintf(stderr, "materialise: element repetition %ld\n", i); */\
                     *el_out = el; \
                     el_out++; \
                 } \
