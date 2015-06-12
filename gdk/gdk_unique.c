@@ -257,7 +257,7 @@ BATsubunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		seq = b->hseqbase;
-		if ((parent = VIEWtparent(b)) != 0) {
+		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(-parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			b = b2;

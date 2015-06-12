@@ -315,17 +315,6 @@ BAThash(BAT *b, BUN masksize)
 	BAT *o = NULL;
 	lng t0 = 0, t1 = 0;
 
-	if (VIEWtparent(b)) {
-		bat p = -VIEWtparent(b);
-		o = b;
-		b = BATdescriptor(p);
-		assert(b != NULL);
-		if (!ALIGNsynced(o, b) || BUNfirst(o) != BUNfirst(b)) {
-			BBPunfix(b->batCacheid);
-			b = o;
-			o = NULL;
-		}
-	}
 	if (BATcheckhash(b)) {
 		if (o != NULL) {
 			o->T->hash = b->T->hash;

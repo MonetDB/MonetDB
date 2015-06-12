@@ -778,7 +778,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-		if ((parent = VIEWtparent(b)) != 0) {
+		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
