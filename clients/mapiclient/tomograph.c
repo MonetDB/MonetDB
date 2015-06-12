@@ -1315,6 +1315,7 @@ createTomogram(void)
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2.0, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
 					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+				else
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkend, (rowoffset + box[i].row)  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:
