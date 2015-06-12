@@ -450,8 +450,8 @@ usageTomograph(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -T | --title=<plot title>\n");
-	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
-	fprintf(stderr, "  -i | --input=<profiler event file > \n");
+	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s]\n");
+	fprintf(stderr, "  -i | --input=<profiler event file >\n");
 	fprintf(stderr, "  -o | --output=<dir/file prefix > (default 'cache/<dbname>'\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -A | --atlas=<number> maximum number of queries (default 1)\n");
@@ -868,7 +868,7 @@ showcpu(void)
 			prev = i;
 		}
 	if( cpus)
-		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
+		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i\n",object);
 	fprintf(gnudata, "set border\n");
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
@@ -930,14 +930,14 @@ showio(void)
 	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots fs solid linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
 	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots solid linecolor rgb \"red\"\n", basefile,  atlaspage, b);
 	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
-	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"\n", basefile,  atlaspage, b);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
 	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
 	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots linecolor rgb \"red\"\n", basefile,  atlaspage, b);
 	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
-	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"\n", basefile,  atlaspage, b);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
@@ -1272,7 +1272,7 @@ createTomogram(void)
 	height = (cpus+1) * 2 * h;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"worker threads\"\n");
-	fprintf(gnudata, "set key right \n");
+	fprintf(gnudata, "set key right\n");
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
@@ -1312,9 +1312,10 @@ createTomogram(void)
 					dumpbox(i);
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2.0, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
+				else
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkend, (rowoffset + box[i].row)  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:

@@ -27,15 +27,6 @@ Ready.
 
 #start transaction;
 #create table nonutf8 ( s string);
-#insert into nonutf8 values ('zwaar lange golf piek -dal �10cm vak5');
-[ 1	]
-#copy 2 records into nonutf8 from stdin;
-#zwaar lange golf piek -dal �10cm vak5
-#�17 %
-[ 2	]
-#select * from nonutf8;
-#We expect error messages here
-#drop table nonutf8;
 #rollback;
 
 # 10:26:04 >  

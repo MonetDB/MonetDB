@@ -804,7 +804,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 		dbl f = 1.0;
 		BAT *v = delta_bind_bat(b, RDONLY, 0), *o = v, *u;
 
-		if ((dcnt = BATcount(v)) > 1024*1024) {
+		if ((dcnt = (size_t) BATcount(v)) > 1024*1024) {
 			v = BATsample(v, 1024);
 			f = dcnt/1024.0;
 		}
@@ -812,7 +812,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 		bat_destroy(o);
 		if (v!=o)
 			bat_destroy(v);
-		dcnt = BATcount(u)*f;
+		dcnt = (size_t) (BATcount(u) * f);
 		bat_destroy(u);
 		return dcnt;
 	} else {
