@@ -2136,7 +2136,7 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 		goto error;
 	}
 
-	if (check_version(lg, fp)) {
+	if (check_version(lg, fp) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
 		goto error;
 	}
