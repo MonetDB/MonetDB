@@ -1629,15 +1629,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	else
 		task->maxrow = (BUN) maxrow;
 
-	/* task->base is always allocated since it is part of the task struct.
-	 * However, the arrays assigned within may be zero if GDKzalloc failed.*/
-	for (i = 0; i < MAXBUFFERS; i++) {
-		if (task->base[i] == NULL) {
-			tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
-			goto bailout;
-		}
-	}
-
 	if (task->fields == 0 || task->cols == 0 || task->time == 0) {
 		tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
 		goto bailout;
