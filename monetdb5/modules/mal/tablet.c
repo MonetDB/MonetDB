@@ -1629,7 +1629,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	else
 		task->maxrow = (BUN) maxrow;
 
-	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
+	if (task->fields == 0 || task->cols == 0 || task->time == 0) {
 		tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
 		goto bailout;
 	}
