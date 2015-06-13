@@ -447,6 +447,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 
 	o = BATproject(s, rids);
 	bat_destroy(rids);
+	bat_destroy(s);
 	rids = o;
 
 	assert(ids->ttype == TYPE_int && rids->ttype == TYPE_oid);
@@ -505,6 +506,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	s = BATproject(l->data, lcb);
 
 	d = BATkdiff(BATmirror(s), BATmirror(rcb));
+	bat_destroy(s);
 	s = BATmirror(BATmark(d, 0));
 	bat_destroy(d);
 	bat_destroy(rcb);
