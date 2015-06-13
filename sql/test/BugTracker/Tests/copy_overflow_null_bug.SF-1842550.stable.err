@@ -30,12 +30,12 @@ stderr of test 'copy_overflow_null_bug.SF-1842550` in directory 'sql/test/BugTra
 # 13:05:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
 # 13:05:29 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n', '''';
         5536|'5536'
         53605|'53605'
-ERROR = !value '53605' from line 2 field 1 not inserted, expecting type smallint
-        !failed to import table
+ERROR = !Failed to import table line 2 field 1 'smallint' expected in '53605'
+
 
 # 08:13:34 >  
 # 08:13:34 >  Done.

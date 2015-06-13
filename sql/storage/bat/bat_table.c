@@ -367,6 +367,21 @@ rids_destroy(rids *r)
 	_DELETE(r);
 }
 
+static rids *
+rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
+{
+	BAT *lcb, *rcb, *s = NULL;
+	
+	lcb = full_column(tr, lc);
+	rcb = full_column(tr, rc);
+	BATsubjoin(&s, NULL, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
+	bat_destroy(l->data);
+	l->data = s;
+	bat_destroy(lcb);
+	bat_destroy(rcb);
+	return l;
+}
+
 int 
 bat_table_init( table_functions *tf )
 {
@@ -379,6 +394,7 @@ bat_table_init( table_functions *tf )
 	
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
+	tf->rids_join = rids_join;
 	tf->rids_next = rids_next;
 	tf->rids_destroy = rids_destroy;
 	return LOG_OK;

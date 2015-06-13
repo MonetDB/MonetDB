@@ -52,7 +52,22 @@ Ready.
 % clob # type
 % 460 # length
 function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
-    X_101:void := querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe",54);
+    X_113:void := querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe",65);
+    X_87 := bat.new(nil:oid,nil:str);
+    X_95 := bat.append(X_87,"sys.orders");
+    X_104 := bat.append(X_95,"sys.L1");
+    X_90 := bat.new(nil:oid,nil:str);
+    X_97 := bat.append(X_90,"o_orderpriority");
+    X_106 := bat.append(X_97,"order_count");
+    X_91 := bat.new(nil:oid,nil:str);
+    X_98 := bat.append(X_91,"char");
+    X_108 := bat.append(X_98,"wrd");
+    X_92 := bat.new(nil:oid,nil:int);
+    X_100 := bat.append(X_92,15);
+    X_110 := bat.append(X_100,32);
+    X_94 := bat.new(nil:oid,nil:int);
+    X_102 := bat.append(X_94,0);
+    X_112 := bat.append(X_102,0);
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","orders");
     X_9:bat[:oid,:date]  := sql.bind(X_5,"sys","orders","o_orderdate",0);
@@ -99,11 +114,7 @@ function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
     (X_79,r1_88,r2_88) := algebra.subsort(X_78,false,false);
     X_82 := algebra.leftfetchjoin(r1_88,X_78);
     X_85 := algebra.leftfetchjoin(r1_88,X_83);
-    X_86 := sql.resultSet(2,1,X_82);
-    sql.rsColumn(X_86,"sys.orders","o_orderpriority","char",15,0,X_82);
-    sql.rsColumn(X_86,"sys.L1","order_count","wrd",32,0,X_85);
-    X_99 := io.stdout();
-    sql.exportResult(X_99,X_86);
+    sql.resultSet(X_104,X_106,X_108,X_110,X_112,X_82,X_85);
 end user.s2_1;
 
 # 22:53:26 >  
