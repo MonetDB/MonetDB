@@ -612,8 +612,10 @@ DESCclean(BAT *b)
  * This leaves you with possibly deadbeef BAT descriptors.
  */
 
+/* #define DISABLE_MSYNC */
 #define MSYNC_BACKGROUND
 
+#ifndef DISABLE_MSYNC
 static void
 BATmsyncImplementation(void *arg)
 {
@@ -630,10 +632,12 @@ BATmsyncImplementation(void *arg)
 	if (len)
 		(void) MT_msync(adr, len);
 }
+#endif
 
 void
 BATmsync(BAT *b)
 {
+#ifndef DISABLE_MSYNC
 #ifdef MSYNC_BACKGROUND
 	MT_Id tid;
 #endif
@@ -653,6 +657,9 @@ BATmsync(BAT *b)
 		BATmsyncImplementation((void*) b->T->vheap);
 #endif
 	}
+#else
+	(void) b;
+#endif	/* DISABLE_MSYNC */
 }
 
 gdk_return
