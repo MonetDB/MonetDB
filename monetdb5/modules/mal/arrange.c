@@ -31,7 +31,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3) {
 		pieces = stk->stk[pci->argv[2]].val.ival;
 	} else {
-		// educated guess needed on number of partitions
+		/* TODO: educated guess needed on number of partitions */
 	}
 #ifdef _DEBUG_ARNG_
 	mnstr_printf(cntxt->fdout,"#bat.arrange pieces %d\n",pieces);
@@ -44,6 +44,10 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
+
+	/* TODO: check if b already has index */
+	/* TODO: check if b is sorted call ARNGindex b with void,(v)oid */
+	/* TODO: check if b is view and parent has index do a range select */
 
 	// create a temporary MAL function
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
@@ -144,13 +148,36 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
-	/* CHECK: types */
-	/* CHECK: if b is sorted call ARNGindex b with void,void */
-	/* CHECK: if b is view and parent has index do a range select */
 
-	aid = (bat *) GDKzalloc(n_ar*sizeof(bat));
-	a = (BAT **) GDKzalloc(n_ar*sizeof(BAT *));
-	/* CHECK: nulls*/
+	assert(BAThdense(b));	/* assert void headed */
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	case TYPE_void:
+	case TYPE_str:
+	case TYPE_ptr:
+	default:
+		/* TODO: support strings, date, timestamps etc. */
+		throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
+	}
+
+	if ((aid = (bat *) GDKzalloc(n_ar*sizeof(bat))) == NULL ) {
+		BBPunfix(bid);
+		throw(MAL, "bat.arrange", MAL_MALLOC_FAIL);
+	}
+	if ((a = (BAT **) GDKzalloc(n_ar*sizeof(BAT *))) == NULL) {
+		BBPunfix(bid);
+		GDKfree(aid);
+		throw(MAL, "bat.arrange", MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < n_ar; i++) {
 		aid[i] = *getArgReference_bat(stk, pci, i+2);
 		a[i] = BATdescriptor(aid[i]);
@@ -168,7 +195,11 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (n_ar == 1) {
 		/* One oid order bat, nothing to merge */
 		if (ARNGindex(b, a[0]) == GDK_FAIL) {
-			/* TAKE STEPS*/
+			BBPunfix(aid[0]);
+			BBPunfix(bid);
+			GDKfree(aid);
+			GDKfree(a);
+			throw(MAL,"bat.arrange", OPERATION_FAILED);
 		}
 	} else {
 		BAT *m; /* merged oid's */
@@ -180,7 +211,12 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		m = BATnew(TYPE_void, TYPE_oid, m_sz, TRANSIENT);
 		if (m == NULL) {
-			/* CHECK: null and clean exit*/
+			for (i = 0; i < n_ar; i++)
+				BBPunfix(aid[i]);
+			BBPunfix(bid);
+			GDKfree(aid);
+			GDKfree(a);
+			throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
 		}
 		mv = (oid *) Tloc(m, BUNfirst(m));
 
@@ -210,47 +246,51 @@ do {																		\
 	}																		\
 } while(0)
 
-			switch (ATOMbasetype(b->T->type)) {
-			case TYPE_bte:
-				BINARY_MERGE(bte);
-				break;
-			case TYPE_sht:
-				BINARY_MERGE(sht);
-				break;
-			case TYPE_int:
-				BINARY_MERGE(int);
-				break;
-			case TYPE_lng:
-				BINARY_MERGE(lng);
-				break;
+			switch (ATOMstorage(b->ttype)) {
+			case TYPE_bte: BINARY_MERGE(bte); break;
+			case TYPE_sht: BINARY_MERGE(sht); break;
+			case TYPE_int: BINARY_MERGE(int); break;
+			case TYPE_lng: BINARY_MERGE(lng); break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				BINARY_MERGE(hge);
-				break;
+			case TYPE_hge: BINARY_MERGE(hge); break;
 #endif
-			case TYPE_flt:
-				BINARY_MERGE(flt);
-				break;
-			case TYPE_dbl:
-				BINARY_MERGE(dbl);
-				break;
+			case TYPE_flt: BINARY_MERGE(flt); break;
+			case TYPE_dbl: BINARY_MERGE(dbl); break;
+			case TYPE_void:
+			case TYPE_str:
+			case TYPE_ptr:
 			default:
-				/* should never reach here */
-				assert(0);
+				/* TODO: support strings, date, timestamps etc. */
+				throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
 			}
 
 		/* use min-heap */
 		} else {
 			oid **p, **q, *t_oid;
 
-			p = (oid **) GDKzalloc(n_ar*sizeof(oid *));
-			q = (oid **) GDKzalloc(n_ar*sizeof(oid *));
-			/* CHECK null and clean exit */
+			if ((p = (oid **) GDKzalloc(n_ar*sizeof(oid *))) == NULL) {
+				for (i = 0; i < n_ar; i++)
+					BBPunfix(aid[i]);
+				BBPunfix(bid);
+				BBPunfix(m->batCacheid);
+				GDKfree(aid);
+				GDKfree(a);
+				throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
+			}
+			if ((q = (oid **) GDKzalloc(n_ar*sizeof(oid *))) == NULL) {
+				for (i = 0; i < n_ar; i++)
+					BBPunfix(aid[i]);
+				BBPunfix(bid);
+				BBPunfix(m->batCacheid);
+				GDKfree(aid);
+				GDKfree(a);
+				GDKfree(p);
+				throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
+			}
 			for (i = 0; i < n_ar; i++) {
 				p[i] = (oid *) Tloc(a[i], BUNfirst(a[i]));
 				q[i] = (oid *) Tloc(a[i], BUNlast(a[i]));
 			}
-
 
 #define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
 
@@ -280,11 +320,18 @@ do {																		\
 
 #define NWAY_MERGE(TYPE)													\
 do {																		\
-	TYPE *minhp;															\
-	TYPE t;																	\
+	TYPE *minhp, t;															\
 	TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));								\
 	if ((minhp = (TYPE *) GDKzalloc(sizeof(TYPE)*n_ar)) == NULL) {			\
-		/* CLEAN exit */													\
+		for (i = 0; i < n_ar; i++)											\
+			BBPunfix(aid[i]);												\
+		BBPunfix(bid);														\
+		BBPunfix(m->batCacheid);											\
+		GDKfree(aid);														\
+		GDKfree(a);															\
+		GDKfree(p);															\
+		GDKfree(q);															\
+		throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);							\
 	}																		\
 	/* init min heap */														\
 	for (i = 0; i < n_ar; i++) {											\
@@ -299,9 +346,9 @@ do {																		\
 		if (p[0] < q[0]) {													\
 			minhp[0] = v[*p[0]];											\
 		} else {															\
-			swap(minhp[0], minhp[n_ar], t);									\
-			swap(p[0], p[n_ar], t_oid);										\
-			swap(q[0], q[n_ar], t_oid);										\
+			swap(minhp[0], minhp[n_ar-1], t);								\
+			swap(p[0], p[n_ar-1], t_oid);									\
+			swap(q[0], q[n_ar-1], t_oid);									\
 			n_ar--;															\
 		}																	\
 		HEAPIFY(0);															\
@@ -309,41 +356,41 @@ do {																		\
 	while (p[0] < q[0]) {													\
 		*mv++ = *(p[0])++;													\
 	}																		\
+	GDKfree(minhp);															\
 } while (0)
 
-			switch (ATOMbasetype(b->T->type)) {
-			case TYPE_bte:
-				NWAY_MERGE(bte);
-				break;
-			case TYPE_sht:
-				NWAY_MERGE(sht);
-				break;
-			case TYPE_int:
-				NWAY_MERGE(int);
-				break;
-			case TYPE_lng:
-				NWAY_MERGE(lng);
-				break;
+			switch (ATOMstorage(b->ttype)) {
+			case TYPE_bte: NWAY_MERGE(bte); break;
+			case TYPE_sht: NWAY_MERGE(sht); break;
+			case TYPE_int: NWAY_MERGE(int); break;
+			case TYPE_lng: NWAY_MERGE(lng); break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				NWAY_MERGE(hge);
-				break;
+			case TYPE_hge: NWAY_MERGE(hge); break;
 #endif
-			case TYPE_flt:
-				NWAY_MERGE(flt);
-				break;
-			case TYPE_dbl:
-				NWAY_MERGE(dbl);
-				break;
+			case TYPE_flt: NWAY_MERGE(flt); break;
+			case TYPE_dbl: NWAY_MERGE(dbl); break;
+			case TYPE_void:
+			case TYPE_str:
+			case TYPE_ptr:
 			default:
-				/* should never reach here */
-				assert(0);
+				/* TODO: support strings, date, timestamps etc. */
+				throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
 			}
+			GDKfree(p);
+			GDKfree(q);
 		}
 		/* fix m properties */
 		if (ARNGindex(b, m) == GDK_FAIL) {
-			/* CLEAN EXIT */
+			for (i = 0; i < n_ar; i++) {
+				BBPunfix(aid[i]);
+			}
+			GDKfree(aid);
+			GDKfree(a);
+			BBPunfix(m->batCacheid);
+			BBPunfix(bid);
+			throw(MAL,"bat.arrange", OPERATION_FAILED);
 		}
+		BBPunfix(m->batCacheid);
 	}
 
 	for (i = 0; i < n_ar; i++) {
@@ -353,9 +400,4 @@ do {																		\
 	GDKfree(a);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
-
-	/* arrange merge bats creating a new :bat[:oid:oid] *o
-	 * feed *o to ARNGkeep(b, o);
-	 * destroy *o
-	 */
 }
