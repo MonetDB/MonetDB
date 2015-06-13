@@ -2108,7 +2108,7 @@ gdk_export lng IMPSimprintsize(BAT *b);
  * The oid index arrangement.
  *
  */
-
+gdk_export gdk_return ARNGindex(BAT *b, BAT *a);
 
 /*
  * @- Multilevel Storage Modes
