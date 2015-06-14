@@ -1012,6 +1012,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	rcandorig = rcand;
 	rstartorig = rstart;
+
+	if (sl)
+		r1->tdense = sl->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (!nil_on_miss && !must_match && lscan > 0) {
 			/* If l is sorted (lscan > 0), we look at the
@@ -1821,6 +1824,9 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	r2->tsorted = 0;
 	r2->trevsorted = 0;
 	r2->tdense = 0;
+
+	if (sl) 
+		r1->tdense = sl->tdense;
 
 	if (lstart == lend || (!nil_on_miss && rstart == rend)) {
 		/* nothing to do: there are no matches */
