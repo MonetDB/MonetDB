@@ -642,6 +642,7 @@ BATmsync(BAT *b)
 	MT_Id tid;
 #endif
 
+	assert(b->batPersistence == PERSISTENT);
 	if (b->T->heap.storage == STORE_MMAP) {
 #ifdef MSYNC_BACKGROUND
 		MT_create_thread(&tid, BATmsyncImplementation, (void *) &b->T->heap, MT_THR_DETACHED);
