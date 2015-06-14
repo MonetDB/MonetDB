@@ -784,6 +784,7 @@ la_apply(logger *lg, logaction *c)
 		la_bat_clear(lg, c);
 		break;
 	}
+	lg->changes++;
 }
 
 static void
@@ -998,7 +999,6 @@ logger_readlog(logger *lg, char *filename)
 		}
 		if (name)
 			GDKfree(name);
-		lg->changes++;
 	}
 	logger_close(lg);
 
@@ -1660,7 +1660,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			}
 		}
 #endif
-		lg->changes++;
 		logger_readlogs(lg, fp, filename);
 		fclose(fp);
 		fp = NULL;
