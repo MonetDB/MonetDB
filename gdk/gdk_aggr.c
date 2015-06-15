@@ -10,8 +10,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <math.h>
+#include "gdk_arrays.h"
 
+#include <math.h>
 /* grouped aggregates
  *
  * The following functions take two to four input BATs and produce a
@@ -1513,88 +1514,43 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
 
-#define dimensionAggrAvg(TPE) \
-	do {\
-		oid minD, maxD, stepD; \
-		long elR, grpR, el, grp; \
-		BUN elsNum, aggrGrp; \
-		const TPE *restrict vals = (const TPE *) Tloc(b, BUNfirst(b)); \
-		double elsPerAggrGrp =0 ; \
-\
-		dimensionCharacteristics(oid, g, &minD, &maxD, &stepD, &elR, &grpR); \
-		elsNum = dimensionElementsNum(minD, maxD, stepD); \
-		elsPerAggrGrp = elR*grpR; \
-\
-		for(aggrGrp=0; aggrGrp<elsNum; aggrGrp++) { \
-			oid start = aggrGrp*elR;\
-fprintf(stderr, "%u: %u\n", (unsigned int)aggrGrp, (unsigned int)start); \
-			dbls[aggrGrp] = 0; /*initialise to 0*/\
-			for(grp=0; grp<grpR; grp++) { \
-				for(el=0; el<elR; el++) { \
-					dbls[aggrGrp]+=vals[start+el]; \
-fprintf(stderr, "avg: group %u - (%u,%f) => %f\n", (unsigned int)aggrGrp, (unsigned int)(start+el), (double)vals[start+el], dbls[aggrGrp]); \
-				}\
-				start+=elsNum*elR; \
-			} \
-			dbls[aggrGrp]/=elsPerAggrGrp; \
-		} \
-	} while(0)
+	if(isBATarray(g))
+		return dimensionBATgroupavg(bnp, cntsp, b, g, e, s, tp, skip_nils, abort_on_error);
 
 	if (BATtdense(g))
 		gids = NULL;
-	else if(!isBATarray(g))
+	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
 	switch (b->ttype) {
 	case TYPE_bte:
-		if(isBATarray(g))
-			dimensionAggrAvg(bte);
-		else
-			AGGR_AVG(bte);
+		AGGR_AVG(bte);
 		break;
 	case TYPE_sht:
-		if(isBATarray(g))
-			dimensionAggrAvg(sht);
-		else
-			AGGR_AVG(sht);
+		AGGR_AVG(sht);
 		break;
 	case TYPE_int:
 #if SIZEOF_WRD == SIZEOF_INT
 	case TYPE_wrd:
 #endif
-		if(isBATarray(g))
-			dimensionAggrAvg(int);
-		else
-			AGGR_AVG(int);
+		AGGR_AVG(int);
 		break;
 	case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
 	case TYPE_wrd:
 #endif
-		if(isBATarray(g))
-			dimensionAggrAvg(lng);
-		else
-			AGGR_AVG(lng);
+		AGGR_AVG(lng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if(isBATarray(g))
-			dimensionAggrAvg(hge);
-		else
-			AGGR_AVG(hge);
+		AGGR_AVG(hge);
 		break;
 #endif
 	case TYPE_flt:
-		if(isBATarray(g))
-			dimensionAggrAvg(flt);
-		else
-			AGGR_AVG_FLOAT(flt);
+		AGGR_AVG_FLOAT(flt);
 		break;
 	case TYPE_dbl:
-		if(isBATarray(g))
-			dimensionAggrAvg(dbl);
-		else
-			AGGR_AVG_FLOAT(dbl);
+		AGGR_AVG_FLOAT(dbl);
 		break;
 	default:
 		GDKfree(rems);

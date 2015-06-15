@@ -371,7 +371,8 @@ str ALGmbrproject(bat *result, const bat *bid, const bat *sid, const bat* rid) {
 		BBPunfix(s->batCacheid);
 		throw(MAL, "algebra.mbrproject", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATmbrproject(b, s, r);
+	if(BATmbrproject(&bn, b, s, r) != GDK_SUCCEED)
+		bn = NULL;
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -400,7 +401,8 @@ str ALGmbrsubselect(bat *result, const bat *bid, const bat *sid, const bat *cid)
 		BBPunfix(s->batCacheid);
 		throw(MAL, "algebra.mbrsubselect", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATmbrsubselect(b, s, c);
+	if(BATmbrsubselect(&bn, b, s, c) != GDK_SUCCEED)
+		bn = NULL;
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	if (c)
@@ -416,47 +418,6 @@ str ALGmbrsubselect(bat *result, const bat *bid, const bat *sid, const bat *cid)
 str ALGmbrsubselect2(bat *result, const bat *bid, const bat *sid) {
 	return ALGmbrsubselect(result, bid, sid, NULL);
 }
-
-#if 0
-str
-ALGdimensionSubselect2(bat *res_id, const bat *in_id, const bat *cand_id, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
-	BAT *inBAT, *resBAT, *candBAT=NULL;
-	const void *nilptr;
-
-	//read the BATs for the input and the candidates (if it exists)
-	if ((inBAT = BATdescriptor(*in_id)) == NULL) {
-		throw(MAL, "algebra.dimension_subselect", RUNTIME_OBJECT_MISSING);
-	}
-	if (cand_id && *cand_id != bat_nil && (candBAT = BATdescriptor(*cand_id)) == NULL) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "algebra.dimension_subselect", RUNTIME_OBJECT_MISSING);
-	}
-
-	derefStr(inBAT, t, low);
-	derefStr(inBAT, t, high);
-	nilptr = ATOMnilptr(inBAT->ttype);
-	if (*li == 1 && *hi == 1 &&
-		ATOMcmp(inBAT->ttype, low, nilptr) == 0 &&
-		ATOMcmp(inBAT->ttype, high, nilptr) == 0) {
-		/* special case: equi-select for NIL */
-		high = NULL;
-	}
-	resBAT = BATdimensionSubselect(inBAT, candBAT, low, high, *li, *hi, *anti);
-	BBPunfix(inBAT->batCacheid);
-	if (candBAT)
-		BBPunfix(candBAT->batCacheid);
-	if (resBAT == NULL)
-		throw(MAL, "algebra.dimension_subselect", GDK_EXCEPTION);
-
-	BBPkeepref((*res_id = resBAT->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str
-ALGdimensionSubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
-	return ALGdimensionSubselect2(result, bid, NULL, low, high, li, hi, anti);
-}
-#endif
 
 str
 ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
@@ -489,38 +450,6 @@ ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op
 	return ALGthetasubselect2(result, bid, NULL, val, op);
 }
 
-#if 0
-str
-ALGdimensionThetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
-{
-	BAT *b, *s = NULL, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.dimension_thetasubselect", RUNTIME_OBJECT_MISSING);
-	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.dimension_thetasubselect", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, val);
-	bn = BATdimensionThetasubselect(b, s, val, *op);
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "algebra.dimension_thetasubselect", GDK_EXCEPTION);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-	*result = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGdimensionThetasubselect1(bat *result, const bat *bid, const void *val, const char **op)
-{
-	return ALGdimensionThetasubselect2(result, bid, NULL, val, op);
-}
-#endif
 
 str
 ALGselect1(bat *result, const bat *bid, ptr value)
@@ -945,7 +874,7 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 }
 
 static str
-ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *), const char *name)
+ALGbinary(bat *result, const bat *lid, const bat *rid, BAT* (*func)(BAT *, BAT *), const char *name)
 {
 	BAT *left, *right,*bn= NULL;
 
@@ -1290,18 +1219,10 @@ ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 	return ALGbinary(result, lid, rid, BATproject, "algebra.leftfetchjoin");
 }
 
-#if 0
-str
-ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATnonDimensionProject, "algebra.non-dimension_leftfetchjoin");
-}
-#endif
-
 str
 ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid)
 {
-	return ALGbinary(result, lid, rid, BATdimensionProject, "algebra.dimension_leftfetchjoin");
+	return ALGbinary(result, lid, rid, dimensionBATproject_wrap, "algebra.dimension_leftfetchjoin");
 }
 
 str

@@ -968,125 +968,6 @@ typedef int (*GDKfcn) ();
 #define BATsetArray(X, n) X->batArray=n
 #define isBATarray(X) X->batArray>0
 
-/*Dimensional Columns*/
-#define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
-do {\
-    TPE *vls; \
-    BUN i; \
-    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-    *min = vls[0]; \
-    *step = vls[BATcount(dimensionBAT)-1]; \
-    *max = vls[BATcount(dimensionBAT)-2]; \
-\
-    *elementRepeats = *groupRepeats = 0; \
-    vls = (TPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
-\
-    for(i=0; i<BATcount(dimensionBAT)-2; i++) { /*last element is the step and at least one element is max*/\
-        if(vls[i] != *min) \
-            break; \
-        (*elementRepeats)++; \
-    } \
-    *groupRepeats = BATcount(dimensionBAT)-i-1; \
-} while(0)
-
-#define dimensionElement(min, max, step, elementRepeats, oid) \
-    ({ \
-        long elementsNum = floor((max-min)/step) + 1; \
-        long elementsPerGroup = elementsNum*elementRepeats; \
-        long elementInGroup = floor((oid%elementsPerGroup)/elementRepeats); \
-/*fprintf(stderr, "dimension element at %d is %d\n", (int)oid, (int)(min+elementInGroup*step)); */\
-        min+elementInGroup*step; \
-    })
-
-#define createDimension(TPE, min, max, step, elementRepeats, groupRepeats) \
-    ({ \
-        long i; \
-        TPE* vls; \
-        BAT *resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats+groupRepeats+1, TRANSIENT); \
-        if(resBAT) { \
-fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRepeats+1)); \
-	        vls = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-	        for(i=0; i<elementRepeats; i++) { \
-	            *vls = min; \
-	            vls++; \
-	        } \
-	        for(i=0; i<groupRepeats; i++) { \
-	            *vls = max; \
-	            vls++; \
-	        } \
-	        *vls = step; \
-\
-	        BATsetcount(resBAT,elementRepeats+groupRepeats+1); \
-	        BATseqbase(resBAT,0); \
-	        BATderiveProps(resBAT,FALSE); \
-	        resBAT->batArray=1; \
-		} \
-        resBAT; \
-    })
-
-#define dimensionElementsNum(min, max, step)\
-    ({\
-        long num = 1; \
-        if(!step) { \
-            if(min!=max) { \
-                GDKerror("dimensionElementsNum: step is 0 but min and max are not equal\n"); \
-                return 0; \
-            } \
-        } else \
-            num = floor((max-min)/step) + 1; \
-        num; \
-    })
-
-#define dimensionBATsizeTPE(TPE, dimensionBAT) \
-    ({\
-        TPE min, max, step; \
-        long elementRepeats, groupRepeats; \
-        BUN elementsNum; \
-        dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-        elementsNum = dimensionElementsNum(min, max, step); \
-        elementsNum*elementRepeats*groupRepeats; \
-    })
-
-#define materialiseDimensionTPE(TPE, dimensionBAT) \
-    ({ \
-        /*find the min, max, step in the dimension*/ \
-        long elementRepeats, groupRepeats, elementsNum; \
-        TPE min, max, step; \
-        oid i, j; \
-        TPE *el_out, el; \
-        BAT *resBAT; \
-\
-        dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-/*fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); */\
-        elementsNum = dimensionElementsNum(min, max, step); \
-/*fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); */\
-        if(!step) \
-            step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
-\
-        if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
-            GDKerror("materialiseDimensionTPE: Unable to create output BAT"); \
-\
-        el_out = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-        for(j=0; j<(unsigned long)groupRepeats; j++) { \
-/*fprintf(stderr, "materialise: group repetition %ld\n", j); */\
-            for(el=min; el<=max; el+=step) { \
-                for(i=0; i<(unsigned long)elementRepeats; i++) { \
-/*fprintf(stderr, "materialise: element repetition %ld\n", i); */\
-                    *el_out = el; \
-                    el_out++; \
-                } \
-            } \
-        } \
-\
-        BATseqbase(resBAT,0); \
-        BATsetcount(resBAT, elementRepeats*elementsNum*groupRepeats);                  \
-        BATderiveProps(resBAT,FALSE); \
-        resBAT; \
-    })
-
-gdk_export BAT* materialiseDimensionBAT(BAT* dimensionBAT);
-gdk_export BUN dimensionBATsize(BAT* dimensionBAT);
-gdk_export BUN dimensionBATelementsNum(BAT* dimensionBAT);
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in
@@ -3314,13 +3195,8 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 #define JOIN_BAND	3
 #define JOIN_NE		(-3)
 
-gdk_export BAT *BATmbrsubselect(BAT *dimensionBAT, BAT *oidsBAT, BAT *candsBAT);
-gdk_export BAT *BATmbrproject(BAT *b, BAT *s, BAT *subselectBAT);
-
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
-gdk_export BAT *BATdimensionSubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
-gdk_export BAT *BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
@@ -3348,8 +3224,6 @@ gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, 
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
 gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);
-gdk_export BAT *BATdimensionProject(BAT *l, BAT *r);
-//gdk_export BAT *BATnonDimensionProject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);

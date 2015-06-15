@@ -10,6 +10,7 @@
 #define ALGEBRA_H
 
 #include <gdk.h>
+#include <gdk_arrays.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 

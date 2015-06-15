@@ -42,7 +42,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <math.h>
+#include "gdk_arrays.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -1694,69 +1694,6 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	return res;
 }
 
-
-static BUN
-dimension_void_replace_bat(BAT *b, BAT *p, BAT *dimensionBAT, bit force)
-{
-	BUN nr = 0;
-	BUN r, s;
-	BATiter uii = bat_iterator(p);
-
-#define replace(TPE) \
-	do {\
-		TPE dimMin, dimMax, dimStep; \
-		long dimGroupRepeats, dimElementRepeats; \
-		dimensionCharacteristics(TPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
-\
-fprintf(stderr, "%d-%d-%d, %ld, %ld\n", (int)dimMin, (int)dimStep, (int)dimMax, dimElementRepeats, dimGroupRepeats); \
-		BATloop(p, r, s) { \
-			oid updid = *(oid *) BUNtail(uii, r); \
-			TPE val = dimensionElement(dimMin, dimMax, dimStep, dimElementRepeats, r); \
-\
-			if (void_inplace(b, updid, &val, force) == GDK_FAIL) \
-				return BUN_NONE; \
-			nr++; \
-		} \
-	} while(0)
-
-	switch (ATOMtype(ATOMbasetype(dimensionBAT->ttype))) {
-        case TYPE_bte:
-            replace(bte);
-            break;
-        case TYPE_sht:
-            replace(sht);
-            break;
-        case TYPE_int:
-            replace(int);
-            break;
-        case TYPE_flt:
-            replace(flt);
-            break;
-        case TYPE_dbl:
-            replace(dbl);
-            break;
-        case TYPE_lng:
-            replace(lng);
-            break;
-#ifdef HAVE_HGE
-        case TYPE_hge:
-            replace(hge);
-            break;
-#endif
-        case TYPE_oid:
-#if SIZEOF_OID == SIZEOF_INT
-            replace(int);
-#else
-            replace(lng);
-#endif
-        break;
-        default:
-            fprintf(stderr, "dimension_void_replace_bat: dimension type not handled\n");
-            return BUN_NONE;
-    }	
-	return nr;
-}
-
 BUN
 void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 {
@@ -3321,112 +3258,4 @@ BATderiveProps(BAT *b, int expensive)
 	BATderiveHeadProps(b, expensive);
 	if (b->H != b->T)
 		BATderiveHeadProps(BATmirror(b), expensive);
-}
-
-BAT* materialiseDimensionBAT(BAT *dimensionBAT) {
-	if(!isBATarray(dimensionBAT))
-		return dimensionBAT;
-
-	 switch(ATOMtype(dimensionBAT->ttype)) {
-		case TYPE_bte:
-            return materialiseDimensionTPE(bte, dimensionBAT);
-        case TYPE_sht:
-            return materialiseDimensionTPE(sht, dimensionBAT);
-        case TYPE_int:
-            return materialiseDimensionTPE(int, dimensionBAT);
-        case TYPE_flt:
-            return materialiseDimensionTPE(flt, dimensionBAT);
-        case TYPE_dbl:
-            return materialiseDimensionTPE(dbl, dimensionBAT);
-        case TYPE_lng:
-            return materialiseDimensionTPE(lng, dimensionBAT);
-#ifdef HAVE_HGE
-        case TYPE_hge:
-            return materialiseDimensionTPE(hge, dimensionBAT);
-#endif
-        case TYPE_oid:
-#if SIZEOF_OID == SIZEOF_INT
-            return materialiseDimensionTPE(int, dimensionBAT);
-#else
-            return materialiseDimensionTPE(lng, dimensionBAT);
-#endif
-        break;
-        default:
-            fprintf(stderr, "materialiseDimensionBAT: dimension type not handled\n");
-            return NULL;
-	}
-	return NULL;
-}
-
-BUN dimensionBATsize(BAT *dimensionBAT) {
-	if(!isBATarray(dimensionBAT))
-		return BATcount(dimensionBAT);
-
-	 switch(ATOMtype(dimensionBAT->ttype)) {
-		case TYPE_bte:
-            return dimensionBATsizeTPE(bte, dimensionBAT);
-        case TYPE_sht:
-            return dimensionBATsizeTPE(sht, dimensionBAT);
-        case TYPE_int:
-            return dimensionBATsizeTPE(int, dimensionBAT);
-        case TYPE_flt:
-            return dimensionBATsizeTPE(flt, dimensionBAT);
-        case TYPE_dbl:
-            return dimensionBATsizeTPE(dbl, dimensionBAT);
-        case TYPE_lng:
-            return dimensionBATsizeTPE(lng, dimensionBAT);
-#ifdef HAVE_HGE
-        case TYPE_hge:
-            return dimensionBATsizeTPE(hge, dimensionBAT);
-#endif
-        case TYPE_oid:
-#if SIZEOF_OID == SIZEOF_INT
-            return dimensionBATsizeTPE(int, dimensionBAT);
-#else
-            return dimensionBATsizeTPE(lng, dimensionBAT);
-#endif
-        break;
-        default:
-            fprintf(stderr, "dimensionBATsize: dimension type not handled\n");
-	}
-	return 0;
-}
-
-BUN dimensionBATelementsNum(BAT* dimensionBAT) {
-#define num(TPE) \
-	({ \
-		TPE min, max, step; \
-		long elementRepeats, groupRepeats; \
-		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
-		dimensionElementsNum(min, max, step); \
-	})
-	switch(ATOMtype(BATttype(dimensionBAT))) {
-		case TYPE_bte:
-            return num(bte);
-        case TYPE_sht:
-            return num(sht);
-        case TYPE_int:
-            return num(int);
-        case TYPE_flt:
-            return num(flt);
-        case TYPE_dbl:
-            return num(dbl);
-        case TYPE_lng:
-            return num(lng);
-#ifdef HAVE_HGE
-        case TYPE_hge:
-            return num(hge);
-#endif
-        case TYPE_oid:
-#if SIZEOF_OID == SIZEOF_INT
-            return num(int);
-#else
-            return num(lng);
-#endif
-        break;
-        default:
-            fprintf(stderr, "dimensionBATelementsNum: dimension type not handled\n");
-	}
-
-	return 0;
 }
