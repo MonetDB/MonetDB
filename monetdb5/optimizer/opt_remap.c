@@ -38,7 +38,10 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	setFunctionId(p,putName(fcn, strlen(fcn)));
 
 	for(i=0; i<pci->retc; i++)
-		getArg(p,i)= getArg(pci,i);
+		if (i<1)
+			getArg(p,i) = getArg(pci,i);
+		else
+			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= pushArgument(mb,p,getArg(pci,i));
