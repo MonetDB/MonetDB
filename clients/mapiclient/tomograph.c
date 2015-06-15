@@ -1204,8 +1204,7 @@ gnuplotheader(char *filename)
 	fprintf(gnudata,"unset border\n");
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"unset ytics\n");
-	// REPLACE THE HARDCODED NAME
-	fprintf(gnudata,"plot \"/ufs/mk/monetdb-final.png\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n");
+	fprintf(gnudata,"plot \"%s\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n", LOGOFILE);
 	fprintf(gnudata,"unset title\n");
 
 }

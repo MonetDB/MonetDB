@@ -7,6 +7,9 @@
 MTSAFE
 INCLUDES = ../mapilib ../../common/options ../../common/stream ../R/MonetDB.R/src $(READLINE_INCS)
 
+# see tools/mserver5/Makefile.ag for location of logo file
+CFLAGS = -DLOGOFILE=\"$(datadir)/doc/MonetDB/monetdblogo.png\"
+
 lib_mcutil = {
 	NOINST
 	SOURCES = dump.c prompt.c dotmonetdb.c eventparser.c eventparser.h
