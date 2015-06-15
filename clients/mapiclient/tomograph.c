@@ -1184,20 +1184,24 @@ updatecolormap(int idx)
 /* gnuplot defaults */
 static int height = 160;
 
+#define LOGOFILE DATA_DIR "/doc/MonetDB/monetdblogo.png"
+
 static char *
 findlogo(void)
 {
 #ifdef _MSC_VER
-	static char buf[512];
+	/* on Windows, convert \ to  / path separators since this path
+	 * is added to gnuplot input */
+	static char buf[sizeof(LOGOFILE)];
 	int i;
 
-	snprintf(buf, sizeof(buf), "%s", DATA_DIR "\\doc\\MonetDB\\monetdblogo.png");
+	snprintf(buf, sizeof(buf), "%s", LOGOFILE);
 	for (i = 0; buf[i]; i++)
 		if (buf[i] == '\\')
 			buf[i] = '/';
 	return buf;
 #else
-	return DATA_DIR "/doc/MonetDB/monetdblogo.png";
+	return LOGOFILE;
 #endif
 }
 
