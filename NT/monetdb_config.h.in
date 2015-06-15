@@ -60,6 +60,9 @@
 /* location where binaries are installed */
 /* #undef BINDIR */
 
+/* read-only architecture-independent data */
+#define DATA_DIR PREFIX "\\share"
+
 /* Directory separator */
 #define DIR_SEP '\\'
 

@@ -3034,6 +3034,8 @@ fi
 Qdatadir="$datadir"
 Xdatadir="`$translatepath "$datadir"`"
 QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+eval "Edatadir=${Xdatadir}"
+QEdatadir="`echo "$Edatadir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qdatadir)
 AC_SUBST(Xdatadir)
 AC_SUBST(QXdatadir)
@@ -3069,6 +3071,7 @@ AC_SUBST(QSOURCE)
 AC_SUBST(XSOURCE)
 AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(DATA_DIR,"$QEdatadir",[read-only architecture-independent data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
