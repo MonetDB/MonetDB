@@ -18,7 +18,9 @@ architecture, but there are notes throughout about building on Windows
 on a 64-bit architecture which is indicated with Windows64.  We have
 successfully built on Windows XP, Windows Server, and Windows 7.
 
-__ http://dev.monetdb.org/hg/MonetDB/
+.. _MonetDB: http://dev.monetdb.org/hg/MonetDB/
+
+__ MonetDB_
 
 Introduction
 ============
@@ -110,12 +112,29 @@ and libraries can be optionally installed to enable optional features.
 The required programs and libraries are listed in this section, the
 following section lists the optional programs and libraries.
 
+Chocolatey
+----------
+
+Although Chocolatey_ is not a prerequisite per se, it makes
+installing and maintaining some of the other prerequisites a lot
+easier.  Therefore we recommend installing chocolatey.  Instructions
+are on their website__.
+
+We have installed the following programs using Chocolatey_::
+
+  choco install ActivePerl ant cmake ruby
+  choco install python2 python2-x86_32 python3 python3-x86_32
+
+.. _Chocolatey: https://chocolatey.org/
+
+__ Chocolatey_
+
 Mercurial (a.k.a. HG)
 ---------------------
 
 All sources of the MonetDB suite of programs are stored using
-Mercurial__ at our server__.  You will need Mercurial to get the
-sources.  We use Mercurial under Cygwin__, but any other version will
+Mercurial_ at our server__.  You will need Mercurial to get the
+sources.  We use Mercurial under Cygwin_, but any other version will
 do as well.
 
 Once Mercurial is installed and configured, you can get the sources
@@ -134,9 +153,11 @@ You can update the sources using (from within the above-mentioned
 
  hg pull -u
 
-__ http://mercurial.selenic.com/
-__ http://dev.monetdb.org/hg/MonetDB/
-__ http://www.cygwin.com/
+.. _Mercurial: http://mercurial.selenic.com/
+.. _Cygwin: http://www.cygwin.com/
+
+__ MonetDB_
+
 
 Compiler
 --------
@@ -169,18 +190,26 @@ __ http://www.mingw.org/
 Python
 ------
 
-Python__ is needed for creating the configuration files that the
+Python_ is needed for creating the configuration files that the
 compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
-On Windows64 you can use either the 32-bit or 64-bit version of
-Python.  However, if you're going to create an installer for the
-python component using ``python setup.py bdist_msi`` or ``python
-setup.py bdist_wininst``, you should use the version of Python for
-which you're creating the installer.
+Note that you can use either or both Python2 and Python3, and on 64
+bit architectures, either the 32 bit or 64 bit version of Python.  All
+these versions are fine for building the MonetDB suite.  However, if
+you want to create an installer for the Python component using
+``python setup.py bdist_wininst``, you need to use the version of
+Python for which you're building the installer.  It is possible to
+install all versions.  Using Chocolatey_ you can do::
 
-__ http://www.python.org/
+  choco install python2 python3 
+  choco install python2-x86_32 python3-x86_32
+
+The latter command only on 64 bit architectures to install the 32 bit
+verions.
+
+.. _Python: http://www.python.org/
 
 Bison
 -----
@@ -260,8 +289,8 @@ contents of the file are::
 
  #include <Windows.h>
  VS_VERSION_INFO	VERSIONINFO
- FILEVERSION		8,36,0,0	// change as appropriate
- PRODUCTVERSION		8,36,0,0	// change as appropriate
+ FILEVERSION		8,37,0,0	// change as appropriate
+ PRODUCTVERSION		8,37,0,0	// change as appropriate
  FILEFLAGSMASK		0x3fL
  FILEFLAGS		0
  FILEOS			VOS_NT_WINDOWS32
@@ -284,18 +313,18 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.1k).  Follow the instructions in the file
+stable version (1.0.2a).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.1k.win32
+   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.2a.win32
    ms\do_ms.bat
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    and::
-   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.1k.win64
-   ms\do_win64a
+   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.2a.win64
+   ms\do_win64a.bat
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    For the debug versions, use ``debug-VC-WIN32`` and
@@ -395,9 +424,26 @@ on Windows with NMake`__.  I did find one problem with this procedure:
 you will need to run the ``autogen.bat`` script despite what it says
 in the instructions.
 
+We needed to make a few changes to the file ``nmake.opt``.  We needed
+to add a blurb for the version of ``nmake`` that we were using.  Look
+at the version number of ``nmake /P`` and adapt the closest match.  We
+also uncommented the section defining ``MSVC_VLD_DIR`` in order to
+compile a debug version.
+
+For newer versions of Visual Studio, we also needed to add a line::
+
+   #include <algorithm>
+
+to the files::
+
+   src\algorithm\LineIntersector.cpp
+   src\geom\LineSegment.cpp
+   src\io\WKTWriter.cpp
+   src\operation\buffer\OffsetCurveSetBuilder.cpp
+
 .. The actual commands were::
    autogen.bat
-   nmake /f makefile.vc MSVC_VER=1600
+   nmake /f makefile.vc
 
 .. On Windows64, add ``WIN64=YES`` to the nmake command line.
 
