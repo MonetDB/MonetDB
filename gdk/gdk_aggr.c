@@ -1426,6 +1426,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
+	if(isBATarray(g))
+		return dimensionBATgroupavg(bnp, cntsp, b, g, e, s, tp, skip_nils, abort_on_error);
+
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
@@ -1513,10 +1516,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	if (bn == NULL)
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
-
-	if(isBATarray(g))
-		return dimensionBATgroupavg(bnp, cntsp, b, g, e, s, tp, skip_nils, abort_on_error);
-
+	
 	if (BATtdense(g))
 		gids = NULL;
 	else
@@ -1698,6 +1698,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			if (x == TYPE##_nil)			\
 				continue;			\
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
+fprintf(stderr, "%u : %f -> %f\n", (unsigned int)i, (double)x, (double)a); \
 		}						\
 		*avg = n > 0 ? a : dbl_nil;			\
 	} while (0)
