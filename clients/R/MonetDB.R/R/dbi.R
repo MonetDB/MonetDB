@@ -319,7 +319,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   }
   if (!dbExistsTable(conn, qname)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
-    fdef <- paste('"', make.db.names(conn, names(value)), '"', fts, collapse=', ')
+    fdef <- paste(make.db.names(conn, names(value)), fts, collapse=', ')
     ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
     dbSendUpdate(conn, ct)
   }

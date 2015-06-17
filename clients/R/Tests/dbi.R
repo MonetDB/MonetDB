@@ -173,6 +173,13 @@ dbRollback(conn)
 # this returns a column with esoteric type MONTH_INTERVAL
 stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as date) - cast('2015-03-01' as date)")[[1]][[1]])))
 
+# reserved words in data frame column names
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24), transaction=F)
+stopifnot(dbExistsTable(conn, "evilt"))
+dbRollback(conn)
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))
@@ -180,12 +187,6 @@ stopifnot(!dbIsValid(conn))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
 
-# reserved words in data frame column names
-stopifnot(dbIsValid(conn))
-dbBegin(conn)
-dbWriteTable(conn, "evilt", data.frame(year=42,month=12, day=24), transaction=F)
-stopifnot(dbExistsTable(conn, "evilt"))
-dbRollback(conn)
 
 
 #test merovingian control code
