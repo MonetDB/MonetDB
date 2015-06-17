@@ -55,7 +55,25 @@ do {\
         num; \
     })
 
+/*find the position in the dimension indices (no repetitions) of the given value*/
 #define dimensionFndValuePos(value, min, step) fmod((value-min), step)? BUN_NONE : (BUN)(value-min)/step
+/*find the position in the dimension indices (no repetitions) of the  given value
+ * or the position of the index that is closest to the given value and greater than it*/
+#define dimensionFndGreaterValuePos(value, min, step, eq) \
+	({\
+		BUN pos = (BUN)(value-min)/step; \
+		fmod((value-min), step) ? ++pos : (pos +(1-eq)); \
+	})
+
+/*find the position in the dimension indices (no repetitions) of the  given value
+ * or the position of the index that is closest to the given value and smaller than it*/
+#define dimensionFndLowerValuePos(value, min, step, eq) \
+	({\
+		BUN pos = (BUN)(value-min)/step; \
+		if(value < min) \
+			pos = -2; \
+		fmod((value-min), step) ? pos : (pos - (1-eq)); \
+	})
 
 BUN dimension_void_replace_bat(BAT *resBAT, BAT *oidsBAT, BAT *dimensionBAT, bit force);
 

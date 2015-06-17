@@ -287,7 +287,6 @@ gdk_return dimensionBATsubselect(BAT** outBAT, BAT *dimensionBAT, BAT *candsBAT,
 #define equal(TPE, el) \
 	do { \
 		TPE min, max, step; \
-\
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
 		elementsNum = dimensionElementsNum(min, max, step); \
 		element_oid = dimensionFndValuePos(el, min, step); \
@@ -338,20 +337,10 @@ gdk_return dimensionBATsubselect(BAT** outBAT, BAT *dimensionBAT, BAT *candsBAT,
 	} else if(ATOMcmp(type, high, nil) == 0) { //find values greater than low
 #define greater(TPE, el) \
 	do { \
-		TPE min, max, step, it; \
-\
+		TPE min, max, step; \
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
 		elementsNum = dimensionElementsNum(min, max, step); \
-\
-		element_oid = elementsNum; \
-        for(it = max ; it >= min ; it -= step) { \
-			if(includeLow && it >= el) \
-            	element_oid--; \
-			else if(!includeLow && it > el) \
-				element_oid--; \
-            else \
-                break; \
-        } \
+		element_oid = dimensionFndGreaterValuePos(el, min, step, includeLow>0); \
 	} while(0)
 		
 		switch (ATOMtype(type)) {
@@ -384,7 +373,6 @@ gdk_return dimensionBATsubselect(BAT** outBAT, BAT *dimensionBAT, BAT *candsBAT,
 		default:
 			return gdk_error_msg(dimension_type, "dimensionBATsubselect", NULL);
     	}
-
 		if(element_oid >= elementsNum && !anti) { //low greater than max
 			if(!(resBAT = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT)))
 				return gdk_error_msg(new_bat, "dimensionBATsubselect", NULL);
@@ -398,20 +386,12 @@ gdk_return dimensionBATsubselect(BAT** outBAT, BAT *dimensionBAT, BAT *candsBAT,
 	} else if(ATOMcmp(type, low, nil) == 0) { //find values lower than high
 #define lower(TPE, el) \
 	do { \
-		TPE min, max, step, it; \
-\
+		TPE min, max, step; \
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
 		elementsNum = dimensionElementsNum(min, max, step); \
-\
-		element_oid = -1; \
-        for(it = min ; it <= max ; it += step) { \
-			if(includeHigh && it <= el) \
-            	element_oid++; \
-			else if(!includeHigh && it < el) \
-				element_oid++; \
-            else \
-                break; \
-        } \
+		element_oid = dimensionFndLowerValuePos(el, min, step, includeHigh>0); \
+		if(element_oid >= elementsNum) \
+			element_oid = elementsNum-1; /* all elements are included*/\
 	} while(0)
 		
 		switch (ATOMtype(type)) {
