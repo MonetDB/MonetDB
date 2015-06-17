@@ -1012,6 +1012,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	rcandorig = rcand;
 	rstartorig = rstart;
+
+	if (sl)
+		r1->tdense = sl->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (!nil_on_miss && !must_match && lscan > 0) {
 			/* If l is sorted (lscan > 0), we look at the
@@ -1822,6 +1825,9 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	r2->trevsorted = 0;
 	r2->tdense = 0;
 
+	if (sl) 
+		r1->tdense = sl->tdense;
+
 	if (lstart == lend || (!nil_on_miss && rstart == rend)) {
 		/* nothing to do: there are no matches */
 		if (must_match && lstart < lend) {
@@ -1839,12 +1845,26 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		return GDK_SUCCEED;
 	}
 
+	rl = BUNfirst(r);
 	if (VIEWtparent(r)) {
 		BAT *b = BBPdescriptor(-VIEWtparent(r));
-		rl = (BUN) ((r->T->heap.base - b->T->heap.base) >> r->T->shift) + BUNfirst(r);
-		r = b;
-	} else {
-		rl = BUNfirst(r);
+		if (b->batPersistence == PERSISTENT || BATcheckhash(b)) {
+			/* only use parent's hash if it is persistent
+			 * or already has a hash */
+			ALGODEBUG
+				fprintf(stderr, "#hashjoin(%s#"BUNFMT"): "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(r), BATcount(r),
+					BATgetId(b), BATcount(b));
+			rl = (BUN) ((r->T->heap.base - b->T->heap.base) >> r->T->shift) + BUNfirst(r);
+			r = b;
+		} else {
+			ALGODEBUG
+				fprintf(stderr, "#hashjoin(%s#"BUNFMT"): not "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(r), BATcount(r),
+					BATgetId(b), BATcount(b));
+		}
 	}
 	rh = rl + rend;
 	rl += rstart;

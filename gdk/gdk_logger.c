@@ -782,6 +782,7 @@ la_apply(logger *lg, logaction *c)
 		la_bat_clear(lg, c);
 		break;
 	}
+	lg->changes++;
 }
 
 static void
@@ -1051,7 +1052,6 @@ logger_readlog(logger *lg, char *filename)
 		}
 		if (name)
 			GDKfree(name);
-		lg->changes++;
 	}
 	logger_close(lg);
 
@@ -1723,7 +1723,6 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			}
 		}
 #endif
-		lg->changes++;
 		if (logger_readlogs(lg, fp, filename) == LOG_ERR) {
 			goto error;
 		}

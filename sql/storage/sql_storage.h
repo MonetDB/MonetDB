@@ -50,8 +50,14 @@ typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
 typedef struct rids {
 	BUN cur;
 	void *data;
-	BUN l,h;	/* subselect using slices */
 } rids;
+
+typedef struct subrids {
+	BUN pos;
+	int id;
+	void *ids;
+	void *rids;
+} subrids;
 
 /* returns table rids, for the given select ranges */
 typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...);
@@ -60,12 +66,24 @@ typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_val
 typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_col);
 
 typedef rids *(*rids_join_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
+typedef rids *(*rids_diff_fptr)( sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc);
 
 /* return table rids from result of table_select, return (-1) when done */
 typedef oid (*rids_next_fptr)(rids *r);
 
 /* clean up the resources taken by the result of table_select */
 typedef void (*rids_destroy_fptr)(rids *r);
+typedef int (*rids_empty_fptr)(rids *r);
+
+typedef subrids *(*subrids_create_fptr)( sql_trans *tr, rids *l, sql_column *jc1, sql_column *jc2, sql_column *obc);
+
+/* return table rids from result of table_select, return (-1) when done */
+typedef oid (*subrids_next_fptr)(subrids *r);
+typedef sqlid (*subrids_nextid_fptr)(subrids *r);
+
+/* clean up the resources taken by the result of table_select */
+typedef void (*subrids_destroy_fptr)(subrids *r);
+
 
 typedef struct table_functions {
 	column_find_row_fptr column_find_row;
@@ -79,6 +97,13 @@ typedef struct table_functions {
 	rids_join_fptr rids_join;
 	rids_next_fptr rids_next;
 	rids_destroy_fptr rids_destroy;
+	rids_empty_fptr rids_empty;
+
+	subrids_create_fptr subrids_create;
+	subrids_next_fptr subrids_next;
+	subrids_nextid_fptr subrids_nextid;
+	subrids_destroy_fptr subrids_destroy;
+	rids_diff_fptr rids_diff;
 } table_functions; 
 
 extern table_functions table_funcs;

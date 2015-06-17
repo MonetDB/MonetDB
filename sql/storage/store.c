@@ -560,24 +560,21 @@ load_tables_of_tables(sql_trans *tr, sql_schema *s)
 }
 
 static sql_table *
-load_table(sql_trans *tr, sql_schema *s, oid rid)
+load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 {
 	void *v;
 	sql_table *t = SA_ZNEW(tr->sa, sql_table);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *tables = find_sql_table(syss, "_tables");
-	sql_table *columns = find_sql_table(syss, "_columns");
 	sql_table *idxs = find_sql_table(syss, "idxs");
 	sql_table *keys = find_sql_table(syss, "keys");
 	sql_table *triggers = find_sql_table(syss, "triggers");
 	char *query;
-	sql_column *column_table_id, *column_number, *idx_table_id;
-	sql_column *key_table_id, *trigger_table_id;
-	sqlid tid;
+	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
+	oid rid;
 	rids *rs;
 
-	v = table_funcs.column_find_value(tr, find_sql_column(tables, "id"), rid);
-	tid = *(sqlid *)v;			_DELETE(v);	
+	rid = table_funcs.column_find_row(tr, find_sql_column(tables, "id"), &tid, NULL);
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "name"), rid);
 	base_init(tr->sa, &t->base, tid, TR_OLD, v);	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "query"), rid);
@@ -624,14 +621,8 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	if (bs_debug)
 		fprintf(stderr, "#\tload table %s\n", t->base.name);
 
-	column_table_id = find_sql_column(columns, "table_id");
-	column_number = find_sql_column(columns, "number");
-	rs = table_funcs.rids_select(tr, column_table_id, &t->base.id, &t->base.id, NULL);
-	rs = table_funcs.rids_orderby(tr, rs, column_number); 
-	
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.subrids_next(nrs); rid != oid_nil; rid = table_funcs.subrids_next(nrs)) 
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
-	table_funcs.rids_destroy(rs);
 
 	if (!isKindOfTable(t))
 		return t;
@@ -726,19 +717,15 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 }
 
 static sql_func *
-load_func(sql_trans *tr, sql_schema *s, oid rid)
+load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 {
 	void *v;
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *funcs = find_sql_table(syss, "functions");
-	sql_table *args = find_sql_table(syss, "args");
-	sql_column *arg_func_id, *arg_number;
-	sqlid fid;
-	rids *rs;
+	oid rid;
 
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "id"), rid);
-	fid = *(sqlid *)v;			_DELETE(v);
+	rid = table_funcs.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "name"), rid);
 	base_init(tr->sa, &t->base, fid, TR_OLD, v); 	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "func"), rid);
@@ -764,16 +751,12 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 		t->imp = NULL;
 	}
 
-	arg_func_id = find_sql_column(args, "func_id");
-	arg_number = find_sql_column(args, "number");
-	rs = table_funcs.rids_select(tr, arg_func_id, &t->base.id, &t->base.id, NULL);
-	rs = table_funcs.rids_orderby(tr, rs, arg_number); 
-
 	if (bs_debug)
 		fprintf(stderr, "#\tload func %s\n", t->base.name);
 
 	t->ops = list_new(tr->sa, (fdestroy)NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+	if (rs)
+	for(rid = table_funcs.subrids_next(rs); rid != oid_nil; rid = table_funcs.subrids_next(rs)) {
 		sql_arg *a = load_arg(tr, t, rid);
 
 		if (a->inout == ARG_OUT) {
@@ -786,7 +769,6 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	}
 	if (t->type == F_FUNC && !t->res)
 		t->type = F_PROC;
-	table_funcs.rids_destroy(rs);
 	return t;
 }
 
@@ -904,9 +886,19 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	/* second tables */
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
+	/* all tables with id >= id */
 	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &id, NULL, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
-	    	cs_add(&s->tables, load_table(tr, s, rid), TR_OLD);
+	if (rs && !table_funcs.rids_empty(rs)) {
+		sql_table *columns = find_sql_table(syss, "_columns");
+		sql_column *column_table_id = find_sql_column(columns, "table_id");
+		sql_column *column_number = find_sql_column(columns, "number");
+		subrids *nrs = table_funcs.subrids_create(tr, rs, table_id, column_table_id, column_number);
+		sqlid tid;
+
+		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) 
+			cs_add(&s->tables, load_table(tr, s, tid, nrs), TR_OLD);
+		table_funcs.subrids_destroy(nrs);
+	}
 	table_funcs.rids_destroy(rs);
 	load_tables_of_tables(tr, s);
 
@@ -914,8 +906,24 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	func_schema = find_sql_column(funcs, "schema_id");
 	func_id = find_sql_column(funcs, "id");
 	rs = table_funcs.rids_select(tr, func_schema, &s->base.id, &s->base.id, func_id, &id, NULL, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
-		cs_add(&s->funcs, load_func(tr, s, rid), TR_OLD);
+	if (rs && !table_funcs.rids_empty(rs)) {
+		sql_table *args = find_sql_table(syss, "args");
+		sql_column *arg_func_id = find_sql_column(args, "func_id");
+		sql_column *arg_number = find_sql_column(args, "number");
+		subrids *nrs = table_funcs.subrids_create(tr, rs, func_id, arg_func_id, arg_number);
+		sqlid fid;
+
+		for(fid = table_funcs.subrids_nextid(nrs); fid >= 0; fid = table_funcs.subrids_nextid(nrs)) 
+			cs_add(&s->funcs, load_func(tr, s, fid, nrs), TR_OLD);
+		/* Handle all procedures without arguments (no args) */
+		rs = table_funcs.rids_diff(tr, rs, func_id, nrs, arg_func_id);
+		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+			void *v = table_funcs.column_find_value(tr, func_id, rid);
+			fid = *(sqlid*)v; _DELETE(v);
+			cs_add(&s->funcs, load_func(tr, s, fid, NULL), TR_OLD);
+		}
+		table_funcs.subrids_destroy(nrs);
+	}
 	table_funcs.rids_destroy(rs);
 
 	/* last sequence numbers */

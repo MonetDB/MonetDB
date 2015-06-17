@@ -1184,6 +1184,23 @@ updatecolormap(int idx)
 /* gnuplot defaults */
 static int height = 160;
 
+static char *
+findlogo(void)
+{
+#ifdef _MSC_VER
+	static char buf[512];
+	int i;
+
+	snprintf(buf, sizeof(buf), "%s", DATA_DIR "\\doc\\MonetDB\\monetdblogo.png");
+	for (i = 0; buf[i]; i++)
+		if (buf[i] == '\\')
+			buf[i] = '/';
+	return buf;
+#else
+	return DATA_DIR "/doc/MonetDB/monetdblogo.png";
+#endif
+}
+
 static void
 gnuplotheader(char *filename)
 {
@@ -1204,8 +1221,7 @@ gnuplotheader(char *filename)
 	fprintf(gnudata,"unset border\n");
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"unset ytics\n");
-	// REPLACE THE HARDCODED NAME
-	fprintf(gnudata,"plot \"/ufs/mk/monetdb-final.png\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n");
+	fprintf(gnudata,"plot \"%s\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n", findlogo());
 	fprintf(gnudata,"unset title\n");
 
 }
