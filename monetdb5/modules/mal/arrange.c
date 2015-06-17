@@ -46,7 +46,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
 
 	/* TODO: check if b already has index */
-	/* TODO: check if b is sorted call ARNGindex b with void,(v)oid */
+	/* TODO: check if b is sorted, then index does nto make sense, other action  is needed*/
 	/* TODO: check if b is view and parent has index do a range select */
 
 	// create a temporary MAL function
@@ -380,6 +380,14 @@ do {																		\
 			GDKfree(q);
 		}
 		/* fix m properties */
+		BATsetcount(m, m_sz);
+		BATseqbase(m, b->hseqbase);
+		BATseqbase(BATmirror(m), b->hseqbase);
+		m->tkey = 1;
+		m->T->nil = 0;
+		m->T->nonil = 1;
+		m->tsorted = m->trevsorted = 0;
+		m->tdense = 0;
 		if (ARNGindex(b, m) == GDK_FAIL) {
 			for (i = 0; i < n_ar; i++) {
 				BBPunfix(aid[i]);
