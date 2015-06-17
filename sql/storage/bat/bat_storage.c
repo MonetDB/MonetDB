@@ -1866,6 +1866,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			obat->bid = cbat->ibid;
 			cbat->bid = cbat->ibid = 0;
 
+			BATmsync(ins);
 			ins = cur;
 			cur = newcur;
 		} else {

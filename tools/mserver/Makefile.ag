@@ -8,7 +8,7 @@ MTSAFE
 
 man_MANS = mserver5.1
 
-EXTRA_DIST = monetdblogo.png $(man_MANS)
+EXTRA_DIST = $(man_MANS)
 
 INCLUDES = ../../monetdb5/mal \
 		   ../../gdk \
@@ -17,10 +17,29 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../common/options \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
+headers_docx = {
+	HEADERS = docx
+	SOURCES = tomographintro.docx
+	DIR = datadir/doc/MonetDB-client-tools
+}
+
+headers_pdf = {
+	HEADERS = pdf
+	SOURCES = tomographintro.pdf
+	DIR = datadir/doc/MonetDB-client-tools
+}
+
+# see clients/mapiclient/Makefile.ag for use of logo file
+headers_png = {
+	HEADERS = png
+	SOURCES = monetdblogo.png
+	DIR = datadir/doc/MonetDB
+}
+
 bin_mserver5 = {
 	# hack: include mserver5.1.in here to get it expanded
 	SOURCES = mserver5.c monet_version.h monet_version.c.in \
-		mserver5.1.in 
+		mserver5.1.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
