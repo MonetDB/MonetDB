@@ -16,6 +16,7 @@
  * _MSC_VER = 1500: Visual Studio 9.0
  * _MSC_VER = 1600: Visual Studio 10.0
  * _MSC_VER = 1800: Visual Studio 12.0
+ * _MSC_VER = 1900: Visual Studio 14.0
  */
 
 #ifndef _SEEN_MONETDB_CONFIG_H
@@ -993,8 +994,10 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
+#if _MSC_VER < 1900
 #ifndef snprintf
 #define snprintf _snprintf
+#endif
 #endif
 
 /* type used by connect */

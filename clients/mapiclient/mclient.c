@@ -1507,7 +1507,7 @@ setFormatter(const char *s)
 		free(separator);
 	separator = NULL;
 	csvheader = 0;
-#ifdef WIN32
+#ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
 #endif
@@ -1543,7 +1543,7 @@ setFormatter(const char *s)
 	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
 	} else if (strcmp(s, "test") == 0) {
-#ifdef WIN32
+#ifdef _TWO_DIGIT_EXPONENT
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;

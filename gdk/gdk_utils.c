@@ -1621,6 +1621,9 @@ THRget(int tid)
 	return (GDKthreads + tid - 1);
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#pragma warning(disable : 4172)
+#endif
 static inline size_t
 THRsp(void)
 {
