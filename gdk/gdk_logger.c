@@ -850,7 +850,7 @@ tr_abort(logger *lg, trans *tr)
 static int log_sequence_nrs(logger *lg);
 
 /* Update the last transaction id written in the catalog file.
- * Mostly used by the shared logger. */
+ * Only used by the shared logger. */
 static int
 logger_update_catalog_file(logger *lg, const char *dir, const char *filename, int role)
 {
@@ -1086,28 +1086,37 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
-		while((lg->shared && lid > lg->id && res != LOG_ERR) || (!lg->shared && lid >= lg->id && res != LOG_ERR)) {
+		if (!lg->shared && lid >= lg->id) {
+			lg->id = lid;
 			snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-			if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
+			if ((res = logger_readlog(lg, log_filename)) != 0) {
 				/* we cannot distinguish errors from
 				 * incomplete transactions (even if we
 				 * would log aborts in the logs). So
 				 * we simply abort and move to the
-				 * next log file.
-				 * The only special case is if the files is missing altogether
-				 * and the logger is a shared one,
-				 * then we have missing transactions and we should abort.
-				 * Yeah, and we also ignore the 1st files it most likely never exists. */
-				res = LOG_ERR;
-				fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
+				 * next log file */
+				(void) res;
 			}
-			/* Increment the id only at the end, since we want to re-read the last file.
-			 * That is because last time we read it, it was empty, since the logger create empty files
-			 * and fills them in later. */
-			lg->id++;
-		}
-		/* if this is a shared logger, write the id in the shared file */
-		if (lg->shared) {
+		} else {
+			while (lid >= lg->id && res != LOG_ERR) {
+				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
+					/* The only special case is if the files is missing altogether
+					 * and the logger is a shared one,
+					 * then we have missing transactions and we should abort.
+					 * Yeah, and we also ignore the 1st files it most likely never exists. */
+					res = LOG_ERR;
+					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
+				}
+				/* Increment the id only at the end, since we want to re-read the last file.
+				 * That is because last time we read it, it was empty, since the logger creates empty files
+				 * and fills them in later. */
+                lg->id++;
+			}
+            if (lid < lg->id) {
+                lg->id = lid;
+            }
+			/* if this is a shared logger, write the id in the shared file */
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
 	}

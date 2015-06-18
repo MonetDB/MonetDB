@@ -1669,7 +1669,7 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock, "store_manager");
-        if (GDKexiting() || (logger_funcs.changes() < 1000000 && shared_transactions_drift <= shared_drift_threshold)) {
+        if (GDKexiting() || (logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
             MT_lock_unset(&bs_lock, "store_manager");
             continue;
         }
