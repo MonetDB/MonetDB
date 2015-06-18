@@ -2892,6 +2892,13 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
+	if(isBATarray(l) && isBATarray(r))
+		return dimensionBATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
+	if(isBATarray(l) || isBATarray(r)) {
+		GDKerror("BATsubjoin: One of the BATs is an array and the othes is not. Case not handled");
+		return GDK_FAIL;
+	}
+
 	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	*r1p = r1;

@@ -67,8 +67,6 @@ fprintf(stderr, "createDimension: %ld total elements\n", (elementRepeats+groupRe
 /*fprintf(stderr, "materialise: elementRepeats = %ld - groupRepeats = %ld\n", elementRepeats, groupRepeats); */\
         elementsNum = dimensionElementsNum(min, max, step); \
 /*fprintf(stderr, "materialise elementsNum = %ld\n", elementsNum); */\
-        if(!step) \
-            step = 1 ; /*if 0 then it loops for ever when adding the elements in the resBAT*/\
 \
         if((resBAT = BATnew(TYPE_void, TYPE_##TPE, elementRepeats*elementsNum*groupRepeats, TRANSIENT)) == NULL) \
             GDKerror("materialiseDimensionTPE: Unable to create output BAT"); \
@@ -1311,3 +1309,125 @@ fprintf(stderr, "BATnondimensionProject: new repeat2 = %ld\n", repeat2_new); \
 	return resBAT;
 }
 #endif
+
+
+gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl, BAT *dimensionBATr, BAT *sl, BAT *sr, int nil_matches, BUN estimate) {
+	BAT *resBATl, *resBATr;
+	oid *qualifyingL, *qualifyingR;
+	BUN resSize;
+
+	if(sr || sl)
+	    return gdk_error_msg(general_error, "dimensionBATsubjoin", "Unhandled BATs");
+
+(void)nil_matches;
+(void)estimate;
+
+#define join(TPE) \
+do { \
+	TPE minL, maxL, stepL, minR, maxR, stepR, min, max, step, it; \
+	unsigned long elRepeatsL, grRepeatsL, elRepeatsR, grRepeatsR; \
+	BUN elsNumR, elsPerGroupR, totalElsNumR, elsNumL, elsPerGroupL, totalElsNumL; \
+\
+	dimensionCharacteristics(TPE, dimensionBATl, &minL, &maxL, &stepL, &elRepeatsL, &grRepeatsL); \
+	elsNumL = dimensionElementsNum(minL, maxL, stepL); \
+	elsPerGroupL = elsNumL*elRepeatsL; \
+	totalElsNumL = elsPerGroupL*grRepeatsL; \
+	dimensionCharacteristics(TPE, dimensionBATr, &minR, &maxR, &stepR, &elRepeatsR, &grRepeatsR); \
+	elsNumR = dimensionElementsNum(minR, maxR, stepR); \
+	elsPerGroupR = elsNumR*elRepeatsR; \
+	totalElsNumR = elsPerGroupR*grRepeatsR; \
+	/*use for the iteration the smallest dimension*/ \
+	if( elsNumR > elsNumL ) { \
+		min = minL; \
+		max = maxL; \
+		step = stepL; \
+		resSize = elRepeatsL*grRepeatsL*elRepeatsR*grRepeatsR*elsNumL; \
+	} else {\
+		min = minR; \
+		max = maxR; \
+		step = stepR; \
+		resSize = elRepeatsL*grRepeatsL*elRepeatsR*grRepeatsR*elsNumR; \
+	} \
+\
+fprintf(stderr, "resSize = %lu\n", resSize); \
+\
+	resBATl = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT); \
+	qualifyingL = (oid*)Tloc(resBATl, BUNfirst(resBATl)); \
+	resBATr = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT); \
+	qualifyingR = (oid*)Tloc(resBATr, BUNfirst(resBATr)); \
+	resSize = 0; \
+\
+	/*for each index*/ \
+	for(it=min; it<=max; it+=step) { \
+		/*find the position of the index in each dimension*/ \
+		BUN lPos = dimensionFndValuePos(it, minL, stepL)*elRepeatsL; \
+		BUN rPos = dimensionFndValuePos(it, minR, stepR)*elRepeatsR; \
+fprintf(stderr, "Checking %d : lPos = %lu, rPos = %lu\n", (int)it, lPos, rPos); \
+		if(lPos != BUN_NONE && rPos != BUN_NONE) { \
+			/*match all occurrences in left dimension to all occurences in right dimension */ \
+			BUN i, j; \
+			for(i=lPos; i<totalElsNumL; i+=elsPerGroupL) { \
+				for(j=rPos; j<totalElsNumR; j+=elsPerGroupR) { \
+					unsigned long ii, jj; \
+					for(ii=0; ii<elRepeatsL; ii++) { \
+						for(jj=0; jj<elRepeatsR; jj++) { \
+							*qualifyingL++ = i+ii; \
+							*qualifyingR++ = j+jj; \
+							resSize++; \
+fprintf(stderr, "%lu: Added (%lu, %lu)\n", resSize, (i+ii), (j+jj)); \
+						} \
+					} \
+				}\
+			} \
+		}\
+	} \
+} while(0)
+
+	switch (ATOMtype(BATttype(dimensionBATl))) {
+        case TYPE_bte:
+            join(bte);
+            break;
+        case TYPE_sht:
+            join(sht);
+            break;
+        case TYPE_int:
+            join(int);
+            break;
+        case TYPE_flt:
+            join(flt);
+            break;
+        case TYPE_dbl:
+            join(dbl);
+            break;
+        case TYPE_lng:
+            join(lng);
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            join(hge);
+            break;
+#endif
+        case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+            join(int);
+#else
+            join(lng);
+#endif
+    	    break;
+        default:
+            return gdk_error_msg(dimension_type, "dimensionBATsubjoin", NULL);
+	}
+
+	BATsetcount(resBATl,resSize);
+    BATseqbase(resBATl,0);
+    BATderiveProps(resBATl,FALSE);
+	BATsetcount(resBATr,resSize);
+    BATseqbase(resBATr,0);
+    BATderiveProps(resBATr,FALSE);
+
+	*outBATl = resBATl;
+	*outBATr = resBATr;
+
+	return GDK_SUCCEED;
+}
+

@@ -31,6 +31,10 @@ do {\
         (*elementRepeats)++; \
     } \
     *groupRepeats = BATcount(dimensionBAT)-i-1; \
+\
+	/*a zero step shows a single element in the dimension but leads to infinite loops and we do not want that*/ \
+	if(!(*step)) \
+		*step = 1; \
 } while(0)
 
 #define dimensionElement(min, max, step, elementRepeats, oid) \
@@ -89,5 +93,5 @@ BAT* dimensionBATproject_wrap(BAT* oidsBAT, BAT* dimensionBAT);
 gdk_return BATmbrproject(BAT **outBAT, BAT *b, BAT *oidsToProjectBAT, BAT *subselectBAT);
 gdk_return dimensionBATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *dimensionBAT, BAT *g, BAT *e, BAT *h);
 gdk_return dimensionBATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
-
+gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl, BAT *dimensionBATr, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 #endif /* _GDK_ARRAYS_H */
