@@ -222,6 +222,7 @@ struct Imprints {
 };
 
 struct Arngment {
+	int flags;
 	Heap *arngment;
 };
 

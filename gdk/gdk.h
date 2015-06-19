@@ -675,7 +675,7 @@ typedef struct {
 } Hash;
 
 typedef struct Imprints Imprints;
-typedef struct Arngment Arngment;
+typedef struct Order Order;
 
 
 /*
@@ -798,7 +798,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *hheap;           // heap for varsized head values
  *           Hash   *hhash;           // linear chained hash table on head
  *           Imprints *himprints;     // column imprints index on head
- *           Arngment *harngment;     // oid index arrangement on head
+ *           Order    *horder;        // order oid index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -812,7 +812,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
- *           Arngment *tarngment;     // oid index arrangement on tail
+ *           Order *torder;           // order oid index on tail
  *  } BAT;
  * @end verbatim
  *
@@ -892,7 +892,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
-	Arngment *arngment;	/* oid index arrangement */
+	Order *order;	/* order oid index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -2074,7 +2074,7 @@ gdk_export oid OIDnew(oid inc);
  * @end multitable
  *
  * The current BAT implementation supports three search accelerators:
- * hashing, imprints, and oid arrangement.
+ * hashing, imprints, and oid order.
  *
  * The routine BAThash makes sure that a hash accelerator on the tail of the
  * BAT exists. GDK_FAIL is returned upon failure to create the supportive
@@ -2099,7 +2099,7 @@ gdk_export gdk_return BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
 /*
- * @- OID index arrangement
+ * @- OID index order
  *
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
@@ -2107,10 +2107,10 @@ gdk_export lng IMPSimprintsize(BAT *b);
  *  BAT 
  * @end multitable
  *
- * The oid index arrangement.
+ * The oid index order.
  *
  */
-gdk_export gdk_return ARNGindex(BAT *b, BAT *a);
+gdk_export gdk_return ORDERindex(BAT *b, BAT *order);
 
 /*
  * @- Multilevel Storage Modes
