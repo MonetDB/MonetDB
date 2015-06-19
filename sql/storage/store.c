@@ -3112,12 +3112,10 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		fc->unique = pfc->unique;
 		fc->storage_type = NULL;
 		if (pfc->storage_type)
-			fc->storage_type = sa_strdup(tr->sa, pfc->storage_type);
-		if (fc->def) 
-			sa_strdup(tr->sa, fc->def);
+			fc->storage_type = pfc->storage_type;
 		fc->def = NULL;
 		if (pfc->def)
-			fc->def = sa_strdup(tr->sa, pfc->def);
+			fc->def = pfc->def;
 		fc->base.wtime = fc->base.rtime = 0;
 	}
 	return LOG_OK;

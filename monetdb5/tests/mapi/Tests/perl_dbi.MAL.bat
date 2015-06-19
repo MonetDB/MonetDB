@@ -3,4 +3,4 @@
 prompt # $t $g  
 echo on
 
-malsample.pl %MAPIPORT% %TSTDB%
+perl malsample.pl %MAPIPORT% %TSTDB%
