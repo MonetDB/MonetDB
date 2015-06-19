@@ -1,0 +1,6 @@
+
+#leftfetch join when having a dimension from an array
+command algebra.leftfetchjoin ( dims:ptr, pos:int ) :bat[:oid,:any]
+address dimension_leftfetchjoin;
+
+

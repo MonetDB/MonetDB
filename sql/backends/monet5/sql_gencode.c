@@ -2645,17 +2645,39 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 		} break;
+		case st_cells: {
+			sql_table *t = s->op4.tval;
+
+			q = newStmt1(mb, sqlRef, "get_cells");
+			if (q == NULL)
+				return -1;
+//			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+//			setVarUDFtype(mb, getArg(q, 0));
+			q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
+			if (q == NULL)
+				return -1;
+			s->nr = getDestVar(q);
+		} break;
 		case st_dimension: {
+#if 0
 			int ht = TYPE_oid;
 			int tt = s->op4.dval->type.type->localtype;
+#endif	
 			sql_table *t = s->op4.dval->t;
+			
+			q = newStmt2(mb, sqlRef, "get_dimension");
+			if (q == NULL)
+				return -1;
 
+#if 0		
 			q = newStmt2(mb, sqlRef, createDimRef);
 			if (q == NULL)
 				return -1;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb, getArg(q, 0));
-	
+#endif	
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);

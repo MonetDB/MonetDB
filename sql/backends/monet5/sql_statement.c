@@ -403,6 +403,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_atom:
 			case st_trans:
 			case st_catalog:
+			case st_cells:
 			case st_dimension:
 				break;
 			}
@@ -821,12 +822,34 @@ stmt_atom(sql_allocator *sa, atom *op1)
 	return s;
 }
 
-stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim) {
-	stmt *s = stmt_create(sa, st_dimension);
-	s->op4.dval = dim;
-	s->nrcols = 2; //the cardinality is always greated than 1
+stmt* stmt_cells(sql_allocator *sa, sql_table *t)
+{
+	stmt *s = stmt_create(sa, st_cells);
 
+	s->op4.tval = t;
+	s->nrcols = 1;
 	return s;
+}
+
+
+/*called when the column belongs to an array*/
+stmt* stmt_column(sql_allocator *sa, sql_column* col, sql_table *t) {
+	stmt *arr = stmt_cells(sa, t);
+	stmt *c = stmt_bat(sa, col, RDONLY);
+	
+	//join the dimension with the cells
+	return stmt_project(sa, arr, c);
+}
+
+stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim, sql_table *t) {
+	stmt *arr = stmt_cells(sa, t);
+
+	stmt *d = stmt_create(sa, st_dimension);
+	d->op4.dval = dim;
+	d->nrcols = 2; //the cardinality is always greated than 1
+
+	//join the dimension with the cells
+	return stmt_project(sa, arr, d);
 }
 
 stmt *
@@ -1406,6 +1429,8 @@ char *_column_name(sql_allocator *sa, stmt *st);
 char *
 column_name(sql_allocator *sa, stmt *st)
 {
+	if(st->type == st_cells)
+		return "cells";
 	if (!st->cname)
 		st->cname = _column_name(sa, st);
 	return st->cname;

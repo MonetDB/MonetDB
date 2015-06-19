@@ -12,7 +12,7 @@
 
 #include <sql_mem.h>
 #include <gdk.h>
-#include <gdk_arrays.h>
+#include <arrays.h>
 #include <stdarg.h>
 #include <sql_scan.h>
 #include <sql_list.h>

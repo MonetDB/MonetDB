@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_arrays.h"
+#include <arrays.h>
 /* how much to extend the extent and histo bats when we run out of space */
 #define GROUPBATINCR	8192
 

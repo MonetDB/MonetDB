@@ -26,7 +26,8 @@ lib_kernel = {
 		logger.c \
 		microbenchmark.c microbenchmark.h \
 		mmath.c mmath.h \
-		status.c status.h 
+		status.c status.h \ 
+		arrays.c arrays.h
 }
 
 headers_mal = {
@@ -36,7 +37,8 @@ headers_mal = {
 		mmath.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mal aggr.mal \
-		logger.mal microbenchmark.mal
+		logger.mal microbenchmark.mal \
+		arrays.mal
 }
 
 headers_hge = {

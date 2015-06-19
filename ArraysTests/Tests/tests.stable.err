@@ -1,0 +1,432 @@
+stderr of test 'tests` in directory 'ArraysTests` itself:
+
+
+# 10:34:58 >  
+# 10:34:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32745" "--set" "mapi_usock=/var/tmp/mtest-1623/.s.monetdb.32745" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/alvanaki/INSTALL/MonetDB-arrays/var/MonetDB/mTests_ArraysTests" "--set" "mal_listing=0"
+# 10:34:58 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/alvanaki/INSTALL/MonetDB-arrays/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32745
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1623/.s.monetdb.32745
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch2/alvanaki/INSTALL/MonetDB-arrays/var/MonetDB/mTests_ArraysTests
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+dimensionise: groupRepeats = 4, elementsInGroup = 2
+dimensionise: Group:[0, 1]
+dimensionise: Group:[2, 3]
+dimensionise: Group:[4, 5]
+dimensionise: Group:[6, 7]
+dimensionise: elementRepeats=1
+createDimension: 6 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 8
+dimensionise: Group:[0, 7]
+dimensionise: elementRepeats=2
+createDimension: 4 total elements
+dimensionise: groupRepeats = 2, elementsInGroup = 5
+dimensionise: Group:[0, 4]
+dimensionise: Group:[5, 9]
+dimensionise: elementRepeats=1
+dimensionise: groupRepeats = 1, elementsInGroup = 10
+createDimension: 4 total elements
+dimensionise: Group:[0, 9]
+dimensionise: elementRepeats=5
+createDimension: 7 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 4
+dimensionise: Group:[0, 3]
+dimensionise: elementRepeats=2
+dimensionise: groupRepeats = 2, elementsInGroup = 2
+createDimension: 4 total elements
+dimensionise: Group:[0, 1]
+dimensionise: Group:[2, 3]
+dimensionise: elementRepeats=1
+createDimension: 4 total elements
+Added anti oid: 0
+Added anti oid: 1
+Added anti oid: 3
+Added anti oid: 4
+Added anti oid: 5
+Added anti oid: 6
+Added anti oid: 8
+Added anti oid: 9
+Added anti oid: 10
+Added anti oid: 11
+Added anti oid: 13
+Added anti oid: 14
+Added anti oid: 15
+Added anti oid: 16
+Added anti oid: 18
+Added anti oid: 19
+Added anti oid: 0
+Added anti oid: 1
+Added anti oid: 2
+Added anti oid: 3
+Added anti oid: 4
+Added anti oid: 10
+Added anti oid: 11
+Added anti oid: 12
+Added anti oid: 13
+Added anti oid: 14
+Added anti oid: 15
+Added anti oid: 16
+Added anti oid: 17
+Added anti oid: 18
+Added anti oid: 19
+dimensionise: groupRepeats = 1, elementsInGroup = 12
+dimensionise: Group:[0, 11]
+dimensionise: elementRepeats=4
+dimensionise: groupRepeats = 3, elementsInGroup = 4
+dimensionise: Group:[0, 3]
+dimensionise: Group:[4, 7]
+dimensionise: Group:[8, 11]
+dimensionise: elementRepeats=1
+0 : -1.000000 -> -1.000000
+1 : -1.000000 -> -1.000000
+2 : -1.000000 -> -1.000000
+3 : -1.000000 -> -1.000000
+4 : -1.000000 -> -1.000000
+5 : -1.000000 -> -1.000000
+6 : -1.000000 -> -1.000000
+7 : -1.000000 -> -1.000000
+8 : -1.000000 -> -1.000000
+9 : -1.000000 -> -1.000000
+10 : -1.000000 -> -1.000000
+11 : -1.000000 -> -1.000000
+12 : -1.000000 -> -1.000000
+13 : -1.000000 -> -1.000000
+14 : -1.000000 -> -1.000000
+15 : -1.000000 -> -1.000000
+16 : -1.000000 -> -1.000000
+17 : -1.000000 -> -1.000000
+18 : -1.000000 -> -1.000000
+19 : -1.000000 -> -1.000000
+dimensionise: groupRepeats = 4, elementsInGroup = 1
+dimensionise: Group:[3, 3]
+dimensionise: elementRepeats=1
+createDimension: 6 total elements
+0 : -1.000000 -> -1.000000
+1 : -1.000000 -> -1.000000
+2 : -1.000000 -> -1.000000
+3 : 3.000000 -> 0.000000
+4 : -1.000000 -> -0.200000
+5 : -1.000000 -> -0.333333
+6 : -1.000000 -> -0.428571
+7 : -1.000000 -> -0.500000
+8 : 3.000000 -> -0.111111
+9 : -1.000000 -> -0.200000
+10 : -1.000000 -> -0.272727
+11 : -1.000000 -> -0.333333
+12 : -1.000000 -> -0.384615
+13 : 3.000000 -> -0.142857
+14 : -1.000000 -> -0.200000
+15 : -1.000000 -> -0.250000
+16 : -1.000000 -> -0.294118
+17 : -1.000000 -> -0.333333
+18 : 3.000000 -> -0.157895
+19 : -1.000000 -> -0.200000
+0 : 3.000000 -> 3.000000
+1 : 3.000000 -> 3.000000
+2 : 3.000000 -> 3.000000
+3 : 3.000000 -> 3.000000
+0 : -1.000000 -> -1.000000
+1 : -1.000000 -> -1.000000
+2 : -1.000000 -> -1.000000
+3 : 3.000000 -> 0.000000
+4 : -1.000000 -> -0.200000
+0 : -1.000000 -> -1.000000
+1 : 3.000000 -> 1.000000
+2 : -1.000000 -> 0.333333
+3 : 3.000000 -> 1.000000
+4 : -1.000000 -> 0.600000
+5 : 3.000000 -> 1.000000
+6 : -1.000000 -> 0.714286
+7 : 3.000000 -> 1.000000
+Added anti oid: 0
+Added anti oid: 2
+Added anti oid: 3
+Added anti oid: 4
+Added anti oid: 5
+Added anti oid: 7
+Added anti oid: 8
+Added anti oid: 9
+Added anti oid: 10
+Added anti oid: 12
+Added anti oid: 13
+Added anti oid: 14
+Added anti oid: 15
+Added anti oid: 17
+Added anti oid: 18
+Added anti oid: 19
+0 : -1.000000 -> -1.000000
+1 : -1.000000 -> -1.000000
+2 : 3.000000 -> 0.333333
+3 : -1.000000 -> -0.000000
+4 : -1.000000 -> -0.200000
+5 : -1.000000 -> -0.333333
+6 : 3.000000 -> 0.142857
+7 : -1.000000 -> -0.000000
+8 : -1.000000 -> -0.111111
+9 : -1.000000 -> -0.200000
+10 : 3.000000 -> 0.090909
+11 : -1.000000 -> -0.000000
+12 : -1.000000 -> -0.076923
+13 : -1.000000 -> -0.142857
+14 : 3.000000 -> 0.066667
+15 : -1.000000 -> -0.000000
+elementRepeats = 1, groupRepeats = 4 - size = 5
+resSize = 5 - eR = 1 - gR = 4
+createDimension: 6 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 5
+dimensionise: Group:[0, 4]
+dimensionise: elementRepeats=1
+createDimension: 3 total elements
+0: 0
+avg: group 0 - (0,-1.000000) => -1.000000
+avg: group 0 - (5,-1.000000) => -2.000000
+avg: group 0 - (10,-1.000000) => -3.000000
+avg: group 0 - (15,-1.000000) => -4.000000
+1: 1
+avg: group 1 - (1,-1.000000) => -1.000000
+avg: group 1 - (6,-1.000000) => -2.000000
+avg: group 1 - (11,-1.000000) => -3.000000
+avg: group 1 - (16,-1.000000) => -4.000000
+2: 2
+avg: group 2 - (2,-1.000000) => -1.000000
+avg: group 2 - (7,-1.000000) => -2.000000
+avg: group 2 - (12,-1.000000) => -3.000000
+avg: group 2 - (17,-1.000000) => -4.000000
+3: 3
+avg: group 3 - (3,3.000000) => 3.000000
+avg: group 3 - (8,3.000000) => 6.000000
+avg: group 3 - (13,3.000000) => 9.000000
+avg: group 3 - (18,3.000000) => 12.000000
+4: 4
+avg: group 4 - (4,-1.000000) => -1.000000
+avg: group 4 - (9,-1.000000) => -2.000000
+avg: group 4 - (14,-1.000000) => -3.000000
+avg: group 4 - (19,-1.000000) => -4.000000
+elementRepeats = 5, groupRepeats = 1 - size = 4
+resSize = 4 - eR = 5 - gR = 1
+createDimension: 7 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 4
+dimensionise: Group:[0, 3]
+dimensionise: elementRepeats=1
+createDimension: 3 total elements
+0: 0
+avg: group 0 - (0,-1.000000) => -1.000000
+avg: group 0 - (1,-1.000000) => -2.000000
+avg: group 0 - (2,-1.000000) => -3.000000
+avg: group 0 - (3,3.000000) => 0.000000
+avg: group 0 - (4,-1.000000) => -1.000000
+1: 5
+avg: group 1 - (5,-1.000000) => -1.000000
+avg: group 1 - (6,-1.000000) => -2.000000
+avg: group 1 - (7,-1.000000) => -3.000000
+avg: group 1 - (8,3.000000) => 0.000000
+avg: group 1 - (9,-1.000000) => -1.000000
+2: 10
+avg: group 2 - (10,-1.000000) => -1.000000
+avg: group 2 - (11,-1.000000) => -2.000000
+avg: group 2 - (12,-1.000000) => -3.000000
+avg: group 2 - (13,3.000000) => 0.000000
+avg: group 2 - (14,-1.000000) => -1.000000
+3: 15
+avg: group 3 - (15,-1.000000) => -1.000000
+avg: group 3 - (16,-1.000000) => -2.000000
+avg: group 3 - (17,-1.000000) => -3.000000
+avg: group 3 - (18,3.000000) => 0.000000
+avg: group 3 - (19,-1.000000) => -1.000000
+dimensionise: groupRepeats = 4, elementsInGroup = 1
+dimensionise: Group:[3, 3]
+dimensionise: elementRepeats=1
+createDimension: 6 total elements
+Added anti oid: 0
+Added anti oid: 2
+Added anti oid: 3
+Added anti oid: 4
+Added anti oid: 5
+Added anti oid: 7
+Added anti oid: 8
+Added anti oid: 9
+Added anti oid: 10
+Added anti oid: 12
+Added anti oid: 13
+Added anti oid: 14
+Added anti oid: 15
+Added anti oid: 17
+Added anti oid: 18
+Added anti oid: 19
+0 : -1.000000 -> -1.000000
+1 : -1.000000 -> -1.000000
+2 : 6.000000 -> 1.333333
+3 : -1.000000 -> 0.750000
+4 : -1.000000 -> 0.400000
+5 : -1.000000 -> 0.166667
+6 : 6.000000 -> 1.000000
+7 : -1.000000 -> 0.750000
+8 : -1.000000 -> 0.555556
+9 : -1.000000 -> 0.400000
+10 : 6.000000 -> 0.909091
+11 : -1.000000 -> 0.750000
+12 : -1.000000 -> 0.615385
+13 : -1.000000 -> 0.500000
+14 : 6.000000 -> 0.866667
+15 : -1.000000 -> 0.750000
+elementRepeats = 5, groupRepeats = 1 - size = 4
+resSize = 4 - eR = 5 - gR = 1
+createDimension: 7 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 4
+dimensionise: Group:[0, 3]
+dimensionise: elementRepeats=1
+createDimension: 3 total elements
+0: 0
+avg: group 0 - (0,-1.000000) => -1.000000
+avg: group 0 - (1,-1.000000) => -2.000000
+avg: group 0 - (2,-1.000000) => -3.000000
+avg: group 0 - (3,6.000000) => 3.000000
+avg: group 0 - (4,-1.000000) => 2.000000
+1: 5
+avg: group 1 - (5,-1.000000) => -1.000000
+avg: group 1 - (6,-1.000000) => -2.000000
+avg: group 1 - (7,-1.000000) => -3.000000
+avg: group 1 - (8,6.000000) => 3.000000
+avg: group 1 - (9,-1.000000) => 2.000000
+2: 10
+avg: group 2 - (10,-1.000000) => -1.000000
+avg: group 2 - (11,-1.000000) => -2.000000
+avg: group 2 - (12,-1.000000) => -3.000000
+avg: group 2 - (13,6.000000) => 3.000000
+avg: group 2 - (14,-1.000000) => 2.000000
+3: 15
+avg: group 3 - (15,-1.000000) => -1.000000
+avg: group 3 - (16,-1.000000) => -2.000000
+avg: group 3 - (17,-1.000000) => -3.000000
+avg: group 3 - (18,6.000000) => 3.000000
+avg: group 3 - (19,-1.000000) => 2.000000
+Added anti oid: 0
+Added anti oid: 2
+Added anti oid: 3
+Added anti oid: 4
+Added anti oid: 5
+Added anti oid: 7
+Added anti oid: 8
+Added anti oid: 9
+Added anti oid: 10
+Added anti oid: 12
+Added anti oid: 13
+Added anti oid: 14
+Added anti oid: 15
+Added anti oid: 17
+Added anti oid: 18
+Added anti oid: 19
+dimensionise: groupRepeats = 1, elementsInGroup = 16
+dimensionise: Group:[0, 15]
+dimensionise: elementRepeats=4
+createDimension: 6 total elements
+elementRepeats = 4, groupRepeats = 1 - size = 4
+resSize = 4 - eR = 4 - gR = 1
+createDimension: 6 total elements
+dimensionise: groupRepeats = 1, elementsInGroup = 4
+dimensionise: Group:[0, 3]
+dimensionise: elementRepeats=1
+createDimension: 3 total elements
+0: 0
+avg: group 0 - (0,-1.000000) => -1.000000
+avg: group 0 - (1,-1.000000) => -2.000000
+avg: group 0 - (2,6.000000) => 4.000000
+avg: group 0 - (3,-1.000000) => 3.000000
+1: 4
+avg: group 1 - (4,-1.000000) => -1.000000
+avg: group 1 - (5,-1.000000) => -2.000000
+avg: group 1 - (6,6.000000) => 4.000000
+avg: group 1 - (7,-1.000000) => 3.000000
+2: 8
+avg: group 2 - (8,-1.000000) => -1.000000
+avg: group 2 - (9,-1.000000) => -2.000000
+avg: group 2 - (10,6.000000) => 4.000000
+avg: group 2 - (11,-1.000000) => 3.000000
+3: 12
+avg: group 3 - (12,-1.000000) => -1.000000
+avg: group 3 - (13,-1.000000) => -2.000000
+avg: group 3 - (14,6.000000) => 4.000000
+avg: group 3 - (15,-1.000000) => 3.000000
+resSize = 27
+Checking 0 : lPos = 0, rPos = 0
+1: Added (0, 0)
+2: Added (0, 1)
+3: Added (0, 2)
+4: Added (3, 0)
+5: Added (3, 1)
+6: Added (3, 2)
+7: Added (6, 0)
+8: Added (6, 1)
+9: Added (6, 2)
+Checking 1 : lPos = 1, rPos = 3
+10: Added (1, 3)
+11: Added (1, 4)
+12: Added (1, 5)
+13: Added (4, 3)
+14: Added (4, 4)
+15: Added (4, 5)
+16: Added (7, 3)
+17: Added (7, 4)
+18: Added (7, 5)
+Checking 2 : lPos = 2, rPos = 6
+19: Added (2, 6)
+20: Added (2, 7)
+21: Added (2, 8)
+22: Added (5, 6)
+23: Added (5, 7)
+24: Added (5, 8)
+25: Added (8, 6)
+26: Added (8, 7)
+27: Added (8, 8)
+dimensionise: groupRepeats = 2, elementsInGroup = 3
+dimensionise: Group:[0, 2]
+dimensionise: Group:[3, 5]
+dimensionise: elementRepeats=1
+createDimension: 4 total elements
+resSize = 18
+Checking 0 : lPos = 0, rPos = 0
+1: Added (0, 0)
+2: Added (0, 1)
+3: Added (0, 2)
+4: Added (3, 0)
+5: Added (3, 1)
+6: Added (3, 2)
+Checking 1 : lPos = 1, rPos = 3
+7: Added (1, 3)
+8: Added (1, 4)
+9: Added (1, 5)
+10: Added (4, 3)
+11: Added (4, 4)
+12: Added (4, 5)
+Checking 2 : lPos = 2, rPos = 6
+13: Added (2, 6)
+14: Added (2, 7)
+15: Added (2, 8)
+16: Added (5, 6)
+17: Added (5, 7)
+18: Added (5, 8)
+
+# 10:34:58 >  
+# 10:34:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1623" "--port=32745"
+# 10:34:58 >  
+
+
+# 10:34:58 >  
+# 10:34:58 >  "Done."
+# 10:34:58 >  
+

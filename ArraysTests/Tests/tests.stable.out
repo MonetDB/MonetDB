@@ -1,0 +1,309 @@
+stdout of test 'tests` in directory 'ArraysTests` itself:
+
+
+# 10:34:58 >  
+# 10:34:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32745" "--set" "mapi_usock=/var/tmp/mtest-1623/.s.monetdb.32745" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/alvanaki/INSTALL/MonetDB-arrays/var/MonetDB/mTests_ArraysTests" "--set" "mal_listing=0"
+# 10:34:58 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_ArraysTests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://essen.ins.cwi.nl:32745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1623/.s.monetdb.32745
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:34:58 >  
+# 10:34:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1623" "--port=32745"
+# 10:34:58 >  
+
+#select * from testa;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	3,	-1	]
+[ 1,	3,	-1	]
+[ 2,	3,	-1	]
+[ 3,	3,	-1	]
+[ 4,	3,	-1	]
+[ 0,	6,	-1	]
+[ 1,	6,	-1	]
+[ 2,	6,	-1	]
+[ 3,	6,	-1	]
+[ 4,	6,	-1	]
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 2,	9,	-1	]
+[ 3,	9,	-1	]
+[ 4,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+[ 2,	12,	-1	]
+[ 3,	12,	-1	]
+[ 4,	12,	-1	]
+#select * from testa where x<2;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	3,	-1	]
+[ 1,	3,	-1	]
+[ 0,	6,	-1	]
+[ 1,	6,	-1	]
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+#select * from testa where y>=9;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 2,	9,	-1	]
+[ 3,	9,	-1	]
+[ 4,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+[ 2,	12,	-1	]
+[ 3,	12,	-1	]
+[ 4,	12,	-1	]
+#select * from testa where x>=3 and y<9;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	24 # length
+[ 3,	3,	-1	]
+[ 4,	3,	-1	]
+[ 3,	6,	-1	]
+[ 4,	6,	-1	]
+#select * from testa where x <>2 and y <>6;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	3,	-1	]
+[ 1,	3,	-1	]
+[ 3,	3,	-1	]
+[ 4,	3,	-1	]
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 3,	9,	-1	]
+[ 4,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+[ 3,	12,	-1	]
+[ 4,	12,	-1	]
+#select count(*) from testa;
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 20	]
+#select avg(v) from testa;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ -1	]
+#update testa set v=3 where x=3;
+[ 4	]
+#select * from testa;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	3,	-1	]
+[ 1,	3,	-1	]
+[ 2,	3,	-1	]
+[ 3,	3,	3	]
+[ 4,	3,	-1	]
+[ 0,	6,	-1	]
+[ 1,	6,	-1	]
+[ 2,	6,	-1	]
+[ 3,	6,	3	]
+[ 4,	6,	-1	]
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 2,	9,	-1	]
+[ 3,	9,	3	]
+[ 4,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+[ 2,	12,	-1	]
+[ 3,	12,	3	]
+[ 4,	12,	-1	]
+#select avg(v) from testa;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ -0.2	]
+#select avg(v) from testa where x=3;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 3	]
+#select avg(v) from testa where y=12;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ -0.2	]
+#select avg(v) from testa where x=1 or x=3;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 1	]
+#select avg(v) from testa where x<>1;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ -4.163336342e-17	]
+#select x, avg(v) from testa group by x;
+% .testa,	sys.L1 # table_name
+% x,	L1 # name
+% int,	double # type
+% 1,	24 # length
+[ 0,	-1	]
+[ 1,	-1	]
+[ 2,	-1	]
+[ 3,	3	]
+[ 4,	-1	]
+#select y, avg(v) from testa group by y;
+% .testa,	sys.L1 # table_name
+% y,	L1 # name
+% int,	double # type
+% 2,	24 # length
+[ 3,	-0.2	]
+[ 6,	-0.2	]
+[ 9,	-0.2	]
+[ 12,	-0.2	]
+#update testa set v=2*x where x=3;
+[ 4	]
+#select * from testa;
+% .testa,	.testa,	sys.testa # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	2,	24 # length
+[ 0,	3,	-1	]
+[ 1,	3,	-1	]
+[ 2,	3,	-1	]
+[ 3,	3,	6	]
+[ 4,	3,	-1	]
+[ 0,	6,	-1	]
+[ 1,	6,	-1	]
+[ 2,	6,	-1	]
+[ 3,	6,	6	]
+[ 4,	6,	-1	]
+[ 0,	9,	-1	]
+[ 1,	9,	-1	]
+[ 2,	9,	-1	]
+[ 3,	9,	6	]
+[ 4,	9,	-1	]
+[ 0,	12,	-1	]
+[ 1,	12,	-1	]
+[ 2,	12,	-1	]
+[ 3,	12,	6	]
+[ 4,	12,	-1	]
+#select avg(v) from testa where x<>1;
+% sys.L1 # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ 0.75	]
+#select y, avg(v) from testa group by y;
+% .testa,	sys.L1 # table_name
+% y,	L1 # name
+% int,	double # type
+% 2,	24 # length
+[ 3,	0.4	]
+[ 6,	0.4	]
+[ 9,	0.4	]
+[ 12,	0.4	]
+#select y, avg(v) from testa where x<>1 group by y;
+% .testa,	sys.L1 # table_name
+% y,	L1 # name
+% int,	double # type
+% 2,	24 # length
+[ 3,	0.75	]
+[ 6,	0.75	]
+[ 9,	0.75	]
+[ 12,	0.75	]
+#update testb set v=10*x+y;
+[ 9	]
+#update testc set v=10*x+y;
+[ 9	]
+#select testb.v as "b.v", testc.v as "c.v", testb.v+testc.v as "b.v+c.v" from testb, testc where testb.x=testc.x;
+% sys.L,	sys.L,	sys.L # table_name
+% b.v,	c.v,	b.v+c.v # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 0,	1,	1	]
+[ 0,	2,	2	]
+[ 1,	0,	1	]
+[ 1,	1,	2	]
+[ 1,	2,	3	]
+[ 2,	0,	2	]
+[ 2,	1,	3	]
+[ 2,	2,	4	]
+[ 10,	10,	20	]
+[ 10,	11,	21	]
+[ 10,	12,	22	]
+[ 11,	10,	21	]
+[ 11,	11,	22	]
+[ 11,	12,	23	]
+[ 12,	10,	22	]
+[ 12,	11,	23	]
+[ 12,	12,	24	]
+[ 20,	20,	40	]
+[ 20,	21,	41	]
+[ 20,	22,	42	]
+[ 21,	20,	41	]
+[ 21,	21,	42	]
+[ 21,	22,	43	]
+[ 22,	20,	42	]
+[ 22,	21,	43	]
+[ 22,	22,	44	]
+#select testb.v as "b.v", testc.v as "c.v", testb.v+testc.v as "b.v+c.v" from testb, testc where testb.x=testc.x and testb.y<2;
+% sys.L,	sys.L,	sys.L # table_name
+% b.v,	c.v,	b.v+c.v # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 0,	1,	1	]
+[ 0,	2,	2	]
+[ 1,	0,	1	]
+[ 1,	1,	2	]
+[ 1,	2,	3	]
+[ 10,	10,	20	]
+[ 10,	11,	21	]
+[ 10,	12,	22	]
+[ 11,	10,	21	]
+[ 11,	11,	22	]
+[ 11,	12,	23	]
+[ 20,	20,	40	]
+[ 20,	21,	41	]
+[ 20,	22,	42	]
+[ 21,	20,	41	]
+[ 21,	21,	42	]
+[ 21,	22,	43	]
+#drop array testa;
+#create array testa (x integer dimension[5], y integer dimension[3:3:11], v float default -1);
+
+# 10:34:58 >  
+# 10:34:58 >  "Done."
+# 10:34:58 >  
+

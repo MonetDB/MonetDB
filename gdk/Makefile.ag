@@ -6,7 +6,7 @@
 
 MTSAFE
 
-INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
+INCLUDES = ../common/options ../common/stream ../common/utils ../monetdb5/modules/kernel$(valgrind_CFLAGS)
 
 lib_gdk = {
 	VERSION = $(GDK_VERSION)
@@ -30,7 +30,6 @@ lib_gdk = {
 		gdk_join.c gdk_join_legacy.c \
 		gdk_unique.c \
 		gdk_firstn.c \
-		gdk_arrays.c gdk_arrays_aggr.c gdk_arrays.h \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

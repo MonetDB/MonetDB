@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "res_table.h"
 #include "sql_types.h"
-#include <gdk_arrays.h>
+#include <arrays.h>
 
 static void
 bat_incref(bat bid)

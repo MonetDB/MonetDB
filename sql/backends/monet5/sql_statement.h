@@ -102,6 +102,7 @@ typedef enum stmt_type {
 	st_return,
 	st_assign,
 
+	st_cells,
 	st_dimension
 } st_type;
 
@@ -175,7 +176,9 @@ extern stmt *stmt_atom_wrd(sql_allocator *sa, wrd i);
 extern stmt *stmt_atom_wrd_nil(sql_allocator *sa);
 extern stmt *stmt_bool(sql_allocator *sa, int b);
 
-extern stmt *stmt_dimension(sql_allocator *sa, sql_dimension *dim);
+extern stmt *stmt_cells(sql_allocator *sa, sql_table *t);
+extern stmt *stmt_dimension(sql_allocator *sa, sql_dimension *dim, sql_table *t);
+extern stmt *stmt_column(sql_allocator *sa, sql_column *col, sql_table *t);
 
 extern stmt *stmt_mbrselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);
 extern stmt *stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);

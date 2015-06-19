@@ -312,6 +312,7 @@ exp_list( mvc *sql, list *exps, stmt *l, stmt *r, stmt *grp, stmt *ext, stmt *cn
 	return stmt_list(sql->sa, nl);
 }
 
+
 stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel) 
 {
@@ -801,12 +802,6 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
-	//when having arrays deltas are handled later inside the code
-	//thus, I do not need to join at this moment
-	if(isArray(c->t)) {
-		return sc;
-	}	
-	
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
@@ -1220,7 +1215,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 
 	if (!t && c)
 		t = c->t;
-       	dels = stmt_tid(sql->sa, t);
+    dels = stmt_tid(sql->sa, t);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1259,20 +1254,23 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 		} else {
 			if(exp->type == e_dimension) {
 				sql_dimension *dim = find_sql_dimension(t, oname);
-				s = stmt_dimension(sql->sa, dim);
+				s = stmt_dimension(sql->sa, dim, t);
 			} else {
 				sql_column *c = find_sql_column(t, oname);
-				s = stmt_col(sql, c, dels);
-				
-				if(isArray(t) && exp->f) { //carrythe default value
+								
+				if(isArray(t) && exp->f) { //carry the default value and join with the cells
+					s =stmt_column(sql->sa, c, t);
 					s->op1 = exp_bin(sql, exp->f, NULL, NULL, NULL, NULL, NULL, NULL);
-				}
+				} else
+					s = stmt_col(sql, c, dels);
+
 			}
 		}
 		s->tname = rname;
 		s->cname = exp->name;
 		list_append(l, s);
 	}
+
 	return stmt_list(sql->sa, l);
 }
 
@@ -2428,8 +2426,6 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(sql->sa, bin_first_column(sql->sa, sub), s);
 	
-//		if(exp->type == e_dimension)
-//			s = stmt_materialise(sql->sa, s);	
 		s = stmt_rename(sql, rel, exp, s);
 		column_name(sql->sa, s); /* save column name */
 		list_append(pl, s);

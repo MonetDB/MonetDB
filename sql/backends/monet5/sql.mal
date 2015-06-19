@@ -219,12 +219,20 @@ pattern create_cells(mvc:int, sname:str, tname:str, cname:str, def:any):bat[:oid
 address mvc_create_cells_bat_wrap
 comment "Create the 'schema.table.column' BAT";
 
-pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid,:any_1]
-address mvc_create_dimension_bat_wrap
-comment "Create the 'schema.table.dimension' BAT";
+pattern get_cells(mvc:int, schema:str, table:str):ptr
+address mvc_get_cells
+comment "Get a set with all the dimensions of the array";
 
-command materialise_dimension(:bat[:oid,:any]):bat[:oid,:any]
-address materialiseDimension;
+pattern get_dimension(mvc:int, schema:str, table:str, dimension:str):int
+address mvc_get_dimension
+comment "Get the order of the dimension in the array (starting from 1)";
+
+#pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid,:any_1]
+#address mvc_create_dimension_bat_wrap
+#comment "Create the 'schema.table.dimension' BAT";
+
+#command materialise_dimension(:bat[:oid,:any]):bat[:oid,:any]
+#address materialiseDimension;
 #pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
 #address mvc_dimension_subselect_with_cand_bat_wrap;
 #pattern dimension_subselect(mvc:int, schema:str, table:str, dimension:str, low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]

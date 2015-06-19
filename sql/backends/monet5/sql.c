@@ -1869,6 +1869,7 @@ mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, void* defVal
 	return mvc_fill_values(c, b, t->cellsNum, defVal);
 }
 
+#if 0
 static BAT*
 mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 	BAT *b = NULL;
@@ -1958,7 +1959,9 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 
 	return b;
 }
-/*
+#endif
+
+#if 0
 static BAT* mvc_subselect_dimension_bat(mvc *m, char* sname, char* tname, char* dname, bat* cand, void* low, void* high, bit li, bit hi, bit anti) {
 	BAT *b = NULL, *candBAT, *b_tmp;
 	sql_schema *s = NULL;
@@ -2141,7 +2144,8 @@ fprintf(stderr, "Final element: %ld\n", current_elements[i]);
 
 	return b;
 
-}*/
+}
+#endif
 
 static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
@@ -2297,6 +2301,66 @@ mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	throw(SQL, "sql.create_cells", "unable to find %s(%s)", *tname, *cname);
 }
 
+str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	ptr *res = getArgReference_ptr(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+
+	*res = 0; //not found
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	
+	s = mvc_bind_schema(m, *sname);
+	if (s == NULL)
+		throw(SQL, "sql.get_cells", "unable to find %s.%s", *sname, *tname);
+	t = mvc_bind_table(m, s, *tname);
+	if (t == NULL)
+		throw(SQL, "sql.get_cells", "unable to find %s.%s", *sname, *tname);
+
+	*res = &t->dimensions;
+	return MAL_SUCCEED;
+}
+
+str mvc_get_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int *res = getArgReference_int(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_dimension *dim = NULL;
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
+	str *dname = getArgReference_str(stk, pci, 4);
+
+	*res = 0; //not found
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	
+	s = mvc_bind_schema(m, *sname);
+	if (s == NULL)
+		throw(SQL, "sql.get_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+	t = mvc_bind_table(m, s, *tname);
+	if (t == NULL)
+		throw(SQL, "sql.get_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+	dim = mvc_bind_dimension(m, t, *dname);
+	if (dim == NULL)
+		throw(SQL, "sql.get_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
+
+	*res = dim->dimnr+1;
+	return MAL_SUCCEED;
+}
+
+#if 0
 str
 mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2352,8 +2416,9 @@ str materialiseDimension(bat* res, bat* in) {
     return MAL_SUCCEED;
 
 }
+#endif
 
-/*
+#if 0
 str
 mvc_dimension_subselect_with_cand_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2415,7 +2480,8 @@ mvc_dimension_subselect_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.dimension_subselect", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 	throw(SQL, "sql.dimension_subselect", "unable to find %s(%s)", *tname, *dname);
-}*/
+}
+#endif
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str

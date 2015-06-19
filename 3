@@ -10,8 +10,8 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <arrays.h>
 
+#include <math.h>
 /*
  * All "sub" join variants produce some sort of join on two input
  * BATs, optionally subject to up to two candidate lists.  Only values
@@ -117,8 +117,10 @@ joininitresults(BAT **r1p, BAT **r2p, BUN size, const char *func)
 	r1 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	r2 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	if (r1 == NULL || r2 == NULL) {
-		BBPreclaim(r1);
-		BBPreclaim(r2);
+		if (r1)
+			BBPreclaim(r1);
+		if (r2)
+			BBPreclaim(r2);
 		*r1p = *r2p = NULL;
 		GDKerror("%s: cannot create output BATs.\n", func);
 		return GDK_FAIL;
@@ -502,7 +504,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * missing values */
 				BATsetcount(r1, cnt);
 				BATseqbase(BATmirror(r1), seq);
-				if (BATextend(r2, cnt) != GDK_SUCCEED)
+				if (BATextend(r2, cnt) == GDK_FAIL)
 					goto bailout;
 				for (o = seq - l->hseqbase + l->tseqbase; o < lo; o++)
 					APPEND(r2, oid_nil);
@@ -575,8 +577,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r2->tkey = 1;
 		r2->tsorted = 1;
 		cnt = BATcount(sl);
-		if (BATextend(r1, cnt) != GDK_SUCCEED ||
-		    BATextend(r2, cnt) != GDK_SUCCEED) {
+		if (BATextend(r1, cnt) == GDK_FAIL ||
+		    BATextend(r2, cnt) == GDK_FAIL) {
 			goto bailout;
 		}
 		if (nil_on_miss) {
@@ -671,8 +673,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
 			cnt -= i;
 
-			if (BATextend(r1, cnt) != GDK_SUCCEED ||
-			    BATextend(r2, cnt) != GDK_SUCCEED) {
+			if (BATextend(r1, cnt) == GDK_FAIL ||
+			    BATextend(r2, cnt) == GDK_FAIL) {
 				goto bailout;
 			}
 			r2->T->nil = 0;
@@ -718,8 +720,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			return GDK_SUCCEED;
 		}
 	}
-	if (BATextend(r1, cnt) != GDK_SUCCEED ||
-	    BATextend(r2, cnt) != GDK_SUCCEED) {
+	if (BATextend(r1, cnt) == GDK_FAIL ||
+	    BATextend(r2, cnt) == GDK_FAIL) {
 		goto bailout;
 	}
 	r1->tdense = 1;
@@ -1537,8 +1539,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * extending */
 			BATsetcount(r1, BATcount(r1));
 			BATsetcount(r2, BATcount(r2));
-			if (BATextend(r1, newcap) != GDK_SUCCEED ||
-			    BATextend(r2, newcap) != GDK_SUCCEED) {
+			if (BATextend(r1, newcap) == GDK_FAIL ||
+			    BATextend(r2, newcap) == GDK_FAIL) {
 				goto bailout;
 			}
 			assert(BATcapacity(r1) == BATcapacity(r2));
@@ -1690,8 +1692,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	BBPreclaim(r1);
-	BBPreclaim(r2);
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -1722,8 +1726,8 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			newcap = BATgrows(r1);				\
 			BATsetcount(r1, BATcount(r1));			\
 			BATsetcount(r2, BATcount(r2));			\
-			if (BATextend(r1, newcap) != GDK_SUCCEED ||	\
-			    BATextend(r2, newcap) != GDK_SUCCEED)	\
+			if (BATextend(r1, newcap) == GDK_FAIL ||	\
+			    BATextend(r2, newcap) == GDK_FAIL)		\
 				goto bailout;				\
 			assert(BATcapacity(r1) == BATcapacity(r2));	\
 		}							\
@@ -1851,7 +1855,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	rl += rstart;
 	rseq += rstart;
 
-	if (BAThash(r, 0) != GDK_SUCCEED)
+	if (BAThash(r, 0) == GDK_FAIL)
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
@@ -1897,8 +1901,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) != GDK_SUCCEED ||
-						    BATextend(r2, newcap) != GDK_SUCCEED)
+						if (BATextend(r1, newcap) == GDK_FAIL ||
+						    BATextend(r2, newcap) == GDK_FAIL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -2015,8 +2019,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 						newcap = BATgrows(r1);
 						BATsetcount(r1, BATcount(r1));
 						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) != GDK_SUCCEED ||
-						    BATextend(r2, newcap) != GDK_SUCCEED)
+						if (BATextend(r1, newcap) == GDK_FAIL ||
+						    BATextend(r2, newcap) == GDK_FAIL)
 							goto bailout;
 						assert(BATcapacity(r1) == BATcapacity(r2));
 					}
@@ -2077,8 +2081,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	return GDK_SUCCEED;
 
   bailout:
-	BBPreclaim(r1);
-	BBPreclaim(r2);
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -2251,8 +2257,8 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) != GDK_SUCCEED ||
-				    BATextend(r2, newcap) != GDK_SUCCEED)
+				if (BATextend(r1, newcap) == GDK_FAIL ||
+				    BATextend(r2, newcap) == GDK_FAIL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2307,8 +2313,10 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode)
 	return GDK_SUCCEED;
 
   bailout:
-	BBPreclaim(r1);
-	BBPreclaim(r2);
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -2652,8 +2660,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				newcap = BATgrows(r1);
 				BATsetcount(r1, BATcount(r1));
 				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) != GDK_SUCCEED ||
-				    BATextend(r2, newcap) != GDK_SUCCEED)
+				if (BATextend(r1, newcap) == GDK_FAIL ||
+				    BATextend(r2, newcap) == GDK_FAIL)
 					goto bailout;
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
@@ -2708,8 +2716,10 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	BBPreclaim(r1);
-	BBPreclaim(r2);
+	if (r1)
+		BBPreclaim(r1);
+	if (r2)
+		BBPreclaim(r2);
 	return GDK_FAIL;
 }
 
@@ -2722,7 +2732,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, name) != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, name) == GDK_FAIL)
 		return GDK_FAIL;
 
 	lcount = BATcount(l);
@@ -2748,7 +2758,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 		return GDK_SUCCEED;
 	}
 
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), name) != GDK_SUCCEED)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), name) == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -2843,11 +2853,11 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubthetajoin") != GDK_SUCCEED)
+			    "BATsubthetajoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -2868,7 +2878,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	lcount = BATcount(l);
 	if (sl)
@@ -2892,14 +2902,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if(isBATarray(l) && isBATarray(r))
-		return dimensionBATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
-	if(isBATarray(l) || isBATarray(r)) {
-		GDKerror("BATsubjoin: One of the BATs is an array and the othes is not. Case not handled");
-		return GDK_FAIL;
-	}
-
-	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") != GDK_SUCCEED)
+	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -2999,11 +3002,11 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubbandjoin") != GDK_SUCCEED)
+			    "BATsubbandjoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3019,11 +3022,11 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") == GDK_FAIL)
 		return GDK_FAIL;
 	if (joininitresults(&r1, &r2,
 			    estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l),
-			    "BATsubrangejoin") != GDK_SUCCEED)
+			    "BATsubrangejoin") == GDK_FAIL)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3034,7 +3037,7 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 }
 
 #define project_loop(TYPE)						\
-static gdk_return							\
+static int								\
 project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 {									\
 	oid lo, hi;							\
@@ -3108,7 +3111,7 @@ project_loop(lng)
 project_loop(hge)
 #endif
 
-static gdk_return
+static int
 project_void(BAT *bn, BAT *l, BAT *r)
 {
 	oid lo, hi;
@@ -3148,7 +3151,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static int
 project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 {
 	BUN n;
@@ -3218,8 +3221,7 @@ BATproject(BAT *l, BAT *r)
 {
 	BAT *bn;
 	oid lo, hi;
-	gdk_return res;
-	int tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
+	int res, tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s,"
@@ -3234,15 +3236,6 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
-
-	if(isBATarray(r)) {
-		if(dimensionBATproject(&bn, l, r) != GDK_SUCCEED)
-			return NULL;
-		if(bn)
-			return bn;
-		//otherwise it is cannot be expressed as an array and we proceed as if it is any other BAT
-		r = materialiseDimensionBAT(r);
-	}
 
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
@@ -3286,17 +3279,10 @@ BATproject(BAT *l, BAT *r)
 	}
 	assert(l->ttype == TYPE_oid);
 
-	if (ATOMstorage(tpe) == TYPE_str &&
-	    l->T->nonil &&
-	    (rcount == 0 ||
-	     lcount > (rcount >> 3) ||
-	     r->batRestricted == BAT_READ)) {
+	if (ATOMstorage(tpe) == TYPE_str && l->T->nonil &&
+	    (rcount == 0 || lcount > (rcount >> 3))) {
 		/* insert strings as ints, we need to copy the string
-		 * heap whole sale; we can not do this if there are
-		 * nils in the left column, and we will not do it if
-		 * the left is much smaller than the right and the
-		 * right is writable (meaning we have to actually copy
-		 * the right string heap) */
+		 * heap whole sale */
 		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
@@ -3364,7 +3350,7 @@ BATproject(BAT *l, BAT *r)
 		break;
 	}
 
-	if (res != GDK_SUCCEED)
+	if (res == GDK_FAIL)
 		goto bailout;
 
 	/* handle string trick */
@@ -3387,7 +3373,7 @@ BATproject(BAT *l, BAT *r)
 				if (bn->T->vheap->filename == NULL)
 					goto bailout;
 			}
-			if (HEAPcopy(bn->T->vheap, r->T->vheap) != GDK_SUCCEED)
+			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0)
 				goto bailout;
 		}
 		bn->ttype = r->ttype;
@@ -3424,4 +3410,327 @@ BATproject(BAT *l, BAT *r)
 	BBPreclaim(bn);
 	return NULL;
 }
+BAT* BATdimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
+	BAT *resBAT;
+	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
+	
+	assert(BAThdense(oidsBAT));
+    assert(BAThdense(dimensionBAT));
+    assert(ATOMtype(oidsBAT->ttype) == TYPE_oid);
 
+#define dimensionise(TYPE) \
+	do { \
+		long dimGroupRepeats, dimElementRepeats, flg=0, cnt=0, elementsInGroup=-1; \
+		TYPE *bt, *elsi, *oids; \
+		BUN i=0; \
+		TYPE dimMin, dimMax, dimStep; \
+		TYPE resMin, resMax, resStep; \
+\
+		dimensionCharacteristics(TYPE, dimensionBAT, &dimMin, &dimMax, &dimStep, &dimElementRepeats, &dimGroupRepeats); \
+		/*min, step, max implied by oids*/ \
+		oids = (oid*)Tloc(oidsBAT, BUNfirst(oidsBAT)); \
+		min_res = dimensionElement(TYPE, dimMin, dimMax, dimStep, dimElementRepeats, oids[0]); \
+		max_res = dimensionElement(TYPE, dimMin, dimMax, dimStep, dimElementRepeats, oids[BATcount(oidsBAT)-1]); \
+\
+		/*min and max should appear the same number of times*/ \
+		for(i=0; i<BATcount(oidsBAT); i++) { \
+			cnt++; \
+			if(oids[i] == min_res) { \
+				if(flg>0) { \
+					fprintf(stderr, "BATdimensionProject: dimension not regular (max more than min)\n"); \
+					return NULL; \
+				} \
+				flg++; \
+				cnt = 1; \
+			} \
+			if(oids[i] == max_res) { \
+				if(flg<1) { \
+					fprintf(stderr, "BATdimensionProject: dimension not regular (min more than max)\n"); \
+					return NULL; \
+				} \
+				flg--; \
+				groupsRepeats++; \
+\
+				if(elementsInGroup >= 0 && elementsInGroup != cnt) { \
+					fprintf(stderr, "BATdimensionProject: dimension not regular (different number of elements among groups)\n"); \
+					return NULL; \
+				} \
+				elementsInGroup = cnt; \
+				cnt = 0; \
+			} \
+		} \
+\
+		/*check that the step is the same between the elements and each element is repeated the same number of times*/ \
+		for(i=0; i<BATcount(oidsBAT); i++) { \
+			if(ois[i] == max_res) { \
+				/*iterate over the elements in the group*/ \
+				BUN j; \
+				TYPE el_cur=oids[i-elementsInGroup]; \
+				long r=0; \
+				for(j=i-elementsInGroup; j<=i; j++) { \
+					if(oids[j] == el_cur) \
+						r++; \
+					else { \
+						if(elementsRepeats >=0 && elementsRepeats != r) { \
+							fprintf(stderr, "BATdimensionProject: dimension not regular (different number of repetitions)\n"); \
+							return NULL; \
+						} else if(elementsRepeats <0) { \
+							step_res = oids[j] - el_cur; \
+						} \
+						if(step_res != (oids[j] - el_cur)) { \
+							fprintf(stderr, "BATdimensionProject: dimension not regular (not equal steps)\n"); \
+							return NULL; \
+						} \
+						elementsRepeats = r; \
+						el_cur=oids[j]; \
+						r=1; \
+					} \
+				} \
+			} \
+		} \
+\
+		/*create the BAT*/ \
+		if((resBAT = BATnew(TYPE_void, tpe, elementsRepeats+groupsRepeats+1, TRANSIENT)) == NULL) \
+			return NULL; \
+\
+		bt = (TYPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+		for(i=0; i<elementsRepeats; i++) { \
+			*bt = min_new; \
+			bt++; \
+		} \
+		for(i=0; i<groupsRepeats; i++) { \
+			*bt = max_new; \
+			bt++; \
+		} \
+		*bt = step; \
+\
+		BATsetcount(resBAT,elementsRepeats+groupsRepeats+1); \
+        BATseqbase(resBAT,0); \
+        BATderiveProps(resBAT,FALSE); \
+\
+	while(0) \
+
+	if(BATcount(oidsBAT)) {	
+		switch (tpe) {
+    	case TYPE_bte:
+        	dimensionise(bte);
+	        break;
+    	case TYPE_sht:
+        	dimensionise(sht);
+	        break;
+    	case TYPE_int:
+        	dimensionise(int);
+	        break;
+    	case TYPE_flt:
+        	dimensionise(flt);
+	        break;
+    	case TYPE_dbl:
+        	dimensionise(dbl);
+	        break;
+    	case TYPE_lng:
+        	dimensinise(lng);
+	        break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	dimensionise(hge);
+	        break;
+#endif
+    	case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+        	dimensionise(int);
+#else
+        	dimensionise(lng);
+#endif
+        break;
+    	default:
+			fprintf(stderr, "BATdimensionProject: dimension type not handled\n");
+			return NULL;
+	    }
+	} else {
+		//no oids. Empty BAT
+		if((resBAT = BATnew(TYPE_void, tpe, 0, TRANSIENT)) == NULL) 
+			return NULL;
+
+		BATsetcount(resBAT,0);
+        BATseqbase(resBAT,0);
+        BATderiveProps(resBAT,FALSE);
+	}
+
+	return resBAT;
+}
+
+BAT* BATnonDimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
+	BAT *resBAT;
+	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
+	
+	assert(BAThdense(oidsBAT));
+    assert(BAThdense(dimensionBAT));
+    assert(ATOMtype(oidsBAT->ttype) == TYPE_oid);
+	
+#define project(TYPE) \
+	do { \
+    	TYPE *bt;                      \
+\
+		long repeat1, elementsNum, elementsPerGroup; \
+		TYPE min_orig, max_orig, step; \
+		TYPE min_new, max_new; /*the step remains the same*/ \
+        oid i, previous_oid, jj; \
+		TYPE *el_in; \
+		long repeat1_new, repeat2_new, j; \
+		long currentRepeat; \
+		TYPE currentEl; \
+		long startGroup, endGroup, currentGroup; \
+		BUN p, q; \
+		oid currentOid; \
+		BATiter oidsBAT_iter;\
+		bool first = true; \
+\
+		/*find the min, max step of the input BAT*/ \
+		el_in = (TYPE*)Tloc(dimensionBAT, BUNfirst(dimensionBAT)); \
+        min_orig = el_in[0]; \
+        step = el_in[BATcount(dimensionBAT)-1]; \
+\
+        repeat1 = 1; \
+        for(i=1; i<BATcount(dimensionBAT); i++) { \
+            if(min_orig == el_in[i]) \
+                repeat1++; \
+            else { \
+                max_orig = el_in[i]; \
+                break; \
+            } \
+        } \
+fprintf(stderr, "BATdimensionProject: original repeat1 = %ld\n", repeat1); \
+\
+        elementsNum = floor((max_orig-min_orig)/step) + 1; \
+		elementsPerGroup = repeat1*elementsNum; \
+fprintf(stderr, "BATdimensionProject: original elements per group = %ld\n", elementsPerGroup); \
+\
+		oidsBAT_iter = bat_iterator(oidsBAT); \
+		BATloop(oidsBAT, p, q) { \
+			currentOid = *((oid*) BUNtail(oidsBAT_iter, p)); \
+			if(first) { \
+fprintf(stderr, "BATdimensionProject: original elements per group = %u\n", (unsigned int)currentOid); \
+				startGroup = floor(currentOid/elementsPerGroup); \
+fprintf(stderr, "start group = %ld\n", startGroup); \
+\
+				/*check the elements per group*/ \
+				currentGroup = floor(currentOid/elementsPerGroup); \
+				min_new = max_new = currentEl = (currentOid%(repeat1*elementsNum))/repeat1; \
+				repeat1_new = currentRepeat = 1; \
+fprintf(stderr, "BATdimensionProject: (first) group %ld -> original[%u]\n", currentGroup, (unsigned int)currentOid); \
+				first = false; \
+			} else { \
+				TYPE el = (currentOid%(repeat1*elementsNum))/repeat1; \
+				long grp = floor(currentOid/elementsPerGroup); \
+\
+				if(currentGroup == grp) { /*still in the same group*/\
+					/*there should not be any missing oids inside the same element of the same group*/ \
+					if(currentEl == el) { /*same group, same element*/\
+						for(jj=previous_oid+1; jj<=currentOid; jj++) { \
+fprintf(stderr, "BATdimensionProject: (same-same) group %ld -> original[%u]\n", grp, (unsigned int)jj); \
+							currentRepeat++; \
+						} \
+					} else {/*same group but other element*/ \
+fprintf(stderr, "BATdimensionProject: (same-new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+						if(currentRepeat > repeat1_new) \
+							repeat1_new = currentRepeat; \
+						currentEl = el; \
+						currentRepeat = 1; \
+						if(min_new > el) \
+							min_new = el; \
+						if(max_new < el) \
+							max_new = el; \
+					} \
+				} else { /*new group*/ \
+fprintf(stderr, "BATdimensionProject: (new) group %ld -> original[%u]\n", grp, (unsigned int)currentOid); \
+					if(currentRepeat > repeat1_new) \
+						repeat1_new = currentRepeat; \
+					currentEl = el; \
+					currentRepeat = 1; \
+					currentGroup = grp; \
+					if(min_new > el) \
+						min_new = el; \
+					if(max_new < el) \
+						max_new = el; \
+				} \
+			} \
+			previous_oid = currentOid; \
+			if(currentRepeat>repeat1_new) \
+				repeat1_new = currentRepeat; \
+fprintf(stderr, "BATdimensionProject: new repeat1 = %ld\n", repeat1_new); \
+		} \
+\
+		endGroup = floor(currentOid/elementsPerGroup); \
+fprintf(stderr, "end group = %ld\n", endGroup); \
+		repeat2_new = endGroup - startGroup +1; \
+fprintf(stderr, "BATdimensionProject: new repeat2 = %ld\n", repeat2_new); \
+\
+		/*create the resBAT*/ \
+		if((resBAT = BATnew(TYPE_void, tpe, repeat1_new+repeat2_new+1, TRANSIENT)) == NULL) \
+			return NULL; \
+\
+		bt = (TYPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+		for(j=0; j<repeat1_new; j++) { \
+			*bt = min_new; \
+			bt++; \
+		} \
+		for(j=0; j<repeat2_new; j++) { \
+			*bt = max_new; \
+			bt++; \
+		} \
+		*bt = step; \
+\
+		BATsetcount(resBAT,repeat1_new+repeat2_new+1); \
+        BATseqbase(resBAT,0); \
+        BATderiveProps(resBAT,FALSE); \
+\
+	} while(0)
+
+	if(BATcount(oidsBAT)) {	
+		switch (tpe) {
+    	case TYPE_bte:
+        	project(bte);
+	        break;
+    	case TYPE_sht:
+        	project(sht);
+	        break;
+    	case TYPE_int:
+        	project(int);
+	        break;
+    	case TYPE_flt:
+        	project(flt);
+	        break;
+    	case TYPE_dbl:
+        	project(dbl);
+	        break;
+    	case TYPE_lng:
+        	project(lng);
+	        break;
+#ifdef HAVE_HGE
+    	case TYPE_hge:
+        	project(hge);
+	        break;
+#endif
+    	case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+        	project(int);
+#else
+        	project(lng);
+#endif
+        break;
+    	default:
+			fprintf(stderr, "BATnonDimensionProject: type not handled\n");
+			return NULL;
+	    }
+	} else {
+		//no oids. Empty BAT
+		if((resBAT = BATnew(TYPE_void, tpe, 0, TRANSIENT)) == NULL) 
+			return NULL;
+
+		BATsetcount(resBAT,0);
+        BATseqbase(resBAT,0);
+        BATderiveProps(resBAT,FALSE);
+	}
+
+	return resBAT;
+}
