@@ -26,7 +26,7 @@ lib_kernel = {
 		logger.c \
 		microbenchmark.c microbenchmark.h \
 		mmath.c mmath.h \
-		status.c status.h \ 
+		status.c status.h \
 		arrays.c arrays.h
 }
 
@@ -48,6 +48,6 @@ headers_hge = {
 	SOURCES = 00_aggr_hge.mal
 }
 
-EXTRA_DIST = alarm.mal logger.mal microbenchmark.mal aggr.mal 00_aggr_hge.mal group.mal algebra.mal
+EXTRA_DIST = alarm.mal logger.mal microbenchmark.mal aggr.mal 00_aggr_hge.mal group.mal
 
 EXTRA_DIST_DIR = Tests

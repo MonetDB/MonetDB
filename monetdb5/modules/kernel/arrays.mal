@@ -1,6 +1,23 @@
-
 #leftfetch join when having a dimension from an array
 command algebra.leftfetchjoin ( dims:ptr, pos:int ) :bat[:oid,:any]
 address dimension_leftfetchjoin;
 
+command algebra.mbrsubselect(b:bat[:oid,:any], s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
+address ALGmbrsubselect;
+command algebra.mbrsubselect(b:bat[:oid,:any], s:bat[:oid, :oid]) :bat[:oid,:oid]
+address ALGmbrsubselect2;
+command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
+address ALGmbrproject;
 
+
+#command algebra.dimension_subselect(b:bat[:oid, :any], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+#address ALGdimensionSubselect1;
+#
+#command algebra.dimension_subselect(b:bat[:oid,:any], cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
+#address ALGdimensionSubselect2;
+#
+#command algebra.dimension_thetasubselect(b:bat[:oid,:any], val:any, op:str) :bat[:oid,:oid]
+#address ALGdimensionThetasubselect1;
+#
+#command algebra.dimension_thetasubselect(b:bat[:oid,:any], s:bat[:oid,:oid], val:any, op:str) :bat[:oid,:oid]
+#address ALGdimensionThetasubselect2;

@@ -10,9 +10,10 @@
 #define ALGEBRA_H
 
 #include <gdk.h>
-#include "arrays.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include <gdk_arrays.h>
+#include "arrays.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -35,12 +36,8 @@ algebra_export str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 algebra_export str ALGcard(lng *result, const bat *bid);
 algebra_export str ALGsubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGdimensionSubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGdimensionSubselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
 algebra_export str ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
-algebra_export str ALGdimensionThetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
-algebra_export str ALGdimensionThetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(bat *result, const bat *bid, ptr value);
 algebra_export str ALGselect(bat *result, const bat *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin);
@@ -77,8 +74,6 @@ algebra_export str ALGjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGleftjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGouterjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
@@ -125,9 +120,5 @@ algebra_export str ALGfind(oid *ret, const bat *bid, ptr val);
 algebra_export str ALGselectNotNil(bat *result, const bat *bid);
 algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 algebra_export str ALGreuse(bat *ret, const bat *bid);
-
-algebra_export str ALGmbrsubselect(bat *result, const bat *bid, const bat *sid, const bat *cid);
-algebra_export str ALGmbrsubselect2(bat *result, const bat *bid, const bat *sid);
-algebra_export str ALGmbrproject(bat *result, const bat *bid, const bat *sid, const bat *rid);
 
 #endif

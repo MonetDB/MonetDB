@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <arrays.h>
+#include "gdk_arrays.h"
 #include "gdk_cand.h"
 #include "gdk_private.h"
 #include <math.h>

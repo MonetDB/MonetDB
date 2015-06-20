@@ -31,7 +31,8 @@ lib_gdk = {
 		gdk_unique.c \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \
-		libbat.rc
+		libbat.rc \
+		gdk_arrays.c gdk_arrays.h
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \
 		../common/utils/libmutils \
@@ -52,7 +53,8 @@ headers_h = {
 		gdk_posix.h \
 		gdk_search.h \
 		gdk_system.h \
-		gdk_utils.h
+		gdk_utils.h \
+		gdk_arrays.h
 }
 
 headers_pc = {

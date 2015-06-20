@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <arrays.h>
+#include "gdk_arrays.h"
 
 #include <math.h>
 /* grouped aggregates

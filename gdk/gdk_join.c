@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <arrays.h>
+#include "gdk_arrays.h"
 
 /*
  * All "sub" join variants produce some sort of join on two input
