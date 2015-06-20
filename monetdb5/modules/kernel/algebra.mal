@@ -443,7 +443,3 @@ comment "Gives the variance of all tail values";
 command variancep(b:bat[:oid,:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
-
-
-include algebra_arrays;
-

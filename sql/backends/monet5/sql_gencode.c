@@ -2651,14 +2651,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt1(mb, sqlRef, "get_cells");
 			if (q == NULL)
 				return -1;
-//			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-//			setVarUDFtype(mb, getArg(q, 0));
+			setVarType(mb, getArg(q, 0), TYPE_ptr);
+			setVarUDFtype(mb, getArg(q, 0));
+			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			/* rename second result */
+			renameVariable(mb, getArg(q, 1), "X_%d", s->nr);
 		} break;
 		case st_dimension: {
 #if 0
