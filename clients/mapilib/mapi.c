@@ -2555,17 +2555,21 @@ mapi_start_talking(Mapi mid)
 
 	assert(len < BLOCK);
 
+	if (len == 0){
+		mapi_setError(mid, "Challenge string is not valid, it is empty", "mapi_start_talking", MERROR);
+		return mid->error;
+	}
 	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
 	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, server not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*server++ = '\0';
 	protover = strchr(server, ':');
 	if (protover == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, protocol not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*protover++ = '\0';
