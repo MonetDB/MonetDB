@@ -1910,8 +1910,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	GDKfree(task->fields);
 	GDKfree(task->cols);
 	GDKfree(task->time);
-	GDKfree(task->base[task->cur]);
-	GDKfree(task->lines[task->cur]);
+	for (i = 0; i < MAXBUFFERS; i++) {
+		if (task->base[i])
+			GDKfree(task->base[i]);
+		if (task->lines[i])
+			GDKfree(task->lines[i]);
+	}
+	if (task->rowerror)
+		GDKfree(task->rowerror);
 	MT_sema_destroy(&task->producer);
 	MT_sema_destroy(&task->consumer);
 	GDKfree(task);
