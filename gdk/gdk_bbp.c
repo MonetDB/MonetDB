@@ -3530,6 +3530,10 @@ BBPsync(int cnt, bat *subcommit)
 			backup_dir = backup_subdir = 0;
 			(void) GDKremovedir(0, DELDIR);
 			(void) BBPprepare(0);	/* (try to) remove DELDIR and set up new BAKDIR */
+			if (backup_files > 1) {
+				PERFDEBUG fprintf(stderr, "%d\n", backup_files);
+				backup_files = 1;
+			}
 		}
 	}
 	PERFDEBUG fprintf(stderr, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
