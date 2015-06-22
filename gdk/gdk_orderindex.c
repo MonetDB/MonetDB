@@ -67,10 +67,10 @@ ORDERkeepidx(BAT *b, BAT *order) {
 	}
 
 	MT_lock_set(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
-	if (!b->torderidx->flags) {
-		b->torderidx->o = BBPcacheid(order);
+	if (!b->torderidx.flags) {
+		b->torderidx.o = BBPcacheid(order);
 		BBPkeepref(order->batCacheid);
-		b->torderidx->flags = 1;
+		b->torderidx.flags = 1;
 	} else {
 		/* take care if other index already exists, should not happen though
 		 * because it is a waste of resources.
@@ -86,8 +86,8 @@ gdk_export
 BAT *ORDERgetidx(BAT *b) {
 	BATcheck(b, "ORDERgetidx", GDK_FAIL);
 
-	if (b->torderidx->flags) {
-		return BBPdescriptor(b->torderidx->o);
+	if (b->torderidx.flags) {
+		return BBPdescriptor(b->torderidx.o);
 	}
 	return NULL;
 }

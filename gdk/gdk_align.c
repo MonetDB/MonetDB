@@ -331,8 +331,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	bn->T->imprints = NULL;
 	/* Order OID index */
 	/* TODO: what is the correct step here? slice the OID index? */
-	bn->H->orderidx = NULL;
-	bn->T->orderidx = NULL;
+	bn->H->orderidx.flags = 0;
+	bn->T->orderidx.flags = 0;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
@@ -548,13 +548,6 @@ VIEWunlink(BAT *b)
 			b->H->imprints = NULL;
 		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
 			b->T->imprints = NULL;
-
-		/* unlink order OID index */
-		if (hpb && b->H->orderidx && b->H->orderidx == hpb->H->orderidx)
-			b->H->orderidx = NULL;
-		if (tpb && b->T->orderidx && b->T->orderidx == tpb->H->orderidx)
-			b->T->orderidx = NULL;
-
 	}
 }
 
