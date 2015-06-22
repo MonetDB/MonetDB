@@ -674,8 +674,12 @@ typedef struct {
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
+typedef struct {
+	int flags;		/* flags */
+	bat o;			/* bat with oid order map */
+} OrderIdx;
+
 typedef struct Imprints Imprints;
-typedef struct Order Order;
 
 
 /*
@@ -798,7 +802,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *hheap;           // heap for varsized head values
  *           Hash   *hhash;           // linear chained hash table on head
  *           Imprints *himprints;     // column imprints index on head
- *           Order    *horder;        // order oid index on head
+ *           OrderIdx    *horderidx;  // order oid index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -812,7 +816,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
- *           Order *torder;           // order oid index on tail
+ *           OrderIdx *torderidx;     // order oid index on tail
  *  } BAT;
  * @end verbatim
  *
@@ -892,7 +896,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
-	Order *order;	/* order oid index */
+	OrderIdx *orderidx; 	/* order oid index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -960,6 +964,9 @@ typedef int (*GDKfcn) ();
 #define tident		T->id
 #define halign		H->align
 #define talign		T->align
+#define horderidx	H->orderidx
+#define torderidx	T->orderidx
+
 
 #define batMaphead	S->map_head
 #define batMaptail	S->map_tail
@@ -2110,7 +2117,8 @@ gdk_export lng IMPSimprintsize(BAT *b);
  * The oid index order.
  *
  */
-gdk_export gdk_return ORDERindex(BAT *b, BAT *order);
+gdk_export gdk_return ORDERkeepidx(BAT *b, BAT *order);
+gdk_export BAT *ORDERgetidx(BAT *b);
 
 /*
  * @- Multilevel Storage Modes
