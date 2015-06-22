@@ -1518,7 +1518,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			if (lcand &&
 			    nl > 1 &&
-			    lcand[-1] != lcand[-1 - nl] + nl) {
+			    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
 				/* not all values in the range are
 				 * candidates */
 				lskipped = 1;
