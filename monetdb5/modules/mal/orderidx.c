@@ -11,7 +11,7 @@
  * Implement a parallel sort-merge MAL program generator
  */
 #include "monetdb_config.h"
-#include "arrange.h"
+#include "orderidx.h"
 #include "gdk.h"
 
 str
@@ -194,7 +194,7 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (n_ar == 1) {
 		/* One oid order bat, nothing to merge */
-		if (ARNGindex(b, a[0]) == GDK_FAIL) {
+		if (ORDERkeepidx(b, a[0]) == GDK_FAIL) {
 			BBPunfix(aid[0]);
 			BBPunfix(bid);
 			GDKfree(aid);
@@ -388,7 +388,7 @@ do {																		\
 		m->T->nonil = 1;
 		m->tsorted = m->trevsorted = 0;
 		m->tdense = 0;
-		if (ARNGindex(b, m) == GDK_FAIL) {
+		if (ORDERkeepidx(b, m) == GDK_FAIL) {
 			for (i = 0; i < n_ar; i++) {
 				BBPunfix(aid[i]);
 			}
