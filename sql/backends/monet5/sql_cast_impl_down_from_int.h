@@ -28,7 +28,7 @@ str
 FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 {
 	int scale = *s1;
-	lng val = *v, h = (val < 0) ? -5 : 5;
+	lng val = *v, h = 0;//(val < 0) ? -5 : 5;
 
 	/* shortcut nil */
 	if (*v == NIL(TP1)) {
