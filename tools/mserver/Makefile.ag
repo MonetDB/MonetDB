@@ -41,7 +41,7 @@ bin_mserver5 = {
 	SOURCES = mserver5.c monet_version.h monet_version.c.in \
 		mserver5.1.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
-		../../gdk/libbat \
+		../../gdk/libbat ../../common/stream/libstream \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
 }
