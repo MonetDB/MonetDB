@@ -97,6 +97,7 @@ MAPI  = (monetdb) /var/tmp/mtest-21021/.s.monetdb.35166
 QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.garbageCollector();optimizer.multiplex();';
 ERROR = !'garbageCollector' should be used as the last one
 
+
 # 03:16:17 >  
 # 03:16:17 >  "Done."
 # 03:16:17 >  
