@@ -10,6 +10,7 @@ INCLUDES = ../../mal \
 		   ../../../common/stream \
 		   ../../../gdk
 
+
 MTSAFE
 
 lib_kernel = {

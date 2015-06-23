@@ -1,6 +1,39 @@
 #include "monetdb_config.h"
 #include "gdk_arrays.h"
 
+#define createDim(TPE) \
+gdk_dimension* createDimension_##TPE(int dimNum, BUN elsNum, TPE min, TPE max, TPE step) { \
+	gdk_dimension *dim = GDKmalloc(sizeof(gdk_dimension)); \
+\
+	void *minVoid = GDKmalloc(sizeof(TPE)); \
+    void *maxVoid = GDKmalloc(sizeof(TPE)); \
+    void *stepVoid = GDKmalloc(sizeof(TPE)); \
+\
+    memcpy(minVoid, &min, sizeof(TPE)); \
+    memcpy(maxVoid, &max, sizeof(TPE)); \
+    memcpy(stepVoid, &step, sizeof(TPE)); \
+\
+	dim->type = TYPE_##TPE; \
+	dim->dimNum = dimNum; \
+	dim->elementsNum = floor((max - min )/ step)+1; \
+	dim->min = minVoid; \
+    dim->max = maxVoid; \
+    dim->step = stepVoid; \
+	dim->initialElementsNum = elsNum; \
+\
+	return dim; \
+}
+
+createDim(bte);
+createDim(sht);
+createDim(int);
+createDim(wrd);
+createDim(oid);
+createDim(lng);
+createDim(dbl);
+createDim(flt);
+
+
 gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg) {
 	switch(errorCode) {
 		case general_error:
@@ -16,6 +49,117 @@ gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg
 	}
 	return GDK_FAIL;
 }
+
+gdk_cells* cells_new(void) {
+    gdk_cells *cells = GDKmalloc(sizeof(gdk_cells));
+    cells->h = cells->t = NULL;
+    cells->dimsNum = 0;
+    return cells;
+}
+
+gdk_cells* cells_add_dimension(gdk_cells* cells, gdk_dimension *dim) {
+    dim_node *n = GDKmalloc(sizeof(dim_node));
+    n->next = NULL;
+    n->data = dim;
+
+
+    if (cells->dimsNum) {
+        cells->t->next = n;
+    } else {
+        cells->h = n;
+    }
+    cells->t = n;
+    cells->dimsNum++;
+
+    return cells;
+}
+
+static dim_node* findNode(gdk_cells *cells, int dimNum) {
+	dim_node *n;
+	for(n=cells->h; n->data->dimNum < dimNum; n=n->next);
+	return n;
+}
+
+static gdk_return freeDimension(gdk_dimension *dim) {
+	GDKfree(dim->min);
+	GDKfree(dim->max);
+	GDKfree(dim->step);
+	GDKfree(dim);
+
+	return GDK_SUCCEED;
+}
+
+gdk_cells* cells_remove_dimension(gdk_cells* cells, gdk_dimension *dim) {
+    dim_node *prevNode = findNode(cells, dim->dimNum-1);
+	dim_node *currNode = prevNode->next;
+
+	prevNode->next = currNode->next;
+
+	/* free the space allocated for the node that is being removed */
+	freeDimension(currNode->data);
+	GDKfree(currNode);
+	
+    return cells;
+}
+
+gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension *dim) {
+    dim_node *currNode = findNode(cells, dim->dimNum);
+
+	/* free the space that is allocated for the dimension that is being replaced */
+	freeDimension(currNode->data);
+	/* set the data on the node to the new dimensions */
+	currNode->data = dim;
+
+	return cells;
+}
+
+
+/*
+#define valueInOID(oidVal, min, max, step) \
+do {\
+	
+} while(0);
+
+BAT* projectDimension(gdk_dimension *oidsDim, gdk_dimension *valuesDim) {
+	switch(ATOMtype(valuesDim->type)) {
+        case TYPE_bte:
+            dim->elementsNum = floor((*(bte*)max - *(bte*)min )/ *(bte*)step)+1;
+            break;
+        case TYPE_sht:
+            dim->elementsNum = floor((*(sht*)max - *(sht*)min )/ *(sht*)step)+1;
+            break;
+        case TYPE_int:
+            dim->elementsNum = floor((*(int*)max - *(int*)min )/ *(int*)step)+1;
+            break;
+        case TYPE_flt:
+            dim->elementsNum = floor((*(flt*)max - *(flt*)min )/ *(flt*)step)+1;
+            break;
+        case TYPE_dbl:
+            dim->elementsNum = floor((*(dbl*)max - *(dbl*)min )/ *(dbl*)step)+1;
+            break;
+        case TYPE_lng:
+            dim->elementsNum = floor((*(lng*)max - *(lng*)min )/ *(lng*)step)+1;
+            break;
+#ifdef HAVE_HGE
+        case TYPE_hge:
+            dim->elementsNum = floor((*(hge*)max - *(hge*)min )/ *(hge*)step)+1;
+            break;
+#endif
+        case TYPE_oid:
+            dim->elementsNum = floor((*(oid*)max - *(oid*)min )/ *(oid*)step)+1;
+#if SIZEOF_OID == SIZEOF_INT
+#else
+            dim->elementsNum = floor((*(int*)max - *(int*)min )/ *(int*)step)+1;
+#endif
+            break;
+        default:
+            fprintf(stderr, "createDimension_NEW: dimension type not handled\n");
+            return NULL;
+    }
+
+    return dim;
+}
+*/
 
 #define createDimension(TPE, min, max, step, elementRepeats, groupRepeats) \
     ({ \

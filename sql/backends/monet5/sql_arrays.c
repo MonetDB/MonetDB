@@ -448,6 +448,7 @@ str mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	throw(SQL, "sql.create_cells", "unable to find %s(%s)", *tname, *cname);
 }
 
+#if 0
 str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ptr *res = getArgReference_ptr(stk, pci, 0);
 	BAT *oidsBAT = NULL; //at this point it is empty. It is just initialised
@@ -456,8 +457,8 @@ str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str msg;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	str *sname = getArgReference_str(stk, pci, 2);
-	str *tname = getArgReference_str(stk, pci, 3);
+	str *sname = getArgReference_str(stk, pci, 3);
+	str *tname = getArgReference_str(stk, pci, 4);
 
 	*res = 0; //not found
 
@@ -485,19 +486,65 @@ str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	return MAL_SUCCEED;
 }
+#endif
+
+#define generaliseDimension(dim) \
+({ \
+    gdk_dimension *resDim = GDKmalloc(sizeof(gdk_dimension)); \
+    atom_cast(dim->min, &dim->type); \
+    atom_cast(dim->step, &dim->type); \
+    atom_cast(dim->max, &dim->type); \
+    switch(dim->type.type->localtype) { \
+        case TYPE_bte: \
+			resDim = createDimension_bte(dim->dimnr, 0, dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);\
+            break; \
+        case TYPE_sht: \
+   			resDim = createDimension_sht(dim->dimnr, 0, dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval); \
+            break; \
+        case TYPE_int: \
+   			resDim = createDimension_int(dim->dimnr, 0, dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival); \
+            break; \
+        case TYPE_wrd: \
+   			resDim = createDimension_wrd(dim->dimnr, 0, dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval); \
+            break; \
+        case TYPE_oid: \
+   			resDim = createDimension_oid(dim->dimnr, 0, dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval); \
+            break; \
+        case TYPE_lng: \
+   			resDim = createDimension_lng(dim->dimnr, 0, dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval); \
+            break; \
+        case TYPE_dbl: \
+   			resDim = createDimension_dbl(dim->dimnr, 0, dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval); \
+            break; \
+        case TYPE_flt: \
+   			resDim = createDimension_flt(dim->dimnr, 0, dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval); \
+	        break; \
+		default: \
+			fprintf(stderr, "generaliseDimension: type not found\n"); \
+			resDim = NULL; \
+    } \
+    resDim; \
+})
+
 
 str mvc_get_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int *res = getArgReference_int(stk, pci, 0);
+	ptr* dims_res = getArgReference_ptr(stk, pci, 0);
+	ptr* dim_res = getArgReference_ptr(stk, pci, 1);
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_dimension *dim = NULL;
-	str *sname = getArgReference_str(stk, pci, 2);
-	str *tname = getArgReference_str(stk, pci, 3);
-	str *dname = getArgReference_str(stk, pci, 4);
+	str *sname = getArgReference_str(stk, pci, 3);
+	str *tname = getArgReference_str(stk, pci, 4);
+	str *dname = getArgReference_str(stk, pci, 5);
+	
 
-	*res = 0; //not found
+	gdk_array *cells = GDKmalloc(sizeof(gdk_array));
+	node *n;
+	int i;
+	*dim_res = NULL; //not found
+
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -514,7 +561,23 @@ str mvc_get_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (dim == NULL)
 		throw(SQL, "sql.get_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 
-	*res = dim->dimnr+1;
+	cells->dimsNum = t->dimensions.set->cnt+1; //dimensions start from 1
+	cells->dimSizes = GDKmalloc(sizeof(BUN)*cells->dimsNum);
+	cells->dimSizes[0] = 0;
+	for(i=1, n=t->dimensions.set->h; n; n=n->next, i++) {
+		sql_dimension *dim_sql = (sql_dimension*)n->data;
+		gdk_dimension *dim_gdk = generaliseDimension(dim_sql);
+	
+		cells->dimSizes[i] = dim_gdk->elementsNum;	
+		if(dim_gdk->dimNum == dim->dimnr) {
+			//fix the number of initial elements because I se everythin to 0
+			dim_gdk->initialElementsNum = dim_gdk->elementsNum;
+			*dim_res = dim_gdk;
+		}	
+	}
+		
+	*dims_res = cells;
+
 	return MAL_SUCCEED;
 }
 

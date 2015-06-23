@@ -2,7 +2,7 @@
 #define _SQL_ARRAYS_H
 
 #include <sql_mem.h>
-
+#include <gdk_arrays.h>
 
 #ifdef WIN32
 #ifndef LIBSQL
@@ -24,7 +24,7 @@
 #include <mal_interpreter.h>
 
 
-sql5_export str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//sql5_export str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_dimension_subselect_with_cand_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 //sql5_export str mvc_dimension_subselect_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 //sql5_export str mvc_create_dimension_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

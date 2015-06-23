@@ -1,6 +1,6 @@
 #leftfetch join when having a dimension from an array
-command algebra.leftfetchjoin ( dims:ptr, pos:int ) :bat[:oid,:any]
-address dimension_leftfetchjoin;
+command algebra.leftfetchjoin(candsBAT:bat[:oid,:oid], dims:ptr, dim:ptr ) :bat[:oid,:any]
+address ALGdimensionLeftfetchjoin;
 
 command algebra.mbrsubselect(b:bat[:oid,:any], s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
 address ALGmbrsubselect;
@@ -9,12 +9,14 @@ address ALGmbrsubselect2;
 command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
 address ALGmbrproject;
 
+command algebra.subselect(dims:ptr, dim:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
+address ALGdimensionSubselect1;
+command algebra.subselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+address ALGdimensionSubselect2;
 
-#command algebra.dimension_subselect(b:bat[:oid, :any], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-#address ALGdimensionSubselect1;
-#
-#command algebra.dimension_subselect(b:bat[:oid,:any], cand:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit):bat[:oid,:oid]
-#address ALGdimensionSubselect2;
+command algebra.cellsProject(candDims:ptr, candBAT:bat[:oid,:oid]) :bat[:oid,:oid]
+address ALGproject;
+ 
 #
 #command algebra.dimension_thetasubselect(b:bat[:oid,:any], val:any, op:str) :bat[:oid,:oid]
 #address ALGdimensionThetasubselect1;

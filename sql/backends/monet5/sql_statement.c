@@ -822,6 +822,7 @@ stmt_atom(sql_allocator *sa, atom *op1)
 	return s;
 }
 
+#if 0
 stmt* stmt_cells(sql_allocator *sa, sql_table *t)
 {
 	stmt *s = stmt_create(sa, st_cells);
@@ -830,26 +831,24 @@ stmt* stmt_cells(sql_allocator *sa, sql_table *t)
 	s->nrcols = 1;
 	return s;
 }
-
+#endif
 
 /*called when the column belongs to an array*/
-stmt* stmt_column(sql_allocator *sa, sql_column* col, sql_table *t) {
-	stmt *arr = stmt_cells(sa, t);
+stmt* stmt_column(sql_allocator *sa, sql_column* col) { //, sql_table *t) {
+//	stmt *arr = stmt_cells(sa, t);
 	stmt *c = stmt_bat(sa, col, RDONLY);
 	
 	//join the dimension with the cells
-	return stmt_project(sa, arr, c);
+//	return stmt_project(sa, arr, c);
+	return c;
 }
 
-stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim, sql_table *t) {
-	stmt *arr = stmt_cells(sa, t);
-
+stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim) {
 	stmt *d = stmt_create(sa, st_dimension);
 	d->op4.dval = dim;
 	d->nrcols = 2; //the cardinality is always greated than 1
 
-	//join the dimension with the cells
-	return stmt_project(sa, arr, d);
+	return d;
 }
 
 stmt *
@@ -883,12 +882,28 @@ stmt *
 stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub)
 {
 	stmt *s = stmt_create(sa, st_uselect);
+	stmt *cls = stmt_create(sa, st_cells);
 
-	s->op1 = op1;
-	s->op2 = op2;
-	s->op3 = sub;
-	s->flag = cmptype;
-	s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+    s->op1 = op1;
+    s->op2 = op2;
+    s->op3 = sub;
+    s->flag = cmptype;
+    s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+
+    if(s->op1->type == st_dimension) {
+    	//it is a dimension. After the selection we should reconstruct the cells
+        cls->op1 = s;
+       
+        //if the cells were reconstructed in the previous subselect remove it from there
+        if(sub && sub->type == st_cells)
+    	    s->op3 = s->op3->op1;
+        
+		cls->nrcols = s->nrcols;
+        return cls;
+        
+    }
+        
+
 	return s;
 }
 

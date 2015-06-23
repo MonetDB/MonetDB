@@ -3,13 +3,13 @@ pattern sql.create_cells(mvc:int, sname:str, tname:str, cname:str, def:any):bat[
 address mvc_create_cells_bat_wrap
 comment "Create the 'schema.table.column' BAT";
 
-pattern sql.get_cells(mvc:int, schema:str, table:str) (:ptr, :bat[:oid,:oid])
-address mvc_get_cells
-comment "Get a set with all the dimensions of the array and an empty BAT which will be filled with the qualifying oids";
+#pattern sql.get_cells(mvc:int, schema:str, table:str) (:ptr, :bat[:oid,:oid])
+#address mvc_get_cells
+#comment "Get a set with all the dimensions of the array and an empty BAT which will be filled with the qualifying oids";
 
-pattern sql.get_dimension(mvc:int, schema:str, table:str, dimension:str):int
+pattern sql.get_dimension(mvc:int, schema:str, table:str, dimension:str) (:ptr, :ptr)
 address mvc_get_dimension
-comment "Get the order of the dimension in the array (starting from 1)";
+comment "Get the order of the dimension in the array (starting from 1) and a pointer to all dimensions";
 
 #pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid,:any_1]
 #address mvc_create_dimension_bat_wrap

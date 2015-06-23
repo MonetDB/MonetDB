@@ -1,21 +1,180 @@
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "arrays.h"
+
 #include <gdk_arrays.h>
 
-str dimension_leftfetchjoin(bat *result,  ptr *dims, int dimNum) {
-	BAT *resBAT= NULL;
+static gdk_dimension* getDimension(gdk_cells *dims, int dimNum) {
+	dim_node *n;
 
-	(void)*dims;
-	(void)dimNum;
-	/*find the dimension in dimNum and create the BAT out of it*/
+	for(n=dims->h; n->data->dimNum<dimNum; n=n->next);
+	return n->data;
+}
 
+/*takes a set of dimensions of any type and returns the correspondin 
+ * dimensions in indices format */
+static gdk_cells* sizesToDimensions(gdk_array *array) {
+	gdk_cells *resDims = cells_new();
+	int i=0;
+	
+	for(i=1; i<array->dimsNum; i++) {
+		gdk_dimension *dim = createDimension_oid(i, array->dimSizes[i], 0, array->dimSizes[i]-1, 1);
+		resDims = cells_add_dimension(resDims, dim);
+	}
+	return resDims;
+}
+
+static gdk_dimension* merge2CandidateDimensions(gdk_dimension *dim1, gdk_dimension *dim2) {
+	oid min, max, step;
+	
+	if(*(oid*)dim1->max < *(oid*)dim2->min || *(oid*)dim2->max < *(oid*)dim1->min) {
+		//disjoint ranges. cannot merge
+		return NULL;
+	}
+
+	/*the biggest of the mins and the smallest of the maximums */
+	min = *(oid*)dim1->min > *(oid*)dim2->min ? *(oid*)dim1->min : *(oid*)dim2->min;
+	max = *(oid*)dim1->max < *(oid*)dim2->max ? *(oid*)dim1->max : *(oid*)dim2->max;
+	step = *(oid*)dim1->step ; //step is always 1
+
+	//the dimensions that are merged should have the same order
+	//they also have the same number of initial elements because the came from the same dimension
+	return createDimension_oid(dim1->dimNum, dim1->initialElementsNum, min, max, step); }
+
+static gdk_cells* mergeCandidateDimensions(gdk_cells *dims, gdk_dimension *dim) {
+	gdk_dimension *candDim = getDimension(dims, dim->dimNum);
+	gdk_dimension *mergedDim = merge2CandidateDimensions(candDim, dim);	
+
+
+	//check the limits of the two dimensions
+	if(!mergedDim) {
+		fprintf(stderr, "Disjoint ranges. Create a BAT");
+		//remove the dimension from the candidates
+		return cells_remove_dimension(dims, candDim);
+	}
+
+	//create a new dimension that is the combined result of the candidates and the dim
+	return cells_replace_dimension(dims, mergedDim);
+}
+
+static BUN oidToIdx(oid oidVal, int currentDimNum, BUN skipCells, gdk_array *dims) {
+	if(currentDimNum == dims->dimsNum)
+		return oidVal%skipCells;
+	else {
+		if(currentDimNum == 1)
+			return oidToIdx(oidVal, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
+		return oidToIdx(oidVal, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims)%skipCells;
+	}
+}
+
+static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, oid **resOIDs ) {
+	BUN sz = 0;
+	BUN j;
+	oid io;
+
+	oid *qOIDS = NULL;
+
+	gdk_dimension *oidsDim;
+	dim_node *n;
+	for(n=oidDims->h; n && n->data->dimNum<dimNum; n = n->next);
+	oidsDim = n->data;
+
+	if(dimNum == oidDims->dimsNum) {
+		qOIDS = GDKmalloc(sizeof(oid)*oidsDim->elementsNum);
+		for(io=*(oid*)oidsDim->min, sz=0; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
+			qOIDS[sz] = skipSize*io;
+fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+		}
+		*resOIDs = qOIDS;
+	} else {
+		oid *resOIDs_local = NULL;
+		BUN addedEls = qualifyingOIDs(dimNum+1, skipSize*oidsDim->initialElementsNum, oidDims, &resOIDs_local);
+		if(dimNum == 1)
+			qOIDS = *resOIDs;
+		else
+			qOIDS = GDKmalloc(sizeof(oid)*oidsDim->elementsNum*addedEls);
+
+		for(j=0, sz=0; j<addedEls; j++) {
+fprintf(stderr, "-> %u = %u\n", (unsigned int)j, (unsigned int)resOIDs_local[j]);
+			for(io=*(oid*)oidsDim->min; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
+				qOIDS[sz] = resOIDs_local[j] + skipSize*io;
+fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+			}
+		}
+		*resOIDs = qOIDS;
+	}
+
+	return sz;
+}
+
+#define computeValues(TPE) \
+do { \
+	TPE min = *(TPE*)dimension->min; \
+	TPE step = *(TPE*)dimension->step; \
+	BUN p, q; \
+	BATiter candsIter = bat_iterator(candsBAT); \
+	TPE *vals; \
+	if(!(resBAT = BATnew(TYPE_void, TYPE_##TPE, resSize, TRANSIENT))) \
+        throw(MAL, "algebra.dimensionLeftfetchjoin", "Problem allocating new BAT"); \
+	vals = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+\
+	BATloop(candsBAT, p, q) { \
+    	oid qOid = *(oid *) BUNtail(candsIter, p); \
+		BUN idx = oidToIdx(qOid, 1, 1, array); \
+		*vals++ = min +idx*step; \
+fprintf(stderr, "%d - %d - %d\n", (int)qOid, (int)idx, (int)vals[-1]); \
+    } \
+} while(0)
+
+str ALGdimensionLeftfetchjoin(bat *result, const bat *cands, const ptr *dims, const ptr *dim) {
+	gdk_array *array = (gdk_array*)*dims;
+	gdk_dimension *dimension = (gdk_dimension*)*dim;
+	BAT *candsBAT = NULL, *resBAT = NULL;
+	BUN resSize = 0;
+
+	if ((candsBAT = BATdescriptor(*cands)) == NULL) {
+        throw(MAL, "algebra.dimensionLeftfetchjoin", RUNTIME_OBJECT_MISSING);
+    }
+	resSize = BATcount(candsBAT);
+	/*for each oid in the candsBAT find the real value of the dimension */
+ 	switch(dimension->type) { \
+        case TYPE_bte: \
+			computeValues(bte);
+            break;
+        case TYPE_sht: 
+   			computeValues(sht);
+        	break;
+        case TYPE_int:
+   			computeValues(int);
+        	break;
+        case TYPE_wrd:
+   			computeValues(wrd);
+        	break;
+        case TYPE_oid:
+   			computeValues(oid);
+        	break;
+        case TYPE_lng:
+   			computeValues(lng);
+    	    break;
+        case TYPE_dbl:
+   			computeValues(dbl);
+	        break;
+        case TYPE_flt:
+   			computeValues(flt);
+   	    	break;
+		default:
+			throw(MAL, "algebra.dimensionLeftfetchjoin", "Dimension type not supported\n");
+    }
+
+	BATsetcount(resBAT, resSize);
+	BATseqbase(resBAT, 0);
     *result = resBAT->batCacheid;
     BBPkeepref(*result);
     return MAL_SUCCEED;
 
 }
 
+#if 0
 static str
 ALGbinary(bat *result, const bat *lid, const bat *rid, BAT* (*func)(BAT *, BAT *), const char *name)
 {
@@ -42,6 +201,70 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT* (*func)(BAT *, BAT *
 
 str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid) {
     return ALGbinary(result, lid, rid, dimensionBATproject_wrap, "algebra.dimension_leftfetchjoin");
+}
+#endif
+
+str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const ptr *dimsCand, const bat* oidsCand, 
+							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+	gdk_array *array = (gdk_array*)*dims; //the sizes of all the dimensions (I treat them as indices and I do not care about the exact values)
+	gdk_dimension *dimension = (gdk_dimension*)*dim;
+
+	gdk_cells *dimensionsCandidates = NULL;
+	BAT *candidatesBAT = NULL;
+	gdk_cells *dimensionsResult = cells_new();
+
+	int type;
+	const void *nil;
+
+	(void)(bit*)li;
+	(void)(bit*)hi;
+	(void)(bit*)anti;
+	
+	//if there are not candidates then everything is a candidate
+	if(!dimsCand && !oidsCand) {
+		dimensionsCandidates = sizesToDimensions(array);
+		//create an empy candidates BAT
+		 if((candidatesBAT = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
+            throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
+		BATsetcount(candidatesBAT, 0);
+		BATseqbase(candidatesBAT, 0);
+	}
+	else {
+		dimensionsCandidates = (gdk_cells*)*dimsCand;
+		if ((candidatesBAT = BATdescriptor(*oidsCand)) == NULL) {
+        	throw(MAL, "algebra.dimensionSubselect", RUNTIME_OBJECT_MISSING);
+    	}
+	}
+
+
+    type = dimension->type;
+    nil = ATOMnilptr(type);
+    type = ATOMbasetype(type);
+
+    if(ATOMcmp(type, low, high) == 0) { //point selection   
+		//find the idx of the value
+		oid qualifyingOID = equalIdx(dimension, low); 
+		//the dimension comes from the original this the elemenst and initial elements num is the same
+		gdk_dimension *resDimension = createDimension_oid(1, dimension->initialElementsNum, qualifyingOID, qualifyingOID, 1); //step cannot be 0 or infinite loop
+		
+		//merge the dimension in the candidates with the result of this operation
+		dimensionsResult = mergeCandidateDimensions(dimensionsCandidates, resDimension);		
+
+	} else if(ATOMcmp(type, high, nil) == 0) { //find values greater than low
+		return MAL_SUCCEED;
+	} else if(ATOMcmp(type, low, nil) == 0) { //find values lower than high
+		return MAL_SUCCEED;
+	}
+
+	*dimsRes = dimensionsResult;
+	BBPkeepref(*oidsRes = candidatesBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str ALGdimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, 
+							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+	return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, NULL, NULL, low, high, li, hi, anti);
 }
 
 str ALGmbrproject(bat *result, const bat *bid, const bat *sid, const bat* rid) {
@@ -105,5 +328,33 @@ str ALGmbrsubselect(bat *result, const bat *bid, const bat *sid, const bat *cid)
 
 str ALGmbrsubselect2(bat *result, const bat *bid, const bat *sid) {
     return ALGmbrsubselect(result, bid, sid, NULL);
+}
+
+str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {	
+	gdk_cells *candidatesDimensions = (gdk_cells*)*candDims;
+	BAT *candidatesBAT, *resBAT;
+	BUN resSize = 1;
+	dim_node *n;
+	oid *resOIDs = NULL;
+
+	if ((candidatesBAT = BATdescriptor(*candBAT)) == NULL) {
+       	throw(MAL, "algebra.cellsProject", RUNTIME_OBJECT_MISSING);
+    }
+
+	/*combine the oidsDimensions in order to get the global oids (the cells)*/
+	for(n=candidatesDimensions->h; n; n=n->next)
+		resSize *= n->data->elementsNum;	
+fprintf(stderr, "size = %u\n", (unsigned int)resSize);		
+	/*the size of the result is the same as the number of cells in the candidatesDimensions */
+	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)))
+		throw(MAL, "algebra.cellsProject", "Problem allocating new array");
+	resOIDs = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+	resSize = qualifyingOIDs(1, 1, candidatesDimensions, &resOIDs);
+	BATsetcount(resBAT, resSize);
+	BATseqbase(resBAT, 0);
+    *result = resBAT->batCacheid;
+    BBPkeepref(*result);
+
+	return MAL_SUCCEED;
 }
 

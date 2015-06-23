@@ -1217,6 +1217,9 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 		t = c->t;
     dels = stmt_tid(sql->sa, t);
 
+//	if(isArray(t))
+//		list_append(l, stmt_cells(sql->sa, t));
+
 	/* add aliases */
 	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -1254,12 +1257,12 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 		} else {
 			if(exp->type == e_dimension) {
 				sql_dimension *dim = find_sql_dimension(t, oname);
-				s = stmt_dimension(sql->sa, dim, t);
+				s = stmt_dimension(sql->sa, dim);
 			} else {
 				sql_column *c = find_sql_column(t, oname);
 								
-				if(isArray(t) && exp->f) { //carry the default value and join with the cells
-					s =stmt_column(sql->sa, c, t);
+				if(isArray(t) && exp->f) { //carry the default value
+					s =stmt_column(sql->sa, c);
 					s->op1 = exp_bin(sql, exp->f, NULL, NULL, NULL, NULL, NULL, NULL);
 				} else
 					s = stmt_col(sql, c, dels);
@@ -1270,7 +1273,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 		s->cname = exp->name;
 		list_append(l, s);
 	}
-
+	
 	return stmt_list(sql->sa, l);
 }
 
@@ -2412,6 +2415,9 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	if (sub)
 		pl->expected_cnt = list_length(sub->op4.lval);
 	psub = stmt_list(sql->sa, pl);
+//	//if an array we need the cells
+//	if(((stmt*)sub->op4.lval->h->data)->type == st_cells)
+//		list_append(pl, ((stmt*)sub->op4.lval->h->data));	
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(sql, exp, sub, psub, NULL, NULL, NULL, NULL);

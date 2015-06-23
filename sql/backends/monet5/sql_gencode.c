@@ -137,17 +137,30 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
-		sql_subtype *t = tail_type(c);
-		char *tname = table_name(sql->sa, c);
-		char *sname = schema_name(sql->sa, c);
+		sql_subtype *t;
+		char *tname;
+		char *sname;
 		char *_empty = "";
-		char *tn = (tname) ? tname : _empty;
-		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(sql->sa, c);
-		char *ntn = sql_escape_ident(tn);
-		char *nsn = sql_escape_ident(sn);
+		char *tn;
+		char *sn;
+		char *cn;
+		char *ntn;
+		char *nsn;
 		size_t fqtnl;
 		char *fqtn;
+
+		if(c->type == st_cells) {
+			fprintf(stderr, "dump_header: st_cells in output ignored\n");
+			continue;
+		}
+		t = tail_type(c);
+		tname = table_name(sql->sa, c);
+		sname = schema_name(sql->sa, c);
+		tn = (tname) ? tname : _empty;
+		sn = (sname) ? sname : _empty;
+		cn = column_name(sql->sa, c);
+		ntn = sql_escape_ident(tn);
+		nsn = sql_escape_ident(sn);
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
 			fqtn = NEW_ARRAY(char, fqtnl);
@@ -1418,9 +1431,34 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				switch (s->flag) {
 				case cmp_equal:{
 					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
+					if(s->op1->type == st_dimension) {
+						char nme[SMALLBUFSIZ];
+                    	int uval = -1;
+
+                    	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+                    	uval = findVariable(mb, nme);
+                    	assert(uval >= 0);
+
+						setVarType(mb, getArg(q, 0), TYPE_ptr);
+						setVarUDFtype(mb, getArg(q, 0));
+						q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+						q = pushArgument(mb, q, l); //all the dimensions
+						q = pushArgument(mb, q, uval); //the current dimension
+
+						if(sub > 0) { //candidates
+							snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+	                    	uval = findVariable(mb, nme);
+    	                	assert(uval >= 0);
+
+							q = pushArgument(mb, q, sub);
+							q = pushArgument(mb, q, uval);
+						}
+					} else {
+						q = pushArgument(mb, q, l);
+
+						if (sub > 0)
+							q = pushArgument(mb, q, sub);
+					}
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, r);
 					q = pushBit(mb, q, TRUE);
@@ -1489,9 +1527,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
 				}
 			}
-			if (q)
+			if (q) {
 				s->nr = getDestVar(q);
-			else
+				if(s->op1->type == st_dimension) { 
+					/* rename second result */
+					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+				}
+			} else
 				s->nr = newTmpVariable(mb, TYPE_any);
 		}
 			break;
@@ -1747,6 +1789,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt2(mb, algebraRef, leftjoinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
+				if(s->op2->type == st_dimension) {
+					char nme[SMALLBUFSIZ];
+                    int uval = -1;
+
+                    snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
+                    uval = findVariable(mb, nme);
+                    assert(uval >= 0);
+					q = pushArgument(mb, q, uval);
+				}
+
+
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
@@ -2646,22 +2699,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 		} break;
 		case st_cells: {
-			sql_table *t = s->op4.tval;
+			int l;
+			char nme[SMALLBUFSIZ];
+			int uval = -1;
 
-			q = newStmt1(mb, sqlRef, "get_cells");
-			if (q == NULL)
-				return -1;
-			setVarType(mb, getArg(q, 0), TYPE_ptr);
-			setVarUDFtype(mb, getArg(q, 0));
-			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, t);
-			q = pushStr(mb, q, t->base.name);
+            if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
+                return -1;
+                        
+            snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+            uval = findVariable(mb, nme);
+            assert(uval >= 0);
+
+			q = newStmt2(mb, algebraRef, "cellsProject");
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
+			q = pushArgument(mb, q, l); //the candidates as dimensions
+        	q = pushArgument(mb, q, uval); //the candidates as BAT
+
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
-			/* rename second result */
-			renameVariable(mb, getArg(q, 1), "X_%d", s->nr);
 		} break;
 		case st_dimension: {
 #if 0
@@ -2681,6 +2737,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb, getArg(q, 0));
 #endif	
+			setVarType(mb, getArg(q, 0), TYPE_ptr);
+			setVarUDFtype(mb, getArg(q, 0));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
@@ -2688,6 +2747,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			/* rename second result */
+			renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+
 		} break;
 		}
 		if (mb->errors)
