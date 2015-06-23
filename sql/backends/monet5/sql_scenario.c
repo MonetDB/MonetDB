@@ -837,103 +837,122 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 /*
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
- * of the query. This feature is extended with
- * a SQL variable to identify which trace flags are needed.
- * The control term 'keep' avoids clearing the performance tables,
- * which makes it possible to inspect the results later using
- * SQL itself. (Script needed to bind the BATs to a SQL table.)
+ * of the query. 
  */
 static void
-SQLsetTrace(backend *be, Client c, bit onoff)
+SQLsetTrace(backend *be, Client cntxt, bit onoff)
 {
-	int i = 0, j = 0;
-	InstrPtr q;
-	int n, r;
-#define MAXCOLS 24
-	int rs[MAXCOLS];
-	str colname[MAXCOLS];
-	int coltype[MAXCOLS];
-	MalBlkPtr mb = c->curprg->def;
-	str traceFlag, t, s, def = GDKstrdup("show,ticks,stmt");
+	InstrPtr q, resultset;
+	InstrPtr tbls, cols, types, clen, scale;
+	MalBlkPtr mb = cntxt->curprg->def;
+	int k;
 
-	traceFlag = stack_get_string(be->mvc, "trace");
-	if (traceFlag && *traceFlag) {
-		GDKfree(def);
-		def = GDKstrdup(traceFlag);
-	}
-	t = def;
-
+	(void) be;
 	if (onoff) {
-		if (strstr(def, "keep") == 0)
-			(void) newStmt(mb, "profiler", "reset");
 		q= newStmt(mb, "profiler", "stethoscope");
-		(void) pushInt(mb,q,1);
-	} else if (def && strstr(def, "show")) {
+		(void) pushInt(mb,q,0);
+	} else {
 		(void) newStmt(mb, "profiler", "stop");
+		/* cook a new resultSet instruction */
+		resultset = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(resultset, sqlRef);
+		setFunctionId(resultset, resultSetRef);
+	    getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
 
-		do {
-			s = t;
-			t = strchr(t + 1, ',');
-			if (t)
-				*t = 0;
-			if (strcmp("keep", s) && strcmp("show", s)) {
-				q = newStmt(mb, profilerRef, "getTrace");
-				q = pushStr(mb, q, s);
-				n = getDestVar(q);
-				rs[i] = getDestVar(q);
-				colname[i] = s;
-				/* FIXME: type for name should come from
-				 * mal_profiler.mx, second FIXME: check the user
-				 * supplied values */
-				if (strcmp(s, "time") == 0 || strcmp(s, "pc") == 0 || strcmp(s, "stmt") == 0) {
-					coltype[i] = TYPE_str;
-				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "tmpspace") == 0 || 
-						   strcmp(s, "inblock") == 0 || strcmp(s, "oublock") == 0 || strcmp(s,"minflt") == 0 ||
-						   strcmp(s,"majflt") ==0  || strcmp(s,"nvcsw") == 0) {
-					coltype[i] = TYPE_lng;
-				} else if ( strcmp(s,"event") == 0 || strcmp(s, "thread") == 0) {
-					coltype[i] = TYPE_int;
-				}
-				i++;
-				if (i == MAXCOLS)	/* just ignore the rest */
-					break;
-			}
-		} while (t++);
 
-		if (i > 0) {
-			q = newStmt(mb, sqlRef, "resultSet");
-			q = pushInt(mb, q, i);
-			q = pushInt(mb, q, 1);
-			q = pushArgument(mb, q, rs[0]);
-			r = getDestVar(q);
+		/* build table defs */
+		tbls = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
+		tbls = pushType(mb, tbls, TYPE_oid);
+		tbls = pushType(mb, tbls, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(tbls,0));
 
-			for (j = 0; j < i; j++) {
-				q = newStmt(mb, sqlRef, "rsColumn");
-				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, ".trace");
-				q = pushStr(mb, q, colname[j]);
-				if (coltype[j] == TYPE_str) {
-					q = pushStr(mb, q, "varchar");
-					q = pushInt(mb, q, 1024);
-				} else if (coltype[j] == TYPE_lng) {
-					q = pushStr(mb, q, "bigint");
-					q = pushInt(mb, q, 64);
-				} else if (coltype[j] == TYPE_int) {
-					q = pushStr(mb, q, "int");
-					q = pushInt(mb, q, 32);
-				}
-				q = pushInt(mb, q, 0);
-				(void) pushArgument(mb, q, rs[j]);
-			}
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,getArg(tbls,0));
+		q= pushStr(mb,q,".trace");
+		k= getArg(q,0);
 
-			q = newStmt(mb, ioRef, "stdout");
-			n = getDestVar(q);
-			q = newStmt(mb, sqlRef, "exportResult");
-			q = pushArgument(mb, q, n);
-			(void) pushArgument(mb, q, r);
-		}
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,k);
+		q= pushStr(mb,q,".trace");
+
+		/* build colum defs */
+		cols = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
+		cols = pushType(mb, cols, TYPE_oid);
+		cols = pushType(mb, cols, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(cols,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,getArg(cols,0));
+		q= pushStr(mb,q,"ticks");
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(cols,0));
+		q= pushStr(mb,q,"statement");
+
+		/* build type defs */
+		types = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
+		types = pushType(mb, types, TYPE_oid);
+		types = pushType(mb, types, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(types,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(types,0));
+		q= pushStr(mb,q,"bigint");
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, k);
+		q= pushStr(mb,q,"clob");
+
+		/* build scale defs */
+		clen = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
+		clen = pushType(mb, clen, TYPE_oid);
+		clen = pushType(mb, clen, TYPE_int);
+		resultset= pushArgument(mb,resultset, getArg(clen,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(clen,0));
+		q= pushInt(mb,q,64);
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, k);
+		q= pushInt(mb,q,0);
+
+		/* build scale defs */
+		scale = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
+		scale = pushType(mb, scale, TYPE_oid);
+		scale = pushType(mb, scale, TYPE_int);
+		resultset= pushArgument(mb,resultset, getArg(scale,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(scale,0));
+		q= pushInt(mb,q,0);
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb, q, k);
+		q= pushInt(mb,q,0);
+
+		/* add the ticks column */
+
+		q = newStmt(mb, profilerRef, "getTrace");
+		q = pushStr(mb, q, putName("ticks",5));
+		resultset= pushArgument(mb,resultset, getArg(q,0));
+
+		/* add the stmt column */
+		q = newStmt(mb, profilerRef, "getTrace");
+		q = pushStr(mb, q, putName("stmt",4));
+		resultset= pushArgument(mb,resultset, getArg(q,0));
+
+		pushInstruction(mb,resultset);
 	}
-	GDKfree(def);
 }
 
 #define MAX_QUERY 	(64*1024*1024)
@@ -1230,8 +1249,8 @@ recompilequery:
 			}
 			c->curprg->def = mb;
 		}
-		/* we know more in this case than
-		   chkProgram(c->fdout, c->nspace, c->curprg->def); */
+		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
+		/* we know more in this case than chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			showErrors(c);
 			/* restore the state */
