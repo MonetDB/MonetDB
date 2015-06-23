@@ -901,7 +901,6 @@ developer, but if you do want to test, this is the package you need.
 
 %{configure} \
 	--enable-assert=no \
-	--enable-bits=%{bits} \
 	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \

@@ -1,0 +1,48 @@
+stdout of test 'cast_to_num.Bug-3744` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 21:30:40 >  
+# 21:30:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30165" "--set" "mapi_usock=/var/tmp/mtest-9124/.s.monetdb.30165" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:30:40 >  
+
+# MonetDB 5 server v11.21.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30165/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9124/.s.monetdb.30165
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.29'
+# Finished reading the write-ahead log 'sql_logs/sql/log.29'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:30:40 >  
+# 21:30:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9124" "--port=30165"
+# 21:30:40 >  
+
+#select cast(cast(13.8 as decimal(10,7)) as int);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 13	]
+#select cast(cast(13.8 as double) as int);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 13	]
+
+# 21:30:41 >  
+# 21:30:41 >  "Done."
+# 21:30:41 >  
+
