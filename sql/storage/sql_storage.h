@@ -10,6 +10,7 @@
 #define SQL_STORAGE_H
 
 #include "sql_catalog.h"
+#include "gdk_logger.h"
 
 #define COLSIZE	1024
 
@@ -263,14 +264,19 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
+typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version, int keep_persisted_log_files);
+typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int catalog_version, const char *slave_logdir);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
-typedef int (*logger_cleanup_fptr) (void);
+typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
+typedef lng (*logger_read_last_transaction_id_fptr)(void);
+typedef lng (*logger_get_transaction_drift_fptr)(void);
+
+typedef int (*logger_reload_fptr) (void);
 
 typedef int (*log_isnew_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
@@ -279,12 +285,17 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 
 typedef struct logger_functions {
 	logger_create_fptr create;
+	logger_create_shared_fptr create_shared;
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
+	logger_read_last_transaction_id_fptr read_last_transaction_id;
+	logger_get_transaction_drift_fptr get_transaction_drift;
+
+	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
@@ -305,8 +316,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int
- store_init(int debug, store_type store, int readonly, int singleuser, const char *logdir, backend_stack stk);
+extern int store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk);
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);

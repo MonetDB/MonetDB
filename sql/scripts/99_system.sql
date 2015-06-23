@@ -14,3 +14,6 @@ update _tables set system = true;
 
 -- only system schemas until now
 update schemas set system = true;
+
+-- make sure all gets commited
+COMMIT;

@@ -34,13 +34,21 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 
+int keep_persisted_log_files = 0;
+int create_shared_logger = 0;
+int shared_drift_threshold = -1;
+
+backend_stack backend_stk;
+
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
+logger_functions shared_logger_funcs;
 
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
 static int bs_debug = 0;
+static int logger_debug = 0;
 
 #define MAX_SPARES 32
 static sql_trans *spare_trans[MAX_SPARES];
@@ -208,8 +216,10 @@ destroy_spare_transactions(void)
 	int i, s = spares;
 
 	spares = MAX_SPARES; /* ie now there not spared anymore */
-	for (i = 0; i < s; i++) 
+	for (i = 0; i < s; i++) {
 		sql_trans_destroy(spare_trans[i]);
+	}
+	spares = 0;
 }
 
 static int
@@ -1309,43 +1319,21 @@ store_schema_number(void)
 	return schema_number;
 }
 
-int
-store_init(int debug, store_type store, int readonly, int singleuser, const char *logdir, backend_stack stk)
-{
-	sqlid id = 0;
-	lng lng_store_oid;
+static int
+store_load(void) {
 	int first = 1;
-	sql_schema *s, *p = NULL;
-	sql_table *t, *types, *funcs, *args;
-	sql_trans *tr;
-	int v = 1;
+
 	sql_allocator *sa;
+	sql_trans *tr;
+	sql_table *t, *types, *funcs, *args;
+	sql_schema *s, *p = NULL;
 
-	bs_debug = debug&2;
-
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
-#endif
-	MT_lock_set(&bs_lock, "store_init");
-
-	/* initialize empty bats */
-	if (store == store_bat) 
-		bat_utils_init();
-	if (store == store_bat) {
-		bat_storage_init(&store_funcs);
-		bat_table_init(&table_funcs);
-		bat_logger_init(&logger_funcs);
-	}
-	active_store_type = store;
-	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, logdir, CATALOG_VERSION*v) == LOG_ERR) {
-		MT_lock_unset(&bs_lock, "store_init");
-		return -1;
-	}
+	lng lng_store_oid;
+	sqlid id = 0;
 
 	sa = sa_create();
-	MT_lock_unset(&bs_lock, "store_init");
-	types_init(sa, debug);
+	MT_lock_unset(&bs_lock, "store_load");
+	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
 	assert( store_oid <= FUNC_OIDS );
@@ -1353,24 +1341,24 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 	store_oid = FUNC_OIDS;
 
 	sequences_init();
-	gtrans = tr = create_trans(sa, stk);
-	active_transactions = sa_list(sa); 
-
-	store_readonly = readonly;
-	store_singleuser = singleuser;
+	gtrans = tr = create_trans(sa, backend_stk);
+	active_transactions = sa_list(sa);
 
 	if (logger_funcs.log_isnew()) {
-		/* cannot initialize database in readonly mode */
-		if (readonly)
+		/* cannot initialize database in readonly mode
+		 * unless this is a slave instance with a read-only/shared logger */
+		if (store_readonly && !create_shared_logger) {
 			return -1;
-		tr = sql_trans_create(stk, NULL, NULL);
+		}
+		tr = sql_trans_create(backend_stk, NULL, NULL);
 	} else {
 		first = 0;
 	}
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
-	if (!first) 
+	if (!first) {
 		s->base.flag = TR_OLD;
+	}
 
 	t = bootstrap_create_table(tr, s, "schemas");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1496,8 +1484,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		bootstrap_create_column(tr, t, "nr", "int", 32);
 
 		if (!p) {
-			p = s; 
-
+			p = s;
 			/* now the same tables for temporaries */
 			s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN, USER_MONETDB);
 		} else {
@@ -1513,19 +1500,85 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 		insert_aggrs(tr, funcs, args);
 		insert_schemas(tr);
 
-		if (sql_trans_commit(tr) != SQL_OK)
+		if (sql_trans_commit(tr) != SQL_OK) {
 			fprintf(stderr, "cannot commit initial transaction\n");
+		}
 		sql_trans_destroy(tr);
 	}
 
 	id = store_oid; /* db objects up till id are already created */
-	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	if (!create_shared_logger) {
+		logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	} else {
+		shared_logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	}
 	prev_oid = store_oid = (sqlid)lng_store_oid;
 
 	/* load remaining schemas, tables, columns etc */
 	if (!first)
 		load_trans(gtrans, id);
 	return first;
+}
+
+int
+store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
+{
+
+	int v = 1;
+
+	backend_stk = stk;
+	logger_debug = debug;
+	bs_debug = debug&2;
+	store_readonly = readonly;
+	store_singleuser = singleuser;
+	/* get the set shared_drift_threshold
+	 * we will need it later in store_manager */
+	shared_drift_threshold = log_settings->shared_drift_threshold;
+	/* get the set shared_drift_threshold
+	 * we will need it later when calling logger_cleanup */
+	keep_persisted_log_files = log_settings->keep_persisted_log_files;
+
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&bs_lock, "SQL_bs_lock");
+#endif
+	MT_lock_set(&bs_lock, "store_init");
+
+	/* check if all parameters for a shared log are set */
+	if (store_readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
+		create_shared_logger = 1;
+	}
+
+	/* initialize empty bats */
+	if (store == store_bat)
+		bat_utils_init();
+	if (store == store_bat) {
+		bat_storage_init(&store_funcs);
+		bat_table_init(&table_funcs);
+		bat_logger_init(&logger_funcs);
+		if (create_shared_logger) {
+			bat_logger_init_shared(&shared_logger_funcs);
+		}
+	}
+	active_store_type = store;
+	if (!logger_funcs.create ||
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, keep_persisted_log_files) == LOG_ERR) {
+		MT_lock_unset(&bs_lock, "store_init");
+		return -1;
+	}
+
+	if (create_shared_logger) {
+		/* create a read-only logger for the shared directory */
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store_init creating shared logger\n");
+#endif
+		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
+			MT_lock_unset(&bs_lock, "store_init");
+			return -1;
+		}
+	}
+
+	/* create the initial store structure or re-load previous data */
+	return store_load();
 }
 
 static int logging = 0;
@@ -1550,17 +1603,20 @@ store_exit(void)
 		sequences_exit();
 		MT_lock_set(&bs_lock, "store_exit");
 	}
-	if (spares > 0) 
+	if (spares > 0)
 		destroy_spare_transactions();
 
 	logger_funcs.destroy();
+	if (create_shared_logger) {
+		shared_logger_funcs.destroy();
+	}
 
 	/* Open transactions have a link to the global transaction therefore
 	   we need busy waiting until all transactions have ended or
 	   (current implementation) simply keep the gtrans alive and simply
 	   exit (but leak memory).
-	 */ 
-	if (!transactions) { 
+	 */
+	if (!transactions) {
 		sql_trans_destroy(gtrans);
 		gtrans = NULL;
 	}
@@ -1583,7 +1639,7 @@ store_apply_deltas(void)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
 	if (logging && res == LOG_OK)
-		res = logger_funcs.cleanup();
+		res = logger_funcs.cleanup(keep_persisted_log_files);
 	logging = 0;
 }
 
@@ -1593,34 +1649,76 @@ store_manager(void)
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
+		lng shared_transactions_drift = -1;
 
 		for (t = 30000; t > 0; t -= 50) {
 			MT_sleep_ms(50);
 			if (GDKexiting())
 				return;
 		}
-		MT_lock_set(&bs_lock, "store_manager");
-		if (GDKexiting() || logger_funcs.changes() < 1000000) {
-			MT_lock_unset(&bs_lock, "store_manager");
-			continue;
+		/* check if we have a shared logger as well */
+		if (create_shared_logger) {
+			/* get the shared transactions drift */
+			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
+#ifdef STORE_DEBUG
+	fprintf(stderr, "#store_manager shared_transactions_drift is " LLFMT "\n", shared_transactions_drift);
+#endif
+			if (shared_transactions_drift == LOG_ERR) {
+				GDKfatal("shared write-ahead log last transaction read failure");
+			}
 		}
-		while (store_nr_active) { /* find a moment to flush */
-			MT_lock_unset(&bs_lock, "store_manager");
-			MT_sleep_ms(50);
+
+		MT_lock_set(&bs_lock, "store_manager");
+        if (GDKexiting() || (logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+            MT_lock_unset(&bs_lock, "store_manager");
+            continue;
+        }
+        while (store_nr_active) { /* find a moment to flush */
+            MT_lock_unset(&bs_lock, "store_manager");
+            MT_sleep_ms(50);
+            MT_lock_set(&bs_lock, "store_manager");
+        }
+
+		if (create_shared_logger) {
+			/* (re)load data from shared write-ahead log */
+			res = shared_logger_funcs.reload();
+			if (res != LOG_OK) {
+				MT_lock_unset(&bs_lock, "store_manager");
+				GDKfatal("shared write-ahead log loading failure");
+			}
+			/* destroy all global transactions
+			 * we will re-load the new later */
+			sql_trans_destroy(gtrans);
+			destroy_spare_transactions();
+
+			/* re-set the store_oid */
+			store_oid = 0;
+			/* reload the store and the global transactions */
+			res = store_load();
+			if (res < 0) {
+				MT_lock_unset(&bs_lock, "store_manager");
+				GDKfatal("shared write-ahead log store re-load failure");
+			}
 			MT_lock_set(&bs_lock, "store_manager");
 		}
+
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
-		if (store_funcs.gtrans_update)
+		if (store_funcs.gtrans_update) {
 			store_funcs.gtrans_update(gtrans);
+		}
 		res = logger_funcs.restart();
+
 		MT_lock_unset(&bs_lock, "store_manager");
-		if (logging && res == LOG_OK)
-			res = logger_funcs.cleanup();
+		if (logging && res == LOG_OK) {
+			res = logger_funcs.cleanup(keep_persisted_log_files);
+		}
+
 		MT_lock_set(&bs_lock, "store_manager");
 		logging = 0;
 		MT_lock_unset(&bs_lock, "store_manager");
+
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
 	}

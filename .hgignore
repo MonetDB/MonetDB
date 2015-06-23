@@ -91,3 +91,8 @@ NT/sql
 NT/testing
 NT/tools
 NT/unistd.h
+
+syntax: regexp
+^java/build$
+syntax: regexp
+^java/target$

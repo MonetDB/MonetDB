@@ -12,6 +12,7 @@
 #include "sql_types.h" /* EC_POS */
 
 logger *bat_logger = NULL;
+logger *bat_logger_shared = NULL;
 
 static int
 bl_preversion( int oldversion, int newversion)
@@ -149,12 +150,23 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(int debug, const char *logdir, int cat_version)
+bl_create(int debug, const char *logdir, int cat_version, int keep_persisted_log_files)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
+	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion, keep_persisted_log_files);
 	if (bat_logger)
+		return LOG_OK;
+	return LOG_ERR;
+}
+
+static int
+bl_create_shared(int debug, const char *logdir, int cat_version, const char *local_logdir)
+{
+	if (bat_logger_shared)
+		return LOG_ERR;
+	bat_logger_shared = logger_create_shared(debug, "sql", logdir, local_logdir, cat_version, bl_preversion, bl_postversion);
+	if (bat_logger_shared)
 		return LOG_OK;
 	return LOG_ERR;
 }
@@ -171,6 +183,18 @@ bl_destroy(void)
 	}
 }
 
+static void
+bl_destroy_shared(void)
+{
+	logger *l = bat_logger_shared;
+
+	bat_logger_shared = NULL;
+	if (l) {
+		logger_exit(l);
+		logger_destroy(l);
+	}
+}
+
 static int 
 bl_restart(void)
 {
@@ -180,10 +204,18 @@ bl_restart(void)
 }
 
 static int
-bl_cleanup(void)
+bl_cleanup(int keep_persisted_log_files)
 {
 	if (bat_logger)
-		return logger_cleanup(bat_logger);
+		return logger_cleanup(bat_logger, keep_persisted_log_files);
+	return LOG_OK;
+}
+
+static int
+bl_cleanup_shared(int keep_persisted_log_files)
+{
+	if (bat_logger_shared)
+		return logger_cleanup(bat_logger_shared, keep_persisted_log_files);
 	return LOG_OK;
 }
 
@@ -193,6 +225,22 @@ bl_changes(void)
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
+static lng
+bl_read_last_transaction_id_shared(void)
+{
+	return logger_read_last_transaction_id(bat_logger_shared, bat_logger_shared->dir, LOGFILE, bat_logger_shared->dbfarm_role);
+}
+
+static lng
+bl_get_transaction_drift_shared(void)
+{
+	lng res = bl_read_last_transaction_id_shared();
+	if (res != LOG_ERR) {
+		return MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max);
+	}
+	return res;
+}
+
 static int 
 bl_get_sequence(int seq, lng *id)
 {
@@ -200,9 +248,24 @@ bl_get_sequence(int seq, lng *id)
 }
 
 static int
+bl_get_sequence_shared(int seq, lng *id)
+{
+	return logger_sequence(bat_logger_shared, seq, id);
+}
+
+static int
 bl_log_isnew(void)
 {
 	if (BATcount(bat_logger->catalog_bid) > 10) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+bl_log_isnew_shared(void)
+{
+	if (BATcount(bat_logger_shared->catalog_bid) > 10) {
 		return 0;
 	}
 	return 1;
@@ -226,6 +289,12 @@ bl_sequence(int seq, lng id)
 	return log_sequence(bat_logger, seq, id);
 }
 
+static int
+bl_reload_shared(void)
+{
+	return logger_reload(bat_logger_shared);
+}
+
 int 
 bat_logger_init( logger_functions *lf )
 {
@@ -239,5 +308,19 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
+	return LOG_OK;
+}
+
+int
+bat_logger_init_shared( logger_functions *lf )
+{
+	lf->create_shared = bl_create_shared;
+	lf->destroy = bl_destroy_shared;
+	lf->cleanup = bl_cleanup_shared;
+	lf->get_sequence = bl_get_sequence_shared;
+	lf->read_last_transaction_id = bl_read_last_transaction_id_shared;
+	lf->get_transaction_drift = bl_get_transaction_drift_shared;
+	lf->log_isnew = bl_log_isnew_shared;
+	lf->reload = bl_reload_shared;
 	return LOG_OK;
 }

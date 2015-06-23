@@ -1487,6 +1487,8 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define PERSISTENT		0
 #define TRANSIENT		1
+#define LOG_DIR			2
+#define SHARED_LOG_DIR	3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
@@ -1568,6 +1570,7 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export char *GDKfilepath_long(int farmid, const char *dir, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*

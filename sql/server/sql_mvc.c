@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "rel_select.h"
+#include "gdk_logger.h"
 
 static int mvc_debug = 0;
 
@@ -25,15 +26,38 @@ int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
-	char *logdir = "sql_logs";
+
+	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
+	/* Set the default WAL directory. "sql_logs" by default */
+	log_settings->logdir = "sql_logs";
+	/* Get and pass on the WAL directory location, if set */
+	if (GDKgetenv("gdk_logdir") != NULL) {
+		log_settings->logdir = GDKgetenv("gdk_logdir");
+	}
+	/* Get and pass on the shared WAL directory location, if set */
+	log_settings->shared_logdir = GDKgetenv("gdk_shared_logdir");
+	/* Get and pass on the shared WAL drift threshold, if set.
+	 * -1 by default, meaning it should be ignored, since it is not set */
+	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
+
+	/* Get and pass on the flag how many WAL files should be preserved.
+	 * 0 by default - keeps only the current WAL file. */
+	log_settings->keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
 
 	mvc_debug = debug&4;
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
+	if (mvc_debug) {
+		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
+		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings->keep_persisted_log_files);
+		if (log_settings->shared_logdir != NULL) {
+			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings->shared_logdir);
+		}
+		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings->shared_drift_threshold);
+	}
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, ro, su, logdir, stk)) < 0) {
+
+	if ((first = store_init(debug, store, ro, su, log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -209,7 +233,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 		store_unlock();
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
-build up the hash (not copyied in the trans dup)) */ 
+build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
@@ -242,28 +266,29 @@ build up the hash (not copyied in the trans dup)) */
 		return 0;
 	}
 
-	/* validation phase 
+	/*
 	while (tr->schema_updates && store_nr_active > 1) {
 		store_unlock();
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
-			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurency conflicts, will ROLLBACK instead");
+			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
 		store_lock();
 	}
 	 * */
+	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("40000!COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
+			char *msg = sql_message("40000!COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -1572,4 +1597,3 @@ mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
 }
-
