@@ -561,10 +561,9 @@ str mvc_get_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (dim == NULL)
 		throw(SQL, "sql.get_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 
-	cells->dimsNum = t->dimensions.set->cnt+1; //dimensions start from 1
+	cells->dimsNum = t->dimensions.set->cnt;
 	cells->dimSizes = GDKmalloc(sizeof(BUN)*cells->dimsNum);
-	cells->dimSizes[0] = 0;
-	for(i=1, n=t->dimensions.set->h; n; n=n->next, i++) {
+	for(i=0, n=t->dimensions.set->h; n; n=n->next, i++) {
 		sql_dimension *dim_sql = (sql_dimension*)n->data;
 		gdk_dimension *dim_gdk = generaliseDimension(dim_sql);
 	

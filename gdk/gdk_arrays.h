@@ -193,6 +193,7 @@ do {\
     })
 
 
+gdk_export gdk_return freeDimension(gdk_dimension *dim);
 BUN dimension_void_replace_bat(BAT *resBAT, BAT *oidsBAT, BAT *dimensionBAT, bit force);
 
 //BAT* projectDimension(sql_dimension *oidsDim, sql_dimension *valuesDim);

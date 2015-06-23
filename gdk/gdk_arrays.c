@@ -80,7 +80,7 @@ static dim_node* findNode(gdk_cells *cells, int dimNum) {
 	return n;
 }
 
-static gdk_return freeDimension(gdk_dimension *dim) {
+gdk_return freeDimension(gdk_dimension *dim) {
 	GDKfree(dim->min);
 	GDKfree(dim->max);
 	GDKfree(dim->step);
