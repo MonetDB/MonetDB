@@ -311,7 +311,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 static str
 validatePipe(MalBlkPtr mb)
 {
-	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE;
+	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
 
 	if (mb == NULL || getInstrPtr(mb, 1) == 0)
@@ -319,18 +319,21 @@ validatePipe(MalBlkPtr mb)
 	if (getFunctionId(getInstrPtr(mb, 1)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, 1)), "inline"))
 		throw(MAL, "optimizer.validate", "'inline' should be the first\n");
 
-	/* deadcode should be used */
 	for (i = 1; i < mb->stop - 1; i++)
 		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
 			if (strcmp(getFunctionId(getInstrPtr(mb, i)), "deadcode") == 0)
 				deadcode = TRUE;
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "remap") == 0)
+				remap = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mitosis") == 0)
 				mitosis = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mergetable") == 0)
 				mergetable = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "multiplex") == 0)
 				multiplex = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0 && i == mb->stop - 2)
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "generator") == 0)
+				generator = TRUE;
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
 			throw(MAL, "optimizer.validate", "Missing optimizer call\n");
@@ -338,12 +341,17 @@ validatePipe(MalBlkPtr mb)
 	if (mitosis == TRUE && mergetable == FALSE)
 		throw(MAL, "optimizer.validate", "'mitosis' needs 'mergetable'\n");
 
+	/* several optimizer should be used */
 	if (multiplex == 0)
 		throw(MAL, "optimizer.validate", "'multiplex' should be used\n");
 	if (deadcode == FALSE)
-		throw(MAL, "optimizeri.validate", "'deadcode' should be used at least once\n");
+		throw(MAL, "optimizer.validate", "'deadcode' should be used at least once\n");
 	if (garbage == FALSE)
 		throw(MAL, "optimizer.validate", "'garbageCollector' should be used as the last one\n");
+	if (remap == FALSE)
+		throw(MAL, "optimizer.validate", "'remap' should be used\n");
+	if (generator == FALSE)
+		throw(MAL, "optimizer.validate", "'generator' should be used\n");
 
 	return MAL_SUCCEED;
 }
