@@ -1021,9 +1021,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
-			q = pushStr(mb, q, t->base.name);
-			q = pushStr(mb, q, s->op4.cval->base.name);
-			q = pushInt(mb, q, s->flag);
+			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,s->op4.cval->base.name));
+			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
@@ -1051,9 +1051,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
-			q = pushStr(mb, q, t->base.name);
-			q = pushStr(mb, q, s->op4.idxval->base.name);
-			q = pushInt(mb, q, s->flag);
+			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,s->op4.idxval->base.name));
+			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
