@@ -14,6 +14,11 @@ address ALGdimensionSubselect1;
 command algebra.subselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 address ALGdimensionSubselect2;
 
+command algebra.thetasubselect(dims:ptr, dim:ptr, val:any_1, op:str) (:ptr, :bat[:oid,:oid])
+address ALGdimensionThetasubselect1;
+command algebra.thetasubselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], val:any_1, op:str) (:ptr, :bat[:oid,:oid])
+address ALGdimensionThetasubselect2;
+
 command algebra.cellsProject(candDims:ptr, candBAT:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGproject;
  

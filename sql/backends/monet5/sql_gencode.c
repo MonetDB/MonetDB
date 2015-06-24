@@ -1429,103 +1429,104 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 
 				switch (s->flag) {
-				case cmp_equal:{
-					q = newStmt2(mb, algebraRef, cmd);
-					if(s->op1->type == st_dimension) {
-						char nme[SMALLBUFSIZ];
-                    	int uval = -1;
+					case cmp_equal:
+					case cmp_notequal: {
+						q = newStmt2(mb, algebraRef, cmd);
+						if(s->op1->type == st_dimension) {
+							char nme[SMALLBUFSIZ];
+	                    	int uval = -1;
 
-                    	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-                    	uval = findVariable(mb, nme);
-                    	assert(uval >= 0);
+    	                	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+        	            	uval = findVariable(mb, nme);
+            	        	assert(uval >= 0);
 
-						setVarType(mb, getArg(q, 0), TYPE_ptr);
-						setVarUDFtype(mb, getArg(q, 0));
-						q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-						q = pushArgument(mb, q, l); //all the dimensions
-						q = pushArgument(mb, q, uval); //the current dimension
+							setVarType(mb, getArg(q, 0), TYPE_ptr);
+							setVarUDFtype(mb, getArg(q, 0));
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+							q = pushArgument(mb, q, l); //all the dimensions
+							q = pushArgument(mb, q, uval); //the current dimension
 
-						if(sub > 0) { //candidates
-							snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+							if(sub > 0) { //candidates
+								snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+	                	    	uval = findVariable(mb, nme);
+    	                		assert(uval >= 0);
+
+								q = pushArgument(mb, q, sub);
+								q = pushArgument(mb, q, uval);
+							}
+						} else {
+							q = pushArgument(mb, q, l);
+
+							if (sub > 0)
+								q = pushArgument(mb, q, sub);
+						}
+						q = pushArgument(mb, q, r);
+						q = pushArgument(mb, q, r);
+						q = pushBit(mb, q, TRUE);
+						q = pushBit(mb, q, TRUE);
+					} break;
+					case cmp_lt:
+					case cmp_lte:
+					case cmp_gt:
+					case cmp_gte: {
+						q = newStmt2(mb, algebraRef, cmd);
+						if(s->op1->type == st_dimension) {
+							char nme[SMALLBUFSIZ];
+                    		int uval = -1;
+
+                    		snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 	                    	uval = findVariable(mb, nme);
     	                	assert(uval >= 0);
 
-							q = pushArgument(mb, q, sub);
-							q = pushArgument(mb, q, uval);
-						}
-					} else {
-						q = pushArgument(mb, q, l);
+							setVarType(mb, getArg(q, 0), TYPE_ptr);
+							setVarUDFtype(mb, getArg(q, 0));
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+							q = pushArgument(mb, q, l); //all the dimensions
+							q = pushArgument(mb, q, uval); //the current dimension
 
-						if (sub > 0)
-							q = pushArgument(mb, q, sub);
-					}
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, FALSE);
-					
-					if (q == NULL)
-						return -1;
-					break;
+							if(sub > 0) { //candidates
+								snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+		                    	uval = findVariable(mb, nme);
+    		                	assert(uval >= 0);
+
+								q = pushArgument(mb, q, sub);
+								q = pushArgument(mb, q, uval);
+							}
+						} else {
+							q = pushArgument(mb, q, l);
+							if (sub > 0)
+								q = pushArgument(mb, q, sub);
+						}	
+						q = pushArgument(mb, q, r);
+					} break;
+					default:
+						showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
 				}
-				case cmp_notequal:{
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					if (q == NULL)
-						return -1;
-					break;
+
+				switch(s->flag) { //set the last argument
+					case cmp_equal:
+						q = pushBit(mb, q, FALSE);
+						break;
+					case cmp_notequal:
+						q = pushBit(mb, q, TRUE);
+						break;
+					case cmp_lt:
+						q = pushStr(mb, q, "<");
+						break;
+					case cmp_lte:
+						q = pushStr(mb, q, "<=");
+						break;
+					case  cmp_gt:
+						q = pushStr(mb, q, ">");
+						break;
+					case cmp_gte:
+						q = pushStr(mb, q, ">=");
+						break;
+					default: //this should never happen
+						showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
 				}
-				case cmp_lt:
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushStr(mb, q, "<");
-					if (q == NULL)
-						return -1;
-					break;
-				case cmp_lte:
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushStr(mb, q, "<=");
-					if (q == NULL)
-						return -1;
-					break;
-				case cmp_gt:
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushStr(mb, q, ">");
-					if (q == NULL)
-						return -1;
-					break;
-				case cmp_gte:
-					q = newStmt2(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushStr(mb, q, ">=");
-					if (q == NULL)
-						return -1;
-					break;
-				default:
-					showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
-				}
+				if (q == NULL)
+					return -1;
 			}
 			if (q) {
 				s->nr = getDestVar(q);
@@ -1593,9 +1594,33 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 
 				q = newStmt1(mb, algebraRef, "subselect");
-				q = pushArgument(mb, q, k);
-				if (sub > 0)
-					q = pushArgument(mb, q, sub);
+				if(s->op1->type == st_dimension) {
+					char nme[SMALLBUFSIZ];
+                   	int uval = -1;
+
+                   	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+	               	uval = findVariable(mb, nme);
+    	           	assert(uval >= 0);
+
+					setVarType(mb, getArg(q, 0), TYPE_ptr);
+					setVarUDFtype(mb, getArg(q, 0));
+					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+					q = pushArgument(mb, q, k); //all the dimensions
+					q = pushArgument(mb, q, uval); //the current dimension
+
+					if(sub > 0) { //candidates
+						snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+		               	uval = findVariable(mb, nme);
+    		           	assert(uval >= 0);
+
+						q = pushArgument(mb, q, sub);
+						q = pushArgument(mb, q, uval);
+					}
+				} else {
+					q = pushArgument(mb, q, k);
+					if (sub > 0)
+						q = pushArgument(mb, q, sub);
+				}
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
@@ -1604,6 +1629,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+				if(s->op1->type == st_dimension)
+					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				break;
 			}
 			/* if st_join2 try to convert to bandjoin */
@@ -1635,9 +1662,33 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, algebraRef, cmd);
 			if (s->type == st_join2)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, l);
-			if (sub > 0) /* only for uselect2 */
-				q = pushArgument(mb, q, sub);
+			else if(s->type == st_uselect2 && s->op1->type == st_dimension) {
+				char nme[SMALLBUFSIZ];
+               	int uval = -1;
+
+               	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+	           	uval = findVariable(mb, nme);
+    	       	assert(uval >= 0);
+
+				setVarType(mb, getArg(q, 0), TYPE_ptr);
+				setVarUDFtype(mb, getArg(q, 0));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+				q = pushArgument(mb, q, l); //all the dimensions
+				q = pushArgument(mb, q, uval); //the current dimension
+
+				if(sub > 0) { //candidates
+					snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
+		           	uval = findVariable(mb, nme);
+    		       	assert(uval >= 0);
+
+					q = pushArgument(mb, q, sub);
+					q = pushArgument(mb, q, uval);
+				}
+			} else {
+				q = pushArgument(mb, q, l);
+				if (sub > 0) /* only for uselect2 */
+					q = pushArgument(mb, q, sub);
+			}
 			if (rs) {
 				q = pushArgument(mb, q, rs);
 			} else {
@@ -1674,6 +1725,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+				if(s->op1->type == st_dimension)
+					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+
 				break;
 			}
 			if (q == NULL)
@@ -2720,23 +2774,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_dimension: {
-#if 0
-			int ht = TYPE_oid;
-			int tt = s->op4.dval->type.type->localtype;
-#endif	
 			sql_table *t = s->op4.dval->t;
 			
 			q = newStmt2(mb, sqlRef, "get_dimension");
 			if (q == NULL)
 				return -1;
-
-#if 0		
-			q = newStmt2(mb, sqlRef, createDimRef);
-			if (q == NULL)
-				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			setVarUDFtype(mb, getArg(q, 0));
-#endif	
 			setVarType(mb, getArg(q, 0), TYPE_ptr);
 			setVarUDFtype(mb, getArg(q, 0));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));

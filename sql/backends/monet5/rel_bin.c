@@ -1217,9 +1217,6 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 		t = c->t;
     dels = stmt_tid(sql->sa, t);
 
-//	if(isArray(t))
-//		list_append(l, stmt_cells(sql->sa, t));
-
 	/* add aliases */
 	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -2369,6 +2366,7 @@ topn_offset( sql_rel *rel )
 	return NULL;
 }
 
+
 static stmt *
 rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 {
@@ -2376,6 +2374,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
 	stmt *l = NULL;
+	stmt *cells = NULL;
 
 	if (topn) {
 		sql_exp *le = topn_limit(topn);
@@ -2414,10 +2413,9 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	pl = sa_list(sql->sa);
 	if (sub)
 		pl->expected_cnt = list_length(sub->op4.lval);
+		
 	psub = stmt_list(sql->sa, pl);
-//	//if an array we need the cells
-//	if(((stmt*)sub->op4.lval->h->data)->type == st_cells)
-//		list_append(pl, ((stmt*)sub->op4.lval->h->data));	
+
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(sql, exp, sub, psub, NULL, NULL, NULL, NULL);
@@ -2426,6 +2424,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			assert(0);
 			return NULL;
 		}
+		if(cells && s->type == st_join && (s->op1->type == st_uselect || s->op1->type == st_uselect2))
+			s->op1 = cells;
 		/* single value with limit */
 		if (topn && rel->r && sub && sub->nrcols == 0)
 			s = const_column(sql->sa, s);
@@ -2536,6 +2536,46 @@ rel2bin_predicate(mvc *sql)
 	return const_column(sql->sa, stmt_bool(sql->sa, 1));
 }
 
+/*
+static stmt* find_before_uselect(stmt *s) {
+	stmt *us = NULL;
+	if(!s)
+		return NULL;
+	if(s->op1 && (s->op1->type == st_uselect || s->op1->type == st_uselect2))
+		return s;
+	if(s->op2 && (s->op2->type == st_uselect || s->op2->type == st_uselect2))
+		return s;
+	us = find_before_uselect(s->op1);
+	if(!us)
+		return find_before_uselect(s->op2);
+	return us;
+}
+*/
+static stmt* addCells(mvc *sql, stmt *s) {
+	//find where the selections over the dimensions start and put an st_cells
+	if((s->type == st_uselect || s->type == st_uselect2) && s->op1->type == st_dimension) {
+		s = stmt_cells(sql->sa, s);
+	} else if(s->op3)
+		return addCells(sql, s->op3);
+	return s;
+}
+/*
+static stmt *projectCells(mvc *sql, stmt* s) {
+	if(s->type == st_list) {
+		node *n;
+		for(n=s->op4.lval->h; n; n=n->next) {
+			stmt *elStmt = (stmt*)n->data;
+			//find the uselect (if there)
+			stmt *us = find_before_uselect(elStmt);
+			if(us->op1 && (us->op1->type == st_uselect || us->op1->type == st_uselect2))
+				us->op1 = addCells(sql, us->op1);
+			else if(us->op2 && (us->op2->type == st_uselect || us->op2->type == st_uselect2))
+				us->op2 = addCells(sql, us->op2);
+		}
+	}
+	return s;
+}*/
+
 static stmt *
 rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 {
@@ -2590,8 +2630,12 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			sel = stmt_uselect(sql->sa, s, stmt_bool(sql->sa, 1), cmp_equal, NULL);
 		} else {
 			sel = s;
-		}
+		}	
 	}
+
+	//if it is an array we need to roject the cells
+	sel = addCells(sql, sel);
+
 
 	/* construct relation */
 	l = sa_list(sql->sa);
@@ -4684,6 +4728,28 @@ rel_bin(mvc *sql, sql_rel *rel)
 	return s;
 }
 
+#if 0
+static stmt *array_output(mvc *sql, stmt* s) {
+	if(s->type == st_output) {
+		stmt *lStmt = s->op1;
+		if(lStmt->type == st_list) {
+			node *n;
+			for(n=lStmt->op4.lval->h; n; n=n->next) {
+				stmt *elStmt = (stmt*)n->data;
+				//find the uselect (if there)
+				stmt *us = find_before_uselect(elStmt);
+				if(us->op1 && (us->op1->type == st_uselect || us->op1->type == st_uselect2))
+					us->op1 = addCells(sql, us->op1);
+				else if(us->op2 && (us->op2->type == st_uselect || us->op2->type == st_uselect2))
+					us->op2 = addCells(sql, us->op2);
+			}
+		}
+	}
+
+	return s;
+}
+#endif
+
 stmt *
 output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
@@ -4694,7 +4760,9 @@ output_rel_bin(mvc *sql, sql_rel *rel )
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
-	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
+	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE) {
 		s = stmt_output(sql->sa, s);
+//		s = array_output(sql, s);
+	}
 	return s;
 }

@@ -822,16 +822,13 @@ stmt_atom(sql_allocator *sa, atom *op1)
 	return s;
 }
 
-#if 0
-stmt* stmt_cells(sql_allocator *sa, sql_table *t)
+stmt* stmt_cells(sql_allocator *sa, stmt *dims)
 {
 	stmt *s = stmt_create(sa, st_cells);
-
-	s->op4.tval = t;
-	s->nrcols = 1;
+    s->op1 = dims;
+	s->nrcols = dims->nrcols;
 	return s;
 }
-#endif
 
 /*called when the column belongs to an array*/
 stmt* stmt_column(sql_allocator *sa, sql_column* col) { //, sql_table *t) {
@@ -882,27 +879,13 @@ stmt *
 stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub)
 {
 	stmt *s = stmt_create(sa, st_uselect);
-	stmt *cls = stmt_create(sa, st_cells);
+//	stmt *cls = stmt_create(sa, st_cells);
 
     s->op1 = op1;
     s->op2 = op2;
     s->op3 = sub;
     s->flag = cmptype;
     s->nrcols = (op1->nrcols == 2) ? 2 : 1;
-
-    if(s->op1->type == st_dimension) {
-    	//it is a dimension. After the selection we should reconstruct the cells
-        cls->op1 = s;
-       
-        //if the cells were reconstructed in the previous subselect remove it from there
-        if(sub && sub->type == st_cells)
-    	    s->op3 = s->op3->op1;
-        
-		cls->nrcols = s->nrcols;
-        return cls;
-        
-    }
-        
 
 	return s;
 }
