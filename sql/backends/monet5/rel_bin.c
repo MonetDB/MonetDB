@@ -2556,7 +2556,7 @@ static stmt* addCells(mvc *sql, stmt *s) {
 	if((s->type == st_uselect || s->type == st_uselect2) && s->op1->type == st_dimension) {
 		s = stmt_cells(sql->sa, s);
 	} else if(s->op3)
-		return addCells(sql, s->op3);
+		s->op3 = addCells(sql, s->op3);
 	return s;
 }
 /*

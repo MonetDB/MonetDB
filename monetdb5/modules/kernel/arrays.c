@@ -380,6 +380,7 @@ str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {
             throw(MAL, "algebra.cellsProject", GDK_EXCEPTION);
 		BATsetcount(resBAT, 0);
 		BATseqbase(resBAT, 0);
+		BATderiveProps(resBAT, FALSE);
 
     	BBPkeepref((*result= resBAT->batCacheid));
 
@@ -401,13 +402,16 @@ fprintf(stderr, "size = %u\n", (unsigned int)resSize);
 	resSize = qualifyingOIDs(0, 1, candidatesDimensions, &resOIDs);
 	BATsetcount(resBAT, resSize);
 	BATseqbase(resBAT, 0);
-    *result = resBAT->batCacheid;
+	BATderiveProps(resBAT, FALSE);    
+
+	*result = resBAT->batCacheid;
     BBPkeepref(*result);
 
 	//clean the candidates
 	BBPunfix(candidatesBAT->batCacheid);
 	freeCells(candidatesDimensions);
 
+	
 	return MAL_SUCCEED;
 }
 

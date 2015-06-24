@@ -5345,6 +5345,7 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+#if 0
 static bool isColumn(sql_exp* exp) {
 	if(exp->type == e_cmp && ((sql_exp*)exp->l)->type == e_column)
 		return true;
@@ -5352,6 +5353,7 @@ static bool isColumn(sql_exp* exp) {
 		return isColumn(exp->f);
 	return false;
 }
+#endif
 
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
@@ -5374,6 +5376,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				return sql_error(sql, 02, "Subquery result missing");
 			return NULL;
 		}
+#if 0
 		if(rel->op == op_basetable) {
 			sql_table *t = (sql_table*)rel->l;
 			if(isArray(t)) {
@@ -5413,6 +5416,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				return NULL;
 			}
 		}
+#endif
 		rel = r;
 	}
 
