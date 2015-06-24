@@ -23,6 +23,11 @@ int malvartop;
 int debug=0;
 char *monetdb_characteristics;
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#include "strptime.c"
+#endif
+
 void
 clearArguments(void)
 {
@@ -205,7 +210,6 @@ parseArguments(char *call, int m)
 int
 eventparser(char *row, EventRecord *ev)
 {
-#ifdef HAVE_STRPTIME
 	char *c, *cc, *v =0;
 	struct tm stm;
 
@@ -427,8 +431,5 @@ eventparser(char *row, EventRecord *ev)
 	}
 	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
 		*v = 0;
-#else
-	(void) row;
-#endif
 	return 0;
 }
