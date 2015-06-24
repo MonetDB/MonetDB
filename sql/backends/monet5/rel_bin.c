@@ -2555,8 +2555,10 @@ static stmt* addCells(mvc *sql, stmt *s) {
 	//find where the selections over the dimensions start and put an st_cells
 	if((s->type == st_uselect || s->type == st_uselect2) && s->op1->type == st_dimension) {
 		s = stmt_cells(sql->sa, s);
-	} else if(s->op3)
-		s->op3 = addCells(sql, s->op3);
+	} 
+	//Uncomment in case the cells projection is needed before performing any other selection
+	//else if(s->op3)
+	//	s->op3 = addCells(sql, s->op3);
 	return s;
 }
 /*

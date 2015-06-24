@@ -9,10 +9,16 @@ address ALGmbrsubselect2;
 command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
 address ALGmbrproject;
 
+#subselection in dimensions
 command algebra.subselect(dims:ptr, dim:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
 address ALGdimensionSubselect1;
 command algebra.subselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 address ALGdimensionSubselect2;
+
+#subselection in non-dimenional columns of arrays after a subselection in dimensions has been performed
+command algebra.subselect(:bat[:oid, :any], candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) :bat[:oid, :any]
+address ALGsubselect3;
+
 
 command algebra.thetasubselect(dims:ptr, dim:ptr, val:any_1, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect1;
