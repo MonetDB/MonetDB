@@ -218,6 +218,21 @@ newExitStmt(MalBlkPtr mb, str nme)
 	return q;
 }
 
+int
+getIntConstant(MalBlkPtr mb, int val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_int;
+	cst.val.ival= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_int,&cst);
+	return _t;
+}
+
 InstrPtr
 pushInt(MalBlkPtr mb, InstrPtr q, int val)
 {
@@ -231,6 +246,21 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	cst.len = 0;
 	_t = defConstant(mb, TYPE_int,&cst);
 	return pushArgument(mb, q, _t);
+}
+
+int
+getWrdConstant(MalBlkPtr mb, wrd val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_wrd;
+	cst.val.wval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_wrd, &cst);
+	return _t;
 }
 
 InstrPtr
@@ -248,6 +278,21 @@ pushWrd(MalBlkPtr mb, InstrPtr q, wrd val)
 	return pushArgument(mb, q, _t);
 }
 
+int
+getBteConstant(MalBlkPtr mb, bte val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_bte;
+	cst.val.btval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_bte, &cst);
+	return _t;
+}
+
 InstrPtr
 pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 {
@@ -263,7 +308,22 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 	return pushArgument(mb, q, _t);
 }
 
-InstrPtr
+int
+getOidConstant(MalBlkPtr mb, oid val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_oid;
+	cst.val.oval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_oid, &cst);
+	return _t;
+}
+
+InstrPtr 
 pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 {
 	int _t;
@@ -293,6 +353,21 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 	return pushArgument(mb, q, _t);
 }
 
+int
+getLngConstant(MalBlkPtr mb, lng val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_lng;
+	cst.val.lval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_lng, &cst);
+	return _t;
+}
+
 InstrPtr
 pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 {
@@ -306,6 +381,21 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_lng,&cst);
 	return pushArgument(mb, q, _t);
+}
+
+int
+getShtConstant(MalBlkPtr mb, sht val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_sht;
+	cst.val.shval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_sht, &cst);
+	return _t;
 }
 
 InstrPtr
@@ -322,6 +412,21 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 }
 
 #ifdef HAVE_HGE
+int
+getHgeConstant(MalBlkPtr mb, hge val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_oid;
+	cst.val.hval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_hge, &cst);
+	return _t;
+}
+
 InstrPtr
 pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 {
@@ -334,6 +439,21 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 	return pushArgument(mb, q, _t);
 }
 #endif
+
+int
+getDblConstant(MalBlkPtr mb, dbl val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_dbl;
+	cst.val.dval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_dbl, &cst);
+	return _t;
+}
 
 InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
@@ -350,6 +470,21 @@ pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 	return pushArgument(mb, q, _t);
 }
 
+int
+getFltConstant(MalBlkPtr mb, flt val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_flt;
+	cst.val.fval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_flt, &cst);
+	return _t;
+}
+
 InstrPtr
 pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 {
@@ -363,6 +498,22 @@ pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_flt,&cst);
 	return pushArgument(mb, q, _t);
+}
+
+int
+getStrConstant(MalBlkPtr mb, str val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_str;
+	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
+		return -1;
+	cst.len= (int) strlen(cst.val.sval);
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_str, &cst);
+	return _t;
 }
 
 InstrPtr
@@ -381,6 +532,21 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 	cst.len= (int) strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
 	return pushArgument(mb, q, _t);
+}
+
+int
+getBitConstant(MalBlkPtr mb, bit val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_bit;
+	cst.val.btval= val;
+	cst.len = 0;
+	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if( _t < 0)
+		_t = defConstant(mb, TYPE_bit, &cst);
+	return _t;
 }
 
 InstrPtr
