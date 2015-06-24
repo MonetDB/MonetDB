@@ -35,26 +35,26 @@ function user.main():void;
     mdb.List("user","tst");
     user.tst();
 end user.main;
-function user.tst():void;               	# 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
-    bat.append(b:bat[:oid,:int],1:int); 	# BKCappend_val_wrap
-    bat.append(b:bat[:oid,:int],2:int); 	# BKCappend_val_wrap
-    bat.append(b:bat[:oid,:int],3:int); 	# BKCappend_val_wrap
-    bat.append(b:bat[:oid,:int],4:int); 	# BKCappend_val_wrap
-    bat.append(b:bat[:oid,:int],5:int); 	# BKCappend_val_wrap
-    c:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,0:int);	# CMDBATpartition2
-    io.print(c:bat[:oid,:int]);         	# IOprint_val
-    d:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,1:int);	# CMDBATpartition2
-    io.print(d:bat[:oid,:int]);         	# IOprint_val
-    (b1:bat[:oid,:int],b2:bat[:oid,:int]) := bat.partition(b:bat[:oid,:int]);	# CMDBATpartition
-    io.print(b1:bat[:oid,:int]);        	# IOprint_val
-    io.print(b2:bat[:oid,:int]);        	# IOprint_val
-    b3:bat[:oid,:int] := bat.partition(b:bat[:oid,:int]);	# CMDBATpartition
-    io.print(b3:bat[:oid,:int]);        	# IOprint_val
-# an error should be produced           	# 
-    e:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,-1:int);	# CMDBATpartition2
-    io.print(e:bat[:oid,:int]);         	# IOprint_val
-end user.tst;                           	# 
+function user.tst():void;               	#[0]  0 <- 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
+    bat.append(b:bat[:oid,:int],2:int); 	#[3] BKCappend_val_wrap 6 <- 1 7 
+    bat.append(b:bat[:oid,:int],3:int); 	#[4] BKCappend_val_wrap 8 <- 1 9 
+    bat.append(b:bat[:oid,:int],4:int); 	#[5] BKCappend_val_wrap 10 <- 1 11 
+    bat.append(b:bat[:oid,:int],5:int); 	#[6] BKCappend_val_wrap 12 <- 1 13 
+    c:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,0:int);	#[7] CMDBATpartition2 14 <- 1 7 15 
+    io.print(c:bat[:oid,:int]);         	#[8] IOprint_val 16 <- 14 
+    d:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,1:int);	#[9] CMDBATpartition2 17 <- 1 7 5 
+    io.print(d:bat[:oid,:int]);         	#[10] IOprint_val 18 <- 17 
+    (b1:bat[:oid,:int],b2:bat[:oid,:int]) := bat.partition(b:bat[:oid,:int]);	#[11] CMDBATpartition 19 20 <- 1 
+    io.print(b1:bat[:oid,:int]);        	#[12] IOprint_val 21 <- 19 
+    io.print(b2:bat[:oid,:int]);        	#[13] IOprint_val 22 <- 20 
+    b3:bat[:oid,:int] := bat.partition(b:bat[:oid,:int]);	#[14] CMDBATpartition 23 <- 1 
+    io.print(b3:bat[:oid,:int]);        	#[15] IOprint_val 24 <- 23 
+# an error should be produced           	#[16]  25 <- 
+    e:bat[:oid,:int] := bat.partition(b:bat[:oid,:int],2:int,-1:int);	#[17] CMDBATpartition2 26 <- 1 7 27 
+    io.print(e:bat[:oid,:int]);         	#[18] IOprint_val 28 <- 26 
+end user.tst;                           	#[19]  
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

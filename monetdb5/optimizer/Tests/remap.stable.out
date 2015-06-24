@@ -26,17 +26,17 @@ function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               	# 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
-# a correct call                        	# 
-    z:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],1:int);	# CMDbatADDsignal
-    f:bat[:oid,:bit] := batcalc.<(b:bat[:oid,:int],3:int);	# CMDbatLT
-    f:bat[:oid,:bit] := batcalc.<(3:int,b:bat[:oid,:int]);	# CMDbatLT
-    d:bat[:oid,:str] := bat.new(:oid,:str);	# CMDBATnew
-    a:bat[:oid,:bit] := batcalc.isnil(d:bat[:oid,:str]);	# CMDbatISNIL
-# demonstrate an error                  	# 
-    y:bat[:int,:int] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);	# MANIFOLDremapMultiplex
-end user.tst;                           	# 
+function user.tst():void;               	#[0]  0 <- 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+# a correct call                        	#[2]  4 <- 
+    z:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],1:int);	#[3] CMDbatADDsignal 5 <- 1 8 
+    f:bat[:oid,:bit] := batcalc.<(b:bat[:oid,:int],3:int);	#[4] CMDbatLT 9 <- 1 11 
+    f:bat[:oid,:bit] := batcalc.<(3:int,b:bat[:oid,:int]);	#[5] CMDbatLT 9 <- 11 1 
+    d:bat[:oid,:str] := bat.new(:oid,:str);	#[6] CMDBATnew 12 <- 2 13 
+    a:bat[:oid,:bit] := batcalc.isnil(d:bat[:oid,:str]);	#[7] CMDbatISNIL 14 <- 12 
+# demonstrate an error                  	#[8]  16 <- 
+    y:bat[:int,:int] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);	#[9] MANIFOLDremapMultiplex 17 <- 6 7 1 8 
+end user.tst;                           	#[10]  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

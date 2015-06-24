@@ -32,21 +32,21 @@ function user.main():void;
     mdb.var("user","tst");
     mdb.List("user","tst");
 end user.main;
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	# 
-barrier X_9:bit{transparent} := language.dataflow();	# MALstartDataflow
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);	# ALGcount_bat
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	# ALGcount_bat
-exit X_9:bit{transparent};              	# 
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	# CMDBATnew
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	# ITRbunIterator
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	# ALGfetchoid
-    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	# CALCmax
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	# BKCappend_val_wrap
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	# ITRbunNext
-exit (X_16:oid,X_17:dbl);               	# 
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	# 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	# IOtable
-end user.tst;                           	# 
+function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
+barrier X_9:bit{transparent} := language.dataflow();	#[1] MALstartDataflow 9 <- 
+    c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
+exit X_9:bit{transparent};              	#[4]  9 <- 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+exit (X_16:oid,X_17:dbl);               	#[11]  16 17 <- 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
+end user.tst;                           	#[14]  
 #[1]     b =  :bat[:oid,:dbl]  
 #[2]    b2 =  :bat[:oid,:dbl]  
 #[5]     z =  :bat[:oid,:dbl]  
@@ -60,21 +60,21 @@ end user.tst;                           	#
 #[17]   _17 =  :dbl  
 #[19]   _19 =  :dbl  
 #[21]   _21 =  :dbl  
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	# 
-barrier X_9:bit{transparent} := language.dataflow();	# MALstartDataflow
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);	# ALGcount_bat
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	# ALGcount_bat
-exit X_9:bit{transparent};              	# 
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	# CMDBATnew
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	# ITRbunIterator
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	# ALGfetchoid
-    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	# CALCmax
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	# BKCappend_val_wrap
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	# ITRbunNext
-exit (X_16:oid,X_17:dbl);               	# 
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	# 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	# IOtable
-end user.tst;                           	# 
+function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
+barrier X_9:bit{transparent} := language.dataflow();	#[1] MALstartDataflow 9 <- 
+    c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
+exit X_9:bit{transparent};              	#[4]  9 <- 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+exit (X_16:oid,X_17:dbl);               	#[11]  16 17 <- 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
+end user.tst;                           	#[14]  
 
 # 09:02:36 >  
 # 09:02:36 >  "Done."
