@@ -24,7 +24,6 @@ install: targetdirs all
 	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
-	-if exist "C:\Program Files (x86)" if $(bits)==32 cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" *.vdproj
 
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
         cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
