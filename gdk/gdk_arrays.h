@@ -52,7 +52,7 @@ gdk_export gdk_dimension* createDimension_flt(int dimNum, BUN elsNum, flt min, f
 
 gdk_cells* cells_new(void);
 gdk_cells* cells_add_dimension(gdk_cells* cells, gdk_dimension *dim);
-gdk_cells* cells_remove_dimension(gdk_cells* cells, gdk_dimension *dim);
+gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum);
 gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
 
 #if 0
@@ -194,6 +194,7 @@ do {\
 
 
 gdk_export gdk_return freeDimension(gdk_dimension *dim);
+gdk_export gdk_return freeCells(gdk_cells *cells);
 BUN dimension_void_replace_bat(BAT *resBAT, BAT *oidsBAT, BAT *dimensionBAT, bit force);
 
 //BAT* projectDimension(sql_dimension *oidsDim, sql_dimension *valuesDim);

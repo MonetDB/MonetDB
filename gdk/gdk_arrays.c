@@ -89,8 +89,17 @@ gdk_return freeDimension(gdk_dimension *dim) {
 	return GDK_SUCCEED;
 }
 
-gdk_cells* cells_remove_dimension(gdk_cells* cells, gdk_dimension *dim) {
-    dim_node *prevNode = findNode(cells, dim->dimNum-1);
+gdk_return freeCells(gdk_cells *cells) {
+	dim_node *n;
+	for(n=cells->h; n; n=n->next)
+		freeDimension(n->data);
+	GDKfree(cells);
+
+	return GDK_SUCCEED;
+}
+
+gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum) {
+    dim_node *prevNode = findNode(cells, dimNum);
 	dim_node *currNode = prevNode->next;
 
 	prevNode->next = currNode->next;
