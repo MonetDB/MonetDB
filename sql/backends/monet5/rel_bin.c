@@ -2551,6 +2551,28 @@ static stmt* find_before_uselect(stmt *s) {
 	return us;
 }
 */
+
+/* in arrays the selections over dimensions should be done 
+ * before the selections over non-dimensions */
+static int pushDimensionSelections(stmt **s) {
+	int changes = 0;
+	stmt *nextS = (*s)->op3;
+	if(nextS) {
+		//the current is but the next is not
+		if((*s)->op1->type == st_dimension && nextS->op1->type != st_dimension) {
+			//switch the positions of the selection
+			changes++;
+			(*s)->op3 = nextS->op3;
+			nextS->op3 = (*s);
+			*s = nextS;
+		}
+		if((*s)->op3)
+			changes += pushDimensionSelections(&(*s)->op3);
+	}
+
+	return changes;
+}
+
 static stmt* addCells(mvc *sql, stmt *s) {
 	//find where the selections over the dimensions start and put an st_cells
 	if((s->type == st_uselect || s->type == st_uselect2) && s->op1->type == st_dimension) {
@@ -2635,7 +2657,9 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		}	
 	}
 
-	//if it is an array we need to roject the cells
+	//if there are selections on dimensions they should be performed at the beggining
+	while(pushDimensionSelections(&sel));
+	//if it is an array we need to project the cells
 	sel = addCells(sql, sel);
 
 
