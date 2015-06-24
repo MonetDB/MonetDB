@@ -227,7 +227,7 @@ getIntConstant(MalBlkPtr mb, int val)
 	cst.vtype= TYPE_int;
 	cst.val.ival= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_int,&cst);
 	return _t;
@@ -257,7 +257,7 @@ getWrdConstant(MalBlkPtr mb, wrd val)
 	cst.vtype= TYPE_wrd;
 	cst.val.wval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_wrd, &cst);
 	return _t;
@@ -287,7 +287,7 @@ getBteConstant(MalBlkPtr mb, bte val)
 	cst.vtype= TYPE_bte;
 	cst.val.btval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bte, &cst);
 	return _t;
@@ -317,7 +317,7 @@ getOidConstant(MalBlkPtr mb, oid val)
 	cst.vtype= TYPE_oid;
 	cst.val.oval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_oid, &cst);
 	return _t;
@@ -362,7 +362,7 @@ getLngConstant(MalBlkPtr mb, lng val)
 	cst.vtype= TYPE_lng;
 	cst.val.lval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_lng, &cst);
 	return _t;
@@ -392,7 +392,7 @@ getShtConstant(MalBlkPtr mb, sht val)
 	cst.vtype= TYPE_sht;
 	cst.val.shval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_sht, &cst);
 	return _t;
@@ -421,7 +421,7 @@ getHgeConstant(MalBlkPtr mb, hge val)
 	cst.vtype= TYPE_oid;
 	cst.val.hval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_hge, &cst);
 	return _t;
@@ -449,7 +449,7 @@ getDblConstant(MalBlkPtr mb, dbl val)
 	cst.vtype= TYPE_dbl;
 	cst.val.dval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_dbl, &cst);
 	return _t;
@@ -479,7 +479,7 @@ getFltConstant(MalBlkPtr mb, flt val)
 	cst.vtype= TYPE_flt;
 	cst.val.fval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_flt, &cst);
 	return _t;
@@ -510,7 +510,7 @@ getStrConstant(MalBlkPtr mb, str val)
 	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
 		return -1;
 	cst.len= (int) strlen(cst.val.sval);
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_str, &cst);
 	return _t;
@@ -543,7 +543,7 @@ getBitConstant(MalBlkPtr mb, bit val)
 	cst.vtype= TYPE_bit;
 	cst.val.btval= val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	_t= fndConstant(mb, &cst, mb->stop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bit, &cst);
 	return _t;
