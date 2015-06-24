@@ -168,7 +168,9 @@ str ALGdimensionLeftfetchjoin(bat *result, const bat *cands, const ptr *dims, co
 
 	BATsetcount(resBAT, resSize);
 	BATseqbase(resBAT, 0);
-    *result = resBAT->batCacheid;
+    BATderiveProps(resBAT, FALSE);    
+
+	*result = resBAT->batCacheid;
     BBPkeepref(*result);
 
 	//free the space occupied by the dimension
@@ -240,6 +242,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
             throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
 		BATsetcount(candidatesBAT_in, 0);
 		BATseqbase(candidatesBAT_in, 0);
+		BATderiveProps(candidatesBAT_in, FALSE);    
 	} 
 
 	if(!dimensionsCandidates) { //empty results
@@ -248,6 +251,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
             throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
 		BATsetcount(candidatesBAT_out, 0);
 		BATseqbase(candidatesBAT_out, 0);
+		BATderiveProps(candidatesBAT_out, FALSE);    
 
 		*dimsRes = dimensionsResult;
 		BBPkeepref(*oidsRes = candidatesBAT_out->batCacheid);
@@ -270,6 +274,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
             	throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
 			BATsetcount(candidatesBAT_out, 0);
 			BATseqbase(candidatesBAT_out, 0);
+			BATderiveProps(candidatesBAT_in, FALSE);    
 
 			//remove all the dimensions, there will be no results in the output
 			dimensionsResult = NULL;
