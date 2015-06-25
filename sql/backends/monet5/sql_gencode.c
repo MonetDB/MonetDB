@@ -860,7 +860,7 @@ static InstrPtr
 pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 {
 	if (t->s)
-		return pushStr(mb, q, t->s->base.name);
+		return pushArgument(mb, q, getStrConstant(mb,t->s->base.name));
 	else
 		return pushNil(mb, q, TYPE_str);
 }
