@@ -17,9 +17,9 @@ function user.main():void;
     mdb.List();
 end user.main;
 [ "done" ]
-function user.main():void;              	#[0]  0 <- 
+function user.main():void;              	#[0]  0 
     io.print("done":str);               	#[1] IOprint_val 15 <- 16 
-    mdb.List();                         	#[2] MDBlistDetail 18 <- 
+    mdb.List();                         	#[2] MDBlistDetail 18 
 end user.main;                          	#[3]  
 
 # 23:53:03 >  

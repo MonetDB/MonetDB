@@ -23,12 +23,12 @@ function user.main():void;
     mdb.List();
 end user.main;
 [ nil ]
-function user.main():void;              	#[0]  0 <- 
-# test constant expressions with strong types 	#[1]  1 <- 
+function user.main():void;              	#[0]  0 
+# test constant expressions with strong types 
     X2:dbl := nil:dbl;                  	#[2]  2 <- 9 
-    X14:dbl := nil:dbl;                 	#[3]  4 <- 9 
-    io.print(nil:dbl);                  	#[4] IOprint_val 6 <- 9 
-    mdb.List();                         	#[5] MDBlistDetail 8 <- 
+    X14:dbl := nil:dbl;                 	#[3]  4 <- 10 
+    io.print(nil:dbl);                  	#[4] IOprint_val 6 <- 10 
+    mdb.List();                         	#[5] MDBlistDetail 8 
 end user.main;                          	#[6]  
 
 # 13:54:00 >  

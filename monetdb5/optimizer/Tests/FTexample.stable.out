@@ -29,8 +29,8 @@ barrier always:bit := true:bit;         	#[3]  9 <- 10
     z:bat[:oid,:str] := algebra.select(b:bat[:oid,:str],s:str,s:str);	#[4] ALGselect 7 <- 2 1 1 
     i:wrd := aggr.count(z:bat[:oid,:str]);	#[5] ALGcount_bat 8 <- 7 
     yield test:wrd := i:wrd;            	#[6]  0 <- 8 
-    redo always:bit;                    	#[7]  9 <- 
-exit always:bit;                        	#[8]  9 <- 
+    redo always:bit;                    	#[7]  9 
+exit always:bit;                        	#[8]  9 
     return test:wrd := test:wrd;        	#[9]  0 <- 0 
 end user.test;                          	#[10]  
 

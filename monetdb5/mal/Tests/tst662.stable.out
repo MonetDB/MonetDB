@@ -34,7 +34,7 @@ function user.main():void;
 #Testing variable return lists 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               	#[0]  0 <- 
+function user.tst():void;               	#[0]  0 
     X100:lng := -1:lng;                 	#[1]  1 <- 2 
     X102:lng := -1:lng;                 	#[2]  3 <- 2 
     X103:lng := -1:lng;                 	#[3]  4 <- 2 

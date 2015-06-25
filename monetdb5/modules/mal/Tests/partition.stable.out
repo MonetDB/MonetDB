@@ -35,7 +35,7 @@ function user.main():void;
     mdb.List("user","tst");
     user.tst();
 end user.main;
-function user.tst():void;               	#[0]  0 <- 
+function user.tst():void;               	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
     bat.append(b:bat[:oid,:int],2:int); 	#[3] BKCappend_val_wrap 6 <- 1 7 

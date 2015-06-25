@@ -24,7 +24,7 @@ exit (X_15,X_16);
     c:bat[:oid,:int]  := X_11;
     mdb.List();
 end user.main;
-function user.main():void;              	#[0]  0 <- 
+function user.main():void;              	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_11:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[3] CMDBATnew 11 <- 12 13 
@@ -32,9 +32,9 @@ barrier (X_15:oid,X_16:int) := iterator.new(b:bat[:oid,:int]);	#[4] ITRbunIterat
     X_18:int := calc.+(X_16:int,1:int); 	#[5] CMDvarADDsignal 18 <- 16 5 
     bat.append(X_11:bat[:oid,:int],X_18:int);	#[6] BKCappend_val_wrap 19 <- 11 18 
     redo (X_15:oid,X_16:int) := iterator.next(b:bat[:oid,:int]);	#[7] ITRbunNext 15 16 <- 1 
-exit (X_15:oid,X_16:int);               	#[8]  15 16 <- 
+exit (X_15:oid,X_16:int);               	#[8]  15 16 
     c:bat[:oid,:int] := X_11:bat[:oid,:int];	#[9]  6 <- 11 
-    mdb.List();                         	#[10] MDBlistDetail 10 <- 
+    mdb.List();                         	#[10] MDBlistDetail 10 
 end user.main;                          	#[11]  
 
 # 23:53:03 >  

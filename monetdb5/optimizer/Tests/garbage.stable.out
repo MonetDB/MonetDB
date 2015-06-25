@@ -19,7 +19,7 @@ end user.tst;
 function user.main():void;
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               	#[0]  0 <- 
+function user.tst():void;               	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     c:bat[:oid,:int]{keep} := bat.new(:oid,:int);	#[2] CMDBATnew 4 <- 2 3 
     io.print(b:bat[:oid,:int]);         	#[3] IOprint_val 5 <- 1 

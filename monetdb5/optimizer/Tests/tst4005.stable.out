@@ -57,10 +57,10 @@ barrier V12:bit := V11:bit;             	#[5]  9 <- 8
     V22:int := calc.*(p:int,V15:int);   	#[7] CMDvarMULsignal 13 <- 1 11 
     V24:int := calc.int(V22:int);       	#[8] CMDvarCONVERT 14 <- 13 
     x:int := V24:int;                   	#[9]  2 <- 14 
-exit V12:bit;                           	#[10]  9 <- 
+exit V12:bit;                           	#[10]  9 
 barrier V27:bit := calc.not(V11:bit);   	#[11] CMDvarNOT 15 <- 8 
     x:int := p:int;                     	#[12]  2 <- 1 
-exit V27:bit;                           	#[13]  15 <- 
+exit V27:bit;                           	#[13]  15 
     return V31:int := x:int;            	#[14]  18 <- 2 
 end user.getz;                          	#[15]  
 

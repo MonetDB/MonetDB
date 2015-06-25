@@ -30,8 +30,8 @@ function user.main():void;
 # test constant expressions 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               	#[0]  0 <- 
-    io.print(57.29577951308232:dbl);    	#[1] IOprint_val 8 <- 12 
+function user.tst():void;               	#[0]  0 
+    io.print(57.29577951308232:dbl);    	#[1] IOprint_val 8 <- 13 
 end user.tst;                           	#[2]  
 
 # 21:32:15 >  
