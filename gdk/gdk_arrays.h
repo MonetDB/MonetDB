@@ -143,6 +143,70 @@ gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
 	idx; \
 })
 
+#define lowerIdx(dim, value, eq) \
+({\
+	BUN idx = 0; \
+	switch(dim->type) { \
+        case TYPE_bte: \
+			idx = dimensionFndLowerValuePos(*(bte*)value, *(bte*)dim->min, *(bte*)dim->step, eq); \
+			break; \
+        case TYPE_sht: \
+			idx = dimensionFndLowerValuePos(*(sht*)value, *(sht*)dim->min, *(sht*)dim->step, eq); \
+            break; \
+        case TYPE_int:\
+			idx = dimensionFndLowerValuePos(*(int*)value, *(int*)dim->min, *(int*)dim->step, eq); \
+            break; \
+        case TYPE_flt:\
+			idx = dimensionFndLowerValuePos(*(flt*)value, *(flt*)dim->min, *(flt*)dim->step, eq); \
+            break; \
+        case TYPE_dbl:\
+			idx = dimensionFndLowerValuePos(*(dbl*)value, *(dbl*)dim->min, *(dbl*)dim->step, eq); \
+            break; \
+        case TYPE_lng:\
+			idx = dimensionFndLowerValuePos(*(lng*)value, *(lng*)dim->min, *(lng*)dim->step, eq); \
+            break; \
+        case TYPE_hge:\
+			idx = dimensionFndLowerValuePos(*(hge*)value, *(hge*)dim->min, *(hge*)dim->step, eq); \
+			break; \
+        case TYPE_oid:\
+			idx = dimensionFndLowerValuePos(*(oid*)value, *(oid*)dim->min, *(oid*)dim->step, eq); \
+            break; \
+	} \
+	idx; \
+})
+
+#define greaterIdx(dim, value, eq) \
+({\
+	BUN idx = 0; \
+	switch(dim->type) { \
+        case TYPE_bte: \
+			idx = dimensionFndGreaterValuePos(*(bte*)value, *(bte*)dim->min, *(bte*)dim->step, eq); \
+			break; \
+        case TYPE_sht: \
+			idx = dimensionFndGreaterValuePos(*(sht*)value, *(sht*)dim->min, *(sht*)dim->step, eq); \
+            break; \
+        case TYPE_int:\
+			idx = dimensionFndGreaterValuePos(*(int*)value, *(int*)dim->min, *(int*)dim->step, eq); \
+            break; \
+        case TYPE_flt:\
+			idx = dimensionFndGreaterValuePos(*(flt*)value, *(flt*)dim->min, *(flt*)dim->step, eq); \
+            break; \
+        case TYPE_dbl:\
+			idx = dimensionFndGreaterValuePos(*(dbl*)value, *(dbl*)dim->min, *(dbl*)dim->step, eq); \
+            break; \
+        case TYPE_lng:\
+			idx = dimensionFndGreaterValuePos(*(lng*)value, *(lng*)dim->min, *(lng*)dim->step, eq); \
+            break; \
+        case TYPE_hge:\
+			idx = dimensionFndGreaterValuePos(*(hge*)value, *(hge*)dim->min, *(hge*)dim->step, eq); \
+			break; \
+        case TYPE_oid:\
+			idx = dimensionFndGreaterValuePos(*(oid*)value, *(oid*)dim->min, *(oid*)dim->step, eq); \
+            break; \
+	} \
+	idx; \
+})
+
 
 
 

@@ -24,13 +24,19 @@ static gdk_cells* sizesToDimensions(gdk_array *array) {
 	return resDims;
 }
 
+static bool compatibleRanges(gdk_dimension *dim1, gdk_dimension *dim2) {
+	if(*(oid*)dim1->max < *(oid*)dim2->min || *(oid*)dim2->max < *(oid*)dim1->min) {
+		//disjoint ranges. empty result
+		return 0;
+	}
+	return 1;
+}
+
 static gdk_dimension* merge2CandidateDimensions(gdk_dimension *dim1, gdk_dimension *dim2) {
 	oid min, max, step;
 	
-	if(*(oid*)dim1->max < *(oid*)dim2->min || *(oid*)dim2->max < *(oid*)dim1->min) {
-		//disjoint ranges. cannot merge
-		return NULL;
-	}
+	//check whether the merge creates a dimension or not
+	//In case it does not return NULL and then a BAT should be created	
 
 	/*the biggest of the mins and the smallest of the maximums */
 	min = *(oid*)dim1->min > *(oid*)dim2->min ? *(oid*)dim1->min : *(oid*)dim2->min;
@@ -41,20 +47,8 @@ static gdk_dimension* merge2CandidateDimensions(gdk_dimension *dim1, gdk_dimensi
 	//they also have the same number of initial elements because the came from the same dimension
 	return createDimension_oid(dim1->dimNum, dim1->initialElementsNum, min, max, step); }
 
-static gdk_cells* mergeCandidateDimensions(gdk_cells *dims, gdk_dimension *dim) {
-	gdk_dimension *candDim = getDimension(dims, dim->dimNum);
-	gdk_dimension *mergedDim = merge2CandidateDimensions(candDim, dim);	
-
-
-	//check the limits of the two dimensions
-	if(!mergedDim) {
-		fprintf(stderr, "Disjoint ranges. Create a BAT");
-		//remove the dimension from the candidates
-		return cells_remove_dimension(dims, candDim->dimNum);
-	}
-
-	//create a new dimension that is the combined result of the candidates and the dim
-	return cells_replace_dimension(dims, mergedDim);
+static gdk_dimension* mergeCandidateDimensions(gdk_dimension *dim1, gdk_dimension *dim2) {
+	return merge2CandidateDimensions(dim1, dim2);	
 }
 
 static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *dims) {
@@ -187,49 +181,59 @@ str ALGdimensionLeftfetchjoin(bat *result, const bat *cands, const ptr *dims, co
 
 }
 
-#if 0
-static str
-ALGbinary(bat *result, const bat *lid, const bat *rid, BAT* (*func)(BAT *, BAT *), const char *name)
-{
-    BAT *left, *right,*bn= NULL;
+static str emptyCandidateResults(ptr *candsRes_dims, bat* candsRes_bid) {
+	BAT *candidatesBAT = NULL;
 
-    if ((left = BATdescriptor(*lid)) == NULL) {
-        throw(MAL, name, RUNTIME_OBJECT_MISSING);
-    }
-    if ((right = BATdescriptor(*rid)) == NULL) {
-        BBPunfix(left->batCacheid);
-        throw(MAL, name, RUNTIME_OBJECT_MISSING);
-    }
-    bn = (*func)(left, right);
-    BBPunfix(left->batCacheid);
-    BBPunfix(right->batCacheid);
-    if (bn == NULL)
-        throw(MAL, name, GDK_EXCEPTION);
-    if (!(bn->batDirty&2))
-        BATsetaccess(bn, BAT_READ);
-    *result = bn->batCacheid;
-    BBPkeepref(*result);
-    return MAL_SUCCEED;
+	if((candidatesBAT = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
+        throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
+	BATsetcount(candidatesBAT, 0);
+	BATseqbase(candidatesBAT, 0);
+	BATderiveProps(candidatesBAT, FALSE);    
+
+	BBPkeepref(*candsRes_bid = candidatesBAT->batCacheid);
+	*candsRes_dims = NULL;
+
+	return MAL_SUCCEED;
 }
 
-str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid) {
-    return ALGbinary(result, lid, rid, dimensionBATproject_wrap, "algebra.dimension_leftfetchjoin");
+static bool updateCandidateResults(gdk_cells** dimensionsCandidates_out, BAT** candidatesBAT_out, 
+									gdk_cells *dimensionsCandidates_in, BAT* candidatesBAT_in,
+									int dimNum, BUN elsNum, oid min, oid max) {
+	//the dimension comes from the original the elements and initial elements num is the same
+	gdk_dimension *dimensionCand_out = createDimension_oid(dimNum, elsNum, min, max, 1); //step cannot be 0 or infinite loop
+	gdk_dimension *dimensionCand_in = getDimension(dimensionsCandidates_in, dimNum);
+	
+	//if the existing results for the dimension and the new computed results can be combined in a new dimension
+	if(compatibleRanges(dimensionCand_in, dimensionCand_out)) {
+		//merge the dimension in the candidates with the result of this operation
+		dimensionCand_out = mergeCandidateDimensions(dimensionCand_in, dimensionCand_out);
+		if(!dimensionCand_out) {
+			//the dimensions cannot be merged to a new dimension. Create a BAT
+			*dimensionsCandidates_out = cells_remove_dimension(dimensionsCandidates_in, dimNum);
+		} else {
+			*dimensionsCandidates_out = cells_replace_dimension(dimensionsCandidates_in, dimensionCand_out);
+			//the candidatesBAT does not change
+			*candidatesBAT_out = candidatesBAT_in;
+		}
+	} else //cannot produce candidates. Empty result
+		return 0;
+
+	return 1;	
 }
-#endif
 
 str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const ptr *dimsCand, const bat* oidsCand, 
 							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	gdk_array *array = (gdk_array*)*dims; //the sizes of all the dimensions (I treat them as indices and I do not care about the exact values)
 	gdk_dimension *dimension = (gdk_dimension*)*dim;
 
-	gdk_cells *dimensionsCandidates = NULL;
+	gdk_cells *dimensionsCandidates_in = NULL, *dimensionsCandidates_out = NULL;
 	BAT *candidatesBAT_in = NULL, *candidatesBAT_out = NULL;
-	gdk_cells *dimensionsResult = cells_new();
+
+	gdk_dimension *dimensionCand_in = NULL, *dimensionCand_out = NULL;
 
 	int type;
 	const void *nil;
 
-	(void)(bit*)li;
 	(void)(bit*)hi;
 	(void)(bit*)anti;
 	
@@ -240,11 +244,11 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 	}
 
 	if(dimsCand)
-		dimensionsCandidates = (gdk_cells*)*dimsCand;
+		dimensionsCandidates_in = (gdk_cells*)*dimsCand;
 
 	//if there are no candidates then everything is a candidate
 	if(!dimsCand && !oidsCand) {
-		dimensionsCandidates = sizesToDimensions(array);
+		dimensionsCandidates_in = sizesToDimensions(array);
 		//create an empy candidates BAT
 		 if((candidatesBAT_in = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
             throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
@@ -253,20 +257,8 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 		BATderiveProps(candidatesBAT_in, FALSE);    
 	} 
 
-	if(!dimensionsCandidates) { //empty results
-		//create an empy candidates BAT
-		if((candidatesBAT_out = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
-            throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
-		BATsetcount(candidatesBAT_out, 0);
-		BATseqbase(candidatesBAT_out, 0);
-		BATderiveProps(candidatesBAT_out, FALSE);    
-
-		*dimsRes = dimensionsResult;
-		BBPkeepref(*oidsRes = candidatesBAT_out->batCacheid);
-	
-		return MAL_SUCCEED;			
-	}
-
+	if(!dimensionsCandidates_in) //empty results
+		return emptyCandidateResults(dimsRes, oidsRes);
 
     type = dimension->type;
     nil = ATOMnilptr(type);
@@ -274,40 +266,55 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 
     if(ATOMcmp(type, low, high) == 0) { //point selection   
 		//find the idx of the value
-		gdk_dimension *resDimension = NULL;
-		oid qualifyingOID = equalIdx(dimension, low); 
-		if(qualifyingOID >= dimension->initialElementsNum) {
-			//no results. create empty candidates BAT
-			if((candidatesBAT_out = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
-            	throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
-			BATsetcount(candidatesBAT_out, 0);
-			BATseqbase(candidatesBAT_out, 0);
-			BATderiveProps(candidatesBAT_in, FALSE);    
-
+		oid qualifyingIdx = equalIdx(dimension, low); 
+		if(qualifyingIdx >= dimension->initialElementsNum) {
 			//remove all the dimensions, there will be no results in the output
-			dimensionsResult = NULL;
-			freeCells(dimensionsCandidates);
+			freeCells(dimensionsCandidates_in);
+			return emptyCandidateResults(dimsRes, oidsRes);
 		}  else {
-			//the dimension comes from the original this the elemenst and initial elements num is the same
-			resDimension = createDimension_oid(dimension->dimNum, dimension->initialElementsNum, qualifyingOID, qualifyingOID, 1); //step cannot be 0 or infinite loop
-		
-			//merge the dimension in the candidates with the result of this operation
-			dimensionsResult = mergeCandidateDimensions(dimensionsCandidates, resDimension);		
+			if(!updateCandidateResults(&dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum, dimension->initialElementsNum, qualifyingIdx, qualifyingIdx)) {
+				//remove all the dimensions, there will be no results in the output
+				freeCells(dimensionsCandidates_in);
+				return emptyCandidateResults(dimsRes, oidsRes);
+			}
 		}
-	} else if(ATOMcmp(type, high, nil) == 0) { //find values greater than low
-		return MAL_SUCCEED;
-	} else if(ATOMcmp(type, low, nil) == 0) { //find values lower than high
+	} else if(ATOMcmp(type, low, nil) == 0 && ATOMcmp(type, high, nil) == 0) {
+		oid qualifyingIdx_min = lowerIdx(dimension, low, *li); 
+		oid qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
+
+		if(qualifyingIdx_max >= dimension->initialElementsNum || qualifyingIdx_min >= dimension->initialElementsNum) {
+			freeCells(dimensionsCandidates_in);
+			return emptyCandidateResults(dimsRes, oidsRes);
+		} else {
+			dimensionCand_out = createDimension_oid(dimension->dimNum, dimension->initialElementsNum, qualifyingIdx_min, qualifyingIdx_max, 1);
+			dimensionCand_in = getDimension(dimensionsCandidates_in, dimension->dimNum);
+
+			//if the existing results for the dimension and the new computed results can be combined in a new dimension
+			if(compatibleRanges(dimensionCand_in, dimensionCand_out)) {
+				//merge the dimension in the candidates with the result of this operation
+				dimensionCand_out = mergeCandidateDimensions(dimensionCand_in, dimensionCand_out);
+				if(!dimensionCand_out) {
+					//the dimensions cannot be merged to a new dimension. Create a BAT
+					dimensionsCandidates_out = cells_remove_dimension(dimensionsCandidates_in, dimensionCand_in->dimNum);
+				} else 
+					dimensionsCandidates_out = cells_replace_dimension(dimensionsCandidates_in, dimensionCand_out);
+			} else {
+				//remove all the dimensions, there will be no results in the output
+				freeCells(dimensionsCandidates_in);
+				return emptyCandidateResults(dimsRes, oidsRes);
+			}	
+		} 
+		
+
 		return MAL_SUCCEED;
 	}
 
-	if(!candidatesBAT_out)  //the BAT did not change
-		candidatesBAT_out = candidatesBAT_in;
-	else if(oidsCand)
+	if(oidsCand && candidatesBAT_in != candidatesBAT_out) //there was a candidatesBAT in the input that is not sent in the output
 		BBPunfix(candidatesBAT_in->batCacheid);
 
 	BBPkeepref(*oidsRes = candidatesBAT_out->batCacheid);
 
-	*dimsRes = dimensionsResult;
+	*dimsRes = dimensionsCandidates_out;
 
 	return MAL_SUCCEED;
 }

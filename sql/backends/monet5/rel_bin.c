@@ -2557,7 +2557,7 @@ static stmt* find_before_uselect(stmt *s) {
 static int pushDimensionSelections(stmt **s) {
 	int changes = 0;
 	stmt *nextS = (*s)->op3;
-	if(nextS) {
+	if(nextS && nextS->op1) {
 		//the current is but the next is not
 		if((*s)->op1->type == st_dimension && nextS->op1->type != st_dimension) {
 			//switch the positions of the selection
