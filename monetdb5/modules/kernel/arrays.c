@@ -57,14 +57,22 @@ static gdk_cells* mergeCandidateDimensions(gdk_cells *dims, gdk_dimension *dim) 
 	return cells_replace_dimension(dims, mergedDim);
 }
 
-static BUN oidToIdx(oid oidVal, int currentDimNum, BUN skipCells, gdk_array *dims) {
-	if(currentDimNum == dims->dimsNum-1)
-		return oidVal%skipCells;
-	else {
-		if(currentDimNum == 0)
-			return oidToIdx(oidVal, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
-		return oidToIdx(oidVal, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims)%skipCells;
+static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *dims) {
+	BUN oid = 0;
+
+	while(currentDimNum < dimNum) {
+		skipCells*=dims->dimSizes[currentDimNum];
+		currentDimNum++;
 	}
+
+	if(currentDimNum == dims->dimsNum-1)
+		oid = oidVal;
+	else
+		oid = oidToIdx(oidVal, dimNum, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
+
+	if(currentDimNum == dimNum) //in the last one we do not compute module
+		return oid/skipCells;
+	return oid%skipCells;
 }
 
 static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, oid **resOIDs ) {
@@ -120,7 +128,7 @@ do { \
 \
 	BATloop(candsBAT, p, q) { \
     	oid qOid = *(oid *) BUNtail(candsIter, p); \
-		BUN idx = oidToIdx(qOid, 0, 1, array); \
+		BUN idx = oidToIdx(qOid, dimension->dimNum, 0, 1, array); \
 		*vals++ = min +idx*step; \
 fprintf(stderr, "%d - %d - %d\n", (int)qOid, (int)idx, (int)vals[-1]); \
     } \
