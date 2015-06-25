@@ -3,4 +3,4 @@
 prompt # $t $g  
 echo on
 
-sqlsample.pl %MAPIPORT% %TSTDB%
+perl sqlsample.pl %MAPIPORT% %TSTDB%

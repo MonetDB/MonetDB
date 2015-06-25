@@ -5,7 +5,7 @@
 # Copyright 2008-2015 MonetDB B.V.
 
 MTSAFE
-INCLUDES = ../mapilib ../../common/options ../../common/stream ../R/MonetDB.R/src $(READLINE_INCS)
+INCLUDES = ../mapilib ../../common/options ../../common/stream ../../common/utils ../R/MonetDB.R/src $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST

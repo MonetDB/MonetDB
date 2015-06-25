@@ -191,6 +191,12 @@
 #include "monetdb_config.h"
 #include "mtime.h"
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#include "strptime.c"
+#endif
+
+
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i)							\
 	do {										\
@@ -3479,7 +3485,6 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 str
 MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 {
-#ifdef HAVE_STRPTIME
 	struct tm t;
 
 	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
@@ -3491,9 +3496,6 @@ MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.str_to_date", "strptime support missing");
-#endif
 }
 
 str
@@ -3528,7 +3530,6 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 str
 MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
 {
-#ifdef HAVE_STRPTIME
 	struct tm t;
 
 	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
@@ -3540,9 +3541,6 @@ MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'\n", *format, *s);
 	*d = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.str_to_time", "strptime support missing");
-#endif
 }
 
 str
@@ -3576,7 +3574,6 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 str
 MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *format)
 {
-#ifdef HAVE_STRPTIME
 	struct tm t;
 
 	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
@@ -3589,9 +3586,6 @@ MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *
 	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
 	ts->msecs = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.str_to_timestamp", "strptime support missing");
-#endif
 }
 
 str
