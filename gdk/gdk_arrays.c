@@ -540,7 +540,7 @@ gdk_return dimensionBATsubselect(BAT** outBAT, BAT *dimensionBAT, BAT *candsBAT,
 		TPE min, max, step; \
 		dimensionCharacteristics(TPE, dimensionBAT, &min, &max, &step, &elementRepeats, &groupRepeats); \
 		elementsNum = dimensionElementsNum(min, max, step); \
-		element_oid = dimensionFndLowerValuePos(el, min, step, includeHigh>0); \
+		element_oid = dimensionFndLowerValuePos(el, min, max, step, includeHigh>0); \
 		if(element_oid >= elementsNum) \
 			element_oid = elementsNum-1; /* all elements are included*/\
 	} while(0)

@@ -229,12 +229,9 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 	gdk_cells *dimensionsCandidates_in = NULL, *dimensionsCandidates_out = NULL;
 	BAT *candidatesBAT_in = NULL, *candidatesBAT_out = NULL;
 
-	gdk_dimension *dimensionCand_in = NULL, *dimensionCand_out = NULL;
-
 	int type;
 	const void *nil;
 
-	(void)(bit*)hi;
 	(void)(bit*)anti;
 	
 	if(oidsCand) {
@@ -278,7 +275,35 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 				return emptyCandidateResults(dimsRes, oidsRes);
 			}
 		}
-	} else if(ATOMcmp(type, low, nil) == 0 && ATOMcmp(type, high, nil) == 0) {
+	} else if(ATOMcmp(type, low, nil) == 0) { //no lower bound
+		oid qualifyingIdx_min = 0; 
+		oid qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
+	
+		if(qualifyingIdx_max >= dimension->initialElementsNum) {
+			freeCells(dimensionsCandidates_in);
+			return emptyCandidateResults(dimsRes, oidsRes);
+		} else {
+			if(!updateCandidateResults(&dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum, dimension->initialElementsNum, qualifyingIdx_min, qualifyingIdx_max)) {
+				//remove all the dimensions, there will be no results in the output
+				freeCells(dimensionsCandidates_in);
+				return emptyCandidateResults(dimsRes, oidsRes);
+			}
+		} 
+	} else if(ATOMcmp(type, high, nil) == 0) { //no upper bound
+		oid qualifyingIdx_min = lowerIdx(dimension, low, *li); 
+		oid qualifyingIdx_max = dimension->initialElementsNum-1;
+
+		if(qualifyingIdx_min >= dimension->initialElementsNum) {
+			freeCells(dimensionsCandidates_in);
+			return emptyCandidateResults(dimsRes, oidsRes);
+		} else {
+			if(!updateCandidateResults(&dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum, dimension->initialElementsNum, qualifyingIdx_min, qualifyingIdx_max)) {
+				//remove all the dimensions, there will be no results in the output
+				freeCells(dimensionsCandidates_in);
+				return emptyCandidateResults(dimsRes, oidsRes);
+			}
+		} 
+	} else if(ATOMcmp(type, low, nil) != 0 && ATOMcmp(type, high, nil) != 0) {
 		oid qualifyingIdx_min = lowerIdx(dimension, low, *li); 
 		oid qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
 
@@ -286,27 +311,15 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 			freeCells(dimensionsCandidates_in);
 			return emptyCandidateResults(dimsRes, oidsRes);
 		} else {
-			dimensionCand_out = createDimension_oid(dimension->dimNum, dimension->initialElementsNum, qualifyingIdx_min, qualifyingIdx_max, 1);
-			dimensionCand_in = getDimension(dimensionsCandidates_in, dimension->dimNum);
-
-			//if the existing results for the dimension and the new computed results can be combined in a new dimension
-			if(compatibleRanges(dimensionCand_in, dimensionCand_out)) {
-				//merge the dimension in the candidates with the result of this operation
-				dimensionCand_out = mergeCandidateDimensions(dimensionCand_in, dimensionCand_out);
-				if(!dimensionCand_out) {
-					//the dimensions cannot be merged to a new dimension. Create a BAT
-					dimensionsCandidates_out = cells_remove_dimension(dimensionsCandidates_in, dimensionCand_in->dimNum);
-				} else 
-					dimensionsCandidates_out = cells_replace_dimension(dimensionsCandidates_in, dimensionCand_out);
-			} else {
+			if(!updateCandidateResults(&dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum, dimension->initialElementsNum, qualifyingIdx_min, qualifyingIdx_max)) {
 				//remove all the dimensions, there will be no results in the output
 				freeCells(dimensionsCandidates_in);
 				return emptyCandidateResults(dimsRes, oidsRes);
-			}	
+			}
 		} 
-		
-
-		return MAL_SUCCEED;
+	} else {
+		//both values are NULL. Empty result
+		return emptyCandidateResults(dimsRes, oidsRes);
 	}
 
 	if(oidsCand && candidatesBAT_in != candidatesBAT_out) //there was a candidatesBAT in the input that is not sent in the output
@@ -322,6 +335,64 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 str ALGdimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, 
 							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, NULL, NULL, low, high, li, hi, anti);
+}
+
+str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const ptr *dimsCand, const bat* oidsCand, const void *val, const char **opp) {
+	bit li = 0;
+	bit hi = 0;
+	bit anti = 0;
+	const char *op = *opp;
+	gdk_dimension *dimension = *dim;
+	const void *nil = ATOMnilptr(dimension->type);
+
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+        /* "=" or "==" */
+		li = hi = 1;
+		anti = 0;
+        return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+    }
+    if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+        /* "!=" (equivalent to "<>") */ 
+		li = hi = anti = 1;
+        return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+    }
+    if (op[0] == '<') { 
+        if (op[1] == 0) {
+            /* "<" */
+			li = hi = anti = 0;
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, nil, val, &li, &hi, &anti);
+        }
+        if (op[1] == '=' && op[2] == 0) {
+            /* "<=" */
+			li = anti = 0;
+			hi = 1;
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, nil, val, &li, &hi, &anti);
+        }
+        if (op[1] == '>' && op[2] == 0) {
+            /* "<>" (equivalent to "!=") */ 
+			li = hi = anti = 1;
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+        }
+    }
+    if (op[0] == '>') { 
+        if (op[1] == 0) {
+            /* ">" */
+			li = hi = anti = 0;
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+        }
+        if (op[1] == '=' && op[2] == 0) {
+            /* ">=" */
+			li = 1;
+			hi = anti = 0;
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dims, dim, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+        }
+    }
+
+    throw(MAL, "algebra.dimensionThetasubselect", "BATdimensionThetasubselect: unknown operator.\n");
+}
+
+str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const void *val, const char **op) {
+	return ALGdimensionThetasubselect2(dimsRes, oidsRes, dims, dim, NULL, NULL, val, op);
 }
 
 str ALGmbrproject(bat *result, const bat *bid, const bat *sid, const bat* rid) {

@@ -95,18 +95,30 @@ gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
  * or the position of the index that is closest to the given value and greater than it*/
 #define dimensionFndGreaterValuePos(value, min, step, eq) \
 	({\
-		BUN pos = (BUN)(value-min)/step; \
-		fmod((value-min), step) ? ++pos : (pos +(1-eq)); \
+		BUN pos = 0; \
+		if(value >= min) { \
+			/*the index of the value greater or equal to a value < min is the index of the min (0)*/ \
+			pos = (BUN)(value-min)/step; \
+			fmod((value-min), step) ? ++pos : (pos +=(1-eq)); \
+		} \
+		pos; \
 	})
 
 /*find the position in the dimension indices (no repetitions) of the  given value
  * or the position of the index that is closest to the given value and smaller than it*/
-#define dimensionFndLowerValuePos(value, min, step, eq) \
+#define dimensionFndLowerValuePos(value, min, max, step, eq) \
 	({\
-		BUN pos = (BUN)(value-min)/step; \
-		if(value < min) \
-			pos = -2; \
-		fmod((value-min), step) ? pos : (pos - (1-eq)); \
+		BUN pos = 0; \
+		if(value <= max) { \
+			if(value < min) \
+				pos = BUN_NONE; \
+			pos = (BUN)(value-min)/step; \
+			fmod((value-min), step) ? pos : (pos -= (1-eq)); \
+		} else {\
+			/*the index of the value  <= to a value > max is the index of the max*/ \
+			pos = (BUN)(max-min)/step; \
+		} \
+		pos; \
 	})
 
 
@@ -143,39 +155,39 @@ gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
 	idx; \
 })
 
-#define lowerIdx(dim, value, eq) \
+#define greaterIdx(dim, value, eq) \
 ({\
 	BUN idx = 0; \
 	switch(dim->type) { \
         case TYPE_bte: \
-			idx = dimensionFndLowerValuePos(*(bte*)value, *(bte*)dim->min, *(bte*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(bte*)value, *(bte*)dim->min, *(bte*)dim->max, *(bte*)dim->step, eq); \
 			break; \
         case TYPE_sht: \
-			idx = dimensionFndLowerValuePos(*(sht*)value, *(sht*)dim->min, *(sht*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(sht*)value, *(sht*)dim->min, *(sht*)dim->max, *(sht*)dim->step, eq); \
             break; \
         case TYPE_int:\
-			idx = dimensionFndLowerValuePos(*(int*)value, *(int*)dim->min, *(int*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(int*)value, *(int*)dim->min, *(int*)dim->max, *(int*)dim->step, eq); \
             break; \
         case TYPE_flt:\
-			idx = dimensionFndLowerValuePos(*(flt*)value, *(flt*)dim->min, *(flt*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(flt*)value, *(flt*)dim->min, *(flt*)dim->max, *(flt*)dim->step, eq); \
             break; \
         case TYPE_dbl:\
-			idx = dimensionFndLowerValuePos(*(dbl*)value, *(dbl*)dim->min, *(dbl*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(dbl*)value, *(dbl*)dim->min, *(dbl*)dim->max, *(dbl*)dim->step, eq); \
             break; \
         case TYPE_lng:\
-			idx = dimensionFndLowerValuePos(*(lng*)value, *(lng*)dim->min, *(lng*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(lng*)value, *(lng*)dim->min, *(lng*)dim->max, *(lng*)dim->step, eq); \
             break; \
         case TYPE_hge:\
-			idx = dimensionFndLowerValuePos(*(hge*)value, *(hge*)dim->min, *(hge*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(hge*)value, *(hge*)dim->min, *(hge*)dim->max, *(hge*)dim->step, eq); \
 			break; \
         case TYPE_oid:\
-			idx = dimensionFndLowerValuePos(*(oid*)value, *(oid*)dim->min, *(oid*)dim->step, eq); \
+			idx = dimensionFndLowerValuePos(*(oid*)value, *(oid*)dim->min, *(oid*)dim->max, *(oid*)dim->step, eq); \
             break; \
 	} \
 	idx; \
 })
 
-#define greaterIdx(dim, value, eq) \
+#define lowerIdx(dim, value, eq) \
 ({\
 	BUN idx = 0; \
 	switch(dim->type) { \
