@@ -37,3 +37,4 @@ true_or_predicate.Bug-3733
 crash.Bug-3736
 div_zero.Bug-3742
 cast_to_num.Bug-3744
+mergejoin_NULL.Bug-3747

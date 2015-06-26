@@ -505,7 +505,7 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
-		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
+		if (0 && (BBP_status(b->batCacheid) & BBPEXISTING) &&
 		    b->batInserted == b->batCount &&
 		    HEAPsave(hp, nme, ext) == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
