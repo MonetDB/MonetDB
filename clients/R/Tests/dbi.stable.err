@@ -1,11 +1,11 @@
 stderr of test 'dbi` in directory 'clients/R` itself:
 
 
-# 14:24:02 >  
-# 14:24:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37882" "--set" "mapi_usock=/var/tmp/mtest-79204/.s.monetdb.37882" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-oct2014-install/var/MonetDB/mTests_clients_R" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 14:24:02 >  
+# 16:49:50 >  
+# 16:49:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36003" "--set" "mapi_usock=/var/tmp/mtest-66827/.s.monetdb.36003" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_clients_R" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:49:50 >  
 
-# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-oct2014-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,21 +17,24 @@ stderr of test 'dbi` in directory 'clients/R` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37882
-# cmdline opt 	mapi_usock = /var/tmp/mtest-79204/.s.monetdb.37882
+# cmdline opt 	mapi_port = 36003
+# cmdline opt 	mapi_usock = /var/tmp/mtest-66827/.s.monetdb.36003
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-oct2014-install/var/MonetDB/mTests_clients_R
+# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/MonetDB/mTests_clients_R
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:24:03 >  
-# 14:24:03 >  "R" "--vanilla" "--slave" "--args" "37882"
-# 14:24:03 >  
+# 16:49:50 >  
+# 16:49:50 >  "R" "--vanilla" "--slave" "--args" "36003"
+# 16:49:50 >  
 
+Identifier(s) Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, Species contain reserved SQL characters and need to be quoted.
+Identifier(s) Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, Species contain reserved SQL characters and need to be quoted.
+Identifier(s) year, month, day are reserved SQL keywords and need to be quoted.
 
-# 14:24:04 >  
-# 14:24:04 >  "Done."
-# 14:24:04 >  
+# 16:49:52 >  
+# 16:49:52 >  "Done."
+# 16:49:52 >  
 

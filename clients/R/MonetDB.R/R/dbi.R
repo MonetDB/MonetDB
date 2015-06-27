@@ -205,7 +205,7 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
   # TODO: this is evil... 
   return(tolower(gsub("(^\"|\"$)","",as.character(name))) %in% 
-    tolower(dbListTables(conn,sys_tables=T)))
+    tolower(dbListTables(conn, sys_tables=T)))
 })
 
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
@@ -215,7 +215,7 @@ setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
 setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  dbGetQuery(conn,paste0("SELECT * FROM ", name))
+  dbGetQuery(conn, paste0("SELECT * FROM ", name))
 })
 
 # This one does all the work in this class
@@ -281,20 +281,28 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
     }
   }
 
-  return(new("MonetDBResult", env=env))
+  new("MonetDBResult", env=env)
   })
 
 
 
 # quoting
-setMethod("dbQuoteIdentifier", c("MonetDBConnection", "character"), function(conn, x, ...) {
-  qts <- !grepl("^[a-z][a-z0-9_]+$",x,perl=T)
-  x[qts] <- paste('"', gsub('"', '""', x[qts], fixed = TRUE), '"', sep = "")
-  SQL(x)
-})
+quoteIfNeeded <- function(conn, x, ...) {
+  chars <- !grepl("^[A-Za-z][A-Za-z0-9_]*$", x, perl=T) && !grepl("^\"[^\"]*\"$", x, perl=T)
+  if (any(chars)) {
+    message("Identifier(s) ", paste(x[chars], collapse=", "), " contain reserved SQL characters and need to be quoted.")
+  }
+  reserved <- toupper(x) %in% .SQL92Keywords
+  if (any(reserved)) {
+    message("Identifier(s) ", paste(x[reserved], collapse=", "), " are reserved SQL keywords and need to be quoted.")
+  }
+  qts <- reserved || chars
+  x[qts] <- dbQuoteIdentifier(conn, x[qts])
+  x
+}
 
-# overload as per DBI documentation
-setMethod("dbQuoteIdentifier", c("MonetDBConnection", "SQL"), function(conn, x, ...) {x})
+# # overload as per DBI documentation
+# setMethod("dbQuoteIdentifier", c("MonetDBConnection", "SQL"), function(conn, x, ...) {x})
 
 # adapted from RMonetDB, very useful...
 setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
@@ -310,7 +318,8 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   if (overwrite && append) {
     stop("Setting both overwrite and append to true makes no sense.")
   }
-  qname <- make.db.names(conn, name)
+
+  qname <- quoteIfNeeded(conn, name)
   if (dbExistsTable(conn, qname)) {
     if (overwrite) dbRemoveTable(conn, qname)
     if (!overwrite && !append) stop("Table ", qname, " already exists. Set overwrite=TRUE if you want 
@@ -319,7 +328,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   }
   if (!dbExistsTable(conn, qname)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
-    fdef <- paste('"', make.db.names(conn, names(value)), '"', fts, collapse=', ')
+    fdef <- paste(quoteIfNeeded(conn, names(value)), fts, collapse=', ')
     ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
     dbSendUpdate(conn, ct)
   }
@@ -458,8 +467,8 @@ monetdbRtype <- function(dbType) {
 }
 
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
-  # dbGetQuery() still calls fetch(), thus no error message yet 
-  # warning("fetch() is deprecated, use dbFetch()")
+  # DBI on CRAN still uses fetch()
+  # message("fetch() is deprecated, use dbFetch()")
   dbFetch(res, n, ...)
 })
 
@@ -568,7 +577,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   
   # if (getOption("monetdb.profile", T))  .profiler_clear()
 
-  return(df)
+  df
 })
 
 

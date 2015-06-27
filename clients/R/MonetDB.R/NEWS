@@ -1,5 +1,5 @@
 0.9.9
-- dbWriteTable now quotes column names
+- dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
 
 0.9.8
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
