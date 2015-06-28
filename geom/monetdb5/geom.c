@@ -826,7 +826,7 @@ pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 	dbl *px = NULL, *py = NULL;
 	BUN i = 0, cnt;
 	int j = 0, nv;
-	bte *cs = NULL;
+	bit *cs = NULL;
 
 	/*Get the BATs*/
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -849,7 +849,7 @@ pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 	}
 
 	/*Create output BAT*/
-	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+	if ((bo = BATnew(TYPE_void, ATOMindex("bit"), BATcount(bpx), TRANSIENT)) == NULL) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
@@ -862,7 +862,7 @@ pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 
 	nv = nvert -1;
 	cnt = BATcount(bpx);
-	cs = (bte*) Tloc(bo,BUNfirst(bo));
+	cs = (bit*) Tloc(bo,BUNfirst(bo));
 	for (i = 0; i < cnt; i++) {
 		int wn = 0;
 		for (j = 0; j < nv; j++) {
@@ -895,7 +895,7 @@ pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 	dbl *px = NULL, *py = NULL;
 	BUN i = 0, cnt = 0;
 	int j = 0, h = 0;
-	bte *cs = NULL;
+	bit *cs = NULL;
 
 	/*Get the BATs*/
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -917,7 +917,7 @@ pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 	}
 
 	/*Create output BAT*/
-	if ((bo = BATnew(TYPE_void, ATOMindex("bte"), BATcount(bpx), TRANSIENT)) == NULL) {
+	if ((bo = BATnew(TYPE_void, ATOMindex("bit"), BATcount(bpx), TRANSIENT)) == NULL) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
@@ -928,7 +928,7 @@ pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
 	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
 	cnt = BATcount(bpx);
-	cs = (bte*) Tloc(bo,BUNfirst(bo));
+	cs = (bit*) Tloc(bo,BUNfirst(bo));
 	for (i = 0; i < cnt; i++) {
 		int wn = 0;
 
@@ -985,7 +985,8 @@ pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 #define POLY_NUM_HOLE 10
 
 str
-wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y) {
+wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y) 
+{
 	double *vert_x, *vert_y, **holes_x = NULL, **holes_y= NULL;
 	int *holes_n= NULL, j;
 	wkb *geom = NULL;
