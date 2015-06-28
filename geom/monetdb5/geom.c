@@ -69,9 +69,7 @@ geom_export str wkbgetcoordX(dbl *out, wkb **geom);
 geom_export str wkbgetcoordY(dbl *out, wkb **geom);
 geom_export str wkbcreatepoint(wkb **out, const dbl *x, const dbl *y);
 geom_export str wkbcreatepoint_bat(bat *out, const bat *x, const bat *y);
-geom_export str pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y);
 geom_export double isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y);
-geom_export str pnpolyWithHoles_(int *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, bat *point_x, bat *point_y);
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
 geom_export str wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y);
 geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
@@ -819,7 +817,7 @@ isLeft( double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
 			- (P2x -  P0x) * (P1y - P0y) );
 }
 
-str
+static str
 pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 {
 	BAT *bo = NULL, *bpx = NULL, *bpy;
@@ -888,7 +886,7 @@ pnpoly_(int *out, int nvert, dbl *vx, dbl *vy, int *point_x, int *point_y)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 pnpolyWithHoles_(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, bat *point_x, bat *point_y)
 {
 	BAT *bo = NULL, *bpx = NULL, *bpy;
