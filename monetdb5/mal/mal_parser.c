@@ -2043,7 +2043,7 @@ parseError(Client cntxt, str msg)
 {
 	Symbol curPrg;
 	MalBlkPtr curBlk;
-	char buf[10 * 1024];
+	char buf[1028];
 	char *s = buf, *t, *l = lastline(cntxt);
 	lng i;
 
@@ -2054,7 +2054,7 @@ parseError(Client cntxt, str msg)
 
 	/* accidental %s directives in the lastline can
 	   crash the vfsprintf later => escape them */
-	for (t = l; *t && *t != '\n'; t++) {
+	for (t = l; *t && *t != '\n' && s < buf+1024; t++) {
 		if (*t == '%')
 			*s++ = '%';
 		*s++ = *t;

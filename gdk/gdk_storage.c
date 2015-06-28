@@ -85,6 +85,18 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	return path;
 }
 
+/* Same as GDKfilepath, but tries to extract a filename from multilevel dir paths. */
+char *
+GDKfilepath_long(int farmid, const char *dir, const char *ext) {
+	char last_dir_parent[BUFSIZ] = "";
+	char last_dir[BUFSIZ] = "";
+
+	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir)) {
+		return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
+	}
+	return NULL;
+}
+
 gdk_return
 GDKcreatedir(const char *dir)
 {
@@ -212,6 +224,23 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 	return f;
 }
 
+FILE *
+GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode) {
+	char *path;
+
+	/* if name is null, try to get one from dir (in case it was a path) */
+	if ((name == NULL) || (*name == 0)) {
+		path = GDKfilepath_long(farmid, dir, extension);
+	} else {
+		path = GDKfilepath(farmid, dir, name, extension);
+	}
+
+	if (path != NULL) {
+        IODEBUG THRprintf(GDKstdout, "#GDKfileopen(%s)\n", path);
+		return fopen(path, mode);
+	}
+	return NULL;
+}
 
 /*
  * Unlink the file.

@@ -1471,9 +1471,10 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
-	for (i = mb->vtop - 1; i >= k; i--) {
+	for (i=k; i < mb->vtop - 1; i++) 
+	if( isVarConstant(mb,i)){
 		VarPtr v = getVar(mb, i);
-		if (v && isVarConstant(mb, i) && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
+		if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
 	}
 	return -1;

@@ -98,6 +98,11 @@ print(nrow(head(anti_join(player_info, hof), n=23L)))
 }))
 # TODO: set ops
 
+# Arbitrary SQL -------------------------------------------------------------
+# You can also provide sql as is, using the sql function:
+batting2008 <- tbl(dps,
+  sql('SELECT * FROM "Batting" WHERE "yearID" = 2008'))
+nrow(head(batting2008, n=26L))
 
 # sample functions
 print(nrow(sample_n(player_info, 24L)))
@@ -108,33 +113,34 @@ dbWriteTable(dps$con, "mtcars", mtcars)
 my_tbl <- tbl(dps, "mtcars") 
 
 # https://github.com/hadley/dplyr/issues/1165
-my_tbl %>% 
+aa <- my_tbl %>% 
     group_by( cyl , gear ) %>% 
-    summarise( n = n() )
+    summarise( n = n() ) %>% collect()
+print(nrow(aa))
 
 # this works fin
-my_tbl %>% 
+aa <- my_tbl %>% 
     group_by( cyl , gear ) %>% 
-    summarise( n = n() )
+    summarise( n = n() ) %>% collect()
+print(nrow(aa))
 
-my_tbl %>%
-    group_by( cyl , gear ) %>%
-    tally %>%
-    group_by( cyl ) %>%
-    mutate( pct = ( 100 * n ) / sum( n ) )
+# this breaks
+# aa <- my_tbl %>% 
+#     group_by( cyl , gear ) %>% 
+#     summarise( n = n() ) %>% 
+#     mutate( pct = 100 * n / sum( n ) ) %>% collect()
 
-my_tbl %>% 
-    group_by( cyl , gear ) %>% 
-    summarise( n = n() ) %>% 
-    mutate( pct = 100 * n / sum( n ) )
+# aa <- my_tbl %>%
+#     group_by( cyl , gear ) %>%
+#     tally %>%
+#     group_by( cyl ) %>%
+#     mutate( pct = ( 100 * n ) / sum( n ) )  %>% collect()
+# print(nrow(aa))
+
+
+
 
 dbRemoveTable(dps$con, "mtcars")
 
-
-# Arbitrary SQL -------------------------------------------------------------
-# You can also provide sql as is, using the sql function:
-batting2008 <- tbl(dps,
-  sql('SELECT * FROM "Batting" WHERE "yearID" = 2008'))
-nrow(head(batting2008, n=26L))
 
 print("SUCCESS")
