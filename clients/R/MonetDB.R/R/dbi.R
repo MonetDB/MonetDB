@@ -281,7 +281,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
     }
   }
 
-  new("MonetDBResult", env=env)
+  invisible(new("MonetDBResult", env=env))
   })
 
 

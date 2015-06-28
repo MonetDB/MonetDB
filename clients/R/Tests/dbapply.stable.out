@@ -30,11 +30,6 @@ Ready.
 # 11:43:14 >  
 
 [1] TRUE
-An object of class "MonetDBResult"
-Slot "env":
-<environment: 0x7fa0e4a984e8>
-
-[1] 42
 [1] TRUE
 [1] TRUE
 [1] TRUE

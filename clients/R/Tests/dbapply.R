@@ -23,9 +23,8 @@ stopifnot(dbIsValid(con))
 
 # make sure embedded R is working in general
 dbBegin(con)
-dbSendQuery(con, "CREATE FUNCTION fuuu() RETURNS TABLE(i INTEGER) LANGUAGE R {42L}")
+invisible(dbSendQuery(con, "CREATE FUNCTION fuuu() RETURNS TABLE(i INTEGER) LANGUAGE R {42L}"))
 res <- dbGetQuery(con, "SELECT * FROM fuuu();")
-print(res$i[[1]])
 stopifnot(identical(42L, res$i[[1]]))
 dbRollback(con)
 
