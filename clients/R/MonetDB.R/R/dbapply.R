@@ -29,7 +29,7 @@ setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, ta
 
   # now generate the UDF
   # find packages loaded here and load them on the server as well
-  toloadpkgs <- setdiff(unique(sapply(strsplit(grep("^package:",search(),value=T),":"),function(x) x[[2]])),c("base","stats","methods","utils","codetools","graphics","grDevices","datasets"))
+  toloadpkgs <- setdiff(unique(sapply(strsplit(grep("^package:",search(),value=T),":"),function(x) x[[2]])),c("base","stats","methods","utils","codetools","graphics","grDevices","datasets","MonetDB.R","DBI","digest"))
   dbrcode <- ''
   if (length(toloadpkgs) > 0) {
     if (getOption("monetdb.debug.query",FALSE)) 
