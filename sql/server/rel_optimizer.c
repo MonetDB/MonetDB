@@ -5794,7 +5794,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 					sql_subfunc *f = l->f;
 					
 					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					if (0 && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
 					     is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						int flag = a->data.val.bval;

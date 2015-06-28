@@ -236,6 +236,8 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 		low = * getArgReference_##TPE(stk, pci, i);		\
 		hgh = * getArgReference_##TPE(stk, pci, i + 1);	\
 									\
+		if (low == hgh && low != TPE##_nil) 			\
+			hi = li;					\
 		if (low == TPE##_nil && hgh == TPE##_nil) {		\
 			if (li && hi && !anti) {			\
 				/* match NILs (of which there aren't */	\
@@ -359,6 +361,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tlow = *getArgReference_TYPE(stk,pci,i, timestamp);
 			thgh = *getArgReference_TYPE(stk,pci,i+1, timestamp);
 
+			if (tlow.msecs == thgh.msecs &&
+			    tlow.days == thgh.days &&
+			    !timestamp_isnil(tlow))
+				hi = li;
 			if( hi && !timestamp_isnil(thgh) )
 				thgh.msecs++;
 			if( !li && !timestamp_isnil(tlow) )
