@@ -2,7 +2,7 @@
 
 bv:= bat.new(:oid,:int);
 barrier v:= 0:int;
-	w:= mmath.rand();
+    w:= mmath.rand();
     bat.append(bv,w);
     redo v:= iterator.next(1:int,10:int);
 exit v;

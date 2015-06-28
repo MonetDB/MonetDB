@@ -93,12 +93,12 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for (i=0; i< pieces; i++) {
 		// add sort instruction
-		q = newStmt(smb, putName("algebra",7), putName("arrangeorder", 9));
+		q = newStmt(smb, putName("algebra",7), putName("orderidx", 9));
 		setVarType(smb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 0);
-		q = pushBit(smb, q, 0);
+		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
 	}
 	// finalize, check, and evaluate
@@ -398,7 +398,7 @@ do {																		\
 			BBPunfix(bid);
 			throw(MAL,"bat.arrange", OPERATION_FAILED);
 		}
-		BBPunfix(m->batCacheid);
+		//BBPunfix(m->batCacheid);
 	}
 
 	for (i = 0; i < n_ar; i++) {
