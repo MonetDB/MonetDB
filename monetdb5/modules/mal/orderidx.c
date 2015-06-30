@@ -418,12 +418,11 @@ do {																		\
 			BBPunfix(bid);
 			throw(MAL,"bat.arrange", OPERATION_FAILED);
 		}
-		//BBPunfix(m->batCacheid);
+		for (i = 0; i < n_ar; i++) {
+			BBPunfix(aid[i]);
+		}
 	}
 
-	for (i = 0; i < n_ar; i++) {
-		BBPunfix(aid[i]);
-	}
 	GDKfree(aid);
 	GDKfree(a);
 	BBPunfix(bid);

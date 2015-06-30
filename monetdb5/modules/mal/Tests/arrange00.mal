@@ -5,13 +5,17 @@ bv:= bat.new(:oid,:int);
 barrier v:= 0:int;
     w:= mmath.rand();
     bat.append(bv,w);
-    redo v:= iterator.next(1:int,10:int);
+    redo v:= iterator.next(1:int,100:int);
 exit v;
 
 io.print(bv);
 
-bat.arrange(bv,3);
+bat.arrange(bv,4);
 
 ord := bat.getorder(bv);
 
 io.print(ord);
+
+(k,l):= algebra.subsort(bv,0:bit,1:bit);
+
+io.print(l);
