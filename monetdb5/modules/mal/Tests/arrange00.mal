@@ -1,4 +1,5 @@
 # create sorted oid arrangement 
+include orderidx;
 
 bv:= bat.new(:oid,:int);
 barrier v:= 0:int;
@@ -10,3 +11,7 @@ exit v;
 io.print(bv);
 
 bat.arrange(bv,3);
+
+ord := bat.getorder(bv);
+
+io.print(ord);

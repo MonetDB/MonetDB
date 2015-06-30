@@ -2121,7 +2121,7 @@ gdk_export lng IMPSimprintsize(BAT *b);
  *
  */
 gdk_export gdk_return ORDERkeepidx(BAT *b, BAT *order);
-gdk_export BAT *ORDERgetidx(BAT *b);
+gdk_export bat ORDERgetidx(BAT *b);
 
 /*
  * @- Multilevel Storage Modes

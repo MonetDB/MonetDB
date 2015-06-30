@@ -10,6 +10,10 @@ pattern bat.arrange(bv:bat[:oid,:any_1], l:bat[:oid,:oid]...):void
 address ARNGmerge
 comment "Consolidates the OID index arrangement";
 
+pattern bat.getorder(bv:bat[:oid,:any_1]):bat[:oid,:oid]
+address ARNGgetorder
+comment "Return the order index oid bat";
+
 function algebra.orderidx(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
 	(v,o):= algebra.subsort(bv,reverse,stable);
 	return sortorder:= o;

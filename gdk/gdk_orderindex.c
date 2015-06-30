@@ -83,11 +83,11 @@ ORDERkeepidx(BAT *b, BAT *order) {
 }
 
 gdk_export
-BAT *ORDERgetidx(BAT *b) {
+bat ORDERgetidx(BAT *b) {
 	BATcheck(b, "ORDERgetidx", GDK_FAIL);
 
-	if (b->torderidx.flags) {
-		return BBPdescriptor(b->torderidx.o);
+	if (b->torderidx.flags != 0) {
+		return b->torderidx.o;
 	}
-	return NULL;
+	return 0;
 }

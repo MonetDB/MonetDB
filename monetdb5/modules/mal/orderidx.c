@@ -128,6 +128,26 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+str
+ARNGgetorder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	bat *ret = getArgReference_bat(stk,pci,0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+
+	(void) cntxt;
+	(void) mb;
+
+
+	b = BATdescriptor(bid);
+	if (b == NULL)
+		throw(MAL, "bat.getorder", RUNTIME_OBJECT_MISSING);
+
+	*ret = ORDERgetidx(b);
+
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
 
 str
 ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

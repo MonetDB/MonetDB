@@ -28,4 +28,5 @@
 #define _DEBUG_ARNG_
 arrange_export str ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 arrange_export str ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+arrange_export str ARNGgetorder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _ARNG_H */
