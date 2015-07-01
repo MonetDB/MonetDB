@@ -342,7 +342,6 @@ mvc_release(mvc *m, const char *name)
 	int ok = SQL_OK;
 	int res = Q_TRANS;
 	sql_trans *tr = m->session->tr;
-	sql_trans *cur = tr;
 
 	assert(tr);
 	assert(m->session->active);	/* only release active transactions */
@@ -361,16 +360,17 @@ mvc_release(mvc *m, const char *name)
 		return -1;
 	}
 	tr = m->session->tr;
-	tr = tr->parent;
 	store_lock();
 	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
+		/* commit all intermediate savepoints */
+		if (sql_trans_commit(tr) != SQL_OK)
+			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr);
 	}
-	if (tr->name && strcmp(tr->name, name) == 0) {
-		tr = sql_trans_destroy(tr);
-	}
+	tr->name = NULL;
 	store_unlock();
-	cur -> parent = tr;
+	m->session->tr = tr;
+	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 
 	m->type = res;
 	return res;

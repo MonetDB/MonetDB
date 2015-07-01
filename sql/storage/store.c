@@ -1836,12 +1836,10 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	ni->type = i->type;
 	ni->key = NULL;
 
-	assert(flag == TR_OLD || tr->parent == gtrans);
-
 	/* Needs copy when committing (ie from tr to gtrans) and 
-	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	 * on savepoints from tr->parent to new tr */
 	if ((isNew(i) && flag == TR_NEW && tr->parent == gtrans) ||
-	    (i->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+	    (i->base.allocated && tr->parent != gtrans))
 		if (isTable(ni->t)) 
 			store_funcs.dup_idx(tr, i, ni);
 
@@ -1962,9 +1960,9 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 		c->storage_type = sa_strdup(sa, oc->storage_type);
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
-	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	 * on savepoints from tr->parent to new tr */
 	if ((isNew(oc) && flag == TR_NEW && tr->parent == gtrans) ||
-	    (oc->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+	    (oc->base.allocated && tr->parent != gtrans))
 		if (isTable(c->t)) 
 			store_funcs.dup_col(tr, oc, c);
 	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) {
@@ -2130,9 +2128,9 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->pkey = NULL;
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
-	 * on savepoints from tr->parent to new tr (flag == TR_OLD) */
+	 * on savepoints from tr->parent to new tr */
 	if ((isNew(ot) && flag == TR_NEW && tr->parent == gtrans) ||
-	    (ot->base.allocated && flag == TR_OLD && tr->parent != gtrans))
+	    (ot->base.allocated && tr->parent != gtrans))
 		if (isTable(t)) 
 			store_funcs.dup_del(tr, ot, t);
 
@@ -2146,7 +2144,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 			cs_add(&t->columns, column_dup(tr, flag, c, t), tr_flag(&c->base, flag));
 		}
-		ot->columns.nelm = NULL;
+		if (tr->parent == gtrans)
+			ot->columns.nelm = NULL;
 	}
 	/*
 	if (ot->tables.set) {
@@ -2157,7 +2156,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 			cs_add(&t->tables, npt, tr_flag(&pt->base, flag));
 			npt->p = t;
 		}
-		ot->tables.nelm = NULL;
+		if (tr->parent == gtrans)
+			ot->tables.nelm = NULL;
 	}
 	*/
 	if (ot->idxs.set) {
@@ -2166,7 +2166,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 			cs_add(&t->idxs, idx_dup(tr, flag, i, t), tr_flag(&i->base, flag));
 		}
-		ot->idxs.nelm = NULL;
+		if (tr->parent == gtrans)
+			ot->idxs.nelm = NULL;
 	}
 	if (ot->keys.set) {
 		for (n = ot->keys.set->h; n; n = n->next) {
@@ -2174,7 +2175,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 			cs_add(&t->keys, key_dup(tr, flag, k, t), tr_flag(&k->base, flag));
 		}
-		ot->keys.nelm = NULL;
+		if (tr->parent == gtrans)
+			ot->keys.nelm = NULL;
 	}
 	if (ot->triggers.set) {
 		for (n = ot->triggers.set->h; n; n = n->next) {
@@ -2182,7 +2184,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 			cs_add(&t->triggers, trigger_dup(tr, flag, k, t), tr_flag(&k->base, flag));
 		}
-		ot->triggers.nelm = NULL;
+		if (tr->parent == gtrans)
+			ot->triggers.nelm = NULL;
 	}
 	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) {
 		ot->base.flag = TR_OLD;
@@ -2260,7 +2263,7 @@ seq_dup(sql_trans *tr, int flag, sql_sequence *oseq, sql_schema * s)
 }
 
 static void
-table_of_tables_dup(sql_table *omt, sql_schema *s, int flag) 
+table_of_tables_dup(sql_trans *tr, sql_table *omt, sql_schema *s, int flag) 
 {
 	node *n;
 	sql_table *mt = schema_table_find(s, omt);
@@ -2272,7 +2275,8 @@ table_of_tables_dup(sql_table *omt, sql_schema *s, int flag)
 			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
 			npt->p = mt;
 		}
-		mt->tables.nelm = NULL;
+		if (tr->parent == gtrans)
+			mt->tables.nelm = NULL;
 	}
 }
 
@@ -2301,7 +2305,8 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		for (n = os->types.set->h; n; n = n->next) {
 			cs_add(&s->types, type_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
 		}
-		os->types.nelm = NULL;
+		if (tr->parent == gtrans)
+			os->types.nelm = NULL;
 	}
 	if (os->tables.set) {
 		for (n = os->tables.set->h; n; n = n->next) {
@@ -2310,26 +2315,30 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 			if (ot->persistence != SQL_LOCAL_TEMP)
 				cs_add(&s->tables, table_dup(tr, flag, ot, s), tr_flag(&ot->base, flag));
 		}
-		os->tables.nelm = NULL;
+		if (tr->parent == gtrans)
+			os->tables.nelm = NULL;
 		for (n = os->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
 			if (ot->persistence != SQL_LOCAL_TEMP && (isMergeTable(ot) || isReplicaTable(ot)))
-				table_of_tables_dup(ot, s, flag);
+				table_of_tables_dup(tr, ot, s, flag);
 		}
-		os->tables.nelm = NULL;
+		if (tr->parent == gtrans)
+			os->tables.nelm = NULL;
 	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
 			cs_add(&s->funcs, func_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
 		}
-		os->funcs.nelm = NULL;
+		if (tr->parent == gtrans)
+			os->funcs.nelm = NULL;
 	}
 	if (os->seqs.set) {
 		for (n = os->seqs.set->h; n; n = n->next) {
 			cs_add(&s->seqs, seq_dup(tr, flag, n->data, s), tr_flag(&os->base, flag));
 		}
-		os->seqs.nelm = NULL;
+		if (tr->parent == gtrans)
+			os->seqs.nelm = NULL;
 	}
 	if (flag == TR_NEW && tr->parent == gtrans) {
 		os->base.flag = TR_OLD;
@@ -2382,7 +2391,8 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		for (n = ot->schemas.set->h; n; n = n->next) {
 			cs_add(&t->schemas, schema_dup(t, TR_OLD, n->data, t), TR_OLD);
 		}
-		ot->schemas.nelm = NULL;
+		if (ot == gtrans)
+			ot->schemas.nelm = NULL;
 	}
 	return t;
 }
