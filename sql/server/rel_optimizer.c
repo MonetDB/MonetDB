@@ -5794,7 +5794,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 					sql_subfunc *f = l->f;
 					
 					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-					if (0 && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
 					     is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						int flag = a->data.val.bval;
@@ -5803,7 +5803,9 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 						assert(list_length(args) == 1);
 						l = args->h->data;
 						r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-						e = exp_compare(sql->sa, l, r, (flag)?cmp_equal:cmp_notequal);
+						e = exp_compare2(sql->sa, l, r, r, 3);
+						if (e && !flag)
+							set_anti(e);
 					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 						if (is_atom(r->type) && r->l) { /* direct literal */
 							atom *a = r->l;
