@@ -147,10 +147,10 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 					}
 					var colData = resp.data[resp.rows-bindparams.length+paramIndex];
 					if(colData) {
-						if(colData[0] == "timestamp") {
-							s = "timestamp "+s;
-						} else if(colData[0] == "timestamptz") {
-							s = "timestamptz "+s
+						var toCheck = ['timestamp', 'timestamptz', 'date'];
+						var i = toCheck.indexOf(colData[0]);
+						if(i >= 0) {
+							s = toCheck[i] + ' ' + s;
 						}
 					}
 					return s;
