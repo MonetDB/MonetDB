@@ -10,13 +10,12 @@
   
 }
 \usage{
-  dbApply(conn, table, rettype, fun)
+  dbApply(conn, table, fun)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} 
    with the \code{\link[MonetDB.R]{MonetDB.R}} database driver.}
    \item{table}{A MonetDB database table. Can also be a view or temporary table.}
-   \item{rettype}{SQL type the function returns. Case-insensitive. For example, \code{INTEGER}, \code{DOUBLE}, \code{STRING} etc.}
    \item{fun}{A R function to be run on the database table. The function gets passed a single \code{data.frame} argument which represents the database table. The function needs to return a single vector (for now).}
  }
 \value{

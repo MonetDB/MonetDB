@@ -12,11 +12,12 @@
   return(res)
 }
 
+# TODO: support arbitrary arguments that are passed to fun
 # TOOD: support running this on query results?
-if (is.null(getGeneric("dbApply"))) setGeneric("dbApply", function(conn, table, rettype, fun) 
+if (is.null(getGeneric("dbApply"))) setGeneric("dbApply", function(conn, table, fun) 
   standardGeneric("dbApply"))
 
-setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, table, rettype, fun) {
+setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, table, fun) {
   # generate unique function name
   dbfunname <- "__r_dapply_autogen_"
   while (dbGetQuery(conn,paste0("select count(*) from functions where name='",dbfunname,"'"))[[1]] > 0)
@@ -44,24 +45,29 @@ setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, ta
   if (!is.na(sfilename)) {
     dbrcode <- paste0(dbrcode,'# load serialized global variables\nload("',sfilename,'")\n')
   }
+  rfilename <- tempfile()
   # get source of user function and append
-  dbrcode <- paste0(dbrcode,"# user-supplied function\n.userfun <- ",paste0(deparse(fun),collapse="\n"),"\n# calling user function\nreturn(.userfun(.dbdata))\n")
+  dbrcode <- paste0(dbrcode,"# user-supplied function\n.userfun <- ",paste0(deparse(fun),collapse="\n"),"\n# calling user function\nsaveRDS(.userfun(.dbdata),file=\"",rfilename,"\")\nreturn(42L)\n")
   
   # find out things about the table, then wrap the r function
   res <- dbSendQuery(conn,paste0("SELECT * FROM ",table," LIMIT 1"))
   dbnames <- res@env$info$names
   dbtypes <- res@env$info$dbtypes
   dbfun <- paste0("CREATE FUNCTION ",dbfunname,"(",paste0(dbnames," ", dbtypes, collapse=", "),
-                  ") \nRETURNS TABLE(retval ",rettype,") LANGUAGE R {\n# rename arguments\n.dbdata <- data.frame(",
+                  ") \nRETURNS TABLE(retval INTEGER) LANGUAGE R {\n# rename arguments\n.dbdata <- data.frame(",
                   paste0(dbnames, collapse=", "),")\n",dbrcode,"};\n")
   # call the function we just created
   dbsel <- paste0("SELECT * FROM ", dbfunname, "( (SELECT * FROM ", table, " AS t) );\n")
   # ok, talk to DB (EZ)
   dbBegin(conn)
   dbSendQuery(conn,dbfun)
-  res <- dbGetQuery(conn,dbsel)
+  dres <- dbGetQuery(conn,dbsel)
   dbRollback(conn)
-  return(res[,1])
+  # TODO: check dres
+  # TODO: check if sfilename exists and is valid
+  res <- readRDS(rfilename)
+  on.exit(file.remove(na.omit(c(sfilename, rfilename))))
+  res
 })
 
 
