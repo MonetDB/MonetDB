@@ -8,11 +8,12 @@
 
     # TODO: optionally inline serialized context for remote dbs
   res <- tempfile()
-  save(list=vars,file=res,envir=environment(name),compress=T)
+  save(list=vars,file=res,envir=environment(name), compress=T)
   return(res)
 }
 
-if (is.null(getGeneric("dbApply"))) setGeneric("dbApply", function(conn, ...) 
+# TOOD: support running this on query results?
+if (is.null(getGeneric("dbApply"))) setGeneric("dbApply", function(conn, table, rettype, fun) 
   standardGeneric("dbApply"))
 
 setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, table, rettype, fun) {

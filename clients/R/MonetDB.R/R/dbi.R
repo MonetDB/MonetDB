@@ -22,8 +22,8 @@ setMethod("dbUnloadDriver", "MonetDBDriver", def=function(drv, ...) {
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
   list(name="MonetDBDriver", 
-       driver.version=packageVersion("MonetDB.R"), 
-       DBI.version=packageVersion("DBI"), 
+       driver.version=utils::packageVersion("MonetDB.R"), 
+       DBI.version=utils::packageVersion("DBI"), 
        client.version="NA", 
        max.connections=125) # R can only handle 128 connections, three of which are pre-allocated
 )
@@ -624,7 +624,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
                                                delim=",", newline="\\n", quote="\"", create=TRUE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
-  headers <- lapply(files, read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
+  headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
                     ...)
 
   if (!missing(nrows)) {
