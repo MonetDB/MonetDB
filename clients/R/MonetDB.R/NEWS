@@ -3,7 +3,7 @@
 - Cleaned up SQL to R type mapping (we had this twice)
 - Now creating actual R integers if data fits
 - dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
-- New dbApply function to automatically create embedded R functions in MonetDB
+- New mdbapply function to automatically create and run embedded R functions in MonetDB
 - Fixes for dplyr backend
 
 0.9.7

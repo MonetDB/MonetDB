@@ -1,32 +1,24 @@
-.encodeGlobals <- function(name) {
-  vars <- findGlobals(name,merge=F)$variables
-  if (length(vars) < 1) {
-    return(NA)
-  }
-  if (getOption("monetdb.debug.query",FALSE)) 
-    message("Variable(s) ",paste0(vars,collapse=", "))
-
-    # TODO: optionally inline serialized context for remote dbs
-  res <- tempfile()
-  save(list=vars,file=res,envir=environment(name), compress=T)
-  return(res)
-}
-
-# TODO: support arbitrary arguments that are passed to fun
 # TOOD: support running this on query results?
-if (is.null(getGeneric("dbApply"))) setGeneric("dbApply", function(conn, table, fun) 
-  standardGeneric("dbApply"))
+# TODO: support remote dbs, find out whether its local via canary file
 
-setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, table, fun) {
+if (is.null(getGeneric("mdbapply"))) setGeneric("mdbapply", function(conn, table, fun, ...) 
+  standardGeneric("mdbapply"))
+
+setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, table, fun, ...) {
+  # make sure table exists
+  if (!dbExistsTable(conn, table)) {
+    stop("Table ", table, " does not exist.")
+  }
+
   # generate unique function name
-  dbfunname <- "__r_dapply_autogen_"
-  while (dbGetQuery(conn,paste0("select count(*) from functions where name='",dbfunname,"'"))[[1]] > 0)
-    dbfunname <- paste0(dbfunname,sample(letters,1))
+  dbfunname <- "mdbapply_autogen_"
+  while (dbGetQuery(conn, paste0("select count(*) from functions where name='", dbfunname, "'"))[[1]] > 0)
+    dbfunname <- paste0(dbfunname, sample(letters, 1))
 
   # test R integration with dummy function
   dbBegin(conn)
-  dbSendQuery(conn,paste0("CREATE FUNCTION ",dbfunname,"() RETURNS TABLE(d INTEGER) LANGUAGE R {1L}"))
-  res <- dbGetQuery(conn,paste0("SELECT * FROM ",dbfunname,"()"))[[1]]
+  dbSendQuery(conn,paste0("CREATE FUNCTION ", dbfunname, "() RETURNS TABLE(d INTEGER) LANGUAGE R {1L}"))
+  res <- dbGetQuery(conn,paste0("SELECT * FROM ", dbfunname, "()"))[[1]]
   dbRollback(conn)
 
   # now generate the UDF
@@ -41,32 +33,42 @@ setMethod("dbApply", signature(conn="MonetDBConnection"),  def=function(conn, ta
                       ',unique(sapply(strsplit(grep("^package:", search(), value=T),":"), function(x) x[[2]]))), function(pname) library(pname, character.only=T, quietly=T)))\n')
   }
   # serialize global variables into ascii string, and add the code to scan it again into the current env
-  sfilename <- .encodeGlobals(fun)
-  if (!is.na(sfilename)) {
-    dbrcode <- paste0(dbrcode,'# load serialized global variables\nload("',sfilename,'")\n')
+  vars <- findGlobals(fun,merge=F)$variables
+  dotdot <- list(...)
+  sfilename <- NA
+  if (length(vars) > 1 || length(dotdot) > 1) {
+    if (getOption("monetdb.debug.query",FALSE)) 
+      message("Variable(s) ",paste0(vars,dotdot,collapse=", "))
+    #vars$mdbapply_dotdot <- dotdot
+    sfilename <- tempfile()
+    save(list=vars,file=sfilename,envir=environment(fun), compress=T)
+    dbrcode <- paste0(dbrcode, '# load serialized global variables\nload("', sfilename, '")\n')
   }
+
   rfilename <- tempfile()
   # get source of user function and append
-  dbrcode <- paste0(dbrcode,"# user-supplied function\n.userfun <- ",paste0(deparse(fun),collapse="\n"),"\n# calling user function\nsaveRDS(.userfun(.dbdata),file=\"",rfilename,"\")\nreturn(42L)\n")
+  dbrcode <- paste0(dbrcode, "# user-supplied function\nmdbapply_userfun <- ", paste0(deparse(fun), collapse="\n"), 
+    "\n# calling user function\nsaveRDS(mdbapply_userfun(mdbapply_dbdata),file=\"", rfilename, "\")\nreturn(42L)\n")
   
-  # find out things about the table, then wrap the r function
-  res <- dbSendQuery(conn,paste0("SELECT * FROM ",table," LIMIT 1"))
-  dbnames <- res@env$info$names
-  dbtypes <- res@env$info$dbtypes
-  dbfun <- paste0("CREATE FUNCTION ",dbfunname,"(",paste0(dbnames," ", dbtypes, collapse=", "),
-                  ") \nRETURNS TABLE(retval INTEGER) LANGUAGE R {\n# rename arguments\n.dbdata <- data.frame(",
-                  paste0(dbnames, collapse=", "),")\n",dbrcode,"};\n")
+  # find out things about the table, then wrap the R function
+  query <- paste0("SELECT * FROM ", table, " AS t")
+  res <- monetdb_queryinfo(conn, query)
+  dbfun <- paste0("CREATE FUNCTION ", dbfunname,"(", paste0(dbQuoteIdentifier(conn, res$names)," ", res$dbtypes, collapse=", "),
+                  ") \nRETURNS TABLE(retval INTEGER) LANGUAGE R {\n# rename arguments\nmdbapply_dbdata <- data.frame(",
+                  paste0(res$names, collapse=", "),", stringsAsFactors=F)\n", dbrcode, "};\n")
   # call the function we just created
-  dbsel <- paste0("SELECT * FROM ", dbfunname, "( (SELECT * FROM ", table, " AS t) );\n")
+  dbsel <- paste0("SELECT * FROM ", dbfunname, "( (",query,") );\n")
   # ok, talk to DB (EZ)
+  res <- NA
   dbBegin(conn)
-  dbSendQuery(conn,dbfun)
-  dres <- dbGetQuery(conn,dbsel)
-  dbRollback(conn)
-  # TODO: check dres
-  # TODO: check if sfilename exists and is valid
-  res <- readRDS(rfilename)
-  on.exit(file.remove(na.omit(c(sfilename, rfilename))))
+  tryCatch({
+    dbSendQuery(conn, dbfun)
+    dbGetQuery(conn, dbsel)
+    res <- readRDS(rfilename)
+  }, finally={
+    dbRollback(conn)
+    file.remove(stats::na.omit(c(sfilename, rfilename)))
+  })
   res
 })
 
