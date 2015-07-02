@@ -510,8 +510,8 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 			candidatesBAT_out = candidatesBAT_in;
 		} else if(*anti) {
 			//two ranges qualify for the result [0, quaifyingIdx-1] and [qualifyingIdx+1, max]
-			BUN i=0;
-			gdk_dimension *dimensionCand_out;
+			BUN i=0, sz = 0;
+			gdk_dimension *dimensionCand_out, *dimensionCand_in;
 			BUN skipCells = jumpSize(array, dimension->dimNum);
 			oid* dimOIDs = NULL;
 			BAT *dimBAT = BATnew(TYPE_void, TYPE_oid, dimension->initialElementsNum-1, TRANSIENT);
@@ -519,15 +519,36 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 				throw(MAL, "algebra.dimensionSubselect", "Proble creating new BAT");
 			dimOIDs = (oid*)Tloc(dimBAT, BUNfirst(dimBAT));
 
-			for(i=0; i<dimension->initialElementsNum; i++) {
-				if(i==qualifyingIdx)
-					continue;
-				*dimOIDs++ = i*skipCells; //I assume all other dimensions are zero
+			/*make sure to be inside the limits as might have been set by earlier filtering*/
+			dimensionCand_in = getDimension(dimensionsCandidates_in, dimension->dimNum);
+
+			if(dimensionCand_in->elementsNum != dimensionCand_in->initialElementsNum && dimensionCand_in->elementsNum > 0) {
+				for(i=0; i<dimension->initialElementsNum; i++) {
+					if(i==qualifyingIdx || i < *(oid*)dimensionCand_in->min || i > *(oid*)dimensionCand_in->max)
+						continue;
+					dimOIDs[sz] = i*skipCells; //I assume all other dimensions are zero
+					sz++;
+				}
+			} else {
+				for(i=0; i<dimension->initialElementsNum; i++) {
+					if(i==qualifyingIdx)
+						continue;
+					dimOIDs[sz] = i*skipCells; //I assume all other dimensions are zero
+					sz++;
+				}				
 			}
 			BATseqbase(dimBAT, 0);
-			BATsetcount(dimBAT, dimension->initialElementsNum-1);
+			BATsetcount(dimBAT, sz);
 			BATderiveProps(dimBAT, FALSE);
 
+//			if(dimensionCand_in->elementsNum != dimensionCand_in->initialElementsNum) {
+//				/* combine the BAT and the dimension */
+//				if(!mergeBATandDimension(array, &dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum)) {
+//					//remove all the dimensions, there will be no results in the output
+//					freeCells(dimensionsCandidates_in);
+//					return emptyCandidateResults(dimsRes, oidsRes);
+//				}
+//			}
 			if(BATcount(candidatesBAT_in) == 0) //nothing in the BAT, send to the output the BAT just created
 				candidatesBAT_out = dimBAT;
 			else {
@@ -541,6 +562,11 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
 			dimensionCand_out->elementsNum =0;
 			//replace the dimension with the new one
 			dimensionsCandidates_out = cells_replace_dimension(dimensionsCandidates_in, dimensionCand_out);
+
+			if(BATcount(candidatesBAT_out) == 0) { //nothing in the output
+				freeCells(dimensionsCandidates_in);
+				return emptyCandidateResults(dimsRes, oidsRes);
+			}
 		} else {
 			if(!updateCandidateResults(array, &dimensionsCandidates_out, &candidatesBAT_out, dimensionsCandidates_in, candidatesBAT_in, dimension->dimNum, qualifyingIdx, qualifyingIdx)) {
 				//remove all the dimensions, there will be no results in the output
