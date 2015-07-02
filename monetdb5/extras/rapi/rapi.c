@@ -581,12 +581,12 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	retval = R_tryEval(VECTOR_ELT(x, 0), env, &evalErr);
 	if (evalErr != FALSE) {
 		char* errormsg = strdup(R_curErrorBuf());
+		size_t c;
 		if (errormsg == NULL) {
 			msg = createException(MAL, "rapi.eval", "Error running R expression.");
 			goto wrapup;
 		}
 		// remove newlines from error message so it fits into a MAPI error (lol)
-		size_t c;
 		for (c = 0; c < strlen(errormsg); c++) {
 			if (errormsg[c] == '\r' || errormsg[c] == '\n') {
 				errormsg[c] = ' ';
