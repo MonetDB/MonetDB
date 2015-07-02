@@ -14,8 +14,6 @@ if (length(args) > 1)
 
 options(monetdb.insert.splitsize=10)
 options(monetdb.profile=F)
-options(monetdb.debug.query=T)
-
 
 tname <- "monetdbtest"
 
@@ -52,6 +50,8 @@ predictions <- mdbapply(con, tname, function(d) {
 
 stopifnot(identical(unname(predict(fitted, newdata=mtcars)), unname(predictions)))
 
+print(length(predictions))
+
 # make sure we bubble up the error
 haderror <- FALSE
 tryCatch({
@@ -63,20 +63,24 @@ tryCatch({
 })
 stopifnot(haderror)
 
+print(haderror)
+
 # run simple test again to make sure the error did dbRollback() and we are consistent
 res <- mdbapply(con, tname, function(d) {
 	d$mpg
 })
 stopifnot(identical(res, mtcars$mpg))
 
+print(length(res))
 
 # additional parameters 
 res <- mdbapply(con,tname,function(d, n, m) {
   n+m
 }, 20, 22)
 
+print(res)
+
 dbRemoveTable(con,tname)
 stopifnot(identical(FALSE, dbExistsTable(con,tname)))
-
 
 print("SUCCESS")

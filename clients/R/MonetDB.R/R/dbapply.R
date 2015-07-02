@@ -1,5 +1,6 @@
-# TOOD: support running this on query results?
+# TOOD: support running this on a select in addition to table?
 # TODO: support remote dbs, find out whether its local via canary file
+# TODO: don't actually construct the data frame but use attr/class trick to save copying
 
 if (is.null(getGeneric("mdbapply"))) setGeneric("mdbapply", function(conn, table, fun, ...) 
   standardGeneric("mdbapply"))
@@ -33,22 +34,26 @@ setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, t
                       ',unique(sapply(strsplit(grep("^package:", search(), value=T),":"), function(x) x[[2]]))), function(pname) library(pname, character.only=T, quietly=T)))\n')
   }
   # serialize global variables into ascii string, and add the code to scan it again into the current env
-  vars <- findGlobals(fun,merge=F)$variables
-  dotdot <- list(...)
+  vars <- codetools::findGlobals(fun, merge=F)$variables
+  mdbapply_dotdot <- list(...)
+  if (length(mdbapply_dotdot) > 0) {
+    vars <- c(vars,"mdbapply_dotdot")
+    assign("mdbapply_dotdot", mdbapply_dotdot, envir=environment(fun))
+  }
   sfilename <- NA
-  if (length(vars) > 1 || length(dotdot) > 1) {
+  if (length(vars) > 0) {
     if (getOption("monetdb.debug.query",FALSE)) 
-      message("Variable(s) ",paste0(vars,dotdot,collapse=", "))
-    #vars$mdbapply_dotdot <- dotdot
-    sfilename <- tempfile()
+      message("Variable(s) ",paste0(vars,collapse=", "))
+    #sfilename <- tempfile()
+    sfilename <- '/tmp/args.rds'
     save(list=vars,file=sfilename,envir=environment(fun), compress=T)
-    dbrcode <- paste0(dbrcode, '# load serialized global variables\nload("', sfilename, '")\n')
+    dbrcode <- paste0(dbrcode, '# load serialized global variable(s) ', paste(vars, collapse=", "), '\nload("', sfilename, '")\n')
   }
 
   rfilename <- tempfile()
   # get source of user function and append
   dbrcode <- paste0(dbrcode, "# user-supplied function\nmdbapply_userfun <- ", paste0(deparse(fun), collapse="\n"), 
-    "\n# calling user function\nsaveRDS(mdbapply_userfun(mdbapply_dbdata),file=\"", rfilename, "\")\nreturn(42L)\n")
+    "\n# calling user function\nsaveRDS(do.call(mdbapply_userfun, if(exists('mdbapply_dotdot')){c(list(mdbapply_dbdata), mdbapply_dotdot)} else{list(mdbapply_dbdata)}),file=\"", rfilename, "\")\nreturn(42L)\n")
   
   # find out things about the table, then wrap the R function
   query <- paste0("SELECT * FROM ", table, " AS t")
@@ -58,7 +63,7 @@ setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, t
                   paste0(res$names, collapse=", "),", stringsAsFactors=F)\n", dbrcode, "};\n")
   # call the function we just created
   dbsel <- paste0("SELECT * FROM ", dbfunname, "( (",query,") );\n")
-  # ok, talk to DB (EZ)
+  # ok, talk to DB (easiest part of this)
   res <- NA
   dbBegin(conn)
   tryCatch({
@@ -67,7 +72,7 @@ setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, t
     res <- readRDS(rfilename)
   }, finally={
     dbRollback(conn)
-    file.remove(stats::na.omit(c(sfilename, rfilename)))
+   # file.remove(stats::na.omit(c(sfilename, rfilename)))
   })
   res
 })
