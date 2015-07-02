@@ -9,6 +9,17 @@ gdk_dimension* createDimension_##TPE(int dimNum, BUN elsNum, TPE min, TPE max, T
     void *maxVoid = GDKmalloc(sizeof(TPE)); \
     void *stepVoid = GDKmalloc(sizeof(TPE)); \
 \
+	if(!dim || !minVoid || !maxVoid || !stepVoid) { \
+		if(dim) \
+			GDKfree(dim); \
+		if(minVoid) \
+			GDKfree(minVoid); \
+		if(maxVoid) \
+			GDKfree(maxVoid); \
+		if(stepVoid) \
+			GDKfree(stepVoid); \
+		return NULL; \
+	} \
     memcpy(minVoid, &min, sizeof(TPE)); \
     memcpy(maxVoid, &max, sizeof(TPE)); \
     memcpy(stepVoid, &step, sizeof(TPE)); \
