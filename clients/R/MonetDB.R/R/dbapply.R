@@ -44,8 +44,7 @@ setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, t
   if (length(vars) > 0) {
     if (getOption("monetdb.debug.query",FALSE)) 
       message("Variable(s) ",paste0(vars,collapse=", "))
-    #sfilename <- tempfile()
-    sfilename <- '/tmp/args.rds'
+    sfilename <- tempfile()
     save(list=vars,file=sfilename,envir=environment(fun), compress=T)
     dbrcode <- paste0(dbrcode, '# load serialized global variable(s) ', paste(vars, collapse=", "), '\nload("', sfilename, '")\n')
   }
@@ -72,7 +71,7 @@ setMethod("mdbapply", signature(conn="MonetDBConnection"),  def=function(conn, t
     res <- readRDS(rfilename)
   }, finally={
     dbRollback(conn)
-   # file.remove(stats::na.omit(c(sfilename, rfilename)))
+    file.remove(stats::na.omit(c(sfilename, rfilename)))
   })
   res
 })
