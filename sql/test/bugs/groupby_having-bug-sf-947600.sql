@@ -15,12 +15,12 @@ GROUP BY a.name, b.name
 HAVING COUNT(*) >= 1
 ORDER BY a.name, b.name;
 
-select name from tables where "type" = 0 and "system" = true
+select name from tables where "type" = 10 and "system" = true
 and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
 'keys', 'modules', 'sequences') having 1=1;
-select name from tables where "type" = 0 and "system" = true having 1=0;
+select name from tables where "type" = 10 and "system" = true having 1=0;
 
-select name from tables where "type" = 0 and "system" = true
+select name from tables where "type" = 10 and "system" = true
 and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
 'keys', 'modules', 'sequences') group by name having 1=1;
-select name from tables where "type" = 0 and "system" = true group by name having 1=0;
+select name from tables where "type" = 10 and "system" = true group by name having 1=0;

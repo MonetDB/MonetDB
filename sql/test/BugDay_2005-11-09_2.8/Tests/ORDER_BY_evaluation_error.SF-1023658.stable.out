@@ -31,10 +31,10 @@ Ready.
 #  AND "tables"."schema_id" = "schemas"."id"
 #  AND "tables"."system" = FALSE
 #  AND "keys"."type" = 0;
-% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary,	table_type,	id,	name,	authorization,	owner,	system # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint,	smallint,	int,	varchar,	int,	int,	boolean # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	1,	1,	0,	1,	1,	5 # length
+% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary,	id,	name,	authorization,	owner,	system # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint,	int,	varchar,	int,	int,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	1,	0,	1,	1,	5 # length
 #SELECT *
 #FROM "keys", "objects", "tables", "schemas"
 #WHERE "keys"."id" = "objects"."id"
@@ -43,10 +43,10 @@ Ready.
 #  AND "tables"."system" = FALSE
 #  AND "keys"."type" = 0
 #ORDER BY "objects"."name";
-% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary,	table_type,	id,	name,	authorization,	owner,	system # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint,	smallint,	int,	varchar,	int,	int,	boolean # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	1,	1,	0,	1,	1,	5 # length
+% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary,	id,	name,	authorization,	owner,	system # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint,	int,	varchar,	int,	int,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	1,	0,	1,	1,	5 # length
 
 # 10:35:10 >  
 # 10:35:10 >  "Done."

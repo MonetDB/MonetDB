@@ -1332,7 +1332,7 @@ sql_update_jul2015(Client c)
 			"  (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),\n"
 			"  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');\n"
 			"drop view sys.tables;\n"
-			"create view sys.tables as SELECT * FROM (SELECT p.*, 0 AS \"temporary\", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;\n");
+			"create view sys.tables as SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";\n");
 
 	/* change to 75_storagemodel */
 	pos += snprintf(buf + pos, bufsize - pos,
