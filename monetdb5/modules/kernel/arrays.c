@@ -499,16 +499,16 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const pt
     if(ATOMcmp(type, low, high) == 0) { //point selection   
 		//find the idx of the value
 		oid qualifyingIdx = equalIdx(dimension, low); 
-		if(qualifyingIdx >= dimension->initialElementsNum && !anti) {
+		if(qualifyingIdx >= dimension->initialElementsNum && !*anti) {
 			//remove all the dimensions, there will be no results in the output
 			freeCells(dimensionsCandidates_in);
 			return emptyCandidateResults(dimsRes, oidsRes);
-		}  if(qualifyingIdx >= dimension->initialElementsNum && anti) {
+		}  if(qualifyingIdx >= dimension->initialElementsNum && *anti) {
 			//the whole dimension qualifies for the outpu
 			//we send out whatever came int
 			dimensionsCandidates_out = dimensionsCandidates_in;
 			candidatesBAT_out = candidatesBAT_in;
-		} else if(anti) {
+		} else if(*anti) {
 			//two ranges qualify for the result [0, quaifyingIdx-1] and [qualifyingIdx+1, max]
 			BUN i=0;
 			gdk_dimension *dimensionCand_out;
