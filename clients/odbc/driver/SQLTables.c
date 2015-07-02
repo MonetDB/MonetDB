@@ -218,18 +218,22 @@ MNDBTables(ODBCStmt *stmt,
 					"t.temporary = 0 and "
 					"s.name <> 'tmp' "
 				   "then cast('TABLE' as varchar(20)) "
-				   "when t.type = 0 and "
+				   "when t.type = 20 and "
 					"t.system = false and "
-					"t.temporary = 0 and "
+					"t.temporary = 1 and "
 					"s.name = 'tmp' "
 				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
-				   "when t.type = 0 and "
+				   "when t.type = 10 and "
 					"t.system = true and "
 					"t.temporary = 0 "
 				   "then cast('SYSTEM TABLE' as varchar(20)) "
+				   "when t.type = 11 and "
+					"t.system = true and "
+					"t.temporary = 0 "
+				   "then cast('SYSTEM VIEW' as varchar(20)) "
 				   "when t.type = 1 "
 				   "then cast('VIEW' as varchar(20)) "
-				   "when t.type = 0 and "
+				   "when t.type = 30 and "
 					"t.system = false and "
 					"t.temporary = 1 "
 				   "then cast('LOCAL TEMPORARY' as varchar(20)) "
@@ -290,13 +294,16 @@ MNDBTables(ODBCStmt *stmt,
 						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name <> 'tmp') or ");
 					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
 						strcpy(query_end,
-						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name = 'tmp') or ");
+						       "(t.type = 20 and t.system = false and t.temporary = 1 and s.name = 'tmp') or ");
 					} else if (strcmp(buf, "SYSTEM TABLE") == 0) {
 						strcpy(query_end,
-						       "(t.type = 0 and t.system = true and t.temporary = 0) or ");
+						       "(t.type = 10 and t.system = true and t.temporary = 0) or ");
+					} else if (strcmp(buf, "SYSTEM VIEW") == 0) {
+						strcpy(query_end,
+						       "(t.type = 11 and t.system = true and t.temporary = 0) or ");
 					} else if (strcmp(buf, "LOCAL TEMPORARY") == 0) {
 						strcpy(query_end,
-						       "(t.type = 0 and t.system = false and t.temporary = 1) or ");
+						       "(t.type = 30 and t.system = false and t.temporary = 1) or ");
 					}
 					query_end += strlen(query_end);
 					j = 0;
