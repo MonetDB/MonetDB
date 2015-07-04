@@ -89,10 +89,12 @@ Copyright 2008-2015 MonetDB B.V.
   <!-- jar targets -->
   <target name="jar_jdbc" depends="compile_mcl,compile_jdbc"
     unless="uptodate.jdbc-jar">
+    <echo file="${builddir}/META-INF/services/java.sql.Driver" append="false">nl.cwi.monetdb.jdbc.MonetDriver</echo>
     <jar jarfile="${jdbc-jar}">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
         <include name="${mcl-package}/**/*.class" />
+        <include name="META-INF/services/java.sql.Driver" />
       </fileset>
     </jar>
   </target>
@@ -125,6 +127,7 @@ Copyright 2008-2015 MonetDB B.V.
         <include name="${mcl-package}/**/*.class" />
         <include name="${client-package}/**/*.class" />
         <include name="${util-package}/**/*.class" />
+        <include name="META-INF/services/java.sql.Driver" />
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
