@@ -1195,6 +1195,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * going to match: ready for the next iteration. */
 		if (!nil_matches && cmp(v, nil) == 0) {
 			/* v is nil and nils don't match anything */
+			r1->tdense = 0;
+			r2->tdense = 0;
 			if (must_match) {
 				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
 				goto bailout;
@@ -3246,6 +3248,11 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
+
+	if (lcount == 0 || rcount == 0) {
+		bn = BATnew(TYPE_void, tpe, 0, TRANSIENT);
+		return bn;
+	}
 
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;

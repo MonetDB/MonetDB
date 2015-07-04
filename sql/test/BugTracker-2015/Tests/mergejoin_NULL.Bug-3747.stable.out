@@ -1,0 +1,51 @@
+stdout of test 'mergejoin_NULL.Bug-3747` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 20:38:15 >  
+# 20:38:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35242" "--set" "mapi_usock=/var/tmp/mtest-23020/.s.monetdb.35242" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:38:15 >  
+
+# MonetDB 5 server v11.21.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35242/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23020/.s.monetdb.35242
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.30'
+# Finished reading the write-ahead log 'sql_logs/sql/log.30'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:38:15 >  
+# 20:38:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23020" "--port=35242"
+# 20:38:15 >  
+
+#create table foo (a string, b int);
+#create table bar (a string, b int);
+#insert into foo values ('hi',0),('there',null),('monet',1);
+[ 3	]
+#insert into bar values ('sup',0),('dude',1);
+[ 2	]
+#select foo.a,foo.b,bar.b,bar.a from foo join bar on foo.b=bar.b;
+% sys.foo,	sys.foo,	sys.bar,	sys.bar # table_name
+% a,	b,	b,	a # name
+% clob,	int,	int,	clob # type
+% 5,	1,	1,	4 # length
+[ "hi",	0,	0,	"sup"	]
+[ "monet",	1,	1,	"dude"	]
+#drop table foo;
+#drop table bar;
+
+# 20:38:15 >  
+# 20:38:15 >  "Done."
+# 20:38:15 >  
+

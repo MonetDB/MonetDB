@@ -1280,6 +1280,10 @@ sql_update_jul2015(Client c)
 			"create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";\n"
 			"create filter function sys.\"ilike\"(val string, pat string) external name algebra.\"ilike\";\n");
 
+	/* change to 17_temporal */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
+
 	/* new file 51_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE TABLE sys.keywords (\n"

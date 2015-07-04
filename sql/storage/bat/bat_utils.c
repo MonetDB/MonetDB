@@ -168,7 +168,6 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		c = BATcopy(o, TYPE_void, o->ttype, TRUE, PERSISTENT);
 		BATseqbase(c, ibase );
 		c->H->dense = 1;
-		BATcommit(o);
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);

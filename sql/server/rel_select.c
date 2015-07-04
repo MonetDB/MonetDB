@@ -5411,8 +5411,11 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			te = rel_table_exp(sql, &rel, n->data.sym);
 		} else 
 			ce = NULL;
-		if (!ce && !te)
+		if (!ce && !te) {
+			if (sql->errstr[0])
+				return NULL;
 			return sql_error(sql, 02, "SELECT: subquery result missing");
+		}
 		/* here we should merge the column expressions we
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
@@ -5722,12 +5725,12 @@ static sql_rel *
 rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
 {
 	operator_type op = op_join;
-	sql_rel *t1, *t2, *inner;
+	sql_rel *t1 = NULL, *t2 = NULL, *inner;
 	int l_nil = 0, r_nil = 0;
 
 	t1 = table_ref(sql, rel, tab1);
-	t2 = table_ref(sql, rel, tab2);
-
+	if (t1)
+		t2 = table_ref(sql, rel, tab2);
 	if (!t1 || !t2)
 		return NULL;
 
@@ -5891,8 +5894,10 @@ rel_crossquery(mvc *sql, sql_rel *rel, symbol *q)
 	symbol *tab1 = n->data.sym;
 	symbol *tab2 = n->next->data.sym;
 	sql_rel *t1 = table_ref(sql, rel, tab1);
-	sql_rel *t2 = table_ref(sql, rel, tab2);
-
+	sql_rel *t2 = NULL;
+       
+	if (t1)
+		t2 = table_ref(sql, rel, tab2);
 	if (!t1 || !t2)
 		return NULL;
 
@@ -5905,12 +5910,14 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 {
 	dnode *n = q->data.lval->h;
 	sql_rel *lv = table_ref(sql, rel, n->data.sym);
-	sql_rel *rv = table_ref(sql, rel, n->next->next->data.sym);
+	sql_rel *rv = NULL;
 	int all = n->next->data.i_val;
 	list *lexps, *rexps;
 	node *m;
 	int found = 0;
 
+	if (lv)
+       		rv = table_ref(sql, rel, n->next->next->data.sym);
 	assert(n->next->type == type_int);
 	if (!lv || !rv)
 		return NULL;
