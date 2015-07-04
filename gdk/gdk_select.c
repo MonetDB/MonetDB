@@ -1270,13 +1270,14 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
 	if (equi) {
 		assert(lval);
-		if (th == NULL)
-			hi = li;
+		hi = li;
 		th = tl;
 		hval = 1;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
 	}
+	if (!equi && !lval && !hval && lnil) 
+		anti = !anti;
 	if (anti) {
 		if (lval != hval) {
 			/* one of the end points is nil and the other

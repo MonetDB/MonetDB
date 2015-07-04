@@ -37,3 +37,6 @@ true_or_predicate.Bug-3733
 crash.Bug-3736
 div_zero.Bug-3742
 cast_to_num.Bug-3744
+null_is_null.Bug-3739
+mergejoin_NULL.Bug-3747
+epoch_now.Bug-3740

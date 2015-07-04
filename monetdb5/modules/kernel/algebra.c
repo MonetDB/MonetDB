@@ -26,16 +26,16 @@
  * and we have to de-reference them before entering the gdk library.
  * This calls for knowlegde on the underlying BAT typs`s
  */
-#define derefStr(b, s, v)							\
-		do {										\
-			int _tpe= ATOMstorage((b)->s##type);	\
-			if (_tpe >= TYPE_str) {					\
-				if ((v) == 0 || *(str*) (v) == 0)	\
-					(v) = (str) str_nil;			\
-				else								\
-					(v) = *(str *) (v);				\
-			}										\
-		} while (0)
+#define derefStr(b, s, v)					\
+	do {							\
+		int _tpe= ATOMstorage((b)->s##type);		\
+		if (_tpe >= TYPE_str) {				\
+			if ((v) == 0 || *(str*) (v) == 0)	\
+				(v) = (str) str_nil;		\
+			else					\
+				(v) = *(str *) (v);		\
+		}						\
+	} while (0)
 
 #include "monetdb_config.h"
 #include "algebra.h"
@@ -433,23 +433,26 @@ str
 ALGselectNotNil(bat *result, const bat *bid)
 {
 	BAT *b, *bn = NULL;
-	ptr low,high;
-	bit bound=FALSE;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.selectNotNil", RUNTIME_OBJECT_MISSING);
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
-		low=high= ATOMnilptr(b->ttype);
-		CMDselect_(&bn, b, low, high, &bound, &bound);
+		BAT *s = NULL;
+		ptr low = ATOMnilptr(b->ttype);
+
+		s = BATsubselect(b, s, low, NULL, TRUE, TRUE, TRUE);
+		if (s) {
+			bn = BATproject(s, b);
+			BBPunfix(s->batCacheid);
+		}
+		BBPunfix(b->batCacheid);
 		if (bn) {
 			if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 			*result = bn->batCacheid;
 			BBPkeepref(*result);
-			BBPunfix(b->batCacheid);
 			return MAL_SUCCEED;
 		}
-		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.selectNotNil", GDK_EXCEPTION);
 	}
 	/* just pass on the result */
@@ -1677,6 +1680,11 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
 	BAT *b, *bv;
 
+	if (*start == oid_nil && end && *end == oid_nil) {
+		*ret = *bid;
+		BBPincref(*ret, TRUE);
+		return MAL_SUCCEED;
+	}
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 

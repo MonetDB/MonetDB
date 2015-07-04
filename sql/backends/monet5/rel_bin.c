@@ -2852,6 +2852,15 @@ stmt_selectnonil( mvc *sql, stmt *col, stmt *s )
 }
 
 static stmt *
+stmt_selectnil( mvc *sql, stmt *col)
+{
+	sql_subtype *t = tail_type(col);
+	stmt *n = stmt_atom(sql->sa, atom_general(sql->sa, t, NULL));
+	stmt *nn = stmt_uselect2(sql->sa, col, n, n, 3, NULL);
+	return nn;
+}
+
+static stmt *
 insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 {
 /* pkey's cannot have NULLs, ukeys however can
@@ -3111,8 +3120,7 @@ sql_insert_check_null(mvc *sql, sql_table *t, list *inserts, list *l)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				s = stmt_uselect(sql->sa, i->op1, s, cmp_equal, NULL);
+				s = stmt_selectnil(sql, i->op1);
 				s = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);
@@ -3531,9 +3539,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 			upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, dels));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
-			stmt *nn = upd;
-
-			nn = stmt_uselect(sql->sa, nn, stmt_atom(sql->sa, atom_general(sql->sa, &c->c->type, NULL)), cmp_equal, NULL);
+			stmt *nn = stmt_selectnil(sql, upd);
 			if (null)
 				null = stmt_tunion(sql->sa, null, nn);
 			else
@@ -3828,9 +3834,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		if (c->c->null) {
-			stmt *nn = upd;
-
-			nn = stmt_uselect(sql->sa, nn, stmt_atom(sql->sa, atom_general(sql->sa, &c->c->type, NULL)), cmp_equal, NULL);
+			stmt *nn = stmt_selectnil(sql, upd);
 			if (null)
 				null = stmt_tunion(sql->sa, null, nn);
 			else
@@ -3968,8 +3972,7 @@ sql_update_check_null(mvc *sql, sql_table *t, stmt **updates, list *l)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				s = stmt_uselect(sql->sa, updates[c->colnr]->op2, s, cmp_equal, NULL);
+				s = stmt_selectnil(sql, updates[c->colnr]->op2);
 				s = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);
