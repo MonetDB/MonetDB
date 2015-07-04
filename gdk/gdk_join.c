@@ -3249,11 +3249,6 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
-	if (lcount == 0 || rcount == 0) {
-		bn = BATnew(TYPE_void, tpe, 0, TRANSIENT);
-		return bn;
-	}
-
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + BATcount(l);
