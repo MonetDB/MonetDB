@@ -220,8 +220,7 @@ setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
 
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="character"),  
-          def=function(conn, statement, ..., list=NULL, async=FALSE) {
-            
+          def=function(conn, statement, ..., list=NULL, async=FALSE) {   
   if(!is.null(list) || length(list(...))){
     if (length(list(...))) statement <- .bindParameters(statement, list(...))
     if (!is.null(list)) statement <- .bindParameters(statement, list)
@@ -245,11 +244,11 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
     env$data <- resp$tuples
     resp$tuples <- NULL # clean up
     env$info <- resp
-    env$delivered <- 0
+    env$delivered <- -1
     env$query <- statement
     env$open <- TRUE
   }
-  if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY) {
+  if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY || resp$type == MSG_PROMPT) {
     env$success = TRUE
     env$conn <- conn
     env$query <- statement
@@ -483,6 +482,9 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   
   # okay, so we arrive here with the tuples from the first result in res@env$data as a list
   info <- res@env$info
+  if (res@env$delivered < 0) {
+    res@env$delivered <- 0
+  }
   stopifnot(res@env$delivered <= info$rows, info$index <= info$rows)
   remaining <- info$rows - res@env$delivered
     
@@ -523,7 +525,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   
   # we have delivered everything, return empty df (spec is not clear on this one...)
   if (n < 1) {
-    return(data.frame(df))
+    return(data.frame(df, stringsAsFactors=F))
   }
   
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
@@ -576,7 +578,6 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   class(df) <- "data.frame"
   
   # if (getOption("monetdb.profile", T))  .profiler_clear()
-
   df
 })
 

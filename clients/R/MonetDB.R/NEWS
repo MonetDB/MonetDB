@@ -5,6 +5,8 @@
 - dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
 - New mdbapply function to automatically create and run embedded R functions in MonetDB
 - Fixes for dplyr backend
+- Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
+- Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
