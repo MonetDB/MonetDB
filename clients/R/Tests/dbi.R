@@ -174,9 +174,11 @@ stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as 
 # reserved words in data frame column names
 stopifnot(dbIsValid(conn))
 dbBegin(conn)
-dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24), transaction=F)
+dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24, some.dot=12), transaction=F)
 stopifnot(dbExistsTable(conn, "evilt"))
 dbRollback(conn)
+
+stopifnot(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0") != NULL)
 
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
