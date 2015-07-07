@@ -1,4 +1,4 @@
-0.9.8
+1.0.0
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
 - Cleaned up SQL to R type mapping (we had this twice)
 - Now creating actual R integers if data fits
@@ -7,6 +7,7 @@
 - Fixes for dplyr backend
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
+- Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
