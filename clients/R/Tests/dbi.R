@@ -53,7 +53,6 @@ dbWriteTable(con,tname,iris)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 stopifnot(identical(dbExistsTable(con,"monetdbtest2"),FALSE))
 stopifnot(tname %in% dbListTables(con))
-
 stopifnot(identical(dbListFields(con,tname),names(iris)))
 # get stuff, first very convenient
 iris2 <- dbReadTable(con,tname)
@@ -178,7 +177,18 @@ dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24, some.dot=12), 
 stopifnot(dbExistsTable(conn, "evilt"))
 dbRollback(conn)
 
-stopifnot(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0") != NULL)
+# evil table from survey
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+data(api, package="survey")
+x <- apiclus1
+x$idkey <- seq( nrow( x ) )
+dbWriteTable( conn , 'x' , x , transaction=F)
+stopifnot(dbExistsTable(conn, "x"))
+dbRollback(conn)
+
+# empty result set
+stopifnot(!is.null(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0")))
 
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors

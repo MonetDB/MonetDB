@@ -287,15 +287,15 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 
 # quoting
 quoteIfNeeded <- function(conn, x, ...) {
-  chars <- !grepl("^[A-Za-z][A-Za-z0-9_]*$", x, perl=T) && !grepl("^\"[^\"]*\"$", x, perl=T)
+  chars <- !grepl("^[a-z][a-z0-9_]*$", x, perl=T) & !grepl("^\"[^\"]*\"$", x, perl=T)
   if (any(chars)) {
-    message("Identifier(s) ", paste(x[chars], collapse=", "), " contain reserved SQL characters and need to be quoted.")
+    message("Identifier(s) ", paste(x[chars], collapse=", "), " contain uppercase or reserved SQL characters and need(s) to be quoted in queries.")
   }
   reserved <- toupper(x) %in% .SQL92Keywords
   if (any(reserved)) {
-    message("Identifier(s) ", paste(x[reserved], collapse=", "), " are reserved SQL keywords and need to be quoted.")
+    message("Identifier(s) ", paste(x[reserved], collapse=", "), " are reserved SQL keywords and need(s) to be quoted in queries.")
   }
-  qts <- reserved || chars
+  qts <- reserved | chars
   x[qts] <- dbQuoteIdentifier(conn, x[qts])
   x
 }

@@ -4,7 +4,7 @@
 - Now creating actual R integers if data fits
 - dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
 - New mdbapply function to automatically create and run embedded R functions in MonetDB
-- Fixes for dplyr backend
+- Fixes for dplyr backend (Thanks, Anthony)
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
 - Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
