@@ -154,13 +154,13 @@ Ready.
 % isvalid_single_value # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT json.isValid('{"test":"""}'); 	-- TRUE, must be false
 % .L # table_name
 % isvalid_single_value # name
 % boolean # type
 % 5 # length
-[ true	]
+[ false	]
 #SELECT json.isValid('{"test":"\""}'); 	-- true
 % .L # table_name
 % isvalid_single_value # name
@@ -178,7 +178,7 @@ Ready.
 % isvalid_single_value # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 
 # 23:37:50 >  
 # 23:37:50 >  "Done."
