@@ -13,28 +13,28 @@ function user.s1_0{autoCommit=true}():void;
     remote.register(_59,"user","s1_0map");
     _66 := remote.put(_59,_54);
     _66 := remote.exec(_59,"user","s1_0map");
-    _54 := remote.get(_59,_66);
+    _504 := remote.get(_59,_66);
     remote.disconnect(_59);
 
     _70 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn3","monetdb","monetdb","msql");
     remote.register(_70,"user","s1_0map");
     _73 := remote.put(_70,_55);
-    _73 := remote.exec(_70,"user","s1_0map");
-    _55 := remote.get(_70,_73);
+    _74 := remote.exec(_70,"user","s1_0map");
+    _505 := remote.get(_70,_73);
     remote.disconnect(_70);
 
     _77 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn1","monetdb","monetdb","msql");
     remote.register(_77,"user","s1_0map");
     _80 := remote.put(_77,_56);
-    _80 := remote.exec(_77,"user","s1_0map");
-    _56 := remote.get(_77,_80);
+    _81 := remote.exec(_77,"user","s1_0map");
+    _506 := remote.get(_77,_80);
     remote.disconnect(_77);
 
     _84 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn2","monetdb","monetdb","msql");
     remote.register(_84,"user","s1_0map");
     _87 := remote.put(_84,_57);
-    _87 := remote.exec(_84,"user","s1_0map");
-    _57 := remote.get(_84,_87);
+    _88 := remote.exec(_84,"user","s1_0map");
+    _507 := remote.get(_84,_87);
     remote.disconnect(_84);
 
     bat.append(_17,_54);
