@@ -6,11 +6,11 @@
 
 module profiler;
 
-command tomograph(b:int)
+pattern tomograph(b:int)
 address CMDtomograph
 comment "Start tomograph profiler with heart beat";
 
-command stethoscope(b:int)
+pattern stethoscope(b:int)
 address CMDstethoscope
 comment "Start stethoscope profiling with heart beat";
 

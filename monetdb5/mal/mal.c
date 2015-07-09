@@ -98,7 +98,7 @@ int mal_init(void){
 	/* Use the same shortcuts as stethoscope */
 	if ( mal_trace ) {
 		openProfilerStream(mal_clients[0].fdout);
-		startProfiler(1,0);
+		startProfiler(mal_clients[0].user,1,0);
 	} 
 	return 0;
 }
