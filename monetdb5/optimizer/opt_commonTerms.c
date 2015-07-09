@@ -18,7 +18,7 @@
 int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, prop, candidate, barrier= 0, cnt;
+	int i, j, k, prop, barrier= 0, cnt;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
@@ -27,7 +27,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *list;	
 	/* link all final constant expressions in a list */
 	/* it will help to find duplicate sql.bind calls */
-	int cstlist=0;
 	int *vars;
 
 	(void) cntxt;
@@ -59,32 +58,44 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for ( k = 0; k < p->argc; k++)
 		if ( alias[getArg(p,k)] )
 			getArg(p,k) = alias[getArg(p,k)];
-
+			
 		/* Link the statement to the previous use, based on the last argument.*/
-		if ( p->retc < p->argc ) {
-			candidate = vars[getArg(p,p->argc-1)];
-			if ( isVarConstant(mb, getArg(p,p->argc-1)) ){
-				/* all instructions with constant tail are linked */
-				list[i] = cstlist;
-				cstlist = i;
-			} else
-				list[i]= vars[ getArg(p,p->argc-1) ];
+		if ( p->retc < p->argc ){
+			list[i] = vars[getArg(p,p->argc-1)];
 			vars[getArg(p,p->argc-1)] = i;
-		} else candidate = 0;
+		} 
+
+		for ( k = 0; k < p->retc; k++)
+			if( vars[getArg(p,k)] && p->barrier != RETURNsymbol){
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+				mnstr_printf(cntxt->fdout, "#ERROR MULTIPLE ASSIGNMENTS[%d] ",i);
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+				pushInstruction(mb,p);
+				barrier= TRUE; // no more optimization allowed
+				break;
+			}
+		if( k < p->retc)
+			continue;
 
 		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
 			/* wrap up the remainder */
 			for(i++; i<limit; i++)
-				if( old[i])
+				if( old[i]){
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+					mnstr_printf(cntxt->fdout, "#FINALIZE[%d] ",i);
+					printInstruction(cntxt->fdout, mb, 0, old[i], LIST_MAL_ALL);
+#endif
 					pushInstruction(mb,old[i]);
+			}
 			break;
 		}
 		/*
-		 * Any non-empty barrier block signals the end of this optimizer,
-		 * the impact of the block can affect the common code.
+		 * Any barrier block signals the end of this optimizer,
+		 * because the impact of the block can affect the common code eliminated.
 		 */
-		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) && old[i+1]->barrier!=EXITsymbol;
+		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol);
 		/*
 		 * Also block further optimization when you have seen an assert().
 		 * This works particularly for SQL, because it is not easy to track
@@ -93,38 +104,35 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 * Like all optimizer decisions, it is safe to stop.
 		 */
 		barrier |= getFunctionId(p) == assertRef;
-		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier /* || p->retc == p->argc */) {
+		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol /* || p->retc == p->argc */) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				mnstr_printf(cntxt->fdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
+				mnstr_printf(cntxt->fdout, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
 #endif
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] ",i);
+		mnstr_printf(cntxt->fdout,"#TARGET CANDIDATE[%d] ",i);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		prop = mayhaveSideEffects(cntxt, mb, p,TRUE) || isUpdateInstruction(p);
-		j =	isVarConstant(mb, getArg(p,p->argc-1))? cstlist: candidate;
-				
-		cnt = mb->stop / 128 < 32? 32 : mb->stop/128;	/* limit search depth */
+		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
 		if ( !prop)
-		for (; cnt > 0 && j ; cnt--, j = list[j]) 
+		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 
 			if ( getFunctionId(q=getInstrPtr(mb,j)) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
+			mnstr_printf(cntxt->fdout,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
 				hasSameSignature(mb, p, q, p->retc), 
 				hasSameArguments(mb, p, q));
-				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
+				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d ", 
 					q->token != ASSIGNsymbol ,
 					list[getArg(q,q->argc-1)],i,
 					!hasCommonResults(p, q), 
-					!mayhaveSideEffects(cntxt, mb, q, TRUE),
+					!isUnsafeFunction(q),
 					!isUpdateInstruction(q),
-					isLinearFlow(q),
-					isLinearFlow(p));
+					isLinearFlow(q));
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 #endif
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -135,6 +143,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					hasSameSignature(mb, p, q, p->retc) && 
 					!hasCommonResults(p, q) && 
 					!isUnsafeFunction(q) && 
+					!isUpdateInstruction(q) &&
 					isLinearFlow(q) 
 				   ) {
 						if (safetyBarrier(p, q) ){
@@ -143,10 +152,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 #endif
 						break;
 					}
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-						mnstr_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
-						printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-#endif
 					clrFunction(p);
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
@@ -154,7 +159,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",i,j);
+					mnstr_printf(cntxt->fdout, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
@@ -163,7 +168,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			else if ( mayhaveSideEffects(cntxt, mb, q, TRUE) || isUpdateInstruction(p)){
-				mnstr_printf(cntxt->fdout, "COMMON SKIPPED %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				mnstr_printf(cntxt->fdout, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 			}
 #endif

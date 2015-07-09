@@ -1,7 +1,7 @@
-j1:= json.new("3.14");
+#j1:= json.new("3.14");
 #json.dump(j1);
-d:= json.number(j1);
-io.print(d);
+#d:= json.number(j1);
+#io.print(d);
 
 j1:= json.new("[3.14]");
 #json.dump(j1);
@@ -18,10 +18,10 @@ d:= json.number(j1);
 io.print(d);
 
 
-j1:= json.new("314");
+#j1:= json.new("314");
 #json.dump(j1);
-i:= json.integer(j1);
-io.print(i);
+#i:= json.integer(j1);
+#io.print(i);
 
 j1:= json.new("{\"tag\":314}");
 #json.dump(j1);

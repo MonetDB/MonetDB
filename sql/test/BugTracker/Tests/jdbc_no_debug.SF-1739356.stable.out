@@ -49,17 +49,17 @@ Operation successful
 | mal                                                                 |
 +==================================================================================================+
 | function user.s3_1{autoCommit=true}():void;                              |
-|     X_43:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
+|     X_41:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
 |     X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);          |
 |     X_6:bat[:oid,:oid]  := sql.tid(X_2,"sys","_tables");    |
-|     X_59 := algebra.subselect(X_9,X_6,2,2,true,true,true);                                       |
+|     X_57 := algebra.subselect(X_9,X_6,2,2,true,true,true);                                       |
 |     (X_12,r1_12) := sql.bind(X_2,"sys","_tables","type",2); |
-|     X_60 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2,2,true,true,true);                      |
+|     X_58 := algebra.subselect(r1_12,nil:bat[:oid,:oid],2,2,true,true,true);                      |
 |     X_15:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1);                 |
-|     X_62 := algebra.subselect(X_15,X_6,2,2,true,true,true);                                      |
-|     X_18 := sql.subdelta(X_59,X_6,X_12,X_60,X_62);                                               |
+|     X_60 := algebra.subselect(X_15,X_6,2,2,true,true,true);                                      |
+|     X_18 := sql.subdelta(X_57,X_6,X_12,X_58,X_60);                                               |
 |     X_19:bat[:oid,:int] := sql.bind(X_2,"sys","_tables","id",0);                                 |
 |     (X_21,r1_24) := sql.bind(X_2,"sys","_tables","id",2);                                        |
 |     X_23:bat[:oid,:int] := sql.bind(X_2,"sys","_tables","id",1);                                 |
@@ -72,8 +72,8 @@ Operation successful
 |     X_31 := algebra.leftfetchjoin(X_28,X_30);                                                    |
 |     X_32 := aggr.count(X_31);                                                                    |
 |     X_33 := bat.append(X_27,X_32,true);                                                          |
-|     X_35:wrd := aggr.sum(X_33);                                                                  |
-|     sql.resultSet(".L3","L3","wrd",64,0,7,X_35);                                                 |
+|     X_34:wrd := aggr.sum(X_33);                                                                  |
+|     sql.resultSet(".L3","L3","wrd",64,0,7,X_34);                                                 |
 | end user.s3_1;                                                                                 |
 +--------------------------------------------------------------------------------------------------+
 27 rows
