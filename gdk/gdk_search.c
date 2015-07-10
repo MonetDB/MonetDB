@@ -237,6 +237,8 @@ BATcheckhash(BAT *b)
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
 	t = GDKusec() - t;
+// use or ignore a persistent hash
+#ifdef PERSISTENTHASH
 	if (b->T->hash == NULL) {
 		Hash *h;
 		Heap *hp;
@@ -298,6 +300,7 @@ BATcheckhash(BAT *b)
 		}
 		GDKfree(hp);
 	}
+#endif
 	ret = b->T->hash != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
