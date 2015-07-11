@@ -896,6 +896,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			BUNappend(task->cntxt->error_msg, buf, FALSE);
 			BUNappend(task->cntxt->error_input, err, FALSE);
 			snprintf(buf, BUFSIZ, "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, s);
+			buf[BUFSIZ-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
 			task->rowerror[idx]++;
