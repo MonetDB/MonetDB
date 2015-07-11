@@ -2,6 +2,5 @@ HAVE_LIBR?install
 HAVE_LIBR?dbi
 HAVE_LIBR?survey
 HAVE_LIBR?dplyr
+HAVE_LIBR?dplyr-flights
 HAVE_LIBR?dbapply
-
-

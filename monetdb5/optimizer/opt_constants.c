@@ -49,7 +49,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (i=0; i< mb->vtop; i++)
 		alias[ i]= i;
 	for (i=0; i< mb->vtop; i++)
-		if ( isVarConstant(mb,i)  && isVarFixed(mb,i) ){
+		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
 			x= getVar(mb,i); 
 			fnd = 0;
 			if ( x->type && x->value.vtype)

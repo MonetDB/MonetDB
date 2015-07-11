@@ -1,11 +1,11 @@
 stderr of test 'rapi09` in directory 'sql/backends/monet5` itself:
 
 
-# 11:14:59 >  
-# 11:14:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36576" "--set" "mapi_usock=/var/tmp/mtest-9729/.s.monetdb.36576" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/hannes/monetdb-rint-install/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 11:14:59 >  
+# 11:20:45 >  
+# 11:20:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36531" "--set" "mapi_usock=/var/tmp/mtest-14205/.s.monetdb.36531" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:20:45 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch2/hannes/monetdb-rint-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,43 +17,36 @@ stderr of test 'rapi09` in directory 'sql/backends/monet5` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 36576
-# cmdline opt 	mapi_usock = /var/tmp/mtest-9729/.s.monetdb.36576
+# cmdline opt 	mapi_port = 36531
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14205/.s.monetdb.36531
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch2/hannes/monetdb-rint-install/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/MonetDB/mTests_sql_backends_monet5
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 11:15:00 >  
-# 11:15:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9729" "--port=36576"
-# 11:15:00 >  
+# 11:20:46 >  
+# 11:20:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14205" "--port=36531"
+# 11:20:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9729/.s.monetdb.36576
+MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
 QUERY = SELECT * FROM shouldbeint();
 ERROR = !wrong R column type for column 0, expected INTeger, got REAL.
-MAPI  = (monetdb) /var/tmp/mtest-9729/.s.monetdb.36576
+MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
 QUERY = SELECT * FROM throwerror();
-ERROR = !Error running R expression. Error message: Error in (function() { : goodbye cruel world
-        !Calls: as.data.frame -> <Anonymous>
-MAPI  = (monetdb) /var/tmp/mtest-9729/.s.monetdb.36576
+ERROR = !Error running R expression: Error in (function() { : goodbye cruel world Calls: as.data.frame -> <Anonymous> 
+MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
 QUERY = SELECT * FROM suicide();
-ERROR = !Error running R expression. Error message: Error in quit(save = "no") : 
-        !  We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead.
-        !Calls: as.data.frame -> <Anonymous> -> quit
-MAPI  = (monetdb) /var/tmp/mtest-9729/.s.monetdb.36576
+ERROR = !Error running R expression: Error in quit(save = "no") :    We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead. Calls: as.data.frame -> <Anonymous> -> quit 
+MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
 QUERY = SELECT * FROM suicide2();
-ERROR = !Error running R expression. Error message: Error in base::quit(save = "no") : 
-        !  We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead.
-        !Calls: as.data.frame -> <Anonymous> -> <Anonymous>
-MAPI  = (monetdb) /var/tmp/mtest-9729/.s.monetdb.36576
+ERROR = !Error running R expression: Error in base::quit(save = "no") :    We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead. Calls: as.data.frame -> <Anonymous> -> <Anonymous> 
+MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
 QUERY = SELECT * FROM suicide3();
-ERROR = !Error running R expression. Error message: Error in .Internal(quit("no", 0, F)) : 
-        !  there is no .Internal function 'quit'
-        !Calls: as.data.frame -> <Anonymous>
+ERROR = !Error running R expression: Error in .Internal(quit("no", 0, F)) :    there is no .Internal function 'quit' Calls: as.data.frame -> <Anonymous> 
 
-# 11:15:00 >  
-# 11:15:00 >  "Done."
-# 11:15:00 >  
+# 11:20:46 >  
+# 11:20:46 >  "Done."
+# 11:20:46 >  
 

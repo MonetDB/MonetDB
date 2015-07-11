@@ -62,7 +62,7 @@ Ready.
 [ "sequences",	"idxs",	4	]
 [ "sequences",	"keys",	4	]
 [ "sequences",	"objects",	4	]
-#select name from tables where "type" = 0 and "system" = true
+#select name from tables where "type" = 10 and "system" = true
 #and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
 #'keys', 'modules', 'sequences') group by name having 1=1;
 % .tables # table_name

@@ -123,7 +123,7 @@ Dependencies between database objects
 [ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
-#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
+#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
 % .t,	.f,	.L3 # table_name
 % name,	name,	L3 # name
 % varchar,	varchar,	char # type
@@ -295,7 +295,7 @@ Dependencies between database objects
 [ "id_t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "age_v1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
-#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
+#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name;
 % .v,	.f,	.L3 # table_name
 % name,	name,	L3 # name
 % varchar,	varchar,	char # type
@@ -604,7 +604,7 @@ Cleanup
 [ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
-#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
+#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
 % .t,	.f,	.L3 # table_name
 % name,	name,	L3 # name
 % varchar,	varchar,	char # type
@@ -764,7 +764,7 @@ Cleanup
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
-#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
+#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name;
 % .v,	.f,	.L3 # table_name
 % name,	name,	L3 # name
 % varchar,	varchar,	char # type

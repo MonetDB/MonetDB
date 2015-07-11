@@ -5,7 +5,7 @@ monetdb.server.start <-
       if( !file.exists( bat.file ) ) stop( paste( bat.file , "does not exist. Run monetdb.server.setup() to create a batch file." ) )
       
       # uugly, find path of pid file again by parsing shell script.
-      sc <- read.table(bat.file,sep="\n",stringsAsFactors=F)
+      sc <- utils::read.table(bat.file,sep="\n",stringsAsFactors=F)
       pidfile <- substring(sc[[2,1]],11)
       
       # run script

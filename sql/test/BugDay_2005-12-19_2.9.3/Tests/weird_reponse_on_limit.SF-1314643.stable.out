@@ -24,17 +24,19 @@ Ready.
 # 11:51:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < weird_reponse_on_limit.SF-1314643.sql
 # 11:51:19 >  
 
+#select name, query, "type", system, commit_action, "temporary" from tables limit 1;
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % name,	query,	type,	system,	commit_action,	temporary # name
 % varchar,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 7,	0,	1,	5,	1,	1 # length
-[ "schemas",	NULL,	0,	true,	0,	0	]
+% 7,	0,	2,	5,	1,	1 # length
+[ "schemas",	NULL,	10,	true,	0,	0	]
+#select name, query, "type", system, commit_action, "temporary" from tables limit 2;
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % name,	query,	type,	system,	commit_action,	temporary # name
 % varchar,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 7,	0,	1,	5,	1,	1 # length
-[ "schemas",	NULL,	0,	true,	0,	0	]
-[ "types",	NULL,	0,	true,	0,	0	]
+% 7,	0,	2,	5,	1,	1 # length
+[ "schemas",	NULL,	10,	true,	0,	0	]
+[ "types",	NULL,	10,	true,	0,	0	]
 
 # 20:30:00 >  
 # 20:30:00 >  Done.

@@ -287,7 +287,8 @@ handleClient(void *data)
 		if (top == NULL) {
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
-			mnstr_printf(fout, "!monetdbd: internal error while starting mserver, please refer to the logs\n");
+			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s', please refer to the logs\n",e);
+			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 		}
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -400,8 +401,9 @@ handleClient(void *data)
 					algos, MONETDB5_PASSWDHASH);
 			mnstr_flush(fout);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
-			mnstr_printf(fout, "!monetdbd: an internal error has occurred, refer to the logs for details, please try again later\n");
+			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
 			mnstr_flush(fout);
+			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 			close_stream(fout);
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);

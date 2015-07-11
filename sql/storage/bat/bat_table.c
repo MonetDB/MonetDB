@@ -315,14 +315,15 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	b = full_column(tr, key);
 	if (!kvl)
 		kvl = ATOMnilptr(b->ttype);
-	if (!kvh && key_value_low != ATOMnilptr(b->ttype))
+	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
-	hi = (kvl == kvh);
-	if (!b->T->hash)
-		BAThash(b, 0);
-	r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
-	bat_destroy(s);
-	s = r;
+	if (key_value_low) {
+		if (!b->T->hash)
+			BAThash(b, 0);
+		r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
+		bat_destroy(s);
+		s = r;
+	}
 	full_destroy(key, b);
 	if (key_value_low || key_value_high) {
 		va_start(va, key_value_high);
@@ -333,9 +334,9 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			b = full_column(tr, key);
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
-			if (!kvh)
+			if (!kvh && kvl != ATOMnilptr(b->ttype))
 				kvh = ATOMnilptr(b->ttype);
-			hi = (kvl == kvh);
+			assert(kvh);
 			r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
 			bat_destroy(s);
 			s = r;

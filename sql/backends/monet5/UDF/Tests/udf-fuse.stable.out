@@ -95,7 +95,7 @@ end user.s4_1;
 % clob # type
 % 97 # length
 function user.s8_1{autoCommit=true}():void;
-    X_43:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27);
+    X_42:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);
@@ -127,7 +127,7 @@ end user.s8_1;
 % clob # type
 % 97 # length
 function user.s9_1{autoCommit=true}():void;
-    X_43:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27);
+    X_42:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);
@@ -159,7 +159,7 @@ end user.s9_1;
 % clob # type
 % 97 # length
 function user.s10_1{autoCommit=true}():void;
-    X_43:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27);
+    X_42:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27);
     X_25 := bat.new(nil:oid,nil:str);
     X_33 := bat.append(X_25,"sys.L");
     X_28 := bat.new(nil:oid,nil:str);

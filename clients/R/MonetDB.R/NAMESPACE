@@ -4,7 +4,7 @@ import(DBI,digest,methods,codetools)
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,dbApply)
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,mdbapply)
 # shorthands
 export(mc,mq)
 useDynLib(MonetDB.R)

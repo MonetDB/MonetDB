@@ -137,13 +137,21 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 						/* escape single quotes except if they are already escaped */
 							s = "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
 							break
+						case 'object':
+						case 'array':
+							s = "json '" + JSON.stringify(param).replace(/([^\\])'/g,"$1\\'") + "'";
+							break;
 						default:
 							s = param;
 							break;
 					}
 					var colData = resp.data[resp.rows-bindparams.length+paramIndex];
-					if(colData && colData[0] == "timestamp") {
-						s = "timestamp "+s;
+					if(colData) {
+						var toCheck = ['timestamp', 'timestamptz', 'date'];
+						var i = toCheck.indexOf(colData[0]);
+						if(i >= 0) {
+							s = toCheck[i] + ' ' + s;
+						}
 					}
 					return s;
 				}).join(', ');
