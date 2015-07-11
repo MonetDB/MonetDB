@@ -51109,11 +51109,11 @@ pattern profiler.stop():void
 address CMDstopProfiler;
 comment Stop performance tracing
 
-command profiler.stethoscope(b:int):void 
+pattern profiler.stethoscope(b:int):void 
 address CMDstethoscope;
 comment Start stethoscope profiling with heart beat
 
-command profiler.tomograph(b:int):void 
+pattern profiler.tomograph(b:int):void 
 address CMDtomograph;
 comment Start tomograph profiler with heart beat
 
