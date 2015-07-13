@@ -583,9 +583,15 @@ hasSideEffects(InstrPtr p, int strict)
 	return FALSE;
 }
 
+/* Void returning functions always have side-effects.
+ */
 int
 mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 {
+	int tpe;
+	tpe= getVarType(mb,getArg(p,0));
+	if( tpe == TYPE_void)
+		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects( p, strict);
 	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)

@@ -297,6 +297,8 @@ Ready.
 [ "sys",	"epoch",	1,	"int",	""	]
 [ "sys",	"epoch",	0,	"int",	"create function \"epoch\"(ts timestamp) returns int\n\texternal name timestamp.\"epoch\";"	]
 [ "sys",	"epoch",	1,	"timestamp",	""	]
+[ "sys",	"epoch",	0,	"int",	"create function \"epoch\"(ts timestamp with time zone) returns int\n\texternal name timestamp.\"epoch\";"	]
+[ "sys",	"epoch",	1,	"timestamptz",	""	]
 [ "sys",	"equals",	0,	"boolean",	"-- ogc spatial relation methods\ncreate function equals(a geometry, b geometry) returns boolean external name geom.\"Equals\";"	]
 [ "sys",	"equals",	1,	"geometry",	""	]
 [ "sys",	"equals",	2,	"geometry",	""	]

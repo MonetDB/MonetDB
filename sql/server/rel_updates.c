@@ -369,6 +369,47 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
 	return exps;
 }
 
+
+static sql_table *
+insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
+{
+	if (!t) {
+		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (t->access == TABLE_READONLY) {
+		return sql_error(sql, 02, "%s: cannot %s read only table '%s'", op, opname, tname);
+	}
+	if (t && !isTempTable(t) && STORE_READONLY)
+		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+
+	if (!table_privs(sql, t, PRIV_INSERT)) {
+		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+	}
+	return t;
+}
+
+static sql_table *
+update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
+{
+	if (!t) {
+		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "%s: cannot %s read or append only table '%s'", op, opname, tname);
+	}
+	if (t && !isTempTable(t) && STORE_READONLY)
+		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+	if (is_delete && !table_privs(sql, t, PRIV_DELETE)) 
+		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+	return t;
+}
+
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
@@ -393,22 +434,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
-	}
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "INSERT INTO: insert into table '%s' not allowed in readonly mode", tname);
-
-	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", stack_get_string(sql, "current_user"), tname);
-	}
-
+	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
+		return NULL;
 	collist = check_table_columns(sql, t, columns, "INSERT", tname);
 	if (!collist)
 		return NULL;
@@ -821,23 +848,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "UPDATE: cannot update merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
-		return sql_error(sql, 02, "UPDATE: cannot update read or append only table '%s'", tname);
-	} else {
+	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
 		list *exps;
 		dnode *n;
 		char *rname = NULL;
-
-		if (t && !isTempTable(t) && STORE_READONLY)
-			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
 
 		if (opt_where) {
 			int status = sql->session->status;
@@ -971,6 +987,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		r = rel_update(sql, bt, r, updates, exps);
 		return r;
 	}
+	return NULL;
 }
 
 sql_rel *
@@ -1007,20 +1024,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from read or append only table '%s'", tname);
-	}
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
-	if (!table_privs(sql, t, PRIV_DELETE)) {
-		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
-	} else {
+	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
 
 		if (opt_where) {
@@ -1051,6 +1055,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		}
 		return r;
 	}
+	return NULL;
 }
 
 static list *
@@ -1141,13 +1146,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) 
-		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->access == TABLE_READONLY) 
-		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
-
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+		return NULL;
 	/* Only the MONETDB user is allowed copy into with 
 	   a lock and only on tables without idx */
 	if (locked && sql->user_id != USER_MONETDB) {
@@ -1332,12 +1332,8 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) 
-		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->access == TABLE_READONLY) 
-		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+		return NULL;
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");
 

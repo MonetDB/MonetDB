@@ -58,7 +58,7 @@ Ready.
 % clob # type
 % 812 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
-    X_143:void := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey having\n\t\tsum(ps_supplycost * ps_availqty) > (\n\t\t\tselect\n\t\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t--\t                                   ^^^^^^^^^^^^\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\t\tfrom\n\t\t\t\tpartsupp,\n\t\t\t\tsupplier,\n\t\t\t\tnation\n\t\t\twhere\n\t\t\t\tps_suppkey = s_suppkey\n\t\t\t\tand s_nationkey = n_nationkey\n\t\t\t\tand n_name = \\'GERMANY\\'\n\t\t)\norder by\n\tvalue desc;","sequential_pipe",83);
+    X_145:void := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey having\n\t\tsum(ps_supplycost * ps_availqty) > (\n\t\t\tselect\n\t\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t--\t                                   ^^^^^^^^^^^^\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\t\tfrom\n\t\t\t\tpartsupp,\n\t\t\t\tsupplier,\n\t\t\t\tnation\n\t\t\twhere\n\t\t\t\tps_suppkey = s_suppkey\n\t\t\t\tand s_nationkey = n_nationkey\n\t\t\t\tand n_name = \\'GERMANY\\'\n\t\t)\norder by\n\tvalue desc;","sequential_pipe",83);
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","supplier");
     X_9:bat[:oid,:oid]  := sql.bind_idxbat(X_5,"sys","supplier","supplier_s_nationkey_fkey",0);
@@ -72,7 +72,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     X_25:bat[:oid,:str]  := sql.bind(X_5,"sys","nation","n_name",1);
     X_26 := sql.delta(X_21,X_23,r1_23,X_25);
     X_27 := algebra.leftfetchjoin(X_19,X_26);
-    X_84 := algebra.subselect(X_27,A2,A2,true,true,false);
+    X_84 := algebra.subselect(X_27,A2,A2,true,false,false);
     X_86 := algebra.leftfetchjoin(X_84,X_19);
     (X_87,r1_114) := algebra.subjoin(X_18,X_86,nil:BAT,nil:BAT,false,nil:lng);
     X_91 := algebra.leftfetchjoin(X_87,X_6);
@@ -98,7 +98,7 @@ function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
     X_97:bat[:oid,:lng]  := batcalc.*(X_95,X_96);
     X_98:lng  := aggr.sum(X_97);
     X_99 := calc.*(X_98,A1);
-    X_28 := algebra.subselect(X_27,A0,A0,true,true,false);
+    X_28 := algebra.subselect(X_27,A0,A0,true,false,false);
     X_30 := algebra.leftfetchjoin(X_28,X_19);
     (X_31,r1_32) := algebra.subjoin(X_18,X_30,nil:BAT,nil:BAT,false,nil:lng);
     X_35 := algebra.leftfetchjoin(X_31,X_6);
