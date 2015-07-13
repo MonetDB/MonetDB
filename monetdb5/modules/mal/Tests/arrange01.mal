@@ -1,0 +1,39 @@
+# create sorted oid arrangement 
+include orderidx;
+
+bv:= bat.new(:oid,:int);
+barrier v:= 0:int;
+    w:= mmath.rand();
+    bat.append(bv,w);
+    redo v:= iterator.next(1:int,10:int);
+exit v;
+
+s0:= algebra.subselect(bv,nil:bat[:oid,:oid],nil:int,nil:int,false,false,false);
+io.print(s0,bv);
+
+s1:= algebra.subselect(bv,nil:bat[:oid,:oid],nil:int,846930886,true,true,false);
+io.print(s1,bv);
+
+s2:= algebra.subselect(bv,nil:bat[:oid,:oid],846930886,846930886,true,true,false);
+io.print(s2,bv);
+
+s3:= algebra.subselect(bv,nil:bat[:oid,:oid],1649760492,nil:int,true,true,false);
+io.print(s3,bv);
+
+# introduce an oid index, it should produce the same results
+bat.arrange(bv,3);
+ord := bat.getorder(bv);
+io.print(ord,bv);
+x0:= algebra.subselect(bv,nil:bat[:oid,:oid],nil:int,nil:int,false,false,false);
+io.print(x0,bv);
+
+x1:= algebra.subselect(bv,nil:bat[:oid,:oid],nil:int,846930886,true,true,false);
+io.print(x1,bv);
+
+x2:= algebra.subselect(bv,nil:bat[:oid,:oid],846930886,846930886,true,true,false);
+io.print(x2,bv);
+
+x3:= algebra.subselect(bv,nil:bat[:oid,:oid],1649760492,nil:int,true,true,false);
+io.print(x3,bv);
+
+
