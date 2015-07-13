@@ -1,3 +1,7 @@
+###
+# SELECT, INSERT, UPDATE, DELETE a table for which the USER has GRANTs (possible).
+###
+
 import os, sys
 try:
     from MonetDBtesting import process

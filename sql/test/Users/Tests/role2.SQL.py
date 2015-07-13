@@ -1,3 +1,7 @@
+###
+# SET a non-GRANTed ROLE for a USER (not possible).
+###
+
 import os, sys
 try:
     from MonetDBtesting import process
