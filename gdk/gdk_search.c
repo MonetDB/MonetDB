@@ -655,11 +655,11 @@ HASHgonebad(BAT *b, const void *v)
  * treated in one macro. Main motivation: distrust of gradient
  * performance on odmg data and its high mult/div overhead.
  */
-#define SORTfndloop(TYPE, CMP, BUNtail)					\
+#define SORTfndloop(TYPE, CMP, BUNtail, POS)				\
 	do {								\
 		while (lo < hi) {					\
 			cur = mid = (lo + hi) >> 1;			\
-			cmp = CMP(BUNtail(bi, cur), v, TYPE);		\
+			cmp = CMP(BUNtail(bi, POS), v, TYPE);		\
 			if (cmp < 0) {					\
 				lo = ++mid;				\
 				cur++;					\
@@ -678,16 +678,18 @@ enum find_which {
 };
 
 static BUN
-SORTfndwhich(BAT *b, const void *v, enum find_which which)
+SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 {
 	BUN lo, hi, mid;
 	int cmp;
 	BUN cur;
-	BATiter bi;
+	BAT *o;
+	BATiter bi, bio;
 	BUN diff, end;
 	int tp;
 
-	if (b == NULL || (!b->tsorted && !b->trevsorted))
+	if (b == NULL || (!b->tsorted && !b->trevsorted && !use_orderidx)
+	              || (use_orderidx && !b->torderidx.flags))
 		return BUN_NONE;
 
 	lo = BUNfirst(b);
@@ -723,10 +725,22 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 	/* only use storage type if comparison functions are equal */
 	tp = ATOMbasetype(b->ttype);
 
+	if (use_orderidx) {
+		o = BBPdescriptor(b->torderidx.o);
+		if (o == NULL) {
+			GDKerror("#ORDERfindwhich: order idx not found\n");
+		}
+		lo = BUNfirst(o);
+		hi = BUNlast(o);
+		bio = bat_iterator(o);
+	}
+
 	switch (which) {
 	case FIND_FIRST:
 		end = lo;
-		if (lo >= hi || (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype))) {
+		if (lo >= hi ||
+		    (use_orderidx && (atom_GE(BUNtail(bi,*(oid *)BUNtail(bio,lo)), v, b->ttype))) ||
+		    (!use_orderidx && (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
 			 * or <= v (if revsorted), we're done */
@@ -735,7 +749,9 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		break;
 	case FIND_LAST:
 		end = hi;
-		if (lo >= hi || (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype))) {
+		if (lo >= hi ||
+		    (use_orderidx && (atom_LE(BUNtail(bi,*(oid *)BUNtail(bio,hi-1)), v, b->ttype))) ||
+		    (!use_orderidx && b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype))) {
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
@@ -751,68 +767,97 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		break;
 	}
 
-	if (b->tsorted) {
+	if (use_orderidx) {
 		switch (tp) {
 		case TYPE_bte:
-			SORTfndloop(bte, simple_CMP, BUNtloc);
+			SORTfndloop(bte, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 		case TYPE_sht:
-			SORTfndloop(sht, simple_CMP, BUNtloc);
+			SORTfndloop(sht, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 		case TYPE_int:
-			SORTfndloop(int, simple_CMP, BUNtloc);
+			SORTfndloop(int, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 		case TYPE_lng:
-			SORTfndloop(lng, simple_CMP, BUNtloc);
+			SORTfndloop(lng, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SORTfndloop(hge, simple_CMP, BUNtloc);
+			SORTfndloop(hge, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 #endif
 		case TYPE_flt:
-			SORTfndloop(flt, simple_CMP, BUNtloc);
+			SORTfndloop(flt, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
 			break;
 		case TYPE_dbl:
-			SORTfndloop(dbl, simple_CMP, BUNtloc);
+			SORTfndloop(dbl, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur));
+			break;
+		default:
+			assert(0);
+			break;
+		}
+	} else if (b->tsorted) {
+		switch (tp) {
+		case TYPE_bte:
+			SORTfndloop(bte, simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_sht:
+			SORTfndloop(sht, simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_int:
+			SORTfndloop(int, simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_lng:
+			SORTfndloop(lng, simple_CMP, BUNtloc, cur);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SORTfndloop(hge, simple_CMP, BUNtloc, cur);
+			break;
+#endif
+		case TYPE_flt:
+			SORTfndloop(flt, simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_dbl:
+			SORTfndloop(dbl, simple_CMP, BUNtloc, cur);
 			break;
 		default:
 			if (b->tvarsized)
-				SORTfndloop(b->ttype, atom_CMP, BUNtvar);
+				SORTfndloop(b->ttype, atom_CMP, BUNtvar, cur);
 			else
-				SORTfndloop(b->ttype, atom_CMP, BUNtloc);
+				SORTfndloop(b->ttype, atom_CMP, BUNtloc, cur);
 			break;
 		}
 	} else {
 		switch (tp) {
 		case TYPE_bte:
-			SORTfndloop(bte, -simple_CMP, BUNtloc);
+			SORTfndloop(bte, -simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_sht:
-			SORTfndloop(sht, -simple_CMP, BUNtloc);
+			SORTfndloop(sht, -simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_int:
-			SORTfndloop(int, -simple_CMP, BUNtloc);
+			SORTfndloop(int, -simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_lng:
-			SORTfndloop(lng, -simple_CMP, BUNtloc);
+			SORTfndloop(lng, -simple_CMP, BUNtloc, cur);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SORTfndloop(hge, -simple_CMP, BUNtloc);
+			SORTfndloop(hge, -simple_CMP, BUNtloc, cur);
 			break;
 #endif
 		case TYPE_flt:
-			SORTfndloop(flt, -simple_CMP, BUNtloc);
+			SORTfndloop(flt, -simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_dbl:
-			SORTfndloop(dbl, -simple_CMP, BUNtloc);
+			SORTfndloop(dbl, -simple_CMP, BUNtloc, cur);
 			break;
 		default:
 			if (b->tvarsized)
-				SORTfndloop(b->ttype, -atom_CMP, BUNtvar);
+				SORTfndloop(b->ttype, -atom_CMP, BUNtvar, cur);
 			else
-				SORTfndloop(b->ttype, -atom_CMP, BUNtloc);
+				SORTfndloop(b->ttype, -atom_CMP, BUNtloc, cur);
 			break;
 		}
 	}
@@ -855,7 +900,14 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 BUN
 SORTfnd(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_ANY);
+	return SORTfndwhich(b, v, FIND_ANY, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfnd(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_ANY, 1);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value that is
@@ -864,7 +916,14 @@ SORTfnd(BAT *b, const void *v)
 BUN
 SORTfndfirst(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_FIRST);
+	return SORTfndwhich(b, v, FIND_FIRST, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfndfirst(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_FIRST, 1);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value beyond v.
@@ -872,5 +931,12 @@ SORTfndfirst(BAT *b, const void *v)
 BUN
 SORTfndlast(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_LAST);
+	return SORTfndwhich(b, v, FIND_LAST, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfndlast(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_LAST, 1);
 }

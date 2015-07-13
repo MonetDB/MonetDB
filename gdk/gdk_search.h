@@ -236,4 +236,9 @@ gdk_export BUN SORTfnd(BAT *b, const void *v);
 gdk_export BUN SORTfndfirst(BAT *b, const void *v);
 gdk_export BUN SORTfndlast(BAT *b, const void *v);
 
+gdk_export BUN ORDERfnd(BAT *b, const void *v);
+gdk_export BUN ORDERfndfirst(BAT *b, const void *v);
+gdk_export BUN ORDERfndlast(BAT *b, const void *v);
+
+
 #endif /* _GDK_SEARCH_H_ */
