@@ -11,3 +11,4 @@ test_privs2_p1
 test_privs2_p2
 dropManyUsers.Bug-3764
 grantAndRevokeUserLogedIN.Bug-3476
+grantRevokeAndGrantAgain.Bug-3765
