@@ -70,6 +70,47 @@ static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gd
 	return oid%skipCells;
 }
 
+
+static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimNum, BUN skipCells, gdk_array *dims) {
+	BUN *oids = GDKmalloc(valsNum*sizeof(BUN));
+	int i;
+
+	if(!oids) {
+		GDKerror("Problem allocating space");
+		return NULL;
+	}
+
+	while(currentDimNum < dimNum) {
+		skipCells*=dims->dimSizes[currentDimNum];
+		currentDimNum++;
+	}
+
+	if(currentDimNum == dims->dimsNum-1) { //last dimension, do not go any deeper
+		if(currentDimNum == dimNum) {//in the dimension of interest we do not compute the module
+			for(i=0; i<valsNum; i++)
+				oids[i] = oidVals[i]/skipCells;
+		} else {
+			for(i=0; i<valsNum; i++)
+				oids[i] = oidVals[i]%skipCells;
+		}	
+	}
+	else {
+		BUN *oidRes = oidToIdx_bulk(oidVals, valsNum, dimNum, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
+
+		if(currentDimNum == dimNum) {//in the dimension of interest we do not compute the module
+			for(i=0; i<valsNum; i++)
+				oids[i] = oidRes[i]/skipCells;
+		} else {
+			for(i=0; i<valsNum; i++)
+				oids[i] = oidRes[i]%skipCells;
+		}	
+
+		GDKfree(oidRes);
+	}
+
+	return oids;
+}
+
 static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, BAT* oidsBAT, oid **resOIDs ) {
 	BUN sz = 0;
 	BUN j;
@@ -87,7 +128,7 @@ static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, BAT* oid
 			qOIDS = GDKmalloc(sizeof(oid)*oidsDim->elementsNum);
 			for(io=*(oid*)oidsDim->min, sz=0; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
 				qOIDS[sz] = skipSize*io;
-fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 			}
 		} else {
 			//the oids are in the BAT
@@ -102,7 +143,7 @@ fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 				int idx = candOIDs[i]/skipSize;
 				if(idx > previousIdx) {
 					qOIDS[sz] = skipSize*idx;
-fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 					sz++;
 					previousIdx = idx;
 				}
@@ -122,11 +163,11 @@ fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 		}
 
 		for(j=0, sz=0; j<addedEls; j++) {
-fprintf(stderr, "-> %u = %u\n", (unsigned int)j, (unsigned int)resOIDs_local[j]);
+//fprintf(stderr, "-> %u = %u\n", (unsigned int)j, (unsigned int)resOIDs_local[j]);
 			if(oidsDim->elementsNum > 0) {
 				for(io=*(oid*)oidsDim->min; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
 					qOIDS[sz] = resOIDs_local[j] + skipSize*io;
-fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 				}
 			} else {
 				//check the BAT
@@ -137,7 +178,7 @@ fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 					int idx = (candOIDs[i]%(skipSize*oidsDim->initialElementsNum))/skipSize;
 					if(idx > previousIdx) {
 						qOIDS[sz] = resOIDs_local[j]+skipSize*idx;
-fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 						sz++;
 						previousIdx = idx;
 					}
@@ -154,18 +195,20 @@ fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
 do { \
 	TPE min = *(TPE*)dimension->min; \
 	TPE step = *(TPE*)dimension->step; \
-	BUN p, q; \
-	BATiter candsIter = bat_iterator(candsBAT); \
 	TPE *vals; \
+	oid *oids; \
+	BUN *idxs; \
+	BUN i; \
+\
 	if(!(resBAT = BATnew(TYPE_void, TYPE_##TPE, resSize, TRANSIENT))) \
         throw(MAL, "algebra.dimensionLeftfetchjoin", "Problem allocating new BAT"); \
 	vals = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
+	oids = (oid*)Tloc(candsBAT, BUNfirst(candsBAT)); \
 \
-	BATloop(candsBAT, p, q) { \
-    	oid qOid = *(oid *) BUNtail(candsIter, p); \
-		BUN idx = oidToIdx(qOid, dimension->dimNum, 0, 1, array); \
-		*vals++ = min +idx*step; \
-fprintf(stderr, "%d - %d - %d\n", (int)qOid, (int)idx, (int)vals[-1]); \
+	idxs = oidToIdx_bulk(oids, resSize, dimension->dimNum, 0, 1, array); \
+	for(i=0; i<resSize; i++) { \
+		*vals++ = min +idxs[i]*step; \
+/*fprintf(stderr, "%d - %d - %d\n", (int)oids[i], (int)idxs[i], (int)vals[-1]); */\
     } \
 } while(0)
 
@@ -790,13 +833,13 @@ str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {
 			resSize *= n->data->initialElementsNum;
 	}
 	resSize += BATcount(candidatesBAT); //this is not accurate but I believe it is ok
-fprintf(stderr, "estiamted size = %u\n", (unsigned int)resSize);		
+//fprintf(stderr, "estiamted size = %u\n", (unsigned int)resSize);		
 	/*the size of the result is the same as the number of cells in the candidatesDimensions */
 	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)))
 		throw(MAL, "algebra.cellsProject", "Problem allocating new array");
 	resOIDs = (oid*)Tloc(resBAT, BUNfirst(resBAT));
 	resSize = qualifyingOIDs(0, 1, candidatesDimensions, candidatesBAT, &resOIDs);
-fprintf(stderr, "real size = %u\n", (unsigned int)resSize);		
+//fprintf(stderr, "real size = %u\n", (unsigned int)resSize);		
 	BATsetcount(resBAT, resSize);
 	BATseqbase(resBAT, 0);
 	BATderiveProps(resBAT, FALSE);    
