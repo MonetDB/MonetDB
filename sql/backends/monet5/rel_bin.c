@@ -2556,7 +2556,15 @@ static stmt* find_before_uselect(stmt *s) {
  * before the selections over non-dimensions */
 static int pushDimensionSelections(stmt **s) {
 	int changes = 0;
-	stmt *nextS = (*s)->op3;
+	stmt *nextS = NULL;
+	
+	while((*s)->type == st_mbrselect) { //st_mbrselects are always be in the beginning
+		//skip them
+		*s = (*s)->op3;
+	}
+	nextS = (*s)->op3;
+
+
 	if(nextS && nextS->op1) {
 		//the current is but the next is not
 		if((*s)->op1->type == st_dimension && nextS->op1->type != st_dimension) {
