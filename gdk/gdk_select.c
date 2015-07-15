@@ -1414,9 +1414,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->tsorted || b->trevsorted) {
+	if (b->tsorted || b->trevsorted || b->torderidx.flags) {
 		BUN low = 0;
 		BUN high = b->batCount;
+		int use_orderidx = b->torderidx.flags && !(b->tsorted || b->trevsorted);
 
 		if (BATtdense(b)) {
 			/* positional */
@@ -1449,7 +1450,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				low = (BUN) l;
 			if (low > high)
 				low = high;
-		} else if (b->tsorted) {
+		} else if (b->tsorted || use_orderidx) {
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 					  ",s=%s%s,anti=%d): sorted\n",
 					  BATgetId(b), BATcount(b),
@@ -1458,19 +1459,19 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  anti);
 			if (lval) {
 				if (li)
-					low = SORTfndfirst(b, tl);
+					low = use_orderidx?ORDERfndfirst(b, tl):SORTfndfirst(b, tl);
 				else
-					low = SORTfndlast(b, tl);
+					low = use_orderidx?ORDERfndlast(b, tl):SORTfndlast(b, tl);
 			} else {
 				/* skip over nils at start of column */
-				low = SORTfndlast(b, nil);
+				low = use_orderidx?ORDERfndlast(b, nil):SORTfndlast(b, nil);
 			}
 			low -= BUNfirst(b);
 			if (hval) {
 				if (hi)
-					high = SORTfndlast(b, th);
+					high = use_orderidx?ORDERfndlast(b, th):SORTfndlast(b, th);
 				else
-					high = SORTfndfirst(b, th);
+					high = use_orderidx?ORDERfndfirst(b, th):SORTfndfirst(b, th);
 				high -= BUNfirst(b);
 			}
 		} else {
@@ -1544,9 +1545,19 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				bn = doubleslice(s, 0, 0, low, high);
 			} else {
-				bn = doublerange(0, 0,
-						 low + b->hseqbase,
-						 high + b->hseqbase);
+				if (use_orderidx) {
+					BAT *order;
+
+					if ((order = BBPdescriptor(b->torderidx.o)) == NULL) {
+						GDKerror("Runtime object (order index) not found");
+					}
+					bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
+					BATorder(bn);
+				} else {
+					bn = doublerange(0, 0,
+						         low + b->hseqbase,
+						         high + b->hseqbase);
+				}
 			}
 		}
 		bn->hseqbase = 0;
