@@ -223,7 +223,7 @@ returns table (
 	stmt string
 	) external name sql.dump_trace;
 create view sys.tracelog as select * from sys.tracelog();
-insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'epoch', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 delete from systemfunctions where function_id not in (select id from functions);
 update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_history', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
 drop procedure sys.cluster1;
