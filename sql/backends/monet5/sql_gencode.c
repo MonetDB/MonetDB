@@ -1222,8 +1222,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_mbrselect:
 #if 0
-		}
-			int l, r=-1, sub=-1;
+		{
+			int l, r=-1, uval=-1, sub=-1;
+			char nme[SMALLBUFSIZ];
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 	
@@ -1453,6 +1454,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //all the dimensions
 							q = pushArgument(mb, q, uval); //the current dimension
+						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
+							setVarType(mb, getArg(q, 0), TYPE_ptr);
+							setVarUDFtype(mb, getArg(q, 0));
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+							q = pushArgument(mb, q, l);
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1486,6 +1492,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //all the dimensions
 							q = pushArgument(mb, q, uval); //the current dimension
+						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
+							setVarType(mb, getArg(q, 0), TYPE_ptr);
+							setVarUDFtype(mb, getArg(q, 0));
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+							q = pushArgument(mb, q, l);
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1531,7 +1542,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (q) {
 				s->nr = getDestVar(q);
-				if(s->op1->type == st_dimension) { 
+				if(s->op1->type == st_dimension || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))) { 
 					/* rename second result */
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				}
@@ -1833,7 +1844,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
-				q = pushArgument(mb, q, l);
+//				if(s->op2->type == st_bat) {
+//					sql_table *t = (sql_table*)s->op2->op4.cval->t;
+//					if(!isArray(t))
+//						q = pushArgument(mb, q, l);
+//				} else
+					q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if(s->op2->type == st_dimension) {
 					char nme[SMALLBUFSIZ];

@@ -51,9 +51,6 @@ command exist(b:bat[:oid,:any_1], val:any_1):bit
 address ALGexist
 comment "Returns whether 'val' occurs in b.";
 
-#command algebra.subselect(pos:int, dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
-#address ALGdimensionSubselect1;
-
 # The range selections are targeted at the tail of the BAT.
 command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
 address ALGsubselect1

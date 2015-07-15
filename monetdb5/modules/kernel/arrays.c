@@ -212,7 +212,7 @@ do { \
     } \
 } while(0)
 
-str ALGdimensionLeftfetchjoin(bat *result, const bat *cands, const ptr *dims, const ptr *dim) {
+str ALGdimensionLeftfetchjoin1(bat *result, const bat *cands, const ptr *dims, const ptr *dim) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_dimension *dimension = (gdk_dimension*)*dim;
 	BAT *candsBAT = NULL, *resBAT = NULL;
@@ -852,6 +852,23 @@ str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {
 	freeCells(candidatesDimensions);
 
 	
+	return MAL_SUCCEED;
+}
+
+
+str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const bat* values, const ptr *dimsCand, const bat* oidsCand,
+                        const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+	(void)*dimsRes;
+	(void)*oidsRes;
+	(void)*values;
+	(void)*dimsCand;
+	(void)*oidsCand;
+	(void)*(int*)low;
+	(void)*(int*)high;
+	(void)*li;
+	(void)*hi;
+	(void)*anti;
+
 	return MAL_SUCCEED;
 }
 
