@@ -24,6 +24,7 @@ create filter function sys."like"(val string, pat string) external name algebra.
 drop filter function sys."ilike";
 create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
 create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
+create function sys."epoch"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp."epoch";
 CREATE TABLE sys.keywords (
     keyword VARCHAR(40) NOT NULL PRIMARY KEY);
 
