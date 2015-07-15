@@ -521,18 +521,16 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			BATiter li;
 			li = bat_iterator(b);
 			varvalue = PROTECT(NEW_STRING(BATcount(b)));
-			BATloop(b, p, q)
-				{
-					const char *t = (const char *) BUNtail(li, p);
-					if (t == str_nil) {
-						SET_STRING_ELT(varvalue, j, NA_STRING);
-					} else {
-						SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
-					}
-					j++;
+			BATloop(b, p, q) {
+				const char *t = (const char *) BUNtail(li, p);
+				if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
+					SET_STRING_ELT(varvalue, j, NA_STRING);
+				} else {
+					SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
 				}
-		}
-			break;
+				j++;
+			}
+		} 	break;
 		default:
 			// no clue what type to consider
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
