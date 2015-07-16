@@ -678,8 +678,8 @@ msab_getStatus(sabdb** ret, char *dbname)
 	 * sufficient to see if reparsing is necessary.  The gdk_lock always has
 	 * to be checked to detect crashes. */
 
-	sabdb *sdb, *top;
-	sdb = top = *ret = NULL;
+	sabdb *sdb;
+	sdb = *ret = NULL;
 
 	/* scan the parent for directories */
 	if ((p = getFarmPath(pathbuf, sizeof(pathbuf), NULL)) != NULL)
@@ -700,12 +700,10 @@ msab_getStatus(sabdb** ret, char *dbname)
 			continue;
 
 		sdb = msab_getSingleStatus(pathbuf, e->d_name, sdb);
-		if (top == NULL)
-			top = sdb;
 	}
 	(void)closedir(d);
 
-	*ret = top;
+	*ret = sdb;
 	return(NULL);
 }
 
