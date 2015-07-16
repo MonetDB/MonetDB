@@ -51,10 +51,14 @@ Copyright 2008-2015 MonetDB B.V.
   Cross-compile for JVM 1.5 ("Java 5"). This allows the driver to work with older java installations.
   see also https://blogs.oracle.com/darcy/entry/bootclasspath_older_source for details on the error message w.r.t rt.jar 
   to get around this issue, the -Xlint:-options compiler option has also been addded.
-  2013-04-17, hannes@cwi.nl 
+  2013-04-17, hannes@cwi.nl
+
+  Update: cross-compile for JVM 1.7 since 1.5 and 1.6 are both long
+  since EOL.
+  2015-07-16, sjoerd@acm.org
 
   -->
-  <property name="jvm.version"               value="1.5" />
+  <property name="jvm.version"               value="1.7" />
   <property name="javac.flags"               value="-Xlint:-options" />
 
   <!-- full target -->
