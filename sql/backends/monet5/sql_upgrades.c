@@ -1500,7 +1500,7 @@ sql_update_jul2015(Client c)
 
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'epoch', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 			"delete from systemfunctions where function_id not in (select id from functions);\n"
 			"update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_history', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
