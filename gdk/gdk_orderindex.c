@@ -69,7 +69,7 @@ ORDERkeepidx(BAT *b, BAT *order) {
 	MT_lock_set(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
 	if (!b->torderidx.flags) {
 		b->torderidx.o = BBPcacheid(order);
-		BBPkeepref(order->batCacheid);
+		//BBPkeepref(order->batCacheid);
 		b->torderidx.flags = 1;
 	} else {
 		/* take care if other index already exists, should not happen though

@@ -744,7 +744,6 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
 			 * or <= v (if revsorted), we're done */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return lo;
 		}
 		break;
@@ -756,7 +755,6 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return hi;
 		}
 		break;
@@ -764,7 +762,6 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = 0;	/* not used in this case */
 		if (lo >= hi) {
 			/* empty BAT: value not found */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return BUN_NONE;
 		}
 		break;
@@ -894,7 +891,6 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		}
 		break;
 	}
-	if (use_orderidx) BBPunfix(o->batCacheid);
 	return cur;
 }
 

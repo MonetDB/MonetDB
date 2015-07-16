@@ -1552,7 +1552,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 						GDKerror("Runtime object (order index) not found");
 					}
 					bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
-					BATorder(bn);
+					BATorder(BATmirror(bn));
 				} else {
 					bn = doublerange(0, 0,
 						         low + b->hseqbase,
