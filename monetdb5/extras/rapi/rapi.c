@@ -153,7 +153,7 @@ void clearRErrConsole(void) {
 	// Do nothing?
 }
 
-int RAPIinstalladdons(void);
+static char *RAPIinstalladdons(void);
 
 /* UNIX-like initialization */
 #ifndef WIN32
@@ -162,8 +162,10 @@ int RAPIinstalladdons(void);
 #define CSTACK_DEFNS 1
 #include <Rinterface.h>
 
-static int RAPIinitialize(void) {
+static char *RAPIinitialize(void) {
 // TODO: check for header/library version mismatch?
+	char *e;
+
 	// set R_HOME for packages etc. We know this from our configure script
 	setenv("R_HOME", RHOME, TRUE);
 
@@ -186,7 +188,7 @@ static int RAPIinitialize(void) {
 		Rp->NoRenviron = TRUE;
 		stat = Rf_initialize_R(2, rargv);
 		if (stat < 0) {
-			return 2;
+			return "Rf_initialize failed";
 		}
 		R_SetParams(Rp);
 	}
@@ -207,8 +209,8 @@ static int RAPIinitialize(void) {
 	// big boy here
 	setup_Rmainloop();
 
-	if (RAPIinstalladdons() != 0) {
-		return 3;
+	if ((e = RAPIinstalladdons()) != 0) {
+		return e;
 	}
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
@@ -216,7 +218,7 @@ static int RAPIinitialize(void) {
 	//SET_INTERNAL(install("system"), R_NilValue);
 
 	rapiInitialized++;
-	return 0;
+	return NULL;
 }
 #else
 /* Completely different Windows initialization */
@@ -280,23 +282,20 @@ static void my_onintr(int sig)
 
 //extern Rboolean R_LoadRconsole;
 
-int RAPIinitialize(void) {
+static char *RAPIinitialize(void) {
 	structRstart rp;
 	Rstart Rp = &rp;
 	char Rversion[25], *RHome;
 
 	snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
 	if(strncmp(getDLLVersion(), Rversion, 25) != 0) {
-		fprintf(stderr, "Error: R.DLL version does not match\n");
-		exit(1);
+		return "Error: R.DLL version does not match";
 	}
 
 	R_setStartTime();
 	R_DefParams(Rp);
 	if((RHome = get_R_HOME()) == NULL) {
-		fprintf(stderr,
-				"R_HOME must be set in the environment or Registry\n");
-		exit(2);
+		return "R_HOME must be set in the environment or Registry";
 	}
 	Rp->rhome = RHome;
 	Rp->home = getRUser();
@@ -333,7 +332,7 @@ void initRinside() {
 #endif
 
 
-int RAPIinstalladdons(void) {
+static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
 	char rlibs[BUFSIZ];
@@ -345,7 +344,7 @@ int RAPIinstalladdons(void) {
 			 "rapi_packages");
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
-		return 4;
+		return "cannot create rapi_packages directory";
 	}
 #ifdef _RAPI_DEBUG_
 	printf("# R libraries installed in %s\n",rlibs);
@@ -359,6 +358,14 @@ int RAPIinstalladdons(void) {
 	// run rapi.R environment setup script
 	snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")",
 			 locate_file("rapi", ".R", 0));
+#if DIR_SEP != '/'
+	{
+		char *p;
+		for (p = rapiinclude; *p; p++)
+			if (*p == DIR_SEP)
+				*p = '/';
+	}
+#endif
 	R_tryEvalSilent(
 		VECTOR_ELT(
 			R_ParseVector(mkString(rapiinclude), 1, &status,
@@ -366,9 +373,9 @@ int RAPIinstalladdons(void) {
 
 	// of course the script may contain errors as well
 	if (evalErr != FALSE) {
-		return 5;
+		return "failure running R setup script";
 	}
-	return 0;
+	return NULL;
 }
 
 rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
@@ -749,15 +756,15 @@ str RAPIprelude(void *ret) {
 		MT_lock_set(&rapiLock, "rapi.evaluate");
 		/* startup internal R environment  */
 		if (!rapiInitialized) {
-			int initstatus;
+			char *initstatus;
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
 				throw(MAL, "rapi.eval",
-					  "failed to initialise R environment (%i)", initstatus);
+					  "failed to initialise R environment (%s)", initstatus);
 			}
 		}
 		MT_lock_unset(&rapiLock, "rapi.evaluate");
-		fprintf(stdout, "# MonetDB/R   module loaded\n");
+		printf("# MonetDB/R   module loaded\n");
 	}
 	return MAL_SUCCEED;
 }

@@ -40,3 +40,5 @@ cast_to_num.Bug-3744
 null_is_null.Bug-3739
 mergejoin_NULL.Bug-3747
 epoch_now.Bug-3740
+schema_view2.Bug-3766
+create-temp-table-using-like.Bug-3767

@@ -1,3 +1,7 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Jul 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- We now compile the Java classes using the latest Java 1.8 version, and
+  we tell it to compile for Java 1.7.
+
