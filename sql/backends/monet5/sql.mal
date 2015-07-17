@@ -566,6 +566,10 @@ command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
+pattern oidindex(sch:str,tab:str,col:str)
+address SQLoidindex
+comment "Create an oid index on a particular column";
+
 command sql.dec_round( v:bte, r:bte ) :bte 
 address bte_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
