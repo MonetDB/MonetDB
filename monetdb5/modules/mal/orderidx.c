@@ -221,6 +221,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(a);
 			throw(MAL,"bat.orderidx", OPERATION_FAILED);
 		}
+		BBPincref(aid[0], TRUE);
 	} else {
 		BAT *m; /* merged oid's */
 		oid *mv;
@@ -421,6 +422,7 @@ do {																		\
 		for (i = 0; i < n_ar; i++) {
 			BBPunfix(aid[i]);
 		}
+		BBPincref(m->batCacheid, TRUE);
 	}
 
 	GDKfree(aid);
