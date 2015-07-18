@@ -15,7 +15,7 @@
 #include "gdk.h"
 
 str
-ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int pieces = 3;
 	int i, loopvar, bid, arg;
@@ -33,17 +33,17 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		/* TODO: educated guess needed on number of partitions */
 	}
-#ifdef _DEBUG_ARNG_
-	mnstr_printf(cntxt->fdout,"#bat.arrange pieces %d\n",pieces);
+#ifdef _DEBUG_OIDX_
+	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
 #endif
 
 	if (pieces < 0)
-		throw(MAL,"bat.arrange","Positive number expected");
+		throw(MAL,"bat.orderidx","Positive number expected");
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
 	/* TODO: check if b already has index */
 	/* TODO: check if b is sorted, then index does nto make sense, other action  is needed*/
@@ -62,7 +62,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// create the pack instruction first, as it will hold intermediate variables
 	pack = newInstruction(0, ASSIGNsymbol);
 	setModuleId(pack, putName("bat", 3));
-	setFunctionId(pack, putName("arrange", 7));
+	setFunctionId(pack, putName("orderidx", 8));
 	pack->argv[0] = newTmpVariable(smb, TYPE_void);
 	pack = pushArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
@@ -93,7 +93,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for (i=0; i< pieces; i++) {
 		// add sort instruction
-		q = newStmt(smb, putName("algebra",7), putName("orderidx", 9));
+		q = newStmt(smb, putName("algebra",7), putName("orderidx", 8));
 		setVarType(smb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, pack->argv[2+i]);
@@ -109,7 +109,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pushEndInstruction(smb);
 	chkProgram(cntxt->fdout, cntxt->nspace, smb);
 	if (smb->errors) {
-		msg = createException(MAL, "bat.arrange", "Type errors in generated code");
+		msg = createException(MAL, "bat.orderidx", "Type errors in generated code");
 	} else {
 		// evaluate MAL block
 		newstk = prepareMALstack(smb, smb->vsize);
@@ -129,7 +129,7 @@ ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-ARNGgetorder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -150,7 +150,7 @@ ARNGgetorder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *b;
@@ -167,7 +167,7 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
 	assert(BAThdense(b));	/* assert void headed */
 	switch (ATOMstorage(b->ttype)) {
@@ -186,17 +186,17 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_ptr:
 	default:
 		/* TODO: support strings, date, timestamps etc. */
-		throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
+		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 	}
 
 	if ((aid = (bat *) GDKzalloc(n_ar*sizeof(bat))) == NULL ) {
 		BBPunfix(bid);
-		throw(MAL, "bat.arrange", MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
 	}
 	if ((a = (BAT **) GDKzalloc(n_ar*sizeof(BAT *))) == NULL) {
 		BBPunfix(bid);
 		GDKfree(aid);
-		throw(MAL, "bat.arrange", MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
 	}
 	for (i = 0; i < n_ar; i++) {
 		aid[i] = *getArgReference_bat(stk, pci, i+2);
@@ -208,7 +208,7 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(aid);
 			GDKfree(a);
 			BBPunfix(bid);
-			throw(MAL, "bat.arrange", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -219,7 +219,7 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(bid);
 			GDKfree(aid);
 			GDKfree(a);
-			throw(MAL,"bat.arrange", OPERATION_FAILED);
+			throw(MAL,"bat.orderidx", OPERATION_FAILED);
 		}
 	} else {
 		BAT *m; /* merged oid's */
@@ -236,7 +236,7 @@ ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(bid);
 			GDKfree(aid);
 			GDKfree(a);
-			throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
+			throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
 		}
 		mv = (oid *) Tloc(m, BUNfirst(m));
 
@@ -281,7 +281,7 @@ do {																		\
 			case TYPE_ptr:
 			default:
 				/* TODO: support strings, date, timestamps etc. */
-				throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
+				throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 			}
 
 		/* use min-heap */
@@ -295,7 +295,7 @@ do {																		\
 				BBPunfix(m->batCacheid);
 				GDKfree(aid);
 				GDKfree(a);
-				throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
+				throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
 			}
 			if ((q = (oid **) GDKzalloc(n_ar*sizeof(oid *))) == NULL) {
 				for (i = 0; i < n_ar; i++)
@@ -305,7 +305,7 @@ do {																		\
 				GDKfree(aid);
 				GDKfree(a);
 				GDKfree(p);
-				throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);
+				throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
 			}
 			for (i = 0; i < n_ar; i++) {
 				p[i] = (oid *) Tloc(a[i], BUNfirst(a[i]));
@@ -351,7 +351,7 @@ do {																		\
 		GDKfree(a);															\
 		GDKfree(p);															\
 		GDKfree(q);															\
-		throw(MAL,"bat.arrange", MAL_MALLOC_FAIL);							\
+		throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);							\
 	}																		\
 	/* init min heap */														\
 	for (i = 0; i < n_ar; i++) {											\
@@ -394,7 +394,7 @@ do {																		\
 			case TYPE_ptr:
 			default:
 				/* TODO: support strings, date, timestamps etc. */
-				throw(MAL, "bat.arrange", TYPE_NOT_SUPPORTED);
+				throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 			}
 			GDKfree(p);
 			GDKfree(q);
@@ -416,7 +416,7 @@ do {																		\
 			GDKfree(a);
 			BBPunfix(m->batCacheid);
 			BBPunfix(bid);
-			throw(MAL,"bat.arrange", OPERATION_FAILED);
+			throw(MAL,"bat.orderidx", OPERATION_FAILED);
 		}
 		for (i = 0; i < n_ar; i++) {
 			BBPunfix(aid[i]);

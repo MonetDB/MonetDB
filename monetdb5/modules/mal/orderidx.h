@@ -6,8 +6,8 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-#ifndef _ARNG_H
-#define _ARNG_H
+#ifndef _OIDX_H
+#define _OIDX_H
 
 #include "mal.h"
 #include "mal_builder.h"
@@ -17,16 +17,16 @@
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define arrange_export extern __declspec(dllimport)
+#define orderidx_export extern __declspec(dllimport)
 #else
-#define arrange_export extern __declspec(dllexport)
+#define orderidx_export extern __declspec(dllexport)
 #endif
 #else
-#define arrange_export extern
+#define orderidx_export extern
 #endif
 
-#define _DEBUG_ARNG_
-arrange_export str ARNGcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-arrange_export str ARNGmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-arrange_export str ARNGgetorder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _ARNG_H */
+#define _DEBUG_OIDX_
+orderidx_export str OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+orderidx_export str OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+orderidx_export str OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* _OIDX_H */

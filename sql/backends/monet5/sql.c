@@ -4412,7 +4412,7 @@ SQLoidindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     tr = m->session->tr;
     t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
     t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	printf("#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
+	mnstr_printf(cntxt->fdout, "#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
 	
     return MAL_SUCCEED;
 }
