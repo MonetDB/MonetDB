@@ -33,6 +33,7 @@
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mal_instruction.h"
+#include "orderidx.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -4384,7 +4385,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Experimental code for dealing with oid indices */
 str
-SQLoidindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     str *sch = getArgReference_str(stk, pci, 1);
     str *tbl = getArgReference_str(stk, pci, 2);
@@ -4394,7 +4395,8 @@ SQLoidindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     sql_table *t;
     sql_column *c;
     mvc *m = NULL;
-    str msg;
+	BAT *b;
+    str msg = MAL_SUCCEED;
 
     if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
         return msg;
@@ -4402,19 +4404,23 @@ SQLoidindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         return msg;
     s = mvc_bind_schema(m, *sch);
     if (s == NULL)
-        throw(SQL, "sql.oidindex", "3F000!Schema missing");
+        throw(SQL, "sql.orderidx", "3F000!Schema missing");
     t = mvc_bind_table(m, s, *tbl);
     if (t == NULL)
-        throw(SQL, "sql.oidindex", "42S02!Table missing");
+        throw(SQL, "sql.orderidx", "42S02!Table missing");
     c = mvc_bind_column(m, t, *col);
     if (c == NULL)
-        throw(SQL, "sql.oidindex", "42S02!Column missing");
+        throw(SQL, "sql.orderidx", "42S02!Column missing");
     tr = m->session->tr;
     t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
     t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	mnstr_printf(cntxt->fdout, "#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
-	
-    return MAL_SUCCEED;
+	b = store_funcs.bind_col(tr, c, RDONLY);
+	if( b == NULL)
+		throw(SQL,"sql.orderidx","Can not access descriptor");
+	msg=  OIDXcreateImplementation(cntxt,mb,stk,pci, b);
+	BBPunfix(b->batCacheid);
+    return msg;
 }
 
 /*
@@ -4660,7 +4666,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *oidx;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4681,6 +4687,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rphash = getArgReference_bat(stk, pci, 11);
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
+	bat *roidx = getArgReference_bat(stk, pci, 14);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4716,10 +4723,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(sort, 0);
+	oidx = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	BATseqbase(oidx, 0);
 	
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
-		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL) {
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL || oidx == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4748,6 +4757,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
 			BBPunfix(sort->batCacheid);
+		if (oidx)
+			BBPunfix(oidx->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
@@ -4836,6 +4847,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
+
+								sz = 0; 
+								BUNappend(oidx, &sz, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4915,6 +4929,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
+									sz = 0; 
+									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -4936,6 +4952,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
+	BBPkeepref(*roidx = oidx->batCacheid);
 	return MAL_SUCCEED;
 }
 
