@@ -1539,11 +1539,15 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else {
 			/* match: [low..high) */
 			if (s) {
-				oid o = (oid) low + b->hseqbase;
-				low = SORTfndfirst(s, &o) - BUNfirst(s);
-				o = (oid) high + b->hseqbase;
-				high = SORTfndfirst(s, &o) - BUNfirst(s);
-				bn = doubleslice(s, 0, 0, low, high);
+				if (use_orderidx) {
+					return GDK_FAIL; /* fail until fixed*/
+				} else {
+					oid o = (oid) low + b->hseqbase;
+					low = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) high + b->hseqbase;
+					high = SORTfndfirst(s, &o) - BUNfirst(s);
+					bn = doubleslice(s, 0, 0, low, high);
+				}
 			} else {
 				if (use_orderidx) {
 					BAT *order;
@@ -1552,7 +1556,15 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 						GDKerror("Runtime object (order index) not found");
 					}
 					bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
-					BATorder(BATmirror(bn));
+					/* output must be sorted */
+					GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+					bn->tsorted = 1;
+					bn->trevsorted = bn->batCount <= 1;
+					bn->tkey = 1;
+					bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? BUNfirst(bn) : oid_nil;
+					bn->T->nil = 0;
+					bn->T->nonil = 1;
+
 				} else {
 					bn = doublerange(0, 0,
 						         low + b->hseqbase,
