@@ -89,7 +89,7 @@ bat.append(bstr,"asdf":str);
 bat.append(bstr,"sd asd asd asd asd a":str);
 bat.append(bstr,"":str);
 bat.append(bstr,nil:str);
-rstr:bat[:oid,:int] := rapi.eval(nil:ptr,"unlist(lapply(arg1,nchar))",bstr);
+rstr:bat[:oid,:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr);
 io.print(rstr);
 
 
