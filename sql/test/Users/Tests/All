@@ -18,4 +18,5 @@ grantAndRevokeUserLogedIN.Bug-3476
 grantRevokeAndGrantAgain.Bug-3765
 grantMonetdbToRegularUser.Bug-3771
 grantMonetdbToSchemaOwner.Bug-3771
+grantRole.Bug-3772
 dropManyUsers.Bug-3764
