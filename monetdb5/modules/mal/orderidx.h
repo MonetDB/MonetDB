@@ -27,6 +27,7 @@
 
 #define _DEBUG_OIDX_
 orderidx_export str OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+orderidx_export str OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT *b);
 orderidx_export str OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 orderidx_export str OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _OIDX_H */

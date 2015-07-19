@@ -15,16 +15,14 @@
 #include "gdk.h"
 
 str
-OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT *b)
 {
-	int pieces = 3;
-	int i, loopvar, bid, arg;
+	int i, loopvar, arg, pieces;
 	BUN cnt, step=0,o;
 	MalBlkPtr smb;
 	MalStkPtr newstk;
 	Symbol snew;
 	InstrPtr q, pack;
-	BAT *b;
 	char name[IDLENGTH];
 	str msg= MAL_SUCCEED;
 
@@ -39,11 +37,6 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (pieces < 0)
 		throw(MAL,"bat.orderidx","Positive number expected");
-
-	bid = *getArgReference_bat(stk, pci, 1);
-	b = BATdescriptor(bid);
-	if (b == NULL)
-		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
 	/* TODO: check if b already has index */
 	/* TODO: check if b is sorted, then index does nto make sense, other action  is needed*/
@@ -119,12 +112,25 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
-#ifdef _DEBUG_INDEX_
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_ALL);
+#ifdef _DEBUG_INDEX_
 #endif
-	BBPunfix(b->batCacheid);
 	// get rid of temporary MAL block
 	freeSymbol(snew);
+	return msg;
+}
+
+str
+OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	str msg= MAL_SUCCEED;
+
+	b = BATdescriptor( *getArgReference_bat(stk, pci, 1));
+	if (b == NULL)
+		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+	msg = OIDXcreateImplementation(cntxt,mb,stk,pci, b);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
