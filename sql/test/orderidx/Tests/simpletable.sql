@@ -15,3 +15,5 @@ select * from xtmp1 where i <8;
 
 select * from xtmp1 where i>=0 and i <8;
 select * from xtmp1 where i>=2 and i <=2;
+
+drop table xtmp1;
