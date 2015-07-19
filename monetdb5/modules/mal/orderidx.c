@@ -15,9 +15,9 @@
 #include "gdk.h"
 
 str
-OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BAT *b)
+OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 {
-	int i, loopvar, arg, pieces;
+	int i, loopvar, arg;
 	BUN cnt, step=0,o;
 	MalBlkPtr smb;
 	MalStkPtr newstk;
@@ -26,18 +26,15 @@ OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	char name[IDLENGTH];
 	str msg= MAL_SUCCEED;
 
-	if (pci->argc == 3) {
-		pieces = stk->stk[pci->argv[2]].val.ival;
-	} else {
-		/* TODO: educated guess needed on number of partitions */
+	if( pieces < 0){
+		/* TODO estimate number of pieces */
+		pieces = 3;
 	}
 #ifdef _DEBUG_OIDX_
 	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
 #endif
 
-	if (pieces < 0)
-		throw(MAL,"bat.orderidx","Positive number expected");
-
+	mnstr_printf(cntxt->fdout,"#oidx ttype %d bat %d\n", b->ttype,tpe);
 	/* TODO: check if b already has index */
 	/* TODO: check if b is sorted, then index does nto make sense, other action  is needed*/
 	/* TODO: check if b is view and parent has index do a range select */
@@ -47,7 +44,7 @@ OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	snew = newFunction(putName("user", 4), putName(name, strlen(name)), FUNCTIONsymbol);
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
-	arg = newTmpVariable(smb, getArgType(mb,pci,1));
+	arg = newTmpVariable(smb, tpe);
 	pushArgument(smb, q, arg);
 	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
@@ -72,7 +69,7 @@ OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for (i=0; i< pieces; i++) {
 		// add slice instruction
 		q = newStmt(smb, putName("algebra", 7),putName("slice", 5));
-		setVarType(smb, getArg(q,0), getArgType(mb, pci, 1));
+		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
 		q = pushArgument(smb, q, arg);
 		pack = pushArgument(smb, pack, getArg(q,0));
@@ -107,13 +104,14 @@ OIDXcreateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		// evaluate MAL block
 		newstk = prepareMALstack(smb, smb->vsize);
 		newstk->up = 0;
-		VALcopy(&newstk->stk[arg], &stk->stk[getArg(pci,1)]);
+		newstk->stk[arg].vtype= TYPE_bat;
+		newstk->stk[arg].val.bval= b->batCacheid;
 		BBPincref(newstk->stk[arg].val.bval, TRUE);
         msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
-	printFunction(cntxt->fdout, smb, 0, LIST_MAL_ALL);
 #ifdef _DEBUG_INDEX_
+	printFunction(cntxt->fdout, smb, 0, LIST_MAL_ALL);
 #endif
 	// get rid of temporary MAL block
 	freeSymbol(snew);
@@ -125,11 +123,19 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	str msg= MAL_SUCCEED;
+	int pieces = -1;
+
+
+	if (pci->argc == 3) {
+		pieces = stk->stk[pci->argv[2]].val.ival;
+		if (pieces < 0)
+			throw(MAL,"bat.orderidx","Positive number expected");
+	}
 
 	b = BATdescriptor( *getArgReference_bat(stk, pci, 1));
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
-	msg = OIDXcreateImplementation(cntxt,mb,stk,pci, b);
+	msg = OIDXcreateImplementation(cntxt, getArgType(mb,pci,1), b, pieces);
 	BBPunfix(b->batCacheid);
 	return msg;
 }

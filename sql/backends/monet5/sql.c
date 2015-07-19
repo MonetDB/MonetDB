@@ -4418,7 +4418,7 @@ SQLorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = store_funcs.bind_col(tr, c, RDONLY);
 	if( b == NULL)
 		throw(SQL,"sql.orderidx","Can not access descriptor");
-	msg=  OIDXcreateImplementation(cntxt,mb,stk,pci, b);
+	msg=  OIDXcreateImplementation(cntxt,newBatType(TYPE_oid,b->ttype),b,-1);
 	BBPunfix(b->batCacheid);
     return msg;
 }

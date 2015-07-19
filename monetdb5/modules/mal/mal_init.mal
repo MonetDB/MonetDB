@@ -31,7 +31,7 @@ include streams;
 include bat5;
 include batExtensions;
 include algebra;
-include arrange;
+include orderidx;
 #include calc; --- moved to autoload/01_calc
 include status;
 include groupby;
