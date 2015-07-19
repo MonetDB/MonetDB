@@ -1844,12 +1844,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
-//				if(s->op2->type == st_bat) {
-//					sql_table *t = (sql_table*)s->op2->op4.cval->t;
-//					if(!isArray(t))
-//						q = pushArgument(mb, q, l);
-//				} else
-					q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, l);
+				/*if the second argument is a BAT and the first has two variables then
+ 				* it is a subselect on a non-dimensional column that produces an MBR */ 
+				if(getVarType(mb, r) == TYPE_bat || getVarType(mb, r) == TYPE_any) {
+					char nme[SMALLBUFSIZ];
+                    int uval = -1;
+
+                    snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+                    uval = findVariable(mb, nme);
+                    if(uval >= 0)
+						q = pushArgument(mb, q, uval);
+				}
 				q = pushArgument(mb, q, r);
 				if(s->op2->type == st_dimension) {
 					char nme[SMALLBUFSIZ];

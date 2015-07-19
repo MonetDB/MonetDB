@@ -14,7 +14,8 @@
 
 algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const bat* cands, const ptr *dims, const ptr *dim) ;
 algebra_export str ALGdimensionLeftfetchjoin2(bat* result, const ptr* dimsCand, const ptr *dims, const ptr *dim) ;
-algebra_export str ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
+algebra_export str ALGnonDimensionLeftfetchjoin(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat);
+//algebra_export str ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 //algebra_export str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 
 algebra_export str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const ptr *dimsCand, const bat* oidsCand,
@@ -26,6 +27,8 @@ algebra_export str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const
 
 
 algebra_export str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const bat* values, const ptr *dimsCand, const bat* oidsCand, 
+                            const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+algebra_export str ALGnonDimensionSubselect1(ptr *dimsRes, bat* oidsRes, const bat* values, 
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 
 algebra_export str ALGmbrsubselect(bat *result, const ptr *dims, const ptr* dim, const bat *sid, const bat *cid);

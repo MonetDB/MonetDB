@@ -265,6 +265,24 @@ str ALGdimensionLeftfetchjoin1(bat *result, const bat *cands, const ptr *dims, c
 
 }
 
+str ALGdimensionLeftfetchjoin2(bat *result, const ptr *candDims, const ptr *dims, const ptr *dim) {
+	(void)*result;
+	(void)*candDims;
+	(void)*dims;
+	(void)*dim;
+	
+	return MAL_SUCCEED;
+}
+
+str ALGnonDimensionLeftfetchjoin(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat) {
+	(void)*result;
+	(void)*dimsCand;
+	(void)*candBat;
+	(void)*valsBat;
+
+	return MAL_SUCCEED;
+}
+
 static str emptyCandidateResults(ptr *candsRes_dims, bat* candsRes_bid) {
 	BAT *candidatesBAT = NULL;
 
@@ -870,5 +888,10 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const bat* values, con
 	(void)*anti;
 
 	return MAL_SUCCEED;
+}
+
+str ALGnonDimensionSubselect1(ptr *dimsRes, bat* oidsRes, const bat* values,
+                        const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+	return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, NULL, NULL, low, high, li, hi, anti);
 }
 

@@ -1,9 +1,13 @@
 #leftfetch join when having a dimension from an array
+#It gets the candidates and projects the dimensions
 command algebra.leftfetchjoin(candsBAT:bat[:oid,:oid], dims:ptr, dim:ptr ) :bat[:oid,:any]
 address ALGdimensionLeftfetchjoin1;
-#it is called after a selection on a non-dimensional column and is the mbr of the qualifying cells
+#it is called after a selection on a non-dimensional column when projecting a dimensional column and is the mbr of the qualifying cells
 command algebra.leftfetchjoin(dimsCand:ptr, dims:ptr, dim:ptr ) :bat[:oid,:any]
 address ALGdimensionLeftfetchjoin2;
+#it is called after a selection on a non-dimensional column when projecting a non-dimensional column and is the mbr of the qualifying cells
+command algebra.leftfetchjoin(dimsCand:ptr, candBat:bat[:oid,:oid], valsBat:bat[:oid,:any] ) :bat[:oid,:any]
+address ALGnonDimensionLeftfetchjoin;
 
 command algebra.mbrsubselect(b:bat[:oid,:any], s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
 address ALGmbrsubselect;
