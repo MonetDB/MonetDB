@@ -16,4 +16,6 @@ changeSchemaUser
 role
 grantAndRevokeUserLogedIN.Bug-3476
 grantRevokeAndGrantAgain.Bug-3765
+grantMonetdbToRegularUser.Bug-3771
+grantMonetdbToSchemaOwner.Bug-3771
 dropManyUsers.Bug-3764
