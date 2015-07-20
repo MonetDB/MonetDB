@@ -4150,7 +4150,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			rel_project_add_exp(sql, gr, e);
 			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e);
 		}
-		if (!e) {
+		if (!e || !exp_subtype(e)) { /* we also do not expect parameters here */
 			set_processed(groupby);
 			return NULL;
 		}
