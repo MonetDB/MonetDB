@@ -30,12 +30,12 @@ stderr of test 'mergedropcrash` in directory 'sql/test/mergetables` itself:
 # 12:42:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2966" "--port=31946"
 # 12:42:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-2966/.s.monetdb.31946
+MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = alter table m drop table t1;
-ERROR = !ALTER TABLE: table 't1' isn't part of the MERGE TABLE 'sys.m'
-MAPI  = (monetdb) /var/tmp/mtest-2966/.s.monetdb.31946
+ERROR = !ALTER TABLE: table 'sys.t1' isn't part of the MERGE TABLE 'sys.m'
+MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = alter table m drop table t1;
-ERROR = !ALTER TABLE: table 't1' isn't part of the MERGE TABLE 'sys.m'
+ERROR = !ALTER TABLE: no such table 't1' in schema 'sys'
 
 # 12:42:18 >  
 # 12:42:18 >  "Done."

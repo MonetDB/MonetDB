@@ -1,0 +1,65 @@
+stdout of test 'dplyr-flights` in directory 'clients/R` itself:
+
+
+# 11:44:02 >  
+# 11:44:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30588" "--set" "mapi_usock=/var/tmp/mtest-68891/.s.monetdb.30588" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_clients_R" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:44:02 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_clients_R', using 4 threads
+# Compiled for x86_64-apple-darwin14.4.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:30588/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-68891/.s.monetdb.30588
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:44:05 >  
+# 11:44:05 >  "R" "--vanilla" "--slave" "--args" "30588"
+# 11:44:05 >  
+
+[1] TRUE
+[1] 336776     16
+[1] 42 16
+[1] 42 16
+[1] 42 16
+[1] 42 16
+[1] 42 16
+[1] 42  3
+[1] 42  3
+[1] 42 13
+[1] 42  1
+[1] 42 16
+[1] 42  1
+[1] 42  2
+[1] 42 18
+[1] 42 18
+[1] 42  2
+[1] 1 1
+[1] 10 16
+[1] 42 16
+[1] 42  3
+[1] 42  4
+[1] 42  4
+[1] 12  3
+[1] 1 2
+[1] 42  5
+[1] 42  5
+[1] 42  5
+[1] "SUCCESS"
+
+# 11:44:15 >  
+# 11:44:15 >  "Done."
+# 11:44:15 >  
+

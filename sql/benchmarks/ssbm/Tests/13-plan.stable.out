@@ -51,19 +51,19 @@ project (
 | | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.lo_supplycost, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
 | | | | | | select (
 | | | | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
-| | | | | | ) [ dwdate.d_year in (int[smallint "1997"], int[smallint "1998"]) ]
+| | | | | | ) [ dwdate.d_year in (int "1997", int "1998") ]
 | | | | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ],
 | | | | | select (
 | | | | | | table(sys.part) [ part.p_category, part.p_brand1, part.%TID% NOT NULL ] COUNT 
-| | | | | ) [ part.p_category = clob[char(7) "MFGR#14"] ]
+| | | | | ) [ part.p_category = clob "MFGR#14" ]
 | | | | ) [ lineorder.%lineorder_lo_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
 | | | | select (
 | | | | | table(sys.supplier) [ supplier.s_city, supplier.s_nation, supplier.%TID% NOT NULL ] COUNT 
-| | | | ) [ supplier.s_nation = clob[char(13) "UNITED STATES"] ]
+| | | | ) [ supplier.s_nation = clob "UNITED STATES" ]
 | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | select (
 | | | | table(sys.customer) [ customer.c_region, customer.%TID% NOT NULL ] COUNT 
-| | | ) [ customer.c_region = clob[char(7) "AMERICA"] ]
+| | | ) [ customer.c_region = clob "AMERICA" ]
 | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ]
 | ) [ dwdate.d_year, supplier.s_city, part.p_brand1 ] [ dwdate.d_year, supplier.s_city, part.p_brand1, sys.sum no nil (sys.sql_sub(bigint[lineorder.lo_revenue] as lineorder.lo_revenue, bigint[lineorder.lo_supplycost] as lineorder.lo_supplycost)) as L1.L1 ]
 ) [ dwdate.d_year, supplier.s_city, part.p_brand1, L1 as L1.profit1 ] [ dwdate.d_year ASC, supplier.s_city ASC, part.p_brand1 ASC ]

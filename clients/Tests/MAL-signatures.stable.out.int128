@@ -3258,6 +3258,10 @@ command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte]
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+command batgeom.Contains(a:wkb,px:bat[:oid,:dbl],py:bat[:oid,:dbl]):bat[:oid,:bit] 
+address wkbContains_point_bat;
+comment Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b
+
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
 comment Construct a point-BAT from two geometry-BATs
@@ -48995,6 +48999,10 @@ command geom.ConvexHull(a:wkb):wkb
 address wkbConvexHull;
 comment Returns a geometry that represents the convex hull of this geometry.
 
+command geom.Contains(a:wkb,x:dbl,y:dbl):bit 
+address wkbContains_point;
+comment Returns true if the Geometry a 'spatially contains' Geometry b
+
 command geom.Contains(a:wkb,b:wkb):bit 
 address wkbContains;
 comment Returns true if the Geometry a 'spatially contains' Geometry b
@@ -50412,7 +50420,7 @@ address MTIMEdaytime1;
 comment default time with zeroed components
 
 command mtime.date_to_str(d:date,format:str):str 
-address MTIMEstrftime;
+address MTIMEdate_to_str;
 comment create a string from the date, using the specified format (see man strftime)
 
 command mtime.dayname(day:int):str 
@@ -50603,8 +50611,16 @@ command mtime.sql_seconds(t:timestamp):int
 address MTIMEtimestamp_sql_seconds;
 command mtime.seconds(t:timestamp):int 
 address MTIMEtimestamp_seconds;
+command mtime.str_to_timestamp(s:str,format:str):timestamp 
+address MTIMEstr_to_timestamp;
+comment create a timestamp from the string, using the specified format (see man strptime)
+
+command mtime.str_to_time(s:str,format:str):daytime 
+address MTIMEstr_to_time;
+comment create a time from the string, using the specified format (see man strptime)
+
 command mtime.str_to_date(s:str,format:str):date 
-address MTIMEstrptime;
+address MTIMEstr_to_date;
 comment create a date from the string, using the specified format (see man strptime)
 
 command mtime.start_dst(t:timezone):zrule 
@@ -50622,6 +50638,14 @@ comment extracts seconds (with fractional milliseconds) from daytime
 command mtime.seconds(d:daytime):int 
 address MTIMEdaytime_extract_seconds;
 comment extracts seconds from daytime
+
+command mtime.timestamp_to_str(d:timestamp,format:str):str 
+address MTIMEtimestamp_to_str;
+comment create a string from the time, using the specified format (see man strftime)
+
+command mtime.time_to_str(d:daytime,format:str):str 
+address MTIMEtime_to_str;
+comment create a string from the time, using the specified format (see man strftime)
 
 command mtime.time_synonyms(allow:bit):void 
 address MTIMEsynonyms;
@@ -51085,11 +51109,11 @@ pattern profiler.stop():void
 address CMDstopProfiler;
 comment Stop performance tracing
 
-command profiler.stethoscope(b:int):void 
+pattern profiler.stethoscope(b:int):void 
 address CMDstethoscope;
 comment Start stethoscope profiling with heart beat
 
-command profiler.tomograph(b:int):void 
+pattern profiler.tomograph(b:int):void 
 address CMDtomograph;
 comment Start tomograph profiler with heart beat
 
@@ -51328,25 +51352,15 @@ command sql.alpha(dec:dbl,theta:dbl):dbl
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
 
-pattern sql.analyze(sch:str,tbl:str,col:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str,col:str):void 
 address sql_analyze;
 comment Update the database statistics table
 
-pattern sql.analyze(sch:str,tbl:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str):void 
 address sql_analyze;
-pattern sql.analyze(sch:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str):void 
 address sql_analyze;
-pattern sql.analyze(sample:lng):void 
-address sql_analyze;
-pattern sql.analyze(sch:str,tbl:str,col:str):void 
-address sql_analyze;
-comment Update the database statistics table
-
-pattern sql.analyze(sch:str,tbl:str):void 
-address sql_analyze;
-pattern sql.analyze(sch:str):void 
-address sql_analyze;
-pattern sql.analyze():void 
+pattern sql.analyze(minmax:int,sample:lng):void 
 address sql_analyze;
 pattern sql.argRecord(a:any...):str 
 address SQLargRecord;
@@ -51424,11 +51438,11 @@ pattern sql.current_time():daytime
 address SQLcurrent_daytime;
 comment Get the clients current daytime
 
-pattern sql.copyfrom(t:ptr,sep:str,rsep:str,ssep:str,ns:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
-address mvc_import_table_stdin;
-comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
-
-pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
+pattern sql.copy_rejects_clear():void 
+address COPYrejects_clear;
+pattern sql.copy_rejects() (rowid:bat[:oid,:lng],fldid:bat[:oid,:int],msg:bat[:oid,:str],inp:bat[:oid,:str]) 
+address COPYrejects;
+pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int,best:int):bat[:oid,:any]... 
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
@@ -51443,6 +51457,14 @@ comment Create the function described by f, needed for the Oct2014 upgrade
 pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd 
 address mvc_clear_table_wrap;
 comment Clear table
+
+pattern sql.catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void 
+address SQLcatalog;
+comment a alter table add/del table catalog statement
+
+pattern sql.catalog(type:int,sname:str,tname:str,access:int):void 
+address SQLcatalog;
+comment a alter table access statement
 
 pattern sql.catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void 
 address SQLcatalog;
@@ -51580,10 +51602,6 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportValue{unsafe}(qtype:int,tname:str,name:str,typename:str,digits:int,scale:int,eclass:int,val:any_1,w:str):void 
-address mvc_export_value_wrap;
-comment export a single value onto the stream s
-
 pattern sql.exportOperation{unsafe}(w:str):void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
@@ -51603,6 +51621,14 @@ comment Export a result (in order) to stream s
 pattern sql.exportHead{unsafe}(s:streams,res_id:int):void 
 address mvc_export_head_wrap;
 comment Export a result (in order) to stream s
+
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_export_table_wrap;
+comment Prepare a table result set for the COPY INTO stream
+
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_export_row_wrap;
+comment Prepare a table result set for the COPY INTO stream
 
 pattern sql.evalAlgebra(cmd:str,optimize:bit):void 
 address RAstatement;
@@ -51748,29 +51774,17 @@ command sql.round(v:bte,d:int,s:int,r:bte):bte
 address bte_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,col:bat[:oid,:any_1]):void 
-address mvc_result_column_wrap;
-comment Add the column to the table query result
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_table_result_wrap;
+comment Prepare a table result set for the client in default CSV format
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,val:any_1):void 
-address mvc_result_value_wrap;
-comment Add the value to the row query result
-
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:bat[:oid,:any_1]):int 
-address mvc_result_table_wrap;
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_row_result_wrap;
 comment Prepare a table result set
 
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:any_1):int 
-address mvc_result_row_wrap;
-comment Prepare a row result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:bat[:oid,:any_1]):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:any_1):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
+pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
+address mvc_scalar_value_wrap;
+comment Prepare a table result set
 
 pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng 
 address mvc_restart_seq;
@@ -52035,6 +52049,10 @@ comment Extract the tail of a string
 command str.substitute(s:str,src:str,dst:str,rep:bit):str 
 address STRSubstitute;
 comment Substitute first occurrence of 'src' by	'dst'.  Iff repeated = true this is	repeated while 'src' can be found in the	result string. In order to prevent	recursion and result strings of unlimited	size, repeating is only done iff src is	not a substring of dst.
+
+command str.splitpart(s:str,needle:str,field:int):str 
+address STRsplitpart;
+comment Split string on delimiter. Returns	 given field (counting from one.)
 
 command str.search(s:str,c:str):int 
 address STRstrSearch;

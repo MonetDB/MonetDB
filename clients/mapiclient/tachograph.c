@@ -67,9 +67,12 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *basefilename = "tachograph";
-static char *cache= "cache";
-static char cachebuf[BUFSIZ]={0};
+static char *prefix = "tachograph";
+#ifdef NATIVE_WIN32
+static char *dirpath= "cache\\";
+#else
+static char *dirpath= "cache/";
+#endif
 static char *dbname;
 static int beat = 5000;
 static int delay = 0; // ms
@@ -507,25 +510,25 @@ initFiles(void)
 {
 	char buf[BUFSIZ];
 
-	snprintf(buf,BUFSIZ,"%s%s_%s_%d.json", cachebuf, basefilename, dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d.json", dirpath, prefix, queryid);
 	tachojson= fopen(buf,"w");
 	if( tachojson == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(-1);
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%s_%d_mal.csv",cachebuf, basefilename, dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d_mal.csv",dirpath, prefix, queryid);
 	tachomal= fopen(buf,"w");
 	if( tachomal == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(-1);
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%s_%d_stmt.csv", cachebuf, basefilename, dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d_stmt.csv", dirpath, prefix, queryid);
 	tachostmt= fopen(buf,"w");
 	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(-1);
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%s_%d.trace", cachebuf, basefilename, dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d.trace", dirpath, prefix, queryid);
 	tachotrace= fopen(buf,"w");
 	if( tachotrace == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
@@ -592,7 +595,8 @@ update(EventRecord *ev)
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
 	if (ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( capturing){
-			fprintf(stderr,"We lost some events\n");
+			fprintf(stderr,"Input garbled or we lost some events\n");
+			eventdump();
 			resetTachograph();
 			capturing = 0;
 		}
@@ -793,6 +797,7 @@ main(int argc, char **argv)
 	int i = 0;
 	FILE *trace = NULL;
 	EventRecord event;
+	char *s;
 
 	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
@@ -804,7 +809,6 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
-		{ "cache", 1, 0, 'c' },
 		{ "queries", 1, 0, 'q' },
 		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
@@ -862,13 +866,19 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case 'o':
-			basefilename = strdup(optarg);
-			if( strstr(basefilename,".trace"))
-				*strstr(basefilename,".trace") = 0;
-			printf("-- Output directed towards %s\n", basefilename);
-			break;
-		case 'c': // cache directory
-			cache = strdup(optarg);
+			//store the output files in a specific place
+			prefix = strdup(optarg);
+#ifdef NATIVE_WIN32
+			s= strrchr(prefix, (int) '\\');
+#else
+			s= strrchr(prefix, (int) '/');
+#endif
+			if( s ){
+				dirpath= prefix;
+				prefix = strdup(prefix);
+				*(s+1) = 0;
+				prefix += s-dirpath;
+			} 
 			break;
 		case '?':
 			usageTachograph();
@@ -882,20 +892,11 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(cachebuf,BUFSIZ,"%s\\",cache);
-#else
-		snprintf(cachebuf,BUFSIZ,"%s/",cache);
-#endif
 	if ( dbname == NULL){
 		fprintf(stderr,"Database name missing\n");
 		usageTachograph();
 		exit(-1);
 	}
-
-	if(debug)
-		printf("tachograph -d %s -c %s -o %s\n",dbname,cache,basefilename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -958,17 +959,15 @@ main(int argc, char **argv)
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-	if( cache){
 #ifdef NATIVE_WIN32
-		if( _mkdir(cache) < 0 && errno != EEXIST){
+	if( _mkdir(dirpath) < 0 && errno != EEXIST){
 #else
-		if( mkdir(cache,0755)  < 0 && errno != EEXIST) {
+	if( mkdir(dirpath,0755)  < 0 && errno != EEXIST) {
 #endif
-			fprintf(stderr,"Failed to create cache '%s'\n",cache);
-			exit(-1);
-		}
-	} 
-	snprintf(buf,BUFSIZ,"%s%s_%s.trace", cachebuf, basefilename,dbname);
+		fprintf(stderr,"Failed to create '%s'\n",dirpath);
+		exit(-1);
+	}
+	snprintf(buf,BUFSIZ,"%s%s.trace", dirpath, prefix);
 	// keep a trace of the events received
 	trace = fopen(buf,"w");
 	if( trace == NULL){

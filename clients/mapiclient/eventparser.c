@@ -23,6 +23,11 @@ int malvartop;
 int debug=0;
 char *monetdb_characteristics;
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#include "strptime.c"
+#endif
+
 void
 clearArguments(void)
 {
@@ -70,11 +75,22 @@ stripQuotes(char *currentquery)
 			*q =0;
 	return qry;
 }
+ 
+
+void
+eventdump(void)
+{	int i;
+	fprintf(stderr,"Event analysis\n");
+	for(i=0; i < malargc; i++)
+		fprintf(stderr,"arg[%d] %s %s %d\n",i,malarguments[i], maltypes[i], malcount[i]);
+	for(i=0; i < malvartop; i++)
+		fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
+}
 
 static void
 parseArguments(char *call, int m)
 {
-	int i, argc= m < 0? -1:0;
+	int argc= m < 0? -1:0;
 	char  *c = call, *l, ch;
 	char *v, *w;
 	
@@ -187,18 +203,13 @@ parseArguments(char *call, int m)
 		if (*c == 0 || *c ==')' )
 			break;
 	}
-	if( debug){
-		for(i=0; i < malargc; i++)
-			fprintf(stderr,"arg[%d] %s %s %d\n",i,malarguments[i], maltypes[i], malcount[i]);
-		for(i=0; i < malvartop; i++)
-			fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
-	}
+	if( debug)
+		eventdump();
 }
 
 int
 eventparser(char *row, EventRecord *ev)
 {
-#ifdef HAVE_STRPTIME
 	char *c, *cc, *v =0;
 	struct tm stm;
 
@@ -420,8 +431,5 @@ eventparser(char *row, EventRecord *ev)
 	}
 	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
 		*v = 0;
-#else
-	(void) row;
-#endif
 	return 0;
 }

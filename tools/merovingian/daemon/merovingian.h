@@ -35,6 +35,7 @@ typedef char* err;
 
 /* when not writing to stderr, one has to flush, make it easy to do so */
 #define Mfprintf(S, ...)						\
+	if( S) 										\
 	do {										\
 		fprintf(S, __VA_ARGS__);				\
 		fflush(S);								\

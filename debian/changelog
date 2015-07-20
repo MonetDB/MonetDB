@@ -1,3 +1,28 @@
+monetdb (11.19.15-20150603) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3707: var() possibly not working in debug builds
+  * BZ#3720: Incorrect results on joining with same table
+  * BZ#3725: LEFT JOIN bug with CONST value
+  * BZ#3731: left shift for IP addresses not available to non-system users
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 03 Jun 2015 12:31:39 +0200
+
+monetdb (11.19.13-20150519) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3712: Concurrency issue on querying the SQL catalog
+  * BZ#3713: Long startup cost for simple session
+  * BZ#3715: Crash with two ALTER TABLE statements in a transaction
+  * BZ#3718: Adding and dropping a non existing tablename to/from a merge
+    table is accepted without an error
+  * BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+    BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+  * BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+    `0' failed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 May 2015 13:34:49 +0200
+
 monetdb (11.19.11-20150423) unstable; urgency=low
 
   * Rebuilt.

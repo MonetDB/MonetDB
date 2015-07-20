@@ -330,20 +330,12 @@ SELECT replace('yabadoo', 'bad', '') AS "yaoo";
 select split_part('joeuser@mydatabase','@',0) AS "an error";
 
 select split_part('joeuser@mydatabase','@',1) AS "joeuser";
--- MonetDB does not support split_part() but in some cases it can be replaced by using substring() and locate(), such as:
-select substring('joeuser@mydatabase', 0, locate('@','joeuser@mydatabase', 0) -1) AS "joeuser";
 
 select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
--- MonetDB does not support split_part() but in some cases it can be replaced by using substring() and locate(), such as:
-select substring('joeuser@mydatabase', locate('@','joeuser@mydatabase', 0) +1) AS "mydatabase";
 
 select split_part('joeuser@mydatabase','@',3) AS "empty string";
--- MonetDB does not support split_part() but in some cases it can be replaced by using substring() and locate(), such as:
-select substring('joeuser@mydatabase', locate('@','joeuser@mydatabase', 1) +1, locate('@','joeuser@mydatabase', 2) -1) AS "empty string";
 
 select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
--- MonetDB does not support split_part() but in some cases it can be replaced by using substring() and locate(), such as:
-select substring('@joeuser@mydatabase@', locate('@','@joeuser@mydatabase@', 0) +1, locate('@','@joeuser@mydatabase@', 1) -1) AS "joeuser";
 
 --
 -- test to_hex

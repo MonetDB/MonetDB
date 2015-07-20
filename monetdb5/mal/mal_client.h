@@ -169,6 +169,13 @@ typedef struct CLIENT {
 	 */
 	bit		active;		/* processing a query or not */
 	Workset inprogress[THREADS];
+	/*	
+	 *	Errors during copy into are collected in a user specific column set
+	 */
+	BAT *error_row;
+	BAT *error_fld;
+	BAT *error_msg;
+	BAT *error_input;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

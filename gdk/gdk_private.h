@@ -108,6 +108,8 @@ __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const ch
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
+__hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
+	__attribute__((__visibility__("hidden")));
 __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
 __hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
@@ -406,7 +408,7 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 	gdk_return res = GDKmunmap(ptr, len);
 	ALLOCDEBUG fprintf(stderr,
 			   "#GDKmunmap(" PTRFMT "," SZFMT ") -> %d [%s:%d]\n",
-			   PTRFMTCAST ptr, len, res, filename, lineno);
+			   PTRFMTCAST ptr, len, (int) res, filename, lineno);
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)

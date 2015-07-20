@@ -26,6 +26,7 @@ stream *eventstream = 0;
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
 static str myname = 0;
+static oid user = 0;
 
 static void offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
@@ -118,9 +119,9 @@ static void logsend(char *logbuffer)
  * Note that the profiler itself should lead to event generations.
  */
 void
-profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	(void) idx;
+	if( usr != user) return; // only trace your own commands
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
@@ -338,10 +339,11 @@ closeProfilerStream(void)
 static int TRACE_init = 0;
 
 str
-startProfiler(int mode, int beat)
+startProfiler(oid usr, int mode, int beat)
 {
 	Client c;
 	int i,j;
+	
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -361,6 +363,7 @@ startProfiler(int mode, int beat)
 	malProfileMode = mode;
 	eventcounter = 0;
 	setHeartbeat(beat); 
+	user = usr;
 	MT_lock_unset(&mal_profileLock, "startProfiler");
 
 	/* show all in progress instructions for stethoscope startup */
@@ -387,6 +390,7 @@ stopProfiler(void)
 	cachedProfiling = FALSE;
 	setHeartbeat(0); // stop heartbeat
 	closeProfilerStream();
+	user = 0;
 	MT_lock_unset(&mal_profileLock, "stopProfiler");
 	return MAL_SUCCEED;
 }

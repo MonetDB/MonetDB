@@ -113,6 +113,19 @@ sql2str(char *s)
 				*p++ = '\n';
 			} else if (*cur == 't') {
 				*p++ = '\t';
+			} else if (*cur == 'r') {
+				*p++ = '\r';
+			} else if (*cur == 'f') {
+				*p++ = '\f';
+			} else if (*cur == 'b') {
+				*p++ = '\b';
+			} else if (*cur == '/') {
+				*p++ = '/';
+			} else if (*cur == '"') {
+				*p++ = '\\';
+				*p++ = '"';
+			} else if (*cur == '\\') {
+				*p++ = '\\';
 			} else if ((cur[0] >= '0' && cur[0] <= '7') && (cur[1] >= '0' && cur[1] <= '7') && (cur[2] >= '0' && cur[2] <= '7')) {
 				*p++ = (cur[2] & 7) | ((cur[1] & 7) << 3) | ((cur[0] & 7) << 6);
 				cur += 2;

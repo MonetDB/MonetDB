@@ -1,0 +1,56 @@
+stderr of test 'nonutf8` in directory 'sql/test/copy` itself:
+
+
+# 15:39:56 >  
+# 15:39:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31776" "--set" "mapi_usock=/var/tmp/mtest-2478/.s.monetdb.31776" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:39:56 >  
+
+# builtin opt 	gdk_dbpath = /home/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31776
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2478/.s.monetdb.31776
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_copy
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:39:57 >  
+# 15:39:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2478" "--port=31776"
+# 15:39:57 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
+        
+        copy 2 records into nonutf8 from stdin;
+        zwaar lange golf piek -dal ±10cm vak5
+        ±17 %
+ERROR = !invalid start of UTF-8 sequence
+MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
+        
+        copy 2 records into nonutf8 from stdin;
+        zwaar lange golf piek -dal ±10cm vak5
+        ±17 %
+        
+        select * from nonutf8;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+QUERY = drop table nonutf8;
+ERROR = !current transaction is aborted (please ROLLBACK)
+
+# 15:39:57 >  
+# 15:39:57 >  "Done."
+# 15:39:57 >  
+

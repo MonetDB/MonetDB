@@ -164,8 +164,8 @@ setpgrp = False
 
 ttywidth = 0
 if isatty and os.isatty(sys.stdin.fileno()):
-    if os.name != 'nt':
-        ttywidth = 80
+    if os.name == 'nt':
+        ttywidth = 79
     else:
         try:
             proc = process.Popen(['stty', '-a'], stdout = process.PIPE,

@@ -62,7 +62,7 @@ Ready.
 [ 1 ]
 #INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
 [ 1 ]
-#SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
+#SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(now as timestamptz);
 % sys.L2 # table_name
 % two # name
 % wrd # type

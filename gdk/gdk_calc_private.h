@@ -12,22 +12,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long ulng;
-#else
-typedef unsigned __int64 ulng;
-#endif
-
-#ifdef HAVE_HGE
-#ifdef HAVE___INT128
-typedef unsigned __int128 uhge;
-#else
-#ifdef HAVE___UINT128_T
-typedef __uint128_t uhge;
-#endif
-#endif
-#endif
-
 /* signed version of BUN */
 #if SIZEOF_BUN == SIZEOF_INT
 #define SBUN	int

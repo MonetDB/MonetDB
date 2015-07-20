@@ -1489,6 +1489,8 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define PERSISTENT		0
 #define TRANSIENT		1
+#define LOG_DIR			2
+#define SHARED_LOG_DIR	3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
@@ -1563,11 +1565,14 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
+gdk_export void BATmsync(BAT *b);
+
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export char *GDKfilepath_long(int farmid, const char *dir, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*
@@ -2897,30 +2902,15 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloop
  * @tab
  *  (BAT *b; Hash *h, size_t dummy; ptr value)
- * @item HASHloop_bit
- * @tab
- *  (BAT *b; Hash *h, size_t idx; bit *value, BUN w)
  * @item HASHloop_bte
  * @tab
  *  (BAT *b; Hash *h, size_t idx; bte *value, BUN w)
  * @item HASHloop_sht
  * @tab
  *  (BAT *b; Hash *h, size_t idx; sht *value, BUN w)
- * @item HASHloop_bat
- * @tab
- *  (BAT *b; Hash *h, size_t idx; bat *value, BUN w)
- * @item HASHloop_ptr
- * @tab
- *  (BAT *b; Hash *h, size_t idx; ptr *value, BUN w)
  * @item HASHloop_int
  * @tab
  *  (BAT *b; Hash *h, size_t idx; int *value, BUN w)
- * @item HASHloop_oid
- * @tab
- *  (BAT *b; Hash *h, size_t idx; oid *value, BUN w)
- * @item HASHloop_wrd
- * @tab
- *  (BAT *b; Hash *h, size_t idx; wrd *value, BUN w)
  * @item HASHloop_flt
  * @tab
  *  (BAT *b; Hash *h, size_t idx; flt *value, BUN w)
@@ -3018,17 +3008,6 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 
 /*
- * For string search, we can optimize if the string heap has
- * eliminated all doubles. This is the case when not too many
- * different strings are stored in the heap. You can check this with
- * the macro strElimDoubles() If so, we can just compare integer index
- * numbers instead of strings:
- */
-#define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = HASHget(h, strHash(v)&h->mask), idx = strLocate((bi.b)->T->vheap,v); \
-	     hb != HASHnil(h); hb = HASHgetlink(h,hb))				\
-		if (VarHeapValRaw((bi).b->T->heap.base, hb, (bi).b->T->width) == idx)
-/*
  * The following example shows how the hashloop is used:
  *
  * @verbatim
@@ -3072,26 +3051,15 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 	     hb = HASHgetlink(h,hb))				\
 		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
 
-#define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
 #define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
-#define HASHloop_wrd(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, wrd)
 #define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
 #ifdef HAVE_HGE
 #define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
 #endif
-#define HASHloop_oid(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, oid)
-#define HASHloop_bat(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bat)
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
 #define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
-#define HASHloop_ptr(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, ptr)
-
-#define HASHloop_any(bi, h, hb, v)				\
-	for (hb = HASHget(h, hash_any(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (atom_EQ(v, BUNtail(bi, hb), (bi).b->ttype))
 
 /*
  * @- loop over a BAT with ordered tail

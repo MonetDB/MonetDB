@@ -174,14 +174,28 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
 	seq = b->hseqbase;
+	l = BUNfirst(b);
+	h = BUNlast(b);
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
-		l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
-		h = l + BATcount(b);
-		b = b2;
-	} else {
-		l = BUNfirst(b);
-		h = BUNlast(b);
+		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
+			/* only use parent's hash if it is persistent
+			 * or already has a hash */
+			ALGODEBUG
+				fprintf(stderr, "#hashselect(%s#"BUNFMT"): "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(b), BATcount(b),
+					BATgetId(b2), BATcount(b2));
+			l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			h = l + BATcount(b);
+			b = b2;
+		} else {
+			ALGODEBUG
+				fprintf(stderr, "#hashselect(%s#"BUNFMT"): not "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(b), BATcount(b),
+					BATgetId(b2), BATcount(b2));
+		}
 	}
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
@@ -1256,13 +1270,14 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
 	if (equi) {
 		assert(lval);
-		if (th == NULL)
-			hi = li;
+		hi = li;
 		th = tl;
 		hval = 1;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
 	}
+	if (!equi && !lval && !hval && lnil) 
+		anti = !anti;
 	if (anti) {
 		if (lval != hval) {
 			/* one of the end points is nil and the other

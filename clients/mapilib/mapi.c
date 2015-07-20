@@ -2551,21 +2551,25 @@ mapi_start_talking(Mapi mid)
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
 
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
 
 	assert(len < BLOCK);
 
+	if (len == 0){
+		mapi_setError(mid, "Challenge string is not valid, it is empty", "mapi_start_talking", MERROR);
+		return mid->error;
+	}
 	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
 	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, server not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*server++ = '\0';
 	protover = strchr(server, ':');
 	if (protover == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, protocol not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*protover++ = '\0';
@@ -3437,7 +3441,7 @@ read_line(Mapi mid)
 		if (mid->trace == MAPI_TRACE)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
 		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
-		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
+		check_stream(mid, mid->from, "Connection terminated during read line", "read_line", (mid->blk.eos = 1, (char *) 0));
 		if (mid->tracelog) {
 			mapi_log_header(mid, "R");
 			mnstr_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);

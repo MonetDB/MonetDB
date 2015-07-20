@@ -57,28 +57,6 @@ Ready.
 #plan ALTER TABLE LINEITEM
 #ADD CONSTRAINT LINEITEM_FK2 FOREIGN KEY (L_PARTKEY,L_SUPPKEY) references
 #        PARTSUPP;
-% .plan # table_name
-% rel # name
-% clob # type
-% 619 # length
- REF 1 (2)
-project (
-| ddl
-| | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL, lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_linenumber NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_tax NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.l_linestatus NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.l_commitdate NOT NULL, lineitem.l_receiptdate NOT NULL, lineitem.l_shipinstruct NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.l_comment NOT NULL, lineitem.%TID% NOT NULL, lineitem.%lineitem_fk2 NOT NULL JOINIDX sys.lineitem.lineitem_fk2 ] COUNT 
-) [ lineitem.%TID% NOT NULL, lineitem.l_orderkey NOT NULL, lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_linenumber NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_tax NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.l_linestatus NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.l_commitdate NOT NULL, lineitem.l_receiptdate NOT NULL, lineitem.l_shipinstruct NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.l_comment NOT NULL ]
-update(
-| & REF 1 
-| update(
-| | ddl
-| | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL, lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_linenumber NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_tax NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.l_linestatus NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.l_commitdate NOT NULL, lineitem.l_receiptdate NOT NULL, lineitem.l_shipinstruct NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.l_comment NOT NULL, lineitem.%TID% NOT NULL, lineitem.%lineitem_fk2 NOT NULL JOINIDX sys.lineitem.lineitem_fk2 ] COUNT 
-| | project (
-| | | join (
-| | | | & REF 1 ,
-| | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL  as L1.ps_partkey, partsupp.ps_suppkey NOT NULL as L1.ps_suppkey, partsupp.%TID% NOT NULL as L1.%TID%, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  as L1.%partsupp_ps_partkey_ps_suppkey_pkey ] COUNT 
-| | | ) [ L1.ps_partkey NOT NULL = lineitem.l_partkey NOT NULL HASHCOL , L1.ps_suppkey NOT NULL = lineitem.l_suppkey NOT NULL HASHCOL  ]
-| | ) [ lineitem.%TID% NOT NULL, L1.%TID% NOT NULL as lineitem.%lineitem_fk2 ]
-| ) [ lineitem.%lineitem_fk2 NOT NULL ]
-)
 #COMMIT;
 
 # 10:53:23 >  

@@ -410,6 +410,8 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
+	if( bn->batPersistence == PERSISTENT)
+		BATmsync(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -613,6 +615,8 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -628,6 +632,8 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -650,8 +656,10 @@ BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
 	BBPunfix(s->batCacheid);
 	if (ret != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
+		 throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -676,6 +684,8 @@ BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -752,6 +762,8 @@ BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }

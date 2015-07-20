@@ -107,14 +107,14 @@
 extern char *TID;
 
 typedef enum temp_t { 
-	SQL_PERSIST,
-	SQL_LOCAL_TEMP,
-	SQL_GLOBAL_TEMP,
-	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
-	SQL_MERGE_TABLE,
-	SQL_STREAM,
-	SQL_REMOTE,
-	SQL_REPLICA_TABLE
+	SQL_PERSIST = 0,
+	SQL_LOCAL_TEMP = 1,
+	SQL_GLOBAL_TEMP = 2,
+	SQL_DECLARED_TABLE = 3,	/* variable inside a stored procedure */
+	SQL_MERGE_TABLE = 4,
+	SQL_STREAM = 5,
+	SQL_REMOTE = 6,
+	SQL_REPLICA_TABLE = 7
 } temp_t;
 
 typedef enum comp_type {
@@ -436,6 +436,8 @@ typedef struct sql_column {
 	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 	size_t dcount;
+	char *min;
+	char *max;
 
 	struct sql_table *t;
 	void *data;

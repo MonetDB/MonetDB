@@ -1260,7 +1260,7 @@ sqltypeinit( sql_allocator *sa)
 
 	dates = t;
 	MONINT = *t++ = sql_create_type(sa, "MONTH_INTERVAL", 32, 0, 2, EC_MONTH, "int");
-	SECINT = *t++ = sql_create_type(sa, "SEC_INTERVAL", 19, SCALE_FIX, 10, EC_SEC, "lng");
+	SECINT = *t++ = sql_create_type(sa, "SEC_INTERVAL", 13, SCALE_FIX, 10, EC_SEC, "lng");
 	TME = *t++ = sql_create_type(sa, "TIME", 7, 0, 0, EC_TIME, "daytime");
 	TMETZ = *t++ = sql_create_type(sa, "TIMETZ", 7, SCALE_FIX, 0, EC_TIME, "daytime");
 	DTE = *t++ = sql_create_type(sa, "DATE", 0, 0, 0, EC_DATE, "date");
@@ -1573,6 +1573,7 @@ sqltypeinit( sql_allocator *sa)
 
 		sql_create_func(sa, "locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3(sa, "locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
+		sql_create_func3(sa, "splitpart", "str", "splitpart", *t, *t, INT, *t, INOUT);
 		sql_create_func(sa, "substring", "str", "substring", *t, INT, *t, INOUT);
 		sql_create_func3(sa, "substring", "str", "substring", *t, INT, INT, *t, INOUT);
 		sql_create_func(sa, "like", "algebra", "like", *t, *t, BIT, SCALE_NONE);
@@ -1635,9 +1636,9 @@ sqltypeinit( sql_allocator *sa)
 				sres, FALSE, F_FUNC, SCALE_FIX);
 	}
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, TABLE, 0, 0), ARG_OUT); 
-	/* copyfrom fname (arg 8) */
+	/* copyfrom fname (arg 9) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
-	 	list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
+	 	list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
@@ -1645,19 +1646,8 @@ sqltypeinit( sql_allocator *sa)
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
-	f->varres = 1;
-
-	/* copyfrom stdin */
-	f = sql_create_func_(sa, "copyfrom", "sql", "copyfrom",
-	 	list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
+			create_arg(sa, NULL, sql_create_subtype(sa, INT, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
 	f->varres = 1;
 
 	/* bincopyfrom */

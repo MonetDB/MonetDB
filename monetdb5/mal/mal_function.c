@@ -466,9 +466,9 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
  * is returned.
  */
 void
-debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
+debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 {
-	int i;
+	int i,j;
 	str ps;
 	InstrPtr p;
 
@@ -476,14 +476,24 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
-	if ( flg == 0)
+	if ( flg == 0 || step < 0  || first < 0 )
 		return;
-	assert(size>=0);
-	assert(first>=0 && first <mb->stop);
-	for (i = first; i < first +size && i < mb->stop; i++){
+
+	for (i = first; i < first +step && i < mb->stop; i++){
 		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
 		if (ps) {
-			mnstr_printf(fd,"%-40s\t# %s\n",ps, (p->blk && p->blk->binding? p->blk->binding:""));
+			if (p->token == REMsymbol)
+				mnstr_printf(fd,"%-40s\n",ps);
+			else {
+				mnstr_printf(fd,"%-40s\t#[%d] %s ",ps, i, (p->blk && p->blk->binding? p->blk->binding:""));
+				for(j =0; j < p->retc; j++)
+					mnstr_printf(fd,"%d ",getArg(p,j));
+				if( p->argc - p->retc > 0)
+					mnstr_printf(fd,"<- ");
+				for(; j < p->argc; j++)
+					mnstr_printf(fd,"%d ",getArg(p,j));
+				mnstr_printf(fd,"\n");
+			}
 			GDKfree(ps);
 		}
 	}

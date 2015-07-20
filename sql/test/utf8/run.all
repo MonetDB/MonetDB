@@ -7,7 +7,7 @@
 # Copyright 2008-2015 MonetDB B.V.
 
 PWD=`pwd`
-SQL="mclient -lsql -u monetdb -P monetdb"
+SQL="mclient -lsql -u monetdb"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

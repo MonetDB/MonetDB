@@ -11,16 +11,16 @@ INCLUDES = \
 	$(ODBC_INCS)
 
 DEFS = @DEFS@
-ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
+ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32 $(LEGACY_STDIO_DEFINITIONS)
 
 lib_MonetODBCs = {
 	SOURCES = setup.c setup.rc setup.syms resource.h
-	LIBS = -lodbccp32 -luser32
+	LIBS = -lodbccp32 -luser32 $(LEGACY_STDIO_DEFINITIONS)
 }
 
 bin_odbcinstall = {
 	SOURCES = install.c
-	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
+	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32 $(LEGACY_STDIO_DEFINITIONS)
 }
 
 EXTRA_DIST = banner.bmp

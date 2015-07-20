@@ -168,7 +168,6 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		c = BATcopy(o, TYPE_void, o->ttype, TRUE, PERSISTENT);
 		BATseqbase(c, ibase );
 		c->H->dense = 1;
-		BATcommit(o);
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
@@ -241,7 +240,11 @@ tr_find_table( sql_trans *tr, sql_table *t)
 	while ((!nt || !nt->data) && tr) {
 		sql_schema *s = tr_find_schema( tr, t->s);
 
-		nt = find_sql_table_id(s, t->base.id);
+		if (list_length(s->tables.set) < HASH_MIN_SIZE)
+			nt = find_sql_table_id(s, t->base.id);
+		else
+			nt = find_sql_table(s, t->base.name);
+		assert(nt->base.id == t->base.id);
 		tr = tr->parent;
 	}
 	return nt;
@@ -253,8 +256,7 @@ tr_find_column( sql_trans *tr, sql_column *c)
 	sql_column *nc = NULL;
 
 	while ((!nc || !nc->data) && tr) {
-		sql_schema *s = tr_find_schema( tr, c->t->s);
-		sql_table *t =  find_sql_table_id(s, c->t->base.id);
+		sql_table *t =  tr_find_table(tr, c->t);
 		node *n = cs_find_id(&t->columns, c->base.id);
 		if (n)
 			nc = n->data;
@@ -269,8 +271,7 @@ tr_find_idx( sql_trans *tr, sql_idx *i)
 	sql_idx *ni = NULL;
 
 	while ((!ni || !ni->data) && tr) {
-		sql_schema *s = tr_find_schema( tr, i->t->s);
-		sql_table *t =  find_sql_table_id(s, i->t->base.id);
+		sql_table *t =  tr_find_table(tr, i->t);
 		node *n = cs_find_id(&t->idxs, i->base.id);
 		if (n)
 			ni = n->data;

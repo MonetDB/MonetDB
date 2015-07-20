@@ -67,12 +67,11 @@ stderr of test 'incomplete-utf8-sequence.Bug-2575` in directory 'sql/test/BugTra
 # 14:47:29 >  mclient -lsql -ftest -i -e --host=ottar --port=36476 
 # 14:47:29 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters '\t','\n','';
         10001160000	29	.v.
         10001690001	0	coÃ
-ERROR = !value 'coÃ' from line 2 field 3 not inserted, expecting type char(3)
-        !failed to import table
+ERROR = !Failed to import table line 2 field 3 'char(3)' expected in 'coÃ'
 
 # 14:47:29 >  
 # 14:47:29 >  Done.

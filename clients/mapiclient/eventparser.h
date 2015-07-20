@@ -98,6 +98,7 @@ extern int debug;
 extern char *monetdb_characteristics;
 
 extern void clearArguments(void);
+extern void eventdump(void);
 extern int eventparser(char *row, EventRecord *ev);
 extern char *stripQuotes(char *currentquery);
 #endif /*_EVENT_PARSER_*/

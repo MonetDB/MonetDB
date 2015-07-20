@@ -16,6 +16,7 @@
  * _MSC_VER = 1500: Visual Studio 9.0
  * _MSC_VER = 1600: Visual Studio 10.0
  * _MSC_VER = 1800: Visual Studio 12.0
+ * _MSC_VER = 1900: Visual Studio 14.0
  */
 
 #ifndef _SEEN_MONETDB_CONFIG_H
@@ -59,6 +60,9 @@
 
 /* location where binaries are installed */
 /* #undef BINDIR */
+
+/* read-only architecture-independent data */
+#define DATA_DIR PREFIX "\\share"
 
 /* Directory separator */
 #define DIR_SEP '\\'
@@ -782,13 +786,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.20.0"
+#define PACKAGE_STRING "MonetDB 11.22.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.20.0"
+#define PACKAGE_VERSION "11.22.0"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
@@ -990,8 +994,10 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
+#if _MSC_VER < 1900
 #ifndef snprintf
 #define snprintf _snprintf
+#endif
 #endif
 
 /* type used by connect */
@@ -1036,19 +1042,23 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;
+typedef unsigned long long ulng;
 # define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 typedef __int64 lng;
+typedef unsigned __int64 ulng;
 # define SIZEOF_LNG SIZEOF___INT64
 #endif
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
+typedef unsigned __int128 uhge;
 # define HAVE_HGE 1
 # define SIZEOF_HGE SIZEOF___INT128
 #else
 # if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
+typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif

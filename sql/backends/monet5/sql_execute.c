@@ -179,7 +179,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		if (backend_callinline(sql, c, s) == 0)
+		if (backend_callinline(sql, c, s, 1) == 0)
 			addQueryToCache(c);
 		else
 			err = 1;
@@ -332,6 +332,8 @@ SQLexecutePrepared(Client c, backend *be, cq *q)
 		v->vtype = TYPE_int;
 		v->val.ival = int_nil;
 	}
+	if (glb && ret) /* error */
+		garbageCollector(c, mb, glb, glb != 0);
 	q->stk = (backend_stack) glb;
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);

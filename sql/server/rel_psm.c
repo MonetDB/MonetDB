@@ -1098,22 +1098,29 @@ drop_trigger(mvc *sql, dlist *qname)
 }
 
 static sql_rel *
-psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
+psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *sample, int minmax )
 {
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_exp *sample_exp = NULL, *call;
+	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
 	char *sname = NULL, *tname = NULL;
 	list *tl = sa_list(sql->sa);
 	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 
+	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
+	append(tl, exp_subtype(mm_exp));
 	if (sample) {
 		sql_subtype *tpe = sql_bind_localtype("lng");
 
        		sample_exp = rel_value_exp( sql, NULL, sample, 0, ek);
 		if (sample_exp)
 			sample_exp = rel_check_type(sql, tpe, sample_exp, type_cast); 
+	} else {
+		sample_exp = exp_atom_lng(sql->sa, 0);
 	}
+	append(exps, sample_exp);
+	append(tl, exp_subtype(sample_exp));
+
 	if (qname) {
 		if (qname->h->next)
 			sname = qname_schema(qname);
@@ -1124,7 +1131,7 @@ psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
 		if (qname->h->next)
 			tname = qname_table(qname);
 	}
-	/* call analyze( [schema, [ table ]], opt_sample_size ) */
+	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
 	if (sname) {
 		sql_exp *sname_exp = exp_atom_clob(sql->sa, sname);
 
@@ -1141,11 +1148,7 @@ psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
 			append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		if (sample_exp) {
-			append(exps, sample_exp);
-			append(tl, exp_subtype(sample_exp));
-		}
-		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "analyze", tl, F_PROC);
+		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
 		if (!f)
 			return sql_error(sql, 01, "Analyze procedure missing");
 		call = exp_op(sql->sa, exps, f);
@@ -1153,10 +1156,7 @@ psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
 	} else {
 		dnode *n;
 
-		if (sample_exp)
-			append(tl, exp_subtype(sample_exp));
-		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "analyze", tl, F_PROC);
-
+		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
 		if (!f)
 			return sql_error(sql, 01, "Analyze procedure missing");
 		for( n = columns->h; n; n = n->next) {
@@ -1165,16 +1165,13 @@ psm_analyze(mvc *sql, dlist *qname, dlist *columns, symbol *sample )
 			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
 
 			append(nexps, cname_exp);
-			if (sample_exp)
-				append(nexps, sample_exp);
-			/* call analyze( sname, tname, cname, opt_sample_size ) */
+			/* call analyze( opt_minmax, opt_sample_size, sname, tname, cname) */
 			call = exp_op(sql->sa, nexps, f);
 			append(analyze_calls, call);
 		}
 	}
 	return rel_psm_block(sql->sa, analyze_calls);
 }
-
 
 sql_rel *
 rel_psm(mvc *sql, symbol *s)
@@ -1242,7 +1239,7 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 
-		ret = psm_analyze(sql, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */, l->h->next->next->data.sym /* opt_sample_size */);
+		ret = psm_analyze(sql, "analyze", l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */, l->h->next->next->data.sym /* opt_sample_size */, l->h->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	} 	break;
 	default:

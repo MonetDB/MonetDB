@@ -52,7 +52,7 @@ CREATE FUNCTION dependencies_columns_on_keys()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1);
 
---Column c has a dependency on index i 
+--Column c has a dependency on index i
 CREATE FUNCTION dependencies_columns_on_indexes()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys));

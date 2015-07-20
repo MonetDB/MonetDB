@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.20.0
+%define version 11.22.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP4/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -265,6 +265,9 @@ tools can be used to monitor the MonetDB database server.
 %{_bindir}/stethoscope
 %{_bindir}/tachograph
 %{_bindir}/tomograph
+%dir %{_datadir}/doc/MonetDB-client-tools
+%docdir %{_datadir}/doc/MonetDB-client-tools
+%{_datadir}/doc/MonetDB-client-tools/*
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -664,6 +667,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+%dir %{_datadir}/doc/MonetDB
+%docdir %{_datadir}/doc/MonetDB
+%{_datadir}/doc/MonetDB/*
 
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
@@ -763,15 +769,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
-%if (0%{?fedora} >= 20)
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
-%else
-%dir %{_datadir}/doc/MonetDB-SQL-%{version}
-%docdir %{_datadir}/doc/MonetDB-SQL-%{version}
-%{_datadir}/doc/MonetDB-SQL-%{version}/*
-%endif
 
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
@@ -901,7 +901,6 @@ developer, but if you do want to test, this is the package you need.
 
 %{configure} \
 	--enable-assert=no \
-	--enable-bits=%{bits} \
 	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
@@ -961,15 +960,30 @@ rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
 
-%if 0%{?fedora} >= 20
-mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
-%endif
-
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Jun 03 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.15-20150603
+- Rebuilt.
+- BZ#3707: var() possibly not working in debug builds
+- BZ#3720: Incorrect results on joining with same table
+- BZ#3725: LEFT JOIN bug with CONST value
+- BZ#3731: left shift for IP addresses not available to non-system users
+
+* Tue May 19 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.13-20150519
+- Rebuilt.
+- BZ#3712: Concurrency issue on querying the SQL catalog
+- BZ#3713: Long startup cost for simple session
+- BZ#3715: Crash with two ALTER TABLE statements in a transaction
+- BZ#3718: Adding and dropping a non existing tablename to/from a merge
+  table is accepted without an error
+- BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+  BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+- BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+  `0' failed.
+
 * Thu Apr 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
 - Rebuilt.
 - BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"

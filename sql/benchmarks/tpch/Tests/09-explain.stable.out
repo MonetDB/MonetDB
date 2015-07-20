@@ -57,16 +57,36 @@ Ready.
 % clob # type
 % 739 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:str):void;
-    X_208:void := querylog.define("explain select\n\tnation,\n\to_year,\n\tsum(amount) as sum_profit\nfrom\n\t(\n\t\tselect\n\t\t\tn_name as nation,\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\tpartsupp,\n\t\t\torders,\n\t\t\tnation\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand ps_suppkey = l_suppkey\n\t\t\tand ps_partkey = l_partkey\n\t\t\tand p_partkey = l_partkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand p_name like \\'%green%\\'\n\t) as profit\ngroup by\n\tnation,\n\to_year\norder by\n\tnation,\n\to_year desc;","sequential_pipe",106);
+    X_225:void := querylog.define("explain select\n\tnation,\n\to_year,\n\tsum(amount) as sum_profit\nfrom\n\t(\n\t\tselect\n\t\t\tn_name as nation,\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\tpartsupp,\n\t\t\torders,\n\t\t\tnation\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand ps_suppkey = l_suppkey\n\t\t\tand ps_partkey = l_partkey\n\t\t\tand p_partkey = l_partkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand p_name like \\'%green%\\'\n\t) as profit\ngroup by\n\tnation,\n\to_year\norder by\n\tnation,\n\to_year desc;","sequential_pipe",121);
+    X_189 := bat.new(nil:oid,nil:str);
+    X_197 := bat.append(X_189,"sys.profit");
+    X_207 := bat.append(X_197,"sys.profit");
+    X_215 := bat.append(X_207,"sys.L1");
+    X_192 := bat.new(nil:oid,nil:str);
+    X_199 := bat.append(X_192,"nation");
+    X_208 := bat.append(X_199,"o_year");
+    X_217 := bat.append(X_208,"sum_profit");
+    X_193 := bat.new(nil:oid,nil:str);
+    X_201 := bat.append(X_193,"char");
+    X_210 := bat.append(X_201,"int");
+    X_219 := bat.append(X_210,"decimal");
+    X_194 := bat.new(nil:oid,nil:int);
+    X_203 := bat.append(X_194,25);
+    X_212 := bat.append(X_203,32);
+    X_221 := bat.append(X_212,19);
+    X_196 := bat.new(nil:oid,nil:int);
+    X_205 := bat.append(X_196,0);
+    X_214 := bat.append(X_205,0);
+    X_223 := bat.append(X_214,4);
     X_4 := sql.mvc();
     X_8:bat[:oid,:str]  := sql.bind(X_4,"sys","part","p_name",0);
     X_5:bat[:oid,:oid]  := sql.tid(X_4,"sys","part");
-    X_249 := algebra.likesubselect(X_8,X_5,A1,"",false);
+    X_266 := algebra.likesubselect(X_8,X_5,A1,"",false);
     (X_11,r1_11) := sql.bind(X_4,"sys","part","p_name",2);
-    X_250 := algebra.likesubselect(r1_11,nil:bat[:oid,:oid],A1,"",false);
+    X_267 := algebra.likesubselect(r1_11,nil:bat[:oid,:oid],A1,"",false);
     X_14:bat[:oid,:str]  := sql.bind(X_4,"sys","part","p_name",1);
-    X_252 := algebra.likesubselect(X_14,X_5,A1,"",false);
-    X_17 := sql.subdelta(X_249,X_5,X_11,X_250,X_252);
+    X_269 := algebra.likesubselect(X_14,X_5,A1,"",false);
+    X_17 := sql.subdelta(X_266,X_5,X_11,X_267,X_269);
     X_20:bat[:oid,:int] := sql.bind(X_4,"sys","part","p_partkey",0);
     (X_22,r1_26) := sql.bind(X_4,"sys","part","p_partkey",2);
     X_24:bat[:oid,:int] := sql.bind(X_4,"sys","part","p_partkey",1);
@@ -153,14 +173,9 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str):void;
     (X_130,r1_152,r2_152) := algebra.subsort(X_129,false,false);
     (X_134,r1_156,r2_156) := algebra.subsort(X_128,r1_152,r2_152,true,false);
     X_138 := algebra.leftfetchjoin(r1_156,X_129);
-    X_187 := algebra.leftfetchjoin(r1_156,X_185);
     X_139 := algebra.leftfetchjoin(r1_156,X_128);
-    X_188 := sql.resultSet(3,1,X_138);
-    sql.rsColumn(X_188,"sys.profit","nation","char",25,0,X_138);
-    sql.rsColumn(X_188,"sys.profit","o_year","int",32,0,X_139);
-    sql.rsColumn(X_188,"sys.L1","sum_profit","decimal",19,4,X_187);
-    X_206 := io.stdout();
-    sql.exportResult(X_206,X_188);
+    X_187 := algebra.leftfetchjoin(r1_156,X_185);
+    sql.resultSet(X_215,X_217,X_219,X_221,X_223,X_138,X_139,X_187);
 end user.s2_1;
 
 # 22:53:27 >  
