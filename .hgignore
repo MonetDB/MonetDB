@@ -91,3 +91,7 @@ NT/sql
 NT/testing
 NT/tools
 NT/unistd.h
+
+# package building on Mac OS X
+MacOSX/build
+MacOSX/usr
