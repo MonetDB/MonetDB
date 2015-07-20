@@ -14,6 +14,8 @@
 #include "orderidx.h"
 #include "gdk.h"
 
+#define MIN_PIECE 2	/* TODO use realistic size in production */
+
 str
 OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 {
@@ -26,9 +28,18 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	char name[IDLENGTH];
 	str msg= MAL_SUCCEED;
 
-	if( pieces < 0){
+	if( BATcount(b) == 0)
+		return MAL_SUCCEED;
+
+	if( pieces < 0 ){
 		/* TODO estimate number of pieces */
 		pieces = 3;
+	}
+	if ( BATcount(b) < MIN_PIECE)
+		pieces = 1;
+	else
+	if ( BATcount(b) <= (BUN) pieces ){
+		pieces = BATcount(b);
 	}
 #ifdef _DEBUG_OIDX_
 	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
