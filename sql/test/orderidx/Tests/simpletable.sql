@@ -1,6 +1,6 @@
 create table xtmp1( i integer);
 insert into xtmp1 values (1),(2),(4),(0);
-select * from xtmp;
+select * from xtmp1;
 
 select * from storage where "table"= 'xtmp1';
 call orderidx('sys','xtmp1','i');
