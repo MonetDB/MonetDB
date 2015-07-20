@@ -229,7 +229,8 @@ class Popen(subprocess.Popen):
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
            user = 'monetdb', passwd = 'monetdb', log = False,
-           interactive = None, echo = None):
+           interactive = None, echo = None,
+           input = None, communicate = False):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -318,6 +319,12 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stdout = _BufferedPipe(p.stdout)
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
+    if input is not None:
+        p.stdout,write(input)
+    if commumnicate:
+        out, err = p.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
     return p
 
 def server(args = [], stdin = None, stdout = None, stderr = None,
