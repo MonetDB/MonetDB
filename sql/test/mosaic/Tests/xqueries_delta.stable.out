@@ -46,18 +46,18 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 103 # length
-function user.s6_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+% 104 # length
+function user.s5_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.thetasubselect(X_7,X_4,A0,"<");
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s6_1;
-#select count(*) from tmp3 where i <4;
+end user.s5_1;
+#select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -67,18 +67,18 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
-function user.s7_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+% 105 # length
+function user.s6_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.subselect(X_7,X_4,A0,A0,true,false,false);
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s7_1;
-#select count(*) from tmp3 where i = 7;
+end user.s6_1;
+#select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -109,18 +109,18 @@ end user.s7_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 103 # length
-function user.s14_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+% 104 # length
+function user.s13_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.thetasubselect(X_7,X_4,A0,"<");
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s14_1;
-#select count(*) from tmp3 where i <4;
+end user.s13_1;
+#select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -130,18 +130,18 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
-function user.s15_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+% 105 # length
+function user.s14_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.subselect(X_7,X_4,A0,A0,true,false,false);
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s15_1;
-#select count(*) from tmp3 where i = 7;
+end user.s14_1;
+#select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -166,18 +166,18 @@ end user.s15_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 103 # length
-function user.s21_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+% 104 # length
+function user.s20_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.thetasubselect(X_7,X_4,A0,"<");
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s21_1;
-#select count(*) from tmp3 where i <4;
+end user.s20_1;
+#select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -187,18 +187,18 @@ end user.s21_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
-function user.s22_1{autoCommit=true}(A0:int):void;
-    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+% 105 # length
+function user.s21_1{autoCommit=true}(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_3 := sql.mvc();
-    X_7:bat[:oid,:int]  := sql.bind(X_3,"sys","tmp3","i",0);
-    X_4:bat[:oid,:oid]  := sql.tid(X_3,"sys","tmp3");
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","dtmp3","i",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","dtmp3");
     X_10 := mosaic.subselect(X_7,X_4,A0,A0,true,false,false);
     X_12 := mosaic.leftfetchjoin(X_10,X_7);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s22_1;
-#select count(*) from tmp3 where i = 7;
+end user.s21_1;
+#select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type

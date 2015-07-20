@@ -1,6 +1,5 @@
 set optimizer='sequential_pipe';
 
-drop table tmp3;
 create table tmp3( i integer, b boolean, f real,t timestamp);
 insert into tmp3 values
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
@@ -101,7 +100,7 @@ alter table tmp3 alter column f set storage 'literal';
 explain select * from tmp3;
 select * from tmp3;
 
-select * from storage where "table" = 'tmp3';
+--select * from storage where "table" = 'tmp3';
 select count(*) from tmp3;
 
 alter table tmp3 alter column i set storage NULL;
@@ -113,4 +112,4 @@ select * from tmp3;
 alter table tmp3 set read write;
 select * from tmp3;
 
---drop table tmp3;
+drop table tmp3;

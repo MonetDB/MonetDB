@@ -4661,7 +4661,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *compressed;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4682,6 +4682,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rphash = getArgReference_bat(stk, pci, 11);
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
+	bat *rcompressed = getArgReference_bat(stk, pci, 14);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4717,10 +4718,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(sort, 0);
+	compressed = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
+	BATseqbase(compressed, 0);
 	
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
-		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL) {
+		sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL || compressed == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4749,6 +4752,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
 			BBPunfix(sort->batCacheid);
+		if (compressed)
+			BBPunfix(compressed->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
@@ -4837,6 +4842,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
+
+								w = bn->T->heap.compressed;
+								BUNappend(compressed, &w, FALSE);
+
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4916,6 +4925,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
+									w = bn->T->heap.compressed;
+									BUNappend(compressed, &w, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -4937,6 +4948,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
+	BBPkeepref(*rcompressed = compressed->batCacheid);
 	return MAL_SUCCEED;
 }
 

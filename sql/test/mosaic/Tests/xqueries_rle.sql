@@ -1,8 +1,7 @@
 set optimizer='sequential_pipe';
 
-drop table tmp3;
-create table tmp3( i integer, b boolean, f real,t timestamp);
-insert into tmp3 values
+create table xtmp3( i integer, b boolean, f real,t timestamp);
+insert into xtmp3 values
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
@@ -90,39 +89,39 @@ insert into tmp3 values
 (9, false, 0.317,'2014-08-23 11:34:54.000000'),
 (10, false, 0.317,'2014-08-23 11:34:54.000000');
 
-alter table tmp3 set read only;
+alter table xtmp3 set read only;
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from xtmp3 where i <4;
+select count(*) from xtmp3 where i <4;
+explain select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where f <0.316;
+select count(*) from xtmp3 where b = true;
 
-alter table tmp3 alter column i set storage 'runlength';
-alter table tmp3 alter column b set storage 'runlength';
-alter table tmp3 alter column f set storage 'runlength';
+alter table xtmp3 alter column i set storage 'runlength';
+alter table xtmp3 alter column b set storage 'runlength';
+alter table xtmp3 alter column f set storage 'runlength';
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from xtmp3 where i <4;
+select count(*) from xtmp3 where i <4;
+explain select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where f <0.316;
+select count(*) from xtmp3 where b = true;
 
---select * from storage where "table" = 'tmp3';
-alter table tmp3 alter column i set storage NULL;
-alter table tmp3 alter column b set storage NULL;
-alter table tmp3 alter column f set storage NULL;
+--select * from storage where "table" = 'xtmp3';
+alter table xtmp3 alter column i set storage NULL;
+alter table xtmp3 alter column b set storage NULL;
+alter table xtmp3 alter column f set storage NULL;
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from xtmp3 where i <4;
+select count(*) from xtmp3 where i <4;
+explain select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where i = 7;
+select count(*) from xtmp3 where f <0.316;
+select count(*) from xtmp3 where b = true;
 
-alter table tmp3 set read write;
---select * from tmp3;
+alter table xtmp3 set read write;
+--select * from xtmp3;
 
---drop table tmp3;
+drop table xtmp3;

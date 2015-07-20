@@ -46,97 +46,144 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
-function user.s6_1{autoCommit=true}():void;
-    X_36:void := querylog.define("explain select * from tmp3;","sequential_pipe",20);
+% 88 # length
+function user.s5_1{autoCommit=true}():void;
+    X_57:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
+    X_20 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_20,"sys.tmp3rle");
+    X_36 := bat.append(X_28,"sys.tmp3rle");
+    X_43 := bat.append(X_36,"sys.tmp3rle");
+    X_50 := bat.append(X_43,"sys.tmp3rle");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"i");
+    X_37 := bat.append(X_30,"b");
+    X_44 := bat.append(X_37,"f");
+    X_51 := bat.append(X_44,"t");
+    X_24 := bat.new(nil:oid,nil:str);
+    X_31 := bat.append(X_24,"int");
+    X_38 := bat.append(X_31,"boolean");
+    X_45 := bat.append(X_38,"real");
+    X_52 := bat.append(X_45,"timestamp");
+    X_25 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_25,32);
+    X_40 := bat.append(X_33,1);
+    X_47 := bat.append(X_40,24);
+    X_54 := bat.append(X_47,7);
+    X_27 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_27,0);
+    X_42 := bat.append(X_35,0);
+    X_49 := bat.append(X_42,0);
+    X_56 := bat.append(X_49,0);
     X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","tmp3rle","i",0);
     X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_16:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0);
-    X_18 := mosaic.leftfetchjoin(X_3,X_16);
-    X_13:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0);
-    X_15 := mosaic.leftfetchjoin(X_3,X_13);
-    X_10:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0);
+    X_10:bat[:oid,:bit] := sql.bind(X_2,"sys","tmp3rle","b",0);
     X_12 := mosaic.leftfetchjoin(X_3,X_10);
-    X_19 := sql.resultSet(4,1,X_9);
-    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
-    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
-    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
-    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
-    X_34 := io.stdout();
-    sql.exportResult(X_34,X_19);
-end user.s6_1;
-#alter table tmp3 alter column i set storage 'runlength';
-#alter table tmp3 alter column b set storage 'runlength';
-#alter table tmp3 alter column f set storage 'runlength';
-#alter table tmp3 alter column t set storage 'runlength';
-#explain select i from tmp3;
+    X_13:bat[:oid,:flt] := sql.bind(X_2,"sys","tmp3rle","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_16:bat[:oid,:timestamp] := sql.bind(X_2,"sys","tmp3rle","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    sql.resultSet(X_50,X_51,X_52,X_54,X_56,X_9,X_12,X_15,X_18);
+end user.s5_1;
+#alter table tmp3RLE alter column i set storage 'runlength';
+#alter table tmp3RLE alter column b set storage 'runlength';
+#alter table tmp3RLE alter column f set storage 'runlength';
+#alter table tmp3RLE alter column t set storage 'runlength';
+#explain select i from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
-function user.s11_1{autoCommit=true}():void;
-    X_18:void := querylog.define("explain select i from tmp3;","sequential_pipe",11);
+% 88 # length
+function user.s10_1{autoCommit=true}():void;
+    X_27:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",18);
+    X_11 := bat.new(nil:oid,nil:str);
+    X_19 := bat.append(X_11,"sys.tmp3rle");
+    X_14 := bat.new(nil:oid,nil:str);
+    X_21 := bat.append(X_14,"i");
+    X_15 := bat.new(nil:oid,nil:str);
+    X_22 := bat.append(X_15,"int");
+    X_16 := bat.new(nil:oid,nil:int);
+    X_24 := bat.append(X_16,32);
+    X_18 := bat.new(nil:oid,nil:int);
+    X_26 := bat.append(X_18,0);
     X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","tmp3rle","i",0);
     X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_10 := sql.resultSet(1,1,X_9);
-    sql.rsColumn(X_10,"sys.tmp3","i","int",32,0,X_9);
-    X_16 := io.stdout();
-    sql.exportResult(X_16,X_10);
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_9);
+end user.s10_1;
+#explain select b from tmp3RLE;
+% .explain # table_name
+% mal # name
+% clob # type
+% 88 # length
+function user.s11_1{autoCommit=true}():void;
+    X_27:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",18);
+    X_11 := bat.new(nil:oid,nil:str);
+    X_19 := bat.append(X_11,"sys.tmp3rle");
+    X_14 := bat.new(nil:oid,nil:str);
+    X_21 := bat.append(X_14,"b");
+    X_15 := bat.new(nil:oid,nil:str);
+    X_22 := bat.append(X_15,"boolean");
+    X_16 := bat.new(nil:oid,nil:int);
+    X_24 := bat.append(X_16,1);
+    X_18 := bat.new(nil:oid,nil:int);
+    X_26 := bat.append(X_18,0);
+    X_2 := sql.mvc();
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:bit] := sql.bind(X_2,"sys","tmp3rle","b",0);
+    X_9 := mosaic.leftfetchjoin(X_3,X_6);
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_9);
 end user.s11_1;
 #explain select b from tmp3;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 88 # length
 function user.s12_1{autoCommit=true}():void;
-    X_17:void := querylog.define("explain select b from tmp3;","sequential_pipe",11);
+    X_27:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",18);
+    X_11 := bat.new(nil:oid,nil:str);
+    X_19 := bat.append(X_11,"sys.tmp3rle");
+    X_14 := bat.new(nil:oid,nil:str);
+    X_21 := bat.append(X_14,"f");
+    X_15 := bat.new(nil:oid,nil:str);
+    X_22 := bat.append(X_15,"real");
+    X_16 := bat.new(nil:oid,nil:int);
+    X_24 := bat.append(X_16,24);
+    X_18 := bat.new(nil:oid,nil:int);
+    X_26 := bat.append(X_18,0);
     X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0);
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:flt] := sql.bind(X_2,"sys","tmp3rle","f",0);
     X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_10 := sql.resultSet(1,1,X_9);
-    sql.rsColumn(X_10,"sys.tmp3","b","boolean",1,0,X_9);
-    X_15 := io.stdout();
-    sql.exportResult(X_15,X_10);
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_9);
 end user.s12_1;
 #explain select f from tmp3;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 88 # length
 function user.s13_1{autoCommit=true}():void;
-    X_18:void := querylog.define("explain select f from tmp3;","sequential_pipe",11);
+    X_27:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",18);
+    X_11 := bat.new(nil:oid,nil:str);
+    X_19 := bat.append(X_11,"sys.tmp3rle");
+    X_14 := bat.new(nil:oid,nil:str);
+    X_21 := bat.append(X_14,"t");
+    X_15 := bat.new(nil:oid,nil:str);
+    X_22 := bat.append(X_15,"timestamp");
+    X_16 := bat.new(nil:oid,nil:int);
+    X_24 := bat.append(X_16,7);
+    X_18 := bat.new(nil:oid,nil:int);
+    X_26 := bat.append(X_18,0);
     X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0);
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:timestamp] := sql.bind(X_2,"sys","tmp3rle","t",0);
     X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_10 := sql.resultSet(1,1,X_9);
-    sql.rsColumn(X_10,"sys.tmp3","f","real",24,0,X_9);
-    X_16 := io.stdout();
-    sql.exportResult(X_16,X_10);
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_9);
 end user.s13_1;
-#explain select t from tmp3;
-% .explain # table_name
-% mal # name
-% clob # type
-% 85 # length
-function user.s14_1{autoCommit=true}():void;
-    X_18:void := querylog.define("explain select t from tmp3;","sequential_pipe",11);
-    X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0);
-    X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_10 := sql.resultSet(1,1,X_9);
-    sql.rsColumn(X_10,"sys.tmp3","t","timestamp",7,0,X_9);
-    X_16 := io.stdout();
-    sql.exportResult(X_16,X_10);
-end user.s14_1;
-#select * from tmp3;
-% sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
+#select * from tmp3RLE;
+% sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name
 % int,	boolean,	real,	timestamp # type
 % 2,	5,	15,	26 # length
@@ -226,16 +273,16 @@ end user.s14_1;
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
-#select * from storage where "table" = 'tmp3';
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted,	compress # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 3,	4,	1,	9,	8,	7,	2,	1,	3,	1,	1,	1,	5,	5 # length
-[ "sys",	"tmp3",	"i",	"int",	"readonly",	"13/1323",	86,	4,	344,	0,	0,	0,	false,	false	]
-[ "sys",	"tmp3",	"b",	"boolean",	"readonly",	"13/1336",	86,	1,	86,	0,	0,	0,	false,	false	]
-[ "sys",	"tmp3",	"f",	"real",	"readonly",	"13/1337",	86,	4,	344,	0,	0,	0,	false,	false	]
-[ "sys",	"tmp3",	"t",	"timestamp",	"readonly",	"13/1340",	86,	8,	688,	0,	0,	0,	true,	false	]
-#select count(*) from tmp3;
+#select * from storage where "table" = 'tmp3rle';
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	compress # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean # type
+% 3,	7,	1,	9,	8,	7,	2,	1,	3,	1,	1,	5,	1,	5,	5 # length
+[ "sys",	"tmp3rle",	"i",	"int",	"readonly",	"14/1400",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"b",	"boolean",	"readonly",	"14/1414",	86,	1,	86,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"f",	"real",	"readonly",	"14/1415",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"t",	"timestamp",	"readonly",	"14/1416",	86,	8,	688,	0,	0,	false,	0,	true,	false	]
+#select count(*) from tmp3RLE;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
@@ -249,29 +296,48 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
-function user.s22_1{autoCommit=true}():void;
-    X_36:void := querylog.define("explain select * from tmp3;","sequential_pipe",20);
+% 88 # length
+function user.s21_1{autoCommit=true}():void;
+    X_57:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
+    X_20 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_20,"sys.tmp3rle");
+    X_36 := bat.append(X_28,"sys.tmp3rle");
+    X_43 := bat.append(X_36,"sys.tmp3rle");
+    X_50 := bat.append(X_43,"sys.tmp3rle");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"i");
+    X_37 := bat.append(X_30,"b");
+    X_44 := bat.append(X_37,"f");
+    X_51 := bat.append(X_44,"t");
+    X_24 := bat.new(nil:oid,nil:str);
+    X_31 := bat.append(X_24,"int");
+    X_38 := bat.append(X_31,"boolean");
+    X_45 := bat.append(X_38,"real");
+    X_52 := bat.append(X_45,"timestamp");
+    X_25 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_25,32);
+    X_40 := bat.append(X_33,1);
+    X_47 := bat.append(X_40,24);
+    X_54 := bat.append(X_47,7);
+    X_27 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_27,0);
+    X_42 := bat.append(X_35,0);
+    X_49 := bat.append(X_42,0);
+    X_56 := bat.append(X_49,0);
     X_2 := sql.mvc();
-    X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","tmp3");
-    X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","tmp3","i",0);
+    X_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tmp3rle");
+    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","tmp3rle","i",0);
     X_9 := mosaic.leftfetchjoin(X_3,X_6);
-    X_16:bat[:oid,:timestamp]  := sql.bind(X_2,"sys","tmp3","t",0);
-    X_18 := mosaic.leftfetchjoin(X_3,X_16);
-    X_13:bat[:oid,:flt]  := sql.bind(X_2,"sys","tmp3","f",0);
-    X_15 := mosaic.leftfetchjoin(X_3,X_13);
-    X_10:bat[:oid,:bit]  := sql.bind(X_2,"sys","tmp3","b",0);
+    X_10:bat[:oid,:bit] := sql.bind(X_2,"sys","tmp3rle","b",0);
     X_12 := mosaic.leftfetchjoin(X_3,X_10);
-    X_19 := sql.resultSet(4,1,X_9);
-    sql.rsColumn(X_19,"sys.tmp3","i","int",32,0,X_9);
-    sql.rsColumn(X_19,"sys.tmp3","b","boolean",1,0,X_12);
-    sql.rsColumn(X_19,"sys.tmp3","f","real",24,0,X_15);
-    sql.rsColumn(X_19,"sys.tmp3","t","timestamp",7,0,X_18);
-    X_34 := io.stdout();
-    sql.exportResult(X_34,X_19);
-end user.s22_1;
-#select * from tmp3;
-% sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
+    X_13:bat[:oid,:flt] := sql.bind(X_2,"sys","tmp3rle","f",0);
+    X_15 := mosaic.leftfetchjoin(X_3,X_13);
+    X_16:bat[:oid,:timestamp] := sql.bind(X_2,"sys","tmp3rle","t",0);
+    X_18 := mosaic.leftfetchjoin(X_3,X_16);
+    sql.resultSet(X_50,X_51,X_52,X_54,X_56,X_9,X_12,X_15,X_18);
+end user.s21_1;
+#select * from tmp3RLE;
+% sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name
 % int,	boolean,	real,	timestamp # type
 % 2,	5,	15,	26 # length

@@ -1,8 +1,7 @@
 set optimizer='sequential_pipe';
 
-drop table tmp3;
-create table tmp3( i integer, b boolean, f real,t timestamp);
-insert into tmp3 values
+create table dtmp3( i integer, b boolean, f real,t timestamp);
+insert into dtmp3 values
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
@@ -90,41 +89,41 @@ insert into tmp3 values
 (9, false, 0.317,'2014-08-23 11:34:54.000000'),
 (10, false, 0.317,'2014-08-23 11:34:54.000000');
 
-alter table tmp3 set read only;
+alter table dtmp3 set read only;
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from dtmp3 where i <4;
+select count(*) from dtmp3 where i <4;
+explain select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where f <0.316;
+select count(*) from dtmp3 where b = true;
 
-alter table tmp3 alter column i set storage 'delta';
-alter table tmp3 alter column b set storage 'delta';
-alter table tmp3 alter column f set storage 'delta';
+alter table dtmp3 alter column i set storage 'delta';
+alter table dtmp3 alter column b set storage 'delta';
+alter table dtmp3 alter column f set storage 'delta';
 
-select count(*) from tmp3;
+select count(*) from dtmp3;
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from dtmp3 where i <4;
+select count(*) from dtmp3 where i <4;
+explain select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where f <0.316;
+select count(*) from dtmp3 where b = true;
 
---select * from storage where "table" = 'tmp3';
-alter table tmp3 alter column i set storage NULL;
-alter table tmp3 alter column b set storage NULL;
-alter table tmp3 alter column f set storage NULL;
+--select * from storage where "table" = 'dtmp3';
+alter table dtmp3 alter column i set storage NULL;
+alter table dtmp3 alter column b set storage NULL;
+alter table dtmp3 alter column f set storage NULL;
 
-explain select count(*) from tmp3 where i <4;
-select count(*) from tmp3 where i <4;
-explain select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where i = 7;
-select count(*) from tmp3 where f <0.316;
-select count(*) from tmp3 where b = true;
+explain select count(*) from dtmp3 where i <4;
+select count(*) from dtmp3 where i <4;
+explain select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where i = 7;
+select count(*) from dtmp3 where f <0.316;
+select count(*) from dtmp3 where b = true;
 
-alter table tmp3 set read write;
---select * from tmp3;
+alter table dtmp3 set read write;
+--select * from dtmp3;
 
---drop table tmp3;
+drop table dtmp3;
