@@ -59,7 +59,6 @@ io.print(xs);
 c:= bat.new(:oid,:oid);
 bat.append(c,1@0);
 bat.append(c,5@0);
-io.print(c);
 
 s:= algebra.subselect(base,c,-1,4,false,false,false);
 io.print(s);

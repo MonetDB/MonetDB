@@ -61,10 +61,10 @@ function user.main():void;
     xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
     io.print(xs);
 # using candidatelists 
+    io.print("candidate stuff");
     c := bat.new(:oid,:oid);
     bat.append(c,2@0);
     bat.append(c,5@0);
-    io.print(c);
     s := algebra.subselect(base,c,0,50,false,false,false);
     io.print(s);
     xs := mosaic.subselect(x,c,0,50,false,false,false);
@@ -224,6 +224,7 @@ end user.main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
+[ "candidate stuff" ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -288,8 +289,6 @@ end user.main;
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	5@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type

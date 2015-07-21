@@ -52,10 +52,10 @@ xs:= mosaic.subselect(x,nil:int,nil:int,false,false,true);
 io.print(xs);
 
 # using candidatelists
+io.print("candidate stuff");
 c:= bat.new(:oid,:oid);
 bat.append(c,2@0);
 bat.append(c,5@0);
-io.print(c);
 
 s:= algebra.subselect(base,c,0,50,false,false,false);
 io.print(s);
