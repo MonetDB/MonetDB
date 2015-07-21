@@ -320,7 +320,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     if input is not None:
-        p.stdout,write(input)
+        p.stdin.write(input)
     if communicate:
         out, err = p.communicate()
         sys.stdout.write(out)
