@@ -92,6 +92,10 @@ NT/testing
 NT/tools
 NT/unistd.h
 
+# package building on Mac OS X
+MacOSX/build
+MacOSX/usr
+
 syntax: regexp
 ^java/build$
 syntax: regexp
