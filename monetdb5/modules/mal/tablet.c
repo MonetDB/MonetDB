@@ -713,7 +713,7 @@ typedef struct {
 static void
 tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
 {
-	if (task->cntxt->error_row == NULL) {
+	if (task->cntxt->error_row != NULL) {
 		MT_lock_set(&errorlock, "tablet_error");
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
@@ -722,11 +722,17 @@ tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
 			task->as->error = M5OutOfMemory;
 		if (row != lng_nil)
-			task->rowerror[row - 1]++;
+			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",
 					 row, col, msg, fcn);
 #endif
+		task->errorcnt++;
+		MT_lock_unset(&errorlock, "tablet_error");
+	} else {
+		MT_lock_set(&errorlock, "tablet_error");
+		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
+			task->as->error = M5OutOfMemory;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock, "tablet_error");
 	}
@@ -994,7 +1000,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				mnstr_printf(GDKout, "after #1 %s\n", s);
 #endif
 				if (!line) {
-					str errline = SQLload_error(task, task->top[task->cur]);
+					errline = SQLload_error(task, task->top[task->cur]);
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, (int) i, errmsg, errline);
 					GDKfree(errline);
