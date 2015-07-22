@@ -29,8 +29,8 @@ extern int sql_find_schema(mvc *m, str schema);
 
 extern char *sql_create_role(mvc *m, str auth, int grantor);
 extern char *sql_drop_role(mvc *m, str auth);
-extern char *sql_grant_role(mvc *m, str grantee, str auth);
-extern char *sql_revoke_role(mvc *m, str grantee, str auth);
+extern char *sql_grant_role(mvc *m, str grantee, str auth, int grantor, int admin);
+extern char *sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin);
 extern int sql_create_privileges(mvc *m, sql_schema *s);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
 

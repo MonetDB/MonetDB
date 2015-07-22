@@ -272,6 +272,27 @@ Ready.
 [ 1	]
 #ALTER TABLE "testschema"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "testschema"."keytest1" ("key1", "key2");
 #ALTER SEQUENCE "testschema"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
+#CREATE MERGE TABLE testschema.mt3 (t int);
+#CREATE MERGE TABLE testschema.mt2 (t int);
+#CREATE MERGE TABLE testschema.mt1 (t int);
+#CREATE TABLE testschema.t1 (i int);
+#CREATE TABLE testschema.t2 (j int);
+#INSERT INTO testschema.t1 VALUES (11), (13);
+[ 2	]
+#INSERT INTO testschema.t2 VALUES (23), (27);
+[ 2	]
+#ALTER TABLE testschema.mt1 ADD TABLE t1;
+#ALTER TABLE testschema.mt1 ADD TABLE t2;
+#CREATE TABLE testschema.t3 (k int);
+#INSERT INTO testschema.t3 VALUES (31), (37);
+[ 2	]
+#CREATE TABLE testschema.t4 (l int);
+#INSERT INTO testschema.t4 VALUES (41), (47);
+[ 2	]
+#ALTER TABLE testschema.mt2 ADD TABLE t1;
+#ALTER TABLE testschema.mt2 ADD TABLE t3;
+#ALTER TABLE testschema.mt3 ADD TABLE mt1;
+#ALTER TABLE testschema.mt3 ADD TABLE t4;
 #COMMIT;
 #START TRANSACTION;
 #CREATE TABLE testschema.geomtest (

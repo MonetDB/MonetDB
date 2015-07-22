@@ -528,9 +528,39 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 			if ((!IS_AGGR(a) || !a->res))
 				continue;
 
-			if (strcmp(a->base.name, sqlaname) == 0 && 
+			if (strcmp(a->base.name, sqlaname) == 0 &&  
 		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
+		}
+	}
+	return NULL;
+}
+
+sql_subaggr *
+sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *type, int nrargs)
+{
+	node *n = aggrs->h;
+
+	while (n) {
+		sql_func *a = n->data;
+
+		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
+		    arg_subtype_cmp(a->ops->h->data, type) == 0)
+			return _dup_subaggr(sa, a, NULL);
+		n = n->next;
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *a = n->data;
+
+			if ((!IS_AGGR(a) || !a->res))
+				continue;
+
+			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
+		    	    arg_subtype_cmp(a->ops->h->data, type) == 0)
+				return _dup_subaggr(sa, a, NULL);
 		}
 	}
 	return NULL;

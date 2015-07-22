@@ -30,9 +30,18 @@ stderr of test 'schema_view2.Bug-3766` in directory 'sql/test/BugTracker-2015` i
 # 16:30:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2635" "--port=37297"
 # 16:30:15 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-2635/.s.monetdb.37297
+MAPI  = (monetdb) /var/tmp/mtest-6881/.s.monetdb.33815
 QUERY = create view tst.v1 (i) as select * from t1;
-ERROR = !CREATE VIEW: name 'v1' already in use
+ERROR = !SELECT: no such table 't1'
+MAPI  = (monetdb) /var/tmp/mtest-6881/.s.monetdb.33815
+QUERY = select * from tst.v1;
+ERROR = !SELECT: no such table 'v1'
+MAPI  = (monetdb) /var/tmp/mtest-6881/.s.monetdb.33815
+QUERY = create view tst.v1 (i) as select * from t1;
+ERROR = !SELECT: no such table 't1'
+MAPI  = (monetdb) /var/tmp/mtest-6881/.s.monetdb.33815
+QUERY = drop view tst.v1;
+ERROR = !DROP VIEW: unknown view 'v1'
 
 # 16:30:15 >  
 # 16:30:15 >  "Done."
