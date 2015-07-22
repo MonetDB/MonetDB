@@ -6027,3 +6027,16 @@ rel_selects(mvc *sql, symbol *s)
 		(void) sql_error(sql, 02, "relational query without result");
 	return ret;
 }
+
+sql_rel *
+schema_selects(mvc *sql, sql_schema *schema, symbol *s)
+{
+	sql_rel *res;
+	sql_schema *os = sql->session->schema;
+
+	sql->session->schema = schema;
+	res = rel_selects(sql, s);
+	sql->session->schema = os;
+	return res;
+}
+

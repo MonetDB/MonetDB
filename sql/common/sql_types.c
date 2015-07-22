@@ -546,7 +546,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subty
 
 		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
 		    arg_subtype_cmp(a->ops->h->data, type) == 0)
-			return _dup_subaggr(sa, a, type);
+			return _dup_subaggr(sa, a, NULL);
 		n = n->next;
 	}
 	if (s) {
@@ -560,7 +560,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subty
 
 			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
 		    	    arg_subtype_cmp(a->ops->h->data, type) == 0)
-				return _dup_subaggr(sa, a, type);
+				return _dup_subaggr(sa, a, NULL);
 		}
 	}
 	return NULL;

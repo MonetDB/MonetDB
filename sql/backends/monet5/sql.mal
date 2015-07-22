@@ -79,7 +79,11 @@ pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
 address SQLcatalog
 comment "a catalog statement";
 
-pattern catalog(type:int,grantee:str,role:str):void
+pattern catalog(type:int,sname:str,tname:str):void
+address SQLcatalog
+comment "a catalog trigger statement";
+
+pattern catalog(type:int,grantee:str,role:str,grantor:int,admin:int):void
 address SQLcatalog
 comment "a grant/revoke role statement";
 

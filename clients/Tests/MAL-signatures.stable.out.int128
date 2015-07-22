@@ -51478,9 +51478,13 @@ pattern sql.catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str
 address SQLcatalog;
 comment a user catalog statement
 
-pattern sql.catalog(type:int,grantee:str,role:str):void 
+pattern sql.catalog(type:int,grantee:str,role:str,grantor:int,admin:int):void 
 address SQLcatalog;
 comment a grant/revoke role statement
+
+pattern sql.catalog(type:int,sname:str,tname:str):void 
+address SQLcatalog;
+comment a catalog trigger statement
 
 pattern sql.catalog(type:int,sname:str,t:ptr,restart:lng):void 
 address SQLcatalog;
