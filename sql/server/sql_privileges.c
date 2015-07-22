@@ -64,6 +64,7 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 char *
 sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor)
 {
+	sql_trans *tr = sql->session->tr;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
@@ -107,6 +108,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 		sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
 	else
 		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+	tr->schema_updates++;
 	return NULL;
 }
 
@@ -177,10 +179,12 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant);
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant);
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant);
-	} else if (!c)
-		sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
-	else
-		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+	} else if (!c) {
+		sql_delete_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
+	} else {
+		sql_delete_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+	}
+	sql->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -195,6 +199,7 @@ sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
 		return FALSE;
 
 	table_funcs.table_insert(m->session->tr, auths, &id, auth, &grantor);
+	m->session->tr->schema_updates++;
 	return TRUE;
 }
 
@@ -214,6 +219,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 
 	id = store_next_oid();
 	table_funcs.table_insert(m->session->tr, auths, &id, auth, &grantor);
+	m->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -229,6 +235,7 @@ sql_drop_role(mvc *m, str auth)
 	if (rid == oid_nil)
 		return sql_message("0P000!DROP ROLE: no such role '%s'", auth);
 	table_funcs.table_delete(m->session->tr, auths, rid);
+	m->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -336,6 +343,7 @@ sql_grant_role(mvc *m, str grantee, str auth, int grantor, int admin)
 
 		table_funcs.table_insert(m->session->tr, privs, &auth_id, &grantee_id, &priv, &grantor, &one);
 	}
+	m->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -379,6 +387,7 @@ sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin)
 		if (rid != oid_nil) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	}
+	m->session->tr->schema_updates++;
 	return NULL;
 }
 
