@@ -4,9 +4,7 @@
 
 from util import sql_test_client
 
-sql_client = os.getenv('SQL_CLIENT')
-
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 CREATE SCHEMA s1;
 CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1;
 CREATE TABLE s1.test(d int);
@@ -15,7 +13,7 @@ GRANT ALL ON s1.test to role1;
 """)
 
 
-client('bruce', 'bruce', input = """\
+sql_test_client('bruce', 'bruce', input = """\
 GRANT role1 to bruce;
 SET role role1;
 select * from test;
