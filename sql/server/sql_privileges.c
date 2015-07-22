@@ -372,11 +372,11 @@ sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin)
 
 	if (!admin) { 
 		rid = table_funcs.column_find_row(m->session->tr, login_id, &grantee_id, role_id, &auth_id, NULL);
-		if (rid == oid_nil) 
+		if (rid != oid_nil) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	} else {
 		rid = sql_privilege_rid(m, grantee_id, auth_id, PRIV_ROLE_ADMIN, 0);
-		if (rid == oid_nil) 
+		if (rid != oid_nil) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	}
 	return NULL;
