@@ -1670,7 +1670,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		}
 		schema = strdup(schema);
 		tname = strdup(tname);
-		rc = dump_table(mid, schema, tname, toConsole, type == 3 ? 1 : describe, describe, useInserts);
+		rc = dump_table(mid, schema, tname, toConsole, type == 3 || type == 5 ? 1 : describe, describe, useInserts);
 		free(schema);
 		free(tname);
 	}
