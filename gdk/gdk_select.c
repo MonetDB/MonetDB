@@ -1206,6 +1206,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	const void *nil;
 	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
+	int use_orderidx = 0 , use_imprints = 0;
 	union {
 		bte v_bte;
 		sht v_sht;
@@ -1414,10 +1415,20 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->tsorted || b->trevsorted || b->torderidx.flags) {
+	/* If there is an order index and the bat is not tsorted or trevstorted
+	 * then use the order index.
+	 * HOWEVER, if query is not very very selective, then is better to use
+	 * imprints or scan.
+	 * TODO: selective queries are the ones below 0.1% and less than
+	 * 1000 results */
+	 /* TODO: also we do not support order index and anti for now */
+	if (!anti && b->torderidx.flags && !(b->tsorted || b->trevsorted) &&
+	    ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000)))
+		use_orderidx = 1;
+
+	if (b->tsorted || b->trevsorted || use_orderidx) {
 		BUN low = 0;
 		BUN high = b->batCount;
-		int use_orderidx = b->torderidx.flags && !(b->tsorted || b->trevsorted);
 
 		if (BATtdense(b)) {
 			/* positional */
@@ -1537,34 +1548,44 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		} else {
-			/* match: [low..high) */
-			if (s) {
-				if (use_orderidx) {
-					return GDK_FAIL; /* fail until fixed*/
-				} else {
+			if (use_orderidx) {
+				BAT *order;
+
+				if ((order = BBPdescriptor(b->torderidx.o)) == NULL) {
+					GDKerror("Runtime object (order index) not found");
+				}
+				bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
+				if (s) {
+					BAT *bn2;
+					BUN p,q;
+					BATiter bni = bat_iterator(bn);
+
+					bn2 = BATnew(TYPE_void, TYPE_oid, bn->batCount, TRANSIENT);
+					BATloop(bn,p,q) {
+						if (SORTfnd(s, BUNtail(bni,p)) != BUN_NONE) {
+							BUNappend(bn2, BUNtail(bni,p), FALSE);
+						}
+					}
+					BBPunfix(bn->batCacheid);
+					bn = bn2;
+				}
+				/* output must be sorted */
+				GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				bn->tsorted = 1;
+				bn->trevsorted = bn->batCount <= 1;
+				bn->tkey = 1;
+				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? BUNfirst(bn) : oid_nil;
+				bn->T->nil = 0;
+				bn->T->nonil = 1;
+
+			} else {
+				/* match: [low..high) */
+				if (s) {
 					oid o = (oid) low + b->hseqbase;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
 					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
 					bn = doubleslice(s, 0, 0, low, high);
-				}
-			} else {
-				if (use_orderidx) {
-					BAT *order;
-
-					if ((order = BBPdescriptor(b->torderidx.o)) == NULL) {
-						GDKerror("Runtime object (order index) not found");
-					}
-					bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
-					/* output must be sorted */
-					GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
-					bn->tsorted = 1;
-					bn->trevsorted = bn->batCount <= 1;
-					bn->tkey = 1;
-					bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? BUNfirst(bn) : oid_nil;
-					bn->T->nil = 0;
-					bn->T->nonil = 1;
-
 				} else {
 					bn = doublerange(0, 0,
 						         low + b->hseqbase,
@@ -1711,7 +1732,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		bn = BAT_hashselect(b, s, bn, tl, maximum);
 	} else {
-		int use_imprints = 0;
 		if (!equi &&
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
