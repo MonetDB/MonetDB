@@ -873,12 +873,10 @@ sorted_col(sql_trans *tr, sql_column *col)
 	int sorted = 0;
 
 	/* fallback to central bat */
-	if (tr && tr->parent && !col->data) {
-		col = find_col(tr->parent, 
-			col->t->s->base.name, 
-			col->t->base.name,
-			col->base.name);
-	}
+	if (!col->t->s)
+		return 0;
+	if (tr && tr->parent && !col->data) 
+		col = find_col(tr->parent, col->t->s->base.name, col->t->base.name, col->base.name);
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);
