@@ -751,8 +751,8 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = hi;
 		if (lo >= hi ||
 		    (use_orderidx && (atom_LE(BUNtail(bi,*(oid *)BUNtail(bio,hi-1) - b->hseqbase + BUNfirst(b)), v, b->ttype))) ||
-		    (!use_orderidx && b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype))) {
-			/* shortcut: if BAT is empty or first (and
+		    (!use_orderidx && (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype)))) {
+			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
 			return hi;
