@@ -1,4 +1,4 @@
-stderr of test 'grantRole` in directory 'sql/test/Users` itself:
+stderr of test 'grantRole.Bug-3772` in directory 'sql/test/Users` itself:
 
 
 # 22:31:48 >  
@@ -26,15 +26,21 @@ stderr of test 'grantRole` in directory 'sql/test/Users` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 22:31:49 >  
-# 22:31:49 >  "/usr/bin/python2" "grantRole.SQL.py" "grantRole"
-# 22:31:49 >  
+# 21:11:02 >  
+# 21:11:02 >  "/usr/bin/python2" "grantRole.Bug-3772.SQL.py" "grantRole.Bug-3772"
+# 21:11:02 >  
 
-#GRANT role1 to bruce;
-# I imaine the error message should be something like this...
-GRANT: cannot grant ROLE 'role1' to ROLE/USER 'bruce'
+MAPI  = (bruce) /var/tmp/mtest-29369/.s.monetdb.31833
+QUERY = GRANT role1 to bruce;
+ERROR = !GRANT: insufficient privileges to grant ROLE 'role1'
+MAPI  = (bruce) /var/tmp/mtest-29369/.s.monetdb.31833
+QUERY = SET role role1;
+ERROR = !Role (role1) missing
+MAPI  = (bruce) /var/tmp/mtest-29369/.s.monetdb.31833
+QUERY = select * from test;
+ERROR = !SELECT: access denied for bruce to table 's1.test'
 
-# 22:31:49 >  
-# 22:31:49 >  "Done."
-# 22:31:49 >  
+# 21:11:02 >  
+# 21:11:02 >  "Done."
+# 21:11:02 >  
 
