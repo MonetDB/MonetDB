@@ -70,6 +70,7 @@ Ready.
 [ "oid",	"lng",	1	]
 [ "oid",	"oid",	0	]
 [ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
@@ -85,7 +86,7 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 10,	2 # length
-[ "persistent",	12	]
+[ "persistent",	13	]
 
 # 16:21:16 >  
 # 16:21:16 >  "Done."
