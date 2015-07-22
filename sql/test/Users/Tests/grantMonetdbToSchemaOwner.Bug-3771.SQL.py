@@ -1,43 +1,26 @@
 ###
-# Let a user inherit the rights of monetdb.
+# Let a scheam owner inherit the rights of monetdb.
 # Check that by assuming the monetdb role the user has complete privileges (e.g. select, create, drop).
 ###
 
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from util import sql_test_client
 
-def client(user, passwd, input=None):
-    clt = process.client(lang='sql', user=user, passwd=passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE,
-                         port = int(os.getenv('MAPIPORT')))
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+sql_test_client('monetdb', 'monetdb', input = """\
+CREATE USER owner with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;
 
-sql_client = os.getenv('SQL_CLIENT')
+CREATE SCHEMA schemaForOwner AUTHORIZATION owner;
 
-
-client('monetdb', 'monetdb', input = """\
-CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;
-
-CREATE SCHEMA a_brand_new_schema_with_a_longer_name_than_usual AUTHORIZATION user_with_many_rights;
-
-CREATE table a_brand_new_schema_with_a_longer_name_than_usual.testTable(v1 int, v2 int);
+CREATE table schemaForOwner.testTable(v1 int, v2 int);
 
 -- Grant delete rights.
-GRANT monetdb to user_with_many_rights;
+GRANT monetdb to owner;
 
 """)
 
-client('user_with_many_rights', 'ThisIsAS3m1S3cur3P4ssw0rd', input = """\
+sql_test_client('owner', 'ThisIsAS3m1S3cur3P4ssw0rd', input = """\
 -- Check delete.
-set schema a_brand_new_schema_with_a_longer_name_than_usual;
+set schema schemaForOwner;
 set role monetdb;
 
 DROP TABLE testTable;

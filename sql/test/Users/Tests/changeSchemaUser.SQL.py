@@ -1,42 +1,26 @@
 ###
-# Assess that the schema of a user can be changed.
-# Assess that there is an error message if it tries to set an unexisting schema.
-# Assess that there is an error message if it tries to set a schema for an unexisting user.
-# Assess that a user that owns a schema cannot be dropped.
+# Change the default schema of a user (possible).
+# Change the default schema of a user to an unexisting schema (not possible).
+# Change the default schema for an unexisting user (not possible).
+# Drop a user that owns a schema (not possible).
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from util import sql_test_client
 
-def client(user, passwd, input=None):
-    clt = process.client(lang='sql', user=user, passwd=passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE,
-                         port = int(os.getenv('MAPIPORT')))
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-sql_client = os.getenv('SQL_CLIENT')
-
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 ALTER USER "april" SET SCHEMA library;
 ALTER USER "april2" SET SCHEMA library; --no such user
 ALTER USER "april" SET SCHEMA library2; --no such schema
 """)
 
 # This is the new april, so these operations should fail.
-client('april', 'april', input = """\
+sql_test_client('april', 'april', input = """\
 SELECT * from bank.accounts; --no such table.
 SELECT * from library.orders; --not enough privileges.
 """)
 
 
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 ALTER USER "april" SET SCHEMA bank;
 CREATE SCHEMA forAlice AUTHORIZATION april;
 DROP user april;

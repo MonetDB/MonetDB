@@ -1,46 +1,36 @@
 ###
-# Assess that the admin can change the password of a user.
-# Assess that a user can change its one password.
-# Assess that by changing the username the user keeps their privileges.
+# Let admin rename a user (from A to B) (possible).
+# Create another user with the old name (A)(possible).
+# Verify that the new user (A) cannot make use of the role assign to the inital user (now B).
+# Verify that a user with no special permissions cannot rename users.
+# Verify that the renamed user (B) still has his rights.
+# Rename a user with an already existing name (not possible).
+# Rename an unexisting user (not possible).
+# Create an user on a non-existing schema (not possible).
+# Create an user with a name of an existing user (not possible).
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from util import sql_test_client
 
-def client(user, passwd, input=None):
-    clt = process.client(lang='sql', user=user, passwd=passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE,
-                         port = int(os.getenv('MAPIPORT')))
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-sql_client = os.getenv('SQL_CLIENT')
-
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 ALTER USER "april" RENAME TO "april2"; --succeed
 CREATE USER april with password 'april' name 'second' schema bank;
 """)
 
 # This is the new april, so these operations should fail.
-client('april', 'april', input = """\
+sql_test_client('april', 'april', input = """\
 DELETE from bank.accounts; -- not enough privelges
 SET role bankAdmin; -- no such role
 ALTER USER "april2" RENAME TO "april3"; --not enough privileges
 """)
 
 # This is the initial april, so these operations should succeed.
-client('april2', 'april', input = """\
+sql_test_client('april2', 'april', input = """\
 SELECT * from bank.accounts;
 SET role bankAdmin;
 """)
 
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 ALTER USER "april2" RENAME TO "april";
 drop user april;
 ALTER USER "april2" RENAME TO "april";

@@ -1,22 +1,8 @@
 ###
-# Assess that a regular user cannot grant any role further.
+# Let any user grant any role (not possible).
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
-
-def client(user, passwd, input=None):
-    clt = process.client(lang='sql', user=user, passwd=passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE,
-                         port = int(os.getenv('MAPIPORT')))
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+from util import sql_test_client
 
 sql_client = os.getenv('SQL_CLIENT')
 

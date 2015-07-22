@@ -3,26 +3,9 @@
 # Drop four users.
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from util import sql_test_client
 
-def client(user, passwd, input=None):
-    clt = process.client(lang='sql', user=user, passwd=passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE,
-                         port = int(os.getenv('MAPIPORT')))
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-sql_client = os.getenv('SQL_CLIENT')
-
-
-client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input = """\
 CREATE SCHEMA newSchema;
 select * from "sys"."users";
 
