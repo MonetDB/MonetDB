@@ -1,0 +1,59 @@
+stdout of test 'quantile_function_resolution.Bug-3773` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 10:18:57 >  
+# 10:18:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33648" "--set" "mapi_usock=/var/tmp/mtest-31416/.s.monetdb.33648" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:18:57 >  
+
+# MonetDB 5 server v11.21.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33648/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31416/.s.monetdb.33648
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.32'
+# Finished reading the write-ahead log 'sql_logs/sql/log.32'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:18:57 >  
+# 10:18:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31416" "--port=33648"
+# 10:18:57 >  
+
+#start transaction;
+#create table x (y decimal(10,4));
+#plan select quantile(y, 0.0) from x;
+% .plan # table_name
+% rel # name
+% clob # type
+% 88 # length
+project (
+| group by (
+| | table(sys.x) [ x.y ] COUNT 
+| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L1.L1 ]
+) [ L1 as L1.L1 ]
+#plan select quantile(y, 0) from x;
+% .plan # table_name
+% rel # name
+% clob # type
+% 88 # length
+project (
+| group by (
+| | table(sys.x) [ x.y ] COUNT 
+| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L1.L1 ]
+) [ L1 as L1.L1 ]
+#rollback;
+
+# 10:18:57 >  
+# 10:18:57 >  "Done."
+# 10:18:57 >  
+

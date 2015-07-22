@@ -42,3 +42,5 @@ mergejoin_NULL.Bug-3747
 epoch_now.Bug-3740
 schema_view2.Bug-3766
 create-temp-table-using-like.Bug-3767
+quantile_function_resolution.Bug-3773
+backslash_predecing_separator.Bug-3775
