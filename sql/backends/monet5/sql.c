@@ -1257,14 +1257,18 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_GRANT_ROLES:{
 		char *auth = SaveArgReference(stk, pci, 3);
+		int grantor = *getArgReference_int(stk, pci, 4);
+		int admin = *getArgReference_int(stk, pci, 5);
 
-		msg = sql_grant_role(sql, sname /*grantee */ , auth);
+		msg = sql_grant_role(sql, sname /*grantee */ , auth, grantor, admin);
 		break;
 	}
 	case DDL_REVOKE_ROLES:{
 		char *auth = SaveArgReference(stk, pci, 3);
+		int grantor = *getArgReference_int(stk, pci, 4);
+		int admin = *getArgReference_int(stk, pci, 5);
 
-		msg = sql_revoke_role(sql, sname /*grantee */ , auth);
+		msg = sql_revoke_role(sql, sname /*grantee */ , auth, grantor, admin);
 		break;
 	}
 	case DDL_GRANT:{

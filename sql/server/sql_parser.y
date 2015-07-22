@@ -888,8 +888,8 @@ revoke:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $5);
-	  append_int(l, $6);
 	  append_int(l, $2);
+	  append_int(l, $6);
 	$$ = _symbol_create_list( SQL_REVOKE_ROLES, l); }
  ;
 

@@ -2508,6 +2508,10 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								       "CASE o.type "
 									    "WHEN 0 THEN 'TABLE' "
 									    "WHEN 1 THEN 'VIEW' "
+									    "WHEN 3 THEN 'MERGE TABLE' "
+									    "WHEN 4 THEN 'STREAM TABLE' "
+									    "WHEN 5 THEN 'REMOTE TABLE' "
+									    "WHEN 6 THEN 'REPLICA TABLE' "
 									    "ELSE '' "
 								       "END) AS type, "
 								      "o.system, "
@@ -2515,13 +2519,17 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								      "CASE o.type "
 									   "WHEN 0 THEN %d "
 									   "WHEN 1 THEN %d "
+									   "WHEN 3 THEN %d "
+									   "WHEN 4 THEN %d "
+									   "WHEN 5 THEN %d "
+									   "WHEN 6 THEN %d "
 									   "ELSE 0 "
 								      "END AS ntype "
 							       "FROM sys._tables o, "
 								    "sys.schemas s "
 							       "WHERE o.schema_id = s.id AND "
 								     "%s AND "
-								     "o.type IN (0, 1) "
+								     "o.type IN (0, 1, 3, 4, 5, 6) "
 							       "UNION "
 							       "SELECT o.name, "
 								      "'SEQUENCE' AS type, "
@@ -2546,7 +2554,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							 "WHERE ntype & %u > 0 "
 							       "%s "
 							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW,
+							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,

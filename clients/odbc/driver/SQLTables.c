@@ -31,7 +31,7 @@
 
 
 #define NCOLUMNS	5
-#define NROWS		5
+#define NROWS		9
 static const char *columnnames[NCOLUMNS] = {
 	"table_cat",
 	"table_schem",
@@ -60,12 +60,24 @@ static const char *tuples1[NCOLUMNS] = {
 	NULL, NULL, NULL, "LOCAL TEMPORARY", NULL
 };
 static const char *tuples2[NCOLUMNS] = {
-	NULL, NULL, NULL, "SYSTEM TABLE", NULL
+	NULL, NULL, NULL, "MERGE TABLE", NULL
 };
 static const char *tuples3[NCOLUMNS] = {
-	NULL, NULL, NULL, "TABLE", NULL
+	NULL, NULL, NULL, "REMOTE TABLE", NULL
 };
 static const char *tuples4[NCOLUMNS] = {
+	NULL, NULL, NULL, "REPLICA TABLE", NULL
+};
+static const char *tuples5[NCOLUMNS] = {
+	NULL, NULL, NULL, "STREAM TABLE", NULL
+};
+static const char *tuples6[NCOLUMNS] = {
+	NULL, NULL, NULL, "SYSTEM TABLE", NULL
+};
+static const char *tuples7[NCOLUMNS] = {
+	NULL, NULL, NULL, "TABLE", NULL
+};
+static const char *tuples8[NCOLUMNS] = {
 	NULL, NULL, NULL, "VIEW", NULL
 };
 static const char **tuples[NROWS] = {
@@ -73,7 +85,11 @@ static const char **tuples[NROWS] = {
 	tuples1,
 	tuples2,
 	tuples3,
-	tuples4
+	tuples4,
+	tuples5,
+	tuples6,
+	tuples7,
+	tuples8
 };
 
 static SQLRETURN
@@ -233,6 +249,14 @@ MNDBTables(ODBCStmt *stmt,
 				   "then cast('SYSTEM VIEW' as varchar(20)) "
 				   "when t.type = 1 "
 				   "then cast('VIEW' as varchar(20)) "
+				   "when t.type = 3 "
+				   "then cast('MERGE TABLE' as varchar(20)) "
+				   "when t.type = 4 "
+				   "then cast('STREAM TABLE' as varchar(20)) "
+				   "when t.type = 5 "
+				   "then cast('REMOTE TABLE' as varchar(20)) "
+				   "when t.type = 6 "
+				   "then cast('REPLICA TABLE' as varchar(20)) "
 				   "when t.type = 30 and "
 					"t.system = false and "
 					"t.temporary = 1 "
