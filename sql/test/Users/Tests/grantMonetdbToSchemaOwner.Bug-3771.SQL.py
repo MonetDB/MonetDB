@@ -1,5 +1,5 @@
 ###
-# Let a scheam owner inherit the rights of monetdb.
+# Let a schema owner inherit the rights of monetdb.
 # Check that by assuming the monetdb role the user has complete privileges (e.g. select, create, drop).
 ###
 

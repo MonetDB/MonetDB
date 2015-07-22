@@ -1,4 +1,4 @@
-stdout of test 'grantMonetdbToSchemaOwner` in directory 'sql/test/Users` itself:
+stdout of test 'grantMonetdbToSchemaOwner.Bug-3771` in directory 'sql/test/Users` itself:
 
 
 # 16:37:23 >  
@@ -68,7 +68,7 @@ Ready.
 #CREATE TABLE testTable(v1 INT);
 #ALTER TABLE testTable ADD COLUMN v2 INT;
 #SELECT * FROM testTable;
-% a_brand_new_schema_with_a_longer_name_than_usual.testtable,	a_brand_new_schema_with_a_longer_name_than_usual.testtable # table_name
+% schemaforowner.testtable,	schemaforowner.testtable # table_name
 % v1,	v2 # name
 % int,	int # type
 % 1,	1 # length
