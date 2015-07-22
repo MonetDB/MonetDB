@@ -280,7 +280,7 @@ table_privs(mvc *m, sql_table *t, int priv)
 	/* temporary tables are owned by the session user */
 	if (t->persistence != SQL_PERSIST || t->commit_action)
 		return 1;
-	if (m->user_id == USER_MONETDB || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
+	if (m->user_id == USER_MONETDB || m->user_id == t->s->auth_id || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
 		return 1;
 	}
 	return 0;
