@@ -311,20 +311,27 @@ MNDBTables(ODBCStmt *stmt,
 					}
 					buf[j] = 0;
 					if (strcmp(buf, "VIEW") == 0) {
-						strcpy(query_end,
-						       "t.type = 1 or ");
+						strcpy(query_end, "t.type = 1 or ");
 					} else if (strcmp(buf, "TABLE") == 0) {
 						strcpy(query_end,
 						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name <> 'tmp') or ");
-					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
-						strcpy(query_end,
-						       "(t.type = 20 and t.system = false and t.temporary = 1 and s.name = 'tmp') or ");
+					} else if (strcmp(buf, "MERGE TABLE") == 0) {
+						strcpy(query_end, "t.type = 3 or ");
+					} else if (strcmp(buf, "STREAM TABLE") == 0) {
+						strcpy(query_end, "t.type = 4 or ");
+					} else if (strcmp(buf, "REMOTE TABLE") == 0) {
+						strcpy(query_end, "t.type = 5 or ");
+					} else if (strcmp(buf, "REPLICA TABLE") == 0) {
+						strcpy(query_end, "t.type = 6 or ");
 					} else if (strcmp(buf, "SYSTEM TABLE") == 0) {
 						strcpy(query_end,
 						       "(t.type = 10 and t.system = true and t.temporary = 0) or ");
 					} else if (strcmp(buf, "SYSTEM VIEW") == 0) {
 						strcpy(query_end,
 						       "(t.type = 11 and t.system = true and t.temporary = 0) or ");
+					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
+						strcpy(query_end,
+						       "(t.type = 20 and t.system = false and t.temporary = 1 and s.name = 'tmp') or ");
 					} else if (strcmp(buf, "LOCAL TEMPORARY") == 0) {
 						strcpy(query_end,
 						       "(t.type = 30 and t.system = false and t.temporary = 1) or ");
