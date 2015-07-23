@@ -53,22 +53,20 @@ dbWriteTable(con,tname,iris)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 stopifnot(identical(dbExistsTable(con,"monetdbtest2"),FALSE))
 stopifnot(tname %in% dbListTables(con))
-
-stopifnot(identical(dbListFields(con,tname),c("sepal_length","sepal_width",
-	"petal_length","petal_width","species")))
+stopifnot(identical(dbListFields(con,tname),names(iris)))
 # get stuff, first very convenient
 iris2 <- dbReadTable(con,tname)
 stopifnot(identical(dim(iris),dim(iris2)))
 
 
 # then manually
-res <- dbSendQuery(con,"SELECT species, sepal_width FROM monetdbtest")
+res <- dbSendQuery(con,"SELECT \"Species\", \"Sepal.Width\" FROM monetdbtest")
 stopifnot(dbIsValid(res))
 stopifnot(identical(class(res)[[1]],"MonetDBResult"))
 stopifnot(identical(res@env$success,TRUE))
 
-stopifnot(dbColumnInfo(res)[[1,1]] == "species")
-stopifnot(dbColumnInfo(res)[[2,1]] == "sepal_width")
+stopifnot(dbColumnInfo(res)[[1,1]] == "Species")
+stopifnot(dbColumnInfo(res)[[2,1]] == "Sepal.Width")
 
 stopifnot(dbGetInfo(res)$row.count == 150 && res@env$info$rows == 150)
 
@@ -99,8 +97,7 @@ unlink(file)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 iris3 <- dbReadTable(con,tname)
 stopifnot(identical(dim(iris),dim(iris3)))
-stopifnot(identical(dbListFields(con,tname),c("sepal_length","sepal_width",
-	"petal_length","petal_width","species")))
+stopifnot(identical(dbListFields(con,tname),names(iris)))
 dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
@@ -173,20 +170,32 @@ dbRollback(conn)
 # this returns a column with esoteric type MONTH_INTERVAL
 stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as date) - cast('2015-03-01' as date)")[[1]][[1]])))
 
+# reserved words in data frame column names
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24, some.dot=12), transaction=F)
+stopifnot(dbExistsTable(conn, "evilt"))
+dbRollback(conn)
+
+# evil table from survey
+stopifnot(dbIsValid(conn))
+dbBegin(conn)
+data(api, package="survey")
+x <- apiclus1
+x$idkey <- seq( nrow( x ) )
+dbWriteTable( conn , 'x' , x , transaction=F)
+stopifnot(dbExistsTable(conn, "x"))
+dbRollback(conn)
+
+# empty result set
+stopifnot(!is.null(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0")))
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(!dbIsValid(conn))
 stopifnot(identical(dbDisconnect(con),TRUE))
 stopifnot(identical(dbDisconnect(con),TRUE))
-
-# reserved words in data frame column names
-stopifnot(dbIsValid(conn))
-dbBegin(conn)
-dbWriteTable(conn, "evilt", data.frame(year=42,month=12, day=24), transaction=F)
-stopifnot(dbExistsTable(conn, "evilt"))
-dbRollback(conn)
-
 
 #test merovingian control code
 #cannot really do this in Mtest, sorry
