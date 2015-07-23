@@ -31,7 +31,7 @@
 
 
 #define NCOLUMNS	5
-#define NROWS		9
+#define NROWS		10
 static const char *columnnames[NCOLUMNS] = {
 	"table_cat",
 	"table_schem",
@@ -75,9 +75,12 @@ static const char *tuples6[NCOLUMNS] = {
 	NULL, NULL, NULL, "SYSTEM TABLE", NULL
 };
 static const char *tuples7[NCOLUMNS] = {
-	NULL, NULL, NULL, "TABLE", NULL
+	NULL, NULL, NULL, "SYSTEM VIEW", NULL
 };
 static const char *tuples8[NCOLUMNS] = {
+	NULL, NULL, NULL, "TABLE", NULL
+};
+static const char *tuples9[NCOLUMNS] = {
 	NULL, NULL, NULL, "VIEW", NULL
 };
 static const char **tuples[NROWS] = {
@@ -89,7 +92,8 @@ static const char **tuples[NROWS] = {
 	tuples5,
 	tuples6,
 	tuples7,
-	tuples8
+	tuples8,
+	tuples9
 };
 
 static SQLRETURN
@@ -234,11 +238,6 @@ MNDBTables(ODBCStmt *stmt,
 					"t.temporary = 0 and "
 					"s.name <> 'tmp' "
 				   "then cast('TABLE' as varchar(20)) "
-				   "when t.type = 20 and "
-					"t.system = false and "
-					"t.temporary = 1 and "
-					"s.name = 'tmp' "
-				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
 				   "when t.type = 10 and "
 					"t.system = true and "
 					"t.temporary = 0 "
@@ -257,6 +256,11 @@ MNDBTables(ODBCStmt *stmt,
 				   "then cast('REMOTE TABLE' as varchar(20)) "
 				   "when t.type = 6 "
 				   "then cast('REPLICA TABLE' as varchar(20)) "
+				   "when t.type = 20 and "
+					"t.system = false and "
+					"t.temporary = 1 and "
+					"s.name = 'tmp' "
+				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
 				   "when t.type = 30 and "
 					"t.system = false and "
 					"t.temporary = 1 "
