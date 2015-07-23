@@ -67,7 +67,9 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
+#ifdef HAVE_PROFILER
 #include "profiler.h"
+#endif
 
 enum modes {
 	MAL,
@@ -1966,7 +1968,9 @@ doFileBulk(Mapi mid, FILE *fp)
 		}
 
 		assert(hdl != NULL);
+#ifdef HAVE_PROFILER
 		profiler_arm();
+#endif
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2756,8 +2760,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
+#ifdef HAVE_PROFILER
 			profiler_arm();
-
+#endif
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2897,7 +2902,9 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
+#ifdef HAVE_PROFILER
 	fprintf(stderr, " -P          | --progress         show progress bar\n");
+#endif
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -3267,7 +3274,7 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-
+#ifdef HAVE_PROFILER
 	// switch on progress bars
 	if (mode == SQL && progress) {
 		char* buf = malloc(100);
@@ -3280,7 +3287,9 @@ main(int argc, char **argv)
 		sprintf(buf, "CALL profiler_stethoscope(0)");
 		mapi_query(mid, buf);
 	}
-
+#else
+	fprintf(stderr, "No progress bar in this version of mclient. Sorry.\n");
+#endif
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3351,7 +3360,9 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
+#ifdef HAVE_PROFILER
 		profiler_arm();
+#endif
 		c = doRequest(mid, command);
 		timerEnd();
 	}
