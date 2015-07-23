@@ -10,6 +10,8 @@ privs2
 test_privs2_p1
 test_privs2_p2
 createSetUp
+withGrantOption
+columnRights
 changePasswordUser
 renameUser
 changeSchemaUser
@@ -19,4 +21,5 @@ grantRevokeAndGrantAgain.Bug-3765
 grantMonetdbToRegularUser.Bug-3771
 grantMonetdbToSchemaOwner.Bug-3771
 grantRole.Bug-3772
+grantMonetdb
 dropManyUsers.Bug-3764
