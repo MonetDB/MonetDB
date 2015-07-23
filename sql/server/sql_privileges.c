@@ -288,7 +288,7 @@ table_privs(mvc *m, sql_table *t, int priv)
 
 
 static int
-role_granting_privs(mvc *m, int role_rid, int role_id, int grantor_id)
+role_granting_privs(mvc *m, oid role_rid, int role_id, int grantor_id)
 {
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *auths = find_sql_table(sys, "auths");
