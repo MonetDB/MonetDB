@@ -67,10 +67,6 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
-#ifdef HAVE_PROFILER
-#include "profiler.h"
-#endif
-
 enum modes {
 	MAL,
 	SQL,
@@ -1968,9 +1964,6 @@ doFileBulk(Mapi mid, FILE *fp)
 		}
 
 		assert(hdl != NULL);
-#ifdef HAVE_PROFILER
-		profiler_arm();
-#endif
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2760,9 +2753,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
-#ifdef HAVE_PROFILER
-			profiler_arm();
-#endif
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2902,9 +2892,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
-#ifdef HAVE_PROFILER
-	fprintf(stderr, " -P          | --progress         show progress bar\n");
-#endif
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -2931,7 +2918,6 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
-	int progress = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
@@ -2957,7 +2943,6 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
-		{"progress", 0, 0, 'P'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 #if 0
@@ -3160,9 +3145,6 @@ main(int argc, char **argv)
 		case 'z':
 			settz = 0;
 			break;
-		case 'P':
-			progress = 1;
-			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3274,22 +3256,6 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-#ifdef HAVE_PROFILER
-	// switch on progress bars
-	if (mode == SQL && progress) {
-		char* buf = malloc(100);
-		int port = profiler_start();
-		if (port < 0) {
-			fprintf(stderr, "Unable to listen for UDP profiling messages\n");
-		}
-		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
-		mapi_query(mid, buf);
-		sprintf(buf, "CALL profiler_stethoscope(0)");
-		mapi_query(mid, buf);
-	}
-#else
-	fprintf(stderr, "No progress bar in this version of mclient. Sorry.\n");
-#endif
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3360,9 +3326,6 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
-#ifdef HAVE_PROFILER
-		profiler_arm();
-#endif
 		c = doRequest(mid, command);
 		timerEnd();
 	}
