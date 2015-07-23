@@ -2,7 +2,7 @@
 dir.create(unlist(strsplit(Sys.getenv("R_LIBS_USER"), .Platform$path.sep))[1L], recursive = TRUE, showWarnings=F)
 
 # autoinstall DBI and digest, we need those to install MonetDB.R
-dd <- capture.output( suppressMessages ( {
+dd <- capture.output(suppressMessages(suppressWarnings({
 	(function(lp) {
 	np <- lp[!(lp %in% installed.packages()[,"Package"])]
 	repos <- "http://cran.rstudio.com/"
@@ -10,5 +10,4 @@ dd <- capture.output( suppressMessages ( {
 	update.packages(repos=repos, ask=F, oldPkgs=lp, type="source", quiet=T)
 	x <- lapply(lp,function(x){library(x,character.only=TRUE,quietly=T)}) 
 	})(c("DBI", "digest"))
-}))
-
+})))

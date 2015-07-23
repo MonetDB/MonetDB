@@ -615,6 +615,12 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
 		int bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
+		if (bat_type == TYPE_any || bat_type == TYPE_void) {
+			getArgType(mb,pci,i) = bat_type;
+			msg = createException(MAL, "rapi.eval",
+									  "Unknown return value, possibly projecting with no parameters.");
+			goto wrapup;
+		}
 		cnt = (BUN) ret_rows;
 
 		// hand over the vector into a BAT
