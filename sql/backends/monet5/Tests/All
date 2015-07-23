@@ -12,6 +12,8 @@ HAVE_LIBR?rapi07
 HAVE_LIBR?rapi09
 HAVE_LIBR?rapi10
 HAVE_LIBR?rapi12
+HAVE_LIBR?rapi13
+HAVE_LIBR?rapi14
 
 # should this work?
 #inlineUDF
