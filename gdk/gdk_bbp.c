@@ -1033,7 +1033,6 @@ void
 BBPinit(void)
 {
 	FILE *fp = NULL;
-	char buf[4096];
 	struct stat st;
 	int min_stamp = 0x7fffffff, max_stamp = 0;
 	bat bid;
@@ -1057,20 +1056,17 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
 
 	/* try to obtain a BBP.dir from bakdir */
-	snprintf(buf, sizeof(buf), "%s%cBBP.dir", BAKDIR, DIR_SEP);
 
-	if (stat(buf, &st) == 0) {
+	if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) == 0) {
 		/* backup exists; *must* use it */
-		snprintf(buf, sizeof(buf), "%s%cBBP.dir", BATDIR, DIR_SEP);
-		if (recover_dir(0, stat(buf, &st) == 0) != GDK_SUCCEED)
+		if (recover_dir(0, stat(BATDIR DIR_SEP_STR "BBP.dir", &st) == 0) != GDK_SUCCEED)
 			goto bailout;
 		if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL)
 			GDKfatal("BBPinit: cannot open recovered BBP.dir.");
 	} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 		/* there was no BBP.dir either. Panic! try to use a
 		 * BBP.bak */
-		snprintf(buf, sizeof(buf), "%s%cBBP.bak", BAKDIR, DIR_SEP);
-		if (stat(buf, &st) < 0) {
+		if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) < 0) {
 			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 			 * create a new one */
 			IODEBUG fprintf(stderr, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
@@ -1342,10 +1338,8 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	/* we need to copy the backup BBP.dir to the new, but
 	 * replacing the entries for the subcommitted bats */
-	snprintf(buf, sizeof(buf), "%s%cBBP.dir", SUBDIR, DIR_SEP);
-	if ((obbpf = fopen(buf, "r")) == NULL) {
-		snprintf(buf, sizeof(buf), "%s%cBBP.dir", BAKDIR, DIR_SEP);
-		if ((obbpf = fopen(buf, "r")) == NULL)
+	if ((obbpf = fopen(SUBDIR DIR_SEP_STR "BBP.dir", "r")) == NULL) {
+		if ((obbpf = fopen(BAKDIR DIR_SEP_STR "BBP.dir", "r")) == NULL)
 			GDKfatal("BBPdir: subcommit attempted without backup BBP.dir.");
 	}
 	/* read first three lines */
