@@ -195,6 +195,21 @@ no-auto)
 	;;
 esac
 
+dft_embedded=no
+AC_ARG_ENABLE(embedded,
+	AS_HELP_STRING([--enable-embedded],
+		[enable support for running MonetDB as a library (default=no)]),
+	enable_embedded=$enableval,
+	enable_embedded=$dft_embedded)
+AM_CONDITIONAL(HAVE_EMBEDDED, test x$enable_embedded != xno)
+
+if test "x$enable_embedded" != xno; then
+	AC_DEFINE(HAVE_EMBEDDED, 1, [Support for MonetDB as a library])
+fi
+AM_CONDITIONAL(HAVE_EMBEDDED, test x"$enable_embedded" != xno)
+
+
+
 dft_microhttpd=no
 AC_ARG_ENABLE(microhttpd,
 	AS_HELP_STRING([--enable-microhttpd],
@@ -2257,6 +2272,7 @@ if test "x$enable_rintegration" != xno; then
 fi
 AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
 
+
 # ODBC, only used by ODBC driver
 if test "x$enable_odbc" != xno; then
 	have_unixodbc=auto
@@ -2926,6 +2942,7 @@ AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
+AM_CONDITIONAL(HAVE_EMBEDDED, test "x$enable_embedded" = xyes)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
 AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
@@ -3301,6 +3318,7 @@ for comp in \
 	'debug       ' \
 	'assert      ' \
 	'optimize    ' \
+	'embedded    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
