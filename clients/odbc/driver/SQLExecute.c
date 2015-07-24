@@ -443,8 +443,7 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	snprintf(query, querylen, "execute %d (", stmt->queryid);
-	querypos = strlen(query);
+	querypos = snprintf(query, querylen, "execute %d (", stmt->queryid);
 	/* XXX fill in parameter values */
 	if (desc->sql_desc_bind_offset_ptr)
 		offset = *desc->sql_desc_bind_offset_ptr;
