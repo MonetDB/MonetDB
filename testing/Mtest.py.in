@@ -2693,7 +2693,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if len(TST) <= l:
                 s = '%-*s ' % (l, TST)
             else:
-                s = '%s...%s ' % (TST[:l/2 - 2], TST[-(l/2-1):])
+                s = '%s...%s ' % (TST[:l/2 - 2], TST[l/2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
