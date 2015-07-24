@@ -8,4 +8,3 @@ dd <- capture.output(suppressMessages(suppressWarnings({
 	x <- lapply(lp,function(x){library(x,character.only=TRUE,quietly=T)}) 
 	})(c('Rcpp', 'dplyr','survey','sqlsurvey','Lahman','nycflights13'))
 })))
-
