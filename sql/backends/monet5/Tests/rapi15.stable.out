@@ -1,0 +1,93 @@
+stdout of test 'rapi15` in directory 'sql/backends/monet5` itself:
+
+
+# 11:25:57 >  
+# 11:25:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30670" "--set" "mapi_usock=/var/tmp/mtest-37032/.s.monetdb.30670" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:25:57 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-apple-darwin14.4.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:30670/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-37032/.s.monetdb.30670
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 11:25:57 >  
+# 11:25:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-37032" "--port=30670"
+# 11:25:57 >  
+
+#start transaction;
+#create table "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" ("Consumer Number" INTEGER,"1-Disloyalty" varchar(250),"2-Age" varchar(250),"3-Amount transferred" INTEGER,"4-Gender" varchar(250),"5-Citiz enship" varchar(250),"6- Profession" varchar(250),"7-City" varchar(250),"8-1 NC Billboard" varchar(250),"8-2 NC Friends" varchar(250),"8-3 NC Magazine" varchar(250),"8-4 NC Others" varchar(250),"9-Score" decimal(18,3),"10- Type of operation" varchar(250),"11-1 Welcoming" INTEGER,"11-2 Waiting time" INTEGER,"11-3 Time to finish request" INTEGER,"11-4 Fees" INTEGER,"11-5 Courtesy of employees" INTEGER,"11-6 Branch layout" INTEGER,"11-7 Attention to special requests" INTEGER,"12- Total time for service" decimal(18,3),"13- Distance from POS" decimal(18,3),"14- Weight" INTEGER);
+#COPY 233 offset 2 records INTO "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" FROM stdin USING DELIMITERS ',','\n','"' null as '';
+#,,,,Female ,Citizen,Employee,Suburbs,No,No,No,No,,International,6,5,3,6,6,2,2,10.27,1.5,75,
+#2,Loyal,[21-30],3,Male ,Resident,Employee,Cities,No,Yes,No,No,9.51,Local,2,6,8,2,2,1,4,10.44,1.8,78,
+#3,Loyal,[21-30],3,Male,Resident,Employee,Suburbs,Yes,No,Yes,No,6.67,Local,5,2,8,4,7,8,3,14.34,2.2,75,
+#4,Disloyal,[21-30],3,Male,Citizen,B. Owner,Cities,No,No,No,No,4.74,Local,4,8,3,6,3,4,6,6.92,0.8,81,
+[ 233	]
+#CREATE AGGREGATE "ttest2samples"(arg1 double, arg2 varchar(250)) RETURNS double LANGUAGE R { 
+#unlist(lapply(split(data.frame(arg1, arg2, stringsAsFactors=F), aggr_group), function(x) {round(t.test(arg1 ~ arg2, data=x)$p.value,2)}))
+#};
+#CREATE AGGREGATE "ttest2samplesStatistic"(arg1 double, arg2 varchar(250)) RETURNS double LANGUAGE R { 
+#unlist(lapply(split(data.frame(arg1, arg2, stringsAsFactors=F), aggr_group), function(x) {round(t.test(arg1 ~ arg2, data=x)$statistic,2)}))
+#};
+#update "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" set "4-Gender"=trim("4-Gender");
+[ 233	]
+#select "2-Age","ttest2samplesStatistic"("9-Score", "4-Gender") as "stat", "ttest2samples"("9-Score", "4-Gender") as "pvalue" from "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea"  group by  "2-Age";
+% sys.Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea,	sys.L1,	sys.L2 # table_name
+% 2-Age,	stat,	pvalue # name
+% varchar,	double,	double # type
+% 7,	24,	24 # length
+[ "[21-30]",	-0.9,	0.37	]
+[ "[10-20]",	-2.42,	0.02	]
+[ "> 30",	-1.36,	0.18	]
+#rollback;
+
+# 11:25:57 >  
+# 11:25:57 >  "Done."
+# 11:25:57 >  
+

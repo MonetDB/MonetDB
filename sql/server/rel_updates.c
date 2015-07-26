@@ -858,6 +858,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		if (opt_where) {
 			int status = sql->session->status;
 	
+			if (!table_privs(sql, t, PRIV_SELECT)) 
+				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
@@ -1029,6 +1031,9 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 
 		if (opt_where) {
 			int status = sql->session->status;
+
+			if (!table_privs(sql, t, PRIV_SELECT)) 
+				return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 

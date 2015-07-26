@@ -65,13 +65,6 @@ Ready.
 # 00:02:47 >  
 
 #create table t1 (i int);
-#create temp table tmp (like t1);
-#select * from tmp;
-% sys.t1 # table_name
-% i # name
-% int # type
-% 1 # length
-#drop table tmp;
 #drop table t1;
 
 

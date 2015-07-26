@@ -67,8 +67,6 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
-#include "profiler.h"
-
 enum modes {
 	MAL,
 	SQL,
@@ -1966,7 +1964,6 @@ doFileBulk(Mapi mid, FILE *fp)
 		}
 
 		assert(hdl != NULL);
-		profiler_arm();
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2508,6 +2505,10 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								       "CASE o.type "
 									    "WHEN 0 THEN 'TABLE' "
 									    "WHEN 1 THEN 'VIEW' "
+									    "WHEN 3 THEN 'MERGE TABLE' "
+									    "WHEN 4 THEN 'STREAM TABLE' "
+									    "WHEN 5 THEN 'REMOTE TABLE' "
+									    "WHEN 6 THEN 'REPLICA TABLE' "
 									    "ELSE '' "
 								       "END) AS type, "
 								      "o.system, "
@@ -2515,13 +2516,17 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								      "CASE o.type "
 									   "WHEN 0 THEN %d "
 									   "WHEN 1 THEN %d "
+									   "WHEN 3 THEN %d "
+									   "WHEN 4 THEN %d "
+									   "WHEN 5 THEN %d "
+									   "WHEN 6 THEN %d "
 									   "ELSE 0 "
 								      "END AS ntype "
 							       "FROM sys._tables o, "
 								    "sys.schemas s "
 							       "WHERE o.schema_id = s.id AND "
 								     "%s AND "
-								     "o.type IN (0, 1) "
+								     "o.type IN (0, 1, 3, 4, 5, 6) "
 							       "UNION "
 							       "SELECT o.name, "
 								      "'SEQUENCE' AS type, "
@@ -2546,7 +2551,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							 "WHERE ntype & %u > 0 "
 							       "%s "
 							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW,
+							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,
@@ -2748,8 +2753,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
-			profiler_arm();
-
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2889,7 +2892,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
-	fprintf(stderr, " -P          | --progress         show progress bar\n");
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -2916,7 +2918,6 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
-	int progress = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
@@ -2942,7 +2943,6 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
-		{"progress", 0, 0, 'P'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 #if 0
@@ -3145,9 +3145,6 @@ main(int argc, char **argv)
 		case 'z':
 			settz = 0;
 			break;
-		case 'P':
-			progress = 1;
-			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3259,20 +3256,6 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-
-	// switch on progress bars
-	if (mode == SQL && progress) {
-		char* buf = malloc(100);
-		int port = profiler_start();
-		if (port < 0) {
-			fprintf(stderr, "Unable to listen for UDP profiling messages\n");
-		}
-		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
-		mapi_query(mid, buf);
-		sprintf(buf, "CALL profiler_stethoscope(0)");
-		mapi_query(mid, buf);
-	}
-
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3343,7 +3326,6 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
-		profiler_arm();
 		c = doRequest(mid, command);
 		timerEnd();
 	}
