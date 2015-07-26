@@ -308,6 +308,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_FRAME);
+	MOSsetCnt(blk,0);
 
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable

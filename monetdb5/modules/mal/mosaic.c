@@ -376,6 +376,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				MOSsetTag(task->blk,MOSAIC_EOL);
+				MOSsetCnt(task->blk,0);
 			}
 			break;
 		case MOSAIC_NONE:
@@ -386,6 +387,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 				// always start with an EOL block
 				task->dst = ((char*) task->blk)+ MosaicBlkSize;
 				MOSsetTag(task->blk,MOSAIC_EOL);
+				MOSsetCnt(task->blk,0);
 			}
 		}
 		// apply the compression to a chunk

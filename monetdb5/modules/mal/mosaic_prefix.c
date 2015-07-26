@@ -322,7 +322,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				compress(base,j,rbits,m);
 				hdr->checksum.sumbte += val;
 			}
-			MOSincCnt(blk,j);
+			MOSsetCnt(blk,j);
 		}
 		break;
 	case 2:
@@ -357,7 +357,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				compress(base,j,rbits,m);
 				hdr->checksum.sumsht += val;
 			}
-			MOSincCnt(blk,j);
+			MOSsetCnt(blk,j);
 		}
 		break;
 	case 4:
@@ -393,7 +393,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				compress(base,j,rbits,m);
 				hdr->checksum.sumint += val;
 			}
-			MOSincCnt(blk,j);
+			MOSsetCnt(blk,j);
 		}
 		break;
 	case 8:
@@ -429,7 +429,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				compress(base,j,rbits,m);
 				hdr->checksum.sumlng += val;
 			}
-			MOSincCnt(blk,j);
+			MOSsetCnt(blk,j);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
