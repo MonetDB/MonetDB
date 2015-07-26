@@ -1,6 +1,5 @@
 # Range compressions
 
-
 b:= bat.new(:oid,:int);
 bat.append(b,0);
 bat.append(b,2);

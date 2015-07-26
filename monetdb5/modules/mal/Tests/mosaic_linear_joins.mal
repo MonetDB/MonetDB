@@ -25,6 +25,7 @@ c:= bat.new(:oid,:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 bat.append(c,4@0);
+bat.append(c,7@0);
 io.print(c);
 
 #mosaic.dump(x);
@@ -39,11 +40,20 @@ bat.append(d,13);
 bat.append(d,nil:int);
 
 (jl,jr):= algebra.join(base,d);
+io.print(jl);
+io.print(jr);
 io.print(jl,jr);
 (ml,mr):= mosaic.join(x,d);
+io.print(ml);
+io.print(mr);
 io.print(ml,mr);
 
+io.printf("reverse join operands");
 (jl,jr):= algebra.join(d,base);
+io.print(jl);
+io.print(jr);
 io.print(jl,jr);
 (ml,mr):= mosaic.join(d,x);
+io.print(ml);
+io.print(mr);
 io.print(ml,mr);

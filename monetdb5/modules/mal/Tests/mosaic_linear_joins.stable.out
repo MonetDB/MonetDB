@@ -42,6 +42,7 @@ function user.main():void;
     bat.append(c,0@0);
     bat.append(c,2@0);
     bat.append(c,4@0);
+    bat.append(c,7@0);
     io.print(c);
 #mosaic.dump(x); 
     s := algebra.leftfetchjoin(c,base);
@@ -53,12 +54,21 @@ function user.main():void;
     bat.append(d,13);
     bat.append(d,nil:int);
     (jl,jr) := algebra.join(base,d);
+    io.print(jl);
+    io.print(jr);
     io.print(jl,jr);
     (ml,mr) := mosaic.join(x,d);
+    io.print(ml);
+    io.print(mr);
     io.print(ml,mr);
+    io.printf("reverse join operands");
     (jl,jr) := algebra.join(d,base);
+    io.print(jl);
+    io.print(jr);
     io.print(jl,jr);
     (ml,mr) := mosaic.join(d,x);
+    io.print(ml);
+    io.print(mr);
     io.print(ml,mr);
 end user.main;
 #--------------------------#
@@ -114,6 +124,7 @@ end user.main;
 [ 0@0,	0@0  ]
 [ 1@0,	2@0  ]
 [ 2@0,	4@0  ]
+[ 3@0,	7@0  ]
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -121,6 +132,7 @@ end user.main;
 [ 0@0,	0  ]
 [ 1@0,	4  ]
 [ 2@0,	8  ]
+[ 3@0,	4  ]
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -128,6 +140,21 @@ end user.main;
 [ 0@0,	0  ]
 [ 1@0,	4  ]
 [ 2@0,	8  ]
+[ 3@0,	4  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
+[ 2@0,	10@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	1@0  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
@@ -136,12 +163,40 @@ end user.main;
 [ 1@0,	7@0,	0@0  ]
 [ 2@0,	10@0,	1@0  ]
 #--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
+[ 2@0,	10@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	1@0  ]
+#--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
 #--------------------------#
 [ 0@0,	2@0,	0@0  ]
 [ 1@0,	7@0,	0@0  ]
 [ 2@0,	10@0,	1@0  ]
+reverse join operands#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
+[ 2@0,	10@0  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
@@ -149,6 +204,20 @@ end user.main;
 [ 0@0,	0@0,	2@0  ]
 [ 1@0,	0@0,	7@0  ]
 [ 2@0,	1@0,	10@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+[ 2@0,	1@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
+[ 2@0,	10@0  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type

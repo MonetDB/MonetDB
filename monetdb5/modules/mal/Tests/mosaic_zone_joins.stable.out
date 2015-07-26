@@ -46,8 +46,12 @@ function user.main():void;
     (ml,mr) := mosaic.join(x,d);
     io.print(ml,mr);
     (jl,jr) := algebra.join(d,base);
+    io.print(jl);
+    io.print(jr);
     io.print(jl,jr);
     (ml,mr) := mosaic.join(d,x);
+    io.print(ml);
+    io.print(mr);
     io.print(ml,mr);
 end user.main;
 #--------------------------#
@@ -102,11 +106,35 @@ end user.main;
 [ 0@0,	2@0,	0@0  ]
 [ 1@0,	5@0,	0@0  ]
 #--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
+#--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
 #--------------------------#
 [ 0@0,	0@0,	2@0  ]
 [ 1@0,	0@0,	5@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	2@0  ]
+[ 1@0,	5@0  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type
