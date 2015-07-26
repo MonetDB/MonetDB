@@ -2131,7 +2131,7 @@ mapi_mapi(const char *host, int port, const char *username,
 				while ((e = readdir(d)) != NULL) {
 					if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
 						continue;
-					if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= sizeof(buf))
+					if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
 						continue; /* ignore long name */
 					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
 						socks[i++] = atoi(e->d_name + 11);
