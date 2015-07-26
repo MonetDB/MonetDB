@@ -78,13 +78,13 @@ typedef struct MOSAICHEADER{
 	lng elms[MOSAIC_METHODS];	
 	flt factor;
 	int top;
-	oid oidbase[MOSAICINDEX];
+	oid oidbase[MOSAICINDEX];	// to speedup localization
 	BUN offset[MOSAICINDEX];
-	bte mask, bits, framebits;
-	int dictsize;
-	int framesize;
+	bte mask, bits, framebits;	// global compression type properties
+	int dictsize;		// used by dictionary compression
+	int framesize;		// used by frame compression
 #ifdef HAVE_HGE
-	hge dict[256];
+	hge dict[256];		// global dictionary
 	hge frame[256];
 #else
 	lng dict[256];
@@ -93,14 +93,15 @@ typedef struct MOSAICHEADER{
 } * MosaicHdr;
 
 // bit stuffed header block, currently 4 bytes wide
-#define MOSshift 24
-typedef int *MosaicBlk;
+typedef struct{
+	unsigned int tag:8, cnt:24;
+} *MosaicBlk;
 
-#define MOSgetTag(Blk) (*(Blk)>>MOSshift)
-#define MOSsetTag(Blk,Tag)  *Blk = (Tag) <<MOSshift
-#define MOSsetCnt(Blk,I) *Blk = I & ~(0377<<MOSshift)
-#define MOSgetCnt(Blk) (BUN)(*(Blk) & ~(0377<<MOSshift))
-#define MOSincCnt(Blk,I) *(Blk)= *(Blk)+I
+#define MOSgetTag(Blk) (Blk->tag)
+#define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
+#define MOSsetCnt(Blk,I) (assert(I < (1<<23)), (Blk)->cnt = I)
+#define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
+#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < (1<<23)), (Blk)->cnt+= I)
 
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
@@ -109,7 +110,7 @@ typedef int *MosaicBlk;
 	 ((SZ) +  ((SZ) % sizeof(TYPE)? sizeof(TYPE) - ((SZ)%sizeof(TYPE)) : 0))
 
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),lng)
-#define MosaicBlkSize  wordaligned(sizeof(lng),lng)
+#define MosaicBlkSize  wordaligned(sizeof(MosaicBlk *),lng)
 
 
 typedef struct MOSTASK{
@@ -137,6 +138,7 @@ typedef struct MOSTASK{
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
 	lng	n;			// element count in candidate list
+	lng cnt;		// elements in result set
 
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 

@@ -170,7 +170,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	if ( *v != val)\
 		break;\
 	hdr->checksum.sum##TYPE += i * val;\
-	MOSincCnt(blk, i);\
+	MOSsetCnt(blk, i);\
 	task->dst +=  sizeof(TYPE);\
 }
 
@@ -205,7 +205,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 			if ( *v != val)
 				break;
 			hdr->checksum.sumint += i * val;
-			MOSincCnt(blk,i);
+			MOSsetCnt(blk,i);
 			task->dst +=  sizeof(int);
 		}
 		break;
@@ -593,6 +593,7 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		*v++ = val;\
 		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) v;\
 }
@@ -629,6 +630,7 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 				task->n--;
 			}
 			task->src = (char*) v;
+			task->cnt++;
 		}
 		break;
 	case  TYPE_str:

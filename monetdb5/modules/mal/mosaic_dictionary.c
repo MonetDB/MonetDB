@@ -859,6 +859,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 		dictdecompress(i);\
 		*v++ = dict[j];\
 		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) v;\
 }
@@ -896,6 +897,7 @@ MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
 				dictdecompress(i);
 				*v++ = dict[j];
 				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) v;
 		}

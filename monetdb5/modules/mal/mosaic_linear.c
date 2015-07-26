@@ -183,14 +183,15 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit():task->stop;\
 	*(TYPE*) linear_base(blk) = val;\
 	*(TYPE*) linear_step(task,blk) = step;\
-	for(i=1; i<limit; i++, val = *v++)\
-	if (  *v - val != step)\
-		break;\
-	else hdr->checksum.sum##TYPE += val;\
-	MOSincCnt(blk, i);\
-	task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);\
+	for(i=1; i<limit; i++, val = *v++){\
+		hdr->checksum.sum##TYPE += val;\
+		if (  *v - val != step)\
+			break;\
+	} MOSsetCnt(blk, i);\
+	task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TYPE),TYPE);\
 }
 
+	//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
 void
 MOScompress_linear(Client cntxt, MOStask task)
 {
@@ -219,12 +220,14 @@ MOScompress_linear(Client cntxt, MOStask task)
 			BUN limit = task->stop - task->start >= task->start + MOSlimit()? MOSlimit():task->stop;
 			*(int*) linear_base(blk) = val;
 			*(int*) linear_step(task,blk) = step;
-			for(i=1; i<limit; i++, val = *v++)
-			if ( *v-val != step)
-				break;
-			else hdr->checksum.sumint += val;
-			MOSincCnt(blk,i);
-			task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
+			for(i=1; i<limit; i++, val = *v++){
+				hdr->checksum.sumint += val;
+				if ( *v-val != step)
+					break;
+			}
+			MOSsetCnt(blk,i);
+			//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(int);
+			task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(int),int);\
 		}
 		break;
 	case  TYPE_str:
@@ -279,7 +282,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++){
 				((int*)task->src)[i] = val + i * step;
-				hdr->checksum2.sumint += (val + i *step);
+				hdr->checksum2.sumint += ((int*)task->src)[i];
 			}
 			task->src += i * sizeof(int);
 		}
@@ -625,7 +628,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	for(; first < last; first++, val+=step){\
 		MOSskipit();\
 		*v++ = val;\
-		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) v;\
 }
@@ -661,7 +664,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 			for(; first < last; first++,val+=step){
 				MOSskipit();
 				*v++ = val;
-				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) v;
 		}
@@ -688,7 +691,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 				for(; first < last; first++, val+=step){
 					MOSskipit();
 					*v++ = val;
-					task->n--;
+					task->cnt++;
 				}
 				task->src = (char*) v;
 			}
@@ -739,11 +742,12 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 			int step = *(int*) linear_step(task,blk);
 			for(n = task->elm, o = 0; n -- > 0; w++,o++){
 				int val = *(int*) linear_base(blk) ;
-				for(oo= (oid) first; oo < (oid) last; val+=step, oo++)
+				for(oo= (oid) first; oo < (oid) last; val+= step, oo++){
 					if ( *w == val){
 						BUNappend(task->lbat, &oo, FALSE);
 						BUNappend(task->rbat, &o, FALSE);
 					}
+				}
 			}
 		}
 		break;

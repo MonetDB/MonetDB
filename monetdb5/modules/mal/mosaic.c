@@ -180,6 +180,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
 
 #define MOSnewBlk(TASK)\
 			MOSsetTag(TASK->blk,MOSAIC_EOL);\
+			MOSsetCnt(TASK->blk,0);\
 			TASK->dst = ((char*) TASK->blk)+ MosaicBlkSize;
 
 str
@@ -262,6 +263,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		task->timer = GDKusec();
 
 		MOSinit(task,bcompress);
+		task->blk->cnt= 0;
 		MOSinitHeader(task);
 
 		// claim the server for exclusive use
@@ -289,6 +291,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		task->timer = GDKusec();
 
 		MOSinit(task,bsrc);
+		task->blk->cnt= 0;
 		MOSinitHeader(task);
 	}
 	MOScreateframe(cntxt,task);
@@ -1015,19 +1018,21 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( !isCompressed(*rid))
 		return ALGleftfetchjoin(ret,lid,rid);
 
-	bl = BATdescriptor(*lid);
-	if( bl == NULL)
-		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
-
 	br = BATdescriptor(*rid);
 	if( br == NULL){
-		BBPunfix(*rid);
 		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
 	}
 	if (isVIEWCOMBINE(br)){
 		BBPunfix(*rid);
 		throw(MAL,"mosaic.leftfetchjoin","compressed view");
 	}
+
+	bl = BATdescriptor(*lid);
+	if( bl == NULL){
+		BBPunfix(*rid);
+		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+	}
+
 	cnt = BATcount(bl);
 	bn = BATnew(TYPE_void,br->ttype, cnt, TRANSIENT);
 	if ( bn == NULL){
@@ -1045,10 +1050,10 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPunfix(bl->batCacheid);
-		BBPunfix(br->batCacheid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
 		GDKfree(task);
-		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.leftfetchjoin", RUNTIME_OBJECT_MISSING);
 	}
 	MOSinit(task,br);
 	task->src = (char*) Tloc(bn,BUNfirst(bn));
@@ -1114,7 +1119,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 
-	BATsetcount(bn,cnt);
+	BATsetcount(bn,task->cnt);
 	bn->hdense = 1;
 	bn->hseqbase = 0;
 	bn->hkey = 1;
@@ -1182,12 +1187,12 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( bl->T->heap.compressed){
 		MOSinit(task,bl);
-		task->elm = BATcount(br);
-		task->src= Tloc(br,BUNfirst(br));
+		//task->elm = BATcount(br);
+		//task->src= Tloc(br,BUNfirst(br));
 	} else {
 		MOSinit(task,br);
-		task->elm = BATcount(bl);
-		task->src= Tloc(bl,BUNfirst(bl));
+		//task->elm = BATcount(bl);
+		//task->src= Tloc(bl,BUNfirst(bl));
 		swapped=1;
 	}
 	task->lbat = bln;
@@ -1207,6 +1212,13 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
+	if ( bl->T->heap.compressed){
+		task->elm = BATcount(br);
+		task->src= Tloc(br,BUNfirst(br));
+	} else {
+		task->elm = BATcount(bl);
+		task->src= Tloc(bl,BUNfirst(bl));
+	}
 	// loop thru all the chunks and collect the results
 	while(task->blk )
 		switch(MOSgetTag(task->blk)){

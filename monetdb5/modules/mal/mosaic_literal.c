@@ -88,11 +88,9 @@ MOScompress_literal(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
-	BUN cnt = MOSgetCnt(blk);
 
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_NONE);
-	MOSsetCnt(blk,cnt);
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_bte: LITERALcompress(bte); break ;
@@ -559,6 +557,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		*v++ = *val;\
 		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) v;\
 }
@@ -592,6 +591,7 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 				MOSskipit();
 				*v++ = *val;
 				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) v;
 		}

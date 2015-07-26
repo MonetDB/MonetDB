@@ -151,7 +151,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *v;\
 	}\
-	MOSincCnt(blk,i);\
+	MOSsetCnt(blk,i);\
 }
 
 // rather expensive simple value non-compressed store
@@ -188,7 +188,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 				*(bte*)task->dst++ = (bte) delta;
 				val = *v;
 			}
-			MOSincCnt(blk,i);
+			MOSsetCnt(blk,i);
 		}
 		break;
 	case  TYPE_str:
@@ -647,6 +647,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		*v++ = val;\
 		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) v;\
 }
@@ -679,6 +680,7 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 				MOSskipit();
 				*v++ = val;
 				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) v;
 		}

@@ -961,6 +961,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 		value = (TPE) v;\
 		*r++ = value;\
 		task->n--;\
+		task->cnt++;\
 	}\
 	task->src = (char*) r;\
 }
@@ -1008,6 +1009,7 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 				value = (int) v;
 				*r++ = value;
 				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) r;
 		}
