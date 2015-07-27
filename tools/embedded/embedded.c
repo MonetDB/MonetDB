@@ -144,14 +144,16 @@ void monetdb_cleanup_result(void* output) {
 SEXP monetdb_query_R(SEXP query) {
 	SEXP retlist = R_NilValue;
 	res_table* output = monetdb_query((char*)CHAR(STRING_ELT(query, 0)));
-	SEXP varvalue = R_NilValue;
+	SEXP names, varvalue = R_NilValue;
 	if (output && output->nr_cols > 0) {
 		int i;
 		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
+		names = PROTECT(NEW_STRING(output->nr_cols));
 
 		for (i = 0; i < output->nr_cols; i++) {
 			res_col col = output->cols[i];
 			BAT* b = BATdescriptor(col.b);
+			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 
 			switch (ATOMstorage(getColumnType(b->T->type))) {
 				case TYPE_bte:
@@ -190,14 +192,14 @@ SEXP monetdb_query_R(SEXP query) {
 				default:
 					// no clue what type to consider
 					fprintf(stderr, "unknown argument type");
-					// TODO: cleanup result set
 					return NULL;
 			}
 
 			SET_VECTOR_ELT(retlist, i, varvalue);
-			// TODO: create a separate names vector and set names (names in cols struct)
 		}
-		UNPROTECT(output->nr_cols + 1);
+		SET_NAMES(retlist, names);
+		UNPROTECT(output->nr_cols + 2);
+
 		monetdb_cleanup_result(output);
 	}
 	return retlist;
