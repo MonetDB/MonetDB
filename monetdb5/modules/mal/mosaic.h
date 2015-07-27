@@ -147,8 +147,8 @@ typedef struct MOSTASK{
 
 /* Run through a column to produce a compressed version */
 
-#ifdef _MSC_VER
-#define nextafter   _nextafter
+#ifndef HAVE_NEXTAFTERF
+#define nextafter	_nextafter
 float nextafterf(float x, float y);
 #endif
 
