@@ -1617,13 +1617,13 @@ main(int argc, char **argv)
 {
 	int i;
 	ssize_t m;
-	size_t n, len;
+	size_t n, len, buflen;
 	char *host = NULL;
 	int portnr = 0;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ], *e, *response;
+	char buf[BUFSIZ], *buffer, *e, *response;
 	FILE *trace = NULL;
 	FILE *inpfd;
 	int colormap=0;
@@ -1894,10 +1894,16 @@ main(int argc, char **argv)
 			fprintf(stderr,"Not yet implemented\n");
 		}
 		len = 0;
+		buflen = BUFSIZ;
+		buffer = malloc(buflen);
+		if( buffer == NULL){
+			fprintf(stderr,"Could not create input buffer\n");
+			exit(-1);
+		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-			buf[len + m] = 0;
-			response = buf;
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+			buffer[len + m] = 0;
+			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
 				i = eventparser(response,&event);
@@ -1908,12 +1914,22 @@ main(int argc, char **argv)
 					fprintf(trace,"%s\n",response);
 					response = e + 1;
 				}
+			/* handle the case that the line is not yet completed */
+			if( response == buffer){
+				char *new = realloc(buffer, buflen + BUFSIZ);
+				if( new == NULL){
+					fprintf(stderr,"Could not extend input buffer\n");
+					exit(-1);
+				}
+				buffer = new;
+				buflen += BUFSIZ;
+			}
 			/* handle last line in buffer */
-			if (*response) {
+			if (response != buffer && *response) {
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
-				strncpy(buf, response, len + 1);
+				strncpy(buffer, response, len + 1);
 			} else
 				len = 0;
 		}
