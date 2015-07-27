@@ -110,14 +110,14 @@ int
 main(int argc, char **argv)
 {
 	ssize_t  n;
-	size_t len;
+	size_t len, buflen;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ], *e, *response;
+	char buf[BUFSIZ], *buffer, *e, *response;
 	int line = 0;
 	FILE *trace = NULL;
 
@@ -268,11 +268,17 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create trace file\n");
 
 	len = 0;
-	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-		buf[len + n] = 0;
+	buflen = BUFSIZ;
+	buffer = (char *) malloc(buflen);
+	if( buffer == NULL){
+		fprintf(stderr,"Could not create input buffer\n");
+		exit(-1);
+	}
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+		buffer[len + n] = 0;
 		if( trace) 
-			fprintf(trace,"%s",buf);
-		response = buf;
+			fprintf(trace,"%s",buffer);
+		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			printf("%s\n", response);
@@ -281,12 +287,22 @@ main(int argc, char **argv)
 			}
 			response = e + 1;
 		}
+		/* handle the case that the line is not yet completed */
+		if( response == buffer){
+			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
+			if( new == NULL){
+				fprintf(stderr,"Could not extend input buffer\n");
+				exit(-1);
+			}
+			buffer = new;
+			buflen += BUFSIZ;
+		}
 		/* handle last line in buffer */
 		if (*response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buf, response, len + 1);
+			strncpy(buffer, response, len + 1);
 		} else
 			len = 0;
 	}

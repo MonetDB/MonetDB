@@ -499,7 +499,7 @@ get_bin_path(void)
 	 * string. */
 	if (*execn != '/') {
 		if (getcwd(buf, PATH_MAX) != NULL) {
-			snprintf(buf + strlen(buf), PATH_MAX, "/%s", execn);
+			snprintf(buf + strlen(buf), PATH_MAX - strlen(buf), "/%s", execn);
 			if (realpath(buf, _bin_path) != NULL)
 				return(_bin_path);
 		}

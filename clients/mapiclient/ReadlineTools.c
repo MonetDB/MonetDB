@@ -61,12 +61,16 @@ sql_tablename_generator(const char *text, int state)
 	static MapiHdl table_hdl;
 
 	if (!state) {
-		char query[512];
+		char *query;
 
 		seekpos = 0;
 		len = strlen(text);
-		snprintf(query, sizeof(query), "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id AND t.\"name\" like '%s%%'", text);
-		if ((table_hdl = mapi_query(_mid, query)) == NULL || mapi_error(_mid)) {
+		if ((query = malloc(len + 128)) == NULL)
+			return NULL;
+		snprintf(query, len + 128, "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id AND t.\"name\" like '%s%%'", text);
+		table_hdl = mapi_query(_mid, query);
+		free(query);
+		if (table_hdl == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -176,7 +180,7 @@ static char *mal_commands[] = {
 static int
 mal_help(int cnt, int key)
 {
-	char *name, *c, buf[512];
+	char *name, *c, *buf;
 	int seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
@@ -188,8 +192,12 @@ mal_help(int cnt, int key)
 		c--;
 	while (c > rl_line_buffer && !isspace(*c))
 		c--;
-	snprintf(buf, sizeof(buf), "manual.help(\"%s\");", c);
-	if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
+	if ((buf = malloc(strlen(c) + 20)) == NULL)
+		return 0;
+	snprintf(buf, strlen(c) + 20, "manual.help(\"%s\");", c);
+	table_hdl = mapi_query(_mid, buf);
+	free(buf);
+	if (table_hdl == NULL || mapi_error(_mid)) {
 		if (table_hdl) {
 			mapi_explain_query(table_hdl, stderr);
 			mapi_close_handle(table_hdl);
@@ -220,7 +228,7 @@ mal_command_generator(const char *text, int state)
 	static int idx;
 	static int seekpos, len, rowcount;
 	static MapiHdl table_hdl;
-	char *name, buf[512];
+	char *name, *buf;
 
 	/* we pick our own portion of the linebuffer */
 	text = rl_line_buffer + strlen(rl_line_buffer) - 1;
@@ -250,14 +258,18 @@ mal_command_generator(const char *text, int state)
 			text = c + 2;
 		while (isspace((int) *text))
 			text++;
+		if ((buf = malloc(strlen(text) + 32)) == NULL)
+			return NULL;
 		if (strchr(text, '.') == NULL)
-			snprintf(buf, sizeof(buf),
+			snprintf(buf, strlen(text) + 32,
 				 "manual.completion(\"%s.*(\");", text);
 		else
-			snprintf(buf, sizeof(buf),
+			snprintf(buf, strlen(text) + 32,
 				 "manual.completion(\"%s(\");", text);
 		seekpos = 0;
-		if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
+		table_hdl = mapi_query(_mid, buf);
+		free(buf);
+		if (table_hdl == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
