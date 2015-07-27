@@ -19,10 +19,10 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Local dictionary encoding based on 8-bits.
+ * Global dictionary encoding
  * Index value zero is not used to easy detection of filler
- * The dictionary size is correlated with the number of entries covered
- * Dictionaries bring back the size to 1 byte, which leads to limited type use and compression gains
+ * The dictionary index size is derived from the number of entries covered.
+ * It leads to a compact n-bit representation.
  * Floating points are not expected to be replicated 
  */
 

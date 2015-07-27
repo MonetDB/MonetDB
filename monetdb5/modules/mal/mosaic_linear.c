@@ -19,7 +19,8 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Range encoding framework for a single chunk
+ * Linear encoding
+ * Replace a well-behaving series by its [start,step] value.
  */
 
 #include "monetdb_config.h"

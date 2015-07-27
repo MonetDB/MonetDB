@@ -19,7 +19,7 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Byte-wise delta encoding for SHT,INT,LNG,TIMESTAMP
+ * Byte-wise delta encoding for SHT,INT,LNG, OID, WRD, STR-offsets, TIMESTAMP
  */
 
 #include "monetdb_config.h"

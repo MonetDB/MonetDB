@@ -19,7 +19,9 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Blocked bit_ prefix compression
+ * Blocked bit_prefix compression
+ * Factor out the leading bits from a series of values.
+ * The prefix size is determined by the first two non-identical values.
  */
 
 #include "monetdb_config.h"
