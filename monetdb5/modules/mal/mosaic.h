@@ -133,12 +133,11 @@ typedef struct MOSTASK{
 
 	lng  xsize,size;// original and compressed size
 	lng timer;		// compression time
-	void *min, *max;// space for zones indices
 
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
 	lng	n;			// element count in candidate list
-	lng cnt;		// elements in result set
+	BUN cnt;		// elements in result set
 
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 
