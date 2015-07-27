@@ -2505,7 +2505,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* New result set rendering infrastructure */
 
 static str
-mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_set_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res_id =getArgReference_int(stk,pci,0);
 	bat tblId= *getArgReference_bat(stk, pci,1);

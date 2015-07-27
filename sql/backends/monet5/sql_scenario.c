@@ -443,13 +443,14 @@ SQLinitClient(Client c)
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
-	schema = monet5_user_get_def_schema(m, c->user);
-	if (!schema) {
+	if (!isAdministrator(c)) {
+		schema = monet5_user_get_def_schema(m, c->user);
+		if (!schema) {
+			_DELETE(schema);
+			throw(PERMD, "SQLinitClient", "08004!schema authorization error");
+		}
 		_DELETE(schema);
-		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
-	_DELETE(schema);
-
 	/*expect SQL text first */
 	be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */

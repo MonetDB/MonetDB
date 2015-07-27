@@ -18,10 +18,18 @@
 MTSAFE
 
 INCLUDES = ../../monetdb5/mal \
+		   ../../monetdb5/modules/atoms \ 
+		   ../../monetdb5/modules/mal \ 
 		   ../../gdk \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../common/options \
+		   ../../clients/mapilib \
+		   ../../sql/include \
+		   ../../sql/server \
+		   ../../sql/common \
+		   ../../sql/storage \
+		   ../../sql/backends/monet5 \ 
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 lib_embedded  =  {
