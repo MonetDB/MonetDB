@@ -1,0 +1,23 @@
+#!/bin/sh
+cd src
+
+# TODO wget/unpack MonetDB here? Once embedded-lib is in release...
+./configure --prefix=$R_PACKAGE_DIR/install --enable-embedded  --disable-fits \
+--disable-geom --disable-rintegration --disable-gsl --disable-jdbc --disable-merocontrol \
+--disable-odbc --disable-console --disable-microhttpd --without-perl --without-python2 \
+--without-python3 --without-rubygem --without-unixodbc --without-samtools --without-sphinxclient \
+--without-geos --without-samtools
+
+ #--enable-optimize
+
+# Dirty hack, normally R would call make, but we need to also do a make install to get the libs in place. 
+# So we do it ourselves instead and then render the MonetDB makefile inert.
+make -j clean install
+echo -e "dummytarget:\n\ttrue\n" > Makefile
+cd ..
+
+# Normally, the installer would create the libs dir, but only after make, so we need to create this as well
+mkdir -p $R_PACKAGE_DIR/libs/
+
+# and finall put the embedded library where R expects it
+ln -s $R_PACKAGE_DIR/install/lib/libembedded.[0-9].* $R_PACKAGE_DIR/libs/MonetDB.so

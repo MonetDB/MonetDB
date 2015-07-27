@@ -1,0 +1,9 @@
+Package: MonetDB
+Version: 1.0.0
+Title: Connect MonetDB to R
+Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"))
+Author: Hannes Muehleisen [aut, cre]
+Maintainer: Hannes Muehleisen <hannes@cwi.nl>
+Description: Blarg.
+License: MPL (== 1.1)
+URL: http://www.monetdb.org

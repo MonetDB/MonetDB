@@ -1,3 +1,16 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2008-2015 MonetDB B.V.
+ */
+
+/*
+ * H. Muehleisen, M. Raasveldt
+ * Inverse RAPI
+ */
+
 #include <stdio.h>
 #include "monetdb_config.h"
 
@@ -25,54 +38,67 @@ SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
 typedef void (*res_table_destroy_ptr_tpe)(res_table *t);
 res_table_destroy_ptr_tpe res_table_destroy_ptr = NULL;
 
+bit monetdb_embedded_initialized = 0;
+static MT_Lock monetdb_embedded_lock;
+
+static void* lookup_function(char* lib, char* func) {
+	void *dl, *fun;
+	dl = mdlopen(lib, RTLD_NOW | RTLD_GLOBAL);
+	if (dl == NULL) {
+		return NULL;
+	}
+	fun =  dlsym(dl, func);
+	dlclose(dl);
+	return fun;
+}
+
 
 int monetdb_startup(char* dir) {
 	opt *set = NULL;
 	int setlen = 0;
-	void *dl;
+	int retval = -1;
+	char mod_path[1000];
 
-	//GDKsetenv("gdk_dbpath", dir);
-	//BBPaddfarm(dir, (1 << PERSISTENT) | (1 << TRANSIENT));
+	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
+	MT_lock_set(&monetdb_embedded_lock, "monetdb.startup");
+	if (monetdb_embedded_initialized) goto cleanup;
+
 	setlen = mo_builtin_settings(&set);
-	if (GDKinit(set, setlen) == 0) {
-		return -1;
-	}
-	msab_dbpathinit(dir);
+	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
+	if (GDKinit(set, setlen) == 0) goto cleanup;
 
-	// TODO: we should be able to set this correctly from R
-	GDKsetenv("monet_mod_path", "/Users/hannes/Library/R/3.2/library/MonetDB/install/lib/monetdb5/");
+	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
+	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
 
-	if (mal_init() != 0) {
-		return -2;
-	}
+	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
+	if (mal_init() != 0) goto cleanup;
 
-	// This dynamically looks up the SQLstatementIntern function, because the library containing it is loaded at runtime.
-	dl = mdlopen("lib_sql", RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) {
-		return -3;
-	}
-	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) dlsym(dl, "SQLstatementIntern");
-	dlclose(dl);
+	printf("# Using data directory %s\n", GDKgetenv("gdk_dbpath"));
 
-	dl = mdlopen("libstore", RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) {
-		return -3;
-	}
-	res_table_destroy_ptr = (res_table_destroy_ptr_tpe) dlsym(dl, "res_table_destroy");
-	dlclose(dl);
+	// This dynamically looks up functions, because the library containing them is loaded at runtime.
+	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql", "SQLstatementIntern");
+	res_table_destroy_ptr = (res_table_destroy_ptr_tpe) lookup_function("libstore", "res_table_destroy");
+	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) goto cleanup;
 
-	return 0;
-}
+	monetdb_embedded_initialized = true;
+	retval = 0;
 
-int monetdb_shutdown(void){
-	return 42;
+cleanup:
+	mo_free_options(set, setlen);
+	MT_lock_unset(&monetdb_embedded_lock, "monetdb.startup");
+	return retval;
 }
 
 void* monetdb_query(char* query) {
 	str res;
 	res_table* output = NULL;
 	Client c = &mal_clients[0];
+	if (!monetdb_embedded_initialized) {
+		fprintf(stderr, "! Embedded MonetDB is not initialized. Call monetdb_startup() first.\n");
+		return NULL;
+	}
+
 	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, &output);
 	if (output) {
 		return output;

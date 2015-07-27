@@ -1,0 +1,3 @@
+useDynLib(MonetDB)
+export(monetdb_startup)
+export(monetdb_query)
