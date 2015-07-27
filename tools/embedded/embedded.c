@@ -86,12 +86,6 @@ void monetdb_cleanup_result(void* output) {
 }
 
 
-#include <Rembedded.h>
-#include <Rdefines.h>
-#include <Rinternals.h>
-#include <R_ext/Parse.h>
-
-
 #define BAT_TO_INTSXP(bat,tpe,retsxp)						\
 	do {													\
 		tpe v;	size_t j;									\
@@ -119,8 +113,9 @@ void monetdb_cleanup_result(void* output) {
 	} while (0)
 
 
-void* monetdb_query_R(char* query) {
-	res_table* output = monetdb_query(query);
+SEXP monetdb_query_R(SEXP query) {
+
+	res_table* output = monetdb_query((char*)CHAR(STRING_ELT(query, 0)));
 	//SEXP varname = R_NilValue;
 	SEXP varvalue = R_NilValue;
 	if (output) {
@@ -172,10 +167,19 @@ void* monetdb_query_R(char* query) {
 
 		}
 		monetdb_cleanup_result(output);
+	}
+	return R_NilValue;
 
-			// TODO
-			return output;
-		} else {
-			return NULL;
-		}
+}
+
+
+
+
+SEXP monetdb_startup_R(SEXP dirsexp) {
+	const char* dir = CHAR(STRING_ELT(dirsexp, 0));
+	int res = monetdb_startup((char*) dir);
+	SEXP retsxp = PROTECT(NEW_INTEGER(1));
+	INTEGER_POINTER(retsxp)[0] = res;
+	UNPROTECT(1);
+	return retsxp;
 }
