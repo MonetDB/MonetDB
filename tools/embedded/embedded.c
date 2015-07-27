@@ -41,6 +41,8 @@ int monetdb_startup(char* dir) {
 
 	// TODO: we should be able to set this correctly from R
 	GDKsetenv("monet_mod_path", "/Users/hannes/Library/R/3.2/library/MonetDB/install/lib/monetdb5/");
+	GDKsetenv("mapi_disable", "true");
+
 	if (mal_init() != 0) {
 		return -2;
 	}
@@ -71,14 +73,14 @@ void* monetdb_query(char* query) {
 	str res;
 	res_table* output = NULL;
 	Client c = &mal_clients[0];
-
 	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, &output);
 	if (output) {
 		return output;
-	} else {
-		fprintf(stderr, "sql err: %s\n", res);
-		return NULL;
 	}
+	if (res != MAL_SUCCEED){
+		fprintf(stderr, "sql err: %s\n", res);
+	}
+	return NULL;
 }
 
 void monetdb_cleanup_result(void* output) {
@@ -114,12 +116,13 @@ void monetdb_cleanup_result(void* output) {
 
 
 SEXP monetdb_query_R(SEXP query) {
-
+	SEXP retlist = R_NilValue;
 	res_table* output = monetdb_query((char*)CHAR(STRING_ELT(query, 0)));
-	//SEXP varname = R_NilValue;
 	SEXP varvalue = R_NilValue;
-	if (output) {
+	if (output && output->nr_cols > 0) {
 		int i;
+		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
+
 		for (i = 0; i < output->nr_cols; i++) {
 			res_col col = output->cols[i];
 			BAT* b = BATdescriptor(col.b);
@@ -165,15 +168,15 @@ SEXP monetdb_query_R(SEXP query) {
 					return NULL;
 			}
 
+			SET_VECTOR_ELT(retlist, i, varvalue);
+			// TODO: create a separate names vector and set names (names in cols struct)
 		}
+		UNPROTECT(output->nr_cols + 1);
 		monetdb_cleanup_result(output);
 	}
-	return R_NilValue;
+	return retlist;
 
 }
-
-
-
 
 SEXP monetdb_startup_R(SEXP dirsexp) {
 	const char* dir = CHAR(STRING_ELT(dirsexp, 0));

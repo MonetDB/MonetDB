@@ -443,6 +443,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	accept_any = GDKgetenv_istrue("mapi_open");
 	autosense = GDKgetenv_istrue("mapi_autosense");
 
+	/* early way out, we do not want to listen on any port when running in embedded mode */
+	if (GDKgetenv_istrue("mapi_disable")) {
+		return MAL_SUCCEED;
+	}
+
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 	if (psock == NULL)
 		throw(MAL,"mal_mapi.listen", MAL_MALLOC_FAIL);
