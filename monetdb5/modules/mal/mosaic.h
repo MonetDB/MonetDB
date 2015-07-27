@@ -99,9 +99,9 @@ typedef struct{
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
-#define MOSsetCnt(Blk,I) (assert(I < (1<<23)), (Blk)->cnt = I)
+#define MOSsetCnt(Blk,I) (assert(I < (1<<23)), (Blk)->cnt = (unsigned int)(I))
 #define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
-#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < (1<<23)), (Blk)->cnt+= I)
+#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < (1<<23)), (Blk)->cnt+= (unsigned int)(I))
 
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
