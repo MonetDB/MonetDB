@@ -19,7 +19,14 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Use the dictionary space to administer deltas wrt frame of reference value
+ * Dictionary frame of reference compression
+ * A chunk is beheaded by a reference value F from the column. The elements V in the
+ * chunk are replaced by an index into a global dictionary of V-F offsets.
+ *
+ * The dictionary is limited to 256 entries and all indices are one byte.
+ * The maximal achievable compression ratio is 8 (for longs)
+ *
+ * This scheme is particularly geared at evolving time series.
  */
 
 #include "monetdb_config.h"

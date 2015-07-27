@@ -93,15 +93,17 @@ typedef struct MOSAICHEADER{
 } * MosaicHdr;
 
 // bit stuffed header block, currently 4 bytes wide
+#define MOSAICMAXCNT (1<<23)
+
 typedef struct{
 	unsigned int tag:8, cnt:24;
 } *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
-#define MOSsetCnt(Blk,I) (assert(I < (1<<23)), (Blk)->cnt = (unsigned int)(I))
+#define MOSsetCnt(Blk,I) (assert(I < MOSAICMAXCNT), (Blk)->cnt = (unsigned int)(I))
 #define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
-#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < (1<<23)), (Blk)->cnt+= (unsigned int)(I))
+#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
 
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements

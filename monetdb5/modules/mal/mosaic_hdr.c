@@ -123,7 +123,8 @@ MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 */
 BUN 
 MOSlimit(void) {
+	if( MOSblocklimit > MOSAICMAXCNT)
+		MOSblocklimit = MOSAICMAXCNT;
 	return MOSblocklimit;
-	//return (BUN) ~(0377<<MOSshift);
 }
 /* allow for experiementation using different block sizes */
