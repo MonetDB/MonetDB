@@ -13,10 +13,7 @@
 #ifndef _INVERSE_RAPI_LIB_
 #define _INVERSE_RAPI_LIB_
 
-#include <Rembedded.h>
 #include <Rdefines.h>
-#include <Rinternals.h>
-#include <R_ext/Parse.h>
 
 int monetdb_startup(char* dir);
 void* monetdb_query(char* query);

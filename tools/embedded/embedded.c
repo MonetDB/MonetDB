@@ -78,7 +78,7 @@ int monetdb_startup(char* dir) {
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql", "SQLstatementIntern");
-	res_table_destroy_ptr = (res_table_destroy_ptr_tpe) lookup_function("libstore", "res_table_destroy");
+	res_table_destroy_ptr = (res_table_destroy_ptr_tpe) lookup_function("libstore",  "res_table_destroy");
 	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) goto cleanup;
 
 	monetdb_embedded_initialized = true;
