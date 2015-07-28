@@ -1,23 +1,33 @@
 #!/bin/sh
 cd src
-
 # TODO wget/unpack MonetDB here? Once embedded-lib is in release...
-./configure --prefix=$R_PACKAGE_DIR/install --enable-embedded  --disable-fits \
---disable-geom --disable-rintegration --disable-gsl --disable-jdbc --disable-merocontrol \
---disable-odbc --disable-console --disable-microhttpd --without-perl --without-python2 \
---without-python3 --without-rubygem --without-unixodbc --without-samtools --without-sphinxclient \
---without-geos --without-samtools
-
- #--enable-optimize
+CFLAGS="-I$R_INCLUDE_DIR" LDFLAGS="-Wl,-rpath,$R_PACKAGE_DIR/install/lib" ./configure --prefix=$R_PACKAGE_DIR/install \
+--enable-embedded  --disable-fits --disable-geom --disable-rintegration --disable-gsl \
+--disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
+--without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
+--without-samtools --without-sphinxclient --without-geos --without-samtools --enable-optimize
 
 # Dirty hack, normally R would call make, but we need to also do a make install to get the libs in place. 
 # So we do it ourselves instead and then render the MonetDB makefile inert.
-make -j clean install
+make -j install
 echo -e "dummytarget:\n\ttrue\n" > Makefile
 cd ..
 
 # Normally, the installer would create the libs dir, but only after make, so we need to create this as well
 mkdir -p $R_PACKAGE_DIR/libs/
 
-# and finall put the embedded library where R expects it
-ln -s $R_PACKAGE_DIR/install/lib/libembedded.[0-9].* $R_PACKAGE_DIR/libs/MonetDB.so
+# and finally put the embedded library where R expects it
+RDYNLIB=$R_PACKAGE_DIR/libs/MonetDB.so
+# TODO: this number should probably be pulled from automake and friends
+VER=1
+if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.$VER.dylib" ]; then
+    ln -s $R_PACKAGE_DIR/install/lib/libembedded.$VER.dylib $RDYNLIB
+fi
+if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.so.$VER" ]; then
+    ln -s $R_PACKAGE_DIR/install/lib/libembedded.so.$VER $RDYNLIB
+fi
+# TODO: Windows case (shudder)
+if [ ! -f $RDYNLIB ]; then
+	echo "could not link $RDYNLIB"
+    exit -1
+fi
