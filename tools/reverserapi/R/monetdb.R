@@ -1,3 +1,7 @@
+.onLoad <- function(libname, pkgname){
+	dyn.load(file.path(libname, pkgname, "libs", "MonetDB.so"), local=F, now=F)
+}
+
 monetdb_startup <- function(dir=tempdir()) {
 	dir <- as.character(dir)
 	if (length(dir) != 1) {
@@ -9,7 +13,7 @@ monetdb_startup <- function(dir=tempdir()) {
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
-	invisible(.Call("monetdb_startup_R", dir , PACKAGE="MonetDB"))
+	invisible(.Call("monetdb_startup_R", dir))
 }
 
 monetdb_query <- function(query) {
@@ -19,7 +23,7 @@ monetdb_query <- function(query) {
 	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
-	res <- .Call("monetdb_query_R", query, PACKAGE="MonetDB")
+	res <- .Call("monetdb_query_R", query)
 	if (is.null(res)) {
 		return(invisible(FALSE))
 	}

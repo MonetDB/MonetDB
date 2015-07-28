@@ -52,7 +52,6 @@ static void* lookup_function(char* lib, char* func) {
 	return fun;
 }
 
-
 int monetdb_startup(char* dir) {
 	opt *set = NULL;
 	int setlen = 0;
