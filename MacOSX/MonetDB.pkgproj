@@ -504,7 +504,7 @@
 				<key>CONCLUSION_ACTION</key>
 				<integer>0</integer>
 				<key>IDENTIFIER</key>
-				<string>com.monetdbsolutions.pkg.monetdb</string>
+				<string>org.monetdb.pkg.monetdb</string>
 				<key>NAME</key>
 				<string>MonetDB</string>
 				<key>OVERWRITE_PERMISSIONS</key>
@@ -815,13 +815,6 @@
 				<key>PATH_TYPE</key>
 				<integer>1</integer>
 			</dict>
-			<key>CERTIFICATE</key>
-			<dict>
-				<key>NAME</key>
-				<string>Developer ID Installer: MonetDB Solutions B.V. (YEJLE7L8A4)</string>
-				<key>PATH</key>
-				<string>/Users/sjoerd/Library/Keychains/login.keychain</string>
-			</dict>
 			<key>EXCLUDED_FILES</key>
 			<array>
 				<dict>
@@ -991,7 +984,7 @@
 				</dict>
 			</array>
 			<key>NAME</key>
-			<string>MonetDB</string>
+			<string>MonetDB-unsigned</string>
 		</dict>
 	</dict>
 	<key>TYPE</key>

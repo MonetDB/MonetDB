@@ -212,7 +212,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			       "fkt.name = '%s' "
 			 "ORDER BY fkk.name, nr", schema, tname);
 	} else if (tid != NULL) {
-		maxquerylen = 1024;
+		maxquerylen = 1024 + strlen(tid);
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
 			 "SELECT ps.name, "		/* 0 */
@@ -529,6 +529,8 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 	maxquerylen = 1024;
 	if (tid == NULL)
 		maxquerylen += strlen(tname) + strlen(schema);
+	else
+		maxquerylen += strlen(tid);
 	if ((query = malloc(maxquerylen)) == NULL)
 		goto bailout;
 
