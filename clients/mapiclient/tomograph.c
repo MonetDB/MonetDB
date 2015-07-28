@@ -1912,8 +1912,8 @@ main(int argc, char **argv)
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				if( trace && i >=0 && capturing) 
 					fprintf(trace,"%s\n",response);
-					response = e + 1;
-				}
+				response = e + 1;
+			}
 			/* handle the case that the line is not yet completed */
 			if( response == buffer){
 				char *new = realloc(buffer, buflen + BUFSIZ);
