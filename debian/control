@@ -222,7 +222,7 @@ Description: MonetDB5 SQL GIS support module
 Package: monetdb5-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Recommends: monetdb5-server-hugeint, monetdb5-sql
+Recommends: monetdb5-server-hugeint [amd64], monetdb5-sql
 Suggests: monetdb-client
 Description: MonetDB database server version 5
  MonetDB is a database management system that is developed from a
@@ -235,7 +235,7 @@ Description: MonetDB database server version 5
  to use the SQL frontend, you also need monetdb5-sql.
 
 Package: monetdb5-server-hugeint
-Architecture: any
+Architecture: amd64
 Depends: monetdb5-server (= ${source:Version})
 Description: MonetDB - 128-bit integer support for MonetDB5-server
  MonetDB is a database management system that is developed from a
@@ -261,7 +261,7 @@ Description: MonetDB database server version 5
 Package: monetdb5-sql
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-server (= ${source:Version})
-Recommends: monetdb5-sql-hugeint
+Recommends: monetdb5-sql-hugeint [amd64]
 Suggests: monetdb-client
 Description: MonetDB SQL support for monetdb5
  MonetDB is a database management system that is developed from a
@@ -272,7 +272,7 @@ Description: MonetDB SQL support for monetdb5
  This package contains the SQL frontend for MonetDB.
 
 Package: monetdb5-sql-hugeint
-Architecture: any
+Architecture: amd64
 Depends: monetdb5-sql (= ${source:Version}), monetdb5-server-hugeint (= ${source:Version})
 Description: MonetDB5 128 bit integer (hugeint) support for SQL
  MonetDB is a database management system that is developed from a
