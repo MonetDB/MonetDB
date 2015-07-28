@@ -109,3 +109,4 @@ lib_MonetODBC = {
 	LIBS = ../../mapilib/libmapi $(LTLIBICONV) $(ODBCINST_LIBS) $(SOCKET_LIBS)
 }
 
+EXTRA_DIST = Copyright
