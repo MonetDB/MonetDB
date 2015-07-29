@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jul 28 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Added support for 128-bit integers (called HUGEINT) on platforms that
+  support this.
+
 * Wed Feb 18 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed support for the mseed library.
 

@@ -136,9 +136,9 @@ BuildRequires: R-core-devel
 %endif
 
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
-Recommends: MonetDB5-server
-Suggests: %{name}-client
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 # need to define python_sitelib on RHEL 5 and older
@@ -233,7 +233,7 @@ library.
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %endif
 
 %description client
@@ -598,11 +598,11 @@ Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %if %{bits} == 64
-Recommends: MonetDB5-server-hugeint
+Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
-Suggests: %{name}-client
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 %description -n MonetDB5-server
@@ -745,9 +745,9 @@ Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
 %if %{bits} == 64
-Recommends: %{name}-SQL-server5-hugeint
+Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
-Suggests: %{name}-client
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 %description SQL-server5
