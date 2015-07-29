@@ -240,4 +240,6 @@ typedef enum mnstr_errors {
 	MNSTR_TIMEOUT
 } mnstr_errors;
 
+stream_export stream* stream_blackhole_create(void);
+
 #endif /*_STREAM_H_*/

@@ -3736,3 +3736,36 @@ wbstream(stream *s, size_t buflen)
 	wbs->len = buflen;
 	return ns;
 }
+
+
+static ssize_t
+stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	s = (stream*)s;
+	buf = (const void*) buf;
+	elmsize = (size_t) elmsize;
+	return (ssize_t) cnt;
+}
+
+static void
+stream_blackhole_close(stream *s)
+{
+	s = (stream*)s;
+	// no resources to close
+}
+
+stream * stream_blackhole_create (void)
+{
+	stream *s;
+	if ((s = create_stream("blackhole")) == NULL) {
+		return NULL;
+	}
+
+	s->read = NULL;
+	s->write = stream_blackhole_write;
+	s->close = stream_blackhole_close;
+	s->flush = NULL;
+	s->access = ST_WRITE;
+	return s;
+}
+

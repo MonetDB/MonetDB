@@ -958,8 +958,10 @@ logger_readlog(logger *lg, char *filename)
 		return 1;
 	}
 	t0 = time(NULL);
-	printf("# Start reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Start reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
@@ -1059,8 +1061,10 @@ logger_readlog(logger *lg, char *filename)
 	while (tr)
 		tr = tr_abort(lg, tr);
 	t0 = time(NULL);
-	printf("# Finished reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Finished reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	return LOG_OK;
 }
 
@@ -1884,10 +1888,11 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 {
 	logger *lg;
 
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
-
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	if (!lg)
 		return NULL;
 	if (logger_open(lg) == LOG_ERR) {
@@ -1895,7 +1900,9 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 
 		return NULL;
 	}
-	printf("# Finished processing logs %s/%s\n",fn,logdir);
+	if (lg->debug & 1) {
+		printf("# Finished processing logs %s/%s\n",fn,logdir);
+	}
 	GDKsetenv("recovery","finished");
 	fflush(stdout);
 	if (lg->changes &&
@@ -1914,11 +1921,11 @@ logger *
 logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, local_logdir);
-
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	return lg;
 }
 

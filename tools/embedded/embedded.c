@@ -17,8 +17,9 @@
 #include "embedded.h"
 #include <stdio.h>
 #include <errno.h>
-#include <string.h> /* strerror */
+#include <string.h>
 #include <locale.h>
+
 #include "monet_options.h"
 #include "mal.h"
 #include "mal_session.h"
@@ -32,6 +33,7 @@
 #include "msabaoth.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
+
 
 typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
 SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
@@ -69,18 +71,26 @@ int monetdb_startup(char* dir) {
 	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
 	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
+	GDKsetenv("max_clients", "0");
 
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 	if (mal_init() != 0) goto cleanup;
 
-	printf("# Using data directory %s\n", GDKgetenv("gdk_dbpath"));
+	// hide output on client out
+	mal_clients[0].fdout = stream_blackhole_create();
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
-	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql", "SQLstatementIntern");
-	res_table_destroy_ptr = (res_table_destroy_ptr_tpe) lookup_function("libstore",  "res_table_destroy");
+	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
+	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
 	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) goto cleanup;
 
+
 	monetdb_embedded_initialized = true;
+	// sanity check, run a SQL query
+	if (monetdb_query("SELECT * FROM tables;") == NULL) {
+		monetdb_embedded_initialized = false;
+		goto cleanup;
+	}
 	retval = 0;
 
 cleanup:
@@ -111,7 +121,6 @@ void* monetdb_query(char* query) {
 void monetdb_cleanup_result(void* output) {
 	(*res_table_destroy_ptr)((res_table*) output);
 }
-
 
 #define BAT_TO_INTSXP(bat,tpe,retsxp)						\
 	do {													\

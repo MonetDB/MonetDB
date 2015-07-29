@@ -2,14 +2,16 @@
 cd src
 # TODO wget/unpack MonetDB here? Once embedded-lib is in release...
 CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/install \
---enable-embedded  --disable-fits --disable-geom --disable-rintegration --disable-gsl \
+--enable-embedded  --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
---without-samtools --without-sphinxclient --without-geos --without-samtools --enable-optimize
+--without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
+--enable-optimize --enable-silent-rules
 
 # Dirty hack, normally R would call make, but we need to also do a make install to get the libs in place. 
 # So we do it ourselves instead and then render the MonetDB makefile inert.
 make -j clean install
+
 echo -e "dummytarget:\n\ttrue\n" > Makefile
 cd ..
 
@@ -28,6 +30,6 @@ if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.so.$VER" ]; then
 fi
 # TODO: Windows case (shudder)
 if [ ! -f $RDYNLIB ]; then
-	echo "could not link $RDYNLIB"
+	echo "configure/build failure"
     exit -1
 fi
