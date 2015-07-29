@@ -40,7 +40,7 @@ SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
 typedef void (*res_table_destroy_ptr_tpe)(res_table *t);
 res_table_destroy_ptr_tpe res_table_destroy_ptr = NULL;
 
-bit monetdb_embedded_initialized = 0;
+static bit monetdb_embedded_initialized = 0;
 static MT_Lock monetdb_embedded_lock;
 
 static void* lookup_function(char* lib, char* func) {
@@ -54,7 +54,7 @@ static void* lookup_function(char* lib, char* func) {
 	return fun;
 }
 
-int monetdb_startup(char* dir) {
+int monetdb_startup(char* dir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
 	int retval = -1;
@@ -66,24 +66,26 @@ int monetdb_startup(char* dir) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
-	if (GDKinit(set, setlen) == 0) goto cleanup;
+	if (GDKinit(set, setlen) == 0)  goto cleanup;
 
 	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
 	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");
 
+	if (silent) {
+		THRdata[0] = stream_blackhole_create();
+	}
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
+
 	if (mal_init() != 0) goto cleanup;
-
-	// hide output on client out
-	mal_clients[0].fdout = stream_blackhole_create();
-
+	if (silent) {
+		mal_clients[0].fdout = THRdata[0];
+	}
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
 	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
 	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) goto cleanup;
-
 
 	monetdb_embedded_initialized = true;
 	// sanity check, run a SQL query
@@ -104,7 +106,7 @@ void* monetdb_query(char* query) {
 	res_table* output = NULL;
 	Client c = &mal_clients[0];
 	if (!monetdb_embedded_initialized) {
-		fprintf(stderr, "! Embedded MonetDB is not initialized. Call monetdb_startup() first.\n");
+		fprintf(stderr, "Embedded MonetDB is not started.\n");
 		return NULL;
 	}
 
@@ -214,11 +216,12 @@ SEXP monetdb_query_R(SEXP query) {
 
 }
 
-SEXP monetdb_startup_R(SEXP dirsexp) {
+SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
+	if (!IS_CHARACTER(dirsexp) || !IS_LOGICAL(silentsexp)) {
+		return ScalarInteger(-1);
+	}
 	const char* dir = CHAR(STRING_ELT(dirsexp, 0));
-	int res = monetdb_startup((char*) dir);
-	SEXP retsxp = PROTECT(NEW_INTEGER(1));
-	INTEGER_POINTER(retsxp)[0] = res;
-	UNPROTECT(1);
-	return retsxp;
+	char silent = LOGICAL(silentsexp)[0];
+	int res = monetdb_startup((char*) dir, silent);
+	return ScalarInteger(res);
 }

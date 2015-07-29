@@ -15,10 +15,10 @@
 
 #include <Rdefines.h>
 
-int monetdb_startup(char* dir);
+int monetdb_startup(char* dir, char silent);
 void* monetdb_query(char* query);
 void monetdb_cleanup_result(void* output);
-SEXP monetdb_query_R(SEXP query);
-SEXP monetdb_startup_R(SEXP dir);
+SEXP monetdb_query_R(SEXP querysexp);
+SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp);
 
 #endif

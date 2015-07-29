@@ -178,8 +178,8 @@ SQLprelude(void *ret)
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return (tmp);
-	fprintf(stdout, "# MonetDB/SQL module loaded\n");
-	fflush(stdout);		/* make merovingian see this *now* */
+	mnstr_printf(GDKout, "# MonetDB/SQL module loaded\n");
+	mnstr_flush(GDKout);	/* make merovingian see this *now* */
 
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
@@ -481,7 +481,7 @@ SQLinitClient(Client c)
 		if (fullname) {
 			str filename = fullname;
 			str p, n;
-			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
+			mnstr_printf(GDKout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				p = strchr(filename, PATH_SEP);
 				if (p)
@@ -491,7 +491,7 @@ SQLinitClient(Client c)
 				} else {
 					n++;
 				}
-				fprintf(stdout, "# loading sql script: %s\n", n);
+				mnstr_printf(GDKout, "# loading sql script: %s\n", n);
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;

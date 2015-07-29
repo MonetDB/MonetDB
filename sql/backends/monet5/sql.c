@@ -3143,11 +3143,15 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
+	if (ATOMextern(mtype))
+		p = *(ptr *) p;
+
+	// scalar values are single-column result sets
+	mvc_result_table(b->mvc, 1, 1, NULL);
+	mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
 	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
-	if (ATOMextern(mtype))
-		p = *(ptr *) p;
 	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, "", "NULL") != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;

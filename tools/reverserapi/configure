@@ -8,6 +8,7 @@ CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/install \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
 --enable-optimize --enable-silent-rules
 
+
 # Dirty hack, normally R would call make, but we need to also do a make install to get the libs in place. 
 # So we do it ourselves instead and then render the MonetDB makefile inert.
 make -j clean install
