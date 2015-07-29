@@ -82,6 +82,7 @@ int monetdb_startup(char* dir, char silent) {
 	if (silent) {
 		mal_clients[0].fdout = THRdata[0];
 	}
+
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
 	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");

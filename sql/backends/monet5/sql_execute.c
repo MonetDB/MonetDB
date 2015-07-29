@@ -85,6 +85,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
+	// hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise
+	// suspect this to be due to the shallow value copy above
+	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -98,6 +101,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!output) {
 		sql->output_format = OFMT_NONE;
 	}
+	// and do it again
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
