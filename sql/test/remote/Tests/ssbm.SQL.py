@@ -190,6 +190,12 @@ for workerrec in workers:
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 
+c.execute("select * from lineorder where lo_orderkey=356")
+print str(c.fetchall()[0][0])
+
+c.execute("select * from " + shardtable + workers[0]['tpf'] + " where lo_orderkey=356")
+print str(c.fetchall()[0][0])
+
 # run queries, use mclient so output is comparable
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()

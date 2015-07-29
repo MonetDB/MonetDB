@@ -679,6 +679,7 @@ update(EventRecord *ev)
 		fprintf(tachojson,"{\n");
 		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
+		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
 		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"start\",\n");
