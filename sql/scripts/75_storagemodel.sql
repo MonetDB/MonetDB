@@ -18,7 +18,22 @@
 -- For strings we take a sample to determine their average length.
 
 create function sys."storage"()
-returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, imprints bigint, sorted boolean)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
 external name sql."storage";
 
 create view sys."storage" as select * from sys."storage"();
@@ -32,7 +47,7 @@ create table sys.storagemodelinput(
 	"column" string,
 	"type" string,
 	"typewidth" int,
-	"count" bigint,	-- estimated number of tuples
+	"count" bigint,		-- estimated number of tuples
 	"distinct" bigint,	-- indication of distinct number of strings
 	"atomwidth" int,	-- average width of strings or clob
 	"reference" boolean,	-- used as foreign key reference

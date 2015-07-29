@@ -1166,45 +1166,30 @@ sql_update_hugeint(Client c)
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
 
+	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.stddev_samp(val hugeint)\n"
-			"returns double\n"
-			"external name aggr.stdev;\n");
+			"create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE\n"
+			"    external name \"aggr\".\"stdev\";\n"
+			"create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE\n"
+			"    external name \"aggr\".\"stdevp\";\n"
+			"create aggregate sys.var_samp(val HUGEINT) returns DOUBLE\n"
+			"    external name \"aggr\".\"variance\";\n"
+			"create aggregate sys.var_pop(val HUGEINT) returns DOUBLE\n"
+			"    external name \"aggr\".\"variancep\";\n"
+			"create aggregate sys.median(val HUGEINT) returns HUGEINT\n"
+			"    external name \"aggr\".\"median\";\n"
+			"create aggregate sys.quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
+			"    external name \"aggr\".\"quantile\";\n"
+			"create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT\n"
+			"    external name \"aggr\".\"corr\";\n");
 
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.stddev_pop(val hugeint)\n"
-			"returns double\n"
-			"external name aggr.stdevp;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.var_samp(val hugeint)\n"
-			"returns double\n"
-			"external name aggr.variance;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.var_pop(val hugeint)\n"
-			"returns double\n"
-			"external name aggr.variancep;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.median(val hugeint)\n"
-			"returns hugeint\n"
-			"external name aggr.median;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.quantile(val hugeint, q double)\n"
-			"returns hugeint\n"
-			"external name aggr.quantile;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.corr(e1 hugeint, e2 hugeint)\n"
-			"returns hugeint\n"
-			"external name aggr.corr;\n");
-
+	/* 40_json_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function json.filter(js json, name hugeint)\n"
 			"returns json\n"
-			"external name json.filter;\n"
+			"external name json.filter;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tablestoragemodel;\n"
 			"create view sys.tablestoragemodel\n"
 			"as select \"schema\",\"table\",max(count) as \"count\",\n"
@@ -1261,7 +1246,7 @@ sql_update_hugeint(Client c)
 static str
 sql_update_jul2015(Client c)
 {
-	size_t bufsize = 10240, pos = 0;
+	size_t bufsize = 15360, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
@@ -1280,9 +1265,97 @@ sql_update_jul2015(Client c)
 			"create filter function sys.\"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";\n"
 			"create filter function sys.\"ilike\"(val string, pat string) external name algebra.\"ilike\";\n");
 
+	/* change to 13_date */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.str_to_time(s string, format string) returns time external name mtime.\"str_to_time\";\n"
+			"create function sys.time_to_str(d time, format string) returns string external name mtime.\"time_to_str\";\n"
+			"create function sys.str_to_timestamp(s string, format string) returns timestamp external name mtime.\"str_to_timestamp\";\n"
+			"create function sys.timestamp_to_str(d timestamp, format string) returns string external name mtime.\"timestamp_to_str\";\n");
+
+	/* change to 15_querylog */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.querylog_history;\n"
+			"drop view sys.querylog_calls;\n"
+			"drop function sys.querylog_calls;\n"
+			"drop view sys.querylog_catalog;\n"
+			"drop function sys.querylog_catalog;\n"
+			"create function sys.querylog_catalog()\n"
+			"returns table(\n"
+			"    id oid,\n"
+			"    owner string,\n"
+			"    defined timestamp,\n"
+			"    query string,\n"
+			"    pipe string,\n"
+			"    \"plan\" string,\n"
+			"    mal int,\n"
+			"    optimize bigint\n"
+			") external name sql.querylog_catalog;\n"
+			"create function sys.querylog_calls()\n"
+			"returns table(\n"
+			"    id oid,\n"
+			"    \"start\" timestamp,\n"
+			"    \"stop\" timestamp,\n"
+			"    arguments string,\n"
+			"    tuples wrd,\n"
+			"    run bigint,\n"
+			"    ship bigint,\n"
+			"    cpu int,\n"
+			"    io int\n"
+			") external name sql.querylog_calls;\n"
+			"create view sys.querylog_catalog as select * from sys.querylog_catalog();\n"
+			"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
+			"create view sys.querylog_history as\n"
+			"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
+			"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
+			"where qd.id = ql.id and qd.owner = user;\n");
+
+
+	/* change to 16_tracelog */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.tracelog;\n"
+			"drop function sys.tracelog;\n"
+			"create function sys.tracelog()\n"
+			"returns table (\n"
+			"    event integer,\n"
+			"    clk varchar(20),\n"
+			"    pc varchar(50),\n"
+			"    thread int,\n"
+			"    ticks bigint,\n"
+			"    rrsMB bigint,\n"
+			"    vmMB bigint,\n"
+			"    reads bigint,\n"
+			"    writes bigint,\n"
+			"    minflt bigint,\n"
+			"    majflt bigint,\n"
+			"    nvcsw bigint,\n"
+			"    stmt string\n"
+			"    ) external name sql.dump_trace;\n"
+			"create view sys.tracelog as select * from sys.tracelog();\n"
+			"create procedure sys.profiler_openstream(host string, port int) external name profiler.\"openStream\";\n"
+			"create procedure sys.profiler_stethoscope(ticks int) external name profiler.stethoscope;\n");
+
 	/* change to 17_temporal */
 	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n"
 			"create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
+
+	/* removal of 19_cluster.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.cluster1;\n"
+			"drop procedure sys.cluster2;\n");
+
+	/* new file 27_rejects.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.rejects()\n"
+			"returns table(\n"
+			"    rowid bigint,\n"
+			"    fldid int,\n"
+			"    \"message\" string,\n"
+			"    \"input\" string\n"
+			") external name sql.copy_rejects;\n"
+			"create view sys.rejects as select * from sys.rejects();\n"
+			"create procedure sys.clearrejects()\n"
+			"external name sql.copy_rejects_clear;\n");
 
 	/* new file 51_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1319,11 +1392,8 @@ sql_update_jul2015(Client c)
 			"    table_type_name VARCHAR(25) NOT NULL UNIQUE);\n"
 
 			"INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES\n"
-			"-- values from sys._tables.type:  0=Table, 1=View, 2=Generated, 3=Merge, etc.\n"
 			"  (0, 'TABLE'), (1, 'VIEW'), /* (2, 'GENERATED'), */ (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'),\n"
-			"-- synthetically constructed system obj variants (added 10 to sys._tables.type value when sys._tables.system is true).\n"
 			"  (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'),\n"
-			"-- synthetically constructed temporary variants (added 20 or 30 to sys._tables.type value depending on values of temporary and commit_action).\n"
 			"  (20, 'GLOBAL TEMPORARY TABLE'),\n"
 			"  (30, 'LOCAL TEMPORARY TABLE');\n"
 
@@ -1332,25 +1402,68 @@ sql_update_jul2015(Client c)
 			"    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);\n"
 
 			"INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES\n"
-			"-- values taken from sql_catalog.h\n"
 			"  (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),\n"
-			"  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');\n"
+			"  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');\n");
+
+	/* the attendant change to the sys.tables view */
+	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tables;\n"
 			"create view sys.tables as SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";\n");
 
 	/* change to 75_storagemodel */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.storagemodel;\n"
 			"drop view sys.tablestoragemodel;\n"
-			"drop view sys.storage;\n"
+			"drop view sys.storagemodel;\n"
 			"drop function sys.storagemodel;\n"
 			"drop function sys.imprintsize;\n"
 			"drop function sys.columnsize;\n"
+			"drop procedure sys.storagemodelinit;\n"
+			"drop view sys.storage;\n"
 			"drop function sys.storage;\n"
-			"create function sys.storage()\n"
-			"returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)\n"
-			"external name sql.storage;\n"
-			"create view sys.storage as select * from sys.storage();\n"
+
+			"create function sys.\"storage\"()\n"
+			"returns table (\n"
+			"  \"schema\" string,\n"
+			"  \"table\" string,\n"
+			"  \"column\" string,\n"
+			"  \"type\" string,\n"
+			"  \"mode\" string,\n"
+			"  location string,\n"
+			"  \"count\" bigint,\n"
+			"  typewidth int,\n"
+			"  columnsize bigint,\n"
+			"  heapsize bigint,\n"
+			"  hashes bigint,\n"
+			"  phash boolean,\n"
+			"  imprints bigint,\n"
+			"  sorted boolean\n"
+			")\n"
+			"external name sql.\"storage\";\n"
+
+			"create view sys.\"storage\" as select * from sys.\"storage\"();\n"
+
+			"create procedure sys.storagemodelinit()\n"
+			"begin\n"
+			"  delete from sys.storagemodelinput;\n"
+			"  insert into sys.storagemodelinput\n"
+			"  select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted from sys.\"storage\"() X;\n"
+			"  update sys.storagemodelinput\n"
+			"  set reference = true\n"
+			"  where concat(concat(\"schema\",\"table\"), \"column\") in (\n"
+			"    SELECT concat( concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\" )\n"
+			"    FROM \"sys\".\"keys\" AS    \"fkkey\",\n"
+			"        \"sys\".\"objects\" AS \"fkkeycol\",\n"
+			"        \"sys\".\"tables\" AS  \"fktable\",\n"
+			"        \"sys\".\"schemas\" AS \"fkschema\"\n"
+			"    WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\"\n"
+			"      AND \"fkkey\".\"id\" = \"fkkeycol\".\"id\"\n"
+			"      AND \"fkschema\".\"id\" = \"fktable\".\"schema_id\"\n"
+			"      AND \"fkkey\".\"rkey\" > -1);\n"
+			"  update sys.storagemodelinput\n"
+			"  set \"distinct\" = \"count\" -- assume all distinct\n"
+			"  where \"type\" = 'varchar' or \"type\"='clob';\n"
+			"end;\n"
+
 			"create function sys.columnsize(nme string, i bigint, d bigint)\n"
 			"returns bigint\n"
 			"begin\n"
@@ -1372,6 +1485,7 @@ sql_update_jul2015(Client c)
 			"  else return 8 * i;\n"
 			"  end case;\n"
 			"end;\n"
+
 			"create function sys.imprintsize(i bigint, nme string)\n"
 			"returns bigint\n"
 			"begin\n"
@@ -1391,6 +1505,7 @@ sql_update_jul2015(Client c)
 			"  end if;\n"
 			"  return 0;\n"
 			"end;\n"
+
 			"create function sys.storagemodel()\n"
 			"returns table (\n"
 			"  \"schema\" string,\n"
@@ -1412,7 +1527,9 @@ sql_update_jul2015(Client c)
 			"  I.sorted\n"
 			"  from sys.storagemodelinput I;\n"
 			"end;\n"
+
 			"create view sys.storagemodel as select * from sys.storagemodel();\n"
+
 			"create view sys.tablestoragemodel\n"
 			"as select \"schema\",\"table\",max(count) as \"count\",\n"
 			"  sum(columnsize) as columnsize,\n"
@@ -1424,85 +1541,33 @@ sql_update_jul2015(Client c)
 
 	/* change to 80_statistics */
 	pos += snprintf(buf + pos, bufsize - pos,
+			"drop all procedure sys.analyze;\n"
 			"drop table sys.statistics;\n"
 			"create table sys.statistics(\n"
-			"  \"column_id\" integer,\n"
-			"  \"type\" string,\n"
-			"  width integer,\n"
-			"  stamp timestamp,\n"
-			"  \"sample\" bigint,\n"
-			"  \"count\" bigint,\n"
-			"  \"unique\" bigint,\n"
-			"  \"nils\" bigint,\n"
-			"  minval string,\n"
-			"  maxval string,\n"
-			"  sorted boolean);\n"
-			"drop all procedure sys.analyze;\n"
-			"create procedure analyze(minmax int, \"sample\" bigint)\n"
+			"    \"column_id\" integer,\n"
+			"    \"type\" string,\n"
+			"    width integer,\n"
+			"    stamp timestamp,\n"
+			"    \"sample\" bigint,\n"
+			"    \"count\" bigint,\n"
+			"    \"unique\" bigint,\n"
+			"    \"nils\" bigint,\n"
+			"    minval string,\n"
+			"    maxval string,\n"
+			"    sorted boolean);\n"
+			"create procedure sys.analyze(minmax int, \"sample\" bigint)\n"
 			"external name sql.analyze;\n"
-
-			"create procedure analyze(minmax int, \"sample\" bigint,sch string)\n"
+			"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string)\n"
 			"external name sql.analyze;\n"
-
-			"create procedure analyze(minmax int, \"sample\" bigint,sch string, tbl string)\n"
+			"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string, tbl string)\n"
 			"external name sql.analyze;\n"
-
-			"create procedure analyze(minmax int, \"sample\" bigint,sch string, tbl string, col string)\n"
-			"external name sql.analyze;\n"
-
-			);
-
-	/* 15_querylog update the querylog table definition */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.querylog_history;\n"
-			"drop view sys.querylog_calls;\n"
-			"drop function sys.querylog_calls;\n"
-			"create function sys.querylog_calls()\n"
-			"returns table(\n"
-			"    id oid,\n"
-			"    \"start\" timestamp,\n"
-			"    \"stop\" timestamp,\n"
-			"    arguments string,\n"
-			"    tuples wrd,\n"
-			"    run bigint,\n"
-			"    ship bigint,\n"
-			"    cpu int,\n"
-			"    io int\n"
-			") external name sql.querylog_calls;\n"
-			"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
-			"create view sys.querylog_history as\n"
-			"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
-			"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
-			"where qd.id = ql.id and qd.owner = user;\n");
-
-
-	/* 16_tracelog update the tracelog table definition */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.tracelog;\n"
-			"drop function sys.tracelog;\n"
-			"create function sys.tracelog()\n"
-			"returns table (\n"
-			"  event integer,\n"
-			"  clk varchar(20),\n"
-			"  pc varchar(50),\n"
-			"  thread int,\n"
-			"  ticks bigint,\n"
-			"  rrsMB bigint,\n"
-			"  vmMB bigint,\n"
-			"  reads bigint,\n"
-			"  writes bigint,\n"
-			"  minflt bigint,\n"
-			"  majflt bigint,\n"
-			"  nvcsw bigint,\n"
-			"  stmt string\n"
-			"  ) external name sql.dump_trace;\n"
-			"create view sys.tracelog as select * from sys.tracelog();\n");
-
+			"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string, tbl string, col string)\n"
+			"external name sql.analyze;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('columnsize', 'epoch', 'ilike', 'imprintsize', 'like', 'querylog_calls', 'storage', 'storagemodel', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('analyze', 'clearrejects', 'columnsize', 'epoch', 'ilike', 'imprintsize', 'like', 'profiler_openstream', 'profiler_stethoscope', 'querylog_calls', 'querylog_catalog', 'rejects', 'storage', 'storagemodel', 'storagemodelinit', 'str_to_time', 'str_to_timestamp', 'timestamp_to_str', 'time_to_str', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 			"delete from systemfunctions where function_id not in (select id from functions);\n"
-			"update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_history', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_catalog', 'querylog_history', 'rejects', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
 		char *msg;
@@ -1516,30 +1581,27 @@ sql_update_jul2015(Client c)
 			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
 				sql_table *t;
 
-				if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
-					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "querylog_catalog")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
 					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
+					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "tables")) != NULL)
+					t->system = 0;
+				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
 					t->system = 0;
 				if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
 					t->system = 0;
 			}
 		}
 	}
-
-	/* remove code from 19_cluster.sql script */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.cluster1;\n"
-			"drop procedure sys.cluster2;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
