@@ -16,7 +16,7 @@
 #include <Rdefines.h>
 
 int monetdb_startup(char* dir, char silent);
-void* monetdb_query(char* query);
+char* monetdb_query(char* query, void** result);
 void monetdb_cleanup_result(void* output);
 SEXP monetdb_query_R(SEXP querysexp);
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp);

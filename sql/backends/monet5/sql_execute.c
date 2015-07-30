@@ -85,8 +85,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
-	// hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise
-	// suspect this to be due to the shallow value copy above
+	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
 
 	/* create private allocator */
@@ -106,9 +105,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
-		m->reply_size = -2; /* do not cleanup, result tables */
+		m->reply_size = -2; /* do not clean up result tables */
 
-	/* mimick a client channel on which the query text is received */
+	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);

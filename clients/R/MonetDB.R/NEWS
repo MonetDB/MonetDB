@@ -8,6 +8,7 @@
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
 - Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
+- Initial support for running MonetDB in embedded mode
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

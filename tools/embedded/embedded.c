@@ -11,29 +11,15 @@
  * Inverse RAPI
  */
 
-#include <stdio.h>
-#include "monetdb_config.h"
-
 #include "embedded.h"
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <locale.h>
 
+#include "monetdb_config.h"
 #include "monet_options.h"
 #include "mal.h"
-#include "mal_session.h"
-#include "mal_import.h"
 #include "mal_client.h"
-#include "mal_function.h"
-#include "mal_authorize.h"
 #include "mal_linker.h"
-
-#include "mutils.h"
 #include "msabaoth.h"
-#include "sql_catalog.h"
-#include "sql_execute.h"
-
+#include "sql_scenario.h"
 
 typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
 SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
@@ -49,7 +35,7 @@ static void* lookup_function(char* lib, char* func) {
 	if (dl == NULL) {
 		return NULL;
 	}
-	fun =  dlsym(dl, func);
+	fun = dlsym(dl, func);
 	dlclose(dl);
 	return fun;
 }
@@ -58,6 +44,7 @@ int monetdb_startup(char* dir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
 	int retval = -1;
+	void* res = NULL;
 	char mod_path[1000];
 
 	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
@@ -73,15 +60,10 @@ int monetdb_startup(char* dir, char silent) {
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");
 
-	if (silent) {
-		THRdata[0] = stream_blackhole_create();
-	}
+	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
-
 	if (mal_init() != 0) goto cleanup;
-	if (silent) {
-		mal_clients[0].fdout = THRdata[0];
-	}
+	if (silent) mal_clients[0].fdout = THRdata[0];
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
@@ -90,7 +72,7 @@ int monetdb_startup(char* dir, char silent) {
 
 	monetdb_embedded_initialized = true;
 	// sanity check, run a SQL query
-	if (monetdb_query("SELECT * FROM tables;") == NULL) {
+	if (monetdb_query("SELECT * FROM tables;", res) < 0) {
 		monetdb_embedded_initialized = false;
 		goto cleanup;
 	}
@@ -102,23 +84,16 @@ cleanup:
 	return retval;
 }
 
-void* monetdb_query(char* query) {
+// TODO: This does stop working on the first failing query, do something about this
+char* monetdb_query(char* query, void** result) {
 	str res;
-	res_table* output = NULL;
 	Client c = &mal_clients[0];
 	if (!monetdb_embedded_initialized) {
 		fprintf(stderr, "Embedded MonetDB is not started.\n");
 		return NULL;
 	}
-
-	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, &output);
-	if (output) {
-		return output;
-	}
-	if (res != MAL_SUCCEED){
-		fprintf(stderr, "sql err: %s\n", res);
-	}
-	return NULL;
+	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
+	return res;
 }
 
 void monetdb_cleanup_result(void* output) {
@@ -153,11 +128,14 @@ void monetdb_cleanup_result(void* output) {
 
 
 SEXP monetdb_query_R(SEXP query) {
-	SEXP retlist = R_NilValue;
-	res_table* output = monetdb_query((char*)CHAR(STRING_ELT(query, 0)));
-	SEXP names, varvalue = R_NilValue;
+	res_table* output = NULL;
+	char* err = monetdb_query((char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
+	if (err != NULL) { // there was an error
+		return ScalarString(mkCharCE(err, CE_UTF8));
+	}
 	if (output && output->nr_cols > 0) {
 		int i;
+		SEXP retlist, names, varvalue = R_NilValue;
 		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
 		names = PROTECT(NEW_STRING(output->nr_cols));
 
@@ -212,9 +190,9 @@ SEXP monetdb_query_R(SEXP query) {
 		UNPROTECT(output->nr_cols + 2);
 
 		monetdb_cleanup_result(output);
+		return retlist;
 	}
-	return retlist;
-
+	return ScalarLogical(1);
 }
 
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {

@@ -43,7 +43,7 @@ mq <- function(dbname, query, ...) {
 }
 
 setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="monetdb", 
-                                                     password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", 
+                                                     password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", embedded=FALSE,
                                                      ..., url="") {
   
   if (substring(url, 1, 10) == "monetdb://") {
@@ -85,6 +85,14 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   # validate port number
   if (length(port) != 1 || port < 1 || port > 65535) {
     stop("Illegal port number ",port)
+  }
+
+  if (embedded != FALSE) {
+    if (!require("MonetDB", character.only=T)) {
+      stop("MonetDB package required for embedded mode")
+    }
+    monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
+    return(new("MonetDBEmbeddedConnection"))
   }
   
   if (getOption("monetdb.debug.mapi", F)) message("II: Connecting to MonetDB on host ", host, " at "
@@ -135,6 +143,9 @@ valueClass="MonetDBConnection")
 ### MonetDBConnection
 setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
                                              connenv="environment"))
+
+setClass("MonetDBEmbeddedConnection", representation("MonetDBConnection"))
+
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   envdata <- dbGetQuery(dbObj, "SELECT name, value from sys.env()")
@@ -283,6 +294,77 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   invisible(new("MonetDBResult", env=env))
   })
 
+
+
+# This one does all the work in this class
+setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="character"),  
+          def=function(conn, statement, ..., list=NULL) {   
+  if(!is.null(list) || length(list(...))){
+    if (length(list(...))) statement <- .bindParameters(statement, list(...))
+    if (!is.null(list)) statement <- .bindParameters(statement, list)
+  } 
+  env <- NULL
+  if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
+  # make the progress bar wait for querylog.define
+  # if (getOption("monetdb.profile", T))  .profiler_arm()
+
+  # the actual request
+
+  resp <- monetdb_embedded_query(statement)
+
+  env <- new.env(parent=emptyenv())
+  if (resp$type == Q_TABLE) {
+    meta <- new.env(parent=emptyenv())
+    meta$type  <- Q_TABLE
+    meta$id    <- 42
+    meta$rows  <- NROW(resp$tuples)
+    meta$cols  <- NCOL(resp$tuples)
+    meta$index <- 0
+    meta$names <- names(resp$tuples)
+
+    env$info <- meta
+
+    env$success = TRUE
+    env$conn <- conn
+    env$resp <- resp
+    env$delivered <- -1
+    env$query <- statement
+    env$open <- TRUE
+  }
+  if (resp$type == Q_UPDATE || resp$type == Q_CREATE || resp$type == MSG_ASYNC_REPLY || resp$type == MSG_PROMPT) {
+    env$success = TRUE
+    env$conn <- conn
+    env$query <- statement
+    env$info <- resp
+
+  }
+  if (resp$type == MSG_MESSAGE) {
+    env$success = FALSE
+    env$conn <- conn
+    env$query <- statement
+    env$info <- resp
+    env$message <- resp$message
+  }
+
+  if (!env$success) {
+    sp <- strsplit(env$message, "!", fixed=T)[[1]]
+    # truncate statement to not hide actual error message
+    if (nchar(statement) > 100) { statement <- paste0(substring(statement, 1, 100), "...") }
+    if (length(sp) == 3) {
+      errno <- sp[[2]]
+      errmsg <- sp[[3]]
+      conn@connenv$exception <- list(errNum=errno, errMsg=errmsg)
+      stop("Unable to execute statement '", statement, "'.\nServer says '", errmsg, "' [#", 
+           errno, "].")
+    }
+    else {
+      conn@connenv$exception <- list(errNum=NA, errMsg=env$message)
+      stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
+    }
+  }
+
+  invisible(new("MonetDBEmbeddedResult", env=env))
+  })
 
 
 # quoting
@@ -439,6 +521,8 @@ setMethod("dbSendUpdateAsync", signature(conn="MonetDBConnection", statement="ch
 
 ### MonetDBResult
 setClass("MonetDBResult", representation("DBIResult", env="environment"))
+setClass("MonetDBEmbeddedResult", representation("MonetDBResult", env="environment"))
+
 
 .CT_INT <- 0L
 .CT_NUM <- 1L
@@ -581,6 +665,26 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   df
 })
 
+# most of the heavy lifting here
+setMethod("dbFetch", signature(res="MonetDBEmbeddedResult", n="numeric"), def=function(res, n, ...) {
+  if (!res@env$success) {
+    stop("Cannot fetch results from error response, error was ", res@env$info$message)
+  }
+  if (!dbIsValid(res)) {
+    stop("Cannot fetch results from closed response.")
+  }
+
+  if (n > -1) {
+    stop("Cannot do partial fetch")
+  }
+  res@env$delivered <- res@env$info$rows
+  res@env$resp$tuples
+})
+
+setMethod("dbClearResult", "MonetDBEmbeddedResult", def = function(res, ...) {
+  # no need to do anything here
+  return(invisible(TRUE))
+}, valueClass = "logical")
 
 setMethod("dbClearResult", "MonetDBResult", def = function(res, ...) {
   if (res@env$info$type == Q_TABLE) {

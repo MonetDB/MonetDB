@@ -21,18 +21,27 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query) {
+monetdb_embedded_query <- function(query, commit=T) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
 	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
+	if (commit) query <- paste(query, "COMMIT;")
 	res <- .Call("monetdb_query_R", query)
-	if (is.null(res)) {
-		return(invisible(FALSE))
+
+	resp <- list()
+	if (is.character(res)) { # error
+		resp$type <- "!" # MSG_MESSAGE
+		resp$message <- res
 	}
-	else {
-		return(as.data.frame(res, stringsAsFactors=F))
+	if (is.logical(res)) { # no result set, but successful
+		resp$type <- 2 # Q_UPDATE
 	}
+	if (is.list(res)) {
+		resp$type <- 1 # Q_TABLE
+		resp$tuples <- as.data.frame(res, stringsAsFactors=F)
+	}
+	invisible(resp)
 }
