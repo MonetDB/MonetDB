@@ -2558,9 +2558,9 @@ static int pushDimensionSelections(stmt **s) {
 	int changes = 0;
 	stmt *nextS = NULL;
 	
-	while((*s)->type == st_mbrselect) { //st_mbrselects are always be in the beginning
+	if((*s)->type == st_mbrselect) { //st_mbrselects are always be in the beginning
 		//skip them
-		*s = (*s)->op3;
+		return pushDimensionSelections(&(*s)->op3);
 	}
 	nextS = (*s)->op3;
 

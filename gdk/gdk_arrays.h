@@ -16,7 +16,7 @@ typedef struct dimStruct {
 } gdk_dimension;
 
 typedef struct arrayStruct {
-	int dimsNum; //the number of dimensions
+	unsigned short dimsNum; //the number of dimensions (0 to 65,535)
 	BUN *dimSizes; //an array having the size for each dimension
 } gdk_array;
 
@@ -289,4 +289,9 @@ gdk_return dimensionBATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *dime
 gdk_return dimensionBATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl, BAT *dimensionBATr, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 
+/*NEW*/
+gdk_export BAT *projectCells(gdk_cells* dims, BAT* oidsBAT);
+gdk_export gdk_cells* arrayToCells(gdk_array *array);
+gdk_export gdk_array *cellsToArray(gdk_cells *cells);
 #endif /* _GDK_ARRAYS_H */
+

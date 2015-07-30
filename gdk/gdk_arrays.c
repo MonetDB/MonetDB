@@ -1702,3 +1702,141 @@ fprintf(stderr, "avg: group %u - (%u,%f) => %f\n", (unsigned int)aggrGrp, (unsig
 
     return GDK_SUCCEED;
 }
+
+static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, BAT* oidsBAT, oid **resOIDs ) {
+    BUN sz = 0;
+    BUN j;
+    oid io;
+
+    oid *qOIDS = NULL;
+
+    gdk_dimension *oidsDim;
+    dim_node *n;
+    for(n=oidDims->h; n && n->data->dimNum<dimNum; n = n->next);
+    oidsDim = n->data;
+
+    if(dimNum == oidDims->dimsNum-1) { //last dimension
+        if(oidsDim->elementsNum > 0) {
+            qOIDS = GDKmalloc(sizeof(oid)*oidsDim->elementsNum);
+            for(io=*(oid*)oidsDim->min, sz=0; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
+                qOIDS[sz] = skipSize*io;
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+            }
+        } else {
+            //the oids are in the BAT
+            //iterate over the elements in the BAT to find the indices of the dimension that have survided
+            //and add and idx for each one of these elements
+            oid* candOIDs = (oid*)Tloc(oidsBAT, BUNfirst(oidsBAT));
+            int previousIdx = -1;
+            BUN i;
+            qOIDS = GDKmalloc(sizeof(oid)*oidsDim->initialElementsNum);
+
+            for(i=0; i<BATcount(oidsBAT); i++) {
+                int idx = candOIDs[i]/skipSize;
+                if(idx > previousIdx) {
+                    qOIDS[sz] = skipSize*idx;
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+                    sz++;
+                    previousIdx = idx;
+                }
+            }
+        }
+        *resOIDs = qOIDS;
+    } else {
+        oid *resOIDs_local = NULL;
+        BUN addedEls = qualifyingOIDs(dimNum+1, skipSize*oidsDim->initialElementsNum, oidDims, oidsBAT, &resOIDs_local);
+        if(dimNum == 0)
+            qOIDS = *resOIDs;
+        else {
+            if(oidsDim->elementsNum > 0)
+                qOIDS = GDKmalloc(sizeof(oid)*oidsDim->elementsNum*addedEls);
+            else
+                qOIDS = GDKmalloc(sizeof(oid)*oidsDim->initialElementsNum*addedEls);
+        }
+
+        for(j=0, sz=0; j<addedEls; j++) {
+//fprintf(stderr, "-> %u = %u\n", (unsigned int)j, (unsigned int)resOIDs_local[j]);
+            if(oidsDim->elementsNum > 0) {
+                for(io=*(oid*)oidsDim->min; io<=*(oid*)oidsDim->max; io+=*(oid*)oidsDim->step, sz++) {
+                    qOIDS[sz] = resOIDs_local[j] + skipSize*io;
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+                }
+            } else {
+                //check the BAT
+                oid* candOIDs = (oid*)Tloc(oidsBAT, BUNfirst(oidsBAT));
+                int previousIdx = -1;
+                BUN i;
+                for(i=0; i<BATcount(oidsBAT); i++) {
+                    int idx = (candOIDs[i]%(skipSize*oidsDim->initialElementsNum))/skipSize;
+                    if(idx > previousIdx) {
+                        qOIDS[sz] = resOIDs_local[j]+skipSize*idx;
+//fprintf(stderr, "%u = %u\n", (unsigned int)sz, (unsigned int)qOIDS[sz]);
+                        sz++;
+                        previousIdx = idx;
+                    }
+                }
+            }
+        }
+        *resOIDs = qOIDS;
+    }
+
+    return sz;
+}
+
+BAT *projectCells(gdk_cells* dims, BAT* oidsBAT) {
+	BAT *resBAT = NULL;
+	BUN resSize = 1;
+	oid *resOIDs = NULL;
+	dim_node *n;
+
+    /*combine the oidsDimensions in order to get the global oids (the cells)*/
+    for(n=dims->h; n; n=n->next) {
+        BUN sz = n->data->elementsNum;
+        if(sz > 0)
+            resSize *= sz;
+        else
+            resSize *= n->data->initialElementsNum;
+    }
+    resSize += BATcount(oidsBAT); //this is not accurate but I believe it is ok
+	//fprintf(stderr, "estiamted size = %u\n", (unsigned int)resSize);      
+	/*the size of the result is the same as the number of cells in the candidatesDimensions */
+	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)))
+		return NULL;
+	resOIDs = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+	resSize = qualifyingOIDs(0, 1, dims, oidsBAT, &resOIDs);
+	//fprintf(stderr, "real size = %u\n", (unsigned int)resSize);       
+	BATsetcount(resBAT, resSize);
+	BATseqbase(resBAT, 0);
+	BATderiveProps(resBAT, FALSE);
+
+	return resBAT;
+}
+
+
+/*takes a set of dimensions of any type and returns the corresponding dimensions in indices format */
+gdk_cells* arrayToCells(gdk_array *array) {
+    gdk_cells *resDims = cells_new();
+    int i=0;
+
+    for(i=0; i<array->dimsNum; i++) {
+        gdk_dimension *dim = createDimension_oid(i, array->dimSizes[i], 0, array->dimSizes[i]-1, 1);
+        resDims = cells_add_dimension(resDims, dim);
+    }
+    return resDims;
+}
+
+gdk_array *cellsToArray(gdk_cells *cells) {
+	dim_node *n;
+	int i=0;
+	gdk_array *array = GDKmalloc(sizeof(gdk_array));
+	if(!array)
+		return NULL;
+	//count the dimensions
+	array->dimsNum = 0;
+	for(n=cells->h ; n ; n=n->next)
+		array->dimsNum++;
+	//get the size of each dimension (the initial size)
+	for(n=cells->h , i=0; n ; n= n->next, i++)
+		array->dimSizes[i] = n->data->initialElementsNum;
+	return array;
+}

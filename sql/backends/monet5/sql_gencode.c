@@ -934,28 +934,33 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			int ht = TYPE_oid;
 			int tt = c->type.type->localtype;
-								
-			if(c->def) {
+
+			if(isArray(c->t)) {
 				int def = 0;
-				if ((def = _dumpstmt(sql, mb, s->op1)) < 0)
+				if (c->def && (def = _dumpstmt(sql, mb, s->op1)) < 0)
 					return -1;	
 
-				q = newStmt2(mb, sqlRef, "create_cells");
+				//q = newStmt2(mb, sqlRef, "create_cells");
+				q = newStmt2(mb, sqlRef, "bind_array_column");
 				if(q == NULL)
 					return -1;
 
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 				setVarUDFtype(mb, getArg(q, 0));
-				
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));	
 				q = pushArgument(mb, q, sql->mvc_var);
 				q = pushSchema(mb, q, c->t);
 				q = pushStr(mb, q, c->t->base.name);
 				q = pushStr(mb, q, c->base.name);
-				q = pushArgument(mb, q, def);
+				if(c->def)
+					q = pushArgument(mb, q, def);
 
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+			
+				/* rename second result */
+				renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 
 			} else {
 				q = newStmt2(mb, sqlRef, bindRef);
@@ -1231,12 +1236,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if(!s->op3)
 				showException(GDKout, SQL, "sql", "SQL2MAL: error mbrsubselect without candidates\n");
 
+			snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+			uval = findVariable(mb, nme);
+			assert(uval >=0);
+			
+			q = newStmt2(mb, "algebra", "mbrsubselect");
+			q = pushArgument(mb, q, l); //all the dimensions
+			q = pushArgument(mb, q, uval); //the current dimension
+
 			if ((sub = _dumpstmt(sql, mb, s->op3)) < 0)
 				return -1;
 
-
-			q = newStmt2(mb, "algebra", "mbrsubselect");
-			q = pushArgument(mb, q, l);
 			if(s->op3->type == st_uselect || s->op3->type == st_tunion)
 				q = pushArgument(mb, q, sub);
 			else {
@@ -1303,7 +1313,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 		}
-#endif 
+#endif
 		break;
 		case st_uselect:{
 			bit need_not = FALSE;
@@ -2790,7 +2800,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_dimension: {
 			sql_table *t = s->op4.dval->t;
 			
-			q = newStmt2(mb, sqlRef, "get_dimension");
+			q = newStmt2(mb, sqlRef, "bind_array_dimension");
 			if (q == NULL)
 				return -1;
 			setVarType(mb, getArg(q, 0), TYPE_ptr);

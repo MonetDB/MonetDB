@@ -26,9 +26,9 @@ algebra_export str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const
 algebra_export str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dims, const ptr* dim, const void *val, const char **op);
 
 
-algebra_export str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const bat* values, const ptr *dimsCand, const bat* oidsCand, 
+algebra_export str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const bat* values, const ptr *dimsCand, const bat* oidsCand, 
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGnonDimensionSubselect1(ptr *dimsRes, bat* oidsRes, const bat* values, 
+algebra_export str ALGnonDimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dims, const bat* values, 
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 
 algebra_export str ALGmbrsubselect(bat *result, const ptr *dims, const ptr* dim, const bat *sid, const bat *cid);
