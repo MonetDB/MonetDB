@@ -72,7 +72,7 @@ int monetdb_startup(char* dir, char silent) {
 
 	monetdb_embedded_initialized = true;
 	// sanity check, run a SQL query
-	if (monetdb_query("SELECT * FROM tables;", res) < 0) {
+	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
 		monetdb_embedded_initialized = false;
 		goto cleanup;
 	}
@@ -196,11 +196,14 @@ SEXP monetdb_query_R(SEXP query) {
 }
 
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
+	const char* dir = NULL;
+	char silent = 0;
+	int res = 0;
 	if (!IS_CHARACTER(dirsexp) || !IS_LOGICAL(silentsexp)) {
 		return ScalarInteger(-1);
 	}
-	const char* dir = CHAR(STRING_ELT(dirsexp, 0));
-	char silent = LOGICAL(silentsexp)[0];
-	int res = monetdb_startup((char*) dir, silent);
+	dir = CHAR(STRING_ELT(dirsexp, 0));
+	silent = LOGICAL(silentsexp)[0];
+	res = monetdb_startup((char*) dir, silent);
 	return ScalarInteger(res);
 }

@@ -8,7 +8,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 	if (length(dir) != 1) {
 		stop("Need a single directory name as parameter.")
 	}
-	if (!dir.exists(dir) && !dir.create(dir, recursive=T)) {
+	if (!file.exists(dir) && !dir.create(dir, recursive=T)) {
 		stop("Cannot create ", dir)
 	}
 	if (file.access(dir, mode=2) < 0) {
