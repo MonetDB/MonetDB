@@ -57,7 +57,7 @@
 
 #define INTERNAL_BAT_ACCESS "Internal error, can not access BAT."
 #define INTERNAL_BAT_HEAD "BAT has wrong head type"
-#define INTERNAL_OBJ_CREATE "Can not create object"
+#define INTERNAL_OBJ_CREATE "Cannot create object"
 #define INTERNAL_AUTHORIZATION "authorization BATs not empty"
 
 #define MAL_MALLOC_FAIL	"could not allocate space for"

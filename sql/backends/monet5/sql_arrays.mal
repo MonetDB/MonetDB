@@ -15,10 +15,6 @@ pattern sql.bind_array_column(mvc:int, schema:str, array:str, column:str) (:bat[
 address mvc_bind_array_column
 comment "Bind the 'schema.array.column' BAT";
 
-pattern sql.bind_array_column(mvc:int, schema:str, array:str, column:str, def:any) (:bat[:oid,:any], :ptr)
-address mvc_bind_array_column_with_default
-comment "Bind the 'schema.array.column' BAT";
-
 #pattern create_dimension(mvc:int, schema:str, table:str, dimension:str):bat[:oid,:any_1]
 #address mvc_create_dimension_bat_wrap
 #comment "Create the 'schema.table.dimension' BAT";

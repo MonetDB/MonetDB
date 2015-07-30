@@ -936,11 +936,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt = c->type.type->localtype;
 
 			if(isArray(c->t)) {
-				int def = 0;
-				if (c->def && (def = _dumpstmt(sql, mb, s->op1)) < 0)
-					return -1;	
-
-				//q = newStmt2(mb, sqlRef, "create_cells");
 				q = newStmt2(mb, sqlRef, "bind_array_column");
 				if(q == NULL)
 					return -1;
@@ -952,8 +947,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushSchema(mb, q, c->t);
 				q = pushStr(mb, q, c->t->base.name);
 				q = pushStr(mb, q, c->base.name);
-				if(c->def)
-					q = pushArgument(mb, q, def);
 
 				if (q == NULL)
 					return -1;

@@ -432,109 +432,6 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 	return dup_delta( tr, obat, bat, type, oc_isnew, c_isnew, isTempTable(t), t->sz);
 }
 
-
-static BAT*
-materialise_nonDimensional_column(sql_column *c, unsigned int cellsNum, char* defVal) {
-    BAT *b = NULL;
-
-#define fillVals(TPE, def)                     \
-    do {                                \
-            TPE *elements = NULL; \
-            BUN i; \
-\
-            if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
-                return NULL;                   \
-\
-            elements = (TPE*) Tloc(b, BUNfirst(b));          \
-\
-            /*Fill the rest of the cells with the default value or NULL if no \
- *             * default values is provided*/ \
-            for(i=0;i<cellsNum; i++) { \
-                elements[i] = def; \
-            }   \
-\
-            b->tsorted = 0;              \
-            b->trevsorted = 0;           \
-    } while (0)
-
-	switch (c->type.type->localtype) {
-        case TYPE_bte: {
-			bte val = bte_nil;
-            if(defVal)
-            	val = atoi(defVal);
-			fillVals(bte, val);
-        }	break;
-        case TYPE_sht: {
-			short val = sht_nil;
-            if(defVal)
-				val = atoi(defVal);
-            fillVals(sht, val);
-        }	break;
-        case TYPE_int: {
-			int val = int_nil;
-            if(defVal)
-				val = atoi(defVal);
-            fillVals(int, val);
-        }	break;
-        case TYPE_lng: {
-			long val = lng_nil;
-            if(defVal)
-				val = atol(defVal);
-            fillVals(lng, val);
-        }	break;
-#ifdef HAVE_HGE
-        case TYPE_hge: {
-			hge val = hge_nil;
-            if(defVal)
-				val = atol(defVal);
-            fillVals(hge, val);
-		}	break;
-#endif
-        case TYPE_flt: {
-			float val = flt_nil;
-            if(defVal)
-				val = atof(defVal);
-            fillVals(flt, val);
-        }    break;
-        case TYPE_dbl: {
-			double val = dbl_nil;
-            if(defVal)
-				val = atof(defVal);
-            fillVals(dbl, val);
-        }    break;
-        case TYPE_str: {
-            BUN i; 
-
-            if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)
-                return NULL;
-
-            /*Fill the rest of the cells with the default value or NULL if no \
-             * default values is provided*/
-			for(i=0; i<cellsNum; i++) {
-                if(!defVal)
-                    BUNappend(b,str_nil, TRUE);
-                else
-                    BUNappend(b, (char*)defVal, TRUE);
-            }
-            
-
-            b->tsorted = 0;
-            b->trevsorted = 0;    
-			}
-
-            break;
-        default:
-            fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");
-            return NULL;
-    }
-
-    BATsetcount(b,cellsNum);
-    BATseqbase(b,0);
-    BATderiveProps(b,FALSE);
-
-    return b;
-}
-
 static void
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
@@ -564,7 +461,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			BAT *b_in = temp_descriptor(bat->ibid); //the BAT of the updated column
 			BUN existingCells = BATcount(b_in) + bat->cnt;
 			if(existingCells < neededCells) {
-				BAT *extra = materialise_nonDimensional_column(c, neededCells-existingCells, c->def);
+				BAT *extra = materialise_nonDimensional_column(c->type.type->localtype, neededCells-existingCells, c->def);
 				delta_append_bat(bat, extra); //append the values to the column
 			}
 		}

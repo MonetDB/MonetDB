@@ -1840,3 +1840,107 @@ gdk_array *cellsToArray(gdk_cells *cells) {
 		array->dimSizes[i] = n->data->initialElementsNum;
 	return array;
 }
+
+
+BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, char* defVal) {
+    BAT *b = NULL;
+
+#define fillVals(TPE, def)                     \
+    do {                                \
+            TPE *elements = NULL; \
+            BUN i; \
+\
+            if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
+                return NULL;                   \
+\
+            elements = (TPE*) Tloc(b, BUNfirst(b));          \
+\
+            /*Fill the rest of the cells with the default value or NULL if no \
+ *  *             * default values is provided*/ \
+            for(i=0;i<cellsNum; i++) { \
+                elements[i] = def; \
+            }   \
+\
+            b->tsorted = 0;              \
+            b->trevsorted = 0;           \
+    } while (0)
+
+	switch (columntype) {
+        case TYPE_bte: {
+            bte val = bte_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(bte, val);
+        }   break;
+        case TYPE_sht: {
+            short val = sht_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(sht, val);
+        }   break;
+        case TYPE_int: {
+            int val = int_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(int, val);
+        }   break;
+        case TYPE_lng: {
+            long val = lng_nil;
+            if(defVal)
+                val = atol(defVal);
+            fillVals(lng, val);
+        }   break;
+#ifdef HAVE_HGE
+        case TYPE_hge: {
+            hge val = hge_nil;
+            if(defVal)
+                val = atol(defVal);
+            fillVals(hge, val);
+        }   break;
+#endif
+        case TYPE_flt: {
+            float val = flt_nil;
+            if(defVal)
+                val = atof(defVal);
+            fillVals(flt, val);
+        }    break;
+        case TYPE_dbl: {
+            double val = dbl_nil;
+            if(defVal)
+                val = atof(defVal);
+            fillVals(dbl, val);
+        }    break;
+        case TYPE_str: {
+            BUN i;
+
+            if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)
+                return NULL;
+
+            /*Fill the rest of the cells with the default value or NULL if no \
+ *              * default values is provided*/
+            for(i=0; i<cellsNum; i++) {
+                if(!defVal)
+                    BUNappend(b,str_nil, TRUE);
+                else
+                    BUNappend(b, (char*)defVal, TRUE);
+            }
+
+
+            b->tsorted = 0;
+            b->trevsorted = 0;
+            }
+
+            break;
+        default:
+            fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");
+            return NULL;
+    }
+
+    BATsetcount(b,cellsNum);
+    BATseqbase(b,0);
+    BATderiveProps(b,FALSE);
+
+    return b;
+}
+
+

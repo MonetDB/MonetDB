@@ -24,7 +24,6 @@
 #include <mal_interpreter.h>
 
 sql5_export str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_array_column_with_default(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 //sql5_export str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

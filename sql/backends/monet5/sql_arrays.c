@@ -600,10 +600,6 @@ str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	return MAL_SUCCEED;
 }
 
-str mvc_bind_array_column_with_default(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return mvc_bind_array_column(cntxt, mb, stk, pci);
-}
-
 str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
@@ -614,8 +610,6 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	str *sname = getArgReference_str(stk, pci, 3);
 	str *tname = getArgReference_str(stk, pci, 4);
 	str *cname = getArgReference_str(stk, pci, 5);
-	ptr def = NULL;
-	int tpe =0;
 	
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -625,15 +619,6 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-
-	if(pci->argc > 6) {
-		def = getArgReference(stk, pci, 6);
-		tpe = getArgType(mb, pci, 6);
-
-		if (ATOMextern(tpe))
-			def = *(ptr *) def;
-	}
-//Na dw ti kanw otan kanw project kai na vrw apo ekei pws mporw na valw to default akoma kai an einai null
 
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
@@ -646,11 +631,12 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.bind_array_column", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 
 	*dims_res = get_dims1(t);
-	
-	b = store_funcs.bind_col(m->session->tr, c, 0);
 
-	if(b && def)
-		b = mvc_fill_values(c, b, t->cellsNum, def);
+	/*bind the column*/
+	b = store_funcs.bind_col(m->session->tr, c, 0);
+	/*fill the BAT*/
+	if(b)
+		b = materialise_nonDimensional_column(c->type.type->localtype, t->cellsNum, c->def);
 
 	if(b) {
 		BBPkeepref(*bid = b->batCacheid);

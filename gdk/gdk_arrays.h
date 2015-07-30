@@ -293,5 +293,8 @@ gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl,
 gdk_export BAT *projectCells(gdk_cells* dims, BAT* oidsBAT);
 gdk_export gdk_cells* arrayToCells(gdk_array *array);
 gdk_export gdk_array *cellsToArray(gdk_cells *cells);
+
+gdk_export BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, char* defVal);
+
 #endif /* _GDK_ARRAYS_H */
 
