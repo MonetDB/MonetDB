@@ -588,7 +588,7 @@ GDKmemdump(void)
  * applied: for all mallocs > 1MB.
  */
 static void
-GDKmemfail(str s, size_t len)
+GDKmemfail(const char *s, size_t len)
 {
 	int bak = GDKdebug;
 
@@ -943,6 +943,25 @@ GDKmunmap(void *addr, size_t size)
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
+#undef GDKmremap
+void *
+GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+{
+	void *ret;
+
+	ret = MT_mremap(path, mode, old_address, old_size, new_size);
+	if (ret == NULL) {
+		GDKmemfail("GDKmremap", *new_size);
+		ret = MT_mremap(path, mode, old_address, old_size, new_size);
+		if (ret != NULL)
+			fprintf(stderr, "#GDKmremap: recovery ok. Continuing..\n");
+	}
+	if (ret != NULL) {
+		memdec(old_size, "GDKmremap");
+		meminc(*new_size, "GDKmremap");
+	}
+	return ret;
+}
 
 /*
  * @+ Session Initialization
