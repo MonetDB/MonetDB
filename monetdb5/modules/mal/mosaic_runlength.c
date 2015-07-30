@@ -69,6 +69,44 @@ MOSdump_runlength(Client cntxt, MOStask task)
 }
 
 void
+MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MosaicBlk blk = task->blk;
+	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+	(void) cntxt;
+
+	BUNappend(btech, "runlength", FALSE);
+	BUNappend(bcount, &cnt, FALSE);
+	input = cnt * ATOMsize(task->type);
+	switch(ATOMstorage(task->type)){
+	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
+	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit),bit); break;
+	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
+	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
+	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
+	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid),oid); break;
+	case TYPE_wrd: output = wordaligned( MosaicBlkSize + sizeof(wrd),wrd); break;
+	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt),flt); break;
+	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl),dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: output = wordaligned( MosaicBlkSize + sizeof(hge),hge); break;
+#endif
+	case  TYPE_str:
+		// we only have to look at the index width, not the values
+		switch(task->b->T->width){
+		case 1: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
+		case 2: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
+		case 4: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
+		case 8: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
+		}
+		break;
+	}
+	BUNappend(binput, &input, FALSE);
+	BUNappend(boutput, &output, FALSE);
+	BUNappend(bproperties, "", FALSE);
+}
+
+void
 MOSadvance_runlength(Client cntxt, MOStask task)
 {
 	(void) cntxt;

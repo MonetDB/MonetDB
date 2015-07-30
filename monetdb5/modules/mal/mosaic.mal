@@ -36,12 +36,12 @@ pattern optimize(bid:int)
 address MOSoptimize
 comment "Perform a search thru the compression space using depth 1";
 
-pattern optimize(bid:int, ply:int)
+pattern optimize(bid:int)
 address MOSoptimize
 comment "Perform a search thru the compression space using up to 2^ply
 candidate combinations";
 
-pattern optimize(bid:int, ply:int, blk:int)
+pattern optimize(bid:int, blk:int)
 address MOSoptimize
 comment "Perform a search thru the compression space using up to 2^ply
 candidate combinations and blk*1000 blocksize limits";

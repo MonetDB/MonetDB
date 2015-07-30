@@ -30,6 +30,7 @@
 #include "mal_client.h"
 
 mosaic_export void MOSdump_literal(Client cntxt, MOStask task);
+mosaic_export void MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSadvance_literal(Client cntxt, MOStask task);
 mosaic_export void MOSskip_literal(Client cntxt, MOStask task);
 mosaic_export void MOScompress_literal(Client cntxt, MOStask task);

@@ -88,6 +88,42 @@ MOSdump_linear(Client cntxt, MOStask task)
 }
 
 void
+MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MosaicBlk blk = task->blk;
+	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+
+	(void) cntxt;
+	BUNappend(btech, "linear", FALSE);
+	BUNappend(bcount, &cnt, FALSE);
+	input = cnt * ATOMsize(task->type);
+	switch(ATOMstorage(task->type)){
+	case TYPE_bte: output = wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte); break;
+	case TYPE_bit: output = wordaligned( MosaicBlkSize + 2 * sizeof(bit),bit); break;
+	case TYPE_sht: output = wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht); break;
+	case TYPE_int: output = wordaligned( MosaicBlkSize + 2 * sizeof(int),int); break;
+	case TYPE_oid: output = wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid); break;
+	case TYPE_lng: output = wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng); break;
+	case TYPE_wrd: output = wordaligned( MosaicBlkSize + 2 * sizeof(wrd),wrd); break;
+	case TYPE_flt: output = wordaligned( MosaicBlkSize + 2 * sizeof(flt),flt); break;
+	case TYPE_dbl: output = wordaligned( MosaicBlkSize + 2 * sizeof(dbl),dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: output = wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge); break;
+#endif
+	case TYPE_str:
+		switch(task->b->T->width){
+		case 1: output = wordaligned( MosaicBlkSize + 2 *sizeof(bte),bte); break ;
+		case 2: output = wordaligned( MosaicBlkSize + 2 *sizeof(sht),sht); break ;
+		case 4: output = wordaligned( MosaicBlkSize + 2 *sizeof(int),int); break ;
+		case 8: output = wordaligned( MosaicBlkSize + 2 *sizeof(lng),lng); break ;
+		}
+	}
+	BUNappend(binput, &input, FALSE);
+	BUNappend(boutput, &output, FALSE);
+	BUNappend(bproperties, "", FALSE);
+}
+
+void
 MOSadvance_linear(Client cntxt, MOStask task)
 {
 	(void) cntxt;

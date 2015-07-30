@@ -86,6 +86,22 @@ MOSdump_dictionary(Client cntxt, MOStask task)
 }
 
 void
+MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MosaicBlk blk = task->blk;
+	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+
+	(void) cntxt;
+	BUNappend(btech, "dictionary", FALSE);
+	BUNappend(bcount, &cnt, FALSE);
+	input = cnt * ATOMsize(task->type);
+	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
+	BUNappend(binput, &input, FALSE);
+	BUNappend(boutput, &output, FALSE);
+	BUNappend(bproperties, "", FALSE);
+}
+
+void
 MOSskip_dictionary(Client cntxt, MOStask task)
 {
 	MOSadvance_dictionary(cntxt, task);

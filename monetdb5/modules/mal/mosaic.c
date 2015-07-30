@@ -67,10 +67,50 @@ MOSdumpTask(Client cntxt,MOStask task)
 	mnstr_printf(cntxt->fdout,"# ");
 	mnstr_printf(cntxt->fdout,"clk " LLFMT"\tsizes %10lld\t%10lld\t%3.0f%%\t%10.3fx\t", 
 		task->timer,task->size,task->xsize, task->xsize/perc, task->xsize ==0 ? 0:(flt)task->size/task->xsize);
-	for ( i=0; i < MOSAIC_METHODS; i++)
-	if( task->hdr->blks[i])
-		mnstr_printf(cntxt->fdout, "%s\t"LLFMT "\t"LLFMT " " LLFMT"\t" , MOSfiltername[i], task->hdr->blks[i], task->hdr->elms[i], task->hdr->elms[i]/task->hdr->blks[i]);
+	for ( i=0; i < MOSAIC_METHODS -1; i++)
+	if( task->filter[i])
+		mnstr_printf(cntxt->fdout, "%s["LLFMT ","LLFMT "]\t" , MOSfiltername[i], task->hdr->blks[i], task->hdr->elms[i]);
 	mnstr_printf(cntxt->fdout,"\n");
+}
+
+str
+MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MOStask task=0;
+
+	task= (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL)
+		throw(SQL,"mosaic",MAL_MALLOC_FAIL);
+	MOSinit(task,b);
+	MOSinitializeScan(cntxt,task,0,task->hdr->top);
+	while(task->start< task->stop){
+		switch(MOSgetTag(task->blk)){
+		case MOSAIC_NONE:
+			MOSlayout_literal(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_literal(cntxt,task);
+			break;
+		case MOSAIC_RLE:
+			MOSlayout_runlength(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_runlength(cntxt,task);
+			break;
+		case MOSAIC_DICT:
+			MOSlayout_dictionary(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_dictionary(cntxt,task);
+			break;
+		case MOSAIC_DELTA:
+			MOSlayout_delta(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_delta(cntxt,task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSlayout_prefix(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_prefix(cntxt,task);
+			break;
+		case MOSAIC_FRAME:
+			MOSlayout_frame(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_frame(cntxt,task);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 // dump a compressed BAT
@@ -1276,7 +1316,48 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // The analyse routine runs through the BAT dictionary and assess
 // all possible compression options.
 
+/*
+ * Start searching for a proper compression scheme.
+ * Naive creation of all patterns in increasing number of bits
+ */
+
+#define STEP MOSAIC_METHODS
 static int
+makepatterns(int *patterns, int size)
+{
+	int i,j,k, idx, bit=1, step = MOSAIC_METHODS - 1;
+	int lim= 8*7*6*5*4*3*2;
+	
+	for(k=0, i=0; i<lim && k <size; i++){
+		patterns[k]=0;
+		idx =i;
+		while(idx > 0) {
+			if( idx % step ) 
+					patterns[k] |= 1 <<(idx % step);
+			idx /= step;
+		}
+		for( j=0; j< k; j++)
+			if(patterns[k] == patterns[j]) break;
+		if( j < k ) continue;
+		
+#ifdef _MOSAIC_DEBUG_
+		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
+			mnstr_printf(GDKout,"%d", (patterns[k] & bit) > 0);
+			bit *=2;
+		}
+		mnstr_printf(GDKout,"\n");
+#else
+		(void) bit;
+#endif
+		k++;
+	}
+#ifdef _MOSAIC_DEBUG_
+	mnstr_printf(GDKout,"lim %d k %d\n",lim,k);
+#endif
+	return k;
+}
+		
+int
 MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 {
 	BAT *b;
@@ -1336,10 +1417,75 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 	GDKfree(type);
 	BBPunfix(bid);
 	return 1;
-
 }
+
+#define CANDIDATES 256  /* all three combinations */
+void
+MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, lng sample)
+{
+	int i,j,k,cases, bit=1, ret, bid= b->batCacheid;
+	BUN cnt=  BATcount(b);
+	lng input;
+	MOStask task;
+	int pattern[CANDIDATES];
+	char technique[CANDIDATES]={0}, *t =  technique;
+	dbl xf[CANDIDATES], factor;
+
+	cases = makepatterns(pattern,CANDIDATES);
+	task = (MOStask) GDKzalloc(sizeof(*task));
+	if( task == NULL)
+		return;
+	for( i = 0; i < CANDIDATES; i++)
+		xf[i]= -1;
+	input = cnt * ATOMsize(b->ttype);
+	for( i = 1; i< cases; i++){
+		// filter in-effective sub-patterns
+		for( j=0; j < i; j++)
+			if ( (pattern[i] & pattern[j]) == pattern[j] && xf[j]== 0) break;
+		if( j<i ) continue;
+		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
+			task->filter[j]= (pattern[i] & bit)>0;
+			bit *=2;
+		}
+		MOScompressInternal(cntxt, &ret, &bid, task, sample, 0);
+		
+		// analyse result to detect a new combination
+		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
+			if ( task->filter[j] && task->hdr->blks[j])
+				k |= bit;
+			bit *=2;
+		}
+		for( j=0; j < i; j++)
+			if (pattern[j] == k )
+				break;
+		if( j<i)
+			continue;
+
+		xf[i]= task->hdr? task->factor: 0;
+		if( xf[i] == 0)
+			continue;
+		BUNappend(boutput,&task->xsize,FALSE);
+
+		t= technique;
+		for ( j=0; j < MOSAIC_METHODS -1; j++)
+		if( task->hdr->blks[j]) {
+			snprintf(t, 1024-strlen(technique),"%s ", MOSfiltername[j]);
+			t= technique + strlen(technique);
+		}
+		BUNappend(btech,technique,FALSE);
+		if( task->xsize)
+			factor = (input + 0.0)/task->xsize;
+		BUNappend(bfactor,&factor,FALSE);
+
+		// get rid of temporary compressed BAT
+		if( ret != bid)
+			BBPdecref(ret, TRUE);
+	}
+	GDKfree(task);
+}
+
 /* slice a fixed size atom into thin columns*/
-static str
+str
 MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
 {
 	BUN i;
@@ -1496,78 +1642,38 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/*
- * Start searching for a proper compression scheme.
- */
-
-#define STEP MOSAIC_METHODS
-static int
-MOSsetmix(float *xf, int idx, MOStask task){
-	int i, j=0;
-	for( i = 1; i < STEP; i++)
-		task->filter[i] = 0;
-	while(idx > 0) {
-		if( idx % STEP ) { 
-			if ( xf[idx % STEP] > 1.0  || xf[idx % STEP] == 0){
-				if( idx % STEP < STEP -1) { /* ignore EOL */
-					task->filter[idx % STEP] = 1;
-					j++;
-				}
-			} else 
-				return -1;
-		}
-		idx /= STEP;
-	}
-	return j ? 0: -1;
-}
-
-static int getPattern(MOStask task)
-{	int i,p=0;
-	for( i = 0; i< MOSAIC_METHODS-1; i++)
-		p += 2 * p + task->filter[i];
-	return p;
-}
-
 str
 MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ply = 1;
 	MOStask task;
 	int cases;
-	int i, j, ret, idx =0, p;
+	int i, j, k, bit, ret;
 	bat bid;
-	int pattern[1024];
-	float mx, xf[1024];
+	int pattern[CANDIDATES];
+	float  xf[CANDIDATES];
 
 	(void) mb;
 
+	cases = makepatterns(pattern,CANDIDATES);
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
 		throw(MAL, "mosaic.mosaic", MAL_MALLOC_FAIL);
 
 	bid = *getArgReference_int(stk,pci,1);
-	if( pci->argc > 2)
-		ply = *getArgReference_int(stk,pci,2);
 	MOSblocklimit = 100000;
-	if( pci->argc > 3)
-		MOSblocklimit  = *getArgReference_int(stk,pci,3) * 1000;
-
-	cases = STEP;
-	for ( i=ply-1; i > 0 && cases * STEP < 1024; i--)
-		cases *= STEP;
 
 	for( i = 0; i < 1024; i++)
-		xf[i]=0;
+		xf[i]= -1;
 
-	mx = 0;
 	for( i = 1; i< cases; i++){
-		if( MOSsetmix(xf,i,task) < 0)
-			continue;
-		p= getPattern(task);
+		// filter in-effective sub-patterns
 		for( j=0; j < i; j++)
-			if (pattern[j] == p) break;
+			if ( (pattern[i] & pattern[j]) == pattern[j] && xf[j]== 0) break;
 		if( j<i ) continue;
-		pattern[j]= p;
+		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
+			task->filter[j]= (pattern[i] & bit)>0;
+			bit *=2;
+		}
 #define _DEBUG_MOSAIC_
 #ifdef _DEBUG_MOSAIC_
 		mnstr_printf(cntxt->fdout,"# %d\t%-8s\t", bid, BBP_physical(bid));
@@ -1578,21 +1684,24 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		(void) cntxt;
 #endif
 		MOScompressInternal(cntxt, &ret, &bid, task, 0, TRUE);
+		
+		// analyse result to detect a new combination
+		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
+			if ( task->filter[j] && task->hdr->blks[j])
+				k |= bit;
+			bit *=2;
+		}
+		for( j=0; j < i; j++)
+			if (pattern[j] == k && task->factor == xf[j])
+				break;
+		if( j<i)
+			continue;
+
+
 		xf[i] = task->factor;
 		if( ret != bid)
 			BBPdecref(ret, TRUE);
-		if( mx < task->factor){
-			mx = task->factor;
-			idx = i;
-		}
-		
 	}
-	mnstr_printf(cntxt->fdout,"#best strategy %d ",idx);
-	(void) MOSsetmix(xf,idx,task);
-	for( j = 0; j < MOSAIC_METHODS -1; j++)
-	if( task->filter[j])
-		mnstr_printf(cntxt->fdout,"%s ",MOSfiltername[j]);
-	mnstr_printf(cntxt->fdout,"\t%9.5f\n",mx);
 	GDKfree(task);
 	
 	return MAL_SUCCEED;

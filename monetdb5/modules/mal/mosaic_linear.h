@@ -29,6 +29,7 @@
 #include "mal_client.h"
 
 mosaic_export void MOSdump_linear(Client cntxt, MOStask task);
+mosaic_export void MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSadvance_linear(Client cntxt, MOStask task);
 mosaic_export void MOSskip_linear(Client cntxt, MOStask task);
 mosaic_export flt  MOSestimate_linear(Client cntxt, MOStask task);

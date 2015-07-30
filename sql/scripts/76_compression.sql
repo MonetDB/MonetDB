@@ -16,23 +16,25 @@
 -- All Rights Reserved.
 
 -- Author M.Kersten
--- Make the compression techniques applied for each column visible
--- Each column consists of multiple blocks compressed differently
--- The total compression factor achieved is shown always
+-- Routines to assess the opportunities for compression columns
 
-create function sys."compression"()
+-- inspect the layout of a compressioned column
+
+create schema mosaic;
+
+create function mosaic.layout(sch string, tbl string, col string)
 returns table (
-	"schema" string, 
-	"table" string, 
-	"column" string, 
-	"type" string, 
-	"count" bigint, -- total column size
-	technique string, -- any of the built-in compressors
-	blocks bigint, -- number of compressed blocks
-	cover bigint, -- number of elements compressed this way
-	factor  double	-- compression factor achieved
-	)
-external name sql."compression";
+	"technique" string, 	-- any of the built-in compressors + header
+	"count" bigint, 	-- entries covered 
+	inputsize bigint,	-- original storage footprint
+	outputsize bigint,	-- after compression
+	properties string	-- additional information
+	) external name sql."mosaicLayout";
 
-create view sys."compression" as select * from sys."compression"();
-
+-- provide an analysis of the possible mosaic storage layouts 
+create function mosaic.analysis(sch string, tbl string, col string)
+returns table(
+	technique string, 	-- compression techniques being used
+	outputsize bigint,	-- after compression
+	factor double		-- compression factor
+) external name sql."mosaicAnalysis";

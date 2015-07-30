@@ -30,6 +30,7 @@
 #include "mal_client.h"
 
 mosaic_export void MOSdump_runlength(Client cntxt, MOStask task);
+mosaic_export void MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSadvance_runlength(Client cntxt, MOStask task);
 mosaic_export void MOSskip_runlength(Client cntxt, MOStask task);
 mosaic_export flt  MOSestimate_runlength(Client cntxt, MOStask task);

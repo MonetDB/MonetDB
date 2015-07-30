@@ -32,7 +32,6 @@
 #include <bbp.h>
 #include <opt_pipes.h>
 #include "clients.h"
-#include "mosaic.h"
 #include "mal_instruction.h"
 #include "mosaic.h"
 

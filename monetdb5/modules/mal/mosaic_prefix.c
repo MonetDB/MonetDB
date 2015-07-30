@@ -71,6 +71,63 @@ MOSdump_prefix(Client cntxt, MOStask task)
 }
 
 void
+MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MosaicBlk blk = task->blk;
+	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+	int bits, bytes;
+	int size = ATOMsize(task->type);
+
+	(void) cntxt;
+	if( ATOMstorage(task->type == TYPE_str))
+			size =task->b->T->width;
+	BUNappend(btech, "prefix", FALSE);
+	BUNappend(bcount, &cnt, FALSE);
+	input = cnt * ATOMsize(task->type);
+	switch(size){
+	case 1:
+		{	bte *dst = (bte*)  (((char*) task->blk) + MosaicBlkSize);
+			bte mask = *dst++;
+			bte val = *dst++;
+			bits = val & (~mask);
+			// be aware that we use longs as bit vectors
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			output =  wordaligned(bytes,bte); 
+		}
+		break;
+	case 2:
+		{	sht *dst = (sht*)  (((char*) task->blk) + MosaicBlkSize);
+			sht mask = *dst++;
+			sht val = *dst++;
+			bits = val & (~mask);
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			output = wordaligned(bytes,sht); 
+		}
+		break;
+	case 4:
+		{	int *dst = (int*)  (((char*) task->blk) + MosaicBlkSize);
+			int mask = *dst++;
+			int val = *dst++;
+			bits = val & (~mask);
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			output = wordaligned(bytes, int); 
+		}
+		break;
+	case 8:
+		{	lng *dst = (lng*)  (((char*) task->blk) + MosaicBlkSize);
+			lng mask = *dst++;
+			lng val = *dst++;
+			bits = val & (~mask);
+			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			output = wordaligned(bytes, lng); 
+		}
+	}
+	BUNappend(binput, &input, FALSE);
+	BUNappend(boutput, &output, FALSE);
+	BUNappend(bproperties, "", FALSE);
+}
+
+void
 MOSadvance_prefix(Client cntxt, MOStask task)
 {
 	int bits, bytes;

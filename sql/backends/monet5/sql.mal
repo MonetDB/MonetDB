@@ -452,6 +452,12 @@ pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 
+pattern mosaic(sch:str, tbl:str):void
+address sql_mosaic;
+pattern mosaic(sch:str, tbl:str, col:str):void
+address sql_mosaic
+comment "Analyse the data for possible compression effectiveness";
+
 pattern storage()(
 	schema:bat[:oid,:str],
 	table:bat[:oid,:str],
@@ -471,18 +477,21 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
-pattern compression()(
-	schema:bat[:oid,:str],
-	table:bat[:oid,:str],
-	column:bat[:oid,:str],
-	type:bat[:oid,:str],
-	count:bat[:oid,:lng],
+pattern mosaicLayout(sch:str,tbl:str,col:str)(
 	technique:bat[:oid,:str],
-	blocks:bat[:oid,:lng],
-	cover:bat[:oid,:lng],
+	count:bat[:oid,:lng],
+	inputsize:bat[:oid,:lng],
+	outputsize:bat[:oid,:lng],
+	properties:bat[:oid,:str])
+address sql_mosaicLayout
+comment "Return a table with detailed compression information ";
+
+pattern mosaicAnalysis(sch:str,tbl:str,col:str)(
+	technique:bat[:oid,:str],
+	outputsize:bat[:oid,:lng],
 	factor:bat[:oid,:dbl])
-address sql_compression
-comment "return a table with compression information ";
+address sql_mosaicAnalysis
+comment "Return a table with compression opportunities for the column";
 
 command calc.identity(:any_2) :oid 
 address SQLidentity
