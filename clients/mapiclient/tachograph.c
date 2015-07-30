@@ -679,6 +679,7 @@ update(EventRecord *ev)
 		fprintf(tachojson,"{\n");
 		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
+		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
 		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"start\",\n");
@@ -787,13 +788,13 @@ int
 main(int argc, char **argv)
 {
 	ssize_t  n;
-	size_t len;
+	size_t len, buflen;
 	char *host = NULL;
 	int portnr = 0;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ], *e, *response;
+	char buf[BUFSIZ], *buffer, *e, *response;
 	int i = 0;
 	FILE *trace = NULL;
 	EventRecord event;
@@ -976,9 +977,15 @@ main(int argc, char **argv)
 	}
 
 	len = 0;
-	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-		buf[len + n] = 0;
-		response = buf;
+	buflen = BUFSIZ;
+	buffer = (char *) malloc(buflen);
+	if( buffer == NULL){
+		fprintf(stderr,"Could not create input buffer\n");
+		exit(-1);
+	}
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+		buffer[len + n] = 0;
+		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			if(debug)
@@ -993,12 +1000,22 @@ main(int argc, char **argv)
 				fprintf(tachotrace,"%s\n",response);
 			response = e + 1;
 		}
-		/* handle last line in buffer */
-		if (*response) {
+		/* handle the case that the line is not yet completed */
+		if( response == buffer){
+			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
+			if( new == NULL){
+				fprintf(stderr,"Could not extend input buffer\n");
+				exit(-1);
+			}
+			buffer = new;
+			buflen += BUFSIZ;
+		}
+		/* handle last part of line in buffer */
+		if (response != buffer && *response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buf, response, len + 1);
+			strncpy(buffer, response, len + 1);
 		} else
 			len = 0;
 	}

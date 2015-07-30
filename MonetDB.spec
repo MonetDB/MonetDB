@@ -136,9 +136,9 @@ BuildRequires: R-core-devel
 %endif
 
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
-Recommends: MonetDB5-server
-Suggests: %{name}-client
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 # need to define python_sitelib on RHEL 5 and older
@@ -233,7 +233,7 @@ library.
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %endif
 
 %description client
@@ -598,9 +598,11 @@ Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5
-Recommends: MonetDB5-server-hugeint
-Suggests: %{name}-client
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+%if %{bits} == 64
+Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+%endif
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 %description -n MonetDB5-server
@@ -655,7 +657,9 @@ fi
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
+%if %{bits} == 64
 %exclude %{_libdir}/monetdb5/*_hge.mal
+%endif
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -685,6 +689,7 @@ fi
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
 
+%if %{bits} == 64
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Application/Databases
@@ -704,6 +709,7 @@ MonetDB5-server component.
 %{_libdir}/monetdb5/*_hge.mal
 %exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
 %{_libdir}/monetdb5/autoload/*_hge.mal
+%endif
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -738,8 +744,10 @@ Requires: %{_bindir}/systemd-tmpfiles
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5-hugeint
-Suggests: %{name}-client
+%if %{bits} == 64
+Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
+%endif
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
 %description SQL-server5
@@ -781,16 +789,19 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
 %{_libdir}/monetdb5/createdb/*.sql
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
 %{_libdir}/monetdb5/sql*.mal
+%if %{bits} == 64
+%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
+%endif
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 
+%if %{bits} == 64
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
@@ -811,6 +822,7 @@ frontend of MonetDB.
 %{_libdir}/monetdb5/autoload/??_sql_hge.mal
 %{_libdir}/monetdb5/createdb/*_hge.sql
 %{_libdir}/monetdb5/sql*_hge.mal
+%endif
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API

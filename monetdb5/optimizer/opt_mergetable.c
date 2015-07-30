@@ -1401,7 +1401,6 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			pushInstruction(mb,q);
 		}
 
-		ml->v[piv].pushed = 1;
 		ml->v[piv].packed = 1;
 		ml->v[piv].type = mat_slc;
 	}
