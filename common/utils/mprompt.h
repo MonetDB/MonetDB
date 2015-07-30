@@ -6,15 +6,5 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-#ifdef NATIVE_WIN32
-#if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL)
-#define mutils_export extern __declspec(dllimport)
-#else
-#define mutils_export extern __declspec(dllexport)
-#endif
-#else
-#define mutils_export extern
-#endif
-
-mutils_export char *prompt_getlogin(void);
-mutils_export char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
+extern char *prompt_getlogin(void);
+extern char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
