@@ -50,29 +50,31 @@ clearArguments(void)
 }
 
 char * 
-stripQuotes(char *currentquery)
-{	char *q, *c, *qry;
-			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			if( q == NULL){
-				fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
-				exit(-1);
-			}
-			for (c= currentquery; *c; ){
-				if ( strncmp(c,"\\\\t",3) == 0){
-					*q++ = '\t';
-					c+=3;
-				} else
-				if ( strncmp(c,"\\\\n",3) == 0){
-					*q++ = '\n';
-					c+=3;
-				} else if ( strncmp(c,"\\\"",2) == 0){
-					*q++= '"';
-					c+=2;
-				} else if ( strncmp(c,"\\\\",2) == 0){
-					c+= 2;
-				} else *q++ = *c++;
-			}
-			*q =0;
+stripQuotes(const char *currentquery)
+{
+	const char *c;
+	char *q, *qry;
+	q = qry = (char *) malloc(strlen(currentquery) * 2);
+	if( q == NULL){
+		fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
+		exit(-1);
+	}
+	for (c= currentquery; *c; ){
+		if ( strncmp(c,"\\\\t",3) == 0){
+			*q++ = '\t';
+			c+=3;
+		} else
+			if ( strncmp(c,"\\\\n",3) == 0){
+				*q++ = '\n';
+				c+=3;
+			} else if ( strncmp(c,"\\\"",2) == 0){
+				*q++= '"';
+				c+=2;
+			} else if ( strncmp(c,"\\\\",2) == 0){
+				c+= 2;
+			} else *q++ = *c++;
+	}
+	*q =0;
 	return qry;
 }
  
@@ -228,7 +230,7 @@ eventparser(char *row, EventRecord *ev)
 
 	/* scan event record number */
 	c = row+1;
-	if (c == 0)
+	if (*c == 0)
 		return -2;
 	ev->eventnr = atoi(c + 1);
 
@@ -250,6 +252,8 @@ eventparser(char *row, EventRecord *ev)
 			ev->clkticks += usec;
 		}
 		c = strchr(c + 1, '"');
+		if (c == NULL)
+			return -3;
 		if (ev->clkticks < 0) {
 			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
 		}
