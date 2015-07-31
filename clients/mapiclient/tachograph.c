@@ -777,8 +777,24 @@ update(EventRecord *ev)
 		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
 		fprintf(tachostmt,LLFMT"\t",ev->inblock);
 		fprintf(tachostmt,LLFMT"\t",ev->oublock);
-		fprintf(tachostmt,"%s\t",ev->stmt);
-		fprintf(tachostmt, "%s\n",line);
+		fprintf(tachojson," \"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
+		fprintf(tachojson," \"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 
 		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));

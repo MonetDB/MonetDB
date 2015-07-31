@@ -429,6 +429,10 @@ eventparser(char *row, EventRecord *ev)
 		if( v)
 			parseArguments(v+3,1);
 	}
+	if (ev->stmt && (v=strstr(ev->stmt, ",\t]"))){
+		*v=',';
+		*(v+1) = 0;
+	} else
 	if (ev->stmt && (v=strstr(ev->stmt, "\"\t]")))
 		*v = 0;
 	else
