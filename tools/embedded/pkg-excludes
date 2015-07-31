@@ -42,4 +42,7 @@ sql/jdbc/tests/Tests
 sql/odbc/samples/Tests
 sql/test
 tools/embedded/Tests
-*.pdf
+java/jdbc-*.pdf
+BAMRecipe.pdf
+clients/odbc/doc/
+bam/*.png
