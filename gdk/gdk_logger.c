@@ -1248,11 +1248,15 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 #endif
 
 	snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
-	if ((lg->fn = GDKstrdup(fn)) == NULL ||
-	    (lg->dir = GDKstrdup(filename)) == NULL) {
+	lg->fn = GDKstrdup(fn);
+	lg->dir = GDKstrdup(filename);
+	lg->bufsize = 64*1024;
+	lg->buf = GDKmalloc(lg->bufsize);
+	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
+		GDKfree(lg->buf);
 		GDKfree(lg);
 		return NULL;
 	}
@@ -1269,7 +1273,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
-	lg->buf = GDKmalloc(lg->bufsize = 64*1024);
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
@@ -1309,7 +1312,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				     "(--dbpath) and log directory "
 				     "(--set %s_logdir)?\n",
 				     fn, 0, 0);
-			goto error;
 		}
 
 		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
@@ -1321,7 +1323,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		if (debug & 1)
 			fprintf(stderr, "#create %s catalog\n", fn);
 
-		/* Make persistent */
+		/* give the catalog bats names so we can find them
+		 * next time */
 		bid = lg->catalog_bid->batCacheid;
 		BBPincref(bid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
@@ -1329,7 +1332,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("Logger_new: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		/* Make persistent */
 		bid = lg->catalog_nme->batCacheid;
 		BBPincref(bid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
@@ -1393,10 +1395,17 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
 		if (d == 0) {
+			/* older database: create dcatalog and convert
+			 * catalog_bid and catalog_nme to
+			 * dense-headed */
 			d = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+			if (d == NULL)
+				logger_fatal("Logger_new: cannot create "
+					     "dcatalog bat", 0, 0, 0);
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
-				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
+				logger_fatal("Logger_new: BBPrename to %s "
+					     "failed", bak, 0, 0);
 			if (!BAThdense(b) || !BAThdense(n)) {
 				/* we need to convert catalog_bid and
 				 * catalog_nme to be dense-headed; we
@@ -1463,7 +1472,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				     "--set %s_logdir=<path to old log directory> or move the old log\n"
 				     "directory to the new location (%s).\n",
 				     fn, fn, lg->dir);
-			goto error;
 		}
 		lg->catalog_bid = b;
 		lg->catalog_nme = n;
@@ -1481,6 +1489,11 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
 		lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
 		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL)
+			logger_fatal("Logger_new: cannot create seqs bats",
+				     0, 0, 0);
 
 		/* create LOG_SID sequence number */
 		if (BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
@@ -1489,20 +1502,26 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				     "sequences bat", 0, 0, 0);
 
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
+		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+		if (lg->snapshots_bid == NULL ||
+		    lg->snapshots_tid == NULL ||
+		    lg->dsnapshots == NULL)
+			logger_fatal("Logger_new: failed to create snapshots "
+				     "bats", 0, 0, 0);
+
 		snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
 		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0)
 			logger_fatal("Logger_new: BBPrename to %s failed",
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
 		snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
 		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0)
 			logger_fatal("Logger_new: BBPrename to %s failed",
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid");
 
-		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
 		snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
 		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 			logger_fatal("Logger_new: BBPrename to %s failed",
@@ -1521,6 +1540,9 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			BAT *o_id = BATdescriptor(seqs_id);
 			BAT *o_val = BATdescriptor(seqs_val);
 
+			if (o_id == NULL || o_val == NULL)
+				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
+
 			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
@@ -1530,6 +1552,11 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
 		}
 		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL)
+			logger_fatal("Logger_new: cannot create seqs bats",
+				     0, 0, 0);
 
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)

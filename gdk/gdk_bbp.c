@@ -1375,9 +1375,12 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				obbpf = NULL;
 			} else if (sscanf(buf, "%d", &n) != 1 || n <= 0)
 				GDKfatal("BBPdir: subcommit attempted with invalid backup BBP.dir.");
+			/* at this point, obbpf == NULL, or n > 0 */
 		}
-		if (j == cnt && n == 0)
+		if (j == cnt && n == 0) {
+			assert(obbpf == NULL);
 			break;
+		}
 		if (j < cnt && (n == 0 || subcommit[j] <= n || obbpf == NULL)) {
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
@@ -1425,8 +1428,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		GDKsyserror("BBPdir_subcommit: Closing BBP.dir file failed\n");
 		goto bailout;
 	}
-	if (obbpf != NULL)
-		fclose(obbpf);
 
 	IODEBUG fprintf(stderr, "#BBPdir end\n");
 
@@ -3592,8 +3593,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 			ret = GDK_FAIL;
 		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, (int) ret);
 
-		if (GDKcreatedir(dstdir) == GDK_SUCCEED)
-			ret = GDK_SUCCEED;
+		(void) GDKcreatedir(dstdir); /* if fails, move will fail */
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
 		if (ret != GDK_SUCCEED)
 			GDKsyserror("force_move: link(%s,%s)=%d\n", srcpath, dstpath, (int) ret);
