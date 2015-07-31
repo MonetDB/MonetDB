@@ -477,6 +477,13 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
+pattern mosaicLayout(sch:str,tbl:str,col:str,compressionscheme:str)(
+	technique:bat[:oid,:str],
+	count:bat[:oid,:lng],
+	inputsize:bat[:oid,:lng],
+	outputsize:bat[:oid,:lng],
+	properties:bat[:oid,:str])
+address sql_mosaicLayout;
 pattern mosaicLayout(sch:str,tbl:str,col:str)(
 	technique:bat[:oid,:str],
 	count:bat[:oid,:lng],

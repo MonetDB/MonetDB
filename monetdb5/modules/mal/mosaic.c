@@ -74,13 +74,30 @@ MOSdumpTask(Client cntxt,MOStask task)
 }
 
 str
-MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties, str compressionscheme)
 {
 	MOStask task=0;
+	int i,ret,bid;
+	BAT *bn= NULL;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
 		throw(SQL,"mosaic",MAL_MALLOC_FAIL);
+
+	if(compressionscheme){
+		//create a tempory compressed column 
+		for( i = 0; i< MOSAIC_METHODS; i++)
+			task->filter[i]= strstr(compressionscheme, MOSfiltername[i]) != 0;
+		bid = b->batCacheid;
+		MOScompressInternal(cntxt, &ret, &bid, task,0,FALSE);
+		if( ret == 0)
+			throw(MAL,"mosaic.layout","Compression failed");
+		bn = BATdescriptor(ret);
+		if( bn == NULL)
+			throw(MAL,"mosaic.layout", RUNTIME_OBJECT_MISSING);
+		b = bn;
+	}
+
 	MOSinit(task,b);
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
 	while(task->start< task->stop){
@@ -110,6 +127,8 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 			MOSadvance_frame(cntxt,task);
 		}
 	}
+	if( bn)
+		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1330,7 +1349,7 @@ makepatterns(int *patterns, int size, str compressions)
 	int candidate[MOSAIC_METHODS]= {0};
 
 	for( i = 0; i < MOSAIC_METHODS; i++)
-		candidate[i] = strstr(compressions,MOSfiltername[i]) != 0;
+		candidate[i] = compressions == NULL || strstr(compressions,MOSfiltername[i]) != 0;
 
 	for( k=0, i=0; i<lim && k <size; i++){
 		patterns[k]=0;
@@ -1669,7 +1688,7 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_int(stk,pci,1);
 	MOSblocklimit = 100000;
 
-	for( i = 0; i < 1024; i++)
+	for( i = 0; i < CANDIDATES; i++)
 		xf[i]= -1;
 
 	for( i = 1; i< cases; i++){

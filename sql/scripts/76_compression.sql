@@ -31,6 +31,15 @@ returns table (
 	properties string	-- additional information
 	) external name sql."mosaicLayout";
 
+create function mosaic.layout(sch string, tbl string, col string, compressionscheme string)
+returns table (
+	"technique" string, 	-- any of the built-in compressors + header
+	"count" bigint, 	-- entries covered 
+	inputsize bigint,	-- original storage footprint
+	outputsize bigint,	-- after compression
+	properties string	-- additional information
+	) external name sql."mosaicLayout";
+
 -- provide an analysis of the possible mosaic storage layouts 
 create function mosaic.analysis(sch string, tbl string, col string)
 returns table(

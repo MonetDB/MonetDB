@@ -217,7 +217,7 @@ mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mosaic_export str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mosaic_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties, str compressionscheme);
 mosaic_export str MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b);
 mosaic_export int MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid);
 mosaic_export void MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *output, BAT *factor, str compressions);

@@ -31,6 +31,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sch = 0, tbl = 0, col = 0;
 	BAT *bn, *btech, *bcount, *binput, *boutput, *bproperties;
 	int *tech,*count,*input,*output, *properties;
+	str compressionscheme= NULL;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -80,12 +81,16 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bproperties,0);
-	properties = getArgReference_bat(stk, pci, 3);
-	*properties = boutput->batCacheid;
+	properties = getArgReference_bat(stk, pci, 4);
+	*properties = bproperties->batCacheid;
 
-	sch = *getArgReference_str(stk, pci, 4);
-	tbl = *getArgReference_str(stk, pci, 5);
-	col = *getArgReference_str(stk, pci, 6);
+	sch = *getArgReference_str(stk, pci, 5);
+	tbl = *getArgReference_str(stk, pci, 6);
+	col = *getArgReference_str(stk, pci, 7);
+	if ( pci->argc == 9){
+		// use a predefined collection of compression schemes.
+		compressionscheme = *getArgReference_str(stk,pci,8);
+	}
 
 #ifdef DEBUG_SQL_MOSAIC
 	mnstr_printf(cntxt->fdout, "#mosaic layout %s.%s.%s \n", sch, tbl, col);
@@ -112,12 +117,17 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSlayout(cntxt, bn, btech, bcount, binput, boutput, bproperties);
+						MOSlayout(cntxt, bn, btech, bcount, binput, boutput, bproperties, compressionscheme);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}
 			}
 	}
+	BBPkeepref(*tech);
+	BBPkeepref(*count);
+	BBPkeepref(*input);
+	BBPkeepref(*output);
+	BBPkeepref(*properties);
 	return MAL_SUCCEED;
 }
 
@@ -131,7 +141,6 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sch = 0, tbl = 0, col = 0;
 	int *tech,*output, *factor;
 	BAT *bn, *btech, *boutput, *bfactor;
-	int k;
 	str compressions = NULL;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
