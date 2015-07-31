@@ -27,6 +27,3 @@ monetdb_embedded_query("COPY INTO lineitem FROM '/tmp/lineitem6.tbl'")
 monetdb_embedded_query("SELECT * FROM lineitem LIMIT 10;")
 monetdb_embedded_query("SELECT COUNT(*) FROM lineitem")
 monetdb_embedded_query("DROP TABLE lineitem");
-
-
-#install.packages("~/source/monetdb-embedded/tools/reverserapi/", repos=NULL)

@@ -1,0 +1,2 @@
+# When configure.win is run the environment variables R_HOME (which uses ‘/’ as the file separator), R_ARCH and Use R_ARCH_BIN will be set. Use R_ARCH to decide if this is a 64-bit build (its value there is ‘/x64’) and to install DLLs to the correct place (${R_HOME}/libs${R_ARCH}). Use R_ARCH_BIN to find the correct place under the bin directory, e.g. ${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe.
+
