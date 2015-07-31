@@ -132,7 +132,6 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *tech,*output, *factor;
 	BAT *bn, *btech, *boutput, *bfactor;
 	int k;
-	MOStask task = (MOStask) GDKzalloc(sizeof(*task));
 	str compressions = NULL;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
@@ -172,8 +171,6 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		compressions = *getArgReference_str(stk,pci,6);
 	}
 
-	for( k = 0; k< MOSAIC_METHODS; k++)
-		task->filter[k]= 1;
 #ifdef DEBUG_SQL_MOSAIC
 	mnstr_printf(cntxt->fdout, "#mosaic analysis %s.%s.%s \n", sch, tbl, col);
 #endif
