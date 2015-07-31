@@ -1,28 +1,26 @@
 #!/bin/sh
 set -x
 
-TARBALL=/tmp/embedded.tgz
-STAGEDIR=/tmp/monetdb-embedded-tarball
+STAGEDIR=/tmp/monetdb-embedded-stage
 RPKG=MonetDB_1.0.0.tar.gz
 
 rm -rf $TARBALL
 rm -rf $STAGEDIR
 
-hg archive $STAGEDIR
+hg archive $STAGEDIR/sourcetree
 
-cd $STAGEDIR
+cd $STAGEDIR/sourcetree
 
 ./bootstrap
 
-tar --exclude-from=tools/embedded/tar-excludes -zcvf $TARBALL .
+#tar --exclude-from=tools/embedded/tar-excludes -zcvf $TARBALL .
 
-scp $TARBALL lyon.ins.cwi.nl:/cwi/www/homepages/hannes/WWW/R
+cd ..
+mv sourcetree/tools/reverserapi .
+rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ reverserapi/src
 
-R CMD build tools/reverserapi 
+R CMD build reverserapi
 scp $RPKG lyon.ins.cwi.nl:/cwi/www/homepages/hannes/WWW/R
-
-rm -rf $TARBALL
-rm -rf $STAGEDIR
 
 # install.packages("MonetDB", repos="http://homepages.cwi.nl/~hannes/R/", type="source")
 
