@@ -7,8 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <monet_options.h>
-#include "mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -39,12 +37,12 @@ prompt_getlogin(void)
 	 *  The correct procedure for determining the login name is to call
 	 *  cuserid(3C), or to call getlogin() and if  it fails to call
 	 *  getpwuid(3C). */
-	return(cuserid(NULL));
+	return cuserid(NULL);
 # else
-	return(getlogin());
+	return getlogin();
 # endif
 #else
-	return(defaultlogin);
+	return defaultlogin;
 #endif
 }
 
