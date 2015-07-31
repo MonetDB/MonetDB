@@ -1,4 +1,3 @@
-.hg
 sql/test
 sql/benchmarks
 autom4te.cache
@@ -43,3 +42,5 @@ sql/jdbc/tests/Tests
 sql/odbc/samples/Tests
 sql/test
 tools/embedded/Tests
+*.pdf
+*.png
