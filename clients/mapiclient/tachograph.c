@@ -568,7 +568,7 @@ update(EventRecord *ev)
 {
 	int progress=0;
 	int i,j;
-	char *v;
+	char *v, *s;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
 	char prereq[BUFSIZ]={0};
@@ -697,7 +697,25 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"status\": \"start\",\n");
 		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
 		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
-		fprintf(tachojson,"\"beautystmt\": \"%s\",\n",line);
+
+		fprintf(tachojson," \"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
+		fprintf(tachojson," \"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
 		for( i=0; i < malvartop; i++){
