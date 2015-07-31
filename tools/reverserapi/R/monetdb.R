@@ -43,5 +43,5 @@ monetdb_embedded_query <- function(query, commit=T) {
 		resp$type <- 1 # Q_TABLE
 		resp$tuples <- as.data.frame(res, stringsAsFactors=F)
 	}
-	invisible(resp)
+	resp
 }

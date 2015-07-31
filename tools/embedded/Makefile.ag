@@ -30,13 +30,13 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../sql/common \
 		   ../../sql/storage \
 		   ../../sql/backends/monet5 \ 
-		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
+		   $(pcre_CFLAGS)
 
 lib_embedded  =  {
 	SOURCES = embedded.c embedded.h
 	VERSION = 1
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat \
-		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
+		$(pcre_LIBS) $(PSAPILIB) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
 }

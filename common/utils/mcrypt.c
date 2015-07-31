@@ -12,10 +12,11 @@
 #endif
 #include "mcrypt.h"
 #include <string.h>
+
+#ifdef HAVE_OPENSSL
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/ripemd.h>
-
 
 /**
  * Returns a comma separated list of supported hash algorithms suitable
@@ -378,3 +379,84 @@ mcrypt_hashPassword(
 
 	return strdup(ret);
 }
+
+#else /* in embedded mode, we don't do MAPI or vaults, therefore we can run without OpenSSL. One build dependency down. */
+
+#define NO_OPENSSL_FATAL "MonetDB was built without OpenSSL, but what you are trying to do requires it."
+
+char* mcrypt_sum_fail(const char *string, size_t len) {
+	(void)string;
+	(void)len;
+	GDKfatal(NO_OPENSSL_FATAL);
+	return NULL;
+}
+
+char *
+mcrypt_getHashAlgorithms(void)
+{
+	GDKfatal(NO_OPENSSL_FATAL);
+	return NULL;
+}
+
+char *
+mcrypt_MD5Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_SHA1Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+
+char *
+mcrypt_SHA224Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_SHA256Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_SHA384Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_SHA512Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_RIPEMD160Sum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_BackendSum(const char *string, size_t len)
+{
+	return mcrypt_sum_fail(string, len);
+}
+
+char *
+mcrypt_hashPassword(
+		const char *algo,
+		const char *password,
+		const char *challenge)
+{
+	(void)algo;
+	(void)password;
+	(void)challenge;
+	GDKfatal(NO_OPENSSL_FATAL);
+	return NULL;
+}
+#endif
