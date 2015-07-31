@@ -696,7 +696,6 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"start\",\n");
 		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
 
 		fprintf(tachojson," \"stmt\":\"");
 		for(s = ev->stmt; *s; s++)
@@ -756,9 +755,25 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"done\",\n");
 		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachojson," \"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson,"\"beautystmt\": \"%s\"\n",line);
+		fprintf(tachojson," \"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		fprintf(tachojson,"},\n");
 		fflush(tachojson);
 
@@ -777,24 +792,6 @@ update(EventRecord *ev)
 		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
 		fprintf(tachostmt,LLFMT"\t",ev->inblock);
 		fprintf(tachostmt,LLFMT"\t",ev->oublock);
-		fprintf(tachojson," \"stmt\":\"");
-		for(s = ev->stmt; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		fprintf(tachojson," \"beautystmt\":\"");
-		for(s = line; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
 
 		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));
