@@ -232,7 +232,7 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 #endif
 
 	if ( msg){
-		logadd("\"%s\",\t",msg);
+		logadd("\"%s\"\t",msg);
 	} else {
 		// TODO Obfusate instructions unless administrator calls for it.
 		
@@ -244,9 +244,9 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 			c++;
 		stmtq = mal_quote(c, strlen(c));
 		if (stmtq != NULL) {
-			logadd(" \"%s\",\t", stmtq);
+			logadd(" \"%s\"\t", stmtq);
 			GDKfree(stmtq);
-		} else logadd(" ,\t");
+		} else logadd("\t");
 		GDKfree(stmt);
 	}
 	
