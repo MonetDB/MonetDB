@@ -9,21 +9,23 @@ INCLUDES = ../mapilib ../../common/options ../../common/stream ../../common/util
 
 lib_mcutil = {
 	NOINST
-	SOURCES = dump.c prompt.c dotmonetdb.c eventparser.c eventparser.h
+	SOURCES = dump.c dotmonetdb.c dotmonetdb.h eventparser.c eventparser.h
 }
 
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
+		../../common/utils/libmutils \
 		$(READLINE_LIBS) \
 		$(curl_LIBS) $(LTLIBICONV) $(PTHREAD_LIBS) $(MATH_LIBS) $(SOCKET_LIBS)
 }
 
 bin_msqldump = {
-	SOURCES = msqldump.c
+	SOURCES = msqldump.c msqldump.h
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
+		../../common/utils/libmutils \
 		$(curl_LIBS)
 }
 
@@ -31,6 +33,7 @@ bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
+		../../common/utils/libmutils \
 		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
 }
 
@@ -38,6 +41,7 @@ bin_tachograph = {
 	SOURCES = tachograph.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
+		../../common/utils/libmutils \
 		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
 }
 
@@ -45,6 +49,7 @@ bin_tomograph = {
 	SOURCES = tomograph.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
+		../../common/utils/libmutils \
 		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
 }
 
@@ -59,6 +64,6 @@ bin_tomograph = {
 
 man_MANS = mclient.1 msqldump.1
 
-EXTRA_DIST = msqldump.h mprompt.h dotmonetdb.h $(man_MANS)
+EXTRA_DIST = $(man_MANS)
 
 EXTRA_DIST_DIR = Tests

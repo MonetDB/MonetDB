@@ -12,7 +12,7 @@ INCLUDES = $(openssl_CFLAGS)
 
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.h mutils.c
+	SOURCES = mutils.h mutils.c prompt.c mprompt.h
 }
 
 lib_mcrypt = {
