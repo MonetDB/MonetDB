@@ -539,11 +539,23 @@ initFiles(void)
 static void
 progressBarInit(char *qry)
 {
+	char *s;
 	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
 	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
 	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
+	fprintf(tachojson," \"tag\":%d,\n",currenttag);
+
 	fprintf(tachojson," \"query\":\"%s\",\n",qry);
+	for(s = qry; *s; s++)
+	switch(*s){
+	case '\n': fputs("\\n", tachojson); break;
+	case '\r': fputs("\\r", tachojson); break;
+	case '\t': fputs("\\t", tachojson); break;
+	case '\b': fputs("\\b", tachojson); break;
+	default: fputc((int) *s, tachojson);
+	}
+	fprintf(tachojson,"\",\n",qry);
+
 	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
 	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
 	fprintf(tachojson," \"instructions\":%d\n",malsize);
