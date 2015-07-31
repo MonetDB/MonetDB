@@ -486,6 +486,11 @@ pattern mosaicLayout(sch:str,tbl:str,col:str)(
 address sql_mosaicLayout
 comment "Return a table with detailed compression information ";
 
+pattern mosaicAnalysis(sch:str,tbl:str,col:str,compression:str)(
+	technique:bat[:oid,:str],
+	outputsize:bat[:oid,:lng],
+	factor:bat[:oid,:dbl])
+address sql_mosaicAnalysis;
 pattern mosaicAnalysis(sch:str,tbl:str,col:str)(
 	technique:bat[:oid,:str],
 	outputsize:bat[:oid,:lng],

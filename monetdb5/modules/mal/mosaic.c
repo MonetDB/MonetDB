@@ -1323,24 +1323,31 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define STEP MOSAIC_METHODS
 static int
-makepatterns(int *patterns, int size)
+makepatterns(int *patterns, int size, str compressions)
 {
 	int i,j,k, idx, bit=1, step = MOSAIC_METHODS - 1;
 	int lim= 8*7*6*5*4*3*2;
-	
-	for(k=0, i=0; i<lim && k <size; i++){
+	int candidate[MOSAIC_METHODS]= {0};
+
+	for( i = 0; i < MOSAIC_METHODS; i++)
+		candidate[i] = strstr(compressions,MOSfiltername[i]) != 0;
+
+	for( k=0, i=0; i<lim && k <size; i++){
 		patterns[k]=0;
 		idx =i;
 		while(idx > 0) {
-			if( idx % step ) 
+			if( idx % step && candidate[ idx % step]) 
 					patterns[k] |= 1 <<(idx % step);
 			idx /= step;
 		}
+
+		// weed out duplicates
 		for( j=0; j< k; j++)
 			if(patterns[k] == patterns[j]) break;
 		if( j < k ) continue;
 		
 #ifdef _MOSAIC_DEBUG_
+		mnstr_printf(GDKout,"#");
 		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
 			mnstr_printf(GDKout,"%d", (patterns[k] & bit) > 0);
 			bit *=2;
@@ -1421,7 +1428,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 
 #define CANDIDATES 256  /* all three combinations */
 void
-MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, lng sample)
+MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, str compressions)
 {
 	int i,j,k,cases, bit=1, ret, bid= b->batCacheid;
 	BUN cnt=  BATcount(b);
@@ -1431,7 +1438,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, l
 	char technique[CANDIDATES]={0}, *t =  technique;
 	dbl xf[CANDIDATES], factor;
 
-	cases = makepatterns(pattern,CANDIDATES);
+	cases = makepatterns(pattern,CANDIDATES, compressions);
 	task = (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
 		return;
@@ -1447,7 +1454,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, l
 			task->filter[j]= (pattern[i] & bit)>0;
 			bit *=2;
 		}
-		MOScompressInternal(cntxt, &ret, &bid, task, sample, 0);
+		MOScompressInternal(cntxt, &ret, &bid, task, 0, 0);
 		
 		// analyse result to detect a new combination
 		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
@@ -1654,7 +1661,7 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 
-	cases = makepatterns(pattern,CANDIDATES);
+	cases = makepatterns(pattern,CANDIDATES,NULL);
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
 		throw(MAL, "mosaic.mosaic", MAL_MALLOC_FAIL);

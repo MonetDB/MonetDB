@@ -586,7 +586,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				return msg;
 			// TODO check:allocate_delta(sql->session->tr, nc);
 			d = nc->data;
-			assert(nc->base.allocated == 1);
+			//assert(nc->base.allocated == 1);
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 			d->bid = bid;
 			mvc_storage(sql, nc, c->storage_type);
@@ -4812,12 +4812,14 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/* just take a sample */
 									if (cnt1 > 512)
 										cnt1 = cnt2 = 512;
-									BATloop(bn, p, q) {
-										str s = BUNtail(bi, p);
-										if (s != NULL && strcmp(s, str_nil))
-											sum += (int) strlen(s);
-										if (--cnt1 <= 0)
-											break;
+									if (BATcount(bn)){
+										BATloop(bn, p, q) {
+											str s = BUNtail(bi, p);
+											if (s != NULL && strcmp(s, str_nil))
+												sum += (int) strlen(s);
+											if (--cnt1 <= 0)
+												break;
+										}
 									}
 									if (cnt2)
 										w = (int) (sum / cnt2);

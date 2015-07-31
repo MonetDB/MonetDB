@@ -220,7 +220,7 @@ mosaic_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 mosaic_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export str MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b);
 mosaic_export int MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid);
-mosaic_export void MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *output, BAT *factor, lng sample);
+mosaic_export void MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *output, BAT *factor, str compressions);
 mosaic_export str MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
