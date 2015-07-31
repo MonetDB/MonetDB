@@ -11,9 +11,9 @@ cd $STAGEDIR/sourcetree
 ./bootstrap
 
 cd ..
-mv sourcetree/tools/reverserapi .
-rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ reverserapi/src
-R CMD build reverserapi
+mv sourcetree/tools/embedded/rpackage .
+rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
+R CMD build rpackage
 
 scp $RPKG lyon.ins.cwi.nl:/cwi/www/homepages/hannes/WWW/R
 

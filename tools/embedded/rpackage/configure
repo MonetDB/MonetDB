@@ -1,9 +1,4 @@
 #!/bin/sh
-# curl http://homepages.cwi.nl/~hannes/R/embedded.tgz > arch.tgz
-# rm -rf src
-# mkdir src
-# tar xvf arch.tgz -C src
-# rm arch.tgz
 cd src
 
 CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/install \
