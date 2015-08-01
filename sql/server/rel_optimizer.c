@@ -2972,7 +2972,7 @@ static sql_exp *
 exp_uses_exp( list *exps, sql_exp *e)
 {
 	node *n;
-	char *rname = exp_find_rel_name(e);
+	char *rname = exp_relname(e);
 	char *name = exp_name(e);
 
 	if (!exps)
