@@ -148,6 +148,9 @@ typedef enum operator_type {
 
 #define is_atom(et) \
 	(et == e_atom)
+/* a simple atom is a literal or on the query stack */
+#define is_simple_atom(e) \
+	(is_atom(e->flag) && !e->r && !e->f)
 #define is_func(et) \
 	(et == e_func)
 #define is_map_op(et) \
