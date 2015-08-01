@@ -1,0 +1,7 @@
+CREATE TABLE t2 (a int, b int);
+INSERT INTO t2 VALUES (1,2);
+SELECT * FROM t2;
+SELECT b, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
+SELECT b, CASE a WHEN b THEN 444 END, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a) FROM t2;
+SELECT b as "b1", (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
+DROP TABLE t2;
