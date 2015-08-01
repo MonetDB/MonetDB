@@ -29,8 +29,9 @@
 #include "mal_client.h"
 #include "mosaic_dictionary.h"
 
-mosaic_export void MOScreateframe(Client cntxt, MOStask task);
+mosaic_export void MOScreateframeDictionary(Client cntxt, MOStask task);
 mosaic_export void MOSdump_frame(Client cntxt, MOStask task);
+mosaic_export void MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSadvance_frame(Client cntxt, MOStask task);
 mosaic_export void MOSskip_frame(Client cntxt, MOStask task);

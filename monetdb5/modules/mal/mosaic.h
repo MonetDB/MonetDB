@@ -83,8 +83,10 @@ typedef struct MOSAICHEADER{
 	bte mask, bits, framebits;	// global compression type properties
 	int dictsize;		// used by dictionary compression
 	int framesize;		// used by frame compression
+	// both dictionary and framebased compression require a global dictionary of frequent values
+	// Their size is purposely topped 
 #ifdef HAVE_HGE
-	hge dict[256];		// global dictionary
+	hge dict[256];
 	hge frame[256];
 #else
 	lng dict[256];
@@ -92,7 +94,7 @@ typedef struct MOSAICHEADER{
 #endif
 } * MosaicHdr;
 
-// bit stuffed header block, currently 4 bytes wide
+// bit stuffed header block, currently 4 bytes wide and chunks should be 4-byte aligned
 #define MOSAICMAXCNT (1<<23)
 
 typedef struct{

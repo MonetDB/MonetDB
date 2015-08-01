@@ -100,6 +100,10 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 	MOSinit(task,b);
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
+
+	if( task->hdr->blks[MOSAIC_FRAME])
+		MOSlayout_frame_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
+
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_NONE:
@@ -353,7 +357,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		task->blk->cnt= 0;
 		MOSinitHeader(task);
 	}
-	MOScreateframe(cntxt,task);
+	MOScreateframeDictionary(cntxt,task);
 	MOScreatedictionary(cntxt,task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);

@@ -142,9 +142,6 @@ end user.main;
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	0  ]
-[ 1@0,	2  ]
-[ 2@0,	50  ]
 #--------------------------#
 # h	t	t  # name
 # void	oid	oid  # type

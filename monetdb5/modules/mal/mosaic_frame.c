@@ -19,19 +19,22 @@
 
 /*
  * (c)2014 author Martin Kersten
- * Dictionary frame of reference compression
+ * Frame of reference compression with dictionary
  * A chunk is beheaded by a reference value F from the column. The elements V in the
  * chunk are replaced by an index into a global dictionary of V-F offsets.
  *
- * The dictionary is limited to 256 entries and all indices are one byte.
- * The maximal achievable compression ratio is 8 (for longs)
+ * The dictionary is limited to 256 entries and all indices are at most one byte.
+ * The maximal achievable compression ratio depends on the size of the dictionary
  *
- * This scheme is particularly geared at evolving time series.
+ * This scheme is particularly geared at evolving time series, e.g. stock markets.
  */
 
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_frame.h"
+
+// we use longs as the basis for bit vectors
+#define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng);
 
 void
 MOSadvance_frame(Client cntxt, MOStask task)
@@ -49,43 +52,61 @@ MOSadvance_frame(Client cntxt, MOStask task)
 }
 
 /* Beware, the dump routines use the compressed part of the task */
+static void
+MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
+{
+	void * val = (void*) task->hdr->frame;
+	switch(ATOMstorage(task->type)){
+	case TYPE_sht:
+		snprintf(buf,len,"sht [%d] %hd ",i, ((sht*) val)[i]); break;
+	case TYPE_int:
+		snprintf(buf,len,"int [%d] %d ",i, ((int*) val)[i]); break;
+	case  TYPE_oid:
+		snprintf(buf,len,"oid [%d] "OIDFMT, i, ((oid*) val)[i]); break;
+	case  TYPE_lng:
+		snprintf(buf,len,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
+#ifdef HAVE_HGE
+	case  TYPE_hge:
+		snprintf(buf,len,"hge [%d] %.40g ", i, (dbl) ((hge*) val)[i]); break;
+#endif
+	case  TYPE_wrd:
+		snprintf(buf,len,"wrd [%d] "SZFMT, i, ((wrd*) val)[i]); break;
+	case TYPE_flt:
+		snprintf(buf,len,"flt [%d] %f ",i, ((flt*) val)[i]); break;
+	case TYPE_dbl:
+		snprintf(buf,len,"dbl [%d] %g ",i, ((dbl*) val)[i]); break;
+	}
+}
+
 void
 MOSdump_frame(Client cntxt, MOStask task)
 {
-	MosaicHdr hdr= task->hdr;
 	int i;
-	void *val = (void*)hdr->frame;
+	char buf[BUFSIZ];
 
-	mnstr_printf(cntxt->fdout,"# framebits %d",hdr->framebits);
-	switch(ATOMstorage(task->type)){
-	case TYPE_sht:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"sht [%d] %hd ",i, ((sht*) val)[i]); break;
-	case TYPE_int:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"int [%d] %d ",i, ((int*) val)[i]); break;
-	case  TYPE_oid:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"oid [%d] "OIDFMT, i, ((oid*) val)[i]); break;
-	case  TYPE_lng:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"hge [%d] %.40g ", i, (dbl) ((hge*) val)[i]); break;
-#endif
-	case  TYPE_wrd:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"wrd [%d] "SZFMT, i, ((wrd*) val)[i]); break;
-	case TYPE_flt:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"flt [%d] %f ",i, ((flt*) val)[i]); break;
-	case TYPE_dbl:
-		for(i=0; i< hdr->framesize; i++)
-		mnstr_printf(cntxt->fdout,"dbl [%d] %g ",i, ((dbl*) val)[i]); break;
+	mnstr_printf(cntxt->fdout,"# framebits %d",task->hdr->framebits);
+	for(i=0; i< task->hdr->framesize; i++){
+		MOSdump_frameInternal(buf, BUFSIZ, task,i);
+		mnstr_printf(cntxt->fdout,"%s",buf);
 	}
 	mnstr_printf(cntxt->fdout,"\n");
+}
+
+void
+MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	lng cnt=0,i;
+	char buf[BUFSIZ];
+
+	(void) cntxt;
+	for(i=0; i< task->hdr->framesize; i++){
+		MOSdump_frameInternal(buf, BUFSIZ, task,i);
+		BUNappend(btech, "frame_hdr", FALSE);
+		BUNappend(bcount, &i, FALSE);
+		BUNappend(binput, &cnt, FALSE);
+		BUNappend(boutput, &cnt, FALSE);
+		BUNappend(bproperties, buf, FALSE);
+	}
 }
 
 void
@@ -98,7 +119,7 @@ MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 	BUNappend(btech, "frame", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
-	output =  MosaicBlkSize + (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(unsigned long);
+	output = chunk_size(task,cnt);
 	BUNappend(binput, &input, FALSE);
 	BUNappend(boutput, &output, FALSE);
 	BUNappend(bproperties, "", FALSE);
@@ -132,7 +153,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 		if( j == hdr->framesize || dict[j] != delta )\
 			break;\
 	}\
-	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,TPE);\
+	if(i) factor = (flt) ((int)i * sizeof(TYPE)) / chunk_size(task,i);\
 }
 
 // store it in the compressed heap header directly
@@ -177,7 +198,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 
 
 void
-MOScreateframe(Client cntxt, MOStask task)
+MOScreateframeDictionary(Client cntxt, MOStask task)
 {	BUN i;
 	int j;
 	MosaicHdr hdr = task->hdr;
@@ -275,7 +296,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,lng);
+			//if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,lng);
+			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
