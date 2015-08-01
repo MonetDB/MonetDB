@@ -625,6 +625,16 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 }
 
 int 
+exp_equal( sql_exp *e1, sql_exp *e2)
+{
+	if (e1 == e2)
+		return 0;
+	if (e1->rname && e2->rname && strcmp(e1->rname, e2->rname) == 0)
+		return strcmp(e1->name, e2->name);
+	return -1;
+}
+
+int 
 exp_match( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_cmp(e1, e2) == 0)

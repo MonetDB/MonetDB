@@ -1702,7 +1702,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_grant_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+				  l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id);
 		/* grantor ? */
 	} 	break;
 	case SQL_REVOKE_ROLES:
@@ -1714,7 +1714,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_revoke_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
 		/* grantor ? */
 	} 	break;
 	case SQL_GRANT:
@@ -1726,7 +1726,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_grant_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* grant ? */
-				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
 		/* grantor ? */
 	} 	break;
 	case SQL_REVOKE:
@@ -1738,7 +1738,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_revoke_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
 				   l->h->next->data.lval,	/* grantees */
 				   l->h->next->next->data.i_val,	/* grant ? */
-				   l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+				   l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
 		/* grantor ? */
 	} 	break;
 	case SQL_CREATE_ROLE:
@@ -1746,7 +1746,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		char *rname = l->h->data.sval;
 		ret = rel_schema2(sql->sa, DDL_CREATE_ROLE, rname, NULL,
-				 l->h->next->data.i_val ? sql->user_id : sql->role_id);
+				 l->h->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
 	} 	break;
 	case SQL_DROP_ROLE:
 	{
