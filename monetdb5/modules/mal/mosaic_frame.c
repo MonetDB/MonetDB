@@ -58,23 +58,23 @@ MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 	void * val = (void*) task->hdr->frame;
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht:
-		snprintf(buf,len,"sht [%d] %hd ",i, ((sht*) val)[i]); break;
+		snprintf(buf,len,"%hd", ((sht*) val)[i]); break;
 	case TYPE_int:
-		snprintf(buf,len,"int [%d] %d ",i, ((int*) val)[i]); break;
+		snprintf(buf,len,"%d", ((int*) val)[i]); break;
 	case  TYPE_oid:
-		snprintf(buf,len,"oid [%d] "OIDFMT, i, ((oid*) val)[i]); break;
+		snprintf(buf,len,OIDFMT, ((oid*) val)[i]); break;
 	case  TYPE_lng:
-		snprintf(buf,len,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
+		snprintf(buf,len,LLFMT, ((lng*) val)[i]); break;
 #ifdef HAVE_HGE
 	case  TYPE_hge:
-		snprintf(buf,len,"hge [%d] %.40g ", i, (dbl) ((hge*) val)[i]); break;
+		snprintf(buf,len,"%.40g", (dbl) ((hge*) val)[i]); break;
 #endif
 	case  TYPE_wrd:
-		snprintf(buf,len,"wrd [%d] "SZFMT, i, ((wrd*) val)[i]); break;
+		snprintf(buf,len,SZFMT, ((wrd*) val)[i]); break;
 	case TYPE_flt:
-		snprintf(buf,len,"flt [%d] %f ",i, ((flt*) val)[i]); break;
+		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
 	case TYPE_dbl:
-		snprintf(buf,len,"dbl [%d] %g ",i, ((dbl*) val)[i]); break;
+		snprintf(buf,len,"%g", ((dbl*) val)[i]); break;
 	}
 }
 
@@ -87,7 +87,7 @@ MOSdump_frame(Client cntxt, MOStask task)
 	mnstr_printf(cntxt->fdout,"# framebits %d",task->hdr->framebits);
 	for(i=0; i< task->hdr->framesize; i++){
 		MOSdump_frameInternal(buf, BUFSIZ, task,i);
-		mnstr_printf(cntxt->fdout,"%s",buf);
+		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
