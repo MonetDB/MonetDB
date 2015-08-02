@@ -1518,7 +1518,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 							 BATcount(b) + b->hseqbase);
 				}
 			} else {
-				BUN last = SORTfndlast(b, nil) - BUNfirst(b);
+				BUN last = SORTfndfirst(b, nil) - BUNfirst(b);
 				/* match: [0..low) + [high..last) */
 				if (s) {
 					oid o = (oid) last + b->H->seq;

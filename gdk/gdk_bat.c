@@ -1203,13 +1203,25 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		if (b->H->hash) {
 			HASHins(bm, p, h);
-			if (hsize && hsize != b->H->vheap->size)
+#ifndef STATIC_CODE_ANALYSIS
+			if (hsize && hsize != b->H->vheap->size) {
+				/* Coverity: "Useless call: calling
+				 * HEAPwarm is only useful for its
+				 * return value, which is ignored" */
 				HEAPwarm(b->H->vheap);
+			}
+#endif
 		}
 		if (b->T->hash) {
 			HASHins(b, p, t);
-			if (tsize && tsize != b->T->vheap->size)
+#ifndef STATIC_CODE_ANALYSIS
+			if (tsize && tsize != b->T->vheap->size) {
+				/* Coverity: "Useless call: calling
+				 * HEAPwarm is only useful for its
+				 * return value, which is ignored" */
 				HEAPwarm(b->T->vheap);
+			}
+#endif
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
