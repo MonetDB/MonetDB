@@ -34,6 +34,7 @@
 mosaic_export void MOScreatedictionary(Client cntxt, MOStask task);
 mosaic_export void MOSdump_dictionary(Client cntxt, MOStask task);
 mosaic_export void MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mosaic_export void MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mosaic_export void MOSadvance_dictionary(Client cntxt, MOStask task);
 mosaic_export void MOSskip_dictionary(Client cntxt, MOStask task);
 mosaic_export flt  MOSestimate_dictionary(Client cntxt, MOStask task);

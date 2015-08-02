@@ -46,44 +46,64 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 }
 
 /* Beware, the dump routines use the compressed part of the task */
+static void
+MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
+{
+	void *val = (void*)task->hdr->dict;
+
+	switch(ATOMstorage(task->type)){
+	case TYPE_sht:
+		snprintf(buf,len,"%hd", ((sht*) val)[i]); break;
+	case TYPE_int:
+		snprintf(buf,len,"%d", ((int*) val)[i]); break;
+	case  TYPE_oid:
+		snprintf(buf,len,OIDFMT,  ((oid*) val)[i]); break;
+	case  TYPE_lng:
+		snprintf(buf,len,LLFMT,  ((lng*) val)[i]); break;
+#ifdef HAVE_HGE
+	case  TYPE_hge:
+		snprintf(buf,len,"%.40g",  (dbl) ((hge*) val)[i]); break;
+#endif
+	case  TYPE_wrd:
+		snprintf(buf,len,SZFMT,  ((wrd*) val)[i]); break;
+	case TYPE_flt:
+		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
+	case TYPE_dbl:
+		snprintf(buf,len,"%g", ((dbl*) val)[i]); break;
+	}
+}
+
 void
 MOSdump_dictionary(Client cntxt, MOStask task)
 {
-	MosaicHdr hdr= task->hdr;
 	int i;
-	void *val = (void*)hdr->dict;
+	char buf[BUFSIZ];
 
-	mnstr_printf(cntxt->fdout,"# bits %d",hdr->bits);
-	switch(ATOMstorage(task->type)){
-	case TYPE_sht:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"sht [%d] %hd ",i, ((sht*) val)[i]); break;
-	case TYPE_int:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"int [%d] %d ",i, ((int*) val)[i]); break;
-	case  TYPE_oid:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"oid [%d] "OIDFMT, i, ((oid*) val)[i]); break;
-	case  TYPE_lng:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"lng [%d] "LLFMT, i, ((lng*) val)[i]); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"hge [%d] %.40g ", i, (dbl) ((hge*) val)[i]); break;
-#endif
-	case  TYPE_wrd:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"wrd [%d] "SZFMT, i, ((wrd*) val)[i]); break;
-	case TYPE_flt:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"flt [%d] %f ",i, ((flt*) val)[i]); break;
-	case TYPE_dbl:
-		for(i=0; i< hdr->dictsize; i++)
-		mnstr_printf(cntxt->fdout,"dbl [%d] %g ",i, ((dbl*) val)[i]); break;
+	mnstr_printf(cntxt->fdout,"#bits %d",task->hdr->bits);
+	for(i=0; i< task->hdr->dictsize; i++){
+		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
+		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
 	}
 	mnstr_printf(cntxt->fdout,"\n");
 }
+
+void
+MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	lng cnt=0,i;
+	char buf[BUFSIZ];
+
+	(void) cntxt;
+	for(i=0; i< task->hdr->dictsize; i++){
+		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
+		BUNappend(btech, "dictionary_hdr", FALSE);
+		BUNappend(bcount, &i, FALSE);
+		BUNappend(binput, &cnt, FALSE);
+		BUNappend(boutput, &cnt, FALSE);
+		BUNappend(bproperties, buf, FALSE);
+	}
+}
+
 
 void
 MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)

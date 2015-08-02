@@ -79,6 +79,8 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	MOStask task=0;
 	int i,ret,bid;
 	BAT *bn= NULL;
+	char buf[BUFSIZ];
+	lng zero=0;
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL)
@@ -100,9 +102,35 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 	MOSinit(task,b);
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
+	// safe the general properties
 
+		BUNappend(btech, "ratio", FALSE);
+		BUNappend(bcount, &zero, FALSE);
+		BUNappend(binput, &zero, FALSE);
+		BUNappend(boutput, &zero , FALSE);
+		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
+		BUNappend(bproperties, buf, FALSE);
+	for(i=0; i < MOSAIC_METHODS-1; i++){
+		lng zero = 0;
+		snprintf(buf,BUFSIZ,"%s_blks", MOSfiltername[i]);
+		BUNappend(btech, buf, FALSE);
+		BUNappend(bcount, &zero, FALSE);
+		BUNappend(binput, &task->hdr->blks[i], FALSE);
+		BUNappend(boutput, &zero , FALSE);
+		BUNappend(bproperties, "", FALSE);
+
+		snprintf(buf,BUFSIZ,"%s_elms", MOSfiltername[i]);
+		BUNappend(btech, buf, FALSE);
+		BUNappend(bcount, &zero, FALSE);
+		BUNappend(binput, &task->hdr->elms[i], FALSE);
+		BUNappend(boutput, &zero , FALSE);
+		BUNappend(bproperties, "", FALSE);
+
+	}
 	if( task->hdr->blks[MOSAIC_FRAME])
 		MOSlayout_frame_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
+	if( task->hdr->blks[MOSAIC_DICT])
+		MOSlayout_dictionary_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
 
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
@@ -254,7 +282,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	BUN cutoff =0;
 	str msg = MAL_SUCCEED;
 	int cand;
-	float factor= 1.0, fac= 1.0;
+	float ratio= 1.0, fac= 1.0;
 	
 	*ret = 0;
 
@@ -367,7 +395,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// default is to extend the non-compressed block
 		cand = MOSAIC_NONE;
 		fac = 1.0;
-		factor = 1.0;
+		ratio = 1.0;
 
 		// cutoff the filters, especially dictionary tests are expensive
 		if( cutoff && cutoff < task->start){
@@ -381,46 +409,46 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		// select candidate amongst those
 		if ( task->filter[MOSAIC_RLE]){
 			fac = MOSestimate_runlength(cntxt,task);
-			if (fac > factor){
+			if (fac > ratio){
 				cand = MOSAIC_RLE;
-				factor = fac;
+				ratio = fac;
 			}
 		}
 		if ( task->filter[MOSAIC_DICT]){
 			fac = MOSestimate_dictionary(cntxt,task);
-			if (fac > factor){
+			if (fac > ratio){
 				cand = MOSAIC_DICT;
-				factor = fac;
+				ratio = fac;
 			}
 		}
 		if ( task->filter[MOSAIC_FRAME]){
 			fac = MOSestimate_frame(cntxt,task);
-			if (fac > factor){
+			if (fac > ratio){
 				cand = MOSAIC_FRAME;
-				factor = fac;
+				ratio = fac;
 			}
 		}
 		if ( task->filter[MOSAIC_DELTA]){
 			fac = MOSestimate_delta(cntxt,task);
-			if ( fac > factor ){
+			if ( fac > ratio ){
 				cand = MOSAIC_DELTA;
-				factor = fac;
+				ratio = fac;
 			}
 		}
 		if ( task->filter[MOSAIC_PREFIX]){
 			fac = MOSestimate_prefix(cntxt,task);
-			if ( fac > factor ){
+			if ( fac > ratio ){
 				cand = MOSAIC_PREFIX;
-				factor = fac;
+				ratio = fac;
 			}
 			if ( fac  < 0.0)
 					task->filter[MOSAIC_PREFIX] = 0;
 		}
 		if ( task->filter[MOSAIC_LINEAR]){
 			fac = MOSestimate_linear(cntxt,task);
-			if ( fac >factor){
+			if ( fac >ratio){
 				cand = MOSAIC_LINEAR;
-				factor = fac;
+				ratio = fac;
 			}
 		}
 
@@ -530,7 +558,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		BBPkeepref(*ret = bsrc->batCacheid);
 		BBPunfix(bcompress->batCacheid);
 	}
-	task->factor = task->hdr->factor = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
+	task->ratio = task->hdr->ratio = (task->xsize ==0 ? 0:(flt)task->size/task->xsize);
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bcompress);
 #endif
@@ -1451,7 +1479,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 
 #define CANDIDATES 256  /* all three combinations */
 void
-MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, str compressions)
+MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, str compressions)
 {
 	int i,j,k,cases, bit=1, ret, bid= b->batCacheid;
 	BUN cnt=  BATcount(b);
@@ -1459,7 +1487,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, s
 	MOStask task;
 	int pattern[CANDIDATES];
 	char technique[CANDIDATES]={0}, *t =  technique;
-	dbl xf[CANDIDATES], factor;
+	dbl xf[CANDIDATES], ratio;
 
 	cases = makepatterns(pattern,CANDIDATES, compressions);
 	task = (MOStask) GDKzalloc(sizeof(*task));
@@ -1491,7 +1519,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, s
 		if( j<i)
 			continue;
 
-		xf[i]= task->hdr? task->factor: 0;
+		xf[i]= task->hdr? task->ratio: 0;
 		if( xf[i] == 0)
 			continue;
 		BUNappend(boutput,&task->xsize,FALSE);
@@ -1504,8 +1532,8 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bfactor, s
 		}
 		BUNappend(btech,technique,FALSE);
 		if( task->xsize)
-			factor = (input + 0.0)/task->xsize;
-		BUNappend(bfactor,&factor,FALSE);
+			ratio = (input + 0.0)/task->xsize;
+		BUNappend(bratio,&ratio,FALSE);
 
 		// get rid of temporary compressed BAT
 		if( ret != bid)
@@ -1634,7 +1662,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for( k = 0; k< MOSAIC_METHODS; k++)
 					task->filter[k]= 1;
 			x+= MOSanalyseInternal(cntxt, threshold, task, bid);
-			xf[j]= task->hdr? task->factor: 0;
+			xf[j]= task->hdr? task->ratio: 0;
 			if(xf[mx] < xf[j]) mx =j;
 		}
 		if(x >1){
@@ -1655,7 +1683,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for( k = 0; k< MOSAIC_METHODS; k++)
 						task->filter[k]= 1;
 				x+= MOSanalyseInternal(cntxt, threshold, task, i);
-			xf[j]= task->hdr? task->factor: 0;
+			xf[j]= task->hdr? task->ratio: 0;
 		}
 		if( x >1){
 			mnstr_printf(cntxt->fdout,"#all %d ",i);
@@ -1722,13 +1750,13 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bit *=2;
 		}
 		for( j=0; j < i; j++)
-			if (pattern[j] == k && task->factor == xf[j])
+			if (pattern[j] == k && task->ratio == xf[j])
 				break;
 		if( j<i)
 			continue;
 
 
-		xf[i] = task->factor;
+		xf[i] = task->ratio;
 		if( ret != bid)
 			BBPdecref(ret, TRUE);
 	}

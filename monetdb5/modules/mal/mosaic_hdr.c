@@ -96,7 +96,7 @@ MOSinitHeader(MOStask task)
 	for(i=0; i < MOSAIC_METHODS; i++){
 		hdr->elms[i] = hdr->blks[i] = 0;
 	}
-	hdr->factor = 0;
+	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
 	hdr->checksum.sumlng = 0;

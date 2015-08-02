@@ -73,18 +73,15 @@ typedef struct MOSAICHEADER{
 		flt sumflt;
 		dbl sumdbl;
 	} checksum, checksum2;
-	// collect compression statistics for the particular task
-	lng blks[MOSAIC_METHODS];	
-	lng elms[MOSAIC_METHODS];	
-	flt factor;
 	int top;
+	// skip index for OID access
 	oid oidbase[MOSAICINDEX];	// to speedup localization
 	BUN offset[MOSAICINDEX];
 	bte mask, bits, framebits;	// global compression type properties
-	int dictsize;		// used by dictionary compression
-	int framesize;		// used by frame compression
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
+	int dictsize;		// used by dictionary compression
+	int framesize;		// used by frame compression
 #ifdef HAVE_HGE
 	hge dict[256];
 	hge frame[256];
@@ -92,6 +89,12 @@ typedef struct MOSAICHEADER{
 	lng dict[256];
 	lng frame[256];
 #endif
+	// collect compression statistics for the particular task
+	flt ratio;	//compresion ratio
+	lng blks[MOSAIC_METHODS];	
+	lng elms[MOSAIC_METHODS];	
+	lng dictfreq[256];// keep track on their use
+	lng framefreq[256];
 } * MosaicHdr;
 
 // bit stuffed header block, currently 4 bytes wide and chunks should be 4-byte aligned
@@ -125,7 +128,7 @@ typedef struct MOSTASK{
 	MosaicBlk blk;	// current block header in scan
 	oid start;		// oid of first element in current blk
 	oid stop;		// last oid of range to be scanned
-	flt factor;
+	flt ratio;		// compression ratio encountered
 
 	char *dst;		// write pointer into current compressed blocks
 
