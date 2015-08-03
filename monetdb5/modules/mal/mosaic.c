@@ -150,13 +150,20 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 			MOSlayout_delta(cntxt,task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_delta(cntxt,task);
 			break;
-		case MOSAIC_PREFIX:
-			MOSlayout_prefix(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_prefix(cntxt,task);
+		case MOSAIC_LINEAR:
+			MOSlayout_linear(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_linear(cntxt,task);
 			break;
 		case MOSAIC_FRAME:
 			MOSlayout_frame(cntxt,task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_frame(cntxt,task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSlayout_prefix(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_prefix(cntxt,task);
+			break;
+		default:
+			assert(0);
 		}
 	}
 	if( bn)
@@ -322,7 +329,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	}
 
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#compress bat %d properties %s\n",*bid,properties?properties:"");
+	mnstr_printf(cntxt->fdout,"#compress bat %d \n",*bid);
 #endif
 	bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
 
