@@ -340,8 +340,8 @@ eventparser(char *row, EventRecord *ev)
 	if (*c == 0)
 		return -1;
 	*c = 0;
-	ev->numa= strdup(numa);
-	if( ev->num == NULL){
+	ev->numa = strdup(numa);
+	if( ev->numa == NULL){
 		fprintf(stderr,"Could not allocate numa memory\n");
 		exit(-1);
 	}
