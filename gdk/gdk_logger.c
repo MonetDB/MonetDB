@@ -125,7 +125,7 @@ log_find_int(BAT *b, BAT *d, int val)
 //MK So, if the BAThash construction fails, the BAT b still could have information
 //?? protect against failing BAThash() with non-empty b required
 		}
-	} 
+	}
 	return BUN_NONE;
 #endif
 }
@@ -154,7 +154,7 @@ log_find_bid(BAT *b, BAT *d, log_bid val)
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
 		}
-	} 
+	}
 	return BUN_NONE;
 #endif
 }
@@ -260,7 +260,7 @@ log_read_clear(logger *lg, trans *tr, char *name)
 }
 
 static int
-avoid_snapshot( logger *lg, log_bid bid ) 
+avoid_snapshot(logger *lg, log_bid bid)
 {
 	if (BATcount(lg->snapshots_bid)-BATcount(lg->dsnapshots)) {
 		BUN p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid);
@@ -285,7 +285,7 @@ la_bat_clear(logger *lg, logaction *la)
 		fprintf(stderr, "#la_bat_clear %s\n", la->name);
 
 	/* do we need to skip these old updates */
-	if (avoid_snapshot(lg, bid)) 
+	if (avoid_snapshot(lg, bid))
 		return;
 
 	b = BATdescriptor(bid);
@@ -362,9 +362,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			}
 		}
 	}
-	assert( (ht == TYPE_void && l->flag == LOG_INSERT) ||
-		(ht == TYPE_void && l->flag == LOG_DELETE) || 
-		((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE) );
+	assert((ht == TYPE_void && l->flag == LOG_INSERT) ||
+	       (ht == TYPE_void && l->flag == LOG_DELETE) ||
+	       ((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE));
 	if (ht >= 0 && tt >= 0) {
 		BAT *uid = NULL;
 		BAT *r;
@@ -477,7 +477,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			}
 			GDKfree(hv);
 		}
-		if (tv != lg->buf) 
+		if (tv != lg->buf)
 			GDKfree(tv);
 		logbat_destroy(b);
 
@@ -508,7 +508,7 @@ la_bat_updates(logger *lg, logaction *la)
 		return;		/* ignore bats no longer in the catalog */
 
 	/* do we need to skip these old updates */
-	if (avoid_snapshot(lg, bid)) 
+	if (avoid_snapshot(lg, bid))
 		return;
 
 	b = BATdescriptor(bid);
@@ -849,6 +849,10 @@ tr_abort(logger *lg, trans *tr)
 
 static int log_sequence_nrs(logger *lg);
 
+#ifdef _MSC_VER
+#define access(file, mode)	_access(file, mode)
+#endif
+
 /* Update the last transaction id written in the catalog file.
  * Only used by the shared logger. */
 static int
@@ -860,11 +864,7 @@ logger_update_catalog_file(logger *lg, const char *dir, const char *filename, in
 
 	bak_exists = 0;
 	/* check if an older file exists and move bak it up */
-#if defined(_MSC_VER)
-	if (_access(filename, 0) != -1) {
-#else
 	if (access(filename, 0) != -1) {
-#endif
 		bak_exists = 1;
 		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") == GDK_FAIL) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
@@ -907,7 +907,7 @@ logger_open(logger *lg)
 	lg->log = open_wstream(filename);
 	lg->end = 0;
 
-	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) { 
+	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) {
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
 		return LOG_ERR;
 	}
@@ -1111,11 +1111,11 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 				/* Increment the id only at the end, since we want to re-read the last file.
 				 * That is because last time we read it, it was empty, since the logger creates empty files
 				 * and fills them in later. */
-                lg->id++;
+				lg->id++;
 			}
-            if (lid < lg->id) {
-                lg->id = lid;
-            }
+			if (lid < lg->id) {
+				lg->id = lid;
+			}
 			/* if this is a shared logger, write the id in the shared file */
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
@@ -1184,7 +1184,7 @@ check_version(logger *lg, FILE *fp)
 }
 
 static BAT *
-bm_tids(BAT *b, BAT *d) 
+bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
 	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
@@ -1318,7 +1318,7 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			logger_fatal("logger_set_logdir_path: logdir path is not correct (%s)."
-					"Make sure you specify a valid absolute or relative path.\n", logdir, 0, 0);
+				     "Make sure you specify a valid absolute or relative path.\n", logdir, 0, 0);
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
@@ -1338,7 +1338,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 	int id = LOG_SID;
 	FILE *fp;
 	char bak[BUFSIZ];
-    log_bid snapshots_bid = 0;
+	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
@@ -1375,11 +1375,12 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		/* catalog does not exist, so the log file also
 		 * shouldn't exist */
 		if (fp != NULL) {
-			logger_fatal(
-					"logger_load: there is no logger catalog, but there is a log file.\n"
-							"Are you sure you are using the correct combination of database\n"
-							"(--dbpath) and log directory (--set %s_logdir)?\n", fn, 0, 0);
-			goto error;
+			logger_fatal("logger_load: there is no logger catalog, "
+				     "but there is a log file.\n"
+				     "Are you sure you are using the correct "
+				     "combination of database\n"
+				     "(--dbpath) and log directory "
+				     "(--set %s_logdir)?\n", fn, 0, 0);
 		}
 
 		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
@@ -1391,7 +1392,8 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		if (debug & 1)
 			fprintf(stderr, "#create %s catalog\n", fn);
 
-		/* Make persistent */
+		/* give the catalog bats names so we can find them
+		 * next time */
 		bid = lg->catalog_bid->batCacheid;
 		BBPincref(bid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
@@ -1399,7 +1401,6 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		/* Make persistent */
 		bid = lg->catalog_nme->batCacheid;
 		BBPincref(bid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
@@ -1417,12 +1418,10 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		if (GDKcreatedir(filename) != GDK_SUCCEED) {
 			logger_fatal("logger_load: cannot create directory for log file %s\n",
 				     filename, 0, 0);
-			goto error;
 		}
 		if ((fp = fopen(filename, "w")) == NULL) {
 			logger_fatal("logger_load: cannot create log file %s\n",
 				     filename, 0, 0);
-			goto error;
 		}
 		lg->id ++;
 		if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
@@ -1442,7 +1441,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			/* cannot commit catalog, so remove log */
 			unlink(filename);
 			goto error;
-	    }
+		}
 	} else {
 		/* find the persistent catalog. As non persistent bats
 		 * require a logical reference we also add a logical
@@ -1463,7 +1462,13 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
 		if (d == 0) {
+			/* older database: create dcatalog and convert
+			 * catalog_bid and catalog_nme to
+			 * dense-headed */
 			d = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+			if (d == NULL)
+				logger_fatal("Logger_new: cannot create "
+					     "dcatalog bat", 0, 0, 0);
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
@@ -1533,7 +1538,6 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				     "--set %s_logdir=<path to old log directory> or move the old log\n"
 				     "directory to the new location (%s).\n",
 				     fn, fn, lg->dir);
-			goto error;
 		}
 		lg->catalog_bid = b;
 		lg->catalog_nme = n;
@@ -1547,33 +1551,44 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		}
 	}
 
-    snapshots_bid = logger_find_bat(lg, "snapshots_bid");
-    if (snapshots_bid == 0) {
-    	lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
-    	lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
-    	lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
-	
-        /* create LOG_SID sequence number */
+	snapshots_bid = logger_find_bat(lg, "snapshots_bid");
+	if (snapshots_bid == 0) {
+		lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
+		lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
+		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL)
+			logger_fatal("Logger_new: cannot create seqs bats",
+				     0, 0, 0);
+
+		/* create LOG_SID sequence number */
 		if (BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
 		    BUNappend(lg->seqs_val, &lg->id, FALSE) != GDK_SUCCEED)
 			logger_fatal("logger_load: failed to append value to "
 				     "sequences bat", 0, 0, 0);
 
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
+		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+		if (lg->snapshots_bid == NULL ||
+		    lg->snapshots_tid == NULL ||
+		    lg->dsnapshots == NULL)
+			logger_fatal("Logger_new: failed to create snapshots "
+				     "bats", 0, 0, 0);
+
 		snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
 		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
-		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
 		snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
 		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid");
 
-		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
 		snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
 		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 			logger_fatal("Logger_new: BBPrename to %s failed",
@@ -1588,19 +1603,24 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 		bat dsnapshots = logger_find_bat(lg, "dsnapshots");
 
-        if (seqs_id) {
-            BAT *o_id = BATdescriptor(seqs_id);
-            BAT *o_val = BATdescriptor(seqs_val);
-        
-            lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
-            lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
-            BBPunfix(o_id->batCacheid);
-            BBPunfix(o_val->batCacheid);
+		if (seqs_id) {
+			BAT *o_id = BATdescriptor(seqs_id);
+			BAT *o_val = BATdescriptor(seqs_val);
+
+			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
+			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
+			BBPunfix(o_id->batCacheid);
+			BBPunfix(o_val->batCacheid);
 		} else {
-            lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
-            lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
+			lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
+			lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
 		}
 		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL)
+			logger_fatal("Logger_new: cannot create seqs bats",
+				     0, 0, 0);
 
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)
@@ -1608,18 +1628,18 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
 		if (lg->snapshots_tid == 0)
 			logger_fatal("logger_load: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
-        
-        if (dsnapshots) {
-            lg->dsnapshots = BATdescriptor(dsnapshots);
-            if (lg->dsnapshots == 0)
-                logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
-        } else {
-            lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
-            snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
-            if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
-                logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
-            logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
-        }
+
+		if (dsnapshots) {
+			lg->dsnapshots = BATdescriptor(dsnapshots);
+			if (lg->dsnapshots == 0)
+				logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
+		} else {
+			lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+			snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
+			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
+				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
+			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
+		}
 	}
 	lg->freed = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
 	if (lg->freed == NULL)
@@ -1683,40 +1703,40 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				fseek(fp, off, SEEK_SET);
 
 
-			if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
-				/* file indicating that we need to do
-				 * a 32->64 bit OID conversion exists;
-				 * record the fact in case we get
-				 * interrupted, and set the flag so
-				 * that we actually do what's asked */
-				fclose(fp1);
-				/* first create a versioned file using
-				 * the current log id */
-				if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
-				    fprintf(fp1, "%d\n", curid) < 2 ||
-				    fflush(fp1) != 0 || /* make sure it's save on disk */
+				if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+					/* file indicating that we need to do
+					 * a 32->64 bit OID conversion exists;
+					 * record the fact in case we get
+					 * interrupted, and set the flag so
+					 * that we actually do what's asked */
+					fclose(fp1);
+					/* first create a versioned file using
+					 * the current log id */
+					if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
+					    fprintf(fp1, "%d\n", curid) < 2 ||
+					    fflush(fp1) != 0 || /* make sure it's save on disk */
 #if defined(_MSC_VER)
-				    _commit(_fileno(fp1)) < 0 ||
+					    _commit(_fileno(fp1)) < 0 ||
 #elif defined(HAVE_FDATASYNC)
-				    fdatasync(fileno(fp1)) < 0 ||
+					    fdatasync(fileno(fp1)) < 0 ||
 #elif defined(HAVE_FSYNC)
-				    fsync(fileno(fp1)) < 0 ||
+					    fsync(fileno(fp1)) < 0 ||
 #endif
-				    fclose(fp1) != 0)
-					logger_fatal("logger_load: failed to write %s\n", cvfile, 0, 0);
-				/* then remove the unversioned file
-				 * that gdk_bbp created (in this
-				 * order!) */
-				unlink(bak);
-				/* set the flag that we need to convert */
-				lg->read32bitoid = 1;
-			} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
-				/* the versioned conversion file
-				 * exists: check version */
-				int newid;
+					    fclose(fp1) != 0)
+						logger_fatal("logger_load: failed to write %s\n", cvfile, 0, 0);
+					/* then remove the unversioned file
+					 * that gdk_bbp created (in this
+					 * order!) */
+					unlink(bak);
+					/* set the flag that we need to convert */
+					lg->read32bitoid = 1;
+				} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
+					/* the versioned conversion file
+					 * exists: check version */
+					int newid;
 
 					if (fscanf(fp1, "%d", &newid) == 1 &&
-						newid == curid) {
+					    newid == curid) {
 						/* versions match, we need to
 						 * convert */
 						lg->read32bitoid = 1;
@@ -1750,7 +1770,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 	}
 
 	return LOG_OK;
-	error:
+  error:
 	if (fp)
 		fclose(fp);
 	if (lg)
@@ -1785,11 +1805,15 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 #endif
 
 	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
-	if ((lg->fn = GDKstrdup(fn)) == NULL ||
-	    (lg->dir = GDKstrdup(filename)) == NULL) {
+	lg->fn = GDKstrdup(fn);
+	lg->dir = GDKstrdup(filename);
+	lg->bufsize = 64*1024;
+	lg->buf = GDKmalloc(lg->bufsize);
+	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
+		GDKfree(lg->buf);
 		GDKfree(lg);
 		return NULL;
 	}
@@ -1816,11 +1840,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		/* get last shared logger id from the local log dir,
 		 * but first check if the file exists */
 		snprintf(shared_log_filename, sizeof(shared_log_filename), "%s%s", lg->local_dir, LOGFILE_SHARED);
-#if defined(_MSC_VER)
-		if (_access(shared_log_filename, 0) != -1) {
-#else
 		if (access(shared_log_filename, 0) != -1) {
-#endif
 			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 			if (res == LOG_ERR) {
 				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
@@ -1855,7 +1875,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
-	lg->buf = GDKmalloc(lg->bufsize = 64*1024);
 
 	if (logger_load(debug, fn, filename, lg) == LOG_OK) {
 		return lg;
@@ -2159,7 +2178,7 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 
 	return lid;
 
-	error:
+  error:
 	if (fp)
 		fclose(fp);
 	if (lg)
@@ -2286,7 +2305,7 @@ log_bat_transient(logger *lg, const char *name)
 
 	/* if this is a snapshot bat, we need to skip all changes */
 	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
-	//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
+		//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -2302,7 +2321,7 @@ log_bat_transient(logger *lg, const char *name)
 			assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
-	//	if (lg->tid == tid)
+		//	if (lg->tid == tid)
 		if (p >= lg->snapshots_tid->batInserted) {
 			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 		} else {
@@ -2311,9 +2330,9 @@ log_bat_transient(logger *lg, const char *name)
 			BUNappend(lg->snapshots_tid, &lg->tid, FALSE);
 			BUNappend(lg->snapshots_bid, &bid, FALSE);
 		}
-	//	else
-	//		printf("%d != %d\n", lg->tid, tid);
-	//	assert(lg->tid == tid);
+		//	else
+		//		printf("%d != %d\n", lg->tid, tid);
+		//	assert(lg->tid == tid);
 	}
 
 	if (log_write_format(lg, &l) == LOG_ERR ||
@@ -2538,7 +2557,7 @@ log_tend(logger *lg)
 
 		tids = bm_tids(lg->snapshots_tid, lg->dsnapshots);
 		cands = BATsubselect(lg->snapshots_tid, tids, &lg->tid, &lg->tid,
-				    TRUE, TRUE, FALSE);
+				     TRUE, TRUE, FALSE);
 		if (tids == NULL || cands == NULL) {
 			fprintf(stderr, "!ERROR: log_tend: subselect failed\n");
 			return LOG_ERR;
@@ -2690,7 +2709,7 @@ bm_commit(logger *lg)
 		if (bid == lg->dsnapshots->batCacheid)
 			continue;
 
-	       	lb = BATdescriptor(bid);
+		lb = BATdescriptor(bid);
 
 		assert(lb);
 		BATmode(lb, PERSISTENT);
@@ -2753,7 +2772,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
-		
+
 		BUNappend(lg->dsnapshots, &q, FALSE);
 		if (lg->debug & 1)
 			fprintf(stderr,
@@ -2785,6 +2804,6 @@ logger_find_bat(logger *lg, const char *name)
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
 		}
-	} 
+	}
 	return 0;
 }

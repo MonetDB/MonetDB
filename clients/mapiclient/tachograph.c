@@ -486,7 +486,7 @@ showBar(int level, lng clk, char *stmt)
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ETC  ", (level == 100? '-':' '),stamp);
+		printf("  %s ETC  ", stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){

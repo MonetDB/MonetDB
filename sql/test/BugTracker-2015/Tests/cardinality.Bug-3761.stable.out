@@ -1,0 +1,154 @@
+stdout of test 'cardinality.Bug-3761` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 16:23:57 >  
+# 16:23:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33257" "--set" "mapi_usock=/var/tmp/mtest-3180/.s.monetdb.33257" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:23:57 >  
+
+# MonetDB 5 server v11.21.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33257/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3180/.s.monetdb.33257
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.33'
+# Finished reading the write-ahead log 'sql_logs/sql/log.33'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:23:57 >  
+# 16:23:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3180" "--port=33257"
+# 16:23:57 >  
+
+#SELECT NULL AS table_catalog, (SELECT s.name FROM sys.schemas s WHERE t.schema_id = s.id) AS table_schema FROM sys.tables t;
+% .L2,	.L3 # table_name
+% table_catalog,	table_schema # name
+% char,	varchar # type
+% 0,	3 # length
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"tmp"	]
+[ NULL,	"tmp"	]
+[ NULL,	"tmp"	]
+[ NULL,	"tmp"	]
+[ NULL,	"tmp"	]
+[ NULL,	"tmp"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"sys"	]
+[ NULL,	"bam"	]
+[ NULL,	"bam"	]
+[ NULL,	"bam"	]
+[ NULL,	"bam"	]
+[ NULL,	"bam"	]
+[ NULL,	"sys"	]
+#SELECT (SELECT s.name FROM sys.schemas s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM sys.tables t;
+% .L3,	.L3 # table_name
+% table_schema,	table_catalog # name
+% varchar,	char # type
+% 3,	0 # length
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "tmp",	NULL	]
+[ "tmp",	NULL	]
+[ "tmp",	NULL	]
+[ "tmp",	NULL	]
+[ "tmp",	NULL	]
+[ "tmp",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "sys",	NULL	]
+[ "bam",	NULL	]
+[ "bam",	NULL	]
+[ "bam",	NULL	]
+[ "bam",	NULL	]
+[ "bam",	NULL	]
+[ "sys",	NULL	]
+
+# 16:23:57 >  
+# 16:23:57 >  "Done."
+# 16:23:57 >  
+

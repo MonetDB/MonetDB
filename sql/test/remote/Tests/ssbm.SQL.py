@@ -108,7 +108,7 @@ if not os.path.exists(lineorderdir):
     os.makedirs(lineorderdir)
 inputData = open(lineordertbl, 'r').read().split('\n')
 linesperslice = len(inputData) / nworkers + 1
-i = 1
+i = 0
 for lines in range(0, len(inputData), linesperslice):
     outputData = inputData[lines:lines+linesperslice]
     outputStr = '\n'.join(outputData)
@@ -119,6 +119,7 @@ for lines in range(0, len(inputData), linesperslice):
     outputFile.close()
     i += 1
 loadsplits =  glob.glob(os.path.join(lineorderdir, 'split-*'))
+loadsplits.sort()
 
 # load data (in parallel)
 def worker_load(workerrec):

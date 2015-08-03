@@ -1277,20 +1277,26 @@ strPut(Heap *h, var_t *dst, const char *v)
 				/* 110bbbba 10aaaaaa
 				 * one of the b's must be set*/
 				assert(v[i] & 0x4D);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else if ((v[i] & 0xF0) == 0xE0) {
 				/* 1110cccc 10cbbbba 10aaaaaa
 				 * one of the c's must be set*/
 				assert(v[i] & 0x0F || v[i + 1] & 0x20);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else if ((v[i] & 0xF8) == 0xF0) {
 				/* 11110ddd 10ddcccc 10cbbbba 10aaaaaa
 				 * one of the d's must be set */
 				assert(v[i] & 0x07 || v[i + 1] & 0x30);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else {
 				/* this will fail */
 				assert((v[i] & 0x80) == 0);
