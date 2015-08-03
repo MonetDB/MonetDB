@@ -441,7 +441,7 @@ eventparser(char *row, EventRecord *ev)
 		*w = 0;
 	if( ev->state == MDB_SYSTEM){
 		monetdb_characteristics = strdup(ev->stmt);
-		if( ev->stmt == NULL){
+		if( monetdb_characteristics == NULL){
 			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
 			exit(-1);
 		}
