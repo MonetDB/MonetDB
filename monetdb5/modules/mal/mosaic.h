@@ -189,13 +189,13 @@ float nextafterf(float x, float y);
 
 // skip until you hit a candidate
 #define MOSskipit()\
-if ( task->cl && task->n){\
-	while( *task->cl < (oid) first)\
+if ( task->n && task->cl ){\
+	while(task->n > 0 && *task->cl < (oid) first)\
 		{task->cl++; task->n--;}\
-	if (task->n == 0 || *task->cl > (oid) first )\
+	if (task->n <= 0 || *task->cl > (oid) first )\
 		continue;\
 	if ( *task->cl == (oid) first ){\
-		task->cl++; task->n--;\
+		task->cl++; \
 	}\
 } else if (task->cl) continue;
 
