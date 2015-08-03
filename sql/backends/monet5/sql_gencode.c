@@ -1457,11 +1457,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //all the dimensions
 							q = pushArgument(mb, q, uval); //the current dimension
-						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
+/*NOT NEEDED						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
 							setVarType(mb, getArg(q, 0), TYPE_ptr);
 							setVarUDFtype(mb, getArg(q, 0));
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l);
+*/
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1495,12 +1496,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //all the dimensions
 							q = pushArgument(mb, q, uval); //the current dimension
-						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
+/*NOT NEEDED						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
 							setVarType(mb, getArg(q, 0), TYPE_ptr);
 							setVarUDFtype(mb, getArg(q, 0));
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l);
-						} else
+*/						} else
 							q = pushArgument(mb, q, l);
 
 						if(sub > 0) { //candidates
@@ -1545,7 +1546,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (q) {
 				s->nr = getDestVar(q);
-				if(s->op1->type == st_dimension || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))) { 
+				if(s->op1->type == st_dimension /*NOT NEEDED || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))*/) { 
 					/* rename second result */
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				}
@@ -1847,6 +1848,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
+				
+				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t))
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+
 				q = pushArgument(mb, q, l);
 				{
 				/* if the first argument has two variables then it is a sub-select
@@ -1873,14 +1878,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
                     snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
                     uval = findVariable(mb, nme);
 //					assert(uval >= 0);
-					if(uval >= 0)
+					if(uval >= 0) //{
 						q = pushArgument(mb, q, uval);
+				//		if(s->op1->type == st_tid)
+				//			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+				//	}
 //				}
 				}
-
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+
+				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t)) {
+					/* left fetch join on a non-dimensional column and the tid
+ 					* I need to return also the pointer to dims or it will be lost afterwards */
+
+					/* rename second result */
+					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+				}
+				
 				return s->nr;
 			}
 

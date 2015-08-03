@@ -129,6 +129,8 @@ str ALGdimensionLeftfetchjoin1(bat *result, const bat *cands, const ptr *dims, c
 	BAT *candsBAT = NULL, *resBAT = NULL;
 	BUN resSize = 0;
 
+//TODO: Make sure that the cabdidates form an MBR
+
 	if ((candsBAT = BATdescriptor(*cands)) == NULL) {
         throw(MAL, "algebra.dimensionLeftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
@@ -176,25 +178,17 @@ str ALGdimensionLeftfetchjoin1(bat *result, const bat *cands, const ptr *dims, c
 
 }
 
-str ALGdimensionLeftfetchjoin2(bat *result, const ptr *candDims, const ptr *dims, const ptr *dim) {
+//str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat) {
+str ALGnonDimensionLeftfetchjoin1(bat* result, const bat* cands, const bat *vals, const ptr *dims) {
 	(void)*result;
-	(void)*candDims;
+	(void)*cands;
+	(void)*vals;
 	(void)*dims;
-	(void)*dim;
-	
-	return MAL_SUCCEED;
-}
-
-str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat) {
-	(void)*result;
-	(void)*dimsCand;
-	(void)*candBat;
-	(void)*valsBat;
 
 	return MAL_SUCCEED;
 }
 
-str ALGnonDimensionLeftfetchjoin2(bat* result, const bat *tids, const bat *vals, const ptr *dims) {
+str ALGnonDimensionLeftfetchjoin2(bat* result, ptr *dimsRes, const bat *tids, const bat *vals, const ptr *dims) {
 	BAT *materialisedBAT = NULL;
 	BAT *nonDimensionalBAT = NULL;
 	BUN totalCellsNum, neededCellsNum;
@@ -223,7 +217,10 @@ str ALGnonDimensionLeftfetchjoin2(bat* result, const bat *tids, const bat *vals,
 	
 	BBPunfix(materialisedBAT->batCacheid);
 	BBPkeepref(*result = nonDimensionalBAT->batCacheid);
-        
+
+	//sent this to the output so that we do not lose it afterwards     
+	*dimsRes = *dims;
+   
 	return MAL_SUCCEED;
 
 }

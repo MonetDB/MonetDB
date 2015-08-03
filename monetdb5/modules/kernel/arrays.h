@@ -13,9 +13,16 @@
 #endif
 
 algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const bat* cands, const ptr *dims, const ptr *dim) ;
+#if 0
 algebra_export str ALGdimensionLeftfetchjoin2(bat* result, const ptr* dimsCand, const ptr *dims, const ptr *dim) ;
+/* project a non-dimensional column based on oids selected over dimensions */
 algebra_export str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat);
-algebra_export str ALGnonDimensionLeftfetchjoin2(bat* result, const bat *tids, const bat *vals, const ptr *dims);
+#endif
+/* project a non-dimensional column based on oids selected over dimensions */
+/*make sure that the BAT with the oids is an MBR and put NULL to values that are not in the oids but are needed to create the MBR*/
+algebra_export str ALGnonDimensionLeftfetchjoin1(bat* result, const bat* cands, const bat *vals, const ptr *dims);
+/* project a non-dimensional column based on tid (actually materialise it) */
+algebra_export str ALGnonDimensionLeftfetchjoin2(bat* result, ptr* dimsRes, const bat *tids, const bat *vals, const ptr *dims);
 //algebra_export str ALGnonDimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 //algebra_export str ALGdimensionLeftfetchjoin(bat *result, const bat *lid, const bat *rid);
 

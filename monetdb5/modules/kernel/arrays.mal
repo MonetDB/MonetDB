@@ -1,15 +1,17 @@
 #leftfetch join when having a dimension from an array
 #It gets the candidates and projects the dimensions
+#it should make sure that the candidates form an MBR (this might not be true of the selection was done on a nonDimensional column)
 command algebra.leftfetchjoin(candsBAT:bat[:oid,:oid], dims:ptr, dim:ptr ) :bat[:oid,:any]
 address ALGdimensionLeftfetchjoin1;
-#it is called after a selection on a non-dimensional column when projecting a dimensional column and is the mbr of the qualifying cells
-command algebra.leftfetchjoin(dimsCand:ptr, dims:ptr, dim:ptr ) :bat[:oid,:any]
-address ALGdimensionLeftfetchjoin2;
-#it is called after a selection on a non-dimensional column when projecting a non-dimensional column and is the mbr of the qualifying cells
-command algebra.leftfetchjoin(dimsCand:ptr, candBat:bat[:oid,:oid], valsBat:bat[:oid,:any] ) :bat[:oid,:any]
+##it is called after a selection on a non-dimensional column when projecting a dimensional column and is the mbr of the qualifying cells
+#command algebra.leftfetchjoin(dimsCand:ptr, dims:ptr, dim:ptr ) :bat[:oid,:any]
+#address ALGdimensionLeftfetchjoin2;
+##it is called after a selection on a non-dimensional column when projecting a non-dimensional column and is the mbr of the qualifying cells
+#command algebra.leftfetchjoin(dimsCand:ptr, candBat:bat[:oid,:oid], valsBat:bat[:oid,:any] ) :bat[:oid,:any]
+command algebra.leftfetchjoin(cands:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
 address ALGnonDimensionLeftfetchjoin1;
 #it is called when projecting a non-dimensional column of an array
-command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) :bat[:oid,:any]
+command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) (:bat[:oid,:any], :ptr)
 address ALGnonDimensionLeftfetchjoin2;
 
 
