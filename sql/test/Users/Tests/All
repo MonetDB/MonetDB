@@ -1,3 +1,4 @@
+dropManyUsers.Bug-3764
 schema
 role1
 role2
@@ -20,6 +21,6 @@ grantAndRevokeUserLogedIN.Bug-3476
 grantRevokeAndGrantAgain.Bug-3765
 grantMonetdbToRegularUser.Bug-3771
 grantMonetdbToSchemaOwner.Bug-3771
+grantPrivilegesNonDefaultRole.Bug-3365
 grantRole.Bug-3772
 grantMonetdb
-dropManyUsers.Bug-3764
