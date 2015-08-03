@@ -99,7 +99,7 @@ MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BA
 		BUNappend(btech, "dictionary_hdr", FALSE);
 		BUNappend(bcount, &i, FALSE);
 		BUNappend(binput, &cnt, FALSE);
-		BUNappend(boutput, &cnt, FALSE);
+		BUNappend(boutput, &task->hdr->dictfreq[i], FALSE);
 		BUNappend(bproperties, buf, FALSE);
 	}
 }
@@ -322,6 +322,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 		if(j == hdr->dictsize || dict[j] != *val) \
 			break;\
 		else {\
+			hdr->dictfreq[j]++;\
 			MOSincCnt(blk,1);\
 			dictcompress(base,i,hdr->bits,j);\
 		}\
@@ -370,6 +371,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 				if( j == hdr->dictsize || dict[j] != *val )
 					break;
 				else {
+					hdr->dictfreq[j]++;
 					MOSincCnt(blk,1);
 					cid = i * hdr->bits/64;
 					lshift= 63 -((i * hdr->bits) % 64) ;

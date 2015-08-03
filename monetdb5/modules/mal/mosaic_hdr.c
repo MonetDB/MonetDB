@@ -101,6 +101,10 @@ MOSinitHeader(MOStask task)
 	hdr->top = 0;
 	hdr->checksum.sumlng = 0;
 	hdr->checksum2.sumlng = 0;
+	for(i=0; i < 256; i++){
+		hdr->dictfreq[i]=0;
+		hdr->framefreq[i]=0;
+	}
 }
 
 // position the task on the mosaic blk to be scanned

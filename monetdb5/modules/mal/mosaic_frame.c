@@ -104,7 +104,7 @@ MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 		BUNappend(btech, "frame_hdr", FALSE);
 		BUNappend(bcount, &i, FALSE);
 		BUNappend(binput, &cnt, FALSE);
-		BUNappend(boutput, &cnt, FALSE);
+		BUNappend(boutput, &task->hdr->framefreq[i], FALSE);
 		BUNappend(bproperties, buf, FALSE);
 	}
 }
@@ -334,6 +334,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 		if(j == hdr->framesize || dict[j] != delta) \
 			break;\
 		else {\
+			hdr->framefreq[j]++;\
 			MOSincCnt(blk,1);\
 			framecompress(base,i,hdr->framebits,j);\
 		}\
@@ -384,6 +385,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 				if( j == hdr->framesize || dict[j] != delta )
 					break;
 				else {
+					hdr->framefreq[j]++;
 					MOSincCnt(blk,1);
 					cid = i * hdr->framebits/64;
 					lshift= 63 -((i * hdr->framebits) % 64) ;
