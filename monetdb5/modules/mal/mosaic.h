@@ -192,7 +192,7 @@ float nextafterf(float x, float y);
 if ( task->cl && task->n){\
 	while( *task->cl < (oid) first)\
 		{task->cl++; task->n--;}\
-	if ( *task->cl > (oid) first  || task->n ==0)\
+	if (task->n == 0 || *task->cl > (oid) first )\
 		continue;\
 	if ( *task->cl == (oid) first ){\
 		task->cl++; task->n--;\

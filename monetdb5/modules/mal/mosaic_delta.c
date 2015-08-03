@@ -710,7 +710,16 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
 			delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(int));
 			for(; first < last; first++, val+= *delta, delta++){
-				MOSskipit();
+				//MOSskipit();
+if ( task->cl && task->n){
+    while( *task->cl < (oid) first)
+        {task->cl++; task->n--;}
+    if (task->n == 0 || *task->cl > (oid) first )
+        continue;
+    if ( *task->cl == (oid) first ){
+        task->cl++; task->n--;
+    }
+} else if (task->cl) continue;
 				*v++ = val;
 				task->n--;
 				task->cnt++;

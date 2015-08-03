@@ -610,6 +610,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 	BAT *bsrc, *b;
 	MOStask task;
 	str msg;
+	int error;
 	(void) cntxt;
 
 #ifdef _DEBUG_MOSAIC_
@@ -759,7 +760,30 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		BBPunfix(b->batCacheid);
 		BBPkeepref( *ret = bsrc->batCacheid);
 	}
-	if( task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng)
+	error = 0;
+	switch( ATOMstorage(task->type)){
+	case TYPE_bte:
+		error = task->hdr->checksum.sumbte != task->hdr->checksum2.sumbte;
+		break;
+	case TYPE_sht:
+		error = task->hdr->checksum.sumsht != task->hdr->checksum2.sumsht;
+		break;
+	case TYPE_int:
+		error = task->hdr->checksum.sumint != task->hdr->checksum2.sumint;
+		break;
+	case TYPE_lng:
+		error = task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng;
+		break;
+	case TYPE_flt:
+		error = task->hdr->checksum.sumflt != task->hdr->checksum2.sumflt;
+		break;
+	case TYPE_dbl:
+		error = task->hdr->checksum.sumdbl != task->hdr->checksum2.sumdbl;
+		break;
+	default:
+		mnstr_printf(cntxt->fdout,"#unknown compression compatibility\n");
+	}
+	if(error)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
 	GDKfree(task);
 
