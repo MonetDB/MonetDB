@@ -221,12 +221,12 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 1:
 		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < limit; i++, w++)
+			for(i = 0;i < limit-1; i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == limit )
+			if ( i == limit -1)
 				break;
 			Prefix(bits, mask, val, val2, 8);
 			if( bits == 0)
@@ -245,12 +245,12 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 2:
 		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
+			for(i = 0;i < limit-1;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == limit)
+			if ( i == limit-1)
 				break;
 			Prefix(bits, mask, val, val2, 16);
 			if( bits == 0)
@@ -269,12 +269,12 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 4:
 		{	int *v = ((int*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < limit ;i++, w++)
+			for(i = 0;i < limit-1 ;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == limit)
+			if ( i == limit-1)
 				break;
 			Prefix(bits, mask, val, val2, 32);
 			if( bits == 0)
@@ -293,12 +293,12 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < limit ;i++, w++)
+			for(i = 0;i < limit-1 ;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
 			}
-			if ( i == limit )
+			if ( i == limit-1 )
 				break;
 			Prefix(bits, mask, val, val2, 64);
 			if( bits == 0)
