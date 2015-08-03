@@ -210,7 +210,7 @@ parseArguments(char *call, int m)
 int
 eventparser(char *row, EventRecord *ev)
 {
-	char *c, *cc, *v =0;
+	char *c, *cc, *v =0,*w;
 	struct tm stm;
 
 	malargc = 0;
@@ -390,13 +390,6 @@ eventparser(char *row, EventRecord *ev)
 		exit(-1);
 	}
 	c= ev->fcn;
-	if( ev->state == MDB_SYSTEM){
-		monetdb_characteristics = strdup(ev->stmt);
-		if( ev->stmt == NULL){
-			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
-			exit(-1);
-		}
-	} else
 	if( *c != '[')
 	{
 		v=c;
@@ -429,14 +422,25 @@ eventparser(char *row, EventRecord *ev)
 		if( v)
 			parseArguments(v+3,1);
 	}
-	if (ev->stmt && (v=strstr(ev->stmt, ",\t]"))){
-		*v=',';
-		*(v+1) = 0;
-	} else
-	if (ev->stmt && (v=strstr(ev->stmt, "\"\t]")))
-		*v = 0;
-	else
-	if (ev->stmt && (v=strstr(ev->stmt, "\t]")))
-		*v = 0;
+	// remove some superflous elements
+	w = strrchr(ev->stmt, (int) ']');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) '\t');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) ',');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) '"');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	if( ev->state == MDB_SYSTEM){
+		monetdb_characteristics = strdup(ev->stmt);
+		if( ev->stmt == NULL){
+			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
+			exit(-1);
+		}
+	} 
 	return 0;
 }
