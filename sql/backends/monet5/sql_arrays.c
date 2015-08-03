@@ -635,8 +635,8 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/*bind the column*/
 	b = store_funcs.bind_col(m->session->tr, c, 0);
 	/*fill the BAT*/
-	if(b)
-		b = materialise_nonDimensional_column(c->type.type->localtype, t->cellsNum, c->def);
+//	if(b)
+//		b = materialise_nonDimensional_column(c->type.type->localtype, t->cellsNum, c->def);
 
 	if(b) {
 		BBPkeepref(*bid = b->batCacheid);
