@@ -713,7 +713,7 @@ update(EventRecord *ev)
 			if( *(s+1) == '\\' ) s++;
 		default: fputc((int) *s, tachojson);
 		}
-		fprintf(tachojson,"\",\n");
+		fprintf(tachojson,"\"\n");
 
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
@@ -774,7 +774,7 @@ update(EventRecord *ev)
 		}
 		fprintf(tachojson,"\",\n");
 
-		fprintf(tachojson,"},\n");
+		fprintf(tachojson,"}\n");
 		fflush(tachojson);
 
 		events[ev->pc].state= FINISHED;
