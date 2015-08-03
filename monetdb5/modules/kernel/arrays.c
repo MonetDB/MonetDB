@@ -19,6 +19,10 @@ static int jumpSize(gdk_array *array, int dimNum) {
 	return skip;
 }
 
+static int arrayCellsNum(gdk_array *array) {
+	return jumpSize(array, array->dimsNum);
+}
+
 static bool overlapingRanges(gdk_dimension *dim1, gdk_dimension *dim2) {
 	if(*(oid*)dim1->max < *(oid*)dim2->min || *(oid*)dim2->max < *(oid*)dim1->min) {
 		//disjoint ranges. empty result
@@ -181,13 +185,40 @@ str ALGdimensionLeftfetchjoin2(bat *result, const ptr *candDims, const ptr *dims
 	return MAL_SUCCEED;
 }
 
-str ALGnonDimensionLeftfetchjoin(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat) {
+str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr* dimsCand, const bat *candBat, const bat *valsBat) {
 	(void)*result;
 	(void)*dimsCand;
 	(void)*candBat;
 	(void)*valsBat;
 
 	return MAL_SUCCEED;
+}
+
+str ALGnonDimensionLeftfetchjoin2(bat* result, const bat *tids, const bat *vals, const ptr *dims) {
+	BAT *materialisedBAT = NULL;
+	BAT *nonDimensionalBAT = NULL;
+	BUN neededCellsNum;
+
+	gdk_array *array = (gdk_array*)*dims;
+
+	if ((nonDimensionalBAT = BATdescriptor(*vals)) == NULL) {
+        throw(MAL, "algebra.leftfecthjoin", RUNTIME_OBJECT_MISSING);
+    }
+	(void)*tids; //ignore the tids
+
+	neededCellsNum = arrayCellsNum(array) - BATcount(nonDimensionalBAT);
+	
+	/*TODO: fix this so that I can have the real default value of the column */
+	materialisedBAT = materialise_nonDimensional_column(ATOMtype(BATttype(nonDimensionalBAT)), neededCellsNum, NULL);
+
+	BBPunfix(nonDimensionalBAT->batCacheid);
+
+	if(materialisedBAT) {
+        BBPkeepref(*result = materialisedBAT->batCacheid);
+        return MAL_SUCCEED;
+	}
+
+	throw(MAL, "algebra.leftfetchjoin", "Problem materialising non-dimensional column");
 }
 
 static str emptyCandidateResults(ptr *candsRes_dims, bat* candsRes_bid) {

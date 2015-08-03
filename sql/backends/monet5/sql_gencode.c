@@ -1848,9 +1848,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
 				q = pushArgument(mb, q, l);
-				/*if the second argument is a BAT and the first has two variables then
- 				* it is a subselect on a non-dimensional column that produces an MBR */ 
-				if(getVarType(mb, r) == TYPE_bat || getVarType(mb, r) == TYPE_any) {
+				{
+				/* if the first argument has two variables then it is a sub-select
+ 				* on a non-dimensional column that produces an MBR */
+				///*if the second argument is a BAT and the first has two variables then
+ 				//* it is a subselect on a non-dimensional column that produces an MBR */ 
+
+//				if(getVarType(mb, r) == TYPE_bat || getVarType(mb, r) >= TYPE_any) {
 					char nme[SMALLBUFSIZ];
                     int uval = -1;
 
@@ -1858,18 +1862,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
                     uval = findVariable(mb, nme);
                     if(uval >= 0)
 						q = pushArgument(mb, q, uval);
-				}
+//				}
 				q = pushArgument(mb, q, r);
-				if(s->op2->type == st_dimension) {
-					char nme[SMALLBUFSIZ];
-                    int uval = -1;
-
+				/* if the second argument has two variables then it is either a dimensional
+ 				* or a non-dimensional column of an array along with the dimensional of the array */ 
+//				if(s->op2->type == st_dimension) {
+//					char nme[SMALLBUFSIZ];
+//                  int uval = -1;
+//
                     snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
                     uval = findVariable(mb, nme);
-                    assert(uval >= 0);
-					q = pushArgument(mb, q, uval);
+//					assert(uval >= 0);
+					if(uval >= 0)
+						q = pushArgument(mb, q, uval);
+//				}
 				}
-
 
 				if (q == NULL)
 					return -1;
