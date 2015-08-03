@@ -213,10 +213,11 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		bat->cached = NULL;
 	}
 
+#if 0
 	//materialise the dimension
 	if(isBATarray(updates))
 		updates = materialiseDimensionBAT(updates);
-
+#endif
 	if (!is_new && bat->uibid && bat->uvbid) {
 		BAT *ib = temp_descriptor(bat->ibid), *otids = tids;
 

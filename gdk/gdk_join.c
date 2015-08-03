@@ -3234,7 +3234,7 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
-
+#if 0
 	if(isBATarray(r)) {
 		if(dimensionBATproject(&bn, l, r) != GDK_SUCCEED)
 			return NULL;
@@ -3243,7 +3243,7 @@ BATproject(BAT *l, BAT *r)
 		//otherwise it is cannot be expressed as an array and we proceed as if it is any other BAT
 		r = materialiseDimensionBAT(r);
 	}
-
+#endif
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + BATcount(l);
