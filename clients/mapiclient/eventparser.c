@@ -6,7 +6,7 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-/* (c) M Kersten, S Manegold */
+/* (c) M Kersten */
 
 #include "eventparser.h"
 

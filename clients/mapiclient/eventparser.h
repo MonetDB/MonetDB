@@ -6,7 +6,7 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-/* (c) M Kersten, S Manegold
+/* (c) M Kersten
  * The easiest calling method is something like:
  * tomograph -d demo --atlast=10
  * which connects to the demo database server and
