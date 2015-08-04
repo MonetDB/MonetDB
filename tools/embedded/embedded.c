@@ -53,7 +53,7 @@ int monetdb_startup(char* dir, char silent) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
-	if (GDKinit(set, setlen) == 0)  goto cleanup;
+	if (GDKinit(set, setlen) == 0) goto cleanup;
 
 	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
 	GDKsetenv("monet_mod_path", mod_path);
@@ -77,7 +77,6 @@ int monetdb_startup(char* dir, char silent) {
 		goto cleanup;
 	}
 	retval = 0;
-
 cleanup:
 	mo_free_options(set, setlen);
 	MT_lock_unset(&monetdb_embedded_lock, "monetdb.startup");
