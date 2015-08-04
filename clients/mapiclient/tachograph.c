@@ -755,7 +755,7 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"done\",\n");
 		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson," \"stmt\":\"");
+		fprintf(tachojson,"\"stmt\":\"");
 		for(s = ev->stmt; *s; s++)
 		switch(*s){
 		case '\\': 
@@ -765,16 +765,16 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\",\n");
 
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson," \"beautystmt\":\"");
+		fprintf(tachojson,"\"beautystmt\":\"");
 		for(s = line; *s; s++)
 		switch(*s){
 		case '\\': 
 			if( *(s+1) == '\\' ) s++;
 		default: fputc((int) *s, tachojson);
 		}
-		fprintf(tachojson,"\",\n");
+		fprintf(tachojson,"\"\n");
 
-		fprintf(tachojson,"}\n");
+		fprintf(tachojson,"},\n");
 		fflush(tachojson);
 
 		events[ev->pc].state= FINISHED;
