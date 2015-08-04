@@ -82,7 +82,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (!cname) {
 		if (!allowed)
-			allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
+			allowed = sql_grantable(sql, grantor, t->base.id, privs, 0);
 
 		if (!allowed) 
 			return sql_message("0L000!GRANT: grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
@@ -102,12 +102,23 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0) 
 		return sql_message("42M32!GRANT: user/role '%s' unknown", grantee);
-	if (privs == all)
+	/* first check if privilege isn't already given */
+	if ((privs == all && 
+	    (sql_privilege(sql, grantee_id, t->base.id, PRIV_SELECT, 0) ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_UPDATE, 0) ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_INSERT, 0) ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_DELETE, 0))) ||
+	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs, 0)) || 
+	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs, 0))) {
+		return sql_message("42M32!GRANT: user/role '%s' already has this privilege", grantee);
+	}
+	if (privs == all) {
 		sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
-	else if (!c)
+	} else if (!c) {
 		sql_insert_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
-	else
+	} else {
 		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
+	}
 	tr->schema_updates++;
 	return NULL;
 }
@@ -154,7 +165,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
+		allowed = sql_grantable(sql, grantor, t->base.id, privs, 0);
 
 	if (!allowed) 
 		return sql_message("0L000!REVOKE: grantor '%s' is not allowed to revoke privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
@@ -497,20 +508,26 @@ mvc_set_role(mvc *m, char *role)
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (rid != oid_nil) {
-		sql_table *roles = find_sql_table(sys, "user_role");
-		sql_column *role_id = find_sql_column(roles, "role_id");
-		sql_column *login_id = find_sql_column(roles, "login_id");
-
 		sql_column *auths_id = find_sql_column(auths, "id");
 		void *p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 		int id = *(int *)p;
 
 		_DELETE(p);
-		rid = table_funcs.column_find_row(m->session->tr, login_id, &m->user_id, role_id, &id, NULL);
-		
-		if (rid != oid_nil) {
+
+		if (m->user_id == id) {
 			m->role_id = id;
 			res = 1;
+		} else {
+			sql_table *roles = find_sql_table(sys, "user_role");
+			sql_column *role_id = find_sql_column(roles, "role_id");
+			sql_column *login_id = find_sql_column(roles, "login_id");
+
+			rid = table_funcs.column_find_row(m->session->tr, login_id, &m->user_id, role_id, &id, NULL);
+		
+			if (rid != oid_nil) {
+				m->role_id = id;
+				res = 1;
+			}
 		}
 	}
 	return res;

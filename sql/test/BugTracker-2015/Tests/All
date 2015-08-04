@@ -45,3 +45,9 @@ create-temp-table-using-like.Bug-3767
 crash_on_declared_table.Bug-3770
 quantile_function_resolution.Bug-3773
 backslash_predecing_separator.Bug-3775
+sessions_crash.Bug-3759
+cast_on_groupby_col_crash.Bug-3769
+apply_merge_distinct.Bug-3760
+cardinality.Bug-3761
+set_default_role.Bug-3364
+useless_casts.Bug-3756

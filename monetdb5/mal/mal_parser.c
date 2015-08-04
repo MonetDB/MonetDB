@@ -2052,21 +2052,17 @@ parseError(Client cntxt, str msg)
 	if (curBlk)
 		curBlk->errors++;
 
-	/* accidental %s directives in the lastline can
-	   crash the vfsprintf later => escape them */
-	for (t = l; *t && *t != '\n' && s < buf+1024; t++) {
-		if (*t == '%')
-			*s++ = '%';
+	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
 		*s++ = *t;
 	}
 	*s++ = '\n';
 	*s = 0;
-	if (s != buf + 1 && strlen(buf) < 1024) {
+	if (s != buf + 1 && strlen(buf) < sizeof(buf) - 4) {
 		showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 		/* produce the position marker*/
 		s = buf;
 		i = position(cntxt) - 1;
-		for (; i > 0; i--) {
+		for (; i > 0 && s < buf+sizeof(buf)-4; i--) {
 			*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';
 		}
 		*s++ = '^';
@@ -2074,7 +2070,7 @@ parseError(Client cntxt, str msg)
 	}
 
 	if (msg && strlen(msg))
-		snprintf(s, 1020, "%s", msg);
+		snprintf(s, sizeof(buf)-(s-buf), "%s", msg);
 	skipToEnd(cntxt);
 	showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 	return 0;

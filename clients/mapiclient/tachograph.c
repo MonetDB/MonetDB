@@ -486,7 +486,7 @@ showBar(int level, lng clk, char *stmt)
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ETC  ", (level == 100? '-':' '),stamp);
+		printf("  %s ETC  ", stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
@@ -539,11 +539,23 @@ initFiles(void)
 static void
 progressBarInit(char *qry)
 {
+	char *s;
 	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
 	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
 	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
-	fprintf(tachojson," \"query\":\"%s\",\n",qry);
+	fprintf(tachojson," \"tag\":%d,\n",currenttag);
+
+	fprintf(tachojson," \"query\":\"");
+	for(s = qry; *s; s++)
+	switch(*s){
+	case '\n': fputs("\\n", tachojson); break;
+	case '\r': fputs("\\r", tachojson); break;
+	case '\t': fputs("\\t", tachojson); break;
+	case '\b': fputs("\\b", tachojson); break;
+	default: fputc((int) *s, tachojson);
+	}
+	fprintf(tachojson,"\",\n");
+
 	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
 	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
 	fprintf(tachojson," \"instructions\":%d\n",malsize);
@@ -555,8 +567,8 @@ static void
 update(EventRecord *ev)
 {
 	int progress=0;
-	int i,j;
-	char *v;
+	int i,j,k;
+	char *v, *s;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
 	char prereq[BUFSIZ]={0};
@@ -684,20 +696,36 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"start\",\n");
 		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
-		fprintf(tachojson,"\"beautystmt\": \"%s\",\n",line);
+
+		fprintf(tachojson," \"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
+		fprintf(tachojson," \"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
-		for( i=0; i < malvartop; i++){
+		for( k=0, i=0; i < malvartop; i++){
 			// remove duplicates
 			for(j= ev->pc-1; j>=0;j --){
-				//if(debug)
-					//fprintf(stderr,"locate %s in %s\n",malvariables[i], events[j].stmt);
 				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					snprintf(number,BUFSIZ,"%d",j);
+					snprintf(number,BUFSIZ," %d ",j);
+					//avoid duplicate prerequisites
 					if( strstr(prereq,number) == 0)
-						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s%d",(i?", ":""), j);
-					//fprintf(tachojson,"%s%d",(i?", ":""), j);
+						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s %d ",(k?", ":""), j);
+					k++;
 					break;
 				}
 			}
@@ -726,9 +754,25 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"done\",\n");
 		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachojson,"\"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson,"\"beautystmt\": \"%s\"\n",line);
+		fprintf(tachojson,"\"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\"\n");
+
 		fprintf(tachojson,"},\n");
 		fflush(tachojson);
 
@@ -747,8 +791,6 @@ update(EventRecord *ev)
 		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
 		fprintf(tachostmt,LLFMT"\t",ev->inblock);
 		fprintf(tachostmt,LLFMT"\t",ev->oublock);
-		fprintf(tachostmt,"%s\t",ev->stmt);
-		fprintf(tachostmt, "%s\n",line);
 
 		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));

@@ -319,6 +319,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_hge) {
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
+					va_end(ap);
 					return_error(type_error);
 #endif
 				} else if (type == TYPE_int) {
@@ -357,6 +358,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_hge) {
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
+					va_end(ap);
 					return_error(type_error);
 #endif
 				} else {
