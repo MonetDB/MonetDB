@@ -1,6 +1,6 @@
 ###
-# Assess that the admin can change the password of a user.
-# Assess that a user can change its own password.
+# Grant monetdb rights to a user.
+# Verify that the user can assume the monetdb role and CREATE new users, GRANT privileges and roles.
 ###
 
 from util import sql_test_client
