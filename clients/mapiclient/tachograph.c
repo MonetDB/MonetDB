@@ -713,7 +713,7 @@ update(EventRecord *ev)
 			if( *(s+1) == '\\' ) s++;
 		default: fputc((int) *s, tachojson);
 		}
-		fprintf(tachojson,"\"\n");
+		fprintf(tachojson,"\",\n");
 
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
