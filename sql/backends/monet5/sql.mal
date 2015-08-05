@@ -122,6 +122,10 @@ pattern evalAlgebra(cmd:str, optimize:bit):void
 address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
+command flush_log( ) :void
+address SQLflush_log
+comment "flush the log now";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";

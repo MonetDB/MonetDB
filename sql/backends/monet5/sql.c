@@ -5200,3 +5200,11 @@ BATSTRstrings(bat *res, const bat *src)
 	BBPkeepref((*res = r->batCacheid));
 	return MAL_SUCCEED;
 }
+
+str 
+SQLflush_log(void *ret)
+{
+	(void)ret;
+	store_flush_log();
+	return MAL_SUCCEED;
+}

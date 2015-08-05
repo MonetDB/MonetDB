@@ -44,3 +44,8 @@ create function sys.bbp ()
 
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
+
+-- enqueue a flush log, ie as soon as no transactions are active 
+-- flush the log and cleanup the used storage
+create procedure sys.flush_log ()
+	external name sql."flush_log";

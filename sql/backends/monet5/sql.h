@@ -328,4 +328,6 @@ sql5_export str BATSTRindex_bte(bat *res, const bat *src, const bit *u);
 sql5_export str STRstrings(str *res, const str *src);
 sql5_export str BATSTRstrings(bat *res, const bat *src);
 
+sql5_export str SQLflush_log(void *ret);
+
 #endif /* _SQL_H */
