@@ -81,32 +81,33 @@ static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimN
 	return oids;
 }
 
-static str readCands(gdk_cells** dimsRes, BAT** oidsRes, const ptr *dimsCand, const bat *oidsCand, gdk_array* array) {
-	gdk_cells *dimensionsCandidates_in = NULL;
+/*UPDATED*/
+static str readCands(gdk_array** dimCands_res, BAT** oidCands_res, const ptr *dimCands, const bat *oidCands, gdk_array* array) {
+	gdk_array *dimCands_in = NULL;
 	BAT *candidatesBAT_in = NULL;
 	
-	if(oidsCand) {
-		if ((candidatesBAT_in = BATdescriptor(*oidsCand)) == NULL) {
-        	throw(MAL, "algebra.dimensionSubselect", RUNTIME_OBJECT_MISSING);
+	if(oidCands) { //there are candidates that cannot be expressed as dimensions and thus are expressed with oids
+		if ((candidatesBAT_in = BATdescriptor(*oidCands)) == NULL) {
+        	throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
     	}
 	}
 
-	if(dimsCand)
-		dimensionsCandidates_in = (gdk_cells*)*dimsCand;
+	if(dimCands) //there are candidates exressed as dimensions
+		dimCands_in = (gdk_array*)*dimsCand;
 
 	//if there are no candidates then everything is a candidate
-	if(!dimsCand && !oidsCand) {
-		dimensionsCandidates_in = arrayToCells(array);
+	if(!dimCands && !oidCands) {
+		dimCands_in = array;
 		//create an empy candidates BAT
 		 if((candidatesBAT_in = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
-            throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
+            throw(MAL, "algebra.subselect", GDK_EXCEPTION);
 		BATsetcount(candidatesBAT_in, 0);
 		BATseqbase(candidatesBAT_in, 0);
 		BATderiveProps(candidatesBAT_in, FALSE);    
 	} 
 
-	*dimsRes = dimensionsCandidates_in;
-	*oidsRes = candidatesBAT_in;
+	*dimCands_res = dimCands_in;
+	*oidCands_res = candidatesBAT_in;
 
 	return MAL_SUCCEED;
 }
