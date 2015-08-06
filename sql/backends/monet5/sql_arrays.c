@@ -2,6 +2,7 @@
 #include "sql_arrays.h"
 #include "sql.h"
 
+#if 0
 //when the column belongs to an array extra values should be added in order to 
 //have values for all cells int he array
 BAT* mvc_fill_values(sql_column *c, BAT *b_in, unsigned int cellsNum, void* defVal) {
@@ -141,7 +142,6 @@ static BAT* mvc_create_cells_bat(mvc *m, char *sname, char *tname, char *cname, 
 	return mvc_fill_values(c, b, t->cellsNum, defVal);
 }
 
-#if 0
 static BAT*
 mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 	BAT *b = NULL;
@@ -231,9 +231,7 @@ mvc_create_dimension_bat(mvc *m, char *sname, char *tname, char *dname) {
 
 	return b;
 }
-#endif
 
-#if 0
 static BAT* mvc_subselect_dimension_bat(mvc *m, char* sname, char* tname, char* dname, bat* cand, void* low, void* high, bit li, bit hi, bit anti) {
 	BAT *b = NULL, *candBAT, *b_tmp;
 	sql_schema *s = NULL;
@@ -417,7 +415,6 @@ fprintf(stderr, "Final element: %ld\n", current_elements[i]);
 	return b;
 
 }
-#endif
 
 str mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *b = NULL;
@@ -448,7 +445,6 @@ str mvc_create_cells_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	throw(SQL, "sql.create_cells", "unable to find %s(%s)", *tname, *cname);
 }
 
-#if 0
 str mvc_get_cells(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ptr *res = getArgReference_ptr(stk, pci, 0);
 	BAT *oidsBAT = NULL; //at this point it is empty. It is just initialised
@@ -566,8 +562,8 @@ static ptr get_dims2(ptr* dim_res, sql_table *t, sql_dimension *dim) {
 }
 
 str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	ptr* dims_res = getArgReference_ptr(stk, pci, 0);
-	ptr* dim_res = getArgReference_ptr(stk, pci, 1);
+	ptr* dim_res = getArgReference_ptr(stk, pci, 0);
+	ptr* dims_res = getArgReference_ptr(stk, pci, 1);
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s = NULL;

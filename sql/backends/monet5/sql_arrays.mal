@@ -9,7 +9,7 @@
 
 pattern sql.bind_array_dimension(mvc:int, schema:str, array:str, dimension:str) (:ptr, :ptr)
 address mvc_bind_array_dimension
-comment "Get the order of the dimension in the array (starting from 1) and a pointer to all dimensions";
+comment "Get a pointer to the dimension and a pointer to the array (a structure having the size of all the dimensions)" 
 
 pattern sql.bind_array_column(mvc:int, schema:str, array:str, column:str) (:bat[:oid,:any], :ptr)
 address mvc_bind_array_column

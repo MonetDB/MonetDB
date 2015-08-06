@@ -15,12 +15,12 @@ command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) 
 address ALGnonDimensionLeftfetchjoin2;
 
 
-command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
-address ALGmbrsubselect;
-command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid]) :bat[:oid,:oid]
-address ALGmbrsubselect2;
-command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
-address ALGmbrproject;
+#command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
+#address ALGmbrsubselect;
+#command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid]) :bat[:oid,:oid]
+#address ALGmbrsubselect2;
+#command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
+#address ALGmbrproject;
 
 #subselection in dimensions
 command algebra.subselect(dims:ptr, dim:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
@@ -28,12 +28,12 @@ address ALGdimensionSubselect1;
 command algebra.subselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 address ALGdimensionSubselect2;
 
-#subselect on non-dimensional column of an array
-#the ptr has the mbr dimensions and the bat{;oid,:oid] the oids that really qualify (rest of cells in mbr should be null)
-command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
-address ALGnonDimensionSubselect1;
-command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
-address ALGnonDimensionSubselect2;
+##subselect on non-dimensional column of an array
+##the ptr has the mbr dimensions and the bat{;oid,:oid] the oids that really qualify (rest of cells in mbr should be null)
+#command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+#address ALGnonDimensionSubselect1;
+#command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+#address ALGnonDimensionSubselect2;
 
 command algebra.thetasubselect(dims:ptr, dim:ptr, val:any_1, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect1;

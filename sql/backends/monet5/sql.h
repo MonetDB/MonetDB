@@ -49,7 +49,6 @@
 #include "sql_qc.h"
 #include "sql_env.h"
 #include "sql_statement.h"
-#include "sql_arrays.h"
 
 #include "querylog.h"
 

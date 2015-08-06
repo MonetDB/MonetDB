@@ -1721,9 +1721,6 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 
 	b = store_funcs.bind_col(tr, c, access);
 
-	if(isArray(t))
-		return mvc_fill_values(c, b, t->cellsNum, NULL);
-
 	return b;
 }
 
