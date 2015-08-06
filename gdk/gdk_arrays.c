@@ -44,13 +44,12 @@ createAnalyticDim(dbl);
 createAnalyticDim(flt);
 
 #define createDim(TPE) \
-gdk_dimension* createDimension_##TPE(unsigned int elsNum_initial, TPE min, TPE max, TPE step) { \
+gdk_dimension* createDimension_##TPE(TPE min, TPE max, TPE step) { \
 	gdk_dimension *dim = GDKmalloc(sizeof(gdk_dimension)); \
 	dim->elsNum = floor((max - min )/ step)+1; \
 	dim->min = 0; \
     dim->max = dim->elsNum; \
 	dim->step = 1; \
-	dim->elsNum_initial = elsNum_initial; \
 	return dim; \
 }
 
@@ -66,13 +65,28 @@ createDim(flt);
 
 gdk_array* arrayNew(unsigned short dimsNum) {
 	gdk_array *array = (gdk_array*)GDKmalloc(sizeof(gdk_array));
+	if(!array)
+		return NULL;
 	array->dimsNum = dimsNum;
 	array->dims = (gdk_dimension**)GDKmalloc(sizeof(gdk_dimension*)*dimsNum);
+	if(!array->dims)
+		return NULL;
 	return array;
 }
 
+gdk_array* arrayCopy(gdk_array *array) {
+	unsigned short i;
+	gdk_array *array_copy = arrayNew(array->dimsNum);
+	if(!array_copy)
+		return NULL;
+	for(i=0; i<array_copy->dimsNum; i++)
+		array_copy[i] = array[i];
+
+	return array_copy;
+}
+
 gdk_return arrayDelete(gdk_array *array) {
-	int i=0;
+	unsigned short i=0;
 	for(i=0; i<array->dimsNum; i++)
 		GDKfree(array->dims[i]);
 	GDKfree(array->dims);

@@ -32,7 +32,6 @@ typedef struct dimensionStruct {
 	unsigned int max;
 	unsigned int step; //initialy this is set to 1
 	unsigned int elsNum;
-	unsigned int elsNum_initial;
 } gdk_dimension;
 
 typedef struct arrayStruct {
@@ -49,14 +48,14 @@ typedef enum errors {
 
 gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg);
 
-gdk_export gdk_dimension* createDimension_bte(unsigned int elsNum_initial, bte min, bte max, bte step);
-gdk_export gdk_dimension* createDimension_sht(unsigned int elsNum_initial, sht min, sht max, sht step);
-gdk_export gdk_dimension* createDimension_int(unsigned int elsNum_initial, int min, int max, int step);
-gdk_export gdk_dimension* createDimension_wrd(unsigned int elsNum_initial, wrd min, wrd max, wrd step);
-gdk_export gdk_dimension* createDimension_oid(unsigned int elsNum_initial, oid min, oid max, oid step);
-gdk_export gdk_dimension* createDimension_lng(unsigned int elsNum_initial, lng min, lng max, lng step);
-gdk_export gdk_dimension* createDimension_dbl(unsigned int elsNum_initial, dbl min, dbl max, dbl step);
-gdk_export gdk_dimension* createDimension_flt(unsigned int elsNum_initial, flt min, flt max, flt step);
+gdk_export gdk_dimension* createDimension_bte(bte min, bte max, bte step);
+gdk_export gdk_dimension* createDimension_sht(sht min, sht max, sht step);
+gdk_export gdk_dimension* createDimension_int(int min, int max, int step);
+gdk_export gdk_dimension* createDimension_wrd(wrd min, wrd max, wrd step);
+gdk_export gdk_dimension* createDimension_oid(oid min, oid max, oid step);
+gdk_export gdk_dimension* createDimension_lng(lng min, lng max, lng step);
+gdk_export gdk_dimension* createDimension_dbl(dbl min, dbl max, dbl step);
+gdk_export gdk_dimension* createDimension_flt(flt min, flt max, flt step);
 
 gdk_export gdk_analytic_dimension* createAnalyticDimension_bte(unsigned short dimNum, bte min, bte max, bte step);
 gdk_export gdk_analytic_dimension* createAnalyticDimension_sht(unsigned short dimNum, sht min, sht max, sht step);
@@ -70,53 +69,12 @@ gdk_export gdk_analytic_dimension* createAnalyticDimension_flt(unsigned short di
 gdk_export gdk_array* arrayNew(unsigned short dimsNum);
 gdk_export gdk_return arrayDelete(gdk_array *array);
 gdk_export gdk_return analyticDimensionDelete(gdk_analytic_dimension *dim);
+gdk_export gdk_array* arrayCopy(gdk_array* array);
 
-#if 0
-gdk_cells* cells_new(void);
-gdk_cells* cells_add_dimension(gdk_cells* cells, gdk_dimension *dim);
-gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum);
-gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
-gdk_export gdk_return freeDimension(gdk_dimension *dim);
-gdk_export gdk_return freeCells(gdk_cells *cells);
-#endif
 
-#if 0
-#define dimensionElsNum(dim) \
-({ \
-	BUN els = 0; \
-	switch(dim->type.type->localtype) { \
-		case TYPE_bte: \
-            els = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1; \
-            break; \
-        case TYPE_sht: \
-            els = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1; \
-            break; \
-        case TYPE_int: \
-            els = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1; \
-            break; \
-        case TYPE_wrd: \
-            els = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1; \
-            break; \
-        case TYPE_oid: \
-            els = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1; \
-            break; \
-        case TYPE_lng: \
-            els = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1; \
-            break; \
-        case TYPE_dbl: \
-            els = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1; \
-            break; \
-        case TYPE_flt: \
-            els = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1; \
-            break; \
-	} \
-	els; \
-})
-#endif
-
-#if 0
 /*find the position in the dimension indices (no repetitions) of the given value*/
 #define dimensionFndValuePos(value, min, step) fmod((value-min), step)? BUN_NONE : (BUN)(value-min)/step
+
 /*find the position in the dimension indices (no repetitions) of the  given value
  * or the position of the index that is closest to the given value and greater than it*/
 #define dimensionFndGreaterValuePos(value, min, step, eq) \
@@ -146,7 +104,6 @@ gdk_export gdk_return freeCells(gdk_cells *cells);
 		} \
 		pos; \
 	})
-
 
 
 #define equalIdx(dim, value) \
@@ -248,6 +205,56 @@ gdk_export gdk_return freeCells(gdk_cells *cells);
 
 
 
+
+
+
+#if 0
+gdk_cells* cells_new(void);
+gdk_cells* cells_add_dimension(gdk_cells* cells, gdk_dimension *dim);
+gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum);
+gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
+gdk_export gdk_return freeDimension(gdk_dimension *dim);
+gdk_export gdk_return freeCells(gdk_cells *cells);
+#endif
+
+
+
+
+#if 0
+#define dimensionElsNum(dim) \
+({ \
+	BUN els = 0; \
+	switch(dim->type.type->localtype) { \
+		case TYPE_bte: \
+            els = floor((dim->max->data.val.btval - dim->min->data.val.btval )/ dim->step->data.val.btval)+1; \
+            break; \
+        case TYPE_sht: \
+            els = floor((dim->max->data.val.shval - dim->min->data.val.shval )/ dim->step->data.val.shval)+1; \
+            break; \
+        case TYPE_int: \
+            els = floor((dim->max->data.val.ival - dim->min->data.val.ival )/ dim->step->data.val.ival)+1; \
+            break; \
+        case TYPE_wrd: \
+            els = floor((dim->max->data.val.wval - dim->min->data.val.wval )/ dim->step->data.val.wval)+1; \
+            break; \
+        case TYPE_oid: \
+            els = floor((dim->max->data.val.oval - dim->min->data.val.oval )/ dim->step->data.val.oval)+1; \
+            break; \
+        case TYPE_lng: \
+            els = floor((dim->max->data.val.lval - dim->min->data.val.lval )/ dim->step->data.val.lval)+1; \
+            break; \
+        case TYPE_dbl: \
+            els = floor((dim->max->data.val.dval - dim->min->data.val.dval )/ dim->step->data.val.dval)+1; \
+            break; \
+        case TYPE_flt: \
+            els = floor((dim->max->data.val.fval - dim->min->data.val.fval )/ dim->step->data.val.fval)+1; \
+            break; \
+	} \
+	els; \
+})
+#endif
+
+#if 0
 #define dimensionCharacteristics(TPE, dimensionBAT, min, max, step, elementRepeats, groupRepeats) \
 do {\
     TPE *vls; \
