@@ -2892,12 +2892,6 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if(isBATarray(l) && isBATarray(r))
-		return dimensionBATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
-	if(isBATarray(l) || isBATarray(r)) {
-		GDKerror("BATsubjoin: One of the BATs is an array and the othes is not. Case not handled");
-		return GDK_FAIL;
-	}
 
 	if (joininitresults(&r1, &r2, estimate != BUN_NONE ? estimate : sl ? BATcount(sl) : BATcount(l), "BATsubjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -3234,16 +3228,7 @@ BATproject(BAT *l, BAT *r)
 	assert(BAThdense(l));
 	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
-#if 0
-	if(isBATarray(r)) {
-		if(dimensionBATproject(&bn, l, r) != GDK_SUCCEED)
-			return NULL;
-		if(bn)
-			return bn;
-		//otherwise it is cannot be expressed as an array and we proceed as if it is any other BAT
-		r = materialiseDimensionBAT(r);
-	}
-#endif
+
 	if (BATtdense(l) && BATcount(l) > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + BATcount(l);

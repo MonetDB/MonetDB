@@ -73,7 +73,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 	if (b == NULL || !BAThdense(b))
 		return "b must be dense-headed";
-	if (g && !isBATarray(g)) {
+	if (g) {
 		if (!BAThdense(g) || BATcount(b) != BATcount(g) ||
 		    (BATcount(b) != 0 && b->hseqbase != g->hseqbase))
 			return "b and g must be aligned";
@@ -1426,9 +1426,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
-	if(isBATarray(g))
-		return dimensionBATgroupavg(bnp, cntsp, b, g, e, s, tp, skip_nils, abort_on_error);
-
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
@@ -2454,8 +2451,6 @@ static void* BATdimensionMin(BAT* b, void* aggr) {
 void *
 BATmin(BAT *b, void *aggr)
 {
-	if(isBATarray(b))
-		return BATdimensionMin(b, aggr);
 	return BATminmax(b, aggr, do_groupmin);
 }
 
@@ -2487,8 +2482,6 @@ static void* BATdimensionMax(BAT* b, void* aggr) {
 void *
 BATmax(BAT *b, void *aggr)
 {
-	if(isBATarray(b))
-		return BATdimensionMax(b, aggr);
 	return BATminmax(b, aggr, do_groupmax);
 }
 

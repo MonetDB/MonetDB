@@ -1234,13 +1234,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if(isBATarray(b)) {
-		BAT *resBAT = NULL;
-		if(dimensionBATsubselect(&resBAT, b, s, tl, th, li, hi, anti) == GDK_SUCCEED)
-			return resBAT;
-		return NULL;
-	}
-
 	if (b->batCount == 0 ||
 	    (s && (s->batCount == 0 ||
 		   (BATtdense(s) &&
@@ -1726,9 +1719,6 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	BATcheck(b, "BATthetasubselect", NULL);
 	BATcheck(val, "BATthetasubselect", NULL);
 	BATcheck(op, "BATthetasubselect", NULL);
-
-//	if(isBATarray(b))
-//		return dimensionBATthetasubselect(b, s, val, op);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)

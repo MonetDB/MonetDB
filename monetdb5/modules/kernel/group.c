@@ -39,13 +39,9 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 		*next = en->batCacheid;
 		BBPkeepref(*ngid);
 		BBPkeepref(*next);
-		if(isBATarray(b)) {//when array histograms are not used
-			*nhis = 0;
-		} else {
-			*nhis = hn->batCacheid;
-			BBPkeepref(*nhis);
-		}
-
+			
+		*nhis = hn->batCacheid;
+		BBPkeepref(*nhis);
 	}
 	BBPunfix(b->batCacheid);
 	if (g)

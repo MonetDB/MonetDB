@@ -1765,10 +1765,7 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
 	BUN batSize;
 
 	BATcheck(b, "BATconst", NULL);
-	if(b->batArray)
-		batSize = dimensionBATsize(b);
-	else		
-		batSize = BATcount(b);
+	batSize = BATcount(b);
 	bn = BATconstant(tailtype, v, batSize, role);
 
 	if (bn == NULL)

@@ -1485,10 +1485,7 @@ ALGcount_bat(wrd *result, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
 	}
-	if(isBATarray(b))
-		*result = dimensionBATsize(b);
-	else
-		*result = (wrd) BATcount(b);
+	*result = (wrd) BATcount(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

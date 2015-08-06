@@ -1702,9 +1702,6 @@ void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 	BATiter uii = bat_iterator(p);
 	BATiter uvi = bat_iterator(u);
 
-	if(isBATarray(u))
-		return dimension_void_replace_bat(b, p, u, force);
-
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNtail(uii, r);
 		const void *val = BUNtail(uvi, r);

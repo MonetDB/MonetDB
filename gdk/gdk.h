@@ -964,10 +964,6 @@ typedef int (*GDKfcn) ();
 #define batMaphheap	S->map_hheap
 #define batMaptheap	S->map_theap
 
-#define batArray S->array
-#define BATsetArray(X, n) X->batArray=n
-#define isBATarray(X) X->batArray>0
-
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in

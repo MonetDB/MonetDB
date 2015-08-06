@@ -393,7 +393,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKerror("BATgroup_internal: g tail not of type oid\n");
 		return GDK_FAIL;
 	}
-	if(g && BATcount(b) != BATcount(g) && !isBATarray(b)) {
+	if(g && BATcount(b) != BATcount(g)) {
 		GDKerror("BATgroup_internal: g and b have different size\n");
 		return GDK_FAIL;
 	}
@@ -991,7 +991,5 @@ gdk_return
 BATgroup(BAT **groups, BAT **extents, BAT **histo,
 	 BAT *b, BAT *g, BAT *e, BAT *h)
 {
-	if(isBATarray(b))
-		return dimensionBATgroup(groups, extents, histo, b, g, e, h);
 	return BATgroup_internal(groups, extents, histo, b, g, e, h, 0);
 }
