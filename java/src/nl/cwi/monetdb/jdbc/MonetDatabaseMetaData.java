@@ -1575,18 +1575,22 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String select;
 		String orderby;
 		String cat = getEnv("gdk_dbname");
+		// as of Jul2015 release the sys.tables.type values (0 through 6) is extended with new values 10, 11, 20, and 30 (for system and temp tables/views).
+		// for correct behavior we need to know if the server is using the old (pre Jul2015) or new sys.tables.type values
+		boolean preJul2015 = ("11.19.15".compareTo(getDatabaseProductVersion()) >= 0);
+		/* for debug: System.out.println("getDatabaseProductVersion() is " + getDatabaseProductVersion() + "  preJul2015 is " + preJul2015); */
 
 		select =
 			"SELECT * FROM ( " +
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 10 AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 11 AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "10") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "11") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
 				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
 				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 0 THEN 'VIEW' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 20 AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = 21 AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
-				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 30 AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
-				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 31 AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "20") + " AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "21") + " AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
+				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "30") + " AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
+				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "31") + " AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
 				"END AS \"TABLE_TYPE\", \"tables\".\"query\" AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
 				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
 			"FROM \"sys\".\"tables\" AS \"tables\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
@@ -1713,19 +1717,21 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String[][] results;
 
 		columns = new String[1];
-		types = new String[1];
-		results = new String[8][1];
-
 		columns[0] = "TABLE_TYPE";
+
+		types = new String[1];
 		types[0] = "varchar";
-		results[0][0] = "SYSTEM TABLE";
-		results[1][0] = "TABLE";
-		results[2][0] = "SYSTEM VIEW";
-		results[3][0] = "VIEW";
-		results[4][0] = "SYSTEM SESSION TABLE";
-		results[5][0] = "SESSION TABLE";
-		results[6][0] = "SYSTEM SESSION VIEW";
-		results[7][0] = "SESSION VIEW";
+
+		results = new String[8][1];
+		// The results need to be ordered by TABLE_TYPE
+		results[0][0] = "SESSION TABLE";
+		results[1][0] = "SESSION VIEW";
+		results[2][0] = "SYSTEM SESSION TABLE";
+		results[3][0] = "SYSTEM SESSION VIEW";
+		results[4][0] = "SYSTEM TABLE";
+		results[5][0] = "SYSTEM VIEW";
+		results[6][0] = "TABLE";
+		results[7][0] = "VIEW";
 
 		try {
 			return new MonetVirtualResultSet(columns, types, results);
@@ -2081,19 +2087,22 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		List<String[]> tmpRes = new ArrayList<String[]>();
 
 		ResultSet rs = getStmt().executeQuery(query);
-		while (rs.next()) {
-			String[] result = new String[8];
-			result[0]  = "" + DatabaseMetaData.bestRowSession;
-			result[1]  = rs.getString("column_name");
-			result[2]  = "" + MonetDriver.getJavaType(rs.getString("type_name"));
-			result[3]  = rs.getString("type_name");
-			result[4]  = rs.getString("column_size");
-			result[5]  = rs.getString("buffer_length");
-			result[6]  = rs.getString("decimal_digits");
-			result[7]  = "" + DatabaseMetaData.bestRowNotPseudo;
-			tmpRes.add(result);
+		try {
+			while (rs.next()) {
+				String[] result = new String[8];
+				result[0]  = "" + DatabaseMetaData.bestRowSession;
+				result[1]  = rs.getString("column_name");
+				result[2]  = "" + MonetDriver.getJavaType(rs.getString("type_name"));
+				result[3]  = rs.getString("type_name");
+				result[4]  = rs.getString("column_size");
+				result[5]  = rs.getString("buffer_length");
+				result[6]  = rs.getString("decimal_digits");
+				result[7]  = "" + DatabaseMetaData.bestRowNotPseudo;
+				tmpRes.add(result);
+			}
+		} finally {
+			rs.close();
 		}
-		rs.close();
 
 		String[][] results = tmpRes.toArray(new String[tmpRes.size()][]);
 
@@ -2695,14 +2704,15 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				result[7]  = rs.getString("ordinal_position");
 				result[8]  = rs.getString("column_name");
 				result[9]  = rs.getString("asc_or_desc");
-				if (approximate) {
-					result[10] = "0";
-				} else {
-					ResultSet count = sub.executeQuery("SELECT COUNT(*) AS \"CARDINALITY\" FROM \"" + rs.getString("table_schem") + "\".\"" + rs.getString("table_name") + "\"");
-					if (count.next()) {
-						result[10] = count.getString("cardinality");
-					} else {
-						result[10] = "0";
+				result[10] = "0";
+				if (!approximate && sub != null) {
+					/* issue a separate count query for each table its index to get the exact cardinality */
+					ResultSet count = sub.executeQuery("SELECT COUNT(*) FROM \"" + result[1] + "\".\"" + result[2] + "\"");
+					if (count != null) {
+						if (count.next()) {
+							result[10] = count.getString(1);
+						}
+						count.close();
 					}
 				}
 				result[11] = rs.getString("pages");
@@ -2710,7 +2720,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				tmpRes.add(result);
 			}
 
-			if (!approximate) sub.close();
+			if (sub != null) sub.close();
 		} finally {
 			rs.close();
 		}
