@@ -1315,6 +1315,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			
 			char nme[SMALLBUFSIZ];
             int uval = -1;
+			int outputsNum = 1; //I will use this when having an array
 
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
@@ -1464,6 +1465,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l);
 */
+							//two outputs
+							outputsNum = 2;
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1486,11 +1489,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					case cmp_gt:
 					case cmp_gte: {
 						q = newStmt2(mb, algebraRef, cmd);
-						if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
-							snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	       	            	uval = findVariable(mb, nme);
+//NOT NEEDED						if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
+						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+	       	            uval = findVariable(mb, nme);
 
-							assert(uval >=0);
+						if(uval >=0) {
 
 							setVarType(mb, getArg(q, 0), TYPE_ptr);
 							setVarUDFtype(mb, getArg(q, 0));
@@ -1502,7 +1505,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 							setVarUDFtype(mb, getArg(q, 0));
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l);
-*/						} else
+*/						//two outputs
+						outputsNum = 2;
+						} else
 							q = pushArgument(mb, q, l);
 
 						if(sub > 0) { //candidates
@@ -1547,7 +1552,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (q) {
 				s->nr = getDestVar(q);
-				if(s->op1->type == st_dimension /*NOT NEEDED || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))*/) { 
+		//		if(s->op1->type == st_dimension /*NOT NEEDED || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))*/) { 
+				if(outputsNum == 2) {
 					/* rename second result */
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				}
