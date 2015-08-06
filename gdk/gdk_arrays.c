@@ -1,9 +1,9 @@
 #include "monetdb_config.h"
 #include "gdk_arrays.h"
 
-#define createDim(TPE) \
-gdk_dimension* createDimension_##TPE(int dimNum, BUN elsNum, TPE min, TPE max, TPE step) { \
-	gdk_dimension *dim = GDKmalloc(sizeof(gdk_dimension)); \
+#define createAnalyticDim(TPE) \
+gdk_analytic_dimension* createAnalyticDimension_##TPE(unsigned short dimNum, TPE min, TPE max, TPE step) { \
+	gdk_analytic_dimension *dim = GDKmalloc(sizeof(gdk_analytic_dimension)); \
 \
 	void *minVoid = GDKmalloc(sizeof(TPE)); \
     void *maxVoid = GDKmalloc(sizeof(TPE)); \
@@ -26,12 +26,31 @@ gdk_dimension* createDimension_##TPE(int dimNum, BUN elsNum, TPE min, TPE max, T
 \
 	dim->type = TYPE_##TPE; \
 	dim->dimNum = dimNum; \
-	dim->elementsNum = floor((max - min )/ step)+1; \
 	dim->min = minVoid; \
     dim->max = maxVoid; \
     dim->step = stepVoid; \
-	dim->initialElementsNum = elsNum; \
+	dim->elsNum = floor((max - min )/ step)+1; \
 \
+	return dim; \
+}
+
+createAnalyticDim(bte);
+createAnalyticDim(sht);
+createAnalyticDim(int);
+createAnalyticDim(wrd);
+createAnalyticDim(oid);
+createAnalyticDim(lng);
+createAnalyticDim(dbl);
+createAnalyticDim(flt);
+
+#define createDim(TPE) \
+gdk_dimension* createDimension_##TPE(unsigned int elsNum_initial, TPE min, TPE max, TPE step) { \
+	gdk_dimension *dim = GDKmalloc(sizeof(gdk_dimension)); \
+	dim->elsNum = floor((max - min )/ step)+1; \
+	dim->min = 0; \
+    dim->max = dim->elsNum; \
+	dim->step = 1; \
+	dim->elsNum_initial = elsNum_initial; \
 	return dim; \
 }
 
@@ -43,6 +62,33 @@ createDim(oid);
 createDim(lng);
 createDim(dbl);
 createDim(flt);
+
+
+gdk_array* arrayNew(unsigned short dimsNum) {
+	gdk_array *array = (gdk_array*)GDKmalloc(sizeof(gdk_array));
+	array->dimsNum = dimsNum;
+	array->dims = (gdk_dimension**)GDKmalloc(sizeof(gdk_dimension*)*dimsNum);
+	return array;
+}
+
+gdk_return arrayDelete(gdk_array *array) {
+	int i=0;
+	for(i=0; i<array->dimsNum; i++)
+		GDKfree(array->dims[i]);
+	GDKfree(array->dims);
+	GDKfree(array);
+
+	return GDK_SUCCEED;
+}
+
+gdk_return analyticDimensionDelete(gdk_analytic_dimension *dim) {
+	GDKfree(dim->min);
+	GDKfree(dim->max);
+	GDKfree(dim->step);
+	GDKfree(dim);
+
+	return GDK_SUCCEED;
+}
 
 
 gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg) {
@@ -61,6 +107,108 @@ gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg
 	return GDK_FAIL;
 }
 
+BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, char* defVal) {
+    BAT *b = NULL;
+
+#define fillVals(TPE, def)                     \
+    do {                                \
+            TPE *elements = NULL; \
+            BUN i; \
+\
+            if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
+                return NULL;                   \
+\
+            elements = (TPE*) Tloc(b, BUNfirst(b));          \
+\
+            /*Fill the rest of the cells with the default value or NULL if no \
+ *  *             * default values is provided*/ \
+            for(i=0;i<cellsNum; i++) { \
+                elements[i] = def; \
+            }   \
+\
+            b->tsorted = 0;              \
+            b->trevsorted = 0;           \
+    } while (0)
+
+	switch (columntype) {
+        case TYPE_bte: {
+            bte val = bte_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(bte, val);
+        }   break;
+        case TYPE_sht: {
+            short val = sht_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(sht, val);
+        }   break;
+        case TYPE_int: {
+            int val = int_nil;
+            if(defVal)
+                val = atoi(defVal);
+            fillVals(int, val);
+        }   break;
+        case TYPE_lng: {
+            long val = lng_nil;
+            if(defVal)
+                val = atol(defVal);
+            fillVals(lng, val);
+        }   break;
+#ifdef HAVE_HGE
+        case TYPE_hge: {
+            hge val = hge_nil;
+            if(defVal)
+                val = atol(defVal);
+            fillVals(hge, val);
+        }   break;
+#endif
+        case TYPE_flt: {
+            float val = flt_nil;
+            if(defVal)
+                val = atof(defVal);
+            fillVals(flt, val);
+        }    break;
+        case TYPE_dbl: {
+            double val = dbl_nil;
+            if(defVal)
+                val = atof(defVal);
+            fillVals(dbl, val);
+        }    break;
+        case TYPE_str: {
+            BUN i;
+
+            if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)
+                return NULL;
+
+            /*Fill the rest of the cells with the default value or NULL if no \
+ *              * default values is provided*/
+            for(i=0; i<cellsNum; i++) {
+                if(!defVal)
+                    BUNappend(b,str_nil, TRUE);
+                else
+                    BUNappend(b, (char*)defVal, TRUE);
+            }
+
+
+            b->tsorted = 0;
+            b->trevsorted = 0;
+            }
+
+            break;
+        default:
+            fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");
+            return NULL;
+    }
+
+    BATsetcount(b,cellsNum);
+    BATseqbase(b,0);
+    BATderiveProps(b,FALSE);
+
+    return b;
+}
+
+#if 0
 gdk_cells* cells_new(void) {
     gdk_cells *cells = GDKmalloc(sizeof(gdk_cells));
     cells->h = cells->t = NULL;
@@ -91,24 +239,6 @@ static dim_node* findNode(gdk_cells *cells, int dimNum) {
 	return n;
 }
 
-gdk_return freeDimension(gdk_dimension *dim) {
-	GDKfree(dim->min);
-	GDKfree(dim->max);
-	GDKfree(dim->step);
-	GDKfree(dim);
-
-	return GDK_SUCCEED;
-}
-
-gdk_return freeCells(gdk_cells *cells) {
-	dim_node *n;
-	for(n=cells->h; n; n=n->next)
-		freeDimension(n->data);
-	GDKfree(cells);
-
-	return GDK_SUCCEED;
-}
-
 gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum) {
     dim_node *prevNode = findNode(cells, dimNum);
 	dim_node *currNode = prevNode->next;
@@ -133,6 +263,14 @@ gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension *dim) {
 	return cells;
 }
 
+gdk_return freeCells(gdk_cells *cells) {
+	dim_node *n;
+	for(n=cells->h; n; n=n->next)
+		freeDimension(n->data);
+	GDKfree(cells);
+
+	return GDK_SUCCEED;
+}
 
 /*
 #define valueInOID(oidVal, min, max, step) \
@@ -827,7 +965,6 @@ fprintf(stderr, "resMin = %d - resMax = %d\n", (int)resMin, (int)resMax); \
 	return gdkRetVal;
 }
 
-#if 0
 BAT *BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 {
     const void *nil;
@@ -874,7 +1011,6 @@ BAT *BATdimensionThetasubselect(BAT *b, BAT *s, const void *val, const char *op)
     GDKerror("BATdimensionThetasubselect: unknown operator.\n");
     return NULL;
 }
-#endif
 
 gdk_return dimensionBATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *dimensionBAT, BAT *g, BAT *e, BAT *h) {
     BAT* resBAT;
@@ -1296,7 +1432,6 @@ gdk_return BATmbrproject(BAT **outBAT, BAT *b, BAT *oidsToProjectBAT, BAT *subse
 	return GDK_SUCCEED;
 }
 
-#if 0
 BAT* BATnonDimensionProject(BAT* oidsBAT, BAT* dimensionBAT) {
 	BAT *resBAT;
 	int tpe = ATOMtype(dimensionBAT->ttype);//, nilcheck = 1, sortcheck = 1, stringtrick = 0;
@@ -1472,8 +1607,6 @@ fprintf(stderr, "BATnondimensionProject: new repeat2 = %ld\n", repeat2_new); \
 
 	return resBAT;
 }
-#endif
-
 
 gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl, BAT *dimensionBATr, BAT *sl, BAT *sr, int nil_matches, BUN estimate) {
 	BAT *resBATl, *resBATr;
@@ -1840,107 +1973,6 @@ gdk_array *cellsToArray(gdk_cells *cells) {
 		array->dimSizes[i] = n->data->initialElementsNum;
 	return array;
 }
-
-
-BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, char* defVal) {
-    BAT *b = NULL;
-
-#define fillVals(TPE, def)                     \
-    do {                                \
-            TPE *elements = NULL; \
-            BUN i; \
-\
-            if((b = BATnew(TYPE_void, TYPE_##TPE, cellsNum, TRANSIENT)) == NULL)   \
-                return NULL;                   \
-\
-            elements = (TPE*) Tloc(b, BUNfirst(b));          \
-\
-            /*Fill the rest of the cells with the default value or NULL if no \
- *  *             * default values is provided*/ \
-            for(i=0;i<cellsNum; i++) { \
-                elements[i] = def; \
-            }   \
-\
-            b->tsorted = 0;              \
-            b->trevsorted = 0;           \
-    } while (0)
-
-	switch (columntype) {
-        case TYPE_bte: {
-            bte val = bte_nil;
-            if(defVal)
-                val = atoi(defVal);
-            fillVals(bte, val);
-        }   break;
-        case TYPE_sht: {
-            short val = sht_nil;
-            if(defVal)
-                val = atoi(defVal);
-            fillVals(sht, val);
-        }   break;
-        case TYPE_int: {
-            int val = int_nil;
-            if(defVal)
-                val = atoi(defVal);
-            fillVals(int, val);
-        }   break;
-        case TYPE_lng: {
-            long val = lng_nil;
-            if(defVal)
-                val = atol(defVal);
-            fillVals(lng, val);
-        }   break;
-#ifdef HAVE_HGE
-        case TYPE_hge: {
-            hge val = hge_nil;
-            if(defVal)
-                val = atol(defVal);
-            fillVals(hge, val);
-        }   break;
 #endif
-        case TYPE_flt: {
-            float val = flt_nil;
-            if(defVal)
-                val = atof(defVal);
-            fillVals(flt, val);
-        }    break;
-        case TYPE_dbl: {
-            double val = dbl_nil;
-            if(defVal)
-                val = atof(defVal);
-            fillVals(dbl, val);
-        }    break;
-        case TYPE_str: {
-            BUN i;
-
-            if((b = BATnew(TYPE_void, TYPE_str, cellsNum, TRANSIENT)) == NULL)
-                return NULL;
-
-            /*Fill the rest of the cells with the default value or NULL if no \
- *              * default values is provided*/
-            for(i=0; i<cellsNum; i++) {
-                if(!defVal)
-                    BUNappend(b,str_nil, TRUE);
-                else
-                    BUNappend(b, (char*)defVal, TRUE);
-            }
-
-
-            b->tsorted = 0;
-            b->trevsorted = 0;
-            }
-
-            break;
-        default:
-            fprintf(stderr, "materialise_nonDimensional_column: non-dimensional column type not handled\n");
-            return NULL;
-    }
-
-    BATsetcount(b,cellsNum);
-    BATseqbase(b,0);
-    BATderiveProps(b,FALSE);
-
-    return b;
-}
 
 

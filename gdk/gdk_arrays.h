@@ -4,22 +4,16 @@
 #include "gdk.h"
 #include <math.h>
 
-
-typedef struct dimStruct {
+typedef struct dimensionAnalyticStruct {
 	bte type;
 	int dimNum;
 	void *min;
 	void *max;
 	void *step;
-	BUN elementsNum;
-	BUN initialElementsNum;
-} gdk_dimension;
+	unsigned int elsNum;
+} gdk_analytic_dimension;
 
-typedef struct arrayStruct {
-	unsigned short dimsNum; //the number of dimensions (0 to 65,535)
-	BUN *dimSizes; //an array having the size for each dimension
-} gdk_array;
-
+/*
 typedef struct dim_node {
     struct dim_node *next;
     gdk_dimension *data;
@@ -30,6 +24,21 @@ typedef struct cells {
     dim_node *t;
     int dimsNum;
 } gdk_cells;
+*/
+
+//As long as the dimension is not projected the following info is enough
+typedef struct dimensionStruct {
+	unsigned int min; //initialy this is set to 0
+	unsigned int max;
+	unsigned int step; //initialy this is set to 1
+	unsigned int elsNum;
+	unsigned int elsNum_initial;
+} gdk_dimension;
+
+typedef struct arrayStruct {
+	unsigned short dimsNum; //the number of dimensions (0 to 65,535)
+	gdk_dimension **dims; //an array having the dimensions. The dimNum of each dimension is implicit, its position in the aray
+} gdk_array;
 
 typedef enum errors {
 	general_error,
@@ -40,20 +49,36 @@ typedef enum errors {
 
 gdk_return gdk_error_msg(errors errorCode, const char* funcName, const char *msg);
 
+gdk_export gdk_dimension* createDimension_bte(unsigned int elsNum_initial, bte min, bte max, bte step);
+gdk_export gdk_dimension* createDimension_sht(unsigned int elsNum_initial, sht min, sht max, sht step);
+gdk_export gdk_dimension* createDimension_int(unsigned int elsNum_initial, int min, int max, int step);
+gdk_export gdk_dimension* createDimension_wrd(unsigned int elsNum_initial, wrd min, wrd max, wrd step);
+gdk_export gdk_dimension* createDimension_oid(unsigned int elsNum_initial, oid min, oid max, oid step);
+gdk_export gdk_dimension* createDimension_lng(unsigned int elsNum_initial, lng min, lng max, lng step);
+gdk_export gdk_dimension* createDimension_dbl(unsigned int elsNum_initial, dbl min, dbl max, dbl step);
+gdk_export gdk_dimension* createDimension_flt(unsigned int elsNum_initial, flt min, flt max, flt step);
 
-gdk_export gdk_dimension* createDimension_bte(int dimNum, BUN elsNum, bte min, bte max, bte step);
-gdk_export gdk_dimension* createDimension_sht(int dimNum, BUN elsNum, sht min, sht max, sht step);
-gdk_export gdk_dimension* createDimension_int(int dimNum, BUN elsNum, int min, int max, int step);
-gdk_export gdk_dimension* createDimension_wrd(int dimNum, BUN elsNum, wrd min, wrd max, wrd step);
-gdk_export gdk_dimension* createDimension_oid(int dimNum, BUN elsNum, oid min, oid max, oid step);
-gdk_export gdk_dimension* createDimension_lng(int dimNum, BUN elsNum, lng min, lng max, lng step);
-gdk_export gdk_dimension* createDimension_dbl(int dimNum, BUN elsNum, dbl min, dbl max, dbl step);
-gdk_export gdk_dimension* createDimension_flt(int dimNum, BUN elsNum, flt min, flt max, flt step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_bte(unsigned short dimNum, bte min, bte max, bte step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_sht(unsigned short dimNum, sht min, sht max, sht step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_int(unsigned short dimNum, int min, int max, int step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_wrd(unsigned short dimNum, wrd min, wrd max, wrd step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_oid(unsigned short dimNum, oid min, oid max, oid step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_lng(unsigned short dimNum, lng min, lng max, lng step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_dbl(unsigned short dimNum, dbl min, dbl max, dbl step);
+gdk_export gdk_analytic_dimension* createAnalyticDimension_flt(unsigned short dimNum, flt min, flt max, flt step);
 
+gdk_export gdk_array* arrayNew(unsigned short dimsNum);
+gdk_export gdk_return arrayDelete(gdk_array *array);
+gdk_export gdk_return analyticDimensionDelete(gdk_analytic_dimension *dim);
+
+#if 0
 gdk_cells* cells_new(void);
 gdk_cells* cells_add_dimension(gdk_cells* cells, gdk_dimension *dim);
 gdk_cells* cells_remove_dimension(gdk_cells* cells, int dimNum);
 gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
+gdk_export gdk_return freeDimension(gdk_dimension *dim);
+gdk_export gdk_return freeCells(gdk_cells *cells);
+#endif
 
 #if 0
 #define dimensionElsNum(dim) \
@@ -89,6 +114,7 @@ gdk_cells* cells_replace_dimension(gdk_cells* cells, gdk_dimension* dim);
 })
 #endif
 
+#if 0
 /*find the position in the dimension indices (no repetitions) of the given value*/
 #define dimensionFndValuePos(value, min, step) fmod((value-min), step)? BUN_NONE : (BUN)(value-min)/step
 /*find the position in the dimension indices (no repetitions) of the  given value
@@ -269,8 +295,6 @@ do {\
     })
 
 
-gdk_export gdk_return freeDimension(gdk_dimension *dim);
-gdk_export gdk_return freeCells(gdk_cells *cells);
 BUN dimension_void_replace_bat(BAT *resBAT, BAT *oidsBAT, BAT *dimensionBAT, bit force);
 
 //BAT* projectDimension(sql_dimension *oidsDim, sql_dimension *valuesDim);
@@ -288,11 +312,14 @@ gdk_return BATmbrproject(BAT **outBAT, BAT *b, BAT *oidsToProjectBAT, BAT *subse
 gdk_return dimensionBATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *dimensionBAT, BAT *g, BAT *e, BAT *h);
 gdk_return dimensionBATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl, BAT *dimensionBATr, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+#endif
 
 /*NEW*/
+#if 0
 gdk_export BAT *projectCells(gdk_cells* dims, BAT* oidsBAT);
 gdk_export gdk_cells* arrayToCells(gdk_array *array);
 gdk_export gdk_array *cellsToArray(gdk_cells *cells);
+#endif
 
 gdk_export BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, char* defVal);
 

@@ -2,6 +2,44 @@
 #include "sql_arrays.h"
 #include "sql.h"
 
+#define generaliseDimension_analytic(dim) \
+({ \
+    gdk_analytic_dimension *resDim = GDKmalloc(sizeof(gdk_analytic_dimension)); \
+    atom_cast(dim->min, &dim->type); \
+    atom_cast(dim->step, &dim->type); \
+    atom_cast(dim->max, &dim->type); \
+    switch(dim->type.type->localtype) { \
+        case TYPE_bte: \
+			resDim = createAnalyticDimension_bte(dim->dimnr, dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);\
+            break; \
+        case TYPE_sht: \
+   			resDim = createAnalyticDimension_sht(dim->dimnr, dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval); \
+            break; \
+        case TYPE_int: \
+   			resDim = createAnalyticDimension_int(dim->dimnr, dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival); \
+            break; \
+        case TYPE_wrd: \
+   			resDim = createAnalyticDimension_wrd(dim->dimnr, dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval); \
+            break; \
+        case TYPE_oid: \
+   			resDim = createAnalyticDimension_oid(dim->dimnr, dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval); \
+            break; \
+        case TYPE_lng: \
+   			resDim = createAnalyticDimension_lng(dim->dimnr, dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval); \
+            break; \
+        case TYPE_dbl: \
+   			resDim = createAnalyticDimension_dbl(dim->dimnr, dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval); \
+            break; \
+        case TYPE_flt: \
+   			resDim = createAnalyticDimension_flt(dim->dimnr, dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval); \
+	        break; \
+		default: \
+			fprintf(stderr, "generaliseDimension: type not found\n"); \
+			resDim = NULL; \
+    } \
+    resDim; \
+})
+
 #define generaliseDimension(dim) \
 ({ \
     gdk_dimension *resDim = GDKmalloc(sizeof(gdk_dimension)); \
@@ -40,43 +78,17 @@
     resDim; \
 })
 
-static ptr get_dims1(sql_table *t) {
-	gdk_array *cells = GDKmalloc(sizeof(gdk_array));
+static ptr get_array(sql_table *t) {
+	gdk_array *array = arrayNew(t->dimensions.set->cnt);
 	node *n;
 	int i;
 
-	cells->dimsNum = t->dimensions.set->cnt;
-	cells->dimSizes = GDKmalloc(sizeof(BUN)*cells->dimsNum);
 	for(i=0, n=t->dimensions.set->h; n; n=n->next, i++) {
 		sql_dimension *dim_sql = (sql_dimension*)n->data;
-		gdk_dimension *dim_gdk = generaliseDimension(dim_sql);
-	
-		cells->dimSizes[i] = dim_gdk->elementsNum;	
+		array->dimSizes[i] = generaliseDimension(dim_sql);
 	}
 	
-	return cells;
-}
-
-static ptr get_dims2(ptr* dim_res, sql_table *t, sql_dimension *dim) {
-	gdk_array *cells = GDKmalloc(sizeof(gdk_array));
-	node *n;
-	int i;
-
-	cells->dimsNum = t->dimensions.set->cnt;
-	cells->dimSizes = GDKmalloc(sizeof(BUN)*cells->dimsNum);
-	for(i=0, n=t->dimensions.set->h; n; n=n->next, i++) {
-		sql_dimension *dim_sql = (sql_dimension*)n->data;
-		gdk_dimension *dim_gdk = generaliseDimension(dim_sql);
-	
-		cells->dimSizes[i] = dim_gdk->elementsNum;	
-		if(dim_gdk->dimNum == dim->dimnr) {
-			//fix the number of initial elements because I set everythin to 0
-			dim_gdk->initialElementsNum = dim_gdk->elementsNum;
-			*dim_res = dim_gdk;
-		}	
-	}
-	
-	return cells;
+	return array;
 }
 
 str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -91,8 +103,6 @@ str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	str *tname = getArgReference_str(stk, pci, 4);
 	str *dname = getArgReference_str(stk, pci, 5);
 	
-	*dim_res = NULL; //not found
-
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -108,8 +118,9 @@ str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if (dim == NULL)
 		throw(SQL, "sql.bind_array_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 
-	
-	*dims_res = get_dims2(dim_res, t, dim);
+
+	*dim_res = generaliseDimension_analytic(dim)	
+	*dims_res = get_array(t);
 
 	return MAL_SUCCEED;
 }
@@ -144,7 +155,7 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (c == NULL)
 		throw(SQL, "sql.bind_array_column", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 
-	*dims_res = get_dims1(t);
+	*dims_res = get_array(t);
 
 	/*bind the column*/
 	b = store_funcs.bind_col(m->session->tr, c, 0);
