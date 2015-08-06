@@ -1,18 +1,22 @@
-#leftfetch join when having a dimension from an array
 #It gets the candidates and projects the dimensions
-#it should make sure that the candidates form an MBR (this might not be true of the selection was done on a nonDimensional column)
-command algebra.leftfetchjoin(candsBAT:bat[:oid,:oid], dims:ptr, dim:ptr ) :bat[:oid,:any]
+command algebra.leftfetchjoin(cands:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
 address ALGdimensionLeftfetchjoin1;
-##it is called after a selection on a non-dimensional column when projecting a dimensional column and is the mbr of the qualifying cells
-#command algebra.leftfetchjoin(dimsCand:ptr, dims:ptr, dim:ptr ) :bat[:oid,:any]
-#address ALGdimensionLeftfetchjoin2;
-##it is called after a selection on a non-dimensional column when projecting a non-dimensional column and is the mbr of the qualifying cells
-#command algebra.leftfetchjoin(dimsCand:ptr, candBat:bat[:oid,:oid], valsBat:bat[:oid,:any] ) :bat[:oid,:any]
+#it gets the candidates and the orojects a non-dimensional column
 command algebra.leftfetchjoin(cands:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
 address ALGnonDimensionLeftfetchjoin1;
 #it is called when projecting a non-dimensional column of an array
 command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) (:bat[:oid,:any], :ptr)
 address ALGnonDimensionLeftfetchjoin2;
+
+#subselection in dimensions
+command algebra.subselect(dim:ptr, dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
+address ALGdimensionSubselect1;
+command algebra.subselect(dim:ptr, dims:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+address ALGdimensionSubselect2;
+command algebra.thetasubselect(dim:ptr, dims:ptr, val:any, op:str) (:ptr, :bat[:oid,:oid])
+address ALGdimensionThetasubselect1;
+command algebra.thetasubselect(dim:ptr, dims:ptr, candDims:ptr, candBat:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
+address ALGdimensionThetasubselect2;
 
 
 #command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
@@ -22,23 +26,12 @@ address ALGnonDimensionLeftfetchjoin2;
 #command algebra.mbrproject(b:bat[:oid,:any], s:bat[:oid, :oid], r:bat[:oid, :oid]) :bat[:oid,:any]
 #address ALGmbrproject;
 
-#subselection in dimensions
-command algebra.subselect(dims:ptr, dim:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
-address ALGdimensionSubselect1;
-command algebra.subselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
-address ALGdimensionSubselect2;
-
 ##subselect on non-dimensional column of an array
 ##the ptr has the mbr dimensions and the bat{;oid,:oid] the oids that really qualify (rest of cells in mbr should be null)
 #command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 #address ALGnonDimensionSubselect1;
 #command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 #address ALGnonDimensionSubselect2;
-
-command algebra.thetasubselect(dims:ptr, dim:ptr, val:any_1, op:str) (:ptr, :bat[:oid,:oid])
-address ALGdimensionThetasubselect1;
-command algebra.thetasubselect(dims:ptr, dim:ptr, candDims:ptr, candBat:bat[:oid,:oid], val:any_1, op:str) (:ptr, :bat[:oid,:oid])
-address ALGdimensionThetasubselect2;
 
 command algebra.cellsProject(candDims:ptr, candBAT:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGproject;
