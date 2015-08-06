@@ -17,25 +17,27 @@ static int arrayCellsNum(gdk_array *array) {
 	return jumpSize(array, array->dimsNum);
 }
 
-static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *dims) {
+/*UPDATED*/
+static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
 	BUN oid = 0;
 
 	while(currentDimNum < dimNum) {
-		skipCells*=dims->dimSizes[currentDimNum];
+		skipCells*=array->dims[currentDimNum]->elsNum;
 		currentDimNum++;
 	}
 
-	if(currentDimNum == dims->dimsNum-1)
+	if(currentDimNum == array->dimsNum-1)
 		oid = oidVal;
 	else
-		oid = oidToIdx(oidVal, dimNum, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
+		oid = oidToIdx(oidVal, dimNum, currentDimNum+1, skipCells*array->dims[currentDimNum]->elsNum, array);
 
 	if(currentDimNum == dimNum) //in the last one we do not compute module
 		return oid/skipCells;
 	return oid%skipCells;
 }
 
-static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimNum, BUN skipCells, gdk_array *dims) {
+/*UPDATED*/
+static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
 	BUN *oids = GDKmalloc(valsNum*sizeof(BUN));
 	int i;
 
@@ -45,11 +47,11 @@ static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimN
 	}
 
 	while(currentDimNum < dimNum) {
-		skipCells*=dims->dimSizes[currentDimNum];
+		skipCells*=array->dims[currentDimNum]->elsNum;
 		currentDimNum++;
 	}
 
-	if(currentDimNum == dims->dimsNum-1) { //last dimension, do not go any deeper
+	if(currentDimNum == array->dimsNum-1) { //last dimension, do not go any deeper
 		if(currentDimNum == dimNum) {//in the dimension of interest we do not compute the module
 			for(i=0; i<valsNum; i++)
 				oids[i] = oidVals[i]/skipCells;
@@ -59,7 +61,7 @@ static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimN
 		}	
 	}
 	else {
-		BUN *oidRes = oidToIdx_bulk(oidVals, valsNum, dimNum, currentDimNum+1, skipCells*dims->dimSizes[currentDimNum], dims);
+		BUN *oidRes = oidToIdx_bulk(oidVals, valsNum, dimNum, currentDimNum+1, skipCells*array->dims[currentDimNum]->elsNum, array);
 
 		if(currentDimNum == dimNum) {//in the dimension of interest we do not compute the module
 			for(i=0; i<valsNum; i++)
@@ -353,7 +355,7 @@ static bool updateCandidateResults(gdk_array* array,
 	return 1;	
 }
 
-str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand, const bat* oidsCand, 
+str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, const bat* oidCands, 
 							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
@@ -364,7 +366,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr
 	int type;
 	const void* nil;
 
-	readCands(&dimCands_in, &candidatesBAT_in, dimsCand, oidsCand, array);
+	readCands(&dimCands_in, &candidatesBAT_in, dimCands, oidCands, array);
 	
 	if(!dimCands_in) { //empty results
 		if(candidatesBAT_in)
@@ -512,7 +514,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr
 		return emptyCandidateResults(dimsRes, oidsRes);
 	}
 
-	if(oidsCand && candidatesBAT_in != candidatesBAT_out) //there was a candidatesBAT in the input that is not sent in the output
+	if(oidCands && candidatesBAT_in != candidatesBAT_out) //there was a candidatesBAT in the input that is not sent in the output
 		BBPunfix(candidatesBAT_in->batCacheid);
 
 	BBPkeepref(*oidsRes = candidatesBAT_out->batCacheid);
@@ -526,7 +528,7 @@ str ALGdimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr
 	return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, low, high, li, hi, anti);
 }
 
-str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand, const bat* oidsCand, const void *val, const char **opp) {
+str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, const bat* oidCands, const void *val, const char **opp) {
 	bit li = 0;
 	bit hi = 0;
 	bit anti = 0;
@@ -538,42 +540,42 @@ str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, cons
         /* "=" or "==" */
 		li = hi = 1;
 		anti = 0;
-        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
     }
     if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
         /* "!=" (equivalent to "<>") */ 
 		li = hi = anti = 1;
-        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
     }
     if (op[0] == '<') { 
         if (op[1] == 0) {
             /* "<" */
 			li = hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, nil, val, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, nil, val, &li, &hi, &anti);
         }
         if (op[1] == '=' && op[2] == 0) {
             /* "<=" */
 			li = anti = 0;
 			hi = 1;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, nil, val, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, nil, val, &li, &hi, &anti);
         }
         if (op[1] == '>' && op[2] == 0) {
             /* "<>" (equivalent to "!=") */ 
 			li = hi = anti = 1;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
         }
     }
     if (op[0] == '>') { 
         if (op[1] == 0) {
             /* ">" */
 			li = hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
         }
         if (op[1] == '=' && op[2] == 0) {
             /* ">=" */
 			li = 1;
 			hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimsCand, oidsCand, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
         }
     }
 
@@ -584,11 +586,11 @@ str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, cons
 	return ALGdimensionThetasubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, val, op);
 }
 
-str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimsCands, const bat *batCands, const ptr *dim, const ptr *dims) {
+str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimCands, const bat *oidCands, const ptr *dim, const ptr *dims) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
-	gdk_cells *candidateDimensions = *dimCands;
-	BAT *candsBAT = NULL, *resBAT = NULL;
+	gdk_array *dimCands_in = (gdk_array*)*dimCands;
+	BAT *oidCandsBAT = NULL, *candsBAT = NULL, *resBAT = NULL;
 	BUN resSize = 0;
 
 #define computeValues(TPE) \
@@ -612,10 +614,15 @@ do { \
 } while(0)
 
 
-	if ((candsBAT = BATdescriptor(*batCands)) == NULL) {
-        throw(MAL, "algebra.dimensionLeftfetchjoin", RUNTIME_OBJECT_MISSING);
+	if ((oidCandsBAT = BATdescriptor(*oidCands)) == NULL) {
+        throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
+	
+//TODO: Find a more clever way to do this without the need to project the cells
+	//create the oids using the candidates
+	candsBAT = projectCells(dimCands_in, oidCandsBAT);	
 	resSize = BATcount(candsBAT);
+
 	/*for each oid in the candsBAT find the real value of the dimension */
  	switch(dimension->type) { \
         case TYPE_bte: \
@@ -656,23 +663,28 @@ do { \
 	/*should I release space or MonetDB does it for the input?*/
 	analyticDimensionDelete(dimension);
 	arrayDelete(array);
+	BBPunfix(candsBAT->batCacheid);
+	BBPunfix(oidCandsBAT->batCacheid);
     return MAL_SUCCEED;
 
 }
 
-str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *batCands, const bat *vals, const ptr *dims) {
+str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimCands, const bat *oidCands, const bat *vals, const ptr *dims) {
 	/* projecting a non-dimensional column does not differ from projecting any relational column */
-	BAT *candsBAT, *valsBAT, *resBAT= NULL;
-
+	BAT *oidCandsBAT, *candsBAT, *valsBAT, *resBAT= NULL;
+	gdk_array *dimCands_in = (gdk_array*)*dimCands;
 	(void)*dims;
 
-    if ((candsBAT = BATdescriptor(*cands)) == NULL) {
+    if ((oidCandsBAT = BATdescriptor(*oidCands)) == NULL) {
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
     if ((valsBAT = BATdescriptor(*vals)) == NULL) {
         BBPunfix(candsBAT->batCacheid);
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
+
+	//create the oids using the candidates
+	candsBAT = projectCells(dimCands_in, oidCandsBAT);	
 
     resBAT = BATproject(candsBAT, valsBAT);
 
@@ -826,7 +838,7 @@ str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {
 }
 
 
-str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const bat* values, const ptr *dimsCand, const bat* oidsCand,
+str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const bat* values, const ptr *dimCands, const bat* oidCands,
                         const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	gdk_array *array = (gdk_array*)*dims;
 	BAT *valuesBAT = NULL, *candidatesBAT = NULL;
@@ -844,7 +856,7 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const
     }
 
 	//read any canidates coming from a previous selection
-	readCands(&dimensionsCandidates, &candidatesBAT, dimsCand, oidsCand, array);
+	readCands(&dimensionsCandidates, &candidatesBAT, dimCands, oidCands, array);
 
 	//find the oids corresponding to the candidates
 	projectedDimsBAT = projectCells(dimensionsCandidates, candidatesBAT);	

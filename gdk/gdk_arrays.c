@@ -222,6 +222,36 @@ BAT* materialise_nonDimensional_column(int columntype, unsigned int cellsNum, ch
     return b;
 }
 
+BAT *projectCells(gdk_array* dims, BAT* oidsBAT) {
+	BAT *resBAT = NULL;
+	BUN resSize = 1;
+	oid *resOIDs = NULL;
+	dim_node *n;
+
+    /*combine the oidsDimensions in order to get the global oids (the cells)*/
+    for(n=dims->h; n; n=n->next) {
+        BUN sz = n->data->elementsNum;
+        if(sz > 0)
+            resSize *= sz;
+        else
+            resSize *= n->data->initialElementsNum;
+    }
+    resSize += BATcount(oidsBAT); //this is not accurate but I believe it is ok
+	//fprintf(stderr, "estiamted size = %u\n", (unsigned int)resSize);      
+	/*the size of the result is the same as the number of cells in the candidatesDimensions */
+	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)))
+		return NULL;
+	resOIDs = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+	resSize = qualifyingOIDs(0, 1, dims, oidsBAT, &resOIDs);
+	//fprintf(stderr, "real size = %u\n", (unsigned int)resSize);       
+	BATsetcount(resBAT, resSize);
+	BATseqbase(resBAT, 0);
+	BATderiveProps(resBAT, FALSE);
+
+	return resBAT;
+}
+
+
 #if 0
 gdk_cells* cells_new(void) {
     gdk_cells *cells = GDKmalloc(sizeof(gdk_cells));
@@ -1928,35 +1958,6 @@ static BUN qualifyingOIDs(int dimNum, int skipSize, gdk_cells* oidDims, BAT* oid
     }
 
     return sz;
-}
-
-BAT *projectCells(gdk_cells* dims, BAT* oidsBAT) {
-	BAT *resBAT = NULL;
-	BUN resSize = 1;
-	oid *resOIDs = NULL;
-	dim_node *n;
-
-    /*combine the oidsDimensions in order to get the global oids (the cells)*/
-    for(n=dims->h; n; n=n->next) {
-        BUN sz = n->data->elementsNum;
-        if(sz > 0)
-            resSize *= sz;
-        else
-            resSize *= n->data->initialElementsNum;
-    }
-    resSize += BATcount(oidsBAT); //this is not accurate but I believe it is ok
-	//fprintf(stderr, "estiamted size = %u\n", (unsigned int)resSize);      
-	/*the size of the result is the same as the number of cells in the candidatesDimensions */
-	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, resSize, TRANSIENT)))
-		return NULL;
-	resOIDs = (oid*)Tloc(resBAT, BUNfirst(resBAT));
-	resSize = qualifyingOIDs(0, 1, dims, oidsBAT, &resOIDs);
-	//fprintf(stderr, "real size = %u\n", (unsigned int)resSize);       
-	BATsetcount(resBAT, resSize);
-	BATseqbase(resBAT, 0);
-	BATderiveProps(resBAT, FALSE);
-
-	return resBAT;
 }
 
 
