@@ -13254,7 +13254,6 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATsetcount(bn, b->batCount);
 	BATseqbase(bn, b->H->seq);
-	BATsetArray(bn, b->batArray);
 
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;

@@ -852,8 +852,6 @@ typedef struct {
 	char map_hheap;		/* mmap mode for head atom heap */
 	char map_theap;		/* mmap mode for tail atom heap */
 
-	int array; /*the BAT represents an array*/
-
 	/* delta status administration */
 	BUN deleted;		/* start of deleted elements */
 	BUN first;		/* to store next deletion */

@@ -2432,22 +2432,6 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			      do_groupmin, "BATgroupmin");
 }
 
-static void* BATdimensionMin(BAT* b, void* aggr) {
-	BATiter bi = bat_iterator(b);
-	void *res =  BUNtail(bi, 0);
-	int len = 0;       
-	if (aggr == NULL) {
-   		len = ATOMlen(BATttype(b), res);       
-		aggr = GDKmalloc(len);
-   	} else {
-       	len = ATOMsize(ATOMtype(BATttype(b)));
-   	}
-   	if (aggr != NULL)   /* else: malloc error */
-       	memcpy(aggr, res, len);
-		
-	return aggr;
-}
-
 void *
 BATmin(BAT *b, void *aggr)
 {
@@ -2460,23 +2444,6 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
 			      do_groupmax, "BATgroupmax");
-}
-
-static void* BATdimensionMax(BAT* b, void* aggr) {
-	BATiter bi = bat_iterator(b);
-	void *res =  BUNtail(bi, BATcount(b)-2);
-	int len = 0;       
-	if (aggr == NULL) {
-   		len = ATOMlen(BATttype(b), res);       
-		aggr = GDKmalloc(len);
-   	} else {
-       	len = ATOMsize(ATOMtype(BATttype(b)));
-   	}
-   	if (aggr != NULL)   /* else: malloc error */
-       	memcpy(aggr, res, len);
-		
-	return aggr;
-
 }
 
 void *
