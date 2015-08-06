@@ -243,6 +243,8 @@ opt_export int pivotDisjunctiveProp;	/* int */
 opt_export int removeProp;		/* int */
 opt_export int tableProp;	        /* str */
 opt_export int sqlfunctionProp;
+opt_export int schematablecolumnProp; /* str */
+opt_export int beautyoperatorProp; /* str */
 
 opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */

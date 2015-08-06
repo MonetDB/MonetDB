@@ -73,6 +73,7 @@
 #define DEBUG_OPT_HEURISTIC			49
 #define DEBUG_OPT_PUSHSELECT		51
 #define DEBUG_OPT_JSON				54
+#define DEBUG_OPT_PROFILER			55
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;

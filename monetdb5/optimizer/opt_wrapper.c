@@ -45,6 +45,7 @@
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
+#include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
 #include "opt_querylog.h"
@@ -79,6 +80,7 @@ struct{
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
+	{"profiler", &OPTprofilerImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
 	{"recycler", &OPTrecyclerImplementation},
@@ -151,7 +153,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 	if ( codes[i].nme == 0){
 		freeInstruction(q);
-		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, "Optimizer %s missing", fcnnme);
 	}
 
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk));

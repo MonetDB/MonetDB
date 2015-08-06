@@ -16,6 +16,7 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 #include "mal_listing.h"
+#include "mal_properties.h"
 
 /* 
  * Since MAL programs can be created on the fly by linked-in query
@@ -373,6 +374,115 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	/* we may accidentally overwrite */
 	if (t > s + len)
 		GDKfatal("instruction2str:");
+	return s;
+}
+
+/* the MAL beautifier is meant to simplify correlation of MAL variables and
+ * the columns in the underlying database.
+ * If the status is set, then we consider the instruction DONE and the result variables 
+ * should be shown as well.
+ */
+static str
+beautyTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
+{
+	str s, nme;
+	BAT *b;
+	ValRecord *val;
+	//VarPtr v;
+	char *cv =0;
+	int varid = getArg(p,idx);
+
+	s= GDKmalloc(BUFSIZ);
+	*s = 0;
+
+	if( isVarConstant(mb,varid) ){
+		val =&getVarConstant(mb, varid);
+		VALformat(&cv, val);
+		snprintf(s,BUFSIZ,"%s",cv);
+		if(cv)
+			GDKfree(cv);
+	} else {
+		val = &stk->stk[varid];
+		VALformat(&cv, val);
+		//v = varGetProp(mb, varid, PropertyIndex("schematablecolumn"));
+		nme = getVarName(mb, varid);
+		if ( isaBatType(getArgType(mb,p,idx))){
+			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			snprintf(s,BUFSIZ,"%s["BUNFMT"]",nme, b?BATcount(b):0);
+		} else
+			snprintf(s,BUFSIZ,"%s",nme);
+		GDKfree(nme);
+	}
+	return s;
+}
+
+str
+instruction2beauty(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int done)
+{
+	int i;
+	str base, s, t, nme;
+	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
+
+	base = s = GDKmalloc(len);
+	if ( s == NULL)
+		return s;
+	*s =0;
+	t=s;
+	if (p->token == REMsymbol) 
+		return base;
+	// handle the result variables
+	if( done ){
+		for (i = 0; i < p->retc; i++)
+			if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+				break;
+
+		if (i == p->retc) // no result arguments
+			goto beauty_end;
+
+		/* display optional multi-assignment list */
+		if (p->retc > 1)
+			*t++ = '(';
+
+		for (i = 0; i < p->retc; i++) {
+			nme = beautyTerm(mb, stk, p,i);
+			snprintf(t,(len-(t-base)), "%s", nme);
+			GDKfree(nme);
+			advance(t,base,len);
+			if (i < p->retc - 1)
+				*t++ = ',';
+		}
+		if (p->retc > 1)
+			*t++ = ')';
+
+	}
+	beauty_end:
+	// handle the instruction mapping
+
+	advance(t,base,len);
+	nme = 0;
+	//nme = varGetPropStr(mb, getArg(p,0), PropertyIndex("beautyoperator"));
+	if( nme){
+		snprintf(t,  (len-(t-base)),"%s", nme);
+		GDKfree(nme);
+	} else 
+		snprintf(t,  (len-(t-base)),"%s.%s", getModuleId(p), getFunctionId(p));
+	advance(t,base,len);
+
+	// handle the arguments, constants should  be shown including their non-default type
+	/* display optional multi-assignment list */
+	*t++ = '(';
+	for (i = 0; i < p->retc; i++) {
+		nme = beautyTerm(mb, stk, p,i);
+		snprintf(t,(len-(t-base)), "%s", nme);
+		GDKfree(nme);
+		advance(t,base,len);
+		if (i < p->retc - 1)
+			*t++ = ',';
+	}
+	*t++ = ')';
+
+	if (t >= s + len)
+		throw(MAL,"instruction2str:","instruction too long");
 	return s;
 }
 

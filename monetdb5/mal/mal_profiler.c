@@ -25,10 +25,12 @@ stream *eventstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
+static int jsonrendering = TRUE;
 static str myname = 0;
 static oid user = 0;
 
 static void offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
+static void offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 static int initTrace(void);
 
@@ -56,6 +58,8 @@ offlineProfilerHeader(void)
 
 	if (eventstream == NULL) 
 		return ;
+	if (jsonrendering) 
+		return;
 
 	lognew();
 	logadd("# ");
@@ -106,7 +110,46 @@ static void logsend(char *logbuffer)
 		error= mnstr_flush(eventstream);
 		MT_lock_unset(&mal_profileLock, "logsend");
 		if( showsystem)
-			offlineProfilerEvent(0, 0, 0, 0, "system", monet_characteristics);
+			offlineProfilerEvent(0, 0, 0, 0, "system", monetdb_characteristics);
+		if ( error) stopProfiler();
+	}
+}
+
+static void logsendJSON(char *logbuffer)
+{	int error=0;
+	char buf[BUFSIZ], *s;
+	size_t len, out;
+
+	if (eventstream) {
+		MT_lock_set(&mal_profileLock, "logsendJSON");
+		if( eventcounter == 0){
+			snprintf(buf,BUFSIZ,"%s\n",monetdb_characteristics);
+			len = strlen(buf);
+			out = mnstr_write(eventstream, buf, 1, len);
+			if( out != len){
+				MT_lock_unset(&mal_profileLock, "logsendJSON");
+				stopProfiler();
+				return;
+			}
+		}
+		eventcounter++;
+		snprintf(buf,BUFSIZ,"%d",eventcounter);
+		s = strchr(logbuffer,(int) ':');
+		if( s == NULL){
+			MT_lock_unset(&mal_profileLock, "logsendJSON");
+			return;
+		}
+	
+		strncpy(s+1, buf,strlen(buf));
+		len = strlen(logbuffer);
+		out= mnstr_write(eventstream, logbuffer, 1, len);
+		if( out != len){
+			MT_lock_unset(&mal_profileLock, "logsendJSON");
+			stopProfiler();
+			return;
+		}
+		error= mnstr_flush(eventstream);
+		MT_lock_unset(&mal_profileLock, "logsendJSON");
 		if ( error) stopProfiler();
 	}
 }
@@ -126,8 +169,10 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
-	if (offlineProfiling)
+	if (offlineProfiling && !jsonrendering)
 		offlineProfilerEvent(mb, stk, pci, start,0,0);
+	if (offlineProfiling && jsonrendering)
+		offlineProfilerEventJSON(mb, stk, pci, start,0,0);
 	if (cachedProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
 	if ( start && pci->pc ==0)
@@ -253,6 +298,158 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	logadd("\t]\n"); // end marker
 	logsend(logbuffer);
 }
+
+/* JSON rendering method of performance data. Using the table header as tag, breaking the complex fields. Example:
+ */
+void
+offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char *alter, char *msg)
+{
+	char logbuffer[LOGLEN], *logbase;
+	int loglen;
+	char ctm[26];
+	time_t clk;
+	struct timeval clock;
+	str stmt, c;
+	char *tbuf;
+	str stmtq;
+
+	if (eventstream == NULL)
+		return ;
+	if (jsonrendering == FALSE)
+		return ;
+
+	if( start) // show when instruction was started
+		clock = pci->clock;
+	else 
+		gettimeofday(&clock, NULL);
+	clk = clock.tv_sec;
+
+	/* make basic profile event tuple  */
+	lognew();
+	logadd("{ \"event\":         ,\n"); // fill in later with the event counter
+
+	/* without this cast, compilation on Windows fails with
+	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+	 */
+#ifdef HAVE_CTIME_R3
+	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
+#else
+#ifdef HAVE_CTIME_R
+	tbuf = ctime_r(&clk, ctm);
+#else
+	tbuf = ctime(&clk);
+#endif
+#endif
+	tbuf[19]=0;
+	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
+	if( alter){
+		logadd("\function\": \"user.%s\",\n",alter);
+	} else {
+		logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
+	}
+
+	logadd("\"thread\":%d,\n", THRgettid());
+	logadd("\"pc\":%d,\n", getPC(mb,pci));
+	logadd("\"tag\":%d,\n", stk->tag);
+
+	if( alter){
+		logadd("\"status\":\"%s\",\n",alter);
+	} else 
+	if( start){
+		logadd("\"status\":\"start\",\n");
+		// determine the Estimated Time of Completion
+		if ( pci->calls){
+			logadd("\"ticks\":"LLFMT",\n", pci->totticks/pci->calls);
+		} else{
+			logadd("\"ticks\":"LLFMT",\n", pci->ticks);
+		}
+	} else {
+		logadd("\"status\":\"done \",\n");
+		logadd("\"ticks\":"LLFMT",\n", pci->ticks);
+	}
+	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
+	logadd("\"size\":"LLFMT ",\n", pci? pci->wbytes/1024/1024:0);	// result size
+
+#ifdef NUMAprofiling
+		logadd("\"numa\":[");
+		for( i= pci->retc ; i < pci->argc; i++)
+		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
+			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
+		logadd("],\n");
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
+		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
+		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
+		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
+		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
+		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	prevUsage = infoUsage;
+#endif
+
+	if ( msg){
+		logadd("\"msg\":\"%s\",",msg);
+	} else {
+		char prereq[BUFSIZ];
+		size_t len;
+		int i,j,k;
+		InstrPtr q;
+
+		/* generate actual call statement */
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
+		c = stmt;
+
+		while (c && *c && isspace((int)*c))
+			c++;
+		stmtq = mal_quote(c, strlen(c));
+		if (stmtq != NULL) {
+			logadd("\"stmt\":\"%s\",\n", stmtq);
+			GDKfree(stmtq);
+		} 
+		GDKfree(stmt);
+
+		stmt = instruction2beauty(mb, stk, pci, start!=0);
+		c = stmt;
+
+		while (c && *c && isspace((int)*c))
+			c++;
+		stmtq = mal_quote(c, strlen(c));
+		if (stmtq != NULL) {
+			logadd("\"beautystmt\":\"%s\",\n", stmtq);
+			GDKfree(stmtq);
+		} 
+		GDKfree(stmt);
+		logadd("\"beautystmt\":\"%s\",\n", "tobedone");
+		// collect the input statements
+		prereq[0]=0;
+		len = 0;
+		for(i= pci->retc; i < pci->argc; i++){
+			for( j = pci->pc-1; j > 0; j--){
+				q= getInstrPtr(mb,j);
+				for( k=0; k < q->retc; k++)
+					if( getArg(q,k) == getArg(pci,i))
+						break;
+				if( k < q->retc){
+					snprintf(prereq + len, BUFSIZ-len,"%c %d", (i != pci->retc?',':'['), j);
+					len = strlen(prereq);
+					break;
+				}
+			}
+		}
+		if( prereq[0])
+			logadd("\"input\":%s]\n", prereq);
+	}
+	// collect all input producing PCs
+	logadd("}\n"); // end marker
+	logsendJSON(logbuffer);
+}
+
 /*
  * Postprocessing events
  * The events may be sent for offline processing through a

@@ -153,6 +153,7 @@ struct OPTcatalog {
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
+{"profiler",	0,	0,	0,	DEBUG_OPT_PROFILER},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
 {"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},

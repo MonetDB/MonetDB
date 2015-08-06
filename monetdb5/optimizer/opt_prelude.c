@@ -245,6 +245,8 @@ int pivotDisjunctiveProp;
 int removeProp;
 int tableProp;
 int sqlfunctionProp;
+int schematablecolumnProp;
+int beautyoperatorProp;
 
 int inlineProp;
 int keepProp;
@@ -507,6 +509,8 @@ void optimizerInit(void)
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
+	schematablecolumnProp = PropertyIndex("schematablecolumn");
+	beautyoperatorProp = PropertyIndex("beautyoperator");
 
 	stableProp = PropertyIndex("stableProp");
 	insertionsProp = PropertyIndex("insertionsProp");
