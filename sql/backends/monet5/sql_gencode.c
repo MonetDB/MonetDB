@@ -1446,17 +1446,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					case cmp_notequal: {
 						q = newStmt2(mb, algebraRef, cmd);
 
-            	        if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
-							snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	       	            	uval = findVariable(mb, nme);
+//NOT NEEDED            	        if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
+						//check if the first argument has two outputs (in such a case it is related to the array processing)
+						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+	       	            uval = findVariable(mb, nme);
 				
-							assert(uval >=0);
-
+						if(uval >=0) {
+							//two outputs
 							setVarType(mb, getArg(q, 0), TYPE_ptr);
 							setVarUDFtype(mb, getArg(q, 0));
 							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-							q = pushArgument(mb, q, l); //all the dimensions
-							q = pushArgument(mb, q, uval); //the current dimension
+							q = pushArgument(mb, q, l); //the dimension or the non-dimension
+							q = pushArgument(mb, q, uval); //all the dimensions
 /*NOT NEEDED						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
 							setVarType(mb, getArg(q, 0), TYPE_ptr);
 							setVarUDFtype(mb, getArg(q, 0));

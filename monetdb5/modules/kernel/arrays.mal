@@ -18,6 +18,11 @@ address ALGdimensionThetasubselect1;
 command algebra.thetasubselect(dim:ptr, dims:ptr, candDims:ptr, candBat:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect2;
 
+#subselection in dimensions
+command algebra.subselect(vals:bat[:oid,:any], dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
+address ALGnonDimensionSubselect1;
+command algebra.subselect(vals:bat[:oid,:oid], dims:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+address ALGnonDimensionSubselect2;
 
 #command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
 #address ALGmbrsubselect;
@@ -33,6 +38,7 @@ address ALGdimensionThetasubselect2;
 #command algebra.subselect(dims:ptr, valsBat:bat[:oid,:any], candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
 #address ALGnonDimensionSubselect2;
 
+#Creates a BAT that contains all cells that satisfied a series of selections on dimensions
 command algebra.cellsProject(candDims:ptr, candBAT:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGproject;
  
