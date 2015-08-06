@@ -1,8 +1,10 @@
 #It gets the candidates and projects the dimensions
-command algebra.leftfetchjoin(cands:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
+#With project cells: command algebra.leftfetchjoin(cands:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
+command algebra.leftfetchjoin(candDims:ptr, candBat:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
 address ALGdimensionLeftfetchjoin1;
 #it gets the candidates and the orojects a non-dimensional column
-command algebra.leftfetchjoin(cands:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
+#with project cells: command algebra.leftfetchjoin(cands:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
+command algebra.leftfetchjoin(candDims:ptr, candBat:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
 address ALGnonDimensionLeftfetchjoin1;
 #it is called when projecting a non-dimensional column of an array
 command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) (:bat[:oid,:any], :ptr)

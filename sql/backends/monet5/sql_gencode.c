@@ -149,10 +149,10 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		size_t fqtnl;
 		char *fqtn;
 
-		if(c->type == st_cells) {
-			fprintf(stderr, "dump_header: st_cells in output ignored\n");
-			continue;
-		}
+//		if(c->type == st_cells) {
+//			fprintf(stderr, "dump_header: st_cells in output ignored\n");
+//			continue;
+//		}
 		t = tail_type(c);
 		tname = table_name(sql->sa, c);
 		sname = schema_name(sql->sa, c);
@@ -2799,8 +2799,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 		} break;
-		case st_cells: {
-			int l;
+/* REMOVED IT		case st_cells: {
+ 			int l;
 			char nme[SMALLBUFSIZ];
 			int uval = -1;
 
@@ -2819,7 +2819,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
-		} break;
+		} break; */
 		case st_dimension: {
 			sql_table *t = s->op4.dval->t;
 			

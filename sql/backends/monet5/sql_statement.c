@@ -403,7 +403,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_atom:
 			case st_trans:
 			case st_catalog:
-			case st_cells:
+//			case st_cells:
 			case st_dimension:
 				break;
 			}
@@ -822,6 +822,7 @@ stmt_atom(sql_allocator *sa, atom *op1)
 	return s;
 }
 
+#if 0
 stmt* stmt_cells(sql_allocator *sa, stmt *dims)
 {
 	stmt *s = stmt_create(sa, st_cells);
@@ -829,14 +830,11 @@ stmt* stmt_cells(sql_allocator *sa, stmt *dims)
 	s->nrcols = dims->nrcols;
 	return s;
 }
+#endif
 
 /*called when the column belongs to an array*/
 stmt* stmt_column(sql_allocator *sa, sql_column* col) { //, sql_table *t) {
-//	stmt *arr = stmt_cells(sa, t);
 	stmt *c = stmt_bat(sa, col, RDONLY);
-	
-	//join the dimension with the cells
-//	return stmt_project(sa, arr, c);
 	return c;
 }
 
@@ -879,7 +877,6 @@ stmt *
 stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub)
 {
 	stmt *s = stmt_create(sa, st_uselect);
-//	stmt *cls = stmt_create(sa, st_cells);
 
     s->op1 = op1;
     s->op2 = op2;
@@ -1427,8 +1424,8 @@ char *_column_name(sql_allocator *sa, stmt *st);
 char *
 column_name(sql_allocator *sa, stmt *st)
 {
-	if(st->type == st_cells)
-		return "cells";
+//	if(st->type == st_cells)
+//		return "cells";
 	if (!st->cname)
 		st->cname = _column_name(sa, st);
 	return st->cname;

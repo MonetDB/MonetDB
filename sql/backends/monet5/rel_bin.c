@@ -2581,6 +2581,7 @@ static int pushDimensionSelections(stmt **s) {
 	return changes;
 }
 
+/*
 static stmt* addCells(mvc *sql, stmt *s) {
 	//find where the selections over the dimensions start and put an st_cells
 	if((s->type == st_uselect || s->type == st_uselect2) && s->op1->type == st_dimension) {
@@ -2591,7 +2592,7 @@ static stmt* addCells(mvc *sql, stmt *s) {
 	//	s->op3 = addCells(sql, s->op3);
 	return s;
 }
-/*
+
 static stmt *projectCells(mvc *sql, stmt* s) {
 	if(s->type == st_list) {
 		node *n;
@@ -2667,8 +2668,8 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 
 	//if there are selections on dimensions they should be performed at the beggining
 	while(pushDimensionSelections(&sel));
-	//if it is an array we need to project the cells
-	sel = addCells(sql, sel);
+	////if it is an array we need to project the cells
+	//sel = addCells(sql, sel);
 
 
 	/* construct relation */
