@@ -1121,13 +1121,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @throws SQLException if there is no such column
 			 */
 			public int getColumnDisplaySize(int column) throws SQLException {
-				int ret;
+				int ret = 1;
+
+				if (header == null)
+					return ret;
+
 				try {
 					ret = header.getColumnLengths()[column - 1];
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
-				
+
 				return ret;
 			}
 
@@ -1140,7 +1144,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getSchemaName(int column) throws SQLException {
 				String schema = "";
-				
+
+				if (header == null)
+					return schema;
+
 				// figure the name out
 				try {
 					schema = header.getTableNames()[column - 1];
@@ -1165,7 +1172,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getTableName(int column) throws SQLException {
 				String table = "";
-				
+
+				if (header == null)
+					return table;
+
 				// figure the name out
 				try {
 					table = header.getTableNames()[column - 1];
@@ -1194,11 +1204,16 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public int getPrecision(int column) throws SQLException {
 				int precision = 0;
-				ResultSet col = getColumnResultSet(column);
+				try {
+					ResultSet col = getColumnResultSet(column);
 
-				// the result has either zero or one results, as the
-				// schema, table and column should be unique...
-				if (col.next()) precision = col.getInt("COLUMN_SIZE");
+					// the result has either zero or one results, as the
+					// schema, table and column should be unique...
+					if (col.next())
+						precision = col.getInt("COLUMN_SIZE");
+				} catch (NullPointerException npe) {
+					/* do nothing */
+				}
 
 				return precision;
 			}
@@ -1215,11 +1230,16 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public int getScale(int column) throws SQLException {
 				int scale = 0;
-				ResultSet col = getColumnResultSet(column);
+				try {
+					ResultSet col = getColumnResultSet(column);
 
-				// the result has either zero or one results, as the
-				// schema, table and column should be unique...
-				if (col.next()) scale = col.getInt("DECIMAL_DIGITS");
+					// the result has either zero or one results, as the
+					// schema, table and column should be unique...
+					if (col.next())
+						scale = col.getInt("DECIMAL_DIGITS");
+				} catch (NullPointerException npe) {
+					/* do nothing */
+				}
 
 				return scale;
 			}
@@ -1236,11 +1256,16 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public int isNullable(int column) throws SQLException {
 				int ret = columnNullableUnknown;
-				ResultSet col = getColumnResultSet(column);
+				try {
+					ResultSet col = getColumnResultSet(column);
 
-				// the result has either zero or one results, as the
-				// schema, table and column should be unique...
-				if (col.next()) ret = col.getInt("NULLABLE");
+					// the result has either zero or one results, as the
+					// schema, table and column should be unique...
+					if (col.next())
+						ret = col.getInt("NULLABLE");
+				} catch (NullPointerException npe) {
+					/* do nothing */
+				}
 
 				return ret;
 			}
@@ -1326,7 +1351,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 							types[column - 1], "M0M03");
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
+				} catch (NullPointerException npe) {
+					/* do nothing */
 				}
+				return "";
 			}
 
 			/**
@@ -1395,7 +1423,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 *
 			 * @param column the column index number starting from 1
 			 * @return Metadata ResultSet
-			 * @throws SQLException if a database error occurs
+			 * @throws SQLException if a database error occurs, NullPointerException for a MonetVirtualResultSet
 			 */
 			private ResultSet getColumnResultSet(int column)
 				throws SQLException
@@ -1404,8 +1432,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					new SQLException("No such column " + column, "M1M05");
 
 				if (colrs[column - 1] == null) {
-					if (dbmd == null)
+					if (dbmd == null) {
+						// Note: the next code will throw a NullPointerException when called
+						// for a MonetVirtualResultSet as getStatement() will return null
+						// it will be caught in the methods which call this private method.
 						dbmd = getStatement().getConnection().getMetaData();
+					}
 					ResultSet col = 
 						dbmd.getColumns(
 								null, /* this doesn't matter here... */

@@ -1,6 +1,12 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Aug  6 2015 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved JDBC driver to not throw NullPointerException anymore
+  when calling isNullable() or getPrecision() or getScale() or
+  getColumnDisplaySize() or getSchemaName() or getTableName() or
+  getColumnClassName() on a ResultSet object.
+
 * Thu Jul 16 2015 Sjoerd Mullender <sjoerd@acm.org>
 - We now compile the Java classes using the latest Java 1.8 version, and
   we tell it to compile for Java 1.7.
