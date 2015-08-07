@@ -61,6 +61,8 @@ mal_export str setEndPoint(Module cntxt, const char *mod, const char *fcn);
 
 mal_export str startProfiler(oid user, int mode, int beat);
 mal_export str stopProfiler(void);
+mal_export str startProfilerCache(void);
+mal_export str stopProfilerCache(void);
 mal_export void setHeartbeat(int delay);
 mal_export str cleanupProfiler(void);
 mal_export void initHeartbeat(void);
@@ -85,4 +87,5 @@ mal_export lng getSystemTime(void);
 mal_export void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 mal_export void _initTrace(void);
 
+mal_export str PROFclearcache(void);
 #endif

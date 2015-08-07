@@ -246,7 +246,6 @@ int removeProp;
 int tableProp;
 int sqlfunctionProp;
 int schematablecolumnProp;
-int beautyoperatorProp;
 
 int inlineProp;
 int keepProp;
@@ -510,7 +509,6 @@ void optimizerInit(void)
 	unsafeProp = PropertyIndex("unsafe");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 	schematablecolumnProp = PropertyIndex("schematablecolumn");
-	beautyoperatorProp = PropertyIndex("beautyoperator");
 
 	stableProp = PropertyIndex("stableProp");
 	insertionsProp = PropertyIndex("insertionsProp");

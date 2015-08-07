@@ -237,6 +237,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	base = s = GDKmalloc(len);
 	if ( s == NULL)
 		return s;
+	*s =0;
 	if (flg) {
 		if( p->token<0){
 			s[0] = '#';
@@ -383,12 +384,12 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
  * should be shown as well.
  */
 static str
-beautyTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
+shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 {
 	str s, nme;
 	BAT *b;
 	ValRecord *val;
-	//VarPtr v;
+	VarPtr vr;
 	char *cv =0;
 	int varid = getArg(p,idx);
 
@@ -404,20 +405,25 @@ beautyTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
-		//v = varGetProp(mb, varid, PropertyIndex("schematablecolumn"));
-		nme = getVarName(mb, varid);
+		vr = varGetProp(mb, varid, PropertyIndex("schematablecolumn"));
+		if( vr) 
+			nme = vr->value.val.sval;
+		else
+			nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
-			snprintf(s,BUFSIZ,"%s["BUNFMT"]",nme, b?BATcount(b):0);
+			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
 		} else
-			snprintf(s,BUFSIZ,"%s",nme);
-		GDKfree(nme);
+		if( cv)
+			snprintf(s,BUFSIZ,"%s=%s ",nme,cv);
+		else
+			snprintf(s,BUFSIZ,"%s ",nme);
 	}
 	return s;
 }
 
 str
-instruction2beauty(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int done)
+shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 {
 	int i;
 	str base, s, t, nme;
@@ -430,22 +436,41 @@ instruction2beauty(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int done)
 	t=s;
 	if (p->token == REMsymbol) 
 		return base;
+	if (p->barrier == LEAVEsymbol || 
+		p->barrier == REDOsymbol || 
+		p->barrier == RETURNsymbol || 
+		p->barrier == YIELDsymbol || 
+		p->barrier == EXITsymbol || 
+		p->barrier == RAISEsymbol) {
+			snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
+			advance(t,base,len);
+		}
+	if( p->token == FUNCTIONsymbol) {
+			snprintf(t,(len-(t-base)), "function %s.", getModuleId(p));
+			advance(t,base,len);
+		}
+	if (p->token == ENDsymbol ){
+		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
+		return s;
+	}
 	// handle the result variables
-	if( done ){
-		for (i = 0; i < p->retc; i++)
-			if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
-				break;
+	for (i = 0; i < p->retc; i++)
+		if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+			break;
 
-		if (i == p->retc) // no result arguments
-			goto beauty_end;
+	if (i == p->retc) // no result arguments
+		goto short_end;
 
-		/* display optional multi-assignment list */
-		if (p->retc > 1)
+	/* display optional multi-assignment list */
+	if( getArgType(mb,p,0) != TYPE_void){
+		if (p->retc > 1){
 			*t++ = '(';
+			*t=0;
+		}
 
 		for (i = 0; i < p->retc; i++) {
-			nme = beautyTerm(mb, stk, p,i);
-			snprintf(t,(len-(t-base)), "%s", nme);
+			nme = shortRenderingTerm(mb, stk, p,i);
+			snprintf(t,(len-(t-base)), "%s%s", (i?",":" "), nme);
 			GDKfree(nme);
 			advance(t,base,len);
 			if (i < p->retc - 1)
@@ -453,33 +478,33 @@ instruction2beauty(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int done)
 		}
 		if (p->retc > 1)
 			*t++ = ')';
-
+		*t++ = ':';
+		*t++ = '=';
+		*t++ = ' ';
 	}
-	beauty_end:
-	// handle the instruction mapping
+	*t =0;
 
+	short_end:
 	advance(t,base,len);
-	nme = 0;
-	//nme = varGetPropStr(mb, getArg(p,0), PropertyIndex("beautyoperator"));
-	if( nme){
-		snprintf(t,  (len-(t-base)),"%s", nme);
-		GDKfree(nme);
-	} else 
-		snprintf(t,  (len-(t-base)),"%s.%s", getModuleId(p), getFunctionId(p));
+
+	// handle the instruction mapping
+	snprintf(t,  (len-(t-base)),"%s", (getFunctionId(p)?getFunctionId(p):""));
 	advance(t,base,len);
 
 	// handle the arguments, constants should  be shown including their non-default type
 	/* display optional multi-assignment list */
 	*t++ = '(';
-	for (i = 0; i < p->retc; i++) {
-		nme = beautyTerm(mb, stk, p,i);
-		snprintf(t,(len-(t-base)), "%s", nme);
+	for (i = p->retc; i < p->argc; i++) {
+		nme = shortRenderingTerm(mb, stk, p,i);
+		snprintf(t,(len-(t-base)), "%c%s", (i!= p->retc? ',':' '), nme);
 		GDKfree(nme);
 		advance(t,base,len);
 		if (i < p->retc - 1)
 			*t++ = ',';
 	}
+	*t++ = ' ';
 	*t++ = ')';
+	*t=0;
 
 	if (t >= s + len)
 		throw(MAL,"instruction2str:","instruction too long");

@@ -25,7 +25,7 @@ stream *eventstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
-static int jsonrendering = TRUE;
+static int jsonProfiling = TRUE;
 static str myname = 0;
 static oid user = 0;
 
@@ -41,6 +41,40 @@ static int eventcounter = 0;
 struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
+
+/*
+ * Profiler trace cache
+ * The trace information for a limited collection of queries is retained in 
+ * a profiler cache, located in the database directory profiler_logs.
+ * It can be used for post-mortem analysis.
+ *
+ * The cache file is simply derived from the MAL block invocation tag,
+ * which is assured to be unique.
+ * 
+ * The JSON structures are sent to the file and upon request also to a listener.
+ */
+
+#define MAXJSONEVENTS (1<<16) /* cut off large JSON traces */
+#define MAXPROFILECACHE 64
+static struct{
+	int tag;
+	int cnt;	// number of events in this bucket
+	lng start,finish;
+	char fname[BUFSIZ];
+	stream *trace;
+	str query;
+} profilerCache[MAXPROFILECACHE];
+
+static int profilerCacheSize= MAXPROFILECACHE;
+
+str
+PROFclearcache(void)
+{
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"rm profiler_logs%c*.json",DIR_SEP);
+	system(buf);
+	return MAL_SUCCEED;
+}
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -58,7 +92,7 @@ offlineProfilerHeader(void)
 
 	if (eventstream == NULL) 
 		return ;
-	if (jsonrendering) 
+	if (jsonProfiling) 
 		return;
 
 	lognew();
@@ -115,19 +149,22 @@ static void logsend(char *logbuffer)
 	}
 }
 
-static void logsendJSON(char *logbuffer)
+static void logjson(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char *logbuffer)
 {	int error=0;
+	int k = stk->tag % profilerCacheSize;
 	char buf[BUFSIZ], *s;
 	size_t len, out;
 
+	(void)mb;
+	MT_lock_set(&mal_profileLock, "logjson");
 	if (eventstream) {
-		MT_lock_set(&mal_profileLock, "logsendJSON");
+		// upon request it is also sent over the profile stream
 		if( eventcounter == 0){
 			snprintf(buf,BUFSIZ,"%s\n",monetdb_characteristics);
 			len = strlen(buf);
 			out = mnstr_write(eventstream, buf, 1, len);
 			if( out != len){
-				MT_lock_unset(&mal_profileLock, "logsendJSON");
+				MT_lock_unset(&mal_profileLock, "logjson");
 				stopProfiler();
 				return;
 			}
@@ -136,7 +173,7 @@ static void logsendJSON(char *logbuffer)
 		snprintf(buf,BUFSIZ,"%d",eventcounter);
 		s = strchr(logbuffer,(int) ':');
 		if( s == NULL){
-			MT_lock_unset(&mal_profileLock, "logsendJSON");
+			MT_lock_unset(&mal_profileLock, "logjson");
 			return;
 		}
 	
@@ -144,14 +181,38 @@ static void logsendJSON(char *logbuffer)
 		len = strlen(logbuffer);
 		out= mnstr_write(eventstream, logbuffer, 1, len);
 		if( out != len){
-			MT_lock_unset(&mal_profileLock, "logsendJSON");
+			MT_lock_unset(&mal_profileLock, "logjson");
 			stopProfiler();
 			return;
 		}
 		error= mnstr_flush(eventstream);
-		MT_lock_unset(&mal_profileLock, "logsendJSON");
 		if ( error) stopProfiler();
 	}
+	if( profilerCacheSize){
+		if( profilerCache[k].trace == NULL){
+			if( profilerCache[k].fname[0]== 0)
+				(void) mkdir("profiler_logs", 0755);
+			if( profilerCache[k].fname[0]== 0){
+				snprintf(profilerCache[k].fname, BUFSIZ,"profiler_logs/%d.json",stk->tag);
+			}
+			profilerCache[k].trace = open_wastream(profilerCache[k].fname);
+			profilerCache[k].start = GDKusec();
+			snprintf(buf,BUFSIZ,"%s\n",monetdb_characteristics);
+			(void) mnstr_write(profilerCache[k].trace, buf, 1, strlen(buf));
+		}
+		if( profilerCache[k].trace){
+			(void) mnstr_write(profilerCache[k].trace,logbuffer,1,len);
+			(void) mnstr_flush(profilerCache[k].trace);
+		}
+		if ( profilerCache[k].trace && ((p->barrier == ENDsymbol && strstr(logbuffer,"done")) || profilerCache[k].cnt > MAXJSONEVENTS) ){
+			(void) mnstr_flush(profilerCache[k].trace);
+			(void) close_stream(profilerCache[k].trace);
+			profilerCache[k].cnt = 0;
+			profilerCache[k].trace = NULL;
+			profilerCache[k].finish = GDKusec();
+		}
+	}
+	MT_lock_unset(&mal_profileLock, "logjson");
 }
 
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
@@ -169,9 +230,9 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
-	if (offlineProfiling && !jsonrendering)
+	if (offlineProfiling )
 		offlineProfilerEvent(mb, stk, pci, start,0,0);
-	if (offlineProfiling && jsonrendering)
+	if (jsonProfiling)
 		offlineProfilerEventJSON(mb, stk, pci, start,0,0);
 	if (cachedProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
@@ -313,9 +374,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 	char *tbuf;
 	str stmtq;
 
-	if (eventstream == NULL)
-		return ;
-	if (jsonrendering == FALSE)
+	if (jsonProfiling == FALSE)
 		return ;
 
 	if( start) // show when instruction was started
@@ -326,7 +385,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 
 	/* make basic profile event tuple  */
 	lognew();
-	logadd("{ \"event\":         ,\n"); // fill in later with the event counter
+	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
 
 	/* without this cast, compilation on Windows fails with
 	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
@@ -342,13 +401,14 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 #endif
 	tbuf[19]=0;
 	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
+	logadd("\"thread\":%d,\n", THRgettid());
+
 	if( alter){
 		logadd("\function\": \"user.%s\",\n",alter);
 	} else {
 		logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	}
 
-	logadd("\"thread\":%d,\n", THRgettid());
 	logadd("\"pc\":%d,\n", getPC(mb,pci));
 	logadd("\"tag\":%d,\n", stk->tag);
 
@@ -364,7 +424,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 			logadd("\"ticks\":"LLFMT",\n", pci->ticks);
 		}
 	} else {
-		logadd("\"status\":\"done \",\n");
+		logadd("\"status\":\"done\",\n");
 		logadd("\"ticks\":"LLFMT",\n", pci->ticks);
 	}
 	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
@@ -398,7 +458,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 	} else {
 		char prereq[BUFSIZ];
 		size_t len;
-		int i,j,k;
+		int i,j,k,comma;
 		InstrPtr q;
 
 		/* generate actual call statement */
@@ -414,21 +474,19 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 		} 
 		GDKfree(stmt);
 
-		stmt = instruction2beauty(mb, stk, pci, start!=0);
-		c = stmt;
-
-		while (c && *c && isspace((int)*c))
-			c++;
-		stmtq = mal_quote(c, strlen(c));
+		stmt = shortStmtRendering(mb, stk, pci);
+		assert(stmt);
+		stmtq = mal_quote(stmt, strlen(stmt));
 		if (stmtq != NULL) {
-			logadd("\"beautystmt\":\"%s\",\n", stmtq);
+			logadd("\"short\":\"%s\",\n", stmtq);
 			GDKfree(stmtq);
 		} 
 		GDKfree(stmt);
-		logadd("\"beautystmt\":\"%s\",\n", "tobedone");
+
 		// collect the input statements
 		prereq[0]=0;
 		len = 0;
+		comma=0;
 		for(i= pci->retc; i < pci->argc; i++){
 			for( j = pci->pc-1; j > 0; j--){
 				q= getInstrPtr(mb,j);
@@ -436,8 +494,9 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 					if( getArg(q,k) == getArg(pci,i))
 						break;
 				if( k < q->retc){
-					snprintf(prereq + len, BUFSIZ-len,"%c %d", (i != pci->retc?',':'['), j);
+					snprintf(prereq + len, BUFSIZ-len,"%c %d", (comma?',':'['), j);
 					len = strlen(prereq);
+					comma++;
 					break;
 				}
 			}
@@ -447,7 +506,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 	}
 	// collect all input producing PCs
 	logadd("}\n"); // end marker
-	logsendJSON(logbuffer);
+	logjson(mb,stk,pci,logbuffer);
 }
 
 /*
@@ -534,6 +593,22 @@ closeProfilerStream(void)
  * is initiated. This is controlled by a delay-switch
  */
 static int TRACE_init = 0;
+
+str
+startProfilerCache(void)
+{
+	jsonProfiling= TRUE;
+	malProfileMode = 1;
+	return MAL_SUCCEED;
+}
+
+str
+stopProfilerCache(void)
+{
+	jsonProfiling= FALSE;
+	malProfileMode = 0;
+	return MAL_SUCCEED;
+}
 
 str
 startProfiler(oid usr, int mode, int beat)
@@ -1213,3 +1288,4 @@ void initHeartbeat(void)
 		hbrunning = 0;
 	}
 }
+

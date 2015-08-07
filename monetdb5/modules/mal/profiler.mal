@@ -14,6 +14,10 @@ pattern stethoscope(b:int)
 address CMDstethoscope
 comment "Start stethoscope profiling with heart beat";
 
+pattern tachograph(start:bit)
+address CMDtachograph
+comment "Start/stop gathering profile traces "'
+
 pattern stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";

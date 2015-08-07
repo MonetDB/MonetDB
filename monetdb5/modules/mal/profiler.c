@@ -182,6 +182,20 @@ CMDstethoscope(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 str
+CMDtachograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+{
+	bit start = *getArgReference_bit(stk,pc,1);
+
+	(void) mb;
+	(void) cntxt;
+	if( start)
+		startProfilerCache();
+	else
+		stopProfilerCache();
+	return MAL_SUCCEED;
+}
+
+str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
 	profilerGetCPUStat(user,nice,sys,idle,iowait);
