@@ -618,9 +618,9 @@ do { \
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
 	
-//TODO: Find a more clever way to do this without the need to project the cells
+//TODO: Find a more clever way to do this without the need to project the cells. There is afunction qualifyingOIDS. Check if it is suitable
 	//create the oids using the candidates
-	candsBAT = projectCells(dimCands_in, oidCandsBAT);	
+	candsBAT = projectCells(dimCands_in, oidCandsBAT, array);	
 	resSize = BATcount(candsBAT);
 
 	/*for each oid in the candsBAT find the real value of the dimension */
@@ -673,23 +673,24 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimCands, const bat *o
 	/* projecting a non-dimensional column does not differ from projecting any relational column */
 	BAT *oidCandsBAT, *candsBAT, *valsBAT, *resBAT= NULL;
 	gdk_array *dimCands_in = (gdk_array*)*dimCands;
-	(void)*dims;
+	gdk_array *array = (gdk_array*)*dims;
 
     if ((oidCandsBAT = BATdescriptor(*oidCands)) == NULL) {
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
     if ((valsBAT = BATdescriptor(*vals)) == NULL) {
-        BBPunfix(candsBAT->batCacheid);
+        BBPunfix(oidCandsBAT->batCacheid);
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
 
 	//create the oids using the candidates
-	candsBAT = projectCells(dimCands_in, oidCandsBAT);	
+	candsBAT = projectCells(dimCands_in, oidCandsBAT, array);	
 
     resBAT = BATproject(candsBAT, valsBAT);
 
     BBPunfix(candsBAT->batCacheid);
-    BBPunfix(valsBAT->batCacheid);
+    BBPunfix(oidCandsBAT->batCacheid);
+	BBPunfix(valsBAT->batCacheid);
 
     if (resBAT == NULL)
         throw(MAL, "algebra.leftfetchjoin", GDK_EXCEPTION);
