@@ -206,7 +206,6 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 			break;
 		BUNins(dst, BUNhead(bi, p), &r, FALSE);
 	}
-	BATsetArray(dst, b->batArray);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

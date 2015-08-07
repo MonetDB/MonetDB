@@ -2,90 +2,70 @@
 #include "sql_arrays.h"
 #include "sql.h"
 
-#define generaliseDimension_analytic(dim) \
-({ \
-    gdk_analytic_dimension *resDim = GDKmalloc(sizeof(gdk_analytic_dimension)); \
-    atom_cast(dim->min, &dim->type); \
-    atom_cast(dim->step, &dim->type); \
-    atom_cast(dim->max, &dim->type); \
-    switch(dim->type.type->localtype) { \
-        case TYPE_bte: \
-			resDim = createAnalyticDimension_bte(dim->dimnr, dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);\
-            break; \
-        case TYPE_sht: \
-   			resDim = createAnalyticDimension_sht(dim->dimnr, dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval); \
-            break; \
-        case TYPE_int: \
-   			resDim = createAnalyticDimension_int(dim->dimnr, dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival); \
-            break; \
-        case TYPE_wrd: \
-   			resDim = createAnalyticDimension_wrd(dim->dimnr, dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval); \
-            break; \
-        case TYPE_oid: \
-   			resDim = createAnalyticDimension_oid(dim->dimnr, dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval); \
-            break; \
-        case TYPE_lng: \
-   			resDim = createAnalyticDimension_lng(dim->dimnr, dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval); \
-            break; \
-        case TYPE_dbl: \
-   			resDim = createAnalyticDimension_dbl(dim->dimnr, dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval); \
-            break; \
-        case TYPE_flt: \
-   			resDim = createAnalyticDimension_flt(dim->dimnr, dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval); \
-	        break; \
-		default: \
-			fprintf(stderr, "generaliseDimension: type not found\n"); \
-			resDim = NULL; \
-    } \
-    resDim; \
-})
+static gdk_analytic_dimension* generaliseDimension_analytic(sql_dimension *dim) {
+    atom_cast(dim->min, &dim->type);
+    atom_cast(dim->step, &dim->type);
+    atom_cast(dim->max, &dim->type);
+    switch(dim->type.type->localtype) {
+        case TYPE_bte:
+			return createAnalyticDimension_bte(dim->dimnr, dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);
+        case TYPE_sht:
+   			return createAnalyticDimension_sht(dim->dimnr, dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval);
+        case TYPE_int:
+   			return createAnalyticDimension_int(dim->dimnr, dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival);
+        case TYPE_wrd:
+   			return createAnalyticDimension_wrd(dim->dimnr, dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval);
+        case TYPE_oid:
+   			return createAnalyticDimension_oid(dim->dimnr, dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval);
+        case TYPE_lng:
+   			return createAnalyticDimension_lng(dim->dimnr, dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval);
+        case TYPE_dbl:
+   			return createAnalyticDimension_dbl(dim->dimnr, dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval);
+        case TYPE_flt:
+   			return createAnalyticDimension_flt(dim->dimnr, dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval);
+		default:
+			fprintf(stderr, "generaliseDimension_analytic: type not found\n");
+			return NULL; \
+    } 
+    return NULL;
+}
 
-#define generaliseDimension(dim) \
-({ \
-    gdk_dimension *resDim = GDKmalloc(sizeof(gdk_dimension)); \
-    atom_cast(dim->min, &dim->type); \
-    atom_cast(dim->step, &dim->type); \
-    atom_cast(dim->max, &dim->type); \
-    switch(dim->type.type->localtype) { \
-        case TYPE_bte: \
-			resDim = createDimension_bte(dim->dimnr, 0, dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);\
-            break; \
-        case TYPE_sht: \
-   			resDim = createDimension_sht(dim->dimnr, 0, dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval); \
-            break; \
-        case TYPE_int: \
-   			resDim = createDimension_int(dim->dimnr, 0, dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival); \
-            break; \
-        case TYPE_wrd: \
-   			resDim = createDimension_wrd(dim->dimnr, 0, dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval); \
-            break; \
-        case TYPE_oid: \
-   			resDim = createDimension_oid(dim->dimnr, 0, dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval); \
-            break; \
-        case TYPE_lng: \
-   			resDim = createDimension_lng(dim->dimnr, 0, dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval); \
-            break; \
-        case TYPE_dbl: \
-   			resDim = createDimension_dbl(dim->dimnr, 0, dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval); \
-            break; \
-        case TYPE_flt: \
-   			resDim = createDimension_flt(dim->dimnr, 0, dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval); \
-	        break; \
-		default: \
-			fprintf(stderr, "generaliseDimension: type not found\n"); \
-			resDim = NULL; \
-    } \
-    resDim; \
-})
+static gdk_dimension* generaliseDimension(sql_dimension *dim)  {
+    atom_cast(dim->min, &dim->type);
+    atom_cast(dim->step, &dim->type);
+    atom_cast(dim->max, &dim->type);
+    switch(dim->type.type->localtype) {
+        case TYPE_bte:
+			return createDimension_bte(dim->min->data.val.btval, dim->max->data.val.btval, dim->step->data.val.btval);
+        case TYPE_sht:
+   			return createDimension_sht(dim->min->data.val.shval, dim->max->data.val.shval, dim->step->data.val.shval); 
+        case TYPE_int:
+   			return createDimension_int(dim->min->data.val.ival, dim->max->data.val.ival, dim->step->data.val.ival);
+        case TYPE_wrd:
+   			return createDimension_wrd(dim->min->data.val.wval, dim->max->data.val.wval, dim->step->data.val.wval);
+        case TYPE_oid:
+   			return createDimension_oid(dim->min->data.val.oval, dim->max->data.val.oval, dim->step->data.val.oval);
+        case TYPE_lng:
+   			return createDimension_lng(dim->min->data.val.lval, dim->max->data.val.lval, dim->step->data.val.lval);
+        case TYPE_dbl:
+   			return createDimension_dbl(dim->min->data.val.dval, dim->max->data.val.dval, dim->step->data.val.dval);
+        case TYPE_flt:
+   			return createDimension_flt(dim->min->data.val.fval, dim->max->data.val.fval, dim->step->data.val.fval);
+		default:
+			fprintf(stderr, "generaliseDimension: type not found\n");
+			return NULL;
+    }
+	return NULL;
+}
 
-static ptr get_array(sql_table *t) {
+static gdk_array* get_array(sql_table *t) {
 	gdk_array *array = arrayNew(t->dimensions.set->cnt);
 	node *n;
-	int i;
+	unsigned short i;
 
 	for(i=0, n=t->dimensions.set->h; n; n=n->next, i++) {
 		sql_dimension *dim_sql = (sql_dimension*)n->data;
-		array->dimSizes[i] = generaliseDimension(dim_sql);
+		array->dims[i] = generaliseDimension(dim_sql);
 	}
 	
 	return array;
@@ -119,7 +99,7 @@ str mvc_bind_array_dimension(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		throw(SQL, "sql.bind_array_dimension", "unable to find %s.%s(%s)", *sname, *tname, *dname);
 
 
-	*dim_res = generaliseDimension_analytic(dim)	
+	*dim_res = generaliseDimension_analytic(dim);	
 	*dims_res = get_array(t);
 
 	return MAL_SUCCEED;
