@@ -253,6 +253,7 @@ int rowsProp;
 int fileProp;
 int runonceProp;
 int unsafeProp;
+int orderDependendProp;
 
 int stableProp;
 int insertionsProp;
@@ -506,6 +507,7 @@ void optimizerInit(void)
 	rowsProp = PropertyIndex("rows");
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
+	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	stableProp = PropertyIndex("stableProp");

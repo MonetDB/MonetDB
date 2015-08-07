@@ -531,9 +531,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		s = stmt_aggr(sql->sa, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/ );
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
-		/* HACK: correct cardinality for window functions */
-		if (exp_card(e) > CARD_AGGR)
-			s->nrcols = 2;
 	} 	break;
 	case e_column: {
 		if (right) /* check relation names */

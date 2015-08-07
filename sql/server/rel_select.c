@@ -4902,27 +4902,44 @@ rel_frame(mvc *sql, symbol *frame, list *exps)
 }
 
 /* window functions */
+
+/*
+ * select x, y, rank_op() over (partition by x order by y) as, ...
+                aggr_op(z) over (partition by y order by x) as, ...
+ * from table [x,y,z,w,v]
+ *
+ * project and order by over x,y / y,x
+ * a = project( table ) [ x, y, z, w, v ], [ x, y]
+ * b = project( table ) [ x, y, z, w, v ], [ y, x]
+ *
+ * project with order dependend operators, ie combined prev/current value 
+ * aa = project (a) [ x, y, r = rank_op(diff(x) (marks a new partition), rediff(diff(x), y) (marks diff value with in partition)), z, w, v ]
+ * project(aa) [ aa.x, aa.y, aa.r ] -- only keep current output list 
+ * bb = project (b) [ x, y, a = aggr_op(z, diff(y), rediff(diff(y), x)), z, w, v ]
+ * project(j) [ bb.x, bb.y, bb.a ]  -- only keep current output list
+ */
 static sql_exp *
 rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
+	node *n;
 	dlist *l = se->data.lval;
 	symbol *window_function = l->h->data.sym;
 	dlist *window_specification = l->h->next->data.lval;
 	char *aname = NULL;
 	char *sname = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *e = NULL;
-	sql_rel *r = *rel;
-	list *gbe = NULL, *obe = NULL;
-	sql_subtype *idtype = sql_bind_localtype("oid");
+	sql_exp *e = NULL, *pe = NULL, *oe = NULL;
+	sql_rel *r = *rel, *p;
+	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
+	int distinct = 0;
 	
 	if (window_function->token == SQL_RANK) {
 		aname = qname_fname(window_function->data.lval);
 		sname = qname_schema(window_function->data.lval);
 	} else { /* window aggr function */
 		dnode *n = window_function->data.lval->h;
-		assert(0);
+
 		aname = qname_fname(n->data.lval);
 		sname = qname_schema(n->data.lval);
 	}
@@ -4938,38 +4955,126 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* window operations are only allowed in the projection */
-	if (f != sql_sel)
+	if (f != sql_sel || r->op != op_project || is_processed(r))
 		return sql_error(sql, 02, "OVER: only possible within the selection");
+
+	p = r->l;
+	p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {
-		gbe = rel_group_by(sql, r, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+		gbe = rel_group_by(sql, p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
+		p->r = gbe;
 	}
 	/* Order By */
 	if (window_specification->h->next->data.sym) {
-		obe = rel_order_by(sql, &r, window_specification->h->next->data.sym, f);
+		sql_rel *g;
+		obe = rel_order_by(sql, &p, window_specification->h->next->data.sym, f);
 		if (!obe)
 			return NULL;
-	} else {
-		obe = new_exp_list(sql->sa);
+		/* conditionaly? */
+		g = p->l;
+		if (g->op == op_groupby) {
+			list_merge(p->exps, obe, (fdup)NULL);
+			p->exps = list_distinct(p->exps, (fcmp)exp_equal, (fdup)NULL);
+		}
+		if (p->r) {
+			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL);
+			list_merge(p->r, obe, (fdup)NULL);
+		} else {
+			p->r = obe;
+		}
 	}
 	/* Frame */
 	if (window_specification->h->next->next->data.sym) {
-		obe  = rel_frame(sql, window_specification->h->next->next->data.sym, obe);
-		if (!obe)
+		fbe = new_exp_list(sql->sa);
+		fbe = rel_frame(sql, window_specification->h->next->next->data.sym, fbe);
+		if (!fbe)
 			return NULL;
 	}
-	wf = bind_func(sql, s, aname, idtype, NULL, F_FUNC);
+
+	if (window_function->token == SQL_RANK) {
+		e = p->exps->h->data; 
+		e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+	} else {
+		dnode *n = window_function->data.lval->h->next;
+
+		if (n) {
+			int is_last = 0;
+			exp_kind ek = {type_value, card_column, FALSE};
+
+			distinct = n->data.i_val;
+			e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+		}
+	}
+	(void)distinct;
+
+	/* diff for partitions */
+	if (gbe) {
+		sql_subtype *bt = sql_bind_localtype("bit");
+
+		for( n = gbe->h; n; n = n->next)  {
+			sql_subfunc *df;
+			sql_exp *e = n->data;
+		       
+			args = sa_list(sql->sa);
+			if (pe) { 
+				df = bind_func(sql, s, "diff", bt, exp_subtype(e), F_ANALYTIC);
+				append(args, pe);
+			} else {
+				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
+			}
+			if (!df)
+				return sql_error(sql, 02, "SELECT: function '%s' not found", "diff" );
+			append(args, e);
+			pe = exp_op(sql->sa, args, df);
+		}
+	} else {
+		pe = exp_atom_bool(sql->sa, 0);
+	}
+	/* diff for orderby */
+	if (obe) {
+		sql_subtype *bt = sql_bind_localtype("bit");
+
+		for( n = obe->h; n; n = n->next)  {
+			sql_exp *e = n->data;
+			sql_subfunc *df;
+		       
+			args = sa_list(sql->sa);
+			if (oe) { 
+				df = bind_func(sql, s, "diff", bt, exp_subtype(e), F_ANALYTIC);
+				append(args, oe);
+			} else {
+				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
+			}
+			if (!df)
+				return sql_error(sql, 02, "SELECT: function '%s' not found", "diff" );
+			append(args, e);
+			oe = exp_op(sql->sa, args, df);
+		}
+	} else {
+		oe = exp_atom_bool(sql->sa, 0);
+	}
+
+	types = sa_list(sql->sa);
+	append(types, exp_subtype(e));
+	append(types, exp_subtype(pe));
+	append(types, exp_subtype(oe));
+	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
 	if (!wf)
 		return sql_error(sql, 02, "SELECT: function '%s' not found", aname );
-	/* now we need the gbe and obe lists */
-	e = exp_op(sql->sa, gbe, wf);
-	/* make sure the expression has the proper cardinality */
-	e->card = CARD_AGGR;
-	/* e->r specifies window expression */
-	e->r = obe;
+	args = sa_list(sql->sa);
+	append(args, e);
+	append(args, pe);
+	append(args, oe);
+	e = exp_op(sql->sa, args, wf);
+
+	r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+	set_processed(p);
+	append(p->exps, e);
+	e = rel_lastexp(sql, p);
 	return e;
 }
 
