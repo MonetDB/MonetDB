@@ -2045,72 +2045,43 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		boolean nullable
 	) throws SQLException
 	{
-		String query =
-		"SELECT \"columns\".\"name\" AS \"COLUMN_NAME\", \"columns\".\"type\" AS \"TYPE_NAME\", " +
+		String query = "SELECT " + DatabaseMetaData.bestRowSession + " AS \"SCOPE\", " +
+			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
+			MonetDriver.getSQLTypeMap("\"columns\".\"type\"") + " AS \"DATA_TYPE\", " +
+			"\"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", 0 AS \"BUFFER_LENGTH\", " +
-			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", \"keys\".\"type\" AS \"keytype\" " +
+			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", " +
+			DatabaseMetaData.bestRowNotPseudo + " AS \"PSEUDO_COLUMN\" " +
 				"FROM \"sys\".\"keys\" AS \"keys\", " +
 					"\"sys\".\"objects\" AS \"objects\", " +
 					"\"sys\".\"columns\" AS \"columns\", " +
 					"\"sys\".\"tables\" AS \"tables\", " +
 					"\"sys\".\"schemas\" AS \"schemas\" " +
-				"WHERE \"keys\".\"id\" = \"objects\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
+				"WHERE \"keys\".\"id\" = \"objects\".\"id\" " +
+					"AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"keys\".\"table_id\" = \"columns\".\"table_id\" " +
 					"AND \"objects\".\"name\" = \"columns\".\"name\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
-					"AND \"keys\".\"type\" IN (0, 1) ";
-
-		// SCOPE, DATA_TYPE, PSEUDO_COLUMN have to be generated with Java logic
+					"AND \"keys\".\"type\" IN (0, 1) ";	// only primary keys (type = 0) and unique keys (type = 1), not fkeys (type = 2)
 
 		if (schema != null) {
-			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
+			if (schema.contains("%") || schema.contains("_"))
+				query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
+			else
+				query += "AND \"schemas\".\"name\" = '" + escapeQuotes(schema) + "' ";
 		}
 		if (table != null) {
-			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
+			if (table.contains("%") || table.contains("_"))
+				query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
+			else
+				query += "AND \"tables\".\"name\" = '" + escapeQuotes(table) + "' ";
 		}
 		if (!nullable) {
 			query += "AND \"columns\".\"null\" = false ";
 		}
+		query += "ORDER BY \"keys\".\"type\"";
 
-		query += "ORDER BY \"keytype\"";
-
-		String columns[] = {
-			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
-			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
-		};
-
-		String types[] = {
-			"int", "varchar", "int", "varchar", "int",
-			"int", "int", "int"
-		};
-
-		List<String[]> tmpRes = new ArrayList<String[]>();
-
-		ResultSet rs = getStmt().executeQuery(query);
-		try {
-			while (rs.next()) {
-				String[] result = new String[8];
-				result[0]  = "" + DatabaseMetaData.bestRowSession;
-				result[1]  = rs.getString("column_name");
-				result[2]  = "" + MonetDriver.getJavaType(rs.getString("type_name"));
-				result[3]  = rs.getString("type_name");
-				result[4]  = rs.getString("column_size");
-				result[5]  = rs.getString("buffer_length");
-				result[6]  = rs.getString("decimal_digits");
-				result[7]  = "" + DatabaseMetaData.bestRowNotPseudo;
-				tmpRes.add(result);
-			}
-		} finally {
-			rs.close();
-		}
-
-		String[][] results = tmpRes.toArray(new String[tmpRes.size()][]);
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		return getStmt().executeQuery(query);
 	}
 
 	/**
