@@ -64,7 +64,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	       		it = bat_iterator(b);
 			v = BUNtail(it, 0);
 
-			for(i=0; i<=cnt; i++, bp++, rp++) {
+			for(i=0; i<=cnt; i++, rp++) {
 				*rp = FALSE;
 				if (cmp(v, BUNtail(it,i)) != 0) { 
 					*rp = TRUE;
