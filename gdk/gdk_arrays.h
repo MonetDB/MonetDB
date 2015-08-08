@@ -323,7 +323,7 @@ gdk_return dimensionBATsubjoin(BAT **outBATl, BAT **outBATr, BAT *dimensionBATl,
 #endif
 
 /*NEW*/
-gdk_export BAT *projectCells(gdk_array* dimCands, BAT* oidCandsBAT, gdk_array *array);
+gdk_export BAT *projectCells(gdk_array* dimCands, gdk_array *array);
 
 #if 0
 gdk_export gdk_cells* arrayToCells(gdk_array *array);

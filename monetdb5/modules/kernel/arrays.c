@@ -330,8 +330,8 @@ do { \
 		/* get the elements in the range and use each one as many times as defined by elsR */ \
 		/* repeat the procedure as many times as defined my grpR */ \
 		for(grpRi=0; grpRi<grpR; grpRi++)\
-			for(i=dimCand->min; i<dimCand->max; i+=dimCand->step) \
-				for(elsRi=0; elsRi<elsR; elsRi++) \
+			for(i=dimCand->min; i<=dimCand->max; i+=dimCand->step)\
+				for(elsRi=0; elsRi<elsR; elsRi++)\
 					*vals++ = min + i*step; \
 	}\
 } while(0)
@@ -379,27 +379,22 @@ do { \
 
 }
 
-str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimCands, const bat *oidCands, const bat *vals, const ptr *dims) {
+str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimCands, const bat *vals, const ptr *dims) {
 	/* projecting a non-dimensional column does not differ from projecting any relational column */
-	BAT *oidCandsBAT, *candsBAT, *valsBAT, *resBAT= NULL;
+	BAT *candsBAT, *valsBAT, *resBAT= NULL;
 	gdk_array *dimCands_in = (gdk_array*)*dimCands;
 	gdk_array *array = (gdk_array*)*dims;
 
-    if ((oidCandsBAT = BATdescriptor(*oidCands)) == NULL) {
-        throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
-    }
     if ((valsBAT = BATdescriptor(*vals)) == NULL) {
-        BBPunfix(oidCandsBAT->batCacheid);
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
     }
 
 	//create the oids using the candidates
-	candsBAT = projectCells(dimCands_in, oidCandsBAT, array);	
+	candsBAT = projectCells(dimCands_in, array);	
 
     resBAT = BATproject(candsBAT, valsBAT);
 
     BBPunfix(candsBAT->batCacheid);
-    BBPunfix(oidCandsBAT->batCacheid);
 	BBPunfix(valsBAT->batCacheid);
 
     if (resBAT == NULL)
