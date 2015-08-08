@@ -17,6 +17,7 @@ static int arrayCellsNum(gdk_array *array) {
 	return jumpSize(array, array->dimsNum);
 }
 
+#if 0
 /*UPDATED*/
 static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
 	BUN oid = 0;
@@ -35,6 +36,7 @@ static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gd
 		return oid/skipCells;
 	return oid%skipCells;
 }
+#endif
 
 /*UPDATED*/
 static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
@@ -77,303 +79,58 @@ static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimN
 	return oids;
 }
 
-/*UPDATED*/
-static str readCands(gdk_array** dimCands_res, BAT** oidCands_res, const ptr *dimCands, const bat *oidCands, gdk_array* array) {
-	gdk_array *dimCands_in = NULL;
-	BAT *candidatesBAT_in = NULL;
-	
-	if(oidCands) { //there are candidates that cannot be expressed as dimensions and thus are expressed with oids
-		if ((candidatesBAT_in = BATdescriptor(*oidCands)) == NULL) {
-        	throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
-    	}
-	}
-
-	if(dimCands) //there are candidates exressed as dimensions
-		dimCands_in = (gdk_array*)*dimCands;
-
-	//if there are no candidates then everything is a candidate
-	if(!dimCands && !oidCands) {
-		dimCands_in = arrayCopy(array);
-		//create an empy candidates BAT
-		 if((candidatesBAT_in = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
-            throw(MAL, "algebra.subselect", GDK_EXCEPTION);
-		BATsetcount(candidatesBAT_in, 0);
-		BATseqbase(candidatesBAT_in, 0);
-		BATderiveProps(candidatesBAT_in, FALSE);    
-	} 
-
-	*dimCands_res = dimCands_in;
-	*oidCands_res = candidatesBAT_in;
-
-	return MAL_SUCCEED;
+static gdk_dimension* updateDimCandRange(gdk_dimension *dimCand, unsigned int min, unsigned int max) {
+	dimCand->min = min > dimCand->min ? min : dimCand->min;
+	dimCand->max = max < dimCand->max ? max : dimCand->max;
+	dimCand->elsNum = min>max ? 0 : max-min+1; //if 0 then the dimension is empty
+	return dimCand;
 }
 
-/*UPDATED*/
-/*Empty candidate results are distingueshed from first time results by setting the dimCands to NULL and the oidCands to empty */
-static str emptyCandidateResults(ptr *dimCandsRes, bat* oidCandsRes) {
-	BAT *candidatesBAT = NULL;
+static gdk_dimension* updateDimCandIdxs(gdk_dimension *dimCand, unsigned int min, unsigned int max) {
+	unsigned int elsNum = 0; 
+	unsigned int *idxs = GDKmalloc(sizeof(unsigned int)*dimCand->elsNum); //at most (quailfyingIdx might alresy be out of the idxs)
+	unsigned int i;
 
-	if((candidatesBAT = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
-        throw(MAL, "algebra.dimensionSubselect", GDK_EXCEPTION);
-	BATsetcount(candidatesBAT, 0);
-	BATseqbase(candidatesBAT, 0);
-	BATderiveProps(candidatesBAT, FALSE);    
+	for(i=0 ; i<dimCand->elsNum; i++) {
+		if(dimCand->idxs[i] >= min && dimCand->idxs[i] <= max) {
+			idxs[elsNum] = dimCand->idxs[i];
+			elsNum++;
+		}
+	}
+				
+	//release the previous idxs
+	GDKfree(dimCand->idxs);
+	//store the new idxs
+	dimCand->elsNum = elsNum; //if 0 then the dimension is empty
+	dimCand->idxs = idxs;
+	//upadte the min max if needed
+	dimCand->min = min > dimCand->min ? min : dimCand->min;
+	dimCand->max = max < dimCand->max ? max : dimCand->max;
 
-	BBPkeepref(*oidCandsRes = candidatesBAT->batCacheid);
-	*dimCandsRes = NULL;
-
-	return MAL_SUCCEED;
+	return dimCand;
 }
 
-/*UPDATED*/
-static gdk_dimension* updateCandidateDimensionRange(gdk_dimension *dim, unsigned int min, unsigned int max) {
-	if(dim->max < min || dim->min > max) //non-overlaping ranges
-		return NULL;
-
-	/*the biggest of the mins and the smallest of the maximums */
-	dim->min = dim->min > min ? dim->min : min;
-	dim->max = dim->max < max ? dim->max : max;
-	dim->elsNum = floor((dim->max - dim->min)/dim->step)+1;
-//TODO: Take care of cases were a dimension has step <>1 as a result of multiple selections on it
-	
-	//the dimensions that are merged should have the same order
-	//they also have the same number of initial elements because they came from the same dimension
-	return dim; 
-}
-
-static BAT* joinBATs(BAT *candsBAT, BAT* dimBAT, gdk_array *array, int dimNum) {
-	oid *candsOIDs, *dimOIDs, *mergedOIDs;
-	BAT* mergedBAT;
-
-	BUN i=0, j=0, k=0, minPos;
-	BUN minIdx =0 ;
-	BUN dimSkip = jumpSize(array, dimNum);
-
-	oid dimOIDs_min = 0;
-	bool set = 0;
-	BUN moduloRes;
-
-	candsOIDs = (oid*)Tloc(candsBAT, BUNfirst(candsBAT));
-	dimOIDs = (oid*)Tloc(dimBAT, BUNfirst(dimBAT));
-
-	//the oids in dimBAT have been computed assuming that 0 is allowed in all other dimensions
-	//is this really true? I can verify that using the first oid in candsBAT
-	//if a dimension after filtering is expressed again as a dimension the min might
-	//not be 0 but I do not care about it when it comes to the BAT. I will resolve tha at the end
-	//when projecting the cells where dimensions and BAT will be combined
-	for(j=0; j< (unsigned long)dimNum; j++) {
-		BUN skipCells = 0;
-		//find the min oid of this dimension in the the first qualifying oid
-		minIdx = oidToIdx(candsOIDs[0], j+1, 0, 1, array);
-		if(minIdx == 0)
-			continue;
-		//all oids in the dimOIDs should be updated to comply with the min oid of the dimension
-		skipCells = jumpSize(array, j);
-		for(i=0; i<BATcount(dimBAT); i++)
-			dimOIDs[i] += skipCells*minIdx;
-	}
-	
-	if(!(mergedBAT = BATnew(TYPE_void, TYPE_oid, BATcount(candsBAT)+BATcount(dimBAT), TRANSIENT)))
-		return NULL;
-	mergedOIDs = (oid*)Tloc(mergedBAT, BUNfirst(mergedBAT));
-
-	moduloRes = dimOIDs[0]%dimSkip;
-	/* find the oids in cands that are there to reflect dimNum and keep only those that dim and cand have in common */
-	for(i=0, j=0; i<BATcount(candsBAT) && j<BATcount(dimBAT);) {
-		/* oids in this dimension should be multiples of dimSkip */	
-		if(candsOIDs[i]%dimSkip == moduloRes) {
-			if(candsOIDs[i] < dimOIDs[j]) //it exists in one but not in the other
-				i++;
-			else if (candsOIDs[i] > dimOIDs[j])
-				j++;
-			else { //common
-				mergedOIDs[k] = candsOIDs[i];
-
-				if(!set) {
-					dimOIDs_min = candsOIDs[i];
-					minPos = k;
-					set = 1;
-				}
-
-				i++;
-				j++;
-				k++;
-			}
-		} else {
-			/*not related with the dimension. send it to the output*/
-			mergedOIDs[k] = candsOIDs[i];
-			i++;
-			k++;
-		}
-	}
-
-	BATseqbase(mergedBAT, 0);
-	BATsetcount(mergedBAT, k);
-	BATderiveProps(mergedBAT, FALSE);
-
-	//adapt the candidates BAT to reflect the minimum value for the new dimension
-	//only the ones that are not reflecting the y dimension should be updates
-	minIdx = oidToIdx(dimOIDs_min, dimNum, 0, 1,  array);
-	if(minIdx > 0) {
-		BUN skipCells = jumpSize(array, dimNum);
-		/*split it in 2 parts. Firts update all oids that are before the minPos position
- 		* all those oids will be increased and become greater than the oid in minPos */
-		if(minPos > 0) {
-			for(i=minPos-1; i>0; i--) {
-				/*all will change because they are above the minimum oid regarding the dimension*/
-				mergedOIDs[i+1] = mergedOIDs[i]+skipCells*minIdx;			
-			}
-			/* excluded from the loop because i>=0 always true (infinite loop)*/
-			mergedOIDs[1] = mergedOIDs[0]+skipCells*minIdx;			
-		}
-		mergedOIDs[0] = dimOIDs_min;
-		for(i=minPos+1; i<BATcount(mergedBAT) ; i++)
-			if(mergedOIDs[i]%dimSkip != moduloRes)
-				mergedOIDs[i] += skipCells*minIdx;
-	}
-
-	return mergedBAT;
-}
-
-static BAT* mergeBATs(BAT *candsBAT, BAT* dimBAT, gdk_array *array, int dimNum) {
-	oid *candsOIDs, *dimOIDs, *mergedOIDs;
-	BAT* mergedBAT;
-
-	BUN i=0, j=0, k=0;
-	BUN minIdx =0 ;
-
-	candsOIDs = (oid*)Tloc(candsBAT, BUNfirst(candsBAT));
-	dimOIDs = (oid*)Tloc(dimBAT, BUNfirst(dimBAT));
-
-	//the oids in dimBAT have been computed assuming that 0 is allowed in all other dimensions
-	//is this really true? I can verify that using the first oid in candsBAT
-	//if a dimension after filtering is expressed again as a dimension the min might
-	//not be 0 but I do not care about it when it comes to the BAT. I will resolve tha at the end
-	//when projecting the cells where dimensions and BAT will be combined
-	for(j=0; j< (unsigned long)dimNum; j++) {
-		BUN skipCells = 0;
-		//find the min oid of this dimension in the the first qualifying oid
-		minIdx = oidToIdx(candsOIDs[0], j+1, 0, 1, array);
-		if(minIdx == 0)
-			continue;
-		//all oids in the dimOIDs should be updated to comply with the min oid of the dimension
-		skipCells = jumpSize(array, j+1);
-		for(i=0; i<BATcount(dimBAT); i++)
-			dimOIDs[i] += skipCells*minIdx;
-	}
-	//adapt the candidates BAT to reflect the minimum value for the new dimension
-	minIdx = oidToIdx(dimOIDs[0], dimNum, 0, 1,  array);
-	if(minIdx > 0) {
-		BUN skipCells = jumpSize(array, dimNum);
-		for(i=0; i<BATcount(candsBAT); i++)
-			candsOIDs[i] += skipCells*minIdx;
-	}
-
-	//finaly merge the two BATs
-	if(!(mergedBAT = BATnew(TYPE_void, TYPE_oid, BATcount(candsBAT)+BATcount(dimBAT), TRANSIENT)))
-		return NULL;
-	mergedOIDs = (oid*)Tloc(mergedBAT, BUNfirst(mergedBAT));
-	for(i=0, j=0; i<BATcount(candsBAT) && j<BATcount(dimBAT);) {
-		if(candsOIDs[i] < dimOIDs[j]) {
-			mergedOIDs[k] = candsOIDs[i];
-			i++;
-		} else if(candsOIDs[i] > dimOIDs[j]) {
-			mergedOIDs[k] = dimOIDs[j];
-			j++;
-		} else {
-			mergedOIDs[k] = candsOIDs[i];
-			i++;
-			j++;
-		}
-		k++;
-
-		if(i == BATcount(candsBAT)) {
-			for(; j<BATcount(dimBAT); j++, k++)
-				mergedOIDs[k] = dimOIDs[j];
-		}
-
-		if(j == BATcount(dimBAT)) {
-			for(; i<BATcount(dimBAT); i++, k++)
-				mergedOIDs[k] = candsOIDs[i];
-		}
-	}
-
-	BATseqbase(mergedBAT, 0);
-	BATsetcount(mergedBAT, k);
-	BATderiveProps(mergedBAT, FALSE);
-
-	return mergedBAT;
-}
-
-static bool updateCandidateResults(gdk_array* array, 
-									gdk_array** dimCands_out, BAT** candidatesBAT_out, 
-									gdk_array *dimCands_in, BAT* candidatesBAT_in,
-									unsigned short dimNum, unsigned int min, unsigned int max) {
-	gdk_dimension *dimCand_out, *dimCand_in = dimCands_in->dims[dimNum];
-	
-	//the dimensions do not change
-	*dimCands_out = dimCands_in;
-
-	if(!dimCand_in) {
-		//the dimension is in the BAT
-		//express the results in BAT and merge
-		unsigned int i, j, skipCells;
-		oid *dimOIDs = NULL;
-		BAT *dimBAT = BATnew(TYPE_void, TYPE_oid, max-min+1, TRANSIENT);
-		if(!dimBAT) {
-			throw(MAL, "algebra.dimensionSubselect", "Prolbem creating new BAT");
-			return 0;
-		}
-		dimOIDs  = (oid*)Tloc(dimBAT, BUNfirst(dimBAT));
-		skipCells = jumpSize(array, dimNum);
-		i=0;
-		for(j=min; j<=max; j++) {
-			dimOIDs[i] = j*skipCells;
-			i++;
-		}
-		
-		BATsetcount(dimBAT, i);
-		BATseqbase(dimBAT, 0);
-		BATderiveProps(dimBAT, FALSE);    
-		
-		*candidatesBAT_out = joinBATs(candidatesBAT_in, dimBAT, array, dimNum);
-	
-		return 1;
-
-	}	
-
-	//update the range of the dimCand. It performs the operation on the pointer
-	//of the dimCand so there is no need to update the dimCands_out
-	//the result is immediately visible
-	dimCand_out = updateCandidateDimensionRange(dimCand_in, min, max);
-	if(!dimCand_out) {
-		//cannot produce candidate. there are non-overlapping ranges
-		return 0;
-	}
-
-	//the candidatesBAT does not change
-	*candidatesBAT_out = candidatesBAT_in;
-
-	return 1;	
-}
-
-str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, const bat* oidCands, 
+str ALGdimensionSubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, 
 							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
+	gdk_dimension *dimCand = NULL;
+	gdk_array *dimCands_in = NULL;
 
-	gdk_array *dimCands_in = NULL, *dimCands_out = NULL;
-	BAT *candidatesBAT_in = NULL, *candidatesBAT_out = NULL;
-
+	oid qualifyingIdx_min, qualifyingIdx_max;
 	int type;
 	const void* nil;
 
-	readCands(&dimCands_in, &candidatesBAT_in, dimCands, oidCands, array);
-	
+	if(dimCands) 
+		dimCands_in = (gdk_array*)*dimCands;
+	else //all dimensions are candidates
+		dimCands_in = arrayCopy(array);
+	dimCand = dimCands_in->dims[dimension->dimNum];
+
+	*dimsRes = dimCands_in; //the same pointers will be used but the dimension over which the selection will be performed might change 
 	if(!dimCands_in) { //empty results
-		if(candidatesBAT_in)
-			BBPunfix(candidatesBAT_in->batCacheid);
-		return emptyCandidateResults(dimsRes, oidsRes);
+		arrayDelete(array);
+		return MAL_SUCCEED;
 	}
 
     type = dimension->type;
@@ -383,154 +140,90 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr
     if(ATOMcmp(type, low, high) == 0) { //point selection   
 		//find the idx of the value
 		oid qualifyingIdx = equalIdx(dimension, low); 
-		if(qualifyingIdx >= dimension->elsNum && !*anti) {
-			//remove all the dimensions, there will be no results in the output
-			arrayDelete(dimCands_in);
-			BBPunfix(candidatesBAT_in->batCacheid);
-			return emptyCandidateResults(dimsRes, oidsRes);
-		}  if(qualifyingIdx >= dimension->elsNum && *anti) {
-			//the whole dimension qualifies for the output
-			//we send out whatever came int
-			dimCands_out = dimCands_in;
-			candidatesBAT_out = candidatesBAT_in;
-		} else if(*anti) {
+		if(*anti) {
 			//two ranges qualify for the result [0, quaifyingIdx-1] and [qualifyingIdx+1, max]
-			unsigned int i=0, sz = 0;
-			gdk_dimension *dimCand_in;
-			unsigned int skipCells = jumpSize(array, dimension->dimNum);
-			oid* dimOIDs = NULL;
-			BAT *dimBAT = BATnew(TYPE_void, TYPE_oid, dimension->elsNum-1, TRANSIENT);
-			if(!dimBAT)
-				throw(MAL, "algebra.dimensionSubselect", "Proble creating new BAT");
-			dimOIDs = (oid*)Tloc(dimBAT, BUNfirst(dimBAT));
+			unsigned int elsNum =0;
+			unsigned int i=0;
+			unsigned int *idxs = NULL;
 
-			dimCand_in =dimCands_in->dims[dimension->dimNum];
+			if(dimCand->idxs) { 
+				idxs = GDKmalloc(sizeof(unsigned int)*dimCand->elsNum); //the qualifyingIdx might be already absent from the idxs
+				for(i=0; i<dimCand->elsNum; i++) {
+					if(dimCand->idxs[i] != qualifyingIdx) {
+						idxs[elsNum] = i;
+						elsNum++;
+					}
+				} 
 
-			if(dimCand_in && dimCand_in->elsNum != dimension->elsNum) {
-				/* the dimension has been filtered by a previous subselection and resulted in a new dimension
- 				* make sure to be inside the limits as might have been set by earlier filtering*/
-				for(i=0; i<dimension->elsNum; i++) {
-					if(i==qualifyingIdx || i < dimCand_in->min || i > dimCand_in->max)
-						continue;
-					dimOIDs[sz] = i*skipCells; //I assume all other dimensions are zero
-					sz++;
-				}
+				//release the previous idxs
+				GDKfree(dimCand->idxs);
 			} else {
-				/*No need to check for new limits. Create the oids*/
-				for(i=0; i<dimension->elsNum; i++) {
-					if(i==qualifyingIdx)
-						continue;
-					dimOIDs[sz] = i*skipCells; //I assume all other dimensions are zero
-					sz++;
-				}				
-			}
-			BATseqbase(dimBAT, 0);
-			BATsetcount(dimBAT, sz);
-			BATderiveProps(dimBAT, FALSE);
-
-			if(BATcount(candidatesBAT_in) == 0) //nothing in the received canddates BAT, send to the output the BAT just created
-				candidatesBAT_out = dimBAT;
-			else {
-				/* merge the received and the created candidates BAT */
-				candidatesBAT_out = mergeBATs(candidatesBAT_in, dimBAT, array, dimension->dimNum);
-				if(!candidatesBAT_out) {
-					arrayDelete(dimCands_in);
-					BBPunfix(candidatesBAT_in->batCacheid);
-					BBPunfix(dimBAT->batCacheid);
-					throw(MAL, "algebra.dimensionSubselect", "Problen when merging BATs");
+				idxs = GDKmalloc(sizeof(unsigned int)*dimCand->elsNum-1); 
+				for(i=dimCand->min ; i<=dimCand->max; i+=dimCand->step) { //we shoud be carefull to consider the limits because they might not be the default ones
+					if(i != qualifyingIdx) {
+						idxs[elsNum] = i;
+						elsNum++;
+					}
 				}
 			}
-			/*remove the dimension: We set the position to NULL because the position shows the dimNum*/
-			dimCands_out = dimCands_in;
-			dimCands_out->dims[dimension->dimNum] = NULL;
-/*
-			//fix the dimensions. Keep all in the output but put 0 els in the current one
-			dimCand_out = createDimension_oid(dimension->dimNum, dimension->initialElementsNum, 0, 0, 1);
-			dimCand_out->elementsNum =0;
-			//replace the dimension with the new one
-			dimCands_out = cells_replace_dimension(dimCands_in, dimCand_out);
-*/
-			if(BATcount(candidatesBAT_out) == 0) { //nothing in the output
+
+			//store the new idxs
+			dimCand->elsNum = elsNum;
+			dimCand->idxs = idxs;
+			//upadte the min max if needed
+			dimCand->min = qualifyingIdx > dimCand->min ? qualifyingIdx : dimCand->min;
+			dimCand->max = qualifyingIdx < dimCand->max ? qualifyingIdx : dimCand->max;
+
+			if(elsNum == 0) { //empty result
 				arrayDelete(dimCands_in);
-				BBPunfix(candidatesBAT_in->batCacheid);
-				return emptyCandidateResults(dimsRes, oidsRes);
+				*dimsRes = NULL;
 			}
+
+			arrayDelete(array);
+			return MAL_SUCCEED;
+
 		} else { //a single element qualifies for the result
-			if(!updateCandidateResults(array, &dimCands_out, &candidatesBAT_out, dimCands_in, candidatesBAT_in, dimension->dimNum, qualifyingIdx, qualifyingIdx)) {
-				//remove all the dimensions, there will be no results in the output
-				arrayDelete(dimCands_in);
-				BBPunfix(candidatesBAT_in->batCacheid);
-				return emptyCandidateResults(dimsRes, oidsRes);
-			}
+			qualifyingIdx_min = qualifyingIdx; 
+			qualifyingIdx_max = qualifyingIdx; 	
 		}
 	} else if(ATOMcmp(type, low, nil) == 0) { //no lower bound
-		oid qualifyingIdx_min = 0; 
-		oid qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
-	
-		if(qualifyingIdx_max >= dimension->elsNum) {
-			arrayDelete(dimCands_in);
-			BBPunfix(candidatesBAT_in->batCacheid);
-			return emptyCandidateResults(dimsRes, oidsRes);
-		} else {
-			if(!updateCandidateResults(array, &dimCands_out, &candidatesBAT_out, dimCands_in, candidatesBAT_in, dimension->dimNum, qualifyingIdx_min, qualifyingIdx_max)) {
-				//remove all the dimensions, there will be no results in the output
-				arrayDelete(dimCands_in);
-				BBPunfix(candidatesBAT_in->batCacheid);
-				return emptyCandidateResults(dimsRes, oidsRes);
-			}
-		} 
+		qualifyingIdx_min = 0; 
+		qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
 	} else if(ATOMcmp(type, high, nil) == 0) { //no upper bound
-		oid qualifyingIdx_min = lowerIdx(dimension, low, *li); 
-		oid qualifyingIdx_max = dimension->elsNum-1;
-
-		if(qualifyingIdx_min >= dimension->elsNum) {
-			arrayDelete(dimCands_in);
-			BBPunfix(candidatesBAT_in->batCacheid);
-			return emptyCandidateResults(dimsRes, oidsRes);
-		} else {
-			if(!updateCandidateResults(array, &dimCands_out, &candidatesBAT_out, dimCands_in, candidatesBAT_in, dimension->dimNum, qualifyingIdx_min, qualifyingIdx_max)) {
-				//remove all the dimensions, there will be no results in the output
-				arrayDelete(dimCands_in);
-				BBPunfix(candidatesBAT_in->batCacheid);
-				return emptyCandidateResults(dimsRes, oidsRes);
-			}
-		} 
+		qualifyingIdx_min = lowerIdx(dimension, low, *li); 
+		qualifyingIdx_max = dimension->elsNum-1;
 	} else if(ATOMcmp(type, low, nil) != 0 && ATOMcmp(type, high, nil) != 0) {
-		oid qualifyingIdx_min = lowerIdx(dimension, low, *li); 
-		oid qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
-
-		if(qualifyingIdx_max >= dimension->elsNum || qualifyingIdx_min >= dimension->elsNum) {
-			arrayDelete(dimCands_in);
-			BBPunfix(candidatesBAT_in->batCacheid);
-			return emptyCandidateResults(dimsRes, oidsRes);
-		} else {
-			if(!updateCandidateResults(array, &dimCands_out, &candidatesBAT_out, dimCands_in, candidatesBAT_in, dimension->dimNum, qualifyingIdx_min, qualifyingIdx_max)) {
-				//remove all the dimensions, there will be no results in the output
-				arrayDelete(dimCands_in);
-				BBPunfix(candidatesBAT_in->batCacheid);
-				return emptyCandidateResults(dimsRes, oidsRes);
-			}
-		} 
+		qualifyingIdx_min = lowerIdx(dimension, low, *li); 
+		qualifyingIdx_max = greaterIdx(dimension, high, *hi); 
 	} else {
-		//both values are NULL. Empty result
-		return emptyCandidateResults(dimsRes, oidsRes);
+		arrayDelete(dimCands_in);
+		*dimsRes = NULL;
+		arrayDelete(array);
+		return MAL_SUCCEED;
 	}
 
-	if(oidCands && candidatesBAT_in != candidatesBAT_out) //there was a candidatesBAT in the input that is not sent in the output
-		BBPunfix(candidatesBAT_in->batCacheid);
+	//Now that the new range has been found update the results of the dimCand
+	if(dimCand->idxs) {
+		dimCand = updateDimCandIdxs(dimCand, qualifyingIdx_min, qualifyingIdx_max);
+	} else {
+		dimCand = updateDimCandRange(dimCand, qualifyingIdx_min, qualifyingIdx_max);
+	}	 
 
-	BBPkeepref(*oidsRes = candidatesBAT_out->batCacheid);
-	*dimsRes = dimCands_out;
+	if(dimCand->elsNum == 0) { //empty result
+		arrayDelete(dimCands_in);
+		*dimsRes = NULL;
+	}	
 
+	arrayDelete(array);
 	return MAL_SUCCEED;
 }
 
-str ALGdimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, 
+str ALGdimensionSubselect1(ptr *dimsRes, const ptr *dim, const ptr* dims, 
 							const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
-	return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, low, high, li, hi, anti);
+	return ALGdimensionSubselect2(dimsRes, dim, dims, NULL, low, high, li, hi, anti);
 }
 
-str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, const bat* oidCands, const void *val, const char **opp) {
+str ALGdimensionThetasubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const ptr *dimCands, const void *val, const char **opp) {
 	bit li = 0;
 	bit hi = 0;
 	bit anti = 0;
@@ -542,50 +235,50 @@ str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, cons
         /* "=" or "==" */
 		li = hi = 1;
 		anti = 0;
-        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
+        return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, val, nil, &li, &hi, &anti);
     }
     if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
         /* "!=" (equivalent to "<>") */ 
 		li = hi = anti = 1;
-        return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
+        return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, val, nil, &li, &hi, &anti);
     }
     if (op[0] == '<') { 
         if (op[1] == 0) {
             /* "<" */
 			li = hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, nil, val, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, nil, val, &li, &hi, &anti);
         }
         if (op[1] == '=' && op[2] == 0) {
             /* "<=" */
 			li = anti = 0;
 			hi = 1;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, nil, val, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, nil, val, &li, &hi, &anti);
         }
         if (op[1] == '>' && op[2] == 0) {
             /* "<>" (equivalent to "!=") */ 
 			li = hi = anti = 1;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, val, nil, &li, &hi, &anti);
         }
     }
     if (op[0] == '>') { 
         if (op[1] == 0) {
             /* ">" */
 			li = hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, val, nil, &li, &hi, &anti);
         }
         if (op[1] == '=' && op[2] == 0) {
             /* ">=" */
 			li = 1;
 			hi = anti = 0;
-            return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, dimCands, oidCands, val, nil, &li, &hi, &anti);
+            return ALGdimensionSubselect2(dimsRes, dim, dims, dimCands, val, nil, &li, &hi, &anti);
         }
     }
 
     throw(MAL, "algebra.dimensionThetasubselect", "BATdimensionThetasubselect: unknown operator.\n");
 }
 
-str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const void *val, const char **op) {
-	return ALGdimensionThetasubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, val, op);
+str ALGdimensionThetasubselect1(ptr *dimsRes, const ptr *dim, const ptr* dims, const void *val, const char **op) {
+	return ALGdimensionThetasubselect2(dimsRes, dim, dims, NULL, val, op);
 }
 
 str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimCands, const bat *oidCands, const ptr *dim, const ptr *dims) {

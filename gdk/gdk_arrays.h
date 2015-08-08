@@ -32,6 +32,7 @@ typedef struct dimensionStruct {
 	unsigned int max;
 	unsigned int step; //initialy this is set to 1
 	unsigned int elsNum;
+	unsigned int *idxs; //if it cannot be expressed as a dimension store the idxs analytically
 } gdk_dimension;
 
 typedef struct arrayStruct {

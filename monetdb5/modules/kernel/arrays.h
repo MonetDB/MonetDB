@@ -18,13 +18,13 @@ algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const ptr *dimsCands,
 algebra_export str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *batCands, const bat *vals, const ptr *dims);
 algebra_export str ALGnonDimensionLeftfetchjoin2(bat* result, ptr* dimsRes, const bat *tids, const bat *vals, const ptr *dims);
 
-algebra_export str ALGdimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand, const bat* oidsCand,
+algebra_export str ALGdimensionSubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand,
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-algebra_export str ALGdimensionSubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, 
+algebra_export str ALGdimensionSubselect1(ptr *dimsRes, const ptr *dim, const ptr* dims, 
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 
-algebra_export str ALGdimensionThetasubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand, const bat* oidsCand, const void *val, const char **op);
-algebra_export str ALGdimensionThetasubselect1(ptr *dimsRes, bat* oidsRes, const ptr *dim, const ptr* dims, const void *val, const char **op);
+algebra_export str ALGdimensionThetasubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const ptr *dimsCand, const void *val, const char **op);
+algebra_export str ALGdimensionThetasubselect1(ptr *dimsRes, const ptr *dim, const ptr* dims, const void *val, const char **op);
 
 
 algebra_export str ALGnonDimensionSubselect2(ptr *dimsRes, bat* oidsRes, const ptr *dims, const bat* values, const ptr *dimsCand, const bat* oidsCand, 

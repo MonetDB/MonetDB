@@ -1315,7 +1315,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			
 			char nme[SMALLBUFSIZ];
             int uval = -1;
-			int outputsNum = 1; //I will use this when having an array
 
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
@@ -1447,26 +1446,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					case cmp_notequal: {
 						q = newStmt2(mb, algebraRef, cmd);
 
-//NOT NEEDED            	        if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
 						//check if the first argument has two outputs (in such a case it is related to the array processing)
 						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 	       	            uval = findVariable(mb, nme);
 				
 						if(uval >=0) {
-							//two outputs
-							setVarType(mb, getArg(q, 0), TYPE_ptr);
-							setVarUDFtype(mb, getArg(q, 0));
-							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //the dimension or the non-dimension
 							q = pushArgument(mb, q, uval); //all the dimensions
-/*NOT NEEDED						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
-							setVarType(mb, getArg(q, 0), TYPE_ptr);
-							setVarUDFtype(mb, getArg(q, 0));
-							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-							q = pushArgument(mb, q, l);
-*/
-							//two outputs
-							outputsNum = 2;
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1489,24 +1475,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					case cmp_gt:
 					case cmp_gte: {
 						q = newStmt2(mb, algebraRef, cmd);
-//NOT NEEDED						if(s->op1->type == st_dimension) { //selection over a dimension, two outputs
 						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 	       	            uval = findVariable(mb, nme);
 
 						if(uval >=0) {
-
-							setVarType(mb, getArg(q, 0), TYPE_ptr);
-							setVarUDFtype(mb, getArg(q, 0));
-							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 							q = pushArgument(mb, q, l); //all the dimensions
 							q = pushArgument(mb, q, uval); //the current dimension
-/*NOT NEEDED						} else if(s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t)) { //seelctio over non-dimensional column of an array
-							setVarType(mb, getArg(q, 0), TYPE_ptr);
-							setVarUDFtype(mb, getArg(q, 0));
-							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-							q = pushArgument(mb, q, l);
-*/						//two outputs
-						outputsNum = 2;
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1552,11 +1526,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (q) {
 				s->nr = getDestVar(q);
-		//		if(s->op1->type == st_dimension /*NOT NEEDED || (s->op1->type == st_join && s->op1->op2->type == st_bat && isArray(s->op1->op2->op4.cval->t))*/) { 
-				if(outputsNum == 2) {
-					/* rename second result */
-					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
-				}
 			} else
 				s->nr = newTmpVariable(mb, TYPE_any);
 		}
@@ -1896,6 +1865,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				s->nr = getDestVar(q);
 
+/*I do not have two returs anymore*/
 				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t)) {
 					/* left fetch join on a non-dimensional column and the tid
  					* I need to return also the pointer to dims or it will be lost afterwards */

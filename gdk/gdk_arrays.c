@@ -50,6 +50,7 @@ gdk_dimension* createDimension_##TPE(TPE min, TPE max, TPE step) { \
     dim->max = floor((max - min ) / step); \
 	dim->step = 1; \
 	dim->elsNum = dim->max +1; \
+	dim->idxs = NULL; \
 	return dim; \
 }
 
@@ -88,8 +89,11 @@ gdk_array* arrayCopy(gdk_array *array) {
 
 gdk_return arrayDelete(gdk_array *array) {
 	unsigned short i=0;
-	for(i=0; i<array->dimsNum; i++)
+	for(i=0; i<array->dimsNum; i++) {
+		if(array->dims[i]->idxs)
+			GDKfree(array->dims[i]->idxs);
 		GDKfree(array->dims[i]);
+	}
 	GDKfree(array->dims);
 	GDKfree(array);
 
