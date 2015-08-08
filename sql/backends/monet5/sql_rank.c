@@ -39,7 +39,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 		if (!b)
 			throw(SQL, "sql.rank", "Cannot access descriptor");
-		cnt = BATcount(b);
+		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_bit, cnt, b, "Cannot create bat");
 		rp = (bit*)Tloc(r, 0);
 		if (pci->argc > 2) {
@@ -100,7 +100,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 		if (!b)
 			throw(SQL, "sql.row_number", "Cannot access descriptor");
-		cnt = BATcount(b);
+		cnt = (int)BATcount(b);
 	 	voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
 		if (isaColumnType(getArgType(mb, pci, 2))) { 
@@ -149,7 +149,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 		if (!b)
 			throw(SQL, "sql.rank", "Cannot access descriptor");
-		cnt = BATcount(b);
+		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
 		if (isaColumnType(getArgType(mb, pci, 2))) { 
@@ -234,7 +234,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 		if (!b)
 			throw(SQL, "sql.rank", "Cannot access descriptor");
-		cnt = BATcount(b);
+		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
 		if (isaColumnType(getArgType(mb, pci, 2))) { 
