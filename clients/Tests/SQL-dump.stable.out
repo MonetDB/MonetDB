@@ -151,7 +151,6 @@ SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
 SYSTEM FUNCTION  sys.fitsattach
 SYSTEM FUNCTION  sys.fitsload
-SYSTEM FUNCTION  sys.flush_log
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext

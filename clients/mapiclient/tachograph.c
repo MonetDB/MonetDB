@@ -68,11 +68,6 @@
 static stream *conn = NULL;
 static char hostname[128];
 static char *prefix = "tachograph";
-#ifdef NATIVE_WIN32
-static char *dirpath= "cache\\";
-#else
-static char *dirpath= "cache/";
-#endif
 static char *dbname;
 static int beat = 5000;
 static int delay = 0; // ms
@@ -171,8 +166,6 @@ usageTachograph(void)
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -i | --interactive=<o | 1> show trace on stdout\n");
     fprintf(stderr, "  -o | --output=<webfile>\n");
-    fprintf(stderr, "  -c | --cache=<query pool location>\n");
-    fprintf(stderr, "  -q | --queries=<query pool capacity>\n");
     fprintf(stderr, "  -w | --wait=<delay time> in milliseconds\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
@@ -211,8 +204,6 @@ size_t txtlength=0;
 static int querypool = QUERYPOOL;
 int queryid= 0;
 
-static FILE *tachojson;
-static FILE *tachotrace;
 static FILE *tachomal;
 static FILE *tachostmt;
 
@@ -238,10 +229,6 @@ static void resetTachograph(void){
 	starttime = 0;
 	finishtime = 0;
 	duration =0;
-	fclose(tachojson);
-	tachojson = 0;
-	fclose(tachotrace);
-	tachotrace = 0;
 	fclose(tachomal);
 	tachomal = 0;
 	fclose(tachostmt);
@@ -501,78 +488,32 @@ showBar(int level, lng clk, char *stmt)
 	prevlevel = level;
 }
 
-/* create the progressbar JSON file for pickup.
- * Keep the file in the pool, together with its original trace
- */
-
 static void
 initFiles(void)
 {
 	char buf[BUFSIZ];
 
-	snprintf(buf,BUFSIZ,"%s%s_%d.json", dirpath, prefix, queryid);
-	tachojson= fopen(buf,"w");
-	if( tachojson == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s_%d_mal.csv",dirpath, prefix, queryid);
+	snprintf(buf,BUFSIZ,"%s_%d_mal.csv",prefix, queryid);
 	tachomal= fopen(buf,"w");
 	if( tachomal == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(-1);
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%d_stmt.csv", dirpath, prefix, queryid);
+	snprintf(buf,BUFSIZ,"%s_%d_stmt.csv", prefix, queryid);
 	tachostmt= fopen(buf,"w");
 	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
 		exit(-1);
 	}
-	snprintf(buf,BUFSIZ,"%s%s_%d.trace", dirpath, prefix, queryid);
-	tachotrace= fopen(buf,"w");
-	if( tachotrace == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-}
-
-static void
-progressBarInit(char *qry)
-{
-	char *s;
-	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
-	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
-	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachojson," \"tag\":%d,\n",currenttag);
-
-	fprintf(tachojson," \"query\":\"");
-	for(s = qry; *s; s++)
-	switch(*s){
-	case '\n': fputs("\\n", tachojson); break;
-	case '\r': fputs("\\r", tachojson); break;
-	case '\t': fputs("\\t", tachojson); break;
-	case '\b': fputs("\\b", tachojson); break;
-	default: fputc((int) *s, tachojson);
-	}
-	fprintf(tachojson,"\",\n");
-
-	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
-	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
-	fprintf(tachojson," \"instructions\":%d\n",malsize);
-	fprintf(tachojson,"},\n");
-	fflush(tachojson);
 }
 
 static void
 update(EventRecord *ev)
 {
 	int progress=0;
-	int i,j,k;
-	char *v, *s;
+	int i,j;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
-	char prereq[BUFSIZ]={0};
-	char number[BUFSIZ]={0};
  
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= MDB_PING ) {
@@ -649,7 +590,6 @@ update(EventRecord *ev)
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
 				printf("CACHE ID:%d\n%s\n",queryid, currentquery);
 			prevquery = currentquery;
-			progressBarInit(currentquery);
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
@@ -688,58 +628,7 @@ update(EventRecord *ev)
 				addSourcePair(v, malvariables[malretc]);
 			free(v);
 		}
-		fprintf(tachojson,"{\n");
-		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
-		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachojson,"\"status\": \"start\",\n");
-		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
-
-		fprintf(tachojson," \"stmt\":\"");
-		for(s = ev->stmt; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		fprintf(tachojson," \"beautystmt\":\"");
-		for(s = line; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		// collect all input producing PCs
-		fprintf(tachojson,"\"prereq\":[");
-		for( k=0, i=0; i < malvartop; i++){
-			// remove duplicates
-			for(j= ev->pc-1; j>=0;j --){
-				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					snprintf(number,BUFSIZ," %d ",j);
-					//avoid duplicate prerequisites
-					if( strstr(prereq,number) == 0)
-						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s %d ",(k?", ":""), j);
-					k++;
-					break;
-				}
-			}
-		}
-		fprintf(tachojson,"%s",prereq);
-		fprintf(tachojson,"]\n");
-		fprintf(tachojson,"},\n");
-		fflush(tachojson);
-
 		clearArguments();
-		return;
-	}
-	if( tachojson == NULL){
-		if( debug) fprintf(stderr,"No tachojson available\n");
 		return;
 	}
 	/* end the instruction box */
@@ -747,36 +636,6 @@ update(EventRecord *ev)
 			
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
-		fprintf(tachojson,"{\n");
-		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
-		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachojson,"\"status\": \"done\",\n");
-		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\":\"");
-		for(s = ev->stmt; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson,"\"beautystmt\":\"");
-		for(s = line; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\"\n");
-
-		fprintf(tachojson,"},\n");
-		fflush(tachojson);
-
 		events[ev->pc].state= FINISHED;
 
 		// collect MAL statistics
@@ -839,7 +698,6 @@ main(int argc, char **argv)
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
 	int done = 0;
-	FILE *trace = NULL;
 	EventRecord event;
 	char *s;
 
@@ -918,10 +776,8 @@ main(int argc, char **argv)
 			s= strrchr(prefix, (int) '/');
 #endif
 			if( s ){
-				dirpath= prefix;
 				prefix = strdup(prefix);
 				*(s+1) = 0;
-				prefix += s-dirpath;
 			} 
 			break;
 		case '?':
@@ -1003,21 +859,6 @@ main(int argc, char **argv)
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-#ifdef NATIVE_WIN32
-	if( _mkdir(dirpath) < 0 && errno != EEXIST){
-#else
-	if( mkdir(dirpath,0755)  < 0 && errno != EEXIST) {
-#endif
-		fprintf(stderr,"Failed to create '%s'\n",dirpath);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s.trace", dirpath, prefix);
-	// keep a trace of the events received
-	trace = fopen(buf,"w");
-	if( trace == NULL){
-		fprintf(stderr,"Could not create trace file\n");
-		exit(-1);
-	}
 
 	len = 0;
 	buflen = BUFSIZ;
@@ -1039,11 +880,7 @@ main(int argc, char **argv)
 			} else if( done == 0){
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", done, response);
-				if( trace && done >=0 && (capturing || event.state == MDB_SYSTEM)) 
-					fprintf(trace,"%s\n",response);
-				if( tachotrace && done >=0 && capturing) 
-					fprintf(tachotrace,"%s\n",response);
-				}
+			}
 			response = e + 1;
 		}
 		/* handle the case that the line is not yet completed */
