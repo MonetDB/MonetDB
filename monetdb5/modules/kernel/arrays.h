@@ -14,7 +14,7 @@
 
 //algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const bat* cands, const ptr *dim, const ptr *dims) ;
 //algebra_export str ALGnonDimensionLeftfetchjoin1(bat* result, const bat* cands, const bat *vals, const ptr *dims);
-algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *batCands, const ptr *dim, const ptr *dims) ;
+algebra_export str ALGdimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const ptr *dim, const ptr *dims) ;
 algebra_export str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *batCands, const bat *vals, const ptr *dims);
 algebra_export str ALGnonDimensionLeftfetchjoin2(bat* result, ptr* dimsRes, const bat *tids, const bat *vals, const ptr *dims);
 

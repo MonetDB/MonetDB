@@ -36,7 +36,6 @@ static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gd
 		return oid/skipCells;
 	return oid%skipCells;
 }
-#endif
 
 /*UPDATED*/
 static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
@@ -78,6 +77,8 @@ static BUN* oidToIdx_bulk(oid* oidVals, int valsNum, int dimNum, int currentDimN
 
 	return oids;
 }
+
+#endif
 
 static gdk_dimension* updateDimCandRange(gdk_dimension *dimCand, unsigned int min, unsigned int max) {
 	dimCand->min = min > dimCand->min ? min : dimCand->min;
@@ -129,7 +130,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const 
 
 	*dimsRes = dimCands_in; //the same pointers will be used but the dimension over which the selection will be performed might change 
 	if(!dimCands_in) { //empty results
-		arrayDelete(array);
+		arrayDelete(array); //I am not gona use it later I can delete it
 		return MAL_SUCCEED;
 	}
 
@@ -176,10 +177,10 @@ str ALGdimensionSubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const 
 
 			if(elsNum == 0) { //empty result
 				arrayDelete(dimCands_in);
+				arrayDelete(array); //I am not gonna use it again I can delete it
 				*dimsRes = NULL;
 			}
 
-			arrayDelete(array);
 			return MAL_SUCCEED;
 
 		} else { //a single element qualifies for the result
@@ -211,10 +212,10 @@ str ALGdimensionSubselect2(ptr *dimsRes, const ptr *dim, const ptr* dims, const 
 
 	if(dimCand->elsNum == 0) { //empty result
 		arrayDelete(dimCands_in);
+		arrayDelete(array);
 		*dimsRes = NULL;
 	}	
 
-	arrayDelete(array);
 	return MAL_SUCCEED;
 }
 
@@ -281,72 +282,91 @@ str ALGdimensionThetasubselect1(ptr *dimsRes, const ptr *dim, const ptr* dims, c
 	return ALGdimensionThetasubselect2(dimsRes, dim, dims, NULL, val, op);
 }
 
-str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimCands, const bat *oidCands, const ptr *dim, const ptr *dims) {
+str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimCands, const ptr *dim, const ptr *dims) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
 	gdk_array *dimCands_in = (gdk_array*)*dimCands;
-	BAT *oidCandsBAT = NULL, *candsBAT = NULL, *resBAT = NULL;
+	gdk_dimension *dimCand = dimCands_in->dims[dimension->dimNum];
+
+	BAT *resBAT = NULL;
 	BUN resSize = 0;
 
+	if(!dimCands_in) { //empty
+		if(!(resBAT = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT)))
+			throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
+	} else {
+		unsigned short i=0;
+
+		unsigned int elsR = 1;
+		unsigned int grpR = 1;
+
+		for(i=0; i<dimension->dimNum; i++)
+			elsR *= dimCands_in->dims[i]->elsNum;
+		for(i=dimension->dimNum+1 ; i<array->dimsNum; i++)
+			grpR *= dimCands_in->dims[i]->elsNum;
+
+		resSize = dimCand->elsNum*elsR*grpR;
+	
 #define computeValues(TPE) \
 do { \
 	TPE min = *(TPE*)dimension->min; \
 	TPE step = *(TPE*)dimension->step; \
 	TPE *vals; \
-	oid *oids; \
-	BUN *idxs; \
-	BUN i; \
+\
+	unsigned int i=0, elsRi=0, grpRi = 0; \
 \
 	if(!(resBAT = BATnew(TYPE_void, TYPE_##TPE, resSize, TRANSIENT))) \
-        throw(MAL, "algebra.dimensionLeftfetchjoin", "Problem allocating new BAT"); \
+    	    throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT"); \
 	vals = (TPE*)Tloc(resBAT, BUNfirst(resBAT)); \
-	oids = (oid*)Tloc(candsBAT, BUNfirst(candsBAT)); \
 \
-	idxs = oidToIdx_bulk(oids, resSize, dimension->dimNum, 0, 1, array); \
-	for(i=0; i<resSize; i++) { \
-		*vals++ = min +idxs[i]*step; \
-    } \
+	if(dimCand->idxs) { \
+		/* iterate over the idxs and use each one as many times as defined by elsR */ \
+		/* repeat the procedure as many times as defined my grpR */ \
+		for(grpRi=0; grpRi<grpR; grpRi++)\
+			for(i=0; i<dimCand->elsNum; i++) \
+				for(elsRi=0; elsRi<elsR; elsRi++) \
+					*vals++ = min + dimCand->idxs[i]*step; \
+	} else { \
+		/* get the elements in the range and use each one as many times as defined by elsR */ \
+		/* repeat the procedure as many times as defined my grpR */ \
+		for(grpRi=0; grpRi<grpR; grpRi++)\
+			for(i=dimCand->min; i<dimCand->max; i+=dimCand->step) \
+				for(elsRi=0; elsRi<elsR; elsRi++) \
+					*vals++ = min + i*step; \
+	}\
 } while(0)
 
 
-	if ((oidCandsBAT = BATdescriptor(*oidCands)) == NULL) {
-        throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
-    }
-	
-//TODO: Find a more clever way to do this without the need to project the cells. There is afunction qualifyingOIDS. Check if it is suitable
-	//create the oids using the candidates
-	candsBAT = projectCells(dimCands_in, oidCandsBAT, array);	
-	resSize = BATcount(candsBAT);
-
-	/*for each oid in the candsBAT find the real value of the dimension */
- 	switch(dimension->type) { \
-        case TYPE_bte: \
-			computeValues(bte);
-            break;
-        case TYPE_sht: 
-   			computeValues(sht);
-        	break;
-        case TYPE_int:
-   			computeValues(int);
-        	break;
-        case TYPE_wrd:
-   			computeValues(wrd);
-        	break;
-        case TYPE_oid:
-   			computeValues(oid);
-        	break;
-        case TYPE_lng:
-   			computeValues(lng);
-    	    break;
-        case TYPE_dbl:
-   			computeValues(dbl);
-	        break;
-        case TYPE_flt:
-   			computeValues(flt);
-   	    	break;
-		default:
-			throw(MAL, "algebra.dimensionLeftfetchjoin", "Dimension type not supported\n");
-    }
+		/*for each oid in the candsBAT find the real value of the dimension */
+ 		switch(dimension->type) { \
+    	    case TYPE_bte: \
+				computeValues(bte);
+    	        break;
+    	    case TYPE_sht: 
+   				computeValues(sht);
+    	    	break;
+    	    case TYPE_int:
+   				computeValues(int);
+    	    	break;
+    	    case TYPE_wrd:
+   				computeValues(wrd);
+    	    	break;
+    	    case TYPE_oid:
+   				computeValues(oid);
+    	    	break;
+    	    case TYPE_lng:
+   				computeValues(lng);
+    		    break;
+    	    case TYPE_dbl:
+   				computeValues(dbl);
+		        break;
+    	    case TYPE_flt:
+   				computeValues(flt);
+   		    	break;
+			default:
+				throw(MAL, "algebra.dimensionLeftfetchjoin", "Dimension type not supported\n");
+	    }
+	}
 
 	BATsetcount(resBAT, resSize);
 	BATseqbase(resBAT, 0);
@@ -355,11 +375,6 @@ do { \
 	*result = resBAT->batCacheid;
     BBPkeepref(*result);
 
-	/*should I release space or MonetDB does it for the input?*/
-	analyticDimensionDelete(dimension);
-	arrayDelete(array);
-	BBPunfix(candsBAT->batCacheid);
-	BBPunfix(oidCandsBAT->batCacheid);
     return MAL_SUCCEED;
 
 }
