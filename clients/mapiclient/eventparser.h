@@ -65,23 +65,35 @@ extern char *statenames[];
 
 // the break down of a profiler event message
 typedef struct  {
+	// system state
+	char *version;
+	char *release;
+	char *threads;
+	char *memory;
+	char *host;
+	int oid;
+	char *package;
+
+	// event state
 	int state;
-	char *blk;	// name of MAL block
+	char *function;	// name of MAL block
 	int pc;		// instruction counter in block
 	int tag;	// unique MAL block invocation tag
 	lng eventnr;// serial event number
 	int thread;	// worker thread involved
+	char *clk;	// string rep of clock
 	lng clkticks;
 	lng ticks;
-	lng memory;
-	lng tmpspace;	// size of temporary produced
+	lng rss;
+	lng size;	// size of temporary produced
 	lng inblock;
 	lng oublock;
 	lng majflt;
 	lng swaps;
 	lng csw;
 	char *stmt;	// MAL statement, cpu loads or commentary
-	char *fcn;
+	char *beauty;// MAL statement compressed
+	char *fcn;	// MAL operator
 	char *numa;
 } EventRecord;
 
@@ -99,6 +111,7 @@ extern char *monetdb_characteristics;
 
 extern void clearArguments(void);
 extern void eventdump(void);
-extern int eventparser(char *row, EventRecord *ev);
+extern void resetEventRecord(EventRecord *ev);
+extern int keyvalueparser(char *txt, EventRecord *ev);
 extern char *stripQuotes(const char *currentquery);
 #endif /*_EVENT_PARSER_*/

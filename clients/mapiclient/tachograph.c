@@ -788,8 +788,8 @@ update(EventRecord *ev)
 		fprintf(tachostmt,"%d\t",ev->thread);
 		fprintf(tachostmt,LLFMT"\t",ev->clkticks);
 		fprintf(tachostmt,LLFMT"\t",ev->ticks);
-		fprintf(tachostmt,LLFMT"\t",ev->memory);
-		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
+		fprintf(tachostmt,LLFMT"\t",ev->rss);
+		fprintf(tachostmt,LLFMT"\t",ev->size);
 		fprintf(tachostmt,LLFMT"\t",ev->inblock);
 		fprintf(tachostmt,LLFMT"\t",ev->oublock);
 
@@ -838,7 +838,7 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
-	int i = 0;
+	int done = 0;
 	FILE *trace = NULL;
 	EventRecord event;
 	char *s;
@@ -1033,14 +1033,17 @@ main(int argc, char **argv)
 			*e = 0;
 			if(debug)
 				printf("%s\n", response);
-			i= eventparser(response, &event);
-			update(&event);
-			if (debug  )
-				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			if( trace && i >=0 && (capturing || event.state == MDB_SYSTEM)) 
-				fprintf(trace,"%s\n",response);
-			if( tachotrace && i >=0 && capturing) 
-				fprintf(tachotrace,"%s\n",response);
+			done= keyvalueparser(response, &event);
+			if( done == 1){
+				update(&event);
+			} else if( done == 0){
+				if (debug  )
+					fprintf(stderr, "PARSE %d:%s\n", done, response);
+				if( trace && done >=0 && (capturing || event.state == MDB_SYSTEM)) 
+					fprintf(trace,"%s\n",response);
+				if( tachotrace && done >=0 && capturing) 
+					fprintf(tachotrace,"%s\n",response);
+				}
 			response = e + 1;
 		}
 		/* handle the case that the line is not yet completed */

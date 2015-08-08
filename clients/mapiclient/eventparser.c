@@ -209,41 +209,79 @@ parseArguments(char *call, int m)
 		eventdump();
 }
 
-int
-eventparser(char *row, EventRecord *ev)
+void
+resetEventRecord(EventRecord *ev)
 {
-	char *c, *cc, *v =0,*w;
+	if( ev->version) free(ev->version);
+	if( ev->release) free(ev->release);
+	if( ev->memory) free(ev->memory);
+	if( ev->threads) free(ev->threads);
+	if( ev->host) free(ev->host);
+	if( ev->package) free(ev->package);
+
+	if( ev->function) free(ev->function);
+	if( ev->clk) free(ev->clk);
+	if( ev->stmt) free(ev->stmt);
+	if( ev->fcn) free(ev->fcn);
+	if( ev->numa) free(ev->numa);
+	memset( (char*) ev, 0, sizeof(EventRecord));
+}
+
+/* simple json key:value object parser for event record.
+ * each event pair on a single row, which is required for dealing with string values
+ * It avoids lots of escaped charactor recognition, simply take with mserver delivers
+ * Returns 1 if the closing bracket is found. 0 to continue, -1 upon error
+ */
+#define skipto(C) { while(*c && *c != C) c++; if (*c != C) return -1;}
+#define skipstr() { c= strrchr(c, (int) '"'); if (*c != '"') return -1;}
+int
+keyvalueparser(char *txt, EventRecord *ev)
+{
+	char *c, *key, *val;
 	struct tm stm;
 
-	malargc = 0;
-	malvartop = 0;
-	memset(malarguments, 0, sizeof(malarguments));
-	memset(malvariables, 0, sizeof(malvariables));
-	/* check basic validaty first */
-	if (row[0] =='#'){
+	c= txt;
+
+	if( *c == '{'){
+		resetEventRecord(ev);
+		malargc = 0;
+		malvartop = 0;
+		memset(malarguments, 0, sizeof(malarguments));
+		memset(malvariables, 0, sizeof(malvariables));
 		return 0;
 	}
-	if (row[0] != '[')
-		return -1;
-	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
-		return -1;
+	if( *c == '}')
+		return 1;
 
-	/* scan event record number */
-	c = row+1;
-	if (*c == 0)
-		return -2;
-	ev->eventnr = atoi(c + 1);
+	skipto('"');
+	key = ++c;
+	skipstr();
+	*c++ = 0;
+	skipto(':');
+	c++;
+	while( *c && isspace((int)*c)) c++;
+	if( *c == '"'){
+		val = ++c;
+		skipstr();
+		*c = 0;
+	} else val =c;
 
-	/* scan event time" */
-	c = strchr(c + 1, '"');
-	if (c) {
+	if( strstr(key,"version")) { ev->version= strdup(val); return 0;}
+	if( strstr(key,"release")) { ev->release= strdup(val); return 0;}
+	if( strstr(key,"host")) { ev->host= strdup(val); return 0;}
+	if( strstr(key,"memory")) { ev->memory= strdup(val); return 0;}
+	if( strstr(key,"threads")) { ev->threads= strdup(val); return 0;}
+	if( strstr(key,"oid")) { ev->oid= atoi(val); return 0;}
+	if( strstr(key,"package")) { ev->package= strdup(val); return 0;}
+
+	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
+	if( strstr(key,"time")){
 		/* convert time to epoch in seconds*/
-		cc =c;
+		ev->clk= strdup(val);
 		memset(&stm, 0, sizeof(struct tm));
-		c = strptime(c + 1, "%H:%M:%S", &stm);
+		c = strptime(val + 1, "%H:%M:%S", &stm);
 		ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-		if (c == 0)
-			return -3;
+		c=  strchr(val,(int)'.');
 		if (*c == '.') {
 			lng usec;
 			/* microseconds */
@@ -251,200 +289,45 @@ eventparser(char *row, EventRecord *ev)
 			assert(usec >= 0 && usec < 1000000);
 			ev->clkticks += usec;
 		}
-		c = strchr(c + 1, '"');
-		if (c == NULL)
-			return -3;
 		if (ev->clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
+			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, val);
 		}
-		c++;
-	} else
-		return -3;
-
-	/* skip pc tag */
-	{	// decode qry[pc]tag
-		char *nme = c;
-		c= strchr(c+1,'[');
-		if( c == 0)
-			return -4;
-		*c = 0;
-		ev->blk= strdup(nme);
-		if( ev->blk == NULL){
-			fprintf(stderr,"Could not allocate blk memory\n");
-			exit(-1);
-		}
-		*c = '[';
-		ev->pc = atoi(c+1);
-		c= strchr(c+1,']');
-		if ( c == 0)
-			return -4;
-		ev->tag = atoi(c+1);
+		return 0;
 	}
-	c = strchr(c+1, ',');
-	if (c == 0)
-		return -4;
-
-	/* scan thread */
-	ev->thread = atoi(c+1);
-
-	/* scan status */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -5;
-	if (strncmp(c + 1, "start", 5) == 0) {
-		ev->state = MDB_START;
-		c += 6;
-	} else if (strncmp(c + 1, "done", 4) == 0) {
-		ev->state = MDB_DONE;
-		c += 5;
-	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		ev->state = MDB_PING;
-		c += 5;
-	} else if (strncmp(c + 1, "system", 6) == 0) {
-		ev->state = MDB_SYSTEM;
-		c += 5;
-	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		ev->state = MDB_WAIT;
-		c += 5;
-	} else {
-		ev->state = 0;
-		c = strchr(c + 1, '"');
-		if (c == 0)
-			return -5;
+	if( strstr(key,"function")){ ev->function= strdup(val); return 0;}
+	if( strstr(key,"tag")){ ev->tag= atoi(val); return 0;}
+	if( strstr(key,"thread")){ ev->thread= atoi(val); return 0;}
+	if( strstr(key,"pc")){ ev->pc= atoi(val); return 0;}
+	if( strstr(key,"state")){
+		if( strstr(val,"start")) ev->state= MDB_START;
+		if( strstr(val,"done")) ev->state= MDB_DONE;
+		if( strstr(val,"ping")) ev->state= MDB_PING;
+		if( strstr(val,"wait")) ev->state= MDB_WAIT;
+		if( strstr(val,"system")) ev->state= MDB_SYSTEM;
+		return 0;
 	}
 
-
-	/* scan usec */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -6;
-	ev->ticks = strtoll(c + 1, NULL, 10);
-
-	/* scan rssMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -7;
-	ev->memory = strtoll(c + 1, NULL, 10);
-
-	/* scan tmpMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -8;
-	ev->tmpspace = strtoll(c + 1, NULL, 10);
-
-#ifdef NUMAPROFILING
-	for(; *c && *c !='"'; c++) ;
-	ev->numa = c+1;
-	for(c++; *c && *c !='"'; c++)
-		;
-	if (*c == 0)
-		return -1;
-	*c = 0;
-	ev->numa = strdup(numa);
-	if( ev->numa == NULL){
-		fprintf(stderr,"Could not allocate numa memory\n");
-		exit(-1);
-	}
-	*c = '"';
-#endif
-
-	/* scan inblock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -9;
-	ev->inblock = strtoll(c + 1, NULL, 10);
-
-	/* scan oublock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -10;
-	ev->oublock = strtoll(c + 1, NULL, 10);
-
-	/* scan majflt */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -11;
-	ev->majflt = strtoll(c + 1, NULL, 10);
-
-	/* scan swaps */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -12;
-	ev->swaps = strtoll(c + 1, NULL, 10);
-
-	/* scan context switches */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -13;
-	ev->csw = strtoll(c + 1, NULL, 10);
-
-	/* parse the MAL call, check basic validity */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -15;
-	c++;
-	ev->fcn = strdup(c);
-	if( ev->fcn == NULL){
-		fprintf(stderr,"Could not allocate fcn memory\n");
-		exit(-1);
-	}
-	ev->stmt = strdup(ev->fcn);
-	if( ev->stmt == NULL){
-		fprintf(stderr,"Could not allocate stmt memory\n");
-		exit(-1);
-	}
-	c= ev->fcn;
-	if( *c != '[')
-	{
-		v=c;
-		c = strstr(c + 1, ":= ");
+	if( strstr(key,"ticks")) { ev->ticks= atoi(val); return 0;}
+	if( strstr(key,"rss")) { ev->rss= atol(val); return 0;}
+	if( strstr(key,"size")) { ev->size= atol(val); return 0;}
+	if( strstr(key,"inblock")) { ev->inblock= atol(val); return 0;}
+	if( strstr(key,"oublock")) { ev->oublock= atol(val); return 0;}
+	if( strstr(key,"majflt")) { ev->majflt= atol(val); return 0;}
+	if( strstr(key,"swaps")) { ev->swaps= atol(val); return 0;}
+	if( strstr(key,"nvcsw")) { ev->csw= atol(val); return 0;}
+	if( strstr(key,"stmt")) { ev->stmt= strdup(val); 
+		c = ev->stmt;
+		parseArguments((*c ==')'?c++:c),-1);
+		malretc = malargc;
+		ev->fcn = strdup(val);
+		c = strchr(ev->fcn, (int) '(');
 		if (c) {
-			*c = 0;
-			parseArguments( (*v == '('? v++:v),-1);
-			malretc =malargc;
-			*c=':';
-			ev->fcn = c + 2;
-			/* find genuine function calls */
-			while (isspace((int) *ev->fcn) && *ev->fcn)
-				ev->fcn++;
-			if (strchr(ev->fcn, '.') == 0) 
-				ev->fcn = 0;
-		} 
-		if( ev->fcn){
-			v=  strchr(ev->fcn+1,';');
-			if ( v ) *v = 0;
+			parseArguments(c+1,1);
+			*c =0;
 		}
+		return 0;
 	}
-
-	if (ev->fcn && (v=strchr(ev->fcn, '('))){
-		*v = 0;
-		if( v)
-			parseArguments(v+1,1);
-	 } else { //assigment statements
-		v= ev->stmt;
-		v = strstr(ev->stmt, ":= ");
-		if( v)
-			parseArguments(v+3,1);
-	}
-	// remove some superflous elements
-	w = strrchr(ev->stmt, (int) ']');
-	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
-		*w = 0;
-	w = strrchr(ev->stmt, (int) '\t');
-	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
-		*w = 0;
-	w = strrchr(ev->stmt, (int) ',');
-	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
-		*w = 0;
-	w = strrchr(ev->stmt, (int) '"');
-	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
-		*w = 0;
-	if( ev->state == MDB_SYSTEM){
-		monetdb_characteristics = strdup(ev->stmt);
-		if( monetdb_characteristics == NULL){
-			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
-			exit(-1);
-		}
-	} 
+	if( strstr(key,"short")) { ev->beauty= strdup(val); return 0;}
 	return 0;
 }
+

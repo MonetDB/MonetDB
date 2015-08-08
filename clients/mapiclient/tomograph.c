@@ -1444,8 +1444,8 @@ update(char *line, EventRecord *ev)
 		box[idx].thread = ev->thread;
 		//lastclk[thread] = clkticks-starttime;
 		box[idx].clkend = box[idx].clkstart = ev->clkticks-starttime;
-		box[idx].memend = box[idx].memstart = ev->memory;
-		box[idx].footstart = box[idx].tmpspace = ev->tmpspace;
+		box[idx].memend = box[idx].memstart = ev->rss;
+		box[idx].footstart = box[idx].tmpspace = ev->size;
 		box[idx].inblock = ev->inblock;
 		box[idx].oublock = ev->oublock;
 		box[idx].majflt = ev->majflt;
@@ -1536,11 +1536,11 @@ update(char *line, EventRecord *ev)
 		box[idx].thread = ev->thread;
 		box[idx].clkstart = ev->clkticks? ev->clkticks:1;
 		box[idx].clkend = ev->clkticks;
-		box[idx].memstart = ev->memory;
-		box[idx].memend = ev->memory;
+		box[idx].memstart = ev->rss;
+		box[idx].memend = ev->rss;
 		box[idx].numa = ev->numa;
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
-		box[idx].footstart = ev->tmpspace;
+		box[idx].footstart = ev->size;
 		box[idx].stmt = ev->stmt;
 		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
@@ -1582,8 +1582,8 @@ update(char *line, EventRecord *ev)
 			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (ev->fcn?ev->fcn:""), ev->clkticks, (currentfunction?currentfunction:""), ev->thread,idx,topbox);
 		events++;
 		box[idx].clkend = ev->clkticks;
-		box[idx].memend = ev->memory;
-		box[idx].tmpspace = ev->tmpspace;
+		box[idx].memend = ev->rss;
+		box[idx].tmpspace = ev->size;
 		box[idx].ticks = ev->ticks;
 		box[idx].state = MDB_DONE;
 		box[idx].inblock = ev->inblock;
@@ -1821,8 +1821,9 @@ main(int argc, char **argv)
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = eventparser(response, &event);
-				update(response, &event);
+				i = keyvalueparser(response, &event);
+				if( i == 1)
+					update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
@@ -1909,8 +1910,9 @@ main(int argc, char **argv)
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = eventparser(response,&event);
-				update(response, &event);
+				i = keyvalueparser(response,&event);
+				if( i == 1)
+					update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;

@@ -29,7 +29,6 @@ static int jsonProfiling = TRUE;
 static str myname = 0;
 static oid user = 0;
 
-static void offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
 static void offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 static int initTrace(void);
@@ -54,8 +53,9 @@ static struct rusage prevUsage;
  * The JSON structures are sent to the file and upon request also to a listener.
  */
 
-#define MAXJSONEVENTS (1<<16) /* cut off large JSON traces */
-#define MAXPROFILECACHE 64
+#define MAXJSONEVENTS (1000000) /* cut off large JSON traces */
+#define MAXPROFILECACHE 100
+
 static struct{
 	int tag;
 	int cnt;	// number of events in this bucket
@@ -84,44 +84,6 @@ PROFclearcache(void)
 		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
 	} while (0);}
 
-static void
-offlineProfilerHeader(void)
-{
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
-
-	if (eventstream == NULL) 
-		return ;
-	if (jsonProfiling) 
-		return;
-
-	lognew();
-	logadd("# ");
-	logadd("event,\t");
-	logadd("time,\t");
-	logadd("pc,\t");
-	logadd("thread,\t");
-	logadd("state,\t");
-	logadd("usec,\t");
-	logadd("rssMB,\t");
-	logadd("tmpspace,\t");
-
-#ifdef NUMAprofiling
-		logadd("numa,\t");
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-	logadd("inblock,\t");
-	logadd("oublock,\t");
-	logadd("majflt,\t");
-	logadd("nswap,\t");
-	logadd("switch,\t");
-#endif
-	logadd("stmt,\t");
-	logadd("# name \n");
-	mnstr_printf(eventstream,"%s\n", logbuffer);
-	mnstr_flush(eventstream);
-}
-
 /*
  * Offline processing
  * The offline processing structure is the easiest. We merely have to
@@ -129,25 +91,6 @@ offlineProfilerHeader(void)
  * To avoid unnecessary locks we first build the event as a string
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
-
-static void logsend(char *logbuffer)
-{	int error=0;
-	int showsystem = 0;
-	if (eventstream) {
-		MT_lock_set(&mal_profileLock, "logsend");
-		if( eventcounter == 0){
-			offlineProfilerHeader();
-			showsystem++;
-		}
-		eventcounter++;
-		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
-		error= mnstr_flush(eventstream);
-		MT_lock_unset(&mal_profileLock, "logsend");
-		if( showsystem)
-			offlineProfilerEvent(0, 0, 0, 0, "system", monetdb_characteristics);
-		if ( error) stopProfiler();
-	}
-}
 
 static void logjson(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char *logbuffer)
 {	int error=0;
@@ -230,8 +173,6 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
-	if (offlineProfiling )
-		offlineProfilerEvent(mb, stk, pci, start,0,0);
 	if (jsonProfiling)
 		offlineProfilerEventJSON(mb, stk, pci, start,0,0);
 	if (cachedProfiling && !start )
@@ -240,124 +181,6 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 		profilerHeartbeatEvent("ping");
 	if ( !start && pci->token == ENDsymbol)
 		profilerHeartbeatEvent("ping");
-}
-
-/*
- * Unlike previous versions we issue a fixed record of performance information.
- */
-void
-offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char *alter, char *msg)
-{
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
-	char ctm[26];
-	time_t clk;
-	struct timeval clock;
-	str stmt, c;
-	char *tbuf;
-	char buf[BUFSIZ];
-	str stmtq;
-
-	if (eventstream == NULL)
-		return ;
-
-	if( start) // show when instruction was started
-		clock = pci->clock;
-	else 
-		gettimeofday(&clock, NULL);
-	clk = clock.tv_sec;
-
-	/* make basic profile event tuple  */
-	lognew();
-
-	/* without this cast, compilation on Windows fails with
-	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-	 */
-#ifdef HAVE_CTIME_R3
-	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
-#else
-#ifdef HAVE_CTIME_R
-	tbuf = ctime_r(&clk, ctm);
-#else
-	tbuf = ctime(&clk);
-#endif
-#endif
-	tbuf[19]=0;
-	logadd("\"%s.%06ld\",\t", tbuf+11, (long)clock.tv_usec);
-	if( alter){
-		logadd("\"user.%s[0]0\",\t",alter);
-	} else {
-		snprintf(buf, BUFSIZ, "%s.%s[%d]%d",
-		getModuleId(getInstrPtr(mb, 0)),
-		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
-		logadd("\"%s\",\t", buf);
-	}
-
-	logadd("%d,\t", THRgettid());
-	if( alter) {
-		logadd("\"%s\",\t",alter);
-		logadd("0,\t");
-	} else 
-	if( start){
-		logadd("\"start\",\t");
-		// determine the Estimated Time of Completion
-		if ( pci->calls){
-			logadd(LLFMT ",\t", pci->totticks/pci->calls);
-		} else{
-			logadd(LLFMT ",\t", pci->ticks);
-		}
-	} else {
-		logadd("\"done \",\t");
-		logadd(LLFMT ",\t", pci->ticks);
-	}
-	logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-	logadd(LLFMT ",\t", pci? pci->wbytes/1024/1024:0);
-
-#ifdef NUMAprofiling
-	if( alter){
-		logadd("\"\",\t");
-	} else {
-		logadd("\"");
-		for( i= pci->retc ; i < pci->argc; i++)
-		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
-			logadd("@%d", mb->var[getArg(pci,i)]->worker);
-		logadd("\",\t");
-	}
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-	getrusage(RUSAGE_SELF, &infoUsage);
-	logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-	logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-	logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-	logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-	logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
-	prevUsage = infoUsage;
-#else
-	logadd("0,\t0,\t0,\t0,\t0,\t");
-#endif
-
-	if ( msg){
-		logadd("\"%s\"",msg);
-	} else {
-		// TODO Obfusate instructions unless administrator calls for it.
-		
-		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
-		c = stmt;
-
-		while (c && *c && isspace((int)*c))
-			c++;
-		stmtq = mal_quote(c, strlen(c));
-		if (stmtq != NULL) {
-			logadd(" \"%s\"", stmtq);
-			GDKfree(stmtq);
-		} 
-		GDKfree(stmt);
-	}
-	
-	logadd("\t]\n"); // end marker
-	logsend(logbuffer);
 }
 
 /* JSON rendering method of performance data. Using the table header as tag, breaking the complex fields. Example:
@@ -413,10 +236,10 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 	logadd("\"tag\":%d,\n", stk->tag);
 
 	if( alter){
-		logadd("\"status\":\"%s\",\n",alter);
+		logadd("\"state\":\"%s\",\n",alter);
 	} else 
 	if( start){
-		logadd("\"status\":\"start\",\n");
+		logadd("\"state\":\"start\",\n");
 		// determine the Estimated Time of Completion
 		if ( pci->calls){
 			logadd("\"ticks\":"LLFMT",\n", pci->totticks/pci->calls);
@@ -424,7 +247,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 			logadd("\"ticks\":"LLFMT",\n", pci->ticks);
 		}
 	} else {
-		logadd("\"status\":\"done\",\n");
+		logadd("\"state\":\"done\",\n");
 		logadd("\"ticks\":"LLFMT",\n", pci->ticks);
 	}
 	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
@@ -1234,7 +1057,7 @@ void profilerHeartbeatEvent(char *alter)
 	if ( getCPULoad(cpuload) )
 		return;
 	
-	offlineProfilerEvent(0, 0, 0, 0, alter, cpuload);
+	offlineProfilerEventJSON(0, 0, 0, 0, alter, cpuload);
 }
 
 static MT_Id hbthread;

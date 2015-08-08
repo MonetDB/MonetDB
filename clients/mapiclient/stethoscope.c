@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
+#include "eventparser.h"
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -67,14 +68,57 @@
 static stream *conn = NULL;
 static char hostname[128];
 static char *basefilename = "stethoscope";
-static int debug = 0;
 static int beat = 50;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 
 /*
- * Parsing the argument list of a MAL call to obtain un-quoted string values
+ * Tuple level reformatting
  */
+
+static void
+renderEvent(EventRecord *ev){
+	if( ev->eventnr ==0){
+		printf("[ ");
+		printf("0,	");
+		printf("0,	");
+		printf("\"\",	" );
+		printf("0,	");
+		printf("\"system\",	"); 
+		printf("0,	");
+		printf("0,	");
+		printf("0,	");
+		printf("0,	");
+		printf("0,	");
+		printf("0,	");
+		printf("\"");
+		printf("version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ", 
+			ev->version, ev->release, ev->threads, ev->memory, ev->host, ev->oid, ev->package);
+		printf("\"	]\n");
+		return ;
+	}
+	printf("[ ");
+	printf(LLFMT",	", ev->eventnr);
+	printf("\"%s\",	", ev->clk);
+	printf("\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
+	printf("%d,	", ev->thread);
+	switch(ev->state){
+	case MDB_START: printf("\"start\",	"); break;
+	case MDB_DONE: printf("\"done \",	"); break;
+	case MDB_WAIT: printf("\"wait \",	"); break;
+	case MDB_PING: printf("\"ping \",	"); break;
+	case MDB_SYSTEM: printf("\"system\",	"); 
+	}
+	printf(LLFMT",	", ev->ticks);
+	printf(LLFMT",	", ev->rss);
+	printf(LLFMT",	", ev->size);
+	printf(LLFMT",	", ev->inblock);
+	printf(LLFMT",	", ev->oublock);
+	printf(LLFMT",	", ev->majflt);
+	printf(LLFMT",	", ev->swaps);
+	printf(LLFMT",	", ev->csw);
+	printf("\"%s\"	]\n", ev->stmt);
+}
 
 static void
 usageStethoscope(void)
@@ -118,8 +162,9 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
-	int line = 0;
+	int line = 0, done =0;
 	FILE *trace = NULL;
+	EventRecord *ev = malloc(sizeof(EventRecord));
 
 	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
@@ -133,6 +178,12 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ 0, 0, 0, 0 }
 	};
+
+	if( ev) memset((char*)ev,0, sizeof(EventRecord));
+	else {
+		fprintf(stderr,"could not allocate space\n");
+		exit(-1);
+	}
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
@@ -281,7 +332,12 @@ main(int argc, char **argv)
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			printf("%s\n", response);
+			//printf("%s\n", response);
+			done= keyvalueparser(response,ev);
+			if( done== 1){
+				renderEvent(ev);
+				resetEventRecord(ev);
+			}
 			if (++line % 200) {
 				line = 0;
 			}
