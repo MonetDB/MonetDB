@@ -46,10 +46,10 @@ createAnalyticDim(flt);
 #define createDim(TPE) \
 gdk_dimension* createDimension_##TPE(TPE min, TPE max, TPE step) { \
 	gdk_dimension *dim = GDKmalloc(sizeof(gdk_dimension)); \
-	dim->elsNum = floor((max - min )/ step)+1; \
 	dim->min = 0; \
-    dim->max = dim->elsNum; \
+    dim->max = floor((max - min ) / step); \
 	dim->step = 1; \
+	dim->elsNum = dim->max +1; \
 	return dim; \
 }
 
@@ -79,8 +79,9 @@ gdk_array* arrayCopy(gdk_array *array) {
 	gdk_array *array_copy = arrayNew(array->dimsNum);
 	if(!array_copy)
 		return NULL;
-	for(i=0; i<array_copy->dimsNum; i++)
-		array_copy[i] = array[i];
+	for(i=0; i<array_copy->dimsNum; i++) {
+		array_copy->dims[i] = createDimension_oid(array->dims[i]->min, array->dims[i]->max, array->dims[i]->step);
+	}
 
 	return array_copy;
 }
@@ -429,7 +430,7 @@ BAT* projectDimension(gdk_dimension *oidsDim, gdk_dimension *valuesDim) {
 #endif
             break;
         default:
-            fprintf(stderr, "createDimension_NEW: dimension type not handled\n");
+            fprintf(stderr, "projectDimension: dimension type not handled\n");
             return NULL;
     }
 

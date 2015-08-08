@@ -93,7 +93,7 @@ static str readCands(gdk_array** dimCands_res, BAT** oidCands_res, const ptr *di
 
 	//if there are no candidates then everything is a candidate
 	if(!dimCands && !oidCands) {
-		dimCands_in = array;
+		dimCands_in = arrayCopy(array);
 		//create an empy candidates BAT
 		 if((candidatesBAT_in = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL)
             throw(MAL, "algebra.subselect", GDK_EXCEPTION);
@@ -133,7 +133,7 @@ static gdk_dimension* updateCandidateDimensionRange(gdk_dimension *dim, unsigned
 	/*the biggest of the mins and the smallest of the maximums */
 	dim->min = dim->min > min ? dim->min : min;
 	dim->max = dim->max < max ? dim->max : max;
-
+	dim->elsNum = floor((dim->max - dim->min)/dim->step)+1;
 //TODO: Take care of cases were a dimension has step <>1 as a result of multiple selections on it
 	
 	//the dimensions that are merged should have the same order
@@ -311,6 +311,9 @@ static bool updateCandidateResults(gdk_array* array,
 									unsigned short dimNum, unsigned int min, unsigned int max) {
 	gdk_dimension *dimCand_out, *dimCand_in = dimCands_in->dims[dimNum];
 	
+	//the dimensions do not change
+	*dimCands_out = dimCands_in;
+
 	if(!dimCand_in) {
 		//the dimension is in the BAT
 		//express the results in BAT and merge
@@ -334,15 +337,14 @@ static bool updateCandidateResults(gdk_array* array,
 		BATderiveProps(dimBAT, FALSE);    
 		
 		*candidatesBAT_out = joinBATs(candidatesBAT_in, dimBAT, array, dimNum);
-
-		//the dimensions do not change
-		*dimCands_out = dimCands_in;
-
+	
 		return 1;
 
 	}	
 
-	//merge the dimension in the candidates with the result of this operation
+	//update the range of the dimCand. It performs the operation on the pointer
+	//of the dimCand so there is no need to update the dimCands_out
+	//the result is immediately visible
 	dimCand_out = updateCandidateDimensionRange(dimCand_in, min, max);
 	if(!dimCand_out) {
 		//cannot produce candidate. there are non-overlapping ranges
