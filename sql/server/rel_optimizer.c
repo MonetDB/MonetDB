@@ -4969,14 +4969,6 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			for (;n != NULL; n = n->next) 
 				nr += exp_mark_used(subrel, n->data);
 		}
-		/* rank operators have a second list of arguments */
-		if (e->r) {
-			list *l = e->r;
-			node *n = l->h;
-	
-			for (;n != NULL; n = n->next) 
-				nr += exp_mark_used(subrel, n->data);
-		}
 		break;
 	}
 	case e_cmp:
@@ -6869,7 +6861,7 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 		break;
 	case e_aggr:
 	case e_func: {
-		list *l = e->l, *nl = NULL, *r = e->r, *nr = NULL;
+		list *l = e->l, *nl = NULL;
 
 		if (!l) {
 			return e;
@@ -6878,19 +6870,10 @@ exp_rename_up(mvc *sql, sql_exp *e, list *aliases)
 			if (!nl)
 				return NULL;
 		}
-		if (e->r) {
-			nr = exps_rename_up(sql, r, aliases);
-			if (!nr)
-				return NULL;
-		}
 		if (e->type == e_func)
 			ne = exp_op(sql->sa, nl, e->f);
 		else 
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-		if (ne && nr) {
-			ne->card = CARD_AGGR;
-			ne->r = nr;
-		}
 		break;
 	}	
 	case e_atom:

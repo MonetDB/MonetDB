@@ -624,7 +624,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 	sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
 
 	fres->func = f;
-	if (IS_FUNC(f) || IS_UNION(f)) { /* not needed for PROC/FILT */
+	if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f)) { /* not needed for PROC/FILT */
 		unsigned int mscale = 0, mdigits = 0;
 
 		if (ops) for (tn = ops->h; tn; tn = tn->next) {
@@ -1120,6 +1120,21 @@ sql_create_func3(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *
 	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
 }
 
+static sql_func *
+sql_create_analytic(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+	if (tpe3)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_ANALYTIC, fix_scale);
+}
+
 sql_func *
 sql_create_func4(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
 {
@@ -1405,33 +1420,25 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, WRD);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, WRD);
 
-	sql_create_func(sa, "rank", "calc", "rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "dense_rank", "calc", "dense_rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "percent_rank", "calc", "precent_rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "cume_dist", "calc", "cume_dist_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "row_number", "calc", "mark_grp", ANY, NULL, INT, SCALE_NONE);
+	/* order based operators */
+	sql_create_analytic(sa, "diff", "sql", "diff", ANY, NULL, NULL, BIT, SCALE_NONE);
+	sql_create_analytic(sa, "diff", "sql", "diff", BIT, ANY,  NULL, BIT, SCALE_NONE);
 
-	sql_create_func3(sa, "rank", "calc", "rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, ANY, ANY, SCALE_NONE);
-	sql_create_func3(sa, "row_number", "calc", "mark_grp", ANY, OID, ANY, INT, SCALE_NONE);
+	sql_create_analytic(sa, "rank", "sql", "rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	sql_create_analytic(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	sql_create_analytic(sa, "row_number", "sql", "row_number", ANY, BIT, BIT, INT, SCALE_NONE);
 
-	sql_create_func4(sa, "rank", "calc", "rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "row_number", "calc", "mark_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-
-	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, INT, ANY, SCALE_NONE);
-	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, INT, ANY, SCALE_NONE);
-
-	sql_create_func3(sa, "lag", "calc", "lag_grp", ANY, OID, OID, ANY, SCALE_NONE);
-	sql_create_func3(sa, "lead", "calc", "lead_grp", ANY, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "lag", "calc", "lag_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "lead", "calc", "lead_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "percent_rank", "sql", "precent_rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	//sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "lag", "sql", "lag", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "lead", "sql", "lead", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "sum", "sql", "sum", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "min", "sql", "min", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "max", "sql", "max", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "avg", "sql", "avg", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, ANY, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);

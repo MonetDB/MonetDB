@@ -1564,58 +1564,6 @@ ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
 }
 
 str
-ALGmark_grp_1(bat *result, const bat *bid, const bat *gid)
-{
-	BAT *g, *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATmark_grp(b, g, NULL);
-	if (bn != NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(g->batCacheid);
-	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
-}
-
-str
-ALGmark_grp_2(bat *result, const bat *bid, const bat *gid, const oid *base)
-{
-	BAT *g, *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATmark_grp(b, g, base);
-	if (bn != NULL) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(g->batCacheid);
-	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
-}
-
-str
 ALGlike(bat *ret, const bat *bid, const str *k)
 {
 	BAT *b, *bn = NULL;
