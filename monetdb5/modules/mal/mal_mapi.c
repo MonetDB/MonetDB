@@ -111,6 +111,9 @@ doChallenge(void *data)
 	bstream *bs;
 	int len = 0;
 
+#ifdef _MSC_VER
+	srand((unsigned int) GDKusec());
+#endif
 	GDKfree(data);
 	if (buf == NULL || fdin == NULL || fdout == NULL){
 		if (fdin) {
@@ -647,7 +650,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	/* seed the randomiser such that our challenges aren't
 	 * predictable... */
-	srand((int)time(NULL));
+	srand((unsigned int) GDKusec());
 
 	SERVERannounce(server.sin_addr, port, usockfile);
 	if (usockfile)
