@@ -309,8 +309,9 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 		GDKfree(stmt);
 
 		// collect the input statements
-		prereq[0]=0;
-		len = 0;
+		prereq[0]='[';
+		prereq[1]=0;
+		len = 1;
 		comma=0;
 		for(i= pci->retc; i < pci->argc; i++){
 			for( j = pci->pc-1; j > 0; j--){
@@ -319,15 +320,38 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 					if( getArg(q,k) == getArg(pci,i))
 						break;
 				if( k < q->retc){
-					snprintf(prereq + len, BUFSIZ-len,"%c %d", (comma?',':'['), j);
+					snprintf(prereq + len, BUFSIZ-len,"%s%d", (comma?",":""), j);
 					len = strlen(prereq);
 					comma++;
 					break;
 				}
 			}
 		}
+		logadd("\"input\":%s]\n", prereq);
+		
+#ifdef MALARGUMENTDETAILS
+		// Also show details of the arguments for modelling
+		// Include the sizes later as well
+		prereq[0]=',';
+		prereq[1]=0;
+		len = 1;
+		comma=0;
+		for( j=0; j< pci->argc; j++){
+			int tpe = getVarType(mb, getArg(pci,j));
+			str tname = getTypeName(tpe);
+			if( isaBatType(tpe) ){
+				GDKfree(tname);
+				tname = getTypeName(getColumnType(tpe));
+				snprintf(prereq + len, BUFSIZ-len,"%s\":col[:%s]\"", (comma?",":"["), tname);
+			} else
+				snprintf(prereq + len, BUFSIZ-len,"%s:\"%s\"", (comma?",":"["), tname);
+			comma++;
+			len = strlen(prereq);
+			GDKfree(tname);
+		}
 		if( prereq[0])
-			logadd("\"input\":%s]\n", prereq);
+			logadd("\"types\":%s]\n", prereq);
+#endif
 	}
 	// collect all input producing PCs
 	logadd("}\n"); // end marker

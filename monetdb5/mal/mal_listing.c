@@ -470,11 +470,9 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 		for (i = 0; i < p->retc; i++) {
 			nme = shortRenderingTerm(mb, stk, p,i);
-			snprintf(t,(len-(t-base)), "%s%s", (i?",":" "), nme);
+			snprintf(t,(len-(t-base)), "%s%s", (i?",":""), nme);
 			GDKfree(nme);
 			advance(t,base,len);
-			if (i < p->retc - 1)
-				*t++ = ',';
 		}
 		if (p->retc > 1)
 			*t++ = ')';
