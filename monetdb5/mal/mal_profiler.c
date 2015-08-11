@@ -232,8 +232,8 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 		logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	}
 
-	logadd("\"pc\":%d,\n", getPC(mb,pci));
-	logadd("\"tag\":%d,\n", stk->tag);
+	logadd("\"pc\":%d,\n", mb?getPC(mb,pci):0);
+	logadd("\"tag\":%d,\n", stk?stk->tag:0);
 
 	if( alter){
 		logadd("\"state\":\"%s\",\n",alter);
@@ -255,6 +255,7 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 
 #ifdef NUMAprofiling
 		logadd("\"numa\":[");
+		if(mb)
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
 			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
@@ -278,7 +279,8 @@ offlineProfilerEventJSON(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, c
 
 	if ( msg){
 		logadd("\"msg\":\"%s\",",msg);
-	} else {
+	} else 
+	if( mb){
 		char prereq[BUFSIZ];
 		size_t len;
 		int i,j,k,comma;
@@ -613,10 +615,12 @@ _initTrace(void)
 {
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
+	// TODO split pc into its components fcn,pc,tag
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_str);
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
 	TRACE_id_rssMB = TRACEcreate("id", "rssMB", TYPE_lng);
+	// rename to size
 	TRACE_id_tmpspace = TRACEcreate("id", "tmpspace", TYPE_lng);
 	TRACE_id_inblock = TRACEcreate("id", "read", TYPE_lng);
 	TRACE_id_oublock = TRACEcreate("id", "write", TYPE_lng);

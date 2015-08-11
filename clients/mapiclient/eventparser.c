@@ -225,6 +225,7 @@ resetEventRecord(EventRecord *ev)
 	if( ev->fcn) free(ev->fcn);
 	if( ev->numa) free(ev->numa);
 	memset( (char*) ev, 0, sizeof(EventRecord));
+	clearArguments();
 }
 
 /* simple json key:value object parser for event record.
@@ -233,7 +234,7 @@ resetEventRecord(EventRecord *ev)
  * Returns 1 if the closing bracket is found. 0 to continue, -1 upon error
  */
 #define skipto(C) { while(*c && *c != C) c++; if (*c != C) return -1;}
-#define skipstr() { c= strrchr(c, (int) '"'); if (*c != '"') return -1;}
+#define skipstr() { while (*c && *c !='"') {if (*c =='\\') c++;c++;} if (*c != '"') return -1;}
 int
 keyvalueparser(char *txt, EventRecord *ev)
 {
@@ -315,11 +316,12 @@ keyvalueparser(char *txt, EventRecord *ev)
 	if( strstr(key,"majflt")) { ev->majflt= atol(val); return 0;}
 	if( strstr(key,"swaps")) { ev->swaps= atol(val); return 0;}
 	if( strstr(key,"nvcsw")) { ev->csw= atol(val); return 0;}
-	if( strstr(key,"stmt")) { ev->stmt= strdup(val); 
-		c = ev->stmt;
-		parseArguments((*c ==')'?c++:c),-1);
-		malretc = malargc;
+	if( strstr(key,"stmt")) { 
+		ev->stmt= strdup(val); 
 		ev->fcn = strdup(val);
+		c = ev->stmt;
+		parseArguments((*c =='('?c++:c),-1);
+		malretc = malargc;
 		c = strchr(ev->fcn, (int) '(');
 		if (c) {
 			parseArguments(c+1,1);
