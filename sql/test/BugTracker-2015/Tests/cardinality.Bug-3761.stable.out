@@ -29,8 +29,48 @@ Ready.
 # 16:23:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3180" "--port=33257"
 # 16:23:57 >  
 
-#SELECT NULL AS table_catalog, (SELECT s.name FROM sys.schemas s WHERE t.schema_id = s.id) AS table_schema FROM sys.tables t;
-% .L2,	.L3 # table_name
+#CREATE TABLE tbls (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN,
+#	"temporary"     SMALLINT
+#);
+#COPY 54 RECORDS INTO tbls FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	schemas	2000		10	true	0	0	0
+#2007	types	2000		10	true	0	0	0
+#2016	functions	2000		10	true	0	0	0
+#2027	args	2000		10	true	0	0	0
+#2036	sequences	2000		10	true	0	0	0
+#2046	dependencies	2000		10	true	0	0	0
+#2050	connections	2000		10	true	0	0	0
+#2059	_tables	2000		10	true	0	0	0
+#2068	_columns	2000		10	true	0	0	0
+#2079	keys	2000		10	true	0	0	0
+#2086	idxs	2000		10	true	0	0	0
+#2091	triggers	2000		10	true	0	0	0
+#2102	objects	2000		10	true	0	0	0
+#2107	_tables	2106		10	true	2	0	0
+[ 54	]
+#CREATE TABLE schms (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"authorization" INTEGER,
+#	"owner"         INTEGER,
+#	"system"        BOOLEAN
+#);
+#COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS '\t','\n','"';
+#2000	"sys"	2	3	true
+#2106	"tmp"	2	3	true
+#6821	"json"	3	3	true
+#7176	"bam"	3	3	true
+[ 4	]
+#SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t;
+% .L,	.L1 # table_name
 % table_catalog,	table_schema # name
 % char,	varchar # type
 % 0,	3 # length
@@ -88,8 +128,8 @@ Ready.
 [ NULL,	"bam"	]
 [ NULL,	"bam"	]
 [ NULL,	"sys"	]
-#SELECT (SELECT s.name FROM sys.schemas s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM sys.tables t;
-% .L3,	.L3 # table_name
+#SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t;
+% .L1,	.L1 # table_name
 % table_schema,	table_catalog # name
 % varchar,	char # type
 % 3,	0 # length
