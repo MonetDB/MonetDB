@@ -786,7 +786,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  BATcapacity(bn) + q - p + 1, BUN_NONE);
 				cnt++;
 			}
 			o++;
@@ -801,7 +801,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  BATcapacity(bn) + q - p + 1, BUN_NONE);
 				cnt++;
 			}
 			o++;
@@ -816,7 +816,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  BATcapacity(bn) + q - p + 1, BUN_NONE);
 				cnt++;
 			}
 			o++;
@@ -831,7 +831,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  BATcapacity(bn) + q - p + 1, BUN_NONE);
 				cnt++;
 			}
 			o++;
