@@ -65,6 +65,7 @@ lex.yy.c
 *.gem
 # java:
 *.jar
+java/target/classes/nl/cwi/monetdb/jdbc/MonetDriver.java.in
 # python:
 dist
 
