@@ -1,4 +1,4 @@
-import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil
+import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -88,11 +88,7 @@ def freeport():
 
 ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
-tmpdir = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'remotetest')
-if os.path.exists(tmpdir):
-    shutil.rmtree(tmpdir)
-if not os.path.exists(tmpdir):
-    os.makedirs(tmpdir)
+tmpdir = tempfile.mkdtemp()
 
 masterport = freeport()
 masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
@@ -202,3 +198,11 @@ for q in queries:
     # old way
     # c.execute(codecs.open(q, 'r', encoding='utf8').read())
     # print c.fetchall()
+
+
+for workerrec in workers:
+    workerrec['proc'].communicate()
+
+masterproc.communicate()
+
+shutil.rmtree(tmpdir)
