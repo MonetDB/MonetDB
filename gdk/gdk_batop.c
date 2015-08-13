@@ -103,7 +103,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
 			 * clever tricks to avoid copying:
-			 * - if b is empty, we just let is share the
+			 * - if b is empty, we just let it share the
                          *   string heap with n;
 			 * - otherwise, if b's string heap and n's
                          *   string heap are the same (i.e. shared),
