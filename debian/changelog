@@ -70,7 +70,7 @@ monetdb (11.21.1) unstable; urgency=low
   * java: Improved JDBC driver to not throw NullPointerException anymore
     when calling isNullable() or getPrecision() or getScale() or
     getColumnDisplaySize() or getSchemaName() or getTableName() or
-    getColumnClassName() on a ResultSet object.
+    getColumnClassName() on a ResultSetMetaData object.
 
  -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 6 Aug 2015 14:56:54 +0200
 

@@ -1063,7 +1063,7 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 - java: Improved JDBC driver to not throw NullPointerException anymore
   when calling isNullable() or getPrecision() or getScale() or
   getColumnDisplaySize() or getSchemaName() or getTableName() or
-  getColumnClassName() on a ResultSet object.
+  getColumnClassName() on a ResultSetMetaData object.
 
 * Tue Jul 28 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
 - sql: Added support for 128-bit integers (called HUGEINT) on platforms that
