@@ -1,0 +1,44 @@
+stdout of test 'outerjoin_project.Bug-3725` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 10:41:42 >  
+# 10:41:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30127" "--set" "mapi_usock=/var/tmp/mtest-5429/.s.monetdb.30127" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:41:42 >  
+
+# MonetDB 5 server v11.19.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30127/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5429/.s.monetdb.30127
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:41:42 >  
+# 10:41:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5429" "--port=30127"
+# 10:41:42 >  
+
+#start transaction;
+#create table a (a integer);
+#create table b (a integer);
+#insert into a values (1);
+[ 1	]
+#select * from a left join (select a, 20 from b) as x using (a);
+% .L1,	.L2 # table_name
+% a,	L2 # name
+% int,	tinyint # type
+% 1,	1 # length
+[ 1,	NULL	]
+#rollback;
+
+# 10:41:42 >  
+# 10:41:42 >  "Done."
+# 10:41:42 >  
+

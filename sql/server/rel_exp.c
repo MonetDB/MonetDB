@@ -13,6 +13,7 @@
 #include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
+#include "rel_distribute.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
@@ -173,6 +174,26 @@ exp_atom(sql_allocator *sa, atom *a)
 }
 
 sql_exp *
+exp_atom_max(sql_allocator *sa, sql_subtype *tpe) 
+{
+
+	if (tpe->type->localtype == TYPE_bte) {
+		return exp_atom_bte(sa, GDK_bte_max);
+	} else if (tpe->type->localtype == TYPE_sht) {
+		return exp_atom_sht(sa, GDK_sht_max);
+	} else if (tpe->type->localtype == TYPE_int) {
+		return exp_atom_int(sa, GDK_int_max);
+	} else if (tpe->type->localtype == TYPE_lng) {
+		return exp_atom_lng(sa, GDK_lng_max);
+#ifdef HAVE_HGE
+	} else if (tpe->type->localtype == TYPE_lng) {
+		return exp_atom_hge(sa, GDK_hge_max);
+#endif
+	}
+	return NULL;
+}
+
+sql_exp *
 exp_atom_bool(sql_allocator *sa, int b) 
 {
 	sql_subtype bt; 
@@ -182,6 +203,24 @@ exp_atom_bool(sql_allocator *sa, int b)
 		return exp_atom(sa, atom_bool(sa, &bt, TRUE ));
 	else
 		return exp_atom(sa, atom_bool(sa, &bt, FALSE ));
+}
+
+sql_exp *
+exp_atom_bte(sql_allocator *sa, bte i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "tinyint", 3, 0);
+	return exp_atom(sa, atom_int(sa, &it, i ));
+}
+
+sql_exp *
+exp_atom_sht(sql_allocator *sa, sht i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "smallint", 5, 0);
+	return exp_atom(sa, atom_int(sa, &it, i ));
 }
 
 sql_exp *
@@ -453,6 +492,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
 	rel = rel_optimizer(sql, rel);
+	rel = rel_distribute(sql, rel);
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;
@@ -620,6 +660,16 @@ int
 exp_cmp( sql_exp *e1, sql_exp *e2)
 {
 	return (e1 == e2)?0:-1;
+}
+
+int 
+exp_equal( sql_exp *e1, sql_exp *e2)
+{
+	if (e1 == e2)
+		return 0;
+	if (e1->rname && e2->rname && strcmp(e1->rname, e2->rname) == 0)
+		return strcmp(e1->name, e2->name);
+	return -1;
 }
 
 int 
@@ -1227,14 +1277,15 @@ exp_unsafe( sql_exp *e)
 	if (e->type != e_func && e->type != e_convert)
 		return 0;
 
-	if (e->type == e_func && e->card == CARD_AGGR)
-		return 1;
 	if (e->type == e_convert && e->l)
 		return exp_unsafe(e->l);
 	if (e->type == e_func && e->l) {
+		sql_subfunc *f = e->f;
 		list *args = e->l;
 		node *n;
 
+		if (IS_ANALYTIC(f->func))
+			return 1;
 		for(n = args->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -1600,5 +1651,40 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 	if (e->name)
 		exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));
 	return ne;
+}
+
+atom *
+exp_flatten(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		atom *v =  exp_value(e, sql->args, sql->argc);
+
+		if (v)
+			return atom_dup(sql->sa, v);
+	} else if (e->type == e_convert) {
+		atom *v = exp_flatten(sql, e->l); 
+
+		if (v && atom_cast(v, &e->tpe))
+			return v;
+		return NULL;
+	} else if (e->type == e_func) {
+		sql_subfunc *f = e->f;
+		list *l = e->l;
+		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
+
+		/* TODO handle date + x months */
+		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, l->h->data);
+			atom *l2 = exp_flatten(sql, l->h->next->data);
+			if (l1 && l2)
+				return atom_add(l1,l2);
+		} else if (strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+			atom *l1 = exp_flatten(sql, l->h->data);
+			atom *l2 = exp_flatten(sql, l->h->next->data);
+			if (l1 && l2)
+				return atom_sub(l1,l2);
+		}
+	}
+	return NULL;
 }
 

@@ -22,10 +22,8 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	bn1 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	bn2 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	if (bn1 == NULL || bn2 == NULL) {
-		if (bn1 != NULL)
-			BBPreclaim(bn1);
-		if (bn2 != NULL)
-			BBPreclaim(bn2);
+		BBPreclaim(bn1);
+		BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
 	BATseqbase(bn1, 0);
@@ -64,7 +62,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 {
 	BAT *bn1, *bn2, *t;
 
-	if (BATcross1(&bn1, &bn2, sl ? sl : l, sr ? sr : r) == GDK_FAIL)
+	if (BATcross1(&bn1, &bn2, sl ? sl : l, sr ? sr : r) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (sl) {
 		t = BATproject(bn1, sl);

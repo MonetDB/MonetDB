@@ -1,0 +1,46 @@
+stdout of test 'key_copy` in directory 'sql/test/copy` itself:
+
+
+# 18:36:17 >  
+# 18:36:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32293" "--set" "mapi_usock=/var/tmp/mtest-6766/.s.monetdb.32293" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/resultset/Linux-x86_64/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 18:36:17 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_copy', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32293/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6766/.s.monetdb.32293
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:36:17 >  
+# 18:36:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6766" "--port=32293"
+# 18:36:17 >  
+
+#create table cik1(i int, primary key(i));
+#create table cik2(i int, j int, primary key(i,j));
+#select * from cik1;
+% sys.cik1 # table_name
+% i # name
+% int # type
+% 1 # length
+#select * from cik2;
+% sys.cik2,	sys.cik2 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+#drop table cik1;
+#drop table cik2;
+
+# 18:36:17 >  
+# 18:36:17 >  "Done."
+# 18:36:17 >  
+

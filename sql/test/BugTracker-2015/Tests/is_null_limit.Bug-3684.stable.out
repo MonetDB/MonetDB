@@ -52,11 +52,10 @@ Ready.
 #      (Product_Name like ('%' || 'benches' || '%') escape '!' and
 #      (Month_Begin_Date is null or Month_Begin_Date <> date '2010-12-01'))
 #order by line_margin limit 68 offset 319;
-% .lineitem_denormalized_first1k # table_name
+% sys.lineitem_denormalized_first1k # table_name
 % line_margin # name
 % decimal # type
 % 15 # length
-[ 10.71	]
 [ 10.72	]
 [ 10.76	]
 [ 10.90	]
@@ -70,7 +69,6 @@ Ready.
 [ 11.10	]
 [ 11.10	]
 [ 11.18	]
-[ 11.28	]
 [ 11.28	]
 [ 11.30	]
 [ 11.30	]
@@ -124,6 +122,8 @@ Ready.
 [ 13.60	]
 [ 13.62	]
 [ 13.65	]
+[ 13.70	]
+[ 13.70	]
 #drop table lineitem_denormalized_first1k;
 
 # 13:22:52 >  

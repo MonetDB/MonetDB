@@ -48,7 +48,7 @@ Ready.
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint,	int,	varchar,	int,	int,	boolean # type
 % 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	1,	0,	1,	1,	5 # length
 
-# 11:29:28 >  
-# 11:29:28 >  "Done."
-# 11:29:28 >  
+# 10:35:10 >  
+# 10:35:10 >  "Done."
+# 10:35:10 >  
 

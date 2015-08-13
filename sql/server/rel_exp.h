@@ -39,7 +39,10 @@ extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subaggr *a, int distinc
 #define exp_aggr1(sa, e, a, d, n, c, hn) \
 	exp_aggr(sa, append(new_exp_list(sa), e), a, d, n, c, hn)
 extern sql_exp * exp_atom(sql_allocator *sa, atom *a);
+extern sql_exp * exp_atom_max(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_atom_bool(sql_allocator *sa, int b); 
+extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
+extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
 extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
 #ifdef HAVE_HGE
@@ -92,6 +95,7 @@ extern char *exp_find_rel_name(sql_exp *e);
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
+extern int exp_equal( sql_exp *e1, sql_exp *e2);
 extern int exp_refers( sql_exp *c, sql_exp *p);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
@@ -127,5 +131,6 @@ extern int exps_intern(list *exps);
 extern char *compare_func( comp_type t );
 extern int is_identity( sql_exp *e, sql_rel *r);
 
+extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
 #endif /* _REL_EXP_H_ */

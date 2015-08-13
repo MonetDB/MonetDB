@@ -28,13 +28,14 @@
 static str idCopy(Client cntxt, int len);
 static str strCopy(Client cntxt, int len);
 
-
+static str parseError(Client cntxt, str msg);
 
 /* Before a line is parsed we check for a request to echo it.
  * This command should be executed at the beginning of a parse
  * request and each time we encounter EOL.
 */
-void echoInput(Client cntxt)
+static void 
+echoInput(Client cntxt)
 {
 	if (cntxt->listing == 1) {
 		char *c = CURRENT(cntxt);
@@ -112,7 +113,7 @@ initParser(void)
 #undef isdigit
 #define isdigit(X)  ((X) >= '0' && (X) <= '9')
 
-int
+static int
 idLength(Client cntxt)
 {
 	str s, t;
@@ -169,18 +170,7 @@ idCopy(Client cntxt, int length)
 	return s;
 }
 
-int
-MALkeyword(Client cntxt, str kw, int length)
-{
-	skipSpace(cntxt);
-	if (MALlookahead(cntxt, kw, length)) {
-		advance(cntxt, length);
-		return 1;
-	}
-	return 0;
-}
-
-int
+static int
 MALlookahead(Client cntxt, str kw, int length)
 {
 	int i;
@@ -203,6 +193,18 @@ MALlookahead(Client cntxt, str kw, int length)
 	}
 	return 0;
 }
+
+static inline int
+MALkeyword(Client cntxt, str kw, int length)
+{
+	skipSpace(cntxt);
+	if (MALlookahead(cntxt, kw, length)) {
+		advance(cntxt, length);
+		return 1;
+	}
+	return 0;
+}
+
 /*
  * Keyphrase testing is limited to a few characters only
  * (check manually). To speed this up we use a pipelined and inline macros.
@@ -237,7 +239,7 @@ keyphrase2(Client cntxt, str kw)
  * We should provide the C-method to split strings and
  * concatenate them upon retrieval[todo]
 */
-int
+static int
 stringLength(Client cntxt)
 {
 	int l = 0;
@@ -248,18 +250,13 @@ stringLength(Client cntxt)
 
 	if (*s != '"')
 		return 0;
-	s++;
-	while (*s) {
+	for (s++;*s; l++, s++) {
 		if (quote) {
-			l++;
-			s++;
 			quote = 0;
 		} else {
 			if (*s == '"')
 				break;
 			quote = *s == '\\';
-			l++;
-			s++;
 		}
 	}
 	return l + 2;
@@ -276,10 +273,11 @@ strCopy(Client cntxt, int length)
 	int i;
 
 	i = length < 4 ? 4 : length;
-	s = GDKzalloc(i);
+	s = GDKmalloc(i);
 	if (s == 0)
 		return NULL;
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2));
+	s[length-2] = 0;
 	mal_unquote(s);
 	return s;
 }
@@ -289,7 +287,7 @@ strCopy(Client cntxt, int length)
  * A lookup table is considered, because it generally is
  * faster then a non-dense switch.
 */
-int
+static int
 operatorLength(Client cntxt)
 {
 	int l = 0;
@@ -305,7 +303,7 @@ operatorLength(Client cntxt)
 	return l;
 }
 
-str
+static str
 operatorCopy(Client cntxt, int length)
 {
 	return idCopy(cntxt,length);
@@ -316,7 +314,7 @@ operatorCopy(Client cntxt, int length)
  * which, ofcourse, is easy given the client buffer.
  * The remaining functions are self-explanatory.
 */
-str
+static str
 lastline(Client cntxt)
 {
 	str s = CURRENT(cntxt);
@@ -329,7 +327,7 @@ lastline(Client cntxt)
 	return s;
 }
 
-ssize_t
+static ssize_t
 position(Client cntxt)
 {
 	str s = lastline(cntxt);
@@ -355,7 +353,7 @@ skipToEnd(Client cntxt)
  * Aside from getting its length, we need an indication of its type.
  * The constant structure is initialized for later use.
  */
-int
+static int
 cstToken(Client cntxt, ValPtr cst)
 {
 	int i = 0;
@@ -682,7 +680,7 @@ parseTypeId(Client cntxt, int defaultType)
 	int i = TYPE_any, ht, tt, kh = 0, kt = 0;
 	char *s = CURRENT(cntxt);
 
-	if (strncmp(s, ":bat[", 5) == 0) {
+	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
 		/* parse :bat[:type,:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
@@ -715,12 +713,15 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
 	}
-	if ((strncmp(s, ":bat", 4) == 0 ||
-		 strncmp(s, ":BAT", 4) == 0) && !idCharacter[(int) s[4]]) {
+	if (s[0] == ':' && 
+	   ((s[1] == 'b' && s[2] == 'a' && s[3] == 't')  || 
+	    (s[1] == 'B' && s[2] == 'A' && s[3] == 'T')) && 
+	   !idCharacter[(int) s[4]]) {
 		advance(cntxt, 4);
 		return TYPE_bat;
 	}
-	if (strncmp(s, ":col", 4) == 0 && !idCharacter[(int) s[4]]) {
+	if (s[0] == ':' && s[1] == 'c' && s[2] == 'o' && s[3] == 'l' &&
+	   !idCharacter[(int) s[4]]) {
 		/* parse default for :col[:any] */
 		advance(cntxt, 4);
 		return newColumnType(TYPE_any);
@@ -1384,6 +1385,7 @@ parseCommandPattern(Client cntxt, int kind)
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
 	str modnme = NULL;
+	size_t l = 0;
 
 	curBlk = fcnHeader(cntxt, kind);
 	if (curBlk == NULL) 
@@ -1398,8 +1400,10 @@ parseCommandPattern(Client cntxt, int kind)
 		return (MalBlkPtr) parseError(cntxt, "<module> not defined\n");
 	modnme = modnme ? modnme : cntxt->nspace->name;
 
-	if (isModuleDefined(cntxt->nspace, putName(modnme, strlen(modnme))))
-		insertSymbol(findModule(cntxt->nspace, putName(modnme, strlen(modnme))), curPrg);
+	l = strlen(modnme);
+	modnme = putName(modnme, l);
+	if (isModuleDefined(cntxt->nspace, modnme))
+		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
 	else
 		return (MalBlkPtr) parseError(cntxt, "<module> not found\n");
 	trimMalBlk(curBlk);
@@ -1434,7 +1438,7 @@ parseCommandPattern(Client cntxt, int kind)
 		if (getModuleId(curInstr))
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr,
-				findModule(cntxt->nspace, putName(modnme, strlen(modnme))));
+				findModule(cntxt->nspace, modnme));
 		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, modnme, nme, TRUE);
 		curBlk->binding = nme;
 		if (cntxt->nspace->isAtomModule) {
@@ -2034,12 +2038,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
  * If no lookahead character is a used and the next character is a newline,
  * we should also copy the input.
  */
-str
+static str
 parseError(Client cntxt, str msg)
 {
 	Symbol curPrg;
 	MalBlkPtr curBlk;
-	char buf[10 * 1024];
+	char buf[1028];
 	char *s = buf, *t, *l = lastline(cntxt);
 	lng i;
 
@@ -2048,21 +2052,17 @@ parseError(Client cntxt, str msg)
 	if (curBlk)
 		curBlk->errors++;
 
-	/* accidental %s directives in the lastline can
-	   crash the vfsprintf later => escape them */
-	for (t = l; *t && *t != '\n'; t++) {
-		if (*t == '%')
-			*s++ = '%';
+	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
 		*s++ = *t;
 	}
 	*s++ = '\n';
 	*s = 0;
-	if (s != buf + 1 && strlen(buf) < 1024) {
+	if (s != buf + 1 && strlen(buf) < sizeof(buf) - 4) {
 		showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 		/* produce the position marker*/
 		s = buf;
 		i = position(cntxt) - 1;
-		for (; i > 0; i--) {
+		for (; i > 0 && s < buf+sizeof(buf)-4; i--) {
 			*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';
 		}
 		*s++ = '^';
@@ -2070,7 +2070,7 @@ parseError(Client cntxt, str msg)
 	}
 
 	if (msg && strlen(msg))
-		snprintf(s, 1020, "%s", msg);
+		snprintf(s, sizeof(buf)-(s-buf), "%s", msg);
 	skipToEnd(cntxt);
 	showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 	return 0;

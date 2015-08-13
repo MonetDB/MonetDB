@@ -2875,14 +2875,6 @@ command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
 address ALGleftjoin;
-command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
-address ALGmark_grp_2;
-comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequense of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The third argument (s) gives the base value for the new OID sequence of each group.
-
-command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:oid]):bat[:any_1,:oid] 
-address ALGmark_grp_1;
-comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequence of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The tail of g gives for each group the base value for the new OID sequence.
-
 command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
 comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
@@ -3194,6 +3186,18 @@ command batsql.dec_round(v:bat[:oid,:hge],r:hge):bat[:oid,:hge]
 address hge_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
+pattern batsql.dense_rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLdense_rank;
+comment return the densely ranked groups
+
+pattern batsql.diff{orderdependend}(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
+address SQLdiff;
+comment return true if cur != prev row
+
+pattern batsql.diff{orderdependend}(b:bat[:oid,:any_1]):bat[:oid,:bit] 
+address SQLdiff;
+comment return true if cur != prev row
+
 command batsql.dec_round(v:bat[:oid,:dbl],r:dbl):bat[:oid,:dbl] 
 address dbl_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -3230,6 +3234,14 @@ command batsql.round(v:bat[:oid,:hge],d:int,s:int,r:bte):bat[:oid,:hge]
 address hge_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
+pattern batsql.rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLrank;
+comment return the ranked groups
+
+pattern batsql.row_number{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLrow_number;
+comment return the row_numer-ed groups
+
 command batsql.round(v:bat[:oid,:dbl],r:bte):bat[:oid,:dbl] 
 address dbl_bat_round_wrap;
 comment round off the floating point v to r digits behind the dot (if r < 0, before the dot)
@@ -3257,6 +3269,10 @@ comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, befor
 command batsql.round(v:bat[:oid,:bte],d:int,s:int,r:bte):bat[:oid,:bte] 
 address bte_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
+
+command batgeom.Contains(a:wkb,px:bat[:oid,:dbl],py:bat[:oid,:dbl]):bat[:oid,:bit] 
+address wkbContains_point_bat;
+comment Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b
 
 command batgeom.point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]):bat[:oid,:wkb] 
 address wkbcreatepoint_bat;
@@ -29376,9 +29392,6 @@ command batcalc.dbl(v:bat[:oid,:hge],digits:int,scale:int):bat[:oid,:dbl]
 address bathge_num2dec_dbl;
 comment cast number to decimal(dbl) and check for overflow
 
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 command batcalc.dbl(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:dbl] 
 address batlng_dec2dec_dbl;
 comment cast decimal(lng) to decimal(dbl) and check for overflow
@@ -33253,9 +33266,6 @@ pattern batcalc.lsh_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:hge]):bat[:oid,:bte]
 address CMDbatLSH;
 comment Return B1 << B2, out of range second operand causes NIL value
 
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 pattern batcalc.mod_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatMOD;
 comment Return V % B with candidates list, divide by zero causes NIL value
@@ -36760,9 +36770,6 @@ pattern batcalc.or(b1:bat[:oid,:hge],b2:bat[:oid,:hge]):bat[:oid,:hge]
 address CMDbatOR;
 comment Return B1 OR B2
 
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd],nbits:int,b:bat[:oid,:any_1]):bat[:oid,:int] 
 address MKEYbulk_rotate_xor_hash;
 pattern batcalc.rsh_noerror(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
@@ -48605,7 +48612,7 @@ command color.color(s:str):color
 address CLRcolor;
 comment Converts string to color
 
-command color.#fromstr():color 
+command color.#fromstr():void 
 address color_fromstr;
 command color.green(c:color):int 
 address CLRgreen;
@@ -48647,7 +48654,7 @@ command color.str(s:color):str
 address CLRstr;
 comment Converts color to string 
 
-command color.#tostr():str 
+command color.#tostr():void 
 address color_tostr;
 command color.value(c:color):flt 
 address CLRvalue;
@@ -48685,13 +48692,13 @@ pattern daytime.>(v:daytime,w:daytime):bit
 address CMDvarGT;
 comment Equality of two daytimes
 
-command daytime.#fromstr():daytime 
+command daytime.#fromstr():void 
 address daytime_tz_fromstr;
 pattern daytime.isnil(v:daytime):bit 
 address CMDvarISNIL;
 comment Nil test for daytime value
 
-command daytime.#tostr():str 
+command daytime.#tostr():void 
 address daytime_tostr;
 pattern date.!=(v:date,w:date):bit 
 address CMDvarNE;
@@ -48721,13 +48728,13 @@ command date.date(s:date):date
 address MTIMEdate_date;
 comment Noop routine.
 
-command date.#fromstr():date 
+command date.#fromstr():void 
 address date_fromstr;
 pattern date.isnil(v:date):bit 
 address CMDvarISNIL;
 comment Nil test for date value
 
-command date.#tostr():str 
+command date.#tostr():void 
 address date_tostr;
 command factories.getDeparture():bat[:oid,:timestamp] 
 address FCTgetDeparture;
@@ -48994,6 +49001,10 @@ comment Returns the closure of the combinatorial boundary of this Geometry.
 command geom.ConvexHull(a:wkb):wkb 
 address wkbConvexHull;
 comment Returns a geometry that represents the convex hull of this geometry.
+
+command geom.Contains(a:wkb,x:dbl,y:dbl):bit 
+address wkbContains_point;
+comment Returns true if the Geometry a 'spatially contains' Geometry b
 
 command geom.Contains(a:wkb,b:wkb):bit 
 address wkbContains;
@@ -49283,7 +49294,7 @@ command inet.broadcast(X_1:inet):inet
 address INETbroadcast;
 comment Returns the broadcast address for network
 
-command inet.#cmp():int 
+command inet.#cmp():void 
 address INETcompare;
 command inet.#fromstr():void 
 address INETfromString;
@@ -49317,7 +49328,7 @@ command inet.new(s:str):inet
 address INETnew;
 comment Create an inet from a string literal
 
-command inet.#null():inet 
+command inet.#null():void 
 address INETnull;
 command inet.setmasklen(X_1:inet,X_2:int):inet 
 address INETsetmasklen;
@@ -49487,7 +49498,7 @@ command json.filter(name:json,pathexpr:str):json
 address JSONfilter;
 comment Filter all members of an object by a path expression, returning an array.Non-matching elements are skipped.
 
-command json.#fromstr():json 
+command json.#fromstr():void 
 address JSONfromString;
 comment Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise.
 
@@ -49569,7 +49580,7 @@ command json.text(j:json):str
 address JSONjson2text;
 comment Convert JSON values to their plain string equivalent.
 
-command json.#tostr():str 
+command json.#tostr():void 
 address JSONtoString;
 comment Convert JSON to its string equivalent. Dealing with escape characters
 
@@ -49965,19 +49976,19 @@ pattern mal.manifold(mod:str,fcn:str,a:any...):bat[:oid,:any]
 address MANIFOLDevaluate;
 pattern mal.multiplex(mod:str,fcn:str,a:any...):any... 
 address MANIFOLDremapMultiplex;
-command mbr.#cmp():int 
+command mbr.#cmp():void 
 address mbrCOMP;
-command mbr.#fromstr():mbr 
+command mbr.#fromstr():void 
 address mbrFROMSTR;
-command mbr.#hash():int 
+command mbr.#hash():void 
 address mbrHASH;
 command mbr.mbr(v:str):mbr 
 address mbrFromString;
-command mbr.#null():int 
+command mbr.#null():void 
 address mbrNULL;
 command mbr.#read():void 
 address mbrREAD;
-command mbr.#tostr():str 
+command mbr.#tostr():void 
 address mbrTOSTR;
 command mbr.#write():void 
 address mbrWRITE;
@@ -50021,7 +50032,7 @@ pattern mdb.getDefinition():bat[:oid,:str]
 address MDBgetDefinition;
 comment Returns a string representation of the current function 	with typing information attached
 
-pattern mdb.getStackTrace() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
+pattern mdb.getStackTrace() (X_1:bat[:oid,:int],X_2:bat[:oid,:str]) 
 address MDBStkTrace;
 pattern mdb.getStackFrame() (X_1:bat[:oid,:str],X_2:bat[:oid,:str]) 
 address MDBgetStackFrame;
@@ -50412,7 +50423,7 @@ address MTIMEdaytime1;
 comment default time with zeroed components
 
 command mtime.date_to_str(d:date,format:str):str 
-address MTIMEstrftime;
+address MTIMEdate_to_str;
 comment create a string from the date, using the specified format (see man strftime)
 
 command mtime.dayname(day:int):str 
@@ -50603,8 +50614,16 @@ command mtime.sql_seconds(t:timestamp):int
 address MTIMEtimestamp_sql_seconds;
 command mtime.seconds(t:timestamp):int 
 address MTIMEtimestamp_seconds;
+command mtime.str_to_timestamp(s:str,format:str):timestamp 
+address MTIMEstr_to_timestamp;
+comment create a timestamp from the string, using the specified format (see man strptime)
+
+command mtime.str_to_time(s:str,format:str):daytime 
+address MTIMEstr_to_time;
+comment create a time from the string, using the specified format (see man strptime)
+
 command mtime.str_to_date(s:str,format:str):date 
-address MTIMEstrptime;
+address MTIMEstr_to_date;
 comment create a date from the string, using the specified format (see man strptime)
 
 command mtime.start_dst(t:timezone):zrule 
@@ -50622,6 +50641,14 @@ comment extracts seconds (with fractional milliseconds) from daytime
 command mtime.seconds(d:daytime):int 
 address MTIMEdaytime_extract_seconds;
 comment extracts seconds from daytime
+
+command mtime.timestamp_to_str(d:timestamp,format:str):str 
+address MTIMEtimestamp_to_str;
+comment create a string from the time, using the specified format (see man strftime)
+
+command mtime.time_to_str(d:daytime,format:str):str 
+address MTIMEtime_to_str;
+comment create a string from the time, using the specified format (see man strftime)
 
 command mtime.time_synonyms(allow:bit):void 
 address MTIMEsynonyms;
@@ -51085,11 +51112,11 @@ pattern profiler.stop():void
 address CMDstopProfiler;
 comment Stop performance tracing
 
-command profiler.stethoscope(b:int):void 
+pattern profiler.stethoscope(b:int):void 
 address CMDstethoscope;
 comment Start stethoscope profiling with heart beat
 
-command profiler.tomograph(b:int):void 
+pattern profiler.tomograph(b:int):void 
 address CMDtomograph;
 comment Start tomograph profiler with heart beat
 
@@ -51328,25 +51355,15 @@ command sql.alpha(dec:dbl,theta:dbl):dbl
 address SQLcst_alpha_cst;
 comment Implementation of astronomy alpha function: expands the radius theta depending on the declination
 
-pattern sql.analyze(sch:str,tbl:str,col:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str,col:str):void 
 address sql_analyze;
 comment Update the database statistics table
 
-pattern sql.analyze(sch:str,tbl:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str,tbl:str):void 
 address sql_analyze;
-pattern sql.analyze(sch:str,sample:lng):void 
+pattern sql.analyze(minmax:int,sample:lng,sch:str):void 
 address sql_analyze;
-pattern sql.analyze(sample:lng):void 
-address sql_analyze;
-pattern sql.analyze(sch:str,tbl:str,col:str):void 
-address sql_analyze;
-comment Update the database statistics table
-
-pattern sql.analyze(sch:str,tbl:str):void 
-address sql_analyze;
-pattern sql.analyze(sch:str):void 
-address sql_analyze;
-pattern sql.analyze():void 
+pattern sql.analyze(minmax:int,sample:lng):void 
 address sql_analyze;
 pattern sql.argRecord(a:any...):str 
 address SQLargRecord;
@@ -51424,11 +51441,11 @@ pattern sql.current_time():daytime
 address SQLcurrent_daytime;
 comment Get the clients current daytime
 
-pattern sql.copyfrom(t:ptr,sep:str,rsep:str,ssep:str,ns:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
-address mvc_import_table_stdin;
-comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
-
-pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... 
+pattern sql.copy_rejects_clear():void 
+address COPYrejects_clear;
+pattern sql.copy_rejects() (rowid:bat[:oid,:lng],fldid:bat[:oid,:int],msg:bat[:oid,:str],inp:bat[:oid,:str]) 
+address COPYrejects;
+pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int,best:int):bat[:oid,:any]... 
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
 
@@ -51444,6 +51461,14 @@ pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd
 address mvc_clear_table_wrap;
 comment Clear table
 
+pattern sql.catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void 
+address SQLcatalog;
+comment a alter table add/del table catalog statement
+
+pattern sql.catalog(type:int,sname:str,tname:str,access:int):void 
+address SQLcatalog;
+comment a alter table access statement
+
 pattern sql.catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void 
 address SQLcatalog;
 comment a create index catalog statement
@@ -51456,9 +51481,13 @@ pattern sql.catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str
 address SQLcatalog;
 comment a user catalog statement
 
-pattern sql.catalog(type:int,grantee:str,role:str):void 
+pattern sql.catalog(type:int,grantee:str,role:str,grantor:int,admin:int):void 
 address SQLcatalog;
 comment a grant/revoke role statement
+
+pattern sql.catalog(type:int,sname:str,tname:str):void 
+address SQLcatalog;
+comment a catalog trigger statement
 
 pattern sql.catalog(type:int,sname:str,t:ptr,restart:lng):void 
 address SQLcatalog;
@@ -51492,13 +51521,17 @@ command sql.dec_round(v:hge,r:hge):hge
 address hge_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
-command sql.dense_rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
-address sql_dense_rank;
-comment return the densely ranked bat
-
-command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
-address sql_dense_rank_grp;
+pattern sql.dense_rank(b:any_1,p:bit,o:bit):int 
+address SQLdense_rank;
 comment return the densely ranked groups
+
+pattern sql.diff(p:bit,b:any_1):bit 
+address SQLdiff;
+comment return true if cur != prev row
+
+pattern sql.diff(b:any_1):bit 
+address SQLdiff;
+comment return true if cur != prev row
 
 pattern sql.drop_hash(sch:str,tbl:str):void 
 address SQLdrop_hash;
@@ -51580,10 +51613,6 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportValue{unsafe}(qtype:int,tname:str,name:str,typename:str,digits:int,scale:int,eclass:int,val:any_1,w:str):void 
-address mvc_export_value_wrap;
-comment export a single value onto the stream s
-
 pattern sql.exportOperation{unsafe}(w:str):void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
@@ -51604,6 +51633,14 @@ pattern sql.exportHead{unsafe}(s:streams,res_id:int):void
 address mvc_export_head_wrap;
 comment Export a result (in order) to stream s
 
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_export_table_wrap;
+comment Prepare a table result set for the COPY INTO stream
+
+pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_export_row_wrap;
+comment Prepare a table result set for the COPY INTO stream
+
 pattern sql.evalAlgebra(cmd:str,optimize:bit):void 
 address RAstatement;
 comment Compile and execute a single 'relational algebra' statement
@@ -51615,6 +51652,10 @@ comment Compile and execute a single sql statement (and optionaly send output on
 pattern sql.eval(cmd:str):void 
 address SQLstatement;
 comment Compile and execute a single sql statement
+
+command sql.flush_log():void 
+address SQLflush_log;
+comment flush the log now
 
 command sql.getVersion(clientid:int):lng 
 address mvc_getVersion;
@@ -51708,13 +51749,13 @@ command sql.round(v:hge,d:int,s:int,r:bte):hge
 address hge_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-command sql.rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
-address sql_rank;
-comment return the rank bat
-
-command sql.rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
-address sql_rank_grp;
+pattern sql.rank(b:any_1,p:bit,o:bit):int 
+address SQLrank;
 comment return the ranked groups
+
+pattern sql.row_number(b:any_1,p:bit,o:bit):int 
+address SQLrow_number;
+comment return the row_numer-ed groups
 
 pattern sql.reuse(sch:str,tbl:str):void 
 address SQLreuse;
@@ -51748,36 +51789,23 @@ command sql.round(v:bte,d:int,s:int,r:bte):bte
 address bte_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,col:bat[:oid,:any_1]):void 
-address mvc_result_column_wrap;
-comment Add the column to the table query result
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+address mvc_table_result_wrap;
+comment Prepare a table result set for the client in default CSV format
 
-pattern sql.rsColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int,val:any_1):void 
-address mvc_result_value_wrap;
-comment Add the value to the row query result
-
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:bat[:oid,:any_1]):int 
-address mvc_result_table_wrap;
+pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+address mvc_row_result_wrap;
 comment Prepare a table result set
 
-pattern sql.resultSet{unsafe}(nr_cols:int,qtype:int,order:any_1):int 
-address mvc_result_row_wrap;
-comment Prepare a row result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:bat[:oid,:any_1]):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
-
-pattern sql.resultSet{unsafe}(nr_cols:int,sep:str,rsep:str,ssep:str,ns:str,order:any_1):int 
-address mvc_result_file_wrap;
-comment Prepare a file result set
+pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
+address mvc_scalar_value_wrap;
+comment Prepare a table result set
 
 pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng 
 address mvc_restart_seq;
 comment restart the sequence with value start
 
 function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
-function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.shrink(sch:str,tbl:str):void 
 address SQLshrink;
 comment Consolidate the deletion table over all columns using shrinking
@@ -51822,6 +51850,7 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
+function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.single(x:any_2):bat[:oid,:any_2] 
 address CMDBATsingle;
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 
@@ -52036,6 +52065,10 @@ command str.substitute(s:str,src:str,dst:str,rep:bit):str
 address STRSubstitute;
 comment Substitute first occurrence of 'src' by	'dst'.  Iff repeated = true this is	repeated while 'src' can be found in the	result string. In order to prevent	recursion and result strings of unlimited	size, repeating is only done iff src is	not a substring of dst.
 
+command str.splitpart(s:str,needle:str,field:int):str 
+address STRsplitpart;
+comment Split string on delimiter. Returns	 given field (counting from one.)
+
 command str.search(s:str,c:str):int 
 address STRstrSearch;
 comment Search for a substring. Returns	 position, -1 if not found.
@@ -52230,7 +52263,7 @@ pattern sysmon.stop(id:int):void
 address SYSMONstop;
 pattern sysmon.stop(id:sht):void 
 address SYSMONstop;
-command timezone.#fromstr():timezone 
+command timezone.#fromstr():void 
 address tzone_fromstr;
 command timezone.str(z:timezone):str 
 address MTIMEtzone_tostr;
@@ -52240,7 +52273,7 @@ comment Utility function to create a timestamp from a number of seconds since th
 
 command timezone.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
-command timezone.#tostr():str 
+command timezone.#tostr():void 
 address tzone_tostr;
 pattern timestamp.!=(v:timestamp,w:timestamp):bit 
 address CMDvarNE;
@@ -52282,13 +52315,13 @@ command timestamp.epoch{unsafe}():timestamp
 address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
-command timestamp.#fromstr():timestamp 
+command timestamp.#fromstr():void 
 address timestamp_fromstr;
 pattern timestamp.isnil(v:timestamp):bit 
 address CMDvarISNIL;
 comment Nil test for timestamp value
 
-command timestamp.#tostr():str 
+command timestamp.#tostr():void 
 address timestamp_tostr;
 command timestamp.unix_epoch{unsafe}():timestamp 
 address MTIMEunix_epoch;
@@ -52398,7 +52431,7 @@ command udf.reverse(ra1:str):str
 address UDFreverse;
 comment Reverse a string
 
-command url.#fromstr():url 
+command url.#fromstr():void 
 address URLfromString;
 comment Convert a string to an url. 
 
@@ -52466,7 +52499,7 @@ command url.new(p:str,h:str,prt:int,f:str):url
 address URLnew4;
 comment Construct URL from protocol, host, port, and file
 
-command url.#tostr():str 
+command url.#tostr():void 
 address URLtoString;
 comment Convert url to string equivalent
 
@@ -52478,11 +52511,11 @@ command url.url(s:str):url
 address URLnew;
 comment Create an URL from a string literal
 
-command uuid.#cmp():int 
+command uuid.#cmp():void 
 address UUIDcompare;
-command uuid.#fromstr():uuid 
+command uuid.#fromstr():void 
 address UUIDfromString;
-command uuid.#hash():int 
+command uuid.#hash():void 
 address UUIDhash;
 command uuid.isaUUID(u:str):bit 
 address UUIDisaUUID;
@@ -52492,45 +52525,45 @@ command uuid.new():uuid
 address UUIDgenerateUuid;
 comment Generate a new uuid
 
-command uuid.#null():uuid 
+command uuid.#null():void 
 address UUIDnull;
 command uuid.prelude():void 
 address UUIDprelude;
-command uuid.#read():uuid 
+command uuid.#read():void 
 address UUIDread;
 command uuid.str(u:uuid):str 
 address UUIDuuid2str;
 comment Coerce a uuid to its string type
 
-command uuid.#tostr():str 
+command uuid.#tostr():void 
 address UUIDtoString;
 command uuid.uuid(s:str):uuid 
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
 
-command uuid.#write():int 
+command uuid.#write():void 
 address UUIDwrite;
 command wkb.FromText{unsafe}(w:str,type:int):wkb 
 address wkbFromText;
-command wkb.#cmp():int 
+command wkb.#cmp():void 
 address wkbCOMP;
-command wkb.#del():int 
+command wkb.#del():void 
 address wkbDEL;
-command wkb.#fromstr():wkb 
+command wkb.#fromstr():void 
 address wkbFROMSTR;
-command wkb.#heap():int 
+command wkb.#heap():void 
 address wkbHEAP;
-command wkb.#hash():int 
+command wkb.#hash():void 
 address wkbHASH;
-command wkb.#length():int 
+command wkb.#length():void 
 address wkbLENGTH;
-command wkb.#null():int 
+command wkb.#null():void 
 address wkbNULL;
-command wkb.#put():int 
+command wkb.#put():void 
 address wkbPUT;
 command wkb.#read():void 
 address wkbREAD;
-command wkb.#tostr():str 
+command wkb.#tostr():void 
 address wkbTOSTR;
 command wkb.wkb{unsafe}(v:str):wkb 
 address wkbFromString;
@@ -52584,7 +52617,7 @@ pattern xml.forest(val:xml...):xml
 address XMLforest;
 comment Construct an element list
 
-command xml.#fromstr():xml 
+command xml.#fromstr():void 
 address XMLfromString;
 comment Convert a string to an xml.
 
@@ -52622,7 +52655,7 @@ command xml.text(src:xml):str
 address XMLxmltext;
 comment Extract text from an xml atom
 
-command xml.#tostr():str 
+command xml.#tostr():void 
 address XMLtoString;
 comment Convert xml to string equivalent
 
@@ -52678,9 +52711,9 @@ command zrule.define(m:int,d:int,w:int,h:int,min:int):zrule
 address MTIMEruleDef0;
 comment Introduce a synomym timezone rule.
 
-command zrule.#fromstr():zrule 
+command zrule.#fromstr():void 
 address rule_fromstr;
-command zrule.#tostr():str 
+command zrule.#tostr():void 
 address rule_tostr;
 
 # 15:15:16 >  

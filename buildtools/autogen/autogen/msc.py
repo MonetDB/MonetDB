@@ -229,7 +229,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
         if l == "@LIBOBJS@":
             l = "$(LIBOBJS)"
         # special case (hack) for system libraries
-        elif l in ('-lodbc32', '-lodbccp32', '-lversion', '-lshlwapi', '-luser32'):
+        elif l in ('-lodbc32', '-lodbccp32', '-lversion', '-lshlwapi', '-luser32', '-llegacy_stdio_definitions'):
             l = l[2:] + '.lib'
         elif l[:2] == "-l":
             l = "lib"+l[2:]+".lib"

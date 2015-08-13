@@ -67,8 +67,12 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *basefilename = "tachograph";
-static char *cache= "cache";
+static char *prefix = "tachograph";
+#ifdef NATIVE_WIN32
+static char *dirpath= "cache\\";
+#else
+static char *dirpath= "cache/";
+#endif
 static char *dbname;
 static int beat = 5000;
 static int delay = 0; // ms
@@ -482,7 +486,7 @@ showBar(int level, lng clk, char *stmt)
 	} else
 	if( duration && duration- clk > 0){
 		rendertime(duration - clk,0);
-		printf(" %c%s ETC  ", (level == 100? '-':' '),stamp);
+		printf("  %s ETC  ", stamp);
 		stamplen= strlen(stamp)+3;
 	} else
 	if( duration && duration- clk < 0){
@@ -506,68 +510,52 @@ initFiles(void)
 {
 	char buf[BUFSIZ];
 
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.json",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.json",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d.json",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d.json", dirpath, prefix, queryid);
 	tachojson= fopen(buf,"w");
 	if( tachojson == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_mal.csv",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d_mal.csv",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d_mal.csv",dirpath, prefix, queryid);
 	tachomal= fopen(buf,"w");
 	if( tachomal == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d_stmt.csv",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d_stmt.csv",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d_stmt.csv", dirpath, prefix, queryid);
 	tachostmt= fopen(buf,"w");
 	if( tachostmt == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
-	if (cache)
-#ifdef NATIVE_WIN32
-		snprintf(buf,BUFSIZ,"%s\\%s_%s_%d.trace",cache,basefilename,dbname, queryid);
-#else
-		snprintf(buf,BUFSIZ,"%s/%s_%s_%d.trace",cache,basefilename,dbname, queryid);
-#endif
-	else 
-		snprintf(buf,BUFSIZ,"%s_%s_%d.trace",basefilename,dbname, queryid);
+	snprintf(buf,BUFSIZ,"%s%s_%d.trace", dirpath, prefix, queryid);
 	tachotrace= fopen(buf,"w");
 	if( tachotrace == NULL){
 		fprintf(stderr,"Could not create %s\n",buf);
-		exit(0);
+		exit(-1);
 	}
 }
 
 static void
 progressBarInit(char *qry)
 {
+	char *s;
 	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
 	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
 	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachojson," \"tag\":\"%d\",\n",currenttag);
-	fprintf(tachojson," \"query\":\"%s\",\n",qry);
+	fprintf(tachojson," \"tag\":%d,\n",currenttag);
+
+	fprintf(tachojson," \"query\":\"");
+	for(s = qry; *s; s++)
+	switch(*s){
+	case '\n': fputs("\\n", tachojson); break;
+	case '\r': fputs("\\r", tachojson); break;
+	case '\t': fputs("\\t", tachojson); break;
+	case '\b': fputs("\\b", tachojson); break;
+	default: fputc((int) *s, tachojson);
+	}
+	fprintf(tachojson,"\",\n");
+
 	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
 	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
 	fprintf(tachojson," \"instructions\":%d\n",malsize);
@@ -579,8 +567,8 @@ static void
 update(EventRecord *ev)
 {
 	int progress=0;
-	int i,j;
-	char *v, *qry, *q = 0, *c;
+	int i,j,k;
+	char *v, *s;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
 	char prereq[BUFSIZ]={0};
@@ -619,7 +607,8 @@ update(EventRecord *ev)
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
 	if (ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( capturing){
-			fprintf(stderr,"We lost some events\n");
+			fprintf(stderr,"Input garbled or we lost some events\n");
+			eventdump();
 			resetTachograph();
 			capturing = 0;
 		}
@@ -656,25 +645,11 @@ update(EventRecord *ev)
 			events = (Event*) malloc(malsize * sizeof(Event));
 			memset((char*)events, 0, malsize * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
-			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			for (c= currentquery; *c; ){
-				if ( strncmp(c,"\\\\t",3) == 0){
-					*q++ = '\t';
-					c+=3;
-				} else
-				if ( strncmp(c,"\\\\n",3) == 0){
-					*q++ = '\n';
-					c+=3;
-				} else if ( strncmp(c,"\\\\",2) == 0){
-					c+= 2;
-				} else *q++ = *c++;
-			}
-			*q =0;
-			currentquery = qry;
+			currentquery = stripQuotes(malarguments[malretc]);
 			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
-				printf("CACHE ID:%d\n%s\n",queryid, qry);
+				printf("CACHE ID:%d\n%s\n",queryid, currentquery);
 			prevquery = currentquery;
-			progressBarInit(qry);
+			progressBarInit(currentquery);
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
@@ -716,24 +691,41 @@ update(EventRecord *ev)
 		fprintf(tachojson,"{\n");
 		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
 		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
+		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
 		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"start\",\n");
 		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
-		fprintf(tachojson,"\"beautystmt\": \"%s\",\n",line);
+
+		fprintf(tachojson," \"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
+		fprintf(tachojson," \"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
-		for( i=0; i < malvartop; i++){
+		for( k=0, i=0; i < malvartop; i++){
 			// remove duplicates
 			for(j= ev->pc-1; j>=0;j --){
-				//if(debug)
-					//fprintf(stderr,"locate %s in %s\n",malvariables[i], events[j].stmt);
 				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					snprintf(number,BUFSIZ,"%d",j);
+					snprintf(number,BUFSIZ," %d ",j);
+					//avoid duplicate prerequisites
 					if( strstr(prereq,number) == 0)
-						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s%d",(i?", ":""), j);
-					//fprintf(tachojson,"%s%d",(i?", ":""), j);
+						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s %d ",(k?", ":""), j);
+					k++;
 					break;
 				}
 			}
@@ -762,9 +754,25 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"done\",\n");
 		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\": \"%s\",\n",ev->stmt);
+		fprintf(tachojson,"\"stmt\":\"");
+		for(s = ev->stmt; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\",\n");
+
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson,"\"beautystmt\": \"%s\"\n",line);
+		fprintf(tachojson,"\"beautystmt\":\"");
+		for(s = line; *s; s++)
+		switch(*s){
+		case '\\': 
+			if( *(s+1) == '\\' ) s++;
+		default: fputc((int) *s, tachojson);
+		}
+		fprintf(tachojson,"\"\n");
+
 		fprintf(tachojson,"},\n");
 		fflush(tachojson);
 
@@ -783,8 +791,6 @@ update(EventRecord *ev)
 		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
 		fprintf(tachostmt,LLFMT"\t",ev->inblock);
 		fprintf(tachostmt,LLFMT"\t",ev->oublock);
-		fprintf(tachostmt,"%s\t",ev->stmt);
-		fprintf(tachostmt, "%s\n",line);
 
 		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));
@@ -824,16 +830,17 @@ int
 main(int argc, char **argv)
 {
 	ssize_t  n;
-	size_t len;
+	size_t len, buflen;
 	char *host = NULL;
 	int portnr = 0;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ], *e, *response;
+	char buf[BUFSIZ], *buffer, *e, *response;
 	int i = 0;
 	FILE *trace = NULL;
 	EventRecord event;
+	char *s;
 
 	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
@@ -845,7 +852,6 @@ main(int argc, char **argv)
 		{ "beat", 1, 0, 'b' },
 		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
-		{ "cache", 1, 0, 'c' },
 		{ "queries", 1, 0, 'q' },
 		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
@@ -903,13 +909,19 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case 'o':
-			basefilename = strdup(optarg);
-			if( strstr(basefilename,".trace"))
-				*strstr(basefilename,".trace") = 0;
-			printf("-- Output directed towards %s\n", basefilename);
-			break;
-		case 'c': // cache directory
-			cache = strdup(optarg);
+			//store the output files in a specific place
+			prefix = strdup(optarg);
+#ifdef NATIVE_WIN32
+			s= strrchr(prefix, (int) '\\');
+#else
+			s= strrchr(prefix, (int) '/');
+#endif
+			if( s ){
+				dirpath= prefix;
+				prefix = strdup(prefix);
+				*(s+1) = 0;
+				prefix += s-dirpath;
+			} 
 			break;
 		case '?':
 			usageTachograph();
@@ -923,13 +935,11 @@ main(int argc, char **argv)
 		}
 	}
 
-	if(dbname == NULL){
+	if ( dbname == NULL){
+		fprintf(stderr,"Database name missing\n");
 		usageTachograph();
 		exit(-1);
 	}
-
-	if(debug)
-		printf("tachograph -d %s -c %s -o %s\n",dbname,cache,basefilename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -992,25 +1002,32 @@ main(int argc, char **argv)
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-	if( cache){
 #ifdef NATIVE_WIN32
-		_mkdir(cache);
-		snprintf(buf,BUFSIZ,"%s\\%s_%s.trace",cache,basefilename,dbname);
+	if( _mkdir(dirpath) < 0 && errno != EEXIST){
 #else
-		mkdir(cache,0755);
-		snprintf(buf,BUFSIZ,"%s/%s_%s.trace",cache,basefilename,dbname);
+	if( mkdir(dirpath,0755)  < 0 && errno != EEXIST) {
 #endif
-	} else
-		snprintf(buf,BUFSIZ,"%s_%s.trace",basefilename,dbname);
+		fprintf(stderr,"Failed to create '%s'\n",dirpath);
+		exit(-1);
+	}
+	snprintf(buf,BUFSIZ,"%s%s.trace", dirpath, prefix);
 	// keep a trace of the events received
 	trace = fopen(buf,"w");
-	if( trace == NULL)
+	if( trace == NULL){
 		fprintf(stderr,"Could not create trace file\n");
+		exit(-1);
+	}
 
 	len = 0;
-	while ((n = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-		buf[len + n] = 0;
-		response = buf;
+	buflen = BUFSIZ;
+	buffer = (char *) malloc(buflen);
+	if( buffer == NULL){
+		fprintf(stderr,"Could not create input buffer\n");
+		exit(-1);
+	}
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+		buffer[len + n] = 0;
+		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			if(debug)
@@ -1025,12 +1042,22 @@ main(int argc, char **argv)
 				fprintf(tachotrace,"%s\n",response);
 			response = e + 1;
 		}
-		/* handle last line in buffer */
-		if (*response) {
+		/* handle the case that the line is not yet completed */
+		if( response == buffer){
+			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
+			if( new == NULL){
+				fprintf(stderr,"Could not extend input buffer\n");
+				exit(-1);
+			}
+			buffer = new;
+			buflen += BUFSIZ;
+		}
+		/* handle last part of line in buffer */
+		if (response != buffer && *response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buf, response, len + 1);
+			strncpy(buffer, response, len + 1);
 		} else
 			len = 0;
 	}

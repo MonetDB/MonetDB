@@ -153,7 +153,7 @@ void clearRErrConsole(void) {
 	// Do nothing?
 }
 
-int RAPIinstalladdons(void);
+static char *RAPIinstalladdons(void);
 
 /* UNIX-like initialization */
 #ifndef WIN32
@@ -162,8 +162,10 @@ int RAPIinstalladdons(void);
 #define CSTACK_DEFNS 1
 #include <Rinterface.h>
 
-static int RAPIinitialize(void) {
+static char *RAPIinitialize(void) {
 // TODO: check for header/library version mismatch?
+	char *e;
+
 	// set R_HOME for packages etc. We know this from our configure script
 	setenv("R_HOME", RHOME, TRUE);
 
@@ -186,7 +188,7 @@ static int RAPIinitialize(void) {
 		Rp->NoRenviron = TRUE;
 		stat = Rf_initialize_R(2, rargv);
 		if (stat < 0) {
-			return 2;
+			return "Rf_initialize failed";
 		}
 		R_SetParams(Rp);
 	}
@@ -207,8 +209,8 @@ static int RAPIinitialize(void) {
 	// big boy here
 	setup_Rmainloop();
 
-	if (RAPIinstalladdons() != 0) {
-		return 3;
+	if ((e = RAPIinstalladdons()) != 0) {
+		return e;
 	}
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
@@ -216,7 +218,7 @@ static int RAPIinitialize(void) {
 	//SET_INTERNAL(install("system"), R_NilValue);
 
 	rapiInitialized++;
-	return 0;
+	return NULL;
 }
 #else
 /* Completely different Windows initialization */
@@ -280,23 +282,20 @@ static void my_onintr(int sig)
 
 //extern Rboolean R_LoadRconsole;
 
-int RAPIinitialize(void) {
+static char *RAPIinitialize(void) {
 	structRstart rp;
 	Rstart Rp = &rp;
 	char Rversion[25], *RHome;
 
 	snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
 	if(strncmp(getDLLVersion(), Rversion, 25) != 0) {
-		fprintf(stderr, "Error: R.DLL version does not match\n");
-		exit(1);
+		return "Error: R.DLL version does not match";
 	}
 
 	R_setStartTime();
 	R_DefParams(Rp);
 	if((RHome = get_R_HOME()) == NULL) {
-		fprintf(stderr,
-				"R_HOME must be set in the environment or Registry\n");
-		exit(2);
+		return "R_HOME must be set in the environment or Registry";
 	}
 	Rp->rhome = RHome;
 	Rp->home = getRUser();
@@ -333,7 +332,7 @@ void initRinside() {
 #endif
 
 
-int RAPIinstalladdons(void) {
+static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
 	char rlibs[BUFSIZ];
@@ -345,7 +344,7 @@ int RAPIinstalladdons(void) {
 			 "rapi_packages");
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
-		return 4;
+		return "cannot create rapi_packages directory";
 	}
 #ifdef _RAPI_DEBUG_
 	printf("# R libraries installed in %s\n",rlibs);
@@ -359,6 +358,14 @@ int RAPIinstalladdons(void) {
 	// run rapi.R environment setup script
 	snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")",
 			 locate_file("rapi", ".R", 0));
+#if DIR_SEP != '/'
+	{
+		char *p;
+		for (p = rapiinclude; *p; p++)
+			if (*p == DIR_SEP)
+				*p = '/';
+	}
+#endif
 	R_tryEvalSilent(
 		VECTOR_ELT(
 			R_ParseVector(mkString(rapiinclude), 1, &status,
@@ -366,9 +373,9 @@ int RAPIinstalladdons(void) {
 
 	// of course the script may contain errors as well
 	if (evalErr != FALSE) {
-		return 5;
+		return "failure running R setup script";
 	}
-	return 0;
+	return NULL;
 }
 
 rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
@@ -521,18 +528,16 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			BATiter li;
 			li = bat_iterator(b);
 			varvalue = PROTECT(NEW_STRING(BATcount(b)));
-			BATloop(b, p, q)
-				{
-					const char *t = (const char *) BUNtail(li, p);
-					if (t == str_nil) {
-						SET_STRING_ELT(varvalue, j, NA_STRING);
-					} else {
-						SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
-					}
-					j++;
+			BATloop(b, p, q) {
+				const char *t = (const char *) BUNtail(li, p);
+				if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
+					SET_STRING_ELT(varvalue, j, NA_STRING);
+				} else {
+					SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
 				}
-		}
-			break;
+				j++;
+			}
+		} 	break;
 		default:
 			// no clue what type to consider
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
@@ -580,8 +585,20 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	retval = R_tryEval(VECTOR_ELT(x, 0), env, &evalErr);
 	if (evalErr != FALSE) {
+		char* errormsg = strdup(R_curErrorBuf());
+		size_t c;
+		if (errormsg == NULL) {
+			msg = createException(MAL, "rapi.eval", "Error running R expression.");
+			goto wrapup;
+		}
+		// remove newlines from error message so it fits into a MAPI error (lol)
+		for (c = 0; c < strlen(errormsg); c++) {
+			if (errormsg[c] == '\r' || errormsg[c] == '\n') {
+				errormsg[c] = ' ';
+			}
+		}
 		msg = createException(MAL, "rapi.eval",
-							  "Error running R expression. Error message: %s", R_curErrorBuf());
+							  "Error running R expression: %s", errormsg);
 		goto wrapup;
 	}
 
@@ -598,6 +615,12 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
 		int bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
+		if (bat_type == TYPE_any || bat_type == TYPE_void) {
+			getArgType(mb,pci,i) = bat_type;
+			msg = createException(MAL, "rapi.eval",
+									  "Unknown return value, possibly projecting with no parameters.");
+			goto wrapup;
+		}
 		cnt = (BUN) ret_rows;
 
 		// hand over the vector into a BAT
@@ -645,7 +668,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
-			SXP_TO_BAT(bte, LOGICAL_POINTER, *p==NA_LOGICAL);
+			SXP_TO_BAT(bit, LOGICAL_POINTER, *p==NA_LOGICAL);
 			break;
 		}
 		case TYPE_dbl: {
@@ -739,15 +762,15 @@ str RAPIprelude(void *ret) {
 		MT_lock_set(&rapiLock, "rapi.evaluate");
 		/* startup internal R environment  */
 		if (!rapiInitialized) {
-			int initstatus;
+			char *initstatus;
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
 				throw(MAL, "rapi.eval",
-					  "failed to initialise R environment (%i)", initstatus);
+					  "failed to initialise R environment (%s)", initstatus);
 			}
 		}
 		MT_lock_unset(&rapiLock, "rapi.evaluate");
-		fprintf(stdout, "# MonetDB/R   module loaded\n");
+		printf("# MonetDB/R   module loaded\n");
 	}
 	return MAL_SUCCEED;
 }

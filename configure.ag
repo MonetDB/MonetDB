@@ -10,7 +10,7 @@ dnl Copyright 2008-2015 MonetDB B.V.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.20.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
+AC_INIT([MonetDB], [11.22.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -1017,7 +1017,7 @@ if test "x$enable_optimize" = xyes; then
 	      dnl  -mp does no longer exist with icc 15; using -mieee-fp, instead.
 	      dnl  adding -axSSE4.2 (or even -axCORE-AVX512) results in errors like
 	      dnl  "error: ODBCFetch has been targeted for automatic cpu dispatch" ...
-	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -xHost -xHOST";; 
+	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -inline-level=1 -xHost";;
 
 	      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 	      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
@@ -1183,6 +1183,10 @@ fi
 AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
 AC_SUBST(PERL_LIBDIR)
+QPERL_LIBDIR="$PERL_LIBDIR"
+XPERL_LIBDIR="`$translatepath "$QPERL_LIBDIR"`"
+QXPERL_LIBDIR="`echo "$XPERL_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPERL_LIBDIR)
 
 # check major version of python
 # check if python2 and python3 exist
@@ -1306,8 +1310,16 @@ else
 fi
 
 AC_SUBST(PYTHON2)
+QPYTHON2="$PYTHON2"
+XPYTHON2="`$translatepath "$QPYTHON2"`"
+QXPYTHON2="`echo "$XPYTHON2" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON2)
 AM_CONDITIONAL(HAVE_PYTHON2, test x"$have_python2" != xno)
 AC_SUBST(PYTHON2_LIBDIR)
+QPYTHON2_LIBDIR="$PYTHON2_LIBDIR"
+XPYTHON2_LIBDIR="`$translatepath "$QPYTHON2_LIBDIR"`"
+QXPYTHON2_LIBDIR="`echo "$XPYTHON2_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON2_LIBDIR)
 
 if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
@@ -1361,8 +1373,16 @@ else
 fi
 
 AC_SUBST(PYTHON3)
+QPYTHON3="$PYTHON3"
+XPYTHON3="`$translatepath "$QPYTHON3"`"
+QXPYTHON3="`echo "$XPYTHON3" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON3)
 AM_CONDITIONAL(HAVE_PYTHON3, test x"$have_python3" != xno)
 AC_SUBST(PYTHON3_LIBDIR)
+QPYTHON3_LIBDIR="$PYTHON3_LIBDIR"
+XPYTHON3_LIBDIR="`$translatepath "$QPYTHON3_LIBDIR"`"
+QXPYTHON3_LIBDIR="`echo "$XPYTHON3_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXPYTHON3_LIBDIR)
 
 AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python2" != xno -o x"$have_python3" != xno)
 
@@ -1678,14 +1698,14 @@ no-*)
 	fi
 	;;
 *)
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.6") ; then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.7") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 6 or higher])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 6 or higher to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"
 		fi
 	fi
 	;;
@@ -1709,7 +1729,7 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.6 # >= $req_java_ver_min required
+	req_java_ver_min=1.7 # >= $req_java_ver_min required
 	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
 		have_java_control=yes
 	else
@@ -3014,6 +3034,8 @@ fi
 Qdatadir="$datadir"
 Xdatadir="`$translatepath "$datadir"`"
 QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+eval "Edatadir=${Xdatadir}"
+QEdatadir="`echo "$Edatadir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qdatadir)
 AC_SUBST(Xdatadir)
 AC_SUBST(QXdatadir)
@@ -3049,6 +3071,7 @@ AC_SUBST(QSOURCE)
 AC_SUBST(XSOURCE)
 AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(DATA_DIR,"$QEdatadir",[read-only architecture-independent data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
@@ -3101,21 +3124,25 @@ typedef size_t uintptr_t;
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;
+typedef unsigned long long ulng;
 # define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 # ifdef HAVE___INT64
 typedef __int64 lng;
+typedef unsigned __int64 ulng;
 #  define SIZEOF_LNG SIZEOF___INT64
 # endif
 #endif
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
+typedef unsigned __int128 uhge;
 # define HAVE_HGE 1
 # define SIZEOF_HGE SIZEOF___INT128
 #else
 # if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
+typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif

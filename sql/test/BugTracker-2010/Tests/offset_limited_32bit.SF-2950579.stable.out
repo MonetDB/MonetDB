@@ -36,7 +36,7 @@ Ready.
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 1,	0,	1,	0,	1,	5,	1,	1,	1 # length
 
-# 11:34:25 >  
-# 11:34:25 >  "Done."
-# 11:34:25 >  
+# 10:43:07 >  
+# 10:43:07 >  "Done."
+# 10:43:07 >  
 

@@ -57,6 +57,7 @@ opt_export  str countRef;
 opt_export  str subcountRef;
 opt_export  str copyRef;
 opt_export  str copy_fromRef;
+opt_export  str export_tableRef;
 opt_export  str count_no_nilRef;
 opt_export  str crossRef;
 opt_export  str createRef;
@@ -247,9 +248,10 @@ opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
 opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
-opt_export int fileProp;			/* str */
+opt_export int fileProp;		/* str */
 opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
+opt_export int orderDependendProp;	/* binary */
 
 opt_export int stableProp;		/* binary */
 opt_export int insertionsProp;		/* binary */

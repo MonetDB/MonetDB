@@ -1895,6 +1895,66 @@ STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 }
 
 str
+STRsplitpart(str *res, str *haystack, str *needle, int *field)
+{
+	size_t slen;
+	int len, f = *field;
+	char *p;
+	const char *s = *haystack;
+	const char *s2 = *needle;
+
+	if (strNil(s) || *field == int_nil) {
+		*res = GDKstrdup("");
+		if (*res == NULL)
+			throw(MAL, "str.splitpart", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+
+	if (*field <= 0) {
+		throw(MAL, "str.splitpart", "field position must be greater than zero");
+		*res = GDKstrdup("");
+		if (*res == NULL)
+			throw(MAL, "str.splitpart", "field position must be greater than zero");
+		return MAL_SUCCEED;
+	}
+
+	slen = strlen(s2);
+
+	while ((p = strstr(s, s2)) != 0 && f > 1) {
+		s = p + slen;
+		f--;
+	}
+
+	if (f != 1) {
+		*res = GDKstrdup("");
+		if (*res == NULL)
+			throw(MAL, "str.splitpart", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+   
+	if (p == 0) {
+		len = UTF8_strlen(s);
+	} else if ((p = strstr(s, s2)) != 0) {
+		len = (int) (p - s);
+	} else {
+		len = UTF8_strlen(s);
+	}
+
+	if (len == int_nil || len == 0) {
+		*res = GDKstrdup("");
+		if (*res == NULL)
+			throw(MAL, "str.splitpart", "Allocation failed");
+		return MAL_SUCCEED;
+	}
+	*res = GDKmalloc(len + 1);
+	if (*res == NULL)
+		throw(MAL, "str.splitpart", "Allocation failed");
+	strncpy(*res, s, len);
+	(*res)[len] = 0;
+	return MAL_SUCCEED;
+}
+
+str
 STRStrip(str *res, const str *arg1)
 {
 	const char *start = *arg1;

@@ -33,22 +33,22 @@ end user.qry;
 function user.main():void;
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               	# 
-    X_3:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
-    X_6:bat[:oid,:int] := bat.new(:oid,:int);	# CMDBATnew
-    bat.append(X_3:bat[:oid,:int],1:int);	# BKCappend_val_wrap
-barrier (X_9:oid,X_10:int) := iterator.new(X_3:bat[:oid,:int]);	# ITRbunIterator
-    io.print(X_9:oid);                  	# IOprint_val
-catch MALException:str;                 	# 
-exit MALException:str;                  	# 
-exit (X_9:oid,X_10:int);                	# 
-barrier (X_13:oid,X_10:int) := iterator.new(X_6:bat[:oid,:int]);	# ITRbunIterator
-    io.print(X_13:oid);                 	# IOprint_val
-    redo (X_13:oid,X_10:int) := iterator.next(X_6:bat[:oid,:int]);	# ITRbunNext
-catch MALException:str;                 	# 
-exit MALException:str;                  	# 
-exit (X_13:oid,X_10:int);               	# 
-end user.qry;                           	# 
+function user.qry():void;               	#[0]  0 
+    X_3:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 3 <- 4 5 
+    X_6:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 6 <- 4 5 
+    bat.append(X_3:bat[:oid,:int],1:int);	#[3] BKCappend_val_wrap 7 <- 3 8 
+barrier (X_9:oid,X_10:int) := iterator.new(X_3:bat[:oid,:int]);	#[4] ITRbunIterator 9 10 <- 3 
+    io.print(X_9:oid);                  	#[5] IOprint_val 11 <- 9 
+catch MALException:str;                 	#[6]  12 
+exit MALException:str;                  	#[7]  12 
+exit (X_9:oid,X_10:int);                	#[8]  9 10 
+barrier (X_13:oid,X_10:int) := iterator.new(X_6:bat[:oid,:int]);	#[9] ITRbunIterator 13 10 <- 6 
+    io.print(X_13:oid);                 	#[10] IOprint_val 14 <- 13 
+    redo (X_13:oid,X_10:int) := iterator.next(X_6:bat[:oid,:int]);	#[11] ITRbunNext 13 10 <- 6 
+catch MALException:str;                 	#[12]  12 
+exit MALException:str;                  	#[13]  12 
+exit (X_13:oid,X_10:int);               	#[14]  13 10 
+end user.qry;                           	#[15]  
 
 # 00:18:07 >  
 # 00:18:07 >  Done.

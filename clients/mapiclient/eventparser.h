@@ -6,7 +6,7 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-/* (c) M Kersten, S Manegold
+/* (c) M Kersten
  * The easiest calling method is something like:
  * tomograph -d demo --atlast=10
  * which connects to the demo database server and
@@ -55,9 +55,6 @@
 #define US_HH (US_MM * 60)
 #define US_DD (US_HH * 24)
 
-#define MAXTHREADS 1048
-#define MAXBOX 32678	 /* should be > MAXTHREADS */
-
 #define  MDB_START 1
 #define  MDB_DONE 2
 #define  MDB_PING 3
@@ -101,5 +98,7 @@ extern int debug;
 extern char *monetdb_characteristics;
 
 extern void clearArguments(void);
+extern void eventdump(void);
 extern int eventparser(char *row, EventRecord *ev);
+extern char *stripQuotes(const char *currentquery);
 #endif /*_EVENT_PARSER_*/

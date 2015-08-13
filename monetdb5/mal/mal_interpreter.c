@@ -627,11 +627,52 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (pci->fcn == NULL) {
 					ret = createScriptException(mb, stkpc, MAL, NULL,
 						"address of pattern %s.%s missing", pci->modname, pci->fcnname);
-				} else
+				} else {
 					ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
+#ifndef NDEBUG
+					/* check that the types of actual results match
+					 * expected results */
+					for (i = 0; i < pci->retc; i++) {
+						int a = getArg(pci, i);
+						int t = getArgType(mb, pci, i);
+
+						if (isaBatType(t)) {
+							bat bid = stk->stk[a].val.bval;
+							t = getColumnType(t);
+							assert(stk->stk[a].vtype == TYPE_bat);
+							assert(bid == 0 ||
+								   bid == bat_nil ||
+								   t == TYPE_any ||
+								   ATOMtype(BBP_cache(bid)->ttype) == ATOMtype(t));
+						} else {
+							assert(t == stk->stk[a].vtype);
+						}
+					}
+#endif
+				}
 				break;
 			case CMDcall:
 				ret =malCommandCall(stk, pci);
+#ifndef NDEBUG
+				/* check that the types of actual results match
+				 * expected results */
+				for (i = 0; i < pci->retc; i++) {
+					int a = getArg(pci, i);
+					int t = getArgType(mb, pci, i);
+
+					if (isaBatType(t)) {
+						bat bid = stk->stk[a].val.bval;
+						t = getColumnType(t);
+						assert(stk->stk[a].vtype == TYPE_bat);
+						assert(bid == 0 ||
+							   bid == bat_nil ||
+							   t == TYPE_any ||
+							   ATOMtype(BBP_cache(bid)->ttype) == ATOMtype(t));
+					} else {
+						assert(t == stk->stk[a].vtype);
+					}
+				}
+#endif
 				break;
 			case FACcall:
 				/*
@@ -757,7 +798,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							stk->stk[getArg(pci, i)].val.bval != 0) {
 							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
-								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+								if (ret == MAL_SUCCEED)
+									ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 								continue;
 							}
 							if (b->batStamp <= stamp) {

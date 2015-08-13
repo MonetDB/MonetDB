@@ -1,4 +1,180 @@
-monetdb (11.19.11-20150423) unstable; urgency=low
+monetdb (11.21.1) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3364: Cannot set role back to a user's default role
+  * BZ#3365: Unable to grant object privileges while having a non-default
+    current_role
+  * BZ#3476: Cannot revoke object access
+  * BZ#3556: when 2 multiplexed functions in MAL plan, only one is mapped
+    correctly to bat<mod>.function primitive
+  * BZ#3564: Request: add support for postgresql specific scalar function:
+    split_part(string text, delimiter text, field int)
+  * BZ#3625: SIGSEGV because mat array can overrun in opt_mergetable.c
+  * BZ#3627: SQRT in CASE does not work as of Oct2014
+  * BZ#3654: configure --enable-fits requires extra commands after creating
+    a database instance
+  * BZ#3673: mclient 'expanded' row formatter
+  * BZ#3674: Obfuscate event tracing
+  * BZ#3679: No error is given when incorrect timezone value is specified
+    for a timetz column
+  * BZ#3686: Wrong associativity of multiply/divide
+  * BZ#3702: Filter function not found if created in a user schema
+  * BZ#3708: wrong scoping for cross-schema view references
+  * BZ#3716: alter table my_merge_table drop table t1; crashes mserver5
+    with Segmentation fault
+  * BZ#3724: Wrong size calculation in BATsubjoin
+  * BZ#3732: memory leak (of InstrRecord) in opt_mergetable
+  * BZ#3733: "(TRUE OR <Exp>) AND <Exp>" is evaluated incorrectly
+  * BZ#3735: python connection with unix_socket
+  * BZ#3736: crash if mclient disconnects abruptly during a query
+  * BZ#3738: Database inconsistency when using savepoint
+  * BZ#3739: CASE statements do not handle NULLs in the IN () operator
+    properly
+  * BZ#3740: select epoch(now()); types timestamptz(7,0) and bigint(64,0)
+    are not equal
+  * BZ#3742: Division By Zero
+  * BZ#3744: cast to int gives different results for decimal than double
+  * BZ#3747: joins fail in the presence of nulls
+  * BZ#3748: Missing META-INF/services/java.sql.Driver in JDBC package
+  * BZ#3753: Hang on json field parsing
+  * BZ#3754: select from a REMOTE TABLE referring local table crashes
+    mserver5
+  * BZ#3756: column type conversion sticks to subsequent queries
+  * BZ#3759: select data from "sys"."rejects" returns unexpected error and
+    when next select data from "sys"."sessions" causes an assertion failure
+    in mal_interpreter.c:646.
+  * BZ#3760: SQL parser has problem with (position of) a scalar subquery
+    in a SELECT-list
+  * BZ#3761: SQL executor has problem with (position of) a subquery in a
+    SELECT-list. Inconsistent behavior.
+  * BZ#3764: DROPping multiple users causes a crash
+  * BZ#3765: Re-granting a revoked privilege does not work
+  * BZ#3766: VIEW not visible if created under a different schema
+  * BZ#3767: CREATE TEMP TABLE using "LIKE" incorrectly handled
+  * BZ#3769: SIGSEGV when combining a cast/column alias with a UNION
+    ALL view
+  * BZ#3770: combined conditions on declared table in User Defined Function
+    definition crashes monetdb
+  * BZ#3771: Owner of the schema loses rights if assumes the monetdb role.
+  * BZ#3772: Any user can grant a role.
+  * BZ#3773: quantile(col, 0) and quantile(col, 1) fail
+  * BZ#3774: mclient is unaware of merge tables and remote tables
+  * BZ#3775: COPY INTO: Backslash preceding field separator kills import
+  * BZ#3778: Crash on remote table schema mismatch
+  * BZ#3779: server crashes on MAX() on SELECT DISTINCT something combo
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Aug 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * java: Improved JDBC driver to not throw NullPointerException anymore
+    when calling isNullable() or getPrecision() or getScale() or
+    getColumnDisplaySize() or getSchemaName() or getTableName() or
+    getColumnClassName() on a ResultSet object.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 6 Aug 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * sql: Added support for 128-bit integers (called HUGEINT) on platforms that
+    support this.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Jul 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * java: We now compile the Java classes using the latest Java 1.8 version, and
+    we tell it to compile for Java 1.7.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Jul 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * buildtools: Upgraded the license to the Mozilla Public License Version 2.0.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * clients: Added a new output format to mclient: --format=expanded (or -fx).
+    In this format, column values are shown in full and below each other.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * sql: Removed support for the mseed library.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * sql: Removed support for RDF.
+  * sql: Removed DataCell.  It was experimental code that was never enabled.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * gdk: BUNtvar and BUNhvar macros no longer work for TYPE_void columns.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * gdk: Changed interfaces of a lot of GDK-level functions.  When they modify a
+    BAT, don't return the same BAT or NULL, but instead return GDK_SUCCEED
+    or GDK_FAIL.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * monetdb5: Implemented batcalc.min and batcalc.max.  Made calc.min and calc.max
+    generic so that no other implementations are needed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * monetdb5: Removed function batcalc.ifthen.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.21.1) unstable; urgency=low
+
+  * gdk: Changed a bunch of hash-related functions to work on the tail column.
+    The functions that have been changed to work on the tail column are:
+    BAThash, BATprepareHash, HASHgonebad, HASHins, and HASHremove.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Jun 2015 14:56:54 +0200
+
+monetdb (11.19.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3707: var() possibly not working in debug builds
+  * BZ#3720: Incorrect results on joining with same table
+  * BZ#3725: LEFT JOIN bug with CONST value
+  * BZ#3731: left shift for IP addresses not available to non-system users
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 03 Jun 2015 12:31:39 +0200
+
+monetdb (11.19.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3712: Concurrency issue on querying the SQL catalog
+  * BZ#3713: Long startup cost for simple session
+  * BZ#3715: Crash with two ALTER TABLE statements in a transaction
+  * BZ#3718: Adding and dropping a non existing tablename to/from a merge
+    table is accepted without an error
+  * BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+    BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+  * BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+    `0' failed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 May 2015 13:34:49 +0200
+
+monetdb (11.19.11) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"
@@ -61,20 +237,20 @@ monetdb (11.19.11-20150423) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Apr 2015 09:17:39 +0200
 
-monetdb (11.19.11-20150423) unstable; urgency=low
+monetdb (11.19.11) unstable; urgency=low
 
   * buildtools: We now also create debug packages for Debian and Ubuntu.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Feb 2015 09:17:39 +0200
 
-monetdb (11.19.11-20150423) unstable; urgency=low
+monetdb (11.19.11) unstable; urgency=low
 
   * gdk: Replaced the rangejoin implementation with one that uses imprints if
     it can.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 27 Jan 2015 09:17:39 +0200
 
-monetdb (11.19.9-20150123) unstable; urgency=low
+monetdb (11.19.9) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3467: Field aliases with '#' character excise field names in
@@ -108,14 +284,14 @@ monetdb (11.19.9-20150123) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 23 Jan 2015 13:21:50 +0100
 
-monetdb (11.19.9-20150123) unstable; urgency=low
+monetdb (11.19.9) unstable; urgency=low
 
   * sql: Fixed a typo in a column name of the sys.tablestoragemodel view
     (auxillary changed to auxiliary).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Jan 2015 13:21:50 +0100
 
-monetdb (11.19.9-20150123) unstable; urgency=low
+monetdb (11.19.9) unstable; urgency=low
 
   * clients: Changes to the Perl interface, thanks to Stefan O'Rear:
     1. removes "use sigtrap", because this has global effects and should
@@ -145,13 +321,13 @@ monetdb (11.19.9-20150123) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Jan 2015 13:21:50 +0100
 
-monetdb (11.19.7-20141121) unstable; urgency=low
+monetdb (11.19.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 21 Nov 2014 10:14:18 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3580: cosmetic change (append newline)
@@ -165,27 +341,27 @@ monetdb (11.19.5-20141120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * gdk: Implemented a change to the way in which string bats are appended.
     We now try harder to limit the growth of the string heap.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * monetdb5: Fixed adding of 0 intervals to dates.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * sql: Fixed sys.queue() implementation to report on other queries being
     executed.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * sql: A number of bugs were fixed in the code to upgrade a database from
     previous releases.  This version should fix the upgrade of a database
@@ -194,14 +370,14 @@ monetdb (11.19.5-20141120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 14 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * buildtools: The libraries included in the Windows installers have been upgraded.
     We now use libxml2-2.9.2, openssl-1.0.1j, pcre-8.36, and zlib-1.2.8.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.5-20141120) unstable; urgency=low
+monetdb (11.19.5) unstable; urgency=low
 
   * gdk: Fixed some problems with BATsample.  It was possible for BATsample to
     return a value that was just beyond the end of the sampled BAT.  Also,
@@ -211,13 +387,13 @@ monetdb (11.19.5-20141120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 5 Nov 2014 10:37:22 +0100
 
-monetdb (11.19.3-20141028) unstable; urgency=low
+monetdb (11.19.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Oct 2014 09:02:24 +0100
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * Rebuilt.
   * BZ#2618: Implement master slave scheme
@@ -330,27 +506,27 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Oct 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * monetdb5: Removed algebra.materialize.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 15 Sep 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * monetdb5: Removed algebra.kunique and algebra.tunique.  They were subsumed by
     algebra.subunique.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Aug 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * monetdb5: Remove algebra.antiuselect and algebra.thetauselect.  They were subsumed
     by algebra.subselect.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Aug 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * monetdb5: Removed algebra.topN and its imlementation BATtopN.  The function was
     not used.
@@ -361,7 +537,7 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Aug 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * gdk: Added "multifarm" capability.  It is now possible to separate persistent
     and transient BATs into different directories (presumably on different
@@ -370,7 +546,7 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * buildtools: Jacqueline, the MonetDB/JAQL frontend, has been removed.  The frontend
     never grew beyond being experimental, and there is no interest anymore
@@ -378,20 +554,20 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * sql: Added PostgreSQL compatible string TRIM, LTRIM, RTRIM, LPAD and RPAD
     functions
 
  -- Jennie Zhang <y.zhang@cwi.nl>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * mapilib: Changed mapi_timeout argument from seconds to milliseconds.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * stream: Changed mnstr_settimeout function so that the specified timeout is now
     in milliseconds (used to be seconds), and that it also needs an extra
@@ -401,14 +577,14 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * merovingian: monetdb create: add -p flag to set monetdb user password on creation,
     and therefore allow creating the database in unlocked state
 
  -- Fabian Groffen <fabian@monetdb.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.19.1-20141024) unstable; urgency=low
+monetdb (11.19.1) unstable; urgency=low
 
   * sql: Stop support for upgrading directly from a database created with a
     server from the Oct2012 release or older.  You can upgrade via the
@@ -416,7 +592,7 @@ monetdb (11.19.1-20141024) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 09:22:22 +0200
 
-monetdb (11.17.21-20140725) unstable; urgency=low
+monetdb (11.17.21) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3519: Uppercase TRUE/FALSE strings cannot be converted to boolean
@@ -424,7 +600,7 @@ monetdb (11.17.21-20140725) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jul 2014 15:09:53 +0200
 
-monetdb (11.17.19-20140722) unstable; urgency=low
+monetdb (11.17.19) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3487: dead link to "Professional services"
@@ -435,7 +611,7 @@ monetdb (11.17.19-20140722) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 22 Jul 2014 11:42:07 +0200
 
-monetdb (11.17.19-20140722) unstable; urgency=low
+monetdb (11.17.19) unstable; urgency=low
 
   * buildtools: Fix configure to continue without Python if the python binary is
     too old.  This instead of always aborting configure if python happens
@@ -443,14 +619,14 @@ monetdb (11.17.19-20140722) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 3 Jun 2014 11:42:07 +0200
 
-monetdb (11.17.17-20140514) unstable; urgency=low
+monetdb (11.17.17) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3482: Crossproduct error
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 May 2014 09:55:28 +0200
 
-monetdb (11.17.15-20140508) unstable; urgency=low
+monetdb (11.17.15) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3424: numeric values at the front of strings determines whether
@@ -480,28 +656,28 @@ monetdb (11.17.15-20140508) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 08 May 2014 14:21:36 +0200
 
-monetdb (11.17.15-20140508) unstable; urgency=low
+monetdb (11.17.15) unstable; urgency=low
 
   * buildtools: Lots of minor fixes were made for potential defects found by Coverity
     Scan.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 30 Apr 2014 14:21:36 +0200
 
-monetdb (11.17.15-20140508) unstable; urgency=low
+monetdb (11.17.15) unstable; urgency=low
 
   * clients: ODBC: Implemented {call procedure-name(...)} escape.  The version
     {?=call ...} is not implemented.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 1 Apr 2014 14:21:36 +0200
 
-monetdb (11.17.15-20140508) unstable; urgency=low
+monetdb (11.17.15) unstable; urgency=low
 
   * buildtools: On Windows we now build the geom module against version 3.4.2 of the
     geos library.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Mar 2014 14:21:36 +0200
 
-monetdb (11.17.13-20140306) unstable; urgency=low
+monetdb (11.17.13) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3452: ODBC driver build fails on Mac OS X due to a conflicting
@@ -509,7 +685,7 @@ monetdb (11.17.13-20140306) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Mar 2014 11:48:50 +0100
 
-monetdb (11.17.11-20140303) unstable; urgency=low
+monetdb (11.17.11) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3442: COPY INTO ... LOCKED reports incorrect count
@@ -520,26 +696,26 @@ monetdb (11.17.11-20140303) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 03 Mar 2014 12:31:41 +0100
 
-monetdb (11.17.11-20140303) unstable; urgency=low
+monetdb (11.17.11) unstable; urgency=low
 
   * buildtools: Configure now enables the SQL front end by default.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 28 Feb 2014 12:31:41 +0100
 
-monetdb (11.17.11-20140303) unstable; urgency=low
+monetdb (11.17.11) unstable; urgency=low
 
   * merovingian: monetdb destroy -f now also works on running databases
 
  -- Fabian Groffen <fabian@monetdb.org>  Sun, 16 Feb 2014 12:31:41 +0100
 
-monetdb (11.17.9-20140213) unstable; urgency=low
+monetdb (11.17.9) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3435: INDEX prevents JOIN from discovering matches
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 13 Feb 2014 12:40:14 +0100
 
-monetdb (11.17.7-20140207) unstable; urgency=low
+monetdb (11.17.7) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3436: COPY INTO from file containing leading Byte Order Mark (BOM)
@@ -547,7 +723,7 @@ monetdb (11.17.7-20140207) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Feb 2014 12:53:23 +0100
 
-monetdb (11.17.5-20140206) unstable; urgency=low
+monetdb (11.17.5) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3420: Database does not start after upgrade
@@ -562,7 +738,7 @@ monetdb (11.17.5-20140206) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 06 Feb 2014 10:27:36 +0100
 
-monetdb (11.17.3-20140125) unstable; urgency=low
+monetdb (11.17.3) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3418: Segmentation fault on a query from table expression
@@ -571,7 +747,7 @@ monetdb (11.17.3-20140125) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 25 Jan 2014 14:06:27 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3040: Wrong NULL behavior in EXCEPT and INTERSECT
@@ -606,27 +782,27 @@ monetdb (11.17.1-20140114) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 14 Jan 2014 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * buildtools: Created packages for RPM based systems and Debian/Ubunty containing
     the MonetDB interface to the GNU Scientific Library (gsl).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 10 Dec 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * gdk: Removed some unused fields in the atomDesc structure.  This change
     requires a complete recompilation of the whole suite.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * clients: ODBC: Implemented {fn scalar()} and {interval ...} escapes.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * python2: Changed defaults for connecting (defaults to unix socket now).
   * python2: Unix sockets partially working for control protocol.
@@ -634,7 +810,7 @@ monetdb (11.17.1-20140114) unstable; urgency=low
 
  -- Gijs Molenaar <g.j.molenaar@uva.nl>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * python3: Changed defaults for connecting (defaults to unix socket now).
   * python3: Unix sockets partially working for control protocol.
@@ -642,13 +818,13 @@ monetdb (11.17.1-20140114) unstable; urgency=low
 
  -- Gijs Molenaar <g.j.molenaar@uva.nl>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * buildtools: We no longer install the .la files in our Fedora/Debian/Ubuntu packages.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.17.1-20140114) unstable; urgency=low
+monetdb (11.17.1) unstable; urgency=low
 
   * gdk: Replaced the mutex implementation for both GNU C and Visual Studio with
     a home-grown implementation that uses atomic instructions (__sync_*()
@@ -656,7 +832,7 @@ monetdb (11.17.1-20140114) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 14:39:02 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3243: Segmentation fault (possible data corruption) after clean
@@ -683,7 +859,7 @@ monetdb (11.15.19-20131120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * clients: mclient: Fixed a bug where the -H option only worked if the readline
     history file already existed.  Now we properly create and use the
@@ -691,7 +867,7 @@ monetdb (11.15.19-20131120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * gdk: Stopped using the deprecated sbrk() system call.
   * gdk: Fixed a problem when reverse sorting a sorted column.
@@ -702,7 +878,7 @@ monetdb (11.15.19-20131120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * monetdb5: Fixed a possible buffer overflow in the COPY INTO code.
   * monetdb5: Fixed a problem that when the server is using all available threads
@@ -714,21 +890,21 @@ monetdb (11.15.19-20131120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * sql: Fixed a bug where the server at some point stopped saving compiled
     queries in the SQL query cache.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * merovingian: monetdbd(1) now refuses to startup if it cannot read the properties
     from the dbfarm, bug #3398
 
  -- Fabian Groffen <fabian@monetdb.org>  Fri, 15 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.19-20131120) unstable; urgency=low
+monetdb (11.15.19) unstable; urgency=low
 
   * clients: ODBC: Fixed interpretation SQL_C_SLONG/SQL_C_ULONG/SQL_C_LONG to
     refer to a 32 bit integer always (i.e. "int" on 64 bit architectures
@@ -740,7 +916,7 @@ monetdb (11.15.19-20131120) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 6 Nov 2013 12:27:15 +0100
 
-monetdb (11.15.17-20131008) unstable; urgency=low
+monetdb (11.15.17) unstable; urgency=low
 
   * Rebuilt.
   * BZ#3323: Heapcache bugs/performance issues
@@ -764,21 +940,21 @@ monetdb (11.15.17-20131008) unstable; urgency=low
 
  -- Hannes Muehleisen <hannes@cwi.nl>  Tue, 08 Oct 2013 16:12:02 +0200
 
-monetdb (11.15.17-20131008) unstable; urgency=low
+monetdb (11.15.17) unstable; urgency=low
 
   * java: Rearranged order of returned columns of certain metadata functions to
     comply with the JDBC documentation.  See bug 3356.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 7 Oct 2013 16:12:02 +0200
 
-monetdb (11.15.17-20131008) unstable; urgency=low
+monetdb (11.15.17) unstable; urgency=low
 
   * clients: ODBC: Implemented retrieving variable-length data in parts with
     SQLGetData.  See bug 3381.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Oct 2013 16:12:02 +0200
 
-monetdb (11.15.17-20131008) unstable; urgency=low
+monetdb (11.15.17) unstable; urgency=low
 
   * gdk: Removed the heap cache.  Since the fix for bug 3323 which made that
     the cache was actually getting used, bug 3376 made clear that it didn't
@@ -787,45 +963,45 @@ monetdb (11.15.17-20131008) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 30 Sep 2013 16:12:02 +0200
 
-monetdb (11.15.15-20130925) unstable; urgency=low
+monetdb (11.15.15) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 25 Sep 2013 14:02:36 +0200
 
-monetdb (11.15.13-20130920) unstable; urgency=low
+monetdb (11.15.13) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Sep 2013 10:23:23 +0200
 
-monetdb (11.15.13-20130920) unstable; urgency=low
+monetdb (11.15.13) unstable; urgency=low
 
   * merovingian: monetdb now no longer compresses output when not connected to a terminal,
     bug #3292
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 30 Jul 2013 10:23:22 +0200
 
-monetdb (11.15.11-20130619) unstable; urgency=low
+monetdb (11.15.11) unstable; urgency=low
 
   * Rebuilt.
 
  -- Hannes Muehleisen <hannes@cwi.nl>  Wed, 19 Jun 2013 17:06:18 +0200
 
-monetdb (11.15.9-20130619) unstable; urgency=low
+monetdb (11.15.9) unstable; urgency=low
 
   * Rebuilt.
 
  -- Hannes Muehleisen <hannes@cwi.nl>  Wed, 19 Jun 2013 15:21:39 +0200
 
-monetdb (11.15.9-20130619) unstable; urgency=low
+monetdb (11.15.9) unstable; urgency=low
 
   * java: Further improved setBigDecimal() method, based on patch by Ben Reilly
     in bug #3290
 
  -- Fabian Groffen <fabian@monetdb.org>  Sun, 9 Jun 2013 15:21:38 +0200
 
-monetdb (11.15.9-20130619) unstable; urgency=low
+monetdb (11.15.9) unstable; urgency=low
 
   * java: Fixed bug where PreparedStatement.setBigDecimal() wouldn't format its
     input well enough for the server causing odd errors.
@@ -834,7 +1010,7 @@ monetdb (11.15.9-20130619) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Thu, 23 May 2013 15:21:38 +0200
 
-monetdb (11.15.9-20130619) unstable; urgency=low
+monetdb (11.15.9) unstable; urgency=low
 
   * gdk: System calls to flush files to disks were added.  This may cause
     some slowdown, but it should provide better durability, especially
@@ -842,58 +1018,58 @@ monetdb (11.15.9-20130619) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 May 2013 15:21:38 +0200
 
-monetdb (11.15.7-20130426) unstable; urgency=low
+monetdb (11.15.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 26 Apr 2013 13:09:55 +0200
 
-monetdb (11.15.7-20130426) unstable; urgency=low
+monetdb (11.15.7) unstable; urgency=low
 
   * sql: Added TEMPORARY to the non-reserved keywords, ie no need for double
     quotes when used as identifier.
 
  -- Niels Nes <niels@cwi.nl>  Sat, 13 Apr 2013 13:09:54 +0200
 
-monetdb (11.15.5-20130412) unstable; urgency=low
+monetdb (11.15.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 12 Apr 2013 09:33:06 +0200
 
-monetdb (11.15.5-20130412) unstable; urgency=low
+monetdb (11.15.5) unstable; urgency=low
 
   * java: The pre-compiled .jar files are now created using Java 7 instead of
     Java 6.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Apr 2013 09:33:05 +0200
 
-monetdb (11.15.5-20130412) unstable; urgency=low
+monetdb (11.15.5) unstable; urgency=low
 
   * gdk: Fixed a bug in case the candidate list is dense and completely
     outside the range of the bat being worked upon.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 8 Apr 2013 09:33:05 +0200
 
-monetdb (11.15.5-20130412) unstable; urgency=low
+monetdb (11.15.5) unstable; urgency=low
 
   * monetdb5: Fixed argument parsing of mapi.reconnect() with 5 arguments.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 12 Mar 2013 09:33:05 +0200
 
-monetdb (11.15.3-20130227) unstable; urgency=low
+monetdb (11.15.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Feb 2013 15:26:54 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 12 Feb 2013 09:51:41 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * testing: enabled "top-level" Mtest.py
     So far, while Mtest.py could be called in any subdirectory of the MonetDB
@@ -911,7 +1087,7 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Thu, 17 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * clients: Mapi protocol v8 support was removed from all client drivers.  Protocol
     v8 has not been used by the servers any more since Apr2012 release
@@ -919,7 +1095,7 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * java: merocontrol was changed to return server URIs, and lastStop time.
     Connections and dbpath were removed.
@@ -928,13 +1104,13 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * merovingian: Upgrade support for dbfarms from Mar2011 and Aug2011 was dropped
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * merovingian: monetdb status now uses a more condensed output, to cater for the uris
     being shown, and prints how long a database is stopped, or how long
@@ -942,7 +1118,7 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * merovingian: monetdb status now prints the connection uri for each database,
     when available.  The connections and database path properties have
@@ -950,21 +1126,21 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * merovingian: monetdb status now prints last crash date only if the database has
     not been started since.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * monetdb5: mserver5: The --dbname and --dbfarm options have been replaced by the
     single --dbpath option.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * clients: msqldump: Implmented an option (--table/-t) to dump a single table.
   * clients: Changed msqdump's trace option to be in line with mclient.  In both
@@ -972,7 +1148,7 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.15.1-20130212) unstable; urgency=low
+monetdb (11.15.1) unstable; urgency=low
 
   * monetdb5: The scheduler of mserver5 was changed to use a fixed set of workers to
     perform the work for all connected clients.  Previously, each client
@@ -981,19 +1157,19 @@ monetdb (11.15.1-20130212) unstable; urgency=low
 
  -- Martin Kersten <mk@cwi.nl>  Tue, 15 Jan 2013 09:51:39 +0100
 
-monetdb (11.13.9-20130115) unstable; urgency=low
+monetdb (11.13.9) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Jan 2013 09:59:17 +0100
 
-monetdb (11.13.7-20121212) unstable; urgency=low
+monetdb (11.13.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Dec 2012 13:00:49 +0100
 
-monetdb (11.13.7-20121212) unstable; urgency=low
+monetdb (11.13.7) unstable; urgency=low
 
   * java: Implemented type map support of Connection to allow custom mapping
     of UDTs to Java classes.  By default the INET and URL UDTs are
@@ -1003,7 +1179,7 @@ monetdb (11.13.7-20121212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Fri, 23 Nov 2012 13:00:48 +0100
 
-monetdb (11.13.7-20121212) unstable; urgency=low
+monetdb (11.13.7) unstable; urgency=low
 
   * java: Fixed a problem in PreparedStatement where the prepared statement's
     ResultSetMetaData (on its columns to be produced) incorrectly threw
@@ -1011,72 +1187,72 @@ monetdb (11.13.7-20121212) unstable; urgency=low
 
  -- Fabian Groffen <fabian@monetdb.org>  Thu, 22 Nov 2012 13:00:48 +0100
 
-monetdb (11.13.7-20121212) unstable; urgency=low
+monetdb (11.13.7) unstable; urgency=low
 
   * sql: Fixed crash when performing an INSERT on a table with string-like column
     defaulting to NULL and omitting that column from VALUES, bug #3168
 
  -- Fabian Groffen <fabian@monetdb.org>  Wed, 21 Nov 2012 13:00:48 +0100
 
-monetdb (11.13.5-20121116) unstable; urgency=low
+monetdb (11.13.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Nov 2012 09:29:41 +0100
 
-monetdb (11.13.3-20121016) unstable; urgency=low
+monetdb (11.13.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 16 Oct 2012 13:02:31 +0200
 
-monetdb (11.13.3-20121016) unstable; urgency=low
+monetdb (11.13.3) unstable; urgency=low
 
   * java: Fixed problem with PreparedStatements and setXXX() methods using column
     numbers instead of names, bug #3158
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 10 Oct 2012 13:02:30 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Wed, 10 Oct 2012 11:31:56 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * merovingian: Fixed problem where monetdbd would refuse to startup when discovery
     was set to false, bug #3155
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 9 Oct 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * monetdb5: Removed module attach since it wasn't used or even tested.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * clients: mclient now accepts URIs as database to connect to.
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * monetdb5: The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
     most likely non-functional.
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * gdk: Removed the gdk_embedded (and embedded) option.  The code wasn't tested
     and most likely non-functional.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * clients: all strings returned by python2 are unicode, removed use_unicode option
   * clients: python2 and 3 type convertion speed improvements
@@ -1085,7 +1261,7 @@ monetdb (11.13.1-20121010) unstable; urgency=low
 
  -- Gijs Molenaar <g.j.molenaar@uva.nl>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * gdk: BAT-of-BATs is no longer allowed.  It was already not allowed to
     make these types of BATs persistent, but now they can't be created at
@@ -1093,32 +1269,32 @@ monetdb (11.13.1-20121010) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.13.1-20121010) unstable; urgency=low
+monetdb (11.13.1) unstable; urgency=low
 
   * buildtools: Removed --enable-noexpand configure option.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
 
-monetdb (11.11.11-20120917) unstable; urgency=low
+monetdb (11.11.11) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 10:00:19 +0200
 
-monetdb (11.11.9-20120911) unstable; urgency=low
+monetdb (11.11.9) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Sep 2012 10:33:30 +0200
 
-monetdb (11.11.9-20120911) unstable; urgency=low
+monetdb (11.11.9) unstable; urgency=low
 
   * monetdb5: Changed the way nclients maximum was calculated to avoid 'out of client
     slots' errors way before the maximum was reached.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 7 Sep 2012 10:33:29 +0200
 
-monetdb (11.11.9-20120911) unstable; urgency=low
+monetdb (11.11.9) unstable; urgency=low
 
   * merovingian: Resolved a problem where monetdb could fail to start a database with
     the message "database 'X' started up, but failed to open up a
@@ -1126,27 +1302,27 @@ monetdb (11.11.9-20120911) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 31 Aug 2012 10:33:29 +0200
 
-monetdb (11.11.9-20120911) unstable; urgency=low
+monetdb (11.11.9) unstable; urgency=low
 
   * gdk: Fixed a bug in BATantijoin when either side is a singleton BAT.
     This fixes bug 3139.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 31 Aug 2012 10:33:29 +0200
 
-monetdb (11.11.9-20120911) unstable; urgency=low
+monetdb (11.11.9) unstable; urgency=low
 
   * java: Fixed a bug where DatabaseMetaData.getURL() did return null:0 for
     hostname:port.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 14 Aug 2012 10:33:29 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Aug 2012 11:31:44 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * merovingian: Starting a server now waits for as long as the server needs to possibly
     recover, bug #3134.  In case of a long wait, the monetdbd logfile
@@ -1155,41 +1331,41 @@ monetdb (11.11.7-20120813) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 2 Aug 2012 11:31:44 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * monetdb5: The server now distinguishes between starting and started states,
     such that monetdbd can wait for it to finish starting.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 2 Aug 2012 11:31:44 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * java: Fixed adaptive cache size used when retrieving results, not to cause
     divide by zero errors when memory gets short, bug #3119.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 20 Jul 2012 11:31:44 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * merovingian: Resolved a problem where automatic starting of a database initiated by
     multiple clients at the same time could cause failed starts.  Bug #3107
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 18 Jul 2012 11:31:44 +0200
 
-monetdb (11.11.7-20120813) unstable; urgency=low
+monetdb (11.11.7) unstable; urgency=low
 
   * clients: mclient no longer prints the SQLSTATE at the start of each error
     returned by the SQL-server.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 17 Jul 2012 11:31:44 +0200
 
-monetdb (11.11.5-20120710) unstable; urgency=low
+monetdb (11.11.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Tue, 10 Jul 2012 11:52:59 +0200
 
-monetdb (11.11.5-20120710) unstable; urgency=low
+monetdb (11.11.5) unstable; urgency=low
 
   * gdk: Fixed intermittent problem that joins and selects return incorrect
     results and possibly inconsistent databases. The problems only occurred
@@ -1197,73 +1373,73 @@ monetdb (11.11.5-20120710) unstable; urgency=low
 
  -- Niels Nes <niels@cwi.nl>  Mon, 9 Jul 2012 11:52:58 +0200
 
-monetdb (11.11.3-20120709) unstable; urgency=low
+monetdb (11.11.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Mon, 09 Jul 2012 10:05:31 +0200
 
-monetdb (11.11.3-20120709) unstable; urgency=low
+monetdb (11.11.3) unstable; urgency=low
 
   * merovingian: Fixed misc memory leaks, which caused monetdbd to grow in memory size
     over time.
 
  -- Fabian Groffen <fabian@cwi.nl>  Sat, 7 Jul 2012 10:05:31 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Fri, 06 Jul 2012 11:02:22 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * buildtools: Created seperate RPM and DEB packages for MonetDB/JAQL.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 2 Jul 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * sql: COPY INTO now accepts optional parenthesis for file argument.
     Binary COPY INTO now requires 'COPY BINARY INTO'.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 29 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * clients: ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
     of a connection handle.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * monetdb5: Crackers code has been removed.  Development continues in the holindex
     branch.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 14 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * merovingian: Removed erroneously (re-)added master and slave properties, this
     functionality is currently not working.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 13 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * buildtools: Removed --enable-bits option from configure.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * buildtools: Split the MonetDB-client-ruby RPM package into two and named them in
     accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * gdk: The sorted property, which was used to maintain whether a column in
     a BAT was sorted or reverse sorted, has been replaced by a pair of
@@ -1276,19 +1452,19 @@ monetdb (11.11.1-20120706) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
 
-monetdb (11.11.1-20120706) unstable; urgency=low
+monetdb (11.11.1) unstable; urgency=low
 
   * gdk: Implemented proper overflow checking on all arithmetic operations.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
 
-monetdb (11.9.7-20120607) unstable; urgency=low
+monetdb (11.9.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 07 Jun 2012 11:36:25 +0200
 
-monetdb (11.9.7-20120607) unstable; urgency=low
+monetdb (11.9.7) unstable; urgency=low
 
   * clients: Resolved a cosmetical error where tab-characters would cause
     misalignments in tabular result views.  For the time being, tabs are
@@ -1296,7 +1472,7 @@ monetdb (11.9.7-20120607) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 23 May 2012 11:36:24 +0200
 
-monetdb (11.9.7-20120607) unstable; urgency=low
+monetdb (11.9.7) unstable; urgency=low
 
   * gdk: Limit number of detected CPU cores to 16 on 32-bits systems to avoid
     running quickly out of addressable resources followed by a kill from
@@ -1304,78 +1480,78 @@ monetdb (11.9.7-20120607) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 17 May 2012 11:36:24 +0200
 
-monetdb (11.9.5-20120516) unstable; urgency=low
+monetdb (11.9.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Wed, 16 May 2012 10:07:19 +0200
 
-monetdb (11.9.5-20120516) unstable; urgency=low
+monetdb (11.9.5) unstable; urgency=low
 
   * merovingian: Fixed a bug where connecting to a stopped multiplex-funnel would result
     in a 'there are no available connections' error.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 May 2012 10:07:19 +0200
 
-monetdb (11.9.5-20120516) unstable; urgency=low
+monetdb (11.9.5) unstable; urgency=low
 
   * sql: Databases that were upgraded from the Aug2011 release have an error
     in the catalog for SQL procedures.  This is now fixed.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 May 2012 10:07:19 +0200
 
-monetdb (11.9.3-20120514) unstable; urgency=low
+monetdb (11.9.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Mon, 14 May 2012 12:36:35 +0200
 
-monetdb (11.9.3-20120514) unstable; urgency=low
+monetdb (11.9.3) unstable; urgency=low
 
   * buildtools: Windows: we now use OpenSSL 1.0.1b.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 2 May 2012 12:36:35 +0200
 
-monetdb (11.9.3-20120514) unstable; urgency=low
+monetdb (11.9.3) unstable; urgency=low
 
   * gdk: Implemented MT_getrss for Mac OS X systems, this allows the server to
     know about how much memory is currently in use.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 27 Apr 2012 12:36:35 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 18 Apr 2012 09:48:42 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * merovingian: The logfile and pidfile monetdbd properties are now displayed with
     dbfarm path when relative
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * clients: ODBC: Implemented the SQL_ATTR_CONNECTION_TIMEOUT attribute.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * clients: mclient now has a -a (--autocommit) option to turn off autocommit mode.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * java: Password reading by JdbcClient no longer results in strange artifacts
   * java: JdbcClient now returns exit code 1 in case of failures
 
  -- Wouter Alink <wouter@spinque.com>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * gdk: The type "chr" has been removed.
     chr has long been superseded by bte for 1 byte arithmetic plus it is
@@ -1384,7 +1560,7 @@ monetdb (11.9.1-20120418) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.9.1-20120418) unstable; urgency=low
+monetdb (11.9.1) unstable; urgency=low
 
   * monetdb5: The type "chr" has been removed.
     chr has long been superseded by bte for 1 byte arithmetic plus it is
@@ -1393,26 +1569,26 @@ monetdb (11.9.1-20120418) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
 
-monetdb (11.7.9-20120312) unstable; urgency=low
+monetdb (11.7.9) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Mon, 12 Mar 2012 14:32:53 +0100
 
-monetdb (11.7.9-20120312) unstable; urgency=low
+monetdb (11.7.9) unstable; urgency=low
 
   * java: Implemented missing Number types support in
     PreparedStatement.setObject()
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 28 Feb 2012 14:32:53 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@monetdb.org>  Fri, 24 Feb 2012 13:06:00 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * buildtools: Fixed some of the package names for Debian/Ubuntu.  Packages for
     libraries should contain the major number of the library version number.
@@ -1420,21 +1596,21 @@ monetdb (11.7.7-20120224) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 22 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * java: Fixed bug in DatabaseMetaData.getSchemas() method that caused an SQL
     error when called with catalog and schema argument.
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 20 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * merovingian: Fixed a bug in the multiplex-funnel where certain clients would abort
     on responses for update queries.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 17 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * sql: Fixed a crash that happened at the end of a database upgrade to the
     Dec2011 database scheme.  The crash happened during cleanup after the
@@ -1442,34 +1618,34 @@ monetdb (11.7.7-20120224) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 17 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * sql: Stripped off implementation-specific parts from error messages before
     they get presented to the user.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 15 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * java: Resolved a bug where JDBC and Control connections could terminate
     abruptly with 'Connection closed' messages
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 14 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * monetdb5: Fixed potential crash by dealing better with non-standard types.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 9 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * buildtools: On Debian and Ubuntu, install Python modules in dist-packages instead
     of site-packages.  This fixed bug 2997.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 Feb 2012 13:05:59 +0100
 
-monetdb (11.7.7-20120224) unstable; urgency=low
+monetdb (11.7.7) unstable; urgency=low
 
   * merovingian: Fixed problem where version and mserver properties for monetdbd were
     not always successfully retrieved.  Bug #2982.
@@ -1482,56 +1658,56 @@ monetdb (11.7.7-20120224) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 30 Jan 2012 13:05:59 +0100
 
-monetdb (11.7.5-20120120) unstable; urgency=low
+monetdb (11.7.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Jan 2012 15:00:25 +0100
 
-monetdb (11.7.3-20120117) unstable; urgency=low
+monetdb (11.7.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 Jan 2012 10:51:40 +0100
 
-monetdb (11.7.3-20120117) unstable; urgency=low
+monetdb (11.7.3) unstable; urgency=low
 
   * monetdb5: A couple of memory leaks have been plugged.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Jan 2012 10:51:39 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 11 Jan 2012 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Implemented getMetaData() method of PreparedStatement.
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 2 Jan 2012 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Fixed an AssertionError for special results from e.g. EXPLAIN queries.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 27 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: Fixed crash in monetdb when an invalid property was retrieved using
     the get command, bug #2953.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 27 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Fixed overflow error when batching large statements, bug #2952
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 21 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Resolved a concurrency problem where ResultSet's date-related getters
     could cause odd stack traces when used by multiple threads at the
@@ -1539,7 +1715,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: JDBC now implements JDBCv4.1 which makes it possible to be built with
     Java 7 and up.  JDBCv4.1 is a maintenance release of JDBCv4, and hence
@@ -1548,7 +1724,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 19 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: SQLExceptions thrown now carry a SQLSTATE.  Until the server starts
     sending correct SQLSTATEs for all errors, server originated errors
@@ -1556,7 +1732,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Sun, 11 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Fixed a bug where closing ResultSets and PreparedStatements could lead
     to errors on concurrent running queries using the same Connection due
@@ -1564,21 +1740,21 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Sat, 10 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: Changed version scheme of JDBC driver and MCL jar to be more standard,
     from monetdb-X.Y-<thing>.jar to monetdb-<thing>-X.Y.jar, bug #2943
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 8 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: Fix making connections with stethoscope to hosts without monetdbd.
     Bug #2944.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 7 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: Fixed some bugs in the PHP interface affecting the mapi_ping(),
     monetdb_insert_id() and auto_commit() functions.  Bugs #2936, #2937,
@@ -1586,21 +1762,21 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 6 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * gdk: Fixed memory detection on 32-bits Solaris systems with more memory
     than can be addressed in 32-bits mode, bug #2935
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 6 Dec 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: ODBC: Fixed SQLNumResultCols and SQLDescribeCol to return useful
     information after a call to SQLPrepare and before any SQLExecute.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: mclient: The exact interpretation of the -i (--interactive) option
     and the - filename argument have changed.  The - filename argument
@@ -1615,7 +1791,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * sql: mclient: The csv output format can now also be of the form csv=c and
     csv+c where c is the column separator.  The form with csv+ produces
@@ -1623,7 +1799,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: ODBC: Improved internal query for SQLSpecialColumns.  Before, the query
     returned all columns taking part in a PRIMARY KEY *and* all columns
@@ -1632,14 +1808,14 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * sql: Changed a bug where the sign() function returned the same type as its
     argument instead of always an INTEGER.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: ODBC: The database name is now used as the catalog name throughout.
     Functions that return a catalog name return the database name, and
@@ -1647,7 +1823,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: ODBC: Implemented an easier way to create a log file of interactions
     with the ODBC driver.  You can now add a connection attribute
@@ -1658,7 +1834,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: The embedded monet instance capability of MonetConnection was removed.
   * java: Bump JDBC version to 2.0 (Liberica).  JDBC now implements JDBCv4 which
@@ -1667,20 +1843,20 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: Quoting of object names for mclient's \d command is now more flexible
     and consistent with standard SQL quoting rules, bug #2846.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: monetdb get output is now grouped by database instead of by property
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: Unlike in previous releases, 'monetdbd get mserver' now returns the path
     to the mserver5 binary only for dbfarms that have a running monetdbd,
@@ -1688,34 +1864,34 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: Add nclients property that controls the maximum number of concurrent
     clients allowed to access the database
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * monetdb5: Introduced new variable max_clients that allows to define how many
     concurrent connections are allowed to be made against the database.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: ODBC: Implemented SQLColumnPrivileges function.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * java: INTERVAL columns are now treated as decimals, since they can have
     sub-second precision.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: Starting monetdbd without any arguments or without dbfarm is no longer
     supported.  A dbfarm now must be provided for each command.
@@ -1730,21 +1906,21 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: Install new program, mnc, which provides netcat functionality, but
     based on MonetDB's communication libraries
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: Report full URI to database instead of just database when available
     in mclient.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * merovingian: The monetdbd discoveryport option has been removed in favour of a
     boolean discovery option.  On upgrade, when discoveryport was set to
@@ -1752,7 +1928,7 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * clients: The time format of the timer output can now be controlled with an
     optional argument to the -i option.  ms, s and m force the time to be
@@ -1760,14 +1936,14 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * monetdb5: bpm and partitions have been moved to the attic.  It is replaced by
     the partition optimizer, still under construction.
 
  -- Martin Kersten <mk@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * monetdb5: mal_interpreter.mx Protect against concurrent exceptions If multiple
     parallel blocks access the exception variables and perform GDKfree
@@ -1776,59 +1952,59 @@ monetdb (11.7.1-20120111) unstable; urgency=low
 
  -- Martin Kersten <mk@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * monetdb5: The dataflow optimizer uses a less strict side-effect test for BAT
     new operations and better recognizes trivial plans.
 
  -- Martin Kersten <mk@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.7.1-20120111) unstable; urgency=low
+monetdb (11.7.1) unstable; urgency=low
 
   * monetdb5: The MAL debugger next/step operations semantics have been fixed.
     The profiler also now clearly shows entrance/exit of a MAL function.
 
  -- Martin Kersten <mk@cwi.nl>  Tue, 15 Nov 2011 09:43:23 +0100
 
-monetdb (11.5.9-20111115) unstable; urgency=low
+monetdb (11.5.9) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 Nov 2011 14:06:33 +0100
 
-monetdb (11.5.9-20111115) unstable; urgency=low
+monetdb (11.5.9) unstable; urgency=low
 
   * merovingian: Fixed a bug where monetdbd's socket files from /tmp were removed when
     a second monetdbd was attempted to be started using the same port.
 
  -- Fabian Groffen <fabian@cwi.nl>  Sun, 6 Nov 2011 14:06:32 +0100
 
-monetdb (11.5.9-20111115) unstable; urgency=low
+monetdb (11.5.9) unstable; urgency=low
 
   * sql: Added a fix for bug #2834, which caused weird (failing) behaviour
     with PreparedStatements.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 26 Oct 2011 14:06:32 +0100
 
-monetdb (11.5.7-20111021) unstable; urgency=low
+monetdb (11.5.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 21 Oct 2011 09:32:09 +0200
 
-monetdb (11.5.7-20111021) unstable; urgency=low
+monetdb (11.5.7) unstable; urgency=low
 
   * clients: ODBC: Implemented a workaround in SQLTables for bug 2908.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Oct 2011 09:32:09 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Oct 2011 09:33:46 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: Small improvement to mclient's table rendering for tables without
     any rows.  Previously, the column names in the header could be
@@ -1836,21 +2012,21 @@ monetdb (11.5.5-20111018) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: Python DB API connect() function now supports PEP 249-style arguments
     user and host, bug #2901
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 12 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: mclient now checks the result of encoding conversions using the iconv
     library.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: Fixed a source of crashes in mclient when a query on the command line
     using the -s option is combined with input on standard input (e.g. in
@@ -1858,20 +2034,20 @@ monetdb (11.5.5-20111018) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 10 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * merovingian: Resolved problem where monetdbd would terminate abnormally when
     databases named 'control', 'discovery' or 'merovingian' were stopped.
 
  -- Fabian Groffen <fabian@cwi.nl>  Sun, 9 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * merovingian: monetdbd get status now also reports the version of the running monetdbd
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 7 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: Fixed bug 2897 where slow (network) reads could cause blocks to not
     be fully read in one go, causing errors in the subsequent use of
@@ -1879,47 +2055,47 @@ monetdb (11.5.5-20111018) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * merovingian: Improved response time of 'monetdb start' when the database fails
     to start.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 6 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * merovingian: Fixed a bug in monetdbd where starting a failing database could
     incorrectly be reported as a 'running but dead' database.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 5 Oct 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * merovingian: To avoid confusion, all occurrences of merovingian were changed into
     monetdbd for error messages sent to a client.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 30 Sep 2011 09:33:45 +0200
 
-monetdb (11.5.5-20111018) unstable; urgency=low
+monetdb (11.5.5) unstable; urgency=low
 
   * clients: Fixed a bug in mclient where processing queries from files could result
     in ghost empty results to be reported in the output
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 27 Sep 2011 09:33:45 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Fabian Groffen <fabian@cwi.nl>  Sun, 25 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * clients: Fixed Perl DBD rowcount for larger results, bug #2889
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 23 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * monetdb5: Fixed a problem where MAL variables weren't properly cleared before
     reuse of the data strucutre.  This problem could cause the data flow
@@ -1929,13 +2105,13 @@ monetdb (11.5.3-20110925) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * sql: Fixed a bug when using default values for interval columns.  Bug 2877.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * clients: Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
     (the latter are recognized by being in the "tmp" schema).
@@ -1946,7 +2122,7 @@ monetdb (11.5.3-20110925) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * sql: A bug was fixed where deleted rows weren't properly accounted for in
     all operations.  This was bug 2882.
@@ -1957,7 +2133,7 @@ monetdb (11.5.3-20110925) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.3-20110925) unstable; urgency=low
+monetdb (11.5.3) unstable; urgency=low
 
   * clients: mclient: fix display of varchar columns with only NULL values.
   * clients: Fixed a bug in mclient/msqldump where an internal error occurred during
@@ -1965,41 +2141,41 @@ monetdb (11.5.3-20110925) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Sep 2011 14:14:49 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 07 Sep 2011 09:13:40 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: msqldump now also accepts the database name as last argument on the
     command line (i.e. without -d).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 31 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: Made error messages from the server in mclient go to stderr, instead
     of stdout.
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 26 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * gdk: Removed conversion code for databases that still used the (more than
     two year) old format of "string heaps".
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 25 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * merovingian: Fixed confusing 'Success' error message for monetdb commands where an
     invalid hostname was given
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 23 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * merovingian: The path to the mserver5 binary is no longer returned for the mserver
     property with monetdbd get for a dbfarm which is currently served by
@@ -2010,7 +2186,7 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 19 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: Implemented SQL_ATTR_METADATA_ID attribute.  The attribute is used
     in SQLColumns, SQLProcedures, and SQLTablePrivileges.
@@ -2018,14 +2194,14 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 18 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * merovingian: Added -n option to monetdbd start command, which prevents monetdbd
     from forking into the background.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 17 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * gdk: On Windows and Linux/Unix we can now read databases built on the other
     O/S, as long as the hardware-related architecture (bit size, floating
@@ -2033,28 +2209,28 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * merovingian: Fix incorrect (misleading) path for pidfile in pidfile error message,
     bug #2851
 
  -- Fabian Groffen <fabian@cwi.nl>  Sat, 6 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * buildtools: Fixed Fedora 15 (and presumably later) configuration that uses a tmpfs
     file system for /var/run.  This fixes bug 2850.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 6 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: mclient now automatically sets the SQL `TIME ZONE' variable to its
     (the client's) time zone.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 5 Aug 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * geom: Implemented NULL checks in the geom module.  Now when given NULL
     as input, the module functions return NULL instead of an exception.
@@ -2062,7 +2238,7 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
   * clients: Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
@@ -2070,27 +2246,27 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * buildtools: The default OID size for 64-bit Windows is now 64 bits.  Databases with
     32 bit OIDs are converted automatically.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: Made Mapi.pm usable with current versions of MonetDB again
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * monetdb5: Make crackers optional and disable by default, since it wasn't used
     normally
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * java: Add so_timeout Driver property to specify a SO_TIMEOUT value for the
     socket in use to the database.  Setting this property to a value in
@@ -2099,26 +2275,26 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * java: Added a naive implementation for PreparedStatement.setCharacterStream
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * gdk: Implemented automatic conversion of a 64-bit database with 32-bit OIDs
     to one with 64-bit OIDs.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * merovingian: added status property to get command
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * monetdb5: Authorisation no longer takes scenarios into account.  Access for only
     sql or mal is no longer possible.  Any credentials now mean access to
@@ -2126,7 +2302,7 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * clients: When the first non-option argument of mclient does not refer to an
     exising file, it now is taken as database name.  This allows to simply
@@ -2134,47 +2310,47 @@ monetdb (11.5.1-20110907) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.5.1-20110907) unstable; urgency=low
+monetdb (11.5.1) unstable; urgency=low
 
   * java: The obsolete Java-based implementation for PreparedStatements (formerly
     activated using the java_prepared_statements property) has been dropped
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
 
-monetdb (11.3.7-20110726) unstable; urgency=low
+monetdb (11.3.7) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Jul 2011 09:53:37 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * sql: Fixed regression where the superuser password could no longer be
     changed, bug #2844
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 19 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * buildtools: We can now build RPMs on CentOS 6.0.  Since there is no geos library
     on CentOS, we do not support the geom modules there.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 13 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * gdk: Fixed a problem where appending string BATs could cause enormous growth
     of the string heap.  This fixes bug 2820.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 9 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * java: Return false from Statement.getMoreResults() instead of a
     NullPointerException when no query has been performed on the Statement
@@ -2182,13 +2358,13 @@ monetdb (11.3.5-20110720) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 8 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * clients: Fix stethoscope's mod.fcn filter when using multiple targets, bug #2827
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 1 Jul 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * buildtools: We can now also build on Fedora 15.  This required some very minor
     changes.
@@ -2198,20 +2374,20 @@ monetdb (11.3.5-20110720) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * clients: The separate Python distribution now uses the same version number as
     the main package.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * gdk: Fixes to memory detection on FreeBSD.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * sql: Fixed incorrect insert counts.
   * sql: Fixed bug 2823: MAL exeption on SQL query with subquery in the where
@@ -2224,7 +2400,7 @@ monetdb (11.3.5-20110720) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
 
-monetdb (11.3.5-20110720) unstable; urgency=low
+monetdb (11.3.5) unstable; urgency=low
 
   * java: Fixed read-only interpretation.  Connection.isReadOnly now always
     returns false, setReadOnly now generates a warning when called with
@@ -2233,20 +2409,20 @@ monetdb (11.3.5-20110720) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 6 Jun 2011 12:43:02 +0200
 
-monetdb (11.3.3-20110517) unstable; urgency=low
+monetdb (11.3.3) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 May 2011 16:45:39 +0200
 
-monetdb (11.3.3-20110517) unstable; urgency=low
+monetdb (11.3.3) unstable; urgency=low
 
   * gdk: Fixed a bug where large files (> 2GB) didn't always get deleted on
 Windows.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 13 May 2011 16:45:38 +0200
 
-monetdb (11.3.3-20110517) unstable; urgency=low
+monetdb (11.3.3) unstable; urgency=low
 
   * java: Insertion via PreparedStatement and retrieval via ResultSet of timestamp
 and time fields with and without timezones was improved to better
@@ -2254,39 +2430,39 @@ respect timezones, as partly indicated in bug #2781.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 11 May 2011 16:45:38 +0200
 
-monetdb (11.3.3-20110517) unstable; urgency=low
+monetdb (11.3.3) unstable; urgency=low
 
   * monetdb5: Fixed a bug in conversion from string to the URL type.  The bug was
 an incorrect call to free().
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 11 May 2011 16:45:38 +0200
 
-monetdb (11.3.3-20110517) unstable; urgency=low
+monetdb (11.3.3) unstable; urgency=low
 
   * geom: Fixed various problems so that now all our tests work correctly on
 all our testing platforms.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Apr 2011 16:45:38 +0200
 
-monetdb (11.3.1-20110421) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 21 Apr 2011 09:38:31 +0200
 
-monetdb (11.3.1-20110421) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * merovingian: Fix monetdb return code upon failure to start/stop a database
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 18 Apr 2011 09:38:31 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 14 Apr 2011 10:11:08 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * gdk: Fixed bugs in antiselect which gave the incorrect result when upper
     and lower bound were equal.  This bug could be triggered by the SQL
@@ -2294,7 +2470,7 @@ monetdb (11.3.1-20110414) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 14 Apr 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * sql: Some names in the SQL catalog were changed.  This means that the
     database in the Apr2011 release is not compatible with pre-Apr2011
@@ -2304,27 +2480,27 @@ monetdb (11.3.1-20110414) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 14 Apr 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * clients: Plugged a small memory leak occurring upon redirects by the server
     (e.g. via monetdbd)
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 5 Apr 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * java: clarify exception messages for unsupported methods
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 5 Apr 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * merovingian: The forward property for databases has been removed.  Instead, only
     a global proxy or redirect mode can be set using monetdbd.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * merovingian: monetdbd can no longer log error and normal messages to separate
     logfiles, logging to stdout and stderr is no longer possible either.
@@ -2341,119 +2517,119 @@ monetdb (11.3.1-20110414) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * clients: Remove XQuery related code from Ruby adapter, PHP driver and Perl Mapi
     library
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * java: Removed XQuery related XRPC wrapper and XML:DB code, removed support
     for language=xquery and language=mil from JDBC.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * clients: Make SQL the default language for mclient, e.g. to use when --language=
     or -l is omitted
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.3.1-20110414) unstable; urgency=low
+monetdb (11.3.1) unstable; urgency=low
 
   * monetdb5: mserver5 no longer reads monetdb5.conf upon startup by default.
     Use --config=file to have mserver5 read a configuration on startup
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 24 Mar 2011 10:11:07 +0200
 
-monetdb (11.1.1-20110324) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Mar 2011 09:12:25 +0100
 
-monetdb (11.1.1-20110324) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * gdk: Fixed memory detection on Darwin (Mac OS X) systems not to return
     bogus values
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 22 Mar 2011 09:12:24 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 17 Mar 2011 11:30:33 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * geom: Set endianness for wkb en/decoding.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Mar 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * monetdb5: sphinx module: update, adding limit/max_results support
 
  -- Stefan de Konink <stefan@konink.de>  Sat, 05 Mar 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Fixed bug 2677: SQL_DESC_OCTET_LENGTH should give the size in bytes
     required to copy the data.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 14 Feb 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Disable timer functionality for non-XQuery languages since it is
     incorrect, bug #2705
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 24 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * sql: Fix bug #2648, do not allow restarting a sequence with NULL via the
     result of a sub-query.
 
  -- Fabian Groffen <fabian@cwi.nl>  Mon, 24 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * gdk: MonetDB/src/gdk was moved to gdk
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 14 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Added mapi_get_uri function to retrieve mapi URI for the connection
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * merovingian: Allow use of globs with all commands that accept database names as
     their parameters
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * java: PreparedStatements now free the server-side resources attached to them
     when closed.  This implements bug #2720
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * sql: Allow clients to release prepared handles using Xrelease commands
 
  -- Niels Nes <niels@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Allow to dump table data using INSERT INTO statements, rather than COPY
     INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
@@ -2461,20 +2637,20 @@ monetdb (11.1.1-20110317) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Added support for \dn to list schemas or describe a specific one
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Added support for \df to list functions or describe a specific one
   * clients: Added support for \ds to list sequences or describe a specific one
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: Added support for wildcards * and ? in object names given to \d
     commands, such that pattern matching is possible, e.g. \d my*
@@ -2482,7 +2658,7 @@ monetdb (11.1.1-20110317) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * clients: object names given to \d are now lowercased, unless quoted by either
     single or double quotes
@@ -2490,7 +2666,7 @@ monetdb (11.1.1-20110317) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * merovingian: merovingian has been renamed into monetdbd.  Internally, monetdbd keeps
     referring to merovingian for e.g. settings and logfiles.  Merovingian
@@ -2499,7 +2675,7 @@ monetdb (11.1.1-20110317) unstable; urgency=low
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
 
-monetdb (11.1.1-20110317) unstable; urgency=low
+monetdb (11.1.1) unstable; urgency=low
 
   * monetdb5: Improve the performance of remote.put for BAT arguments.  The put
     speed is now roughly equal to the speed of get on a BAT.

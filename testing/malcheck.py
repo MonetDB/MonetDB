@@ -57,7 +57,7 @@ atomfunctypes = {
     'storage': ('long', (('void', False),)),
     'tostr': ('int', (('str *', False), ('int *', False), ('void *', True))),
     'unfix': ('int', (('void *', True),)),
-    'write': ('int', (('void *', True), ('stream *', False), ('size_t', False))),
+    'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }
 
 defre = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\((?P<args>[a-zA-Z0-9_, \t]*)\)[ \t]*(?P<def>.*)$', re.MULTILINE)

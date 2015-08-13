@@ -642,12 +642,28 @@ comment "Allow synonyms for the parse format of
 	date/timestamp.";
 
 command str_to_date(s:str, format:str) :date
-address MTIMEstrptime
+address MTIMEstr_to_date
 comment "create a date from the string, using the specified format (see man strptime)";
 
 command date_to_str(d:date, format:str) :str
-address MTIMEstrftime
+address MTIMEdate_to_str
 comment "create a string from the date, using the specified format (see man strftime)";
+
+command str_to_time(s:str, format:str) :daytime
+address MTIMEstr_to_time
+comment "create a time from the string, using the specified format (see man strptime)";
+
+command time_to_str(d:daytime, format:str) :str
+address MTIMEtime_to_str
+comment "create a string from the time, using the specified format (see man strftime)";
+
+command str_to_timestamp(s:str, format:str) :timestamp
+address MTIMEstr_to_timestamp
+comment "create a timestamp from the string, using the specified format (see man strptime)";
+
+command timestamp_to_str(d:timestamp, format:str) :str
+address MTIMEtimestamp_to_str
+comment "create a string from the time, using the specified format (see man strftime)";
 
 # @+ Utilities
 # The Monet V4 procs are converted into functions.

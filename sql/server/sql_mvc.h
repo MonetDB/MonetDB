@@ -22,9 +22,6 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
-#ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
-#endif
 
 #include <mapi.h>
 
@@ -116,10 +113,6 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
-#ifdef HAVE_TIMES
-	struct tms times;
-#endif	
-	lng Tparse;
 } mvc;
 
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);

@@ -20,15 +20,15 @@ static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	str mod,fcn;
 	char buf[1024];
-	int i;
+	int i, retc = pci->retc;
 	InstrPtr p;
 
 	(void) stk;
-	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
-	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
+	mod = VALget(&getVar(mb, getArg(pci, retc+0))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, retc+1))->value);
 
 	if(strncmp(mod,"bat",3)==0)
-		return 0;
+		mod+=3;
 	OPTDEBUGremap 
 		mnstr_printf(cntxt->fdout,"#Found a candidate %s.%s\n",mod,fcn);
 
@@ -38,7 +38,10 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	setFunctionId(p,putName(fcn, strlen(fcn)));
 
 	for(i=0; i<pci->retc; i++)
-		getArg(p,i)= getArg(pci,i);
+		if (i<1)
+			getArg(p,i) = getArg(pci,i);
+		else
+			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= pushArgument(mb,p,getArg(pci,i));
@@ -99,11 +102,14 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	InstrPtr q = NULL, sig;
 	char buf[1024];
 	int i,j,k, actions=0;
-	int refbat=0;
+	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	Symbol s;
-	s= findSymbol(cntxt->nspace, VALget(&getVar(mb, getArg(p, 1))->value),
-			VALget(&getVar(mb, getArg(p, 2))->value));
+
+
+	s= findSymbol(cntxt->nspace, 
+			VALget(&getVar(mb, getArg(p, retc+0))->value),
+			VALget(&getVar(mb, getArg(p, retc+1))->value));
 
 	if( s== NULL || !isSideEffectFree(s->def) || 
 		getInstrPtr(s->def,0)->retc != p->retc ) {
@@ -347,14 +353,14 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (isMultiplex(p) && getModuleId(p) != batmalRef /* for now only simple mal.multiplex */){
+		if (isMultiplex(p)){
 			/*
 			 * The next step considered is to handle inlined functions.
 			 * It means we have already skipped the most obvious ones,
 			 * such as the calculator functions. It is particularly
 			 * geared at handling the PSM code.
 			 */
-			if ( varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
+			if (varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
 				OPTDEBUGremap{
 					mnstr_printf(cntxt->fdout,"#Multiplex inline\n");
 					printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
@@ -364,9 +370,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					doit++;
 				OPTDEBUGremap
 					mnstr_printf(cntxt->fdout,"#doit %d\n",doit);
-			} else 
-			if(	OPTremapDirect(cntxt, mb, stk, p, scope) ||
-				OPTremapSwitched(cntxt, mb, stk, p, scope)){
+			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
+				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
 				freeInstruction(p); 
 				doit++;
 			} else {

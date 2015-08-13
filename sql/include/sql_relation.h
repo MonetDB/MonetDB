@@ -59,7 +59,6 @@ typedef struct expression {
 #define APPLY_EXISTS	32
 #define APPLY_NOTEXISTS	64
 
-
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
 #define CMPMASK		(ASCENDING-1)
@@ -117,6 +116,10 @@ typedef struct expression {
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
 
+#define DDL_ALTER_TABLE_ADD_TABLE  61
+#define DDL_ALTER_TABLE_DEL_TABLE  62
+#define DDL_ALTER_TABLE_SET_ACCESS  63
+
 #define MAXOPS 21
 
 typedef enum operator_type {
@@ -145,6 +148,9 @@ typedef enum operator_type {
 
 #define is_atom(et) \
 	(et == e_atom)
+/* a simple atom is a literal or on the query stack */
+#define is_simple_atom(e) \
+	(is_atom(e->flag) && !e->r && !e->f)
 #define is_func(et) \
 	(et == e_func)
 #define is_map_op(et) \
@@ -173,6 +179,8 @@ typedef enum operator_type {
 	(op == op_join || is_outerjoin(op))
 #define is_semi(op) \
 	(op == op_semi || op == op_anti)
+#define is_joinop(op) \
+	(is_join(op) || is_semi(op))
 #define is_apply(op) \
 	(op == op_apply)
 #define is_select(op) \

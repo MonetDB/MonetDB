@@ -59,9 +59,34 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 597 # length
+% 598 # length
 function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
-    X_187:void := querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe",99);
+    X_207:void := querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe",118);
+    X_165 := bat.new(nil:oid,nil:str);
+    X_173 := bat.append(X_165,"sys.part");
+    X_183 := bat.append(X_173,"sys.part");
+    X_191 := bat.append(X_183,"sys.part");
+    X_199 := bat.append(X_191,"sys.L4");
+    X_168 := bat.new(nil:oid,nil:str);
+    X_175 := bat.append(X_168,"p_brand");
+    X_184 := bat.append(X_175,"p_type");
+    X_192 := bat.append(X_184,"p_size");
+    X_201 := bat.append(X_192,"supplier_cnt");
+    X_169 := bat.new(nil:oid,nil:str);
+    X_177 := bat.append(X_169,"char");
+    X_186 := bat.append(X_177,"varchar");
+    X_194 := bat.append(X_186,"int");
+    X_203 := bat.append(X_194,"wrd");
+    X_170 := bat.new(nil:oid,nil:int);
+    X_179 := bat.append(X_170,10);
+    X_188 := bat.append(X_179,25);
+    X_196 := bat.append(X_188,32);
+    X_205 := bat.append(X_196,32);
+    X_172 := bat.new(nil:oid,nil:int);
+    X_181 := bat.append(X_172,0);
+    X_190 := bat.append(X_181,0);
+    X_198 := bat.append(X_190,0);
+    X_206 := bat.append(X_198,0);
     X_13 := sql.mvc();
     X_14:bat[:oid,:oid]  := sql.tid(X_13,"sys","partsupp");
     X_17:bat[:oid,:int]  := sql.bind(X_13,"sys","partsupp","ps_suppkey",0);
@@ -107,20 +132,20 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6
     X_88 := algebra.leftfetchjoin(X_64,X_87);
     X_89 := algebra.subselect(X_88,A0,A0,true,true,true);
     X_91 := algebra.likesubselect(X_80,X_89,A1,"",true);
-    X_92 := algebra.subselect(X_72,X_91,A2,A2,true,true,false);
-    X_94 := algebra.subselect(X_72,X_91,A3,A3,true,true,false);
+    X_92 := algebra.subselect(X_72,X_91,A2,A2,true,false,false);
+    X_94 := algebra.subselect(X_72,X_91,A3,A3,true,false,false);
     X_95 := bat.mergecand(X_92,X_94);
-    X_96 := algebra.subselect(X_72,X_91,A4,A4,true,true,false);
+    X_96 := algebra.subselect(X_72,X_91,A4,A4,true,false,false);
     X_97 := bat.mergecand(X_95,X_96);
-    X_98 := algebra.subselect(X_72,X_91,A5,A5,true,true,false);
+    X_98 := algebra.subselect(X_72,X_91,A5,A5,true,false,false);
     X_99 := bat.mergecand(X_97,X_98);
-    X_100 := algebra.subselect(X_72,X_91,A6,A6,true,true,false);
+    X_100 := algebra.subselect(X_72,X_91,A6,A6,true,false,false);
     X_101 := bat.mergecand(X_99,X_100);
-    X_102 := algebra.subselect(X_72,X_91,A7,A7,true,true,false);
+    X_102 := algebra.subselect(X_72,X_91,A7,A7,true,false,false);
     X_103 := bat.mergecand(X_101,X_102);
-    X_104 := algebra.subselect(X_72,X_91,A8,A8,true,true,false);
+    X_104 := algebra.subselect(X_72,X_91,A8,A8,true,false,false);
     X_105 := bat.mergecand(X_103,X_104);
-    X_106 := algebra.subselect(X_72,X_91,A9,A9,true,true,false);
+    X_106 := algebra.subselect(X_72,X_91,A9,A9,true,false,false);
     X_107 := bat.mergecand(X_105,X_106);
     X_108 := algebra.leftfetchjoin(X_107,X_64);
     (X_109,r1_124) := algebra.subjoin(X_63,X_108,nil:BAT,nil:BAT,false,nil:lng);
@@ -148,16 +173,10 @@ function user.s2_1{autoCommit=true}(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6
     (X_154,r1_173,r2_173) := algebra.subsort(X_142,r1_170,r2_170,false,false);
     (X_157,r1_176,r2_176) := algebra.subsort(X_141,r1_173,r2_173,false,false);
     X_160 := algebra.leftfetchjoin(r1_176,X_143);
-    X_163 := algebra.leftfetchjoin(r1_176,X_145);
-    X_162 := algebra.leftfetchjoin(r1_176,X_141);
     X_161 := algebra.leftfetchjoin(r1_176,X_142);
-    X_164 := sql.resultSet(4,1,X_160);
-    sql.rsColumn(X_164,"sys.part","p_brand","char",10,0,X_160);
-    sql.rsColumn(X_164,"sys.part","p_type","varchar",25,0,X_161);
-    sql.rsColumn(X_164,"sys.part","p_size","int",32,0,X_162);
-    sql.rsColumn(X_164,"sys.L4","supplier_cnt","wrd",32,0,X_163);
-    X_185 := io.stdout();
-    sql.exportResult(X_185,X_164);
+    X_162 := algebra.leftfetchjoin(r1_176,X_141);
+    X_163 := algebra.leftfetchjoin(r1_176,X_145);
+    sql.resultSet(X_199,X_201,X_203,X_205,X_206,X_160,X_161,X_162,X_163);
 end user.s2_1;
 
 # 22:53:29 >  

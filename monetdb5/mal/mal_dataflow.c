@@ -313,6 +313,9 @@ DFLOWworker(void *T)
 
 	thr = THRnew("DFLOWworker");
 
+#ifdef _MSC_VER
+	srand((unsigned int) GDKusec());
+#endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	MT_lock_set(&dataflowLock, "DFLOWworker");
@@ -600,7 +603,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	PARDEBUG {
 		for (n = 0; n < flow->stop - flow->start; n++) {
 			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_MAPI);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
 			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
 			for (j = n; flow->edges[j]; j = flow->edges[j]) {
 				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
@@ -750,7 +753,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 #ifdef DEBUG_FLOW
 	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	printFunction(GDKstdout, mb, 0, LIST_MAPI);
+	printFunction(GDKstdout, mb, 0, LIST_ALL);
 #endif
 
 	/* in debugging mode we should not start multiple threads */

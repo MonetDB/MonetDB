@@ -57,7 +57,7 @@
  * BUN_NONE+1 is returned by the DIV and MOD functions to indicate
  * division by zero.  */
 
-static int
+static gdk_return
 checkbats(BAT *b1, BAT *b2, const char *func)
 {
 	if (!BAThdense(b1) || (b2 != NULL && !BAThdense(b2))) {
@@ -192,7 +192,7 @@ BATcalcnot(BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcnot", NULL);
-	if (checkbats(b, NULL, "BATcalcnot") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcnot") != GDK_SUCCEED)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -251,7 +251,7 @@ BATcalcnot(BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
@@ -312,7 +312,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcnegate", NULL);
-	if (checkbats(b, NULL, "BATcalcnegate") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcnegate") != GDK_SUCCEED)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -373,7 +373,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcnegate(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
@@ -442,7 +442,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcabsolute", NULL);
-	if (checkbats(b, NULL, "BATcalcabsolute") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcabsolute") != GDK_SUCCEED)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -505,7 +505,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcabsolute(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
@@ -576,7 +576,7 @@ BATcalciszero(BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalciszero", NULL);
-	if (checkbats(b, NULL, "BATcalciszero") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalciszero") != GDK_SUCCEED)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -636,7 +636,7 @@ BATcalciszero(BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalciszero(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
@@ -708,7 +708,7 @@ BATcalcsign(BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, "BATcalcsign", NULL);
-	if (checkbats(b, NULL, "BATcalcsign") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcsign") != GDK_SUCCEED)
 		return NULL;
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -771,7 +771,7 @@ BATcalcsign(BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcsign(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bte;
@@ -945,7 +945,7 @@ BATcalcisnotnil(BAT *b, BAT *s)
 	return BATcalcisnil_implementation(b, s, 1);
 }
 
-int
+gdk_return
 VARcalcisnil(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
@@ -953,7 +953,7 @@ VARcalcisnil(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
-int
+gdk_return
 VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
@@ -977,7 +977,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcmin", NULL);
 	BATcheck(b2, "BATcalcmin", NULL);
 
-	if (checkbats(b1, b2, "BATcalcmin") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcmin") != GDK_SUCCEED)
 		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("BATcalcmin: inputs have incompatible types\n");
@@ -1059,7 +1059,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcmin_no_nil", NULL);
 	BATcheck(b2, "BATcalcmin_no_nil", NULL);
 
-	if (checkbats(b1, b2, "BATcalcmin_no_nil") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcmin_no_nil") != GDK_SUCCEED)
 		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("BATcalcmin_no_nil: inputs have incompatible types\n");
@@ -1145,7 +1145,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcmax", NULL);
 	BATcheck(b2, "BATcalcmax", NULL);
 
-	if (checkbats(b1, b2, "BATcalcmax") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcmax") != GDK_SUCCEED)
 		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("BATcalcmax: inputs have incompatible types\n");
@@ -1227,7 +1227,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcmax_no_nil", NULL);
 	BATcheck(b2, "BATcalcmax_no_nil", NULL);
 
-	if (checkbats(b1, b2, "BATcalcmax_no_nil") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcmax_no_nil") != GDK_SUCCEED)
 		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("BATcalcmax_no_nil: inputs have incompatible types\n");
@@ -2887,7 +2887,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BATcheck(b1, "BATcalcadd", NULL);
 	BATcheck(b2, "BATcalcadd", NULL);
 
-	if (checkbats(b1, b2, "BATcalcadd") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcadd") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -2942,7 +2942,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalcaddcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcaddcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcaddcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -2995,7 +2995,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalccstadd", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstadd") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstadd") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -3038,7 +3038,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -3066,7 +3066,7 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	bte one = 1;
 
 	BATcheck(b, func, NULL);
-	if (checkbats(b, NULL, func) == GDK_FAIL)
+	if (checkbats(b, NULL, func) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -3120,7 +3120,7 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 			       "BATcalcincr");
 }
 
-int
+gdk_return
 VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	bte one = 1;
@@ -4648,7 +4648,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	BATcheck(b1, "BATcalcsub", NULL);
 	BATcheck(b2, "BATcalcsub", NULL);
 
-	if (checkbats(b1, b2, "BATcalcsub") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcsub") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -4691,7 +4691,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalcsubcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcsubcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcsubcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -4739,7 +4739,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalccstsub", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstsub") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstsub") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -4778,7 +4778,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -4798,7 +4798,7 @@ BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 			       "BATcalcdecr");
 }
 
-int
+gdk_return
 VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	bte one = 1;
@@ -6509,7 +6509,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 	BATcheck(b1, func, NULL);
 	BATcheck(b2, func, NULL);
 
-	if (checkbats(b1, b2, func) == GDK_FAIL)
+	if (checkbats(b1, b2, func) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -6559,7 +6559,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalcmulcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcmulcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcmulcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -6617,7 +6617,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalccstmul", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstmul") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstmul") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -6665,7 +6665,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -8426,7 +8426,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalcdivcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcdivcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcdivcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -8487,7 +8487,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalccstdiv", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstdiv") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstdiv") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -8520,7 +8520,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -10010,7 +10010,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalcmodcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcmodcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcmodcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -10053,7 +10053,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATcheck(b, "BATcalccstmod", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstmod") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstmod") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -10086,7 +10086,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -10175,7 +10175,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcxor", NULL);
 	BATcheck(b2, "BATcalcxor", NULL);
 
-	if (checkbats(b1, b2, "BATcalcxor") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcxor") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
@@ -10224,7 +10224,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 
 	BATcheck(b, "BATcalcxorcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcxorcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcxorcst") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10273,7 +10273,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 
 	BATcheck(b, "BATcalccstxor", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstxor") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstxor") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10312,7 +10312,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
@@ -10422,7 +10422,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcor", NULL);
 	BATcheck(b2, "BATcalcor", NULL);
 
-	if (checkbats(b1, b2, "BATcalcor") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcor") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
@@ -10471,7 +10471,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 
 	BATcheck(b, "BATcalcorcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcorcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcorcst") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10520,7 +10520,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 
 	BATcheck(b, "BATcalccstor", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstor") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstor") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10559,7 +10559,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
@@ -10666,7 +10666,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	BATcheck(b1, "BATcalcand", NULL);
 	BATcheck(b2, "BATcalcand", NULL);
 
-	if (checkbats(b1, b2, "BATcalcand") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcand") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b1->T->type) != ATOMbasetype(b2->T->type)) {
@@ -10715,7 +10715,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 
 	BATcheck(b, "BATcalcandcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcandcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcandcst") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10763,7 +10763,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 
 	BATcheck(b, "BATcalccstand", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstand") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstand") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(v->vtype)) {
@@ -10801,7 +10801,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
@@ -11017,7 +11017,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BATcheck(b1, "BATcalclsh", NULL);
 	BATcheck(b2, "BATcalclsh", NULL);
 
-	if (checkbats(b1, b2, "BATcalclsh") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalclsh") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -11059,7 +11059,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 
 	BATcheck(b, "BATcalclshcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalclshcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalclshcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -11101,7 +11101,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 	BATcheck(b, "BATcalccstlsh", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstlsh") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstlsh") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -11133,7 +11133,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -11329,7 +11329,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	BATcheck(b1, "BATcalcrsh", NULL);
 	BATcheck(b2, "BATcalcrsh", NULL);
 
-	if (checkbats(b1, b2, "BATcalcrsh") == GDK_FAIL)
+	if (checkbats(b1, b2, "BATcalcrsh") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -11371,7 +11371,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 
 	BATcheck(b, "BATcalcrshcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcrshcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcrshcst") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -11413,7 +11413,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 	BATcheck(b, "BATcalccstrsh", NULL);
 
-	if (checkbats(b, NULL, "BATcalccstrsh") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalccstrsh") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -11445,7 +11445,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   int abort_on_error)
 {
@@ -11827,9 +11827,9 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 	BATcheck(lo, "BATcalcbetween", NULL);
 	BATcheck(hi, "BATcalcbetween", NULL);
 
-	if (checkbats(b, lo, "BATcalcbetween") == GDK_FAIL)
+	if (checkbats(b, lo, "BATcalcbetween") != GDK_SUCCEED)
 		return NULL;
-	if (checkbats(b, hi, "BATcalcbetween") == GDK_FAIL)
+	if (checkbats(b, hi, "BATcalcbetween") != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -11878,7 +11878,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 
 	BATcheck(b, "BATcalcbetweencstcst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcbetweencstcst") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcbetweencstcst") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(lo->vtype) ||
@@ -11910,7 +11910,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 
 	BATcheck(b, "BATcalcbetweenbatcst", NULL);
 
-	if (checkbats(b, lo, "BATcalcbetweenbatcst") == GDK_FAIL)
+	if (checkbats(b, lo, "BATcalcbetweenbatcst") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(hi->vtype)) {
@@ -11943,7 +11943,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 
 	BATcheck(b, "BATcalcbetweencstbat", NULL);
 
-	if (checkbats(b, hi, "BATcalcbetweencstbat") == GDK_FAIL)
+	if (checkbats(b, hi, "BATcalcbetweencstbat") != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->T->type) != ATOMbasetype(lo->vtype)) {
@@ -11967,7 +11967,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 	return bn;
 }
 
-int
+gdk_return
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	       const ValRecord *hi, int sym)
 {
@@ -12163,9 +12163,9 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 	BATcheck(b1, "BATcalcifthenelse", NULL);
 	BATcheck(b2, "BATcalcifthenelse", NULL);
 
-	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b1, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
-	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b2, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
 	if (b->T->type != TYPE_bit || b1->T->type != b2->T->type) {
 		GDKerror("BATcalcifthenelse: \"then\" and \"else\" BATs have different types.\n");
@@ -12184,7 +12184,7 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 	BATcheck(b1, "BATcalcifthenelsecst", NULL);
 	BATcheck(c2, "BATcalcifthenelsecst", NULL);
 
-	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b1, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
 	if (b->T->type != TYPE_bit || b1->T->type != c2->vtype) {
 		GDKerror("BATcalcifthenelsecst: \"then\" and \"else\" BATs have different types.\n");
@@ -12203,7 +12203,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	BATcheck(c1, "BATcalcifthenelsecst", NULL);
 	BATcheck(b2, "BATcalcifthenelsecst", NULL);
 
-	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, b2, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
 	if (b->T->type != TYPE_bit || b2->T->type != c1->vtype) {
 		GDKerror("BATcalcifthencstelse: \"then\" and \"else\" BATs have different types.\n");
@@ -12222,7 +12222,7 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 	BATcheck(c1, "BATcalcifthenelsecst", NULL);
 	BATcheck(c2, "BATcalcifthenelsecst", NULL);
 
-	if (checkbats(b, NULL, "BATcalcifthenelse") == GDK_FAIL)
+	if (checkbats(b, NULL, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
 	if (b->T->type != TYPE_bit || c1->vtype != c2->vtype) {
 		GDKerror("BATcalcifthencstelsecst: \"then\" and \"else\" BATs have different types.\n");
@@ -13257,19 +13257,23 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	if (b->T->type != TYPE_str || BATcount(bn) < 2 ) {
+	if ((bn->T->type != TYPE_bit && b->T->type != TYPE_str) ||
+	    BATcount(bn) < 2) {
 		bn->T->sorted = nils == 0 && b->T->sorted;
 		bn->T->revsorted = nils == 0 && b->T->revsorted;
 	} else {
 		bn->T->sorted = 0;
 		bn->T->revsorted = 0;
 	}
-	bn->T->key = (b->T->key & 1) && nils <= 1;
+	if (bn->T->type != TYPE_bit || BATcount(bn) < 2)
+		bn->T->key = (b->T->key & 1) && nils <= 1;
+	else
+		bn->T->key = 0;
 
 	return bn;
 }
 
-int
+gdk_return
 VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	ptr p;

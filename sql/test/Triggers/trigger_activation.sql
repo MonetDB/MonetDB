@@ -1,4 +1,4 @@
---this test only tests the sintax
+--this test only tests the syntax
 --the semantic should also be tested after the syntax test
 create table t_5_1 (id int, name varchar(1024));
 

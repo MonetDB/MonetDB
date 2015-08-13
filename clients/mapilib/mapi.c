@@ -1490,6 +1490,8 @@ new_result(MapiHdl hdl)
 		printf("allocating new result set\n");
 	/* append a newly allocated struct to the end of the linked list */
 	result = malloc(sizeof(*result));
+	if (result == NULL)
+		return NULL;
 	result->next = NULL;
 	if (hdl->lastresult == NULL)
 		hdl->result = hdl->lastresult = result;
@@ -1735,7 +1737,6 @@ mapi_new_handle(Mapi mid)
 	mapi_check0(mid, "mapi_new_handle");
 
 	hdl = malloc(sizeof(*hdl));
-	assert(hdl);
 	if (hdl == NULL) {
 		mapi_setError(mid, "Memory allocation failure", "mapi_new_handle", MERROR);
 		return NULL;
@@ -1893,6 +1894,10 @@ mapi_new(void)
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
+	if (mid->blk.buf == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
 	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
 	mid->blk.nxt = 0;
@@ -1913,7 +1918,7 @@ mapi_new(void)
 Mapi
 mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang)
 {
-	char uri[8096];
+	char *uri;
 	char *host;
 	int port;
 	char *dbname;
@@ -1956,12 +1961,13 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	}
 
 	/* copy to a writable working buffer */
-	snprintf(uri, 8096, "%s", url + sizeof("mapi:monetdb://") - 1);
+	uri = strdup(url + sizeof("mapi:monetdb://") - 1);
 
 	if (uri[0] != '/') {
 		if ((p = strchr(uri, ':')) == NULL) {
 			mapi_setError(mid, "URI must contain a port number after "
 					"the hostname", "mapi_mapiuri", MERROR);
+			free(uri);
 			return mid;
 		}
 		*p++ = '\0';
@@ -1985,6 +1991,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		if (port <= 0) {
 			mapi_setError(mid, "URI contains invalid port",
 					"mapi_mapiuri", MERROR);
+			free(uri);
 			return mid;
 		}
 	} else {
@@ -2024,6 +2031,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->database = strdup(dbname);
 
 	set_uri(mid);
+	free(uri);
 
 	return mid;
 }
@@ -2123,7 +2131,8 @@ mapi_mapi(const char *host, int port, const char *username,
 				while ((e = readdir(d)) != NULL) {
 					if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
 						continue;
-					snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name);
+					if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
+						continue; /* ignore long name */
 					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
 						socks[i++] = atoi(e->d_name + 11);
 					if (i == sizeof(socks))
@@ -2315,7 +2324,8 @@ parse_uri_query(Mapi mid, char *uri)
 static void
 set_uri(Mapi mid)
 {
-	char uri[1024];
+	size_t urilen = strlen(mid->hostname) + (mid->database ? strlen(mid->database) : 0) + 32;
+	char *uri = malloc(urilen);
 
 	/* uri looks as follows:
 	 *  mapi:monetdb://host:port/database
@@ -2325,25 +2335,25 @@ set_uri(Mapi mid)
 
 	if (mid->database != NULL) {
 		if (mid->hostname[0] == '/') {
-			snprintf(uri, sizeof(uri), "mapi:monetdb://%s?database=%s",
-					mid->hostname, mid->database);
+			snprintf(uri, urilen, "mapi:monetdb://%s?database=%s",
+				 mid->hostname, mid->database);
 		} else {
-			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d/%s",
-					mid->hostname, mid->port, mid->database);
+			snprintf(uri, urilen, "mapi:monetdb://%s:%d/%s",
+				 mid->hostname, mid->port, mid->database);
 		}
 	} else {
 		if (mid->hostname[0] == '/') {
-			snprintf(uri, sizeof(uri), "mapi:monetdb://%s",
-					mid->hostname);
+			snprintf(uri, urilen, "mapi:monetdb://%s",
+				 mid->hostname);
 		} else {
-			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d",
-					mid->hostname, mid->port);
+			snprintf(uri, urilen, "mapi:monetdb://%s:%d",
+				 mid->hostname, mid->port);
 		}
 	}
 
 	if (mid->uri != NULL)
 		free(mid->uri);
-	mid->uri = strdup(uri);
+	mid->uri = uri;
 }
 
 /* (Re-)establish a connection with the server. */
@@ -2546,21 +2556,25 @@ mapi_start_talking(Mapi mid)
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
 
-	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
 
 	assert(len < BLOCK);
 
+	if (len == 0){
+		mapi_setError(mid, "Challenge string is not valid, it is empty", "mapi_start_talking", MERROR);
+		return mid->error;
+	}
 	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
 	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, server not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*server++ = '\0';
 	protover = strchr(server, ':');
 	if (protover == NULL) {
-		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, protocol not found", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
 	*protover++ = '\0';
@@ -2652,7 +2666,7 @@ mapi_start_talking(Mapi mid)
 				pwdhash = mcrypt_MD5Sum(mid->password,
 						strlen(mid->password));
 			} else {
-				snprintf(buf, BLOCK, "server requires unknown hash '%s'",
+				snprintf(buf, BLOCK, "server requires unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
@@ -2683,7 +2697,7 @@ mapi_start_talking(Mapi mid)
 		}
 		if (hash == NULL) {
 			/* the server doesn't support what we can */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", hashes);
+			snprintf(buf, BLOCK, "unsupported hash algorithms: %.100s", hashes);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
@@ -2692,14 +2706,18 @@ mapi_start_talking(Mapi mid)
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
-		snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
+		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 #ifdef WORDS_BIGENDIAN
-			 "BIG",
+			     "BIG",
 #else
-			 "LIT",
+			     "LIT",
 #endif
-			 mid->username, hash, mid->language,
-			 mid->database == NULL ? "" : mid->database);
+			     mid->username, hash, mid->language,
+			     mid->database == NULL ? "" : mid->database) >= BLOCK) {;
+			mapi_setError(mid, "combination of database name and user name too long", "mapi_start_talking", MERROR);
+			free(hash);
+			return mid->error;
+		}
 
 		free(hash);
 	} else {
@@ -2868,7 +2886,7 @@ mapi_start_talking(Mapi mid)
 			} else {
 				char re[BUFSIZ];
 				snprintf(re, sizeof(re),
-						"error while parsing redirect: %s\n", red);
+					 "error while parsing redirect: %.100s\n", red);
 				mapi_close_handle(hdl);
 				mapi_setError(mid, re, "mapi_start_talking", MERROR);
 				return mid->error;
@@ -3432,7 +3450,7 @@ read_line(Mapi mid)
 		if (mid->trace == MAPI_TRACE)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
 		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
-		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
+		check_stream(mid, mid->from, "Connection terminated during read line", "read_line", (mid->blk.eos = 1, (char *) 0));
 		if (mid->tracelog) {
 			mapi_log_header(mid, "R");
 			mnstr_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);

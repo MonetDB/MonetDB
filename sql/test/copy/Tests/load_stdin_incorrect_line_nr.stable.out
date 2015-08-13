@@ -24,12 +24,27 @@ Ready.
 # 22:56:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34976 
 # 22:56:13 >  
 
+# 08:32:32 >  
+# 08:32:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19731" "--port=36883"
+# 08:32:32 >  
+
+#CREATE TABLE "sys"."number" (
+#        "isanumber" int
+#);
+#select * from "number";
 % sys.number # table_name
 % isanumber # name
 % int # type
 % 1 # length
+#drop table "number";
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	14,	4 # length
+[ 2,	1,	"'int' expected",	"bla\n"	]
 
-# 17:35:33 >  
-# 17:35:33 >  Done.
-# 17:35:33 >  
+# 08:32:32 >  
+# 08:32:32 >  "Done."
+# 08:32:32 >  
 

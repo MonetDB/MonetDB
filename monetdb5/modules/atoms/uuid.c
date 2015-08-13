@@ -52,7 +52,7 @@ uuid_export BUN UUIDhash(const void *u);
 uuid_export uuid *UUIDnull(void);
 uuid_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
 uuid_export int UUIDtoString(str *retval, int *len, const uuid *value);
-uuid_export int UUIDwrite(const uuid *u, stream *s, size_t cnt);
+uuid_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
 uuid_export str UUIDgenerateUuid(uuid **retval);
 uuid_export str UUIDstr2uuid(uuid **retval, str *s);
@@ -253,7 +253,7 @@ UUIDread(uuid *u, stream *s, size_t cnt)
 	return u;
 }
 
-int
+gdk_return
 UUIDwrite(const uuid *u, stream *s, size_t cnt)
 {
 	return mnstr_write(s, u, UUID_SIZE, cnt) ? GDK_SUCCEED : GDK_FAIL;

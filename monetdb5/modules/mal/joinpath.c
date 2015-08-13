@@ -198,17 +198,17 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			if ( j == 0) {
 				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
 				ALGODEBUG{
-					mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+					fprintf(stderr,"#joinpath step produces "BUNFMT"\n", BATcount(b));
 				}
 				break;
 			}
-        case 1:
-            b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-            break;
+		case 1:
+			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
+			break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
 			ALGODEBUG{
-				mnstr_printf(cntxt->fdout,"#joinpath step produces "BUNFMT"\n", BATcount(b));
+				fprintf(stderr,"#joinpath step produces "BUNFMT"\n", BATcount(b));
 			}
 			break;
 		}
@@ -320,6 +320,9 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* be optimistic, inherit the properties  */
 		BATseqbase(b,0);
 		BATsettrivprop(b);
+
+		for( --top; top>=0; top--)
+			BBPunfix(joins[top]->batCacheid);
 	} else if (getFunctionId(pci) == leftjoinPathRef) {
 		b = ALGjoinPathBody(cntxt,top,joins, 0); 
 	} else {

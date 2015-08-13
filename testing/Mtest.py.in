@@ -117,7 +117,7 @@ except ImportError:
     try:
         import MonetDBtesting.process as process
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.process as process
         if os.environ.has_key('PYTHONPATH'):
@@ -164,8 +164,8 @@ setpgrp = False
 
 ttywidth = 0
 if isatty and os.isatty(sys.stdin.fileno()):
-    if os.name != 'nt':
-        ttywidth = 80
+    if os.name == 'nt':
+        ttywidth = 79
     else:
         try:
             proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
@@ -251,7 +251,7 @@ except ImportError:
     try:
         from MonetDBtesting import monet_options
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         from MonetDBtesting import monet_options
         if os.environ.has_key('PYTHONPATH'):
@@ -1161,10 +1161,10 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     os.environ['TSTSRCDIR'] = TSTSRCDIR
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
-    os.environ['PYTHON2']   = '@PYTHON2@'
-    os.environ['PYTHON2PATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
-    os.environ['PYTHON3']   = '@PYTHON3@'
-    os.environ['PYTHON3PATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON3_LIBDIR@'))
+    os.environ['PYTHON2']   = '@QXPYTHON2@'
+    os.environ['PYTHON2PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+    os.environ['PYTHON3']   = '@QXPYTHON3@'
+    os.environ['PYTHON3PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
         os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
@@ -1378,7 +1378,7 @@ def ApproveOutput (env, TST) :
                 list = []
                 if not NOPATCH:
                     for f in os.listdir(dir or os.curdir):
-                        if f.endswith('.rej') or f.endswith('.orig'):
+                        if f.endswith('.rej') or f.endswith('.orig') or f.endswith('~'):
                             pass
                         elif f != thefile and test.match(f):
                             remove(os.path.join(dir or os.curdir, f + '.rej'))
@@ -2693,7 +2693,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if len(TST) <= l:
                 s = '%-*s ' % (l, TST)
             else:
-                s = '%s...%s ' % (TST[:l/2 - 2], TST[-(l/2-1):])
+                s = '%s...%s ' % (TST[:l/2 - 2], TST[l/2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
@@ -3745,11 +3745,11 @@ def main(argv) :
     #STDOUT.flush()
 
     # inject vars that tell various languages where to find their libs
-    env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
+    env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@QXPERL_LIBDIR@'))
 # set dynamically for python test lib
-#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
-    env['PHP_INCPATH'] = _configure(os.path.join('@datadir@', 'php'))
-    env['BINDIR'] = _configure('@bindir@')
+#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+    env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
+    env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
 
     # export and display env

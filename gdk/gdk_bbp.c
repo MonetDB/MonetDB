@@ -105,12 +105,13 @@ bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
 static void BBPspin(bat bid, const char *debug, int event);
-static int BBPfree(BAT *b, const char *calledFrom);
-static int BBPdestroy(BAT *b);
+static gdk_return BBPfree(BAT *b, const char *calledFrom);
+static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, int unloaddesc);
-static int BBPprepare(bit subcommit);
+static gdk_return BBPprepare(bit subcommit);
 static BAT *getBBPdescriptor(bat i, int lock);
-static int BBPbackup(BAT *b, bit subcommit);
+static gdk_return BBPbackup(BAT *b, bit subcommit);
+static gdk_return BBPdir(int cnt, bat *subcommit);
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
@@ -413,7 +414,7 @@ BBPphysicalname(str s, int len, bat i)
 	return s + len;
 }
 
-static int
+static gdk_return
 recover_dir(int farmid, int direxists)
 {
 	if (direxists) {
@@ -424,8 +425,8 @@ recover_dir(int farmid, int direxists)
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
 
-static int BBPrecover(int farmid);
-static int BBPrecover_subdir(void);
+static gdk_return BBPrecover(int farmid);
+static gdk_return BBPrecover_subdir(void);
 static int BBPdiskscan(const char *);
 
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
@@ -468,7 +469,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 	else
 		bnme = nme;
 
-	if (GDKmove(b->H->heap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != 0)
+	if (GDKmove(b->H->heap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != GDK_SUCCEED)
 		GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, headtail);
 
 	if ((ht = b->H->type) < 0) {
@@ -487,7 +488,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 	}
 
 	if (b->H->type == TYPE_str) {
-		if (GDKmove(b->H->vheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != 0)
+		if (GDKmove(b->H->vheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, htheap);
 
 		h1 = b->H->heap;
@@ -500,10 +501,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		h2.dirty = 0;
 
 		/* load old string heap */
-		if (HEAPload(&h1, filename, headtail, 0) < 0)
+		if (HEAPload(&h1, filename, headtail, 0) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: loading old %s heap "
 				 "for BAT %d failed\n", headtail, bid);
-		if (HEAPload(&h2, filename, htheap, 0) < 0)
+		if (HEAPload(&h2, filename, htheap, 0) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: loading old string heap "
 				 "for BAT %d failed\n", bid);
 
@@ -514,7 +515,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		w = b->H->width; /* remember old width */
 		b->H->width = 1;
 		b->H->shift = 0;
-		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -522,7 +523,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->H->vheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
 		if (b->H->vheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		if (ATOMheap(TYPE_str, b->H->vheap, b->batCapacity))
+		if (ATOMheap(TYPE_str, b->H->vheap, b->batCapacity) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: initializing new string "
 				 "heap for BAT %d failed\n", bid);
 		b->H->vheap->parentid = bid;
@@ -564,7 +565,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		h1.parentid = 0;
 
 		/* load old heap */
-		if (HEAPload(&h1, filename, headtail, 0) < 0)
+		if (HEAPload(&h1, filename, headtail, 0) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: loading old %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -575,7 +576,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->H->width = SIZEOF_OID;
 		b->H->shift = 3;
 		assert(b->H->width == (1 << b->H->shift));
-		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -672,7 +673,7 @@ fixoidheap(void)
 	}
 
 	/* make permanent */
-	if (TMcommit())
+	if (TMcommit() != GDK_SUCCEED)
 		GDKfatal("fixoidheap: commit failed\n");
 }
 #endif
@@ -1032,7 +1033,6 @@ void
 BBPinit(void)
 {
 	FILE *fp = NULL;
-	char buf[4096];
 	struct stat st;
 	int min_stamp = 0x7fffffff, max_stamp = 0;
 	bat bid;
@@ -1052,30 +1052,27 @@ BBPinit(void)
 	GDKremovedir(0, DELDIR);
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
-	if (BBPrecover_subdir() < 0)
-		GDKfatal("BBPinit: cannot properly process %s.", SUBDIR);
+	if (BBPrecover_subdir() != GDK_SUCCEED)
+		GDKfatal("BBPinit: cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
 
 	/* try to obtain a BBP.dir from bakdir */
-	snprintf(buf, sizeof(buf), "%s%cBBP.dir", BAKDIR, DIR_SEP);
 
-	if (stat(buf, &st) == 0) {
+	if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) == 0) {
 		/* backup exists; *must* use it */
-		snprintf(buf, sizeof(buf), "%s%cBBP.dir", BATDIR, DIR_SEP);
-		if (recover_dir(0, stat(buf, &st) == 0) < 0)
+		if (recover_dir(0, stat(BATDIR DIR_SEP_STR "BBP.dir", &st) == 0) != GDK_SUCCEED)
 			goto bailout;
 		if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL)
 			GDKfatal("BBPinit: cannot open recovered BBP.dir.");
 	} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 		/* there was no BBP.dir either. Panic! try to use a
 		 * BBP.bak */
-		snprintf(buf, sizeof(buf), "%s%cBBP.bak", BAKDIR, DIR_SEP);
-		if (stat(buf, &st) < 0) {
+		if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) < 0) {
 			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 			 * create a new one */
 			IODEBUG fprintf(stderr, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
-			if (BBPdir(0, NULL) < 0)
+			if (BBPdir(0, NULL) != GDK_SUCCEED)
 				goto bailout;
-		} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == 0)
+		} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == GDK_SUCCEED)
 			IODEBUG fprintf(stderr, "#BBPinit: reverting to dir saved in BBP.bak.\n");
 
 		if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL)
@@ -1110,8 +1107,8 @@ BBPinit(void)
 	OIDbase(BBPoid);
 
 	/* will call BBPrecover if needed */
-	if (BBPprepare(FALSE))
-		GDKfatal("BBPinit: cannot properly process %s.", BAKDIR);
+	if (BBPprepare(FALSE) != GDK_SUCCEED)
+		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	BBPdiskscan(BATDIR);
@@ -1129,7 +1126,7 @@ BBPinit(void)
 
       bailout:
 	/* now it is time for real panic */
-	GDKfatal("BBPinit: could not write %s%cBBP.dir", BATDIR, DIR_SEP);
+	GDKfatal("BBPinit: could not write %s%cBBP.dir. Please check whether your disk is full or write-protected", BATDIR, DIR_SEP);
 }
 
 /*
@@ -1250,7 +1247,7 @@ vheap_entry(FILE *fp, Heap *h)
 		       h->free, h->size, (int) h->newstorage);
 }
 
-static int
+static gdk_return
 new_bbpentry(FILE *fp, bat i)
 {
 #ifndef NDEBUG
@@ -1291,25 +1288,25 @@ new_bbpentry(FILE *fp, bat i)
 		    (unsigned char) BBP_desc(i)->S.map_tail,
 		    (unsigned char) BBP_desc(i)->S.map_hheap,
 		    (unsigned char) BBP_desc(i)->S.map_theap) < 0)
-		return -1;
+		return GDK_FAIL;
 	if (heap_entry(fp, &BBP_desc(i)->H) < 0)
-		return -1;
+		return GDK_FAIL;
 	if (heap_entry(fp, &BBP_desc(i)->T) < 0)
-		return -1;
+		return GDK_FAIL;
 
 	if (vheap_entry(fp, BBP_desc(i)->H.vheap) < 0)
-		return -1;
+		return GDK_FAIL;
 	if (vheap_entry(fp, BBP_desc(i)->T.vheap) < 0)
-		return -1;
+		return GDK_FAIL;
 
 	if (BBP_options(i) &&
 	    fprintf(fp, " %s", BBP_options(i)) < 0)
-		return -1;
+		return GDK_FAIL;
 
-	return fprintf(fp, "\n");
+	return fprintf(fp, "\n") < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 BBPdir_header(FILE *f, int n)
 {
 	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n",
@@ -1317,11 +1314,11 @@ BBPdir_header(FILE *f, int n)
 	    OIDwrite(f) < 0 ||
 	    fprintf(f, " BBPsize=%d\n", n) < 0 ||
 	    ferror(f))
-		return -1;
-	return 0;
+		return GDK_FAIL;
+	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 BBPdir_subcommit(int cnt, bat *subcommit)
 {
 	FILE *obbpf, *nbbpf;
@@ -1334,17 +1331,15 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		GDKsyserror("BBPdir_subcommit: Creating new BBP.dir file failed\n");
-		return -1;
+		return GDK_FAIL;
 	}
 
 	n = (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPdir_subcommit");
 
 	/* we need to copy the backup BBP.dir to the new, but
 	 * replacing the entries for the subcommitted bats */
-	snprintf(buf, sizeof(buf), "%s%cBBP.dir", SUBDIR, DIR_SEP);
-	if ((obbpf = fopen(buf, "r")) == NULL) {
-		snprintf(buf, sizeof(buf), "%s%cBBP.dir", BAKDIR, DIR_SEP);
-		if ((obbpf = fopen(buf, "r")) == NULL)
+	if ((obbpf = fopen(SUBDIR DIR_SEP_STR "BBP.dir", "r")) == NULL) {
+		if ((obbpf = fopen(BAKDIR DIR_SEP_STR "BBP.dir", "r")) == NULL)
 			GDKfatal("BBPdir: subcommit attempted without backup BBP.dir.");
 	}
 	/* read first three lines */
@@ -1366,7 +1361,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		fprintf(stderr, "\n");
 	}
 
-	if (BBPdir_header(nbbpf, n) < 0) {
+	if (BBPdir_header(nbbpf, n) != GDK_SUCCEED) {
 		GDKsyserror("BBPdir_subcommit: Writing BBP.dir header failed\n");
 		goto bailout;
 	}
@@ -1380,14 +1375,17 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				obbpf = NULL;
 			} else if (sscanf(buf, "%d", &n) != 1 || n <= 0)
 				GDKfatal("BBPdir: subcommit attempted with invalid backup BBP.dir.");
+			/* at this point, obbpf == NULL, or n > 0 */
 		}
-		if (j == cnt && n == 0)
+		if (j == cnt && n == 0) {
+			assert(obbpf == NULL);
 			break;
+		}
 		if (j < cnt && (n == 0 || subcommit[j] <= n || obbpf == NULL)) {
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i) < 0) {
+				if (new_bbpentry(nbbpf, i) != GDK_SUCCEED) {
 					GDKsyserror("BBPdir_subcommit: Writing BBP.dir entry failed\n");
 					goto bailout;
 				}
@@ -1430,22 +1428,20 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		GDKsyserror("BBPdir_subcommit: Closing BBP.dir file failed\n");
 		goto bailout;
 	}
-	if (obbpf != NULL)
-		fclose(obbpf);
 
 	IODEBUG fprintf(stderr, "#BBPdir end\n");
 
-	return 0;
+	return GDK_SUCCEED;
 
       bailout:
 	if (obbpf != NULL)
 		fclose(obbpf);
 	if (nbbpf != NULL)
 		fclose(nbbpf);
-	return -1;
+	return GDK_FAIL;
 }
 
-int
+gdk_return
 BBPdir(int cnt, bat *subcommit)
 {
 	FILE *fp;
@@ -1466,7 +1462,7 @@ BBPdir(int cnt, bat *subcommit)
 		goto bailout;
 	}
 
-	if (BBPdir_header(fp, (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPdir")) < 0) {
+	if (BBPdir_header(fp, (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPdir")) != GDK_SUCCEED) {
 		GDKsyserror("BBPdir: Writing BBP.dir header failed\n");
 		goto bailout;
 	}
@@ -1475,7 +1471,7 @@ BBPdir(int cnt, bat *subcommit)
 		/* write the entry
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i) < 0) {
+			if (new_bbpentry(fp, i) != GDK_SUCCEED) {
 				GDKsyserror("BBPdir: Writing BBP.dir entry failed\n");
 				goto bailout;
 			}
@@ -1501,20 +1497,20 @@ BBPdir(int cnt, bat *subcommit)
 	}
 	if (fclose(fp) == EOF) {
 		GDKsyserror("BBPdir: Closing BBP.dir file failed\n");
-		return -1;
+		return GDK_FAIL;
 	}
 
 	IODEBUG fprintf(stderr, "#BBPdir end\n");
 
 	if (i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPdir"))
-		return -1;
+		return GDK_FAIL;
 
-	return 0;
+	return GDK_SUCCEED;
 
       bailout:
 	if (fp != NULL)
 		fclose(fp);
-	return -1;
+	return GDK_FAIL;
 }
 
 /* function used for debugging */
@@ -1804,7 +1800,7 @@ BBPinsert(BATstore *bs)
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
-		MT_lock_set(&GDKtrimLock(idx), "BBPreplace");
+		MT_lock_set(&GDKtrimLock(idx), "BBPinsert");
 		MT_lock_set(&GDKcacheLock(idx), "BBPinsert");
 	}
 
@@ -1837,7 +1833,7 @@ BBPinsert(BATstore *bs)
 
 	if (lock) {
 		MT_lock_unset(&GDKcacheLock(idx), "BBPinsert");
-		MT_lock_unset(&GDKtrimLock(idx), "BBPreplace");
+		MT_lock_unset(&GDKtrimLock(idx), "BBPinsert");
 	}
 	/* rest of the work outside the lock , as GDKstrdup/GDKmalloc
 	 * may trigger a BBPtrim */
@@ -1849,7 +1845,7 @@ BBPinsert(BATstore *bs)
 	bs->BM.batCacheid = -i;
 	bs->S.tid = MT_getpid();
 
-	BBP_status_set(i, BBPDELETING, "BBPentry");
+	BBP_status_set(i, BBPDELETING, "BBPinsert");
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
@@ -2346,7 +2342,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 			}
 			BBP_unload_inc(i, "BBPdecref");
 			/* free memory of transient */
-			if (BBPfree(b, "BBPdecref"))
+			if (BBPfree(b, "BBPdecref") != GDK_SUCCEED)
 				return -1;	/* indicate failure */
 		}
 	}
@@ -2507,16 +2503,16 @@ BBPdescriptor(bat i)
  * BAT to BBPsaving, so others that want to save or unload this BAT
  * must spin lock on the BBP_status field.
  */
-int
+gdk_return
 BBPsave(BAT *b)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
 	bat bid = abs(b->batCacheid);
-	int ret = 0;
+	gdk_return ret = GDK_SUCCEED;
 
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
 		/* do nothing */
-		return 0;
+		return GDK_SUCCEED;
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(bid), "BBPsave");
@@ -2546,9 +2542,9 @@ BBPsave(BAT *b)
 		/* do the time-consuming work unlocked */
 		if (BBP_status(bid) & BBPEXISTING)
 			ret = BBPbackup(b, FALSE);
-		if (ret == 0) {
+		if (ret == GDK_SUCCEED) {
 			BBPout++;
-			ret = (BATsave(b) == GDK_FAIL);
+			ret = BATsave(b);
 		}
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPSAVING, "BBPsave");
@@ -2561,7 +2557,7 @@ BBPsave(BAT *b)
  * for being unloaded (or even destroyed, if the BAT is not
  * persistent).
  */
-static int
+static void
 BBPdestroy(BAT *b)
 {
 	bat hp = b->H->heap.parentid, tp = b->T->heap.parentid;
@@ -2606,21 +2602,20 @@ BBPdestroy(BAT *b)
 		GDKunshare(tp);
 	if (vtp)
 		GDKunshare(vtp);
-	return 0;
 }
 
-static int
+static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
 	bat bid = abs(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
-	int ret;
+	gdk_return ret;
 
 	assert(BBPswappable(b));
 	(void) calledFrom;
 
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		if (isVIEW(b)) {	/* physical view */
 			VIEWdestroy(b);
 		} else {
@@ -2637,13 +2632,13 @@ BBPfree(BAT *b, const char *calledFrom)
 	BBP_unload_dec(bid, calledFrom);
 
 	/* parent released when completely done with child */
-	if (ret == 0 && hp)
+	if (ret == GDK_SUCCEED && hp)
 		GDKunshare(hp);
-	if (ret == 0 && tp)
+	if (ret == GDK_SUCCEED && tp)
 		GDKunshare(tp);
-	if (ret == 0 && vhp)
+	if (ret == GDK_SUCCEED && vhp)
 		GDKunshare(vhp);
-	if (ret == 0 && vtp)
+	if (ret == GDK_SUCCEED && vtp)
 		GDKunshare(vtp);
 	return ret;
 }
@@ -3150,7 +3145,8 @@ dirty_bat(bat *i, int subcommit)
 		BBPspin(*i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
-			if ((BBP_status(*i) & BBPNEW) && BATcheckmodes(b, FALSE))	/* check mmap modes */
+			if ((BBP_status(*i) & BBPNEW) &&
+			    BATcheckmodes(b, FALSE) != GDK_SUCCEED) /* check mmap modes */
 				*i = 0;	/* error */
 			if ((BBP_status(*i) & BBPPERSISTENT) &&
 			    (subcommit || BATdirty(b)))
@@ -3170,14 +3166,11 @@ dirty_bat(bat *i, int subcommit)
  * after this succeeds, it may be saved. If some failure occurs
  * halfway saving, we can thus always roll back.
  */
-static int
+static gdk_return
 file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, const char *ext)
 {
-	int ret = 0;
-
-	ret = GDKmove(farmid, srcdir, name, ext, dstdir, name, ext);
-	if (ret == 0) {
-		return 0;
+	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext) == GDK_SUCCEED) {
+		return GDK_SUCCEED;
 	} else {
 		char *path;
 		struct stat st;
@@ -3190,11 +3183,11 @@ file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, 
 			 * sure that this time it does get saved.
 			 */
 			GDKfree(path);
-			return 2;	/* indicate something fishy, but not fatal */
+			return GDK_FAIL;	/* fishy, but not fatal */
 		}
 		GDKfree(path);
 	}
-	return 1;
+	return GDK_FAIL;
 }
 
 /* returns 1 if the file exists */
@@ -3212,13 +3205,15 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	return (ret == 0);
 }
 
-static int
+static gdk_return
 heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, const char *ext)
 {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap
 	 * heap modes */
 	if (file_exists(hp->farmid, dstdir, nme, ext)) {
-		return 0;	/* dont overwrite heap with the committed state already in dstdir */
+		/* dont overwrite heap with the committed state
+		 * already in dstdir */
+		return GDK_SUCCEED;
 	} else if (hp->filename &&
 		   hp->newstorage == STORE_PRIV &&
 		   !file_exists(hp->farmid, srcdir, nme, ext)) {
@@ -3243,9 +3238,9 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 
 		if (fp != NULL) {
 			fclose(fp);
-			return 0;
+			return GDK_SUCCEED;
 		} else {
-			return 1;
+			return GDK_FAIL;
 		}
 	}
 	return file_move(hp->farmid, srcdir, dstdir, nme, ext);
@@ -3266,10 +3261,11 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
  */
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
 
-static int
+static gdk_return
 BBPprepare(bit subcommit)
 {
-	int start_subcommit, ret = 0, set = 1 + subcommit;
+	int start_subcommit, set = 1 + subcommit;
+	gdk_return ret = GDK_SUCCEED;
 
 	/* tmLock is only used here, helds usually very shortly just
 	 * to protect the file counters */
@@ -3279,53 +3275,53 @@ BBPprepare(bit subcommit)
 	if (start_subcommit) {
 		/* starting a subcommit. Make sure SUBDIR and DELDIR
 		 * are clean */
-		ret = (BBPrecover_subdir() < 0);
+		ret = BBPrecover_subdir();
 	}
 	if (backup_files == 0) {
 		backup_dir = 0;
 		ret = BBPrecover(0);
-		if (ret == 0) {
-			ret = (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST);
+		if (ret == GDK_SUCCEED) {
+			if (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST)
+				ret = GDK_FAIL;
 			/* if BAKDIR already exists, don't signal error */
-			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", BAKDIR, ret);
+			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", BAKDIR, (int) ret);
 		}
 	}
-	if (ret == 0 && start_subcommit) {
+	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		ret = mkdir(SUBDIR, 0755);
-		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", SUBDIR, ret);
+		if (mkdir(SUBDIR, 0755) < 0)
+			ret = GDK_FAIL;
+		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", SUBDIR, (int) ret);
 	}
-	if (ret == 0 && backup_dir != set) {
+	if (ret == GDK_SUCCEED && backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
-		if (GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir")) {
-			ret = 1;
-		} else {
+		if ((ret = GDKmove(0, backup_dir ? BAKDIR : BATDIR, "BBP", "dir", subcommit ? SUBDIR : BAKDIR, "BBP", "dir")) == GDK_SUCCEED) {
 			backup_dir = set;
 		}
 	}
 	/* increase counters */
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		backup_subdir += subcommit;
 		backup_files++;
 	}
 	MT_lock_unset(&GDKtmLock, "BBPprepare");
 
-	return ret ? -1 : 0;
+	return ret;
 }
 
-static int
+static gdk_return
 do_backup(const char *srcdir, const char *nme, const char *extbase,
 	  Heap *h, int tp, int dirty, bit subcommit)
 {
-	int ret = 0;
+	gdk_return ret = GDK_SUCCEED;
 
 	 /* direct mmap is unprotected (readonly usage, or has WAL
 	  * protection); however, if we're backing up for subcommit
 	  * and a backup already exists in the main backup directory
 	  * (see GDKupgradevarheap), move the file */
 	if (subcommit && file_exists(h->farmid, BAKDIR, nme, extbase)) {
-		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, extbase))
-			return -1;
+		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, extbase) != GDK_SUCCEED)
+			return GDK_FAIL;
 	} else if (h->storage != STORE_MMAP) {
 		/* STORE_PRIV saves into X.new files. Two cases could
 		 * happen. The first is when a valid X.new exists
@@ -3337,7 +3333,7 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
 		char ext[16];
-		int mvret = 0;
+		gdk_return mvret = GDK_SUCCEED;
 
 		if (h->filename && h->newstorage == STORE_PRIV)
 			snprintf(ext, sizeof(ext), "%s.new", extbase);
@@ -3360,36 +3356,35 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		 * bat as a workaround, do not complain about move
 		 * failure if the source file is nonexistent
 		 */
-		if (mvret && file_exists(h->farmid, srcdir, nme, ext)) {
-			ret |= mvret;
+		if (mvret != GDK_SUCCEED && file_exists(h->farmid, srcdir, nme, ext)) {
+			ret = GDK_FAIL;
 		}
 		if (subcommit &&
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 
 			snprintf(kill_ext, sizeof(kill_ext), "%s.new.kill", ext);
-			if (file_exists(h->farmid, BAKDIR, nme, kill_ext)) {
-				ret |= file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext);
+			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
+			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
+				ret = GDK_FAIL;
 			}
 		}
-		if (ret)
-			return -1;
 	}
-	return 0;
+	return ret;
 }
 
-static int
+static gdk_return
 BBPbackup(BAT *b, bit subcommit)
 {
 	char *srcdir;
 	long_str nme;
 	const char *s = BBP_physical(b->batCacheid);
 
-	if (BBPprepare(subcommit)) {
-		return -1;
+	if (BBPprepare(subcommit) != GDK_SUCCEED) {
+		return GDK_FAIL;
 	}
 	if (b->batCopiedtodisk == 0 || b->batPersistence != PERSISTENT) {
-		return 0;
+		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
 	srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL);
@@ -3401,26 +3396,26 @@ BBPbackup(BAT *b, bit subcommit)
 	srcdir[s - srcdir] = 0;
 
 	if (do_backup(srcdir, nme, "head", &b->H->heap, b->htype,
-		      b->batDirty || b->H->heap.dirty, subcommit) < 0)
+		      b->batDirty || b->H->heap.dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (do_backup(srcdir, nme, "tail", &b->T->heap, b->ttype,
-		      b->batDirty || b->T->heap.dirty, subcommit) < 0)
+		      b->batDirty || b->T->heap.dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->H->vheap &&
 	    do_backup(srcdir, nme, "hheap", b->H->vheap,
 		      b->htype && b->hvarsized,
-		      b->batDirty || b->H->vheap->dirty, subcommit) < 0)
+		      b->batDirty || b->H->vheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->T->vheap &&
 	    do_backup(srcdir, nme, "theap", b->T->vheap,
 		      b->ttype && b->tvarsized,
-		      b->batDirty || b->T->vheap->dirty, subcommit) < 0)
+		      b->batDirty || b->T->vheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	GDKfree(srcdir);
-	return 0;
+	return GDK_SUCCEED;
   fail:
 	GDKfree(srcdir);
-	return -1;
+	return GDK_FAIL;
 }
 
 /*
@@ -3434,10 +3429,11 @@ BBPbackup(BAT *b, bit subcommit)
  *
  * The BBP.dir is also moved into the BAKDIR.
  */
-int
+gdk_return
 BBPsync(int cnt, bat *subcommit)
 {
-	int ret = 0, bbpdirty = 0;
+	gdk_return ret = GDK_SUCCEED;
+	int bbpdirty = 0;
 	int t0 = 0, t1 = 0;
 
 	PERFDEBUG t0 = t1 = GDKms();
@@ -3449,7 +3445,7 @@ BBPsync(int cnt, bat *subcommit)
 	if (OIDdirty()) {
 		bbpdirty = BBP_dirty = 1;
 	}
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		int idx = 0;
 
 		while (++idx < cnt) {
@@ -3458,16 +3454,17 @@ BBPsync(int cnt, bat *subcommit)
 			if (i <= 0)
 				break;
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL && BBPbackup(b, subcommit != NULL))
+				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)
 					break;
 			}
 		}
-		ret = (idx < cnt);
+		if (idx < cnt)
+			ret = GDK_FAIL;
 	}
 	PERFDEBUG fprintf(stderr, "#BBPsync (move time %d) %d files\n", (t1 = GDKms()) - t0, backup_files);
 
 	/* PHASE 2: save the repository */
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		int idx = 0;
 
 		while (++idx < cnt) {
@@ -3477,20 +3474,21 @@ BBPsync(int cnt, bat *subcommit)
 				BAT *b = dirty_bat(&i, subcommit != NULL);
 				if (i <= 0)
 					break;
-				if (b != NULL && BATsave(b) == GDK_FAIL)
+				if (b != NULL && BATsave(b) != GDK_SUCCEED)
 					break;	/* write error */
 			}
 		}
-		ret = (idx < cnt);
+		if (idx < cnt)
+			ret = GDK_FAIL;
 	}
 
 	PERFDEBUG fprintf(stderr, "#BBPsync (write time %d)\n", (t0 = GDKms()) - t1);
 
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		if (bbpdirty) {
 			ret = BBPdir(cnt, subcommit);
-		} else if (backup_dir && GDKmove(0, (backup_dir == 1) ? BAKDIR : SUBDIR, "BBP", "dir", BATDIR, "BBP", "dir")) {
-			ret = -1;	/* tried a cheap way to get BBP.dir; but it failed */
+		} else if (backup_dir && GDKmove(0, (backup_dir == 1) ? BAKDIR : SUBDIR, "BBP", "dir", BATDIR, "BBP", "dir") != GDK_SUCCEED) {
+			ret = GDK_FAIL;	/* tried a cheap way to get BBP.dir; but it failed */
 		} else {
 			/* commit might still fail; we must remember
 			 * that we moved BBP.dir out of BAKDIR */
@@ -3501,7 +3499,7 @@ BBPsync(int cnt, bat *subcommit)
 	PERFDEBUG fprintf(stderr, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPsync"));
 
 	if (bbpdirty || backup_files > 0) {
-		if (ret == 0) {
+		if (ret == GDK_SUCCEED) {
 			char *bakdir = subcommit ? SUBDIR : BAKDIR;
 
 			/* atomic switchover */
@@ -3509,21 +3507,28 @@ BBPsync(int cnt, bat *subcommit)
 			 * whether the operation of this function
 			 * succeeded, so no changing of ret after this
 			 * call anymore */
-			ret = rename(bakdir, DELDIR);
-			if (ret && GDKremovedir(0, DELDIR) == 0)	/* maybe there was an old deldir */
-				ret = rename(bakdir, DELDIR);
-			if (ret)
+			if (rename(bakdir, DELDIR) < 0)
+				ret = GDK_FAIL;
+			if (ret != GDK_SUCCEED &&
+			    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
+			    rename(bakdir, DELDIR) < 0)
+				ret = GDK_FAIL;
+			if (ret != GDK_SUCCEED)
 				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, DELDIR);
-			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, DELDIR, ret);
+			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, DELDIR, (int) ret);
 		}
 
 		/* AFTERMATH */
-		if (ret == 0) {
+		if (ret == GDK_SUCCEED) {
 			BBP_dirty = 0;
 			backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 			backup_dir = backup_subdir = 0;
 			(void) GDKremovedir(0, DELDIR);
 			(void) BBPprepare(0);	/* (try to) remove DELDIR and set up new BAKDIR */
+			if (backup_files > 1) {
+				PERFDEBUG fprintf(stderr, "#BBPsync (backup_files %d > 1)\n", backup_files);
+				backup_files = 1;
+			}
 		}
 	}
 	PERFDEBUG fprintf(stderr, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
@@ -3537,12 +3542,12 @@ BBPsync(int cnt, bat *subcommit)
  * files left for moving in BACKUP/.  The recovery process can resume
  * later with the left over files.
  */
-static int
+static gdk_return
 force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 {
 	const char *p;
 	char *dstpath, *killfile;
-	int ret = 0;
+	gdk_return ret = GDK_SUCCEED;
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
@@ -3560,44 +3565,46 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 			 * this is going to fail */
 			GDKsyserror("force_move: unlink(%s)\n", dstpath);
 			GDKfree(dstpath);
-			return -1;
+			return GDK_FAIL;
 		}
 		GDKfree(dstpath);
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		killfile = GDKfilepath(farmid, srcdir, name, NULL);
-		if ((ret = unlink(killfile)) < 0)
+		if (unlink(killfile) < 0) {
+			ret = GDK_FAIL;
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
+		}
 		GDKfree(killfile);
 		return ret;
 	}
 	/* try to rename it */
 	ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
 
-	if (ret) {
+	if (ret != GDK_SUCCEED) {
 		char *srcpath;
 
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
 		dstpath = GDKfilepath(farmid, dstdir, name, NULL);
 		srcpath = GDKfilepath(farmid, srcdir, name, NULL);
-		ret = unlink(dstpath);	/* clear destination */
-		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, ret);
+		if (unlink(dstpath) < 0)	/* clear destination */
+			ret = GDK_FAIL;
+		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, (int) ret);
 
-		if (GDKcreatedir(dstdir) == GDK_SUCCEED)
-			ret = 0;
+		(void) GDKcreatedir(dstdir); /* if fails, move will fail */
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
-		if (ret)
-			GDKsyserror("force_move: link(%s,%s)=%d\n", srcpath, dstpath, ret);
-		IODEBUG fprintf(stderr, "#link %s %s = %d\n", srcpath, dstpath, ret);
+		if (ret != GDK_SUCCEED)
+			GDKsyserror("force_move: link(%s,%s)=%d\n", srcpath, dstpath, (int) ret);
+		IODEBUG fprintf(stderr, "#link %s %s = %d\n", srcpath, dstpath, (int) ret);
 		GDKfree(dstpath);
 		GDKfree(srcpath);
 	}
 	return ret;
 }
 
-int
+gdk_return
 BBPrecover(int farmid)
 {
 	DIR *dirp = opendir(BAKDIR);
@@ -3605,11 +3612,12 @@ BBPrecover(int farmid)
 	long_str path, dstpath;
 	bat i;
 	size_t j = strlen(BATDIR);
-	int ret = 0, dirseen = FALSE;
+	gdk_return ret = GDK_SUCCEED;
+	int dirseen = FALSE;
 	str dstdir;
 
 	if (dirp == NULL) {
-		return 0;	/* nothing to do */
+		return GDK_SUCCEED;	/* nothing to do */
 	}
 	memcpy(dstpath, BATDIR, j);
 	dstpath[j] = DIR_SEP;
@@ -3619,7 +3627,7 @@ BBPrecover(int farmid)
 
 	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST) {
 		closedir(dirp);
-		return -1;
+		return GDK_FAIL;
 	}
 
 	/* move back all files */
@@ -3662,11 +3670,12 @@ BBPrecover(int farmid)
 			force_move(farmid, BAKDIR, LEFTDIR, dent->d_name);
 		} else {
 			BBPgetsubdir(dstdir, i);
-			ret += force_move(farmid, BAKDIR, dstpath, dent->d_name);
+			if (force_move(farmid, BAKDIR, dstpath, dent->d_name) != GDK_SUCCEED)
+				ret = GDK_FAIL;
 		}
 	}
 	closedir(dirp);
-	if (dirseen && ret == 0) {	/* we have a saved BBP.dir; it should be moved back!! */
+	if (dirseen && ret == GDK_SUCCEED) {	/* we have a saved BBP.dir; it should be moved back!! */
 		struct stat st;
 		char *fn;
 
@@ -3675,11 +3684,12 @@ BBPrecover(int farmid)
 		GDKfree(fn);
 	}
 
-	if (ret == 0) {
-		ret = rmdir(BAKDIR);
-		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", BAKDIR, ret);
+	if (ret == GDK_SUCCEED) {
+		if (rmdir(BAKDIR) < 0)
+			ret = GDK_FAIL;
+		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", BAKDIR, (int) ret);
 	}
-	if (ret)
+	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover: recovery failed. Please check whether your disk is full or write-protected.\n");
 
 	IODEBUG fprintf(stderr, "#BBPrecover(end)\n");
@@ -3692,15 +3702,15 @@ BBPrecover(int farmid)
  * parent (BAKDIR).  We do recognize moving back BBP.dir and set
  * backed_up_subdir accordingly.
  */
-int
+gdk_return
 BBPrecover_subdir(void)
 {
 	DIR *dirp = opendir(SUBDIR);
 	struct dirent *dent;
-	int ret = 0;
+	gdk_return ret = GDK_SUCCEED;
 
 	if (dirp == NULL) {
-		return 0;	/* nothing to do */
+		return GDK_SUCCEED;	/* nothing to do */
 	}
 	IODEBUG fprintf(stderr, "#BBPrecover_subdir(start)\n");
 
@@ -3709,24 +3719,24 @@ BBPrecover_subdir(void)
 		if (dent->d_name[0] == '.')
 			continue;
 		ret = GDKmove(0, SUBDIR, dent->d_name, NULL, BAKDIR, dent->d_name, NULL);
-		if (ret == 0 && strcmp(dent->d_name, "BBP.dir") == 0)
+		if (ret == GDK_SUCCEED && strcmp(dent->d_name, "BBP.dir") == 0)
 			backup_dir = 1;
-		if (ret < 0)
+		if (ret != GDK_SUCCEED)
 			break;
 	}
 	closedir(dirp);
 
 	/* delete the directory */
-	if (ret == 0) {
+	if (ret == GDK_SUCCEED) {
 		ret = GDKremovedir(0, SUBDIR);
 		if (backup_dir == 2) {
 			IODEBUG fprintf(stderr, "BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}
-	IODEBUG fprintf(stderr, "#BBPrecover_subdir(end) = %d\n", ret);
+	IODEBUG fprintf(stderr, "#BBPrecover_subdir(end) = %d\n", (int) ret);
 
-	if (ret)
+	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover_subdir: recovery failed. Please check whether your disk is full or write-protected.\n");
 	return ret;
 }

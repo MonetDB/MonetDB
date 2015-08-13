@@ -43,6 +43,7 @@ str_export str STRLower(str *res, const str *arg1);
 str_export str STRUpper(str *res, const str *arg1);
 str_export str STRstrSearch(int *res, const str *arg1, const str *arg2);
 str_export str STRReverseStrSearch(int *res, const str *arg1, const str *arg2);
+str_export str STRsplitpart(str *res, str *haystack, str *needle, int *field);
 str_export str STRStrip(str *res, const str *arg1);
 str_export str STRLtrim(str *res, const str *arg1);
 str_export str STRRtrim(str *res, const str *arg1);

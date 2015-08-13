@@ -4,8 +4,8 @@
 --
 -- Copyright 2008-2015 MonetDB B.V.
 
-create function sys.password_hash (username string) 
-	returns string 
+create function sys.password_hash (username string)
+	returns string
 	external name sql.password;
 
 create function sys.sessions()
@@ -13,13 +13,13 @@ returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastco
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 
-create procedure sys.shutdown(delay tinyint) 
+create procedure sys.shutdown(delay tinyint)
 external name sql.shutdown;
 
-create procedure sys.shutdown(delay tinyint, force bool) 
+create procedure sys.shutdown(delay tinyint, force bool)
 external name sql.shutdown;
 
--- control the query and session time out 
+-- control the query and session time out
 create procedure sys.settimeout("query" bigint)
 	external name sql.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint)

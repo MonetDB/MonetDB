@@ -25,17 +25,45 @@ Ready.
 # 10:06:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22741" "--port=34205"
 # 10:06:32 >  
 
+#CREATE TABLE "sys"."tbls" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"access"        SMALLINT
+#);
+#COPY 49 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	schemas	2000		0	true	0	0
+#2007	types	2000		0	true	0	0
+#2016	functions	2000		0	true	0	0
+#2027	args	2000		0	true	0	0
+#2036	sequences	2000		0	true	0	0
+#2046	dependencies	2000		0	true	0	0
+#2050	connections	2000		0	true	0	0
+#2059	_tables	2000		0	true	0	0
+#2068	_columns	2000		0	true	0	0
+#2079	keys	2000		0	true	0	0
+#2086	idxs	2000		0	true	0	0
+#2091	triggers	2000		0	true	0	0
+#2102	objects	2000		0	true	0	0
+#2107	_tables	2106		0	true	2	0
+#2116	_columns	2106		0	true	2	0
+[ 49	]
 #create table x (s string);
 #insert into x values('%able%');
 [ 1	]
-#select * from sys._tables, x where name like s;
-% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys.x # table_name
+#select name, schema_id, query, type, system, commit_action, access, s from tbls, x where name like s;
+% sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.x # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	s # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	clob # type
 % 17,	4,	522,	1,	5,	1,	1,	6 # length
-[ "_tables",	2000,	NULL,	0,	true,	0,	0,	"%able%"	]
-[ "_tables",	2106,	NULL,	0,	true,	2,	0,	"%able%"	]
-[ "tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	0,	"%able%"	]
+[ "_tables",	2000,	"",	0,	true,	0,	0,	"%able%"	]
+[ "_tables",	2106,	"",	0,	true,	2,	0,	"%able%"	]
+[ "tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	0,	"%able%"	]
+[ "table_types",	2000,	"",	0,	true,	0,	0,	"%able%"	]
 [ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	0,	"%able%"	]
 #drop table x;
 

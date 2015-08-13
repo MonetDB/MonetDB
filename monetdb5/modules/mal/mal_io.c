@@ -319,6 +319,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_hge) {
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
+					va_end(ap);
 					return_error(type_error);
 #endif
 				} else if (type == TYPE_int) {
@@ -357,6 +358,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_hge) {
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
+					va_end(ap);
 					return_error(type_error);
 #endif
 				} else {
@@ -838,7 +840,7 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNins(b, h, t, FALSE) == GDK_FAIL) {
+		if (BUNins(b, h, t, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			MT_munmap(base, end - base);

@@ -128,29 +128,35 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
+#define mix_bte(X)	((unsigned int) (X))
+#define mix_sht(X)	((unsigned int) (X))
 #define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
+#define mix_lng(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32)))
+#ifdef HAVE_HGE
+#define mix_hge(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32) ^ \
+						((X) >> 64) ^ ((X) >> 96)))
+#endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
 #define hash_any(H,V)	(ATOMhash((H)->type, (V)) & (H)->mask)
 #define heap_hash_any(hp,H,V)	((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
-#define hash_bte(H,V)	(assert(((H)->mask & 0xFF) == 0xFF), (BUN) *(const unsigned char*) (V))
-#define hash_sht(H,V)	(assert(((H)->mask & 0xFFFF) == 0xFFFF), (BUN) *(const unsigned short*) (V))
-#define hash_int(H,V)	((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
+#define hash_bte(H,V)	(assert(((H)->mask & 0xFF) == 0xFF), (BUN) mix_bte(*(const unsigned char*) (V)))
+#define hash_sht(H,V)	(assert(((H)->mask & 0xFFFF) == 0xFFFF), (BUN) mix_sht(*(const unsigned short*) (V)))
+#define hash_int(H,V)	((BUN) mix_int(*(const unsigned int *) (V)) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)	((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(const lng *)(V) >> 32))) & (H)->mask)
+#define hash_lng(H,V)	((BUN) mix_lng(*(const ulng *) (V)) & (H)->mask)
 #ifdef HAVE_HGE
-#define hash_hge(H,V)	((BUN) mix_int((unsigned int) (*(const hge *)(V) ^ (*(const hge *)(V) >> 32) ^ \
-                     	                               (*(const hge *)(V) >> 64) ^ (*(const hge *)(V) >> 96))) & (H)->mask)
+#define hash_hge(H,V)	((BUN) mix_hge(*(const uhge *) (V)) & (H)->mask)
 #endif
 #if SIZEOF_OID == SIZEOF_INT
-#define hash_oid(H,V)	((BUN) mix_int((unsigned int) *((const oid*) (V))) & (H)->mask)
+#define hash_oid(H,V)	hash_int(H,V)
 #else
-#define hash_oid(H,V)	((BUN) mix_int((unsigned int) (*(const oid *)(V) ^ (*(const oid *)(V) >> 32))) & (H)->mask)
+#define hash_oid(H,V)	hash_lng(H,V)
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
-#define hash_wrd(H,V)	((BUN) mix_int((unsigned int) *((const wrd*) (V))) & (H)->mask)
+#define hash_wrd(H,V)	hash_int(H,V)
 #else
-#define hash_wrd(H,V)	((BUN) mix_int((unsigned int) (*(const wrd *)(V) ^ (*(const wrd *)(V) >> 32))) & (H)->mask)
+#define hash_wrd(H,V)	hash_lng(H,V)
 #endif
 
 #define hash_flt(H,V)	hash_int(H,V)
@@ -162,18 +168,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		(x) = BUN_NONE;						\
 		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
 			HASHloop_str((y), (y).b->T->hash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-		} else							\
-			goto hashfnd_failed;				\
-	} while (0)
-#define HASHfnd_str_hv(x,y,z)						\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
-			HASHloop_str_hv((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
 			}						\
@@ -211,18 +205,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #ifdef HAVE_HGE
 #define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
 #endif
-#define HASHfnd_oid(x,y,z)	HASHfnd_TYPE(x,y,z,oid)
-#define HASHfnd_wrd(x,y,z)	HASHfnd_TYPE(x,y,z,wrd)
 
-#if SIZEOF_VOID_P == SIZEOF_INT
-#define HASHfnd_ptr(x,y,z)	HASHfnd_int(x,y,z)
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-#define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
-#endif
-#define HASHfnd_bit(x,y,z)	HASHfnd_bte(x,y,z)
-#define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
-#define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
-#define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
 /*
  * A new entry is added with HASHins using the BAT, the BUN index, and
  * a pointer to the value to be stored.

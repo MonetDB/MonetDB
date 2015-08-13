@@ -280,14 +280,13 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	for (i = 0; i < nr_files; ++i) {
 		TO_LOG("<bam_loader> Creating alignment tables for file '%s'...\n", filenames[i]);
 		if ((dbschema == 0
-			 && create_alignment_storage_0(cntxt,
-						   "bam.create_storage_0",
-						   bws + i) != MAL_SUCCEED)
+			 && (msg = create_alignment_storage_0(cntxt,
+								  "bam.create_storage_0",
+								  bws + i)) != MAL_SUCCEED)
 			|| (dbschema == 1
-			&& create_alignment_storage_1(cntxt,
-							  "bam.create_storage_1",
-							  bws + i) !=
-			MAL_SUCCEED)) {
+				&& (msg = create_alignment_storage_1(cntxt,
+								  "bam.create_storage_1",
+								  bws + i)) != MAL_SUCCEED)) {
 			goto cleanup;
 		}
 	}

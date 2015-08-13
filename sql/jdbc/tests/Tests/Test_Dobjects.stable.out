@@ -80,9 +80,11 @@ mTests_sql_jdbc_tests	sys	auths	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM
 mTests_sql_jdbc_tests	sys	connections	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	db_user_info	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	dependencies	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	dependency_types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	functions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	idxs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	keywords	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	netcdf_attrs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	netcdf_dims	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	netcdf_files	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -95,6 +97,7 @@ mTests_sql_jdbc_tests	sys	sequences	SYSTEM TABLE	null	null	null	null	rowid	SYSTE
 mTests_sql_jdbc_tests	sys	statistics	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storagemodelinput	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	systemfunctions	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	table_types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	user_role	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -115,10 +118,11 @@ select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	queue	SYSTEM VIEW	create view sys.queue as select * from sys.queue();	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	rejects	SYSTEM VIEW	create view sys.rejects as select * from sys.rejects();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	sessions	SYSTEM VIEW	create view sys.sessions as select * from sys.sessions();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storage	SYSTEM VIEW	create view sys."storage" as select * from sys."storage"();	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	storagemodel	SYSTEM VIEW	create view sys.storagemodel as select * from sys.storagemodel();	null	null	null	rowid	SYSTEM	
-mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type <> 2;	null	null	null	rowid	SYSTEM	
+mTests_sql_jdbc_tests	sys	tables	SYSTEM VIEW	SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 /* system table/view */ ELSE (CASE WHEN "commit_action" = 0 THEN "type" /* table/view */ ELSE "type" + 20 /* global temp table */ END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 /* local temp table */ AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";	null	null	null	rowid	SYSTEM	
 mTests_sql_jdbc_tests	sys	tablestoragemodel	SYSTEM VIEW	-- A summary of the table storage requirement is is available as a table view.
 -- The auxiliary column denotes the maximum space if all non-sorted columns
 -- would be augmented with a hash (rare situation)

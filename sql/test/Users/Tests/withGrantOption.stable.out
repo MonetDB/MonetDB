@@ -1,0 +1,44 @@
+stdout of test 'withGrantOption` in directory 'sql/test/Users` itself:
+
+
+# 10:30:19 >  
+# 10:30:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38464" "--set" "mapi_usock=/var/tmp/mtest-28429/.s.monetdb.38464" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:30:19 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 3.746 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://buzu:38464/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28429/.s.monetdb.38464
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.9'
+# Finished reading the write-ahead log 'sql_logs/sql/log.9'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:30:20 >  
+# 10:30:20 >  "/usr/bin/python2" "withGrantOption.SQL.py" "withGrantOption"
+# 10:30:20 >  
+
+#GRANT SELECT ON bank.loans TO april WITH GRANT OPTION;
+#GRANT INSERT ON bank.loans TO april WITH GRANT OPTION;
+#GRANT UPDATE ON bank.loans TO april WITH GRANT OPTION;
+#GRANT DELETE ON bank.loans TO april WITH GRANT OPTION;
+
+#GRANT SELECT ON bank.loans TO alice WITH GRANT OPTION;
+#GRANT INSERT ON bank.loans TO alice WITH GRANT OPTION;
+#GRANT UPDATE ON bank.loans TO alice WITH GRANT OPTION;
+#GRANT DELETE ON bank.loans TO alice WITH GRANT OPTION;
+
+# 10:30:20 >  
+# 10:30:20 >  "Done."
+# 10:30:20 >  
+

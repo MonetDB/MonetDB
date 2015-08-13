@@ -591,9 +591,9 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	user = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	login = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	login = BATnew(TYPE_void, TYPE_timestamp, 0, TRANSIENT);
 	stimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	last = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	last = BATnew(TYPE_void, TYPE_timestamp, 0, TRANSIENT);
 	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){

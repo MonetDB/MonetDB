@@ -59,6 +59,7 @@ str countRef;
 str subcountRef;
 str copyRef;
 str copy_fromRef;
+str export_tableRef;
 str count_no_nilRef;
 str crossRef;
 str createRef;
@@ -252,6 +253,7 @@ int rowsProp;
 int fileProp;
 int runonceProp;
 int unsafeProp;
+int orderDependendProp;
 
 int stableProp;
 int insertionsProp;
@@ -311,6 +313,7 @@ void optimizerInit(void)
 	subcountRef = putName("subcount",8);
 	copyRef = putName("copy",4);
 	copy_fromRef = putName("copy_from",9);
+	export_tableRef = putName("export_table",12);
 	count_no_nilRef = putName("count_no_nil",12);
 	crossRef = putName("crossproduct",12);
 	createRef = putName("create",6);
@@ -504,6 +507,7 @@ void optimizerInit(void)
 	rowsProp = PropertyIndex("rows");
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
+	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	stableProp = PropertyIndex("stableProp");

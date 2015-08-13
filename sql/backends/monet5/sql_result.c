@@ -36,7 +36,7 @@
 				if (*Buf)				\
 					GDKfree(*Buf);			\
 				*len = 5;				\
-				*Buf = GDKmalloc(*len);			\
+				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
 					GDKerror("Allocation failed\n"); \
 					return 0;			\
@@ -69,7 +69,7 @@
 			if (*Buf)					\
 				GDKfree(*Buf);				\
 			*len = l+1;					\
-			*Buf = GDKmalloc(*len);				\
+			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
 				GDKerror("Allocation failed\n");	\
 				return 0;				\
@@ -134,7 +134,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		if (*len < 4 || *buf == NULL) {
 			if (*buf)
 				GDKfree(*buf);
-			*buf = (str) GDKmalloc(*len = 4);
+			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -152,7 +152,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -203,7 +203,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + len2 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + len2 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -454,7 +454,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-		    (r = GDKmalloc(sizeof(X))) == NULL)			\
+		    (r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -465,14 +465,12 @@ bat_max_hgelength(BAT *b)
 	} while (0)
 
 static void *
-dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+dec_frstr(Column *c, int type, const char *s)
 {
 	/* support dec map to bte, sht, int and lng */
-	(void) e;
-	(void) quote;
-	if (s == e) {
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-	} else if (type == TYPE_bte) {
+	if (type == TYPE_bte) {
 		DEC_FRSTR(bte);
 	} else if (type == TYPE_sht) {
 		DEC_FRSTR(sht);
@@ -489,7 +487,7 @@ dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 }
 
 static void *
-sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+sec_frstr(Column *c, int type, const char *s)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
@@ -499,12 +497,10 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 
 	(void) c;
 	(void) type;
-	(void) quote;
 	assert(type == TYPE_lng);
 
-	if (s == e)
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-
 	if (*s == '-') {
 		neg = 1;
 		s++;
@@ -540,7 +536,7 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	if (*s)
 		return NULL;
 	r = c->data;
-	if (r == NULL && (r = (lng *) GDKmalloc(sizeof(lng))) == NULL)
+	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
 		return NULL;
 	c->data = r;
 	if (neg)
@@ -550,14 +546,20 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	return (void *) r;
 }
 
+/* Literal parsing for SQL all pass through this routine */
 static void *
-_ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
+_ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	int len;
-	(void) quote;
+	const char *e; 
+
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
-		int len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+		int len;
+
+		for (e = s; *e; e++) ;
+		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+
 		/* or shouldn't len rather be ssize_t, here? */
 
 		if (c->len < len) {
@@ -571,8 +573,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			}
 			c->data = p;
 		}
-
-		if (s == e) {
+		if (s == e || *s == 0) {
 			len = -1;
 			*(char *) c->data = 0;
 		} else if ((len = (int) GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
@@ -588,11 +589,14 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 		}
 		return c->data;
 	}
+	// All other values are not allowed to the MonetDB nil value
+	if( strcmp(s,"nil")== 0)
+		return NULL;
 
 	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
 	if (len < 0)
 		return NULL;
-	if (len == 0 || len != e - s) {
+	if (len == 0 || s[len]) {
 		/* decimals can be converted to integers when *.000 */
 		if (s[len++] == '.')
 			switch (type) {
@@ -630,7 +634,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		if (l + 3 > *len) {
 			GDKfree(*buf);
 			*len = 2 * l + 3;
-			*buf = GDKmalloc(*len);
+			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -669,15 +673,17 @@ has_whitespace(const char *s)
 	return 0;
 }
 
-BAT **
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
+str
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0;
 	node *n;
 	Tablet as;
 	Column *fmt;
 	BUN cnt = 0;
-	BAT **bats = NULL;
+	str msg = MAL_SUCCEED;
+
+	*bats =0;	// initialize the receiver
 
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
@@ -714,7 +720,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 		as.error = NULL;
 		as.tryall = 0;
 		as.complaints = NULL;
-		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+		as.filename = "";
+		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
@@ -735,7 +742,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
 			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-			fmt[i].data = GDKmalloc(fmt[i].len);
+			fmt[i].data = GDKzalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep ? ssep[0] : 0;
@@ -754,34 +761,46 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+				if (b == NULL)
+					sql_error(m, 500, "failed to bind to table column");
 
 				HASHdestroy(b);
 
 				fmt[i].c = b;
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
-					if (BATextend(fmt[i].c, (BUN) sz) == GDK_FAIL) {
+					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
 						for (i--; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
-						sql_error(m, 500, "failed to allocate result table sizes ");
+						sql_error(m, 500, "failed to allocate space for column");
 						return NULL;
 					}
 				}
 				fmt[i].ci = bat_iterator(fmt[i].c);
 			}
 		}
-		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz) != BUN_NONE && !as.error) {
+		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+				(best || !as.error)) {
+				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+				if ( *bats == NULL){
+					TABLETdestroy_format(&as);
+					return NULL;
+				}
 				if (locked)
-					bats = TABLETcollect_parts(&as, cnt);
+					msg = TABLETcollect_parts(*bats,&as, cnt);
 				else
-					bats = TABLETcollect(&as);
+					msg = TABLETcollect(*bats,&as);
 			} else if (locked) {	/* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
 					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-					BATsetcount(b, cnt);
-					BBPunfix(b->batCacheid);
+					if (b == NULL)
+						sql_error(m, 500, "failed to bind to temporary column");
+					else {
+						BATsetcount(b, cnt);
+						BBPunfix(b->batCacheid);
+					}
 				}
 			}
 		}
@@ -792,12 +811,16 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 				sql_delta *d = c->data;
 
 				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
-				d->ibase = (oid) (d->cnt = BATcount(b));
-				BBPunfix(b->batCacheid);
+				if ( b == NULL)
+					sql_error(m, 500, "failed to bind to delta column");
+				else {
+					d->ibase = (oid) (d->cnt = BATcount(b));
+					BBPunfix(b->batCacheid);
+				}
 			}
 		}
 		if (as.error) {
-			sql_error(m, 500, "%s", as.error);
+			if( !best) sql_error(m, 500, "%s", as.error);
 			if (as.error != M5OutOfMemory)
 				GDKfree(as.error);
 			as.error = NULL;
@@ -809,7 +832,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 		}
 		TABLETdestroy_format(&as);
 	}
-	return bats;
+	return msg;
 }
 
 /*
@@ -1225,7 +1248,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	as.nr = nr;
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
+	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";

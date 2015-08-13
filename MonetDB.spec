@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.20.0
+%define version 11.22.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2014-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -135,6 +135,12 @@ BuildRequires: samtools-devel
 BuildRequires: R-core-devel
 %endif
 
+%if (0%{?fedora} >= 22)
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
+%endif
+
 # need to define python_sitelib on RHEL 5 and older
 # no need to define python3_sitelib: it's defined by python3-devel
 %if 0%{?rhel} && 0%{?rhel} <= 5
@@ -160,7 +166,9 @@ more client packages.
 %package devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
+Requires: %{name}%{?_isa} = %{version}-%{release}
+Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
+Requires: libatomic_ops-devel
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -199,7 +207,7 @@ various other components.
 %package stream-devel
 Summary: MonetDB stream library
 Group: Applications/Databases
-Requires: %{name}-stream = %{version}-%{release}
+Requires: %{name}-stream%{?_isa} = %{version}-%{release}
 Requires: bzip2-devel
 Requires: libcurl-devel
 Requires: zlib-devel
@@ -224,6 +232,9 @@ library.
 %package client
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
+%if (0%{?fedora} >= 22)
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+%endif
 
 %description client
 MonetDB is a database management system that is developed from a
@@ -247,7 +258,7 @@ MonetDB, you will very likely need this package.
 %package client-tools
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 
 %description client-tools
 MonetDB is a database management system that is developed from a
@@ -263,12 +274,15 @@ tools can be used to monitor the MonetDB database server.
 %{_bindir}/stethoscope
 %{_bindir}/tachograph
 %{_bindir}/tomograph
+%dir %{_datadir}/doc/MonetDB-client-tools
+%docdir %{_datadir}/doc/MonetDB-client-tools
+%{_datadir}/doc/MonetDB-client-tools/*
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-stream-devel = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
 Requires: openssl-devel
 
 %description client-devel
@@ -290,7 +304,7 @@ This package contains the files needed to develop with the
 %package client-odbc
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires(pre): unixODBC
 
 %description client-odbc
@@ -347,7 +361,6 @@ program.
 %package client-perl
 Summary: MonetDB perl interface
 Group: Applications/Databases
-Requires: %{name}-client = %{version}-%{release}
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires: perl(DBI)
 Requires: perl(Digest::SHA)
@@ -426,12 +439,12 @@ This package contains the activerecord adapter for MonetDB.
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
-Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-client-odbc = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
 Requires: %{name}-client-php = %{version}-%{release}
-Requires: %{name}-SQL-server5 = %{version}-%{release}
+Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb = %{version}-%{release}
 
 %description client-tests
@@ -464,7 +477,7 @@ developer.
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Obsoletes: %{name}-geom
 Obsoletes: %{name}-geom-devel
 
@@ -488,7 +501,7 @@ extensions for %{name}-SQL-server5.
 %package gsl-MonetDB5
 Summary: MonetDB5 SQL interface to the gsl library
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description gsl-MonetDB5
 MonetDB is a database management system that is developed from a
@@ -510,7 +523,7 @@ numerical analysis (gsl).
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description bam-MonetDB5
 MonetDB is a database management system that is developed from a
@@ -533,7 +546,7 @@ version of Sequence Alignment/Map) data.
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -559,7 +572,7 @@ install it.
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -582,8 +595,15 @@ format.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-rdf
+%if (0%{?fedora} >= 22)
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+%if %{bits} == 64
+Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+%endif
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
+%endif
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -637,7 +657,9 @@ fi
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
+%if %{bits} == 64
 %exclude %{_libdir}/monetdb5/*_hge.mal
+%endif
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -663,11 +685,15 @@ fi
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
+%dir %{_datadir}/doc/MonetDB
+%docdir %{_datadir}/doc/MonetDB
+%{_datadir}/doc/MonetDB/*
 
+%if %{bits} == 64
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Application/Databases
-Requires: MonetDB5-server
+Requires: MonetDB5-server%{?_isa}
 
 %description -n MonetDB5-server-hugeint
 MonetDB is a database management system that is developed from a
@@ -683,11 +709,13 @@ MonetDB5-server component.
 %{_libdir}/monetdb5/*_hge.mal
 %exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
 %{_libdir}/monetdb5/autoload/*_hge.mal
+%endif
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description -n MonetDB5-server-devel
 MonetDB is a database management system that is developed from a
@@ -708,13 +736,19 @@ used from the MAL level.
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 Requires: %{_bindir}/systemd-tmpfiles
 %endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
+%if (0%{?fedora} >= 22)
+%if %{bits} == 64
+Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
+%endif
+Suggests: %{name}-client%{?_isa} = %{version}-%{release}
+%endif
 
 %description SQL-server5
 MonetDB is a database management system that is developed from a
@@ -755,27 +789,24 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
-%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
 %{_libdir}/monetdb5/createdb/*.sql
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
 %{_libdir}/monetdb5/sql*.mal
+%if %{bits} == 64
+%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
+%exclude %{_libdir}/monetdb5/sql*_hge.mal
+%endif
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
-%if (0%{?fedora} >= 20)
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
-%else
-%dir %{_datadir}/doc/MonetDB-SQL-%{version}
-%docdir %{_datadir}/doc/MonetDB-SQL-%{version}
-%{_datadir}/doc/MonetDB-SQL-%{version}/*
-%endif
 
+%if %{bits} == 64
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
-Requires: MonetDB5-server-hugeint = %{version}-%{release}
-Requires: MonetDB-SQL-server5 = %{version}-%{release}
+Requires: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
 %description SQL-server5-hugeint
 MonetDB is a database management system that is developed from a
@@ -791,6 +822,7 @@ frontend of MonetDB.
 %{_libdir}/monetdb5/autoload/??_sql_hge.mal
 %{_libdir}/monetdb5/createdb/*_hge.sql
 %{_libdir}/monetdb5/sql*_hge.mal
+%endif
 
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
@@ -899,7 +931,6 @@ developer, but if you do want to test, this is the package you need.
 
 %{configure} \
 	--enable-assert=no \
-	--enable-bits=%{bits} \
 	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
@@ -938,7 +969,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
-make
+make %{?_smp_mflags}
 
 %install
 %make_install
@@ -959,15 +990,142 @@ rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
 
-%if 0%{?fedora} >= 20
-mv %{buildroot}%{_datadir}/doc/MonetDB-SQL-%{version} %{buildroot}%{_datadir}/doc/MonetDB-SQL
-%endif
-
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Aug 07 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- Rebuilt.
+- BZ#3364: Cannot set role back to a user's default role
+- BZ#3365: Unable to grant object privileges while having a non-default
+  current_role
+- BZ#3476: Cannot revoke object access
+- BZ#3556: when 2 multiplexed functions in MAL plan, only one is mapped
+  correctly to bat<mod>.function primitive
+- BZ#3564: Request: add support for postgresql specific scalar function:
+  split_part(string text, delimiter text, field int)
+- BZ#3625: SIGSEGV because mat array can overrun in opt_mergetable.c
+- BZ#3627: SQRT in CASE does not work as of Oct2014
+- BZ#3654: configure --enable-fits requires extra commands after creating
+  a database instance
+- BZ#3673: mclient 'expanded' row formatter
+- BZ#3674: Obfuscate event tracing
+- BZ#3679: No error is given when incorrect timezone value is specified
+  for a timetz column
+- BZ#3686: Wrong associativity of multiply/divide
+- BZ#3702: Filter function not found if created in a user schema
+- BZ#3708: wrong scoping for cross-schema view references
+- BZ#3716: alter table my_merge_table drop table t1; crashes mserver5
+  with Segmentation fault
+- BZ#3724: Wrong size calculation in BATsubjoin
+- BZ#3732: memory leak (of InstrRecord) in opt_mergetable
+- BZ#3733: "(TRUE OR <Exp>) AND <Exp>" is evaluated incorrectly
+- BZ#3735: python connection with unix_socket
+- BZ#3736: crash if mclient disconnects abruptly during a query
+- BZ#3738: Database inconsistency when using savepoint
+- BZ#3739: CASE statements do not handle NULLs in the IN () operator
+  properly
+- BZ#3740: select epoch(now()); types timestamptz(7,0) and bigint(64,0)
+  are not equal
+- BZ#3742: Division By Zero
+- BZ#3744: cast to int gives different results for decimal than double
+- BZ#3747: joins fail in the presence of nulls
+- BZ#3748: Missing META-INF/services/java.sql.Driver in JDBC package
+- BZ#3753: Hang on json field parsing
+- BZ#3754: select from a REMOTE TABLE referring local table crashes
+  mserver5
+- BZ#3756: column type conversion sticks to subsequent queries
+- BZ#3759: select data from "sys"."rejects" returns unexpected error and
+  when next select data from "sys"."sessions" causes an assertion failure
+  in mal_interpreter.c:646.
+- BZ#3760: SQL parser has problem with (position of) a scalar subquery
+  in a SELECT-list
+- BZ#3761: SQL executor has problem with (position of) a subquery in a
+  SELECT-list. Inconsistent behavior.
+- BZ#3764: DROPping multiple users causes a crash
+- BZ#3765: Re-granting a revoked privilege does not work
+- BZ#3766: VIEW not visible if created under a different schema
+- BZ#3767: CREATE TEMP TABLE using "LIKE" incorrectly handled
+- BZ#3769: SIGSEGV when combining a cast/column alias with a UNION
+  ALL view
+- BZ#3770: combined conditions on declared table in User Defined Function
+  definition crashes monetdb
+- BZ#3771: Owner of the schema loses rights if assumes the monetdb role.
+- BZ#3772: Any user can grant a role.
+- BZ#3773: quantile(col, 0) and quantile(col, 1) fail
+- BZ#3774: mclient is unaware of merge tables and remote tables
+- BZ#3775: COPY INTO: Backslash preceding field separator kills import
+- BZ#3778: Crash on remote table schema mismatch
+- BZ#3779: server crashes on MAX() on SELECT DISTINCT something combo
+
+* Thu Aug  6 2015 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.21.1-20150807
+- java: Improved JDBC driver to not throw NullPointerException anymore
+  when calling isNullable() or getPrecision() or getScale() or
+  getColumnDisplaySize() or getSchemaName() or getTableName() or
+  getColumnClassName() on a ResultSet object.
+
+* Tue Jul 28 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- sql: Added support for 128-bit integers (called HUGEINT) on platforms that
+  support this.
+
+* Thu Jul 16 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- java: We now compile the Java classes using the latest Java 1.8 version, and
+  we tell it to compile for Java 1.7.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- buildtools: Upgraded the license to the Mozilla Public License Version 2.0.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- clients: Added a new output format to mclient: --format=expanded (or -fx).
+  In this format, column values are shown in full and below each other.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- sql: Removed support for the mseed library.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- sql: Removed support for RDF.
+- sql: Removed DataCell.  It was experimental code that was never enabled.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- gdk: BUNtvar and BUNhvar macros no longer work for TYPE_void columns.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- gdk: Changed interfaces of a lot of GDK-level functions.  When they modify a
+  BAT, don't return the same BAT or NULL, but instead return GDK_SUCCEED
+  or GDK_FAIL.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- monetdb5: Implemented batcalc.min and batcalc.max.  Made calc.min and calc.max
+  generic so that no other implementations are needed.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- monetdb5: Removed function batcalc.ifthen.
+
+* Wed Jun  3 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
+- gdk: Changed a bunch of hash-related functions to work on the tail column.
+  The functions that have been changed to work on the tail column are:
+  BAThash, BATprepareHash, HASHgonebad, HASHins, and HASHremove.
+
+* Wed Jun 03 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.15-20150603
+- Rebuilt.
+- BZ#3707: var() possibly not working in debug builds
+- BZ#3720: Incorrect results on joining with same table
+- BZ#3725: LEFT JOIN bug with CONST value
+- BZ#3731: left shift for IP addresses not available to non-system users
+
+* Tue May 19 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.13-20150519
+- Rebuilt.
+- BZ#3712: Concurrency issue on querying the SQL catalog
+- BZ#3713: Long startup cost for simple session
+- BZ#3715: Crash with two ALTER TABLE statements in a transaction
+- BZ#3718: Adding and dropping a non existing tablename to/from a merge
+  table is accepted without an error
+- BZ#3719: Assertion failure in /MonetDB-11.19.11/gdk/gdk_bat.c:2841:
+  BATassertHeadProps: Assertion `!b->H->key || cmp != 0' failed.
+- BZ#3723: Assertion failure in rel_bin.c:2548: rel2bin_groupby: Assertion
+  `0' failed.
+
 * Thu Apr 23 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.19.11-20150423
 - Rebuilt.
 - BZ#3466: UPDATE statements fails with "GDKerror: MT_mremap() failed"

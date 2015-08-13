@@ -25,10 +25,12 @@ headers_sql = {
 		24_zorder.sql \
 		25_debug.sql \
 		26_sysmon.sql \
+		27_rejects.sql \
 		39_analytics.sql \
 		40_json.sql \
 		41_md5sum.sql \
 		45_uuid.sql \
+		51_sys_schema_extension.sql \
 		75_storagemodel.sql \
 		80_statistics.sql \
 		99_system.sql

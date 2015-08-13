@@ -53,7 +53,7 @@ int
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old, *series;
-	int i, k, limit, actions=0;
+	int i, k, limit, slimit, actions=0;
 	str m;
 	str bteRef = getName("bte",3);
 	str shtRef = getName("sht",3);
@@ -69,6 +69,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
     	old = mb->stmt;
     	limit = mb->stop;
+    	slimit = mb->ssize;
     	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
         	return 0;
@@ -76,7 +77,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for( i=0; i < limit; i++){
 		p = old[i];
-		if ( p->token == ENDsymbol){
+		if (p->token == ENDsymbol){
 			pushInstruction(mb,p); 
 			break;
 		}
@@ -147,6 +148,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 	for (i++; i < limit; i++)
         	pushInstruction(mb, old[i]);
+	for (; i < slimit; i++)
+		if (old[i])
+        		freeInstruction(old[i]);
     	GDKfree(old);
     	GDKfree(series);
 

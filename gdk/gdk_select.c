@@ -26,7 +26,7 @@ float nextafterf(float x, float y);
 			BATsetcount((B), (I));			\
 			if (BATextend((B),			\
 				      MIN(BATcapacity(B) + (G),	\
-					  (M))) == GDK_FAIL) {	\
+					  (M))) != GDK_SUCCEED) {	\
 				BBPreclaim(B);			\
 				return (R);			\
 			}					\
@@ -156,9 +156,9 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
-		if (misses += hb >= (hi), (hb >= (lo) && hb < (hi) &&	\
+		if (hb >= (lo) && hb < (hi) &&		\
 		    (cmp == NULL ||			\
-		     (*cmp)(v, BUNtail(bi, hb)) == 0)))
+		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
@@ -169,20 +169,33 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	BUN l, h;
 	oid seq;
 	int (*cmp)(const void *, const void *);
-	BUN misses = 0;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(BAThdense(b));
 	seq = b->hseqbase;
+	l = BUNfirst(b);
+	h = BUNlast(b);
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
-		l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
-		h = l + BATcount(b);
-		b = b2;
-	} else {
-		l = BUNfirst(b);
-		h = BUNlast(b);
+		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
+			/* only use parent's hash if it is persistent
+			 * or already has a hash */
+			ALGODEBUG
+				fprintf(stderr, "#hashselect(%s#"BUNFMT"): "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(b), BATcount(b),
+					BATgetId(b2), BATcount(b2));
+			l = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			h = l + BATcount(b);
+			b = b2;
+		} else {
+			ALGODEBUG
+				fprintf(stderr, "#hashselect(%s#"BUNFMT"): not "
+					"using parent(%s#"BUNFMT") for hash\n",
+					BATgetId(b), BATcount(b),
+					BATgetId(b2), BATcount(b2));
+		}
 	}
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
@@ -195,7 +208,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		}
 		s = NULL;
 	}
-	if (BAThash(b, 0) == GDK_FAIL) {
+	if (BAThash(b, 0) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
 	}
@@ -231,7 +244,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 			cnt++;
 		}
 	}
-	fprintf(stderr, "#BAT_hashselect: misses = "BUNFMT"\n", misses);
 	BATsetcount(bn, cnt);
 	bn->tkey = 1;
 	if (cnt > 1) {
@@ -770,13 +782,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -785,13 +798,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -800,13 +814,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -815,13 +830,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -889,7 +905,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
 	/* build imprints if they do not exist */
-	if (use_imprints && (BATimprints(b) == GDK_FAIL)) {
+	if (use_imprints && (BATimprints(b) != GDK_SUCCEED)) {
 		use_imprints = 0;
 	}
 
@@ -1258,13 +1274,14 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
 	if (equi) {
 		assert(lval);
-		if (th == NULL)
-			hi = li;
+		hi = li;
 		th = tl;
 		hval = 1;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
 	}
+	if (!equi && !lval && !hval && lnil) 
+		anti = !anti;
 	if (anti) {
 		if (lval != hval) {
 			/* one of the end points is nil and the other
@@ -1505,7 +1522,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 							 BATcount(b) + b->hseqbase);
 				}
 			} else {
-				BUN last = SORTfndlast(b, nil) - BUNfirst(b);
+				BUN last = SORTfndfirst(b, nil) - BUNfirst(b);
 				/* match: [0..low) + [high..last) */
 				if (s) {
 					oid o = (oid) last + b->H->seq;
@@ -1950,8 +1967,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == GDK_FAIL ||
-					    BATextend(r2, cnt) == GDK_FAIL)
+					if (BATextend(r1, cnt) != GDK_SUCCEED ||
+					    BATextend(r2, cnt) != GDK_SUCCEED)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -1968,8 +1985,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					cnt = BUNlast(r1) + high - low + 1024;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) == GDK_FAIL ||
-					    BATextend(r2, cnt) == GDK_FAIL)
+					if (BATextend(r1, cnt) != GDK_SUCCEED ||
+					    BATextend(r2, cnt) != GDK_SUCCEED)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -2334,7 +2351,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				continue;
 			if (BATcapacity(r2) < ncnt) {
 				BATsetcount(r2, cnt);
-				if (BATextend(r2, BATcapacity(r1)) == GDK_FAIL)
+				if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED)
 					goto bailout;
 				dst2 = (oid *) Tloc(r2, BUNfirst(r2));
 			}
@@ -2430,8 +2447,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					BUN newcap = BATgrows(r1);
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, newcap) == GDK_FAIL ||
-					    BATextend(r2, newcap) == GDK_FAIL)
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||
+					    BATextend(r2, newcap) != GDK_SUCCEED)
 						goto bailout;
 					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
@@ -2513,9 +2530,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	return GDK_SUCCEED;
 
   bailout:
-	if (r1)
-		BBPreclaim(r1);
-	if (r2)
-		BBPreclaim(r2);
+	BBPreclaim(r1);
+	BBPreclaim(r2);
 	return GDK_FAIL;
 }

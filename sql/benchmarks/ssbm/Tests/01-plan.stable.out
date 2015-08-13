@@ -41,10 +41,10 @@ project (
 | | join (
 | | | select (
 | | | | table(sys.lineorder) [ lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ] COUNT 
-| | | ) [ int[tinyint "1"] <= lineorder.lo_discount <= int[tinyint "3"], lineorder.lo_quantity < int[tinyint "25"] ],
+| | | ) [ int "1" <= lineorder.lo_discount <= int "3", lineorder.lo_quantity < int "25" ],
 | | | select (
 | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
-| | | ) [ dwdate.d_year = int[smallint "1993"] ]
+| | | ) [ dwdate.d_year = int "1993" ]
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [  ] [ sys.sum no nil (sys.sql_mul(bigint[lineorder.lo_extendedprice] as lineorder.lo_extendedprice, lineorder.lo_discount)) as L1.L1 ]
 ) [ L1 as L1.revenue ]

@@ -1,3 +1,7 @@
+###
+# Authenticate unknown USER (not possible).
+###
+
 import sys
 try:
     from MonetDBtesting import process

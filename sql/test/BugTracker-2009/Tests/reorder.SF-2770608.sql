@@ -42,7 +42,7 @@ COPY 29 RECORDS INTO t2770608 FROM stdin USING DELIMITERS '\t','\n','"';
 5187	"inet"	"inet"	0	0	0	13	2000
 
 -- query causes problems in specific pipeline
-set optimizer='optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.mitosis();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.garbageCollector();';
+set optimizer='optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.mitosis();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.garbageCollector();';
 select * from t2770608 t1, t2770608 t2 where t1.id = t2.id;
 
 -- clean up
