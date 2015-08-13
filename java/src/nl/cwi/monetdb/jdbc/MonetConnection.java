@@ -1621,7 +1621,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				cacheSize = rowcount;
 			seqnr = seq;
 			closed = false;
-			destroyOnClose = false;
+			destroyOnClose = id > 0 && tuplecount > rowcount;
 
 			this.id = id;
 			this.tuplecount = tuplecount;

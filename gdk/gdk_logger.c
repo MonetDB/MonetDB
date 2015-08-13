@@ -173,7 +173,6 @@ logbat_new(int tt, BUN size, int role)
 
 	if (nb) {
 		BATseqbase(nb, 0);
-		nb->batDirty |= 2;
 		if (role == PERSISTENT)
 			BATmode(nb, PERSISTENT);
 	} else {
@@ -1553,9 +1552,9 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid");
 	if (snapshots_bid == 0) {
-		lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
-		lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
-		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
+		lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
+		lg->dseqs = logbat_new(TYPE_oid, 1, TRANSIENT);
 		if (lg->seqs_id == NULL ||
 		    lg->seqs_val == NULL ||
 		    lg->dseqs == NULL)
@@ -1607,15 +1606,20 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			BAT *o_id = BATdescriptor(seqs_id);
 			BAT *o_val = BATdescriptor(seqs_val);
 
+			if (o_id == NULL || o_val == NULL)
+				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
+
+			BATseqbase(o_id, 0);
+			BATseqbase(o_val, 0);
 			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
 		} else {
-			lg->seqs_id = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
-			lg->seqs_val = BATnew(TYPE_void, TYPE_lng, 1, TRANSIENT);
+			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
+			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
 		}
-		lg->dseqs = BATnew(TYPE_void, TYPE_oid, 1, TRANSIENT);
+		lg->dseqs = logbat_new(TYPE_oid, 1, TRANSIENT);
 		if (lg->seqs_id == NULL ||
 		    lg->seqs_val == NULL ||
 		    lg->dseqs == NULL)
@@ -1641,10 +1645,9 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
 		}
 	}
-	lg->freed = BATnew(TYPE_void, TYPE_int, 1, TRANSIENT);
+	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
 	if (lg->freed == NULL)
 		logger_fatal("logger_load: failed to create freed bat", 0, 0, 0);
-	BATseqbase(lg->freed, 0);
 	snprintf(bak, sizeof(bak), "%s_freed", fn);
 	/* do not rename it if this is a shared logger */
 	if (!lg->shared && BBPrename(lg->freed->batCacheid, bak) < 0)

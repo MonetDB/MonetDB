@@ -51,3 +51,4 @@ apply_merge_distinct.Bug-3760
 cardinality.Bug-3761
 set_default_role.Bug-3364
 useless_casts.Bug-3756
+sum_interval.Bug-3785

@@ -1405,6 +1405,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", *t, *t);
 	}
+	sql_create_aggr(sa, "sum", "aggr", "sum", MONINT, MONINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", SECINT, SECINT);
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", SHT, DBL);
