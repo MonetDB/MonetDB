@@ -112,7 +112,6 @@ opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
 opt_export  str kdifferenceRef;
-opt_export  str kunionRef;
 opt_export  str languageRef;
 opt_export  str leftfetchjoinRef;
 opt_export  str leftfetchjoinPathRef;
