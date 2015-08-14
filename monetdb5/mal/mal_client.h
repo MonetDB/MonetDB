@@ -164,6 +164,9 @@ typedef struct CLIENT {
 	 */
 	void *sqlcontext;
 
+	void **_append_bats;
+	char **_append_column_names;
+	int _append_columns;
 	/*
 	 * keep track of which instructions are currently being executed
 	 */

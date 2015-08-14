@@ -551,12 +551,18 @@ HEAPcopy(Heap *dst, Heap *src)
 int
 HEAPfree(Heap *h, int remove)
 {
-	if (h->base) {
+	if (h->base && h->storage != STORE_NOWN) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT
 					  " " PTRFMT "\n",
 					  h->size, PTRFMTCAST h->base);
 			GDKfree(h->base);
+		} else if (h->storage == STORE_CMEM) {
+			//heap is stored in regular C memory rather than GDK memory
+			free(h->base);
+		} else if (h->storage == STORE_SHARED)
+		{
+			//release_shared_memory(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base, h->size);
 

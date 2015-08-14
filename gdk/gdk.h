@@ -644,6 +644,9 @@ typedef enum {
 	STORE_MEM = 0,		/* load into GDKmalloced memory */
 	STORE_MMAP = 1,		/* mmap() into virtual memory */
 	STORE_PRIV = 2,		/* BAT copy of copy-on-write mmap */
+	STORE_CMEM = 3,     /* Indicates the value is stored in regular C memory rather than GDK memory.*/
+	STORE_NOWN = 4,     /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
+	STORE_SHARED = 5,   /* Indicattes that the bat uses shared memory. */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 

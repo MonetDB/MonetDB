@@ -87,13 +87,18 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 	 *
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
+#ifdef _EMBEDDED_MONETDB_MONETDB_LIB_
+	dl = dlopen(_EMBEDDED_MONETDB_MONETDB_LIB_, RTLD_NOW | RTLD_GLOBAL);
+#else
 	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
+#endif
 	if (dl == NULL) {
 		/* shouldn't happen, really */
-		if (!silent)
+		if (!silent) {
 			showException(out, MAL, "MAL.getAddress",
 						  "address of '%s.%s' not found",
 						  (modnme?modnme:"<unknown>"), fcnname);
+		}
 		return NULL;
 	}
 	adr = (MALfcn) dlsym(dl, fcnname);

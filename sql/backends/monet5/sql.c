@@ -1958,6 +1958,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c;
 	BAT *b = 0;
 
+	if (cntxt->_append_columns > 0) {
+		int i;
+		for(i = 0; i < cntxt->_append_columns; i++) {
+			if (strcmp(cname, cntxt->_append_column_names[i]) == 0) {
+				ins = (ptr) ((BAT**)cntxt->_append_bats)[i];
+				break;
+			}
+		}
+		tpe = TYPE_bat;
+	}
+
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
