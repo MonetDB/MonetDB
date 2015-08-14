@@ -8,4 +8,4 @@ else
 	find . -name "*.in" -type f -exec sh $0 {} \;
 fi
 touch config.status
-# TODO: add source paths to sedscript 
+# TODO: add source paths to sedscript
