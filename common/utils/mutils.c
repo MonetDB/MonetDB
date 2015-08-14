@@ -472,7 +472,7 @@ get_bin_path(void)
 {
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
-#if defined(_MSC_VER)		/* Windows */
+#if (defined(_MSC_VER) || defined(__MINGW32__))		/* Windows */
 	if (GetModuleFileName(NULL, _bin_path,
 			      (DWORD) sizeof(_bin_path)) != 0)
 		return _bin_path;

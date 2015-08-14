@@ -382,19 +382,21 @@ mcrypt_hashPassword(
 
 #else /* in embedded mode, we don't do MAPI or vaults, therefore we can run without OpenSSL. One build dependency down. */
 
-#define NO_OPENSSL_FATAL "MonetDB was built without OpenSSL, but what you are trying to do requires it."
+#define NO_OPENSSL_FATAL "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n"
 
 char* mcrypt_sum_fail(const char *string, size_t len) {
 	(void)string;
 	(void)len;
-	GDKfatal(NO_OPENSSL_FATAL);
+	fprintf(stderr, NO_OPENSSL_FATAL);
+	exit(1);
 	return NULL;
 }
 
 char *
 mcrypt_getHashAlgorithms(void)
 {
-	GDKfatal(NO_OPENSSL_FATAL);
+	fprintf(stderr, NO_OPENSSL_FATAL);
+	exit(1);
 	return NULL;
 }
 
@@ -456,7 +458,8 @@ mcrypt_hashPassword(
 	(void)algo;
 	(void)password;
 	(void)challenge;
-	GDKfatal(NO_OPENSSL_FATAL);
+	fprintf(stderr, NO_OPENSSL_FATAL);
+	exit(1);
 	return NULL;
 }
 #endif

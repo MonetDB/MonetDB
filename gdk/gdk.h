@@ -582,7 +582,7 @@ typedef char *str;
 #	define LL_CONSTANT(val)	(val)
 #elif SIZEOF_LONG==8
 #	define LL_CONSTANT(val)	(val##L)
-#elif defined(HAVE_LONG_LONG)
+#elif defined(HAVE_LONG_LONG) || defined(__MINGW32__)
 #	define LL_CONSTANT(val)	(val##LL)
 #elif defined(HAVE___INT64)
 #	define LL_CONSTANT(val)	(val##i64)

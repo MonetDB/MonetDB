@@ -364,7 +364,7 @@ MT_init(void)
 	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;	/* default */
 
-#ifdef _MSC_VER
+#if defined(MSC_VER) || defined(__MINGW32__)
 	{
 		MEMORYSTATUSEX memStatEx;
 

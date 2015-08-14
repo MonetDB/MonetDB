@@ -20,7 +20,7 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
-#ifndef HAVE_UUID
+#if !defined(HAVE_UUID) && defined(HAVE_OPENSSL)
 #include <openssl/rand.h>		/* for RAND_bytes */
 #endif
 
