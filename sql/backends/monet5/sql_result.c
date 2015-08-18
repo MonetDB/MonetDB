@@ -1476,7 +1476,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		} else {	/* TYPE_dbl */
 			ok = mvc_send_int(s, 24);
 		}
-	} else if (eclass == EC_DEC) {
+	} else if (eclass == EC_DEC || eclass == EC_SEC) {
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;
