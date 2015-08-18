@@ -995,6 +995,28 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
+- Rebuilt.
+- BZ#3361: constants as MAL function parameters prevent intermediate reuse
+- BZ#3440: Sequence type errors
+- BZ#3449: mserver crash on start - Freebsd 10 amd64
+- BZ#3496: autocompletion table names does not work correctly
+- BZ#3758: "COPY INTO ..." doesn't work, if executing from 2 processes
+  concurrently.
+- BZ#3763: JDBC PreparedStatement for a table with 14 Foreign Keys
+  crashing the Database
+- BZ#3783: Behavioural change in Jul2015 for 'timestamp minus timestamp'
+- BZ#3784: Assertion failed: (bn->batCapacity >= cnt), function
+  BAT_scanselect, file gdk_select.c, line 1008.
+- BZ#3785: sum(interval) causes overflow in conversion to bte
+- BZ#3786: ResultSet.close() never sends Xclose to free resources
+- BZ#3787: "b and g must be aligned" from complex group/union query
+- BZ#3791: HEAPextend: failed to extend to 2420077101056
+
+* Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
+- sql: Differences between time, timestamp, and date values now return properly
+  typed interval types (second or month intervals) instead of integers.
+
 * Fri Aug 07 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
 - Rebuilt.
 - BZ#3364: Cannot set role back to a user's default role

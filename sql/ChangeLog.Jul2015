@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org>
-- Differences between time, timestamp, and date values now return properly
-  typed interval types (second or month intervals) instead of integers.
-
