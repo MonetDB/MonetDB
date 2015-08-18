@@ -849,6 +849,7 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
+		newStmt(mb,"profiler","reset");
 		q= newStmt(mb, "profiler", "stethoscope");
 		(void) pushInt(mb,q,0);
 	} else {

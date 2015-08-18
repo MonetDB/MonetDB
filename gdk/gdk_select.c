@@ -1783,7 +1783,7 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
 gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -1965,6 +1965,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				assert(high >= low);
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -1983,6 +1985,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				/* [low..high) */
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -2445,6 +2449,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				if (BUNlast(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);
+					if (newcap > maxsize)
+						newcap = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, newcap) != GDK_SUCCEED ||

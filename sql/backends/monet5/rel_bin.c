@@ -377,8 +377,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(sql->sa, atom_general(sql->sa, to, NULL));
-			if (exp_card(e->l) > CARD_ATOM) 
-				l = const_column(sql->sa, l);
 		} else {
 	       		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
 		}
