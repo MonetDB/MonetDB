@@ -8,4 +8,5 @@ else
 	find . -name "*.in" -type f -exec sh $0 {} \;
 fi
 touch config.status
+cp tools/embedded/windows/sql_parser.tab.* sql/server/
 # TODO: add source paths to sedscript

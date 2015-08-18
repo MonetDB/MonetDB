@@ -8,12 +8,17 @@ if [ "$1" = "--mode=link" ]; then
 	i=1
 	out=1
 	j=$#
-	call="ar rvs"
+	call="ar rvsT"
 	while [ $i -le $j ]
 	do
 		case "$1" in
-		-rpath) ;;
+		-rpath) 
+		#shift # cough, cough
+		# TODO
+		;;
 		-version-info) ;;
+		-module) ;;
+		-avoid-version) ;;
 		-D*) ;;
 		-o) out=1 ;; 
 		*)

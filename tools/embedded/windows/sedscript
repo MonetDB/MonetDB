@@ -169,7 +169,7 @@ s|@PACKAGE_VERSION@||
 s|@PATHSEP@|;|
 s|@PATH_SEPARATOR@|;|
 s|@pcreversion@|8.3.7|
-s|@pcre_CFLAGS@|-I$(top_builddir)/../bundeled/libs-win64/pcre-8.37.win64/include|
+s|@pcre_CFLAGS@|-I$(top_builddir)/tools/embedded/windows/pcre-8.37.win64/include|
 s|@pcre_LIBS@||
 s|@pdfdir@||
 s|@PERL@||
@@ -260,9 +260,9 @@ s|@target_os@||
 s|@target_vendor@||
 s|@thread_safe_flag_spec@||
 s|@THREAD_SAVE_FLAGS@||
-s|@top_builddir@|c:/Users/Vanilla/MonetDB/src|
+s|@top_builddir@|$(top_srcdir)|
 s|@top_build_prefix@||
-s|@top_srcdir@|c:/Users/Vanilla/MonetDB/src|
+s|@top_srcdir@|c:/Users/Vanilla/MonetDB-2/src|
 s|@translatepath@||
 s|@UUID_LIBS@||
 s|@valgrind_CFLAGS@||

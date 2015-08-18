@@ -17,10 +17,26 @@ echo "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = b
 
 ./bootstrap
 # we need this directory since sql/server depends on it
-
 cd ..
 mv sourcetree/tools/embedded/rpackage .
 rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
+
+# generate sql_parser.tab.c/h to remove our dependency on bison on Windows.
+cd sourcetree
+./configure
+make sql/server/sql_parser.tab.h
+make sql/server/sql_parser.tab.c
+cd ..
+cpsh
+cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/tools/embedded/windows/
+
+# bundle pcre for windows (TODO: also iconv/zlib/ ...?)
+wget http://dev.monetdb.org/downloads/Windows/Libraries/libs-win64.zip
+umask 666
+unzip libs-win64.zip
+umask 644
+cp -r pcre-8.37.win64 rpackage/src/tools/embedded/windows/
+
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
 R CMD build rpackage

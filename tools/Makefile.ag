@@ -4,4 +4,4 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-SUBDIRS = HAVE_MONETDB5?mserver NOT_WIN32?merovingian HAVE_EMBEDDED?embedded HAVE_EMBEDDED?embeddedpy
+SUBDIRS = HAVE_MONETDB5?mserver NOT_WIN32?merovingian HAVE_EMBEDDED?embedded

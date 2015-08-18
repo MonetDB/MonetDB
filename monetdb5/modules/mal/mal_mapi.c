@@ -33,7 +33,9 @@
 #include <sys/types.h>
 #include <stream_socket.h>
 #include <mapi.h>
-#include <openssl/rand.h>		/* RAND_bytes() */
+#ifdef HAVE_OPENSSL
+# include <openssl/rand.h>		/* RAND_bytes() */
+#endif
 
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
