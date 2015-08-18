@@ -31,7 +31,7 @@ winredist/*.dll
 winredist/*.cpl
 /.hg_archival.txt
 .hgeol
-/MacOSX/MonetDB logo.png
+/MacOSX/
 /tools/merovingian
 /tools/mserver
 /clients/examples

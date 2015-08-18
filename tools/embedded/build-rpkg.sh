@@ -14,6 +14,7 @@ echo "SUBDIRS = embedded" > tools/Makefile.ag
 echo "SUBDIRS = mapilib" > clients/Makefile.ag
 echo "SUBDIRS = mal modules optimizer scheduler tools" > monetdb5/Makefile.ag
 echo "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = bootstrap configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
+sed -i "/^SUBDIRS = .*/d" sql/backends/Makefile.ag
 
 ./bootstrap
 # we need this directory since sql/server depends on it
@@ -24,17 +25,15 @@ rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpac
 # generate sql_parser.tab.c/h to remove our dependency on bison on Windows.
 cd sourcetree
 ./configure
-make sql/server/sql_parser.tab.h
-make sql/server/sql_parser.tab.c
-cd ..
-cpsh
+cd sql/server/
+make sql_parser.tab.h
+make sql_parser.tab.c
+cd ../../../
 cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/tools/embedded/windows/
 
 # bundle pcre for windows (TODO: also iconv/zlib/ ...?)
 wget http://dev.monetdb.org/downloads/Windows/Libraries/libs-win64.zip
-umask 666
-unzip libs-win64.zip
-umask 644
+7z x libs-win64.zip
 cp -r pcre-8.37.win64 rpackage/src/tools/embedded/windows/
 
 mkdir -p rpackage/src/monetdb5/extras/rapi

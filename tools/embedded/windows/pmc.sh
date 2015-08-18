@@ -9,4 +9,6 @@ else
 fi
 touch config.status
 cp tools/embedded/windows/sql_parser.tab.* sql/server/
+cp tools/embedded/windows/monetdb_config.h.in .
+
 # TODO: add source paths to sedscript
