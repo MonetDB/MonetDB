@@ -2638,7 +2638,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 #endif
 #endif
-#ifdef HAVE_HAVE
+#ifdef HAVE_HGE
 			case TYPE_hge: {
 				hge v1, v2;
 				int abort_on_error = 1;
