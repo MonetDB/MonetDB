@@ -1,7 +1,4 @@
 #Same as tst200, but includes testing of the profiler
-
-profiler.openStream("/tmp/MonetEvents");
-
 o:= calc.oid(20000000);
 calc.setoid(o);
 #test basic functionality of the BAT library.
@@ -14,7 +11,7 @@ io.printf("#~BeginVariableOutput~#\n");
 io.print(bk,bv); 
 io.printf("#~EndVariableOutput~#\n");
 
-profiler.stethoscope(0);
+profiler.start();
 err := bat.append(b,15);
 err := bat.append(b,4);
 n0  := calc.int(nil);
@@ -30,4 +27,3 @@ err := bat.append(b,81);
 io.print(b);
 io.print(b,b,b);
 profiler.stop();
-profiler.cleanup();

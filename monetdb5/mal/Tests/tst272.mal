@@ -7,7 +7,7 @@ b:= bat.new(:oid,:int);
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-profiler.stethoscope(0);
+profiler.start();
 err := bat.append(b,15);
 err := bat.append(b,4);
 n0  := calc.int(nil);
@@ -24,10 +24,9 @@ io.print(b);
 io.print(b,b,b);
 profiler.stop();
 io.printf("#~BeginVariableOutput~#\n");
-t:= profiler.getTrace("ticks");
+#t:= profiler.getTrace("ticks");
 #io.print(t);
-s:= profiler.getTrace("stmt");
+#s:= profiler.getTrace("stmt");
 #io.print(s);
 #io.print(t,s);
 io.printf("#~EndVariableOutput~#\n");
-profiler.cleanup();
