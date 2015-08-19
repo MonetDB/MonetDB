@@ -4141,13 +4141,13 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[13];
+	bat id;
 
 	(void) cntxt;
 	(void) mb;
 	TRACEtable(t);
-	for (i = 0; i < 13; i++) {
-		bat id = t[i]->batCacheid;
-
+	for(i=0; i< 13; i++){
+		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
