@@ -849,8 +849,8 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
-		q= newStmt(mb, "profiler", "stethoscope");
-		(void) pushInt(mb,q,0);
+		(void) newStmt(mb, "profiler", "reset");
+		(void) newStmt(mb, "profiler", "start");
 	} else {
 		(void) newStmt(mb, "profiler", "stop");
 		/* cook a new resultSet instruction */
@@ -885,7 +885,7 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 		q= newStmt(mb,batRef,appendRef);
 		q= pushArgument(mb,q,getArg(cols,0));
-		q= pushStr(mb,q,"ticks");
+		q= pushStr(mb,q,"usec");
 		k= getArg(q,0);
 
 		q= newStmt(mb,batRef,appendRef);
@@ -943,7 +943,7 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 		/* add the ticks column */
 
 		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("ticks",5));
+		q = pushStr(mb, q, putName("usec",4));
 		resultset= pushArgument(mb,resultset, getArg(q,0));
 
 		/* add the stmt column */
