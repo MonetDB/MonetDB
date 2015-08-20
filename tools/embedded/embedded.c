@@ -53,7 +53,10 @@ int monetdb_startup(char* dir, char silent) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
-	if (GDKinit(set, setlen) == 0) goto cleanup;
+	if (GDKinit(set, setlen) == 0) {
+		retval = -2;
+		goto cleanup;
+	}
 
 	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
 	GDKsetenv("monet_mod_path", mod_path);
@@ -62,18 +65,25 @@ int monetdb_startup(char* dir, char silent) {
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
-	if (mal_init() != 0) goto cleanup;
+	if (mal_init() != 0) {
+		retval = -3;
+		goto cleanup;
+	}
 	if (silent) mal_clients[0].fdout = THRdata[0];
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
 	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
-	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) goto cleanup;
+	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) {
+		retval = -4;
+		goto cleanup;
+	}
 
 	monetdb_embedded_initialized = true;
 	// sanity check, run a SQL query
 	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
 		monetdb_embedded_initialized = false;
+		retval = -5;
 		goto cleanup;
 	}
 	retval = 0;
