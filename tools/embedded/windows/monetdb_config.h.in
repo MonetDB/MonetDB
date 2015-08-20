@@ -71,6 +71,9 @@
 /* location where binaries are installed */
 /* #undef BINDIR */
 
+#define BINDIR "foo"
+// TODO: fixme
+
 /* read-only architecture-independent data */
 #define DATA_DIR PREFIX "\\share"
 
@@ -110,7 +113,7 @@
 /* #undef HAVE_CRYPT_H */
 
 /* Define to 1 if you have the `ctime_r' function. */
-#define HAVE_CTIME_R 1
+//#define HAVE_CTIME_R 1
 
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 //#define HAVE_CTIME_R3 1

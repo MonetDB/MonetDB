@@ -43,7 +43,7 @@ s|@CC@|gcc|
 s|@CCDEPMODE@||
 s|@cfitsio_CFLAGS@||
 s|@cfitsio_LIBS@||
-s|@CFLAGS@||
+s|@CFLAGS@|-m64 -O3 -I"C:/Program Files/R/R-3.2.1/include"|
 s|@CLASSPATH@||
 s|@compilercall@||
 s|@configure_input@||

@@ -17,9 +17,14 @@ if [ "$1" = "--mode=link" ]; then
 		# TODO
 		;;
 		-version-info) ;;
+		1) ;;
 		-module) ;;
 		-avoid-version) ;;
+		-m64) ;;
+		-O3) ;;
+		/monetdb5) ;; # TODO: find nicer way of skipping these.
 		-D*) ;;
+		-I*) ;;
 		-o) out=1 ;; 
 		*)
 		call="$call $1"

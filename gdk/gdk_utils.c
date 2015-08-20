@@ -1079,8 +1079,10 @@ GDKinit(opt *set, int setlen)
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
+#ifndef __MINGW32__ // MinGW does not have these
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
 	_set_error_mode(_OUT_TO_STDERR);
+#endif
 #endif
 	/* now try to lock the database */
 	GDKlockHome();
