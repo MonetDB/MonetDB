@@ -155,7 +155,7 @@ monet_hello(void)
 	printf("# Visit http://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
-	len = snprintf(monetdb_characteristics, sizeof(monetdb_characteristics)-1, "{\n\"MonetDBversion\":\"%s\",\n", VERSION);
+	len = snprintf(monetdb_characteristics, sizeof(monetdb_characteristics)-1, "{\n\"version\":\"%s\",\n", VERSION);
 	len += snprintf(monetdb_characteristics + len, sizeof(monetdb_characteristics)-1-len, "\"release\":\"%s\",\n", MONETDB_RELEASE);
 	len += snprintf(monetdb_characteristics + len, sizeof(monetdb_characteristics)-1-len, "\"host\":\"%s\",\n", HOST);
 	len += snprintf(monetdb_characteristics + len, sizeof(monetdb_characteristics)-1-len, "\"threads\":\"%d\",\n", GDKnr_threads);
