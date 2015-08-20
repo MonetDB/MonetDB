@@ -78,7 +78,7 @@ static MapiHdl hdl = NULL;
 
 static void
 renderEvent(EventRecord *ev){
-	if( ev->eventnr ==0){
+	if( ev->eventnr ==0 && ev->version){
 		printf("[ ");
 		printf("0,	");
 		printf("0,	");
@@ -97,10 +97,15 @@ renderEvent(EventRecord *ev){
 		printf("\"	]\n");
 		return ;
 	}
+	if( ev->eventnr < 0)
+		return;
 	printf("[ ");
 	printf(LLFMT",	", ev->eventnr);
 	printf("\"%s\",	", ev->clk);
-	printf("\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
+	if( ev->function && *ev->function)
+		printf("\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
+	else
+		printf("\"\",	");
 	printf("%d,	", ev->thread);
 	switch(ev->state){
 	case MDB_START: printf("\"start\",	"); break;
@@ -301,14 +306,18 @@ main(int argc, char **argv)
 		goto stop_disconnect;
 	}
 
-	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
+	printf("-- opened TCP profile stream %s:%d for %s\n", hostname, portnr, host);
 
-	snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+	snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
+	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
+	if( debug)
+		fprintf(stderr,"-- %s\n",buf);
+	doQ(buf);
+	snprintf(buf,BUFSIZ-1,"profiler.start();");
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
@@ -325,7 +334,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
 		buffer[len + n] = 0;
 		if( trace) 
 			fprintf(trace,"%s",buffer);
@@ -343,7 +352,8 @@ main(int argc, char **argv)
 			}
 			response = e + 1;
 		}
-		/* handle the case that the line is not yet completed */
+		/* handle the case that the line is too long to
+		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
 			if( new == NULL){
@@ -352,14 +362,18 @@ main(int argc, char **argv)
 			}
 			buffer = new;
 			buflen += BUFSIZ;
+			len += n;
 		}
-		/* handle last line in buffer */
-		if (*response) {
+		/* handle the case the buffer contains more than one
+		 * line, and the last line is not completely read yet.
+		 * Copy the first part of the incomplete line to the
+		 * beginning of the buffer */
+		else if (*response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
 			strncpy(buffer, response, len + 1);
-		} else
+		} else /* reset this line of buffer */
 			len = 0;
 	}
 

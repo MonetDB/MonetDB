@@ -547,7 +547,6 @@ lng totalticks = 0;
 lng starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
-char *currentquery= 0;
 int object = 1;
 
 static void resetTomograph(void){
@@ -1400,7 +1399,6 @@ update(char *line, EventRecord *ev)
 {
 	int idx, i;
 	Box b;
-	char *s;
 	int uid = 0,qid = 0;
  
 	if (topbox == maxbox || maxbox < topbox) {
@@ -1451,9 +1449,6 @@ update(char *line, EventRecord *ev)
 		box[idx].majflt = ev->majflt;
 		box[idx].nswap = ev->swaps;
 		box[idx].csw = ev->csw;
-		s = strchr(ev->stmt, ']');
-		if (s)
-			*s = 0;
 		box[idx].stmt = ev->stmt;
 
 		if ( !capturing){
@@ -1541,12 +1536,10 @@ update(char *line, EventRecord *ev)
 		box[idx].numa = ev->numa;
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
 		box[idx].footstart = ev->size;
-		box[idx].stmt = ev->stmt;
+		box[idx].stmt = ev->beauty;
 		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
-		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			currentquery = stripQuotes(malarguments[malretc]);
+		if(ev->fcn && strstr(ev->fcn,"querylog.define") )
 			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
-		}
 		return;
 	}
 	/* end the instruction box */
@@ -1874,12 +1867,12 @@ main(int argc, char **argv)
 
 		fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
 
-		snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+		snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
 		if( debug)
 			fprintf(stderr,"--%s\n",buf);
 		doQ(buf);
 
-		snprintf(buf,BUFSIZ-1,"profiler.tomograph(%d);", beat);
+		snprintf(buf,BUFSIZ-1,"profiler.tomograph(%d);",beat);
 
 		if( debug)
 			fprintf(stderr,"-- %s\n",buf);
@@ -1905,7 +1898,7 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
@@ -1917,23 +1910,29 @@ main(int argc, char **argv)
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
 			}
-			/* handle the case that the line is not yet completed */
+			/* handle the case that the line is too long to
+			 * fit in the buffer */
 			if( response == buffer){
 				char *new = realloc(buffer, buflen + BUFSIZ);
 				if( new == NULL){
 					fprintf(stderr,"Could not extend input buffer\n");
-					exit(-1);
+					assert(0);
 				}
+				new[buflen] = 0;
 				buffer = new;
 				buflen += BUFSIZ;
+				len += m;
 			}
-			/* handle last line in buffer */
-			if (response != buffer && *response) {
+			/* handle the case the buffer contains more than one
+			 * line, and the last line is not completely read yet.
+			 * Copy the first part of the incomplete line to the
+			 * beginning of the buffer */
+			else if (*response) {
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
 				strncpy(buffer, response, len + 1);
-			} else
+			} else /* reset this line of buffer */
 				len = 0;
 		}
 	}

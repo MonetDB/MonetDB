@@ -73,6 +73,7 @@ static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int capturing=0;
 static int lastpc;
+static int showonbar;
 static int pccount;
 
 #define RUNNING 1
@@ -81,10 +82,12 @@ typedef struct{
 	int state;
 	lng etc;
 	lng actual;
+	lng clkticks;
 	char *stmt;
 } Event;
 
 Event *events;
+static int maxevents;
 
 typedef struct {
 	char *varname;
@@ -127,14 +130,12 @@ stop_disconnect:
 }
 
 char *currentfunction= 0;
-char *currentquery= 0;
 int currenttag;		// to distinguish query invocations
 lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
-int malsize = 0;
 char *prevquery= 0;
-int prevprogress =0;
+int prevprogress =0;// pc of previous progress display
 int prevlevel =0; 
 size_t txtlength=0;
 
@@ -149,7 +150,7 @@ static void resetTachograph(void){
 		fprintf(stderr, "RESET tachograph\n");
 	if( prevprogress)
 		printf("\n"); 
-	for(i=0; i < malsize; i++)
+	for(i=0; i < maxevents; i++)
 	if( events[i].stmt)
 		free(events[i].stmt);
 	for(i=0; i< srctop; i++){
@@ -158,10 +159,8 @@ static void resetTachograph(void){
 	}
 	capturing = 0;
 	srctop=0;
-	malsize= 0;
 	currentfunction = 0;
 	currenttag = 0;
-	currentquery = 0;
 	starttime = 0;
 	finishtime = 0;
 	duration =0;
@@ -169,6 +168,7 @@ static void resetTachograph(void){
 	txtlength =0;
 	prevlevel=0;
 	lastpc = 0;
+	showonbar = -1;
 	pccount = 0;
 	fflush(stdout);
 	events = 0;
@@ -205,7 +205,7 @@ showBar(int level, lng clk, char *stmt)
 	size_t stamplen=0;
 
 	nl = level/2-prevlevel/2;
-	if(nl == 0 ||  level/2 <= prevlevel/2)
+	if( level != 100 && (nl == 0 ||  level/2 <= prevlevel/2))
 		return;
 	assert(MSGLEN < BUFSIZ);
 	if(prevlevel == 0)
@@ -286,8 +286,7 @@ update(EventRecord *ev)
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
 	if (ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( capturing){
-			fprintf(stderr,"Input garbled or we lost some events\n");
-			eventdump();
+			//fprintf(stderr,"Input garbled or we lost some events\n");
 			resetTachograph();
 			capturing = 0;
 		}
@@ -315,50 +314,48 @@ update(EventRecord *ev)
 	if ( !capturing)
 		return;
 
+	if( ev->pc > lastpc)
+		lastpc = ev->pc;
+
 	/* start of instruction box */
 	if (ev->state == MDB_START ) {
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			// extract a string argument
-			currentquery = malarguments[malretc];
-			malsize = malarguments[malretc + 2]? atoi(malarguments[malretc + 2]): 2048;
-			events = (Event*) malloc(malsize * sizeof(Event));
-			memset((char*)events, 0, malsize * sizeof(Event));
+			// extract a string argument from a known MAL signature
+			maxevents = malsize;
+			events = (Event*) malloc(maxevents * sizeof(Event));
+			memset((char*)events, 0, maxevents * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
-			currentquery = stripQuotes(malarguments[malretc]);
-			if( ! (prevquery && strcmp(currentquery,prevquery)== 0))
-				printf("%s\n",currentquery);
-			prevquery = currentquery;
+			if(currentquery) {
+				if( ! (prevquery && strcmp(currentquery,prevquery)== 0))
+					printf("%s\n",currentquery);
+				prevquery = currentquery;
+			}
 		}
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
-		assert(ev->pc < malsize);
+		assert(ev->pc < maxevents);
 		events[ev->pc].state = RUNNING;
-		events[ev->pc].stmt = strdup(ev->beauty);
+		events[ev->pc].stmt = strdup(ev->beauty? ev->beauty:"");
 		events[ev->pc].etc = ev->ticks;
-		if( ev->pc > lastpc)
-			lastpc = ev->pc;
+		events[ev->pc].clkticks = ev->clkticks;
+		showonbar = ev->pc;
 		return;
 	}
 	/* end the instruction box */
 	if (ev->state == MDB_DONE ){
 			
+		events[ev->pc].state= FINISHED;
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
-		events[ev->pc].state= FINISHED;
 
 		progress = (int)(pccount++ / (malsize/100.0));
-		if( progress > prevprogress ){
-			// pick up last unfinished instruction
-			for(i= lastpc; i >0; i--)
-				if( events[i].state == RUNNING && events[i].stmt)
-					break;
-			if( progress < prevprogress)
-				progress = prevprogress;
-			if( ev->clkticks >delay * 1000){
-				showBar((progress>100.0?(int)100:(int)progress),ev->clkticks,events[i].stmt);
-				prevprogress = progress>100.0?100: (int)progress;
-			}
-		}
+		for(i = lastpc; i > 0; i--)
+			if( events[i].state == RUNNING )
+				break;
+
+		if( showonbar == ev->pc)
+			showonbar = i < 0  ?-1 : i;
+		showBar((progress>100.0?(int)100:progress), ev->clkticks, (showonbar >= 0 ? events[showonbar].stmt:NULL));
 		events[ev->pc].actual= ev->ticks;
 	}
 	if (ev->state == MDB_DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
@@ -368,8 +365,7 @@ update(EventRecord *ev)
 				currentfunction = 0;
 			}
 			
-			if( ev->clkticks >delay * 1000)
-				showBar(100,ev->clkticks, 0);
+			showBar(100,ev->clkticks, "\n");
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			resetTachograph();
@@ -520,12 +516,17 @@ main(int argc, char **argv)
 
 	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
 
-	snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+	snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(0);");
+	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(0);");
+	if( debug)
+		fprintf(stderr,"-- %s\n",buf);
+	doQ(buf);
+
+	snprintf(buf,BUFSIZ-1,"profiler.start();");
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
@@ -537,7 +538,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
 		buffer[len + n] = 0;
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
@@ -553,7 +554,8 @@ main(int argc, char **argv)
 			}
 			response = e + 1;
 		}
-		/* handle the case that the line is not yet completed */
+		/* handle the case that the line is too long to 
+		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
 			if( new == NULL){
@@ -562,14 +564,18 @@ main(int argc, char **argv)
 			}
 			buffer = new;
 			buflen += BUFSIZ;
+			len += n;
 		}
-		/* handle last part of line in buffer */
-		if (response != buffer && *response) {
+		/* handle the case the buffer contains more than one
+		 * line, and the last line is not completely read yet.
+		 * Copy the first part of the incomplete line to the
+		 * beginning of the buffer */
+		else if (*response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
 			strncpy(buffer, response, len + 1);
-		} else
+		} else /* reset this line of buffer */
 			len = 0;
 	}
 

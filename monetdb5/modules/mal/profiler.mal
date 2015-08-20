@@ -10,28 +10,43 @@ pattern tomograph(b:int)
 address CMDtomograph
 comment "Start tomograph profiler with heart beat";
 
-pattern stethoscope(b:int)
-address CMDstethoscope
-comment "Start stethoscope profiling with heart beat";
-
 pattern tachograph(start:bit)
 address CMDtachograph
 comment "Start/stop gathering profile traces "'
 
+pattern stethoscope(start:int)
+address CMDstethoscope
+comment "Start/stop gathering profile traces "'
+
+pattern start()
+address CMDstartProfiler
+comment "Start all performance profiling";
+
 pattern stop():void
 address CMDstopProfiler
-comment "Stop performance tracing";
+comment "Stop all performance profiling";
 
-command setHeartbeat(b:int):void
+pattern reset():void
+address CMDclearTrace
+comment "Clear the sql profiling ";
+
+pattern setpoolsize(pool:int)
+address setProfilerPoolSize
+comment "Re-initialize the profiler pool";
+
+command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-pattern openStream():void
+pattern setstream():void
 address CMDopenProfilerStream
 comment "Send the events to output stream";
-pattern openStream(fnme:str):void
-address CMDsetProfilerFile
-comment "Send the log events to a file, stdout or console";
+
+pattern setstream(host:str, port:int):void
+address CMDsetProfilerStream
+comment "Send the log events to a stream ";
+
+# legacy
 pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
@@ -44,20 +59,12 @@ command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
 
-command reset():void
-address CMDclearTrace
-comment "Clear the profiler traces";
-
-command dumpTrace():void
-address CMDdumpTrace
-comment "List the events collected";
-
 command getTrace(e:str):bat[:oid,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
 command cleanup():void
-address CMDcleanup
+address cleanupTraces
 comment "Remove the temporary tables for profiling";
 
 command getDiskReads():lng

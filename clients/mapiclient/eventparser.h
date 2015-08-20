@@ -63,6 +63,8 @@
 
 extern char *statenames[];
 
+#define MAXMALARGS 2048
+
 // the break down of a profiler event message
 typedef struct  {
 	// system state
@@ -75,6 +77,7 @@ typedef struct  {
 	char *package;
 
 	// event state
+	int index; // return/arg index
 	int state;
 	char *function;	// name of MAL block
 	int pc;		// instruction counter in block
@@ -95,23 +98,17 @@ typedef struct  {
 	char *beauty;// MAL statement compressed
 	char *fcn;	// MAL operator
 	char *numa;
+	char *prereq;	// pre-requisite statements
 } EventRecord;
 
-#define MAXMALARGS 1024
-extern char *malarguments[MAXMALARGS];
 extern char *maltypes[MAXMALARGS];
-extern int malpc[MAXMALARGS];
-extern int malcount[MAXMALARGS];
-extern int malargc;
-extern int malretc;
 extern char *malvariables[MAXMALARGS];
-extern int malvartop;
+extern char *malvalues[MAXMALARGS];
+extern int malsize;
 extern int debug;
-extern char *monetdb_characteristics;
+extern char *currentquery;
 
-extern void clearArguments(void);
-extern void eventdump(void);
 extern void resetEventRecord(EventRecord *ev);
 extern int keyvalueparser(char *txt, EventRecord *ev);
-extern char *stripQuotes(const char *currentquery);
+extern char *stripQuotes(char *currentquery);
 #endif /*_EVENT_PARSER_*/

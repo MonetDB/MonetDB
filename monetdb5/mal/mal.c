@@ -94,6 +94,7 @@ int mal_init(void){
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
+	initTrace();
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
 	if ( mal_trace ) {

@@ -12,54 +12,69 @@
 
 char *statenames[]= {"","start","done","action","ping","wait","system"};
 
-char *malarguments[MAXMALARGS];
 char *maltypes[MAXMALARGS];
-int malpc[MAXMALARGS];
-int malcount[MAXMALARGS];
-int malargc;
-int malretc;
 char *malvariables[MAXMALARGS];
-int malvartop;
+char *malvalues[MAXMALARGS];
+
+int malsize;
 int debug=0;
-char *monetdb_characteristics;
+char *currentquery=0;
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
 #include "strptime.c"
 #endif
 
-void
+static void
 clearArguments(void)
 {
 	int i;
-	for(i = 0; i < malargc; i++)
-	if( malarguments[i]){
-		free(malarguments[i]);
-		malarguments[i] = 0;
+
+	if( currentquery){
+		free(currentquery);
+		currentquery = 0;
 	}
-	malargc = 0;
-	malretc = 0;
-	for(i = 0; i < malvartop; i++)
-	if( malvariables[i]){
-		free(malvariables[i]);
-		malvariables[i] = 0;
-		free(maltypes[i]);
-		maltypes[i] = 0;
+
+	for(i = 0; i < MAXMALARGS; i++){
+		if( malvariables[i]){
+			free(malvariables[i]);
+			malvariables[i] = 0;
+		}
+		if( malvalues[i]){
+			free(malvalues[i]);
+			malvalues[i] = 0;
+		}
+		if( maltypes[i]){
+			free(maltypes[i]);
+			maltypes[i] = 0;
+		}
 	}
-	malvartop = 0;
+}
+
+static void
+dumpArguments(void)
+{
+	int i;
+	for( i=0; i < MAXMALARGS; i++)
+	if( maltypes[i])
+		printf("[%d] variable %s value %s type %s\n", i, (malvariables[i]?malvariables[i]:""), malvalues[i], maltypes[i]);
 }
 
 char * 
-stripQuotes(const char *currentquery)
+stripQuotes(char *currentquery)
 {
 	const char *c;
 	char *q, *qry;
+	if( currentquery ==0)
+		return NULL;
 	q = qry = (char *) malloc(strlen(currentquery) * 2);
 	if( q == NULL){
 		fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
 		exit(-1);
 	}
-	for (c= currentquery; *c; ){
+	c= currentquery;
+	if( *c == '"') c++;
+	for (; *c; ){
 		if ( strncmp(c,"\\\\t",3) == 0){
 			*q++ = '\t';
 			c+=3;
@@ -80,136 +95,6 @@ stripQuotes(const char *currentquery)
  
 
 void
-eventdump(void)
-{	int i;
-	fprintf(stderr,"Event analysis\n");
-	for(i=0; i < malargc; i++)
-		fprintf(stderr,"arg[%d] %s %s %d\n",i,malarguments[i], maltypes[i], malcount[i]);
-	for(i=0; i < malvartop; i++)
-		fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
-}
-
-static void
-parseArguments(char *call, int m)
-{
-	int argc= m < 0? -1:0;
-	char  *c = call, *l, ch;
-	char *v, *w;
-	
-	if( debug)
-		fprintf(stderr,"%s\n",call);
-	// skip MAL keywords
-	if( strncmp(c,"function ",10) == 0 ) c +=10;
-	if( strncmp(c,"end ",4) == 0 ) c +=4;
-	if( strncmp(c,"barrier ",8) == 0 ) c +=8;
-	if( strncmp(c,"redo ",5) == 0 ) c +=5;
-	if( strncmp(c,"leave ",6) == 0 ) c +=6;
-	if( strncmp(c,"return ",7) == 0 ) c +=7;
-	if( strncmp(c,"yield ",6) == 0 ) c +=6;
-	if( strncmp(c,"catch ",6) == 0 ) c +=6;
-	if( strncmp(c,"raise ",6) == 0 ) c +=6;
-
-	if( *c == '(') c++;
-	if (*c !=')')
-	for( ; c && *c && malargc < MAXMALARGS;  c++){
-		if(isalpha((int)*c) &&  strncmp(c,"nil",3) && strncmp(c,"true",4) && strncmp(c,"false",5) ){
-			// remember variable in its own structure, it ends with =
-			v=  c;
-			c= strchr(c,'=');
-			if( c == 0)
-				break;
-			*c = 0;
-			malvariables[malvartop++] = strdup(v);
-			if( malvariables[malvartop-1] == NULL){
-				fprintf(stderr,"Could not allocate memory\n");
-				exit(-1);
-			}
-			*c = '=';
-			c++;
-		}
-		// all arguments have a value
-		if (*c && *c== '\\' && *(c+1) =='"'){
-			c++; c++;
-			// parse string skipping escapes
-			for(l=c; *l; l++){
-				if( *l =='\\' &&  *(l+1) =='\\' && *(l+2) =='\\' &&  *(l+3) =='"') { l+=3; continue;}
-				if( *l =='\\' &&  *(l+1) =='\\') { l++; continue;}
-				if( *l =='\\' &&  *(l+1) =='n') { l++; continue;}
-				if( *l =='\\' &&  *(l+1) =='t') { l++; continue;}
-				if( *l =='\\' &&  *(l+1) =='"') break;
-			}
-			*l= 0;
-			malarguments[malargc] = strdup(c);
-			if( malarguments[malargc] == NULL){
-				fprintf(stderr,"Could not allocate memory\n");
-				exit(-1);
-			}
-			c= l+1;
-			// we skip to the type or end of term
-			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
-		} else if(*c =='<') {
-			// extract BAT count
-			l=c;
-			while(*c && *c != '>') c++;
-			c++;
-			*c =0;
-			malarguments[malargc] = strdup(l);
-			if( malarguments[malargc] == NULL){
-				fprintf(stderr,"Could not allocate memory\n");
-				exit(-1);
-			}
-			*c = '[';
-			malcount[malargc]=atoi(c+1);
-			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
-			if( *c == ';') break;
-		} else if(*c) {
-			l=c;
-			while( *c && *c != ':' && *c !=',' && *c !=')' && *c != ';') c++;
-			ch = *c;
-			*c=0;
-			malarguments[malargc] = strdup(l);
-			if( malarguments[malargc] == NULL){
-				fprintf(stderr,"Could not allocate memory\n");
-				exit(-1);
-			}
-			*c = ch;
-			if( ch == ';') break;
-		}
-		// consume the type and bat count
-		if (*c == ':'){
-			if( strncmp(c,":bat[:oid,:",11) == 0){
-				c+= 10;
-				*c = '[';
-				w=c;
-				while(*c && *c != ']') c++;
-			} else
-				w= c+1;
-			while(*c && *c != ';' && *c != '{' && *c != ',' && *c != ')' ) c++;
-			ch = *c;
-			*c =0;
-			malpc[malargc] = argc;
-			argc+= m;
-			maltypes[malargc++] = strdup(w);
-			if( malarguments[malargc-1] == NULL){
-				fprintf(stderr,"Could not allocate memory\n");
-				exit(-1);
-			}
-			*c = ch;
-			if( ch == ';') break;
-		} else malargc++;
-
-		if( *c == '{') { // skip property lists
-			while(*c && *c != '}') c++;
-			c++;
-		}
-		if (*c == 0 || *c ==')' )
-			break;
-	}
-	if( debug)
-		eventdump();
-}
-
-void
 resetEventRecord(EventRecord *ev)
 {
 	if( ev->version) free(ev->version);
@@ -225,6 +110,7 @@ resetEventRecord(EventRecord *ev)
 	if( ev->fcn) free(ev->fcn);
 	if( ev->numa) free(ev->numa);
 	memset( (char*) ev, 0, sizeof(EventRecord));
+	ev->eventnr = -1;
 	clearArguments();
 }
 
@@ -233,26 +119,73 @@ resetEventRecord(EventRecord *ev)
  * It avoids lots of escaped charactor recognition, simply take with mserver delivers
  * Returns 1 if the closing bracket is found. 0 to continue, -1 upon error
  */
+
 #define skipto(C) { while(*c && *c != C) c++; if (*c != C) return -1;}
-#define skipstr() { while (*c && *c !='"') {if (*c =='\\') c++;c++;} if (*c != '"') return -1;}
+#define skipstr() { while (*c && *c !='"') {if (*c =='\\') c++;if(*c)c++;} if (*c != '"') return -1;}
+
+/*
+ * The decomposition of the argument components is postponed
+ * We just keep the concatenated json string
+ */
+
+static int 
+parseArgument(char *txt, EventRecord *ev)
+{
+	char *s,*t;
+	int i=0;
+	// assume single strictly formatted key-value list line
+	(void) txt;
+	(void) ev;
+	s= strstr(txt,"index\":\"");
+	if( s){
+		i = atoi(s + 8);
+		if( i <0 || i >= MAXMALARGS )
+			return 0;
+	}
+	t= strstr(txt,"name\":\"");
+	s= strstr(txt,"\",value\":\"");
+	if( s && t){
+		t+= 7;
+		*s =0;
+		malvariables[i] = strdup(t);
+		s+= 10;
+	}
+	t= strstr(txt,"\",type\":\"");
+	if( s && t){
+		*t = 0;
+		*s =0;
+		malvariables[i] = strdup(t);
+		t+= 7;
+	}
+	if( s && t){
+		*t = 0;
+		t+= 9;
+		s+= 10;
+		maltypes[i] = strdup(t);
+	}
+	return 0;
+}
+
 int
 keyvalueparser(char *txt, EventRecord *ev)
 {
-	char *c, *key, *val;
+	char *c, *s, *key, *val;
 	struct tm stm;
 
 	c= txt;
 
+	if( strstr(c,"\"argument\":") || strstr(c,"\"result\":"))
+		return parseArgument(txt,ev);
 	if( *c == '{'){
 		resetEventRecord(ev);
-		malargc = 0;
-		malvartop = 0;
-		memset(malarguments, 0, sizeof(malarguments));
 		memset(malvariables, 0, sizeof(malvariables));
+		memset(malvalues, 0, sizeof(malvalues));
 		return 0;
 	}
-	if( *c == '}')
+	if( *c == '}'){
+		dumpArguments();
 		return 1;
+	}
 
 	skipto('"');
 	key = ++c;
@@ -266,14 +199,6 @@ keyvalueparser(char *txt, EventRecord *ev)
 		skipstr();
 		*c = 0;
 	} else val =c;
-
-	if( strstr(key,"version")) { ev->version= strdup(val); return 0;}
-	if( strstr(key,"release")) { ev->release= strdup(val); return 0;}
-	if( strstr(key,"host")) { ev->host= strdup(val); return 0;}
-	if( strstr(key,"memory")) { ev->memory= strdup(val); return 0;}
-	if( strstr(key,"threads")) { ev->threads= strdup(val); return 0;}
-	if( strstr(key,"oid")) { ev->oid= atoi(val); return 0;}
-	if( strstr(key,"package")) { ev->package= strdup(val); return 0;}
 
 	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
 	if( strstr(key,"time")){
@@ -308,7 +233,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		return 0;
 	}
 
-	if( strstr(key,"ticks")) { ev->ticks= atoi(val); return 0;}
+	if( strstr(key,"usec")) { ev->ticks= atoi(val); return 0;}
 	if( strstr(key,"rss")) { ev->rss= atol(val); return 0;}
 	if( strstr(key,"size")) { ev->size= atol(val); return 0;}
 	if( strstr(key,"inblock")) { ev->inblock= atol(val); return 0;}
@@ -318,18 +243,51 @@ keyvalueparser(char *txt, EventRecord *ev)
 	if( strstr(key,"nvcsw")) { ev->csw= atol(val); return 0;}
 	if( strstr(key,"stmt")) { 
 		ev->stmt= strdup(val); 
-		ev->fcn = strdup(val);
-		c = ev->stmt;
-		parseArguments((*c =='('?c++:c),-1);
-		malretc = malargc;
-		c = strchr(ev->fcn, (int) '(');
-		if (c) {
-			parseArguments(c+1,1);
-			*c =0;
+		if( (key = strstr(val,"querylog.define(") ) ){
+			s =c= strstr(key,"\\\":str");
+			if( s){
+				s = strstr(c+6,":str,");
+				if( s)
+					malsize = atol(s+5);
+			}
+			c= strstr(key,"\\\":str");
+			if(c) *c = 0;
+			c= strchr(key,(int)'(');
+			while(*c && *c != '"') c++;
+			if( *c == '"') c++;
+			currentquery = strdup(stripQuotes(c));
+		}
+		s= strstr(val," := ");
+		if( s) {
+			s += 4;
+			c= strchr(s,(int)'(');
+			if( c){
+				*c =0;
+				ev->fcn= strdup(s); 
+			}
+		} else{
+			c= strchr(val,(int)'(');
+			if( c){
+				*c =0;
+				ev->fcn= strdup(val); 
+			}
 		}
 		return 0;
 	}
-	if( strstr(key,"short")) { ev->beauty= strdup(val); return 0;}
+	if( strstr(key,"short")) { ev->beauty= strdup(val); return 0; }
+	if( strstr(key,"prereq")) { ev->prereq= strdup(val); return 0;}
+	if( strstr(key,"cpuload")) { 
+		ev->function= strdup(""); 
+		ev->stmt= strdup(val); return 0;
+	}
+
+	if( strstr(key,"version")) { ev->version= strdup(val); return 0;}
+	if( strstr(key,"release")) { ev->release= strdup(val); return 0;}
+	if( strstr(key,"host")) { ev->host= strdup(val); return 0;}
+	if( strstr(key,"memory")) { ev->memory= strdup(val); return 0;}
+	if( strstr(key,"threads")) { ev->threads= strdup(val); return 0;}
+	if( strstr(key,"oid")) { ev->oid= atoi(val); return 0;}
+	if( strstr(key,"package")) { ev->package= strdup(val); return 0;}
 	return 0;
 }
 

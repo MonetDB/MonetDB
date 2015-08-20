@@ -53,20 +53,22 @@ CMDcloseProfilerStream(void *res)
 }
 
 str
-CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *fnme = getArgReference_str(stk,pci,1);
-	(void) mb;		/* fool compiler */
-	return setLogFile(cntxt->fdout,cntxt->nspace, *fnme);
-}
-
-str
 CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *host = getArgReference_str(stk,pci,1);
 	int *port = getArgReference_int(stk,pci,2);
 	(void) mb;		/* fool compiler */
-	return setLogStream(cntxt->nspace, *host, *port);
+	return setProfilerStream(cntxt->nspace, *host, *port);
+}
+
+// initialize SQL tracing
+str
+CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+{
+	(void)mb;
+	(void) stk;
+	(void) pc;
+	return startProfiler(cntxt->user, 1, -1);
 }
 
 str
@@ -87,22 +89,20 @@ CMDnoopProfiler(void *res)
 	return MAL_SUCCEED;
 }
 
-/*
- * Tracing an active system.
- */
+str
+CMDcleanupTraces(void *res)
+{
+	(void) res;		/* fool compiler */
+	cleanupTraces();
+	return MAL_SUCCEED;
+}
+
 str
 CMDclearTrace(void *res)
 {
 	(void) res;		/* fool compiler */
 	clearTrace();
 	return MAL_SUCCEED;
-}
-
-str
-CMDdumpTrace(void *res)
-{
-	(void) res;		/* fool compiler */
-	throw(MAL, "profiler.dump", PROGRAM_NYI);
 }
 
 str
@@ -118,6 +118,9 @@ CMDgetTrace(bat *res, str *ev)
 	}
 	throw(MAL, "getTrace", RUNTIME_OBJECT_MISSING  "%s",*ev);
 }
+/*
+ * Tracing an active system.
+ */
 
 str
 CMDsetHeartbeat(void *res, int *ev)
@@ -125,12 +128,6 @@ CMDsetHeartbeat(void *res, int *ev)
 	(void) res;
 	setHeartbeat(*ev);
 	return MAL_SUCCEED;
-}
-
-str
-CMDcleanup(void *ret){
-	(void) ret;
-	return cleanupProfiler();
 }
 
 str
@@ -170,31 +167,26 @@ CMDtomograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 str
+CMDtachograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+{
+	(void) mb;
+	(void) pc;
+	(void) stk;
+	(void) cntxt;
+	throw(MAL,"profiler.tachograph","NYI");
+}
+
+str
 CMDstethoscope(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	int beat = *getArgReference_int(stk,pc,1);
 
 	(void) mb;
 	if( beat < 0)
-		throw(MAL,"profiler.stethoscope","negative heart beat not allowed");
+		throw(MAL,"profiler.stethoscope","Negative heart beat not allowed");
 	startProfiler(cntxt->user, 1, beat);
 	return MAL_SUCCEED;
 }
-
-str
-CMDtachograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	bit start = *getArgReference_bit(stk,pc,1);
-
-	(void) mb;
-	(void) cntxt;
-	if( start)
-		startProfilerCache();
-	else
-		stopProfilerCache();
-	return MAL_SUCCEED;
-}
-
 str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
