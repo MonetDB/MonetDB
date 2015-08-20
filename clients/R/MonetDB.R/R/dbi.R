@@ -622,7 +622,7 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
                                                locked=FALSE, na.strings="", nrow.check=500, 
-                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, lower.case.names=FALSE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
@@ -641,7 +641,13 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
   
-  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  if (create){
+  
+	if( lower.case.names ) names( headers ) <- tolower( names( headers ) )
+  
+	dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+	
+  }
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   

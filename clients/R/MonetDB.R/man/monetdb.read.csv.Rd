@@ -11,7 +11,7 @@
 \usage{
    monetdb.read.csv (conn, files, tablename, nrows, header=TRUE, 
   locked=FALSE, na.strings="", nrow.check=500, delim=",",
-  newline = "\\\\n", quote = "\"", create=TRUE, ...)
+  newline = "\\\\n", quote = "\"", create=TRUE, lower.case.names=FALSE...)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} with the 
@@ -30,6 +30,7 @@
    \item{newline}{Newline in CSV file, usually \\n for UNIX-like systems and \\r\\r on Windows.}
    \item{quote}{Quote character(s) in CSV file.}
   \item{create}{Create table before importing?}
+  \item{lower.case.names}{Convert all column names to lowercase in the database?}
  }
  
 \value{
