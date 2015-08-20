@@ -31,16 +31,18 @@
  * 
  * The protection against overflow is not tight.
 */
-#define advance(X,B,L)  while(*(X) && B+L>X)(X)++;
+
+// sometimes we advance without the check
+#define advance(X,B,L)  while(*(X) && B+L- 8 > X)(X)++;
 
 static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
-	char *buf;
-	char *nme;
+	char *buf =0;
+	char *nme =0;
 	int nameused= 0;
 	size_t len = 0, maxlen = BUFSIZ;
-	str pstring;
+	str pstring =0;
 	ValRecord *val = 0;
 	char *cv =0;
 	str tpe;
@@ -68,6 +70,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			val = &stk->stk[varid];
 
 		VALformat(&cv, val);
+		assert(cv);
 		if (len + strlen(cv) >= maxlen)
 			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
@@ -78,7 +81,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		if( strcmp(cv,"nil") == 0){
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
-			if( cv) GDKfree(cv);
 			showtype =getColumnType(getVarType(mb,varid)) > TYPE_str || 
 				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
 		} else{
@@ -89,7 +91,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			}
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
-			if( cv) GDKfree(cv);
 
 			if( closequote ){
 				strcat(buf+len,"\"");
@@ -104,6 +105,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
 		}
+		GDKfree(cv);
 	}
 
 	// show the type when required or frozen by the user
@@ -138,7 +140,7 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
-	str arg, t, tpe, pstring= NULL;
+	str arg = NULL, t, tpe= NULL, pstring= NULL;
 
 	t = s;
 	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), operatorName(p->token));
@@ -149,8 +151,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 
 	pstring = varGetPropStr(mb,  getArg(p, 0));
 	snprintf(t, (len-(t-base)), "%s%s(",  getFunctionId(p), pstring?pstring:"");
-	if( pstring ) 
-		GDKfree(pstring);
+	GDKfree(pstring);
 	advance(t, base, len);
 
 	for (i = p->retc; i < p->argc; i++) {
@@ -235,8 +236,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	str arg;
 
 	base = s = GDKmalloc(len);
-	if ( s == NULL)
-		return s;
+	if ( base == NULL)
+		return base;
 	*s =0;
 	if (flg) {
 		if( p->token<0){
@@ -375,7 +376,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	/* we may accidentally overwrite */
 	if (t > s + len)
 		GDKfatal("instruction2str:");
-	return s;
+	return base;
 }
 
 /* the MAL beautifier is meant to simplify correlation of MAL variables and
@@ -394,14 +395,14 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	int varid = getArg(p,idx);
 
 	s= GDKmalloc(BUFSIZ);
+	if( s == NULL)
+		return NULL;
 	*s = 0;
 
 	if( isVarConstant(mb,varid) ){
 		val =&getVarConstant(mb, varid);
 		VALformat(&cv, val);
 		snprintf(s,BUFSIZ,"%s",cv);
-		if(cv)
-			GDKfree(cv);
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
@@ -419,6 +420,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		else
 			snprintf(s,BUFSIZ,"%s ",nme);
 	}
+	GDKfree(cv);
 	return s;
 }
 
@@ -451,7 +453,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 		}
 	if (p->token == ENDsymbol ){
 		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
-		return s;
+		return base;
 	}
 	// handle the result variables
 	for (i = 0; i < p->retc; i++)
@@ -506,14 +508,14 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 	if (t >= s + len)
 		throw(MAL,"instruction2str:","instruction too long");
-	return s;
+	return base;
 }
 
 /* Remote execution of MAL calls for more type/property information to be exchanged */
 str
 mal2str(MalBlkPtr mb, int first, int last)
 {
-	str ps, *txt;
+	str ps = NULL, *txt;
 	int i, *len, totlen = 0;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
@@ -626,5 +628,5 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 		}
-		} 
+	}
 }
