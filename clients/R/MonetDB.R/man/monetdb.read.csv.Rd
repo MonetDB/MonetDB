@@ -9,9 +9,9 @@
   Instruct MonetDB to read a CSV file, optionally also create the table for it.
 }
 \usage{
-   monetdb.read.csv (conn, files, tablename, nrows, header=TRUE, 
+   monetdb.read.csv (conn, files, tablename, nrows=NA, header=TRUE, 
   locked=FALSE, na.strings="", nrow.check=500, delim=",",
-  newline = "\\\\n", quote = "\"", create=TRUE, lower.case.names=FALSE...)
+  newline = "\\\\n", quote = "\"", create=TRUE, lower.case.names=FALSE, ...)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} with the 
