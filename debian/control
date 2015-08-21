@@ -144,7 +144,7 @@ Description: MonetDB php5 client module
 
 Package: perl-monetdb-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${perl:Depends}
+Depends: ${shlibs:Depends}, ${perl:Depends}, libdbi-perl
 Provides: ${perl:Provides}
 Description: MonetDB perl client code
  MonetDB is a database management system that is developed from a
