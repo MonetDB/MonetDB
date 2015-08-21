@@ -760,9 +760,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(sgrps);
 	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    BAThash(b, 0) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
-		    BATcheckhash(BBPdescriptor(-parent)))) {
+		    BAThash(b, 0) == GDK_SUCCEED)
+#ifndef DISABLE_PARENT_HASH
+		   || ((parent = VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(-parent)))
+#endif
+		) {
 		BUN lo, hi;
 
 		/* we already have a hash table on b, or b is

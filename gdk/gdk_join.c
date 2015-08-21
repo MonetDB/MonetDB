@@ -1884,6 +1884,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	}
 
 	rl = BUNfirst(r);
+#ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(r)) {
 		BAT *b = BBPdescriptor(-VIEWtparent(r));
 		if (b->batPersistence == PERSISTENT || BATcheckhash(b)) {
@@ -1904,6 +1905,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					BATgetId(b), BATcount(b));
 		}
 	}
+#endif
 	rh = rl + rend;
 	rl += rstart;
 	rseq += rstart;
@@ -2968,17 +2970,23 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 
 	lparent = VIEWtparent(l);
 	rparent = VIEWtparent(r);
+#ifndef DISABLE_PARENT_HASH
 	if (lparent) {
 		lpcount = BATcount(BBPdescriptor(lparent));
 		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(-lparent));
-	} else {
+	} else
+#endif
+	{
 		lpcount = BATcount(l);
 		lhash = BATcheckhash(l);
 	}
+#ifndef DISABLE_PARENT_HASH
 	if (rparent) {
 		rpcount = BATcount(BBPdescriptor(rparent));
 		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(-rparent));
-	} else {
+	} else
+#endif
+	{
 		rpcount = BATcount(r);
 		rhash = BATcheckhash(r);
 	}

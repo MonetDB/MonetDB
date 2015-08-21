@@ -243,9 +243,12 @@ BATsubunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    BAThash(b, 0) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
-		    BATcheckhash(BBPdescriptor(-parent)))) {
+		    BAThash(b, 0) == GDK_SUCCEED)
+#ifndef DISABLE_PARENT_HASH
+		   || ((parent = VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(-parent)))
+#endif
+		) {
 		BUN lo;
 		oid seq;
 
