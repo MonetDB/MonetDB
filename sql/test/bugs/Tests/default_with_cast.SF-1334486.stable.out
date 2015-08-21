@@ -23,7 +23,7 @@ Ready.
 % .L1 # table_name
 % current_timestamp # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 0	]
 
 # 12:59:30 >  

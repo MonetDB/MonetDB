@@ -34,7 +34,7 @@ Ready.
 % .L5,	.L5 # table_name
 % L2,	v # name
 % sec_interval,	decimal # type
-% 0,	20 # length
+% 14,	20 # length
 [ 1412467200.000,	42.000000000	]
 [ 1412467200.000,	43.000000000	]
 [ 1412467200.000,	NULL	]

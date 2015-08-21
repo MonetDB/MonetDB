@@ -28,13 +28,13 @@ Ready.
 % .L # table_name
 % sql_mul_single_value # name
 % sec_interval # type
-% 0 # length
+% 5 # length
 [ 2.000	]
 #select interval '1' second * 2;
 % .L # table_name
 % sql_mul_single_value # name
 % sec_interval # type
-% 0 # length
+% 5 # length
 [ 2.000	]
 
 # 16:27:57 >  
