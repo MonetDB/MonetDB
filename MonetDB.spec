@@ -659,6 +659,7 @@ fi
 %exclude %{_libdir}/monetdb5/sql*.mal
 %if %{bits} == 64
 %exclude %{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
