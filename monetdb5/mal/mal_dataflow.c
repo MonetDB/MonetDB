@@ -409,18 +409,19 @@ DFLOWworker(void *T)
 		 * All eligible instructions are queued
 		 */
 #ifdef USE_MAL_ADMISSION
-		{
+	{
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
 		assert(p);
 		fe->hotclaim = 0;
 		fe->maxclaim = 0;
 
-		for (i = 0; i < p->retc; i++)
+		for (i = 0; i < p->retc; i++){
 			lng footprint;
 			footprint = getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
 			fe->hotclaim += footprint;
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
+	}
 #endif
 		MT_lock_set(&flow->flowlock, "DFLOWworker");
 
