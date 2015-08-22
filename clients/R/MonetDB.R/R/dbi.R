@@ -642,11 +642,9 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
   } 
   
   if (create){
-  
-	if( lower.case.names ) names( headers ) <- tolower( names( headers ) )
-  
-	dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
-	
+    if(lower.case.names) names(headers[[1]]) <- tolower(names( headers[[1]]))
+    dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+
   }
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
