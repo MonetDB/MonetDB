@@ -47,6 +47,7 @@ typedef struct FLOWEVENT {
 	sht cost;
 	lng hotclaim;   /* memory foot print of result variables */
 	lng argclaim;   /* memory foot print of arguments */
+	lng maxclaim;   /* memory foot print of  largest argument, counld be used to indicate result size */
 } *FlowEvent, FlowEventRec;
 
 typedef struct queue {
@@ -367,6 +368,7 @@ DFLOWworker(void *T)
 #ifdef USE_MAL_ADMISSION
 		if (MALadmission(fe->argclaim, fe->hotclaim)) {
 			fe->hotclaim = 0;   /* don't assume priority anymore */
+			fe->maxclaim = 0;
 			if (todo->last == 0)
 				MT_sleep_ms(DELAYUNIT);
 			q_requeue(todo, fe);
@@ -374,8 +376,8 @@ DFLOWworker(void *T)
 		}
 #endif
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
-						 fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
+		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT "," LLFMT " %s\n",
+						 fe->pc, id, fe->argclaim, fe->hotclaim, fe->maxclaim, error ? error : "");
 #ifdef USE_MAL_ADMISSION
 		/* release the memory claim */
 		MALadmission(-fe->argclaim, -fe->hotclaim);
@@ -411,8 +413,13 @@ DFLOWworker(void *T)
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
 		assert(p);
 		fe->hotclaim = 0;
+		fe->maxclaim = 0;
+
 		for (i = 0; i < p->retc; i++)
-			fe->hotclaim += getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
+			lng footprint;
+			footprint = getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
+			fe->hotclaim += footprint;
+			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 #endif
 		MT_lock_set(&flow->flowlock, "DFLOWworker");
@@ -424,6 +431,8 @@ DFLOWworker(void *T)
 				flow->status[i].blocks = 0;
 				flow->status[i].hotclaim = fe->hotclaim;
 				flow->status[i].argclaim += fe->hotclaim;
+				if( flow->status[i].maxclaim < fe->maxclaim)
+					flow->status[i].maxclaim = fe->maxclaim;
 				fnxt = flow->status + i;
 				break;
 			}
