@@ -32,9 +32,16 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_frame.h"
+#include "bitvector.h"
 
 // we use longs as the basis for bit vectors
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng);
+
+typedef struct{
+	MosaicBlk blk;
+	ValRecord reference;
+	Vector base[];
+}FrameRecord;
 
 void
 MOSadvance_frame(Client cntxt, MOStask task)
@@ -84,7 +91,7 @@ MOSdump_frame(Client cntxt, MOStask task)
 	int i;
 	char buf[BUFSIZ];
 
-	mnstr_printf(cntxt->fdout,"# framebits %d",task->hdr->framebits);
+	mnstr_printf(cntxt->fdout,"# framebits %d:",task->hdr->framebits);
 	for(i=0; i< task->hdr->framesize; i++){
 		MOSdump_frameInternal(buf, BUFSIZ, task,i);
 		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
@@ -260,8 +267,8 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			}
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
 	MOSdump_frame(cntxt, task);
+#ifdef _DEBUG_MOSAIC_
 #endif
 }
 
@@ -296,7 +303,6 @@ MOSestimate_frame(Client cntxt, MOStask task)
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
-			//if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,lng);
 			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
 		}
 	}
@@ -325,7 +331,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
     *(TPE*) task->dst = frame;\
-	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	task->dst += sizeof(TPE);\
+	base = (unsigned long*) (((char*) task->blk) +  wordaligned(sizeof(TPE),lng));\
 	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
 		hdr->checksum.sum##TPE += *val;\
@@ -337,9 +344,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 			hdr->framefreq[j]++;\
 			MOSincCnt(blk,1);\
 			framecompress(base,i,hdr->framebits,j);\
-		}\
-	}\
-	assert(i);\
+	} }\
+	task->dst += wordaligned((i * hdr->framebits / 8) + ( (i * hdr->framebits) % 8 ) != 0, lng);\
 }
 
 void
@@ -373,9 +379,10 @@ MOScompress_frame(Client cntxt, MOStask task)
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
-			*(int*) task->dst = frame;
-			task->dst += sizeof(unsigned long);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			*(int*) task->dst = frame;	// keep the frame reference value
+			task->dst += wordaligned(sizeof(int),lng);
+
+			base = (unsigned long*) (((char*) task->blk) +  sizeof(int)); // start of bit vector
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
 				hdr->checksum.sumint += *val;
@@ -401,7 +408,8 @@ MOScompress_frame(Client cntxt, MOStask task)
 					}
 				} 
 			}
-			assert(i);
+			// bitvectors are multiple longs
+			task->dst += wordaligned((i * hdr->framebits / 8) + ( (i * hdr->framebits) % 8 ) != 0, lng);
 		}
 	}
 }
@@ -423,7 +431,7 @@ if ( lshift >= hdr->framebits){\
 {	TPE *dict =(TPE*)((char*)hdr->frame), frame;\
 	BUN lim = MOSgetCnt(blk);\
 	frame = *(TPE*)(((char*)blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) blk) +  2 * MosaicBlkSize);\
+	base = (unsigned long*) (((char*) blk) +  wordaligned(sizeof(TPE),lng));\
 	for(i = 0; i < lim; i++){\
 		framedecompress(i);\
 		((TPE*)task->src)[i] = frame + dict[j];\
@@ -458,7 +466,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 		{	int *dict =(int*)((char*)hdr->frame), frame;
 			BUN lim = MOSgetCnt(blk);
 			frame = *(int*)(((char*)blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) blk) +  2 * MosaicBlkSize);
+			base = (unsigned long*) (((char*) blk) +  wordaligned(sizeof(int),lng));
 
 			for(i = 0; i < lim; i++){
 				cid = (i * hdr->framebits)/64;

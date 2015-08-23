@@ -101,7 +101,7 @@ typedef struct MOSAICHEADER{
 #define MOSAICMAXCNT (1<<23)
 
 typedef struct{
-	unsigned int tag:8, cnt:24;
+	unsigned int tag:8, cnt:24, free:32;
 } *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
