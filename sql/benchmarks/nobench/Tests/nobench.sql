@@ -1,4 +1,7 @@
+-- The Nobench snippet based on http://pages.cs.wisc.edu/~chasseur/pubs/argo-long.pdf
+
 create table bench10(js json);
+
 copy 10 records into bench10 from stdin;
 {"nested_obj": {"num": 4, "str": "GBRDCMBQ"}, "dyn2": true, "dyn1": 9, "nested_arr": ["especially"], "str2": "GBRDCMBQ", "str1": "GBRDCMBQGE======", "sparse_093": "GBRDCMBQGE======", "thousandth": 9, "sparse_090": "GBRDCMBQGE======", "sparse_091": "GBRDCMBQGE======", "sparse_092": "GBRDCMBQGE======", "num": 9, "bool": true, "sparse_095": "GBRDCMBQGE======", "sparse_096": "GBRDCMBQGE======", "sparse_097": "GBRDCMBQGE======", "sparse_098": "GBRDCMBQGE======", "sparse_094": "GBRDCMBQGE======", "sparse_099": "GBRDCMBQGE======"}
 {"nested_obj": {"num": 2, "str": "GBRDCMA="}, "dyn2": "GBRDCMJR", "dyn1": 7, "nested_arr": ["its", "for", "if", "he", "questions", "to", "put"], "str2": "GBRDCMA=", "str1": "GBRDCMJR", "sparse_079": "GBRDCMJR", "thousandth": 7, "sparse_078": "GBRDCMJR", "num": 7, "bool": true, "sparse_072": "GBRDCMJR", "sparse_073": "GBRDCMJR", "sparse_070": "GBRDCMJR", "sparse_071": "GBRDCMJR", "sparse_076": "GBRDCMJR", "sparse_077": "GBRDCMJR", "sparse_074": "GBRDCMJR", "sparse_075": "GBRDCMJR"}
@@ -12,35 +15,119 @@ copy 10 records into bench10 from stdin;
 {"nested_obj": {"num": 1, "str": "GBRDC==="}, "dyn2": false, "dyn1": 6, "nested_arr": ["to", "interrupted", "some", "daily", "has", "averages"], "str2": "GBRDC===", "str1": "GBRDCMJQ", "thousandth": 6, "sparse_069": "GBRDCMJQ", "sparse_068": "GBRDCMJQ", "num": 6, "bool": false, "sparse_061": "GBRDCMJQ", "sparse_060": "GBRDCMJQ", "sparse_063": "GBRDCMJQ", "sparse_062": "GBRDCMJQ", "sparse_065": "GBRDCMJQ", "sparse_064": "GBRDCMJQ", "sparse_067": "GBRDCMJQ", "sparse_066": "GBRDCMJQ"}
 
 select count(*) from bench10;
---Q1 all documents have it
-
+--Q1:
+ -- MongoDB:
+--    db["nobench_main"].find({}, ["str1", "num"])
+--  Argo/SQL:
+--    SELECT str1, num FROM nobench_main;
 select json.filter(js, '$..str1,$..num') from bench10;
 
 -- Q2
+--  MongoDB:
+--    db["nobench_main"].find({}, ["nested_obj.str", "nested_obj.num"])
+--  Argo/SQL
+--    SELECT nested_obj.str, nested_obj.num FROM nobench_main;
 select json.filter(js,'.nested_obj.str,.nested_obj.num') from bench10;
 
--- Q3
+-- Q3(replace XX with literal digits):
+--  MongoDB:
+--    db["nobench_main"].find(
+--        { "$or" : [ { "sparse_XX0" : {"$exists" : True} },
+--                    { "sparse_XX9" : {"$exists" : True} } ] },
+--        ["sparse_XX0", "sparse_XX9"])
+--  Argo/SQL:
+--    SELECT sparse_XX0, sparse_XX9 FROM nobench_main;
 select json.filter(js,'..sparse_000,..sparse_001') from bench10;
 
+--Q4 (replace XX and YY with different literal digits):
+--  MongoDB:
+--    db["nobench_main"].find(
+--        { "$or" : [ { "sparse_XX0" : {"$exists" : True} },
+--                    { "sparse_YY0" : {"$exists" : True} } ] },
+--        ["sparse_XX0", "sparse_YY0"])
+--  Argo/SQL:
+--    SELECT sparse_XX0, sparse_YY0 FROM nobench_main;
+select json.filter(js,'..sparse_000,..sparse_110') from bench10;
+
+--Q5 (replace XXXXX with a literal string):
+--  MongoDB:
+--    db["nobench_main"].find({ "str1" : XXXXX })
+--  Argo/SQL:
+--    SELECT * FROM nobench_main WHERE str1 = XXXXX;
 select json.filter(js,'str1') from bench10;
-
 select json.text(json.filter(js,'str1')) from bench10;
-
---Q5  point
 select * from bench10 where json.text(json.filter(js,'str1')) = 'GBRDCMBR';
 
---Q6
+--Q6 (replace XXXXX and YYYYY with literal integers):
+--  MongoDB:
+--    db["nobench_main"].find({ "$and": [{ "num" : {"$gte" : XXXXX } },
+--                                       { "num" : {"$lt"  : YYYYY } }]})
+--  Argo/SQL:
+--    SELECT * FROM nobench_main WHERE num BETWEEN XXXXX AND YYYYY;
 select json.number(json.filter(js,'num')) from bench10;
 select json."integer"(json.filter(js,'num')) from bench10;
 select cast(json.text(json.filter(js,'num')) as integer) from bench10;
-
 select * from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0;
 
+--Q7 (replace XXXXX and YYYYY with literal integers):
+--  MongoDB:
+--    db["nobench_main"].find({ "$and": [{ "dyn1" : {"$gte" : XXXXX } },
+--                                       { "dyn1" : {"$lt"  : YYYYY } }]})
+--  Argo/SQL:
+--    SELECT * FROM nobench_main WHERE dyn1 BETWEEN XXXXX AND YYYYY;
 select json.number(json.filter(js,'dyn1')) from bench10;
 select json."integer"(json.filter(js,'dyn1')) from bench10;
-select json.text(json.filter(js,'dyn1')) from bench10;
 select cast(json.text(json.filter(js,'dyn1')) as integer) from bench10;
---Q7
---select * from bench10 where cast(json.text(json.filter(js,'dyn1')) as integer) between 0 and 3;
+select * from bench10 where json.number(json.filter(js,'dyn1')) between 0.0 and 3.0;
+
+-- Q8 (replace XXXXX with one of the "suggested" words from data generation):
+--   MongoDB:
+--     db["nobench_main"].find({ "nested_arr" : XXXXX })
+--   Argo/SQL:
+--     SELECT * FROM nobench_main WHERE XXXXX = ANY nested_arr;
+select json.filter(js,'nested_arr') from bench10;
+select * from bench10 where json.text(json.filter(js,'nested_arr')) = 'check it the';
+
+-- Q9 (replace XXX with literal digits and YYYYY with a literal string):
+--   MongoDB:
+--     db["nobench_main"].find({ "sparse_XXX" : YYYYY })
+--   Argo/SQL:
+--     SELECT * FROM nobench_main WHERE sparse_XXX = YYYYY;
+select * from bench10 where json.text(json.filter(js,'parse_000')) = 'tobedefined';
+
+-- Q10 (replace XXXXX and YYYYY with literal integers):
+--   MongoDB:
+--     db["nobench_main"].group(
+--         {"thousandth" : True},
+--         {"$and": [{"num" : { "$gte" : XXXXX } },
+--                   {"num" : { "$lt"  : YYYYY } }]},
+--         { "total" : 0 },
+--         "function(obj, prev) { prev.total += 1; }")
+--   Argo/SQL:
+--     SELECT COUNT(*) FROM nobench_main WHERE num BETWEEN XXXXX AND YYYYY GROUP BY thousandth;
+select f.h, count(*) from (
+	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
+group by f.h;
+
+-- Q11 (replace XXXXX and YYYYY with literal integers):
+--   MongoDB:
+--     Implemented as Javascript MapReduce job.
+--   Argo/SQL:
+--     SELECT * FROM nobench_main AS left
+--                   INNER JOIN nobench_main AS right
+--                   ON (left.nested_obj.str = right.str1)
+--                   WHERE left.num BETWEEN XXXXX AND YYYYY;
+--select * from bench10 as left inner join bench10 as right on (json.filter(left.js,'nested_obj.str') = json.filter(right.js, 'str1'))
+--where json.number(json.filter(left.js,'num')) between 0.0 and 3.0;
+
+
+-- Q12 (use "extra" data file provided by generator):
+--   MongoDB:
+--     Use mongoimport command-line tool.
+--   PostgreSQL:
+--     COPY table FROM file;
+--   MySQL:
+--     LOAD DATA LOCAL INFILE file REPLACE INTO TABLE table;
+-- copy into bench10 from 'datafile'.
 
 drop table bench10;
