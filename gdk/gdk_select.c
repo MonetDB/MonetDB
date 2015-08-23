@@ -782,13 +782,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -797,13 +798,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -812,13 +814,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -827,13 +830,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -1779,7 +1783,7 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
 gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -1961,6 +1965,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				assert(high >= low);
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -1979,6 +1985,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				/* [low..high) */
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -2441,6 +2449,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				if (BUNlast(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);
+					if (newcap > maxsize)
+						newcap = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, newcap) != GDK_SUCCEED ||

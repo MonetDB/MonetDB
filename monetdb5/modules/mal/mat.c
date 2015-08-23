@@ -148,8 +148,9 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-		/* allocate enough space for the strings */
-		if ( b->T->vheap && bn->T->vheap ){
+		/* allocate enough space for the vheap, but not for strings,
+		 * since BATappend does clever things for strings */
+		if ( b->T->vheap && bn->T->vheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->T->vheap->size * pieces;
 			if (HEAPextend(bn->T->vheap, newsize, TRUE) != GDK_SUCCEED)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);

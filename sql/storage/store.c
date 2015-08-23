@@ -1643,6 +1643,14 @@ store_apply_deltas(void)
 	logging = 0;
 }
 
+static int need_flush = 0;
+
+void
+store_flush_log(void)
+{
+	need_flush = 1;
+}
+
 void
 store_manager(void)
 {
@@ -1651,7 +1659,7 @@ store_manager(void)
 		int t;
 		lng shared_transactions_drift = -1;
 
-		for (t = 30000; t > 0; t -= 50) {
+		for (t = 30000; t > 0 && !need_flush; t -= 50) {
 			MT_sleep_ms(50);
 			if (GDKexiting())
 				return;
@@ -1669,15 +1677,16 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock, "store_manager");
-        if (GDKexiting() || (logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
-            MT_lock_unset(&bs_lock, "store_manager");
-            continue;
-        }
-        while (store_nr_active) { /* find a moment to flush */
-            MT_lock_unset(&bs_lock, "store_manager");
-            MT_sleep_ms(50);
-            MT_lock_set(&bs_lock, "store_manager");
-        }
+        	if (GDKexiting() || (!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+            		MT_lock_unset(&bs_lock, "store_manager");
+            		continue;
+        	}
+		need_flush = 0;
+        	while (store_nr_active) { /* find a moment to flush */
+            		MT_lock_unset(&bs_lock, "store_manager");
+            		MT_sleep_ms(50);
+            		MT_lock_set(&bs_lock, "store_manager");
+        	}
 
 		if (create_shared_logger) {
 			/* (re)load data from shared write-ahead log */

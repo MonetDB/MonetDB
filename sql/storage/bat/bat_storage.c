@@ -172,6 +172,8 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 static BAT *
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
+	if (!isTable(c->t)) 
+		return NULL;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
@@ -186,6 +188,8 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 static BAT *
 bind_idx(sql_trans *tr, sql_idx * i, int access)
 {
+	if (!isTable(i->t)) 
+		return NULL;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		i->data = timestamp_delta(oi->data, tr->stime);
@@ -786,6 +790,8 @@ count_col(sql_trans *tr, sql_column *c, int all)
 {
 	sql_delta *b;
 
+	if (!isTable(c->t)) 
+		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
@@ -804,6 +810,8 @@ dcount_col(sql_trans *tr, sql_column *c)
 {
 	sql_delta *b;
 
+	if (!isTable(c->t)) 
+		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
@@ -837,6 +845,8 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 {
 	sql_delta *b;
 
+	if (!isTable(i->t)) 
+		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		i->data = timestamp_delta(oi->data, tr->stime);
@@ -855,6 +865,8 @@ count_del(sql_trans *tr, sql_table *t)
 {
 	sql_dbat *d;
 
+	if (!isTable(t)) 
+		return 0;
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, tr->stime);
@@ -885,7 +897,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 	int sorted = 0;
 
 	/* fallback to central bat */
-	if (!col->t->s)
+	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	if (tr && tr->parent && !col->data) 
 		col = find_col(tr->parent, col->t->s->base.name, col->t->base.name, col->base.name);
@@ -904,6 +916,8 @@ double_elim_col(sql_trans *tr, sql_column *col)
 {
 	int de = 0;
 
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
 	/* fallback to central bat */
 	if (tr && tr->parent && !col->data) {
 		col = find_col(tr->parent, 

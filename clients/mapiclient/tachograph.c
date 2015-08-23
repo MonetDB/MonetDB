@@ -567,7 +567,7 @@ static void
 update(EventRecord *ev)
 {
 	int progress=0;
-	int i,j;
+	int i,j,k;
 	char *v, *s;
 	int uid = 0,qid = 0;
 	char line[BUFSIZ];
@@ -713,20 +713,19 @@ update(EventRecord *ev)
 			if( *(s+1) == '\\' ) s++;
 		default: fputc((int) *s, tachojson);
 		}
-		fprintf(tachojson,"\"\n");
+		fprintf(tachojson,"\",\n");
 
 		// collect all input producing PCs
 		fprintf(tachojson,"\"prereq\":[");
-		for( i=0; i < malvartop; i++){
+		for( k=0, i=0; i < malvartop; i++){
 			// remove duplicates
 			for(j= ev->pc-1; j>=0;j --){
-				//if(debug)
-					//fprintf(stderr,"locate %s in %s\n",malvariables[i], events[j].stmt);
 				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					snprintf(number,BUFSIZ,"%d",j);
+					snprintf(number,BUFSIZ," %d ",j);
+					//avoid duplicate prerequisites
 					if( strstr(prereq,number) == 0)
-						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s%d",(i?", ":""), j);
-					//fprintf(tachojson,"%s%d",(i?", ":""), j);
+						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s %d ",(k?", ":""), j);
+					k++;
 					break;
 				}
 			}
@@ -755,7 +754,7 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
 		fprintf(tachojson,"\"status\": \"done\",\n");
 		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson," \"stmt\":\"");
+		fprintf(tachojson,"\"stmt\":\"");
 		for(s = ev->stmt; *s; s++)
 		switch(*s){
 		case '\\': 
@@ -765,16 +764,16 @@ update(EventRecord *ev)
 		fprintf(tachojson,"\",\n");
 
 		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson," \"beautystmt\":\"");
+		fprintf(tachojson,"\"beautystmt\":\"");
 		for(s = line; *s; s++)
 		switch(*s){
 		case '\\': 
 			if( *(s+1) == '\\' ) s++;
 		default: fputc((int) *s, tachojson);
 		}
-		fprintf(tachojson,"\",\n");
+		fprintf(tachojson,"\"\n");
 
-		fprintf(tachojson,"}\n");
+		fprintf(tachojson,"},\n");
 		fflush(tachojson);
 
 		events[ev->pc].state= FINISHED;
@@ -1026,7 +1025,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len -1)) > 0) {
 		buffer[len + n] = 0;
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
@@ -1043,7 +1042,8 @@ main(int argc, char **argv)
 				fprintf(tachotrace,"%s\n",response);
 			response = e + 1;
 		}
-		/* handle the case that the line is not yet completed */
+		/* handle the case that the current line is too long to
+		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
 			if( new == NULL){
@@ -1052,14 +1052,18 @@ main(int argc, char **argv)
 			}
 			buffer = new;
 			buflen += BUFSIZ;
+			len += n;
 		}
-		/* handle last part of line in buffer */
-		if (response != buffer && *response) {
+		/* handle the case the buffer contains more than one
+		 * line, and the last line is not completely read yet.
+		 * Copy the first part of the incomplete line to the
+		 * beginning of the buffer */
+		else if (*response) {
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
 			strncpy(buffer, response, len + 1);
-		} else
+		} else /* reset this line of buffer */
 			len = 0;
 	}
 

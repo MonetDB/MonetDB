@@ -1177,12 +1177,6 @@ ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGkunion(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkunion, "algebra.kunion");
-}
-
-str
 ALGkdiff(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATkdiff, "algebra.kdiff");
@@ -1195,33 +1189,6 @@ ALGsample(bat *result, const bat *bid, const int *param)
 }
 
 /* add items missing in the kernel */
-str
-ALGtunion(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATkunion(BATmirror(b),BATmirror(b2));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		BBPunfix(b2->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	throw(MAL, "algebra.tunion", GDK_EXCEPTION);
-}
-
 str
 ALGtdifference(bat *result, const bat *bid, const bat *bid2)
 {
@@ -1561,58 +1528,6 @@ ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
 	base /= *nr_parts;
 	base *= *part_nr;
 	return ALGtmark(result, bid, &base);
-}
-
-str
-ALGmark_grp_1(bat *result, const bat *bid, const bat *gid)
-{
-	BAT *g, *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATmark_grp(b, g, NULL);
-	if (bn != NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(g->batCacheid);
-	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
-}
-
-str
-ALGmark_grp_2(bat *result, const bat *bid, const bat *gid, const oid *base)
-{
-	BAT *g, *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	if ((g = BATdescriptor(*gid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATmark_grp(b, g, base);
-	if (bn != NULL) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		BBPunfix(g->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(g->batCacheid);
-	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
 }
 
 str

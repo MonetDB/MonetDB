@@ -8,6 +8,7 @@
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
 - Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
+- Added lower.case.names= to monet.read.csv() in case users want to avoid quoting
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

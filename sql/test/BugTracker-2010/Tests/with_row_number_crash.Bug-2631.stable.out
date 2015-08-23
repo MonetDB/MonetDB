@@ -52,7 +52,7 @@ Ready.
 [ 19	]
 [ 20	]
 #WITH t1 (i) AS (SELECT ROW_NUMBER () OVER (ORDER BY id ASC) AS i FROM _t2631) select i from t1;
-% .t1 # table_name
+% sys.t1 # table_name
 % i # name
 % int # type
 % 2 # length

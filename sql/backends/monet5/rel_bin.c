@@ -377,8 +377,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(sql->sa, atom_general(sql->sa, to, NULL));
-			if (exp_card(e->l) > CARD_ATOM) 
-				l = const_column(sql->sa, l);
 		} else {
 	       		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
 		}
@@ -531,9 +529,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		s = stmt_aggr(sql->sa, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/ );
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
-		/* HACK: correct cardinality for window functions */
-		if (exp_card(e) > CARD_AGGR)
-			s->nrcols = 2;
 	} 	break;
 	case e_column: {
 		if (right) /* check relation names */
