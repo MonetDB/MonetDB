@@ -777,6 +777,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					}
 				}
 				fmt[i].ci = bat_iterator(fmt[i].c);
+				fmt[i].c->batDirty = TRUE;
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
@@ -1362,7 +1363,9 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 	int ok = 1;
 	size_t count = 0, incr = 0;;
 
-	if (mtype == TYPE_oid)
+	if (eclass == EC_SEC)
+		incr = 1;
+	else if (mtype == TYPE_oid)
 		incr = 2;
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
@@ -1395,7 +1398,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 			}
 			ok = mvc_send_int(s, l);
 		}
-	} else if (eclass == EC_NUM || eclass == EC_POS) {
+	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
 		if (bid) {
 			BAT *b = BATdescriptor(bid);
@@ -1461,6 +1464,8 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 				count = 0;
 			}
 		}
+		if (eclass == EC_SEC && count < 5)
+			count = 5;
 		ok = mvc_send_lng(s, (lng) count);
 		/* the following two could be done once by taking the
 		   max value and calculating the number of digits from that
@@ -1476,7 +1481,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		} else {	/* TYPE_dbl */
 			ok = mvc_send_int(s, 24);
 		}
-	} else if (eclass == EC_DEC || eclass == EC_SEC) {
+	} else if (eclass == EC_DEC) {
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;

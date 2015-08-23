@@ -21,7 +21,8 @@ Ready.
 % sys.t1019122 # table_name
 % m # name
 % month_interval # type
-% 0 # length
+% 1 # length
+#drop table t1019122;
 
 # 11:50:41 >  
 # 11:50:41 >  Done.

@@ -90,7 +90,7 @@ Ready.
 % .L1 # table_name
 % L1 # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 2	]
 #SELECT CAST( INTERVAL '3' YEAR AS INTERVAL YEAR TO MONTH ) = INTERVAL '3-0' YEAR TO MONTH;
 % .L1 # table_name
@@ -108,7 +108,7 @@ Ready.
 % .L1 # table_name
 % L1 # name
 % sec_interval # type
-% 0 # length
+% 10 # length
 [ 218040.000	]
 #SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = INTERVAL '2064:00:00' HOUR TO SECOND;
 % .L1 # table_name

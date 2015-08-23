@@ -18,7 +18,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % month_interval # type
-% 0 # length
+% 3 # length
 [ -14	]
 
 # 12:57:02 >  

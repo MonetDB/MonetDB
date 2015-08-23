@@ -1167,7 +1167,7 @@ check_version(logger *lg, FILE *fp)
 	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
 		    (*lg->prefuncp)(version, lg->version) != 0) {
-			GDKerror("Incompatible database version %06d, "
+			GDKfatal("Incompatible database version %06d, "
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");

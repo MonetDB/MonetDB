@@ -64,7 +64,7 @@ Ready.
 % sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp # table_name
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
-% 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
+% 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	8,	17,	17,	9 # length
 [ NULL,	4,	"name",	"text",	4.1,	4.1,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-11-14 16:27:15.000000,	3610.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #CREATE TABLE tmp (
@@ -108,7 +108,7 @@ Ready.
 % sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp # table_name
 % initial,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	p,	q,	r,	s,	t,	u,	v,	w,	x,	y,	z # name
 % int,	int,	clob,	clob,	double,	double,	smallint,	clob,	clob,	char,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	timestamp,	sec_interval,	clob,	clob,	clob # type
-% 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	0,	17,	17,	9 # length
+% 1,	1,	4,	4,	24,	24,	1,	17,	24,	1,	62,	6,	5,	3,	15,	13,	9,	17,	21,	17,	20,	26,	8,	17,	17,	9 # length
 [ NULL,	4,	"name",	"text",	4.1,	4.1,	2,	"(4.1,4.1,3.1,3.1)",	"Mon May  1 00:30:30 1995",	"c",	"{Mon May  1 00:30:30 1995, Monday Aug 24 14:43:07 1992, epoch}",	314159,	"(1,1)",	"512",	"1 2 3 4 5 6 7 8",	"magnetic disk",	"(1.1,1.1)",	"(4.1,4.1,3.1,3.1)",	"(0,2,4.1,4.1,3.1,3.1)",	"(4.1,4.1,3.1,3.1)",	"[\"epoch\" \"infinity\"]",	2014-11-14 23:59:59.900000,	3610.000,	"{1.0,2.0,3.0,4.0}",	"{1.0,2.0,3.0,4.0}",	"{1,2,3,4}"	]
 #DROP TABLE tmp;
 #CREATE TABLE tmp (regtable int);

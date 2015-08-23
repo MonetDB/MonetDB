@@ -65,13 +65,13 @@ Ready.
 % sys.L # table_name
 % sql_sub_btime # name
 % sec_interval # type
-% 0 # length
+% 13 # length
 [ 189302400.000	]
 #select btime - atime from time_table;
 % sys.L # table_name
 % sql_sub_btime # name
 % sec_interval # type
-% 0 # length
+% 13 # length
 [ 347068800.000	]
 #drop table time_table;
 

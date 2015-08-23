@@ -379,7 +379,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
+#ifndef DISABLE_PARENT_HASH
 	bat parent;
+#endif
 
 	if (b == NULL || !BAThdense(b)) {
 		GDKerror("BATgroup: b must be dense-headed\n");
@@ -760,9 +762,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(sgrps);
 	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    BAThash(b, 0) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
-		    BATcheckhash(BBPdescriptor(-parent)))) {
+		    BAThash(b, 0) == GDK_SUCCEED)
+#ifndef DISABLE_PARENT_HASH
+		   || ((parent = VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(-parent)))
+#endif
+		) {
 		BUN lo, hi;
 
 		/* we already have a hash table on b, or b is
@@ -778,6 +783,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
+#ifndef DISABLE_PARENT_HASH
 		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
@@ -788,7 +794,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			hseqb = b->hseqbase;
 			b = b2;
 			bi = bat_iterator(b);
-		} else {
+		} else
+#endif
+		{
 			lo = BUNfirst(b);
 			hi = BUNlast(b);
 		}

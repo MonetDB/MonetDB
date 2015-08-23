@@ -1884,6 +1884,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 	}
 
 	rl = BUNfirst(r);
+#ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(r)) {
 		BAT *b = BBPdescriptor(-VIEWtparent(r));
 		if (b->batPersistence == PERSISTENT || BATcheckhash(b)) {
@@ -1904,6 +1905,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 					BATgetId(b), BATcount(b));
 		}
 	}
+#endif
 	rh = rl + rend;
 	rl += rstart;
 	rseq += rstart;
@@ -2638,7 +2640,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 #endif
 #endif
-#ifdef HAVE_HAVE
+#ifdef HAVE_HGE
 			case TYPE_hge: {
 				hge v1, v2;
 				int abort_on_error = 1;
@@ -2925,7 +2927,9 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 	BUN lsize, rsize;
 	BUN maxsize;
 	int lhash, rhash;
+#ifndef DISABLE_PARENT_HASH
 	bat lparent, rparent;
+#endif
 	int swap;
 	size_t mem_size;
 
@@ -2966,19 +2970,25 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 	rsize = (BUN) (BATcount(r) * (Tsize(r)) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN));
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
+#ifndef DISABLE_PARENT_HASH
 	lparent = VIEWtparent(l);
-	rparent = VIEWtparent(r);
 	if (lparent) {
 		lpcount = BATcount(BBPdescriptor(lparent));
 		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(-lparent));
-	} else {
+	} else
+#endif
+	{
 		lpcount = BATcount(l);
 		lhash = BATcheckhash(l);
 	}
+#ifndef DISABLE_PARENT_HASH
+	rparent = VIEWtparent(r);
 	if (rparent) {
 		rpcount = BATcount(BBPdescriptor(rparent));
 		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(-rparent));
-	} else {
+	} else
+#endif
+	{
 		rpcount = BATcount(r);
 		rhash = BATcheckhash(r);
 	}
@@ -3017,21 +3027,33 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		 * large (i.e. prefer hash over binary search, but
 		 * only if the hash table doesn't cause thrashing) */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize);
-	} else if ((l->batPersistence == PERSISTENT ||
-		    (lparent != 0 &&
-		     BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)) &&
-		   !(r->batPersistence == PERSISTENT ||
-		     (rparent != 0 &&
-		      BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT))) {
+	} else if ((l->batPersistence == PERSISTENT
+#ifndef DISABLE_PARENT_HASH
+		     || (lparent != 0 &&
+			 BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)
+#endif
+			   ) &&
+		   !(r->batPersistence == PERSISTENT
+#ifndef DISABLE_PARENT_HASH
+		     || (rparent != 0 &&
+			 BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT)
+#endif
+			   )) {
 		/* l (or its parent) is persistent and r is not,
 		 * create hash on l since it may be reused */
 		swap = 1;
-	} else if (!(l->batPersistence == PERSISTENT ||
-		    (lparent != 0 &&
-		     BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)) &&
-		   (r->batPersistence == PERSISTENT ||
-		     (rparent != 0 &&
-		      BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT))) {
+	} else if (!(l->batPersistence == PERSISTENT
+#ifndef DISABLE_PARENT_HASH
+		     || (lparent != 0 &&
+			 BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)
+#endif
+			   ) &&
+		   (r->batPersistence == PERSISTENT
+#ifndef DISABLE_PARENT_HASH
+		    || (rparent != 0 &&
+			BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT)
+#endif
+			   )) {
 		/* l (and its parent) is not persistent but r (or its
 		 * parent) is, create hash on r since it may be
 		 * reused */
