@@ -996,6 +996,10 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Aug 24 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.5-20150824
+- Rebuilt.
+- BZ#3730: SAMPLE function not sampling randomly
+
 * Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
 - Rebuilt.
 - BZ#3361: constants as MAL function parameters prevent intermediate reuse
