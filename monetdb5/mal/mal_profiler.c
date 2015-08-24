@@ -151,6 +151,7 @@ static void logjsonInternal(int k, char *logbuffer, InstrPtr p)
 	strncpy(s+1, buf,strlen(buf));
 	len = strlen(logbuffer);
 
+	MT_lock_set(&mal_profileLock, "logjson");
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
 		if( eventcounter == 0){
@@ -173,6 +174,7 @@ static void logjsonInternal(int k, char *logbuffer, InstrPtr p)
 			profilerPool[k].trace = open_wastream(profilerPool[k].fname);
 			if( profilerPool[k].trace == NULL){
 				GDKerror("could not create profiler file");
+				MT_lock_unset(&mal_profileLock, "logjson");
 				return;
 			}
 			profilerPool[k].start = GDKusec();
