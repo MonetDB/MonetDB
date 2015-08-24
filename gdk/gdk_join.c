@@ -3388,6 +3388,19 @@ BATproject(BAT *l, BAT *r)
 		bn->tkey = 1;
 		if (l->T->nonil && r->T->nonil)
 			nilcheck = 0; /* don't bother checking: no nils */
+		if (tpe != TYPE_oid &&
+		    tpe != ATOMstorage(tpe) &&
+		    !ATOMvarsized(tpe) &&
+		    ATOMcompare(tpe) == ATOMcompare(ATOMstorage(tpe)) &&
+		    (!nilcheck ||
+		     ATOMnilptr(tpe) == ATOMnilptr(ATOMstorage(tpe)))) {
+			/* use base type if we can:
+			 * only fixed sized (no advantage for variable sized),
+			 * compare function identical (for sorted check),
+			 * either no nils, or nil representation identical,
+			 * not oid (separate case for those) */
+			tpe = ATOMstorage(tpe);
+		}
 	}
 	bn->T->nil = 0;
 
