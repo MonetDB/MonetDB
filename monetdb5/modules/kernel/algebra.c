@@ -702,6 +702,15 @@ ALGsubouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 }
 
 str
+ALGsubsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
+				   nil_matches, estimate,
+				   BATsubsemijoin, NULL, NULL, NULL, "algebra.subsemijoin");
+}
+
+str
 ALGsubthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
