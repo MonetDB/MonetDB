@@ -609,7 +609,7 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 	BAT *valuesBAT = NULL, *oidsCandsBAT = NULL, *oidsResBAT;
 
 	if(dimsCands) {
-		mbrIn = (gdk_array*)dimsCands;
+		mbrIn = (gdk_array*)*dimsCands;
 		mbrOut = arrayCopy(mbrIn);
 		arrayDelete(mbrIn);
 	} else
