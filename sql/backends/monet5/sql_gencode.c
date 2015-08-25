@@ -676,6 +676,8 @@ static InstrPtr
 multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, int o2, int rtype)
 {
 	InstrPtr q;
+	char nme[SMALLBUFSIZ];
+	int arraySecondVar = -1;	
 
 	q = newStmt(mb, "mal", "multiplex");
 	if (q == NULL)
@@ -684,8 +686,17 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 	setVarUDFtype(mb, getArg(q, 0));
 	q = pushStr(mb, q, convertMultiplexMod(mod, name));
 	q = pushStr(mb, q, convertMultiplexFcn(name));
+
 	q = pushArgument(mb, q, o1);
+	snprintf(nme, SMALLBUFSIZ, "Y_%d", o1);
+	if((arraySecondVar = findVariable(mb, nme)) >=0) 
+		q = pushArgument(mb, q, arraySecondVar);
+
 	q = pushArgument(mb, q, o2);
+	snprintf(nme, SMALLBUFSIZ, "Y_%d", o2);
+	if((arraySecondVar = findVariable(mb, nme)) >=0) 
+		q = pushArgument(mb, q, arraySecondVar);
+
 	return q;
 }
 
@@ -1314,7 +1325,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			node *n;
 			
 			char nme[SMALLBUFSIZ];
-            int uval = -1;
+            int arraySecondVar = -1;
 
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
@@ -1448,11 +1459,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 						//check if the first argument has two outputs (in such a case it is related to the array processing)
 						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	       	            uval = findVariable(mb, nme);
-				
-						if(uval >=0) {
+	       	            if((arraySecondVar = findVariable(mb, nme)) >= 0) {
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));		
 							q = pushArgument(mb, q, l); //the dimension or the non-dimension
-							q = pushArgument(mb, q, uval); //all the dimensions
+							q = pushArgument(mb, q, arraySecondVar); //all the dimensions
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1461,9 +1471,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 							//check whether two candidates
 							snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
-                	    	uval = findVariable(mb, nme);
-    	                	if(uval >= 0)
-								q = pushArgument(mb, q, uval);
+                	    	if((arraySecondVar = findVariable(mb, nme)) >= 0 )
+								q = pushArgument(mb, q, arraySecondVar);
 						}					
 						q = pushArgument(mb, q, r);
 						q = pushArgument(mb, q, r);
@@ -1476,11 +1485,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					case cmp_gte: {
 						q = newStmt2(mb, algebraRef, cmd);
 						snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	       	            uval = findVariable(mb, nme);
-
-						if(uval >=0) {
+	       	            if((arraySecondVar = findVariable(mb, nme)) >=0 ) {
+							q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));		
 							q = pushArgument(mb, q, l); //all the dimensions
-							q = pushArgument(mb, q, uval); //the current dimension
+							q = pushArgument(mb, q, arraySecondVar); //the current dimension
 						} else
 							q = pushArgument(mb, q, l);
 
@@ -1489,9 +1497,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 							//check whether two candidates
 							snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
-                	    	uval = findVariable(mb, nme);
-    	                	if(uval >= 0)
-								q = pushArgument(mb, q, uval);
+                	    	if((arraySecondVar = findVariable(mb, nme)) >= 0)
+								q = pushArgument(mb, q, arraySecondVar);
 						}	
 						q = pushArgument(mb, q, r);
 					} break;
@@ -1528,6 +1535,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 			} else
 				s->nr = newTmpVariable(mb, TYPE_any);
+			if(arraySecondVar >= 0)
+				renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 		}
 			break;
 		case st_uselect2:
@@ -1542,7 +1551,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int sub = -1;
 
 			char nme[SMALLBUFSIZ];
-            int uval = -1;
+            int arraySecondVar = -1;
 
 			if (l < 0)
 				return -1;
@@ -1592,23 +1601,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if(s->op1->type == st_dimension) {
 					
                    	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	               	uval = findVariable(mb, nme);
-    	           	assert(uval >= 0);
+	               	arraySecondVar = findVariable(mb, nme);
+    	           	assert(arraySecondVar >= 0);
 
 					setVarType(mb, getArg(q, 0), TYPE_ptr);
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 					q = pushArgument(mb, q, k); //all the dimensions
-					q = pushArgument(mb, q, uval); //the current dimension
+					q = pushArgument(mb, q, arraySecondVar); //the current dimension
 				} else
 					q = pushArgument(mb, q, k);
 
 				if(sub > 0) { //candidates
 					q = pushArgument(mb, q, sub);
 					snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
-		           	uval = findVariable(mb, nme);
-    		       	if(uval >= 0)
-						q = pushArgument(mb, q, uval);
+		           	if((arraySecondVar = findVariable(mb, nme)) >= 0)
+						q = pushArgument(mb, q, arraySecondVar);
 				}
 				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, TRUE);
@@ -1618,7 +1626,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
-				if(s->op1->type == st_dimension)
+//				if(s->op1->type == st_dimension)
+				if(arraySecondVar >= 0) //two inputs -> two outputs
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				break;
 			}
@@ -1653,14 +1662,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			else if(s->type == st_uselect2 && s->op1->type == st_dimension) {
                	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	           	uval = findVariable(mb, nme);
-    	       	assert(uval >= 0);
+	           	arraySecondVar = findVariable(mb, nme);
+    	       	assert(arraySecondVar >= 0);
 
 				setVarType(mb, getArg(q, 0), TYPE_ptr);
 				setVarUDFtype(mb, getArg(q, 0));
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 				q = pushArgument(mb, q, l); //all the dimensions
-				q = pushArgument(mb, q, uval); //the current dimension
+				q = pushArgument(mb, q, arraySecondVar); //the current dimension
 			} else 
 				q = pushArgument(mb, q, l);
 					
@@ -1668,9 +1677,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, sub);
 
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", sub);
-		       	uval = findVariable(mb, nme);
-    		   	if(uval >= 0)
-					q = pushArgument(mb, q, uval);
+		       	if((arraySecondVar = findVariable(mb, nme)) >= 0)
+					q = pushArgument(mb, q, arraySecondVar);
 			}
 			if (rs) {
 				q = pushArgument(mb, q, rs);
@@ -1708,7 +1716,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
-				if(s->op1->type == st_dimension)
+//				if(s->op1->type == st_dimension)
+				if(arraySecondVar >= 0)//two inputs -> two outputs
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 
 				break;
@@ -1766,10 +1775,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_join:{
 			int l;
 			int r;
-			int extra;
+			//int extra;
 			int cmp = s->flag;
 			int left = (cmp == cmp_left);
 			char *sjt = "subjoin";
+
+			char nme[SMALLBUFSIZ];
+			int arraySecondVar = -1;
 
 			if (left) {
 				cmp = cmp_equal;
@@ -1779,7 +1791,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
-			if(s->op3 && s->op1->type == st_mbrselect) {
+/*			if(s->op3 && s->op1->type == st_mbrselect) {
 				if ((extra = _dumpstmt(sql, mb, s->op3)) < 0)
 					return -1;
 				q = newStmt2(mb, "algebra", "mbrproject");
@@ -1790,7 +1802,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 				return s->nr;
 			}
-
+*/
 			if (cmp == cmp_joined) {
 				s->nr = l;
 				return s->nr;
@@ -1829,43 +1841,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 
 				q = pushArgument(mb, q, l);
-				{
-				/* if the first argument has two variables then it is a sub-select
- 				* on a non-dimensional column that produces an MBR */
-				///*if the second argument is a BAT and the first has two variables then
- 				//* it is a subselect on a non-dimensional column that produces an MBR */ 
-
-//				if(getVarType(mb, r) == TYPE_bat || getVarType(mb, r) >= TYPE_any) {
-					char nme[SMALLBUFSIZ];
-                    int uval = -1;
-
-                    snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-                    uval = findVariable(mb, nme);
-                    if(uval >= 0)
-						q = pushArgument(mb, q, uval);
-//				}
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+                if((arraySecondVar = findVariable(mb, nme)) >= 0)
+					q = pushArgument(mb, q, arraySecondVar);
+					
 				q = pushArgument(mb, q, r);
-				/* if the second argument has two variables then it is either a dimensional
- 				* or a non-dimensional column of an array along with the dimensional of the array */ 
-//				if(s->op2->type == st_dimension) {
-//					char nme[SMALLBUFSIZ];
-//                  int uval = -1;
-//
-                    snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
-                    uval = findVariable(mb, nme);
-//					assert(uval >= 0);
-					if(uval >= 0) //{
-						q = pushArgument(mb, q, uval);
-				//		if(s->op1->type == st_tid)
-				//			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-				//	}
-//				}
-				}
+                snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
+                if((arraySecondVar = findVariable(mb, nme)) >= 0)
+					q = pushArgument(mb, q, arraySecondVar);
+				
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
 
-/*I do not have two returs anymore*/
 				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t)) {
 					/* left fetch join on a non-dimensional column and the tid
  					* I need to return also the pointer to dims or it will be lost afterwards */

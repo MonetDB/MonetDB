@@ -1,30 +1,43 @@
 #It gets the candidates and projects the dimensions
 #With project cells: command algebra.leftfetchjoin(cands:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
-command algebra.leftfetchjoin(candDims:ptr, dim:ptr, dims:ptr ) :bat[:oid,:any]
-address ALGdimensionLeftfetchjoin1;
-#it gets the candidates and the orojects a non-dimensional column
+command algebra.leftfetchjoin(candDims:ptr, candBAT:bat[:oid,:oid], dim:ptr, dims:ptr ) :bat[:oid,:any]
+address ALGdimensionLeftfetchjoin;
+#it gets the candidates and projects a non-dimensional column
 #with project cells: command algebra.leftfetchjoin(cands:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
-command algebra.leftfetchjoin(candDims:ptr, vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
+command algebra.leftfetchjoin(candDims:ptr, candBAT:bat[:oid,:oid], vals:bat[:oid,:any], dims:ptr ) :bat[:oid,:any]
 address ALGnonDimensionLeftfetchjoin1;
 #it is called when projecting a non-dimensional column of an array
 command algebra.leftfetchjoin(tids:bat[:oid,:oid],vals:bat[:oid,:any],dims:ptr) (:bat[:oid,:any], :ptr)
 address ALGnonDimensionLeftfetchjoin2;
 
-#subselection in dimensions
-command algebra.subselect(dim:ptr, dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) :ptr
+#subselection in dimensions 
+#the first result is the mbr and the second is the oids that satisfy the conditiont
+#it is always null but it is used to avoid having to check whether the selection
+#is on a dimension or a non-dimension when creating the MAL plan
+command algebra.subselect(dim:ptr, dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
 address ALGdimensionSubselect1;
-command algebra.subselect(dim:ptr, dims:ptr, candDims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) :ptr
-address ALGdimensionSubselect2;
-command algebra.thetasubselect(dim:ptr, dims:ptr, val:any, op:str) :ptr
+command algebra.thetasubselect(dim:ptr, dims:ptr, val:any, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect1;
-command algebra.thetasubselect(dim:ptr, dims:ptr, candDims:ptr, val:any, op:str) :ptr
+#the candBAT will be null when the candidates come from selection over dimensional column
+#and non-zero when coming from selection over non-dimensional column
+command algebra.subselect(dim:ptr, dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
+address ALGdimensionSubselect2;
+command algebra.thetasubselect(dim:ptr, dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect2;
 
 #subselection in non-dimensions
 command algebra.subselect(vals:bat[:oid,:any], dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
 address ALGnonDimensionSubselect1;
-command algebra.subselect(vals:bat[:oid,:oid], dims:ptr, candDims:ptr, candBat:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid, :oid])
+command algebra.thetasubselect(vals:bat[:oid,:any], dims:ptr, val:any, op:str) (:ptr, :bat[:oid,:oid])
+address ALGnonDimensionThetasubselect1;
+#the candBAT will be null when the candidates come from selection over dimensional column
+#and non-zero when coming from selection over non-dimensional column
+command algebra.subselect(vals:bat[:oid,:any], dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
 address ALGnonDimensionSubselect2;
+command algebra.thetasubselect(vals:bat[:oid,:any], dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
+address ALGnonDimensionThetasubselect2;
+
+
 
 #command algebra.mbrsubselect(dims:ptr, dim:ptr, s:bat[:oid, :oid], c:bat[:oid, :oid]) :bat[:oid,:oid]
 #address ALGmbrsubselect;
