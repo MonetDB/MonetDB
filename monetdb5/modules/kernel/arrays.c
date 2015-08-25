@@ -145,13 +145,13 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat *oidsRes, const ptr *dim, const ptr
 		dimCands_in = (gdk_array*)*dimsCands;
 	else //all dimensions are candidates
 		dimCands_in = arrayCopy(array);
-	dimCand = dimCands_in->dims[dimension->dimNum];
-
+	
 	*dimsRes = dimCands_in; //the same pointers will be used but the dimension over which the selection will be performed might change 
 	if(!dimCands_in) { //empty results
 		arrayDelete(array); //I am not gona use it later I can delete it
 		return MAL_SUCCEED;
 	}
+	dimCand = dimCands_in->dims[dimension->dimNum];
 
     type = dimension->type;
     nil = ATOMnilptr(type);
@@ -305,8 +305,7 @@ str ALGdimensionLeftfetchjoin(bat *result, const ptr *dimsCands, const bat *oids
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
-	gdk_dimension *dimCand = dimCands_in->dims[dimension->dimNum];
-
+	
 	BAT *resBAT = NULL;
 	BUN resSize = 0;
 
@@ -314,9 +313,13 @@ str ALGdimensionLeftfetchjoin(bat *result, const ptr *dimsCands, const bat *oids
 	(void)*oidsCands;
 
 	if(!dimCands_in) { //empty
-		if(!(resBAT = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT)))
+		if(!(resBAT = newempty("dimensionLeftfetchjoin")))
 			throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
+		BBPkeepref(*result = resBAT->batCacheid);
+		return MAL_SUCCEED;
 	} else {
+		gdk_dimension *dimCand = dimCands_in->dims[dimension->dimNum];
+
 		unsigned short i=0;
 
 		unsigned int elsR = 1;
@@ -406,6 +409,15 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	BAT *mbrCandsBAT = NULL, *oidsCandsBAT = NULL, *valsBAT = NULL, *resBAT= NULL;
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
 	gdk_array *array = (gdk_array*)*dims;
+
+
+ 	if(!dimCands_in) { //empty
+        if(!(resBAT = newempty("nonDimensionLeftfetchjoin1")))
+            throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
+		BBPkeepref(*result = resBAT->batCacheid);
+
+    	return MAL_SUCCEED;
+    }
 
     if ((oidsCandsBAT = BATdescriptor(*oidsCands)) == NULL) {
         throw(MAL, "algebra.leftfetchjoin", RUNTIME_OBJECT_MISSING);
@@ -622,6 +634,8 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 
 		arrayDelete(array);
 		*dimsRes = NULL;		
+
+		throw(MAL, "algebra.nonDimensionSubselect", "Problen in BATsubselect");
 	}
 
 	if(BATcount(oidsResBAT) == 0) { //empty results
@@ -697,3 +711,70 @@ str ALGnonDimensionSubselect1(ptr *dimsRes, bat *oidsRes, const bat *values, con
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, NULL, NULL, low, high, li, hi, anti);
 }
+
+str ALGnonDimensionThetasubselect2(ptr *dimsRes, bat *oidsRes, const bat *values, const ptr* dims, const ptr *dimsCands, const bat *oidsCands, const void *val, const char **opp) {
+	bit li = 0;
+	bit hi = 0;
+	bit anti = 0;
+	const char *op = *opp;
+	BAT *valuesBAT =  BATdescriptor(*values);
+	const void *nil;
+
+	if(!valuesBAT) {
+		throw(MAL, "algebra.nonDimensionThetasubselect", RUNTIME_OBJECT_MISSING);
+	}
+
+	nil = ATOMnilptr(BATttype(valuesBAT));
+	BBPunfix(valuesBAT->batCacheid);
+
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+        /* "=" or "==" */
+		li = hi = 1;
+		anti = 0;
+        return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, val, nil, &li, &hi, &anti);
+    }
+    if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+        /* "!=" (equivalent to "<>") */ 
+		li = hi = anti = 1;
+        return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, val, nil, &li, &hi, &anti);
+    }
+    if (op[0] == '<') { 
+        if (op[1] == 0) {
+            /* "<" */
+			li = hi = anti = 0;
+            return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, nil, val, &li, &hi, &anti);
+        }
+        if (op[1] == '=' && op[2] == 0) {
+            /* "<=" */
+			li = anti = 0;
+			hi = 1;
+            return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, nil, val, &li, &hi, &anti);
+        }
+        if (op[1] == '>' && op[2] == 0) {
+            /* "<>" (equivalent to "!=") */ 
+			li = hi = anti = 1;
+            return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, val, nil, &li, &hi, &anti);
+        }
+    }
+    if (op[0] == '>') { 
+        if (op[1] == 0) {
+            /* ">" */
+			li = hi = anti = 0;
+            return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, val, nil, &li, &hi, &anti);
+        }
+        if (op[1] == '=' && op[2] == 0) {
+            /* ">=" */
+			li = 1;
+			hi = anti = 0;
+            return ALGnonDimensionSubselect2(dimsRes, oidsRes, values, dims, dimsCands, oidsCands, val, nil, &li, &hi, &anti);
+        }
+    }
+
+    throw(MAL, "algebra.dimensionThetasubselect", "BATdimensionThetasubselect: unknown operator.\n");
+}
+
+str ALGnonDimensionThetasubselect1(ptr *dimsRes, bat *oidsRes, const bat *values, const ptr* dims, const void *val, const char **op) {
+	return ALGnonDimensionThetasubselect2(dimsRes, oidsRes, values, dims, NULL, NULL, val, op);
+}
+
+
