@@ -785,6 +785,12 @@ static int find_uselect(stmt *s){
 	return find_uselect(s->op3);
 }
 #endif
+static bool isTid(stmt *s) {
+	if(!s) return false;
+	if(s->type == st_tid) return true;
+	if(s->type == st_alias) return isTid(s->op1);
+	return false;
+}
 
 /*
  * @-
@@ -1798,9 +1804,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (cmp == cmp_project || cmp == cmp_reorder_project) {
 				int ins;
 
-				/* check if we have two input variables in the right argument*/
+				/* check if we have two input variables in the left argument (case: dim join tid)*/
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+                if(findVariable(mb, nme) >= 0 && isTid(s->op2)) {
+					/*it is an array related join with a tid
+ 					* send the right input to the output 
+ 					* i.e tids does not do something useful*/
+					s->nr = l;
+					return s->nr;
+				}/* check if we have two input variables in the right argument (case: tid join bat)*/
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
-                if(findVariable(mb, nme) >= 0 && s->op1->type == st_tid) {
+                if(findVariable(mb, nme) >= 0 && isTid(s->op1)) {
 					/*it is an array related join with a tid
  					* send the right input to the output 
  					* i.e tids does not do something useful*/
