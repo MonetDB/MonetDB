@@ -784,7 +784,6 @@ static int find_uselect(stmt *s){
 		return s->nr;
 	return find_uselect(s->op3);
 }
-#endif
 static bool isTid(stmt *s) {
 	if(!s) return false;
 	if(s->type == st_tid) return true;
@@ -792,6 +791,7 @@ static bool isTid(stmt *s) {
 	return false;
 }
 
+#endif
 /*
  * @-
  * The big code generation switch.
@@ -801,6 +801,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	InstrPtr q = NULL;
 	node *n;
+
+	/* used for handling arrays */
+	char nme[SMALLBUFSIZ];
+	int arraySecondVar = -1;
 
 	if (s) {
 		if (s->nr > 0)
@@ -1239,7 +1243,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 #if 0
 		{
 			int l, r=-1, uval=-1, sub=-1;
-			char nme[SMALLBUFSIZ];
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 	
@@ -1330,9 +1333,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l, r, sub, anti;
 			node *n;
 			
-			char nme[SMALLBUFSIZ];
-            int arraySecondVar = -1;
-
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
 			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
@@ -1555,9 +1555,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			bit swapped = (s->flag & SWAPPED) ? TRUE : FALSE;
 			char *cmd = (s->type == st_uselect2) ? subselectRef : subrangejoinRef;
 			int sub = -1;
-
-			char nme[SMALLBUFSIZ];
-            int arraySecondVar = -1;
 
 			if (l < 0)
 				return -1;
@@ -1785,10 +1782,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int cmp = s->flag;
 			int left = (cmp == cmp_left);
 			char *sjt = "subjoin";
-
-			char nme[SMALLBUFSIZ];
-			int arraySecondVar = -1;
-
+	
 			if (left) {
 				cmp = cmp_equal;
 				sjt = "subleftjoin";
@@ -1804,27 +1798,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (cmp == cmp_project || cmp == cmp_reorder_project) {
 				int ins;
 
-				/* check if we have two input variables in the left argument (case: dim join tid)*/
-				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-                if(findVariable(mb, nme) >= 0 && isTid(s->op2)) {
-					/*it is an array related join with a tid
- 					* send the right input to the output 
- 					* i.e tids does not do something useful*/
-					s->nr = l;
-					return s->nr;
-				}/* check if we have two input variables in the right argument (case: tid join bat)*/
-				snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
-                if(findVariable(mb, nme) >= 0 && isTid(s->op1)) {
-					/*it is an array related join with a tid
- 					* send the right input to the output 
- 					* i.e tids does not do something useful*/
-					s->nr = r;
-					return s->nr;
-				}
-
 				/* delta bat */
 				if (s->op3) {
-					char nme[SMALLBUFSIZ];
 					int uval = -1;
 
 					snprintf(nme, SMALLBUFSIZ, "r1_%d", r);
@@ -1849,6 +1824,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
 				
+				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t))
+                    q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+
 				q = pushArgument(mb, q, l);
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
                 if((arraySecondVar = findVariable(mb, nme)) >= 0)
@@ -2003,7 +1981,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag)
 					s->nr = s->op1->op2->nr;
 			} else if (s->flag) {
-				char nme[SMALLBUFSIZ];
 				int v = -1;
 
 				snprintf(nme, SMALLBUFSIZ, "r%d_%d", s->flag, l);
@@ -2247,9 +2224,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, s->op4.aggrval->aggr->query);
 			}
 
-			if (s->op1->type != st_list) {
+			if (s->op1->type != st_list) 
 				q = pushArgument(mb, q, l);
-			} else {
+			else {
 				for (i=0, n = s->op1->op4.lval->h; n; n = n->next, i++) {
 					stmt *op = n->data;
 
@@ -2768,7 +2745,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 /* REMOVED IT		case st_cells: {
  			int l;
-			char nme[SMALLBUFSIZ];
 			int uval = -1;
 
             if ((l = _dumpstmt(sql, mb, s->op1)) < 0)

@@ -13,7 +13,7 @@ static unsigned int jumpSize(gdk_array *array, unsigned int dimNum) {
 	return skip;
 }
 
-static int arrayCellsNum(gdk_array *array) {
+static wrd arrayCellsNum(gdk_array *array) {
 	return jumpSize(array, array->dimsNum);
 }
 
@@ -135,7 +135,7 @@ str ALGdimensionSubselect2(ptr *dimsRes, bat *oidsRes, const ptr *dim, const ptr
 	int type;
 	const void* nil;
 
-	BAT *oidsResBAT = newempty("leftfetchjoin"); //nothing returned in the oids
+	BAT *oidsResBAT = newempty("subselect"); //nothing returned in the oids
 	BBPkeepref(*oidsRes = oidsResBAT->batCacheid);
 
 	/*ingnore oidsCands. When projecting a dimension only the dimsCands are of interest */
@@ -410,7 +410,6 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
 	gdk_array *array = (gdk_array*)*dims;
 
-
  	if(!dimCands_in) { //empty
         if(!(resBAT = newempty("nonDimensionLeftfetchjoin1")))
             throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
@@ -463,39 +462,38 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 }
 
 str ALGnonDimensionLeftfetchjoin2(bat* result, ptr *dimsRes, const bat *tids, const bat *vals, const ptr *dims) {
-	BAT *materialisedBAT = NULL;
-	BAT *nonDimensionalBAT = NULL;
-	BUN totalCellsNum, neededCellsNum;
+    BAT *materialisedBAT = NULL;
+    BAT *nonDimensionalBAT = NULL;
+    BUN totalCellsNum, neededCellsNum;
 
-	gdk_array *array = (gdk_array*)*dims;
+    gdk_array *array = (gdk_array*)*dims;
 
-	if ((nonDimensionalBAT = BATdescriptor(*vals)) == NULL) {
+    if ((nonDimensionalBAT = BATdescriptor(*vals)) == NULL) {
         throw(MAL, "algebra.leftfecthjoin", RUNTIME_OBJECT_MISSING);
     }
-	(void)*tids; //ignore the tids
+    (void)*tids; //ignore the tids
 
-	totalCellsNum = arrayCellsNum(array);
-	neededCellsNum = totalCellsNum - BATcount(nonDimensionalBAT);
-	
-	/*TODO: fix this so that I can have the real default value of the column */
-	materialisedBAT = materialise_nonDimensional_column(ATOMtype(BATttype(nonDimensionalBAT)), neededCellsNum, NULL);
-	if(!materialisedBAT) {
-		BBPunfix(nonDimensionalBAT->batCacheid);
-		throw(MAL, "algebra.leftfetchjoin", "Problem materialising non-dimensional column");
-	}
+    totalCellsNum = arrayCellsNum(array);
+    neededCellsNum = totalCellsNum - BATcount(nonDimensionalBAT);
+
+    /*TODO: fix this so that I can have the real default value of the column */
+    materialisedBAT = materialise_nonDimensional_column(ATOMtype(BATttype(nonDimensionalBAT)), neededCellsNum, NULL);
+    if(!materialisedBAT) {
+        BBPunfix(nonDimensionalBAT->batCacheid);
+        throw(MAL, "algebra.leftfetchjoin", "Problem materialising non-dimensional column");
+    }
 
 
-	/*append the missing values to the BAT */
-	BATappend(nonDimensionalBAT, materialisedBAT, TRUE);
-	BATsetcount(nonDimensionalBAT, totalCellsNum);
-	
-	BBPunfix(materialisedBAT->batCacheid);
-	BBPkeepref(*result = nonDimensionalBAT->batCacheid);
+    /*append the missing values to the BAT */
+    BATappend(nonDimensionalBAT, materialisedBAT, TRUE);
+    BATsetcount(nonDimensionalBAT, totalCellsNum);
 
-	//sent this to the output so that we do not lose it afterwards     
-	*dimsRes = *dims;
-   
-	return MAL_SUCCEED;
+    BBPunfix(materialisedBAT->batCacheid);
+    BBPkeepref(*result = nonDimensionalBAT->batCacheid);
+
+    //sent this to the output so that we do not lose it afterwards     
+    *dimsRes = *dims;
+    return MAL_SUCCEED;
 }
 
 #if 0
