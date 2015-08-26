@@ -1791,24 +1791,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
-/*			if(s->op3 && s->op1->type == st_mbrselect) {
-				if ((extra = _dumpstmt(sql, mb, s->op3)) < 0)
-					return -1;
-				q = newStmt2(mb, "algebra", "mbrproject");
-				q = pushArgument(mb, q, r);
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, extra);
-			
-				s->nr = getDestVar(q);
-				return s->nr;
-			}
-*/
 			if (cmp == cmp_joined) {
 				s->nr = l;
 				return s->nr;
 			}
 			if (cmp == cmp_project || cmp == cmp_reorder_project) {
 				int ins;
+
+				/* check if we have two input variables in the right argument*/
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
+                if(findVariable(mb, nme) >= 0 && s->op1->type == st_tid) {
+					/*it is an array related join with a tid
+ 					* send the right input to the output 
+ 					* i.e tids does not do something useful*/
+					s->nr = r;
+					return s->nr;
+				}
 
 				/* delta bat */
 				if (s->op3) {
@@ -1837,9 +1835,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
 				
-				if(s->op1->type == st_tid && s->op2->type == st_bat && isArray(s->op2->op4.cval->t))
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-
 				q = pushArgument(mb, q, l);
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
                 if((arraySecondVar = findVariable(mb, nme)) >= 0)
