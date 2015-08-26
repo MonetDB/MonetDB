@@ -5,3 +5,7 @@ comment "Get a pointer to the dimension and a pointer to the array (a structure 
 pattern sql.bind_array_column(mvc:int, schema:str, array:str, column:str) (:bat[:oid,:any], :ptr)
 address mvc_bind_array_column
 comment "Bind the 'schema.array.column' BAT";
+
+pattern sql.array(mvc:int, schema:str, arr:str) :ptr
+address mvc_array
+comment "Get the description of the 'schema.array'";

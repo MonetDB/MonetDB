@@ -147,3 +147,31 @@ str mvc_bind_array_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.bind_array_column", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 	throw(SQL, "sql.bind_array_column", "unable to find %s(%s)", *tname, *cname);
 }
+
+str mvc_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	ptr* array = getArgReference_ptr(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	str *sname = getArgReference_str(stk, pci, 3);
+	str *tname = getArgReference_str(stk, pci, 4);
+	
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	
+	s = mvc_bind_schema(m, *sname);
+	if (s == NULL)
+		throw(SQL, "sql.bind_array_dimension", "unable to find %s.%s", *sname, *tname);
+	t = mvc_bind_table(m, s, *tname);
+	if (t == NULL)
+		throw(SQL, "sql.bind_array_dimension", "unable to find %s.%s", *sname, *tname);
+
+	*array = get_array(t);
+
+	return MAL_SUCCEED;
+}
+
+

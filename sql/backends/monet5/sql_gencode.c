@@ -937,16 +937,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt = TYPE_oid;
 			sql_table *t = s->op4.tval;
 
-			q = newStmt1(mb, sqlRef, "tid");
-			if (q == NULL)
-				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			setVarUDFtype(mb, getArg(q, 0));
+			if(isArray(t)) {
+				q = newStmt1(mb, sqlRef, "array");
+			} else {
+				q = newStmt1(mb, sqlRef, "tid");
+				if (q == NULL)
+					return -1;
+				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+				setVarUDFtype(mb, getArg(q, 0));
+			}
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
+		
 			if (q == NULL)
 				return -1;
+			
 			s->nr = getDestVar(q);
 		}
 			break;
