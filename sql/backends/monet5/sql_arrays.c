@@ -154,8 +154,8 @@ str mvc_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str msg;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	str *sname = getArgReference_str(stk, pci, 3);
-	str *tname = getArgReference_str(stk, pci, 4);
+	str *sname = getArgReference_str(stk, pci, 2);
+	str *tname = getArgReference_str(stk, pci, 3);
 	
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;

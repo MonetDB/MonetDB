@@ -30,6 +30,52 @@ newempty(const char *func)
     return bn;
 }
 
+static int computeOids(oid** oidsRes, BUN currentOidsPos, unsigned int dimNum , gdk_array *array, gdk_array *dims, unsigned int jumpSize) {
+	unsigned int idx = 0;
+	gdk_dimension *currDim = dims->dims[dimNum];
+	gdk_dimension *currDimOrig = array->dims[dimNum];
+
+	jumpSize /= currDimOrig->elsNum;
+
+	if(dimNum == 0) {
+		/*increase as many posistions as the elements in the dimension*/
+		if(currDim->idxs) {
+			unsigned int i=0;
+			for(i=0; i<currDim->elsNum; i++)
+                 (*oidsRes)[currentOidsPos] = currDim->idxs[i];
+		} else {
+			for(idx=currDim->min; idx<=currDim->max; idx+=currDim->step, currentOidsPos++) {
+				(*oidsRes)[currentOidsPos] = idx;
+			}
+		}
+		return currentOidsPos;
+	}
+
+	/*for each idx of the dimension*/
+	if(currDim->idxs) {
+		unsigned int i=0;
+		for(i=0; i<currDim->elsNum; i++) {
+			/*let the other dimensions increase as many elemens as necessary*/
+			BUN nextOidsPos = computeOids(oidsRes, currentOidsPos, dimNum-1, array, dims, jumpSize);
+			/*update all the oids that were update by the other dimensions */
+			for(; currentOidsPos<nextOidsPos; currentOidsPos++) {
+				(*oidsRes)[currentOidsPos] += jumpSize*currDim->idxs[i];
+			}
+		}
+	} else {
+		for(idx=currDim->min; idx<=currDim->max; idx+=currDim->step, currentOidsPos++) {
+			/*let the other dimensions increase as many elemens as necessary*/
+			BUN nextOidsPos = computeOids(oidsRes, currentOidsPos, dimNum-1, array, dims, jumpSize);
+			/*update all the oids that were update by the other dimensions */
+			for(; currentOidsPos<nextOidsPos; currentOidsPos++) {
+				(*oidsRes)[currentOidsPos] += jumpSize*idx;
+			}
+		}
+	}
+
+	return currentOidsPos;
+}
+
 #if 0
 /*UPDATED*/
 static BUN oidToIdx(oid oidVal, int dimNum, int currentDimNum, BUN skipCells, gdk_array *array) {
@@ -301,7 +347,7 @@ str ALGdimensionThetasubselect1(ptr *dimsRes, bat *oidsRes, const ptr *dim, cons
 	return ALGdimensionThetasubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, val, op);
 }
 
-str ALGdimensionLeftfetchjoin(bat *result, const ptr *dimsCands, const bat *oidsCands, const ptr *dim, const ptr *dims) {
+str ALGdimensionLeftfetchjoin1(bat *result, const ptr *dimsCands, const bat *oidsCands, const ptr *dim, const ptr *dims) {
 	gdk_array *array = (gdk_array*)*dims;
 	gdk_analytic_dimension *dimension = (gdk_analytic_dimension*)*dim;
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
@@ -404,6 +450,52 @@ do { \
 
 }
 
+str ALGdimensionLeftfetchjoin2(bat *result, const ptr* dimsCands, const bat* oidsCands, const ptr *array_in) {
+	gdk_array *array = (gdk_array*)*array_in;
+	gdk_array *dims_in = (gdk_array*)*dimsCands;
+	BAT *oidsCandsBAT = BATdescriptor(*oidsCands);
+	BAT *resBAT;
+	oid *resOids;
+
+	wrd elsNum = 1;
+
+	if(!oidsCandsBAT) {
+		arrayDelete(dims_in);
+		throw(MAL, "algebra.dimensionLeftfetchjoin2", RUNTIME_OBJECT_MISSING);
+	}
+
+	/*this function is called in case of an update after a subselection
+ 	* on the dimensions. In such a case only the dimsCands should have 
+	* values and the oidsCands should be empty*/
+	if(BATcount(oidsCandsBAT)) {
+		arrayDelete(dims_in);
+		throw(MAL,"algebra.dimensionLeftfetchjoin2", "oidsCands is not empty");
+	}	
+
+	/*count the cells in the output*/
+	elsNum = arrayCellsNum(dims_in);
+	/*create all oids*/
+	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, elsNum, TRANSIENT))) {
+		arrayDelete(dims_in);
+		throw(MAL, "algebra.dimensionLeftfetchjoin2","Problem allocating new BAT");
+	}
+
+	/* create the oids that should be updated based on the dimsCands */
+	resOids = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+	/* fill the array with the elements in the first dimension */
+	computeOids(&resOids, 0, array->dimsNum-1 , array, dims_in, arrayCellsNum(array));
+
+	BATsetcount(resBAT, elsNum);
+	BATseqbase(resBAT, 0);
+	BATderiveProps(resBAT, FALSE);
+
+	BBPkeepref(*result = resBAT->batCacheid);
+	BBPunfix(oidsCandsBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+
 str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *oidsCands, const bat *vals, const ptr *dims) {
 	/* projecting a non-dimensional column does not differ from projecting any relational column */
 	BAT *mbrCandsBAT = NULL, *oidsCandsBAT = NULL, *valsBAT = NULL, *resBAT= NULL;
@@ -461,17 +553,17 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	return MAL_SUCCEED;
 }
 
-str ALGnonDimensionLeftfetchjoin2(bat* result, ptr *dimsRes, const bat *tids, const bat *vals, const ptr *dims) {
+str ALGnonDimensionLeftfetchjoin2(bat* result, ptr *dimsRes, const ptr *array_in, const bat *vals, const ptr *dims) {
     BAT *materialisedBAT = NULL;
     BAT *nonDimensionalBAT = NULL;
     BUN totalCellsNum, neededCellsNum;
 
-    gdk_array *array = (gdk_array*)*dims;
+    gdk_array *array = (gdk_array*)*array_in;
 
     if ((nonDimensionalBAT = BATdescriptor(*vals)) == NULL) {
         throw(MAL, "algebra.leftfecthjoin", RUNTIME_OBJECT_MISSING);
     }
-    (void)*tids; //ignore the tids
+    (void)*dims; //ignore the dims is the same with the array
 
     totalCellsNum = arrayCellsNum(array);
     neededCellsNum = totalCellsNum - BATcount(nonDimensionalBAT);
@@ -492,7 +584,7 @@ str ALGnonDimensionLeftfetchjoin2(bat* result, ptr *dimsRes, const bat *tids, co
     BBPkeepref(*result = nonDimensionalBAT->batCacheid);
 
     //sent this to the output so that we do not lose it afterwards     
-    *dimsRes = *dims;
+    *dimsRes = array;
     return MAL_SUCCEED;
 }
 
@@ -776,3 +868,10 @@ str ALGnonDimensionThetasubselect1(ptr *dimsRes, bat *oidsRes, const bat *values
 }
 
 
+
+str ALGarrayCount(wrd *res, const ptr *array) {
+	gdk_array *ar = (gdk_array*)*array;
+	*res = arrayCellsNum(ar);
+
+	return MAL_SUCCEED;
+}
