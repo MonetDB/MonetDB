@@ -122,6 +122,10 @@ pattern evalAlgebra(cmd:str, optimize:bit):void
 address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
+command flush_log( ) :void
+address SQLflush_log
+comment "flush the log now";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -368,6 +372,20 @@ comment "Import a table from the files (fname)";
 command zero_or_one( col:bat[:oid,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+
+function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
+	(g,e,h) := group.subgroup(gp);
+	m := aggr.max(h);
+	c0 := calc.isnil(m);
+	c01 := calc.not(c0);
+	c1 := calc.>(m,1:wrd);
+	c11 := calc.and(c01,c1);
+	ms := calc.str(m); 
+	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
+	msg1 := str.+(msg, ">1)");
+	sql.assert(c11, msg1);
+	return zero_or_one := b;
+end sql.subzero_or_one;
 
 command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique 

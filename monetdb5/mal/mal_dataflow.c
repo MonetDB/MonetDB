@@ -313,6 +313,9 @@ DFLOWworker(void *T)
 
 	thr = THRnew("DFLOWworker");
 
+#ifdef _MSC_VER
+	srand((unsigned int) GDKusec());
+#endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
 	MT_lock_set(&dataflowLock, "DFLOWworker");

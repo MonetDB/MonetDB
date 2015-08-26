@@ -2364,14 +2364,6 @@ command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
 address ALGleftjoin;
-command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:any_2],s:oid):bat[:any_1,:oid] 
-address ALGmark_grp_2;
-comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequense of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The third argument (s) gives the base value for the new OID sequence of each group.
-
-command algebra.mark_grp(b:bat[:any_1,:oid],g:bat[:oid,:oid]):bat[:any_1,:oid] 
-address ALGmark_grp_1;
-comment "grouped mark": Produces a new BAT with per group a locally unique dense ascending sequence of OIDs in the tail. The tail of the first BAT (b) identifies the group that each BUN of b belongs to. The second BAT (g) represents the group extent, i.e., the head is the unique list of group IDs from b's tail. The tail of g gives for each group the base value for the new OID sequence.
-
 command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
 address ALGtmarkp;
 comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
@@ -2525,8 +2517,6 @@ command algebra.subselect(b:bat[:oid,:any_1],low:any_1,high:any_1,li:bit,hi:bit,
 address ALGsubselect1;
 comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless low=nil, high=nil,	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,	high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for the other	version of this function.
 
-command algebra.tunion(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
-address ALGtunion;
 command algebra.tdiff(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtdiff;
 command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
@@ -2675,6 +2665,18 @@ command batsql.alpha(dec:bat[:oid,:dbl],theta:dbl):bat[:oid,:dbl]
 address SQLbat_alpha_cst;
 comment BAT implementation of astronomy alpha function
 
+pattern batsql.dense_rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLdense_rank;
+comment return the densely ranked groups
+
+pattern batsql.diff{orderdependend}(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
+address SQLdiff;
+comment return true if cur != prev row
+
+pattern batsql.diff{orderdependend}(b:bat[:oid,:any_1]):bat[:oid,:bit] 
+address SQLdiff;
+comment return true if cur != prev row
+
 command batsql.dec_round(v:bat[:oid,:dbl],r:dbl):bat[:oid,:dbl] 
 address dbl_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
@@ -2706,6 +2708,14 @@ comment round off the value v to nearests multiple of r
 pattern batsql.next_value(sname:bat[:oid,:str],sequence:str):bat[:oid,:lng] 
 address mvc_bat_next_value;
 comment return the next value of the sequence
+
+pattern batsql.rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLrank;
+comment return the ranked groups
+
+pattern batsql.row_number{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+address SQLrow_number;
+comment return the row_numer-ed groups
 
 command batsql.round(v:bat[:oid,:dbl],r:bte):bat[:oid,:dbl] 
 address dbl_bat_round_wrap;
@@ -22841,9 +22851,6 @@ pattern batcalc.cmp(b1:bat[:oid,:bit],b2:bat[:oid,:bit]):bat[:oid,:bte]
 address CMDbatCMP;
 comment Return -1/0/1 if B1 </==/> B2
 
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.dense_rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 command batcalc.dbl(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:dbl] 
 address batlng_dec2dec_dbl;
 comment cast decimal(lng) to decimal(dbl) and check for overflow
@@ -25712,9 +25719,6 @@ pattern batcalc.lsh_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:bte]):bat[:oid,:bte]
 address CMDbatLSH;
 comment Return B1 << B2, out of range second operand causes NIL value
 
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.mark_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 pattern batcalc.mod_noerror(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:dbl] 
 address CMDbatMOD;
 comment Return V % B with candidates list, divide by zero causes NIL value
@@ -28451,9 +28455,6 @@ pattern batcalc.or(b1:bat[:oid,:bit],b2:bat[:oid,:bit]):bat[:oid,:bit]
 address CMDbatOR;
 comment Return B1 OR B2
 
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1]):bat[:oid,:int];
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],orig:bat[:oid,:any_2]):bat[:oid,:int];
-function batcalc.rank_grp{inline}(b:bat[:oid,:any_1],ord:bat[:oid,:oid],grp:bat[:oid,:oid],ext:bat[:oid,:oid]):bat[:oid,:int];
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd],nbits:int,b:bat[:oid,:any_1]):bat[:oid,:int] 
 address MKEYbulk_rotate_xor_hash;
 pattern batcalc.rsh_noerror(v:lng,b:bat[:oid,:lng],s:bat[:oid,:oid]):bat[:oid,:lng] 
@@ -40579,13 +40580,17 @@ pattern sql.commit():void
 address SQLcommit;
 comment Trigger the commit operation for a MAL block
 
-command sql.dense_rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
-address sql_dense_rank;
-comment return the densely ranked bat
-
-command sql.dense_rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
-address sql_dense_rank_grp;
+pattern sql.dense_rank(b:any_1,p:bit,o:bit):int 
+address SQLdense_rank;
 comment return the densely ranked groups
+
+pattern sql.diff(p:bit,b:any_1):bit 
+address SQLdiff;
+comment return true if cur != prev row
+
+pattern sql.diff(b:any_1):bit 
+address SQLdiff;
+comment return true if cur != prev row
 
 pattern sql.drop_hash(sch:str,tbl:str):void 
 address SQLdrop_hash;
@@ -40707,6 +40712,10 @@ pattern sql.eval(cmd:str):void
 address SQLstatement;
 comment Compile and execute a single sql statement
 
+command sql.flush_log():void 
+address SQLflush_log;
+comment flush the log now
+
 command sql.getVersion(clientid:int):lng 
 address mvc_getVersion;
 comment Return the database version identifier for a client
@@ -40795,13 +40804,13 @@ pattern sql.querylog_catalog() (id:bat[:oid,:oid],user:bat[:oid,:str],defined:ba
 address sql_querylog_catalog;
 comment Obtain the query log catalog
 
-command sql.rank(b:bat[:oid,:any_1]):bat[:oid,:int] 
-address sql_rank;
-comment return the rank bat
-
-command sql.rank_grp(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid]):bat[:oid,:int] 
-address sql_rank_grp;
+pattern sql.rank(b:any_1,p:bit,o:bit):int 
+address SQLrank;
 comment return the ranked groups
+
+pattern sql.row_number(b:any_1,p:bit,o:bit):int 
+address SQLrow_number;
+comment return the row_numer-ed groups
 
 pattern sql.reuse(sch:str,tbl:str):void 
 address SQLreuse;
@@ -40852,7 +40861,6 @@ address mvc_restart_seq;
 comment restart the sequence with value start
 
 function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
-function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.shrink(sch:str,tbl:str):void 
 address SQLshrink;
 comment Consolidate the deletion table over all columns using shrinking
@@ -40897,6 +40905,7 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
+function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.single(x:any_2):bat[:oid,:any_2] 
 address CMDBATsingle;
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 

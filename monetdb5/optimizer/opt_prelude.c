@@ -114,7 +114,6 @@ str subbandjoinRef;
 str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
-str kunionRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
@@ -253,6 +252,7 @@ int rowsProp;
 int fileProp;
 int runonceProp;
 int unsafeProp;
+int orderDependendProp;
 
 int stableProp;
 int insertionsProp;
@@ -368,7 +368,6 @@ void optimizerInit(void)
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);
-	kunionRef= putName("kunion",6);
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
@@ -506,6 +505,7 @@ void optimizerInit(void)
 	rowsProp = PropertyIndex("rows");
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
+	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	stableProp = PropertyIndex("stableProp");

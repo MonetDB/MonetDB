@@ -216,7 +216,6 @@ mo_builtin_settings(opt **Set)
 {
 	int i = 0;
 	opt *set;
-	char buf[BUFSIZ];
 
 	if (Set == NULL)
 		return 0;
@@ -228,10 +227,8 @@ mo_builtin_settings(opt **Set)
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbpath");
-	snprintf(buf, BUFSIZ, "%s%c%s%c%s%c%s",
-		 LOCALSTATEDIR, DIR_SEP, "monetdb5", DIR_SEP, "dbfarm",
-		 DIR_SEP, "demo");
-	set[i].value = strdup(buf);
+	set[i].value = strdup(LOCALSTATEDIR DIR_SEP_STR "monetdb5" DIR_SEP_STR
+			      "dbfarm" DIR_SEP_STR "demo");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_debug");

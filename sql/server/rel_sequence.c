@@ -115,6 +115,81 @@ rel_create_seq(
 	return res;
 }
 
+#define SEQ_TYPE	0
+#define SEQ_START	1
+#define SEQ_INC		2
+#define SEQ_MIN		3
+#define SEQ_MAX		4
+#define SEQ_CYCLE	5
+#define SEQ_CACHE	6
+
+static sql_rel *
+list_create_seq(
+	mvc *sql,
+	sql_schema *ss,
+	dlist *qname,
+	dlist *options,
+	int bedropped)
+{
+	dnode *n;
+	sql_subtype* t = NULL;
+	lng start = 1, inc = 1, min = 0, max = 0, cache = 1;
+	int used = 0, cycle = 0;
+
+	/* check if no option is given twice */
+	for (n = options->h; n; n = n->next) {
+		symbol *s = n->data.sym;
+
+		switch(s->token) {
+		case SQL_TYPE:
+			if ((used&(1<<SEQ_TYPE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: AS type found should be used as most once");
+			used |= (1<<SEQ_TYPE);
+			t = &s->data.lval->h->data.typeval;
+			break;
+		case SQL_START:
+			if ((used&(1<<SEQ_START))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: START value should be passed as most once");
+			used |= (1<<SEQ_START);
+			start = s->data.l_val;
+			break;
+		case SQL_INC:
+			if ((used&(1<<SEQ_INC))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: INCREMENT value should be passed as most once");
+			used |= (1<<SEQ_INC);
+			inc = s->data.l_val;
+			break;
+		case SQL_MINVALUE:
+			if ((used&(1<<SEQ_MIN))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+			used |= (1<<SEQ_MIN);
+			min = s->data.l_val;
+			break;
+		case SQL_MAXVALUE:
+			if ((used&(1<<SEQ_MAX))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+			used |= (1<<SEQ_MAX);
+			max = s->data.l_val;
+			break;
+		case SQL_CYCLE:
+			if ((used&(1<<SEQ_CYCLE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+			used |= (1<<SEQ_CYCLE);
+			cycle = s->data.i_val;
+			break;
+		case SQL_CACHE:
+			if ((used&(1<<SEQ_CACHE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: CACHE value should be passed as most once");
+			used |= (1<<SEQ_CACHE);
+			cache = s->data.l_val;
+			break;
+		default:
+			assert(0);
+		}
+	}
+	return rel_create_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle, bedropped);
+}
+
 static sql_rel *
 rel_alter_seq(
 		mvc *sql,
@@ -172,18 +247,77 @@ rel_alter_seq(
 		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
-		switch (start_list->h->next->type) {
-			case type_int:
-				val = exp_atom_lng(sql->sa, (lng)start_list->h->next->data.i_val);
-				break;
-			case type_lng:
-				val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
-				break;
-			default:
-				assert(0);
-		}
+		assert (start_list->h->next->type == type_lng); 
+		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	return rel_seq(sql->sa, DDL_ALTER_SEQ, s->base.name, seq, r, val);
+}
+
+static sql_rel *
+list_alter_seq(
+	mvc *sql,
+	sql_schema *ss,
+	dlist *qname,
+	dlist *options)
+{
+	dnode *n;
+	sql_subtype* t = NULL;
+	lng inc = -1, min = -1, max = -1, cache = -1;
+	dlist *start = NULL;
+	int used = 0, cycle = 0;
+
+	/* check if no option is given twice */
+	for (n = options->h; n; n = n->next) {
+		symbol *s = n->data.sym;
+
+		switch(s->token) {
+		case SQL_TYPE:
+			if ((used&(1<<SEQ_TYPE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: AS type found should be used as most once");
+			used |= (1<<SEQ_TYPE);
+			t = &s->data.lval->h->data.typeval;
+			break;
+		case SQL_START:
+			if ((used&(1<<SEQ_START))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: START value should be passed as most once");
+			used |= (1<<SEQ_START);
+			start = s->data.lval;
+			break;
+		case SQL_INC:
+			if ((used&(1<<SEQ_INC))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: INCREMENT value should be passed as most once");
+			used |= (1<<SEQ_INC);
+			inc = s->data.l_val;
+			break;
+		case SQL_MINVALUE:
+			if ((used&(1<<SEQ_MIN))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+			used |= (1<<SEQ_MIN);
+			min = s->data.l_val;
+			break;
+		case SQL_MAXVALUE:
+			if ((used&(1<<SEQ_MAX))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+			used |= (1<<SEQ_MAX);
+			max = s->data.l_val;
+			break;
+		case SQL_CYCLE:
+			if ((used&(1<<SEQ_CYCLE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+			used |= (1<<SEQ_CYCLE);
+			cycle = s->data.i_val;
+			break;
+		case SQL_CACHE:
+			if ((used&(1<<SEQ_CACHE))) 
+				return sql_error(sql, 02, "3F000!CREATE SEQUENCE: CACHE value should be passed as most once");
+			used |= (1<<SEQ_CACHE);
+			cache = s->data.l_val;
+			break;
+		default:
+			assert(0);
+		}
+	}
+	return rel_alter_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle);
 }
 
 sql_rel *
@@ -195,50 +329,24 @@ rel_sequences(mvc *sql, symbol *s)
 		case SQL_CREATE_SEQ:
 		{
 			dlist *l = s->data.lval;
-			dlist *h = l->h->next->next->data.lval;
 
-			assert(h->h->type == type_lng);
-			assert(h->h->next->type == type_lng);
-			assert(h->h->next->next->type == type_lng);
-			assert(h->h->next->next->next->type == type_lng);
-			assert(h->h->next->next->next->next->type == type_lng);
-			assert(h->h->next->next->next->next->next->type == type_int);
-			assert(h->h->next->next->next->next->next->next->type == type_int);
-			res = rel_create_seq(
+			res = list_create_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
-/* sql_subtype* t*/	&l->h->next->data.typeval, 
-/* lng start */		h->h->data.l_val, 
-/* lng inc */		h->h->next->data.l_val, 
-/* lng min */		h->h->next->next->data.l_val, 
-/* lng max */		h->h->next->next->next->data.l_val,
-/* lng cache */		h->h->next->next->next->next->data.l_val,
-/* int cycle */		h->h->next->next->next->next->next->data.i_val,
-/* int bedropped */	h->h->next->next->next->next->next->next->data.i_val);
+/* dlist* options */	l->h->next->data.lval, 
+/* int bedropped */	l->h->next->next->data.i_val); 
 		}
 		break;
 		case SQL_ALTER_SEQ:
 		{
 			dlist* l = s->data.lval;
-			dlist *h = l->h->next->next->data.lval;
 			
-			assert(h->h->next->type == type_lng);
-			assert(h->h->next->next->type == type_lng);
-			assert(h->h->next->next->next->type == type_lng);
-			assert(h->h->next->next->next->next->type == type_lng);
-			assert(h->h->next->next->next->next->next->type == type_int);
-			res = rel_alter_seq(
+			res = list_alter_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
-/* sql_subtype* t*/	&l->h->next->data.typeval, 
-/* dlist start */	h->h->data.lval, 
-/* lng inc */		h->h->next->data.l_val, 
-/* lng min */		h->h->next->next->data.l_val, 
-/* lng max */		h->h->next->next->next->data.l_val,
-/* lng cache */		h->h->next->next->next->next->data.l_val,
-/* int cycle */		h->h->next->next->next->next->next->data.i_val);
+/* dlist* options */	l->h->next->data.lval);
 		}
 		break;
 		case SQL_DROP_SEQ:

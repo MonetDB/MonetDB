@@ -74,7 +74,7 @@ class Connection(object):
             hostname = None
         if not unix_socket and os.path.exists("/tmp/.s.monetdb.%i" % port):
             unix_socket = "/tmp/.s.monetdb.%i" % port
-        elif not hostname:
+        elif not unix_socket and not hostname:
             hostname = 'localhost'
 
         self.hostname = hostname

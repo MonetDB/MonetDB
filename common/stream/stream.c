@@ -510,16 +510,19 @@ error(stream *s)
 
 	switch (s->errnr) {
 	case MNSTR_OPEN_ERROR:
-		snprintf(buf, sizeof(buf), "error could not open file %s\n", s->name);
+		snprintf(buf, sizeof(buf), "error could not open file %.100s\n", 
+			 s->name);
 		return strdup(buf);
 	case MNSTR_READ_ERROR:
-		snprintf(buf, sizeof(buf), "error reading file %s\n", s->name);
+		snprintf(buf, sizeof(buf), "error reading file %.100s\n",
+			 s->name);
 		return strdup(buf);
 	case MNSTR_WRITE_ERROR:
-		snprintf(buf, sizeof(buf), "error writing file %s\n", s->name);
+		snprintf(buf, sizeof(buf), "error writing file %.100s\n",
+			 s->name);
 		return strdup(buf);
 	case MNSTR_TIMEOUT:
-		snprintf(buf, sizeof(buf), "timeout on %s\n", s->name);
+		snprintf(buf, sizeof(buf), "timeout on %.100s\n", s->name);
 		return strdup(buf);
 	}
 	return strdup("Unknown error");

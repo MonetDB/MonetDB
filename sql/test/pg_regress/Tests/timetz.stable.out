@@ -123,13 +123,13 @@ Ready.
 % sys.timetz_tbl,	sys.L1 # table_name
 % f1,	sql_sub_f1 # name
 % timetz,	sec_interval # type
-% 17,	0 # length
+% 17,	5 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('23:22:21' as timetz), f1) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	.L1 # table_name
 % f1,	sql_sub_single_value # name
 % timetz,	sec_interval # type
-% 17,	0 # length
+% 17,	5 # length
 [ NULL,	NULL	]
 #DROP TABLE TIMETZ_TBL;
 

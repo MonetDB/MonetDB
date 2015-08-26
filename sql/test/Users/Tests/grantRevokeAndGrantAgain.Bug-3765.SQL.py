@@ -30,13 +30,12 @@ GRANT SELECT on table schemaTest.testTable to user_select;
 """)
 
 sql_test_client('user_delete', 'delete', input = """\
--- Check delete.
-DELETE FROM testTable where v1 = 2;
+DELETE FROM testTable where v1 = 2; -- should work
 
 -- Check all the other privileges (they should fail).
-SELECT * FROM testTable;
-UPDATE testTable set v1 = 2 where v2 = 7;
-INSERT into testTable values (3, 3);
+SELECT * FROM testTable; -- not enough privileges
+UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+INSERT into testTable values (3, 3); -- not enough privileges
 """)
 
 sql_test_client('user_update', 'update', input = """\
@@ -44,9 +43,9 @@ sql_test_client('user_update', 'update', input = """\
 UPDATE testTable set v1 = 2 where v2 = 7;
 
 -- Check all the other privileges (they should fail).
-SELECT * FROM testTable;
-INSERT into testTable values (3, 3);
-DELETE FROM testTable where v1 = 2;
+SELECT * FROM testTable; -- not enough privileges
+INSERT into testTable values (3, 3); -- not enough privileges
+DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
 sql_test_client('user_insert', 'insert', input = """\
@@ -54,9 +53,9 @@ sql_test_client('user_insert', 'insert', input = """\
 INSERT into testTable values (3, 3);
 
 -- Check all the other privileges (they should fail).
-SELECT * FROM testTable;
-UPDATE testTable set v1 = 2 where v2 = 7;
-DELETE FROM testTable where v1 = 2;
+SELECT * FROM testTable; -- not enough privileges
+UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
 sql_test_client('user_select', 'select', input = """\
@@ -64,9 +63,9 @@ sql_test_client('user_select', 'select', input = """\
 SELECT * FROM testTable;
 
 -- Check all the other privileges (they should fail).
-INSERT into testTable values (3, 3);
-UPDATE testTable set v1 = 2 where v2 = 7;
-DELETE FROM testTable where v1 = 2;
+INSERT into testTable values (3, 3); -- not enough privileges
+UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
 sql_test_client('monetdb', 'monetdb', input = """\
@@ -80,19 +79,19 @@ REVOKE SELECT on schemaTest.testTable from user_select;
 
 # Next four transitions should not be allowed.
 sql_test_client('user_delete', 'delete', input = """\
-DELETE from testTable where v2 = 666;
+DELETE from testTable where v2 = 666; -- not enough privileges
 """)
 
 sql_test_client('user_insert', 'insert', input = """\
-INSERT into testTable values (666, 666);
+INSERT into testTable values (666, 666); -- not enough privileges
 """)
 
 sql_test_client('user_update', 'update', input = """\
-UPDATE testTable set v1 = 666 where v2 = 666;
+UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges
 """)
 
 sql_test_client('user_select', 'select', input = """\
-SELECT * FROM testTable where v1 = 666;
+SELECT * FROM testTable where v1 = 666; -- not enough privileges
 """)
 #
 
@@ -109,17 +108,17 @@ GRANT SELECT on table schemaTest.testTable to user_select;
 
 # Next four transitions should be allowed.
 sql_test_client('user_delete', 'delete', input = """\
-DELETE from testTable where v1 = 42;
+DELETE from testTable where v1 = 42; -- privilege granted
 """)
 
 sql_test_client('user_insert', 'insert', input = """\
-INSERT into testTable values (42, 42);
+INSERT into testTable values (42, 42); -- privilege granted
 """)
 
 sql_test_client('user_update', 'update', input = """\
-UPDATE testTable set v1 = 42 where v2 = 42;
+UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
 """)
 
 sql_test_client('user_select', 'select', input = """\
-SELECT * FROM testTable where v1 = 42;
+SELECT * FROM testTable where v1 = 42; -- privilege granted
 """)

@@ -798,7 +798,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							stk->stk[getArg(pci, i)].val.bval != 0) {
 							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
-								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+								if (ret == MAL_SUCCEED)
+									ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 								continue;
 							}
 							if (b->batStamp <= stamp) {

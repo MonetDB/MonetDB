@@ -1,4 +1,4 @@
-stderr of test 'dropManyUsers` in directory 'sql/test/Users` itself:
+stderr of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
 
 
 # 14:28:36 >  
@@ -28,14 +28,7 @@ stderr of test 'dropManyUsers` in directory 'sql/test/Users` itself:
 
 
 
-
-
-MAPI  = (monetdb) /var/tmp/mtest-23837/.s.monetdb.35821
-ACTION= mapi_query_done
-QUERY = DROP USER user4;
-
-
-# 14:34:37 >  
-# 14:34:37 >  "Done."
-# 14:34:37 >  
+# 14:49:14 >  
+# 14:49:14 >  "Done."
+# 14:49:14 >  
 

@@ -10,8 +10,9 @@ language R
 };
 
 SELECT rapi14() FROM dval;
-DROP FUNCTION rapi14;
-DROP TABLE dval;
+
+--DROP FUNCTION rapi14;
+--DROP TABLE dval;
 
 ROLLBACK;
 

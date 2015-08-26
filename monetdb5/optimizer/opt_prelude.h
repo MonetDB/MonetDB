@@ -112,7 +112,6 @@ opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
 opt_export  str kdifferenceRef;
-opt_export  str kunionRef;
 opt_export  str languageRef;
 opt_export  str leftfetchjoinRef;
 opt_export  str leftfetchjoinPathRef;
@@ -248,9 +247,10 @@ opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
 opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
-opt_export int fileProp;			/* str */
+opt_export int fileProp;		/* str */
 opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
+opt_export int orderDependendProp;	/* binary */
 
 opt_export int stableProp;		/* binary */
 opt_export int insertionsProp;		/* binary */

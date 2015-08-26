@@ -75,8 +75,6 @@ algebra_export str ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 algebra_export str ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGouterjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGkunion(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGtunion(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtintersect(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGkdiff(bat *result, const bat *lid, const bat *rid);
@@ -104,8 +102,6 @@ algebra_export str ALGcount_no_nil(wrd *result, const bat *bid);
 algebra_export str ALGtmark(bat *result, const bat *bid, const oid *base);
 algebra_export str ALGtmark_default(bat *result, const bat *bid);
 algebra_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
-algebra_export str ALGmark_grp_1(bat *result, const bat *bid, const bat *gid);
-algebra_export str ALGmark_grp_2(bat *result, const bat *bid, const bat *gid, const oid *base);
 algebra_export str ALGlike(bat *ret, const bat *bid, const str *k);
 algebra_export str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 algebra_export str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);

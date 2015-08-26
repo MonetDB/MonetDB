@@ -113,7 +113,8 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		b1->hdense = FALSE;
 		BATseqbase(b1, oid_nil);
 		b1->H->nonil = b2->H->nonil;
-	}
+	} else if (BAThkey(b2))
+		BATseqbase(b1, 0);
 	BATkey(b1, BAThkey(b2));
 	b1->hsorted = BAThordered(b2);
 	b1->hrevsorted = BAThrevordered(b2);

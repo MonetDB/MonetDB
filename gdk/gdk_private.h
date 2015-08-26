@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+/* #define DISABLE_PARENT_HASH 1 */
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -120,6 +122,8 @@ __hidden void *GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 	__attribute__((__visibility__("hidden")));
+__hidden void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmunmap(void *addr, size_t len)
 	__attribute__((__visibility__("hidden")));
 __hidden void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency)
@@ -184,7 +188,7 @@ __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
