@@ -18,7 +18,7 @@ except IOError:
         f = open(os.path.join(db, 'bat', 'BBP.dir'), 'rU')
 hdr = f.readline()
 ptroid = f.readline()
-ptr, oid = ptroid.split()
+ptr, oid, hge = ptroid.split()
 f.close()
 
 z = zipfile.ZipFile(archive)
