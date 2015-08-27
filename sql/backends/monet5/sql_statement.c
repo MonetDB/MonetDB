@@ -385,7 +385,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 					push(s->op2);
 				if (s->op3)
 					push(s->op3);
-				if (depend_type == FUNC_DEPENDENCY) {
+				if (depend_type == FUNC_DEPENDENCY && s->type == st_Nop) {
 					dep_list = cond_append(dep_list, &s->op4.funcval->func->base.id);
 				}
 				break;
@@ -595,15 +595,17 @@ stmt_const_(sql_allocator *sa, stmt *s, stmt *val)
 static stmt *
 push_project(sql_allocator *sa, stmt *rows, stmt *val)
 {
+	node *n;
+	stmt *l;
+
 	switch (val->type) {
 	case st_convert:
 		val->op1 = push_project(sa, rows, val->op1);
 		break;
-	case st_func:
 	case st_Nop:
 		if (val->op4.funcval->func->side_effect) {
-			stmt *l = val->op1;
-			node *n = l->op4.lval->h;
+			l = val->op1;
+			n = l->op4.lval->h;
 			if (n) {
 				n->data = stmt_const_(sa, rows, n->data);
 			} else {	
@@ -611,12 +613,16 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 			}
 		} else {
 			/* push through arguments of Nop */
-			node *n;
-			stmt *l = val->op1;
-
+			l = val->op1;
 			for (n = l->op4.lval->h; n; n = n->next)
 				n->data = push_project(sa, rows, n->data);
 		}
+		break;
+	case st_func:
+		/* push through arguments of func */
+		l = val->op1;
+		for (n = l->op4.lval->h; n; n = n->next)
+			n->data = push_project(sa, rows, n->data);
 		break;
 	default:
 		if (!val->nrcols)

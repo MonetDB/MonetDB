@@ -71,14 +71,14 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % sec_interval # type
-% 0 # length
+% 12 # length
 [ 31622400.000	]
 #drop table foo;
 #select sum(i) from (select interval '1' day) x(i);
 % .L1 # table_name
 % L1 # name
 % sec_interval # type
-% 0 # length
+% 9 # length
 [ 86400.000	]
 
 # 14:37:47 >  

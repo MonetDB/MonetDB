@@ -34,7 +34,7 @@ Ready.
 % .L1 # table_name
 % L1 # name
 % sec_interval # type
-% 0 # length
+% 9 # length
 [ 36000.000	]
 #select * from generate_series(
 #	timestamp '2008-03-01 00:00',

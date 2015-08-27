@@ -34,9 +34,10 @@ Ready.
 % .L5,	.L5 # table_name
 % L2,	v # name
 % sec_interval,	decimal # type
-% 0,	20 # length
+% 14,	20 # length
 [ 1412467200.000,	42.000000000	]
 [ 1412467200.000,	43.000000000	]
+[ 1412467200.000,	NULL	]
 [ 1412467200.000,	NULL	]
 #explain select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
 % .explain # table_name
@@ -44,22 +45,22 @@ Ready.
 % clob # type
 % 206 # length
 function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
-    X_78:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",45);
-    X_54 := bat.new(nil:oid,nil:str);
-    X_61 := bat.append(X_54,".L5");
-    X_71 := bat.append(X_61,".L5");
+    X_76:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",44);
+    X_53 := bat.new(nil:oid,nil:str);
+    X_60 := bat.append(X_53,".L5");
+    X_69 := bat.append(X_60,".L5");
+    X_55 := bat.new(nil:oid,nil:str);
+    X_62 := bat.append(X_55,"L2");
+    X_70 := bat.append(X_62,"v");
     X_56 := bat.new(nil:oid,nil:str);
-    X_63 := bat.append(X_56,"L2");
-    X_72 := bat.append(X_63,"v");
-    X_57 := bat.new(nil:oid,nil:str);
-    X_65 := bat.append(X_57,"sec_interval");
-    X_74 := bat.append(X_65,"decimal");
-    X_58 := bat.new(nil:oid,nil:int);
-    X_67 := bat.append(X_58,19);
-    X_76 := bat.append(X_67,18);
-    X_60 := bat.new(nil:oid,nil:int);
-    X_69 := bat.append(X_60,0);
-    X_77 := bat.append(X_69,9);
+    X_64 := bat.append(X_56,"sec_interval");
+    X_72 := bat.append(X_64,"decimal");
+    X_57 := bat.new(nil:oid,nil:int);
+    X_66 := bat.append(X_57,13);
+    X_74 := bat.append(X_66,18);
+    X_59 := bat.new(nil:oid,nil:int);
+    X_68 := bat.append(X_59,0);
+    X_75 := bat.append(X_68,9);
     X_6:bat[:oid,:lng]  := bat.new(nil:oid,nil:lng);
     X_5 := sql.mvc();
     X_9:bat[:oid,:oid]  := sql.tid(X_5,"sys","foo_nil_2dec");
@@ -83,10 +84,9 @@ function user.s5_1{autoCommit=true}(A0:timestamp,A1:timestamp,A2:void):void;
     X_45 := sql.delta(X_35,X_40,r1_51,X_43);
     X_46 := algebra.leftfetchjoin(X_9,X_45);
     X_47 := bat.append(X_32,X_46,true);
-    X_48 := sql.single(nil:lng);
-    X_49:bat[:oid,:lng] := batcalc.lng(X_48,18,9);
-    X_52 := bat.append(X_47,X_49,true);
-    sql.resultSet(X_71,X_72,X_74,X_76,X_77,X_30,X_52);
+    X_50 := algebra.project(X_29,nil:lng);
+    X_51 := bat.append(X_47,X_50,true);
+    sql.resultSet(X_69,X_70,X_72,X_74,X_75,X_30,X_51);
 end user.s5_1;
 
 # 23:28:04 >  

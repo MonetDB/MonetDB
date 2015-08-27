@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+/* #define DISABLE_PARENT_HASH 1 */
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -183,7 +185,7 @@ __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));

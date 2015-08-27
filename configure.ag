@@ -10,7 +10,7 @@ dnl Copyright 2008-2015 MonetDB B.V.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.21.2], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
+AC_INIT([MonetDB], [11.21.6], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
