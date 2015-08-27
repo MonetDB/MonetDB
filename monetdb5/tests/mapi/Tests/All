@@ -5,5 +5,4 @@ sample3
 sample4
 smack00
 smack01
-smack01-slow
 HAVE_PERL?perl_dbi
