@@ -732,18 +732,20 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 		mbrOut = NULL;
 	} else {
 		//find the mbr around the qualifying oids
-		oid* oids = (oid*)Tloc(oidsResBAT, BUNfirst(oidsResBAT));
-		oid currentOid = oids[0];
-		BUN i=0;
+		BATiter oidsIter = bat_iterator(oidsResBAT);
+		BUN currBun = BUNfirst(oidsResBAT);
+		BUN lastBun = BUNlast(oidsResBAT);
+		oid currentOid;
 		unsigned short d;
 		unsigned int dimIdx;
 		unsigned int totalElsNum = 1, elsNum;
-		for(d=0; d<array->dimsNum; d++) {
-				totalElsNum *= array->dims[d]->elsNum;
-		}
-		
+
+		totalElsNum = arrayCellsNum(array);
+	
 		//initialise the mbr
 		elsNum = totalElsNum;
+		currentOid = *(oid*)BUNtail(oidsIter, currBun);
+
 		for(d = array->dimsNum-1; d>0; d--) {
 			//get the correct elsNum
 			elsNum /= array->dims[d]->elsNum;
@@ -759,10 +761,10 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 		mbrOut->dims[d]->min = currentOid;
 		mbrOut->dims[d]->max = currentOid;
 
-
-		for(i=1; i<BATcount(oidsResBAT); i++) {
+		/* continue with the rest of the dimensions */
+		for(currBun++; currBun < lastBun; currBun++) {
 			elsNum = totalElsNum;
-			currentOid = oids[i];
+			currentOid = *(oid*)BUNtail(oidsIter, currBun);
 
 			for(d = array->dimsNum-1; d>0; d--) {
 				//get the correct elsNum
@@ -778,7 +780,6 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 			//update the last dimension
 			mbrOut->dims[d]->min = currentOid < mbrOut->dims[d]->min ? currentOid : mbrOut->dims[d]->min;
 			mbrOut->dims[d]->max = currentOid > mbrOut->dims[d]->max ? currentOid : mbrOut->dims[d]->max;
-
 		}
 
 		//update the elsNum
