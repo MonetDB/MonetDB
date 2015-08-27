@@ -1607,18 +1607,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 
 				q = newStmt1(mb, algebraRef, "subselect");
-				if(s->op1->type == st_dimension) {
-					
-                   	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	               	arraySecondVar = findVariable(mb, nme);
-    	           	assert(arraySecondVar >= 0);
 
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+	            if((arraySecondVar = findVariable(mb, nme)) >= 0) {
 					setVarType(mb, getArg(q, 0), TYPE_ptr);
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
 					q = pushArgument(mb, q, k); //all the dimensions
 					q = pushArgument(mb, q, arraySecondVar); //the current dimension
-				} else
+
+				} else 
 					q = pushArgument(mb, q, k);
 
 				if(sub > 0) { //candidates
@@ -1635,7 +1633,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
-//				if(s->op1->type == st_dimension)
+
 				if(arraySecondVar >= 0) //two inputs -> two outputs
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 				break;
@@ -1669,10 +1667,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, algebraRef, cmd);
 			if (s->type == st_join2)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			else if(s->type == st_uselect2 && s->op1->type == st_dimension) {
-               	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-	           	arraySecondVar = findVariable(mb, nme);
-    	       	assert(arraySecondVar >= 0);
+
+           	snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+           	if((arraySecondVar = findVariable(mb, nme)) >= 0) {
 
 				setVarType(mb, getArg(q, 0), TYPE_ptr);
 				setVarUDFtype(mb, getArg(q, 0));
