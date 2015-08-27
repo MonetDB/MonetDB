@@ -501,9 +501,7 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	BAT *mbrCandsBAT = NULL, *oidsCandsBAT = NULL, *valsBAT = NULL, *resBAT= NULL;
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
 	gdk_array *array = (gdk_array*)*dims;
-
-	BAT *r1p, *r2p, *r3p;
-
+	
  	if(!dimCands_in) { //empty
         if(!(resBAT = newempty("nonDimensionLeftfetchjoin1")))
             throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
@@ -525,14 +523,20 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	mbrCandsBAT = projectCells(dimCands_in, array);	
 
 	if(BATcount(oidsCandsBAT)) { /*there is mbr and oids. Some values need to be set to null */
-	//left outer join between the mbrCands and the oidsCands
-	if(BATsubouterjoin(&r1p, &r2p, mbrCandsBAT, oidsCandsBAT, NULL, NULL, 0 /*null never match*/, BATcount(mbrCandsBAT) /*the size of the resuls. BUN_NONE will cause it to be computed*/) != GDK_SUCCEED) {
-		BBPunfix(oidsCandsBAT->batCacheid);
-		BBPunfix(valsBAT->batCacheid);
-		BBPunfix(mbrCandsBAT->batCacheid);
-	}
-	r3p = BATproject(r2p, mbrCandsBAT);
-	resBAT = BATproject(r3p, valsBAT);
+		BAT *r1p, *r2p, *r3p;
+
+		//left outer join between the mbrCands and the oidsCands
+		if(BATsubouterjoin(&r1p, &r2p, mbrCandsBAT, oidsCandsBAT, NULL, NULL, 0 /*null never match*/, BATcount(mbrCandsBAT) /*the size of the resuls. BUN_NONE will cause it to be computed*/) != GDK_SUCCEED) {
+			BBPunfix(oidsCandsBAT->batCacheid);
+			BBPunfix(valsBAT->batCacheid);
+			BBPunfix(mbrCandsBAT->batCacheid);
+		}
+		r3p = BATproject(r2p, oidsCandsBAT);
+		resBAT = BATproject(r3p, valsBAT);
+
+		BBPunfix(r1p->batCacheid);
+		BBPunfix(r2p->batCacheid);
+		BBPunfix(r3p->batCacheid);
 	} else
 		resBAT = BATproject(mbrCandsBAT, valsBAT);
 
@@ -719,12 +723,14 @@ str ALGproject(bat *result, const ptr* candDims, const bat* candBAT) {
 str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, const ptr *dims, const ptr *dimsCands, const bat* oidsCands,
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	gdk_array *array = (gdk_array*)*dims;
-	gdk_array *mbrIn = NULL, *mbrOut = NULL;
-	BAT *valuesBAT = NULL, *oidsCandsBAT = NULL, *oidsResBAT;
+	gdk_array *mbrOut = NULL;
+	BAT *valuesBAT = NULL, *mbrCandsBAT = NULL, *oidsCandsBAT = NULL, *oidsResBAT;
 
-	if(dimsCands) 
-		mbrIn = (gdk_array*)*dimsCands;
-		
+	if(dimsCands) { 
+		gdk_array *mbrIn = (gdk_array*)*dimsCands;
+		mbrCandsBAT = projectCells(mbrIn, array);	
+	}		
+
 	mbrOut = arrayCopy(array);
 
 	if ((valuesBAT = BATdescriptor(*values)) == NULL) {
@@ -738,6 +744,26 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 
 	if(!oidsCands || !BATcount(oidsCandsBAT))
 		oidsCandsBAT = NULL;	
+
+	/* merge the oids in the oidsCands and the mbr */
+	if(!oidsCandsBAT && mbrCandsBAT) {
+		oidsCandsBAT = mbrCandsBAT;
+	} else if(oidsCandsBAT && mbrCandsBAT) {	
+		BAT *r1p, *r2p;
+		if(BATsubjoin(&r1p, &r2p, oidsCandsBAT, mbrCandsBAT, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+			BBPunfix(valuesBAT->batCacheid);
+			BBPunfix(oidsCandsBAT->batCacheid);
+			BBPunfix(mbrCandsBAT->batCacheid);
+
+			throw(MAL, "algebra.nonDimensionSubselect2", "Error in BATsubjoin");
+		}
+
+		BBPunfix(r1p->batCacheid);
+		BBPunfix(oidsCandsBAT->batCacheid);
+		BBPunfix(mbrCandsBAT->batCacheid);
+
+		oidsCandsBAT = r2p;
+	}
 
 	/*find the values that satisfy the predicate*/
 	if(!(oidsResBAT = BATsubselect(valuesBAT, oidsCandsBAT, low, high, *li, *hi, *anti))) {
@@ -804,7 +830,7 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 			mbrOut->dims[d]->min = currentOid < mbrOut->dims[d]->min ? currentOid : mbrOut->dims[d]->min;
 			mbrOut->dims[d]->max = currentOid > mbrOut->dims[d]->max ? currentOid : mbrOut->dims[d]->max;
 		}
-
+#if 0
 		if(mbrIn) {
 			/* compare the mbr_in and mbr_out and keep the smallest one */
 			for(d=0; d<mbrOut->dimsNum; d++) {
@@ -816,6 +842,10 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 			for(d=0; d<mbrOut->dimsNum; d++)
 				mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
 		}
+#endif
+		for(d=0; d<mbrOut->dimsNum; d++)
+			mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
+
 	}
 
 	BBPunfix(valuesBAT->batCacheid);
