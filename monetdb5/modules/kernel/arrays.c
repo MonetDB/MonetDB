@@ -502,6 +502,8 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	gdk_array *dimCands_in = (gdk_array*)*dimsCands;
 	gdk_array *array = (gdk_array*)*dims;
 
+	BAT *r1p, *r2p, *r3p;
+
  	if(!dimCands_in) { //empty
         if(!(resBAT = newempty("nonDimensionLeftfetchjoin1")))
             throw(MAL, "algebra.leftfetchjoin", "Problem allocating new BAT");
@@ -522,24 +524,46 @@ str ALGnonDimensionLeftfetchjoin1(bat* result, const ptr *dimsCands, const bat *
 	//create the oids using the candidates
 	mbrCandsBAT = projectCells(dimCands_in, array);	
 
+	if(BATcount(oidsCandsBAT)) { /*there is mbr and oids. Some values need to be set to null */
+	//left outer join between the mbrCands and the oidsCands
+	if(BATsubouterjoin(&r1p, &r2p, mbrCandsBAT, oidsCandsBAT, NULL, NULL, 0 /*null never match*/, BATcount(mbrCandsBAT) /*the size of the resuls. BUN_NONE will cause it to be computed*/) != GDK_SUCCEED) {
+		BBPunfix(oidsCandsBAT->batCacheid);
+		BBPunfix(valsBAT->batCacheid);
+		BBPunfix(mbrCandsBAT->batCacheid);
+	}
+	r3p = BATproject(r2p, mbrCandsBAT);
+	resBAT = BATproject(r3p, valsBAT);
+	} else
+		resBAT = BATproject(mbrCandsBAT, valsBAT);
+
+#if 0
+
     resBAT = BATproject(mbrCandsBAT, valsBAT);
 
-	if(BATcount(oidsCandsBAT) && BATcount(mbrCandsBAT) > BATcount(oidsCandsBAT)) {
+	if(BATcount(resBAT)) { //if there are no oidsCands then there is no MBR either and the result will be empty
 		/*iterate over mbrCandsBAT and oidsCandsBAT and set NULL to all 
 	 	* values in resBAT that are found in mbrCandsBAT but not in oidsCandsBAT */
-		oid *mbrOids = (oid*)Tloc(mbrCandsBAT, BUNfirst(mbrCandsBAT));
-		oid *oidsOids = (oid*)Tloc(oidsCandsBAT, BUNfirst(oidsCandsBAT));
+		BATiter mbrIter = bat_iterator(mbrCandsBAT);
+		BATiter oidsIter = bat_iterator(oidsCandsBAT);
 	
 		void *nilPtr = ATOMnilptr(BATttype(valsBAT));		
 
-		BUN i,j;
-		for(i=0, j=0; i<BATcount(oidsCandsBAT); i++, j++)	{
-			while(mbrOids[i] != oidsOids[j]) {
-				BUNreplace(resBAT, &i, nilPtr, TRUE); //replace with NULL
-				i++;
+		BUN mbrCurrBun = BUNfirst(mbrCandsBAT);
+		BUN mbrLastBun = BUNlast(mbrCandsBAT);
+		BUN oidsCurrBun = BUNfirst(oidsCandsBAT);
+		BUN oidsLastBun = BUNlast(oidsCandsBAT);
+		for(; mbrCurrBun < mbrLastBun && oidsCurrBun < oidsLastBun ; mbrCurrBun++, oidsCurrBun++) {
+			oid mbrOid = *(oid*)BUNtail(mbrIter, mbrCurrBun);
+			oid oidsOid = *(oid*)BUNtail(oidsIter, oidsCurrBun);
+	
+			while(mbrOid != oidsOid && mbrCurrBun < mbrLastBun) {
+				BUNreplace(resBAT, &mbrCurrBun, nilPtr, FALSE); //replace with NULL
+				mbrCurrBun++;
+				mbrOid = *(oid*)BUNtail(mbrIter, mbrCurrBun);
 			}
 		}
 	}
+#endif
 
     BBPunfix(mbrCandsBAT->batCacheid);
 	BBPunfix(valsBAT->batCacheid);
@@ -698,23 +722,22 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 	gdk_array *mbrIn = NULL, *mbrOut = NULL;
 	BAT *valuesBAT = NULL, *oidsCandsBAT = NULL, *oidsResBAT;
 
-	if(dimsCands) {
+	if(dimsCands) 
 		mbrIn = (gdk_array*)*dimsCands;
-		mbrOut = arrayCopy(mbrIn);
-		arrayDelete(mbrIn);
-	} else
-		mbrOut = arrayCopy(array);
+		
+	mbrOut = arrayCopy(array);
 
 	if ((valuesBAT = BATdescriptor(*values)) == NULL) {
        	throw(MAL, "algebra.nonDimensionSubselect", RUNTIME_OBJECT_MISSING);
     }
 
-	if(!oidsCands)
-		oidsCandsBAT = NULL;	
-	else if ((oidsCandsBAT = BATdescriptor(*oidsCands)) == NULL) {
+	if (oidsCands && (oidsCandsBAT = BATdescriptor(*oidsCands)) == NULL) {
 		BBPunfix(valuesBAT->batCacheid);
        	throw(MAL, "algebra.nonDimensionSubselect", RUNTIME_OBJECT_MISSING);
     }
+
+	if(!oidsCands || !BATcount(oidsCandsBAT))
+		oidsCandsBAT = NULL;	
 
 	/*find the values that satisfy the predicate*/
 	if(!(oidsResBAT = BATsubselect(valuesBAT, oidsCandsBAT, low, high, *li, *hi, *anti))) {
@@ -782,9 +805,16 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 			mbrOut->dims[d]->max = currentOid > mbrOut->dims[d]->max ? currentOid : mbrOut->dims[d]->max;
 		}
 
-		//update the elsNum
-		for(d=0; d<mbrOut->dimsNum; d++) {
-			mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
+		if(mbrIn) {
+			/* compare the mbr_in and mbr_out and keep the smallest one */
+			for(d=0; d<mbrOut->dimsNum; d++) {
+				mbrOut->dims[d]->min = mbrIn->dims[d]->min > mbrOut->dims[d]->min ? mbrIn->dims[d]->min : mbrOut->dims[d]->min;
+				mbrOut->dims[d]->max = mbrIn->dims[d]->max < mbrOut->dims[d]->max ? mbrIn->dims[d]->max : mbrOut->dims[d]->max;
+				mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
+			}
+		} else {
+			for(d=0; d<mbrOut->dimsNum; d++)
+				mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
 		}
 	}
 
