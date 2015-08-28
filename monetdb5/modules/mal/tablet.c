@@ -838,12 +838,12 @@ mycpstr(char *t, const char *s)
 }
 
 static str
-SQLload_error(READERtask *task, lng idx, unsigned int attrs)
+SQLload_error(READERtask *task, lng idx, BUN attrs)
 {
 	str line;
 	char *s;
 	size_t sz = 0;
-	unsigned int i;
+	BUN i;
 
 	for (i = 0; i < attrs; i++) {
 		if (task->fields[i][idx])
