@@ -562,7 +562,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			char *msg;
 
 			assert(b);
-			if ( BATcount(b) <10000){
+			if (BATcount(b) <10000){
 				BBPunfix(b->batCacheid);
 				continue;
 			}
@@ -584,11 +584,11 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			BBPunfix(b->batCacheid);
 			if (msg)
 				return msg;
-			// TODO check:allocate_delta(sql->session->tr, nc);
+			store_funcs.clear_col(sql->session->tr, nc);
+			assert(nc->base.allocated == 1);
 			d = nc->data;
-			//assert(nc->base.allocated == 1);
-			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 			d->bid = bid;
+			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
