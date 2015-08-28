@@ -24,8 +24,6 @@
  *
  * Operands provided are:
  * @itemize
- * @item kunion
- * produces a bat union.
  * @item kdiff
  * produces bat difference.
  * @item kintersection
@@ -43,10 +41,6 @@
  * The @emph{kdiff(l,r)} operations result in all BUNs of @emph{l}
  * that are not in @emph{r}. They do not do double-elimination over
  * the @emph{l} BUNs.
- *
- * The @emph{kunion(l,r)} operations result in all BUNs of
- * @emph{l}, plus all BUNs of @emph{r} that are not in @emph{l}. They
- * do not do double-elimination over the @emph{l} nor @emph{r} BUNs.
  *
  * The @emph{kintersect(l,r)} is used also as implementation for the
  * @emph{semijoin()}.
@@ -518,104 +512,4 @@ BAT *
 BATkintersect(BAT *l, BAT *r)
 {
 	return diff_intersect(l, r, 0);
-}
-
-/*
- * @+ Union
- * Union consists of one version: BATkunion(l,r), which unites
- * with double elimination over the head column only. The
- * implementation uses the kdiff() code for
- * efficient double elimination.
- */
-BAT *
-BATkunion(BAT *l, BAT *r)
-{
-	int hdisjunct, tdisjunct;
-	BAT *bn, *b;
-	BUN p,q;
-	BATiter li, ri;
-	int ht, tt;
-
-	BATcompatible(l, r, NULL, "BATkunion");
-	if (BATcount(l) == 0) {
-		b = l;
-		l = r;
-		r = b;
-	}
-	if (BATcount(r) == 0) {
-		return BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT);
-	}
-
-	b = NULL;
-	li = bat_iterator(l);
- 	ri = bat_iterator(r);
-	hdisjunct = BAThordered(r) & BAThordered(l) &&
-		    ATOMcmp(l->htype, BUNhead(li, BUNlast(l) - 1), BUNhead(ri, BUNfirst(r))) < 0;
-	tdisjunct = BATtordered(r) & BATtordered(l) &&
-		    ATOMcmp(l->ttype, BUNtail(li, BUNlast(l) - 1), BUNtail(ri, BUNfirst(r))) < 0;
-
-	if (!hdisjunct) {
-		b = r;
-		ri.b = r = BATkdiff(r, l);
-		if (r == NULL) {
-			return NULL;
-		}
-	}
-
-	if (BATcount(r) == 0) {
-		if (b)
-			BBPreclaim(r);
-		return BATcopy(l, l->htype, l->ttype, FALSE, TRANSIENT);
-	}
-
-	ht = l->htype;
-	tt = l->ttype;
-	if (ht == TYPE_void && l->hseqbase != oid_nil)
-		ht = TYPE_oid;
-	if (tt == TYPE_void && l->tseqbase != oid_nil)
-		tt = TYPE_oid;
-	bn = BATcopy(l, ht, tt, TRUE, TRANSIENT);
-	if (bn == NULL) {
-		if (b)
-			BBPreclaim(r);
-		return NULL;
-	}
-	BATloop(r, p, q) {
-		bunfastins(bn, BUNhead(ri, p), BUNtail(ri, p));
-	}
-	if (!BAThdense(l) || !BAThdense(r) ||
-	    * (oid *) BUNhead(li, BUNlast(l) - 1) + 1 != * (oid *) BUNhead(ri, BUNfirst(r))) {
-		bn->hseqbase = oid_nil;
-		bn->hdense = 0;
-	}
-	if (!BATtdense(l) || !BATtdense(r) ||
-	    * (oid *) BUNtail(li, BUNlast(l) - 1) + 1 != * (oid *) BUNtail(ri, BUNfirst(r))) {
-		bn->tseqbase = oid_nil;
-		bn->tdense = 0;
-	}
-	bn->H->nonil = l->H->nonil & r->H->nonil;
-	bn->T->nonil = l->T->nonil & r->T->nonil;
-	bn->H->nil = l->H->nil | r->H->nil;
-	bn->T->nil = l->T->nil | r->T->nil;
-	if (b) {
-		BBPreclaim(r);
-		r = b;
-	}
-	HASHdestroy(bn);
-
-	bn->hsorted = hdisjunct;
-	bn->hrevsorted = 0;
-	bn->tsorted = tdisjunct;
-	bn->trevsorted = 0;
-	bn->talign = bn->halign = 0;
-	if (!r->hkey)
-		BATkey(bn, FALSE);
-	BATkey(BATmirror(bn), tdisjunct && BATtkey(l) && BATtkey(r));
-
-	return bn;
-  bunins_failed:
-	BBPreclaim(bn);
-	if (b)
-		BBPreclaim(r);
-	return NULL;
 }

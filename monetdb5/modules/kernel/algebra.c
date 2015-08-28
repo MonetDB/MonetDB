@@ -702,6 +702,15 @@ ALGsubouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 }
 
 str
+ALGsubsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
+				   nil_matches, estimate,
+				   BATsubsemijoin, NULL, NULL, NULL, "algebra.subsemijoin");
+}
+
+str
 ALGsubthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
@@ -1177,12 +1186,6 @@ ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGkunion(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkunion, "algebra.kunion");
-}
-
-str
 ALGkdiff(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATkdiff, "algebra.kdiff");
@@ -1195,33 +1198,6 @@ ALGsample(bat *result, const bat *bid, const int *param)
 }
 
 /* add items missing in the kernel */
-str
-ALGtunion(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATkunion(BATmirror(b),BATmirror(b2));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		BBPunfix(b2->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	throw(MAL, "algebra.tunion", GDK_EXCEPTION);
-}
-
 str
 ALGtdifference(bat *result, const bat *bid, const bat *bid2)
 {

@@ -471,6 +471,9 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
+		} else if (c->unique == 1) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value = NULL;
 		}
 		append(rel->exps, e);
 	}

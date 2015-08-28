@@ -966,6 +966,8 @@ caching(mvc *m)
 static int
 cachable(mvc *m, stmt *s)
 {
+	if (m->emode == m_prepare)
+		return 1;
 	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
@@ -1144,7 +1146,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		// look for outdated plans
-		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
 			msg = SQLCacheRemove(c, be->q->name);
 			qc_delete(be->mvc->qc, be->q);
 			goto recompilequery;

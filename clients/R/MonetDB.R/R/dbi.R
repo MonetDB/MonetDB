@@ -103,7 +103,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
         break
       }, error = function(e) {
         if ("connection" %in% class(socket)) {
-          close(socket)
+          tryCatch(close(socket), error=function(e){}) 
         }
         message("Server not ready(", e$message, "), retrying (ESC or CTRL+C to abort)")
         Sys.sleep(1)
@@ -153,18 +153,14 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
   return(invisible(TRUE))
 })
 
-setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F, quote=F) {
+setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F) {
   q <- "select schemas.name as sn, tables.name as tn from sys.tables join sys.schemas on tables.schema_id=schemas.id"
   if (!sys_tables) q <- paste0(q, " where tables.system=false")
   df <- dbGetQuery(conn, q)
-  if (quote) {
-    df$tn <- paste0("\"", df$tn, "\"")
-  }
+    df$tn <- quoteIfNeeded(conn, df$tn, warn=F)
   res <- df$tn
   if (schema_names) {
-    if (quote) {
-      df$sn <- paste0("\"", df$sn, "\"")
-    }
+    df$sn <- quoteIfNeeded(conn, df$sn, warn=F)
     res <- paste0(df$sn, ".", df$tn)
   }
   return(as.character(res))
@@ -203,9 +199,9 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
 })
 
 setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
-  # TODO: this is evil... 
-  return(tolower(gsub("(^\"|\"$)","",as.character(name))) %in% 
-    tolower(dbListTables(conn, sys_tables=T)))
+  name <- quoteIfNeeded(conn, name)
+  return(as.character(name) %in% 
+    dbListTables(conn, sys_tables=T))
 })
 
 setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
@@ -213,6 +209,7 @@ setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
 })
 
 setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
+  name <- quoteIfNeeded(conn, name)
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
   dbGetQuery(conn, paste0("SELECT * FROM ", name))
@@ -283,17 +280,15 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   invisible(new("MonetDBResult", env=env))
   })
 
-
-
 # quoting
-quoteIfNeeded <- function(conn, x, ...) {
-  chars <- !grepl("^[a-z][a-z0-9_]*$", x, perl=T) & !grepl("^\"[^\"]*\"$", x, perl=T)
-  if (any(chars)) {
-    message("Identifier(s) ", paste(x[chars], collapse=", "), " contain uppercase or reserved SQL characters and need(s) to be quoted in queries.")
+quoteIfNeeded <- function(conn, x, warn=T, ...) {
+  chars <- !grepl("^[a-z_][a-z0-9_]*$", x, perl=T) & !grepl("^\"[^\"]*\"$", x, perl=T)
+  if (any(chars) && warn) {
+    message("Identifier(s) ", paste("\"", x[chars],"\"", collapse=", ", sep=""), " contain uppercase or reserved SQL characters and need(s) to be quoted in queries.")
   }
   reserved <- toupper(x) %in% .SQL92Keywords
-  if (any(reserved)) {
-    message("Identifier(s) ", paste(x[reserved], collapse=", "), " are reserved SQL keywords and need(s) to be quoted in queries.")
+  if (any(reserved) && warn) {
+    message("Identifier(s) ", paste("\"", x[reserved],"\"", collapse=", ", sep=""), " are reserved SQL keywords and need(s) to be quoted in queries.")
   }
   qts <- reserved | chars
   x[qts] <- dbQuoteIdentifier(conn, x[qts])
@@ -315,7 +310,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
     if (!is.data.frame(value)) value <- as.data.frame(value)
   }
   if (overwrite && append) {
-    stop("Setting both overwrite and append to true makes no sense.")
+    stop("Setting both overwrite and append to TRUE makes no sense.")
   }
 
   qname <- quoteIfNeeded(conn, name)
@@ -366,8 +361,9 @@ setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def =
 
 
 setMethod("dbRemoveTable", "MonetDBConnection", def=function(conn, name, ...) {
+  name <- quoteIfNeeded(conn, name)
   if (dbExistsTable(conn, name)) {
-    dbSendUpdate(conn, paste("DROP TABLE", tolower(name)))
+    dbSendUpdate(conn, paste("DROP TABLE", name))
     return(invisible(TRUE))
   }
   return(invisible(FALSE))
@@ -622,7 +618,8 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
                                                locked=FALSE, na.strings="", nrow.check=500, 
-                                               delim=",", newline="\\n", quote="\"", create=TRUE, ...){
+                                               delim=",", newline="\\n", quote="\"", create=TRUE, 
+                                               col.names=NULL, lower.case.names=FALSE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, 
@@ -631,7 +628,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
   if (!missing(nrows)) {
     warning("monetdb.read.csv(): nrows parameter is not neccessary any more and deprecated.")
   }
-  
+
   if (length(files)>1){
     nn <- sapply(headers, ncol)
     if (!all(nn==nn[1])) stop("Files have different numbers of columns")
@@ -640,8 +637,22 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     types <- sapply(headers, function(df) sapply(df, dbDataType, dbObj=conn))
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
-  
-  if (create) dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  tablename <- quoteIfNeeded(conn, tablename)
+  if (create){
+    if(lower.case.names) names(headers[[1]]) <- tolower(names(headers[[1]]))
+    if(!is.null(col.names)) {
+      if (lower.case.names) {
+        warning("Ignoring lower.case.names parameter as overriding col.names are supplied.")
+      }
+      col.names <- as.character(col.names)
+      if (length(unique(col.names)) != length(names(headers[[1]]))) {
+        stop("You supplied ", length(unique(col.names)), " unique column names, but file has ", 
+          length(names(headers[[1]])), " columns.")
+      }
+      names(headers[[1]]) <- quoteIfNeeded(conn, col.names)
+    }
+    dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+  }
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   
@@ -659,6 +670,6 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
         delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
     }
   }
-  dbGetQuery(conn, paste("select count(*) from", tablename))
+  dbGetQuery(conn, paste("SELECT COUNT(*) FROM", tablename))[[1]]
 }
 

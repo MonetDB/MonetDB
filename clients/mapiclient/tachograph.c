@@ -326,9 +326,15 @@ update(EventRecord *ev)
 			memset((char*)events, 0, maxevents * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			if(currentquery) {
-				if( ! (prevquery && strcmp(currentquery,prevquery)== 0))
+				if( prevquery && strcmp(currentquery,prevquery)){
 					printf("%s\n",currentquery);
-				prevquery = currentquery;
+					free(prevquery);
+					prevquery = strdup(currentquery);
+				} else
+				if( prevquery == 0){
+					printf("%s\n",currentquery);
+					prevquery = strdup(currentquery);
+				}
 			}
 		}
 		if( ev->tag != currenttag)

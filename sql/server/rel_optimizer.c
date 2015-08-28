@@ -306,9 +306,8 @@ get_relations(sql_rel *rel, list *rels)
 }
 
 static int
-exp_count(int *cnt, int seqnr, sql_exp *e) 
+exp_count(int *cnt, sql_exp *e) 
 {
-	(void)seqnr;
 	if (!e)
 		return 0;
 	if (find_prop(e->p, PROP_JOINIDX))
@@ -320,10 +319,10 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	switch(e->type) {
 	case e_cmp:
 		if (!is_complex_exp(e->flag)) {
-			exp_count(cnt, seqnr, e->l); 
-			exp_count(cnt, seqnr, e->r);
+			exp_count(cnt, e->l); 
+			exp_count(cnt, e->r);
 			if (e->f)
-				exp_count(cnt, seqnr, e->f);
+				exp_count(cnt, e->f);
 		}	
 		switch (get_cmp(e)) {
 		case cmp_equal:
@@ -390,7 +389,7 @@ static int
 exp_keyvalue(sql_exp *e) 
 {
 	int cnt = 0;
-	exp_count(&cnt, 0, e);
+	exp_count(&cnt, e);
 	return cnt;
 }
 
@@ -555,12 +554,26 @@ find_basetable( sql_rel *r)
 	}
 }
 
-static list *
-order_join_expressions(sql_allocator *sa, list *dje, list *rels)
+static int
+exps_count(list *exps) 
 {
-	list *res = sa_list(sa);
+	node *n;
+	int cnt = 0;
+
+	if (!exps)
+		return 0;
+	for (n = exps->h; n; n=n->next)
+		exp_count(&cnt, n->data);
+	return cnt;
+}
+
+static list *
+order_join_expressions(mvc *sql, list *dje, list *rels)
+{
+	list *res = sa_list(sql->sa);
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
+	int debug = mvc_debug_on(sql, 16);
 
 	keys = (int*)malloc(cnt*sizeof(int));
 	pos = (int*)malloc(cnt*sizeof(int));
@@ -574,9 +587,9 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 			sql_rel *r = find_rel(rels, e->r);
 
 			if (l && is_select(l->op) && l->exps)
-				keys[i] += list_length(l->exps)*10;
+				keys[i] += list_length(l->exps)*10 + exps_count(l->exps)*debug;
 			if (r && is_select(r->op) && r->exps)
-				keys[i] += list_length(r->exps)*10;
+				keys[i] += list_length(r->exps)*10 + exps_count(r->exps)*debug;
 		}
 		pos[i] = i;
 	}
@@ -721,7 +734,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 	}
 
 	/* sort expressions on weighted number of reducing operators */
-	sdje = order_join_expressions(sql->sa, dje, rels);
+	sdje = order_join_expressions(sql, dje, rels);
 	return sdje;
 }
 
@@ -965,7 +978,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		cnt = list_length(exps);
 		rel->exps = find_fk(sql, rels, exps);
 		if (list_length(rel->exps) != cnt) 
-			rel->exps = order_join_expressions(sql->sa, exps, rels);
+			rel->exps = order_join_expressions(sql, exps, rels);
 	} else { 
  		get_relations(rel, rels);
 		if (list_length(rels) > 1) {

@@ -1449,7 +1449,7 @@ update(char *line, EventRecord *ev)
 		box[idx].majflt = ev->majflt;
 		box[idx].nswap = ev->swaps;
 		box[idx].csw = ev->csw;
-		box[idx].stmt = ev->stmt;
+		box[idx].stmt = strdup(ev->stmt);
 
 		if ( !capturing){
 			ping = idx;

@@ -3112,8 +3112,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
  * @item BAT *
- * @tab BATkunion (BAT *b, BAT *c)
- * @item BAT *
  * @tab BATkintersect (BAT *b, BAT *c)
  * @item BAT *
  * @tab BATkdiff (BAT *b, BAT *c)
@@ -3192,7 +3190,6 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
 gdk_export BAT *BATkintersect(BAT *b, BAT *c);
-gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);

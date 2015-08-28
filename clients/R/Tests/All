@@ -6,3 +6,5 @@ HAVE_LIBR?survey
 HAVE_LIBR?dplyr
 HAVE_LIBR?dplyr-flights
 HAVE_LIBR?dbapply
+HAVE_LIBR?testrandom
+

@@ -114,7 +114,6 @@ str subbandjoinRef;
 str subrangejoinRef;
 str subthetajoinRef;
 str kdifferenceRef;
-str kunionRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
@@ -370,7 +369,6 @@ void optimizerInit(void)
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
 	kdifferenceRef= putName("kdifference",11);
-	kunionRef= putName("kunion",6);
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
