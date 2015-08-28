@@ -108,6 +108,8 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	r -> hdense = TRUE;
 	r -> hsorted = TRUE;
 	r -> hrevsorted = FALSE;
+	r -> tkey = FALSE;
+	r -> tdense = FALSE;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
 	r -> T ->nonil = gids->T->nonil;
