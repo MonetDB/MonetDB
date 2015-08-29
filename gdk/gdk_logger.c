@@ -1643,6 +1643,9 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
+
+			if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
+				logger_fatal("Logger_new: commit failed", 0, 0, 0);
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
