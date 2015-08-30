@@ -446,10 +446,15 @@ static char *
 utf8skip(char *s, size_t i)
 {
 	char *s0 = s;
+	char *p = s;
+	size_t l;
 
 	while (*s) {
-		if (utf8strlen(s0, s) >= i)
+		if ((l = utf8strlen(s0, s)) > i)
+			return p;
+		else if (l == i)
 			return s;
+		p = s;
 		if ((*s & 0xC0) == 0xC0) {
 			s++;
 			while ((*s & 0xC0) == 0x80)
