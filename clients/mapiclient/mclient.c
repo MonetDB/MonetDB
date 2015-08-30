@@ -362,13 +362,80 @@ static size_t
 utf8strlen(const char *s, const char *e)
 {
 	size_t len = 0;
+	int c;
+	int n;
 
 	if (s == NULL)
 		return 0;
-	while (*s && (e == NULL || s < e)) {
-		/* only count first byte of a sequence */
-		if ((*s & 0xC0) != 0x80)
+	c = 0;
+	n = -1;
+	for (;;) {
+		if (n == 0) {
 			len++;
+			/* the following code points are all East
+			 * Asian Fullwidth and East Asian Wide
+			 * characters as defined in Unicode 8.0 */
+			if ((0x1100 <= c && c <= 0x115F) ||
+			    c == 0x2329 ||
+			    c == 0x232A ||
+			    (0x2E80 <= c && c <= 0x2E99) ||
+			    (0x2E9B <= c && c <= 0x2EF3) ||
+			    (0x2F00 <= c && c <= 0x2FD5) ||
+			    (0x2FF0 <= c && c <= 0x2FFB) ||
+			    (0x3000 <= c && c <= 0x303E) ||
+			    (0x3041 <= c && c <= 0x3096) ||
+			    (0x3099 <= c && c <= 0x30FF) ||
+			    (0x3105 <= c && c <= 0x312D) ||
+			    (0x3131 <= c && c <= 0x318E) ||
+			    (0x3190 <= c && c <= 0x31BA) ||
+			    (0x31C0 <= c && c <= 0x31E3) ||
+			    (0x31F0 <= c && c <= 0x321E) ||
+			    (0x3220 <= c && c <= 0x3247) ||
+			    (0x3250 <= c && c <= 0x4DBF) ||
+			    (0x4E00 <= c && c <= 0xA48C) ||
+			    (0xA490 <= c && c <= 0xA4C6) ||
+			    (0xA960 <= c && c <= 0xA97C) ||
+			    (0xAC00 <= c && c <= 0xD7A3) ||
+			    (0xF900 <= c && c <= 0xFAFF) ||
+			    (0xFE10 <= c && c <= 0xFE19) ||
+			    (0xFE30 <= c && c <= 0xFE52) ||
+			    (0xFE54 <= c && c <= 0xFE66) ||
+			    (0xFE68 <= c && c <= 0xFE6B) ||
+			    (0xFF01 <= c && c <= 0xFFE6) ||
+			    (0x1B000 <= c && c <= 0x1B001) ||
+			    (0x1F200 <= c && c <= 0x1F202) ||
+			    (0x1F210 <= c && c <= 0x1F23A) ||
+			    (0x1F240 <= c && c <= 0x1F248) ||
+			    (0x1F250 <= c && c <= 0x1F251) ||
+			    (0x20000 <= c && c <= 0x2FFFD) ||
+			    (0x30000 <= c && c <= 0x3FFFD))
+				len++;
+		}
+		if (*s == 0 || (e != NULL && s >= e))
+			break;
+		if ((*s & 0x80) == 0) {
+			c = 0;
+			n = -1;
+			len++;
+		} else if ((*s & 0xC0) == 0x80) {
+			n--;
+			c = (c << 6) | (*s & 0x3F);
+		} else if ((*s & 0xE0) == 0xC0) {
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			n = -1;
+			c = 0;
+		}
 		s++;
 	}
 	return len;
@@ -378,7 +445,11 @@ utf8strlen(const char *s, const char *e)
 static char *
 utf8skip(char *s, size_t i)
 {
-	while (*s && i > 0) {
+	char *s0 = s;
+
+	while (*s) {
+		if (utf8strlen(s0, s) >= i)
+			return s;
 		if ((*s & 0xC0) == 0xC0) {
 			s++;
 			while ((*s & 0xC0) == 0x80)
@@ -387,7 +458,6 @@ utf8skip(char *s, size_t i)
 			return s;
 		else
 			s++;
-		i--;
 	}
 	return s;
 }
