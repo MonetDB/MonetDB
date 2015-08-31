@@ -359,36 +359,127 @@ SQLsetSpecial(const char *command)
 /* return the display length of a UTF-8 string
    if e is not NULL, return length up to e */
 static size_t
-utf8strlen(const char *s, const char *e)
+utf8strlenmax(char *s, char *e, size_t max, char **t)
 {
-	size_t len = 0;
+	size_t len = 0, len0 = 0;
+	int c;
+	int n;
+	char *t0 = s;
 
+	assert(max == 0 || t != NULL);
 	if (s == NULL)
 		return 0;
-	while (*s && (e == NULL || s < e)) {
-		/* only count first byte of a sequence */
-		if ((*s & 0xC0) != 0x80)
+	c = 0;
+	n = 0;
+	while (*s != 0 && (e == NULL || s < e)) {
+		if (*s == '\n') {
+			assert(n == 0);
+			if (max) {
+				*t = s;
+				return len;
+			}
 			len++;
+			n = 0;
+		} else if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* the following code points are all East
+				 * Asian Fullwidth and East Asian Wide
+				 * characters as defined in Unicode 8.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    c == 0x2329 ||
+				    c == 0x232A ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
 		s++;
+		if (n == 0) {
+			if (max != 0) {
+				if (len > max) {
+					*t = t0;
+					return len0;
+				}
+				if (len == max) {
+					*t = s;
+					return len;
+				}
+			}
+			t0 = s;
+			len0 = len;
+		}
 	}
+	if (max != 0)
+		*t = s;
 	return len;
+}
+
+static size_t
+utf8strlen(char *s, char *e)
+{
+	return utf8strlenmax(s, e, 0, NULL);
 }
 
 /* skip the specified number of UTF-8 characters, but stop at a newline */
 static char *
 utf8skip(char *s, size_t i)
 {
-	while (*s && i > 0) {
-		if ((*s & 0xC0) == 0xC0) {
-			s++;
-			while ((*s & 0xC0) == 0x80)
-				s++;
-		} else if (*s == '\n')
-			return s;
-		else
-			s++;
-		i--;
-	}
+	utf8strlenmax(s, NULL, i, &s);
 	return s;
 }
 
@@ -434,8 +525,11 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					 * correction for a terminal
 					 * screen (1.62 * 2 -> 3 :
 					 * 9.72~10) */
-					if (ulen > (size_t) len[i])
+					if (ulen > (size_t) len[i]) {
 						cutafter[i] = 3 * len[i] / 10;
+						if (cutafter[i] == 1)
+							cutafter[i]++;
+					}
 				}
 
 				/* on each cycle we get closer to the limit */
