@@ -412,12 +412,15 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
 
-	/* for memory mapped files, create a backup copy before widening
+	/* Create a backup copy before widening.
 	 *
-	 * this solves a problem that we don't control what's in the
-	 * actual file until the next commit happens, so a crash might
-	 * otherwise leave the file (and the database) in an
-	 * inconsistent state
+	 * If the file is memory-mapped, this solves a problem that we
+	 * don't control what's in the actual file until the next
+	 * commit happens, so a crash might otherwise leave the file
+	 * (and the database) in an inconsistent state.  If, on the
+	 * other hand, the heap is allocated, it may happen that later
+	 * on the heap is extended and converted into a memory-mapped
+	 * file.  Then the same problem arises.
 	 *
 	 * also see do_backup in gdk_bbp.c */
 	filename = strrchr(c->heap.filename, DIR_SEP);
@@ -426,9 +429,11 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	else
 		filename++;
 	bid = strtol(filename, NULL, 8);
-	if (c->heap.storage == STORE_MMAP &&
-	    (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL)) {
+	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
+	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL) &&
+	    (c->heap.storage != STORE_MEM ||
+	     GDKmove(c->heap.farmid, BATDIR, c->heap.filename, NULL,
+		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << c->shift;
