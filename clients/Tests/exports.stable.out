@@ -1937,7 +1937,6 @@ str STRreplace(str *ret, const str *s1, const str *s2, const str *s3);
 str STRspace(str *ret, const int *l);
 str STRsplitpart(str *res, str *haystack, str *needle, int *field);
 str STRstrSearch(int *res, const str *arg1, const str *arg2);
-str STRstringLength(int *res, const str *s);
 str STRsubstring(str *ret, const str *s, const int *start, const int *l);
 str STRsubstringTail(str *ret, const str *s, const int *start);
 str STRsuffix(str *ret, const str *s, const int *l);
