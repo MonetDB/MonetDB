@@ -2537,3 +2537,15 @@ STRspace(str *ret, const int *l){
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }
+
+str
+STRstringLength(int *res, const str *s)
+{
+	str r = NULL;
+	STRRtrim(&r, s);
+	STRLength(res, &r);
+	GDKfree(r);
+	return MAL_SUCCEED;
+}
+
+
