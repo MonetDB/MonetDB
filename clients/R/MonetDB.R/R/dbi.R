@@ -291,7 +291,9 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
     message("Identifier(s) ", paste("\"", x[reserved],"\"", collapse=", ", sep=""), " are reserved SQL keywords and need(s) to be quoted in queries.")
   }
   qts <- reserved | chars
-  x[qts] <- dbQuoteIdentifier(conn, x[qts])
+  if (any(qts)) {
+    x[qts] <- dbQuoteIdentifier(conn, x[qts])
+  }
   x
 }
 
@@ -656,19 +658,11 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   
-  if(header){
-    for(i in seq_along(files)) {
-      thefile <- normalizePath(files[i])
-      dbSendUpdate(conn, paste("COPY OFFSET 2 INTO", 
-        tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
-        na.strings[1], "'", sep=""), if(locked) "LOCKED"))
-    }
-  } else {
-    for(i in seq_along(files)) {
-      thefile <- normalizePath(files[i])
-      dbSendUpdate(conn, paste0("COPY INTO ", tablename, " FROM ", paste("'", thefile, "'", sep=""), 
-        delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
-    }
+  for(i in seq_along(files)) {
+    thefile <- normalizePath(files[i])
+    dbSendUpdate(conn, paste("COPY", if(header) "OFFSET 2", "INTO", 
+      tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
+      na.strings[1], "'", sep=""), if(locked) "LOCKED"))
   }
   dbGetQuery(conn, paste("SELECT COUNT(*) FROM", tablename))[[1]]
 }

@@ -41137,7 +41137,7 @@ address STRPrefix;
 comment Prefix check.
 
 command str.stringlength(s:str):int 
-address STRstringLength;
+address STRSQLLength;
 comment Return the length of a right trimed string (SQL semantics).
 
 command str.string(s:str,offset:int,count:int):str 
