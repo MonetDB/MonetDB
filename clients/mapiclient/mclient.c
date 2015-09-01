@@ -69,8 +69,7 @@
 
 enum modes {
 	MAL,
-	SQL,
-	JAQL
+	SQL
 };
 
 static enum modes mode = SQL;
@@ -3076,8 +3075,6 @@ main(int argc, char **argv)
 			mode = SQL;
 		} else if (strcmp(language, "mal") == 0) {
 			mode = MAL;
-		} else if (strcmp(language, "jaql") == 0) {
-			mode = JAQL;
 		}
 	} else {
 		language = strdup("sql");
@@ -3133,13 +3130,6 @@ main(int argc, char **argv)
 				free(language);
 				language = strdup("mal");
 				mode = MAL;
-			} else if (strcmp(optarg, "jaql") == 0 ||
-				   strcmp(optarg, "jaq") == 0 ||
-				   strcmp(optarg, "ja") == 0 ||
-				   strcmp(optarg, "j") == 0) {
-				free(language);
-				language = strdup("jaql");
-				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
 				free(language);
 				language = strdup("msql");
@@ -3344,8 +3334,6 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-		} else if (mode == JAQL) {
-			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
@@ -3356,8 +3344,6 @@ main(int argc, char **argv)
 
 		if (mode == SQL) {
 			lang = "/SQL";
-		} else if (mode == JAQL) {
-			lang = "/JAQL";
 		} else {
 			lang = "";
 		}
