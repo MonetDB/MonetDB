@@ -63,6 +63,7 @@
 				<configuration>
 					<includes>
 						<include>nl/cwi/monetdb/jdbc/**/*.java</include>
+						<include>nl/cwi/monetdb/mcl/**/*.java</include>
 					</includes>
 					<source>1.7</source>
 					<target>1.7</target>
