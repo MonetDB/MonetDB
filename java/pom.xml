@@ -105,6 +105,7 @@
 						<include>nl/cwi/monetdb/jdbc/**/*.java</include>
 						<include>nl/cwi/monetdb/mcl/**/*.java</include>
 					</sourceFileIncludes>
+					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 			</plugin>
 			<plugin>
