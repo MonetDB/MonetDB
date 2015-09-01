@@ -15,7 +15,7 @@ import java.util.*;
  * A DatabaseMetaData object suitable for the MonetDB database.
  * 
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 0.5
  */
 public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaData {
@@ -508,7 +508,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Is "ALTER TABLE" with a drop column supported?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsAlterTableWithDropColumn() {
 		return true;
@@ -530,7 +529,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * should return a column named as C_COUNT instead of count(C)
 	 *
 	 * @return true if so
-	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean supportsColumnAliasing() {
 		return true;
@@ -541,7 +539,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * JDBC Compliant driver always returns true
 	 *
 	 * @return true if so
-	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean nullPlusNonNullIsNull() {
 		return true;
@@ -578,7 +575,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * Are expressions in "ORDER BY" lists supported?
 	 *
-	 * <br>e.g. select * from t order by a + b;
+	 * e.g. select * from t order by a + b;
 	 *
 	 * MonetDB does not support this (yet?)
 	 *
@@ -602,7 +599,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Is some form of "GROUP BY" clause supported?
 	 *
 	 * @return true since MonetDB supports it
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsGroupBy() {
 		return true;
@@ -612,7 +608,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Can a "GROUP BY" clause use columns not in the SELECT?
 	 *
 	 * @return true since that also is supported
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsGroupByUnrelated() {
 		return true;
@@ -656,7 +651,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * This is the main idea behind the Connection, is it?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsMultipleTransactions() {
 		return true;
@@ -733,7 +727,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Would be good if it was like that
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsANSI92FullSQL() {
 		return false;
@@ -753,7 +746,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Is some form of outer join supported?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsOuterJoins(){
 		return true;
@@ -763,7 +755,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Are full nexted outer joins supported?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsFullOuterJoins() {
 		return true;
@@ -773,7 +764,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Is there limited support for outer joins?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsLimitedOuterJoins() {
 		return false;
@@ -1293,7 +1283,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * What is the maximum length of a user name
 	 *
 	 * @return the max name length in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
 	public int getMaxUserNameLength() {
 		return 512;
@@ -1368,7 +1357,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * CREATE TABLE X (A INT);
 	 * SELECT A FROM T INTO X;
 	 * COMMIT;
-	 * </pre><p>
+	 * </pre></p>
 	 *
 	 * does the CREATE TABLE call cause a commit?  The answer is no.
 	 *
@@ -1382,7 +1371,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Is a data definition statement within a transaction ignored?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean dataDefinitionIgnoredInTransactions() {
 		return false;
@@ -1477,8 +1465,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li>procedureNullableUnknown - nullability unknown
 	 * <li><b>REMARKS</b> String => comment describing parameter/column
 	 * </ol>
-	 * @param catalog 
-	 * @param schemaPattern
+	 * @param catalog   not used
+	 * @param schemaPattern not used
 	 * @param procedureNamePattern a procedure name pattern
 	 * @param columnNamePattern a column name pattern
 	 * @return each row is a stored procedure parameter or column description
@@ -3072,7 +3060,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *
 	 * @param holdability one of the following constants:
 	 *			<code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-	 *			<code>ResultSet.CLOSE_CURSORS_AT_COMMIT<code>
+	 *			<code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
 	 * @return <code>true</code> if so; <code>false</code> otherwise
 	 * @see Connection
 	 */

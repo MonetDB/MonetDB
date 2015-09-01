@@ -19,7 +19,7 @@ import java.sql.*;
  * non-useful, ignoring any argument and claiming stuff doesn't work, or
  * won't work out.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.0
  */
 public class MonetWrapper implements Wrapper {

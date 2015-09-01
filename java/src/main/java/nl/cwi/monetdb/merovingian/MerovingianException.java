@@ -15,7 +15,7 @@ package nl.cwi.monetdb.merovingian;
  * exception as one originating from the monetdbd instance being
  * communicated with, instead of a locally generated one.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.0
  */
 public class MerovingianException extends Exception {

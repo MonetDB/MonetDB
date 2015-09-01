@@ -62,7 +62,8 @@ import nl.cwi.monetdb.mcl.parser.StartOfHeaderParser;
  * A Connection object's database should able to provide information
  * describing its tables, its supported SQL grammar, its stored
  * procedures, the capabilities of this connection, and so on. This
- * information is obtained with the getMetaData method.<br />
+ * information is obtained with the getMetaData method.
+ * 
  * Note: By default a Connection object is in auto-commit mode, which
  * means that it automatically commits changes after executing each
  * statement. If auto-commit mode has been disabled, the method commit
@@ -70,9 +71,9 @@ import nl.cwi.monetdb.mcl.parser.StartOfHeaderParser;
  * database changes will not be saved.
  * 
  * The current state of this connection is that it nearly implements the
- * whole Connection interface.<br />
+ * whole Connection interface.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.2
  */
 public class MonetConnection extends MonetWrapper implements Connection {
@@ -638,7 +639,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return the holdability, one of
 	 *         ResultSet.HOLD_CURSORS_OVER_COMMIT or
 	 *         ResultSet.CLOSE_CURSORS_AT_COMMIT
-	 * @throws SQLException is a database access error occors
 	 */
 	public int getHoldability() {
 		// TODO: perhaps it is better to have the server implement
@@ -1112,7 +1112,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	/**
 	 * Not implemented by MonetDB's JDBC driver.
 	 *
-	 * @param properties the list of client info properties to set
+	 * @param props The list of client info properties to set
 	 */
 	public void setClientInfo(Properties props) {
 		for (Entry<Object, Object> entry : props.entrySet()) {
@@ -1327,13 +1327,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *
 	 * @param executor The Executor implementation which will be used by
 	 *        setNetworkTimeout
-	 * @param milliseconds The time in milliseconds to wait for the
+	 * @param millis The time in milliseconds to wait for the
 	 *        database operation to complete
 	 * @throws SQLException if a database access error occurs, this
 	 *         method is called on a closed connection, the executor is
 	 *         null, or the value specified for seconds is less than 0.
-	 * @throws SQLException if a database access error occurs or
-	 *         this method is called on a closed Connection
 	 */
 	public void setNetworkTimeout(Executor executor, int millis)
 		throws SQLException

@@ -80,6 +80,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 * default-sized input buffer, from an InputStream.
 	 *
 	 * @param in An InputStream
+	 * @param enc Encoding
 	 */
 	public BufferedMCLReader(InputStream in, String enc)
 		throws UnsupportedEncodingException

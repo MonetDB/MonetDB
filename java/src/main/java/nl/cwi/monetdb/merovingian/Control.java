@@ -39,7 +39,7 @@ import java.util.Properties;
  * connecting to a merovingian requires a passphrase that is likely to
  * be different for each merovingian.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.0
  */
 public class Control {

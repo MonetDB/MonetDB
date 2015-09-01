@@ -83,7 +83,7 @@ import nl.cwi.monetdb.mcl.parser.MCLParseException;
  * implementations of those interfaces supply some extra functionality
  * geared towards the format of the data.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 4.1
  * @see nl.cwi.monetdb.mcl.io.BufferedMCLReader
  * @see nl.cwi.monetdb.mcl.io.BufferedMCLWriter
@@ -197,8 +197,9 @@ public final class MapiSocket {
 	 * This option must be enabled prior to entering the blocking
 	 * operation to have effect.
 	 *
-	 * @param timeout The specified timeout, in milliseconds.  A timeout
+	 * @param s The specified timeout, in milliseconds.  A timeout
 	 *        of zero is interpreted as an infinite timeout.
+	 * @throws SocketException Issue with the socket
 	 */
 	public void setSoTimeout(int s) throws SocketException {
 		// limit time to wait on blocking operations (0 = indefinite)
@@ -209,11 +210,17 @@ public final class MapiSocket {
 	 * Gets the SO_TIMEOUT from the underlying Socket.
 	 *
 	 * @return the currently in use timeout in milliseconds
+	 * @throws SocketException Issue with the socket
 	 */
 	public int getSoTimeout() throws SocketException {
 		return con.getSoTimeout();
 	}
 	
+	/**
+	 * Enables/disables debug
+	 *
+	 * @param debug Value to set
+	 */
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}

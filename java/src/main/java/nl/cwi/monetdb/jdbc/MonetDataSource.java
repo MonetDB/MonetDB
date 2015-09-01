@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * 
  * Additionally, pooled connections can be used when using a DataSource.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 0.1
  */
 public class MonetDataSource extends MonetWrapper implements DataSource {

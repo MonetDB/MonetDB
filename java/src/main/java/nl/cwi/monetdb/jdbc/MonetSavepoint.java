@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * save point identifiers. In this implementation the validaty of save points
  * is determined by the server, which makes this a light implementation.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.0
  */
 public class MonetSavepoint implements Savepoint {

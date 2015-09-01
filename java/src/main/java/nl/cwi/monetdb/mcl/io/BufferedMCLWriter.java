@@ -49,6 +49,7 @@ public class BufferedMCLWriter extends BufferedWriter {
 	 * default-sized output buffer, from an OutputStream.
 	 *
 	 * @param in An OutputStream
+	 * @param enc Encoding
 	 */
 	public BufferedMCLWriter(OutputStream in, String enc)
 		throws UnsupportedEncodingException
@@ -82,6 +83,7 @@ public class BufferedMCLWriter extends BufferedWriter {
 	 * the stream.  This is a shorthand method for a call to write()
 	 * and flush().
 	 *
+	 * @param line The line to write
 	 * @throws IOException If an I/O error occurs
 	 */
 	public void writeLine(String line) throws IOException {

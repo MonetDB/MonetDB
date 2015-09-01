@@ -35,12 +35,12 @@ import java.util.logging.Logger;
  * to be set in order to use this driver.
  * 
  * This Driver supports MonetDB database URLs. MonetDB URLs are defined
- * as:<br />
+ * as:
  * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt;]/&lt;database&gt;</tt>
- * <br /> where [:&lt;port&gt;] denotes that a port is optional. If not
+ * where [:&lt;port&gt;] denotes that a port is optional. If not
  * given the default (@JDBC_DEF_PORT@) will be used.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version @JDBC_MAJOR@.@JDBC_MINOR@ (@JDBC_VER_SUFFIX@)
  */
 final public class MonetDriver implements Driver {

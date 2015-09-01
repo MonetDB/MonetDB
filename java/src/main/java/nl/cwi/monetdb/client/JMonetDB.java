@@ -17,7 +17,7 @@ import java.util.*;
  * This program mimics the monetdb tool.  It is meant as demonstration
  * and test of the MeroControl library.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.0
  */
 

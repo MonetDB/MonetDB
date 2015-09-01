@@ -20,7 +20,7 @@ import java.io.*;
  * that it is a real resource expensive workaround that contradicts the
  * benefits for a Blob: avoidance of huge resource consumption.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 public class MonetBlob implements Blob {
 	private byte[] buf;

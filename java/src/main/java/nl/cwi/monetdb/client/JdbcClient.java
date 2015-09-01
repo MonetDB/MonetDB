@@ -22,7 +22,7 @@ import java.net.*;
  * it demonstrates the power of the JDBC interface since it built on top
  * of JDBC only.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 1.2
  */
 

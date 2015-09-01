@@ -87,11 +87,12 @@ public class StartOfHeaderParser {
 	}
 
 	/**
-	 * Returns the next token in the CharBuffer as integer.  The value is
+	 * Returns the next token in the CharBuffer as integer. The value is
 	 * considered to end at the end of the CharBuffer or at a space.  If
 	 * a non-numeric character is encountered an MCLParseException is
 	 * thrown.
 	 *
+	 * @return The next token in the CharBuffer as integer
 	 * @throws MCLParseException if no numeric value could be read
 	 */
 	public final int getNextAsInt() throws MCLParseException {

@@ -35,7 +35,7 @@ import nl.cwi.monetdb.mcl.net.*;
  * which relies on server side auto commit.<br />
  * Multi-result queries are supported using the getMoreResults() method.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 0.7
  */
 public class MonetStatement extends MonetWrapper implements Statement {

@@ -36,7 +36,7 @@ import java.text.SimpleDateFormat;
  * [ "int",        9,      0       ]
  * </pre>
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  * @version 0.2
  */
 public class MonetPreparedStatement

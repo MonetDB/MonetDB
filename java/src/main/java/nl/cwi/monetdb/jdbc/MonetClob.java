@@ -20,7 +20,7 @@ import java.io.*;
  * sole reason for a Clob: avoidance of huge resource consumption.
  * <b>Use of this class is highly discouraged.</b>
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 public class MonetClob implements Clob {
 	

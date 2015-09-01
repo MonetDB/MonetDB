@@ -21,7 +21,7 @@ package nl.cwi.monetdb.mcl.parser;
  * extracted by the parser.  Parser specific methods may be available to
  * perform common tasks.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 public abstract class MCLParser {
 	/** The String values found while parsing.  Public, you may touch it. */
@@ -47,6 +47,7 @@ public abstract class MCLParser {
 	 * to allow for next() and hasNext() calls.
 	 *
 	 * @param source the String containing the line to parse
+	 * @return value
 	 * @throws MCLParseException if source cannot be (fully) parsed by
 	 * this parser
 	 * @see #next()
