@@ -15,7 +15,7 @@ package nl.cwi.monetdb.mcl.parser;
  * the same type of work.  While this is a very unnatural solution in
  * the Java language, it prevents many object creations on a low level
  * of the protocol.  This favours performance.
- * <br /><br />
+ * 
  * A typical parser has a method parse() which takes a String, and the
  * methods hasNext() and next() to retrieve the values that were
  * extracted by the parser.  Parser specific methods may be available to

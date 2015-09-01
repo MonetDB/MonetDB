@@ -20,7 +20,7 @@ import java.io.UnsupportedEncodingException;
  * to provide a means for efficient reading of characters, arrays and
  * lines.  This class is based on the BufferedReader class, and provides
  * extra functionality useful for MCL.
- * <br /><br />
+ * 
  * The BufferedMCLReader is typically used as layer inbetween an
  * InputStream and a specific interpreter of the data.
  * <pre>
@@ -93,7 +93,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 * carriage return followed immediately by a linefeed.  Before this
 	 * method returns, it sets the linetype to any of the in MCL
 	 * recognised line types.
-	 * <br /><br />
+	 * 
 	 * Warning: until the server properly prefixes all of its error
 	 * messages with SQLSTATE codes, this method prefixes all errors it
 	 * sees without sqlstate with the generic data exception code
@@ -169,7 +169,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 * for a new command.  All read data is discarded.  If the last line
 	 * read by readLine() was a prompt, this method will immediately
 	 * return.
-	 * <br /><br />
+	 * 
 	 * If there are errors present in the lines that are read, then they
 	 * are put in one string and returned <b>after</b> the prompt has
 	 * been found. If no errors are present, null will be returned.

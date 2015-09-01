@@ -41,7 +41,7 @@ import nl.cwi.monetdb.mcl.parser.MCLParseException;
 /**
  * A Socket for communicating with the MonetDB database in MAPI block
  * mode.
- * <br /><br />
+ * 
  * The MapiSocket implements the protocol specifics of the MAPI block
  * mode protocol, and interfaces it as a socket that delivers a
  * BufferedReader and a BufferedWriter.  Because logging in is an
@@ -56,7 +56,7 @@ import nl.cwi.monetdb.mcl.parser.MCLParseException;
  * PROMPT, HEADER, RESULT, ERROR or UNKNOWN.  Use the getLineType()
  * method on the BufferedMCLReader to retrieve the type of the last
  * line read.
- * <br /><br />
+ * 
  * For debugging purposes a socket level debugging is implemented where
  * each and every interaction to and from the MonetDB server is logged
  * to a file on disk.<br />
@@ -66,7 +66,7 @@ import nl.cwi.monetdb.mcl.parser.MCLParseException;
  * instead.  Following this two char prefix, a timestamp follows as the
  * number of milliseconds since the UNIX epoch.  The rest of the line is
  * a String representation of the data sent or received.
- * <br /><br />
+ * 
  * The general use of this Socket must be seen only in the full context
  * of a MAPI connection to a server.  It has the same ingredients as a
  * normal Socket, allowing for seamless plugging.

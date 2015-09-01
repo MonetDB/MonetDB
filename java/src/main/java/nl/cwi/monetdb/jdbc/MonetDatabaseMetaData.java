@@ -13,7 +13,7 @@ import java.util.*;
 
 /**
  * A DatabaseMetaData object suitable for the MonetDB database.
- * <br /><br />
+ * 
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.5
@@ -352,7 +352,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * Get a comma separated list of all a database's SQL keywords that
 	 * are NOT also SQL:2003 keywords.
-	 * <br /><br />
+	 * 
 	 *
 	 * @return a comma separated list of MonetDB keywords
 	 */

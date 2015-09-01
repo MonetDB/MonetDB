@@ -53,12 +53,12 @@ import nl.cwi.monetdb.mcl.parser.StartOfHeaderParser;
 
 /**
  * A {@link Connection} suitable for the MonetDB database.
- * <br /><br />
+ * 
  * This connection represents a connection (session) to a MonetDB
  * database. SQL statements are executed and results are returned within
  * the context of a connection. This Connection object holds a physical
  * connection to the MonetDB database.
- * <br /><br />
+ * 
  * A Connection object's database should able to provide information
  * describing its tables, its supported SQL grammar, its stored
  * procedures, the capabilities of this connection, and so on. This
@@ -68,7 +68,7 @@ import nl.cwi.monetdb.mcl.parser.StartOfHeaderParser;
  * statement. If auto-commit mode has been disabled, the method commit
  * must be called explicitly in order to commit changes; otherwise,
  * database changes will not be saved.
- * <br /><br />
+ * 
  * The current state of this connection is that it nearly implements the
  * whole Connection interface.<br />
  *
@@ -312,7 +312,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * immediately instead of waiting for them to be automatically
 	 * released. All Statements created from this Connection will be
 	 * closed when this method is called.
-	 * <br /><br />
+	 * 
 	 * Calling the method close on a Connection object that is already
 	 * closed is a no-op.
 	 */
@@ -368,12 +368,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 	/**
 	 * Factory method for creating Array objects.
-	 * <br /><br />
+	 * 
 	 * Note: When createArrayOf is used to create an array object that
 	 * maps to a primitive data type, then it is implementation-defined
 	 * whether the Array object is an array of that primitive data type
 	 * or an array of Object.
-	 * <br /><br />
+	 * 
 	 * Note: The JDBC driver is responsible for mapping the elements
 	 * Object array to the default JDBC SQL type defined in
 	 * java.sql.Types for the given class of Object. The default mapping
@@ -409,7 +409,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * executed using Statement objects. If the same SQL statement is
 	 * executed many times, it may be more efficient to use a
 	 * PreparedStatement object.
-	 * <br /><br />
+	 * 
 	 * Result sets created using the returned Statement object will by
 	 * default be type TYPE_FORWARD_ONLY and have a concurrency level of
 	 * CONCUR_READ_ONLY.
@@ -692,10 +692,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * will be chained to the first one and can be retrieved by calling
 	 * the method SQLWarning.getNextWarning on the warning that was
 	 * retrieved previously.
-	 * <br /><br />
+	 * 
 	 * This method may not be called on a closed connection; doing so
 	 * will cause an SQLException to be thrown.
-	 * <br /><br />
+	 * 
 	 * Note: Subsequent warnings will be chained to this SQLWarning.
 	 *
 	 * @return the first SQLWarning object or null if there are none
@@ -717,7 +717,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * if certain fatal errors have occurred.  This method is guaranteed
 	 * to return true only when it is called after the method
 	 * Connection.close has been called.
-	 * <br /><br />
+	 * 
 	 * This method generally cannot be called to determine whether a
 	 * connection to a database is valid or invalid.  A typical client
 	 * can determine that a connection is invalid by catching any
@@ -747,7 +747,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * valid. The driver shall submit a query on the connection or use
 	 * some other mechanism that positively verifies the connection is
 	 * still valid when this method is called.
-	 * <br /><br />
+	 * 
 	 * The query submitted by the driver to validate the connection
 	 * shall be executed in the context of the current transaction.
 	 *
@@ -786,11 +786,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	/**
 	 * Creates a PreparedStatement object for sending parameterized SQL
 	 * statements to the database.
-	 * <br /><br />
+	 * 
 	 * A SQL statement with or without IN parameters can be pre-compiled
 	 * and stored in a PreparedStatement object. This object can then be
 	 * used to efficiently execute this statement multiple times.
-	 * <br /><br />
+	 * 
 	 * Note: This method is optimized for handling parametric SQL
 	 * statements that benefit from precompilation. If the driver
 	 * supports precompilation, the method prepareStatement will send
@@ -799,7 +799,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * not be sent to the database until the PreparedStatement object is
 	 * executed. This has no direct effect on users; however, it does
 	 * affect which methods throw certain SQLException objects.
-	 * <br /><br />
+	 * 
 	 * Result sets created using the returned PreparedStatement object
 	 * will by default be type TYPE_FORWARD_ONLY and have a concurrency
 	 * level of CONCUR_READ_ONLY.
@@ -856,7 +856,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	/**
 	 * Creates a PreparedStatement object that will generate ResultSet
 	 * objects with the given type, concurrency, and holdability.
-	 * <br /><br />
+	 * 
 	 * This method is the same as the prepareStatement method above, but
 	 * it allows the default result set type, concurrency, and
 	 * holdability to be overridden.
@@ -910,7 +910,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * tells the driver whether it should make auto-generated keys
 	 * available for retrieval.  This parameter is ignored if the SQL
 	 * statement is not an INSERT statement.
-	 * <br /><br />
+	 * 
 	 * Note: This method is optimized for handling parametric SQL
 	 * statements that benefit from precompilation.  If the driver
 	 * supports precompilation, the method prepareStatement will send
@@ -919,7 +919,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * not be sent to the database until the PreparedStatement object is
 	 * executed.  This has no direct effect on users; however, it does
 	 * affect which methods throw certain SQLExceptions.
-	 * <br /><br />
+	 * 
 	 * Result sets created using the returned PreparedStatement object
 	 * will by default be type TYPE_FORWARD_ONLY and have a concurrency
 	 * level of CONCUR_READ_ONLY.
@@ -1023,7 +1023,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 	/**
 	 * Undoes all changes made after the given Savepoint object was set.
-	 * <br /><br />
+	 * 
 	 * This method should be used only when auto-commit has been
 	 * disabled.
 	 *
@@ -1064,7 +1064,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * are terminated by a call to either the method commit or the
 	 * method rollback. By default, new connections are in auto-commit
 	 * mode.
-	 * <br /><br />
+	 * 
 	 * The commit occurs when the statement completes or the next
 	 * execute occurs, whichever comes first. In the case of statements
 	 * returning a ResultSet object, the statement completes when the
@@ -1073,7 +1073,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * statement may return multiple results as well as output parameter
 	 * values. In these cases, the commit occurs when all results and
 	 * output parameter values have been retrieved.
-	 * <br /><br />
+	 * 
 	 * NOTE: If this method is called during a transaction, the
 	 * transaction is committed.
 	 *
@@ -1947,7 +1947,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * by brackets ("[" and "]").  A DataBlockResponse object holds the
 	 * raw data as read from the server, in a parsed manner, ready for
 	 * easy retrieval.
-	 * <br /><br />
+	 * 
 	 * This object is not intended to be queried by multiple threads
 	 * synchronously. It is designed to work for one thread retrieving
 	 * rows from it.  When multiple threads will retrieve rows from this

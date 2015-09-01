@@ -12,7 +12,7 @@ import java.util.*;
 
 /**
  * Implementation of the Sabaoth C-struct as Java object.
- * <br /><br />
+ * 
  * This Class implements a parser for the string representation of a
  * sabaoth information struct as returned by monetdbd.
  * <br />

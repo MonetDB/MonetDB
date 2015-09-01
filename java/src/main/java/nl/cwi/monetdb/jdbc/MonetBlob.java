@@ -43,7 +43,7 @@ public class MonetBlob implements Blob {
 	/**
 	 * This method frees the Blob object and releases the resources that
 	 * it holds. The object is invalid once the free method is called.
-	 * <br /><br />
+	 * 
 	 * After free has been called, any attempt to invoke a method other
 	 * than free will result in a SQLException being thrown. If free is
 	 * called multiple times, the subsequent calls to free are treated

@@ -10,7 +10,7 @@ package nl.cwi.monetdb.merovingian;
 
 /**
  * An Exception raised when monetdbd specific problems occur.
- * <br /><br />
+ * 
  * This class is a shallow wrapper around Exception to identify an
  * exception as one originating from the monetdbd instance being
  * communicated with, instead of a locally generated one.

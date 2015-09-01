@@ -27,7 +27,7 @@ import java.util.Properties;
 /**
  * A Control class to perform operations on a remote merovingian
  * instance, using the TCP control protocol.
- * <br /><br />
+ * 
  * This class implements the protocol specific bits to perform all
  * possible actions against a merovingian server that has remote control
  * facilities enabled.

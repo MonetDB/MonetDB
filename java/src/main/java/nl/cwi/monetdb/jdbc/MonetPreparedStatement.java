@@ -18,12 +18,12 @@ import java.text.SimpleDateFormat;
 
 /**
  * A {@link PreparedStatement} suitable for the MonetDB database.
- * <br /><br />
+ * 
  * This implementation of the PreparedStatement interface uses the
  * capabilities of the MonetDB/SQL backend to prepare and execute
  * queries.  The backend takes care of finding the '?'s in the input and
  * returns the types it expects for them.
- * <br /><br />
+ * 
  * An example of a server response on a prepare query is:
  * <pre>
  * % prepare select name from tables where id &gt; ? and id &lt; ?;
@@ -202,7 +202,7 @@ public class MonetPreparedStatement
 
 	/**
 	 * Clears the current parameter values immediately.
-	 * <br /><br />
+	 * 
 	 * In general, parameter values remain in force for repeated use of a
 	 * statement. Setting a parameter value automatically clears its previous
 	 * value. However, in some cases it is useful to immediately release the
@@ -221,7 +221,7 @@ public class MonetPreparedStatement
 	 * return multiple results; the execute method handles these complex
 	 * statements as well as the simpler form of statements handled by
 	 * the methods executeQuery and executeUpdate.
-	 * <br /><br />
+	 * 
 	 * The execute method returns a boolean to indicate the form of the
 	 * first result.  You must call either the method getResultSet or
 	 * getUpdateCount to retrieve the result; you must call
@@ -322,7 +322,7 @@ public class MonetPreparedStatement
 	 * Retrieves a ResultSetMetaData object that contains information
 	 * about the columns of the ResultSet object that will be returned
 	 * when this PreparedStatement object is executed.
-	 * <br /><br />
+	 * 
 	 * Because a PreparedStatement object is precompiled, it is possible
 	 * to know about the ResultSet object that it will return without
 	 * having to execute it.  Consequently, it is possible to invoke the
@@ -713,7 +713,7 @@ public class MonetPreparedStatement
 			/**
 			 * Retrieves whether null values are allowed in the
 			 * designated parameter.
-			 * <br /><br />
+			 * 
 			 * This is currently always unknown for MonetDB/SQL.
 			 *
 			 * @param param the first parameter is 1, the second is 2, ... 
@@ -872,7 +872,7 @@ public class MonetPreparedStatement
 	 * java.io.InputStream. Data will be read from the stream as needed until
 	 * end-of-file is reached. The JDBC driver will do any necessary conversion
 	 * from ASCII to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -895,7 +895,7 @@ public class MonetPreparedStatement
 	 * java.io.InputStream. Data will be read from the stream as needed until
 	 * end-of-file is reached. The JDBC driver will do any necessary conversion
 	 * from ASCII to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -918,7 +918,7 @@ public class MonetPreparedStatement
 	 * from the stream as needed until end-of-file is reached. The JDBC
 	 * driver will do any necessary conversion from ASCII to the
 	 * database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -982,7 +982,7 @@ public class MonetPreparedStatement
 	 * to a LONGVARBINARY parameter, it may be more practical to send it via a
 	 * java.io.InputStream object. The data will be read from the stream as
 	 * needed until end-of-file is reached.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -1005,7 +1005,7 @@ public class MonetPreparedStatement
 	 * to a LONGVARBINARY parameter, it may be more practical to send it via a
 	 * java.io.InputStream object. The data will be read from the stream as
 	 * needed until end-of-file is reached.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -1028,7 +1028,7 @@ public class MonetPreparedStatement
 	 * to a LONGVARBINARY parameter, it may be more practical to send it via a
 	 * java.io.InputStream object. The data will be read from the stream as
 	 * needed until end-of-file is reached.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -1155,10 +1155,10 @@ public class MonetPreparedStatement
 	 * via a java.io.Reader object. The data will be read from the stream as
 	 * needed until end-of-file is reached. The JDBC driver will do any
 	 * necessary conversion from UNICODE to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
-	 * <br /><br />
+	 * 
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param reader the java.io.Reader object that contains the Unicode data
 	 * @param length the number of characters in the stream
@@ -1191,10 +1191,10 @@ public class MonetPreparedStatement
 	 * via a java.io.Reader object. The data will be read from the stream as
 	 * needed until end-of-file is reached. The JDBC driver will do any
 	 * necessary conversion from UNICODE to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
-	 * <br /><br />
+	 * 
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param reader the java.io.Reader object that contains the Unicode data
 	 * @param length the number of characters in the stream
@@ -1215,10 +1215,10 @@ public class MonetPreparedStatement
 	 * via a java.io.Reader object. The data will be read from the stream as
 	 * needed until end-of-file is reached. The JDBC driver will do any
 	 * necessary conversion from UNICODE to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
-	 * <br /><br />
+	 * 
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param reader the java.io.Reader object that contains the Unicode data
 	 * @param length the number of characters in the stream
@@ -1519,7 +1519,7 @@ public class MonetPreparedStatement
 
 	/**
 	 * Sets the designated parameter to SQL NULL.
-	 * <br /><br />
+	 * 
 	 * Note: You must specify the parameter's SQL type.
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
@@ -1537,7 +1537,7 @@ public class MonetPreparedStatement
 	 * setNull should be used for user-defined types and REF type parameters.
 	 * Examples of user-defined types include: STRUCT, DISTINCT, JAVA_OBJECT,
 	 * and named array types.
-	 * <br /><br />
+	 * 
 	 * Note: To be portable, applications must give the SQL type code and the
 	 * fully-qualified SQL type name when specifying a NULL user-defined or REF
 	 * parameter. In the case of a user-defined type the name is the type name
@@ -1567,11 +1567,11 @@ public class MonetPreparedStatement
 	 * object.  The second parameter must be of type Object; therefore,
 	 * the java.lang equivalent objects should be used for built-in
 	 * types.
-	 * <br /><br />
+	 * 
 	 * The JDBC specification specifies a standard mapping from Java
 	 * Object types to SQL types. The given argument will be converted
 	 * to the corresponding SQL type before being sent to the database.
-	 * <br /><br />
+	 * 
 	 * Note that this method may be used to pass datatabase-specific
 	 * abstract data types, by using a driver-specific Java type. If the
 	 * object is of a class implementing the interface SQLData, the JDBC
@@ -1579,7 +1579,7 @@ public class MonetPreparedStatement
 	 * SQL data stream. If, on the other hand, the object is of a class
 	 * implementing Ref, Blob, Clob, Struct, or Array, the driver should
 	 * pass it to the database as a value of the corresponding SQL type.
-	 * <br /><br />
+	 * 
 	 * This method throws an exception if there is an ambiguity, for
 	 * example, if the object is of a class implementing more than one
 	 * of the interfaces named above.
@@ -1614,7 +1614,7 @@ public class MonetPreparedStatement
 	 * Sets the value of the designated parameter with the given object. The
 	 * second argument must be an object type; for integral values, the
 	 * java.lang equivalent objects should be used.
-	 * <br /><br />
+	 * 
 	 * The given Java object will be converted to the given targetSqlType
 	 * before being sent to the database. If the object has a custom mapping
 	 * (is of a class implementing the interface SQLData), the JDBC driver
@@ -1622,10 +1622,10 @@ public class MonetPreparedStatement
 	 * stream. If, on the other hand, the object is of a class implementing
 	 * Ref, Blob, Clob, Struct, or Array, the driver should pass it to the
 	 * database as a value of the corresponding SQL type.
-	 * <br /><br />
+	 * 
 	 * Note that this method may be used to pass database-specific abstract
 	 * data types.
-	 * <br /><br />
+	 * 
 	 * To meet the requirements of this interface, the Java object is
 	 * converted in the driver, instead of using a SQL CAST construct.
 	 *
@@ -2301,7 +2301,7 @@ public class MonetPreparedStatement
 	 * data will be read from the stream as needed until end-of-file is
 	 * reached. The JDBC driver will do any necessary conversion from Unicode
 	 * to the database char format.
-	 * <br /><br />
+	 * 
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
@@ -2337,10 +2337,10 @@ public class MonetPreparedStatement
 	 * it is automatically closed.  It is generally good practice to
 	 * release resources as soon as you are finished with them to avoid
 	 * tying up database resources.
-	 * <br /><br />
+	 * 
 	 * Calling the method close on a PreparedStatement object that is
 	 * already closed has no effect.
-	 * <br /><br />
+	 * 
 	 * <b>Note:</b> A PreparedStatement object is automatically closed
 	 * when it is garbage collected. When a Statement object is closed,
 	 * its current ResultSet object, if one exists, is also closed. 

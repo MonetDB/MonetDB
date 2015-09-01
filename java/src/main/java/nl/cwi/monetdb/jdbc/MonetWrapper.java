@@ -12,7 +12,7 @@ import java.sql.*;
 
 /**
  * A Wrapper class that implements nothing.
- * <br /><br />
+ * 
  * This Class is used to simply provide JDBC4 Wrapper functions, for as
  * long as we don't really understand that they are for and what they
  * are supposed to do.  Hence the implementations are very stupid and
