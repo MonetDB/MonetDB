@@ -988,7 +988,6 @@ public class MonetPreparedStatement
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the java input stream which contains the binary parameter value
-	 * @param length the number of bytes in the stream
 	 * @throws SQLException if a database access error occurs
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this method
@@ -1197,7 +1196,6 @@ public class MonetPreparedStatement
 	 * 
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param reader the java.io.Reader object that contains the Unicode data
-	 * @param length the number of characters in the stream
 	 * @throws SQLException if a database access error occurs
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this method
@@ -1259,7 +1257,7 @@ public class MonetPreparedStatement
 	 * converts this to an SQL CLOB value when it sends it to the database.
 	 *
 	 * @param i the first parameter is 1, the second is 2, ...
-	 * @param x an object that contains the data to set the parameter
+	 * @param reader an object that contains the data to set the parameter
 	 *          value to
 	 * @throws SQLException if a database access error occurs
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does

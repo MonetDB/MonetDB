@@ -354,7 +354,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * when the method available  is called whether there is data
 	 * available or not.
 	 *
-	 * @param columnLabel the label for the column specified with
+	 * @param columnName the label for the column specified with
 	 * the SQL AS clause. If the SQL AS clause was not specified, then
 	 * the label is the name of the column 
 	 * @return a Java input stream that delivers the database column

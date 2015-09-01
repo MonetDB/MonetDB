@@ -416,7 +416,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 *         elements in the int array passed to this method are not
 	 *         valid column indexes
 	 */
-	public boolean execute(String sql, int[] columnIndexed)
+	public boolean execute(String sql, int[] columnIndexes)
 		throws SQLException
 	{
 		addWarning("execute: generated keys for fixed set of columns not supported", "01M18");
