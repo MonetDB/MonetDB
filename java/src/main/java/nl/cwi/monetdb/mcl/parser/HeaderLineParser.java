@@ -46,6 +46,7 @@ public class HeaderLineParser extends MCLParser {
 	 * @return the type of then parsed header line
 	 * @throws MCLParseException if an error occurs during parsing
 	 */
+	@Override
 	public int parse(String source) throws MCLParseException {
 		char[] chrLine = source.toCharArray();
 		int len = chrLine.length;

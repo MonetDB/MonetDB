@@ -19,10 +19,12 @@ import java.net.*;
 public class URL implements SQLData {
 	private String url;
 
+	@Override
 	public String getSQLTypeName() {
 		return "url";
 	}
 
+	@Override
 	public void readSQL(SQLInput stream, String typeName) throws SQLException {
 		if (typeName.compareTo("url") != 0)
 			throw new SQLException("can only use this class with 'url' type",
@@ -30,10 +32,12 @@ public class URL implements SQLData {
 		url = stream.readString();
 	}
 
+	@Override
 	public void writeSQL(SQLOutput stream) throws SQLException {
 		stream.writeString(url);
 	}
 
+	@Override
 	public String toString() {
 		return url;
 	}

@@ -74,6 +74,7 @@ public class BufferedMCLWriter extends BufferedWriter {
 	 *
 	 * @throws IOException If an I/O error occurs
 	 */
+	@Override
 	public void newLine() throws IOException {
 		write('\n');
 	}

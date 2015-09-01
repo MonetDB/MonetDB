@@ -60,6 +60,7 @@ public class MonetSavepoint implements Savepoint {
 	 * @return the numeric ID of this savepoint
 	 * @throws SQLException if this is a named savepoint
 	 */
+	@Override
 	public int getSavepointId() throws SQLException {
 		if (name != null) throw
 			new SQLException("Cannot getID for named savepoint", "3B000");
@@ -74,6 +75,7 @@ public class MonetSavepoint implements Savepoint {
 	 * @return the name of this savepoint
 	 * @throws SQLException if this is an un-named savepoint
 	 */
+	@Override
 	public String getSavepointName() throws SQLException {
 		if (name == null) throw
 			new SQLException("Unable to retrieve name of unnamed savepoint", "3B000");

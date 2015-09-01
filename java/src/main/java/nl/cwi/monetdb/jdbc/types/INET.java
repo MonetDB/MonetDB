@@ -28,10 +28,12 @@ import java.net.*;
 public class INET implements SQLData {
 	private String inet;
 
+	@Override
 	public String getSQLTypeName() {
 		return "inet";
 	}
 
+	@Override
 	public void readSQL(SQLInput stream, String typeName) throws SQLException {
 		if (typeName.compareTo("inet") != 0)
 			throw new SQLException("can only use this class with 'inet' type",
@@ -39,10 +41,12 @@ public class INET implements SQLData {
 		inet = stream.readString();
 	}
 
+	@Override
 	public void writeSQL(SQLOutput stream) throws SQLException {
 		stream.writeString(inet);
 	}
 
+	@Override
 	public String toString() {
 		return inet;
 	}

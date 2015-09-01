@@ -36,6 +36,7 @@ public class TupleLineParser extends MCLParser {
 	 * @return 0, as there is no 'type' of TupleLine
 	 * @throws ParseException if an error occurs during parsing
 	 */
+	@Override
 	public int parse(String source) throws MCLParseException {
 		int len = source.length();
 		char[] chrLine = new char[len];

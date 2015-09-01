@@ -42,6 +42,7 @@ public class MonetWrapper implements Wrapper {
 	 *         whether this is a wrapper for an object with the given
 	 *         interface.
 	 */
+	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return false;
 	}
@@ -65,6 +66,7 @@ public class MonetWrapper implements Wrapper {
 	 * @throws SQLException If no object found that implements the
 	 *         interface
 	 */
+	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
 		throw new SQLException("No object found (not implemented)", "0A000");
 	}

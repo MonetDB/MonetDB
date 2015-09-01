@@ -42,6 +42,7 @@ public class MonetClob implements Clob {
 	 * called multiple times, the subsequent calls to free are treated
 	 * as a no-op.
 	 */
+	@Override
 	public void free() {
 		buf = null;
 	}
@@ -54,6 +55,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLFeatureNotSupportedException this JDBC driver does
 	 *         not support this method
 	 */
+	@Override
 	public InputStream getAsciiStream() throws SQLException {
 		throw new SQLFeatureNotSupportedException("Operation getAsciiStream() currently not supported", "0A000");
 	}
@@ -66,6 +68,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLFeatureNotSupportedException this JDBC driver does
 	 *         not support this method
 	 */
+	@Override
 	public Reader getCharacterStream() throws SQLException {
 		throw new SQLFeatureNotSupportedException("Operation getCharacterStream() currently not supported", "0A000");
 	}
@@ -84,6 +87,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLFeatureNotSupportedException this JDBC driver does
 	 *         not support this method
 	 */
+	@Override
 	public Reader getCharacterStream(long pos, long length) throws SQLException {
 		throw new SQLFeatureNotSupportedException("Operation getCharacterStream(long, long) currently not supported", "0A000");
 	}
@@ -101,6 +105,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public String getSubString(long pos, int length) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
@@ -119,6 +124,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the length
 	 *         of the CLOB value
 	 */
+	@Override
 	public long length() throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
@@ -138,6 +144,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public long position(Clob searchstr, long start) throws SQLException {
 		return position(searchstr.getSubString(1L, (int)(searchstr.length())), start);
 	}
@@ -155,18 +162,21 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public long position(String searchstr, long start) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
 		return (long)(buf.indexOf(searchstr, (int)(start - 1)));
 	}
 
+	@Override
 	public OutputStream setAsciiStream(long pos) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
 		throw new SQLException("Operation setAsciiStream(long pos) currently not supported", "0A000");
 	}
 
+	@Override
 	public Writer setCharacterStream(long pos) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
@@ -185,6 +195,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public int setString(long pos, String str) throws SQLException {
 		return setString(pos, str, 1, str.length());
 	}
@@ -204,6 +215,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public int setString(long pos, String str, int offset, int len)
 		throws SQLException
 	{
@@ -230,6 +242,7 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
+	@Override
 	public void truncate(long len) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
@@ -243,6 +256,7 @@ public class MonetClob implements Clob {
 	 *
 	 * @return the String this Clob wraps.
 	 */
+	@Override
 	public String toString() {
 		if (buf == null)
 			return "<a freed MonetClob instance>";

@@ -692,6 +692,7 @@ public final class MapiSocket {
 			super(new BufferedOutputStream(out));
 		}
 
+		@Override
 		public void flush() throws IOException {
 			// write the block (as final) then flush.
 			writeBlock(true);
@@ -750,6 +751,7 @@ public final class MapiSocket {
 			writePos = 0;
 		}
 
+		@Override
 		public void write(int b) throws IOException {
 			if (writePos == BLOCK) {
 				writeBlock(false);
@@ -757,10 +759,12 @@ public final class MapiSocket {
 			block[writePos++] = (byte)b;
 		}
 
+		@Override
 		public void write(byte[] b) throws IOException {
 			write(b, 0, b.length);
 		}
 
+		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
 			int t = 0;
 			while (len > 0) {
@@ -779,6 +783,7 @@ public final class MapiSocket {
 			}
 		}
 
+		@Override
 		public void close() throws IOException {
 			// we don't want the flush() method to be called (default of
 			// the FilterOutputStream), so we close manually here
@@ -807,18 +812,22 @@ public final class MapiSocket {
 			super(new BufferedInputStream(in));
 		}
 
+		@Override
 		public int available() {
 			return blockLen - readPos;
 		}
 
+		@Override
 		public boolean markSupported() {
 			return false;
 		}
 
+		@Override
 		public void mark(int readlimit) {
 			throw new AssertionError("Not implemented!");
 		}
 
+		@Override
 		public void reset() {
 			throw new AssertionError("Not implemented!");
 		}
@@ -936,6 +945,7 @@ public final class MapiSocket {
 			return(blockLen);
 		}
 
+		@Override
 		public int read() throws IOException {
 			if (available() == 0) {
 				if (readBlock() == -1)
@@ -947,10 +957,12 @@ public final class MapiSocket {
 			return (int)block[readPos++];
 		}
 
+		@Override
 		public int read(byte[] b) throws IOException {
 			return read(b, 0, b.length);
 		}
 
+		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
 			int t;
 			int size = 0;
@@ -982,6 +994,7 @@ public final class MapiSocket {
 			return size;
 		}
 
+		@Override
 		public long skip(long n) throws IOException {
 			long skip = n;
 			int t = 0;
@@ -1022,6 +1035,7 @@ public final class MapiSocket {
 	 * object tries to disconnect the MonetDB connection if it has not
 	 * been disconnected already.
 	 */
+	@Override
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();

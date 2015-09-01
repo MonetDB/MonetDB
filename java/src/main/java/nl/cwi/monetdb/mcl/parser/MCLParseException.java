@@ -20,6 +20,11 @@ import java.text.ParseException;
  * that the error message includes the offending data read.
  */
 public class MCLParseException extends ParseException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public MCLParseException(String e) {
 		super(e, -1);
 	}

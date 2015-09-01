@@ -13,6 +13,11 @@ package nl.cwi.monetdb.mcl;
  * class should be used if no more precise Exception class exists.
  */
 public class MCLException extends Exception {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public MCLException(String e) {
 		super(e);
 	}

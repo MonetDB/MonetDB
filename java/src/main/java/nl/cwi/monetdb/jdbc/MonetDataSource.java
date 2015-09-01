@@ -64,6 +64,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return a MonetConnection
 	 * @throws SQLException if connecting to the database fails
 	 */
+	@Override
 	public Connection getConnection() throws SQLException {
 		return getConnection(user, password);
 	}
@@ -77,6 +78,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return a MonetConnection
 	 * @throws SQLException if connecting to the database fails
 	 */
+	@Override
 	public Connection getConnection(String username, String password)
 		throws SQLException
 	{
@@ -97,6 +99,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 *
 	 * @return login timeout default is 0 (infinite)
 	 */
+	@Override
 	public int getLoginTimeout() {
 		return loginTimeout;
 	}
@@ -107,6 +110,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 *
 	 * @param seconds the number of seconds to wait before aborting the connect
 	 */
+	@Override
 	public void setLoginTimeout(int seconds) {
 		loginTimeout = seconds;
 	}
@@ -116,6 +120,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 *
 	 * @return null, since there is no log writer
 	 */
+	@Override
 	public PrintWriter getLogWriter() {
 		return null;
 	}
@@ -126,6 +131,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 *
 	 * @param out a PrintWriter - ignored
 	 */
+	@Override
 	public void setLogWriter(PrintWriter out) {
 	}
 
@@ -205,6 +211,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @throws SQLFeatureNotSupportedException if the data source does
 	 *         not use java.util.logging
 	 */
+	@Override
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		throw new SQLFeatureNotSupportedException("java.util.logging not in use", "0A000");
 	}

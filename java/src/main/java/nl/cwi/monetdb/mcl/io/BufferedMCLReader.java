@@ -105,6 +105,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 *         end of the stream has been reached
 	 * @throws IOException If an I/O error occurs
 	 */
+	@Override
 	public String readLine() throws IOException {
 		String r = super.readLine();
 		setLineType(r);

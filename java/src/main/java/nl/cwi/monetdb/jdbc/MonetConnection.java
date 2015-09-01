@@ -107,7 +107,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	private SQLWarning warnings = null;
 	/** The Connection specific mapping of user defined types to Java
 	 * types */
-	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>() {{
+	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>() {/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+	{
 			put("inet", INET.class);
 			put("url",  URL.class);
 	}};
@@ -304,6 +309,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * call to this method, the method getWarnings returns null until a
 	 * new warning is reported for this Connection object.
 	 */
+	@Override
 	public void clearWarnings() {
 		warnings = null;
 	}
@@ -317,6 +323,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * Calling the method close on a Connection object that is already
 	 * closed is a no-op.
 	 */
+	@Override
 	public void close() {
 		synchronized (server) {
 			for (Statement st : statements.keySet()) {
@@ -348,6 +355,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         Connection object is in auto-commit mode
 	 * @see #setAutoCommit(boolean)
 	 */
+	@Override
 	public void commit() throws SQLException {
 		// note: can't use sendIndependentCommand here because we need
 		// to process the auto_commit state the server gives
@@ -398,6 +406,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this data type
 	 */
+	@Override
 	public Array createArrayOf(String typeName, Object[] elements)
 		throws SQLException
 	{
@@ -418,6 +427,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return a new default Statement object
 	 * @throws SQLException if a database access error occurs
 	 */
+	@Override
 	public Statement createStatement() throws SQLException {
 		return createStatement(
 					ResultSet.TYPE_FORWARD_ONLY,
@@ -440,6 +450,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         the given type and concurrency
 	 * @throws SQLException if a database access error occurs
 	 */
+	@Override
 	public Statement createStatement(
 			int resultSetType,
 			int resultSetConcurrency)
@@ -474,6 +485,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * given parameters are not ResultSet constants indicating type,
 	 * concurrency, and holdability
 	 */
+	@Override
 	public Statement createStatement(
 			int resultSetType,
 			int resultSetConcurrency,
@@ -508,6 +520,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support MonetClob objects that can be filled in
 	 */
+	@Override
 	public Clob createClob() throws SQLException {
 		throw new SQLFeatureNotSupportedException("createClob() not supported", "0A000");
 	}
@@ -522,6 +535,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support MonetBlob objects that can be filled in
 	 */
+	@Override
 	public Blob createBlob() throws SQLException {
 		throw new SQLFeatureNotSupportedException("createBlob() not supported", "0A000");
 	}
@@ -536,6 +550,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support MonetClob objects that can be filled in
 	 */
+	@Override
 	public NClob createNClob() throws SQLException {
 		throw new SQLFeatureNotSupportedException("createNClob() not supported", "0A000");
 	}
@@ -556,6 +571,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this data type
 	 */
+	@Override
 	public Struct createStruct(String typeName, Object[] attributes)
 		throws SQLException
 	{
@@ -572,6 +588,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLFeatureNotSupportedException the JDBC driver does
 	 *         not support this data type
 	 */
+	@Override
 	public SQLXML createSQLXML() throws SQLException {
 		throw new SQLFeatureNotSupportedException("createSQLXML() not supported", "0A000");
 	}
@@ -584,6 +601,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         mode
 	 * @see #setAutoCommit(boolean)
 	 */
+	@Override
 	public boolean getAutoCommit() throws SQLException {
 		return autoCommit;
 	}
@@ -595,6 +613,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or the
 	 *         current language is not SQL
 	 */
+	@Override
 	public String getCatalog() throws SQLException {
 		if (lang != LANG_SQL)
 			throw new SQLException("This method is only supported in SQL mode", "M0M04");
@@ -615,6 +634,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param name The name of the client info property to retrieve
 	 * @return The value of the client info property specified
 	 */
+	@Override
 	public String getClientInfo(String name) {
 		// This method will also return null if the specified client
 		// info property name is not supported by the driver.
@@ -628,6 +648,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         value of each of the client info properties supported by
 	 *         the driver.
 	 */
+	@Override
 	public Properties getClientInfo() {
 		return new Properties();
 	}
@@ -640,6 +661,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         ResultSet.HOLD_CURSORS_OVER_COMMIT or
 	 *         ResultSet.CLOSE_CURSORS_AT_COMMIT
 	 */
+	@Override
 	public int getHoldability() {
 		// TODO: perhaps it is better to have the server implement
 		//       CLOSE_CURSORS_AT_COMMIT
@@ -656,6 +678,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if the current language is not SQL
 	 * @return a DatabaseMetaData object for this Connection object
 	 */
+	@Override
 	public DatabaseMetaData getMetaData() throws SQLException {
 		if (lang != LANG_SQL)
 			throw new SQLException("This method is only supported in SQL mode", "M0M04");
@@ -670,6 +693,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return the current transaction isolation level, which will be
 	 *         Connection.TRANSACTION_SERIALIZABLE
 	 */
+	@Override
 	public int getTransactionIsolation() {
 		return TRANSACTION_SERIALIZABLE;
 	}
@@ -682,6 +706,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return the java.util.Map object associated with this Connection
 	 *         object
 	 */
+	@Override
 	public Map<String,Class<?>> getTypeMap() {
 		return typeMap;
 	}
@@ -702,6 +727,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this method is
 	 *         called on a closed connection
 	 */
+	@Override
 	public SQLWarning getWarnings() throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
@@ -726,6 +752,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return true if this Connection object is closed; false if it is
 	 *         still open
 	 */
+	@Override
 	public boolean isClosed() {
 		return closed;
 	}
@@ -738,6 +765,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
+	@Override
 	public boolean isReadOnly() {
 		return false;
 	}
@@ -760,6 +788,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if the value supplied for timeout is less
 	 *         than 0
 	 */
+	@Override
 	public boolean isValid(int timeout) throws SQLException {
 		if (timeout < 0)
 			throw new SQLException("timeout is less than 0", "M1M05");
@@ -778,9 +807,13 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		return false;
 	}
 
+	@Override
 	public String nativeSQL(String sql) {return sql;}
+	@Override
 	public CallableStatement prepareCall(String sql) {return null;}
+	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {return null;}
+	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return null;}
 
 	/**
@@ -810,6 +843,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         pre-compiled SQL statement
 	 * @throws SQLException if a database access error occurs
 	 */
+	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		return prepareStatement(
 					sql,
@@ -839,6 +873,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *                      parameters are not ResultSet constants indicating
 	 *                      type and concurrency
 	 */
+	@Override
 	public PreparedStatement prepareStatement(
 			String sql,
 			int resultSetType,
@@ -879,6 +914,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * given parameters are not ResultSet constants indicating type,
 	 * concurrency, and holdability
 	 */
+	@Override
 	public PreparedStatement prepareStatement(
 			String sql,
 			int resultSetType,
@@ -937,6 +973,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         given parameter is not a Statement  constant indicating
 	 *         whether auto-generated keys should be returned
 	 */
+	@Override
 	public PreparedStatement prepareStatement(
 			String sql,
 			int autoGeneratedKeys)
@@ -955,7 +992,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		);
 	}
 
+	@Override
 	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) {return null;}
+	@Override
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return null;}
 
 	/**
@@ -968,6 +1007,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         Savepoint object is not a valid savepoint in the current
 	 *         transaction
 	 */
+	@Override
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself", "M0M06");
@@ -1002,6 +1042,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         Connection object is in auto-commit mode
 	 * @see #setAutoCommit(boolean)
 	 */
+	@Override
 	public void rollback() throws SQLException {
 		// note: can't use sendIndependentCommand here because we need
 		// to process the auto_commit state the server gives
@@ -1032,6 +1073,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         Savepoint object is no longer valid, or this Connection
 	 *         object is currently in auto-commit mode
 	 */
+	@Override
 	public void rollback(Savepoint savepoint) throws SQLException {
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself", "M0M06");
@@ -1081,6 +1123,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 * @see #getAutoCommit()
 	 */
+	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		if (this.autoCommit != autoCommit) {
 			sendControlCommand("auto_commit " + (autoCommit ? "1" : "0"));
@@ -1093,6 +1136,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * Connection object's database in which to work.  If the driver
 	 * does not support catalogs, it will silently ignore this request. 
 	 */
+	@Override
 	public void setCatalog(String catalog) throws SQLException {
 		// silently ignore this request
 	}
@@ -1105,6 +1149,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *        value is null, the current value of the specified property
 	 *        is cleared.
 	 */
+	@Override
 	public void setClientInfo(String name, String value) {
 		addWarning("clientInfo: " + name + "is not a recognised property", "01M07");
 	}
@@ -1114,6 +1159,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *
 	 * @param props The list of client info properties to set
 	 */
+	@Override
 	public void setClientInfo(Properties props) {
 		for (Entry<Object, Object> entry : props.entrySet()) {
 			setClientInfo(entry.getKey().toString(),
@@ -1121,6 +1167,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		}
 	}
 
+	@Override
 	public void setHoldability(int holdability) {}
 
 	/**
@@ -1133,6 +1180,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this
 	 *         method is called during a transaction.
 	 */
+	@Override
 	public void setReadOnly(boolean readOnly) throws SQLException {
 		if (readOnly == true)
 			addWarning("cannot setReadOnly(true): read-only Connection mode not supported", "01M08");
@@ -1146,6 +1194,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is currently in auto-commit mode
 	 */
+	@Override
 	public Savepoint setSavepoint() throws SQLException {
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
@@ -1180,6 +1229,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is currently in auto-commit mode
 	 */
+	@Override
 	public Savepoint setSavepoint(String name) throws SQLException {
 		// create a new Savepoint object
 		MonetSavepoint sp;
@@ -1221,6 +1271,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *        Connection.TRANSACTION_REPEATABLE_READ, or
 	 *        Connection.TRANSACTION_SERIALIZABLE.
 	 */
+	@Override
 	public void setTransactionIsolation(int level) {
 		if (level != TRANSACTION_SERIALIZABLE) {
 			addWarning("MonetDB only supports fully serializable " +
@@ -1237,6 +1288,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param map the java.util.Map object to install as the replacement for
 	 *        this Connection  object's default type map
 	 */
+	@Override
 	public void setTypeMap(Map<String, Class<?>> map) {
 		typeMap = map;
 	}
@@ -1247,6 +1299,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *
 	 * @return a String representing this Object
 	 */
+	@Override
 	public String toString() {
 		return "MonetDB Connection (" + getJDBCURL() + ") " + 
 				(closed ? "connected" : "disconnected");
@@ -1261,6 +1314,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this
 	 *         method is called on a closed connection
 	 */
+	@Override
 	public void setSchema(String schema) throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
@@ -1274,6 +1328,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or this
 	 *         method is called on a closed connection
 	 */
+	@Override
 	public String getSchema() throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
@@ -1305,6 +1360,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SecurityException if a security manager exists and
 	 *         its checkPermission method denies calling abort
 	 */
+	@Override
 	public void abort(Executor executor) throws SQLException {
 		if (closed)
 			return;
@@ -1333,6 +1389,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         method is called on a closed connection, the executor is
 	 *         null, or the value specified for seconds is less than 0.
 	 */
+	@Override
 	public void setNetworkTimeout(Executor executor, int millis)
 		throws SQLException
 	{
@@ -1360,6 +1417,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs or
 	 *         this method is called on a closed Connection
 	 */
+	@Override
 	public int getNetworkTimeout() throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
@@ -1645,6 +1703,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 *         is unknown
 		 */
 		// {{{ addLine
+		@Override
 		public String addLine(String tmpLine, int linetype) {
 			if (isSet[LENS] && isSet[TYPES] && isSet[TABLES] && isSet[NAMES]) {
 				return resultBlocks[0].addLine(tmpLine, linetype);
@@ -1687,6 +1746,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * This method returns true if not all headers are set, or the
 		 * first DataBlockResponse reports to want more.
 		 */
+		@Override
 		public boolean wantsMore() {
 			if (isSet[LENS] && isSet[TYPES] && isSet[TABLES] && isSet[NAMES]) {
 				return resultBlocks[0].wantsMore();
@@ -1740,6 +1800,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @throws SQLException if the data currently in this Response is not
 		 *                      sufficient to be consistant
 		 */
+		@Override
 		public void complete() throws SQLException {
 			String error = "";
 			if (!isSet[NAMES]) error += "name header missing\n";
@@ -1903,6 +1964,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * Closes this Response by sending an Xclose to the server indicating
 		 * that the result can be closed at the server side as well.
 		 */
+		@Override
 		public void close() {
 			if (closed) return;
 			// send command to server indicating we're done with this
@@ -1983,6 +2045,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return a non-null String if the line is invalid,
 		 *         or additional lines are not allowed.
 		 */
+		@Override
 		public String addLine(String line, int linetype) {
 			if (linetype != BufferedMCLReader.RESULT)
 				return "protocol violation: unexpected line in data block: " + line;
@@ -1999,6 +2062,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 *
 		 * @return true if a next line should be added, false otherwise
 		 */
+		@Override
 		public boolean wantsMore() {
 			// remember: pos is the value already stored
 			return pos + 1 < data.length;
@@ -2012,6 +2076,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 *
 		 * @throws SQLException if not all rows are filled
 		 */
+		@Override
 		public void complete() throws SQLException {
 			if ((pos + 1) != data.length) throw
 				new SQLException("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?", "M0M10");
@@ -2023,6 +2088,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 *
 		 * @throws SQLException
 		 */
+		@Override
 		public void close() {
 			// feed all rows to the garbage collector
 			for (int i = 0; i < data.length; i++) data[i] = null;
@@ -2067,18 +2133,22 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			this.lastid = id;
 		}
 
+		@Override
 		public String addLine(String line, int linetype) {
 			return "Header lines are not supported for an UpdateResponse";
 		}
 
+		@Override
 		public boolean wantsMore() {
 			return false;
 		}
 
+		@Override
 		public void complete() {
 			// empty, because there is nothing to check
 		}
 
+		@Override
 		public void close() {
 			// nothing to do here...
 		}
@@ -2098,18 +2168,22 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	class SchemaResponse implements Response {
 		public final int state = Statement.SUCCESS_NO_INFO;
 		
+		@Override
 		public String addLine(String line, int linetype) {
 			return "Header lines are not supported for a SchemaResponse";
 		}
 
+		@Override
 		public boolean wantsMore() {
 			return false;
 		}
 
+		@Override
 		public void complete() {
 			// empty, because there is nothing to check
 		}
 
+		@Override
 		public void close() {
 			// nothing to do here...
 		}
@@ -2584,6 +2658,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			start();
 		}
 
+		@Override
 		public void run() {
 			sendLock.lock();
 			try {
