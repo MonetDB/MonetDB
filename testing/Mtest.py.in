@@ -1565,6 +1565,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     env['TST_INT128'] = ""
     env['TST_STATIC'] = ""
     env['TST_SINGLE'] = ""
+    env['TST_THREADS'] = ""
     if qOut:
         tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;?(| and 128bit integers) ([^ ]*) linked", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
@@ -1584,9 +1585,11 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                     env['TST_STATIC'] = "STATIC"
                     os.environ['TST_STATIC'] = env['TST_STATIC']
             t = tt.match(l)
-            if t and t.group(1) == "1":
-                env['TST_SINGLE'] = "single"
-                os.environ['TST_SINGLE'] = env['TST_SINGLE']
+            if t:
+                if t.group(1) == "1":
+                    env['TST_SINGLE'] = "single"
+                    os.environ['TST_SINGLE'] = env['TST_SINGLE']
+                env['TST_THREADS'] = t.group(1)
             m = tm.match(l)
             if m:
                 env['TST_MODS'] = eval(m.group(1))
@@ -1840,6 +1843,21 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         reason = "as previous hugeint chained release database is not available"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
+                elif cond.startswith('THREADS='):
+                    if (env['TST_THREADS'] == cond[8:]) == negate:
+                        reason = "as number of threads is wrong"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond.startswith('THREADS<='):
+                    if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
+                        reason = "as number of threads is wrong"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond.startswith('THREADS>='):
+                    if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
+                        reason = "as number of threads is wrong"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
                 elif not CONDITIONALS.has_key(cond):
                     reason = "as conditional '%s' is unknown." % cond
                     elem = SkipTest(env, TST, EXT, reason, length)
@@ -1893,6 +1911,21 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             elif cond == 'PREVHGECHAINREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
                     reason = "as previous hugeint chained release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS='):
+                if (env['TST_THREADS'] == cond[8:]) == negate:
+                    reason = "as number of threads is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS<='):
+                if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
+                    reason = "as number of threads is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS>='):
+                if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
+                    reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif not CONDITIONALS.has_key(cond):
@@ -4010,6 +4043,7 @@ def main(argv) :
             env['TST_OIDS'] = ""
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
+            env['TST_THREADS'] = ""
             env['TST_STATIC'] = ""
             cmd = splitcommand(env['exe']['Mserver'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
