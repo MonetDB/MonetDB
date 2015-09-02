@@ -3055,7 +3055,7 @@ main(int argc, char **argv)
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
 #ifdef HAVE_SETLOCALE
-	setlocale(LC_ALL, "");
+	setlocale(LC_CTYPE, "");
 #endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");

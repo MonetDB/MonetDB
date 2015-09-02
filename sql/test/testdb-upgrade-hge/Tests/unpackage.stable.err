@@ -1,0 +1,12 @@
+stderr of test 'unpackage` in directory 'sql/test/testdb-upgrade-hge` itself:
+
+
+# 15:32:37 >  
+# 15:32:37 >  "/usr/bin/python2" "unpackage.py" "unpackage"
+# 15:32:37 >  
+
+
+# 15:32:38 >  
+# 15:32:38 >  "Done."
+# 15:32:38 >  
+
