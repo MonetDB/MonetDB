@@ -108,6 +108,8 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	r -> hdense = TRUE;
 	r -> hsorted = TRUE;
 	r -> hrevsorted = FALSE;
+	r -> tkey = FALSE;
+	r -> tdense = FALSE;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
 	r -> T ->nonil = gids->T->nonil;
@@ -699,6 +701,15 @@ ALGsubouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
 				   BATsubouterjoin, NULL, NULL, NULL, "algebra.subouterjoin");
+}
+
+str
+ALGsubsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
+				   nil_matches, estimate,
+				   BATsubsemijoin, NULL, NULL, NULL, "algebra.subsemijoin");
 }
 
 str

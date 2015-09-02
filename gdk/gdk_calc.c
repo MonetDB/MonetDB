@@ -73,19 +73,19 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	return GDK_SUCCEED;
 }
 
-#define CHECKCAND(dst, i, candoff, NIL)					\
-	/* cannot use do/while trick because of continue */		\
-	/* NOTE: because of the continue, you *must* use the */		\
-	/* index (i) to index src/dst */				\
-	if (cand) {							\
-		if ((i) < *cand - (candoff)) {				\
-			nils++;						\
-			(dst)[i] = (NIL);				\
-			continue;					\
-		}							\
-		assert((i) == *cand - (candoff));			\
-		if (++cand == (candend))				\
-			end = (i) + 1;					\
+#define CHECKCAND(dst, i, candoff, NIL)				\
+	/* cannot use do/while trick because of continue */	\
+	/* NOTE: because of the continue, you *must* use the */	\
+	/* index (i) to index src/dst */			\
+	if (cand) {						\
+		if ((i) < *cand - (candoff)) {			\
+			nils++;					\
+			(dst)[i] = (NIL);			\
+			continue;				\
+		}						\
+		assert((i) == *cand - (candoff));		\
+		if (++cand == (candend))			\
+			end = (i) + 1;				\
 	}
 
 /* fill in NILs from low to high, used to write NILs before and after
@@ -1304,7 +1304,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	do {							\
 		GDKerror("22003!overflow in calculation "	\
 			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
-			 CST##TYPE1 lft[i], CST##TYPE2 rgt[j]);			\
+			 CST##TYPE1 lft[i], CST##TYPE2 rgt[j]);	\
 		return BUN_NONE;				\
 	} while (0)
 
@@ -8541,7 +8541,7 @@ static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, BUN cnt, BUN start, \
-				BUN end, const oid *restrict cand,		\
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -8573,7 +8573,7 @@ static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, BUN cnt, BUN start, \
-				BUN end, const oid *restrict cand,		\
+				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
 				int abort_on_error)			\
 {									\
@@ -12248,28 +12248,28 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
  * failed (only happens for conversion to str).
  */
 
-#define convertimpl_copy(TYPE)					\
-static BUN							\
+#define convertimpl_copy(TYPE)						\
+static BUN								\
 convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst, BUN cnt,	\
 			BUN start, BUN end, const oid *restrict cand,	\
-			const oid *candend, oid candoff)	\
-{								\
-	BUN i, nils = 0;					\
-								\
-	CANDLOOP(dst, i, TYPE##_nil, 0, start);			\
-	for (i = start; i < end; i++) {				\
-		CHECKCAND(dst, i, candoff, TYPE##_nil);		\
-		nils += src[i] == TYPE##_nil;			\
-		dst[i] = src[i];				\
-	}							\
-	CANDLOOP(dst, i, TYPE##_nil, end, cnt);			\
-	return nils;						\
+			const oid *candend, oid candoff)		\
+{									\
+	BUN i, nils = 0;						\
+									\
+	CANDLOOP(dst, i, TYPE##_nil, 0, start);				\
+	for (i = start; i < end; i++) {					\
+		CHECKCAND(dst, i, candoff, TYPE##_nil);			\
+		nils += src[i] == TYPE##_nil;				\
+		dst[i] = src[i];					\
+	}								\
+	CANDLOOP(dst, i, TYPE##_nil, end, cnt);				\
+	return nils;							\
 }
 
 #define convertimpl_enlarge(TYPE1, TYPE2)				\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
-			  BUN start, BUN end, const oid *restrict cand,		\
+			  BUN start, BUN end, const oid *restrict cand,	\
 			  const oid *candend, oid candoff)		\
 {									\
 	BUN i, nils = 0;						\
@@ -12290,14 +12290,14 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #define CONV_OVERFLOW(TYPE1, TYPE2, value)				\
 	do {								\
 		GDKerror("22003!overflow in conversion of "		\
-			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), TYPE2);	\
+			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), TYPE2); \
 		return BUN_NONE;					\
 	} while (0)
 
 #define convertimpl_oid_enlarge(TYPE1)					\
 static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
-		      BUN start, BUN end, const oid *restrict cand,		\
+		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
 		      int abort_on_error)				\
 {									\
@@ -12325,7 +12325,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 #define convertimpl_oid_reduce(TYPE1)					\
 static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
-		      BUN start, BUN end, const oid *restrict cand,		\
+		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
 		      int abort_on_error)				\
 {									\
@@ -12354,7 +12354,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 #define convertimpl_reduce(TYPE1, TYPE2)				\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
-			  BUN start, BUN end, const oid *restrict cand,		\
+			  BUN start, BUN end, const oid *restrict cand,	\
 			  const oid *candend, oid candoff,		\
 			  int abort_on_error)				\
 {									\
@@ -12385,7 +12385,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
-			  BUN start, BUN end, const oid *restrict cand,		\
+			  BUN start, BUN end, const oid *restrict cand,	\
 			  const oid *candend, oid candoff,		\
 			  int abort_on_error)				\
 {									\
@@ -12414,7 +12414,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #define convert2bit_impl(TYPE)						\
 static BUN								\
 convert_##TYPE##_bit(const TYPE *src, bit *restrict dst, BUN cnt,	\
-		     BUN start, BUN end, const oid *restrict cand,		\
+		     BUN start, BUN end, const oid *restrict cand,	\
 		     const oid *candend, oid candoff)			\
 {									\
 	BUN i, nils = 0;						\

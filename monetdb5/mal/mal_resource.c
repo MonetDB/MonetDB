@@ -203,8 +203,8 @@ MALresourceFairness(lng usec)
 			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
-						mnstr_flush(GDKstdout);
+						PARDEBUG mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
+						PARDEBUG mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);
 				rss = GDKmem_cursize();
