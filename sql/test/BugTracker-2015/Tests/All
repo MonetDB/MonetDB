@@ -50,7 +50,7 @@ cast_on_groupby_col_crash.Bug-3769
 apply_merge_distinct.Bug-3760
 cardinality.Bug-3761
 set_default_role.Bug-3364
-useless_casts.Bug-3756
+THREADS>=3?useless_casts.Bug-3756
 sum_interval.Bug-3785
 nil_cast.Bug-3787
 sql2pcre.Bug-3800
