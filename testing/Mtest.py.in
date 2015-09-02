@@ -1825,9 +1825,19 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         reason = "as previous release database is not available"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
+                elif cond == 'PREVHGEREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
+                        reason = "as previous hugeint release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
                 elif cond == 'PREVCHAINREL':
                     if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                        reason = "as previous release database is not available"
+                        reason = "as previous chained release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVHGECHAINREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
+                        reason = "as previous hugeint chained release database is not available"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
                 elif not CONDITIONALS.has_key(cond):
@@ -1870,9 +1880,19 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as previous release database is not available"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond == 'PREVHGEREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
+                    reason = "as previous hugeint release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
             elif cond == 'PREVCHAINREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                    reason = "as previous release database is not available"
+                    reason = "as previous chained release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGECHAINREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
+                    reason = "as previous hugeint chained release database is not available"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif not CONDITIONALS.has_key(cond):
