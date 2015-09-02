@@ -1440,7 +1440,8 @@ sql_update_jul2015(Client c)
 			"  hashes bigint,\n"
 			"  phash boolean,\n"
 			"  imprints bigint,\n"
-			"  sorted boolean\n"
+			"  sorted boolean,\n"
+			"  orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 

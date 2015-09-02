@@ -16,6 +16,8 @@ bat.orderidx(bv,3);
 ord := bat.getorderidx(bv);
 io.print(ord);
 
+s:= algebra.subsort(bv,false,false);
+io.print(s);
 # check for resilience against multiple calls
 bat.orderidx(bv,3);
 ord1 := bat.getorderidx(bv);
