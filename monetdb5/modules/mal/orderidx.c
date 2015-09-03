@@ -7,7 +7,7 @@
  */
 
 /*
- * (c) Martin Kersten
+ * (c) Martin Kersten, Lefteris Sidirourgos
  * Implement a parallel sort-merge MAL program generator
  */
 #include "monetdb_config.h"
@@ -33,24 +33,25 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 
 	if( pieces < 0 ){
 		/* TODO estimate number of pieces */
-		pieces = 3;
+		pieces = 3; // should become GDKnr_threads
 	}
-	if ( BATcount(b) < MIN_PIECE)
+	if ( BATcount(b) < MIN_PIECE || BATcount(b) <= (BUN) pieces)
 		pieces = 1;
-	else
-	if ( BATcount(b) <= (BUN) pieces ){
-		pieces = BATcount(b);
-	}
 #ifdef _DEBUG_OIDX_
 	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
-#endif
-
 	mnstr_printf(cntxt->fdout,"#oidx ttype %d bat %d\n", b->ttype,tpe);
-	/* TODO: check if b already has index */
-	/* TODO: check if b is sorted, then index does nto make sense, other action  is needed*/
-	/* TODO: check if b is view and parent has index do a range select */
+#endif
+	/* check if b already has index */
+	if( b->torderidx.flags )
+		return MAL_SUCCEED;
+	/* check if b is sorted, then index does nto make sense, other action  is needed*/
+	if( b->tsorted || b->trevsorted)
+		return MAL_SUCCEED;
+	/* check if b is view and parent has index do a range select */
+    if (VIEWtparent(b)  && b->torderidx.flags)
+		return MAL_SUCCEED;
 
-	// create a temporary MAL function
+	// create a temporary MAL function to sort the BAT in parallel
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
 	snew = newFunction(putName("user", 4), putName(name, strlen(name)), FUNCTIONsymbol);
 	smb = snew->def;
@@ -102,7 +103,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
 	}
-	// finalize, check, and evaluate
+	// finalize OID packing, check, and evaluate
 	pushInstruction(smb,pack);
 	q = newAssignment(smb);
 	q->barrier = EXITsymbol;
@@ -112,7 +113,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	if (smb->errors) {
 		msg = createException(MAL, "bat.orderidx", "Type errors in generated code");
 	} else {
-		// evaluate MAL block
+		// evaluate MAL block and keep the ordered OID bat
 		newstk = prepareMALstack(smb, smb->vsize);
 		newstk->up = 0;
 		newstk->stk[arg].vtype= TYPE_bat;
@@ -121,7 +122,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
         msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
-#ifdef _DEBUG_INDEX_
+#ifdef _DEBUG_OIDX_
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_ALL);
 #endif
 	// get rid of temporary MAL block
@@ -135,7 +136,6 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	str msg= MAL_SUCCEED;
 	int pieces = -1;
-
 
 	if (pci->argc == 3) {
 		pieces = stk->stk[pci->argv[2]].val.ival;
@@ -171,6 +171,10 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+/*
+ * Merge the collection of sorted OID BATs into one
+ */
 
 str
 OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -250,9 +254,9 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		oid *mv;
 		BUN m_sz;
 
-		for (i=0, m_sz = 0; i < n_ar; i++) {
+		for (i=0, m_sz = 0; i < n_ar; i++) 
 			m_sz += BATcount(a[i]);
-		}
+		
 		m = BATnew(TYPE_void, TYPE_oid, m_sz, TRANSIENT);
 		if (m == NULL) {
 			for (i = 0; i < n_ar; i++)
@@ -300,9 +304,7 @@ do {																		\
 #endif
 			case TYPE_flt: BINARY_MERGE(flt); break;
 			case TYPE_dbl: BINARY_MERGE(dbl); break;
-			case TYPE_void:
 			case TYPE_str:
-			case TYPE_ptr:
 			default:
 				/* TODO: support strings, date, timestamps etc. */
 				throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
