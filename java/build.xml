@@ -20,7 +20,7 @@ Copyright 2008-2015 MonetDB B.V.
 
 
   <!-- set global properties for this build -->
-  <property name="srcdir"               value="src" />
+  <property name="srcdir"               value="src/main/java" />
   <property name="libdir"               value="lib" />
   <property name="jardir"               value="jars" />
   <property name="builddir"             value="build" />
@@ -184,7 +184,6 @@ Copyright 2008-2015 MonetDB B.V.
       target="${jvm.version}"
       >
       <src path="${srcdir}" />
-      <src path="${builddir}/src" />
       <include name="${jdbc-package}/**/*.java" />
       <compilerarg line="${javac.flags}" />
     </javac>
@@ -281,10 +280,10 @@ Copyright 2008-2015 MonetDB B.V.
     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
 
     <!-- now copy and filter the file -->
-    <copy file="${srcdir}/${jdbc-package}/MonetDriver.java.in"
-      overwrite="true"
-      tofile="${builddir}/src/${jdbc-package}/MonetDriver.java"
-      filtering="yes" />
+  	<copy file="${srcdir}/${jdbc-package}/MonetDriver.java.in"
+  	  overwrite="true"
+  	  tofile="${srcdir}/${jdbc-package}/MonetDriver.java"
+  	  filtering="yes" />
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
   </target>
