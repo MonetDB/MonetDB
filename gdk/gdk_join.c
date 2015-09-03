@@ -1070,7 +1070,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (sl)
 		r1->tdense = sl->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
-		if (!nil_on_miss && !must_match && lscan > 0) {
+		if (lscan == 0) {
+			/* always search r completely */
+			rcand = rcandorig;
+			rstart = rstartorig;
+		} else {
 			/* If l is sorted (lscan > 0), we look at the
 			 * next value in r to see whether we can jump
 			 * over a large section of l using binary
@@ -1081,21 +1085,21 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * If it is, we use binary search on l,
 			 * otherwise we scan l for the next position
 			 * with a value greater than or equal to the
-			 * value in r.  Obviously, we can only do this
-			 * if we're not inserting NILs for missing
-			 * values in r (nil_on_miss set, i.e., outer
-			 * join).
+			 * value in r.
 			 * The next value to match in r is the first
 			 * if equal_order is set, the last
 			 * otherwise. */
+			BUN nlx = 0; /* number of non-matching values in l */
+
 			if (rcand) {
 				if (rcand == rcandend)
-					break;
-				v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
+					v = NULL;
+				else
+					v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
 			} else {
-				if (rstart == rend)
-					break;
-				if (rvals) {
+				if (rstart == rend) {
+					v = NULL;
+				} else if (rvals) {
 					v = VALUE(r, equal_order ? rstart : rend - 1);
 					if (roff == wrd_nil) {
 						rval = oid_nil;
@@ -1114,33 +1118,43 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					v = (const char *) &rval;
 				}
 			}
-			/* here, v points to next value in r */
-			if (lcand) {
+			/* here, v points to next value in r, or if
+			 * we're at the end of r, v is NULL */
+			if (v == NULL) {
+				if (lcand) {
+					nlx = lcandend - lcand;
+					lcand = lcandend;
+				} else {
+					nlx = lend - lstart;
+					lstart = lend;
+				}
+			} else if (lcand) {
 				if (lscan < (BUN) (lcandend - lcand) &&
 				    lordering * cmp(VALUE(l, lcand[lscan] - l->hseqbase),
 						    v) < 0) {
-					lcand += binsearch(lcand, l->hseqbase,
-							   l->ttype, lvals, lvars,
-							   lwidth, lscan,
-							   (BUN) (lcandend - lcand), v,
-							   cmp, lordering, 0);
+					nlx = binsearch(lcand, l->hseqbase,
+							l->ttype, lvals, lvars,
+							lwidth, lscan,
+							(BUN) (lcandend - lcand), v,
+							cmp, lordering, 0);
+					lcand += nlx;
 					if (lcand == lcandend)
-						break;
-					lskipped = BATcount(r1) > 0;
+						v = NULL;
 				}
 			} else if (lvals) {
 				if (lscan < lend - lstart &&
 				    lordering * cmp(VALUE(l, lstart + lscan),
 						    v) < 0) {
+					nlx = lstart;
 					lstart = binsearch(NULL, 0,
 							   l->ttype, lvals, lvars,
 							   lwidth,
 							   lstart + lscan,
 							   lend, v,
 							   cmp, lordering, 0);
+					nlx = lstart - nlx;
 					if (lstart == lend)
-						break;
-					lskipped = BATcount(r1) > 0;
+						v = NULL;
 				}
 			} else if (*(const oid *)v != oid_nil) {
 				if (l->tseqbase == oid_nil) {
@@ -1150,22 +1164,53 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * all other values in r are
 					 * also not nil, and all
 					 * values in l are nil */
+					nlx = lend - lstart;
 					lstart = lend;
-					break;
-				}
-				if (*(const oid *)v > l->tseqbase) {
-					BUN olstart = lstart;
+					v = NULL;
+				} else if (*(const oid *)v > l->tseqbase) {
+					nlx = lstart;
 					lstart = *(const oid *)v - l->tseqbase;
-					if (lstart >= lend)
-						break;
-					if (lstart > olstart)
-						lskipped = BATcount(r1) > 0;
+					if (lstart >= lend) {
+						lstart = lend;
+						v = NULL;
+					}
+					nlx = lstart - nlx;
 				}
 			}
-		} else if (lscan == 0) {
-			/* always search r completely */
-			rcand = rcandorig;
-			rstart = rstartorig;
+			if (nlx > 0) {
+				if (must_match) {
+					GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+					goto bailout;
+				}
+				if (nil_on_miss) {
+					if (r2->T->nonil) {
+						r2->T->nil = 1;
+						r2->T->nonil = 0;
+						r2->tdense = 0;
+						r2->tsorted = 0;
+						r2->trevsorted = 0;
+					}
+					if (lcand) {
+						while (nlx > 0) {
+							APPEND(r1, lcand[-nlx]);
+							APPEND(r2, oid_nil);
+							nlx--;
+						}
+					} else {
+						while (nlx > 0) {
+							APPEND(r1, lstart - nlx);
+							APPEND(r2, oid_nil);
+							nlx--;
+						}
+					}
+				} else {
+					lskipped = BATcount(r1) > 0;
+				}
+			}
+			if (v == NULL) {
+				/* we have exhausted the inputs */
+				break;
+			}
 		}
 		/* Here we determine the next value in l that we are
 		 * going to try to match in r.  We will also count the
