@@ -131,11 +131,11 @@ SELECT '' AS bad, f.f1 * '1e200' from FLOAT8_TBL f;
 
 SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
 
-SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
+--SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
 
-SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
+SELECT '' AS bad, log(-f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
 
-SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
+SELECT '' AS bad, exp(-f.f1) from FLOAT8_TBL f where f.f1 > '-1000.0';
 
 SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
 
