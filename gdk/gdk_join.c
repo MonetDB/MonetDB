@@ -560,7 +560,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* (hi - lo) different OIDs in r2,
 				 * plus one for nil */
 				r2->tkey = hi - lo + 1 == cnt;
-				ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 						  BATgetId(l), BATgetId(r),
 						  BATgetId(r1), BATcount(r1),
 						  r1->tsorted ? "-sorted" : "",
@@ -580,7 +580,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->T->shift = 0;
 			BATsetcount(r2, hi - lo);
 			BATseqbase(BATmirror(r2), r->hseqbase + lo - r->tseqbase);
-			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 					  BATgetId(l), BATgetId(r),
 					  BATgetId(r1), BATcount(r1),
 					  r1->tsorted ? "-sorted" : "",
@@ -655,7 +655,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r1->T->nil = 0;
 		r1->T->nonil = 1;
 		r1->tkey = 1;
-		ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+		ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 				  BATgetId(l), BATgetId(r),
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
@@ -737,7 +737,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
 			r2->tkey = (l->tkey & 1) || BATcount(r2) <= 1;
 			r2->tdense = 0;
-			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 					  BATgetId(l), BATgetId(r),
 					  BATgetId(r1), BATcount(r1),
 					  r1->tsorted ? "-sorted" : "",
@@ -808,7 +808,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r2->tdense = 0;
 		r2->tseqbase = oid_nil;
 	}
-	ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 			  BATgetId(l), BATgetId(r),
 			  BATgetId(r1), BATcount(r1),
 			  r1->tsorted ? "-sorted" : "",
@@ -1717,7 +1717,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
-	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 		  BATgetId(l), BATgetId(r),
 		  BATgetId(r1), BATcount(r1),
 		  r1->tsorted ? "-sorted" : "",
@@ -2127,7 +2127,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, in
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
-	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 		  BATgetId(l), BATgetId(r),
 		  BATgetId(r1), BATcount(r1),
 		  r1->tsorted ? "-sorted" : "",
@@ -2359,7 +2359,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
-	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 		  BATgetId(l), BATgetId(r),
 		  BATgetId(r1), BATcount(r1),
 		  r1->tsorted ? "-sorted" : "",
@@ -2762,7 +2762,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (r2->tdense)
 			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
 	}
-	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 		  BATgetId(l), BATgetId(r),
 		  BATgetId(r1), BATcount(r1),
 		  r1->tsorted ? "-sorted" : "",
