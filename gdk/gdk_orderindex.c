@@ -75,6 +75,7 @@ ORDERkeepidx(BAT *b, BAT *order) {
 		/* take care if other index already exists, should not happen though
 		 * because it is a waste of resources.
 		 */
+		MT_lock_unset(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
 		return GDK_FAIL;
 	}
 	MT_lock_unset(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
