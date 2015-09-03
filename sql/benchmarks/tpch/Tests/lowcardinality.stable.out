@@ -1,0 +1,105 @@
+stdout of test 'lowcardinality` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 15:58:29 >  
+# 15:58:29 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36722" "--set" "mapi_usock=/var/tmp/mtest-32482/.s.monetdb.36722" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/leftmart//Linux/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:58:29 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36722/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32482/.s.monetdb.36722
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.8'
+# Finished reading the write-ahead log 'sql_logs/sql/log.8'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:58:29 >  
+# 15:58:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32482" "--port=36722"
+# 15:58:29 >  
+
+#SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 limit 10;
+% sys.orders,	sys.L1 # table_name
+% o_totalprice,	L1 # name
+% decimal,	wrd # type
+% 17,	1 # length
+[ 126476.16,	2	]
+[ 16236.69,	2	]
+[ 14623.67,	2	]
+[ 169049.46,	2	]
+#SELECT max(o_totalprice) FROM sys.orders;
+% sys.L1 # table_name
+% L1 # name
+% decimal # type
+% 17 # length
+[ 466001.28	]
+#SELECT min(o_totalprice) FROM sys.orders;
+% sys.L1 # table_name
+% L1 # name
+% decimal # type
+% 17 # length
+[ 874.89	]
+#SELECT count(*) FROM sys.orders WHERE o_totalprice BETWEEN 38451.0 AND 38452.0;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM sys.orders WHERE o_totalprice = 38451.38;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM sys.orders WHERE o_totalprice >= 555285.16;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM sys.orders WHERE o_totalprice < 858.0;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
+#WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+#AND  p_retailprice BETWEEN 1214.0 AND 1215.0;
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 8	]
+#SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
+#WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+#AND  s_acctbal BETWEEN 1432.0 AND 1433.0;
+% .L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 80	]
+#SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
+#WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+#AND ps_supplycost BETWEEN 915.0 AND 916;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 7	]
+
+# 15:58:29 >  
+# 15:58:29 >  "Done."
+# 15:58:29 >  
+
