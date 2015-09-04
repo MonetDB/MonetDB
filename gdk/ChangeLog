@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Sep  4 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATkintersect.  It wasn't used anymore.  It's
+  functionality can be obtained by using BATsubsemijoin.
+
 * Fri Aug 14 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed the function BATkunion.
 

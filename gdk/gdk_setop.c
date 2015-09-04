@@ -51,22 +51,15 @@
 #include "gdk_private.h"
 #include "gdk_search.h"
 
-#define HITintersect(h,t)       bunfastins(bn,h,t)
 #define HITdiff(h,t)
-#define MISSintersect(h,t)
 #define MISSdiff(h,t)           bunfastins(bn,h,t)
 
-#define HITintersect_nocheck(h,t)       bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
 #define HITdiff_nocheck(h,t)
-#define MISSintersect_nocheck(h,t)
 #define MISSdiff_nocheck(h,t)           bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
 
-#define DHITintersect(h,t)       bnh[o] = *(h); bnt[o++] = t;
 #define DHITdiff(h,t)
-#define DMISSintersect(h,t)
 #define DMISSdiff(h,t)           bnh[o] = *(h); bnt[o++] = t;
 
-#define ENDintersect(h,t)
 #define ENDdiff(h,t)            for(;p1<q1;p1++) bunfastins(bn,h,t)
 
 /*
@@ -418,7 +411,6 @@ BATins_k##a1(BAT *bn, BAT *l, BAT *r)					\
 	return NULL;							\
 }
 
-batcheck(intersect)
 batcheck(diff)
 
 
@@ -465,9 +457,6 @@ diff_intersect(BAT *l, BAT *r, int diff)
 	if (diff) {
 		ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_kdiff(bn, l, r);\n");
 		bn = BATins_kdiff(bn, l, r);
-	} else {
-		ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_kintersect(bn, l, r);\n");
-		bn = BATins_kintersect(bn, l, r);
 	}
 	if (bn == NULL)
 		return NULL;
@@ -506,10 +495,4 @@ BAT *
 BATkdiff(BAT *l, BAT *r)
 {
 	return diff_intersect(l, r, 1);
-}
-
-BAT *
-BATkintersect(BAT *l, BAT *r)
-{
-	return diff_intersect(l, r, 0);
 }
