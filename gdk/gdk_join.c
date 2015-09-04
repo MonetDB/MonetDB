@@ -439,8 +439,11 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 {
 	BUN cnt;
 
-	if (lstart == lend)
+	if (lstart == lend || (!must_match && !nil_on_miss)) {
+		virtualize(r1);
+		virtualize(r2);
 		return GDK_SUCCEED;
+	}
 	if (must_match) {
 		GDKerror("%s(%s,%s) does not hit always => can't use fetchjoin.\n",
 			 func, BATgetId(l), BATgetId(r));
@@ -448,8 +451,6 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		BBPreclaim(r2);
 		return GDK_FAIL;
 	}
-	if (!nil_on_miss)
-		return GDK_SUCCEED;
 	if (lcand) {
 		cnt = (BUN) (lcandend - lcand);
 		BATextend(r1, cnt);
@@ -569,8 +570,13 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					cnt -= l->hseqbase + BATcount(l) - sl->tseqbase - BATcount(sl);
 			}
 
-			if (hi < lo)
-				hi = lo;
+			if (hi <= lo)
+				return nomatch(r1, r2, l, r,
+					       seq - l->hseqbase,
+					       seq + cnt - l->hseqbase,
+					       NULL, NULL, nil_on_miss,
+					       must_match,
+					       "mergejoin_void");
 			if (must_match && hi - lo < cnt) {
 				GDKerror("mergejoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
 				goto bailout;
@@ -593,13 +599,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nil_on_miss && hi - lo < cnt) {
 				/* we need to fill in nils in r2 for
 				 * missing values */
-				if (hi == lo)
-					return nomatch(r1, r2, l, r,
-						       seq - l->hseqbase,
-						       seq + cnt - l->hseqbase,
-						       NULL, NULL, nil_on_miss,
-						       must_match,
-						       "mergejoin_void");
 				BATsetcount(r1, cnt);
 				BATseqbase(BATmirror(r1), seq);
 				if (BATextend(r2, cnt) != GDK_SUCCEED)
@@ -2805,35 +2804,19 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 	rcount = BATcount(r);
 	if (sr)
 		rcount = MIN(rcount, BATcount(sr));
-	if (lcount == 0 || rcount == 0) {
-		r1 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		r2 = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		if (r1 == NULL || r2 == NULL) {
-			BBPreclaim(r1);
-			BBPreclaim(r2);
-			return GDK_FAIL;
-		}
-		BATseqbase(r1, 0);
-		BATseqbase(BATmirror(r1), 0);
-		BATseqbase(r2, 0);
-		BATseqbase(BATmirror(r2), 0);
-		*r1p = r1;
-		*r2p = r2;
-		return GDK_SUCCEED;
-	}
 
 	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, semi, nil_on_miss, estimate, name)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
+	if (BATtdense(r) && (sr == NULL || BATtdense(sr)) && lcount > 0 && rcount > 0) {
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r1, r2, l, r, sl, sr,
 				      nil_on_miss, must_match);
 	} else if ((r->tsorted || r->trevsorted) &&
-	    (r->ttype == TYPE_void ||
-	     lcount < 1024 ||
-	     BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
+		   (BATtdense(r) ||
+		    lcount < 1024 ||
+		    BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
 				 nil_on_miss, semi, must_match, maxsize);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
