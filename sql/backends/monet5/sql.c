@@ -3037,12 +3037,12 @@ str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	int *res = getArgReference_int(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0), error;
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
 	wrd nr;
-	str *w = getArgReference_str(stk, pci, 3), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3051,7 +3051,8 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_wrd);
 	nr = *getArgReference_wrd(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	if (mvc_export_affrows(b, b->out, nr, *w))
+	error = mvc_export_affrows(b, b->out, nr, "");
+	if (error)
 		throw(SQL, "sql.affectedRows", "failed");
 	return MAL_SUCCEED;
 }
@@ -3127,13 +3128,15 @@ str
 mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	str *w = getArgReference_str(stk, pci, 1), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
+	(void) stk;		/* NOT USED */
+	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_operation(b, b->out, *w))
+	if (mvc_export_operation(b, b->out, ""))
 		throw(SQL, "sql.exportOperation", "failed");
 	return NULL;
 }

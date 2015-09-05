@@ -1677,12 +1677,12 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w)
 	if (!s)
 		return 0;
 
+	m->rowcnt = val;
+	stack_set_number(m, "rowcnt", m->rowcnt);
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->last_id) || mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
-
-	m->last_id = -1;	/* reset after we exposed the value */
 
 	return 0;
 }
@@ -1726,6 +1726,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 		} else
 			count = 1;
 	}
+	m->rowcnt = count;
+	stack_set_number(m, "rowcnt", m->rowcnt);
 	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 

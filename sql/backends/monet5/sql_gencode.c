@@ -2329,7 +2329,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			getArg(q, 0) = sql->mvc_var = newTmpVariable(mb, TYPE_int);
 			q = pushArgument(mb, q, o1);
-			q = pushStr(mb, q, "");	/* warning */
 			if (q == NULL)
 				return -1;
 			sql->mvc_var = s->nr = getDestVar(q);
@@ -2654,7 +2653,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	be->mvc_var = old_mv;
 	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
-		q = pushStr(mb, q, "");	/* warning */
 		if (q == NULL)
 			return -1;
 	}
