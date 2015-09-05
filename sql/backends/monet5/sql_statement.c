@@ -67,7 +67,6 @@ st_type2string(st_type type)
 
 		ST(const);
 
-		ST(mark);
 		ST(gen_group);
 		ST(reverse);
 		ST(mirror);
@@ -193,6 +192,7 @@ stmt_bool(sql_allocator *sa, int b)
 	}
 }
 
+/* OBSOLETE, but retained as it fits the others in this group
 static stmt *
 stmt_atom_oid(sql_allocator *sa, oid i)
 {
@@ -201,6 +201,7 @@ stmt_atom_oid(sql_allocator *sa, oid i)
 	sql_find_subtype(&t, "oid", 0, 0);
 	return stmt_atom(sa, atom_int(sa, &t, i));
 }
+*/
 
 static stmt *
 stmt_create(sql_allocator *sa, st_type type)
@@ -321,7 +322,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_export:
 			case st_convert:
 			case st_const:
-			case st_mark:
 			case st_gen_group:
 			case st_reverse:
 			case st_mirror:
@@ -666,20 +666,6 @@ stmt_const(sql_allocator *sa, stmt *rows, stmt *val)
 	} else {
 		return stmt_const_(sa, rows, val);
 	}
-}
-
-stmt *
-stmt_mark_tail(sql_allocator *sa, stmt *s, oid id)
-{
-	stmt *ns = stmt_create(sa, st_mark);
-
-	ns->op1 = s;
-	ns->op2 = stmt_atom_oid(sa, id);
-
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->aggr = s->aggr;
-	return ns;
 }
 
 stmt *
@@ -1269,7 +1255,6 @@ tail_type(stmt *st)
 		if (st->flag == cmp_project || st->flag == cmp_reorder_project)
 			return tail_type(st->op2);
 		/* fall through */
-	case st_mark:
 	case st_reorder:
 	case st_group:
 	case st_result:
@@ -1328,7 +1313,6 @@ stmt_has_null(stmt *s)
 	case st_atom:
 		return 0;
 	case st_reverse:
-	case st_mark:
 		return stmt_has_null(s->op1);
 	case st_join:
 		return stmt_has_null(s->op2);
@@ -1398,7 +1382,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_group:
 	case st_result:
 	case st_append:
-	case st_mark:
 	case st_gen_group:
 	case st_uselect:
 	case st_uselect2:
@@ -1472,7 +1455,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_mirror:
 	case st_group:
 	case st_result:
-	case st_mark:
 	case st_gen_group:
 	case st_uselect:
 	case st_uselect2:
@@ -1530,7 +1512,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_group:
 	case st_result:
 	case st_append:
-	case st_mark:
 	case st_gen_group:
 	case st_uselect:
 	case st_uselect2:

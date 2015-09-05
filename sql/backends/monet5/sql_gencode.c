@@ -1074,11 +1074,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 		}
 			break;
-		case st_mark:{
-			if (dump_2(sql, mb, s, algebraRef, markRef) < 0)
-				return -1;
-		}
-			break;
 		case st_gen_group:{
 			if (dump_2(sql, mb, s, algebraRef, groupbyRef) < 0)
 				return -1;

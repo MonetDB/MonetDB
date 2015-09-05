@@ -320,25 +320,6 @@ pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 
-# @+ OID Introducing Commands
-# For relational processing, some operators are necessary to produce newly
-# initiated OID columns, for representing n-ary (intermediary) relations.
-command mark( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
-address ALGtmark
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command mark( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
-address ALGtmark_default
-comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
-
-command mark( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
-address ALGtmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
-
 command reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
