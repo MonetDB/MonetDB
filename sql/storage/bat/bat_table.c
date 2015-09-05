@@ -32,12 +32,10 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
-		bat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		bat_destroy(diff);
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		bat_destroy(d);
+		bat_destroy(tids);
+		tids = diff;
 	}
 	return tids;
 }
@@ -497,7 +495,7 @@ subrids_destroy(subrids *r )
 static rids *
 rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 {
-	BAT *lcb = full_column(tr, lc), *s, *d, *rids;
+	BAT *lcb = full_column(tr, lc), *s, *d, *rids, *diff;
 	BAT *rcb = full_column(tr, rc);
 
 	s = BATproject(r->rids, rcb);
@@ -506,13 +504,10 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 
 	s = BATproject(l->data, lcb);
 
-	d = BATkdiff(BATmirror(s), BATmirror(rcb));
-	bat_destroy(s);
-	s = BATmirror(BATmark(d, 0));
-	bat_destroy(d);
-	bat_destroy(rcb);
+	diff = BATsubdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
 
-	BATsubjoin(&rids, &d, lcb, s, NULL, NULL, FALSE, BATcount(s));
+	BATsubjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	bat_destroy(diff);
 	bat_destroy(d);
 	full_destroy(lc, lcb);
 	bat_destroy(s);

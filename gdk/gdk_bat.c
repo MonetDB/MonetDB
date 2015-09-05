@@ -2101,6 +2101,34 @@ BATsetcount(BAT *b, BUN cnt)
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 	}
+	if (b->htype == TYPE_void) {
+		b->hsorted = 1;
+		if (b->hseqbase == oid_nil) { /* unlikely */
+			b->hkey = cnt <= 1;
+			b->hrevsorted = 1;
+			b->H->nil = 1;
+			b->H->nonil = 0;
+		} else {
+			b->hkey = 1;
+			b->hrevsorted = cnt <= 1;
+			b->H->nil = 0;
+			b->H->nonil = 1;
+		}
+	}
+	if (b->ttype == TYPE_void) {
+		b->tsorted = 1;
+		if (b->tseqbase == oid_nil) {
+			b->tkey = cnt <= 1;
+			b->trevsorted = 1;
+			b->T->nil = 1;
+			b->T->nonil = 0;
+		} else {
+			b->tkey = 1;
+			b->trevsorted = cnt <= 1;
+			b->T->nil = 0;
+			b->T->nonil = 1;
+		}
+	}
 	assert(b->batCapacity >= cnt);
 }
 

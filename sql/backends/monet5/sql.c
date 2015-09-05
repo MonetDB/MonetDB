@@ -2250,14 +2250,19 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		u_id = BATdescriptor(*uid);
 		if (!u_id)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		cminu = BATsubdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
 		}
+		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
-		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
+		if (!res) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate" );
+		}
+		c = res;
 
 		if ((u_val = BATdescriptor(*uval)) == NULL) {
 			BBPunfix(c->batCacheid);
@@ -2306,13 +2311,16 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
-			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
-			BBPunfix(i->batCacheid);
+			cminu = BATsubdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
-			if (!cminu) 
+			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-			i = BATmirror(BATmark(cminu, 0));
+			u_id = BATproject(cminu, i);
 			BBPunfix(cminu->batCacheid);
+			BBPunfix(i->batCacheid);
+			if (!u_id)
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			i = u_id;
 		}
 		if (isVIEW(res)) {
 			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE, TRANSIENT);
@@ -2496,11 +2504,11 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( d == NULL)
 			throw(SQL,"sql.tid","Can not bind delete column");
 
-		diff = BATkdiff(tids, BATmirror(d));
-		BBPunfix(tids->batCacheid);
-		tids = BATmirror(BATmark(diff, sb));
-		BBPunfix(diff->batCacheid);
+		diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
+		BBPunfix(tids->batCacheid);
+		BATseqbase(diff, sb);
+		tids = diff;
 	}
 	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
