@@ -792,14 +792,12 @@ str ALGsubthetajoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl,
 str ALGsubunique1(bat *result, const bat *bid);
 str ALGsubunique2(bat *result, const bat *bid, const bat *sid);
 str ALGtdiff(bat *result, const bat *lid, const bat *rid);
-str ALGtdifference(bat *result, const bat *lid, const bat *rid);
 str ALGthetajoin(bat *result, const bat *lid, const bat *rid, const int *opc);
 str ALGthetajoin2(bat *l, bat *r, const bat *lid, const bat *rid, const int *opc);
 str ALGthetajoinEstimate(bat *result, const bat *lid, const bat *rid, const int *opc, const lng *estimate);
 str ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
 str ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 str ALGtinter(bat *result, const bat *lid, const bat *rid);
-str ALGtintersect(bat *result, const bat *lid, const bat *rid);
 str ALGtmark(bat *result, const bat *bid, const oid *base);
 str ALGtmark_default(bat *result, const bat *bid);
 str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);

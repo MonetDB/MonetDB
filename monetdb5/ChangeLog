@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.tdifference and algebra.tintersect.
+
 * Fri Aug 14 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.tunion.
 

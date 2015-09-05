@@ -1201,33 +1201,6 @@ ALGsample(bat *result, const bat *bid, const int *param)
 
 /* add items missing in the kernel */
 str
-ALGtdifference(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATkdiff(BATmirror(b),BATmirror(b2));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		BBPunfix(b2->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	throw(MAL, "algebra.tdifference", GDK_EXCEPTION);
-}
-
-str
 ALGtdiff(bat *result, const bat *bid, const bat *bid2)
 {
 	BAT *b, *b2, *bn;
@@ -1253,31 +1226,6 @@ ALGtdiff(bat *result, const bat *bid, const bat *bid2)
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "algebra.tdiff", GDK_EXCEPTION);
-}
-
-str
-ALGtintersect(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tintersect", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.tintersect", GDK_EXCEPTION);
 }
 
 str

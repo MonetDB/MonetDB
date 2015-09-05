@@ -9,12 +9,6 @@ module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command tintersect( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtintersect;
-
-command tdifference ( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtdifference;
-
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
