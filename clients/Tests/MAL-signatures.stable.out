@@ -2364,18 +2364,6 @@ command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
 address ALGleftjoin;
-command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
-address ALGtmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
-
-command algebra.mark(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
-address ALGtmark_default;
-comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
-
-command algebra.mark(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
-address ALGtmark;
-comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
-
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
@@ -40436,7 +40424,7 @@ pattern sql.argRecord():str
 address SQLargRecord;
 comment Glue together the calling sequence
 
-pattern sql.affectedRows{unsafe}(mvc:int,nr:wrd,w:str):int 
+pattern sql.affectedRows{unsafe}(mvc:int,nr:wrd):int 
 address mvc_affected_rows_wrap;
 comment export the number of affected rows by the current query
 
@@ -40672,7 +40660,7 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportOperation{unsafe}(w:str):void 
+pattern sql.exportOperation{unsafe}():void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
 
