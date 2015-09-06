@@ -77,6 +77,7 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	 */
 	assert(ht >= 0 && tt >= 0);
 	assert(role >= 0 && role < 32);
+	//assert(ht == TYPE_void);
 
 	bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 

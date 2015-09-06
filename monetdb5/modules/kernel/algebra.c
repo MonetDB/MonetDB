@@ -1002,7 +1002,7 @@ ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 str
 ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 {
-	BAT *L, *R, *j1, *j2, *lmap, *rmap;
+	BAT *L, *R, *j1, *j2;
 	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
@@ -1013,41 +1013,11 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (!BAThdense(L) || !BAThdense(R)) {
-		lmap = BATmirror(BATmark(L, 0));
-		j1 = BATmirror(BATmark(BATmirror(L), 0));
-		BBPunfix(L->batCacheid);
-		L = j1;
-		rmap = BATmirror(BATmark(R, 0));
-		j2 = BATmirror(BATmark(BATmirror(R), 0));
-		BBPunfix(R->batCacheid);
-		R = j2;
-	} else {
-		lmap = NULL;
-		rmap = NULL;
-	}
 	ret = BATsubjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (ret != GDK_SUCCEED) {
-		if (lmap)
-			BBPunfix(lmap->batCacheid);
-		if (rmap)
-			BBPunfix(rmap->batCacheid);
+	if (ret != GDK_SUCCEED) 
 		throw(MAL, "algebra.join", GDK_EXCEPTION);
-	}
-	if (lmap) {
-		L = BATproject(j1, lmap);
-		BBPunfix(j1->batCacheid);
-		BBPunfix(lmap->batCacheid);
-		j1 = L;
-		lmap = NULL;
-		R = BATproject(j2, rmap);
-		BBPunfix(j2->batCacheid);
-		BBPunfix(rmap->batCacheid);
-		j2 = R;
-		rmap = NULL;
-	}
 	if (!(j1->batDirty&2))
 		BATsetaccess(j1, BAT_READ);
 	if (!(j2->batDirty&2))
