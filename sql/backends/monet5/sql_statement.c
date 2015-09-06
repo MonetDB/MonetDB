@@ -192,17 +192,6 @@ stmt_bool(sql_allocator *sa, int b)
 	}
 }
 
-/* OBSOLETE, but retained as it fits the others in this group
-static stmt *
-stmt_atom_oid(sql_allocator *sa, oid i)
-{
-	sql_subtype t;
-
-	sql_find_subtype(&t, "oid", 0, 0);
-	return stmt_atom(sa, atom_int(sa, &t, i));
-}
-*/
-
 static stmt *
 stmt_create(sql_allocator *sa, st_type type)
 {
