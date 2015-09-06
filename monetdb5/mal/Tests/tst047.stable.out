@@ -36,8 +36,6 @@ function user.main():void;
     bat.append(b,4);
     bat.append(b,9);
     io.print(b);
-    br := bat.reverse(b);
-    io.print(br);
     l0 := algebra.copy(b);
     io.print(l0);
 end user.main;
@@ -48,17 +46,10 @@ end user.main;
 [ 0@0,	  1	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  9	  ]
-#-----------------#
-# t	tmp_4	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  0@0	  ]
-[ 4,	  1@0	  ]
-[ 9,	  2@0	  ]
-#-----------------#
-# h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  9	  ]
