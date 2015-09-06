@@ -216,10 +216,12 @@ comment "Select all unique values from the tail of the input.
 
 
 command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtinter;
+address ALGtinter
+comment "Deprecated, see algebra.semijoin";
 
 command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtdiff;
+address ALGtdiff
+comment "Deprecated, see algebra.subdiff";
 
 # @+ Join operations
 # The core of every relational engine.
@@ -254,7 +256,8 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 
 command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGrangejoin2;
+address ALGrangejoin2
+comment "Deprecated, see algebra.subrangejoin. Range join";
 
 command subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubjoin
@@ -289,6 +292,14 @@ comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
 command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
+
+command subdiff(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+address ALGsubdiff
+comment "Difference of l and r with candidate lists";
+
+command subinter(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+address ALGsubinter
+comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 
 # @+ Projection operations
 pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]

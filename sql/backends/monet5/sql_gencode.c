@@ -1654,14 +1654,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 		}
 			break;
-		case st_tdiff:{
-			if (dump_2_(sql, mb, s, algebraRef, tdiffRef) < 0)
-				return -1;
-		}
-			break;
+		case st_tdiff:
 		case st_tinter:{
-			if (dump_2_(sql, mb, s, algebraRef, tinterRef) < 0)
+			int o1, o2;
+			if ((o1 = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
+			if ((o2 = _dumpstmt(sql, mb, s->op2)) < 0)
+				return -1;
+
+			q = newStmt1(mb, algebraRef, s->type == st_tdiff ? subdiffRef : subinterRef);
+			q = pushArgument(mb, q, o1); /* left */
+			q = pushArgument(mb, q, o2); /* right */
+			q = pushNil(mb, q, TYPE_bat); /* left candidate */
+			q = pushNil(mb, q, TYPE_bat); /* right candidate */
+			q = pushBit(mb, q, FALSE);    /* nil matches */
+			q = pushNil(mb, q, TYPE_lng); /* estimate */
+			if (q == NULL)
+				return -1;
+			s->nr = getDestVar(q);
 		}
 			break;
 		case st_join:{

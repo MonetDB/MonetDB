@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sun Sep  6 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented algebra.subdiff and algebra.subinter.  The old functions
+  algegra.tdiff and algebra.tinter are now officially deprecated.
+
 * Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.tdifference and algebra.tintersect.
 

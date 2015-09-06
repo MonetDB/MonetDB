@@ -71,6 +71,8 @@ str deleteRef;
 str depositRef;
 str tdiffRef;
 str tinterRef;
+str subdiffRef;
+str subinterRef;
 str mergecandRef;
 str mergepackRef;
 str intersectcandRef;
@@ -322,6 +324,8 @@ void optimizerInit(void)
 	depositRef = putName("deposit",7);
 	tdiffRef= putName("tdiff",5);
 	tinterRef= putName("tinter",6);
+	subdiffRef = putName("subdiff",7);
+	subinterRef = putName("subinter",8);
 	mergecandRef= putName("mergecand",9);
 	mergepackRef= putName("mergepack",9);
 	intersectcandRef= putName("intersectcand",13);

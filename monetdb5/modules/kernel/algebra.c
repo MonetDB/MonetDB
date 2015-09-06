@@ -602,6 +602,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 							   const void *, const void *, int, int, BUN),
 		gdk_return (*rangefunc)(BAT **, BAT **, BAT *, BAT *, BAT *,
 								BAT *, BAT *, int, int, BUN),
+		BAT *(*difffunc)(BAT *, BAT *, BAT *, BAT *, int, BUN),
 		const char *funcname)
 {
 	BAT *left = NULL, *right = NULL, *right2 = NULL;
@@ -628,32 +629,44 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		assert(joinfunc == NULL);
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
+		assert(difffunc == NULL);
 		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (joinfunc) {
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
-		if ((*joinfunc)(&result1, &result2, left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
+		assert(difffunc == NULL);
+		result2 = NULL;
+		if ((*joinfunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
+		assert(difffunc == NULL);
 		if ((*bandfunc)(&result1, &result2, left, right, candleft, candright, c1, c2, li, hi, est) != GDK_SUCCEED)
 			goto fail;
-	} else {
+	} else if (rangefunc) {
+		assert(difffunc == NULL);
 		if ((right2 = BATdescriptor(*r2id)) == NULL)
 			goto fail;
 		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
+	} else {
+		assert(r2 == NULL);
+		if ((result1 = (*difffunc)(left, right, candleft, candright, *nil_matches, est)) == NULL)
+			goto fail;
+		result2 = NULL;
 	}
 	*r1 = result1->batCacheid;
-	*r2 = result2->batCacheid;
 	if (!(result1->batDirty&2))
 		BATsetaccess(result1, BAT_READ);
-	if (!(result2->batDirty&2))
-		BATsetaccess(result2, BAT_READ);
 	BBPkeepref(*r1);
-	BBPkeepref(*r2);
+	if (r2) {
+		*r2 = result2->batCacheid;
+		if (!(result2->batDirty&2))
+			BATsetaccess(result2, BAT_READ);
+		BBPkeepref(*r2);
+	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (candleft)
@@ -682,7 +695,7 @@ ALGsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, co
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubjoin, NULL, NULL, NULL, "algebra.subjoin");
+				   BATsubjoin, NULL, NULL, NULL, NULL, "algebra.subjoin");
 }
 
 str
@@ -691,7 +704,7 @@ ALGsubleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubleftjoin, NULL, NULL, NULL, "algebra.subleftjoin");
+				   BATsubleftjoin, NULL, NULL, NULL, NULL, "algebra.subleftjoin");
 }
 
 str
@@ -700,7 +713,7 @@ ALGsubouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubouterjoin, NULL, NULL, NULL, "algebra.subouterjoin");
+				   BATsubouterjoin, NULL, NULL, NULL, NULL, "algebra.subouterjoin");
 }
 
 str
@@ -709,7 +722,7 @@ ALGsubsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubsemijoin, NULL, NULL, NULL, "algebra.subsemijoin");
+				   BATsubsemijoin, NULL, NULL, NULL, NULL, "algebra.subsemijoin");
 }
 
 str
@@ -718,7 +731,7 @@ ALGsubthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, *op, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   NULL, BATsubthetajoin, NULL, NULL, "algebra.subthetajoin");
+				   NULL, BATsubthetajoin, NULL, NULL, NULL, "algebra.subthetajoin");
 }
 
 str
@@ -728,7 +741,7 @@ ALGsubbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, c1, c2, *li, *hi,
 				   NULL, estimate,
-				   NULL, NULL, BATsubbandjoin, NULL, "algebra.subbandjoin");
+				   NULL, NULL, BATsubbandjoin, NULL, NULL, "algebra.subbandjoin");
 }
 
 str
@@ -736,7 +749,25 @@ ALGsubrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rh
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL, *li, *hi,
 				   NULL, estimate,
-				   NULL, NULL, NULL, BATsubrangejoin, "algebra.subrangejoin");
+				   NULL, NULL, NULL, BATsubrangejoin, NULL, "algebra.subrangejoin");
+}
+
+str
+ALGsubdiff(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
+				   nil_matches, estimate,
+				   NULL, NULL, NULL, NULL, BATsubdiff, "algebra.subdiff");
+}
+
+str
+ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
+				   nil_matches, estimate,
+				   BATsubsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
 }
 
 /* algebra.firstn(b:bat[:oid,:any],

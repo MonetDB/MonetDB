@@ -2322,6 +2322,8 @@ command algebra.ilike(s:str,pat:str,esc:str):bit
 address PCREilike3;
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
+comment Deprecated, see algebra.subrangejoin. Range join
+
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
@@ -2407,6 +2409,14 @@ comment Return the slice with the BUNs at position x till y.
 command algebra.slice(b:bat[:oid,:any_1],x:oid,y:oid):bat[:oid,:any_1] 
 address ALGslice_oid;
 comment Return the slice based on head oid x till y (exclusive).
+
+command algebra.subinter(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng):bat[:oid,:oid] 
+address ALGsubinter;
+comment Intersection of l and r with candidate lists (i.e. half of semi-join)
+
+command algebra.subdiff(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng):bat[:oid,:oid] 
+address ALGsubdiff;
+comment Difference of l and r with candidate lists
 
 command algebra.subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid,:oid],X_10:bat[:oid,:oid]) 
 address ALGsubrangejoin;
@@ -2511,8 +2521,12 @@ comment Select all head values for which the tail value is in range.	Input is a 
 
 command algebra.tdiff(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtdiff;
+comment Deprecated, see algebra.subdiff
+
 command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtinter;
+comment Deprecated, see algebra.semijoin
+
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
