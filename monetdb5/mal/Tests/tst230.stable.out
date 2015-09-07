@@ -47,12 +47,6 @@ function user.main():void;
     io.printf("second refcount =%d\n",i);
     j := bbp.getLRefCount(b);
     io.printf("lrefcount =%d\n",j);
-# referenceing through mirroring 
-    b5 := bat.reverse(b);
-    i := bbp.getRefCount(b);
-    io.printf("after reverse assignment refcount =%d\n",i);
-    j := bbp.getLRefCount(b);
-    io.printf("lrefcount =%d\n",j);
 end user.main;
 refcount =1
 lrefcount =1
@@ -63,8 +57,6 @@ lrefcount =1
 [ 0@0,	  "bat B"	  ]
 second refcount =1
 lrefcount =2
-after reverse assignment refcount =1
-lrefcount =3
 
 # 08:01:02 >  
 # 08:01:02 >  Done.
