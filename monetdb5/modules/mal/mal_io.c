@@ -152,12 +152,6 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, p, 1, 0, FALSE, TRUE);
-}
-
-str
 IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
@@ -533,8 +527,8 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
  * The table printing routine implementations rely on the multiprintf.
  * They merely differ in destination and order prerequisite
  */
-str
-IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
+static str
+IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i)
 {
 	BAT *piv[MAXPARAMS], *b;
 	int nbats = 0;
@@ -559,60 +553,18 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 		piv[nbats++] = b;
 	}
 	/*if(printhead) */ nbats++;
-	BATmultiprintf(f, nbats, piv, printhead, order, printorder);
+	BATmultiprintf(f, nbats, piv, TRUE, 0, TRUE);
 	for (k = 0; k < nbats - 1; k++)
 		BBPunfix(piv[k]->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int order;
-	order = *getArgReference_int(stk, pci, 1);
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, TRUE, TRUE);
-}
-
-str
 IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, TRUE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1);
 }
 
-str
-IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fp;
-	int order;
-
-	fp = *(stream **) getArgReference(stk, pci, 1);
-	order = *getArgReference_int(stk, pci, 2);
-	(void) order;		/* fool compiler */
-	return IOtableAll(fp, cntxt, mb, stk, pci, 3, 1, TRUE, TRUE);
-}
-
-str
-IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fp;
-
-	fp = *(stream **) getArgReference(stk, pci, 1);
-	return IOtableAll(fp, cntxt, mb, stk, pci, 2, 0, TRUE, TRUE);
-}
-
-str
-IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, FALSE, TRUE);
-}
-
-str
-IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int order;
-	order = *getArgReference_int(stk, pci, 1);
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
-}
 
 /*
  * Bulk export/loading
@@ -628,22 +580,6 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * where the server was started unless an absolute file name was
  * presented.
  */
-str
-IOdatafile(str *ret, str *fnme){
-	stream *s = open_rstream(*fnme);
-	*ret = 0;
-	if (s == NULL )
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
-	
-	if (mnstr_errnr(s)) {
-		mnstr_close(s);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
-	}
-	*ret= GDKstrdup(*fnme);
-	mnstr_close(s);
-	mnstr_destroy(s);
-	return MAL_SUCCEED;
-}
 
 str
 IOexport(bit *ret, bat *bid, str *fnme)

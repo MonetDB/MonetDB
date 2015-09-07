@@ -25,7 +25,7 @@ function user.dir():void;
     dl := bbp.getLRefCount();
     dn := bbp.getNames();
     ds := algebra.subsort(dn,false,false);
-    io.table(ds,d,dl);
+    io.print(ds,d,dl);
 end user.dir;
 function user.tmp1(b:bat[:any_1,:any_2]):void;
 end user.tmp1;
