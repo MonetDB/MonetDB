@@ -48474,9 +48474,9 @@ pattern clients.changeUsername(old:str,new:str):void
 address CLTchangeUsername;
 comment Change the username of the user into the new string
 
-pattern clients.getUsers():bat[:oid,:str] 
+pattern clients.getUsers() (X_1:bat[:oid,:oid],X_2:bat[:oid,:str]) 
 address CLTgetUsers;
-comment return a BAT with user id and name available in the system
+comment return a BAT with user id and one with name available in the system
 
 pattern clients.getPasswordHash(user:str):str 
 address CLTgetPasswordHash;

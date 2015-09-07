@@ -59,7 +59,7 @@ monet5_drop_user(ptr _mvc, str user)
 	str err;
 	Client c = MCgetClient(m->clientid);
 
-	err = AUTHremoveUser(&c, &user);
+	err = AUTHremoveUser(c, &user);
 	if (err !=MAL_SUCCEED) {
 		(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
 		_DELETE(err);
@@ -104,7 +104,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	ret = AUTHaddUser(&uid, &c, &user, &pwd);
+	ret = AUTHaddUser(&uid, c, &user, &pwd);
 	if (!enc)
 		free(pwd);
 	if (ret != MAL_SUCCEED)
@@ -118,32 +118,20 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	return NULL;
 }
 
-static BAT *
-db_users(Client c)
-{
-	BAT *b;
-	str tmp;
-
-	if ((tmp = AUTHgetUsers(&b, &c)) != MAL_SUCCEED) {
-		GDKfree(tmp);
-		return (NULL);
-	}
-	return b;
-}
-
 static int
 monet5_find_user(ptr mp, str user)
 {
-	BAT *users;
+	BAT *uid, *nme;
 	BUN p;
 	mvc *m = (mvc *) mp;
 	Client c = MCgetClient(m->clientid);
+	str err;
 
-	users = db_users(c);
-	if (!users)
+	if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED)
 		return -1;
-	p = BUNfnd(users, user);
-	BBPunfix(users->batCacheid);
+	p = BUNfnd(nme, user);
+	BBPunfix(uid->batCacheid);
+	BBPunfix(nme->batCacheid);
 
 	/* yeah, I would prefer to return something different too */
 	return (p == BUN_NONE ? -1 : 1);
@@ -153,10 +141,14 @@ str
 db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *r = getArgReference_bat(stk, pci, 0);
-	BAT *b = db_users(cntxt);
+	BAT *uid, *nme;
+	str err;
 
 	(void) mb;
-	*r = b->batCacheid;
+	if ((err = AUTHgetUsers(&uid, &nme, cntxt)) != MAL_SUCCEED)
+		return err;
+	BBPunfix(uid->batCacheid);
+	*r = nme->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
@@ -169,7 +161,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *user = getArgReference_str(stk, pci, 1);
 	(void) mb;
 
-	ret = AUTHgetPasswordHash(hash, &cntxt, user);
+	ret = AUTHgetPasswordHash(hash, cntxt, user);
 	return ret;
 }
 
@@ -256,7 +248,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			opwd = oldpasswd;
 		}
 		if (user == NULL) {
-			err = AUTHchangePassword(&c, &opwd, &pwd);
+			err = AUTHchangePassword(c, &opwd, &pwd);
 			if (!enc) {
 				free(pwd);
 				free(opwd);
@@ -286,7 +278,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 				(void) sql_error(m, 02, "ALTER USER: " "use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx " "USING OLD PASSWORD yyy' " "when changing your own password");
 				return (FALSE);
 			}
-			err = AUTHsetPassword(&c, &user, &pwd);
+			err = AUTHsetPassword(c, &user, &pwd);
 			if (!enc) {
 				free(pwd);
 				free(opwd);
@@ -330,7 +322,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 
-	if ((err = AUTHchangeUsername(&c, &olduser, &newuser)) !=MAL_SUCCEED) {
+	if ((err = AUTHchangeUsername(c, &olduser, &newuser)) !=MAL_SUCCEED) {
 		(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 		GDKfree(err);
 		return (FALSE);

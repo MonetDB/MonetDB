@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Sep  7 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Changed client.getUsers to return two bats, one with the user id
+  and one with the user name.
+
 * Sun Sep  6 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented algebra.subdiff and algebra.subinter.  The old functions
   algegra.tdiff and algebra.tinter are now officially deprecated.
