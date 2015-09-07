@@ -4294,7 +4294,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		throw(SQL, name, "bat not sorted");
 	}
 */
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -4310,9 +4310,10 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		BUNins(r, BUNhead(bi, p), &rank, FALSE);
+		BUNappend(r, &rank, FALSE);
 		nrank += !dense || c;
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
@@ -4338,14 +4339,14 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, "cannot allocate result bat");
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			rank++;
 		}
 	} else {
@@ -4354,10 +4355,11 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			nrank += !dense || c;
 		}
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
