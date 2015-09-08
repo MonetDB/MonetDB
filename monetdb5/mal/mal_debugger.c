@@ -823,16 +823,7 @@ retryRead:
 				i = findVariable(mb, b);
 			}
 			if (i < 0) {
-				i = BBPindex(b);
-				if (i != 0) {
-					printBATelm(out, i, size, first);
-				} else {
-					i = atoi(b);
-					if (i>-0 || *b == '0')
-						printStackElm(out, mb, stk->stk + i, i, size, first);
-					else
-						mnstr_printf(out, "#%s Symbol not found\n", "#mdb ");
-				}
+				mnstr_printf(out, "#%s Symbol not found\n", b);
 				continue;
 			}
 			if (isaBatType(getVarType(mb, i)) && upper == 'p') {
