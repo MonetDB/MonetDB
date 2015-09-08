@@ -559,6 +559,8 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 str
 openProfilerStream(stream *fd)
 {
+	if( eventstream)
+		closeProfilerStream();
 	malProfileMode = -1;
 	eventstream = fd;
 	return MAL_SUCCEED;

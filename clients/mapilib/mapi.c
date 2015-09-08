@@ -1467,10 +1467,6 @@ mapi_ping(Mapi mid)
 		break;
 	case LANG_MAL:
 		hdl = mapi_query(mid, "io.print(1);");
-		break;
-	case LANG_JAQL:
-		hdl = mapi_query(mid, "[1];");
-		break;
 	}
 	if (hdl)
 		mapi_close_handle(hdl);
@@ -2013,8 +2009,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
-	else if (strstr(lang, "jaql") == lang)
-		mid->languageId = LANG_JAQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 	if (mid->database)
 		free(mid->database);
 	mid->database = NULL;
@@ -2223,8 +2219,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
-	else if (strstr(lang, "jaql") == lang)
-		mid->languageId = LANG_JAQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 
 	if (mid->database)
 		free(mid->database);
@@ -2306,8 +2302,8 @@ parse_uri_query(Mapi mid, char *uri)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
-				else if (strstr(val, "jaql") == val)
-					mid->languageId = LANG_JAQL;
+				else if (strstr(val, "profiler") == val)
+					mid->languageId = LANG_PROFILER;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */
@@ -3293,8 +3289,6 @@ mapi_param_store(MapiHdl hdl)
 			checkSpace(5);
 			if (hdl->mid->languageId == LANG_MAL)
 				nullstr = "nil";
-			else if (hdl->mid->languageId == LANG_JAQL)
-				nullstr = "null";
 			strcpy(hdl->query + k, nullstr);
 		} else {
 			void *src = hdl->params[i].inparam;	/* abbrev */

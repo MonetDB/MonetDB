@@ -70,7 +70,7 @@
 enum modes {
 	MAL,
 	SQL,
-	JAQL
+	PROFILER
 };
 
 static enum modes mode = SQL;
@@ -2109,6 +2109,8 @@ doFileBulk(Mapi mid, FILE *fp)
 static void
 showCommands(void)
 {
+	if (mode == PROFILER)
+		return;
 	/* shared control options */
 	mnstr_printf(toConsole, "\\?      - show this message\n");
 	if (mode == MAL)
@@ -2968,7 +2970,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
-	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
+	fprintf(stderr, " -l language | --language=lang    {sql,mal,profiler}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
@@ -3076,8 +3078,6 @@ main(int argc, char **argv)
 			mode = SQL;
 		} else if (strcmp(language, "mal") == 0) {
 			mode = MAL;
-		} else if (strcmp(language, "jaql") == 0) {
-			mode = JAQL;
 		}
 	} else {
 		language = strdup("sql");
@@ -3133,19 +3133,16 @@ main(int argc, char **argv)
 				free(language);
 				language = strdup("mal");
 				mode = MAL;
-			} else if (strcmp(optarg, "jaql") == 0 ||
-				   strcmp(optarg, "jaq") == 0 ||
-				   strcmp(optarg, "ja") == 0 ||
-				   strcmp(optarg, "j") == 0) {
-				free(language);
-				language = strdup("jaql");
-				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
 				free(language);
 				language = strdup("msql");
 				mode = MAL;
+			} else if (strcmp(optarg, "profiler") == 0) {
+				free(language);
+				language = strdup("profiler");
+				mode = MAL;
 			} else {
-				fprintf(stderr, "language option needs to be sql or mal\n");
+				fprintf(stderr, "language option needs to be sql, mal, or profiler\n");
 				exit(-1);
 			}
 			break;
@@ -3344,8 +3341,6 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-		} else if (mode == JAQL) {
-			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
@@ -3356,8 +3351,6 @@ main(int argc, char **argv)
 
 		if (mode == SQL) {
 			lang = "/SQL";
-		} else if (mode == JAQL) {
-			lang = "/JAQL";
 		} else {
 			lang = "";
 		}

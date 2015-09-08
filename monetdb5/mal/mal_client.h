@@ -196,4 +196,6 @@ mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 
+mal_export str PROFinitClient(Client c);
+mal_export str PROFexitClient(Client c);
 #endif /* _MAL_CLIENT_H_ */

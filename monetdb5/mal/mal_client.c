@@ -568,3 +568,18 @@ MCreadClient(Client c)
 #endif
 	return 1;
 }
+
+str
+PROFinitClient(Client c){
+	startProfiler(c->idx,0,0);
+	return MAL_SUCCEED;
+}
+
+str
+PROFexitClient(Client c){
+	(void) c;
+	stopProfiler();
+	return MAL_SUCCEED;
+}
+
+
