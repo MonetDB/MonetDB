@@ -414,6 +414,7 @@ SQLinitClient(Client c)
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
+	MT_lock_set(&sql_contextLock, "SQLinitClient");
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -526,6 +527,7 @@ SQLinitClient(Client c)
 			SQLupgrades(c,m);
 		maybeupgrade = 0;
 	}
+	MT_lock_unset(&sql_contextLock, "SQLinitClient");
 	fflush(stdout);
 	fflush(stderr);
 
