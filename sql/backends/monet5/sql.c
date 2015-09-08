@@ -2278,20 +2278,23 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		}
 		if (BATcount(u)) {	/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
+			gdk_return rc;
 
 			if (!c_ids){
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
+			rc = BATsubsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
-			BBPunfix(u->batCacheid);
-			if (!cminu) {
-				BBPunfix(c->batCacheid);
+			if (rc != GDK_SUCCEED) {
+				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			u = BATmirror(cminu);
+			c_ids = BATproject(cminu, u);
+			BBPunfix(cminu->batCacheid);
+			BBPunfix(u->batCacheid);
+			u = c_ids;
 		}
 		BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
@@ -2416,11 +2419,26 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	}
 
 	if (BATcount(u_val)) {
-		BAT *o = BATsemijoin(u_id, s);
-		BAT *nu_id = BATproject(o, u_id);
-		BAT *nu_val = BATproject(o, u_val);
-
+		BAT *o, *nu_id, *nu_val;
+		if (BATsubsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
+		nu_id = BATproject(o, u_id);
+		nu_val = BATproject(o, u_val);
 		BBPunfix(o->batCacheid);
+		if (nu_id == NULL || nu_val == NULL) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			if (nu_id)
+				BBPunfix(nu_id->batCacheid);
+			if (nu_val)
+				BBPunfix(nu_val->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = setwritable(res);
 		BATreplace(res, nu_id, nu_val, 0);
 		BBPunfix(nu_id->batCacheid);
