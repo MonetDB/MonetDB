@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Sep  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed obsolete functions BATorder() and BATorder_rev().
+
 * Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented BATsubdiff which returns a list of OIDs (sorted, i.e. usable
   as candidate list) of tuples in the left input whose value does not

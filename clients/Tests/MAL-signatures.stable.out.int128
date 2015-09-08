@@ -40358,14 +40358,6 @@ pattern bat.new(ht:oid,tt:any_1):bat[:oid,:any_1]
 address CMDBATnew;
 comment Creates a new empty transient BAT, with head- and tail-types as indicated.
 
-command bat.orderReverse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCorder_rev;
-comment Reverse sorts the BAT itself on the head, in place. 
-
-command bat.order(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCorder;
-comment Sorts the BAT itself on the head, in place. 
-
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
 address CMDBATpartition2;
 comment Create the n-th slice over the BAT broken into several pieces.

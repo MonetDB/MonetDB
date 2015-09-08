@@ -1606,10 +1606,6 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  * @item BAT *
  * @tab BATsort_rev (BAT *b)
  * @item BAT *
- * @tab BATorder (BAT *b)
- * @item BAT *
- * @tab BATorder_rev (BAT *b)
- * @item BAT *
  * @tab BATrevert (BAT *b)
  * @item int
  * @tab BATordered (BAT *b)
@@ -1627,17 +1623,13 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  * The BATsort functions return a copy of the input BAT, sorted in
  * ascending order on the head column. BATordered starts a check on
  * the head values to see if they are ordered. The result is returned
- * and stored in the hsorted field of the BAT.  BATorder is similar to
- * BATsort, but sorts the BAT itself, rather than returning a copy
- * (BEWARE: this operation destroys the delta
- * information. TODO:fix). The BATrevert puts all the live BUNs of a
- * BAT in reverse order. It just reverses the sequence, so this does
- * not necessarily mean that they are sorted in reverse order!
+ * and stored in the hsorted field of the BAT.  The BATrevert puts all
+ * the live BUNs of a BAT in reverse order. It just reverses the
+ * sequence, so this does not necessarily mean that they are sorted in
+ * reverse order!
  */
 gdk_export BAT *BATsort(BAT *b);
 gdk_export BAT *BATsort_rev(BAT *b);
-gdk_export gdk_return BATorder(BAT *b);
-gdk_export gdk_return BATorder_rev(BAT *b);
 gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
@@ -3224,26 +3216,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			 (c)->type == TYPE_oid ?			\
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
-
-#define BATorder(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder(_b);						\
-	})
-
-#define BATorder_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder_rev(_b);					\
-	})
 
 #define BATsort(b)							\
 	({								\
