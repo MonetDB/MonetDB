@@ -1663,9 +1663,6 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if( b== NULL){
 			throw(MAL,"mapi.put","Can not access BAT");
 		}
-		/* first send the tuples
-		BATmultiprintf(SERVERsessions[i]->fdin,2, &b, TRUE, 0, TRUE);
-		*/
 
 		/* reconstruct the object */
 		ht = getTypeName(getHeadType(tpe));

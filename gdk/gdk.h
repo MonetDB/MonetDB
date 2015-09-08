@@ -1579,24 +1579,18 @@ gdk_export gdk_return GDKcreatedir(const char *nme);
  * @item int
  * @tab BATprintf (stream *f, BAT *b)
  * @item int
- * @tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid,
- * int order, int printorderby)
+ * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
- * The functions to convert BATs into ASCII and the reverse use
- * internally defined formats. They are primarily meant for ease of
+ * The functions to convert BATs into ASCII. They are primarily meant for ease of
  * debugging and to a lesser extent for output processing.  Printing a
  * BAT is done essentially by looping through its components, printing
- * each association.  If an index is available, it will be used.
+ * each association.  
  *
- * The BATmultiprintf command assumes a set of BATs with corresponding
- * oid-s in the head columns. It performs the multijoin over them, and
- * prints the multi-column result on the file.
  */
-gdk_export gdk_return BATprintcols(stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
 gdk_export gdk_return BATprintf(stream *f, BAT *b);
-gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 
 /*
  * @- BAT clustering
