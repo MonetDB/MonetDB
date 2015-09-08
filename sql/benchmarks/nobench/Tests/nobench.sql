@@ -93,7 +93,7 @@ select * from bench10 where json.text(json.filter(js,'nested_arr')) = 'check it 
 --     db["nobench_main"].find({ "sparse_XXX" : YYYYY })
 --   Argo/SQL:
 --     SELECT * FROM nobench_main WHERE sparse_XXX = YYYYY;
-select * from bench10 where json.text(json.filter(js,'parse_000')) = 'GBRDA===';
+select * from bench10 where json.text(json.filter(js,'sparse_000')) = 'GBRDA===';
 
 -- Q10 (replace XXXXX and YYYYY with literal integers):
 --   MongoDB:
