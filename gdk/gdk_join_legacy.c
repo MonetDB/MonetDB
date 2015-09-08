@@ -75,14 +75,13 @@ BATsemijoin(BAT *l, BAT *r)
 		/* r is [dense2,any_1] */
 		BBPfix(r->batCacheid);
 	}
-	if (BATsubsemijoin(&res1, &res2, l, r, NULL, NULL, 0, BATcount(l)) != GDK_SUCCEED) {
+	if (BATsubsemijoin(&res1, NULL, l, r, NULL, NULL, 0, BATcount(l)) != GDK_SUCCEED) {
 		if (lmap)
 			BBPunfix(lmap->batCacheid);
 		BBPunfix(l->batCacheid);
 		BBPunfix(r->batCacheid);
 		return NULL;
 	}
-	BBPunfix(res2->batCacheid);
 	BBPunfix(r->batCacheid);
 	if (lmap) {
 		/* res1 is [dense,sub(dense1)] */

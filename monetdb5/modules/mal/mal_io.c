@@ -91,7 +91,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) ) {
-		BAT *b;
+		BAT *b[2];
 
 		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
 			if (hd)
@@ -101,19 +101,24 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(bat *) val);
-		if (b == NULL) {
+		b[1] = BATdescriptor(*(bat *) val);
+		if (b[1] == NULL) {
 			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
+			mnstr_printf(fp, "<%s>", BBPname(b[0]->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
-		} else
-			BATmultiprintf(cntxt->fdout, 2, &b, TRUE, 0, TRUE);
-		BBPunfix(b->batCacheid);
+		} else {
+			b[0] = BATmark(b[1],0);
+			if( b[0]){
+				BATprintcolumns(cntxt->fdout, 2, b);
+				BBPunfix(b[0]->batCacheid);
+			}
+		}
+		BBPunfix(b[1]->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (hd)
@@ -149,12 +154,6 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	return msg;
 
-}
-
-str
-IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, p, 1, 0, FALSE, TRUE);
 }
 
 str
@@ -530,89 +529,50 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 /*
- * The table printing routine implementations rely on the multiprintf.
+ * The table printing routine implementations.
  * They merely differ in destination and order prerequisite
  */
-str
-IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
+static str
+IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i)
 {
 	BAT *piv[MAXPARAMS], *b;
-	int nbats = 0;
 	int tpe, k = i;
 	ptr val;
 
 	(void) cntxt;
+	assert(pci->retc == 1);
+	assert(pci->argc >= 2);
+
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
-			for (k = 0; k < nbats; k++)
+			for (k = 0; k < i; k++)
 				BBPunfix(piv[k]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
-			for (k = 0; k < nbats; k++)
+			for (k = 0; k < i; k++)
 				BBPunfix(piv[k]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " null BAT encountered");
 		}
-		piv[nbats++] = b;
+		piv[i] = b;
 	}
-	/*if(printhead) */ nbats++;
-	BATmultiprintf(f, nbats, piv, printhead, order, printorder);
-	for (k = 0; k < nbats - 1; k++)
+	/* add materialized void column */
+	piv[0] = BATmark(piv[1],0);
+	BATprintcolumns(f, pci->argc, piv);
+	for (k = 0; k < pci->argc; k++)
 		BBPunfix(piv[k]->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int order;
-	order = *getArgReference_int(stk, pci, 1);
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, TRUE, TRUE);
-}
-
-str
 IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, TRUE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1);
 }
 
-str
-IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fp;
-	int order;
-
-	fp = *(stream **) getArgReference(stk, pci, 1);
-	order = *getArgReference_int(stk, pci, 2);
-	(void) order;		/* fool compiler */
-	return IOtableAll(fp, cntxt, mb, stk, pci, 3, 1, TRUE, TRUE);
-}
-
-str
-IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fp;
-
-	fp = *(stream **) getArgReference(stk, pci, 1);
-	return IOtableAll(fp, cntxt, mb, stk, pci, 2, 0, TRUE, TRUE);
-}
-
-str
-IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, FALSE, TRUE);
-}
-
-str
-IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int order;
-	order = *getArgReference_int(stk, pci, 1);
-	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
-}
 
 /*
  * Bulk export/loading
@@ -628,22 +588,6 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * where the server was started unless an absolute file name was
  * presented.
  */
-str
-IOdatafile(str *ret, str *fnme){
-	stream *s = open_rstream(*fnme);
-	*ret = 0;
-	if (s == NULL )
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
-	
-	if (mnstr_errnr(s)) {
-		mnstr_close(s);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
-	}
-	*ret= GDKstrdup(*fnme);
-	mnstr_close(s);
-	mnstr_destroy(s);
-	return MAL_SUCCEED;
-}
 
 str
 IOexport(bit *ret, bat *bid, str *fnme)

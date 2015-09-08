@@ -986,8 +986,12 @@ BATdelete(BAT *b)
 	b->batCopiedtodisk = FALSE;
 }
 
+/*
+ * BAT specific printing
+ */
+
 gdk_return
-BATprintcols(stream *s, int argc, BAT *argv[])
+BATprintcolumns(stream *s, int argc, BAT *argv[])
 {
 	int i;
 	BUN n, cnt;
@@ -1002,19 +1006,11 @@ BATprintcols(stream *s, int argc, BAT *argv[])
 	/* error checking */
 	for (i = 0; i < argc; i++) {
 		if (argv[i] == NULL) {
-			GDKerror("BAT missing\n");
-			return GDK_FAIL;
-		}
-		if (!BAThdense(argv[i])) {
-			GDKerror("BATs must be dense headed\n");
+			GDKerror("Columns missing\n");
 			return GDK_FAIL;
 		}
 		if (BATcount(argv[0]) != BATcount(argv[i])) {
-			GDKerror("BATs must be the same size\n");
-			return GDK_FAIL;
-		}
-		if (argv[0]->hseqbase != argv[i]->hseqbase) {
-			GDKerror("BATs must be aligned\n");
+			GDKerror("Columns must be the same size\n");
 			return GDK_FAIL;
 		}
 	}
@@ -1071,17 +1067,15 @@ BATprintf(stream *s, BAT *b)
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
 
-	argv[0] = BATmirror(BATmark(b, 0));
-	argv[1] = BATmirror(BATmark(BATmirror(b), 0));
+	argv[0] = BATmark(b, 0);
+	argv[1] = b;
 	if (argv[0] && argv[1]) {
 		BATroles(argv[0], NULL, b->hident);
 		BATroles(argv[1], NULL, b->tident);
-		ret = BATprintcols(s, 2, argv);
+		ret = BATprintcolumns(s, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);
-	if (argv[1])
-		BBPunfix(argv[1]->batCacheid);
 	return ret;
 }
 
@@ -1089,78 +1083,4 @@ gdk_return
 BATprint(BAT *b)
 {
 	return BATprintf(GDKstdout, b);
-}
-
-gdk_return
-BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int printorder)
-{
-	BAT **bats;
-	gdk_return ret;
-	int i;
-
-	(void) printorder;
-	assert(argc >= 2);
-	assert(order < argc);
-	assert(order >= 0);
-	argc--;
-	if ((bats = GDKzalloc((argc + 1) * sizeof(BAT *))) == NULL)
-		return GDK_FAIL;
-	if ((bats[0] = BATmirror(BATmark(argv[order > 0 ? order - 1 : 0], 0))) == NULL)
-		goto bailout;
-	if ((bats[1] = BATmirror(BATmark(BATmirror(argv[0]), 0))) == NULL)
-		goto bailout;
-	for (i = 1; i < argc; i++) {
-		BAT *a, *b, *r, *t;
-		int j;
-
-		if ((r = BATmirror(BATmark(argv[i], 0))) == NULL)
-			goto bailout;
-		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, 0, BUN_NONE);
-		BBPunfix(r->batCacheid);
-		if (ret != GDK_SUCCEED)
-			goto bailout;
-		if ((t = BATproject(a, bats[0])) == NULL) {
-			BBPunfix(a->batCacheid);
-			BBPunfix(b->batCacheid);
-			goto bailout;
-		}
-		BBPunfix(bats[0]->batCacheid);
-		bats[0] = t;
-		for (j = 1; j <= i; j++) {
-			if ((t = BATproject(a, bats[j])) == NULL) {
-				BBPunfix(a->batCacheid);
-				BBPunfix(b->batCacheid);
-				goto bailout;
-			}
-			BBPunfix(bats[j]->batCacheid);
-			bats[j] = t;
-		}
-		BBPunfix(a->batCacheid);
-		if ((r = BATmirror(BATmark(BATmirror(argv[i]), 0))) == NULL) {
-			BBPunfix(b->batCacheid);
-			goto bailout;
-		}
-		t = BATproject(b, r);
-		BBPunfix(b->batCacheid);
-		BBPunfix(r->batCacheid);
-		if (t == NULL)
-			goto bailout;
-		bats[i + 1] = t;
-	}
-	BATroles(bats[0], NULL, argv[order > 0 ? order - 1 : 0]->hident);
-	for (i = 1; i <= argc; i++)
-		BATroles(bats[i], NULL, argv[i - 1]->tident);
-	ret = BATprintcols(s, argc + printhead, bats + !printhead);
-	for (i = 0; i <= argc; i++)
-		BBPunfix(bats[i]->batCacheid);
-	GDKfree(bats);
-	return ret;
-
-  bailout:
-	for (i = 0; i <= argc; i++) {
-		if (bats[i])
-			BBPunfix(bats[i]->batCacheid);
-	}
-	GDKfree(bats);
-	return GDK_FAIL;
 }

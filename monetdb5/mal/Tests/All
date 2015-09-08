@@ -93,7 +93,6 @@ tst120b
 tst130
 tst150
 tst1500
-tst1501
 tst1502
 tst1503
 tst1504
@@ -126,7 +125,6 @@ tst2505
 tst2510
 tst251
 tst252
-tst253
 tst255
 tst2550
 tst256
@@ -138,7 +136,6 @@ tst272
 #tst274
 # opens /tmp/MonetEvents, i.e. not on Windows:
 NOT_WIN32?tst275
-tst277
 tst280
 tst281
 tst292

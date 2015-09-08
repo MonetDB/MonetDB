@@ -803,14 +803,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
-	if (s == NULL && !BAThdense(b)) {
-		/* XXX backward compatibility code: ignore non-dense head, but
-		 * only if no candidate list */
-		s = BATmirror(BATmark(BATmirror(b), 0));
-		BBPunfix(b->batCacheid);
-		b = s;
-		s = NULL;
-	}
+	assert(BAThdense(b) && b->htype == TYPE_void); // headless guard
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, 1, 1, nil_if_empty);
 	BBPunfix(b->batCacheid);
 	if (s)

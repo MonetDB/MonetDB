@@ -1460,15 +1460,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			goto out;
 		}
 		freeb = 1;
-		if (b->htype != TYPE_void) {
-			t1 = BATmirror(BATmark(BATmirror(b), 0));
-			if (t1 == NULL) {
-				err = "internal mark failed";
-				goto out;
-			}
-			BBPunfix(b->batCacheid);
-			b = t1;
-		}
+		assert(b->htype); //headless guard
 		if (g) {
 			g = BATleftjoin(s, g, BATcount(s));
 			if (g == NULL) {
@@ -1476,15 +1468,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto out;
 			}
 			freeg = 1;
-			if (g->htype != TYPE_void) {
-				t1 = BATmirror(BATmark(BATmirror(g), 0));
-				if (t1 == NULL) {
-					err = "internal mark failed";
-					goto out;
-				}
-				BBPunfix(g->batCacheid);
-				g = t1;
-			}
+			assert(g->htype == TYPE_void);// headless guard
 		}
 	}
 	if (g && BATtdense(g)) {

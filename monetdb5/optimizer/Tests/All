@@ -6,13 +6,9 @@ tst4004
 tst4005
 tst4010
 tst4030
-tst4300
 tst4600
 tst4601
 tst4602
-#tst4610 needs new joinpath 
-#tst4611 ,,
-#tst4620 ,,
 tst4630
 tst4700
 tst4701

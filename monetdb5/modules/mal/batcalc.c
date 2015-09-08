@@ -988,7 +988,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dbl avg;
 	BUN vals;
 	bat *bid;
-	BAT *b, *s = NULL, *t;
+	BAT *b, *s = NULL;
 	gdk_return ret;
 
 	(void) cntxt;
@@ -1005,12 +1005,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
 		}
 	}
-	if (!BAThdense(b)) {
-		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
-		BBPunfix(b->batCacheid);
-		b = t;
-		assert(s == NULL);
-	}
+	assert(b->htype == TYPE_void);// headless guard
 	ret = BATcalcavg(b, s, &avg, &vals);
 	BBPunfix(b->batCacheid);
 	if (s)

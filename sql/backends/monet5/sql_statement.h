@@ -42,7 +42,6 @@ typedef enum stmt_type {
 	st_bat,
 	st_idxbat,
 	st_const,
-	st_mark,
 	st_gen_group,
 	st_reverse,
 	st_mirror,
@@ -203,7 +202,6 @@ extern stmt *stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int err
 
 extern stmt *stmt_const(sql_allocator *sa, stmt *s, stmt *val);
 
-extern stmt *stmt_mark_tail(sql_allocator *sa, stmt *s, oid id);
 extern stmt *stmt_gen_group(sql_allocator *sa, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
 extern stmt *stmt_reverse(sql_allocator *sa, stmt *s);
 extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);

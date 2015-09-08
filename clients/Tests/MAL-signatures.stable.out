@@ -2322,6 +2322,8 @@ command algebra.ilike(s:str,pat:str,esc:str):bit
 address PCREilike3;
 command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGrangejoin2;
+comment Deprecated, see algebra.subrangejoin. Range join
+
 command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
@@ -2364,18 +2366,6 @@ command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate
 address ALGleftjoinestimate;
 command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
 address ALGleftjoin;
-command algebra.mark(b:bat[:any_1,:any_2],nr_parts:int,part_nr:int):bat[:any_1,:oid] 
-address ALGtmarkp;
-comment Produces a BAT with fresh unique dense sequense of OIDs in	the tail that starts at base (i.e. [base,..base+b.count()-1] ).	The base is uniquely defined by the part_nr (ie we set the highest	bits based on the part_nr/nr_parts) 
-
-command algebra.mark(b:bat[:any_1,:any_2]):bat[:any_1,:oid] 
-address ALGtmark_default;
-comment Produces a BAT with fresh unique OIDs in the tail starting at 0@0.
-
-command algebra.mark(b:bat[:any_1,:any_2],base:oid):bat[:any_1,:oid] 
-address ALGtmark;
-comment Produces a BAT with fresh unique dense sequense of OIDs in		the tail that starts at base (i.e. [base,..base+b.count()-1] ).
-
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
@@ -2419,6 +2409,14 @@ comment Return the slice with the BUNs at position x till y.
 command algebra.slice(b:bat[:oid,:any_1],x:oid,y:oid):bat[:oid,:any_1] 
 address ALGslice_oid;
 comment Return the slice based on head oid x till y (exclusive).
+
+command algebra.subinter(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng):bat[:oid,:oid] 
+address ALGsubinter;
+comment Intersection of l and r with candidate lists (i.e. half of semi-join)
+
+command algebra.subdiff(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng):bat[:oid,:oid] 
+address ALGsubdiff;
+comment Difference of l and r with candidate lists
 
 command algebra.subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid,:oid],X_10:bat[:oid,:oid]) 
 address ALGsubrangejoin;
@@ -2523,8 +2521,12 @@ comment Select all head values for which the tail value is in range.	Input is a 
 
 command algebra.tdiff(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtdiff;
+comment Deprecated, see algebra.subdiff
+
 command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
 address ALGtinter;
+comment Deprecated, see algebra.semijoin
+
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
 comment Select all head values of the first input BAT for which the tail value	obeys the relation value OP VAL and for which the head value occurs in	the tail of the second input BAT.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
@@ -2533,10 +2535,6 @@ command algebra.thetasubselect(b:bat[:oid,:any_1],val:any_1,op:str):bat[:oid,:oi
 address ALGthetasubselect1;
 comment Select all head values for which the tail value obeys the relation	value OP VAL.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command algebra.tdifference(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
-address ALGtdifference;
-command algebra.tintersect(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
-address ALGtintersect;
 command alarm.ctime{unsafe}():str 
 address ALARMctime;
 comment Return the current time as a C-time string.
@@ -31315,14 +31313,6 @@ pattern bat.new(ht:oid,tt:any_1):bat[:oid,:any_1]
 address CMDBATnew;
 comment Creates a new empty transient BAT, with head- and tail-types as indicated.
 
-command bat.orderReverse(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCorder_rev;
-comment Reverse sorts the BAT itself on the head, in place. 
-
-command bat.order(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCorder;
-comment Sorts the BAT itself on the head, in place. 
-
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
 address CMDBATpartition2;
 comment Create the n-th slice over the BAT broken into several pieces.
@@ -37593,9 +37583,9 @@ pattern clients.changeUsername(old:str,new:str):void
 address CLTchangeUsername;
 comment Change the username of the user into the new string
 
-pattern clients.getUsers():bat[:oid,:str] 
+pattern clients.getUsers() (X_1:bat[:oid,:oid],X_2:bat[:oid,:str]) 
 address CLTgetUsers;
-comment return a BAT with user id and name available in the system
+comment return a BAT with user id and one with name available in the system
 
 pattern clients.getPasswordHash(user:str):str 
 address CLTgetPasswordHash;
@@ -38425,21 +38415,9 @@ command inet.#tostr():void
 address INETtoString;
 comment Convert inet to string equivalent
 
-command io.data(fname:str):str 
-address IOdatafile;
-comment Signals receipt of tuples in a file fname.It returns the name of the file, if it still exists.
-
 command io.export(b:bat[:oid,:any_2],filepath:str):bit 
 address IOexport;
 comment Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it is put into the $DBPATH directory. Success of failure is indicated.
-
-pattern io.ftable(fp:streams,order:int,b1:bat[:oid,:any],b:bat[:oid,:any]...):void 
-address IOfotable;
-comment Print an n-ary table to a file.
-
-pattern io.ftable(filep:streams,b1:bat[:oid,:any],b:bat[:oid,:any]...):void 
-address IOftable;
-comment Print an n-ary table to a file.
 
 command io.import(b:bat[:oid,:any_2],filepath:str):bat[:oid,:any_2] 
 address IOimport;
@@ -38465,17 +38443,13 @@ pattern io.prompt(val:any_1):void
 address IOprompt_val;
 comment Print a MAL value without brackets.
 
-pattern io.print(val:bat[:oid,:any_2]):void 
+pattern io.print(val:bat[:oid,:any_1]):void 
 address IOprint_val;
 comment Print a MAL value column .
 
 pattern io.print(val:any_1):void 
 address IOprint_val;
 comment Print a MAL value tuple .
-
-pattern io.print(order:int,b:bat[:oid,:any],b2:bat[:oid,:any]...):void 
-address IOotable;
-comment The same as normal table print, but 	enforces to use the order of BAT 	number [1..argc] to do the printing.
 
 pattern io.print(b1:bat[:oid,:any]...):void 
 address IOtable;
@@ -40440,7 +40414,7 @@ pattern sql.argRecord():str
 address SQLargRecord;
 comment Glue together the calling sequence
 
-pattern sql.affectedRows{unsafe}(mvc:int,nr:wrd,w:str):int 
+pattern sql.affectedRows{unsafe}(mvc:int,nr:wrd):int 
 address mvc_affected_rows_wrap;
 comment export the number of affected rows by the current query
 
@@ -40676,7 +40650,7 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportOperation{unsafe}(w:str):void 
+pattern sql.exportOperation{unsafe}():void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
 

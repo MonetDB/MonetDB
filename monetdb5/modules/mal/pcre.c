@@ -790,6 +790,9 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	return MAL_SUCCEED;
 }
 
+/* special characters in PCRE that need to be escaped */
+static const char *pcre_specials = ".+?*()[]{}|^$\\";
+
 /* change SQL LIKE pattern into PCRE pattern */
 static str
 sql2pcre(str *r, const char *pat, const char *esc_str)
@@ -812,7 +815,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	 * expression.  If the user used the "+" char as escape and has "++"
 	 * in its pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
-	specials = (*esc_str && strchr( ".+*()[]|", esc) != NULL);
+	specials = (*esc_str && strchr(pcre_specials, esc) != NULL);
 
 	*ppat++ = '^';
 	while ((c = *pat++) != 0) {
@@ -829,7 +832,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 				escaped = 1;
 			}
 			hasWildcard = 1;
-		} else if (strchr(".?+*()[]|\\", c) != NULL) {
+		} else if (strchr(pcre_specials, c) != NULL) {
 			/* escape PCRE special chars, avoid double backslash if the
 			 * user uses an invalid escape sequence */
 			if (!escaped)
@@ -881,7 +884,7 @@ pat2pcre(str *r, const char *pat)
 	while (*pat) {
 		int c = *pat++;
 
-		if (strchr( ".+*()|\\", c) != NULL) {
+		if (strchr(pcre_specials, c) != NULL) {
 			*ppat++ = '\\';
 			*ppat++ = c;
 		} else if (c == '%') {

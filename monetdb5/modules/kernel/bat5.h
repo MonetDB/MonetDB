@@ -31,8 +31,6 @@ bat5_export str BKCdensebat(bat *ret, const wrd *size);
 bat5_export str BKCreverse(bat *ret, const bat *bid);
 bat5_export str BKCmirror(bat *ret, const bat *bid);
 bat5_export str BKCrevert(bat *ret, const bat *bid);
-bat5_export str BKCorder(bat *ret, const bat *bid);
-bat5_export str BKCorder_rev(bat *ret, const bat *bid);
 bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);

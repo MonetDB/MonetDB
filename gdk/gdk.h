@@ -1579,24 +1579,18 @@ gdk_export gdk_return GDKcreatedir(const char *nme);
  * @item int
  * @tab BATprintf (stream *f, BAT *b)
  * @item int
- * @tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid,
- * int order, int printorderby)
+ * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
- * The functions to convert BATs into ASCII and the reverse use
- * internally defined formats. They are primarily meant for ease of
+ * The functions to convert BATs into ASCII. They are primarily meant for ease of
  * debugging and to a lesser extent for output processing.  Printing a
  * BAT is done essentially by looping through its components, printing
- * each association.  If an index is available, it will be used.
+ * each association.  
  *
- * The BATmultiprintf command assumes a set of BATs with corresponding
- * oid-s in the head columns. It performs the multijoin over them, and
- * prints the multi-column result on the file.
  */
-gdk_export gdk_return BATprintcols(stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
 gdk_export gdk_return BATprintf(stream *f, BAT *b);
-gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 
 /*
  * @- BAT clustering
@@ -1605,10 +1599,6 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  * @tab BATsort (BAT *b)
  * @item BAT *
  * @tab BATsort_rev (BAT *b)
- * @item BAT *
- * @tab BATorder (BAT *b)
- * @item BAT *
- * @tab BATorder_rev (BAT *b)
  * @item BAT *
  * @tab BATrevert (BAT *b)
  * @item int
@@ -1627,17 +1617,13 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  * The BATsort functions return a copy of the input BAT, sorted in
  * ascending order on the head column. BATordered starts a check on
  * the head values to see if they are ordered. The result is returned
- * and stored in the hsorted field of the BAT.  BATorder is similar to
- * BATsort, but sorts the BAT itself, rather than returning a copy
- * (BEWARE: this operation destroys the delta
- * information. TODO:fix). The BATrevert puts all the live BUNs of a
- * BAT in reverse order. It just reverses the sequence, so this does
- * not necessarily mean that they are sorted in reverse order!
+ * and stored in the hsorted field of the BAT.  The BATrevert puts all
+ * the live BUNs of a BAT in reverse order. It just reverses the
+ * sequence, so this does not necessarily mean that they are sorted in
+ * reverse order!
  */
 gdk_export BAT *BATsort(BAT *b);
 gdk_export BAT *BATsort_rev(BAT *b);
-gdk_export gdk_return BATorder(BAT *b);
-gdk_export gdk_return BATorder_rev(BAT *b);
 gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
@@ -3112,8 +3098,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
  * @item BAT *
- * @tab BATkintersect (BAT *b, BAT *c)
- * @item BAT *
  * @tab BATkdiff (BAT *b, BAT *c)
  * @end multitable
  *
@@ -3178,6 +3162,7 @@ gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export BAT *BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
@@ -3189,7 +3174,6 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATkintersect(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
@@ -3226,26 +3210,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			 (c)->type == TYPE_oid ?			\
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
-
-#define BATorder(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder(_b);						\
-	})
-
-#define BATorder_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder_rev(_b);					\
-	})
 
 #define BATsort(b)							\
 	({								\
@@ -3425,6 +3389,17 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T), BATcount(_rh), \
 			__func__, __FILE__, __LINE__);			\
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
+	})
+
+#define BATkdiff(l, r)							\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
+			__func__, __FILE__, __LINE__);			\
+		BATkdiff(_l, _r);					\
 	})
 
 #endif

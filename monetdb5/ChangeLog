@@ -1,6 +1,20 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Sep  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed bat.order and bat.orderReverse functions.
+
+* Mon Sep  7 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Changed client.getUsers to return two bats, one with the user id
+  and one with the user name.
+
+* Sun Sep  6 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented algebra.subdiff and algebra.subinter.  The old functions
+  algegra.tdiff and algebra.tinter are now officially deprecated.
+
+* Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.tdifference and algebra.tintersect.
+
 * Fri Aug 14 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.tunion.
 

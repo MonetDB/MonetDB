@@ -17,7 +17,7 @@ import nl.cwi.monetdb.mcl.io.*;
  * in performing COPY INTO sequences.  This is mainly meant to show how
  * a quick load can be performed from Java.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 
 public class SQLcopyinto {

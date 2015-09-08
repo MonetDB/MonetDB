@@ -1080,7 +1080,7 @@ BATslice(BAT *b, BUN l, BUN h)
 
 /*
  *  BAT Sorting
- * BATsort returns a sorted copy. BATorder sorts the BAT itself.
+ * BATsort returns a sorted copy.
  */
 int
 BATordered(BAT *b)
@@ -1194,24 +1194,10 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 	return b;
 }
 
-#undef BATorder
-#undef BATorder_rev
 #undef BATsort
 #undef BATsort_rev
 #undef BATssort
 #undef BATssort_rev
-
-gdk_return
-BATorder(BAT *b)
-{
-	return BATorder_internal(b, 0, 0, 0, "BATorder") ? GDK_SUCCEED : GDK_FAIL;
-}
-
-gdk_return
-BATorder_rev(BAT *b)
-{
-	return BATorder_internal(b, 0, 1, 0, "BATorder_rev") ? GDK_SUCCEED : GDK_FAIL;
-}
 
 BAT *
 BATsort(BAT *b)

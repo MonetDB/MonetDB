@@ -276,8 +276,8 @@ Ready.
 % sys.bench10 # table_name
 % js # name
 % json # type
-% 0 # length
-[ 'value not yet known ' ]
+% 440 # length
+[ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"}"	]
 #select f.h, count(*) from (
 #	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
 #group by f.h;

@@ -1200,11 +1200,9 @@ bm_tids(BAT *b, BAT *d)
 	tids->H->dense = 1;
 
 	if (BATcount(d)) {
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		logbat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		logbat_destroy(diff);
+		tids = diff;
 	}
 	return tids;
 }
