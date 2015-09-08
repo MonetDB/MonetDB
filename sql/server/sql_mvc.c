@@ -247,7 +247,7 @@ build up the hash (not copyied in the trans dup)) */
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
-			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurency conflicts, will ROLLBACK instead");
+			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
@@ -262,7 +262,7 @@ build up the hash (not copyied in the trans dup)) */
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
