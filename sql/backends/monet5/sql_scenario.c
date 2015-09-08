@@ -407,6 +407,7 @@ SQLinitClient(Client c)
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
+	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
@@ -474,6 +475,7 @@ SQLinitClient(Client c)
 		str fullname;
 
 		SQLnewcatalog = 0;
+		maybeupgrade = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -520,7 +522,9 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		SQLupgrades(c,m);
+		if (maybeupgrade)
+			SQLupgrades(c,m);
+		maybeupgrade = 0;
 	}
 	fflush(stdout);
 	fflush(stderr);
