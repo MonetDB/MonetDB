@@ -26,8 +26,6 @@ __hidden str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
 __hidden void exitScenario(Client c)		/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
-__hidden str AUTHrequireAdminOrUser(Client *c, str *username)
-	__attribute__((__visibility__("hidden")));
 __hidden void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	__attribute__((__visibility__("hidden")));
 

@@ -47,6 +47,8 @@ algebra_export str ALGsubsemijoin(bat *r1, bat *r2, const bat *l, const bat *r, 
 algebra_export str ALGsubthetajoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const int *op, const bit *nil_matches, const lng *estimate);
 algebra_export str ALGsubbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const void *low, const void *high, const bit *li, const bit *hi, const lng *estimate);
 algebra_export str ALGsubrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const lng *estimate);
+algebra_export str ALGsubdiff(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+algebra_export str ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 
 /* legacy join functions */
 algebra_export str ALGantijoin2(bat *l, bat *r, const bat *lid, const bat *rid);
@@ -76,10 +78,8 @@ algebra_export str ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 algebra_export str ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
 algebra_export str ALGouterjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGtintersect(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGkdiff(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGtdifference(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsample(bat *result, const bat *bid, const int *param);
 

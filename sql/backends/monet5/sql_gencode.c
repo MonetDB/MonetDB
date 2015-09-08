@@ -1074,11 +1074,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 		}
 			break;
-		case st_mark:{
-			if (dump_2(sql, mb, s, algebraRef, markRef) < 0)
-				return -1;
-		}
-			break;
 		case st_gen_group:{
 			if (dump_2(sql, mb, s, algebraRef, groupbyRef) < 0)
 				return -1;
@@ -1659,14 +1654,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 		}
 			break;
-		case st_tdiff:{
-			if (dump_2_(sql, mb, s, algebraRef, tdiffRef) < 0)
-				return -1;
-		}
-			break;
+		case st_tdiff:
 		case st_tinter:{
-			if (dump_2_(sql, mb, s, algebraRef, tinterRef) < 0)
+			int o1, o2;
+			if ((o1 = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
+			if ((o2 = _dumpstmt(sql, mb, s->op2)) < 0)
+				return -1;
+
+			q = newStmt1(mb, algebraRef, s->type == st_tdiff ? subdiffRef : subinterRef);
+			q = pushArgument(mb, q, o1); /* left */
+			q = pushArgument(mb, q, o2); /* right */
+			q = pushNil(mb, q, TYPE_bat); /* left candidate */
+			q = pushNil(mb, q, TYPE_bat); /* right candidate */
+			q = pushBit(mb, q, FALSE);    /* nil matches */
+			q = pushNil(mb, q, TYPE_lng); /* estimate */
+			if (q == NULL)
+				return -1;
+			s->nr = getDestVar(q);
 		}
 			break;
 		case st_join:{
@@ -2329,7 +2334,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			getArg(q, 0) = sql->mvc_var = newTmpVariable(mb, TYPE_int);
 			q = pushArgument(mb, q, o1);
-			q = pushStr(mb, q, "");	/* warning */
 			if (q == NULL)
 				return -1;
 			sql->mvc_var = s->nr = getDestVar(q);
@@ -2654,7 +2658,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	be->mvc_var = old_mv;
 	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
-		q = pushStr(mb, q, "");	/* warning */
 		if (q == NULL)
 			return -1;
 	}

@@ -1102,6 +1102,11 @@ BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int p
 	assert(argc >= 2);
 	assert(order < argc);
 	assert(order >= 0);
+	// the only flags used so far
+	assert(printhead == TRUE);
+	assert(order == 0);
+	assert(printorder == TRUE);
+
 	argc--;
 	if ((bats = GDKzalloc((argc + 1) * sizeof(BAT *))) == NULL)
 		return GDK_FAIL;

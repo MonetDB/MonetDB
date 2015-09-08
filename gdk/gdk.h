@@ -3140,8 +3140,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
  * @item BAT *
- * @tab BATkintersect (BAT *b, BAT *c)
- * @item BAT *
  * @tab BATkdiff (BAT *b, BAT *c)
  * @end multitable
  *
@@ -3206,6 +3204,7 @@ gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export BAT *BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
@@ -3217,7 +3216,6 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATkintersect(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);

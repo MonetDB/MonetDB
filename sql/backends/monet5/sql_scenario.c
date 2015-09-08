@@ -279,7 +279,7 @@ SQLexit(Client c)
 	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 8
+#define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -318,6 +318,10 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("history", &F);
 
+	typename = "bigint";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return 0;
 }
 

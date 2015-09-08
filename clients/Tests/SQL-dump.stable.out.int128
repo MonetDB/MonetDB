@@ -44,6 +44,10 @@ Ready.
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
 # 15:16:56 >  

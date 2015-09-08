@@ -2251,14 +2251,19 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		u_id = BATdescriptor(*uid);
 		if (!u_id)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		cminu = BATsubdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
 		}
+		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
-		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
+		if (!res) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate" );
+		}
+		c = res;
 
 		if ((u_val = BATdescriptor(*uval)) == NULL) {
 			BBPunfix(c->batCacheid);
@@ -2307,13 +2312,16 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
-			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
-			BBPunfix(i->batCacheid);
+			cminu = BATsubdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
-			if (!cminu) 
+			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-			i = BATmirror(BATmark(cminu, 0));
+			u_id = BATproject(cminu, i);
 			BBPunfix(cminu->batCacheid);
+			BBPunfix(i->batCacheid);
+			if (!u_id)
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			i = u_id;
 		}
 		if (isVIEW(res)) {
 			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE, TRANSIENT);
@@ -2497,11 +2505,11 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( d == NULL)
 			throw(SQL,"sql.tid","Can not bind delete column");
 
-		diff = BATkdiff(tids, BATmirror(d));
-		BBPunfix(tids->batCacheid);
-		tids = BATmirror(BATmark(diff, sb));
-		BBPunfix(diff->batCacheid);
+		diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
+		BBPunfix(tids->batCacheid);
+		BATseqbase(diff, sb);
+		tids = diff;
 	}
 	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
@@ -3030,12 +3038,12 @@ str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	int *res = getArgReference_int(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0), error;
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
 	wrd nr;
-	str *w = getArgReference_str(stk, pci, 3), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3044,7 +3052,8 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_wrd);
 	nr = *getArgReference_wrd(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	if (mvc_export_affrows(b, b->out, nr, *w))
+	error = mvc_export_affrows(b, b->out, nr, "");
+	if (error)
 		throw(SQL, "sql.affectedRows", "failed");
 	return MAL_SUCCEED;
 }
@@ -3120,13 +3129,15 @@ str
 mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	str *w = getArgReference_str(stk, pci, 1), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
+	(void) stk;		/* NOT USED */
+	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_operation(b, b->out, *w))
+	if (mvc_export_operation(b, b->out, ""))
 		throw(SQL, "sql.exportOperation", "failed");
 	return NULL;
 }
@@ -4284,7 +4295,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		throw(SQL, name, "bat not sorted");
 	}
 */
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -4300,9 +4311,10 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		BUNins(r, BUNhead(bi, p), &rank, FALSE);
+		BUNappend(r, &rank, FALSE);
 		nrank += !dense || c;
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
@@ -4328,14 +4340,14 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, "cannot allocate result bat");
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			rank++;
 		}
 	} else {
@@ -4344,10 +4356,11 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			nrank += !dense || c;
 		}
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;

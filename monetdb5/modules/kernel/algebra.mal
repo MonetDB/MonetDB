@@ -9,12 +9,6 @@ module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command tintersect( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtintersect;
-
-command tdifference ( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtdifference;
-
 command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
@@ -222,10 +216,12 @@ comment "Select all unique values from the tail of the input.
 
 
 command tinter( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtinter;
+address ALGtinter
+comment "Deprecated, see algebra.semijoin";
 
 command tdiff( left:bat[:oid,:oid], right:bat[:oid,:oid] ) :bat[:oid,:oid]
-address ALGtdiff;
+address ALGtdiff
+comment "Deprecated, see algebra.subdiff";
 
 # @+ Join operations
 # The core of every relational engine.
@@ -260,7 +256,8 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 
 command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit)
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGrangejoin2;
+address ALGrangejoin2
+comment "Deprecated, see algebra.subrangejoin. Range join";
 
 command subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGsubjoin
@@ -296,6 +293,14 @@ command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],
 address ALGsubrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
 
+command subdiff(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+address ALGsubdiff
+comment "Difference of l and r with candidate lists";
+
+command subinter(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+address ALGsubinter
+comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
+
 # @+ Projection operations
 pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]
 address ALGprojecttail
@@ -319,25 +324,6 @@ comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-
-# @+ OID Introducing Commands
-# For relational processing, some operators are necessary to produce newly
-# initiated OID columns, for representing n-ary (intermediary) relations.
-command mark( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid]
-address ALGtmark
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-
-command mark( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
-address ALGtmark_default
-comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
-
-command mark( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid]
-address ALGtmarkp
-comment "Produces a BAT with fresh unique dense sequense of OIDs in
-	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
-	The base is uniquely defined by the part_nr (ie we set the highest
-	bits based on the part_nr/nr_parts) ";
 
 command reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGreuse

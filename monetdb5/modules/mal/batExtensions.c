@@ -169,9 +169,10 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 
-	b = BATnew(TYPE_oid,getArgType(mb,pci,1),0, TRANSIENT);
+	b = BATnew(TYPE_void,getArgType(mb,pci,1),0, TRANSIENT);
 	if( b == 0)
 		throw(MAL,"bat.single","Could not create it");
+	BATseqbase(b, 0);
     if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
         if (u == 0 || *(str*)u == 0)
             u = (ptr) str_nil;

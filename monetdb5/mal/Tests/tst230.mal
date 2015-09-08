@@ -11,11 +11,3 @@
 	io.printf("second refcount =%d\n",i);
 	j:= bbp.getLRefCount(b);
 	io.printf("lrefcount =%d\n",j);
-
-	# referenceing through mirroring
-	b5:= bat.reverse(b);
-	i:= bbp.getRefCount(b);
-	io.printf("after reverse assignment refcount =%d\n",i);
-	j:= bbp.getLRefCount(b);
-	io.printf("lrefcount =%d\n",j);
-

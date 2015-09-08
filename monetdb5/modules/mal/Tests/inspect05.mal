@@ -13,5 +13,5 @@ a0:= algebra.leftfetchjoin(m0,a);
 
 (fv,forder):= algebra.subsort(f0,false,true);
 
-io.table(1,fv,k0,m1,s0,a0);
+io.print(fv,k0,m1,s0,a0);
 

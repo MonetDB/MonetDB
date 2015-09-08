@@ -340,11 +340,11 @@ pattern exportChunk{unsafe}(s:streams, res_id:int, offset:int, nr:int) :void
 address mvc_export_chunk_wrap
 comment "Export a chunk of the result set (in order) to stream s"; 
 
-pattern exportOperation{unsafe}(w:str) :void
+pattern exportOperation{unsafe}() :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(mvc:int, nr:wrd, w:str) :int
+pattern affectedRows{unsafe}(mvc:int, nr:wrd) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 

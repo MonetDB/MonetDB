@@ -1334,9 +1334,11 @@ rel2bin_args( mvc *sql, sql_rel *rel, list *args)
 		args = rel2bin_args(sql, rel->l, args);
 		args = rel2bin_args(sql, rel->r, args);
 		break;
+	case op_groupby: 
+		if (rel->r) 
+			args = exps2bin_args(sql, rel->r, args);
 	case op_project:
 	case op_select: 
-	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
 		if (rel->exps)
