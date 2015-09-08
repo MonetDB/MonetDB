@@ -3425,6 +3425,17 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
 
+#define BATkdiff(l, r)							\
+	({								\
+		BAT *_l = (l), *_r = (r);				\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
+			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
+			__func__, __FILE__, __LINE__);			\
+		BATkdiff(_l, _r);					\
+	})
+
 #endif
 #endif
 
