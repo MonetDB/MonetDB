@@ -38471,18 +38471,6 @@ pattern io.stdin():bstream
 address io_stdin;
 comment return the input stream to the database client
 
-pattern io.table(order:int,b1:bat[:oid,:any],b2:bat[:oid,:any]...):void 
-address IOtotable;
-comment Print an n-ary table.
-
-pattern io.table(b1:bat[:oid,:any],b2:bat[:oid,:any]...):void 
-address IOttable;
-comment Print an n-ary table. Like print, but does not print oid column
-
-pattern io.table(b1:bat[:oid,:any]):void 
-address IOttable;
-comment Print an n-ary table. Like print, but does not print oid column
-
 command iterator.next(step:dbl,last:dbl):dbl 
 address ITRnext_dbl;
 comment Advances the iterator with a fixed value
