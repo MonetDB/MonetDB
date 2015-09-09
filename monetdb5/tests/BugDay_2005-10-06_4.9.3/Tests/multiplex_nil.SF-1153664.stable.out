@@ -32,6 +32,7 @@ end user.main;
 #-------------------------#
 [ 0@0,	  2,	  4	  ]
 [ 1@0,	  3,	  9	  ]
+!GDKerror:!ERROR: Columns must be the same size
 
 
 
