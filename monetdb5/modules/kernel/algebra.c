@@ -1189,12 +1189,6 @@ ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGkdiff(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkdiff, "algebra.kdiff");
-}
-
-str
 ALGsample(bat *result, const bat *bid, const int *param)
 {
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");

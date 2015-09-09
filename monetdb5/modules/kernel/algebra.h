@@ -79,7 +79,6 @@ algebra_export str ALGouterjoinestimate(bat *result, const bat *lid, const bat *
 algebra_export str ALGouterjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGkdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsample(bat *result, const bat *bid, const int *param);
 
