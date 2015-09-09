@@ -34,7 +34,7 @@ function MonetDBConnection(options, conncallback) {
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
-	this.request('Xauto_commit 1', undefined, true);
+	if (!options.autocommit) this.request('Xauto_commit 0', undefined, true);
 	/* get server environment into connector */
 	this.request('SELECT * FROM env()', function(err, resp) {
 		if (err) {
@@ -489,7 +489,7 @@ function __get_connect_args(options) {
 	__check_arg(options, 'language', 'string'  , 'sql');
 	__check_arg(options, 'debug'   , 'boolean' , false);
 	__check_arg(options, 'q'       , 'function', undefined);
-
+	__check_arg(options, 'autocommit', 'boolean', true);
   return options;
 }
 
