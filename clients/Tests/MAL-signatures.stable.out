@@ -2382,10 +2382,6 @@ command algebra.reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGreuse;
 comment Reuse a temporary BAT if you can. Otherwise,	allocate enough storage to accept result of an 	operation (not involving the heap)
 
-command algebra.revert(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address ALGrevert;
-comment Returns a BAT copy with buns in reverse order
-
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -38449,11 +38445,11 @@ comment Print a MAL value column .
 
 pattern io.print(val:any_1):void 
 address IOprint_val;
-comment Print a MAL value tuple .
+comment Print a MAL value.
 
 pattern io.print(b1:bat[:oid,:any]...):void 
 address IOtable;
-comment BATs are printed with '#' for legend 	lines, and the BUNs on seperate lines 	between brackets, containing each to 	comma separated values (head and tail). 	If multiple BATs are passed for printing, 	print() performs an implicit natural 	join, producing a multi attribute table.
+comment BATs are printed with '#' for legend 	lines, and the BUNs on seperate lines 	between brackets, containing each to 	comma separated values (head and tail). 	If multiple BATs are passed for printing, 	print() performs an implicit natural 	join on the void head, producing a multi attribute table.
 
 pattern io.print(val:any_1,lst:any...):void 
 address IOprint_val;
@@ -38470,18 +38466,6 @@ comment return the error stream for the database console
 pattern io.stdin():bstream 
 address io_stdin;
 comment return the input stream to the database client
-
-pattern io.table(order:int,b1:bat[:oid,:any],b2:bat[:oid,:any]...):void 
-address IOtotable;
-comment Print an n-ary table.
-
-pattern io.table(b1:bat[:oid,:any],b2:bat[:oid,:any]...):void 
-address IOttable;
-comment Print an n-ary table. Like print, but does not print oid column
-
-pattern io.table(b1:bat[:oid,:any]):void 
-address IOttable;
-comment Print an n-ary table. Like print, but does not print oid column
 
 command iterator.next(step:dbl,last:dbl):dbl 
 address ITRnext_dbl;
@@ -41601,18 +41585,6 @@ address wkbWRITE;
 command xml.aggr(val:bat[:oid,:xml]):xml 
 address BATXMLgroup;
 comment Aggregate the XML values.
-
-command xml.agg(val:bat[:oid,:xml]):xml 
-address BATXMLgroup;
-comment Aggregate the XML values over groups specified.
-
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml] 
-address BATXMLagg;
-comment Aggregate the XML values over groups specified.
-
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml] 
-address BATXMLagg3;
-comment Aggregate the XML values over groups specified.
 
 command xml.attribute(name:str,val:str):xml 
 address XMLattribute;

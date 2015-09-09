@@ -483,23 +483,6 @@ BKCmirror(bat *ret, const bat *bid)
 }
 
 str
-BKCrevert(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.revert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.revert", OPERATION_FAILED);
-	if (BATrevert(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.revert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *b, *s;
@@ -892,7 +875,7 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(BATmirror(b));
+	*res = BATordered(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

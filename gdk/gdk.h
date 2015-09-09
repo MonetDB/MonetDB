@@ -1595,12 +1595,6 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
 /*
  * @- BAT clustering
  * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATsort (BAT *b)
- * @item BAT *
- * @tab BATsort_rev (BAT *b)
- * @item BAT *
- * @tab BATrevert (BAT *b)
  * @item int
  * @tab BATordered (BAT *b)
  * @end multitable
@@ -1614,21 +1608,12 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  * clusterings will allow that MonetDB's main-memory oriented
  * algorithms work efficiently also in a disk-oriented context.
  *
- * The BATsort functions return a copy of the input BAT, sorted in
- * ascending order on the head column. BATordered starts a check on
- * the head values to see if they are ordered. The result is returned
- * and stored in the hsorted field of the BAT.  The BATrevert puts all
- * the live BUNs of a BAT in reverse order. It just reverses the
- * sequence, so this does not necessarily mean that they are sorted in
- * reverse order!
+ * BATordered starts a check on the tail values to see if they are
+ * ordered. The result is returned and stored in the tsorted field of
+ * the BAT.
  */
-gdk_export BAT *BATsort(BAT *b);
-gdk_export BAT *BATsort_rev(BAT *b);
-gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
-gdk_export BAT *BATssort(BAT *b);
-gdk_export BAT *BATssort_rev(BAT *b);
 gdk_export gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
 
 
@@ -3047,13 +3032,12 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 
 /*
  * @- loop over a BAT with ordered tail
- * Here we loop over a BAT with an ordered tail column (see for
- * instance BATsort). Again, 'p' and 'q' are iteration variables,
- * where 'p' points at the current BUN. 'tl' and 'th' are pointers to
- * atom corresponding to the minimum (included) and maximum (included)
- * bound in the selected range of BUNs. A nil-value means that there
- * is no bound.  The 's' finally is an integer denoting the bunsize,
- * used for speed.
+ * Here we loop over a BAT with an ordered tail column. Again, 'p' and
+ * 'q' are iteration variables, where 'p' points at the current
+ * BUN. 'tl' and 'th' are pointers to atom corresponding to the
+ * minimum (included) and maximum (included) bound in the selected
+ * range of BUNs. A nil-value means that there is no bound.  The 's'
+ * finally is an integer denoting the bunsize, used for speed.
  */
 #define SORTloop(b, p, q, tl, th)					\
 	if (!BATtordered(b))						\
@@ -3108,10 +3092,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * operation takes two inclusive ranges as search arguments.
  * Interpretation of a NULL argument depends on the position, i.e. a
  * domain lower or upper bound.
- *
- * The operation BATsort sorts the BAT on the header and produces a
- * new BAT. A side effect is the clustering of the BAT store on the
- * sort key.
  *
  * The BATjoin over R[A, B] and S[C, D] performs an equi-join over B
  * and C. It results in a BAT over A and D.  The BATouterjoin
@@ -3210,46 +3190,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			 (c)->type == TYPE_oid ?			\
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
-
-#define BATsort(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsort(_b);						\
-	})
-
-#define BATsort_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsort_rev(_b);					\
-	})
-
-#define BATssort(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATssort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATssort(_b);						\
-	})
-
-#define BATssort_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATssort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATssort_rev(_b);					\
-	})
 
 #define BATselect_(b, h, t, li, hi)					\
 	({								\

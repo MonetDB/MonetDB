@@ -1080,22 +1080,21 @@ BATslice(BAT *b, BUN l, BUN h)
 
 /*
  *  BAT Sorting
- * BATsort returns a sorted copy.
  */
 int
 BATordered(BAT *b)
 {
-	if (!b->hsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hsorted;
+	if (!b->tsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->tsorted;
 }
 
 int
 BATordered_rev(BAT *b)
 {
-	if (!b->hrevsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hrevsorted;
+	if (!b->trevsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->trevsorted;
 }
 
 /* figure out which sort function is to be called
@@ -1125,102 +1124,6 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 		}
 	}
 	return GDK_SUCCEED;
-}
-
-/* Sort b according to stable and reverse, do it in-place if copy is
- * unset, otherwise do it on a copy */
-static BAT *
-BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
-{
-	BATcheck(b, func, NULL);
-	/* set some trivial properties (probably not necessary, but
-	 * it's cheap) */
-	if (b->htype == TYPE_void) {
-		b->hsorted = 1;
-		b->hrevsorted = b->hseqbase == oid_nil || b->batCount <= 1;
-		b->hkey |= b->hseqbase != oid_nil;
-	} else if (b->batCount <= 1) {
-		b->hsorted = b->hrevsorted = 1;
-	}
-	if (reverse ? b->hrevsorted : b->hsorted) {
-		/* b is already ordered as desired, hence we return b
-		 * as is */
-		return copy ? BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT) : b;
-	}
-	if (copy) {
-		/* now make a writable copy that we're going to sort
-		 * materialize any VOID columns while we're at it */
-		b = BATcopy(b, BAThtype(b), BATttype(b), TRUE, TRANSIENT);
-	} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-		/* materialize void-tail in-place */
-		/* note, we don't need to materialize the head column:
-		 * if it is void, either we didn't get here (already
-		 * sorted correctly), or we will fall into BATrevert
-		 * below which does the materialization for us */
-		if (BATmaterializet(b) != GDK_SUCCEED)
-			return NULL;
-	}
-
-	if ((reverse ? b->hsorted : b->hrevsorted) && (!stable || b->hkey)) {
-		/* b is ordered in the opposite direction, hence we
-		 * revert b (note that if requesting stable sort, the
-		 * column needs to be key) */
-		return BATrevert(b) == GDK_SUCCEED ? b : NULL;
-	}
-	if (!(reverse ? b->hrevsorted : b->hsorted) &&
-	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
-		    b->H->vheap ? b->H->vheap->base : NULL,
-		    BATcount(b), Hsize(b), Tsize(b), b->htype,
-		    reverse, stable) != GDK_SUCCEED) {
-		if (copy)
-			BBPreclaim(b);
-		return NULL;
-	}
-	if (reverse) {
-		b->hrevsorted = 1;
-		b->hsorted = b->batCount <= 1;
-	} else {
-		b->hsorted = 1;
-		b->hrevsorted = b->batCount <= 1;
-	}
-	b->tsorted = b->trevsorted = 0;
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	ALIGNdel(b, func, FALSE, NULL);
-	b->hdense = 0;
-	b->tdense = 0;
-	b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = TRUE;
-
-	return b;
-}
-
-#undef BATsort
-#undef BATsort_rev
-#undef BATssort
-#undef BATssort_rev
-
-BAT *
-BATsort(BAT *b)
-{
-	return BATorder_internal(b, 0, 0, 1, "BATsort");
-}
-
-BAT *
-BATsort_rev(BAT *b)
-{
-	return BATorder_internal(b, 0, 1, 1, "BATsort_rev");
-}
-
-BAT *
-BATssort(BAT *b)
-{
-	return BATorder_internal(b, 1, 0, 1, "BATssort");
-}
-
-BAT *
-BATssort_rev(BAT *b)
-{
-	return BATorder_internal(b, 1, 1, 1, "BATssort_rev");
 }
 
 /* subsort the bat b according to both o and g.  The stable and
@@ -1490,72 +1393,6 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	if (groups)
 		*groups = NULL;
 	return GDK_FAIL;
-}
-
-/*
- * Reverse a BAT
- * BATrevert rearranges a BAT in reverse order.
- */
-gdk_return
-BATrevert(BAT *b)
-{
-	char *h, *t;
-	BUN p, q;
-	BATiter bi = bat_iterator(b);
-	size_t s;
-	int x;
-
-	BATcheck(b, "BATrevert", GDK_FAIL);
-	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
-		/* materialize void columns in-place */
-		if (BATmaterialize(b) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	ALIGNdel(b, "BATrevert", FALSE, GDK_FAIL);
-	s = Hsize(b);
-	if (s > 0) {
-		h = (char *) GDKmalloc(s);
-		if (!h) {
-			return GDK_FAIL;
-		}
-		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
-			char *ph = BUNhloc(bi, p);
-			char *qh = BUNhloc(bi, q);
-
-			memcpy(h, ph, s);
-			memcpy(ph, qh, s);
-			memcpy(qh, h, s);
-		}
-		GDKfree(h);
-	}
-	s = Tsize(b);
-	if (s > 0) {
-		t = (char *) GDKmalloc(s);
-		if (!t) {
-			return GDK_FAIL;
-		}
-		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
-			char *pt = BUNtloc(bi, p);
-			char *qt = BUNtloc(bi, q);
-
-			memcpy(t, pt, s);
-			memcpy(pt, qt, s);
-			memcpy(qt, t, s);
-		}
-		GDKfree(t);
-	}
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	/* interchange sorted and revsorted */
-	x = b->hrevsorted;
-	b->hrevsorted = b->hsorted;
-	b->hsorted = x;
-	x = b->trevsorted;
-	b->trevsorted = b->tsorted;
-	b->tsorted = x;
-	b->hdense = FALSE;
-	b->tdense = FALSE;
-	return GDK_SUCCEED;
 }
 
 /*

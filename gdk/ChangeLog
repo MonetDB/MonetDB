@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Sep  9 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATrevert.
+- BATordered now works on the TAIL column.
+
 * Tue Sep  8 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed obsolete functions BATorder() and BATorder_rev().
 

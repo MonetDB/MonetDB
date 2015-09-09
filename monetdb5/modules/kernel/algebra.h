@@ -83,10 +83,6 @@ algebra_export str ALGkdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsample(bat *result, const bat *bid, const int *param);
 
-algebra_export str ALGtsort(bat *result, const bat *bid);
-algebra_export str ALGtsort_rev(bat *result, const bat *bid);
-algebra_export str ALGssort(bat *result, const bat *bid);
-algebra_export str ALGssort_rev(bat *result, const bat *bid);
 algebra_export str ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);
 algebra_export str ALGsubsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable);
 algebra_export str ALGsubsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable);
@@ -96,7 +92,6 @@ algebra_export str ALGsubsort23(bat *result, bat *norder, bat *ngroup, const bat
 algebra_export str ALGsubsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
 algebra_export str ALGsubsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
 algebra_export str ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
-algebra_export str ALGrevert(bat *result, const bat *bid);
 algebra_export str ALGcount_bat(wrd *result, const bat *bid);
 algebra_export str ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils);
 algebra_export str ALGcount_no_nil(wrd *result, const bat *bid);

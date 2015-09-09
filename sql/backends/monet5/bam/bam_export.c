@@ -356,7 +356,7 @@ write_header(stream *output, bam_field fields[11])
 
 	mnstr_printf(output, "@HD\tVN:1.0\tSO:%s\n",
 			BATtordered(fields[0].b) ? "queryname" :
-				(BATordered(fields[2].b) && BATordered(fields[3].b) ? "coordinate" :
+				(BATtordered(fields[2].b) && BATtordered(fields[3].b) ? "coordinate" :
 					"unsorted"));
 
 	/* Use sq_table to print SQ header lines */
