@@ -31,7 +31,7 @@ address CMDclearTrace
 comment "Clear the sql profiling ";
 
 pattern setpoolsize(pool:int)
-address setProfilerPoolSize
+address CMDsetProfilerPoolSize
 comment "Re-initialize the profiler pool";
 
 command setheartbeat(b:int):void
@@ -64,7 +64,7 @@ address CMDgetTrace
 comment "Get the trace details of a specific event";
 
 command cleanup():void
-address cleanupTraces
+address CMDcleanupTraces
 comment "Remove the temporary tables for profiling";
 
 command getDiskReads():lng

@@ -4,13 +4,13 @@
 --
 -- Copyright 2008-2015 MonetDB B.V.
 
--- start/stop collecting mdbs_profiler traces in profiler_logs pool with specific heartbeat
-create schema mdbs_profiler;
+-- start/stop collecting MDBS profiler traces in a profiler_logs pool with a specific heartbeat
+create schema profiler;
 
-create procedure mdbs_profiler.start() external name profiler.start;
-create procedure mdbs_profiler.stop() external name profiler.stop;
+create procedure profiler.start() external name profiler."start";
+create procedure profiler.stop() external name profiler.stop;
 
-create procedure mdbs_profiler.setheartbeat(beat int) external name profiler.setheartbeat;
-create procedure mdbs_profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;
+create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;
+create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;
 
-create procedure mdbs_profiler.setstream(host string, port int) external name profiler.setstream;
+create procedure profiler.setstream(host string, port int) external name profiler.setstream;

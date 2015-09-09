@@ -25,5 +25,5 @@ create function sys.tracelog()
 
 create view sys.tracelog as select * from sys.tracelog();
 
-create procedure profiler_openstream(host string, port int) external name profiler."openStream";
-create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;
+--create procedure profiler_openstream(host string, port int) external name profiler."openStream";
+--create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;
