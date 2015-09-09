@@ -91,7 +91,7 @@ stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
 # test csv import
 file <- tempfile()
-write.table(iris,file,sep=",")
+write.table(iris,file,sep=",",row.names = FALSE)
 tname2 <- "Need to quote this table name"
 monetdb.read.csv(con,file,tname)
 monetdb.read.csv(con,file,tname2)
