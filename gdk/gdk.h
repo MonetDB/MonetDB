@@ -1595,8 +1595,6 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
 /*
  * @- BAT clustering
  * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATrevert (BAT *b)
  * @item int
  * @tab BATordered (BAT *b)
  * @end multitable
@@ -1612,11 +1610,8 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  *
  * BATordered starts a check on the tail values to see if they are
  * ordered. The result is returned and stored in the tsorted field of
- * the BAT.  The BATrevert puts all the live BUNs of a BAT in reverse
- * order. It just reverses the sequence, so this does not necessarily
- * mean that they are sorted in reverse order!
+ * the BAT.
  */
-gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);

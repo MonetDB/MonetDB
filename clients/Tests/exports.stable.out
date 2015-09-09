@@ -166,7 +166,6 @@ gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_o
 BAT *BATproject(BAT *l, BAT *r);
 BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
-gdk_return BATrevert(BAT *b);
 void BATroles(BAT *b, const char *hnme, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
 gdk_return BATsave(BAT *b);
