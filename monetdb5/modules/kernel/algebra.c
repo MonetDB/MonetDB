@@ -1258,48 +1258,6 @@ ALGtinter(bat *result, const bat *bid, const bat *bid2)
 }
 
 str
-ALGtsort(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.tsort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATsort(BATmirror(b));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.tsort", GDK_EXCEPTION);
-}
-
-str
-ALGtsort_rev(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.tsort", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATsort_rev(BATmirror(b));
-	if (bn) {
-		bn = BATmirror(bn);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.tsort", GDK_EXCEPTION);
-}
-
-str
 ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;

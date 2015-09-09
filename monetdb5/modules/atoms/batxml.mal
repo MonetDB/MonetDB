@@ -75,18 +75,6 @@ pattern batxml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
 comment "Construct an element list.";
 
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml]
-address BATXMLagg3
-comment "Aggregate the XML values over groups specified.";
-
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml]
-address BATXMLagg
-comment "Aggregate the XML values over groups specified.";
-
-command xml.agg(val:bat[:oid,:xml]):xml
-address BATXMLgroup
-comment "Aggregate the XML values over groups specified.";
-
 command batxml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
 address BATXMLroot
 comment "Contruct the root nodes.";

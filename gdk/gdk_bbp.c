@@ -952,7 +952,6 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_INET_COMPARE &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}

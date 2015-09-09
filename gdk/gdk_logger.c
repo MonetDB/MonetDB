@@ -1824,6 +1824,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
+	lg->local_dir = NULL;
 
 	if (shared) {
 		/* set the local logdir as well

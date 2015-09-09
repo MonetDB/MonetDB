@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Sep  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed bat.order and bat.orderReverse functions.
+
 * Mon Sep  7 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Changed client.getUsers to return two bats, one with the user id
   and one with the user name.

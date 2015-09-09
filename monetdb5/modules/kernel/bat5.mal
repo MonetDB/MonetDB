@@ -49,14 +49,6 @@ address BKCbat_inplace_force
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
 
-command order(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
-address BKCorder
-comment "Sorts the BAT itself on the head, in place. ";
-
-command orderReverse(b:bat[:oid,:any_1]) :bat[:oid,:any_1] 
-address BKCorder_rev
-comment "Reverse sorts the BAT itself on the head, in place. ";
-
 command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1] ) :bat[:oid,:any_1]
 address BKCappend_wrap
 comment "append the content of u to i";

@@ -790,7 +790,7 @@ command_status(int argc, char *argv[])
 				dbwidth = t;
 			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
 				uriwidth = t;
-			if (stats->locked && uriwidth < 32)
+			if (uriwidth < 32)
 				uriwidth = 32;
 		}
 

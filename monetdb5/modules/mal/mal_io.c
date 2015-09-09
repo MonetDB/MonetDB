@@ -91,7 +91,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) ) {
-		BAT *b;
+		BAT *b[2];
 
 		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
 			if (hd)
@@ -101,19 +101,24 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(bat *) val);
-		if (b == NULL) {
+		b[1] = BATdescriptor(*(bat *) val);
+		if (b[1] == NULL) {
 			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
+			mnstr_printf(fp, "<%s>", BBPname(b[0]->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
-		} else
-			BATmultiprintf(cntxt->fdout, 2, &b, TRUE, 0, TRUE);
-		BBPunfix(b->batCacheid);
+		} else {
+			b[0] = BATmark(b[1],0);
+			if( b[0]){
+				BATprintcolumns(cntxt->fdout, 2, b);
+				BBPunfix(b[0]->batCacheid);
+			}
+		}
+		BBPunfix(b[1]->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (hd)
@@ -524,37 +529,40 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 /*
- * The table printing routine implementations rely on the multiprintf.
+ * The table printing routine implementations.
  * They merely differ in destination and order prerequisite
  */
 static str
 IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i)
 {
 	BAT *piv[MAXPARAMS], *b;
-	int nbats = 0;
 	int tpe, k = i;
 	ptr val;
 
 	(void) cntxt;
+	assert(pci->retc == 1);
+	assert(pci->argc >= 2);
+
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
-			for (k = 0; k < nbats; k++)
+			for (k = 0; k < i; k++)
 				BBPunfix(piv[k]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
-			for (k = 0; k < nbats; k++)
+			for (k = 0; k < i; k++)
 				BBPunfix(piv[k]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " null BAT encountered");
 		}
-		piv[nbats++] = b;
+		piv[i] = b;
 	}
-	/*if(printhead) */ nbats++;
-	BATmultiprintf(f, nbats, piv, TRUE, 0, TRUE);
-	for (k = 0; k < nbats - 1; k++)
+	/* add materialized void column */
+	piv[0] = BATmark(piv[1],0);
+	BATprintcolumns(f, pci->argc, piv);
+	for (k = 0; k < pci->argc; k++)
 		BBPunfix(piv[k]->batCacheid);
 	return MAL_SUCCEED;
 }

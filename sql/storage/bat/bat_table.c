@@ -253,51 +253,6 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 }
 
 
-#if 0
-static int
-table_dump(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	int i, l = cs_size(&t->columns);
-	BAT **b = (BAT**)GDKzalloc(sizeof(BAT*) * l);
-	
-	(void)tr;
-	for (i = 0; n; n = n->next, i++) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-
-		b[i] = temp_descriptor(bat->bid);
-	}
-	BATmultiprintf(GDKstdout, l +1, b, TRUE, 0, 1);
-	for (i = 0; i < l; i++)
-		bat_destroy(b[i]);
-	GDKfree(b);
-	return 0;
-}
-
-static int
-table_check(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	BUN cnt = BUN_NONE;
-
-	(void)tr;
-	for (; n; n = n->next) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-		BAT *b = temp_descriptor(bat->bid);
-
-		if (cnt == BUN_NONE) {
-			cnt = BATcount(b);
-		} else if (cnt != BATcount(b)) {
-			assert(0);
-			return (int)(cnt - BATcount(b));
-		}
-		bat_destroy(b);
-	}
-	return 0;
-}
-#endif
 
 /* returns table rids, for the given select ranges */
 static rids *

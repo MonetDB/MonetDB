@@ -500,40 +500,6 @@ BKCrevert(bat *r, const bat *bid)
 }
 
 str
-BKCorder(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.order", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.order", OPERATION_FAILED);
-	if (BATorder(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.order", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCorder_rev(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.order_rev", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.order_rev", OPERATION_FAILED);
-	if (BATorder_rev(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.order_rev", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *b, *s;
@@ -926,7 +892,7 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(BATmirror(b));
+	*res = BATordered(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

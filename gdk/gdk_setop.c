@@ -10,6 +10,8 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+#undef BATkdiff
+
 BAT *
 BATkdiff(BAT *l, BAT *r)
 {
