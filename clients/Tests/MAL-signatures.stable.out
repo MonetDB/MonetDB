@@ -38449,11 +38449,11 @@ comment Print a MAL value column .
 
 pattern io.print(val:any_1):void 
 address IOprint_val;
-comment Print a MAL value tuple .
+comment Print a MAL value.
 
 pattern io.print(b1:bat[:oid,:any]...):void 
 address IOtable;
-comment BATs are printed with '#' for legend 	lines, and the BUNs on seperate lines 	between brackets, containing each to 	comma separated values (head and tail). 	If multiple BATs are passed for printing, 	print() performs an implicit natural 	join, producing a multi attribute table.
+comment BATs are printed with '#' for legend 	lines, and the BUNs on seperate lines 	between brackets, containing each to 	comma separated values (head and tail). 	If multiple BATs are passed for printing, 	print() performs an implicit natural 	join on the void head, producing a multi attribute table.
 
 pattern io.print(val:any_1,lst:any...):void 
 address IOprint_val;
