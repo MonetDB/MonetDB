@@ -1349,22 +1349,6 @@ ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
 }
 
 str
-ALGrevert(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.revert", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
-	BATrevert(bn);
-	*result= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 ALGcount_bat(wrd *result, const bat *bid)
 {
 	BAT *b;
