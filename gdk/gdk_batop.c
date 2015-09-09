@@ -1084,17 +1084,17 @@ BATslice(BAT *b, BUN l, BUN h)
 int
 BATordered(BAT *b)
 {
-	if (!b->hsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hsorted;
+	if (!b->tsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->tsorted;
 }
 
 int
 BATordered_rev(BAT *b)
 {
-	if (!b->hrevsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hrevsorted;
+	if (!b->trevsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->trevsorted;
 }
 
 /* figure out which sort function is to be called

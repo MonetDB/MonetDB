@@ -892,7 +892,7 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(BATmirror(b));
+	*res = BATordered(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

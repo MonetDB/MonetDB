@@ -855,7 +855,7 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res = MATproject_(map, bats, len );
 	if (sorted && res)
-		BATordered(BATmirror(res));
+		BATordered(res);
 error:
 	if (map) BBPunfix(map->batCacheid);
 	if (bats) {

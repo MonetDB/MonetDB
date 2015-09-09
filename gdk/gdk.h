@@ -1610,8 +1610,8 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  * clusterings will allow that MonetDB's main-memory oriented
  * algorithms work efficiently also in a disk-oriented context.
  *
- * BATordered starts a check on the head values to see if they are
- * ordered. The result is returned and stored in the hsorted field of
+ * BATordered starts a check on the tail values to see if they are
+ * ordered. The result is returned and stored in the tsorted field of
  * the BAT.  The BATrevert puts all the live BUNs of a BAT in reverse
  * order. It just reverses the sequence, so this does not necessarily
  * mean that they are sorted in reverse order!
