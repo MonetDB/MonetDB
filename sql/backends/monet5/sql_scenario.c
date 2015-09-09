@@ -411,12 +411,14 @@ SQLinitClient(Client c)
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
+	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
+	MT_lock_set(&sql_contextLock, "SQLinitClient");
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -478,6 +480,7 @@ SQLinitClient(Client c)
 		str fullname;
 
 		SQLnewcatalog = 0;
+		maybeupgrade = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -524,8 +527,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		SQLupgrades(c,m);
+		if (maybeupgrade)
+			SQLupgrades(c,m);
+		maybeupgrade = 0;
 	}
+	MT_lock_unset(&sql_contextLock, "SQLinitClient");
 	fflush(stdout);
 	fflush(stderr);
 
