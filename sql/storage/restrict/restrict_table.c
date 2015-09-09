@@ -221,8 +221,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	if (d)
 		bat_destroy(d);
 	bat_destroy(r->data);
-	b = BATmirror(b);
-	r->data = BATmirror(BATsort(b));
+	BATsubsort(&d, NULL, NULL, b, NULL, NULL, 0, 0);
+	r->data = d;
 	bat_destroy(b);
 	return r;
 }
