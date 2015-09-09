@@ -52537,18 +52537,6 @@ command xml.aggr(val:bat[:oid,:xml]):xml
 address BATXMLgroup;
 comment Aggregate the XML values.
 
-command xml.agg(val:bat[:oid,:xml]):xml 
-address BATXMLgroup;
-comment Aggregate the XML values over groups specified.
-
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml] 
-address BATXMLagg;
-comment Aggregate the XML values over groups specified.
-
-command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml] 
-address BATXMLagg3;
-comment Aggregate the XML values over groups specified.
-
 command xml.attribute(name:str,val:str):xml 
 address XMLattribute;
 comment Construct an attribute value pair

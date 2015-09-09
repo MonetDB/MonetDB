@@ -824,8 +824,6 @@ str BATPCREnotilike(bat *ret, const bat *b, const str *pat, const str *esc);
 str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
 str BATPCREnotlike(bat *ret, const bat *b, const str *pat, const str *esc);
 str BATPCREnotlike2(bat *ret, const bat *b, const str *pat);
-str BATXMLagg(bat *ret, const bat *bid, const bat *grp);
-str BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *e);
 str BATXMLattribute(bat *ret, const char *const *name, const bat *bid);
 str BATXMLcomment(bat *ret, const bat *bid);
 str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
