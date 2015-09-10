@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Thu Sep 10 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed legacy functions BATuselect and BATuselect_.
 - Removed legacy functions BATantijoin, BATbandjoin, BATouterjoin,
   BATrangejoin, and BATthetajoin.
 

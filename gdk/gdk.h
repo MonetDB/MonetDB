@@ -3116,9 +3116,7 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
-gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
@@ -3191,16 +3189,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATselect_(_b, (h), (t), (li), (hi));			\
 	})
 
-#define BATuselect_(b, h, t, li, hi)					\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect_(_b, (h), (t), (li), (hi));			\
-	})
-
 #define BATselect(b, h, t)						\
 	({								\
 		BAT *_b = (b);						\
@@ -3209,16 +3197,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect(_b, (h), (t));				\
-	})
-
-#define BATuselect(b, h, t)						\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect(_b, (h), (t));				\
 	})
 
 #define BATsemijoin(l, r)						\

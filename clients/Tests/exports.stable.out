@@ -190,8 +190,6 @@ BAT *BATsubunique(BAT *b, BAT *s);
 gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 void BATundo(BAT *b);
-BAT *BATuselect(BAT *b, const void *tl, const void *th);
-BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 BBPrec *BBP[N_BBPINIT];
 void BBPaddfarm(const char *dirname, int rolemask);
 void BBPclear(bat bid);
