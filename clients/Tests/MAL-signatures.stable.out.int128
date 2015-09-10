@@ -48438,10 +48438,6 @@ command calc.xml(src:xml):xml
 address XMLxml2xml;
 command calc.xml(src:str):xml 
 address XMLstr2xml;
-command cluster.new(b:bat[:oid,:hge],bits:int,offset:int,order:bit) (psum:bat[:oid,:wrd],map:bat[:oid,:bte]) 
-address CLS_create2_hge;
-command cluster.new(b:bat[:oid,:hge],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) 
-address CLS_create_hge;
 pattern clients.addUser(nme:str,pw:str):oid 
 address CLTaddUser;
 comment Allow user with password access to the given scenarios

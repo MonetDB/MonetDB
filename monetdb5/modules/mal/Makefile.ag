@@ -79,7 +79,7 @@ headers_hge = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 00_calc_hge.mal 00_batcalc_hge.mal \
-		00_cluster_hge.mal 00_iterator_hge.mal 00_language_hge.mal \
+		00_iterator_hge.mal 00_language_hge.mal \
 		00_mal_mapi_hge.mal 00_mkey_hge.mal 00_batExtensions_hge.mal
 }
 
@@ -91,7 +91,7 @@ EXTRA_DIST = batExtensions.mal iterator.mal \
 	batmtime.mal querylog.mal sysmon.mal \
 	01_calc.mal 01_batcalc.mal \
 	00_calc_hge.mal 00_batcalc_hge.mal \
-	00_cluster_hge.mal 00_iterator_hge.mal 00_language_hge.mal \
+	00_iterator_hge.mal 00_language_hge.mal \
 	00_mal_mapi_hge.mal 00_mkey_hge.mal 00_batExtensions_hge.mal
 
 EXTRA_DIST_DIR = Tests
