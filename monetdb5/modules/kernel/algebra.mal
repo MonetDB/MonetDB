@@ -32,10 +32,6 @@ command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
-command revert( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address ALGrevert
-comment "Returns a BAT copy with buns in reverse order";
-
 # BAT copying
 command copy( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address ALGcopy

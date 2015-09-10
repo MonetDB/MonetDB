@@ -1286,7 +1286,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (only_misses) {
 					if (lcand) {
 						while (nlx > 0) {
-							APPEND(r1, lcand[-nlx]);
+							APPEND(r1, lcand[-(ssize_t)nlx]);
 							nlx--;
 						}
 					} else {
@@ -1309,7 +1309,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					}
 					if (lcand) {
 						while (nlx > 0) {
-							APPEND(r1, lcand[-nlx]);
+							APPEND(r1, lcand[-(ssize_t)nlx]);
 							APPEND(r2, oid_nil);
 							nlx--;
 						}

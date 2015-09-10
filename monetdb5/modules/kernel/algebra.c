@@ -1189,12 +1189,6 @@ ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGkdiff(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkdiff, "algebra.kdiff");
-}
-
-str
 ALGsample(bat *result, const bat *bid, const int *param)
 {
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
@@ -1346,22 +1340,6 @@ str
 ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
 {
 	return ALGsubsort33(result, NULL, NULL, bid, NULL, NULL, reverse, stable);
-}
-
-str
-ALGrevert(bat *result, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.revert", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
-	BATrevert(bn);
-	*result= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
 }
 
 str
