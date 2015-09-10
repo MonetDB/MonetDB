@@ -4036,8 +4036,14 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED)
-		*res = t + m->timezone;
+	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED) {
+		t += m->timezone;
+		while (t < 0)
+			t += 24*60*60*1000;
+		while (t >= 24*60*60*1000)
+			t -= 24*60*60*1000;
+		*res = t;
+	}
 	return msg;
 }
 
