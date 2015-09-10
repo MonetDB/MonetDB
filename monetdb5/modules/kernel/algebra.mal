@@ -235,14 +235,6 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
 
-# Theta Join
-#command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
-#		(l:bat[:oid,:oid],r:bat[:oid,:oid])
-#address ALGthetajoin2
-#comment "Returns 2 columns with all BUNs, consisting of the head-oids
-#	  from 'left' and 'right' for which there are BUNs in 'left'
-#	  and 'right' with equal tails";
-
 command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGcrossproduct2

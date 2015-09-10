@@ -2269,7 +2269,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
-		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
+		u = BATproject(u_val, u_id);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
 		if (!u) {
