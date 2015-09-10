@@ -1425,9 +1425,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * then use the order index.
 	 * HOWEVER, if query is not very very selective, then is better to use
 	 * imprints or scan.
-	 * TODO: selective queries are the ones below 0.1% and less than
-	 * 1000 results */
-	 /* TODO: also we do not support order index and anti for now */
+	 * Selective queries are the ones below 0.1% and less than 1000 results
+	 * TODO: Test if this heuristic works in practice
+	 * TODO: we do not support anti-select with order index */
 	if (!anti && b->torderidx.flags && !(b->tsorted || b->trevsorted) &&
 	    ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000)))
 		use_orderidx = 1;
@@ -1560,20 +1560,28 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				if ((order = BBPdescriptor(b->torderidx.o)) == NULL) {
 					GDKerror("Runtime object (order index) not found");
 				}
-				bn = BATslice(order, low + order->hseqbase, high + order->hseqbase);
+				bn = BATslice(order, low + order->hseqbase,
+				                     high + order->hseqbase);
 				if (s) {
-					BAT *bn2;
-					BUN p,q;
-					BATiter bni = bat_iterator(bn);
+					BAT *n;
+					oid *rn;
+					BUN i, cnt;
+					oid *rbn = (oid *) Tloc((bn), 0);
+					const oid *rcand = (const oid *) Tloc((s), 0);
 
-					bn2 = BATnew(TYPE_void, TYPE_oid, bn->batCount, TRANSIENT);
-					BATloop(bn,p,q) {
-						if (SORTfnd(s, BUNtail(bni,p)) != BUN_NONE) {
-							BUNappend(bn2, BUNtail(bni,p), FALSE);
+					n = BATnew(TYPE_void, TYPE_oid, bn->batCount, TRANSIENT);
+					rn = (oid *) Tloc((n), 0);
+					cnt = 0;
+					for (i = 0; i < bn->batCount; i++) {
+						if (binsearchcand(rcand, 0, s->batCount, *rbn)) {
+							*rn++ = *rbn;
+							cnt++;
 						}
+						rbn++;
 					}
 					BBPunfix(bn->batCacheid);
-					bn = bn2;
+					bn = n;
+					BATsetcount(bn, cnt);
 				}
 				/* output must be sorted */
 				GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);

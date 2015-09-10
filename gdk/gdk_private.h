@@ -206,6 +206,8 @@ __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
+__hidden inline int binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
+	__attribute__((__visibility__("hidden")));
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
