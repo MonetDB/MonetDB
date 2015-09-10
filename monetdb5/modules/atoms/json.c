@@ -1869,16 +1869,16 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		return NULL;
 	}
 	if (s) {
-		b = BATleftjoin(s, b, BATcount(s));
+		b = BATproject(s, b);
 		if (b == NULL) {
-			err = "internal leftjoin failed";
+			err = "internal project failed";
 			goto out;
 		}
 		freeb = 1;
 		if (g) {
-			g = BATleftjoin(s, g, BATcount(s));
+			g = BATproject(s, g);
 			if (g == NULL) {
-				err = "internal leftjoin failed";
+				err = "internal project failed";
 				goto out;
 			}
 			freeg = 1;
