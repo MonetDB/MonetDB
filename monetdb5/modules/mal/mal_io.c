@@ -156,12 +156,6 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 }
 
-str
-IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
-}
-
 /*
  * The IOprintf_() gets a format str, and a sequence of (ptr,int) parameters
  * containing values and their type numbers. The printf() proved to be a

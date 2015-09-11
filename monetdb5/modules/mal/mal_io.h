@@ -31,7 +31,6 @@ typedef FILE *fstream;
 
 io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat);
 io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
