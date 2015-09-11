@@ -8,18 +8,11 @@
 
 /*
  * (c) Martin Kersten
- * This module introduces a series of commands that provide access
- * to the help information stored in the runtime environment.
- *
- * The manual bulk operations ease offline inspection of all function definitions.
+ * This module provides a wrapping of the help function in the .../mal/mal_modules.c
+ * and the list of all MAL functions for analysis using SQL.
  */
 #include "monetdb_config.h"
 #include "manual.h"
-
-/*
- * The manual help overview merely lists the mod.function names
- * together with the help oneliner in texi format for inclusion in the documentation.
- */
 
 str
 MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -28,12 +21,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *sx = getArgReference_bat(stk,pci,0);
 	bat *ax = getArgReference_bat(stk,pci,1);
 	bat *cx = getArgReference_bat(stk,pci,2);
-	stream *f= cntxt->fdout;
 	Module s= cntxt->nspace;
-	int j,z;
+	int j, k, ftop, top=0;
 	Symbol t;
 	Module list[256]; 
-	int k, ftop, top=0;
 	MalBlkPtr blks[25000];
 	str hlp[25000];
 	char buf[BUFSIZ], *tt;
@@ -54,7 +45,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     BATkey(adr, TRUE);
     BATkey(com, TRUE);
 
-	if(s==NULL || f==NULL){
+	if(s==NULL){
 		return MAL_SUCCEED;
 	}
 	list[top++]=s;
@@ -75,10 +66,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		for(z=0; z<ftop; z++){
+		for(j=0; j<ftop; j++){
 			buf[0]=0;
-			BUNappend(com, hlp[z] ? hlp[z]:buf, TRUE);
-			fcnDefinition(blks[z], getInstrPtr(blks[z],0), buf, TRUE, buf, BUFSIZ);
+			BUNappend(com, hlp[j] ? hlp[j]:buf, TRUE);
+			fcnDefinition(blks[j], getInstrPtr(blks[j],0), buf, TRUE, buf, BUFSIZ);
 			tt = strstr(buf,"address ");
 			if( tt){
 				*tt = 0;
