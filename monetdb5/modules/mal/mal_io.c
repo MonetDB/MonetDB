@@ -112,8 +112,9 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			b[0] = BATmark(b[1],0);
+			b[0] = VIEWcombine(b[1]);
 			if( b[0]){
+				BATroles(b[0], NULL, b[1]->hident);
 				BATprintcolumns(cntxt->fdout, 2, b);
 				BBPunfix(b[0]->batCacheid);
 			}

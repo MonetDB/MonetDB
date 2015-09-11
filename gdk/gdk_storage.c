@@ -1067,11 +1067,10 @@ BATprintf(stream *s, BAT *b)
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
 
-	argv[0] = BATmark(b, 0);
+	argv[0] = VIEWcombine(b);
 	argv[1] = b;
 	if (argv[0] && argv[1]) {
 		BATroles(argv[0], NULL, b->hident);
-		BATroles(argv[1], NULL, b->tident);
 		ret = BATprintcolumns(s, 2, argv);
 	}
 	if (argv[0])

@@ -64,15 +64,15 @@ end user.main;
 # t	t  # name
 # void	url  # type
 #--------------------------#
-[ 0@0,	"http://www.educ.uva.nl/schoolweb/rocloka.htm"  ]
-[ 1@0,	"http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"  ]
-[ 2@0,	"http://www.edgeonline.com/"  ]
+[ 3@0,	"http://www.educ.uva.nl/schoolweb/rocloka.htm"  ]
+[ 4@0,	"http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"  ]
+[ 5@0,	"http://www.edgeonline.com/"  ]
 [ "next chunk" ]
 #--------------------------#
 # t	t  # name
 # void	url  # type
 #--------------------------#
-[ 0@0,	"http://robotics.stanford.edu/icons/ "  ]
+[ 6@0,	"http://robotics.stanford.edu/icons/ "  ]
 
 # 00:03:53 >  
 # 00:03:53 >  Done.
