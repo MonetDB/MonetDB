@@ -27,10 +27,11 @@ Ready.
 % .ftf # table_name
 % sch # name
 % varchar # type
-% 4 # length
+% 8 # length
 [ "sys"	]
 [ "tmp"	]
 [ "json"	]
+[ "profiler"	]
 [ "bam"	]
 [ "ft"	]
 #drop function ft.func;

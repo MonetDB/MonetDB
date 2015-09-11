@@ -60,6 +60,7 @@ Ready.
 
 SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
+SYSTEM SCHEMA  profiler
 SYSTEM SCHEMA  sys
 SYSTEM SCHEMA  tmp
 SYSTEM TABLE  sys._columns
@@ -155,6 +156,7 @@ SYSTEM FUNCTION  sys.equals
 SYSTEM FUNCTION  sys.evalalgebra
 SYSTEM FUNCTION  sys.fitsattach
 SYSTEM FUNCTION  sys.fitsload
+SYSTEM FUNCTION  sys.flush_log
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geomcollectionfromtext
@@ -217,8 +219,6 @@ SYSTEM FUNCTION  sys.point
 SYSTEM FUNCTION  sys.pointfromtext
 SYSTEM FUNCTION  sys.polyfromtext
 SYSTEM FUNCTION  sys.polygonfromtext
-SYSTEM FUNCTION  sys.profiler_openstream
-SYSTEM FUNCTION  sys.profiler_stethoscope
 SYSTEM FUNCTION  sys.quantile
 SYSTEM FUNCTION  sys.querycache
 SYSTEM FUNCTION  sys.querylog

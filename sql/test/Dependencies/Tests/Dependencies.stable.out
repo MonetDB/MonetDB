@@ -86,10 +86,11 @@ Dependencies between database objects
 % sys.a,	sys.s,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	4,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
@@ -573,10 +574,11 @@ Cleanup
 % sys.a,	sys.s,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	4,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 % .t,	.v,	.L4 # table_name
