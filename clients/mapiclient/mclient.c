@@ -82,6 +82,7 @@ static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
+static int showtiming = 0;
 #ifdef HAVE_ICONV
 static char *encoding;
 static iconv_t cd_in;
@@ -1353,6 +1354,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	int ps = rowsperpage, silent = 0;
 	mapi_int64 rows = 0;
 
+	/* in case of interactive mode, we should show timing on request */
+	singleinstr = showtiming? 1 :singleinstr;
 #if 0
 	if (mark2)
 		free(mark2);
@@ -3155,6 +3158,7 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			showtiming = 1;
 			if (optarg != NULL) {
 				if (strcmp(optarg, "ms") == 0) {
 					itimemode = T_MILLIS;
