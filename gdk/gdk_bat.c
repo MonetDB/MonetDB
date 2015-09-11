@@ -377,32 +377,7 @@ BATattach(int tt, const char *heapfile, int role)
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.
- *
- * Most BAT operations use a BAT to assemble the result. In several
- * cases it is rather difficult to give a precise estimate of the
- * required space.  The routine BATguess is used internally for this
- * purpose.  It balances the cost of small BATs with their probability
- * of occurrence.  Small results BATs are more likely than 100M BATs.
- *
- * Likewise, the routines Hgrows and Tgrows provides a heuristic to
- * enlarge the space.
  */
-BUN
-BATguess(BAT *b)
-{
-	BUN newcap;
-
-	BATcheck(b, "BATguess", 0);
-	newcap = b->batCount;
-	if (newcap < 10 * BATTINY)
-		return newcap;
-	if (newcap < 50 * BATTINY)
-		return newcap / 2;
-	if (newcap < 100 * BATTINY)
-		return newcap / 10;
-	return newcap / 100;
-}
-
 BUN
 BATgrows(BAT *b)
 {
