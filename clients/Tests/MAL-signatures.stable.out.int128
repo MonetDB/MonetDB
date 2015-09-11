@@ -3006,18 +3006,6 @@ command algebra.selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2]
 address ALGselectNotNil;
 comment Select all not-nil values
 
-command algebra.select(b:bat[:oid,:any_2],value:any_2):bat[:oid,:any_2] 
-address ALGselect1;
-comment Select all BUNs of a BAT with a certain	tail value. Selection on NIL is also	possible (it should be properly casted,	e.g.:int(nil)).
-
-command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:oid,:any_2] 
-address ALGselectInclusive;
-comment Select all BUNs that have tail values: {v| low <{=} v <{=} high}.	Boundary inclusion is indicated separately.	NIL boundary values have a special meaning.	+ low  == nil means: no lower bound	+ high == nil means: no upper bound.
-
-command algebra.select(b:bat[:oid,:any_2],low:any_2,high:any_2):bat[:oid,:any_2] 
-address ALGselect;
-comment Select all BUNs that have tail values: {v| low <= v <= high}.	NIL boundary values have a special meaning.		+ low  == nil means: no lower bound		+ high == nil means: no upper bound.		NOTE 1: you should cast the nil to the appropriate type,				e.g. int(nil) in order to circumvent type clashes.		NOTE 2: as the 'nil' element has no clear place in the				ordered domain of values, tuples with 'nil' values				are NEVER returned by the range select.
-
 command algebra.subselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect2;
 comment Select all head values of the first input BAT for which the tail value	is in range and for which the head value occurs in the tail of the	second input BAT.	The first input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed BAT	with in the tail the head value of the input BAT for which the	tail value is between the values low and high (inclusive if li	respectively hi is set).  The output BAT is sorted on the tail	value.  If low or high is nil, the boundary is not considered	(effectively - and + infinity).  If anti is set, the result is the	complement.  Nil values in the tail are never matched, unless	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for this	function.

@@ -29,15 +29,29 @@ function user.main():void;
     bat.append(b,1);
     bat.append(b,2);
     bat.append(b,3);
-    z := algebra.select(b,0,2);
+    s := algebra.subselect(b,0,2,true,true,false);
+    z := algebra.leftfetchjoin(s,b);
     io.print(z);
-    z := algebra.select(b,0,2,true,true);
+    s := algebra.subselect(b,0,2,true,false,false);
+    z := algebra.leftfetchjoin(s,b);
     io.print(z);
-    z := algebra.select(b,0,2,true,false);
+    s := algebra.subselect(b,0,2,false,true,false);
+    z := algebra.leftfetchjoin(s,b);
     io.print(z);
-    z := algebra.select(b,0,2,false,true);
+    s := algebra.subselect(b,0,2,false,false,false);
+    z := algebra.leftfetchjoin(s,b);
     io.print(z);
-    z := algebra.select(b,0,2,false,false);
+    s := algebra.subselect(b,0,2,true,true,true);
+    z := algebra.leftfetchjoin(s,b);
+    io.print(z);
+    s := algebra.subselect(b,0,2,true,false,true);
+    z := algebra.leftfetchjoin(s,b);
+    io.print(z);
+    s := algebra.subselect(b,0,2,false,true,true);
+    z := algebra.leftfetchjoin(s,b);
+    io.print(z);
+    s := algebra.subselect(b,0,2,false,false,true);
+    z := algebra.leftfetchjoin(s,b);
     io.print(z);
 end user.main;
 #--------------------------#
@@ -53,24 +67,41 @@ end user.main;
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-#-----------------#
+#--------------------------#
 # h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  1	  ]
+# void	int  # type
+#--------------------------#
+[ 0@0,	1  ]
+[ 1@0,	2  ]
 #--------------------------#
 # t	t  # name
 # void	int  # type
 #--------------------------#
-[ 1@0,	1  ]
-[ 2@0,	2  ]
+[ 0@0,	1  ]
 #--------------------------#
 # t	t  # name
 # void	int  # type
 #--------------------------#
-[ 1@0,	1  ]
+[ 0@0,	3  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	2  ]
+[ 1@0,	3  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	3  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	2  ]
+[ 2@0,	3  ]
 
 # 07:58:41 >  
 # 07:58:41 >  Done.

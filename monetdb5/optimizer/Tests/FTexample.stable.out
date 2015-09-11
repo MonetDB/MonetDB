@@ -14,7 +14,7 @@ stdout of test 'FTexample` in directory 'monetdb5/optimizer` itself:
 function user.test(s:str):wrd;
     b := bat.new(:oid,:str);
     bat.append(b,"hello");
-    z := algebra.select(b,s,s);
+    z := algebra.subselect(b,s,s,true,true,false);
     i := aggr.count(z);
     return test := i;
 end user.test;
@@ -25,12 +25,12 @@ end user.main;
 factory user.test(s:str):wrd;           	#[0]  0 <- 1 
     b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 2 <- 3 4 
     bat.append(b:bat[:oid,:str],"hello":str);	#[2] BKCappend_val_wrap 5 <- 2 6 
-barrier always:bit := true:bit;         	#[3]  9 <- 10 
-    z:bat[:oid,:str] := algebra.select(b:bat[:oid,:str],s:str,s:str);	#[4] ALGselect 7 <- 2 1 1 
-    i:wrd := aggr.count(z:bat[:oid,:str]);	#[5] ALGcount_bat 8 <- 7 
-    yield test:wrd := i:wrd;            	#[6]  0 <- 8 
-    redo always:bit;                    	#[7]  9 
-exit always:bit;                        	#[8]  9 
+barrier always:bit := true:bit;         	#[3]  12 <- 8 
+    z:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:str],s:str,s:str,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 7 <- 2 1 1 8 9 10 
+    i:wrd := aggr.count(z:bat[:oid,:oid]);	#[5] ALGcount_bat 11 <- 7 
+    yield test:wrd := i:wrd;            	#[6]  0 <- 11 
+    redo always:bit;                    	#[7]  12 
+exit always:bit;                        	#[8]  12 
     return test:wrd := test:wrd;        	#[9]  0 <- 0 
 end user.test;                          	#[10]  
 
