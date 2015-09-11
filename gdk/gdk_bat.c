@@ -50,20 +50,20 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-char *BATstring_h = "h";
-char *BATstring_t = "t";
+static char *BATstring_h = "h";
+static char *BATstring_t = "t";
 
-static int
+static inline int
 default_ident(char *s)
 {
-	return ((s) == BATstring_h || (s) == BATstring_t);
+	return (s == BATstring_h || s == BATstring_t);
 }
 
 void
 BATinit_idents(BAT *bn)
 {
-	bn->hident = (char *) BATstring_h;
-	bn->tident = (char *) BATstring_t;
+	bn->hident = BATstring_h;
+	bn->tident = BATstring_t;
 }
 
 BATstore *
@@ -112,8 +112,8 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	bn->hsorted = bn->hrevsorted = ATOMlinear(ht) != 0;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 
-	bn->hident = (char *) BATstring_h;
-	bn->tident = (char *) BATstring_t;
+	bn->hident = BATstring_h;
+	bn->tident = BATstring_t;
 	bn->halign = OIDnew(2);
 	bn->talign = bn->halign + 1;
 	bn->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
