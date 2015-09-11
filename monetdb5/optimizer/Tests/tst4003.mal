@@ -5,6 +5,6 @@ optimizer.commonTerms();
 optimizer.aliases();
 b:= bat.new(:oid,:str);
 c:= bat.new(:oid,:str);       # identical until insert takes place
-d:= algebra.select(b,"hello","world");
-e:= algebra.select(b,"hello","world");    # mapped onto one instruction
+d:= algebra.subselect(b,"hello","world",true,true,false);
+e:= algebra.subselect(b,"hello","world",true,true,false);    # mapped onto one instruction
 
