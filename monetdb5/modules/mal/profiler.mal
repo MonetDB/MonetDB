@@ -26,10 +26,6 @@ pattern stop():void
 address CMDstopProfiler
 comment "Stop all performance profiling";
 
-pattern reset():void
-address CMDclearTrace
-comment "Clear the sql profiling ";
-
 pattern setpoolsize(pool:int)
 address CMDsetProfilerPoolSize
 comment "Re-initialize the profiler pool";
