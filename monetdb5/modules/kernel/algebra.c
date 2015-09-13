@@ -53,23 +53,6 @@
  */
 
 static gdk_return
-CMDselect_(BAT **result, BAT *b, ptr low, ptr high, const bit *l_in, const bit *h_in)
-{
-	int tt = b->ttype;
-	ptr nil = ATOMnilptr(tt);
-
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("CMDselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
-		return GDK_FAIL;
-	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("CMDselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
-		return GDK_FAIL;
-	}
-	return (*result = BATselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	wrd j, gcnt = BATcount(gids);
@@ -390,48 +373,6 @@ ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op
 }
 
 str
-ALGselect1(bat *result, const bat *bid, ptr value)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, value);
-	bn = BATselect(b, value, 0);
-	BBPunfix(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-
-str
-ALGselect(bat *result, const bat *bid, ptr low, ptr high)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	bn = BATselect(b, low, high);
-	BBPunfix(b->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
 ALGselectNotNil(bat *result, const bat *bid)
 {
 	BAT *b, *bn = NULL;
@@ -461,133 +402,6 @@ ALGselectNotNil(bat *result, const bat *bid)
 	*result = b->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
-}
-
-str
-ALGselectInclusive(bat *result, const bat *bid, ptr low, ptr high, const bit *lin, const bit *rin)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
-	CMDselect_(&bn, b, low, high, lin, rin);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.select", GDK_EXCEPTION);
-}
-
-str
-ALGthetajoinEstimate(bat *result, const bat *lid, const bat *rid, const int *opc, const lng *estimate)
-{
-	BAT *left, *right, *bn = NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
-	}
-	if( *opc == -3 ){
-		/* The NE case is not supported in the kernel */
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
-		throw(MAL, "algebra.thetajoin", ILLEGAL_ARGUMENT " Theta comparison <> not yet supported");
-	}
-	bn = BATthetajoin(left, right, *opc, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate));
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
-}
-
-str
-ALGthetajoin(bat *result, const bat *lid, const bat *rid, const int *opc)
-{
-	return ALGthetajoinEstimate(result, lid, rid, opc, (ptr)&lng_nil);
-}
-
-str
-ALGbandjoin(bat *result, const bat *lid, const bat *rid, const void *minus, const void *plus, const bit *li, const bit *hi)
-{
-	BAT *left, *right, *bn = NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATbandjoin(left, right, minus, plus, *li, *hi);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
-}
-
-str
-ALGbandjoin_default(bat *result, const bat *lid, const bat *rid, const void *minus, const void *plus)
-{
-	bit li = TRUE;
-	bit hi = TRUE;
-	return ALGbandjoin(result, lid, rid, minus, plus, &li, &hi);
-}
-
-str
-ALGrangejoin(bat *result, const bat *lid, const bat *rlid, const bat *rhid, const bit *li, const bit *hi)
-{
-	BAT *left, *rightl, *righth, *bn = NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((rightl = BATdescriptor(*rlid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((righth = BATdescriptor(*rhid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		BBPunfix(rightl->batCacheid);
-		throw(MAL, "algebra.rangejoin", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATrangejoin(left, rightl, righth, *li, *hi);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPunfix(left->batCacheid);
-		BBPunfix(rightl->batCacheid);
-		BBPunfix(righth->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(left->batCacheid);
-	BBPunfix(rightl->batCacheid);
-	BBPunfix(righth->batCacheid);
-	throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
 }
 
 static str
@@ -966,12 +780,6 @@ ALGsubunique1(bat *result, const bat *bid)
 }
 
 str
-ALGantijoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATantijoin, "algebra.antijoin");
-}
-
-str
 ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 {
 	BAT *L, *R, *j1, *j2;
@@ -1028,35 +836,6 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 }
 
 str
-ALGthetajoin2( bat *l, bat *r, const bat *left, const bat *right, const int *opc)
-{
-	BAT *L, *R, *j1, *j2;
-	gdk_return ret;
-
-	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((R = BATdescriptor(*right)) == NULL) {
-		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
-	}
-
-	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, *opc, 0, BUN_NONE);
-
-	BBPunfix(L->batCacheid);
-	BBPunfix(R->batCacheid);
-	if (ret != GDK_SUCCEED)
-		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
-	if (!(j1->batDirty&2))
-		BATsetaccess(j1, BAT_READ);
-	if (!(j2->batDirty&2))
-		BATsetaccess(j2, BAT_READ);
-	BBPkeepref(*l = j1->batCacheid);
-	BBPkeepref(*r = j2->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 {
 	BAT *L, *R, *bn1, *bn2;
@@ -1074,33 +853,6 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
-	BBPkeepref(*l = bn1->batCacheid);
-	BBPkeepref(*r = bn2->batCacheid);
-	return MAL_SUCCEED;
-}
-str
-ALGbandjoin2(bat *l, bat *r, const bat *left, const bat *right, const void *minus, const void *plus, const bit *li, const bit *hi)
-{
-	BAT *L, *R, *bn1, *bn2;
-	gdk_return ret;
-
-	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((R = BATdescriptor(*right)) == NULL) {
-		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
-	}
-
-	ret = BATsubbandjoin(&bn1, &bn2, L, R, NULL, NULL, minus, plus, *li, *hi, BUN_NONE);
-	BBPunfix(L->batCacheid);
-	BBPunfix(R->batCacheid);
-	if (ret != GDK_SUCCEED)
-		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
-	if (!(bn1->batDirty&2))
-		BATsetaccess(bn1, BAT_READ);
-	if (!(bn2->batDirty&2))
-		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
@@ -1141,18 +893,6 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 }
 
 str
-ALGjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate)
-{
-	return ALGbinaryestimate(result, lid, rid, estimate, BATjoin, "algebra.join");
-}
-
-str
-ALGjoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinaryestimate(result, lid, rid, NULL, BATjoin, "algebra.join");
-}
-
-str
 ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate)
 {
 	return ALGbinaryestimate(result, lid, rid, estimate, BATleftjoin, "algebra.leftjoin");
@@ -1171,27 +911,9 @@ ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGouterjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate)
-{
-	return ALGbinaryestimate(result, lid, rid, estimate, BATouterjoin, "algebra.outerjoin");
-}
-
-str
-ALGouterjoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinaryestimate(result, lid, rid, NULL, BATouterjoin, "algebra.outerjoin");
-}
-
-str
 ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATsemijoin, "algebra.semijoin");
-}
-
-str
-ALGkdiff(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkdiff, "algebra.kdiff");
 }
 
 str

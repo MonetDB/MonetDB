@@ -160,7 +160,6 @@ static struct PIPELINES {
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
- */
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -188,6 +187,7 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
+ */
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };

@@ -48,30 +48,11 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 {
 	BUN lc, rc;
 	BUN cost=0;
-#if 0
-	BUN lsize,rsize;
-	BAT *lsample, *rsample, *j; 
-#endif
 
 	(void) flag;
 	(void) cntxt;
 	lc = BATcount(l);
 	rc = BATcount(r);
-#if 0	
-	/* The sampling method */
-	if(flag < 2 && ( lc > 100000 || rc > 100000)){
-		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		lsample= BATsample(l,lsize);
-		BBPreclaim(lsample);
-		rsize= MIN(rc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		rsample= BATsample(r,rsize);
-		BBPreclaim(rsample);
-		j= BATjoin(l,r, MAX(lsize,rsize));
-		lsize= BATcount(j);
-		BBPreclaim(j);
-		return lsize;
-	}
-#endif
 
 	/* first use logical properties to estimate upper bound of result size */
 	if (l->tkey && r->hkey)
@@ -202,9 +183,6 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 				}
 				break;
 			}
-		case 1:
-			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-			break;
 		case 3:
 			b = BATproject(joins[j], joins[j + 1]);
 			ALGODEBUG{

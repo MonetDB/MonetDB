@@ -3071,10 +3071,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @item BAT *
  * @tab BATjoin (BAT *l, BAT *r, BUN estimate)
  * @item BAT *
- * @tab BATouterjoin (BAT *l, BAT *r, BUN estimate)
- * @item BAT *
- * @tab BATthetajoin (BAT *l, BAT *r, int mode, BUN estimate)
- * @item BAT *
  * @tab BATsemijoin (BAT *l, BAT *r)
  * @item BAT *
  * @tab BATselect (BAT *b, ptr tl, ptr th)
@@ -3094,10 +3090,9 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * domain lower or upper bound.
  *
  * The BATjoin over R[A, B] and S[C, D] performs an equi-join over B
- * and C. It results in a BAT over A and D.  The BATouterjoin
- * implements a left outerjoin over the BATs involved.  The
- * BATsemijoin over R[A, B] and S[C, D] produces the subset of R[A, B]
- * that satisfies the semijoin over A and C.
+ * and C. It results in a BAT over A and D.  The BATsemijoin over R[A,
+ * B] and S[C, D] produces the subset of R[A, B] that satisfies the
+ * semijoin over A and C.
  *
  * The full-materialization policy intermediate results in MonetDB
  * means that a join can produce an arbitrarily large result and choke
@@ -3121,22 +3116,15 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
-gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
-gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
-gdk_export BAT *BATbandjoin(BAT *l, BAT *r, const void *mnus, const void *plus, bit li, bit hi);
-gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
 
 gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
@@ -3201,16 +3189,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATselect_(_b, (h), (t), (li), (hi));			\
 	})
 
-#define BATuselect_(b, h, t, li, hi)					\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect_(_b, (h), (t), (li), (hi));			\
-	})
-
 #define BATselect(b, h, t)						\
 	({								\
 		BAT *_b = (b);						\
@@ -3219,16 +3197,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect(_b, (h), (t));				\
-	})
-
-#define BATuselect(b, h, t)						\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect(_b, (h), (t));				\
 	})
 
 #define BATsemijoin(l, r)						\
@@ -3264,28 +3232,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATleftjoin(_l, _r, (estimate));			\
 	})
 
-#define BATthetajoin(l, r, op, estimate)				\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATthetajoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATthetajoin(_l, _r, (op), (estimate));			\
-	})
-
-#define BATouterjoin(l, r, estimate)					\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATouterjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATouterjoin(_l, _r, (estimate));			\
-	})
-
 #define BATleftfetchjoin(l, r, estimate)				\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
@@ -3295,40 +3241,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATleftfetchjoin(_l, _r, (estimate));			\
-	})
-
-#define BATantijoin(l, r)						\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATantijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATantijoin(_l, _r);					\
-	})
-
-#define BATbandjoin(l, r, c1, c2, li, hi)				\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATbandjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATbandjoin(_l, _r, (c1), (c2), (li), (hi));		\
-	})
-
-#define BATrangejoin(l, rl, rh, li, hi)					\
-	({								\
-		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATrangejoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T), BATcount(_rl), \
-			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T), BATcount(_rh), \
-			__func__, __FILE__, __LINE__);			\
-		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
 	})
 
 #define BATkdiff(l, r)							\

@@ -17,7 +17,7 @@ function user.main():void;
 # common subexpression evaluation 
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:int);
-    d := algebra.select(b,0,100);
+    d := algebra.subselect(b,0,100,true,true,false);
     l := calc.+(24,27);
     l3 := calc.+(l,24);
     mdb.List();
@@ -27,10 +27,10 @@ function user.main():void;              	#[0]  0
 # common subexpression evaluation       
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[3] CMDBATnew 5 <- 6 7 
     c:bat[:oid,:int] := bat.new(:oid,:int);	#[4] CMDBATnew 8 <- 6 7 
-    d:bat[:oid,:int] := algebra.select(b:bat[:oid,:int],0:int,100:int);	#[5] ALGselect 9 <- 5 10 11 
-    l:int := calc.+(24:int,27:int);     	#[6] CMDvarADDsignal 17 <- 14 16 
-    l3:int := calc.+(l:int,24:int);     	#[7] CMDvarADDsignal 19 <- 17 14 
-    mdb.List();                         	#[8] MDBlistDetail 20 
+    d:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:int],0:int,100:int,true:bit,true:bit,false:bit);	#[5] ALGsubselect1 9 <- 5 10 11 12 13 14 
+    l:int := calc.+(24:int,27:int);     	#[6] CMDvarADDsignal 20 <- 17 19 
+    l3:int := calc.+(l:int,24:int);     	#[7] CMDvarADDsignal 22 <- 20 17 
+    mdb.List();                         	#[8] MDBlistDetail 23 
 end user.main;                          	#[9]  
 
 # 23:53:03 >  

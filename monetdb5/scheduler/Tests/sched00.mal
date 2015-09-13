@@ -1,3 +1,4 @@
+include run_isolate;
 function f();
 	i{runonce, rows>4}:=1;	# just properties
     mdb.List();

@@ -36,10 +36,6 @@ pattern print(val:bat[:oid,:any_1]):void
 address IOprint_val
 comment "Print a MAL value column .";
 
-pattern prompt(val:any_1):void 
-address IOprompt_val
-comment "Print a MAL value without brackets.";
-
 pattern printf(fmt:str,val:any...):void 
 address IOprintf
 comment "Select default format ";

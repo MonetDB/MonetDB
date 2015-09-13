@@ -13,15 +13,6 @@ comment "Produces a list of all <module>.<function> that match
 and <function>. Using the '(' asks for signature information and
 using ')' asks for the complete help record.";
 
-pattern search(text:str)
-address MANUALsearch
-comment "Search the manual for command descriptions that match the
-regular expression 'text'";
-
-pattern summary():void
-address MANUALcreateSummary
-comment "Produces a manual summary with help lines grouped by module.";
-
-pattern completion(pat:str):void
-address MANUALcompletion
-comment "Produces the wordcompletion table.";
+pattern functions() (sig:bat[:oid,:str], adr:bat[:oid,:str], com:bat[:oid,:str])
+address MANUALcreateOverview
+comment "Produces a table with all MAL functions known";

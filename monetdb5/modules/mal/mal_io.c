@@ -71,7 +71,7 @@ io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
 {
 	int tpe = getArgType(mb, pci, indx);
@@ -108,12 +108,13 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b[0]->batCacheid));
+			mnstr_printf(fp, "<%s>", BBPname(b[1]->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			b[0] = BATmark(b[1],0);
+			b[0] = VIEWcombine(b[1]);
 			if( b[0]){
+				BATroles(b[0], NULL, b[1]->hident);
 				BATprintcolumns(cntxt->fdout, 2, b);
 				BBPunfix(b[0]->batCacheid);
 			}
@@ -154,12 +155,6 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	return msg;
 
-}
-
-str
-IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
 }
 
 /*

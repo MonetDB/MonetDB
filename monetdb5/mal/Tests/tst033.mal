@@ -4,8 +4,11 @@ bat.append(b,1);
 bat.append(b,2);
 bat.append(b,3);
 
-z:= algebra.select(b,0,2); io.print(z);
-z:= algebra.select(b,0,2,true,true); io.print(z);
-z:= algebra.select(b,0,2,true,false); io.print(z);
-z:= algebra.select(b,0,2,false,true); io.print(z);
-z:= algebra.select(b,0,2,false,false); io.print(z);
+s := algebra.subselect(b,0,2,true,true,false); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,true,false,false); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,false,true,false); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,false,false,false); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,true,true,true); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,true,false,true); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,false,true,true); z := algebra.leftfetchjoin(s,b); io.print(z);
+s := algebra.subselect(b,0,2,false,false,true); z := algebra.leftfetchjoin(s,b); io.print(z);
