@@ -248,6 +248,10 @@ command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], 
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
+command project( col:bat[:oid,:oid], l:bat[:oid,:oid], r:bat[:oid,:oid]) :bat[:oid,:oid]
+address BATleftproject
+comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"
+
 command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client";

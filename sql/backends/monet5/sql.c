@@ -2453,6 +2453,72 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	return MAL_SUCCEED;
 }
 
+str
+BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
+{
+	BAT *c, *l, *r, *res;
+	oid *p, *lp, *rp;
+	size_t cnt = 0, i;
+
+	c = BATdescriptor(*Col);
+	if (c)
+		cnt = BATcount(c);
+	l = BATdescriptor(*L);
+	r = BATdescriptor(*R);
+	res = BATnew(TYPE_void, TYPE_oid, cnt, TRANSIENT);
+	if (!c || !l || !r || !res) {
+		if (c)
+			BBPunfix(c->batCacheid);
+		if (l)
+			BBPunfix(l->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (res)
+			BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	p = (oid*)Tloc(res,0);
+	for(i=0;i<cnt; i++)
+		*p++ = oid_nil;
+	BATsetcount(res, cnt);
+
+	cnt = BATcount(l);
+	p = (oid*)Tloc(res, 0);
+	lp = (oid*)Tloc(l, 0);
+	rp = (oid*)Tloc(r, 0);
+	if (l->ttype == TYPE_void) {
+		size_t lp = l->tseqbase;
+		if (r->ttype == TYPE_void) {
+			size_t rp = r->tseqbase;
+			for(i=0;i<cnt; i++, lp++, rp++) 
+				p[lp] = rp;
+		} else {
+			for(i=0;i<cnt; i++, lp++) 
+				p[lp] = rp[i];
+		}
+	}
+	if (r->ttype == TYPE_void) {
+		size_t rp = r->tseqbase;
+		for(i=0;i<cnt; i++, rp++) 
+			p[lp[i]] = rp;
+	} else {
+		for(i=0;i<cnt; i++) 
+			p[lp[i]] = rp[i];
+	}
+	BATseqbase(res, 0);
+	res->T->sorted = 0;
+	res->T->revsorted = 0;
+	res->T->nil = 0;
+	res->T->nonil = 0;
+	res->T->key = 0;
+	BBPunfix(c->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
+	BBPkeepref(*Res = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
 /* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
 SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
