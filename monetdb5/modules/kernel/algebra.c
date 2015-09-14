@@ -1154,8 +1154,7 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 	}
-	slice(&bn, b, *start, *end);
-	if (bn != NULL) {
+	if (slice(&bn, b, *start, *end) == GDK_SUCCEED) {
 		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
@@ -1189,7 +1188,7 @@ ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	BAT *b, *bn;
+	BAT *b, *bn = NULL;
 	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
 	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
 
@@ -1201,8 +1200,7 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 
-	slice(&bn, b, s, e);
-	if( bn == 0){
+	if (slice(&bn, b, s, e) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.slice", "Slicing failed");
 	}
