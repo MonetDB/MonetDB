@@ -1563,14 +1563,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn = BATslice(order, low + order->hseqbase,
 				                     high + order->hseqbase);
 				if (s) {
-					BAT *n;
-					oid *rn;
 					BUN i, cnt;
 					oid *rbn = (oid *) Tloc((bn), 0);
+					oid *rn = (oid *) Tloc((bn), 0);
 					const oid *rcand = (const oid *) Tloc((s), 0);
 
-					n = BATnew(TYPE_void, TYPE_oid, bn->batCount, TRANSIENT);
-					rn = (oid *) Tloc((n), 0);
 					cnt = 0;
 					for (i = 0; i < bn->batCount; i++) {
 						if (binsearchcand(rcand, 0, s->batCount, *rbn)) {
@@ -1579,8 +1576,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 						}
 						rbn++;
 					}
-					BBPunfix(bn->batCacheid);
-					bn = n;
 					BATsetcount(bn, cnt);
 				}
 				/* output must be sorted */
