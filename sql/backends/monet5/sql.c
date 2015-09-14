@@ -4442,7 +4442,7 @@ SQLorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     sql_table *t;
     sql_column *c;
     mvc *m = NULL;
-	BAT *b;
+    BAT *b;
     str msg = MAL_SUCCEED;
 
     if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)

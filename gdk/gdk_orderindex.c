@@ -55,9 +55,8 @@ ORDERkeepidx(BAT *b, BAT *order) {
 	BATcheck(b, "ORDERkeepidx", GDK_FAIL);
 	BATcheck(order, "ORDERkeepidx", GDK_FAIL);
 
+	/* If b or order is view the fail (TODO: for now) */
 	if (VIEWtparent(b)) {
-		/* the Order Index is a slice of the parent Order Index.
-		 * Functions on modules MAL should take care of that */
 		GDKerror("b=%s is a VIEW.\n", BATgetId(b));
 		return GDK_FAIL;
 	}
@@ -67,9 +66,9 @@ ORDERkeepidx(BAT *b, BAT *order) {
 	}
 
 	MT_lock_set(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
+
 	if (!b->torderidx.flags) {
 		b->torderidx.o = BBPcacheid(order);
-		//BBPkeepref(order->batCacheid);
 		b->torderidx.flags = 1;
 	} else {
 		/* take care if other index already exists, should not happen though
@@ -78,17 +77,26 @@ ORDERkeepidx(BAT *b, BAT *order) {
 		MT_lock_unset(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
 		return GDK_FAIL;
 	}
+
 	MT_lock_unset(&GDKorderIdxLock(abs(b->batCacheid)), "ORDERkeepidx");
 
 	return GDK_SUCCEED;
 }
 
-gdk_export
-bat ORDERgetidx(BAT *b) {
+gdk_export bat
+ORDERgetidx(BAT *b) {
 	BATcheck(b, "ORDERgetidx", GDK_FAIL);
 
 	if (b->torderidx.flags != 0) {
 		return b->torderidx.o;
 	}
 	return 0;
+}
+
+/* Check whether we have orderindex on b (and return true if we do).  It
+ * may be that the index was made persistent, but we hadn't seen
+ * that yet, so check the file system. */
+int
+ORDERcheckidx(BAT *b) {
+
 }

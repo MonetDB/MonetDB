@@ -44,16 +44,17 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* check if b already has index */
 	if( b->torderidx.flags )
 		return MAL_SUCCEED;
-	/* check if b is sorted, then index does nto make sense, other action  is needed*/
+	/* check if b is sorted, then index does not make sense */
 	if( b->tsorted || b->trevsorted)
 		return MAL_SUCCEED;
-	/* check if b is view and parent has index do a range select */
-    if (VIEWtparent(b)  && b->torderidx.flags)
+	/* check if b is view and parent has index */
+    if (VIEWtparent(b) && b->torderidx.flags)
 		return MAL_SUCCEED;
 
-	// create a temporary MAL function to sort the BAT in parallel
+	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
-	snew = newFunction(putName("user", 4), putName(name, strlen(name)), FUNCTIONsymbol);
+	snew = newFunction(putName("user", 4), putName(name, strlen(name)),
+	       FUNCTIONsymbol);
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
 	arg = newTmpVariable(smb, tpe);
@@ -61,7 +62,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
 	resizeMalBlk(smb, 2*pieces+10, 2*pieces+10); // large enough
-	// create the pack instruction first, as it will hold intermediate variables
+	/* create the pack instruction first, as it will hold
+	 * intermediate variables */
 	pack = newInstruction(0, ASSIGNsymbol);
 	setModuleId(pack, putName("bat", 3));
 	setFunctionId(pack, putName("orderidx", 8));
@@ -69,7 +71,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	pack = pushArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
 
-	// the costly part executed as a parallel block
+	/* the costly part executed as a parallel block */
 	loopvar = newTmpVariable(smb, TYPE_bit);
 	q = newStmt(smb, putName("language", 8), putName("dataflow", 8));
 	q->barrier = BARRIERsymbol;
@@ -78,8 +80,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	cnt = BATcount(b);
 	step = cnt/pieces;
 	o = 0;
-	for (i=0; i< pieces; i++) {
-		// add slice instruction
+	for (i = 0; i < pieces; i++) {
+		/* add slice instruction */
 		q = newStmt(smb, putName("algebra", 7),putName("slice", 5));
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
@@ -94,7 +96,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		q = pushOid(smb, q, o);
 	}
 	for (i=0; i< pieces; i++) {
-		// add sort instruction
+		/* add sort instruction */
 		q = newStmt(smb, putName("algebra",7), putName("orderidx", 8));
 		setVarType(smb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
 		setVarFixed(smb, getArg(q, 0));
@@ -103,7 +105,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
 	}
-	// finalize OID packing, check, and evaluate
+	/* finalize OID packing, check, and evaluate */
 	pushInstruction(smb,pack);
 	q = newAssignment(smb);
 	q->barrier = EXITsymbol;
@@ -111,9 +113,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	pushEndInstruction(smb);
 	chkProgram(cntxt->fdout, cntxt->nspace, smb);
 	if (smb->errors) {
-		msg = createException(MAL, "bat.orderidx", "Type errors in generated code");
+		msg = createException(MAL, "bat.orderidx",
+		                           "Type errors in generated code");
 	} else {
-		// evaluate MAL block and keep the ordered OID bat
+		/* evaluate MAL block and keep the ordered OID bat */
 		newstk = prepareMALstack(smb, smb->vsize);
 		newstk->up = 0;
 		newstk->stk[arg].vtype= TYPE_bat;
@@ -125,7 +128,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 #ifdef _DEBUG_OIDX_
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_ALL);
 #endif
-	// get rid of temporary MAL block
+	/* get rid of temporary MAL block */
 	freeSymbol(snew);
 	return msg;
 }

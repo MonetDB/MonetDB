@@ -12,7 +12,7 @@ comment "Consolidates the OID index arrangement";
 
 pattern bat.getorderidx(bv:bat[:oid,:any_1]):bat[:oid,:oid]
 address OIDXgetorderidx
-comment "Return the order index oid bat";
+comment "Return the order index oid bat if exists";
 
 function algebra.orderidx(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
 	(v,o):= algebra.subsort(bv,reverse,stable);
