@@ -102,11 +102,6 @@ command like(b:bat[:oid,:str], substr:str) :bat[:oid,:oid]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
-# Sampling
-command sample ( b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid]
-address ALGsample
-comment "Returns the oids of a random selection of size 'num' from the input BAT.";
-
 command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
 address ALGsubsort11
 comment "Returns a copy of the BAT sorted on tail values.

@@ -2487,10 +2487,6 @@ command algebra.subsort(b:bat[:oid,:any_1],reverse:bit,stable:bit):bat[:oid,:any
 address ALGsubsort11;
 comment Returns a copy of the BAT sorted on tail values.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.sample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
-address ALGsample;
-comment Returns the oids of a random selection of size 'num' from the input BAT.
-
 command algebra.selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
 address ALGselectNotNil;
 comment Select all not-nil values

@@ -690,25 +690,6 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 }
 
 static str
-ALGbinaryint(bat *result, const bat *bid, const int *param, BAT *(*func)(BAT *, BUN), const char *name)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	bn = (*func)(b, *param);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty & 2))
-		BATsetaccess(bn, BAT_READ);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
-static str
 ALGbinaryestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate,
 				  BAT *(*func)(BAT *, BAT *, BUN), const char *name)
 {
@@ -911,12 +892,6 @@ str
 ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATsemijoin, "algebra.semijoin");
-}
-
-str
-ALGsample(bat *result, const bat *bid, const int *param)
-{
-	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
 }
 
 /* add items missing in the kernel */
