@@ -555,12 +555,14 @@ char *
 BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
+	BUN ret=0;
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if (BUNdelHead(b, h, FALSE) != GDK_SUCCEED) {
+	if ( (ret=BUNdelete(b, *h, TRUE)) == BUN_NONE) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}

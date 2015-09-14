@@ -77,7 +77,7 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	 */
 	assert(ht >= 0 && tt >= 0);
 	assert(role >= 0 && role < 32);
-	//assert(ht == TYPE_void);
+	assert(ht == TYPE_void);
 
 	bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 
@@ -1481,7 +1481,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 	if (p == BUN_NONE) {
 		return p;
 	}
-	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
+	if ( /* (b->htype == TYPE_void && b->hseqbase != oid_nil) || */ (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		BUN last = BUNlast(b) - 1;
 
 		if ((p < b->batInserted || p != last) && !force) {
@@ -1508,31 +1508,6 @@ BUNdel(BAT *b, const void *x, const void *y, bit force)
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
-}
-
-/*
- * The routine BUNdelHead is similar, but removes all BUNs whose head
- * matches the argument passed.
- */
-gdk_return
-BUNdelHead(BAT *b, const void *x, bit force)
-{
-	BUN p;
-	BAT *bm;
-
-	BATcheck(b, "BUNdelHead", GDK_FAIL);
-
-	bm = BATmirror(b);
-	if (x == NULL) {
-		x = ATOMnilptr(b->htype);
-	}
-	if ((p = BUNfnd(bm, x)) != BUN_NONE) {
-		ALIGNdel(b, "BUNdelHead", force, GDK_FAIL);	/* zap alignment info */
-		do {
-			BUNdelete(b, p, force);
-		} while ((p = BUNfnd(bm, x)) != BUN_NONE);
-	}
-	return GDK_SUCCEED;
 }
 
 /*

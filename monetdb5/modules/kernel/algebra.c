@@ -134,7 +134,7 @@ static gdk_return
 CMDlike(BAT **ret, BAT *b, const char *s)
 {
 	BATiter bi = bat_iterator(b);
-	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10, TRANSIENT);
+	BAT *c = BATnew(TYPE_void, TYPE_oid, BATcount(b) / 10, TRANSIENT);
 	str t, p;
 	BUN u, v;
 	BUN yy = 0;
@@ -148,17 +148,14 @@ CMDlike(BAT **ret, BAT *b, const char *s)
 	BATloop(b, u, v) {
 		p = BUNtvar(bi, u);
 		if (like(p, t, yy) &&
-			BUNfastins(c, BUNhead(bi, u), p) != GDK_SUCCEED) {
-			BBPreclaim(c);
-			GDKfree(t);
-			return GDK_FAIL;
-		}
+			BUNappend(c, &u, TRUE) != GDK_SUCCEED) {
+				BBPreclaim(c);
+				GDKfree(t);
+				return GDK_FAIL;
+			}
 	}
-	c->hsorted = BAThordered(b);
-	c->hrevsorted = BAThrevordered(b);
 	c->tsorted = BATtordered(b);
 	c->trevsorted = BATtrevordered(b);
-	c->H->nonil = b->H->nonil;
 	c->T->nonil = b->T->nonil;
 	*ret = c;
 	GDKfree(t);
@@ -1217,7 +1214,9 @@ ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	BAT *b, *bv;
+	BAT *b, *bn;
+	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
+	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
 
 	if (*start == oid_nil && end && *end == oid_nil) {
 		*ret = *bid;
@@ -1227,17 +1226,13 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 
-	bv  = BATmirror( b);
-	if ( bv == NULL)
-		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
-	bv  = BATselect_( bv, (ptr) start, (ptr) end, TRUE, FALSE);
-	if ( bv == NULL)
-		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
-	bv  = BATmirror( bv);
-	if ( bv == NULL)
-		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
+	slice(&bn, b, s, e);
+	if( bn == 0){
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.slice", "Slicing failed");
+	}
 
-	*ret = bv->batCacheid;
+	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

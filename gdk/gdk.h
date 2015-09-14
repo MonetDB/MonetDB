@@ -1087,8 +1087,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @item int
  * @tab BUNdel (BAT *b, ptr left, ptr right, bit force)
  * @item int
- * @tab BUNdelHead (BAT *b, ptr left, bit force)
- * @item BUN
  * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
  * @tab BUNlocate (BAT *b, ptr head, ptr tail)
@@ -1112,7 +1110,7 @@ gdk_export bte ATOMelmshift(int sz);
  * copying the BAT first.
  *
  * The update operations come in three flavors. Element-wise updates
- * can use BUNins, BUNappend, BUNreplace, BUNdel, and BUNdelHead.  The
+ * can use BUNins, BUNappend, BUNreplace, and BUNdel.  The
  * batch update operations are BATins, BATappend and BATdel.
  *
  * Only experts interested in speed may use BUNfastins, since it skips
@@ -1305,7 +1303,6 @@ gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BUNdel(BAT *b, const void *left, const void *right, bit force);
-gdk_export gdk_return BUNdelHead(BAT *b, const void *left, bit force);
 gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
 gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
 

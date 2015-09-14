@@ -98,7 +98,7 @@ address ALGselectNotNil
 comment "Select all not-nil values";
 
 # Pattern matching
-command like(b:bat[:oid,:str], substr:str) :bat[:oid,:str]
+command like(b:bat[:oid,:str], substr:str) :bat[:oid,:oid]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 

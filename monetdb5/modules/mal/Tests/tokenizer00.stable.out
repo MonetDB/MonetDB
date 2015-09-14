@@ -73,7 +73,7 @@ end user.main;
 # oid	str		  # type
 #-------------------------#
 [ 0@0,	  "http:"	  ]
-[ 0@0,	"ftp:"  ]
+[ 1@0,	"ftp:"  ]
 #--------------------------#
 # t	t  # name
 # void	str  # type
@@ -85,20 +85,20 @@ end user.main;
 # oid	str			  # type
 #---------------------------------#
 [ 0@0,	  "www.cwi.nl"		  ]
-[ 0@0,	"www.ics.forth.gr"  ]
-[ 0@0,	"www.cook.gr"  ]
-[ 0@0,	"www.nocook.nl"  ]
-[ 1@0,	"thepiratebay.org"  ]
+[ 1@0,	"www.ics.forth.gr"  ]
+[ 2@0,	"www.cook.gr"  ]
+[ 3@0,	"www.nocook.nl"  ]
+[ 4@0,	"thepiratebay.org"  ]
 #--------------------------#
 # t	t  # name
 # void	str  # type
 #--------------------------#
 [ 0@0,	  "~lsidir"	  ]
-[ 0@0,	"~mk"  ]
-[ 1@0,	"~lsidir"  ]
+[ 1@0,	"~mk"  ]
 [ 2@0,	  "~lsidir"	  ]
-[ 2@0,	"~mk"  ]
-[ 3@0,	"~mk"  ]
+[ 3@0,	"~lsidir"  ]
+[ 4@0,	"~mk"  ]
+[ 5@0,	"~mk"  ]
 #--------------------------#
 # t	t  # name
 # void	wrd  # type
