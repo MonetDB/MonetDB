@@ -439,22 +439,6 @@ BKCdensebat(bat *ret, const wrd *size)
 }
 
 str
-BKCreverse(bat *ret, const bat *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.reverse", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATmirror(b);			/* bn inherits ref from b */
-	assert(bn != NULL);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCmirror(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
