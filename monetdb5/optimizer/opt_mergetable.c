@@ -1294,7 +1294,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 		for(k=1; k < mat[attr].mi->argc; k++) {
 			InstrPtr q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
-			setFunctionId(q, leftjoinRef);
+			setFunctionId(q, leftfetchjoinRef);
 			getArg(q, 0) = newTmpVariable(mb, tpe);
 
 			q = pushArgument(mb, q, getArg(slc, k));
