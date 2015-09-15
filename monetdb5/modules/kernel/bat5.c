@@ -881,7 +881,7 @@ BKCisSortedReverse(bit *res, const bat *bid)
 
 /*
  * We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
- * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
+ * such nil columns never set hkey 
  * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
  */
 

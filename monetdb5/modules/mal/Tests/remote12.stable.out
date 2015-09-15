@@ -16,23 +16,18 @@ stdout of test 'remote12` in directory 'monetdb5/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33456/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!SyntaxException:parseError:e := nil:BAT;
-!SyntaxException:parseError:           ^<type identifier> expected
-!SyntaxException:parseError:m:str := remote.put(conn, e);
-!SyntaxException:parseError:^operator expected
-!SyntaxException:parseError:v:BAT := remote.get(conn,m);
-!SyntaxException:parseError:     ^<type identifier> expected
-!SyntaxException:parseError:io.print(v);
-!SyntaxException:parseError:^';' expected
 function user.main():void;
 #causing a sigfault  
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
     e := nil:BAT;
+    m:str := remote.put(conn,e);
     io.print(m);
-    v:BAT;
+    v:BAT := remote.get(conn,m);
+    io.print(v);
     mdb.var();
 end user.main;
+
 
 
 # 20:06:20 >  
