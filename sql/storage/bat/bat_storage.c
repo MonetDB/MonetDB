@@ -175,7 +175,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 static BAT *
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
-	if (!isTable(c->t)) 
+	if (!isTable(c->t) && !isArray(c->t)) 
 		return NULL;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
