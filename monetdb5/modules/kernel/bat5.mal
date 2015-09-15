@@ -8,29 +8,24 @@ module bat;
 
 #TO BE MADE HEADLESS PLAN
 
-command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
-address BKCreverse
-comment "Returns the reverse view of a BAT (head is tail and tail is head).
-        BEWARE  no copying is involved; input and output refer to the 
-        same object!";
-
-command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1] 
-address BKCmirror
-comment "Returns the head-mirror image of a BAT (two head columns).";
-
-command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid,:any_1]
-address BKCdelete
-comment "Delete all BUNs with a certain head value.";
-
-command delete(b:bat[:oid, :any_1]) :bat[:oid,:any_1]
-address BKCdelete_all
-comment "Delete all BUNs in a BAT.";
-
 command delete(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
         in the second.";
 # END TO BE MADE HEADLESS PLAN
+
+command mirror(b:bat[:oid,:any_2]) :bat[:oid,:oid] 
+address BKCmirror
+comment "Returns the head-mirror image of a BAT (two head columns).";
+
+
+command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid,:any_1]
+address BKCdelete
+comment "Delete an entry with a certain head value.";
+
+command delete(b:bat[:oid, :any_1]) :bat[:oid,:any_1]
+address BKCdelete_all
+comment "Delete all entries.";
 
 command replace(b:bat[:oid, :any_1], h:oid, t:any_1) :bat[:oid,:any_1]
 address BKCbun_inplace

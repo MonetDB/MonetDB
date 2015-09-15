@@ -80,7 +80,8 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	BATkey(BATmirror(bn), 0);										\
 	if (!(bn->batDirty&2))											\
 		BATsetaccess(bn, BAT_READ);									\
-	if (b->htype != bn->htype) {									\
+	if (!BAThdense(b)) {											\
+		/* legacy */												\
 		BAT *r = VIEWcreate(b,bn);									\
 																	\
 		BBPunfix(bn->batCacheid);									\
@@ -131,7 +132,8 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	BATkey(BATmirror(bn),0);											\
 	if (!(bn->batDirty&2))												\
 		BATsetaccess(bn, BAT_READ);										\
-	if (b->htype != bn->htype) {										\
+	if (!BAThdense(b)) {												\
+		/* legacy */													\
 		BAT *r = VIEWcreate(b,bn);										\
 																		\
 		BBPunfix(bn->batCacheid);										\

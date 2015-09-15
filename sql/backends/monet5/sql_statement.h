@@ -43,7 +43,6 @@ typedef enum stmt_type {
 	st_idxbat,
 	st_const,
 	st_gen_group,
-	st_reverse,
 	st_mirror,
 	st_result,		/* get nth result of a statement */
 
@@ -189,7 +188,7 @@ extern stmt *stmt_genjoin(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op, 
 
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins);
-extern stmt *stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_left_project(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3);
 
 extern stmt *stmt_list(sql_allocator *sa, list *l);
 extern void stmt_set_nrcols(stmt *s);
@@ -203,7 +202,6 @@ extern stmt *stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int err
 extern stmt *stmt_const(sql_allocator *sa, stmt *s, stmt *val);
 
 extern stmt *stmt_gen_group(sql_allocator *sa, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
-extern stmt *stmt_reverse(sql_allocator *sa, stmt *s);
 extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);
 extern stmt *stmt_result(sql_allocator *sa, stmt *s, int nr);
 

@@ -1576,7 +1576,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*sid)) == NULL)
 		throw(SQL, "sql.next_value", "Cannot access descriptor");
 
-	r = BATnew(b->htype, TYPE_lng, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_lng, BATcount(b), TRANSIENT);
 	if (!r) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.next_value", "Cannot create bat");
@@ -1612,7 +1612,15 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNins(r, BUNhead(bi, p), &l, FALSE);
+		BUNappend(r, &l, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, r);
+		BBPunfix(r->batCacheid);
+		r = b2;
+	} else {
+		BATseqbase(r, b->hseqbase);
 	}
 	if (sb)
 		seqbulk_destroy(sb);
@@ -2270,7 +2278,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
-		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
+		u = BATproject(u_val, u_id);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
 		if (!u) {
@@ -2451,6 +2459,72 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 
 	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
+{
+	BAT *c, *l, *r, *res;
+	oid *p, *lp, *rp;
+	size_t cnt = 0, i;
+
+	c = BATdescriptor(*Col);
+	if (c)
+		cnt = BATcount(c);
+	l = BATdescriptor(*L);
+	r = BATdescriptor(*R);
+	res = BATnew(TYPE_void, TYPE_oid, cnt, TRANSIENT);
+	if (!c || !l || !r || !res) {
+		if (c)
+			BBPunfix(c->batCacheid);
+		if (l)
+			BBPunfix(l->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (res)
+			BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	p = (oid*)Tloc(res,0);
+	for(i=0;i<cnt; i++)
+		*p++ = oid_nil;
+	BATsetcount(res, cnt);
+
+	cnt = BATcount(l);
+	p = (oid*)Tloc(res, 0);
+	lp = (oid*)Tloc(l, 0);
+	rp = (oid*)Tloc(r, 0);
+	if (l->ttype == TYPE_void) {
+		size_t lp = l->tseqbase;
+		if (r->ttype == TYPE_void) {
+			size_t rp = r->tseqbase;
+			for(i=0;i<cnt; i++, lp++, rp++) 
+				p[lp] = rp;
+		} else {
+			for(i=0;i<cnt; i++, lp++) 
+				p[lp] = rp[i];
+		}
+	}
+	if (r->ttype == TYPE_void) {
+		size_t rp = r->tseqbase;
+		for(i=0;i<cnt; i++, rp++) 
+			p[lp[i]] = rp;
+	} else {
+		for(i=0;i<cnt; i++) 
+			p[lp[i]] = rp[i];
+	}
+	BATseqbase(res, 0);
+	res->T->sorted = 0;
+	res->T->revsorted = 0;
+	res->T->nil = 0;
+	res->T->nonil = 0;
+	res->T->key = 0;
+	BBPunfix(c->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
+	BBPkeepref(*Res = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -3836,7 +3910,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3854,7 +3928,15 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3875,7 +3957,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3895,7 +3977,15 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

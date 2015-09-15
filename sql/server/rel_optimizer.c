@@ -4456,11 +4456,106 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
  *
  * ie select a, count(distinct b) from c where ... groupby a;
  * No other aggregations should be present
+ *
+ * Rewrite the more general case, good for parallel execution
+ *
+ * groupby(R) [e,f] [ aggr1 a distinct, aggr2 b distinct, aggr3 c, aggr4 d]
+ *
+ * into
+ *
+ * groupby(
+ * 	groupby(R) [e,f,a,b] [ a, b, aggr3 c, aggr4 d]
+ * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
  */
+
+static sql_rel *
+rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel) 
+{
+	list *ngbes = sa_list(sql->sa), *gbes, *naggrs = sa_list(sql->sa), *aggrs = sa_list(sql->sa);
+	sql_rel *l;
+	node *n;
+
+	gbes = rel->r;
+	if (!gbes) 
+		return rel;
+
+	/* check if each aggr is, rewritable (max,min,sum,count) 
+	 *  			  and only has one argument */
+	for (n = gbes->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		sql_subaggr *af = e->f;
+
+		if (e->type == e_aggr && 
+		   (strcmp(af->aggr->base.name, "sum") && 
+		     strcmp(af->aggr->base.name, "count") &&
+		     strcmp(af->aggr->base.name, "min") &&
+		     strcmp(af->aggr->base.name, "max"))) 
+			return rel; 
+	}
+
+	for (n = gbes->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		append(ngbes, e);
+	}
+
+	/* 1 for each aggr(distinct v) add the attribute expression v to gbes and aggrs list
+	 * 2 for each aggr(z) add aggr_phase2('z') to the naggrs list 
+	 * 3 for each group by col, add also to the naggrs list 
+	 * */
+	for (n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_aggr && need_distinct(e)) { /* 1 */
+			/* need column expression */
+			list *args = e->l;
+			sql_exp *v = args->h->data;
+			append(gbes, v);
+			v = exp_column(sql->sa, exp_find_rel_name(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+			append(aggrs, v);
+			v = exp_aggr1(sql->sa, v, e->f, need_distinct(e), 1, e->card, 1);
+			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
+			append(naggrs, v);
+		} else if (e->type == e_aggr && !need_distinct(e)) {
+			list *args = e->l;
+			sql_exp *v = args->h->data;
+			sql_subaggr *f = e->f;
+			int cnt = strcmp(f->aggr->base.name,"count")==0;
+			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+
+			append(aggrs, e);
+			v = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			set_has_nil(v);
+			v = exp_aggr1(sql->sa, v, a, 0, 1, e->card, 1);
+			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
+			append(naggrs, v);
+		} else { /* group by col */
+			if (list_find_exp(gbes, e)) {  /* group by exp are needed in the aggr list, simple (alias or project) expressions are just needed in the result */
+				append(aggrs, e);
+	
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			}
+			append(naggrs, e);
+		}
+	}	
+
+	l = rel->l = rel_groupby(sql, rel->l, gbes);
+	l->exps = aggrs;
+	rel->r = ngbes;
+	rel->exps = naggrs;
+	(*changes)++;
+	return rel;
+}
 
 static sql_rel *
 rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
 {
+	if (is_groupby(rel->op)) {
+		sql_rel *l = rel->l;
+		if (!l || is_groupby(l->op))
+			return rel;
+	}
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		node *n;
 		int nr = 0;
@@ -4475,10 +4570,12 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 				nr++;
 			}
 		}
-		if (nr != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
+		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
+		if ((nr > 1 || list_length(rel->r) + nr != list_length(rel->exps)))
+			return rel_groupby_distinct2(changes, sql, rel);
 		arg = distinct->l;
-		if (distinct->type != e_aggr || list_length(arg) != 1)
+		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
 			return rel;
 
 		darg = arg->h->data;

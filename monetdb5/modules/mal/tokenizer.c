@@ -580,7 +580,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
-	view = VIEWcreate(BATmirror(tokenBAT[*level].idx),tokenBAT[*level].val);
+	view = VIEWcreate(tokenBAT[*level].idx, tokenBAT[*level].val);
 	*r = view->batCacheid;
 
 	BBPincref(*r, TRUE);

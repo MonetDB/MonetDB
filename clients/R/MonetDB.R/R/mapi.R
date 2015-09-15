@@ -118,7 +118,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     resp <- c(resp, readChar(con, length, useBytes = TRUE))    
     if (final == 1) break
   }
-  if (getOption("monetdb.debug.mapi", F)) cat(paste("RX: '", substring(paste0(resp, collapse=""), 1, 200), "'\n", sep=""))
+  if (getOption("monetdb.debug.mapi", F)) message("RX: '", substring(paste0(resp, collapse=""), 1, 200))
   return(paste0("", resp, collapse=""))
 }
 
@@ -128,7 +128,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     stop("I can only be called with a MonetDB connection object as parameter.")
   final <- FALSE
   pos <- 0
-  if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg, "'\n", sep="")
+  if (getOption("monetdb.debug.mapi", F))  message("TX: '", msg)
   # convert to raw byte array, otherwise multibyte characters are 'difficult'
   msgr <- charToRaw(msg)
   msglen <- length(msgr)

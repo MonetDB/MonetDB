@@ -42,6 +42,10 @@ create function sys.bbp ()
 		status string, kind string)
 	external name bbp.get;
 
+create function sys.malfunctions()
+	returns table("signature" string, "address" string, "comment" string)
+	external name "manual"."functions";
+
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
 

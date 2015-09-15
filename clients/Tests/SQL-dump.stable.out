@@ -192,6 +192,7 @@ SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
+SYSTEM FUNCTION  sys.malfunctions
 SYSTEM FUNCTION  sys.masklen
 SYSTEM FUNCTION  sys.mbr
 SYSTEM FUNCTION  sys.mbroverlaps

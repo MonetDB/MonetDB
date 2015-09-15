@@ -66,8 +66,6 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN BATguess(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, int lock)
@@ -432,5 +430,32 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+#endif
+#endif
+
+#ifndef NDEBUG
+#ifdef __GNUC__
+/* in debug builds, complain (warn) about usage of legacy functions */
+
+#define BATmaterializeh(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterializeh([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterializeh(_b);					\
+	})
+
+#define BATmaterialize(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterialize([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterialize(_b);					\
+	})
+
 #endif
 #endif

@@ -1600,9 +1600,9 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op, int ne
 		sql_subfunc *f = NULL;
 		stmt * cmp;
 
-		if (cmp_op == cmp_equal)
+		if (cmp_op == cmp_equal) 
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else	/* TODO cmp_equal_nil */
+		else 
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
@@ -2136,7 +2136,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
+	s = releqjoin(sql, lje, rje, 1 /* cannot use hash */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 
@@ -2246,7 +2246,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
+	s = releqjoin(sql, lje, rje, 1 /* cannot use hash */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 		
@@ -2958,7 +2958,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_col(sql, c->c, dels);
 		if ((k->type == ukey) && stmt_has_null(s)) {
 			stmt *nn = stmt_selectnonil(sql, s, NULL);
-			s = stmt_reorder_project(sql->sa, nn, s);
+			s = stmt_project(sql->sa, nn, s);
 		}
 		if (h->nrcols) {
 			s = stmt_join(sql->sa, s, h, cmp_equal);
@@ -2985,7 +2985,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			/* inserted vaules may be null */
 			if ((k->type == ukey) && stmt_has_null(ins)) {
 				stmt *nn = stmt_selectnonil(sql, ins, NULL);
-				ins = stmt_reorder_project(sql->sa, nn, ins);
+				ins = stmt_project(sql->sa, nn, ins);
 			}
 		
 			g = stmt_group(sql->sa, ins, NULL, NULL, NULL);
@@ -3441,7 +3441,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			/* remove nulls */
 			if ((k->type == ukey) && stmt_has_null(upd)) {
 				stmt *nn = stmt_selectnonil(sql, upd, NULL);
-				upd = stmt_reorder_project(sql->sa, nn, upd);
+				upd = stmt_project(sql->sa, nn, upd);
 			}
 
 			g = stmt_group(sql->sa, upd, NULL, NULL, NULL);
@@ -3471,18 +3471,44 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 	return res;
 }
 
+/*
+         A referential constraint is satisfied if one of the following con-
+         ditions is true, depending on the <match option> specified in the
+         <referential constraint definition>:
+
+         -  If no <match type> was specified then, for each row R1 of the
+            referencing table, either at least one of the values of the
+            referencing columns in R1 shall be a null value, or the value of
+            each referencing column in R1 shall be equal to the value of the
+            corresponding referenced column in some row of the referenced
+            table.
+
+         -  If MATCH FULL was specified then, for each row R1 of the refer-
+            encing table, either the value of every referencing column in R1
+            shall be a null value, or the value of every referencing column
+            in R1 shall not be null and there shall be some row R2 of the
+            referenced table such that the value of each referencing col-
+            umn in R1 is equal to the value of the corresponding referenced
+            column in R2.
+
+         -  If MATCH PARTIAL was specified then, for each row R1 of the
+            referencing table, there shall be some row R2 of the refer-
+            enced table such that the value of each referencing column in
+            R1 is either null or is equal to the value of the corresponding
+            referenced column in R2.
+*/
+
 static stmt *
 update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, stmt *pup)
 {
 	char *msg = NULL;
-	stmt *s;
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	stmt *s, *cur, *null = NULL, *cntnulls;
+	sql_subtype *wrd = sql_bind_localtype("wrd"), *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
-	stmt *cur;
+	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
+	node *m;
 
-	(void)tids;/*TODO*/
 	if (!idx_updates)
 		return NULL;
 	/* releqjoin.count <> updates[updcol].count */
@@ -3496,6 +3522,37 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 		cur = stmt_col(sql, c->c, dels);
 	}
 	s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_updates, NULL, NULL, cnt, 1, 0), stmt_aggr(sql->sa, cur, NULL, NULL, cnt, 1, 0), ne);
+
+	for (m = k->columns->h; m; m = m->next) {
+		sql_kc *c = m->data;
+
+		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
+		/* Currently only the default MATCH SIMPLE is supported */
+		if (c->c->null) {
+			stmt *upd, *nn;
+
+			if (updates && updates[c->c->colnr]) {
+				upd = updates[c->c->colnr]->op2;
+			} else if (updates && updcol >= 0) {
+				upd = updates[updcol]->op1;
+				upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, tids));
+			} else { /* created idx/key using alter */ 
+				upd = stmt_col(sql, c->c, tids);
+			}
+			nn = stmt_selectnil(sql, upd);
+			if (null)
+				null = stmt_tunion(sql->sa, null, nn);
+			else
+				null = nn;
+		}
+	}
+	if (null) {
+		cntnulls = stmt_aggr(sql->sa, null, NULL, NULL, cnt, 1, 0); 
+	} else {
+		cntnulls = stmt_atom_wrd(sql->sa, 0);
+	}
+	s = stmt_binop(sql->sa, s, 
+		stmt_binop(sql->sa, stmt_aggr(sql->sa, stmt_selectnil(sql, idx_updates), NULL, NULL, cnt, 1, 0), cntnulls , ne), or);
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -3774,48 +3831,18 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	return h;
 }
 
-/*
-         A referential constraint is satisfied if one of the following con-
-         ditions is true, depending on the <match option> specified in the
-         <referential constraint definition>:
-
-         -  If no <match type> was specified then, for each row R1 of the
-            referencing table, either at least one of the values of the
-            referencing columns in R1 shall be a null value, or the value of
-            each referencing column in R1 shall be equal to the value of the
-            corresponding referenced column in some row of the referenced
-            table.
-
-         -  If MATCH FULL was specified then, for each row R1 of the refer-
-            encing table, either the value of every referencing column in R1
-            shall be a null value, or the value of every referencing column
-            in R1 shall not be null and there shall be some row R2 of the
-            referenced table such that the value of each referencing col-
-            umn in R1 is equal to the value of the corresponding referenced
-            column in R2.
-
-         -  If MATCH PARTIAL was specified then, for each row R1 of the
-            referencing table, there shall be some row R2 of the refer-
-            enced table such that the value of each referencing column in
-            R1 is either null or is equal to the value of the corresponding
-            referenced column in R2.
-*/
-
 static stmt *
-join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
+join_idx_update(mvc *sql, sql_idx * i, stmt *ftids, stmt **updates, int updcol)
 {
-	int nulls = 0, len;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
-	stmt *s = NULL, *ptids = stmt_tid(sql->sa, rk->t), *ftids, *l, *r;
-	stmt *null = NULL;
-	stmt **new_updates = table_update_stmts(sql, i->t, &len);
+	stmt *s = NULL, *ptids = stmt_tid(sql->sa, rk->t), *l, *r;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	ftids = stmt_tid(sql->sa, i->t);
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
+		sql_kc *rc = o->data;
 		stmt *upd;
 
 		if (updates && updates[c->c->colnr]) {
@@ -3826,42 +3853,15 @@ join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 		} else { /* created idx/key using alter */ 
 			upd = stmt_col(sql, c->c, ftids);
 		}
-		new_updates[c->c->colnr] = upd;
 
-		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
-		/* Currently only the default MATCH SIMPLE is supported */
-		if (c->c->null) {
-			stmt *nn = stmt_selectnil(sql, upd);
-			if (null)
-				null = stmt_tunion(sql->sa, null, nn);
-			else
-				null = nn;
-			nulls = 1;
-		}
-	}
-
-	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
-		sql_kc *c = m->data;
-		sql_kc *rc = o->data;
-		stmt *upd = new_updates[c->c->colnr];
-
-		/* the join will remove any nulls */
 		list_append(lje, check_types(sql, &rc->c->type, upd, type_equal));
 		list_append(rje, stmt_col(sql, rc->c, ptids));
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal, 0);
+	s = releqjoin(sql, lje, rje, 0 /* use hash */, cmp_equal, 0);
 	l = stmt_result(sql->sa, s, 0);
 	r = stmt_result(sql->sa, s, 1);
-
-	/* add missing nulls */
 	r = stmt_project(sql->sa, r, ptids);
-	if (nulls) {
-		l = stmt_append(sql->sa, l, null);
-		r = stmt_append(sql->sa, r, stmt_const(sql->sa, null, stmt_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL))));
-	}
-	/* correct the order */
-	l = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, rows), stmt_reverse(sql->sa, l));
-	return stmt_project(sql->sa, l, r);
+	return stmt_left_project(sql->sa, ftids, l, r);
 }
 
 static list *

@@ -19,13 +19,15 @@ function user.main():void;
     bat.append(r,2);
     bat.append(r,3);
     bat.append(r,4);
-    s := algebra.select(r,0,5);
+    s := algebra.subselect(r,0,5,true,true,false);
 # equal to a copy 
-    io.print(s);
-    t := algebra.select(r,0,3);
+    r1 := algebra.leftfetchjoin(s,r);
+    io.print(r1);
+    t := algebra.subselect(r,0,3,true,true,false);
 #print(t); 
 # reuse t 
-    io.print(t);
+    r1 := algebra.leftfetchjoin(t,r);
+    io.print(r1);
     io.print("done");
 end user.main;
 #--------------------------#
