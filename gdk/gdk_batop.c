@@ -1498,7 +1498,8 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
 	bn = BATconstant(tailtype, v, BATcount(b), role);
 	if (bn == NULL)
 		return NULL;
-	if (b->H->type != bn->H->type) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *bnn = VIEWcreate(b, bn);
 
 		BBPunfix(bn->batCacheid);
