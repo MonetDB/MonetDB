@@ -686,6 +686,10 @@ parseTypeId(Client cntxt, int defaultType)
 		if (currChar(cntxt) == ':') {
 			ht = simpleTypeId(cntxt);
 			kh = typeAlias(cntxt, ht);
+/* After legacy operations have been dropped.
+			if( ht != TYPE_oid)
+				parseError(cntxt, "':oid' expected\n");
+*/
 		} else
 			ht = TYPE_any;
 
