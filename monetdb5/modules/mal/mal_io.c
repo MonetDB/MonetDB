@@ -585,12 +585,12 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-IOexport(bit *ret, bat *bid, str *fnme)
+IOexport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	stream *s;
 
-	*ret = FALSE;
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
 	
@@ -607,7 +607,6 @@ IOexport(bit *ret, bat *bid, str *fnme)
     BATprintcolumns(s, 1, &b);
 	mnstr_close(s);
 	mnstr_destroy(s);
-	*ret = TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -616,7 +615,7 @@ IOexport(bit *ret, bat *bid, str *fnme)
  * The import command reads a single BAT from an ASCII file produced by export.
  */
 str
-IOimport(int *ret, bat *bid, str *fnme)
+IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	int (*tconvert) (const char *, int *, ptr *);
