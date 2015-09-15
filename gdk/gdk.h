@@ -3251,26 +3251,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATkdiff(_l, _r);					\
 	})
 
-#define BATmaterializeh(b)						\
-	({								\
-		BAT *_b = (b), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATmaterializeh([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATmaterializeh(_b);					\
-	})
-
-#define BATmaterialize(b)						\
-	({								\
-		BAT *_b = (b), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATmaterialize([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATmaterialize(_b);					\
-	})
-
 #endif
 #endif
 
