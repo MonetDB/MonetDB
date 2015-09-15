@@ -1242,7 +1242,8 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 		GDKfree(res);
 	}
 
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 
 		BBPunfix(bn->batCacheid);

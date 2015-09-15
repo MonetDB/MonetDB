@@ -176,7 +176,8 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 	if (!(bn->batDirty & 2))
 		BATsetaccess(bn, BAT_READ);
 
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b, bn);
 
 		BBPkeepref(*res = r->batCacheid);
