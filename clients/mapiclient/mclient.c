@@ -67,12 +67,9 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
-#include "profiler.h"
-
 enum modes {
 	MAL,
-	SQL,
-	JAQL
+	SQL
 };
 
 static enum modes mode = SQL;
@@ -85,6 +82,7 @@ static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
+static int showtiming = 0;
 #ifdef HAVE_ICONV
 static char *encoding;
 static iconv_t cd_in;
@@ -361,36 +359,127 @@ SQLsetSpecial(const char *command)
 /* return the display length of a UTF-8 string
    if e is not NULL, return length up to e */
 static size_t
-utf8strlen(const char *s, const char *e)
+utf8strlenmax(char *s, char *e, size_t max, char **t)
 {
-	size_t len = 0;
+	size_t len = 0, len0 = 0;
+	int c;
+	int n;
+	char *t0 = s;
 
+	assert(max == 0 || t != NULL);
 	if (s == NULL)
 		return 0;
-	while (*s && (e == NULL || s < e)) {
-		/* only count first byte of a sequence */
-		if ((*s & 0xC0) != 0x80)
+	c = 0;
+	n = 0;
+	while (*s != 0 && (e == NULL || s < e)) {
+		if (*s == '\n') {
+			assert(n == 0);
+			if (max) {
+				*t = s;
+				return len;
+			}
 			len++;
+			n = 0;
+		} else if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* the following code points are all East
+				 * Asian Fullwidth and East Asian Wide
+				 * characters as defined in Unicode 8.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    c == 0x2329 ||
+				    c == 0x232A ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
 		s++;
+		if (n == 0) {
+			if (max != 0) {
+				if (len > max) {
+					*t = t0;
+					return len0;
+				}
+				if (len == max) {
+					*t = s;
+					return len;
+				}
+			}
+			t0 = s;
+			len0 = len;
+		}
 	}
+	if (max != 0)
+		*t = s;
 	return len;
+}
+
+static size_t
+utf8strlen(char *s, char *e)
+{
+	return utf8strlenmax(s, e, 0, NULL);
 }
 
 /* skip the specified number of UTF-8 characters, but stop at a newline */
 static char *
 utf8skip(char *s, size_t i)
 {
-	while (*s && i > 0) {
-		if ((*s & 0xC0) == 0xC0) {
-			s++;
-			while ((*s & 0xC0) == 0x80)
-				s++;
-		} else if (*s == '\n')
-			return s;
-		else
-			s++;
-		i--;
-	}
+	utf8strlenmax(s, NULL, i, &s);
 	return s;
 }
 
@@ -436,8 +525,11 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					 * correction for a terminal
 					 * screen (1.62 * 2 -> 3 :
 					 * 9.72~10) */
-					if (ulen > (size_t) len[i])
+					if (ulen > (size_t) len[i]) {
 						cutafter[i] = 3 * len[i] / 10;
+						if (cutafter[i] == 1)
+							cutafter[i]++;
+					}
 				}
 
 				/* on each cycle we get closer to the limit */
@@ -1262,6 +1354,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	int ps = rowsperpage, silent = 0;
 	mapi_int64 rows = 0;
 
+	/* in case of interactive mode, we should show timing on request */
+	singleinstr = showtiming? 1 :singleinstr;
 #if 0
 	if (mark2)
 		free(mark2);
@@ -1507,7 +1601,7 @@ setFormatter(const char *s)
 		free(separator);
 	separator = NULL;
 	csvheader = 0;
-#ifdef WIN32
+#ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
 #endif
@@ -1543,7 +1637,7 @@ setFormatter(const char *s)
 	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
 	} else if (strcmp(s, "test") == 0) {
-#ifdef WIN32
+#ifdef _TWO_DIGIT_EXPONENT
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
@@ -1966,7 +2060,6 @@ doFileBulk(Mapi mid, FILE *fp)
 		}
 
 		assert(hdl != NULL);
-		profiler_arm();
 		mapi_query_part(hdl, buf, length);
 		CHECK_RESULT(mid, hdl, buf, continue, buf);
 
@@ -2508,6 +2601,10 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								       "CASE o.type "
 									    "WHEN 0 THEN 'TABLE' "
 									    "WHEN 1 THEN 'VIEW' "
+									    "WHEN 3 THEN 'MERGE TABLE' "
+									    "WHEN 4 THEN 'STREAM TABLE' "
+									    "WHEN 5 THEN 'REMOTE TABLE' "
+									    "WHEN 6 THEN 'REPLICA TABLE' "
 									    "ELSE '' "
 								       "END) AS type, "
 								      "o.system, "
@@ -2515,13 +2612,17 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								      "CASE o.type "
 									   "WHEN 0 THEN %d "
 									   "WHEN 1 THEN %d "
+									   "WHEN 3 THEN %d "
+									   "WHEN 4 THEN %d "
+									   "WHEN 5 THEN %d "
+									   "WHEN 6 THEN %d "
 									   "ELSE 0 "
 								      "END AS ntype "
 							       "FROM sys._tables o, "
 								    "sys.schemas s "
 							       "WHERE o.schema_id = s.id AND "
 								     "%s AND "
-								     "o.type IN (0, 1) "
+								     "o.type IN (0, 1, 3, 4, 5, 6) "
 							       "UNION "
 							       "SELECT o.name, "
 								      "'SEQUENCE' AS type, "
@@ -2546,7 +2647,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							 "WHERE ntype & %u > 0 "
 							       "%s "
 							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW,
+							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,
@@ -2748,8 +2849,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 		if (hdl == NULL) {
 			timerStart();
-			profiler_arm();
-
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue, buf);
 		} else
@@ -2889,7 +2988,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
-	fprintf(stderr, " -P          | --progress         show progress bar\n");
 	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
@@ -2916,7 +3014,6 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
-	int progress = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
@@ -2942,7 +3039,6 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
-		{"progress", 0, 0, 'P'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 #if 0
@@ -2962,7 +3058,7 @@ main(int argc, char **argv)
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
 #ifdef HAVE_SETLOCALE
-	setlocale(LC_ALL, "");
+	setlocale(LC_CTYPE, "");
 #endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
@@ -2982,8 +3078,6 @@ main(int argc, char **argv)
 			mode = SQL;
 		} else if (strcmp(language, "mal") == 0) {
 			mode = MAL;
-		} else if (strcmp(language, "jaql") == 0) {
-			mode = JAQL;
 		}
 	} else {
 		language = strdup("sql");
@@ -3039,13 +3133,6 @@ main(int argc, char **argv)
 				free(language);
 				language = strdup("mal");
 				mode = MAL;
-			} else if (strcmp(optarg, "jaql") == 0 ||
-				   strcmp(optarg, "jaq") == 0 ||
-				   strcmp(optarg, "ja") == 0 ||
-				   strcmp(optarg, "j") == 0) {
-				free(language);
-				language = strdup("jaql");
-				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
 				free(language);
 				language = strdup("msql");
@@ -3071,6 +3158,7 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			showtiming = 1;
 			if (optarg != NULL) {
 				if (strcmp(optarg, "ms") == 0) {
 					itimemode = T_MILLIS;
@@ -3144,9 +3232,6 @@ main(int argc, char **argv)
 			return(0);
 		case 'z':
 			settz = 0;
-			break;
-		case 'P':
-			progress = 1;
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
@@ -3253,34 +3338,16 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-		} else if (mode == JAQL) {
-			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
 	}
-
-	// switch on progress bars
-	if (mode == SQL && progress) {
-		char* buf = malloc(100);
-		int port = profiler_start();
-		if (port < 0) {
-			fprintf(stderr, "Unable to listen for UDP profiling messages\n");
-		}
-		sprintf(buf, "CALL profiler_openstream('127.0.0.1', %d)", port);
-		mapi_query(mid, buf);
-		sprintf(buf, "CALL profiler_stethoscope(0)");
-		mapi_query(mid, buf);
-	}
-
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
 		if (mode == SQL) {
 			lang = "/SQL";
-		} else if (mode == JAQL) {
-			lang = "/JAQL";
 		} else {
 			lang = "";
 		}
@@ -3343,7 +3410,6 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
-		profiler_arm();
 		c = doRequest(mid, command);
 		timerEnd();
 	}

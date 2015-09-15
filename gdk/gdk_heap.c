@@ -190,7 +190,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		if (size == 0)
 			size = GDK_mmap_pagesize;
 
-		p = MT_mremap(path,
+		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
 				MMAP_READ | MMAP_WRITE,
@@ -201,7 +201,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			h->base = p;
  			return GDK_SUCCEED; /* success */
  		}
-		failure = "MT_mremap() failed";
+		failure = "GDKmremap() failed";
 	} else {
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
@@ -343,7 +343,7 @@ HEAPshrink(Heap *h, size_t size)
 			return GDK_SUCCEED;
 		}
 		path = GDKfilepath(h->farmid, BATDIR, nme, ext);
-		p = MT_mremap(path,
+		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
 				MMAP_READ | MMAP_WRITE,
@@ -412,12 +412,15 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
 
-	/* for memory mapped files, create a backup copy before widening
+	/* Create a backup copy before widening.
 	 *
-	 * this solves a problem that we don't control what's in the
-	 * actual file until the next commit happens, so a crash might
-	 * otherwise leave the file (and the database) in an
-	 * inconsistent state
+	 * If the file is memory-mapped, this solves a problem that we
+	 * don't control what's in the actual file until the next
+	 * commit happens, so a crash might otherwise leave the file
+	 * (and the database) in an inconsistent state.  If, on the
+	 * other hand, the heap is allocated, it may happen that later
+	 * on the heap is extended and converted into a memory-mapped
+	 * file.  Then the same problem arises.
 	 *
 	 * also see do_backup in gdk_bbp.c */
 	filename = strrchr(c->heap.filename, DIR_SEP);
@@ -426,9 +429,11 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	else
 		filename++;
 	bid = strtol(filename, NULL, 8);
-	if (c->heap.storage == STORE_MMAP &&
-	    (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL)) {
+	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
+	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL) &&
+	    (c->heap.storage != STORE_MEM ||
+	     GDKmove(c->heap.farmid, BATDIR, c->heap.filename, NULL,
+		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << c->shift;

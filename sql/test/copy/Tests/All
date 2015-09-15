@@ -1,9 +1,14 @@
+ingestion
 embedded_sep
 escaped_char
 null_as_string
 null_as_string_errors
 null_as_string_output
+int_parse_best
 int_parse
 load_stdin_incorrect_line_nr
 overflow_error
 format_date
+key_copy
+nonutf8
+incorrect_columns

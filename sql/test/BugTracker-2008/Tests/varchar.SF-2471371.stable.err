@@ -83,20 +83,14 @@ stderr of test 'varchar.SF-2471371` in directory 'sql/test/BugTracker-2008` itse
 # 13:05:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
 # 13:05:45 >  
 
-# 11:46:40 >  
-# 11:46:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
-# 11:46:40 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
         a|b2b
-ERROR = !value 'b2b' from line 1 field 2 not inserted, expecting type varchar(2)
-        !failed to import table
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !Failed to import table line 1 field 2 'varchar(2)' expected in 'b2b'
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
         aa|bb
-ERROR = !value 'aa' from line 1 field 1 not inserted, expecting type varchar(1)
-        !failed to import table
+ERROR = !Failed to import table line 1 field 1 'varchar(1)' expected in 'aa'
 
 # 14:48:55 >  
 # 14:48:55 >  Done.

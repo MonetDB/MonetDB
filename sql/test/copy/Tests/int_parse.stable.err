@@ -1,103 +1,51 @@
 stderr of test 'int_parse` in directory 'sql/test/copy` itself:
 
 
-# 19:40:24 >  
-# 19:40:24 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37659 --set xrpc_port=49418 --set monet_prompt= --trace  "--dbname=mTests_src_test_copy" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 19:40:24 >  
+# 11:23:32 >  
+# 11:23:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31080" "--set" "mapi_usock=/var/tmp/mtest-4649/.s.monetdb.31080" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/resultset//Linux/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:23:32 >  
 
-# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.27.0
-# builtin opt 	monet_pid = 22557
-# builtin opt 	prefix = /ufs/mk/monet5//Linux
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 262144
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	gdk_mem_pagebits = 14
-# builtin opt 	gdk_vmtrim = yes
-# builtin opt 	monet_admin = adm
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/resultset//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
+# builtin opt 	monet_daemon = no
 # builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB
-# builtin opt 	xquery_logdir = ${prefix}/var/MonetDB
-# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
-# builtin opt 	standoff_start = start
-# builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/mk/monet5//Linux
-# config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/mk/monet5//Linux
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin
-# config opt 	monet_daemon = no
-# config opt 	monet_welcome = yes
-# config opt 	mero_msglog = ${prefix}/var/log/merovingian.log
-# config opt 	mero_errlog = ${prefix}/var/log/merovingian.log
-# config opt 	mero_timeinterval = 600
-# config opt 	mero_pidfile = ${prefix}/var/run/merovingian.pid
-# config opt 	mero_exittimeout = 7
-# config opt 	mero_doproxy = yes
-# config opt 	mero_discoveryttl = 600
-# config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
-# config opt 	mal_listing = 2
-# config opt 	checkpoint_dir = ${prefix}/var/MonetDB5/chkpnt
-# config opt 	mapi_port = 50000
-# config opt 	mapi_open = false
-# config opt 	sql_logdir = ${prefix}/var/MonetDB5/sql_logs
-# config opt 	sql_init = ${exec_prefix}/lib/MonetDB5/sql_init.sql
-# cmdline opt 	config = /ufs/mk/monet5//Linux/etc/monetdb5.conf
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/mk/monet5//Linux/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /ufs/mk/monet5//Linux/var/MonetDB5/sql_logs
 # cmdline opt 	mapi_open = true
-# cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 37659
-# cmdline opt 	xrpc_port = 49418
+# cmdline opt 	mapi_port = 31080
+# cmdline opt 	mapi_usock = /var/tmp/mtest-4649/.s.monetdb.31080
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_copy
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/resultset//Linux/var/MonetDB/mTests_sql_test_copy
 # cmdline opt 	mal_listing = 0
-# cmdline opt 	gdk_debug = 10
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5//Linux/etc/monetdb5.conf)
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 19:40:24 >  
-# 19:40:24 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37659 
-# 19:40:24 >  
+# 11:23:33 >  
+# 11:23:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4649" "--port=31080"
+# 11:23:33 >  
 
-# 13:10:05 >  
-# 13:10:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
-# 13:10:05 >  
-
-MAPI  = monetdb@sofia:38256
-QUERY = copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+MAPI  = (monetdb) /var/tmp/mtest-8167/.s.monetdb.37816
+QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+        0
         5.1
-ERROR = !value '5.1' from line 1 field 1 not inserted, expecting type int
-        !failed to import table
-MAPI  = monetdb@sofia:38256
-QUERY = copy 4 records into t_int from stdin delimiters ',','\n' NULL as '';
+        9
+ERROR = !Failed to import table line 2 field 1 'int' expected in '5.1'
+MAPI  = (monetdb) /var/tmp/mtest-8167/.s.monetdb.37816
+QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil
+        
         null
         abc
-ERROR = !value 'null' from line 3 field 1 not inserted, expecting type int
-        !failed to import table
+ERROR = !Failed to import table line 2 field 1 'int' expected in 'nil'
 
-# 19:40:25 >  
-# 19:40:25 >  Done.
-# 19:40:25 >  
+# 11:23:33 >  
+# 11:23:33 >  "Done."
+# 11:23:33 >  
 

@@ -1,9 +1,9 @@
 stdout of test 'forex` in directory 'sql/test/mergetables` itself:
 
 
-# 20:39:01 >  
-# 20:39:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37490" "--set" "mapi_usock=/var/tmp/mtest-23657/.s.monetdb.37490" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 20:39:01 >  
+# 23:00:41 >  
+# 23:00:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38230" "--set" "mapi_usock=/var/tmp/mtest-23198/.s.monetdb.38230" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 23:00:41 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,55 +13,21 @@ stdout of test 'forex` in directory 'sql/test/mergetables` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37490/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23657/.s.monetdb.37490
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:38230/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23198/.s.monetdb.38230
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 89_generator_hge.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 99_system.sql
 
-# 20:39:01 >  
-# 20:39:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23657" "--port=37490"
-# 20:39:01 >  
+# 23:00:42 >  
+# 23:00:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23198" "--port=38230"
+# 23:00:42 >  
 
 #CREATE TABLE day1 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 #CREATE TABLE day1stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
-#COPY 10 RECORDS INTO day1stage FROM STDIN USING DELIMITERS '|','\n';
+#COPY 10 RECORDS INTO day1stage FROM stdin USING DELIMITERS '|','\n';
 #1413267171000|EUR/USD|1413267158643|1.271810|1.271890|0.000080
 #1413267171000|USD/JPY|1413267171225|107.121000|107.127000|0.006000
 #1413267171000|GBP/USD|1413267161304|1.606820|1.606930|0.000110
@@ -108,7 +74,7 @@ Ready.
 #ALTER TABLE day1 SET READ ONLY;
 #CREATE TABLE day2 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 #CREATE TABLE day2stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
-#COPY 10 RECORDS INTO day2stage FROM STDIN USING DELIMITERS '|','\n';
+#COPY 10 RECORDS INTO day2stage FROM stdin USING DELIMITERS '|','\n';
 #1413267176000|EUR/USD|1413267177168|1.271780|1.271880|0.000100
 #1413267176000|USD/JPY|1413267177168|107.120000|107.125000|0.005000
 #1413267176000|GBP/USD|1413267175356|1.606820|1.606950|0.000130
@@ -221,7 +187,7 @@ Ready.
 #DROP TABLE day2;
 #DROP TABLE day3;
 
-# 20:39:01 >  
-# 20:39:01 >  "Done."
-# 20:39:01 >  
+# 23:00:42 >  
+# 23:00:42 >  "Done."
+# 23:00:42 >  
 

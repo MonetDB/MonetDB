@@ -450,8 +450,8 @@ usageTomograph(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -T | --title=<plot title>\n");
-	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
-	fprintf(stderr, "  -i | --input=<profiler event file > \n");
+	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s]\n");
+	fprintf(stderr, "  -i | --input=<profiler event file >\n");
 	fprintf(stderr, "  -o | --output=<dir/file prefix > (default 'cache/<dbname>'\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
 	fprintf(stderr, "  -A | --atlas=<number> maximum number of queries (default 1)\n");
@@ -826,6 +826,8 @@ showcpu(void)
 	double cpuload[MAXTHREADS];
 	char *s;
 
+	for (i = 0; i < MAXTHREADS; i++)
+		cpuload[i] = 0;
 	fprintf(gnudata, "\nset tmarg 1\n");
 	fprintf(gnudata, "set bmarg 0\n");
 	fprintf(gnudata, "set lmarg 10\n");
@@ -863,12 +865,12 @@ showcpu(void)
 			// paint the heatmap, the load refers the previous time slot
 			if( prev >= 0)
 				for(j=0; j < cpus; j++)
-				fprintf(gnudata,"set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 noborder\n",
+					fprintf(gnudata,"set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 noborder\n",
 						object++, box[prev].clkend, j , box[i].clkstart, (j+1) , getHeatColor(cpuload[j]) );
 			prev = i;
 		}
 	if( cpus)
-		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i \n",object);
+		fprintf(gnudata,"  plot 0 notitle with lines\n unset for[i=1:%d] object i\n",object);
 	fprintf(gnudata, "set border\n");
 	fprintf(gnudata, "unset yrange\n");
 	fprintf(gnudata, "unset ytics\n");
@@ -930,14 +932,14 @@ showio(void)
 	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots fs solid linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
 	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots solid linecolor rgb \"red\"\n", basefile,  atlaspage, b);
 	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
-	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"\n", basefile,  atlaspage, b);
 #else
 /* this is a slightly modified version that produces decent results on
  * all platforms */
 	fprintf(gnudata, "plot \"%s_%02d.dat\" using 1:($4/%d.0) notitle with dots linecolor rgb \"gray\" ,\\\n", basefile,  atlaspage, b);
 	fprintf(gnudata, "\"%s_%02d.dat\" using ($1+4):($5/%d.0) notitle with dots linecolor rgb \"red\"\n", basefile,  atlaspage, b);
 	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+8):($6/%d.0) notitle with dots linecolor rgb \"green\", \\\n", basefile,  atlaspage, b);
-	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"  \n", basefile,  atlaspage, b);
+	//fprintf(gnudata, "\"%s_%02d.dat\" using ($1+12):($7/%d.0) notitle with dots linecolor rgb \"purple\"\n", basefile,  atlaspage, b);
 #endif
 	fprintf(gnudata, "unset y2label\n");
 	fprintf(gnudata, "unset y2tics\n");
@@ -1173,7 +1175,7 @@ updatecolormap(int idx)
 		colors[fnd].mod = mod?strdup(mod): 0;
 		colors[fnd].fcn = strdup(fcn);
 		if( debug) 
-			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, (mod?mod:""), fcn);
+			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, mod, fcn);
 	}
 
 	colors[fnd].freq++;
@@ -1183,6 +1185,27 @@ updatecolormap(int idx)
 
 /* gnuplot defaults */
 static int height = 160;
+
+#define LOGOFILE DATA_DIR "/doc/MonetDB/monetdblogo.png"
+
+static char *
+findlogo(void)
+{
+#ifdef _MSC_VER
+	/* on Windows, convert \ to  / path separators since this path
+	 * is added to gnuplot input */
+	static char buf[sizeof(LOGOFILE)];
+	int i;
+
+	snprintf(buf, sizeof(buf), "%s", LOGOFILE);
+	for (i = 0; buf[i]; i++)
+		if (buf[i] == '\\')
+			buf[i] = '/';
+	return buf;
+#else
+	return LOGOFILE;
+#endif
+}
 
 static void
 gnuplotheader(char *filename)
@@ -1204,8 +1227,7 @@ gnuplotheader(char *filename)
 	fprintf(gnudata,"unset border\n");
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"unset ytics\n");
-	// REPLACE THE HARDCODED NAME
-	fprintf(gnudata,"plot \"/ufs/mk/monetdb-final.png\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n");
+	fprintf(gnudata,"plot \"%s\" binary filetype=png dx=0.5 dy=0.5 notitle with rgbimage\n", findlogo());
 	fprintf(gnudata,"unset title\n");
 
 }
@@ -1272,7 +1294,7 @@ createTomogram(void)
 	height = (cpus+1) * 2 * h;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"worker threads\"\n");
-	fprintf(gnudata, "set key right \n");
+	fprintf(gnudata, "set key right\n");
 	fprintf(gnudata, "unset colorbox\n");
 	fprintf(gnudata, "unset title\n");
 
@@ -1312,9 +1334,10 @@ createTomogram(void)
 					dumpbox(i);
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %4.2f, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
-						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2.0, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 \n",
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
+				else
+					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkend, (rowoffset + box[i].row)  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:
@@ -1521,7 +1544,7 @@ update(char *line, EventRecord *ev)
 		box[idx].stmt = ev->stmt;
 		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			currentquery = stripQuotes(strdup(malarguments[malretc]));
+			currentquery = stripQuotes(malarguments[malretc]);
 			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
 		}
 		return;
@@ -1596,14 +1619,13 @@ main(int argc, char **argv)
 {
 	int i;
 	ssize_t m;
-	size_t n, len;
+	size_t n, len, buflen;
 	char *host = NULL;
 	int portnr = 0;
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ], *e, *response;
-	FILE *trace = NULL;
+	char buf[BUFSIZ], *buffer, *e, *response;
 	FILE *inpfd;
 	int colormap=0;
 	EventRecord event;
@@ -1638,7 +1660,7 @@ main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:c:Db:A:m",
-					long_options, &option_index);
+				    long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -1751,11 +1773,13 @@ main(int argc, char **argv)
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
 	printf("-- Output directed towards %s%s_*\n", dirpath, prefix);
+	if (
 #ifdef NATIVE_WIN32
-	if( _mkdir(dirpath) < 0 && errno != EEXIST){
+	    _mkdir(dirpath) < 0
 #else
-	if( mkdir(dirpath,0755)  < 0 && errno != EEXIST) {
+	    mkdir(dirpath,0755)  < 0
 #endif
+	    && errno != EEXIST) {
 		fprintf(stderr,"Failed to create dirpath '%s'\n",dirpath);
 		exit(-1);
 	}
@@ -1873,34 +1897,53 @@ main(int argc, char **argv)
 			fprintf(stderr,"Not yet implemented\n");
 		}
 		len = 0;
+		buflen = BUFSIZ;
+		buffer = malloc(buflen);
+		if( buffer == NULL){
+			fprintf(stderr,"Could not create input buffer\n");
+			exit(-1);
+		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buf + len, 1, BUFSIZ - len)) > 0) {
-			buf[len + m] = 0;
-			response = buf;
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len - 1)) > 0) {
+			buffer[len + m] = 0;
+			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
 				i = eventparser(response,&event);
 				update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
-				if( trace && i >=0 && capturing) 
-					fprintf(trace,"%s\n",response);
-					response = e + 1;
+				response = e + 1;
+			}
+			/* handle the case that the current line is too long to
+			 * fit in the buffer */
+			if( response == buffer){
+				char *new = realloc(buffer, buflen + BUFSIZ);
+				if( new == NULL){
+					fprintf(stderr,"Could not extend input buffer\n");
+					exit(-1);
 				}
-			/* handle last line in buffer */
-			if (*response) {
+				buffer = new;
+				buflen += BUFSIZ;
+				len += m;
+			}
+			/* handle the case the buffer contains more than one
+                         * line, and the last line is not completely read yet.
+			 * Copy the first part of the incomplete line to the
+			 * beginning of the buffer */
+			else if (*response) {
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
-				strncpy(buf, response, len + 1);
-			} else
+				strncpy(buffer, response, len + 1);
+			} else /* reset this line of buffer */
 				len = 0;
 		}
 	}
 
 	if( !inputfile) 
 		doQ("profiler.stop();");
-stop_disconnect:
+  stop_disconnect:
 	if( !inputfile) {
 		mapi_disconnect(dbh);
 		printf("-- connection with server %s closed\n", uri ? uri : host);

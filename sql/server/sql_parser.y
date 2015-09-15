@@ -116,6 +116,9 @@ int yydebug=1;
 	func_def
 	index_def
 	seq_def
+	opt_seq_param
+	opt_alt_seq_param
+	opt_seq_common_param
 	all_or_any_predicate
 	like_exp
 	between_predicate
@@ -361,7 +364,6 @@ int yydebug=1;
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
-	opt_restart
 	triggered_action
 	opt_referencing_list
 	old_or_new_values_alias_list
@@ -402,7 +404,6 @@ int yydebug=1;
 	nonzero
 	opt_bounds
 	opt_column
-	opt_cycle
 	opt_encrypted
 	opt_for_each
 	opt_from_grantor
@@ -442,14 +443,9 @@ int yydebug=1;
 	nonzerowrd
 
 %type <l_val>
-	opt_start
 	lngval
 	poslng
 	nonzerolng
-	opt_increment
-	opt_min
-	opt_max
-	opt_cache
 
 %type <bval>
 	opt_brackets
@@ -458,6 +454,7 @@ int yydebug=1;
 	opt_chain
 	opt_distinct
 	opt_locked
+	opt_best_effort
 	opt_constraint
 	set_distinct
 	opt_with_check_option
@@ -486,7 +483,7 @@ int yydebug=1;
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
 
-%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
+%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE 
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
@@ -531,7 +528,7 @@ int yydebug=1;
 %left <operation> AND
 %left <operation> NOT
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
 %right UMINUS
 %left <operation> '*' '/'
 %left <operation> '%'
@@ -896,8 +893,8 @@ revoke:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $5);
-	  append_int(l, $6);
 	  append_int(l, $2);
+	  append_int(l, $6);
 	$$ = _symbol_create_list( SQL_REVOKE_ROLES, l); }
  ;
 
@@ -1115,23 +1112,22 @@ create_statement:
 /*=== BEGIN SEQUENCES ===*/
 seq_def:
 /*
- * CREATE SEQUENCE name AS datatype
+ * CREATE SEQUENCE name 
+ *      [ AS datatype ]
  * 	[ START WITH start ] 
  * 	[ INCREMENT BY increment ]
  * 	[ MINVALUE minvalue | NO MINVALUE ]
  * 	[ MAXVALUE maxvalue | NO MAXVALUE ]
- * 	[ CACHE cache ]
+ * 	[ CACHE cache ] 		* not part of standard -- will be dropped *
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-    create SEQUENCE qname
-    AS data_type
-    opt_seq_params
+    create SEQUENCE qname opt_seq_params
 	{
 		dlist *l = L();
 		append_list(l, $3);
-		append_type(l, &$5);
-		append_list(l, $6);
+		append_list(l, $4);
+		append_int(l, 0); /* to be dropped */
 		$$ = _symbol_create_list(SQL_CREATE_SEQ, l);
 	}
 /*
@@ -1145,146 +1141,59 @@ seq_def:
 	}
 /*
  * ALTER SEQUENCE name
+ *      [ AS datatype ]
  * 	[ RESTART [ WITH start ] ] 
  * 	[ INCREMENT BY increment ]
  * 	[ MINVALUE minvalue | NO MINVALUE ]
  * 	[ MAXVALUE maxvalue | NO MAXVALUE ]
- * 	[ CACHE cache ]
+ * 	[ CACHE cache ] 		* not part of standard -- will be dropped *
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-  | ALTER SEQUENCE qname opt_alt_seq_params
+  | ALTER SEQUENCE qname opt_alt_seq_params 	
 	{
 		dlist *l = L();
 		append_list(l, $3);
-		append_type(l, NULL);
-		append_list(l, $4);
+		append_list(l, $4); 
 		$$ = _symbol_create_list(SQL_ALTER_SEQ, l);
 	}
- ;
+  ;
 
 opt_seq_params:
-	opt_start
-	opt_increment
-	opt_min
-	opt_max
-	opt_cache
-	opt_cycle
-	{ dlist *l = L();
-	  append_lng(l, $1);
-	  append_lng(l, $2);
-	  append_lng(l, $3);
-	  append_lng(l, $4);
-	  append_lng(l, $5);
-	  append_int(l, $6);
-	  append_int(l, 0);	/* bedropped */
-	  $$ = l;
-	}
-;
+	opt_seq_param				{ $$ = append_symbol(L(), $1); }
+  |	opt_seq_params opt_seq_param		{ $$ = append_symbol($1, $2); }
+  ;
 
 opt_alt_seq_params:
-	opt_restart
-	opt_increment
-	opt_min
-	opt_max
-	opt_cache
-	opt_cycle
-	{ dlist *l = L();
-	  append_list(l, $1);
-	  append_lng(l, $2);
-	  append_lng(l, $3);
-	  append_lng(l, $4);
-	  append_lng(l, $5);
-	  append_int(l, $6);
-	  $$ = l;
-	}
-;
-
-/*
- * opt_start returns sequence start number 
- */
-opt_start:
-   	/* empty */		{ $$ = 1; }
-  |	START WITH poslng 	{ $$ = $3; }
+	opt_alt_seq_param			{ $$ = append_symbol(L(), $1); }
+  |	opt_alt_seq_params opt_alt_seq_param	{ $$ = append_symbol($1, $2); }
   ;
 
-/*
- * opt_restart returns a list consisting of:
- * - int: indicating the type of symbol
- *   * -1  absent/empty
- *   *  0  no argument (only for RESTART)
- *   *  1  argument is a subquery
- *   *  2  argument is simple lng
- * - symbol: the symbol
- */
-opt_restart:
-	/* empty */	{ $$ = append_int(L(), -1); }
-  |	RESTART		{ $$ = append_int(L(), 0); }
-  | 	RESTART WITH 
-	poslng 		{ $$ = append_lng(append_int(L(), 2), $3); }
-  | 	RESTART WITH	
-    	subquery	{ $$ = append_symbol(append_int(L(), 1), $3); }
+opt_seq_param:
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	START WITH poslng 		{ $$ = _symbol_create_lng(SQL_START, $3); }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
-/*
- * opt_increment returns a list consisting of:
- * - int: indicating the value
- *   * -1  absent/empty
- *   * else the value
- */
-opt_increment:
-	/* empty */		{ $$ = -1; }
-  |	INCREMENT BY nonzerolng	{ $$ = $3; }
+opt_alt_seq_param:
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+  |	RESTART WITH poslng 		{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), $3));  }
+  |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
-/*
- * opt_min returns a list consisting of:
- * - int: indicating the value
- *   * -1  absent/empty
- *   *  0  NOMINVALUE
- *   * else the MINVALUE value
- */
-opt_min:
-	/* empty */ 			{ $$ = -1; }
-  |	MINVALUE nonzerolng		{ $$ = $2; }
-  |	NOMINVALUE			{ $$ =  0; }
+opt_seq_common_param:
+  	INCREMENT BY nonzerolng		{ $$ = _symbol_create_lng(SQL_INC, $3); }
+  |	MINVALUE nonzerolng		{ $$ = _symbol_create_lng(SQL_MINVALUE, $2); }
+  |	NOMINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE nonzerolng		{ $$ = _symbol_create_lng(SQL_MAXVALUE, $2); }
+  |	NOMAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
+  |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NOCYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
-/*
- * opt_max returns a list consisting of:
- * - int: indicating the value
- *   * -1  absent/empty
- *   *  0  NOMAXVALUE
- *   * else the MAXVALUE value
- */
-opt_max:
-	/* empty */			{ $$ = -1; }
-  |	MAXVALUE nonzerolng		{ $$ = $2; }
-  |	NOMAXVALUE			{ $$ =  0; }
-  ;
-
-/*
- * opt_cache returns a list consisting of:
- * - int: indicating the value
- *   * -1  absent/empty
- *   * else the value
- */
-opt_cache:
-	/* empty */			{ $$ = -1; }
-  |	CACHE nonzerolng		{ $$ = $2; }
-  ;
-
-/*
- * opt_cycle returns a list consisting of:
- * - int: indicating the value
- *   *  0  NOCYCLE (default)
- *   *  1  CYCLE
- */
-opt_cycle:
-	/* empty */				{ $$ = 0; }
-  |	CYCLE					{ $$ = 1; }
-  |	NOCYCLE					{ $$ = 0; }
-  ;
 /*=== END SEQUENCES ===*/
 
 
@@ -1552,21 +1461,13 @@ column_def:
 			if (m->scanner.schema)
 				append_string(seqn1, m->scanner.schema);
 			append_list(l, append_string(seqn1, sn));
-			/* ultra dirty: inline 'integer' type generation */
 			if ($2 == 1)
 				sql_find_subtype(&it, "bigint", 64, 0);
 			else
 				sql_find_subtype(&it, "int", 32, 0);
-			append_type(l, &it);
-			/* finally all the options (no defaults here) */
-			append_lng(o, 1); /* start */
-			append_lng(o, 1); /* increment */
-			append_lng(o, 1); /* min */
-			append_lng(o, 0); /* max */
-			append_lng(o, 1); /* cache */
-			append_int(o, 0); /* cycle */
-			append_int(o, 1); /* bedropped */
+    			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
+			append_int(l, 1); /* to be dropped */
 
 			if (m->sym) {
 				stmts = m->sym->data.lval;
@@ -1653,12 +1554,14 @@ generated_column:
 		dlist *l = L();
 		/* the name of the sequence */
 		append_list(l, append_string(L(), sn));
-		/* ultra dirty: inline 'integer' type generation */
+		if (!$5)
+			$5 = L();
 		sql_find_subtype(&it, "int", 32, 0);
-		append_type(l, &it);
+    		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
 		append_list(l, $5);
+		append_int(l, 0); /* to be dropped */
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create_list(SQL_NEXT, append_string(L(), sn)));
 
 		if (m->sym) {
@@ -1687,18 +1590,10 @@ generated_column:
 		if (m->scanner.schema)
 			append_string(seqn1, m->scanner.schema);
 		append_list(l, append_string(seqn1, sn));
-		/* ultra dirty: inline 'integer' type generation */
 		sql_find_subtype(&it, "int", 32, 0);
-		append_type(l, &it);
-		/* finally all the options (no defaults here) */
-		append_lng(o, 1); /* start */
-		append_lng(o, 1); /* increment */
-		append_lng(o, 1); /* min */
-		append_lng(o, 0); /* max */
-		append_lng(o, 1); /* cache */
-		append_int(o, 0); /* cycle */
-		append_int(o, 0); /* bedropped */
+    		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
+		append_int(l, 0); /* to be dropped */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);
@@ -1715,18 +1610,8 @@ generated_column:
  ;
 
 serial_opt_params:
-	/* empty: return the defaults */
-	{ $$ = L();
-	  /* finally all the options (no defaults here) */
-	  append_lng($$, 1); /* start */
-	  append_lng($$, -1); /* increment */
-	  append_lng($$, -1); /* min */
-	  append_lng($$, -1); /* max */
-	  append_lng($$, -1); /* cache */
-	  append_int($$, 0);  /* cycle */
-	  append_int($$, 0);  /* bedropped */
-	}
-  |	'(' opt_seq_params ')'	{ $$ = $2; }
+	/* empty: return the defaults */ 	{ $$ = NULL; }
+  |	'(' opt_seq_params ')'			{ $$ = $2; }
  ;
 
 
@@ -2598,7 +2483,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2609,8 +2494,9 @@ copyfrom_stmt:
 	  append_string(l, $10);
 	  append_int(l, $11);
 	  append_int(l, $12);
+	  append_int(l, $13);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2621,6 +2507,7 @@ copyfrom_stmt:
 	  append_string(l, $10);
 	  append_int(l, $11);
 	  append_int(l, $12);
+	  append_int(l, $13);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -2717,6 +2604,11 @@ opt_null_string:
 opt_locked:
 	/* empty */	{ $$ = FALSE; }
  |  	LOCKED		{ $$ = TRUE; }
+ ;
+
+opt_best_effort:
+	/* empty */	{ $$ = FALSE; }
+ |  	BEST EFFORT	{ $$ = TRUE; }
  ;
 
 opt_constraint:
@@ -3542,90 +3434,90 @@ simple_scalar_exp:
  |  scalar_exp '+' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_add")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_add")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_sub")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_sub")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_mul")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_mul")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '/' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "sql_div")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_div")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '%' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "mod")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "mod")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '^' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_xor")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_xor")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '&' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_and")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_and")));
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '|' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_or")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "bit_not")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_not")));
 	  		  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "left_shift")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "right_shift")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "left_shift_assign")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift_assign")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
-			  	append_string(L(), sa_strdup(SA, "right_shift_assign")));
+			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift_assign")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3643,7 +3535,7 @@ simple_scalar_exp:
 			  if (!$$) {
 				dlist *l = L();
 			  	append_list(l, 
-			  		append_string(L(), sa_strdup(SA, "sql_neg")));
+			  		append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_neg")));
 	  		  	append_symbol(l, $2);
 	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
 			  }
@@ -3961,6 +3853,16 @@ string_funcs:
   		  	  append_symbol(l, $1);
   		  	  append_symbol(l, $3);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  | SPLIT_PART '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
+			{ dlist *l = L();
+			  dlist *ops = L();
+  		  	  append_list(l,
+				append_string(L(), sa_strdup(SA, "splitpart")));
+  		  	  append_symbol(ops, $3);
+  		  	  append_symbol(ops, $5);
+  		  	  append_symbol(ops, $7);
+			  append_list(l, ops);
+		  	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
 column_exp_commalist:

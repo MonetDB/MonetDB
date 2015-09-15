@@ -30,7 +30,8 @@ Ready.
 % wrd # type
 % 5 # length
 [ 32605	]
-% sys.e,	.e # table_name
+#WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT date, rn from e ORDER BY date limit 5;
+% sys.e,	sys.e # table_name
 % date,	rn # name
 % int,	int # type
 % 8,	1 # length
@@ -39,7 +40,8 @@ Ready.
 [ 19260104,	3	]
 [ 19260105,	4	]
 [ 19260106,	5	]
-% sys.e1,	.e1,	sys.e2,	.e2 # table_name
+#WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn limit 5;
+% sys.e1,	sys.e1,	sys.e2,	sys.e2 # table_name
 % date,	rn,	date,	rn # name
 % int,	int,	int,	int # type
 % 8,	1,	8,	1 # length
@@ -48,7 +50,8 @@ Ready.
 [ 19260104,	3,	19260104,	3	]
 [ 19260105,	4,	19260105,	4	]
 [ 19260106,	5,	19260106,	5	]
-% sys.e1,	.e1,	sys.e2,	.e2 # table_name
+#WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5;
+% sys.e1,	sys.e1,	sys.e2,	sys.e2 # table_name
 % date,	rn,	date,	rn # name
 % int,	int,	int,	int # type
 % 8,	1,	8,	1 # length

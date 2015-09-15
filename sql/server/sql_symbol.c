@@ -44,7 +44,7 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 		symbol_init(s, token, type_list);
 		s->data.lval = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_list(%s,%ld)\n", PTRFMTCAST s, token2string(s->token), (long) s->data.lval);
+			fprintf(stderr, "" PTRFMT " = symbol_create_list(%s," PTRFMT ")\n", PTRFMTCAST s, token2string(s->token), PTRFMTCAST s->data.lval);
 	}
 	return s;
 }

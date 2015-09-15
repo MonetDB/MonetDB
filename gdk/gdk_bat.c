@@ -51,20 +51,20 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-char *BATstring_h = "h";
-char *BATstring_t = "t";
+static char *BATstring_h = "h";
+static char *BATstring_t = "t";
 
-static int
+static inline int
 default_ident(char *s)
 {
-	return ((s) == BATstring_h || (s) == BATstring_t);
+	return (s == BATstring_h || s == BATstring_t);
 }
 
 void
 BATinit_idents(BAT *bn)
 {
-	bn->hident = (char *) BATstring_h;
-	bn->tident = (char *) BATstring_t;
+	bn->hident = BATstring_h;
+	bn->tident = BATstring_t;
 }
 
 BATstore *
@@ -78,6 +78,7 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	 */
 	assert(ht >= 0 && tt >= 0);
 	assert(role >= 0 && role < 32);
+	assert(ht == TYPE_void);
 
 	bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 
@@ -112,8 +113,8 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	bn->hsorted = bn->hrevsorted = ATOMlinear(ht) != 0;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 
-	bn->hident = (char *) BATstring_h;
-	bn->tident = (char *) BATstring_t;
+	bn->hident = BATstring_h;
+	bn->tident = BATstring_t;
 	bn->halign = OIDnew(2);
 	bn->talign = bn->halign + 1;
 	bn->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
@@ -377,32 +378,7 @@ BATattach(int tt, const char *heapfile, int role)
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.
- *
- * Most BAT operations use a BAT to assemble the result. In several
- * cases it is rather difficult to give a precise estimate of the
- * required space.  The routine BATguess is used internally for this
- * purpose.  It balances the cost of small BATs with their probability
- * of occurrence.  Small results BATs are more likely than 100M BATs.
- *
- * Likewise, the routines Hgrows and Tgrows provides a heuristic to
- * enlarge the space.
  */
-BUN
-BATguess(BAT *b)
-{
-	BUN newcap;
-
-	BATcheck(b, "BATguess", 0);
-	newcap = b->batCount;
-	if (newcap < 10 * BATTINY)
-		return newcap;
-	if (newcap < 50 * BATTINY)
-		return newcap / 2;
-	if (newcap < 100 * BATTINY)
-		return newcap / 10;
-	return newcap / 100;
-}
-
 BUN
 BATgrows(BAT *b)
 {
@@ -1204,13 +1180,25 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		if (b->H->hash) {
 			HASHins(bm, p, h);
-			if (hsize && hsize != b->H->vheap->size)
+#ifndef STATIC_CODE_ANALYSIS
+			if (hsize && hsize != b->H->vheap->size) {
+				/* Coverity: "Useless call: calling
+				 * HEAPwarm is only useful for its
+				 * return value, which is ignored" */
 				HEAPwarm(b->H->vheap);
+			}
+#endif
 		}
 		if (b->T->hash) {
 			HASHins(b, p, t);
-			if (tsize && tsize != b->T->vheap->size)
+#ifndef STATIC_CODE_ANALYSIS
+			if (tsize && tsize != b->T->vheap->size) {
+				/* Coverity: "Useless call: calling
+				 * HEAPwarm is only useful for its
+				 * return value, which is ignored" */
 				HEAPwarm(b->T->vheap);
+			}
+#endif
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1494,7 +1482,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 	if (p == BUN_NONE) {
 		return p;
 	}
-	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
+	if ( /* (b->htype == TYPE_void && b->hseqbase != oid_nil) || */ (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		BUN last = BUNlast(b) - 1;
 
 		if ((p < b->batInserted || p != last) && !force) {
@@ -1521,31 +1509,6 @@ BUNdel(BAT *b, const void *x, const void *y, bit force)
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
-}
-
-/*
- * The routine BUNdelHead is similar, but removes all BUNs whose head
- * matches the argument passed.
- */
-gdk_return
-BUNdelHead(BAT *b, const void *x, bit force)
-{
-	BUN p;
-	BAT *bm;
-
-	BATcheck(b, "BUNdelHead", GDK_FAIL);
-
-	bm = BATmirror(b);
-	if (x == NULL) {
-		x = ATOMnilptr(b->htype);
-	}
-	if ((p = BUNfnd(bm, x)) != BUN_NONE) {
-		ALIGNdel(b, "BUNdelHead", force, GDK_FAIL);	/* zap alignment info */
-		do {
-			BUNdelete(b, p, force);
-		} while ((p = BUNfnd(bm, x)) != BUN_NONE);
-	}
-	return GDK_SUCCEED;
 }
 
 /*
@@ -2088,6 +2051,34 @@ BATsetcount(BAT *b, BUN cnt)
 	if (cnt <= 1) {
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
+	}
+	if (b->htype == TYPE_void) {
+		b->hsorted = 1;
+		if (b->hseqbase == oid_nil) { /* unlikely */
+			b->hkey = cnt <= 1;
+			b->hrevsorted = 1;
+			b->H->nil = 1;
+			b->H->nonil = 0;
+		} else {
+			b->hkey = 1;
+			b->hrevsorted = cnt <= 1;
+			b->H->nil = 0;
+			b->H->nonil = 1;
+		}
+	}
+	if (b->ttype == TYPE_void) {
+		b->tsorted = 1;
+		if (b->tseqbase == oid_nil) {
+			b->tkey = cnt <= 1;
+			b->trevsorted = 1;
+			b->T->nil = 1;
+			b->T->nonil = 0;
+		} else {
+			b->tkey = 1;
+			b->trevsorted = cnt <= 1;
+			b->T->nil = 0;
+			b->T->nonil = 1;
+		}
 	}
 	if(b->batCapacity < cnt) {
 		GDKerror("BATsetcount: batCapacity < batCount");

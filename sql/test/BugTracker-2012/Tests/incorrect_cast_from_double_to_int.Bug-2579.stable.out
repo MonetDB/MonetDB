@@ -86,6 +86,18 @@ Ready.
 % decimal # type
 % 7 # length
 [ 0.500	]
+#SELECT '3.1'/'5.1';
+% .L # table_name
+% sql_div_single_value # name
+% sec_interval # type
+% 5 # length
+[ 0.000	]
+#SELECT '3.1'/5.1;
+% .L # table_name
+% sql_div_single_value # name
+% sec_interval # type
+% 5 # length
+[ 0.000	]
 #SELECT 3.1/5.1;
 % .L # table_name
 % sql_div_single_value # name

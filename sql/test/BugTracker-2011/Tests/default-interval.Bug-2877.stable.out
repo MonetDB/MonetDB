@@ -56,7 +56,7 @@ Ready.
 % sys.table2877,	sys.table2877,	sys.table2877 # table_name
 % i,	c1,	c2 # name
 % int,	sec_interval,	sec_interval # type
-% 1,	0,	0 # length
+% 1,	8,	8 # length
 [ 1,	3600.000,	3600.000	]
 #rollback;
 

@@ -27,9 +27,6 @@ stderr of test 'now_results_in_illegal_argument.Bug-2978` in directory 'sql/test
 # 12:53:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=budapest" "--port=36456"
 # 12:53:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13966/.s.monetdb.38628
-QUERY = select now() + 1;
-ERROR = !illegal argument
 
 # 12:53:46 >  
 # 12:53:46 >  "Done."

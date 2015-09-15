@@ -1,11 +1,11 @@
 stderr of test 'dbi` in directory 'clients/R` itself:
 
 
-# 14:24:02 >  
-# 14:24:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37882" "--set" "mapi_usock=/var/tmp/mtest-79204/.s.monetdb.37882" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-oct2014-install/var/MonetDB/mTests_clients_R" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 14:24:02 >  
+# 12:27:25 >  
+# 12:27:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31728" "--set" "mapi_usock=/var/tmp/mtest-43693/.s.monetdb.31728" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_clients_R" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:27:25 >  
 
-# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-oct2014-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /usr/local/Cellar/monetdb/11.19.9/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,21 +17,33 @@ stderr of test 'dbi` in directory 'clients/R` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37882
-# cmdline opt 	mapi_usock = /var/tmp/mtest-79204/.s.monetdb.37882
+# cmdline opt 	mapi_port = 31728
+# cmdline opt 	mapi_usock = /var/tmp/mtest-43693/.s.monetdb.31728
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-oct2014-install/var/MonetDB/mTests_clients_R
+# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/MonetDB/mTests_clients_R
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:24:03 >  
-# 14:24:03 >  "R" "--vanilla" "--slave" "--args" "37882"
-# 14:24:03 >  
+# 12:27:25 >  
+# 12:27:25 >  "R" "--vanilla" "--slave" "--args" "31728"
+# 12:27:25 >  
 
+Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "some.dot" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "year", "month", "day" are reserved SQL keywords and need(s) to be quoted in queries.
+Identifier(s) "sch.wide", "comp.imp", "yr.rnd", "acs.k3", "acs.46", "acs.core", "pct.resp", "not.hsg", "some.col", "col.grad", "grad.sch", "avg.ed", "api.stu" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "full" are reserved SQL keywords and need(s) to be quoted in queries.
 
-# 14:24:04 >  
-# 14:24:04 >  "Done."
-# 14:24:04 >  
+# 12:27:27 >  
+# 12:27:27 >  "Done."
+# 12:27:27 >  
 

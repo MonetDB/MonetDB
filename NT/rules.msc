@@ -6,7 +6,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-VERSION=11.20.0
+VERSION=11.22.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -66,7 +66,7 @@ PTHREAD_INCS =
 PTHREAD_LIBS =
 !ENDIF
 
-ODBCINST_LIBS = odbccp32.lib user32.lib
+ODBCINST_LIBS = odbccp32.lib user32.lib $(LEGACY_STDIO_DEFINITIONS)
 ODBC_LIBS = odbc32.lib
 
 !IFNDEF PYTHON2BASE
@@ -86,18 +86,6 @@ PYTHON3LIB=python32.lib
 PYTHON3_LIBDIR=share\MonetDB\python3
 
 !IFDEF HAVE_PERL
-!IFNDEF LIBPERL
-!IF $(bits) == 32
-LIBPERL = C:\Perl
-!ELSE
-LIBPERL = C:\Perl64
-!ENDIF
-!ENDIF
-!IFNDEF PERLLIB
-PERLLIB = perl510.lib
-!ENDIF
-PERL_INCS = -I$(LIBPERL)\lib\CORE -DWIN32
-PERL_LIBS = $(LIBPERL)\lib\CORE\$(PERLLIB)
 PERL_LIBDIR = share\MonetDB\perl
 !ENDIF
 
@@ -451,7 +439,7 @@ create_winconfig_conds_new_py:
 
 update_winconfig_conds_py: create_winconfig_conds_new_py
 	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
-	C:\cygwin\bin\cmp.exe -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
+	cmp -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
 	$(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \

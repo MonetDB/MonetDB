@@ -1,0 +1,43 @@
+stdout of test 'changeSchemaUser` in directory 'sql/test/Users` itself:
+
+
+# 23:01:33 >  
+# 23:01:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36242" "--set" "mapi_usock=/var/tmp/mtest-7070/.s.monetdb.36242" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 23:01:33 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 3.746 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://buzu:36242/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7070/.s.monetdb.36242
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 23:01:33 >  
+# 23:01:33 >  "/usr/bin/python2" "changeSchemaUser.SQL.py" "changeSchemaUser"
+# 23:01:33 >  
+
+#ALTER USER "april" SET SCHEMA library;
+#SELECT * from bank.accounts; --no such table.
+% bank.accounts,	bank.accounts # table_name
+% nr,	name # name
+% int,	varchar # type
+% 1,	0 # length
+#ALTER USER "april" SET SCHEMA bank;
+#CREATE SCHEMA forAlice AUTHORIZATION april;
+
+# 23:01:33 >  
+# 23:01:33 >  "Done."
+# 23:01:33 >  
+

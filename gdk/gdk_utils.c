@@ -588,7 +588,7 @@ GDKmemdump(void)
  * applied: for all mallocs > 1MB.
  */
 static void
-GDKmemfail(str s, size_t len)
+GDKmemfail(const char *s, size_t len)
 {
 	int bak = GDKdebug;
 
@@ -943,6 +943,25 @@ GDKmunmap(void *addr, size_t size)
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
+#undef GDKmremap
+void *
+GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+{
+	void *ret;
+
+	ret = MT_mremap(path, mode, old_address, old_size, new_size);
+	if (ret == NULL) {
+		GDKmemfail("GDKmremap", *new_size);
+		ret = MT_mremap(path, mode, old_address, old_size, new_size);
+		if (ret != NULL)
+			fprintf(stderr, "#GDKmremap: recovery ok. Continuing..\n");
+	}
+	if (ret != NULL) {
+		memdec(old_size, "GDKmremap");
+		meminc(*new_size, "GDKmremap");
+	}
+	return ret;
+}
 
 /*
  * @+ Session Initialization
@@ -1621,6 +1640,9 @@ THRget(int tid)
 	return (GDKthreads + tid - 1);
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#pragma warning(disable : 4172)
+#endif
 static inline size_t
 THRsp(void)
 {
@@ -1852,3 +1874,30 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
+/**
+ * Extracts the last directory from a path string, if possible.
+ * Stores the parent directory (path) in last_dir_parent and
+ * the last directory (name) without a leading separators in last_dir.
+ * Returns 1 for success, 0 on failure.
+ */
+int
+GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir) {
+	char *last_dir_with_sep;
+	ptrdiff_t last_dirsep_index;
+
+	if (path == NULL || *path == 0) {
+		return 0;
+	}
+
+	last_dir_with_sep = strrchr(path, DIR_SEP);
+	if (last_dir_with_sep == NULL) {
+		/* it wasn't a path, can't work with that */
+		return 0;
+	}
+	last_dirsep_index = last_dir_with_sep - path;
+	/* split the dir string into absolute parent dir path and (relative) log dir name */
+	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
+	strncpy(last_dir_parent, path, last_dirsep_index);
+
+	return 1;
+}

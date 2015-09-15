@@ -1187,33 +1187,33 @@ atom_add(atom *a1, atom *a2)
 	switch(a1->tpe.type->localtype) {
 	case TYPE_bte:
 			a1->data.val.btval += a2->data.val.btval;
-			a1->d = a1->data.val.btval;
+			a1->d = (dbl) a1->data.val.btval;
 			break;
 	case TYPE_sht:
 			a1->data.val.shval += a2->data.val.shval;
-			a1->d = a1->data.val.shval;
+			a1->d = (dbl) a1->data.val.shval;
 			break;
 	case TYPE_int:
 			a1->data.val.ival += a2->data.val.ival;
-			a1->d = a1->data.val.ival;
+			a1->d = (dbl) a1->data.val.ival;
 			break;
 	case TYPE_lng:
 			a1->data.val.lval += a2->data.val.lval;
-			a1->d = a1->data.val.lval;
+			a1->d = (dbl) a1->data.val.lval;
 			break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 			a1->data.val.hval += a2->data.val.hval;
-			a1->d = a1->data.val.hval;
+			a1->d = (dbl) a1->data.val.hval;
 			break;
 #endif
 	case TYPE_flt:
 			a1->data.val.fval += a2->data.val.fval;
-			a1->d = a1->data.val.fval;
+			a1->d = (dbl) a1->data.val.fval;
 			break;
 	case TYPE_dbl:
 			a1->data.val.dval += a2->data.val.dval;
-			a1->d = a1->data.val.dval;
+			a1->d = (dbl) a1->data.val.dval;
 	default:
 			break;
 	}
@@ -1228,33 +1228,33 @@ atom_sub(atom *a1, atom *a2)
 	switch(a1->tpe.type->localtype) {
 	case TYPE_bte:
 			a1->data.val.btval -= a2->data.val.btval;
-			a1->d = a1->data.val.btval;
+			a1->d = (dbl) a1->data.val.btval;
 			break;
 	case TYPE_sht:
 			a1->data.val.shval -= a2->data.val.shval;
-			a1->d = a1->data.val.shval;
+			a1->d = (dbl) a1->data.val.shval;
 			break;
 	case TYPE_int:
 			a1->data.val.ival -= a2->data.val.ival;
-			a1->d = a1->data.val.ival;
+			a1->d = (dbl) a1->data.val.ival;
 			break;
 	case TYPE_lng:
 			a1->data.val.lval -= a2->data.val.lval;
-			a1->d = a1->data.val.lval;
+			a1->d = (dbl) a1->data.val.lval;
 			break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 			a1->data.val.hval -= a2->data.val.hval;
-			a1->d = a1->data.val.hval;
+			a1->d = (dbl) a1->data.val.hval;
 			break;
 #endif
 	case TYPE_flt:
 			a1->data.val.fval -= a2->data.val.fval;
-			a1->d = a1->data.val.fval;
+			a1->d = (dbl) a1->data.val.fval;
 			break;
 	case TYPE_dbl:
 			a1->data.val.dval -= a2->data.val.dval;
-			a1->d = a1->data.val.dval;
+			a1->d = (dbl) a1->data.val.dval;
 	default:
 			break;
 	}

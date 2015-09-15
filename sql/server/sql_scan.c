@@ -56,6 +56,8 @@ scanner_init_keywords(void)
 	keywords_insert("PERCENT_RANK", RANK);
 	keywords_insert("CUME_DIST", RANK);
 	keywords_insert("ROW_NUMBER", RANK);
+	keywords_insert("BEST", BEST);
+	keywords_insert("EFFORT", EFFORT);
 
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
@@ -233,6 +235,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("POSITION", POSITION);
 	keywords_insert("SUBSTRING", SUBSTRING);
+	keywords_insert("SPLIT_PART", SPLIT_PART);
 
 	keywords_insert("CASE", CASE);
 	keywords_insert("WHEN", WHEN);
@@ -620,7 +623,7 @@ scanner_string(mvc *c, int quote)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, "unexpected end of input");
+	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : "unexpected end of input");
 	return LEX_ERROR;
 }
 

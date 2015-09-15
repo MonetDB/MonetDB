@@ -134,7 +134,8 @@ AGGRgrouped2(bat *retval1, bat *retval2, const bat *bid, const bat *eid, int tp,
 	if (b == NULL)
 		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
 	g = BATmirror(BATmark(b, 0)); /* [dense,gid] */
-	e = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,value] */
+	//e = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,value] */
+	e = b;
 	BBPunfix(b->batCacheid);
 	b = e;
 	e = BATdescriptor(*eid);	/* [gid,any] */
@@ -640,7 +641,8 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 		if (!BAThdense(b)) {
 			/* XXX backward compatibility code: ignore non-dense head, but
 			 * only if no candidate list */
-			s = BATmirror(BATmark(BATmirror(b), 0));
+			//s = BATmirror(BATmark(BATmirror(b), 0));
+			s = b;
 			BBPunfix(b->batCacheid);
 			b = s;
 		}

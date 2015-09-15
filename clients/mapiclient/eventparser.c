@@ -6,7 +6,7 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-/* (c) M Kersten, S Manegold */
+/* (c) M Kersten */
 
 #include "eventparser.h"
 
@@ -22,6 +22,11 @@ char *malvariables[MAXMALARGS];
 int malvartop;
 int debug=0;
 char *monetdb_characteristics;
+
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#include "strptime.c"
+#endif
 
 void
 clearArguments(void)
@@ -45,29 +50,31 @@ clearArguments(void)
 }
 
 char * 
-stripQuotes(char *currentquery)
-{	char *q, *c, *qry;
-			q = qry = (char *) malloc(strlen(currentquery) * 2);
-			if( q == NULL){
-				fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
-				exit(-1);
-			}
-			for (c= currentquery; *c; ){
-				if ( strncmp(c,"\\\\t",3) == 0){
-					*q++ = '\t';
-					c+=3;
-				} else
-				if ( strncmp(c,"\\\\n",3) == 0){
-					*q++ = '\n';
-					c+=3;
-				} else if ( strncmp(c,"\\\"",2) == 0){
-					*q++= '"';
-					c+=2;
-				} else if ( strncmp(c,"\\\\",2) == 0){
-					c+= 2;
-				} else *q++ = *c++;
-			}
-			*q =0;
+stripQuotes(const char *currentquery)
+{
+	const char *c;
+	char *q, *qry;
+	q = qry = (char *) malloc(strlen(currentquery) * 2);
+	if( q == NULL){
+		fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
+		exit(-1);
+	}
+	for (c= currentquery; *c; ){
+		if ( strncmp(c,"\\\\t",3) == 0){
+			*q++ = '\t';
+			c+=3;
+		} else
+			if ( strncmp(c,"\\\\n",3) == 0){
+				*q++ = '\n';
+				c+=3;
+			} else if ( strncmp(c,"\\\"",2) == 0){
+				*q++= '"';
+				c+=2;
+			} else if ( strncmp(c,"\\\\",2) == 0){
+				c+= 2;
+			} else *q++ = *c++;
+	}
+	*q =0;
 	return qry;
 }
  
@@ -205,8 +212,7 @@ parseArguments(char *call, int m)
 int
 eventparser(char *row, EventRecord *ev)
 {
-#ifdef HAVE_STRPTIME
-	char *c, *cc, *v =0;
+	char *c, *cc, *v =0,*w;
 	struct tm stm;
 
 	malargc = 0;
@@ -224,7 +230,7 @@ eventparser(char *row, EventRecord *ev)
 
 	/* scan event record number */
 	c = row+1;
-	if (c == 0)
+	if (*c == 0)
 		return -2;
 	ev->eventnr = atoi(c + 1);
 
@@ -246,6 +252,8 @@ eventparser(char *row, EventRecord *ev)
 			ev->clkticks += usec;
 		}
 		c = strchr(c + 1, '"');
+		if (c == NULL)
+			return -3;
 		if (ev->clkticks < 0) {
 			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
 		}
@@ -332,8 +340,8 @@ eventparser(char *row, EventRecord *ev)
 	if (*c == 0)
 		return -1;
 	*c = 0;
-	ev->numa= strdup(numa);
-	if( ev->num == NULL){
+	ev->numa = strdup(numa);
+	if( ev->numa == NULL){
 		fprintf(stderr,"Could not allocate numa memory\n");
 		exit(-1);
 	}
@@ -386,13 +394,6 @@ eventparser(char *row, EventRecord *ev)
 		exit(-1);
 	}
 	c= ev->fcn;
-	if( ev->state == MDB_SYSTEM){
-		monetdb_characteristics = strdup(ev->stmt);
-		if( ev->stmt == NULL){
-			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
-			exit(-1);
-		}
-	} else
 	if( *c != '[')
 	{
 		v=c;
@@ -425,10 +426,25 @@ eventparser(char *row, EventRecord *ev)
 		if( v)
 			parseArguments(v+3,1);
 	}
-	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
-		*v = 0;
-#else
-	(void) row;
-#endif
+	// remove some superflous elements
+	w = strrchr(ev->stmt, (int) ']');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) '\t');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) ',');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	w = strrchr(ev->stmt, (int) '"');
+	if(w &&  *w == ev->stmt[strlen(ev->stmt)-1])
+		*w = 0;
+	if( ev->state == MDB_SYSTEM){
+		monetdb_characteristics = strdup(ev->stmt);
+		if( monetdb_characteristics == NULL){
+			fprintf(stderr,"Could not allocate monetdb_characteristics memory\n");
+			exit(-1);
+		}
+	} 
 	return 0;
 }

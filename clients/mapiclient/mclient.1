@@ -17,7 +17,7 @@ mclient \- the MonetDB command-line tool
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and JAQL- frontends.
+accelerators, and a SQL frontend.
 .PP
 .I Mclient
 is the command-line interface to the MonetDB server.
@@ -267,9 +267,6 @@ dumping the data of a table.
 This option can be used when trying to load data from MonetDB into
 another database, or when e.g. JDBC applications are used to reload
 the dump.
-.TP
-\fB\-\-progress\fP (\fB\-P\fP)
-Show progress bar.
 .SH BACKSLASH COMMANDS
 .SS
 General Commands
@@ -451,4 +448,3 @@ for more information about the COPY INTO query.
 .SH SEE ALSO
 .IR msqldump (1),
 .IR mserver5 (1)
-

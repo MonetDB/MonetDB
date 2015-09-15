@@ -55,8 +55,8 @@ profiler_export str CMDgetDiskReads(lng *ret);
 profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);
 profiler_export str CMDgetSystemTime(lng *ret);
-profiler_export str CMDstethoscope(void *ret, int *beat);
-profiler_export str CMDtomograph(void *ret, int *beat);
+profiler_export str CMDstethoscope(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDtomograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 profiler_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 #endif  /* _PROFILER_*/

@@ -583,9 +583,15 @@ hasSideEffects(InstrPtr p, int strict)
 	return FALSE;
 }
 
+/* Void returning functions always have side-effects.
+ */
 int
 mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 {
+	int tpe;
+	tpe= getVarType(mb,getArg(p,0));
+	if( tpe == TYPE_void)
+		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects( p, strict);
 	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
@@ -639,13 +645,27 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */
+
+static int 
+instrHasProp(InstrPtr p, int prop)
+{
+	int i;
+	MalBlkPtr mb = p->blk;
+	
+	for (i = 0; i < mb->ptop; i++) {
+		if (mb->prps[i].idx == prop)
+			return 1;
+	}
+	return 0;
+}
+
 int isMapOp(InstrPtr p){
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
-		 (getModuleId(p) == batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
+		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) &&
+		 (getModuleId(p) == mkeyRef)) && (!instrHasProp(p, orderDependendProp)) &&
 		 getModuleId(p) != rapiRef;
 }
 

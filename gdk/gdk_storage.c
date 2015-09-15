@@ -85,6 +85,18 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	return path;
 }
 
+/* Same as GDKfilepath, but tries to extract a filename from multilevel dir paths. */
+char *
+GDKfilepath_long(int farmid, const char *dir, const char *ext) {
+	char last_dir_parent[BUFSIZ] = "";
+	char last_dir[BUFSIZ] = "";
+
+	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir)) {
+		return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
+	}
+	return NULL;
+}
+
 gdk_return
 GDKcreatedir(const char *dir)
 {
@@ -212,6 +224,23 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 	return f;
 }
 
+FILE *
+GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode) {
+	char *path;
+
+	/* if name is null, try to get one from dir (in case it was a path) */
+	if ((name == NULL) || (*name == 0)) {
+		path = GDKfilepath_long(farmid, dir, extension);
+	} else {
+		path = GDKfilepath(farmid, dir, name, extension);
+	}
+
+	if (path != NULL) {
+        IODEBUG THRprintf(GDKstdout, "#GDKfileopen(%s)\n", path);
+		return fopen(path, mode);
+	}
+	return NULL;
+}
 
 /*
  * Unlink the file.
@@ -606,6 +635,79 @@ DESCclean(BAT *b)
 		b->T->vheap->dirty = 0;
 }
 
+/* spawning the background msync should be done carefully 
+ * because there is a (small) chance that the BAT has been
+ * deleted by the time you issue the msync.
+ * This leaves you with possibly deadbeef BAT descriptors.
+ */
+
+/* #define DISABLE_MSYNC */
+#define MSYNC_BACKGROUND
+
+#ifndef DISABLE_MSYNC
+struct msync {
+	bat id;
+	Heap *h;
+};
+
+static void
+BATmsyncImplementation(void *arg)
+{
+	Heap *h = ((struct msync *) arg)->h;
+	char *adr;
+	size_t len;
+	size_t offset;
+
+	adr = h->base;
+	offset = ((size_t) adr % MT_pagesize());
+	len = MT_pagesize() * (1 + ((h->base + h->free - adr) / MT_pagesize()));
+	if (offset)
+		adr -= MT_pagesize() - offset;
+	if (len)
+		(void) MT_msync(adr, len);
+	BBPunfix(((struct msync *) arg)->id);
+	GDKfree(arg);
+}
+#endif
+
+void
+BATmsync(BAT *b)
+{
+#ifndef DISABLE_MSYNC
+#ifdef MSYNC_BACKGROUND
+	MT_Id tid;
+#endif
+	struct msync *arg;
+
+	assert(b->batPersistence == PERSISTENT);
+	if (b->T->heap.storage == STORE_MMAP &&
+	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+		arg->id = b->batCacheid;
+		arg->h = &b->T->heap;
+		BBPfix(b->batCacheid);
+#ifdef MSYNC_BACKGROUND
+		MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED);
+#else
+		BATmsyncImplementation(arg);
+#endif
+	}
+
+	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP &&
+	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+		arg->id = b->batCacheid;
+		arg->h = b->T->vheap;
+		BBPfix(b->batCacheid);
+#ifdef MSYNC_BACKGROUND
+		MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED);
+#else
+		BATmsyncImplementation(arg);
+#endif
+	}
+#else
+	(void) b;
+#endif	/* DISABLE_MSYNC */
+}
+
 gdk_return
 BATsave(BAT *bd)
 {
@@ -884,8 +986,12 @@ BATdelete(BAT *b)
 	b->batCopiedtodisk = FALSE;
 }
 
+/*
+ * BAT specific printing
+ */
+
 gdk_return
-BATprintcols(stream *s, int argc, BAT *argv[])
+BATprintcolumns(stream *s, int argc, BAT *argv[])
 {
 	int i;
 	BUN n, cnt;
@@ -900,19 +1006,11 @@ BATprintcols(stream *s, int argc, BAT *argv[])
 	/* error checking */
 	for (i = 0; i < argc; i++) {
 		if (argv[i] == NULL) {
-			GDKerror("BAT missing\n");
-			return GDK_FAIL;
-		}
-		if (!BAThdense(argv[i])) {
-			GDKerror("BATs must be dense headed\n");
+			GDKerror("Columns missing\n");
 			return GDK_FAIL;
 		}
 		if (BATcount(argv[0]) != BATcount(argv[i])) {
-			GDKerror("BATs must be the same size\n");
-			return GDK_FAIL;
-		}
-		if (argv[0]->hseqbase != argv[i]->hseqbase) {
-			GDKerror("BATs must be aligned\n");
+			GDKerror("Columns must be the same size\n");
 			return GDK_FAIL;
 		}
 	}
@@ -969,17 +1067,14 @@ BATprintf(stream *s, BAT *b)
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
 
-	argv[0] = BATmirror(BATmark(b, 0));
-	argv[1] = BATmirror(BATmark(BATmirror(b), 0));
+	argv[0] = VIEWcombine(b);
+	argv[1] = b;
 	if (argv[0] && argv[1]) {
 		BATroles(argv[0], NULL, b->hident);
-		BATroles(argv[1], NULL, b->tident);
-		ret = BATprintcols(s, 2, argv);
+		ret = BATprintcolumns(s, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);
-	if (argv[1])
-		BBPunfix(argv[1]->batCacheid);
 	return ret;
 }
 
@@ -987,78 +1082,4 @@ gdk_return
 BATprint(BAT *b)
 {
 	return BATprintf(GDKstdout, b);
-}
-
-gdk_return
-BATmultiprintf(stream *s, int argc, BAT *argv[], int printhead, int order, int printorder)
-{
-	BAT **bats;
-	gdk_return ret;
-	int i;
-
-	(void) printorder;
-	assert(argc >= 2);
-	assert(order < argc);
-	assert(order >= 0);
-	argc--;
-	if ((bats = GDKzalloc((argc + 1) * sizeof(BAT *))) == NULL)
-		return GDK_FAIL;
-	if ((bats[0] = BATmirror(BATmark(argv[order > 0 ? order - 1 : 0], 0))) == NULL)
-		goto bailout;
-	if ((bats[1] = BATmirror(BATmark(BATmirror(argv[0]), 0))) == NULL)
-		goto bailout;
-	for (i = 1; i < argc; i++) {
-		BAT *a, *b, *r, *t;
-		int j;
-
-		if ((r = BATmirror(BATmark(argv[i], 0))) == NULL)
-			goto bailout;
-		ret = BATsubleftjoin(&a, &b, bats[0], r, NULL, NULL, 0, BUN_NONE);
-		BBPunfix(r->batCacheid);
-		if (ret != GDK_SUCCEED)
-			goto bailout;
-		if ((t = BATproject(a, bats[0])) == NULL) {
-			BBPunfix(a->batCacheid);
-			BBPunfix(b->batCacheid);
-			goto bailout;
-		}
-		BBPunfix(bats[0]->batCacheid);
-		bats[0] = t;
-		for (j = 1; j <= i; j++) {
-			if ((t = BATproject(a, bats[j])) == NULL) {
-				BBPunfix(a->batCacheid);
-				BBPunfix(b->batCacheid);
-				goto bailout;
-			}
-			BBPunfix(bats[j]->batCacheid);
-			bats[j] = t;
-		}
-		BBPunfix(a->batCacheid);
-		if ((r = BATmirror(BATmark(BATmirror(argv[i]), 0))) == NULL) {
-			BBPunfix(b->batCacheid);
-			goto bailout;
-		}
-		t = BATproject(b, r);
-		BBPunfix(b->batCacheid);
-		BBPunfix(r->batCacheid);
-		if (t == NULL)
-			goto bailout;
-		bats[i + 1] = t;
-	}
-	BATroles(bats[0], NULL, argv[order > 0 ? order - 1 : 0]->hident);
-	for (i = 1; i <= argc; i++)
-		BATroles(bats[i], NULL, argv[i - 1]->tident);
-	ret = BATprintcols(s, argc + printhead, bats + !printhead);
-	for (i = 0; i <= argc; i++)
-		BBPunfix(bats[i]->batCacheid);
-	GDKfree(bats);
-	return ret;
-
-  bailout:
-	for (i = 0; i <= argc; i++) {
-		if (bats[i])
-			BBPunfix(bats[i]->batCacheid);
-	}
-	GDKfree(bats);
-	return GDK_FAIL;
 }

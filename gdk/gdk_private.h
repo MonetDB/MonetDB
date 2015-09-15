@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+/* #define DISABLE_PARENT_HASH 1 */
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -63,8 +65,6 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN BATguess(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, int lock)
@@ -108,6 +108,8 @@ __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const ch
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
+__hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
+	__attribute__((__visibility__("hidden")));
 __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
 __hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
@@ -116,6 +118,8 @@ __hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 __hidden void *GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
+	__attribute__((__visibility__("hidden")));
+__hidden void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmunmap(void *addr, size_t len)
 	__attribute__((__visibility__("hidden")));
@@ -181,7 +185,7 @@ __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
@@ -423,5 +427,32 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+#endif
+#endif
+
+#ifndef NDEBUG
+#ifdef __GNUC__
+/* in debug builds, complain (warn) about usage of legacy functions */
+
+#define BATmaterializeh(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterializeh([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterializeh(_b);					\
+	})
+
+#define BATmaterialize(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterialize([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterialize(_b);					\
+	})
+
 #endif
 #endif

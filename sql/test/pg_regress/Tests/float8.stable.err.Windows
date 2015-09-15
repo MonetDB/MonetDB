@@ -114,12 +114,6 @@ MAPI  = (monetdb) /var/tmp/mtest-30808/.s.monetdb.35989
 QUERY = SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
 ERROR = !decimal (1e20) doesn't have format (19.0)
 MAPI  = (monetdb) /var/tmp/mtest-30808/.s.monetdb.35989
-QUERY = SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
-ERROR = !Math exception: Result too large
-MAPI  = (monetdb) /var/tmp/mtest-30808/.s.monetdb.35989
-QUERY = SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
-ERROR = !Math exception: Domain error
-MAPI  = (monetdb) /var/tmp/mtest-30808/.s.monetdb.35989
 QUERY = SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
 ERROR = !division by zero.
 MAPI  = (monetdb) /var/tmp/mtest-30808/.s.monetdb.35989

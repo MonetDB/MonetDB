@@ -12,7 +12,7 @@ INCLUDES = $(openssl_CFLAGS)
 
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.h mutils.c
+	SOURCES = mutils.h mutils.c prompt.c mprompt.h
 }
 
 lib_mcrypt = {
@@ -30,4 +30,4 @@ lib_msabaoth = {
 	SOURCES = msabaoth.h msabaoth.c
 }
 
-EXTRA_DIST = s_nextafterf.c math_private.h
+EXTRA_DIST = s_nextafterf.c math_private.h strptime.c

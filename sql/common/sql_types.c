@@ -528,9 +528,39 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
 			if ((!IS_AGGR(a) || !a->res))
 				continue;
 
-			if (strcmp(a->base.name, sqlaname) == 0 && 
+			if (strcmp(a->base.name, sqlaname) == 0 &&  
 		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
+		}
+	}
+	return NULL;
+}
+
+sql_subaggr *
+sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *type, int nrargs)
+{
+	node *n = aggrs->h;
+
+	while (n) {
+		sql_func *a = n->data;
+
+		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
+		    arg_subtype_cmp(a->ops->h->data, type) == 0)
+			return _dup_subaggr(sa, a, NULL);
+		n = n->next;
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *a = n->data;
+
+			if ((!IS_AGGR(a) || !a->res))
+				continue;
+
+			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
+		    	    arg_subtype_cmp(a->ops->h->data, type) == 0)
+				return _dup_subaggr(sa, a, NULL);
 		}
 	}
 	return NULL;
@@ -594,7 +624,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 	sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
 
 	fres->func = f;
-	if (IS_FUNC(f) || IS_UNION(f)) { /* not needed for PROC/FILT */
+	if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f)) { /* not needed for PROC/FILT */
 		unsigned int mscale = 0, mdigits = 0;
 
 		if (ops) for (tn = ops->h; tn; tn = tn->next) {
@@ -1090,6 +1120,21 @@ sql_create_func3(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *
 	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
 }
 
+static sql_func *
+sql_create_analytic(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+	if (tpe3)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_ANALYTIC, fix_scale);
+}
+
 sql_func *
 sql_create_func4(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
 {
@@ -1260,7 +1305,7 @@ sqltypeinit( sql_allocator *sa)
 
 	dates = t;
 	MONINT = *t++ = sql_create_type(sa, "MONTH_INTERVAL", 32, 0, 2, EC_MONTH, "int");
-	SECINT = *t++ = sql_create_type(sa, "SEC_INTERVAL", 19, SCALE_FIX, 10, EC_SEC, "lng");
+	SECINT = *t++ = sql_create_type(sa, "SEC_INTERVAL", 13, SCALE_FIX, 10, EC_SEC, "lng");
 	TME = *t++ = sql_create_type(sa, "TIME", 7, 0, 0, EC_TIME, "daytime");
 	TMETZ = *t++ = sql_create_type(sa, "TIMETZ", 7, SCALE_FIX, 0, EC_TIME, "daytime");
 	DTE = *t++ = sql_create_type(sa, "DATE", 0, 0, 0, EC_DATE, "date");
@@ -1360,6 +1405,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", *t, *t);
 	}
+	sql_create_aggr(sa, "sum", "aggr", "sum", MONINT, MONINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", SECINT, SECINT);
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", SHT, DBL);
@@ -1375,33 +1422,25 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, WRD);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, WRD);
 
-	sql_create_func(sa, "rank", "calc", "rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "dense_rank", "calc", "dense_rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "percent_rank", "calc", "precent_rank_grp", ANY, NULL, INT, SCALE_NONE);
-	sql_create_func(sa, "cume_dist", "calc", "cume_dist_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "row_number", "calc", "mark_grp", ANY, NULL, INT, SCALE_NONE);
+	/* order based operators */
+	sql_create_analytic(sa, "diff", "sql", "diff", ANY, NULL, NULL, BIT, SCALE_NONE);
+	sql_create_analytic(sa, "diff", "sql", "diff", BIT, ANY,  NULL, BIT, SCALE_NONE);
 
-	sql_create_func3(sa, "rank", "calc", "rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, ANY, INT, SCALE_NONE);
-	sql_create_func3(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, ANY, ANY, SCALE_NONE);
-	sql_create_func3(sa, "row_number", "calc", "mark_grp", ANY, OID, ANY, INT, SCALE_NONE);
+	sql_create_analytic(sa, "rank", "sql", "rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	sql_create_analytic(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	sql_create_analytic(sa, "row_number", "sql", "row_number", ANY, BIT, BIT, INT, SCALE_NONE);
 
-	sql_create_func4(sa, "rank", "calc", "rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-	sql_create_func4(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "row_number", "calc", "mark_grp", ANY, OID, OID, OID, INT, SCALE_NONE);
-
-	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, NULL, ANY, SCALE_NONE);
-	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, INT, ANY, SCALE_NONE);
-	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, INT, ANY, SCALE_NONE);
-
-	sql_create_func3(sa, "lag", "calc", "lag_grp", ANY, OID, OID, ANY, SCALE_NONE);
-	sql_create_func3(sa, "lead", "calc", "lead_grp", ANY, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "lag", "calc", "lag_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
-	sql_create_func4(sa, "lead", "calc", "lead_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "percent_rank", "sql", "precent_rank", ANY, BIT, BIT, INT, SCALE_NONE);
+	//sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "lag", "sql", "lag", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "lead", "sql", "lead", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "sum", "sql", "sum", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "min", "sql", "min", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "max", "sql", "max", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "avg", "sql", "avg", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, ANY, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);
@@ -1573,6 +1612,7 @@ sqltypeinit( sql_allocator *sa)
 
 		sql_create_func(sa, "locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3(sa, "locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
+		sql_create_func3(sa, "splitpart", "str", "splitpart", *t, *t, INT, *t, INOUT);
 		sql_create_func(sa, "substring", "str", "substring", *t, INT, *t, INOUT);
 		sql_create_func3(sa, "substring", "str", "substring", *t, INT, INT, *t, INOUT);
 		sql_create_func(sa, "like", "algebra", "like", *t, *t, BIT, SCALE_NONE);
@@ -1635,9 +1675,9 @@ sqltypeinit( sql_allocator *sa)
 				sres, FALSE, F_FUNC, SCALE_FIX);
 	}
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, TABLE, 0, 0), ARG_OUT); 
-	/* copyfrom fname (arg 8) */
+	/* copyfrom fname (arg 9) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
-	 	list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
+	 	list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
@@ -1645,19 +1685,8 @@ sqltypeinit( sql_allocator *sa)
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
-	f->varres = 1;
-
-	/* copyfrom stdin */
-	f = sql_create_func_(sa, "copyfrom", "sql", "copyfrom",
-	 	list_append( list_append( list_append(list_append (list_append (list_append(list_append(sa_list(sa), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
-			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
+			create_arg(sa, NULL, sql_create_subtype(sa, INT, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
 	f->varres = 1;
 
 	/* bincopyfrom */

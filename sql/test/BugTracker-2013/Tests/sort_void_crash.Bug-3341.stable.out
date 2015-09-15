@@ -44,8 +44,8 @@ Ready.
 #5|44485|F|144659.20|1994-07-30|5-LOW|Clerk#000000925|0|quickly. bold deposits sleep slyly. packages use slyly|
 [ 28	]
 #select rank() over(partition by o_custkey) from orders;
-% .L # table_name
-% rank_o_custkey # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]

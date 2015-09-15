@@ -29,18 +29,18 @@ function user.main():void;
 # testing simple constant expression optimizations 
     mdb.List("user","tst");
 end user.main;
-function user.tst():void;               	# 
-    a:int := 2:int;                     	# 
-    io.print(2:int);                    	# IOprint_val
-    b:int := 2:int;                     	# 
-    io.print(2:int);                    	# IOprint_val
-    c:int := 6:int;                     	# 
-    io.print(6:int);                    	# IOprint_val
-    d:flt := 6:flt;                     	# 
-    io.print(6:flt);                    	# IOprint_val
-    e:flt := -0.2794155:flt;            	# 
-    io.print(-0.2794155:flt);           	# IOprint_val
-end user.tst;                           	# 
+function user.tst():void;               	#[0]  0 
+    a:int := 2:int;                     	#[1]  1 <- 6 
+    io.print(2:int);                    	#[2] IOprint_val 4 <- 6 
+    b:int := 2:int;                     	#[3]  5 <- 6 
+    io.print(2:int);                    	#[4] IOprint_val 7 <- 6 
+    c:int := 6:int;                     	#[5]  8 <- 15 
+    io.print(6:int);                    	#[6] IOprint_val 10 <- 15 
+    d:flt := 6:flt;                     	#[7]  11 <- 16 
+    io.print(6:flt);                    	#[8] IOprint_val 12 <- 16 
+    e:flt := -0.2794155:flt;            	#[9]  13 <- 17 
+    io.print(-0.2794155:flt);           	#[10] IOprint_val 14 <- 17 
+end user.tst;                           	#[11]  
 
 # 08:40:57 >  
 # 08:40:57 >  Done.

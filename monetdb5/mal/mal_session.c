@@ -236,7 +236,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo);
+		err = AUTHcheckCredentials(&uid, root, &user, &passwd, &challenge, &algo);
 		if (err != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", err);
 			exit_streams(fin, fout);
@@ -333,7 +333,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
  * symbol table should also not be affected.  Aside from removing
  * instruction, we should also condense the variable stack, i.e.
  * removing at least the temporary variables, but maybe everything
- * beyond a previous defined pont.
+ * beyond a previous defined point.
  *
  * Beware that we have to cleanup the global stack as well. This to
  * avoid subsequent calls to find garbage information.  However, this

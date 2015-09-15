@@ -80,42 +80,20 @@ stderr of test 'null_as_string_errors` in directory 'sql/test/copy` itself:
 # 21:02:57 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:57 >  
 
-# 13:10:04 >  
-# 13:10:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
-# 13:10:04 >  
-
-MAPI  = monetdb@sofia:38256
+MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,NULL,NULL
-ERROR = !value 'NULL' from line 1 field 1 not inserted, expecting type int
-        !failed to import table
-MAPI  = monetdb@sofia:38256
+ERROR = !Failed to import table line 1 field 1 'int' expected in 'NULL'
+MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,zero,0
-ERROR = !value 'NULL' from line 1 field 1 not inserted, expecting type int
-        !failed to import table
-MAPI  = monetdb@sofia:38256
+ERROR = !Failed to import table line 1 field 1 'int' expected in 'NULL'
+MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         2,two,NULL
-ERROR = !value 'NULL' from line 1 field 3 not inserted, expecting type decimal(5,2)
-        !failed to import table
-MAPI  = monetdb@sofia:38256
-QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-        ,,
-ERROR = !value '' from line 1 field 1 not inserted, expecting type int
-        !failed to import table
-MAPI  = monetdb@sofia:38256
-QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-        ,zero,0
-ERROR = !value '' from line 1 field 1 not inserted, expecting type int
-        !failed to import table
-MAPI  = monetdb@sofia:38256
-QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-        2,two,
-ERROR = !value '' from line 1 field 3 not inserted, expecting type decimal(5,2)
-        !failed to import table
+ERROR = !Failed to import table line 1 field 3 'decimal(5,2)' expected in 'NULL'
 
-# 21:02:58 >  
-# 21:02:58 >  Done.
-# 21:02:58 >  
+# 08:37:31 >  
+# 08:37:31 >  "Done."
+# 08:37:31 >  
 

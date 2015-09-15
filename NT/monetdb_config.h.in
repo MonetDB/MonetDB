@@ -16,6 +16,7 @@
  * _MSC_VER = 1500: Visual Studio 9.0
  * _MSC_VER = 1600: Visual Studio 10.0
  * _MSC_VER = 1800: Visual Studio 12.0
+ * _MSC_VER = 1900: Visual Studio 14.0
  */
 
 #ifndef _SEEN_MONETDB_CONFIG_H
@@ -48,6 +49,14 @@
 #include <stddef.h>
 #include <ws2tcpip.h>
 
+#include <sys/types.h>
+#include <stdio.h>		/* NULL, printf etc. */
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>		/* va_alist.. */
+
+#include <assert.h>
+
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE 1
@@ -59,6 +68,9 @@
 
 /* location where binaries are installed */
 /* #undef BINDIR */
+
+/* read-only architecture-independent data */
+#define DATA_DIR PREFIX "\\share"
 
 /* Directory separator */
 #define DIR_SEP '\\'
@@ -782,13 +794,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.20.0"
+#define PACKAGE_STRING "MonetDB 11.22.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.20.0"
+#define PACKAGE_VERSION "11.22.0"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
@@ -990,8 +1002,38 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
-#ifndef snprintf
-#define snprintf _snprintf
+#if _MSC_VER < 1900
+#define snprintf c99_snprintf
+#define vsnprintf c99_vsnprintf
+
+/* Microsoft _snprintf returns -1 and does not null-terminate when the
+ * buffer is too small, so work around that */
+
+static inline int
+c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
+{
+    int count = -1;
+
+    if (size != 0)
+        count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
+    if (count == -1)
+        count = _vscprintf(format, ap);
+
+    return count;
+}
+
+static inline int
+c99_snprintf(char *outBuf, size_t size, const char *format, ...)
+{
+    int count;
+    va_list ap;
+
+    va_start(ap, format);
+    count = c99_vsnprintf(outBuf, size, format, ap);
+    va_end(ap);
+
+    return count;
+}
 #endif
 
 /* type used by connect */
@@ -1014,20 +1056,6 @@ typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
 
-#if _MSC_VER < 1500
-#ifndef vsnprintf
-#define vsnprintf _vsnprintf
-#endif
-#endif
-
-#include <sys/types.h>
-#include <stdio.h>		/* NULL, printf etc. */
-#include <stdlib.h>
-#include <errno.h>
-#include <stdarg.h>		/* va_alist.. */
-
-#include <assert.h>
-
 /* normally defined in stdbool.h, but that doesn't exist on Windows */
 #define true 1
 #define false 0
@@ -1036,19 +1064,23 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;
+typedef unsigned long long ulng;
 # define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 typedef __int64 lng;
+typedef unsigned __int64 ulng;
 # define SIZEOF_LNG SIZEOF___INT64
 #endif
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
+typedef unsigned __int128 uhge;
 # define HAVE_HGE 1
 # define SIZEOF_HGE SIZEOF___INT128
 #else
 # if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
+typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif

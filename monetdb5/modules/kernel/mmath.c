@@ -45,168 +45,107 @@
 
 #if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
 /* C99 interface: fpclassify */
-# define MNisinf(x)   (fpclassify(x) == FP_INFINITE)
-# define MNisnan(x)   (fpclassify(x) == FP_NAN)
-# define MNfinite(x)  (!MNisinf(x) && !MNisnan(x))
+# define MNisinf(x)		(fpclassify(x) == FP_INFINITE)
+# define MNisnan(x)		(fpclassify(x) == FP_NAN)
+# define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
 #else
-# define MNisnan(x)   isnan(x)
-# define MNfinite(x)  finite(x)
+# define MNisnan(x)		isnan(x)
+# define MNfinite(x)	finite(x)
 # ifdef HAVE_ISINF
-#  define MNisinf(x)  isinf(x)
+#  define MNisinf(x)	isinf(x)
 # else
 static int
 MNisinf(double x)
 {
-#  ifdef HAVE_FPCLASS
+#ifdef HAVE_FPCLASS
 	int cl = fpclass(x);
 
 	return ((cl == FP_NINF) || (cl == FP_PINF));
-#  else
+#else
 	(void)x;
 	return 0;		/* XXX not correct if infinite */
-#  endif
+#endif
 }
 # endif
 #endif /* HAVE_FPCLASSIFY */
-
-#define atan2_binary(x, y, z) *z = atan2(*x,*y)
-#define pow_binary(x, y, z)   *z = pow(*x,*y)
 
 #define cot(x)				(1 / tan(x))
 #define radians(x)			((x) * 3.14159265358979323846 / 180.0)
 #define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
 
-static str
-math_unary_ISNAN(bit *res, const dbl *a)
-{
-#ifdef DEBUG
-	printf("math_unary_ISNAN\n");
-#endif
-	if (*a == dbl_nil) {
-		*res = bit_nil;
-	} else {
-		*res = MNisnan(*a);
-	}
-	return MAL_SUCCEED;
-}
-
-static str
-math_unary_ISINF(int *res, const dbl *a)
-{
-#ifdef DEBUG
-	printf("math_unary_ISINF\n");
-#endif
-	if (*a == dbl_nil) {
-		*res = int_nil;
-	} else {
-		if (MNisinf(*a)) {
-			*res = (*a < 0.0) ? -1 : 1;
-		} else {
-			*res = 0;
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-static str
-math_unary_FINITE(bit *res, const dbl *a)
-{
-#ifdef DEBUG
-	printf("math_unary_FINITE\n");
-#endif
-	if (*a == dbl_nil) {
-		*res = bit_nil;
-	} else {
-		*res = MNfinite(*a);
-	}
-	return MAL_SUCCEED;
-}
-
-#define unopM5(NAME, FUNC)										\
+#define unopbaseM5(NAME, FUNC, TYPE)							\
 str																\
-MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
+MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)				\
 {																\
-	double tmp1,tmp2;											\
-	str msg= MAL_SUCCEED;										\
-	if (*a == dbl_nil) {										\
-		*res =dbl_nil;											\
+	if (*a == TYPE##_nil) {										\
+		*res = TYPE##_nil;										\
 	} else {													\
-		tmp1= *a;												\
+		double a1 = *a, r;										\
 		errno = 0;												\
 		feclearexcept(FE_ALL_EXCEPT);							\
-		tmp2 = FUNC(tmp1);										\
+		r = FUNC(a1);											\
 		if (errno != 0 ||										\
 			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
 				  strerror(errno));								\
-		*res = (dbl) tmp2;										\
+		*res = (TYPE) r;										\
 	}															\
-   return msg;													\
-}																\
+	return MAL_SUCCEED;											\
+}
+
+#define unopM5(NAME, FUNC)						\
+	unopbaseM5(NAME, FUNC, dbl)					\
+	unopbaseM5(NAME, FUNC, flt)
+
+#define binopbaseM5(NAME, FUNC, TYPE)							\
 str																\
-MATHunary##NAME##flt(flt *res , const flt *a)					\
+MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)	\
 {																\
-	double tmp1,tmp2;											\
-	str msg= MAL_SUCCEED;										\
-	if (*a == flt_nil) {										\
-		*res =flt_nil;											\
+	if (*a == TYPE##_nil || *b == TYPE##_nil) {					\
+		*res = TYPE##_nil;										\
 	} else {													\
-		tmp1= *a;												\
+		double r1, a1 = *a, b1 = *b;							\
 		errno = 0;												\
 		feclearexcept(FE_ALL_EXCEPT);							\
-		tmp2 = FUNC(tmp1);										\
+		r1 = FUNC(a1, b1);										\
 		if (errno != 0 ||										\
 			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
 				  strerror(errno));								\
-		*res = (flt) tmp2;										\
+		*res= (TYPE) r1;										\
 	}															\
-   return msg;													\
+	return MAL_SUCCEED;											\
 }
 
-#define binopbaseM5(NAME,X2,X3)							\
-str														\
-MATHbinary##NAME##X3(X3 *res, const X3 *a, const X3 *b)	\
-{														\
-   if (*a == X3##_nil || *b == X3##_nil) {				\
-		*res = X3##_nil;								\
-   } else {												\
-		dbl r1 ,a1 = *a, b1 = *b;						\
-		X2##_binary( &a1, &b1, &r1);					\
-		*res= (X3) r1;									\
-   }													\
-   return MAL_SUCCEED;									\
-}
+#define binopM5(NAME, FUNC)						\
+  binopbaseM5(NAME, FUNC, dbl)					\
+  binopbaseM5(NAME, FUNC, flt)
 
-#define binopM5(X,Y)							\
-  binopbaseM5(X,Y,dbl)							\
-  binopbaseM5(X,Y,flt)
-
-#define roundM5(X1)											\
-str															\
-MATHbinary_ROUND##X1(X1 *res, const X1 *x, const int *y)	\
-{															\
-  if(*x == X1##_nil || *y == int_nil) {						\
-	*res = X1##_nil;										\
-  } else {													\
-	dbl factor = pow(10,*y), integral;						\
-	dbl tmp = *y>0?modf(*x,&integral):*x;					\
-															\
-	tmp *= factor;											\
-	if(tmp>=0)												\
-	  tmp = floor(tmp+0.5);									\
-	else													\
-	  tmp = ceil(tmp-0.5);									\
-	tmp /= factor;											\
-															\
-	if(*y>0)												\
-	  tmp += integral;										\
-															\
-	*res = (X1) tmp;										\
-  }															\
-  return MAL_SUCCEED;										\
+#define roundM5(TYPE)											\
+str																\
+MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
+{																\
+	if (*x == TYPE##_nil || *y == int_nil) {					\
+		*res = TYPE##_nil;										\
+	} else {													\
+		dbl factor = pow(10,*y), integral;						\
+		dbl tmp = *y > 0 ? modf(*x, &integral) : *x;			\
+																\
+		tmp *= factor;											\
+		if (tmp >= 0)											\
+			tmp = floor(tmp + 0.5);								\
+		else													\
+			tmp = ceil(tmp - 0.5);								\
+		tmp /= factor;											\
+																\
+		if (*y > 0)												\
+			tmp += integral;									\
+																\
+		*res = (TYPE) tmp;										\
+	}															\
+	return MAL_SUCCEED;											\
 }
 
 
@@ -248,20 +187,40 @@ roundM5(flt)
 str
 MATHunary_ISNAN(bit *res, const dbl *a)
 {
-	return math_unary_ISNAN(res, a);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNisnan(*a);
+	}
+	return MAL_SUCCEED;
 }
 
 str
 MATHunary_ISINF(int *res, const dbl *a)
 {
-	return math_unary_ISINF(res, a);
+	if (*a == dbl_nil) {
+		*res = int_nil;
+	} else {
+		if (MNisinf(*a)) {
+			*res = (*a < 0.0) ? -1 : 1;
+		} else {
+			*res = 0;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 str
 MATHunary_FINITE(bit *res, const dbl *a)
 {
-	return math_unary_FINITE(res, a);
+	if (*a == dbl_nil) {
+		*res = bit_nil;
+	} else {
+		*res = MNfinite(*a);
+	}
+	return MAL_SUCCEED;
 }
+
 
 str
 MATHrandint(int *res)

@@ -410,6 +410,8 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
+	if( bn->batPersistence == PERSISTENT)
+		BATmsync(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -433,22 +435,6 @@ BKCdensebat(bat *ret, const wrd *size)
 	BATseqbase(BATmirror(bn), 0);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
-	return MAL_SUCCEED;
-}
-
-str
-BKCreverse(bat *ret, const bat *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.reverse", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATmirror(b);			/* bn inherits ref from b */
-	assert(bn != NULL);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -478,57 +464,6 @@ BKCmirror(bat *ret, const bat *bid)
 	*ret = 0;
 	BBPunfix(b->batCacheid);
 	throw(MAL, "bat.mirror", GDK_EXCEPTION);
-}
-
-str
-BKCrevert(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.revert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.revert", OPERATION_FAILED);
-	if (BATrevert(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.revert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCorder(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.order", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.order", OPERATION_FAILED);
-	if (BATorder(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.order", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCorder_rev(bat *r, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.order_rev", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.order_rev", OPERATION_FAILED);
-	if (BATorder_rev(b) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.order_rev", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
 }
 
 str
@@ -604,15 +539,19 @@ char *
 BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
+	BUN ret=0;
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if (BUNdelHead(b, h, FALSE) != GDK_SUCCEED) {
+	if ( (ret=BUNdelete(b, *h, TRUE)) == BUN_NONE) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -628,6 +567,8 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -650,8 +591,10 @@ BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
 	BBPunfix(s->batCacheid);
 	if (ret != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
+		 throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -676,6 +619,8 @@ BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -752,6 +697,8 @@ BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
+	if( b->batPersistence == PERSISTENT)
+		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -914,7 +861,7 @@ BKCisSorted(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(BATmirror(b));
+	*res = BATordered(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -501,7 +501,8 @@ end user.main;
 #-----------------#
 # h	t	  # name
 # void	int	  # type
-#-----------------#
+#--------------------------#
+[ 0@0,	4  ]
 [ "low=4 high=4 li=false hi=true anti=false" ]
 #-----------------#
 # h	t	  # name
@@ -535,10 +536,9 @@ end user.main;
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 [ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  5	  ]
-[ 6@0,	  6	  ]
-[ 7@0,	  7	  ]
+[ 4@0,	5  ]
+[ 5@0,	6  ]
+[ 6@0,	7  ]
 [ "low=4 high=4 li=false hi=true anti=true" ]
 #-----------------#
 # h	t	  # name
@@ -568,30 +568,38 @@ end user.main;
 #-----------------#
 # h	t	  # name
 # void	int	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-[ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  5	  ]
-[ 6@0,	  6	  ]
-[ 7@0,	  7	  ]
+#--------------------------#
 [ "low=nil high=nil li=true hi=false anti=false" ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-[ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  5	  ]
-[ 6@0,	  6	  ]
-[ 7@0,	  7	  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 [ "low=nil high=nil li=false hi=true anti=false" ]
-#-----------------#
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ "low=nil high=nil li=true hi=true anti=false" ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	nil  ]
+[ "low=nil high=nil li=false hi=false anti=true" ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=nil high=nil li=true hi=false anti=true" ]
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
@@ -603,27 +611,19 @@ end user.main;
 [ 5@0,	  5	  ]
 [ 6@0,	  6	  ]
 [ 7@0,	  7	  ]
-[ "low=nil high=nil li=true hi=true anti=false" ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  nil	  ]
-[ "low=nil high=nil li=false hi=false anti=true" ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ "low=nil high=nil li=true hi=false anti=true" ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
 [ "low=nil high=nil li=false hi=true anti=true" ]
-#-----------------#
+#--------------------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
 [ "low=nil high=nil li=true hi=true anti=true" ]
 #-----------------#
 # h	t	  # name

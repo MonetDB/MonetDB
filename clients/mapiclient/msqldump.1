@@ -17,6 +17,30 @@ accelerators, SQL- and XML- frontends.
 .I Msqldump
 is the program to dump an MonetDB/SQL database.
 The dump can be used to populate a new MonetDB/SQL database.
+.PP
+Before
+.I msqldump
+starts parsing command line options, it reads a
+.I .monetdb
+file.
+If the environment variable
+.B DOTMONETDBFILE
+is set, it reads the file pointed to by that variable instead.
+When unset,
+.I msqldump
+searches for a
+.I .monetdb
+file in the current working directory, and if that doesn't exist, in the
+current user's home directory.
+This file can contain defaults for the flags
+.BR user
+and
+.BR password .
+To disable reading the
+.I .monetdb
+file, set the variable
+.B DOTMONETDBFILE
+to the empty string in the environment.
 .SH OPTIONS
 .TP
 \fB\-\-help\fP (\fB\-?\fP)
@@ -64,4 +88,3 @@ and the server.
 .SH SEE ALSO
 .IR mclient (1),
 .IR mserver5 (1)
-

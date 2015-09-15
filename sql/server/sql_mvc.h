@@ -89,6 +89,7 @@ typedef struct mvc {
 	int user_id;
 	int role_id;
 	lng last_id;
+	lng rowcnt;
 
 	/* current session variables */
 	int timezone;		/* milliseconds west of UTC */

@@ -159,22 +159,25 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
-CMDtomograph(void *ret, int *beat)
+CMDtomograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) ret;
-	if( *beat < 0)
+	int beat = *getArgReference_int(stk,pc,1);
+	(void) mb;
+	if( beat < 0)
 		throw(MAL,"profiler.tomograph","negative heart beat not allowed");
-	startProfiler(-1, *beat);
+	startProfiler(cntxt->user, -1, beat);
 	return MAL_SUCCEED;
 }
 
 str
-CMDstethoscope(void *ret,int *beat)
+CMDstethoscope(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) ret;
-	if( *beat < 0)
+	int beat = *getArgReference_int(stk,pc,1);
+
+	(void) mb;
+	if( beat < 0)
 		throw(MAL,"profiler.stethoscope","negative heart beat not allowed");
-	startProfiler(1, *beat);
+	startProfiler(cntxt->user, 1, beat);
 	return MAL_SUCCEED;
 }
 

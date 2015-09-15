@@ -31,7 +31,7 @@
 
 
 #define NCOLUMNS	5
-#define NROWS		5
+#define NROWS		10
 static const char *columnnames[NCOLUMNS] = {
 	"table_cat",
 	"table_schem",
@@ -60,12 +60,27 @@ static const char *tuples1[NCOLUMNS] = {
 	NULL, NULL, NULL, "LOCAL TEMPORARY", NULL
 };
 static const char *tuples2[NCOLUMNS] = {
-	NULL, NULL, NULL, "SYSTEM TABLE", NULL
+	NULL, NULL, NULL, "MERGE TABLE", NULL
 };
 static const char *tuples3[NCOLUMNS] = {
-	NULL, NULL, NULL, "TABLE", NULL
+	NULL, NULL, NULL, "REMOTE TABLE", NULL
 };
 static const char *tuples4[NCOLUMNS] = {
+	NULL, NULL, NULL, "REPLICA TABLE", NULL
+};
+static const char *tuples5[NCOLUMNS] = {
+	NULL, NULL, NULL, "STREAM TABLE", NULL
+};
+static const char *tuples6[NCOLUMNS] = {
+	NULL, NULL, NULL, "SYSTEM TABLE", NULL
+};
+static const char *tuples7[NCOLUMNS] = {
+	NULL, NULL, NULL, "SYSTEM VIEW", NULL
+};
+static const char *tuples8[NCOLUMNS] = {
+	NULL, NULL, NULL, "TABLE", NULL
+};
+static const char *tuples9[NCOLUMNS] = {
 	NULL, NULL, NULL, "VIEW", NULL
 };
 static const char **tuples[NROWS] = {
@@ -73,7 +88,12 @@ static const char **tuples[NROWS] = {
 	tuples1,
 	tuples2,
 	tuples3,
-	tuples4
+	tuples4,
+	tuples5,
+	tuples6,
+	tuples7,
+	tuples8,
+	tuples9
 };
 
 static SQLRETURN
@@ -204,43 +224,96 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		query = (char *) malloc(1000 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
+		query = (char *) malloc(1200 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
 		if (query == NULL)
 			goto nomem;
 		query_end = query;
 
-		strcpy(query_end,
-		       "select e.value as table_cat, "
-			      "s.name as table_schem, "
-			      "t.name as table_name, "
-			      "case when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 0 and "
-					"s.name <> 'tmp' "
-				   "then cast('TABLE' as varchar(20)) "
-				   "when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 0 and "
-					"s.name = 'tmp' "
-				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
-				   "when t.type = 0 and "
-					"t.system = true and "
-					"t.temporary = 0 "
-				   "then cast('SYSTEM TABLE' as varchar(20)) "
-				   "when t.type = 1 "
-				   "then cast('VIEW' as varchar(20)) "
-				   "when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 1 "
-				   "then cast('LOCAL TEMPORARY' as varchar(20)) "
-				   "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
-			      "cast(null as varchar(1)) as remarks "
-		       "from sys.schemas s, "
-			    "sys.tables t, "
-			    "sys.env() e "
-		       "where s.id = t.schema_id and "
-			     "e.name = 'gdk_dbname'");
-		assert(strlen(query) < 900);
+		strcpy(query_end, "with ot as (");
+		query_end += strlen(query_end);
+
+		if (stmt->Dbc->major < 11 || (stmt->Dbc->major == 11 && stmt->Dbc->minor < 21)) {
+			strcpy(query_end,
+			       "select e.value as table_cat, "
+				      "s.name as table_schem, "
+				      "t.name as table_name, "
+				      "case when t.type = 0 and "
+						"t.system = false and "
+						"t.temporary = 0 and "
+						"s.name <> 'tmp' "
+					   "then cast('TABLE' as varchar(20)) "
+					   "when t.type = 0 and "
+						"t.system = false and "
+						"t.temporary = 0 and "
+						"s.name = 'tmp' "
+					   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
+					   "when t.type = 0 and "
+						"t.system = true and "
+						"t.temporary = 0 "
+					   "then cast('SYSTEM TABLE' as varchar(20)) "
+					   "when t.type = 1 and "
+						"t.system = true and "
+						"t.temporary = 0 "
+					   "then cast('SYSTEM VIEW' as varchar(20)) "
+					   "when t.type = 1 "
+					   "then cast('VIEW' as varchar(20)) "
+					   "when t.type = 0 and "
+						"t.system = false and "
+						"t.temporary = 1 "
+					   "then cast('LOCAL TEMPORARY' as varchar(20)) "
+					   "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.schemas s, "
+				    "sys.tables t, "
+				    "sys.env() e "
+			       "where s.id = t.schema_id and "
+				     "e.name = 'gdk_dbname'");
+		} else {
+			strcpy(query_end,
+			       "select e.value as table_cat, "
+				      "s.name as table_schem, "
+				      "t.name as table_name, "
+				      "case when t.type = 0 and "
+						"t.system = false and "
+						"t.temporary = 0 and "
+						"s.name <> 'tmp' "
+					   "then cast('TABLE' as varchar(20)) "
+					   "when t.type = 10 and "
+						"t.system = true and "
+						"t.temporary = 0 "
+					   "then cast('SYSTEM TABLE' as varchar(20)) "
+					   "when t.type = 11 and "
+						"t.system = true and "
+						"t.temporary = 0 "
+					   "then cast('SYSTEM VIEW' as varchar(20)) "
+					   "when t.type = 1 "
+					   "then cast('VIEW' as varchar(20)) "
+					   "when t.type = 3 "
+					   "then cast('MERGE TABLE' as varchar(20)) "
+					   "when t.type = 4 "
+					   "then cast('STREAM TABLE' as varchar(20)) "
+					   "when t.type = 5 "
+					   "then cast('REMOTE TABLE' as varchar(20)) "
+					   "when t.type = 6 "
+					   "then cast('REPLICA TABLE' as varchar(20)) "
+					   "when t.type = 20 and "
+						"t.system = false and "
+						"t.temporary = 1 and "
+						"s.name = 'tmp' "
+					   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
+					   "when t.type = 30 and "
+						"t.system = false and "
+						"t.temporary = 1 "
+					   "then cast('LOCAL TEMPORARY' as varchar(20)) "
+					   "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.schemas s, "
+				    "sys.tables t, "
+				    "sys.env() e "
+			       "where s.id = t.schema_id and "
+				     "e.name = 'gdk_dbname'");
+		}
+		assert(strlen(query) < 1100);
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a
@@ -266,12 +339,15 @@ MNDBTables(ODBCStmt *stmt,
 			free(tab);
 		}
 
+		strcpy(query_end, ") select * from ot");
+		query_end += strlen(query_end);
+
 		if (NameLength4 > 0) {
 			/* filtering requested on table type */
 			char buf[17];	/* the longest string is "GLOBAL TEMPORARY" */
 			int i, j;
 
-			strcpy(query_end, " and (");
+			strcpy(query_end, " where ");
 			query_end += strlen(query_end);
 			for (i = j = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
@@ -282,23 +358,18 @@ MNDBTables(ODBCStmt *stmt,
 						continue;
 					}
 					buf[j] = 0;
-					if (strcmp(buf, "VIEW") == 0) {
-						strcpy(query_end,
-						       "t.type = 1 or ");
-					} else if (strcmp(buf, "TABLE") == 0) {
-						strcpy(query_end,
-						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name <> 'tmp') or ");
-					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
-						strcpy(query_end,
-						       "(t.type = 0 and t.system = false and t.temporary = 0 and s.name = 'tmp') or ");
-					} else if (strcmp(buf, "SYSTEM TABLE") == 0) {
-						strcpy(query_end,
-						       "(t.type = 0 and t.system = true and t.temporary = 0) or ");
-					} else if (strcmp(buf, "LOCAL TEMPORARY") == 0) {
-						strcpy(query_end,
-						       "(t.type = 0 and t.system = false and t.temporary = 1) or ");
+					if (strcmp(buf, "VIEW") == 0 ||
+					    strcmp(buf, "TABLE") == 0 ||
+					    strcmp(buf, "MERGE TABLE") == 0 ||
+					    strcmp(buf, "STREAM TABLE") == 0 ||
+					    strcmp(buf, "REMOTE TABLE") == 0 ||
+					    strcmp(buf, "REPLICA TABLE") == 0 ||
+					    strcmp(buf, "SYSTEM TABLE") == 0 ||
+					    strcmp(buf, "SYSTEM VIEW") == 0 ||
+					    strcmp(buf, "GLOBAL TEMPORARY") == 0 ||
+					    strcmp(buf, "LOCAL TEMPORARY") == 0) {
+						query_end += snprintf(query_end, 38, "table_type = '%s' or ", buf);
 					}
-					query_end += strlen(query_end);
 					j = 0;
 				} else if (j < (int) sizeof(buf) &&
 					   TableType[i] != '\'' &&
@@ -306,16 +377,14 @@ MNDBTables(ODBCStmt *stmt,
 					    (j > 0 && buf[j - 1] != ' ')))
 					buf[j++] = TableType[i];
 			}
-			if (query_end[-1] == '(') {
-				/* no extra tests added, so remove " and (" */
-				query_end -= 6;
-				*query_end = 0;
+			if (strcmp(query_end - 7, " where ") == 0) {
+				/* no extra tests added, so remove " where " */
+				query_end -= 7;
 			} else {
 				/* remove extra " or " at end */
 				query_end -= 4;
-				*query_end++ = ')';
-				*query_end = 0;
 			}
+			*query_end = 0;
 		}
 
 		/* add the ordering */

@@ -36,11 +36,11 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               	# 
-    b:bat[:oid,:str] := bat.new(:oid,:str);	# CMDBATnew
-    bat.append(b:bat[:oid,:str],1:int); 	# 
-    z:bat[:oid,:str] := mal.multiplex("user":str,"bar":str,b:bat[:oid,:str],b:bat[:oid,:str]);	# 
-end user.qry;                           	# 
+function user.qry():void;               	#[0]  0 
+    b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:oid,:str],1:int); 	#[2]  4 <- 1 5 
+    z:bat[:oid,:str] := mal.multiplex("user":str,"bar":str,b:bat[:oid,:str],b:bat[:oid,:str]);	#[3]  6 <- 7 8 1 1 
+end user.qry;                           	#[4]  
 
 # 20:02:17 >  
 # 20:02:17 >  Done.

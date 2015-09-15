@@ -654,7 +654,7 @@ Ready.
 % sys.date_tbl,	sys.L1 # table_name
 % f1,	sql_sub_f1 # name
 % date,	month_interval # type
-% 10,	0 # length
+% 10,	6 # length
 [ 1957-04-09,	-16318	]
 [ 1957-06-13,	-16253	]
 [ 1996-02-28,	-2114	]
@@ -675,7 +675,7 @@ Ready.
 % sys.date_tbl,	.L1 # table_name
 % f1,	sql_sub_single_value # name
 % date,	month_interval # type
-% 10,	0 # length
+% 10,	6 # length
 [ 1957-04-09,	16318	]
 [ 1957-06-13,	16253	]
 [ 1996-02-28,	2114	]
@@ -1002,7 +1002,7 @@ Ready.
 % sys.L # table_name
 % "Days From 2K" # name
 % month_interval # type
-% 0 # length
+% 6 # length
 [ -15607 ]
 [ -15542 ]
 [ -1403 ]
@@ -1023,37 +1023,37 @@ Ready.
 % .L # table_name
 % One day # name
 % month_interval # type
-% 0 # length
+% 2 # length
 [ -1 ]
 #SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
 % .L # table_name
 % One day # name
 % month_interval # type
-% 0 # length
+% 2 # length
 [ -1 ]
 #SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
 % .L # table_name
 % Two days # name
 % month_interval # type
-% 0 # length
+% 2 # length
 [ -2 ]
 #SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
 % .L # table_name
 % One day # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 1 ]
 #SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
 % .L # table_name
 % One day # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 1 ]
 #SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
 % .L # table_name
 % Two days # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 2 ]
 
 # 11:57:21 >  

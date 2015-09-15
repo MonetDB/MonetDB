@@ -153,6 +153,6 @@ pattern checkPermission(usr:str, pw:str):void
 address CLTcheckPermission
 comment "Check permission for a user, requires hashed password (backendsum)";
 
-pattern getUsers():bat[:oid,:str]
+pattern getUsers()(:bat[:oid,:oid],:bat[:oid,:str])
 address CLTgetUsers
-comment "return a BAT with user id and name available in the system";
+comment "return a BAT with user id and one with name available in the system";

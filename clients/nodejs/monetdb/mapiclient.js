@@ -34,7 +34,7 @@ function MonetDBConnection(options, conncallback) {
 	});
 	/* some setup */
 	this.request('Xreply_size -1', undefined, true);
-	this.request('Xauto_commit 1', undefined, true);
+	if (!options.autocommit) this.request('Xauto_commit 0', undefined, true);
 	/* get server environment into connector */
 	this.request('SELECT * FROM env()', function(err, resp) {
 		if (err) {
@@ -137,13 +137,21 @@ MonetDBConnection.prototype.prepare = function(query, callback) {
 						/* escape single quotes except if they are already escaped */
 							s = "'" + param.replace(/([^\\])'/g,"$1\\'") + "'";
 							break
+						case 'object':
+						case 'array':
+							s = "json '" + JSON.stringify(param).replace(/([^\\])'/g,"$1\\'") + "'";
+							break;
 						default:
 							s = param;
 							break;
 					}
 					var colData = resp.data[resp.rows-bindparams.length+paramIndex];
-					if(colData && colData[0] == "timestamp") {
-						s = "timestamp "+s;
+					if(colData) {
+						var toCheck = ['timestamp', 'timestamptz', 'date'];
+						var i = toCheck.indexOf(colData[0]);
+						if(i >= 0) {
+							s = toCheck[i] + ' ' + s;
+						}
 					}
 					return s;
 				}).join(', ');
@@ -386,7 +394,12 @@ exports.parsetuples =  _parsetuples = function(types, lines) {
 				break;
 			case 'ESCAPED':
 				state = 'INQUOTES';
-				curtok += chr;
+                switch(chr) {
+                    case 't': curtok += '\t'; break;
+                    case 'n': curtok += '\n'; break;
+                    case 'r': curtok += '\r'; break;
+                    default: curtok += chr;
+                }
 				break;
 			case 'INQUOTES':
 				if (chr == '"') {
@@ -484,7 +497,7 @@ function __get_connect_args(options) {
 	__check_arg(options, 'language', 'string'  , 'sql');
 	__check_arg(options, 'debug'   , 'boolean' , false);
 	__check_arg(options, 'q'       , 'function', undefined);
-
+	__check_arg(options, 'autocommit', 'boolean', true);
   return options;
 }
 

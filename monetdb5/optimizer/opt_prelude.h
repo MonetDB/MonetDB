@@ -59,6 +59,7 @@ opt_export  str countRef;
 opt_export  str subcountRef;
 opt_export  str copyRef;
 opt_export  str copy_fromRef;
+opt_export  str export_tableRef;
 opt_export  str count_no_nilRef;
 opt_export  str crossRef;
 opt_export  str createRef;
@@ -68,11 +69,10 @@ opt_export  str dblRef;
 opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
-opt_export  str differenceRef;
-opt_export  str tdifferenceRef;
-opt_export  str tintersectRef;
 opt_export  str tdiffRef;
 opt_export  str tinterRef;
+opt_export  str subdiffRef;
+opt_export  str subinterRef;
 opt_export  str mergecandRef;
 opt_export  str mergepackRef;
 opt_export  str intersectcandRef;
@@ -113,7 +113,6 @@ opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
 opt_export  str kdifferenceRef;
-opt_export  str kunionRef;
 opt_export  str languageRef;
 opt_export  str leftfetchjoinRef;
 opt_export  str leftfetchjoinPathRef;
@@ -187,7 +186,6 @@ opt_export  str rapiRef;
 opt_export  str reconnectRef;
 opt_export  str recycleRef;
 opt_export  str refineRef;
-opt_export  str refine_reverseRef;
 opt_export  str registerRef;
 opt_export  str remapRef;
 opt_export  str remoteRef;
@@ -195,7 +193,6 @@ opt_export  str replaceRef;
 opt_export  str replicatorRef;
 opt_export  str resultSetRef;
 opt_export  str reuseRef;
-opt_export  str reverseRef;
 opt_export  str rpcRef;
 opt_export  str rsColumnRef;
 opt_export  str schedulerRef;
@@ -249,9 +246,10 @@ opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
 opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
-opt_export int fileProp;			/* str */
+opt_export int fileProp;		/* str */
 opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
+opt_export int orderDependendProp;	/* binary */
 
 opt_export int stableProp;		/* binary */
 opt_export int insertionsProp;		/* binary */
