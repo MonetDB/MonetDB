@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Sep 14 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.sample.  Use sampe.subuniform instead.
+
 * Fri Sep 11 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.select.  Use algebra.subselect instead.
 

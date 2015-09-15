@@ -439,22 +439,6 @@ BKCdensebat(bat *ret, const wrd *size)
 }
 
 str
-BKCreverse(bat *ret, const bat *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.reverse", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATmirror(b);			/* bn inherits ref from b */
-	assert(bn != NULL);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCmirror(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -555,12 +539,14 @@ char *
 BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
+	BUN ret=0;
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if (BUNdelHead(b, h, FALSE) != GDK_SUCCEED) {
+	if ( (ret=BUNdelete(b, *h, TRUE)) == BUN_NONE) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
@@ -895,7 +881,7 @@ BKCisSortedReverse(bit *res, const bat *bid)
 
 /*
  * We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
- * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
+ * such nil columns never set hkey 
  * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
  */
 

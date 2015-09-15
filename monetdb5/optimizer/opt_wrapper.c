@@ -26,7 +26,6 @@
 /*
  * The optimizer used so far
 */
-#include "opt_accumulators.h"
 #include "opt_aliases.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
@@ -60,7 +59,6 @@ struct{
 	str nme;
 	int (*fcn)();
 } codes[] = {
-	{"accumulators", &OPTaccumulatorsImplementation},
 	{"aliases", &OPTaliasesImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},

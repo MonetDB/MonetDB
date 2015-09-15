@@ -1079,11 +1079,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 		}
 			break;
-		case st_reverse:{
-			if (dump_1(sql, mb, s, batRef, reverseRef) < 0)
-				return -1;
-		}
-			break;
 		case st_mirror:{
 			if (dump_1(sql, mb, s, batRef, mirrorRef) < 0)
 				return -1;
@@ -1695,7 +1690,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = l;
 				return s->nr;
 			}
-			if (cmp == cmp_project || cmp == cmp_reorder_project) {
+			if (cmp == cmp_left_project) {
+				int op3;
+				if ((op3 = _dumpstmt(sql, mb, s->op3)) < 0)
+					return -1;
+				q = newStmt2(mb, sqlRef, projectRef);
+				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, r);
+				q = pushArgument(mb, q, op3);
+				if (q == NULL)
+					return -1;
+				s->nr = getDestVar(q);
+				return s->nr;
+			}
+			if (cmp == cmp_project) {
 				int ins;
 
 				/* delta bat */
@@ -1720,10 +1728,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				if (cmp == cmp_project)
-					q = newStmt1(mb, algebraRef, "leftfetchjoin");
-				else
-					q = newStmt2(mb, algebraRef, leftjoinRef);
+				q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)
@@ -1802,7 +1807,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				break;
 			case cmp_project:
-			case cmp_reorder_project:
 				assert(0);
 				break;
 			default:

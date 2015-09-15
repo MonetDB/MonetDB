@@ -81,9 +81,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* mitosis/mergetable bailout conditions */
 		
 		/* Mergetable cannot handle order related batcalc ops */
-		if ((getModuleId(p) == batcalcRef || getModuleId(p) == sqlRef) && 
-		   (getFunctionId(p) == rankRef || getFunctionId(p) == rank_grpRef ||
-		    getFunctionId(p) == mark_grpRef || getFunctionId(p) == dense_rank_grpRef)) 
+		if (getModuleId(p) == batcalcRef || getModuleId(p) == sqlRef) 
 			return 0;
 
 		if (p->argc > 2 && getModuleId(p) == aggrRef && 

@@ -26,7 +26,7 @@ Ready.
 
 #~BeginVariableOutput~#
 function user.s4_1{autoCommit=true}():void;
-"    X_34:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
+"    X_33:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
     X_2 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
 "    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
@@ -46,10 +46,10 @@ function user.s4_1{autoCommit=true}():void;
 "    X_28 := calc.ifthenelse(X_26,0,X_25);"
 "    X_29 := calc.!=(X_24,X_28);"
 "    sql.assert(X_29,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.exportOperation("""");"
+    sql.exportOperation();
 end user.s4_1;
 function user.s5_1{autoCommit=true}():void;
-"    X_34:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
+"    X_33:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
     X_2 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
 "    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
@@ -69,12 +69,12 @@ function user.s5_1{autoCommit=true}():void;
 "    X_28 := calc.ifthenelse(X_26,0,X_25);"
 "    X_29 := calc.!=(X_24,X_28);"
 "    sql.assert(X_29,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.exportOperation("""");"
+    sql.exportOperation();
 end user.s5_1;
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 function user.s9_1{autoCommit=true}():void;
-"    X_34:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
+"    X_33:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",23);"
     X_2 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
 "    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
@@ -94,7 +94,7 @@ function user.s9_1{autoCommit=true}():void;
 "    X_28 := calc.ifthenelse(X_26,0,X_25);"
 "    X_29 := calc.!=(X_24,X_28);"
 "    sql.assert(X_29,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.exportOperation("""");"
+    sql.exportOperation();
 end user.s9_1;
 #~EndVariableOutput~#
 

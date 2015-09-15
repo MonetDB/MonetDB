@@ -28,7 +28,6 @@ bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void
 bat5_export str BKCnewBAT(bat *res, const int *ht, const int *tt, const BUN *cap, int role);
 bat5_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 bat5_export str BKCdensebat(bat *ret, const wrd *size);
-bat5_export str BKCreverse(bat *ret, const bat *bid);
 bat5_export str BKCmirror(bat *ret, const bat *bid);
 bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);

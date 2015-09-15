@@ -211,11 +211,11 @@ CMDbbpHeat(bat *ret)
 			if (BBP_cache(i) && !monet_modulesilent) {
 				int heat = BBP_lastused(i);
 
-				BUNins(b, &i, &heat, FALSE);
+				BUNappend(b, &heat, FALSE);
 			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				int zero = 0;
 
-				BUNins(b, &i, &zero, FALSE);
+				BUNappend(b, &zero, FALSE);
 			}
 		}
 	BBPunlock("CMDbbpHeat");

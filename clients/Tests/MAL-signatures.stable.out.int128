@@ -2865,7 +2865,7 @@ command algebra.like(s:str,pat:str):bit
 address PCRElike2;
 command algebra.like(s:str,pat:str,esc:str):bit 
 address PCRElike3;
-command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:str] 
+command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:oid] 
 address ALGlike;
 comment Selects all elements that have 'substr' as in the tail.
 
@@ -2997,10 +2997,6 @@ comment Returns a copy of the BAT sorted on tail values and a BAT that         s
 command algebra.subsort(b:bat[:oid,:any_1],reverse:bit,stable:bit):bat[:oid,:any_1] 
 address ALGsubsort11;
 comment Returns a copy of the BAT sorted on tail values.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
-
-command algebra.sample(b:bat[:oid,:any_1],num:int):bat[:oid,:oid] 
-address ALGsample;
-comment Returns the oids of a random selection of size 'num' from the input BAT.
 
 command algebra.selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2] 
 address ALGselectNotNil;
@@ -40204,17 +40200,17 @@ command bat.densebat(sz:wrd):bat[:oid,:oid]
 address BKCdensebat;
 comment Creates a new [void,void] BAT of size 'sz'.
 
-command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCdelete_bat_bun;
-comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
-
 command bat.delete(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
 address BKCdelete_all;
-comment Delete all BUNs in a BAT.
+comment Delete all entries.
 
 command bat.delete(b:bat[:oid,:any_1],h:oid):bat[:oid,:any_1] 
 address BKCdelete;
-comment Delete all BUNs with a certain head value.
+comment Delete an entry with a certain head value.
+
+command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address BKCdelete_bat_bun;
+comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
 command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
@@ -49338,10 +49334,6 @@ pattern io.printf(fmt:str,val:any...):void
 address IOprintf;
 comment Select default format 
 
-pattern io.prompt(val:any_1):void 
-address IOprompt_val;
-comment Print a MAL value without brackets.
-
 pattern io.print(val:bat[:oid,:any_1]):void 
 address IOprint_val;
 comment Print a MAL value column .
@@ -49834,21 +49826,13 @@ command mapi.trace(mid:int,flag:int):void
 address SERVERtrace;
 comment Toggle the Mapi library debug tracer.
 
-pattern manual.completion(pat:str):void 
-address MANUALcompletion;
-comment Produces the wordcompletion table.
+pattern manual.functions() (sig:bat[:oid,:str],adr:bat[:oid,:str],com:bat[:oid,:str]) 
+address MANUALcreateOverview;
+comment Produces a table with all MAL functions known
 
 pattern manual.help(text:str):void 
 address MANUALhelp;
 comment Produces a list of all <module>.<function> that match	the text pattern. The wildcard '*' can be used for <module>and <function>. Using the '(' asks for signature information andusing ')' asks for the complete help record.
-
-pattern manual.summary():void 
-address MANUALcreateSummary;
-comment Produces a manual summary with help lines grouped by module.
-
-pattern manual.search(text:str):void 
-address MANUALsearch;
-comment Search the manual for command descriptions that match theregular expression 'text'
 
 pattern mat.hasMoreElements(grp:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MAThasMoreElements;
@@ -51250,22 +51234,6 @@ command sabaoth.retreatScenario(lang:str):void
 address SABretreatScenario;
 comment Unpublishes the given language as available for this server
 
-pattern scheduler.costPrediction(a:any):lng 
-address RUNcostPrediction;
-comment A sample cost prediction function
-
-pattern scheduler.choice(arg:any...):void 
-address RUNchoice;
-comment Select the next step in a query memo plan
-
-pattern scheduler.choice():void 
-address RUNchoice;
-comment Select the next step in a query memo plan
-
-pattern scheduler.isolation():void 
-address RUNisolation;
-comment Run a private copy of the MAL program
-
 pattern scheduler.peers(N:int):void 
 address SRVsetServers;
 comment Simulate N peers
@@ -51274,17 +51242,9 @@ pattern scheduler.pattern(pat:str):void
 address SRVsetServers;
 comment Activate the peers matching the pattern and return number found.
 
-pattern scheduler.pick(arg:any_1...):any_1 
-address RUNpickResult;
-comment Pick up the first result
-
 pattern scheduler.srvpool():int 
 address SRVPOOLscheduler;
 comment Run a program block in parallel.
-
-pattern scheduler.volumeCost(a:any):lng 
-address RUNvolumeCost;
-comment A sample cost function based on materialized results
 
 function sphinx.sphinx_searchIndexLimit(q:str,i:str,l:int):bat[:oid,:lng];
 function sphinx.sphinx_searchIndex(q:str,i:str):bat[:oid,:lng];
@@ -51664,6 +51624,10 @@ address SQLprelude;
 pattern sql.password(user:str):str 
 address db_password_wrap;
 comment Return password hash of user
+
+command sql.project(col:bat[:oid,:oid],l:bat[:oid,:oid],r:bat[:oid,:oid]):bat[:oid,:oid] 
+address BATleftproject;
+comment Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)
 
 command sql.projectdelta(subselect:bat[:oid,:oid],col:bat[:oid,:any_3],uid:bat[:oid,:oid],uval:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address DELTAproject2;

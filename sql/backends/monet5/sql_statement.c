@@ -68,7 +68,6 @@ st_type2string(st_type type)
 		ST(const);
 
 		ST(gen_group);
-		ST(reverse);
 		ST(mirror);
 		ST(result);
 
@@ -312,7 +311,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_convert:
 			case st_const:
 			case st_gen_group:
-			case st_reverse:
 			case st_mirror:
 			case st_result:
 			case st_limit:
@@ -672,18 +670,6 @@ stmt_gen_group(sql_allocator *sa, stmt *gids, stmt *cnts)
 }
 
 stmt *
-stmt_reverse(sql_allocator *sa, stmt *s)
-{
-	stmt *ns = stmt_create(sa, st_reverse);
-
-	ns->op1 = s;
-	ns->nrcols = s->nrcols;
-	ns->key = s->key;
-	ns->aggr = s->aggr;
-	return ns;
-}
-
-stmt *
 stmt_mirror(sql_allocator *sa, stmt *s)
 {
 	stmt *ns = stmt_create(sa, st_mirror);
@@ -907,9 +893,11 @@ stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins)
 }
 
 stmt *
-stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2)
+stmt_left_project(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3)
 {
-	return stmt_join(sa, op1, op2, cmp_reorder_project);
+	stmt *s = stmt_join(sa, op1, op2, cmp_left_project);
+	s->op3 = op3;
+	return s;
 }
 
 stmt *
@@ -1241,7 +1229,7 @@ tail_type(stmt *st)
 	case st_join:
 	case st_join2:
 	case st_joinN:
-		if (st->flag == cmp_project || st->flag == cmp_reorder_project)
+		if (st->flag == cmp_project)
 			return tail_type(st->op2);
 		/* fall through */
 	case st_reorder:
@@ -1249,7 +1237,6 @@ tail_type(stmt *st)
 	case st_result:
 	case st_tid:
 	case st_mirror:
-	case st_reverse:
 		return sql_bind_localtype("oid");
 	case st_table_clear:
 		return sql_bind_localtype("lng");
@@ -1301,8 +1288,6 @@ stmt_has_null(stmt *s)
 	case st_uselect2:
 	case st_atom:
 		return 0;
-	case st_reverse:
-		return stmt_has_null(s->op1);
 	case st_join:
 		return stmt_has_null(s->op2);
 	case st_bat:
@@ -1357,7 +1342,6 @@ char *
 _column_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
-	case st_reverse:
 	case st_order:
 	case st_reorder:
 		return column_name(sa, st->op1);
@@ -1433,8 +1417,6 @@ char *
 _table_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
-	case st_reverse:
-		return table_name(sa, st->op1);
 	case st_const:
 	case st_join:
 	case st_join2:
@@ -1490,8 +1472,6 @@ char *
 schema_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
-	case st_reverse:
-		return schema_name(sa, st->op1);
 	case st_const:
 	case st_join:
 	case st_join2:
