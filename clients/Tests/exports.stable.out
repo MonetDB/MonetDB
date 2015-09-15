@@ -1598,7 +1598,6 @@ str MTIMEtzone_get_local(tzone *z);
 str MTIMEtzone_set_local(void *res, const tzone *z);
 str MTIMEtzone_tostr(str *s, const tzone *ret);
 str MTIMEunix_epoch(timestamp *ret);
-int OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void OPTaliasRemap(InstrPtr p, int *alias);
 int OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
