@@ -50,13 +50,13 @@ pattern printf(filep:streams,fmt:str):void
 address IOprintfStream
 comment "Select default format ";
 
-command export(b:bat[:oid,:any_2], filepath:str):bit  
+command export(b:bat[:oid,:any_2], filepath:str)  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the $DBPATH directory. Success of failure is indicated.";
 
-command import(b:bat[:oid,:any_2], filepath:str) :bat[:oid,:any_2] 
+command import(b:bat[:oid,:any_2], filepath:str)
 address IOimport
-comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
- parameter BAT. You have to create it! Its signature must match the dump,
- else parsing errors will occur and FALSE is returned.";
+comment "Import a BAT from an ASCII dump. The tuples are appended to the
+ first argument. Its signature must match the dump,
+ else parsing errors will occur as an exception.";

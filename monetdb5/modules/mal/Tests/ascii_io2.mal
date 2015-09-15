@@ -2,33 +2,9 @@ namebat := bat.new(:oid, :str);
 bat.append(namebat,"tmpdocs");
 bat.append(namebat,"tmpterms");
 
-sepbat := bat.new(:oid, :str);
-bat.append(sepbat,",");
-bat.append(sepbat,"\n");
+io.printf("#source:%s\n","namebat");
+io.export(namebat, "namebat");
 
-typebat := bat.new(:oid, :str);
-bat.append(typebat,"str");
-bat.append(typebat,"str");
-
-len := 20;
-targetdir := unix.getenv("TSTTRGDIR");
-barrier correct:= targetdir == "";
-	targetdir := unix.getenv("PWD");
-exit correct;
-barrier correct:= targetdir != "";
-	targetdir := targetdir + "/";
-exit correct;
-
-datafile := targetdir + "ascii_io2.load";
-io.printf("#source:%s\n",datafile);
-
-idxbat := tablet.load(namebat, sepbat, typebat, datafile, len);
-#io.print(idxbat);
-
-b1:bat[:oid,:str] := algebra.fetch(idxbat,0@0);
-#b1:bat[:oid,:str] := bbp.bind(i1);
-io.print(b1);
-
-b2:bat[:oid,:str] := algebra.fetch(idxbat,1@0); 
-#b2:bat[:oid,:str] := bbp.bind(i2);
-io.print(b2);
+z:= bat.new(:oid,:str);
+io.import(z,"namebat");
+io.print(z);
