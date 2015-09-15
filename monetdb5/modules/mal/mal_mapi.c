@@ -1603,7 +1603,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 	while( mapi_fetch_row(hdl)){
-		fld2= mapi_fetch_field(hdl,0);
+		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNappend(b,VALptr(&tval), FALSE);
 	}
