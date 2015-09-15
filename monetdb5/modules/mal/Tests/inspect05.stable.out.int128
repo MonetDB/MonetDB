@@ -77,7 +77,7 @@ end user.main;
 [ 36@0,	"isTransient",	"command",	"bat",	"(b:bat[:oid,:any_1]):bit ",	"BKCgetKey;"  ]
 [ 37@0,	"isaKey",	"command",	"bat",	"(b:bat[:oid,:any_1]) (X_2:bat[:oid,:str],X_3:bat[:oid,:str]) ",	"BKCinfo;"  ]
 [ 38@0,	"mergecand",	"command",	"bat",	"(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid] ",	"BKCmergecand;"  ]
-[ 39@0,	"mirror",	"command",	"bat",	"(b:bat[:any_1,:any_2]):bat[:any_1,:any_1] ",	"BKCmirror;"  ]
+[ 39@0,	"mirror",	"command",	"bat",	"(b:bat[:oid,:any_2]):bat[:oid,:oid] ",	"BKCmirror;"  ]
 [ 40@0,	"new",	"command",	"bat",	"(nme:str):bat[:oid,:any_1] ",	"CMDBATderivedByName;"  ]
 [ 41@0,	"new",	"pattern",	"bat",	"(b:bat[:oid,:any_1],size:lng):bat[:oid,:any_1] ",	"CMDBATnewDerived;"  ]
 [ 42@0,	"new",	"pattern",	"bat",	"(b:bat[:oid,:any_1]):bat[:oid,:any_1] ",	"CMDBATnewDerived;"  ]
