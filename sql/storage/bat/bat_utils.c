@@ -95,20 +95,6 @@ append_inserted(BAT *b, BAT *i )
 	return nr;
 }
 
-BUN
-copy_inserted(BAT *b, BAT *i )
-{
-	BUN nr = 0;
-	BUN r;
-       	BATiter ii = bat_iterator(i);
-
-	for (r = i->batInserted; r < BUNlast(i); r++) {
-		BUNins(b, BUNhead(ii,r), BUNtail(ii,r), TRUE);
-       		nr++;
-	}
-	return nr;
-}
-
 BAT *ebats[MAXATOMS] = { NULL };
 
 log_bid 
