@@ -1188,27 +1188,10 @@ ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	BAT *b, *bn = NULL;
 	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
 	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
 
-	if (*start == oid_nil && end && *end == oid_nil) {
-		*ret = *bid;
-		BBPincref(*ret, TRUE);
-		return MAL_SUCCEED;
-	}
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
-
-	if (slice(&bn, b, s, e) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.slice", "Slicing failed");
-	}
-
-	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return ALGslice(ret, bid, &s, &e) ;
 }
 
 str
