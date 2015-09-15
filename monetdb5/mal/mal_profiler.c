@@ -118,7 +118,8 @@ setProfilerStream(Module cntxt, const char *host, int port)
 {
 	(void)cntxt;        /* still unused */
 	MT_lock_set(&mal_profileLock, "setstream");
-	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
+	//if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
+	if ((eventstream = wastream(host, port, "profileStream")) == NULL) {
 		MT_lock_unset(&mal_profileLock, "setstream");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}

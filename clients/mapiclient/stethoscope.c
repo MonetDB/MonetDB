@@ -171,7 +171,7 @@ main(int argc, char **argv)
 	FILE *trace = NULL;
 	EventRecord *ev = malloc(sizeof(EventRecord));
 
-	static struct option long_options[15] = {
+	static struct option long_options[10] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -195,7 +195,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:D:b",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?o:Db:",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -297,7 +297,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
 	for (portnr = 50010; portnr < 62010; portnr++) 
-		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
+		if ((conn = open_rastream(hostname, portnr)) != NULL)
 			break;
 	
 	if ( conn == NULL) {
@@ -308,18 +308,14 @@ main(int argc, char **argv)
 
 	printf("-- opened TCP profile stream %s:%d for %s\n", hostname, portnr, host);
 
-	snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
-	if( debug)
-		fprintf(stderr,"--%s\n",buf);
-	doQ(buf);
-
 	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-	snprintf(buf,BUFSIZ-1,"profiler.start();");
+
+	snprintf(buf, BUFSIZ, " profiler.setstream(\"%s\", %d);", hostname, portnr);
 	if( debug)
-		fprintf(stderr,"-- %s\n",buf);
+		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
 	snprintf(buf,BUFSIZ,"%s.trace",basefilename);

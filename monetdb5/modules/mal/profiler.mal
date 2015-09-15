@@ -10,13 +10,13 @@ pattern tomograph(b:int)
 address CMDtomograph
 comment "Start tomograph profiler with heart beat";
 
-pattern tachograph(start:bit)
-address CMDtachograph
-comment "Start/stop gathering profile traces "'
+#pattern tachograph(start:bit)
+#address CMDtachograph
+#comment "Start/stop gathering profile traces "'
 
-pattern stethoscope(start:int)
-address CMDstethoscope
-comment "Start/stop gathering profile traces "'
+#pattern stethoscope(start:int)
+#address CMDstethoscope
+#comment "Start/stop gathering profile traces "'
 
 pattern start()
 address CMDstartProfiler
@@ -42,10 +42,9 @@ pattern setstream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
 
-# legacy
 pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
-comment "Send the log events to a stream ";
+comment "Send the log events to a client calling ";
 
 command closeStream():void
 address CMDcloseProfilerStream
