@@ -31,6 +31,14 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
 
+	/* check if b is sorted, then index does not make sense */
+	if (b->tsorted || b->trevsorted)
+		return MAL_SUCCEED;
+
+	/* check if b already has index */
+	if (b->torderidx.set)
+		return MAL_SUCCEED;
+
 	if( pieces < 0 ){
 		/* TODO estimate number of pieces */
 		pieces = 3; // should become GDKnr_threads
@@ -41,15 +49,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
 	mnstr_printf(cntxt->fdout,"#oidx ttype %d bat %d\n", b->ttype,tpe);
 #endif
-	/* check if b already has index */
-	if( b->torderidx.flags )
-		return MAL_SUCCEED;
-	/* check if b is sorted, then index does not make sense */
-	if( b->tsorted || b->trevsorted)
-		return MAL_SUCCEED;
-	/* check if b is view and parent has index */
-    if (VIEWtparent(b) && b->torderidx.flags)
-		return MAL_SUCCEED;
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
@@ -169,7 +168,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.getorder", RUNTIME_OBJECT_MISSING);
 
-	*ret = ORDERgetidx(b);
+	*ret = b->torderidx.o;
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -186,6 +185,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	bat *aid;
 	BAT **a;
+	BAT *m; /* merged oid's */
 	int i, j, n_ar;
 
 	(void) cntxt;
@@ -244,23 +244,20 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (n_ar == 1) {
 		/* One oid order bat, nothing to merge */
-		if (ORDERkeepidx(b, a[0]) == GDK_FAIL) {
+		if (a[0]->batRole != PERSISTENT) {
+			m = BATcopy(a[0], a[0]->htype, a[0]->ttype, 0, PERSISTENT);
 			BBPunfix(aid[0]);
-			BBPunfix(bid);
-			GDKfree(aid);
-			GDKfree(a);
-			throw(MAL,"bat.orderidx", OPERATION_FAILED);
+		} else {
+			m = a[0];
 		}
-		BBPincref(aid[0], TRUE);
 	} else {
-		BAT *m; /* merged oid's */
 		oid *mv;
 		BUN m_sz;
 
-		for (i=0, m_sz = 0; i < n_ar; i++) 
+		for (i=0, m_sz = 0; i < n_ar; i++)
 			m_sz += BATcount(a[i]);
 		
-		m = BATnew(TYPE_void, TYPE_oid, m_sz, TRANSIENT);
+		m = BATnew(TYPE_void, TYPE_oid, m_sz, PERSISTENT);
 		if (m == NULL) {
 			for (i = 0; i < n_ar; i++)
 				BBPunfix(aid[i]);
@@ -437,21 +434,14 @@ do {																		\
 		m->T->nonil = 1;
 		m->tsorted = m->trevsorted = 0;
 		m->tdense = 0;
-		if (ORDERkeepidx(b, m) == GDK_FAIL) {
-			for (i = 0; i < n_ar; i++) {
-				BBPunfix(aid[i]);
-			}
-			GDKfree(aid);
-			GDKfree(a);
-			BBPunfix(m->batCacheid);
-			BBPunfix(bid);
-			throw(MAL,"bat.orderidx", OPERATION_FAILED);
-		}
 		for (i = 0; i < n_ar; i++) {
 			BBPunfix(aid[i]);
 		}
-		BBPincref(m->batCacheid, TRUE);
 	}
+
+	b->torderidx.o = m->batCacheid;
+	b->torderidx.set = 1;
+	BBPincref(m->batCacheid, TRUE);
 
 	GDKfree(aid);
 	GDKfree(a);

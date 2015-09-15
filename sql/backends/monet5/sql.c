@@ -4461,12 +4461,14 @@ SQLorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     tr = m->session->tr;
     t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
     t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	mnstr_printf(cntxt->fdout, "#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
-	b = store_funcs.bind_col(tr, c, RDONLY);
-	if( b == NULL)
-		throw(SQL,"sql.orderidx","Can not access descriptor");
-	msg=  OIDXcreateImplementation(cntxt,newBatType(TYPE_oid,b->ttype),b,-1);
-	BBPunfix(b->batCacheid);
+    mnstr_printf(cntxt->fdout, "#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
+    b = store_funcs.bind_col(tr, c, RDONLY);
+    if (b == NULL)
+        throw(SQL,"sql.orderidx","Can not access descriptor");
+    msg = OIDXcreateImplementation(cntxt,newBatType(TYPE_oid, b->ttype), b, -1);
+    /* b->dirty should be set here, right? the bat descriptor has changed */
+    /* b->torderidx.o is the index bat */
+    BBPunfix(b->batCacheid);
     return msg;
 }
 
@@ -4895,7 +4897,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
 
-								sz = bn->torderidx.flags ; 
+								sz = bn->torderidx.set ;
 								BUNappend(oidx, &sz, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
@@ -4976,7 +4978,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
-									sz = bn->torderidx.flags ; 
+									sz = bn->torderidx.set ;
 									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
 								}

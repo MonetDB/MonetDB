@@ -1428,7 +1428,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * Selective queries are the ones below 0.1% and less than 1000 results
 	 * TODO: Test if this heuristic works in practice
 	 * TODO: we do not support anti-select with order index */
-	if (!anti && b->torderidx.flags && !(b->tsorted || b->trevsorted) &&
+	if (!anti && b->torderidx.set && !(b->tsorted || b->trevsorted) &&
 	    ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000)))
 		use_orderidx = 1;
 
@@ -1557,7 +1557,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (use_orderidx) {
 				BAT *order;
 
-				if ((order = BBPdescriptor(b->torderidx.o)) == NULL) {
+				if ((order = BATdescriptor(b->torderidx.o)) == NULL) {
 					GDKerror("Runtime object (order index) not found");
 				}
 				bn = BATslice(order, low + order->hseqbase,
@@ -1587,6 +1587,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->T->nil = 0;
 				bn->T->nonil = 1;
 
+				BBPunfix(order->batCacheid);
 			} else {
 				/* match: [low..high) */
 				if (s) {

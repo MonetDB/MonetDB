@@ -126,9 +126,10 @@ BATcreatedesc(int ht, int tt, int heapnames, int role)
 	 */
 	BBPinsert(bs);
 	/*
-	 * Default zero flags for order oid index
+	 * Default zero for order oid index
 	 */
-	bn->torderidx.flags = 0;
+	bn->torderidx.set = 0;
+	bn->torderidx.o = 0;
 	/*
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.

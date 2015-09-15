@@ -675,8 +675,8 @@ typedef struct {
 } Hash;
 
 typedef struct {
-	int flags;		/* flags */
-	bat o;			/* bat with oid order map */
+	unsigned int set:1;	/* oid index is set */
+	bat o;				/* bat with oid order map */
 } OrderIdx;
 
 typedef struct Imprints Imprints;
@@ -2078,21 +2078,6 @@ gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 gdk_export gdk_return BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
-
-/*
- * @- OID index order
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAT 
- * @end multitable
- *
- * The oid index order.
- *
- */
-gdk_export gdk_return ORDERkeepidx(BAT *b, BAT *order);
-gdk_export bat ORDERgetidx(BAT *b);
 
 /*
  * @- Multilevel Storage Modes

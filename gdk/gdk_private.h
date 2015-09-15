@@ -233,7 +233,6 @@ typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
-	MT_Lock orderIdx;
 } batlock_t;
 
 typedef struct {
@@ -308,7 +307,6 @@ extern MT_Lock MT_system_lock;
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
 #define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
-#define GDKorderIdxLock(x)  GDKbatLock[(x)&BBP_BATMASK].orderIdx
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
 #else
