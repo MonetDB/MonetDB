@@ -4527,48 +4527,6 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* Experimental code for dealing with oid indices */
-str
-SQLorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    str *sch = getArgReference_str(stk, pci, 1);
-    str *tbl = getArgReference_str(stk, pci, 2);
-    str *col = getArgReference_str(stk, pci, 3);
-    sql_trans *tr;
-    sql_schema *s;
-    sql_table *t;
-    sql_column *c;
-    mvc *m = NULL;
-    BAT *b;
-    str msg = MAL_SUCCEED;
-
-    if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-        return msg;
-    if ((msg = checkSQLContext(cntxt)) != NULL)
-        return msg;
-    s = mvc_bind_schema(m, *sch);
-    if (s == NULL)
-        throw(SQL, "sql.orderidx", "3F000!Schema missing");
-    t = mvc_bind_table(m, s, *tbl);
-    if (t == NULL)
-        throw(SQL, "sql.orderidx", "42S02!Table missing");
-    c = mvc_bind_column(m, t, *col);
-    if (c == NULL)
-        throw(SQL, "sql.orderidx", "42S02!Column missing");
-    tr = m->session->tr;
-    t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-    t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-    mnstr_printf(cntxt->fdout, "#About to create the oid index on %s.%s.%s\n", *sch, *tbl, *col);
-    b = store_funcs.bind_col(tr, c, RDONLY);
-    if (b == NULL)
-        throw(SQL,"sql.orderidx","Can not access descriptor");
-    msg = OIDXcreateImplementation(cntxt,newBatType(TYPE_oid, b->ttype), b, -1);
-    /* b->dirty should be set here, right? the bat descriptor has changed */
-    /* b->torderidx.o is the index bat */
-    BBPunfix(b->batCacheid);
-    return msg;
-}
-
 /*
  * Vacuum cleaning tables
  * Shrinking and re-using space to vacuum clean the holes in the relations.
