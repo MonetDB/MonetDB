@@ -36,7 +36,6 @@ mal_export void initHeartbeat(void);
 mal_export void profilerHeartbeatEvent(char *alter);
 
 mal_export void MPresetProfiler(stream *fdout);
-mal_export str setProfilerStream(Module cntxt, const char *host, int port);
 
 mal_export int malProfileMode;
 mal_export void clearTrace(void);

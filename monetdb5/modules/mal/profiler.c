@@ -63,15 +63,6 @@ CMDsetProfilerPoolSize (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return setprofilerpoolsize(poolsize);
 }
 
-str
-CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *host = getArgReference_str(stk,pci,1);
-	int *port = getArgReference_int(stk,pci,2);
-	(void) mb;		/* fool compiler */
-	return setProfilerStream(cntxt->nspace, *host, *port);
-}
-
 // initialize SQL tracing
 str
 CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)

@@ -18,15 +18,18 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
 #include "eventparser.h"
@@ -39,16 +42,15 @@
 # endif
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
 #endif
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
+
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -296,24 +298,12 @@ main(int argc, char **argv)
 	if(debug)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	for (portnr = 50010; portnr < 62010; portnr++) 
-		if ((conn = open_rastream(hostname, portnr)) != NULL)
-			break;
-	
-	if ( conn == NULL) {
-		fprintf(stderr, "!! opening stream failed: no free ports available\n");
-		fflush(stderr);
-		goto stop_disconnect;
-	}
-
-	printf("-- opened TCP profile stream %s:%d for %s\n", hostname, portnr, host);
-
 	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.setstream(\"%s\", %d);", hostname, portnr);
+	snprintf(buf, BUFSIZ, " profiler.openstream();");
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -330,7 +320,8 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
+	conn = mapi_get_from(dbh);
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
 		if( trace) 
 			fprintf(trace,"%s",buffer);

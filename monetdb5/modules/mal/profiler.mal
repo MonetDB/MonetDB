@@ -34,17 +34,9 @@ command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-pattern setstream():void
+pattern openstream():void
 address CMDopenProfilerStream
 comment "Send the events to output stream";
-
-pattern setstream(host:str, port:int):void
-address CMDsetProfilerStream
-comment "Send the log events to a stream ";
-
-pattern openStream(host:str, port:int):void
-address CMDsetProfilerStream
-comment "Send the log events to a client calling ";
 
 command closeStream():void
 address CMDcloseProfilerStream

@@ -113,21 +113,6 @@ setprofilerpoolsize(int size)
 	return MAL_SUCCEED;
 }
 
-str
-setProfilerStream(Module cntxt, const char *host, int port)
-{
-	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock, "setstream");
-	//if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
-	if ((eventstream = wastream(host, port, "profileStream")) == NULL) {
-		MT_lock_unset(&mal_profileLock, "setstream");
-		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
-	}
-	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock, "setstream");
-	return MAL_SUCCEED;
-}
-
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
@@ -199,19 +184,20 @@ static void logjsonInternal(int k, char *logbuffer, InstrPtr p)
 }
 
 static void logjson(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char *logbuffer)
-{	int i,k;	
+{	
+	int i,k;	
 
 	(void) mb;
-	(void) p;
-	if( stk){
+	if (stk){
 		logjsonInternal( k = stk->tag % poolSize, logbuffer,p);
-		profilerPool[k].tag = stk->tag;
-	} else
+		if (profilerPool)
+			profilerPool[k].tag = stk->tag;
+	} else if (profilerPool) {
 // The heart beat events should be sent to all outstanding channels.
 // But only once to the stream
-	for( i=0; i< poolSize; i++)
-	if(profilerPool[i].trace){
-		logjsonInternal( i, logbuffer, 0);
+		for(i=0; i< poolSize; i++)
+			if (profilerPool[i].trace)
+				logjsonInternal( i, logbuffer, 0);
 	}
 }
 
@@ -570,10 +556,6 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	if (eventstream && eventstream != mal_clients[0].fdout && eventstream != GDKout && eventstream != GDKerr) {
-		(void)mnstr_close(eventstream);
-		(void)mnstr_destroy(eventstream);
-	}
 	eventstream = NULL;
 	malProfileMode = 0;
 	return MAL_SUCCEED;
