@@ -37,6 +37,10 @@ algebra_export str ALGnonDimensionThetasubselect2(ptr *dimsRes, bat *oidsRes, co
 algebra_export str ALGnonDimensionThetasubselect1(ptr *dimsRes, bat *oidsRes, const bat* vals, const ptr *dims, 
 			                            const void *val, const char **op);
 
+algebra_export str ALGprojectDimension(bat* result, const ptr *dim, const ptr *array);
+algebra_export str ALGprojectNonDimension(bat *result, const bat *vals, const ptr *array);
+
+
 
 
 algebra_export str ALGarrayCount(wrd *res, const ptr *array);

@@ -936,3 +936,20 @@ str ALGarrayCount(wrd *res, const ptr *array) {
 
 	return MAL_SUCCEED;
 }
+
+
+str ALGprojectDimension(bat* result, const ptr *dim, const ptr *array) {
+	const gdk_array *dimsCands = arrayCopy((gdk_array*)*array); //candidates exactly the same to the array
+	bat oidsCands;
+	return ALGdimensionLeftfetchjoin1(result, (void*)&dimsCands, &oidsCands, dim, array);
+}
+
+str ALGprojectNonDimension(bat *result, const bat *vals, const ptr *array) {
+	const gdk_array *dimsCands = arrayCopy((gdk_array*)*array); //candidates exactly the same to the array
+	
+	BAT *oidsCandsBAT = newempty("ALGprojectNonDimension");
+	bat oidsCands = oidsCandsBAT->batCacheid;
+
+	return ALGnonDimensionLeftfetchjoin1(result, (void*)&dimsCands, &oidsCands, vals, array);
+}
+

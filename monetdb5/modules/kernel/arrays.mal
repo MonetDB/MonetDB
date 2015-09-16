@@ -41,6 +41,14 @@ command algebra.thetasubselect(vals:bat[:oid,:any], dims:ptr, candDims:ptr, cand
 address ALGnonDimensionThetasubselect2;
 
 
+#projects a dimension
+command algebra.projectArray(dim:ptr, dims:ptr) :bat[:oid,:any]
+address ALGprojectDimension;
+#gets a non-dimensional column of an array and the description of the array 
+#and returns just the BAT of the non-dimensional column
+command algebra.projectArray(vlas:bat[:oid,:any], dims:ptr) :bat[:oid,:any]
+address ALGprojectNonDimension;
+
 #Creates a BAT that contains all cells that satisfied a series of selections on dimensions
 command algebra.cellsProject(candDims:ptr, candBAT:bat[:oid,:oid]) :bat[:oid,:oid]
 address ALGproject;

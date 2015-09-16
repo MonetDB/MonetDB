@@ -157,6 +157,9 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
 	InstrPtr p = NULL, list;
 
+	char nme[SMALLBUFSIZ];
+	int arraySecondVar = -1;	
+
 	list = newInstruction(mb,ASSIGNsymbol);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
 	setModuleId(list, sqlRef);
@@ -184,10 +187,6 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		size_t fqtnl;
 		char *fqtn;
 
-//		if(c->type == st_cells) {
-//			fprintf(stderr, "dump_header: st_cells in output ignored\n");
-//			continue;
-//		}
 		t = tail_type(c);
 		tname = table_name(sql->sa, c);
 		sname = schema_name(sql->sa, c);
@@ -206,7 +205,17 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			metaInfo(tpeId,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
 			metaInfo(lenId,Int,t->digits);
 			metaInfo(scaleId,Int,t->scale);
-			list = pushArgument(mb,list,c->nr);
+	
+			snprintf(nme, SMALLBUFSIZ, "Y_%d", c->nr);
+			if((arraySecondVar = findVariable(mb, nme)) >=0) { 
+				InstrPtr projDim = newStmt1(mb, algebraRef, "projectArray");
+				projDim = pushArgument(mb, projDim, c->nr);
+				projDim = pushArgument(mb, projDim, arraySecondVar);
+
+				list = pushArgument(mb, list, getDestVar(projDim));
+			} else
+				list = pushArgument(mb,list,c->nr);
+
 			_DELETE(fqtn);
 		} else
 			q = NULL;
