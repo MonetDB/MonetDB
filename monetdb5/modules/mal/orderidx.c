@@ -93,6 +93,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o);
+		o += 1;
 	}
 	for (i=0; i< pieces; i++) {
 		/* add sort instruction */
@@ -166,7 +167,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.getorder", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 
 	*ret = b->torderidx.o;
 
