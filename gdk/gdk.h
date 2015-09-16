@@ -3065,8 +3065,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @- BAT relational operators
  *  @multitable @columnfractions 0.08 0.7
  * @item BAT *
-  * @tab BATsemijoin (BAT *l, BAT *r)
- * @item BAT *
  * @tab BATselect (BAT *b, ptr tl, ptr th)
  * @item BAT *
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
@@ -3082,9 +3080,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * operation takes two inclusive ranges as search arguments.
  * Interpretation of a NULL argument depends on the position, i.e. a
  * domain lower or upper bound.
- *
- * The BATsemijoin over R[A, B] and S[C, D] produces the subset of
- * R[A, B] that satisfies the semijoin over A and C.
  *
  * The full-materialization policy intermediate results in MonetDB
  * means that a join can produce an arbitrarily large result and choke
@@ -3112,7 +3107,6 @@ gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
-gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
 
@@ -3184,17 +3178,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect(_b, (h), (t));				\
-	})
-
-#define BATsemijoin(l, r)						\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsemijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATsemijoin(_l, _r);					\
 	})
 
 #endif

@@ -852,12 +852,6 @@ ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGsemijoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsemijoin, "algebra.semijoin");
-}
-
-str
 ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;

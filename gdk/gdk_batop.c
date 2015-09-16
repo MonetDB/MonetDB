@@ -939,8 +939,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * recomputed in the result).
  *
  * Note that the BATslice() is used indirectly as well as a special
- * case for BATselect (range selection on sorted column) and
- * BATsemijoin (when two dense columns are semijoined).
+ * case for BATselect (range selection on sorted column).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */

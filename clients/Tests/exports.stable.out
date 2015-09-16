@@ -163,7 +163,6 @@ BAT *BATsample(BAT *b, BUN n);
 gdk_return BATsave(BAT *b);
 BAT *BATselect(BAT *b, const void *tl, const void *th);
 BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-BAT *BATsemijoin(BAT *l, BAT *r);
 void BATseqbase(BAT *b, oid o);
 gdk_return BATsetaccess(BAT *b, int mode);
 void BATsetcapacity(BAT *b, BUN cnt);
@@ -724,7 +723,6 @@ str ALGrangejoin2(bat *l, bat *r, const bat *lid, const bat *rlid, const bat *rh
 str ALGreuse(bat *ret, const bat *bid);
 str ALGsample(bat *result, const bat *bid, const int *param);
 str ALGselectNotNil(bat *result, const bat *bid);
-str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
 str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);
 str ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end);

@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATsemijoin.  Use BATsubsemijoin instead.
 - Removed BATjoin.  Use BATsubjoin instead.
 - Removed BATleftjoin.  Use BATsubleftjoin or BATproject instead.
 - Removed BATleftfetchjoin.  Use BATproject instead.
