@@ -1214,7 +1214,7 @@ ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	BAT *b, *bn;
+	BAT *b, *bn = NULL;
 	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
 	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
 
@@ -1227,7 +1227,7 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 
 	slice(&bn, b, s, e);
-	if( bn == 0){
+	if(bn == NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.slice", "Slicing failed");
 	}
