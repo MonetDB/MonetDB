@@ -80,10 +80,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		/* mitosis/mergetable bailout conditions */
 		
-		/* Mergetable cannot handle order related batcalc ops */
-		if (getModuleId(p) == batcalcRef || getModuleId(p) == sqlRef) 
-			return 0;
-
 		if (p->argc > 2 && getModuleId(p) == aggrRef && 
 		        getFunctionId(p) != subcountRef &&
 		    	getFunctionId(p) != subminRef &&
