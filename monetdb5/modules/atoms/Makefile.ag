@@ -20,13 +20,13 @@ lib_atoms = {
 		color.c color.h \
 		identifier.c \
 		inet.c \
-		mtime.c mtime.h \
-		streams.c streams.h \
-		str.c str.h \
-		url.c url.h \
 		json.c json.h \
-		uuid.c \
 		mcurl.c \
+		mtime.c mtime.h \
+		str.c str.h \
+		streams.c streams.h \
+		url.c url.h \
+		uuid.c \
 		xml.c xml.h
 }
 
@@ -39,14 +39,14 @@ headers_mal = {
 		color.mal \
 		identifier.mal \
 		inet.mal \
+		json.mal \
+		mcurl.mal \
+		mtime.mal \
 		streams.mal \
 		str.mal \
 		url.mal \
-		json.mal \
 		uuid.mal \
-		xml.mal \
-		mcurl.mal \
-		mtime.mal
+		xml.mal
 }
 
 headers_hge = {
@@ -58,4 +58,4 @@ headers_hge = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql batxml.sql str.mal batxml.mal url.mal json.mal 00_json_hge.mal uuid.mal streams.mal mtime.mal mcurl.mal
+EXTRA_DIST = xml.sql batxml.sql

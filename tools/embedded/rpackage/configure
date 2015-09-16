@@ -28,7 +28,6 @@ fi
 if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.so.$VER" ]; then
     ln -s $R_PACKAGE_DIR/install/lib/libembedded.so.$VER $RDYNLIB
 fi
-# TODO: Windows case (shudder)
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
     exit -1

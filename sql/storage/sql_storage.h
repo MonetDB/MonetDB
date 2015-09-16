@@ -320,6 +320,7 @@ extern int store_init(int debug, store_type store, int readonly, int singleuser,
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);
+extern void store_flush_log(void);
 extern void store_manager(void);
 extern void minmax_manager(void);
 

@@ -1277,14 +1277,15 @@ exp_unsafe( sql_exp *e)
 	if (e->type != e_func && e->type != e_convert)
 		return 0;
 
-	if (e->type == e_func && e->card == CARD_AGGR)
-		return 1;
 	if (e->type == e_convert && e->l)
 		return exp_unsafe(e->l);
 	if (e->type == e_func && e->l) {
+		sql_subfunc *f = e->f;
 		list *args = e->l;
 		node *n;
 
+		if (IS_ANALYTIC(f->func))
+			return 1;
 		for(n = args->h; n; n = n->next) {
 			sql_exp *e = n->data;
 

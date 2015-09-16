@@ -52,8 +52,10 @@ Ready.
 [1] TRUE
 [1] TRUE
 [1] TRUE
-   L1
-1 150
+[1] 150
+[1] 150
+[1] "monetdbtest"                       "\"Need to quote this table name\""
+[1] TRUE
 [1] TRUE
 [1] TRUE
 [1] TRUE

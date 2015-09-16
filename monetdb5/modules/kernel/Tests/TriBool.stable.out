@@ -47,34 +47,36 @@ Ready.
 [ 6@0,	  nil,	  true	  ]
 [ 7@0,	  nil,	  false	  ]
 [ 8@0,	  nil,	  nil	  ]
-#---------------------------------------------------------#
-# t	h	h	h	t	h	t	  # name
-# void	bit	bit	bit	bit	bit	bit	  # type
-#---------------------------------------------------------#
-[ 0@0,	  true,	  true,	  true,	  true,	  true,	  true	  ]
-[ 1@0,	  true,	  false,  true,	  true,	  true,	  true	  ]
-[ 2@0,	  true,	  nil,	  true,	  true,	  true,	  true	  ]
-[ 3@0,	  false,  true,	  true,	  true,	  true,	  true	  ]
-[ 4@0,	  false,  false,  false,  false,  false,  false	  ]
-[ 5@0,	  false,  nil,	  nil,	  nil,	  nil,	  nil	  ]
-[ 6@0,	  nil,	  true,	  true,	  true,	  true,	  true	  ]
-[ 7@0,	  nil,	  false,  nil,	  nil,	  nil,	  nil	  ]
-[ 8@0,	  nil,	  nil,	  nil,	  nil,	  nil,	  nil	  ]
-#---------------------------------------------------------#
-# t	h	h	h	t	h	t	  # name
-# void	bit	bit	bit	bit	bit	bit	  # type
-#---------------------------------------------------------#
-[ 0@0,	  true,	  true,	  true,	  true,	  true,	  true	  ]
-[ 1@0,	  true,	  false,  false,  false,  false,  false	  ]
-[ 2@0,	  true,	  nil,	  nil,	  nil,	  nil,	  nil	  ]
-[ 3@0,	  false,  true,	  false,  false,  false,  false	  ]
-[ 4@0,	  false,  false,  false,  false,  false,  false	  ]
-[ 5@0,	  false,  nil,	  false,  false,  false,  false	  ]
-[ 6@0,	  nil,	  true,	  nil,	  nil,	  nil,	  nil	  ]
-[ 7@0,	  nil,	  false,  false,  false,  false,  false	  ]
-[ 8@0,	  nil,	  nil,	  nil,	  nil,	  nil,	  nil	  ]
+#io.print(bl,br, bo, oo);
+#--------------------------#
+# t	t	t	t	t  # name
+# void	bit	bit	bit	bit  # type
+#--------------------------#
+[ 0@0,	true,	true,	true,	true	]
+[ 1@0,	true,	false,	true,	true	]
+[ 2@0,	true,	nil,	true,	true	]
+[ 3@0,	false,	true,	true,	true	]
+[ 4@0,	false,	false,	false,	false	]
+[ 5@0,	false,	nil,	nil,	nil	]
+[ 6@0,	nil,	true,	true,	true	]
+[ 7@0,	nil,	false,	nil,	nil	]
+[ 8@0,	nil,	nil,	nil,	nil	]
+#io.print(bl,br, ba, aa);
+#--------------------------#
+# t	t	t	t	t  # name
+# void	bit	bit	bit	bit  # type
+#--------------------------#
+[ 0@0,	true,	true,	true,	true	]
+[ 1@0,	true,	false,	false,	false	]
+[ 2@0,	true,	nil,	nil,	nil	]
+[ 3@0,	false,	true,	false,	false	]
+[ 4@0,	false,	false,	false,	false	]
+[ 5@0,	false,	nil,	false,	false	]
+[ 6@0,	nil,	true,	nil,	nil	]
+[ 7@0,	nil,	false,	false,	false	]
+[ 8@0,	nil,	nil,	nil,	nil	]
 
-# 16:19:40 >  
-# 16:19:40 >  Done.
-# 16:19:40 >  
+# 14:13:32 >  
+# 14:13:32 >  "Done."
+# 14:13:32 >  
 

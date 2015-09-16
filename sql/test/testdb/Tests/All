@@ -1,3 +1,4 @@
 HAVE_GEOM?testdb-load
-HAVE_GEOM&RELEASERUN?testdb-package
+!HAVE_HGE&HAVE_GEOM&RELEASERUN?testdb-package
+HAVE_HGE&HAVE_GEOM&RELEASERUN?testdb-package-hge
 HAVE_GEOM?testdb-dump

@@ -1,5 +1,6 @@
 # The first memo driven execution
 # use a generic cost function
+include run_memo;
 
 	A:= bat.new(:oid,:oid);
 	bat.append(A,1@0);

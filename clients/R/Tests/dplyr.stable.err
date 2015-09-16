@@ -30,6 +30,9 @@ stderr of test 'dplyr` in directory 'clients/R` itself:
 # 14:31:12 >  "R" "--vanilla" "--slave" "--args" "32629"
 # 14:31:12 >  
 
+Identifier(s) "Batting" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Master" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "HallOfFame" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
 
 # 17:39:45 >  
 # 17:39:45 >  "Done."

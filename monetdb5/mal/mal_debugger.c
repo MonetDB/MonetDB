@@ -823,16 +823,7 @@ retryRead:
 				i = findVariable(mb, b);
 			}
 			if (i < 0) {
-				i = BBPindex(b);
-				if (i != 0) {
-					printBATelm(out, i, size, first);
-				} else {
-					i = atoi(b);
-					if (i>-0 || *b == '0')
-						printStackElm(out, mb, stk->stk + i, i, size, first);
-					else
-						mnstr_printf(out, "#%s Symbol not found\n", "#mdb ");
-				}
+				mnstr_printf(out, "#%s Symbol not found\n", b);
 				continue;
 			}
 			if (isaBatType(getVarType(mb, i)) && upper == 'p') {
@@ -1245,13 +1236,14 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 static void
 printBATelm(stream *f, bat i, BUN cnt, BUN first)
 {
-	BAT *b, *bs;
+	BAT *b, *bs[2]={0};
 	str tpe;
 
 	b = BATdescriptor(i);
 	if (b) {
 		tpe = getTypeName(newColumnType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
+		GDKfree(tpe);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);
@@ -1261,18 +1253,23 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 				mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 			}
 			/* cut out a portion of the BAT for display */
-			bs = BATslice(b, first, first + cnt);
-
-			if (bs == NULL)
+			bs[1] = BATslice(b, first, first + cnt);
+			/* get the void values */
+			if (bs[1] == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
-				BBPunfix(bs->batCacheid);
+				bs[0] = BATmark(bs[1],0);
+				if( bs[0] == NULL){
+					mnstr_printf(f, "Failed to take chunk index\n");
+				} else {
+					BATprintcolumns(f, 2, bs);
+					BBPunfix(bs[0]->batCacheid);
+					BBPunfix(bs[1]->batCacheid);
+				}
 			}
 		}
 
 		BBPunfix(b->batCacheid);
-		GDKfree(tpe);
 	} else
 		mnstr_printf(f, "\n");
 }
@@ -1345,27 +1342,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.bval != bat_nil) {
-		BAT *b, *bs;
-
-		b = BATdescriptor(v->val.bval);
-		if (b == NULL) {
-			mnstr_printf(f, "Could not access descriptor\n");
-			return;
-		}
-		if (cnt <= BATcount(b)) {
-			mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
-		}
-		/* cut out a portion of the BAT for display */
-		bs = BATslice(b, first, first + cnt);
-
-		if (bs == NULL)
-			mnstr_printf(f, "Failed to take chunk\n");
-		else{
-			BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
-			BBPunfix(bs->batCacheid);
-		}
-
-		BBPunfix(b->batCacheid);
+		printBATelm(f,v->val.bval,cnt,first);
 	}
 }
 
@@ -1389,7 +1366,7 @@ printBatDetails(stream *f, bat bid)
 			BBPunfix(b[0]->batCacheid);
 			return;
 		}
-		BATmultiprintf(f, 3, b, TRUE, 0, TRUE);
+		BATprintcolumns(f, 2, b);
 		BBPunfix(b[0]->batCacheid);
 		BBPunfix(b[1]->batCacheid);
 	}

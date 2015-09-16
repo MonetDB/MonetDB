@@ -176,6 +176,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	seq = b->hseqbase;
 	l = BUNfirst(b);
 	h = BUNlast(b);
+#ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
 		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
@@ -197,6 +198,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 					BATgetId(b2), BATcount(b2));
 		}
 	}
+#endif
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
 		 * boundaries */
@@ -782,13 +784,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -797,13 +800,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -812,13 +816,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -827,13 +832,14 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
 		while (p < q) {
-			if (ptr[p++] == pos) {
+			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p-r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
 			}
+			p++;
 			o++;
 		}
 		break;
@@ -1612,18 +1618,27 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		(((b->batPersistence == PERSISTENT ||
-		  (parent != 0 &&
-		   BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)) &&
+		(((b->batPersistence == PERSISTENT
+#ifndef DISABLE_PARENT_HASH
+		   || (parent != 0 &&
+		       BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)
+#endif
+			  ) &&
 		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
-		 (BATcheckhash(b) ||
-		  (parent != 0 &&
-		   BATcheckhash(BBPdescriptor(-parent)))));
+		 (BATcheckhash(b)
+#ifndef DISABLE_PARENT_HASH
+		  || (parent != 0 &&
+		      BATcheckhash(BBPdescriptor(-parent)))
+#endif
+			 ));
 	if (hash &&
 	    estimate == BUN_NONE &&
-	    !BATcheckhash(b) &&
-	    (parent == 0 || !BATcheckhash(BBPdescriptor(-parent)))) {
+	    !BATcheckhash(b)
+#ifndef DISABLE_PARENT_HASH
+	    && (parent == 0 || !BATcheckhash(BBPdescriptor(-parent)))
+#endif
+		) {
 		/* no exact result size, but we need estimate to choose
 		 * between hash- & scan-select
 		 * (if we already have a hash, it's a no-brainer: we
@@ -1779,7 +1794,7 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
 gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -1961,6 +1976,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				assert(high >= low);
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -1979,6 +1996,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				/* [low..high) */
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, cnt) != GDK_SUCCEED ||
@@ -2441,6 +2460,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					continue;
 				if (BUNlast(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);
+					if (newcap > maxsize)
+						newcap = maxsize;
 					BATsetcount(r1, BATcount(r1));
 					BATsetcount(r2, BATcount(r2));
 					if (BATextend(r1, newcap) != GDK_SUCCEED ||

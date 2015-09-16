@@ -9,7 +9,7 @@ copy 4 records into cik1 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
 
 select * from cik1;
 
-copy 4 records into cik1 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+copy 4 records into cik2 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
 0,1
 5,1
 5,1

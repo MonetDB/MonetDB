@@ -279,7 +279,7 @@ SQLexit(Client c)
 	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 8
+#define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -318,6 +318,10 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("history", &F);
 
+	typename = "bigint";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return 0;
 }
 
@@ -407,12 +411,14 @@ SQLinitClient(Client c)
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
+	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
+	MT_lock_set(&sql_contextLock, "SQLinitClient");
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -475,6 +481,7 @@ SQLinitClient(Client c)
 		str fullname;
 
 		SQLnewcatalog = 0;
+		maybeupgrade = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -521,8 +528,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		SQLupgrades(c,m);
+		if (maybeupgrade)
+			SQLupgrades(c,m);
+		maybeupgrade = 0;
 	}
+	MT_lock_unset(&sql_contextLock, "SQLinitClient");
 	fflush(stdout);
 	fflush(stderr);
 
@@ -850,6 +860,7 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
+		newStmt(mb,"profiler","reset");
 		q= newStmt(mb, "profiler", "stethoscope");
 		(void) pushInt(mb,q,0);
 	} else {
@@ -967,6 +978,8 @@ caching(mvc *m)
 static int
 cachable(mvc *m, stmt *s)
 {
+	if (m->emode == m_prepare)
+		return 1;
 	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
@@ -1145,7 +1158,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		// look for outdated plans
-		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
 			msg = SQLCacheRemove(c, be->q->name);
 			qc_delete(be->mvc->qc, be->q);
 			goto recompilequery;

@@ -133,10 +133,10 @@ typedef enum comp_type {
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 10,			/* special case for crossproducts */
 	cmp_project = 11,		/* special case for projection joins */
-	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
-	cmp_joined = 13, 		/* special case already joined */
-	cmp_equal_nil = 14, 		/* special case equi join, with nil = nil */
-	cmp_left			/* special case equi join, keep left order */
+	cmp_joined = 12, 		/* special case already joined */
+	cmp_equal_nil = 13, 		/* special case equi join, with nil = nil */
+	cmp_left = 14,			/* special case equi join, keep left order */
+	cmp_left_project = 15		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -274,12 +274,14 @@ typedef struct sql_arg {
 #define F_AGGR 3
 #define F_FILT 4
 #define F_UNION 5
+#define F_ANALYTIC 6
 
 #define IS_FUNC(f) (f->type == F_FUNC)
 #define IS_PROC(f) (f->type == F_PROC)
 #define IS_AGGR(f) (f->type == F_AGGR)
 #define IS_FILT(f) (f->type == F_FILT)
 #define IS_UNION(f) (f->type == F_UNION)
+#define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
 
 #define FUNC_LANG_INT 0	/* internal */
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */

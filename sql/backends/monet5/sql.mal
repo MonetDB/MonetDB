@@ -122,6 +122,10 @@ pattern evalAlgebra(cmd:str, optimize:bit):void
 address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
+command flush_log( ) :void
+address SQLflush_log
+comment "flush the log now";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -244,6 +248,10 @@ command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], 
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
+command project( col:bat[:oid,:oid], l:bat[:oid,:oid], r:bat[:oid,:oid]) :bat[:oid,:oid]
+address BATleftproject
+comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"
+
 command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client";
@@ -336,11 +344,11 @@ pattern exportChunk{unsafe}(s:streams, res_id:int, offset:int, nr:int) :void
 address mvc_export_chunk_wrap
 comment "Export a chunk of the result set (in order) to stream s"; 
 
-pattern exportOperation{unsafe}(w:str) :void
+pattern exportOperation{unsafe}() :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(mvc:int, nr:wrd, w:str) :int
+pattern affectedRows{unsafe}(mvc:int, nr:wrd) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -368,6 +376,20 @@ comment "Import a table from the files (fname)";
 command zero_or_one( col:bat[:oid,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+
+function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
+	(g,e,h) := group.subgroup(gp);
+	m := aggr.max(h);
+	c0 := calc.isnil(m);
+	c01 := calc.not(c0);
+	c1 := calc.>(m,1:wrd);
+	c11 := calc.and(c01,c1);
+	ms := calc.str(m); 
+	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
+	msg1 := str.+(msg, ">1)");
+	sql.assert(c11, msg1);
+	return zero_or_one := b;
+end sql.subzero_or_one;
 
 command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique 

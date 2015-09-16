@@ -582,7 +582,7 @@ typedef char *str;
 #	define LL_CONSTANT(val)	(val)
 #elif SIZEOF_LONG==8
 #	define LL_CONSTANT(val)	(val##L)
-#elif defined(HAVE_LONG_LONG) || defined(__MINGW32__)
+#elif defined(HAVE_LONG_LONG)
 #	define LL_CONSTANT(val)	(val##LL)
 #elif defined(HAVE___INT64)
 #	define LL_CONSTANT(val)	(val##i64)
@@ -644,9 +644,6 @@ typedef enum {
 	STORE_MEM = 0,		/* load into GDKmalloced memory */
 	STORE_MMAP = 1,		/* mmap() into virtual memory */
 	STORE_PRIV = 2,		/* BAT copy of copy-on-write mmap */
-	STORE_CMEM = 3,     /* Indicates the value is stored in regular C memory rather than GDK memory.*/
-	STORE_NOWN = 4,     /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
-	STORE_SHARED = 5,   /* Indicattes that the bat uses shared memory. */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
@@ -1090,8 +1087,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @item int
  * @tab BUNdel (BAT *b, ptr left, ptr right, bit force)
  * @item int
- * @tab BUNdelHead (BAT *b, ptr left, bit force)
- * @item BUN
  * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
  * @tab BUNlocate (BAT *b, ptr head, ptr tail)
@@ -1115,7 +1110,7 @@ gdk_export bte ATOMelmshift(int sz);
  * copying the BAT first.
  *
  * The update operations come in three flavors. Element-wise updates
- * can use BUNins, BUNappend, BUNreplace, BUNdel, and BUNdelHead.  The
+ * can use BUNins, BUNappend, BUNreplace, and BUNdel.  The
  * batch update operations are BATins, BATappend and BATdel.
  *
  * Only experts interested in speed may use BUNfastins, since it skips
@@ -1308,7 +1303,6 @@ gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BUNdel(BAT *b, const void *left, const void *right, bit force);
-gdk_export gdk_return BUNdelHead(BAT *b, const void *left, bit force);
 gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
 gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
 
@@ -1582,38 +1576,22 @@ gdk_export gdk_return GDKcreatedir(const char *nme);
  * @item int
  * @tab BATprintf (stream *f, BAT *b)
  * @item int
- * @tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid,
- * int order, int printorderby)
+ * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
- * The functions to convert BATs into ASCII and the reverse use
- * internally defined formats. They are primarily meant for ease of
+ * The functions to convert BATs into ASCII. They are primarily meant for ease of
  * debugging and to a lesser extent for output processing.  Printing a
  * BAT is done essentially by looping through its components, printing
- * each association.  If an index is available, it will be used.
+ * each association.  
  *
- * The BATmultiprintf command assumes a set of BATs with corresponding
- * oid-s in the head columns. It performs the multijoin over them, and
- * prints the multi-column result on the file.
  */
-gdk_export gdk_return BATprintcols(stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
 gdk_export gdk_return BATprintf(stream *f, BAT *b);
-gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 
 /*
  * @- BAT clustering
  * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATsort (BAT *b)
- * @item BAT *
- * @tab BATsort_rev (BAT *b)
- * @item BAT *
- * @tab BATorder (BAT *b)
- * @item BAT *
- * @tab BATorder_rev (BAT *b)
- * @item BAT *
- * @tab BATrevert (BAT *b)
  * @item int
  * @tab BATordered (BAT *b)
  * @end multitable
@@ -1627,25 +1605,12 @@ gdk_export gdk_return BATmultiprintf(stream *f, int argc, BAT *argv[], int print
  * clusterings will allow that MonetDB's main-memory oriented
  * algorithms work efficiently also in a disk-oriented context.
  *
- * The BATsort functions return a copy of the input BAT, sorted in
- * ascending order on the head column. BATordered starts a check on
- * the head values to see if they are ordered. The result is returned
- * and stored in the hsorted field of the BAT.  BATorder is similar to
- * BATsort, but sorts the BAT itself, rather than returning a copy
- * (BEWARE: this operation destroys the delta
- * information. TODO:fix). The BATrevert puts all the live BUNs of a
- * BAT in reverse order. It just reverses the sequence, so this does
- * not necessarily mean that they are sorted in reverse order!
+ * BATordered starts a check on the tail values to see if they are
+ * ordered. The result is returned and stored in the tsorted field of
+ * the BAT.
  */
-gdk_export BAT *BATsort(BAT *b);
-gdk_export BAT *BATsort_rev(BAT *b);
-gdk_export gdk_return BATorder(BAT *b);
-gdk_export gdk_return BATorder_rev(BAT *b);
-gdk_export gdk_return BATrevert(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
-gdk_export BAT *BATssort(BAT *b);
-gdk_export BAT *BATssort_rev(BAT *b);
 gdk_export gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
 
 
@@ -3064,13 +3029,12 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 
 /*
  * @- loop over a BAT with ordered tail
- * Here we loop over a BAT with an ordered tail column (see for
- * instance BATsort). Again, 'p' and 'q' are iteration variables,
- * where 'p' points at the current BUN. 'tl' and 'th' are pointers to
- * atom corresponding to the minimum (included) and maximum (included)
- * bound in the selected range of BUNs. A nil-value means that there
- * is no bound.  The 's' finally is an integer denoting the bunsize,
- * used for speed.
+ * Here we loop over a BAT with an ordered tail column. Again, 'p' and
+ * 'q' are iteration variables, where 'p' points at the current
+ * BUN. 'tl' and 'th' are pointers to atom corresponding to the
+ * minimum (included) and maximum (included) bound in the selected
+ * range of BUNs. A nil-value means that there is no bound.  The 's'
+ * finally is an integer denoting the bunsize, used for speed.
  */
 #define SORTloop(b, p, q, tl, th)					\
 	if (!BATtordered(b))						\
@@ -3104,20 +3068,12 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * @item BAT *
  * @tab BATjoin (BAT *l, BAT *r, BUN estimate)
  * @item BAT *
- * @tab BATouterjoin (BAT *l, BAT *r, BUN estimate)
- * @item BAT *
- * @tab BATthetajoin (BAT *l, BAT *r, int mode, BUN estimate)
- * @item BAT *
  * @tab BATsemijoin (BAT *l, BAT *r)
  * @item BAT *
  * @tab BATselect (BAT *b, ptr tl, ptr th)
  * @item BAT *
  * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
  * @item
- * @item BAT *
- * @tab BATkunion (BAT *b, BAT *c)
- * @item BAT *
- * @tab BATkintersect (BAT *b, BAT *c)
  * @item BAT *
  * @tab BATkdiff (BAT *b, BAT *c)
  * @end multitable
@@ -3130,15 +3086,10 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
  * Interpretation of a NULL argument depends on the position, i.e. a
  * domain lower or upper bound.
  *
- * The operation BATsort sorts the BAT on the header and produces a
- * new BAT. A side effect is the clustering of the BAT store on the
- * sort key.
- *
  * The BATjoin over R[A, B] and S[C, D] performs an equi-join over B
- * and C. It results in a BAT over A and D.  The BATouterjoin
- * implements a left outerjoin over the BATs involved.  The
- * BATsemijoin over R[A, B] and S[C, D] produces the subset of R[A, B]
- * that satisfies the semijoin over A and C.
+ * and C. It results in a BAT over A and D.  The BATsemijoin over R[A,
+ * B] and S[C, D] produces the subset of R[A, B] that satisfies the
+ * semijoin over A and C.
  *
  * The full-materialization policy intermediate results in MonetDB
  * means that a join can produce an arbitrarily large result and choke
@@ -3162,27 +3113,21 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
-gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
-gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
-gdk_export BAT *BATbandjoin(BAT *l, BAT *r, const void *mnus, const void *plus, bit li, bit hi);
-gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
 
 gdk_export gdk_return BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export BAT *BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
@@ -3194,8 +3139,6 @@ gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATkintersect(BAT *b, BAT *c);
-gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
@@ -3233,66 +3176,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
 
-#define BATorder(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder(_b);						\
-	})
-
-#define BATorder_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATorder_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATorder_rev(_b);					\
-	})
-
-#define BATsort(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsort(_b);						\
-	})
-
-#define BATsort_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATsort_rev(_b);					\
-	})
-
-#define BATssort(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATssort([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATssort(_b);						\
-	})
-
-#define BATssort_rev(b)							\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATssort_rev([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATssort_rev(_b);					\
-	})
-
 #define BATselect_(b, h, t, li, hi)					\
 	({								\
 		BAT *_b = (b);						\
@@ -3303,16 +3186,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATselect_(_b, (h), (t), (li), (hi));			\
 	})
 
-#define BATuselect_(b, h, t, li, hi)					\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect_(_b, (h), (t), (li), (hi));			\
-	})
-
 #define BATselect(b, h, t)						\
 	({								\
 		BAT *_b = (b);						\
@@ -3321,16 +3194,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
 			__func__, __FILE__, __LINE__);			\
 		BATselect(_b, (h), (t));				\
-	})
-
-#define BATuselect(b, h, t)						\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATuselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATuselect(_b, (h), (t));				\
 	})
 
 #define BATsemijoin(l, r)						\
@@ -3366,28 +3229,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATleftjoin(_l, _r, (estimate));			\
 	})
 
-#define BATthetajoin(l, r, op, estimate)				\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATthetajoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATthetajoin(_l, _r, (op), (estimate));			\
-	})
-
-#define BATouterjoin(l, r, estimate)					\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATouterjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATouterjoin(_l, _r, (estimate));			\
-	})
-
 #define BATleftfetchjoin(l, r, estimate)				\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
@@ -3399,38 +3240,15 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 		BATleftfetchjoin(_l, _r, (estimate));			\
 	})
 
-#define BATantijoin(l, r)						\
+#define BATkdiff(l, r)							\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATantijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
 			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
-		BATantijoin(_l, _r);					\
-	})
-
-#define BATbandjoin(l, r, c1, c2, li, hi)				\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATbandjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATbandjoin(_l, _r, (c1), (c2), (li), (hi));		\
-	})
-
-#define BATrangejoin(l, rl, rh, li, hi)					\
-	({								\
-		BAT *_l = (l), *_rl = (rl), *_rh = (rh);		\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATrangejoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_rl->H), _COL_TYPE(_rl->T), BATcount(_rl), \
-			_COL_TYPE(_rh->H), _COL_TYPE(_rh->T), BATcount(_rh), \
-			__func__, __FILE__, __LINE__);			\
-		BATrangejoin(_l, _rl, _rh, (li), (hi));			\
+		BATkdiff(_l, _r);					\
 	})
 
 #endif
