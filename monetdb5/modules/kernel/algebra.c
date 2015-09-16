@@ -894,63 +894,6 @@ ALGsemijoin(bat *result, const bat *lid, const bat *rid)
 	return ALGbinary(result, lid, rid, BATsemijoin, "algebra.semijoin");
 }
 
-/* add items missing in the kernel */
-str
-ALGtdiff(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATkdiff(BATmirror(b),BATmirror(b2));
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (bn) {
-		BAT *r = BATmirror(BATmark(bn,0));
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.tdiff", GDK_EXCEPTION);
-}
-
-str
-ALGtinter(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (bn) {
-		BAT *r = BATmirror(BATmark(bn,0));
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.tinter", GDK_EXCEPTION);
-}
-
 str
 ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {

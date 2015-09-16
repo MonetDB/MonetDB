@@ -3137,8 +3137,6 @@ gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATkdiff(BAT *b, BAT *c);
-
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
@@ -3225,17 +3223,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATleftjoin(_l, _r, (estimate));			\
-	})
-
-#define BATkdiff(l, r)							\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATkdiff(_l, _r);					\
 	})
 
 #endif

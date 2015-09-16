@@ -67,8 +67,6 @@ opt_export  str dblRef;
 opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
-opt_export  str tdiffRef;
-opt_export  str tinterRef;
 opt_export  str subdiffRef;
 opt_export  str subinterRef;
 opt_export  str mergecandRef;

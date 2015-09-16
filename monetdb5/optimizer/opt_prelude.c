@@ -69,8 +69,6 @@ str dblRef;
 str defineRef;
 str deleteRef;
 str depositRef;
-str tdiffRef;
-str tinterRef;
 str subdiffRef;
 str subinterRef;
 str mergecandRef;
@@ -316,8 +314,6 @@ void optimizerInit(void)
 	defineRef = putName("define",6);
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
-	tdiffRef= putName("tdiff",5);
-	tinterRef= putName("tinter",6);
 	subdiffRef = putName("subdiff",7);
 	subinterRef = putName("subinter",8);
 	mergecandRef= putName("mergecand",9);
