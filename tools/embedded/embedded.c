@@ -390,7 +390,7 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	const char *schema = NULL, *name = NULL;
 	str msg;
 	int col_ct, row_ct, i, j;
-	BAT *b;
+	BAT *b = NULL;
 	BUN cnt;
 	append_data *ad = NULL;
 	int t_column_count;
