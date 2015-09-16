@@ -21,7 +21,6 @@ lib_mal = {
 		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
 		clients.c clients.h \
-		cluster.c cluster.h \
 		factories.c factories.h \
 		groupby.c groupby.h \
 		inspect.c inspect.h \
@@ -63,7 +62,6 @@ headers_mal = {
 		transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		cluster.mal \
 		tokenizer.mal zorder.mal sample.mal json_util.mal \
 		batmtime.mal querylog.mal sysmon.mal
 }

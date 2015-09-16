@@ -17,7 +17,6 @@
  */
 #include "monetdb_config.h"
 #include "joinpath.h"
-//#include "cluster.h"
 
 /*
  * The join path optimizer takes a join sequence and
