@@ -1113,11 +1113,6 @@ gdk_export bte ATOMelmshift(int sz);
  * can use BUNins, BUNappend, BUNreplace, and BUNdel.  The
  * batch update operations are BATins, BATappend and BATdel.
  *
- * Only experts interested in speed may use BUNfastins, since it skips
- * most consistency checks, does not update search accelerators, and
- * does not maintain properties such as the hsorted and tsorted
- * flags. Beware!
- *
  * The routine BUNfnd provides fast access to a single BUN providing a
  * value for the tail of the binary association.
  *
@@ -1183,7 +1178,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMputFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
-#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 #define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
 #define HTreplacevalue(b, p, v, HT)					\
 	do {								\
@@ -1231,7 +1225,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMreplaceFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
-#define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
 #define HTfastins_nocheck(b, p, v, s, HT)			\
 	do {							\
@@ -1239,35 +1232,7 @@ gdk_export bte ATOMelmshift(int sz);
 		(b)->HT->heap.free += (s);			\
 		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
 	} while (0)
-#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
 #define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
-
-#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
-	do {						\
-		hfastins_nocheck(b, p, h, hs);		\
-		tfastins_nocheck(b, p, t, ts);		\
-		(b)->batCount++;			\
-	} while (0)
-
-#define bunfastins_nocheck_inc(b, p, h, t)				\
-	do {								\
-		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
-		p++;							\
-	} while (0)
-
-#define bunfastins(b, h, t)						\
-	do {								\
-		register BUN _p = BUNlast(b);				\
-		if (_p >= BATcapacity(b)) {				\
-			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
-	} while (0)
 
 #define bunfastapp_nocheck(b, p, t, ts)		\
 	do {					\
@@ -1297,7 +1262,6 @@ gdk_export bte ATOMelmshift(int sz);
 	} while (0)
 
 gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
-gdk_export gdk_return BUNfastins(BAT *b, const void *left, const void *right);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
@@ -3130,18 +3094,5 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
  *
  */
 #define MAXPARAMS	32
-
-#ifndef NDEBUG
-#ifdef __GNUC__
-/* in debug builds, complain (warn) about usage of legacy functions */
-
-#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
-				(c)->seq == oid_nil ? "nil" : "void" :	\
-			 (c)->type == TYPE_oid ?			\
-				(c)->dense ? "dense" : "oid" :		\
-			 ATOMname((c)->type))
-
-#endif
-#endif
 
 #endif /* _GDK_H_ */
