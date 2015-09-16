@@ -137,7 +137,6 @@ gdk_return BAThash(BAT *b, BUN masksize);
 gdk_return BATimprints(BAT *b);
 gdk_return BATins(BAT *b, BAT *c, bit force);
 BAT *BATintersectcand(BAT *a, BAT *b);
-BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 gdk_return BATkey(BAT *b, int onoff);
 BAT *BATmark(BAT *b, oid base);
 BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
