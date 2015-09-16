@@ -23,6 +23,10 @@
 
 typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
 SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
+typedef str (*SQLautocommit_ptr_tpe)(Client, mvc*);
+SQLautocommit_ptr_tpe SQLautocommit_ptr = NULL;
+typedef str (*SQLinitClient_ptr_tpe)(Client);
+SQLinitClient_ptr_tpe SQLinitClient_ptr = NULL;
 typedef void (*res_table_destroy_ptr_tpe)(res_table *t);
 res_table_destroy_ptr_tpe res_table_destroy_ptr = NULL;
 
@@ -73,12 +77,15 @@ int monetdb_startup(char* dir, char silent) {
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
+	SQLautocommit_ptr = (SQLautocommit_ptr_tpe) lookup_function("lib_sql",  "SQLautocommit");
+	SQLinitClient_ptr = (SQLinitClient_ptr_tpe) lookup_function("lib_sql",  "SQLinitClient");
 	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
-	if (SQLstatementIntern_ptr == NULL || res_table_destroy_ptr == NULL) {
+	if (SQLstatementIntern_ptr == NULL || SQLautocommit_ptr == NULL || res_table_destroy_ptr == NULL) {
 		retval = -4;
 		goto cleanup;
 	}
-
+	// call this, otherwise c->sqlcontext is empty
+	(*SQLinitClient_ptr)(&mal_clients[0]);
 	monetdb_embedded_initialized = true;
 	// sanity check, run a SQL query
 	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
@@ -118,7 +125,7 @@ char* monetdb_query(char* query, void** result) {
 		res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
 	}
 
-	SQLautocommit(c, m);
+	(*SQLautocommit_ptr)(c, m);
 	return res;
 }
 
