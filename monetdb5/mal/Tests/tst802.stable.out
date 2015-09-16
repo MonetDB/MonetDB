@@ -21,7 +21,7 @@ stdout of test 'tst802` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.tst(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
+function user.tst(b:bat[:oid,:any_2]):bat[:oid,:any_2];
     return tst := b;
 end user.tst;
 function user.main():void;

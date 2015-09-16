@@ -1,5 +1,5 @@
 #testing simple stuff around type BAT
-function tst(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
+function tst(b:bat[:oid,:any_2]):bat[:oid,:any_2];
 	return b;
 end tst;
 
