@@ -103,7 +103,7 @@ char* monetdb_query(char* query, void** result) {
 		return NULL;
 	}
 
-	while (query == ' ' || query == '\t') query++;
+	while (*query == ' ' || *query == '\t') query++;
 	if (strncasecmp(query, "START", 5) == 0) { // START TRANSACTION
 		m->session->auto_commit = 0;
 	}
