@@ -518,6 +518,13 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 					return sql_message("40000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
+		if (t->access != TABLE_READONLY) {
+			for (n = t->idxs.nelm; n; n = n->next) {
+				sql_idx *i = n->data;
+				if (i && i->type == ordered_idx)
+					return sql_message("40000!ORDERED INDEX: only READONLY tables can have an ORDERED INDEX\n");
+			}
+		}
 	}
 
 	/* check for changes */

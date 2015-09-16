@@ -12,6 +12,7 @@
 #include <sql_string.h>
 #include <algebra.h>
 #include <gdk_atoms.h>
+#include <orderidx.h>
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
@@ -123,7 +124,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
+	u = delta_bind_ubat(i->data, access, (oid_index(i->type))?TYPE_oid:TYPE_wrd);
 	return u;
 }
 
@@ -454,7 +455,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		return;
 
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (oid_index(i->type))?TYPE_oid:TYPE_wrd;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -562,7 +563,7 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 	int ok = LOG_OK;
 
 	if (i->data) {
-		int type = (ni->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (oid_index(ni->type))?TYPE_oid:TYPE_wrd;
 		sql_delta *bat = ni->data = ZNEW(sql_delta), *obat = i->data;
 		ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
 		ni->base.allocated = 1;
@@ -648,7 +649,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		return;
 
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (oid_index(i->type))?TYPE_oid:TYPE_wrd;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -1149,7 +1150,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	sql_delta *bat = ni->data;
 	int type = TYPE_wrd;
 
-	if (ni->type == join_idx)
+	if (oid_index(ni->type))
 		type = TYPE_oid;
 
 	if (!bat) {
@@ -1168,6 +1169,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		sql_column *c = ni->t->columns.set->h->data;
 		sql_delta *d;
 	       
+		if (ni->type == ordered_idx) 
+			c = ((sql_kc*)ni->columns->h->data)->c;
 		if (!c->data) {
 			sql_column *oc = tr_find_column(tr->parent, c);
 			c->data = timestamp_delta(oc->data, tr->stime);
@@ -1176,7 +1179,19 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		/* Here we also handle indices created through alter stmts */
 		/* These need to be created aligned to the existing data */
 
-		bat->bid = copyBat(d->bid, type, 0);
+		if (ni->type == ordered_idx) {
+			Client cntxt = mal_clients+tr->stk;
+			BAT *b = temp_descriptor(d->bid);
+			str msg;
+
+			/* what to do with the result msg */
+			msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,type), b, -1);
+			assert(msg == NULL);
+			bat->bid = b->torderidx.o;
+			(void)msg;
+			bat_destroy(b);
+		} else
+			bat->bid = copyBat(d->bid, type, 0);
 		bat->ibid = copyBat(d->ibid, type, d->ibase);
 		bat->ibase = d->ibase;
 		bat->cnt = d->cnt;
@@ -1511,7 +1526,7 @@ static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (oid_index(i->type))?TYPE_oid:TYPE_wrd;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -1560,7 +1575,7 @@ empty_col(sql_column *c)
 static void 
 empty_idx(sql_idx *i)
 {
-	int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+	int type = (oid_index(i->type))?TYPE_oid:TYPE_wrd;
 	sql_delta *bat = i->data;
 
 	assert(i->data && i->base.allocated && bat->bid == 0);
