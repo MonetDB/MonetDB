@@ -15,7 +15,6 @@
 #undef BATsemijoin
 #undef BATjoin
 #undef BATleftjoin
-#undef BATleftfetchjoin
 
 /* Return a subset of l where head elements occur as head element in r. */
 BAT *
@@ -197,13 +196,4 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 {
 	return do_batjoin(l, r, estimate,
 			  BATsubleftjoin, "BATleftjoin");
-}
-
-/* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
- * if there is no match for a tuple in l, return nil in tail */
-BAT *
-BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
-{
-	return do_batjoin(l, r, estimate,
-			  BATsubleftfetchjoin, "BATleftfetchjoin");
 }

@@ -140,7 +140,6 @@ BAT *BATintersectcand(BAT *a, BAT *b);
 BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 BAT *BATkdiff(BAT *b, BAT *c);
 gdk_return BATkey(BAT *b, int onoff);
-BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 BAT *BATmark(BAT *b, oid base);
 BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
