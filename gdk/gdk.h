@@ -3118,7 +3118,6 @@ gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
 
@@ -3212,17 +3211,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
 			__func__, __FILE__, __LINE__);			\
 		BATjoin(_l, _r, (estimate));				\
-	})
-
-#define BATleftjoin(l, r, estimate)					\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATleftjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATleftjoin(_l, _r, (estimate));			\
 	})
 
 #endif

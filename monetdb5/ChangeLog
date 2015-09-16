@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.leftjoin.  Use algebra.subleftjoin or
+  algebra.leftfetchjoin instead.
 - Removed algebra.tdiff and algebra.tinter.
 
 * Mon Sep 14 2015 Sjoerd Mullender <sjoerd@acm.org>

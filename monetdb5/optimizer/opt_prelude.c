@@ -114,8 +114,6 @@ str kdifferenceRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
-str leftjoinRef;
-str leftjoinPathRef;
 str likeselectRef;
 str ilikeselectRef;
 str likeuselectRef;
@@ -359,8 +357,6 @@ void optimizerInit(void)
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
-	leftjoinRef = putName("leftjoin",8);
-	leftjoinPathRef = putName("leftjoinPath",12);
 	likeselectRef = putName("like_select",11);
 	ilikeselectRef = putName("ilike_select",12);
 	likeuselectRef = putName("like_uselect",12);

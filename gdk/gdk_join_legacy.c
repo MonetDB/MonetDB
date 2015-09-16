@@ -14,7 +14,6 @@
 
 #undef BATsemijoin
 #undef BATjoin
-#undef BATleftjoin
 
 /* Return a subset of l where head elements occur as head element in r. */
 BAT *
@@ -187,13 +186,4 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 {
 	return do_batjoin(l, r, estimate,
 			  BATsubjoin, "BATjoin");
-}
-
-/* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
- * return value is in order of left input */
-BAT *
-BATleftjoin(BAT *l, BAT *r, BUN estimate)
-{
-	return do_batjoin(l, r, estimate,
-			  BATsubleftjoin, "BATleftjoin");
 }

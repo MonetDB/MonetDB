@@ -689,31 +689,6 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 	return MAL_SUCCEED;
 }
 
-static str
-ALGbinaryestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate,
-				  BAT *(*func)(BAT *, BAT *, BUN), const char *name)
-{
-	BAT *left, *right, *bn = NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	bn = (*func)(left, right, estimate ? (BUN) *estimate : BUN_NONE);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	if (bn == NULL)
-		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
 static BAT *
 BATwcopy(BAT *b)
 {
@@ -868,18 +843,6 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate)
-{
-	return ALGbinaryestimate(result, lid, rid, estimate, BATleftjoin, "algebra.leftjoin");
-}
-
-str
-ALGleftjoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinaryestimate(result, lid, rid, NULL, BATleftjoin, "algebra.leftjoin");
 }
 
 str

@@ -112,8 +112,6 @@ opt_export  str kdifferenceRef;
 opt_export  str languageRef;
 opt_export  str leftfetchjoinRef;
 opt_export  str leftfetchjoinPathRef;
-opt_export  str leftjoinRef;
-opt_export  str leftjoinPathRef;
 opt_export  str likeselectRef;
 opt_export  str ilikeselectRef;
 opt_export  str likeuselectRef;

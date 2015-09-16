@@ -2332,10 +2332,6 @@ pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
-pattern algebra.leftjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
@@ -2362,10 +2358,6 @@ command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:o
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
 
-command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate:lng):bat[:oid,:any_3] 
-address ALGleftjoinestimate;
-command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
-address ALGleftjoin;
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
