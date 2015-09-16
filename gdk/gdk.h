@@ -3063,23 +3063,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 
 /*
  * @- BAT relational operators
- *  @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATselect (BAT *b, ptr tl, ptr th)
- * @item BAT *
- * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
- * @item
- * @item BAT *
- * @tab BATkdiff (BAT *b, BAT *c)
- * @end multitable
- *
- * The BAT library comes with a full-fledged collection of relational
- * operators. The two selection operators BATselect and BATfragment
- * produce a partial copy of the BAT. The former performs a search on
- * the tail; the latter considers both dimensions.  The BATselect
- * operation takes two inclusive ranges as search arguments.
- * Interpretation of a NULL argument depends on the position, i.e. a
- * domain lower or upper bound.
  *
  * The full-materialization policy intermediate results in MonetDB
  * means that a join can produce an arbitrarily large result and choke
@@ -3102,8 +3085,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
-gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
@@ -3159,26 +3140,6 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 			 (c)->type == TYPE_oid ?			\
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
-
-#define BATselect_(b, h, t, li, hi)					\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATselect_(_b, (h), (t), (li), (hi));			\
-	})
-
-#define BATselect(b, h, t)						\
-	({								\
-		BAT *_b = (b);						\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			__func__, __FILE__, __LINE__);			\
-		BATselect(_b, (h), (t));				\
-	})
 
 #endif
 #endif

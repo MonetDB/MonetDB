@@ -161,8 +161,6 @@ gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 void BATroles(BAT *b, const char *hnme, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
 gdk_return BATsave(BAT *b);
-BAT *BATselect(BAT *b, const void *tl, const void *th);
-BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 void BATseqbase(BAT *b, oid o);
 gdk_return BATsetaccess(BAT *b, int mode);
 void BATsetcapacity(BAT *b, BUN cnt);

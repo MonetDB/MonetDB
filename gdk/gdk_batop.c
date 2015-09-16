@@ -925,9 +925,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * The BAT selectors are among the most heavily used operators.
  * Their efficient implementation is therefore mandatory.
  *
- * The interface supports seven operations: BATslice, BATselect,
- * BATfragment, BATproject, BATrestrict.
- *
  * BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
  * execution by avoiding to copy when the BAT is memory mapped (in
@@ -937,9 +934,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * If a new copy has to be created, this function takes care to
  * preserve void-columns (in this case, the seqbase has to be
  * recomputed in the result).
- *
- * Note that the BATslice() is used indirectly as well as a special
- * case for BATselect (range selection on sorted column).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */

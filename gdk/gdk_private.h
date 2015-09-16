@@ -438,6 +438,12 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
 
+#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
+				(c)->seq == oid_nil ? "nil" : "void" :	\
+			 (c)->type == TYPE_oid ?			\
+				(c)->dense ? "dense" : "oid" :		\
+			 ATOMname((c)->type))
+
 #define BATkdiff(l, r)							\
 	({								\
 		BAT *_l = (l), *_r = (r);				\
