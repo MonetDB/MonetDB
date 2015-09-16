@@ -37,6 +37,10 @@ typedef sql_schema* (*mvc_bind_schema_ptr_tpe)(mvc*, const char*);
 mvc_bind_schema_ptr_tpe mvc_bind_schema_ptr = NULL;
 typedef sql_table* (*mvc_bind_table_ptr_tpe)(mvc*, sql_schema*, const char*);
 mvc_bind_table_ptr_tpe mvc_bind_table_ptr = NULL;
+typedef int (*sqlcleanup_ptr_tpe)(mvc*, int);
+sqlcleanup_ptr_tpe sqlcleanup_ptr = NULL;
+typedef void (*mvc_trans_ptr_tpe)(mvc*);
+mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
 
 static bit monetdb_embedded_initialized = 0;
 static MT_Lock monetdb_embedded_lock;
@@ -93,11 +97,14 @@ int monetdb_startup(char* dir, char silent) {
 	mvc_append_wrap_ptr = (mvc_append_wrap_ptr_tpe)  lookup_function("lib_sql", "mvc_append_wrap");
 	mvc_bind_schema_ptr = (mvc_bind_schema_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_schema");
 	mvc_bind_table_ptr = (mvc_bind_table_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_table");
+	sqlcleanup_ptr = (sqlcleanup_ptr_tpe)  lookup_function("lib_sql", "sqlcleanup");
+	mvc_trans_ptr = (mvc_trans_ptr_tpe) lookup_function("lib_sql", "mvc_trans");
 
 	if (SQLstatementIntern_ptr == NULL || SQLautocommit_ptr == NULL ||
 			SQLinitClient_ptr == NULL || getSQLContext_ptr == NULL ||
 			res_table_destroy_ptr == NULL || mvc_append_wrap_ptr == NULL ||
-			mvc_bind_schema_ptr == NULL || mvc_bind_table_ptr == NULL) {
+			mvc_bind_schema_ptr == NULL || mvc_bind_table_ptr == NULL ||
+			sqlcleanup_ptr == NULL || mvc_trans_ptr == NULL) {
 		retval = -4;
 		goto cleanup;
 	}
@@ -159,8 +166,10 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	InstrRecord*  pci = NULL;
 	str res = MAL_SUCCEED;
 	VarRecord bat_varrec;
+	mvc* m = ((backend *) mal_clients[0].sqlcontext)->mvc;
 
 	assert(table != NULL && data != NULL && col_ct > 0);
+
 	// very black MAL magic below
 	mb.var = GDKmalloc(6 * sizeof(VarRecord*));
 	stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
@@ -178,7 +187,7 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	stk->stk[4].vtype = TYPE_str;
 	stk->stk[5].vtype = TYPE_bat;
 	mb.var[5] = &bat_varrec;
-
+	(*mvc_trans_ptr)(m);
 	for (i=0; i < col_ct; i++) {
 		append_data ad = data[i];
 		stk->stk[4].val.sval = ad.colname;
@@ -188,6 +197,10 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 		if (res != NULL) {
 			break;
 		}
+	}
+	if (res == MAL_SUCCEED) {
+//		m->emod = 16;
+		(*sqlcleanup_ptr)(m, 0);
 	}
 	GDKfree(mb.var);
 	GDKfree(stk);
@@ -341,7 +354,7 @@ static str monetdb_get_columns(const char* schema_name, const char *table_name, 
 	sql_table *t;
 	char *msg = MAL_SUCCEED;
 	int columns;
-	int i;
+	node *n;
 
 	assert(column_count != NULL && column_names != NULL && column_types != NULL);
 
@@ -364,11 +377,12 @@ static str monetdb_get_columns(const char* schema_name, const char *table_name, 
 		return MAL_MALLOC_FAIL;
 	}
 
-	for(i = 0; i < columns; i++) {
-		int acol = ((sql_column*)t->columns.set->h->data)[i].colnr;
-		*column_names[acol] = ((sql_base*)t->columns.set->h->data)[i].name;
-		*column_types[acol] = ((sql_column*)t->columns.set->h->data)[i].type.type->localtype;
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		(*column_names)[c->colnr] = c->base.name;
+		(*column_types)[c->colnr] = c->type.type->localtype;
 	}
+
 	return msg;
 }
 
