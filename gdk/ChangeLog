@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BUNins from the list of exported functions.
+
 * Thu Sep 10 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed legacy functions BATuselect and BATuselect_.
 - Removed legacy functions BATantijoin, BATbandjoin, BATouterjoin,

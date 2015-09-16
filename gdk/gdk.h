@@ -1298,7 +1298,6 @@ gdk_export bte ATOMelmshift(int sz);
 
 gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNfastins(BAT *b, const void *left, const void *right);
-gdk_export gdk_return BUNins(BAT *b, const void *left, const void *right, bit force);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);

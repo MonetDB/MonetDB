@@ -98,6 +98,8 @@ __hidden void BBPtrim(size_t delta)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BUNins(BAT *b, const void *left, const void *right, bit force)
+	__attribute__((__visibility__("hidden")));
 __hidden void GDKclrerr(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
