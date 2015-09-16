@@ -40,7 +40,7 @@ mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
 R CMD build rpackage
 
-scp $RPKG lyon.ins.cwi.nl:/cwi/www/homepages/hannes/WWW/R
+scp $RPKG cwi:WWW/R
 
 # install.packages("MonetDB", repos="http://homepages.cwi.nl/~hannes/R/", type="source")
 
