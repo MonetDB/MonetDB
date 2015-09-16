@@ -24,14 +24,13 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query, commit=T) {
+monetdb_embedded_query <- function(query) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
 	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
-	if (commit) query <- paste(query, "COMMIT;")
 	res <- .Call("monetdb_query_R", query)
 
 	resp <- list()
