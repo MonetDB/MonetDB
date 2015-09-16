@@ -906,7 +906,8 @@ typedef struct {
 
 #define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
-#define GDKLIBRARY		061030
+#define GDKLIBRARY_NOORDERIDX	061030
+#define GDKLIBRARY		061031
 
 typedef struct BAT {
 	/* static bat properties */

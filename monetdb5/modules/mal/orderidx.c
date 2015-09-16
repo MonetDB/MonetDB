@@ -441,6 +441,7 @@ do {																		\
 		}
 	}
 
+	m->batDirtydesc = TRUE;
 	b->torderidx.o = m->batCacheid;
 	b->torderidx.set = 1;
 	BBPincref(m->batCacheid, TRUE);

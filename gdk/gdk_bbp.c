@@ -699,6 +699,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	lng align;
 	lng free;
 	lng size;
+	int orderidx;
 	unsigned short storage;
 	int n;
 
@@ -706,14 +707,25 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	(void) bbpversion;	/* could be used to implement compatibility */
 
 	norevsorted = 0; /* default for first case */
-	if (sscanf(buf,
+	if (bbpversion <= GDKLIBRARY_NOORDERIDX) {
+		if (sscanf(buf,
 		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &align, &free, &size, &storage,
 		   &n) < 13)
-		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+	} else {
+		if (sscanf(buf,
+		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu %d"
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &align, &free, &size, &storage, &orderidx,
+		   &n) < 14)
+			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+	}
 
 	if (properties & ~0x0F81)
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
@@ -765,6 +777,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
+	col->orderidx.o = orderidx;
 	if (bbpversion <= GDKLIBRARY_INET_COMPARE && strcmp(type, "inet") == 0) {
 		/* don't trust ordering information on inet columns */
 		col->sorted = 0;
@@ -952,6 +965,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_NOORDERIDX &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
@@ -1216,7 +1230,7 @@ static inline int
 heap_entry(FILE *fp, COLrec *col)
 {
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d %d ", 
 		       col->type >= 0 ? BATatoms[col->type].name : ATOMunknown_name(col->type),
 		       col->width,
 		       col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
@@ -1234,7 +1248,8 @@ heap_entry(FILE *fp, COLrec *col)
 		       col->align,
 		       col->heap.free,
 		       col->heap.size,
-		       (int) col->heap.newstorage);
+		       (int) col->heap.newstorage,
+		       (int)col->orderidx.o);
 }
 
 static inline int
