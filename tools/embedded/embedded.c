@@ -27,8 +27,16 @@ typedef str (*SQLautocommit_ptr_tpe)(Client, mvc*);
 SQLautocommit_ptr_tpe SQLautocommit_ptr = NULL;
 typedef str (*SQLinitClient_ptr_tpe)(Client);
 SQLinitClient_ptr_tpe SQLinitClient_ptr = NULL;
+typedef str (*getSQLContext_ptr_tpe)(Client, MalBlkPtr, mvc**, backend**);
+getSQLContext_ptr_tpe getSQLContext_ptr = NULL;
 typedef void (*res_table_destroy_ptr_tpe)(res_table *t);
 res_table_destroy_ptr_tpe res_table_destroy_ptr = NULL;
+typedef str (*mvc_append_wrap_ptr_tpe)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+mvc_append_wrap_ptr_tpe mvc_append_wrap_ptr = NULL;
+typedef sql_schema* (*mvc_bind_schema_ptr_tpe)(mvc*, const char*);
+mvc_bind_schema_ptr_tpe mvc_bind_schema_ptr = NULL;
+typedef sql_table* (*mvc_bind_table_ptr_tpe)(mvc*, sql_schema*, const char*);
+mvc_bind_table_ptr_tpe mvc_bind_table_ptr = NULL;
 
 static bit monetdb_embedded_initialized = 0;
 static MT_Lock monetdb_embedded_lock;
@@ -76,12 +84,20 @@ int monetdb_startup(char* dir, char silent) {
 	if (silent) mal_clients[0].fdout = THRdata[0];
 
 	// This dynamically looks up functions, because the library containing them is loaded at runtime.
+	// argh
 	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
 	SQLautocommit_ptr = (SQLautocommit_ptr_tpe) lookup_function("lib_sql",  "SQLautocommit");
 	SQLinitClient_ptr = (SQLinitClient_ptr_tpe) lookup_function("lib_sql",  "SQLinitClient");
+	getSQLContext_ptr = (getSQLContext_ptr_tpe) lookup_function("lib_sql",  "getSQLContext");
 	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
+	mvc_append_wrap_ptr = (mvc_append_wrap_ptr_tpe)  lookup_function("lib_sql", "mvc_append_wrap");
+	mvc_bind_schema_ptr = (mvc_bind_schema_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_schema");
+	mvc_bind_table_ptr = (mvc_bind_table_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_table");
+
 	if (SQLstatementIntern_ptr == NULL || SQLautocommit_ptr == NULL ||
-			SQLinitClient_ptr == NULL || res_table_destroy_ptr == NULL) {
+			SQLinitClient_ptr == NULL || getSQLContext_ptr == NULL ||
+			res_table_destroy_ptr == NULL || mvc_append_wrap_ptr == NULL ||
+			mvc_bind_schema_ptr == NULL || mvc_bind_table_ptr == NULL) {
 		retval = -4;
 		goto cleanup;
 	}
@@ -102,7 +118,6 @@ cleanup:
 	return retval;
 }
 
-// TODO: This does stop working on the first failing query, do something about this
 char* monetdb_query(char* query, void** result) {
 	str res = MAL_SUCCEED;
 	Client c = &mal_clients[0];
@@ -136,32 +151,47 @@ char* monetdb_query(char* query, void** result) {
 	return res;
 }
 
-char* monetdb_append(char* schema, char* table, append_data *data, int ncols) {
+char* monetdb_append(const char* schema, const char* table, append_data *data, int col_ct) {
 	int i;
+	int nvar = 6; // variables we need to make up
 	MalBlkRecord mb;
-	MalStack     stk;
-	InstrRecord  pci;
+	MalStack*     stk = NULL;
+	InstrRecord*  pci = NULL;
 	str res = MAL_SUCCEED;
+	VarRecord bat_varrec;
 
-	assert(table != NULL && append_data != NULL && ncols > 0);
-	for (i = 0; i < 6; i++) {
-		pci.argv[i] = i;
+	assert(table != NULL && data != NULL && col_ct > 0);
+	// very black MAL magic below
+	mb.var = GDKmalloc(6 * sizeof(VarRecord*));
+	stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
+	pci = GDKmalloc(sizeof(InstrRecord) + nvar * sizeof(int));
+	assert(mb.var != NULL && stk != NULL && pci != NULL); // cough, cough
+	bat_varrec.type = TYPE_bat;
+	for (i = 0; i < nvar; i++) {
+		pci->argv[i] = i;
 	}
+	stk->stk[0].vtype = TYPE_int;
+	stk->stk[2].val.sval = (str) schema;
+	stk->stk[2].vtype = TYPE_str;
+	stk->stk[3].val.sval = (str) table;
+	stk->stk[3].vtype = TYPE_str;
+	stk->stk[4].vtype = TYPE_str;
+	stk->stk[5].vtype = TYPE_bat;
+	mb.var[5] = &bat_varrec;
 
-	stk.stk[2].val.sval = schema;
-	stk.stk[3].val.sval = table;
-
-	for (i=0; i <ncols; i++) {
+	for (i=0; i < col_ct; i++) {
 		append_data ad = data[i];
-		stk.stk[4].val.sval = ad.colname;
-		stk.stk[5].vtype = TYPE_bat;
-		stk.stk[5].val.bval = ad.batid;
+		stk->stk[4].val.sval = ad.colname;
+		stk->stk[5].val.bval = ad.batid;
 
-		res = mvc_append_wrap(&mal_clients[0], mb, stk, pci);
+		res = (*mvc_append_wrap_ptr)(&mal_clients[0], &mb, stk, pci);
 		if (res != NULL) {
 			break;
 		}
 	}
+	GDKfree(mb.var);
+	GDKfree(stk);
+	GDKfree(pci);
 	return res;
 }
 
@@ -304,7 +334,7 @@ SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
 	return ScalarInteger(res);
 }
 
-str monetdb_get_columns(char* schema_name, char *table_name, int *column_count, char ***column_names, int **column_types) {
+static str monetdb_get_columns(const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types) {
 	Client c = &mal_clients[0];
 	mvc *m;
 	sql_schema *s;
@@ -315,13 +345,13 @@ str monetdb_get_columns(char* schema_name, char *table_name, int *column_count, 
 
 	assert(column_count != NULL && column_names != NULL && column_types != NULL);
 
-	if ((msg = getSQLContext(c, NULL, &m, NULL)) != NULL)
+	if ((msg = (*getSQLContext_ptr)(c, NULL, &m, NULL)) != NULL)
 		return msg;
 
-	s = mvc_bind_schema(m, schema_name);
+	s = (*mvc_bind_schema_ptr)(m, schema_name);
 	if (s == NULL)
 		msg = createException(MAL, "embedded", "Missing schema!");
-	t = mvc_bind_table(m, s, table_name);
+	t = (*mvc_bind_table_ptr)(m, s, table_name);
 	if (t == NULL)
 		msg = createException(MAL, "embedded", "Could not find table %s", table_name);
 
@@ -345,7 +375,7 @@ str monetdb_get_columns(char* schema_name, char *table_name, int *column_count, 
 SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	const char *schema = NULL, *name = NULL;
 	str msg;
-	int ncols, nrows, i, j;
+	int col_ct, row_ct, i, j;
 	BAT *b;
 	BUN cnt;
 	append_data *ad = NULL;
@@ -359,33 +389,31 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	schema = CHAR(STRING_ELT(schemasexp, 0));
 	name = CHAR(STRING_ELT(namesexp, 0));
 
-	ncols = LENGTH(tabledatasexp);
-	nrows = LENGTH(VECTOR_ELT(tabledatasexp, 0));
+	col_ct = LENGTH(tabledatasexp);
+	row_ct = LENGTH(VECTOR_ELT(tabledatasexp, 0));
 
 	msg = monetdb_get_columns(schema, name, &t_column_count, &t_column_names, &t_column_types);
 	if (msg != MAL_SUCCEED)
 		goto wrapup;
 
-	if (t_column_count != ncols) {
+	if (t_column_count != col_ct) {
 		msg = GDKstrdup("Unequal number of columns"); // TODO: add counts here
 		goto wrapup;
 	}
 
-	ad = GDKmalloc(ncols * sizeof(append_data));
+	ad = GDKmalloc(col_ct * sizeof(append_data));
 
-	for (i = 0; i < ncols; i++) {
+	for (i = 0; i < col_ct; i++) {
 		SEXP ret_col = VECTOR_ELT(tabledatasexp, i);
 		int bat_type = t_column_types[i];
-		cnt = (BUN) nrows;
+		cnt = (BUN) row_ct;
 
 		// hand over the vector into a BAT
 		switch (bat_type) {
 		case TYPE_int: {
 			if (!IS_INTEGER(ret_col)) {
 				msg =
-					createException(MAL, "rapi.eval",
-									"wrong R column type for column %d, expected INTeger, got %s.",
-									i, rtypename(TYPEOF(ret_col)));
+					createException(MAL, "rapi.eval", "boo"); // TODO: better error message
 				goto wrapup;
 			}
 			SXP_TO_BAT(int, INTEGER_POINTER, *p==NA_INTEGER);
@@ -396,13 +424,16 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 		ad[i].batid = b->batCacheid;
 	}
 
-	monetdb_append(schema, name, ad, ncols);
+	msg = monetdb_append(schema, name, ad, col_ct);
 	wrapup:
 		if (t_column_names != NULL) {
 			GDKfree(t_column_names);
 		}
 		if (t_column_types != NULL) {
 			GDKfree(t_column_types);
+		}
+		if (msg == NULL) {
+			return ScalarLogical(1);
 		}
 		return ScalarString(mkCharCE(msg, CE_UTF8));
 }

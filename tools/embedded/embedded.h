@@ -22,7 +22,7 @@ typedef struct append_data {
 
 int monetdb_startup(char* dir, char silent);
 char* monetdb_query(char* query, void** result);
-char* monetdb_append(char* schema, char* table, *append_data, int ncols);
+char* monetdb_append(const char* schema, const char* table, append_data *ad, int ncols);
 void monetdb_cleanup_result(void* output);
 SEXP monetdb_query_R(SEXP querysexp);
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp);
