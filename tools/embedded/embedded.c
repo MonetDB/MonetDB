@@ -95,14 +95,30 @@ cleanup:
 
 // TODO: This does stop working on the first failing query, do something about this
 char* monetdb_query(char* query, void** result) {
-	str res;
+	str res = MAL_SUCCEED;
 	Client c = &mal_clients[0];
+	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	if (!monetdb_embedded_initialized) {
 		fprintf(stderr, "Embedded MonetDB is not started.\n");
 		return NULL;
 	}
-	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
-	//SQLautocommit(c, ((backend *) c->sqlcontext)->mvc); ??
+
+	while (query == ' ' || query == '\t') query++;
+	if (strncasecmp(query, "START", 5) == 0) { // START TRANSACTION
+		m->session->auto_commit = 0;
+	}
+	else if (strncasecmp(query, "ROLLBACK", 8) == 0) {
+		m->session->status = -1;
+		m->session->auto_commit = 1;
+	}
+	else if (strncasecmp(query, "COMMIT", 6) == 0) {
+		m->session->auto_commit = 1;
+	}
+	else {
+		res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
+	}
+
+	SQLautocommit(c, m);
 	return res;
 }
 

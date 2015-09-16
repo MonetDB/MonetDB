@@ -15,8 +15,11 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 		stop("Cannot write to ", dir)
 	}
 	res <- .Call("monetdb_startup_R", dir, quiet)
-	if (res < 0) {
+	if (res < -1) {
 		stop("Failed to initialize embedded MonetDB.")
+	}
+	if (res == -1) {
+		warning("monetdb_embedded_startup() was already called. Ignoring this invocation.")
 	}
 	invisible(TRUE)
 }
