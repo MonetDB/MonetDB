@@ -6,12 +6,6 @@
 
 module optimizer;
 
-pattern optimizer.accumulators():str
-address OPTwrapper;
-pattern optimizer.accumulators(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace calculations with accumulator model";
-
 #opt_aliases.mal
 
 pattern optimizer.aliases():str
@@ -161,10 +155,6 @@ address OPTwrapper;
 pattern optimizer.joinPath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
-
-pattern algebra.leftjoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
-address ALGjoinPath
-comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
 pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
 address ALGjoinPath

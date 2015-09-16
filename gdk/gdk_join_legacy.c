@@ -13,9 +13,6 @@
 /* This file contains the legacy interface to the join functions */
 
 #undef BATsemijoin
-#undef BATjoin
-#undef BATleftjoin
-#undef BATleftfetchjoin
 
 /* Return a subset of l where head elements occur as head element in r. */
 BAT *
@@ -102,108 +99,4 @@ BATsemijoin(BAT *l, BAT *r)
 	BBPunfix(res1->batCacheid);
 	BBPunfix(res2->batCacheid);
 	return bn;
-}
-
-static BAT *
-do_batjoin(BAT *l, BAT *r, BUN estimate,
-	   gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
-				  int, BUN),
-
-	   const char *name)
-{
-	BAT *lmap, *rmap;
-	BAT *res1, *res2;
-	BAT *bn;
-	gdk_return ret;
-
-	ALGODEBUG fprintf(stderr, "#Legacy %s(l=%s#"BUNFMT"[%s,%s]%s%s%s,"
-			  "r=%s#" BUNFMT "[%s,%s]%s%s%s)\n", name,
-			  BATgetId(l), BATcount(l),
-			  ATOMname(l->htype), ATOMname(l->ttype),
-			  BAThdense(l) ? "-hdense" : "",
-			  l->tsorted ? "-sorted" : "",
-			  l->trevsorted ? "-revsorted" : "",
-			  BATgetId(r), BATcount(r),
-			  ATOMname(r->htype), ATOMname(r->ttype),
-			  BAThdense(r) ? "-hdense" : "",
-			  r->tsorted ? "-sorted" : "",
-			  r->trevsorted ? "-revsorted" : "");
-	r = BATmirror(r);
-	/* r is [any_3,any_2] */
-	if (!BAThdense(l) || !BAThdense(r)) {
-		/* l is [any_1,any_2] */
-		lmap = BATmirror(BATmark(l, 0));
-		/* lmap is [dense1,any_1] */
-		l = BATmirror(BATmark(BATmirror(l), 0));
-		/* l is [dense1,any_2] */
-		/* r is [any_3,any_2] */
-		rmap = BATmirror(BATmark(r, 0));
-		/* rmap is [dense2,any_3] */
-		r = BATmirror(BATmark(BATmirror(r), 0));
-		/* r is [dense2,any_2] */
-	} else {
-		/* l is [dense1,any_2] */
-		lmap = NULL;
-		BBPfix(l->batCacheid);
-		/* r is [dense2,any_2] */
-		rmap = NULL;
-		BBPfix(r->batCacheid);
-	}
-	ret = (*joinfunc)(&res1, &res2, l, r, NULL, NULL, 0, estimate);
-	if (ret != GDK_SUCCEED) {
-		BBPunfix(l->batCacheid);
-		BBPunfix(r->batCacheid);
-		if (lmap)
-			BBPunfix(lmap->batCacheid);
-		if (rmap)
-			BBPunfix(rmap->batCacheid);
-		return NULL;
-	}
-	if (lmap) {
-		bn = BATproject(res1, lmap);
-		BBPunfix(res1->batCacheid);
-		BBPunfix(lmap->batCacheid);
-		res1 = bn;
-		/* res1 is [dense,any_1] */
-		lmap = NULL;
-		bn = BATproject(res2, rmap);
-		BBPunfix(res2->batCacheid);
-		BBPunfix(rmap->batCacheid);
-		res2 = bn;
-		/* res2 is [dense,any_3] */
-		rmap = NULL;
-	}
-	bn = VIEWcreate(BATmirror(res1), res2);
-	/* bn is [any_1,any_3] */
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
-	BBPunfix(res1->batCacheid);
-	BBPunfix(res2->batCacheid);
-	return bn;
-}
-
-/* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3] */
-BAT *
-BATjoin(BAT *l, BAT *r, BUN estimate)
-{
-	return do_batjoin(l, r, estimate,
-			  BATsubjoin, "BATjoin");
-}
-
-/* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
- * return value is in order of left input */
-BAT *
-BATleftjoin(BAT *l, BAT *r, BUN estimate)
-{
-	return do_batjoin(l, r, estimate,
-			  BATsubleftjoin, "BATleftjoin");
-}
-
-/* join [any_1,any_2] with [any_2,any_3], return [any_1,any_3];
- * if there is no match for a tuple in l, return nil in tail */
-BAT *
-BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
-{
-	return do_batjoin(l, r, estimate,
-			  BATsubleftfetchjoin, "BATleftfetchjoin");
 }

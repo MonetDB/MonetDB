@@ -1,8 +1,13 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed algebra.leftjoin.  Use algebra.subleftjoin or
+  algebra.leftfetchjoin instead.
+- Removed algebra.tdiff and algebra.tinter.
+
 * Mon Sep 14 2015 Sjoerd Mullender <sjoerd@acm.org>
-- Removed algebra.sample.  Use sampe.subuniform instead.
+- Removed algebra.sample.  Use sample.subuniform instead.
 
 * Fri Sep 11 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.select.  Use algebra.subselect instead.
@@ -18,8 +23,7 @@
   and one with the user name.
 
 * Sun Sep  6 2015 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented algebra.subdiff and algebra.subinter.  The old functions
-  algegra.tdiff and algebra.tinter are now officially deprecated.
+- Implemented algebra.subdiff and algebra.subinter.
 
 * Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.tdifference and algebra.tintersect.
