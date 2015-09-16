@@ -112,6 +112,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	q->argv[0] =loopvar;
 	pushEndInstruction(smb);
 	chkProgram(cntxt->fdout, cntxt->nspace, smb);
+	printFunction(THRdata[0], smb, 0 , 23);
 	if (smb->errors) {
 		msg = createException(MAL, "bat.orderidx",
 		                           "Type errors in generated code");
@@ -122,7 +123,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		newstk->stk[arg].vtype= TYPE_bat;
 		newstk->stk[arg].val.bval= b->batCacheid;
 		BBPincref(newstk->stk[arg].val.bval, TRUE);
-        msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
+        	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
 #ifdef _DEBUG_OIDX_
