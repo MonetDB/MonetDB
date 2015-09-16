@@ -136,6 +136,35 @@ char* monetdb_query(char* query, void** result) {
 	return res;
 }
 
+char* monetdb_append(char* schema, char* table, append_data *data, int ncols) {
+	int i;
+	MalBlkRecord mb;
+	MalStack     stk;
+	InstrRecord  pci;
+	str res = MAL_SUCCEED;
+
+	assert(table != NULL && append_data != NULL && ncols > 0);
+	for (i = 0; i < 6; i++) {
+		pci.argv[i] = i;
+	}
+
+	stk.stk[2].val.sval = schema;
+	stk.stk[3].val.sval = table;
+
+	for (i=0; i <ncols; i++) {
+		append_data ad = data[i];
+		stk.stk[4].val.sval = ad.colname;
+		stk.stk[5].vtype = TYPE_bat;
+		stk.stk[5].val.bval = ad.batid;
+
+		res = mvc_append_wrap(&mal_clients[0], mb, stk, pci);
+		if (res != NULL) {
+			break;
+		}
+	}
+	return res;
+}
+
 void monetdb_cleanup_result(void* output) {
 	(*res_table_destroy_ptr)((res_table*) output);
 }
@@ -164,6 +193,33 @@ void monetdb_cleanup_result(void* output) {
 			else											\
 				NUMERIC_POINTER(retsxp)[j] = 	(double)v;	\
 		}													\
+	} while (0)
+
+
+#define SXP_TO_BAT(tpe,access_fun,na_check)								\
+	do {																\
+		tpe *p, prev = tpe##_nil;										\
+		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
+		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
+		b->tsorted = 1; b->trevsorted = 1;								\
+		p = (tpe*) Tloc(b, BUNfirst(b));								\
+		for( j =0; j< (int) cnt; j++, p++){								\
+			*p = (tpe) access_fun(ret_col)[j];							\
+			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
+			if (j > 0){													\
+				if ( *p > prev && b->trevsorted){						\
+					b->trevsorted = 0;									\
+					if (*p != prev +1) b->tdense = 0;					\
+				} else													\
+					if ( *p < prev && b->tsorted){						\
+						b->tsorted = 0;									\
+						b->tdense = 0;									\
+					}													\
+			}															\
+			prev = *p;													\
+		}																\
+		BATsetcount(b,cnt);												\
+		BATsettrivprop(b);												\
 	} while (0)
 
 
@@ -247,3 +303,107 @@ SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
 	res = monetdb_startup((char*) dir, silent);
 	return ScalarInteger(res);
 }
+
+str monetdb_get_columns(char* schema_name, char *table_name, int *column_count, char ***column_names, int **column_types) {
+	Client c = &mal_clients[0];
+	mvc *m;
+	sql_schema *s;
+	sql_table *t;
+	char *msg = MAL_SUCCEED;
+	int columns;
+	int i;
+
+	assert(column_count != NULL && column_names != NULL && column_types != NULL);
+
+	if ((msg = getSQLContext(c, NULL, &m, NULL)) != NULL)
+		return msg;
+
+	s = mvc_bind_schema(m, schema_name);
+	if (s == NULL)
+		msg = createException(MAL, "embedded", "Missing schema!");
+	t = mvc_bind_table(m, s, table_name);
+	if (t == NULL)
+		msg = createException(MAL, "embedded", "Could not find table %s", table_name);
+
+	columns = t->columns.set->cnt;
+	*column_count = columns;
+	*column_names = GDKzalloc(sizeof(char*) * columns);
+	*column_types = GDKzalloc(sizeof(int) * columns);
+
+	if (*column_names == NULL || *column_types == NULL) {
+		return MAL_MALLOC_FAIL;
+	}
+
+	for(i = 0; i < columns; i++) {
+		int acol = ((sql_column*)t->columns.set->h->data)[i].colnr;
+		*column_names[acol] = ((sql_base*)t->columns.set->h->data)[i].name;
+		*column_types[acol] = ((sql_column*)t->columns.set->h->data)[i].type.type->localtype;
+	}
+	return msg;
+}
+
+SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
+	const char *schema = NULL, *name = NULL;
+	str msg;
+	int ncols, nrows, i, j;
+	BAT *b;
+	BUN cnt;
+	append_data *ad = NULL;
+	int t_column_count;
+	char** t_column_names = NULL;
+	int* t_column_types = NULL;
+
+	if (!IS_CHARACTER(schemasexp) || !IS_CHARACTER(namesexp)) {
+		return ScalarInteger(-1);
+	}
+	schema = CHAR(STRING_ELT(schemasexp, 0));
+	name = CHAR(STRING_ELT(namesexp, 0));
+
+	ncols = LENGTH(tabledatasexp);
+	nrows = LENGTH(VECTOR_ELT(tabledatasexp, 0));
+
+	msg = monetdb_get_columns(schema, name, &t_column_count, &t_column_names, &t_column_types);
+	if (msg != MAL_SUCCEED)
+		goto wrapup;
+
+	if (t_column_count != ncols) {
+		msg = GDKstrdup("Unequal number of columns"); // TODO: add counts here
+		goto wrapup;
+	}
+
+	ad = GDKmalloc(ncols * sizeof(append_data));
+
+	for (i = 0; i < ncols; i++) {
+		SEXP ret_col = VECTOR_ELT(tabledatasexp, i);
+		int bat_type = t_column_types[i];
+		cnt = (BUN) nrows;
+
+		// hand over the vector into a BAT
+		switch (bat_type) {
+		case TYPE_int: {
+			if (!IS_INTEGER(ret_col)) {
+				msg =
+					createException(MAL, "rapi.eval",
+									"wrong R column type for column %d, expected INTeger, got %s.",
+									i, rtypename(TYPEOF(ret_col)));
+				goto wrapup;
+			}
+			SXP_TO_BAT(int, INTEGER_POINTER, *p==NA_INTEGER);
+			break;
+		}
+		}
+		ad[i].colname = t_column_names[i];
+		ad[i].batid = b->batCacheid;
+	}
+
+	monetdb_append(schema, name, ad, ncols);
+	wrapup:
+		if (t_column_names != NULL) {
+			GDKfree(t_column_names);
+		}
+		if (t_column_types != NULL) {
+			GDKfree(t_column_types);
+		}
+		return ScalarString(mkCharCE(msg, CE_UTF8));
+}
+

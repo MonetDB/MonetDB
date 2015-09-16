@@ -47,3 +47,20 @@ monetdb_embedded_query <- function(query) {
 	}
 	resp
 }
+
+
+monetdb_embedded_append <- function(table, tdata, schema="sys") {
+	table <- as.character(table)
+	if (length(table) != 1) {
+		stop("Need a single table name as parameter.")
+	}
+	schema <- as.character(schema)
+	if (length(schema) != 1) {
+		stop("Need a single schema name as parameter.")
+	}
+	if (!is.data.frame(tdata)) {
+		stop("Need a data frame as tdata parameter.")
+	}
+
+	.Call("monetdb_append_R", schema, table, tdata)
+}

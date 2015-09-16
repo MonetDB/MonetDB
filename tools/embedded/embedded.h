@@ -15,10 +15,17 @@
 
 #include <Rdefines.h>
 
+typedef struct append_data {
+	char* colname;
+	ssize_t batid;
+} append_data;
+
 int monetdb_startup(char* dir, char silent);
 char* monetdb_query(char* query, void** result);
+char* monetdb_append(char* schema, char* table, *append_data, int ncols);
 void monetdb_cleanup_result(void* output);
 SEXP monetdb_query_R(SEXP querysexp);
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp);
+SEXP monetdb_append_R(SEXP schemaname, SEXP tablename, SEXP tabledata);
 
 #endif
