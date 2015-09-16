@@ -1455,87 +1455,87 @@ BATXMLxquery(bat *ret, const bat *bid, const char * const *expr)
 
 #else
 
-#define NO_LIBXML_FATAL "MonetDB was built without libxml, but what you are trying to do requires it."
+#define NO_LIBXML_FATAL "batxml: MonetDB was built without libxml, but what you are trying to do requires it."
 
 str BATXMLxml2str(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLxmltext(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLstr2xml(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLdocument(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLcontent(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLisdocument(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) options;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLcomment(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option) {
 	(void) ret;
 	(void) doccont;
 	(void) bid;
 	(void) option;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr) {
 	(void) ret;
 	(void) bid;
 	(void) expr;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid) {
 	(void) ret;
 	(void) tgt;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone) {
 	(void) ret;
 	(void) bid;
 	(void) version;
 	(void) standalone;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLattribute(bat *ret, const char * const *name, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid) {
 	(void) ret;
@@ -1543,38 +1543,25 @@ str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const 
 	(void) ns;
 	(void) attr;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLconcat(bat *ret, const bat *bid, const bat *rid) {
 	(void) ret;
 	(void) bid;
 	(void) rid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
-	return NO_LIBXML_FATAL;
-}
-str BATXMLagg(bat *ret, const bat *bid, const bat *grp) {
-	(void) ret;
-	(void) bid;
-	(void) grp;
-	return NO_LIBXML_FATAL;
-}
-str BATXMLagg3(bat *ret, const bat *bid, const bat *grp, const bat *e) {
-	(void) ret;
-	(void) bid;
-	(void) grp;
-	(void) e;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str BATXMLgroup(xml *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils) {
 	(void) retval;
@@ -1583,7 +1570,7 @@ str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	(void) eid;
 	(void) sid;
 	(void) skip_nils;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils) {
 	(void) retval;
@@ -1591,7 +1578,7 @@ str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	(void) gid;
 	(void) eid;
 	(void) skip_nils;
-	return NO_LIBXML_FATAL;
+	return GDKstrdup(NO_LIBXML_FATAL);
 }
 
 #endif

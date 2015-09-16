@@ -102,6 +102,7 @@ char* monetdb_query(char* query, void** result) {
 		return NULL;
 	}
 	res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
+	//SQLautocommit(c, ((backend *) c->sqlcontext)->mvc); ??
 	return res;
 }
 
