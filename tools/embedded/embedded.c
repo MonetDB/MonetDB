@@ -211,7 +211,8 @@ void monetdb_cleanup_result(void* output) {
 	(*res_table_destroy_ptr)((res_table*) output);
 }
 
-#include "converters.h"
+/* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
+#include "converters.c"
 
 SEXP monetdb_query_R(SEXP query) {
 	res_table* output = NULL;

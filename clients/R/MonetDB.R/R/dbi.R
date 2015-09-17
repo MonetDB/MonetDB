@@ -92,7 +92,9 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       stop("MonetDB package required for embedded mode")
     }
     monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
-    return(new("MonetDBEmbeddedConnection"))
+    connenv <- new.env(parent=emptyenv())
+    connenv$open <- TRUE
+    return(new("MonetDBEmbeddedConnection", connenv=connenv))
   }
   
   if (getOption("monetdb.debug.mapi", F)) message("II: Connecting to MonetDB on host ", host, " at "
@@ -135,7 +137,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
 
   # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
-  return(conn)
+  conn
 }, 
 valueClass="MonetDBConnection")
 
@@ -144,7 +146,7 @@ valueClass="MonetDBConnection")
 setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
                                              connenv="environment"))
 
-setClass("MonetDBEmbeddedConnection", representation("MonetDBConnection"))
+setClass("MonetDBEmbeddedConnection", representation("MonetDBConnection", connenv="environment"))
 
 
 setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
@@ -152,7 +154,7 @@ setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   ll <- as.list(envdata$value)
   names(ll) <- envdata$name
   ll$name <- "MonetDBConnection"
-  return(ll)
+  ll
 })
 
 setMethod("dbIsValid", "MonetDBConnection", def=function(dbObj, ...) {
@@ -161,7 +163,12 @@ setMethod("dbIsValid", "MonetDBConnection", def=function(dbObj, ...) {
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
   .mapiDisconnect(conn@socket)
-  return(invisible(TRUE))
+  invisible(TRUE)
+})
+
+setMethod("dbDisconnect", "MonetDBEmbeddedConnection", def=function(conn, ...) {
+  conn@connenv$open <- FALSE
+  invisible(TRUE)
 })
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F) {
@@ -174,7 +181,7 @@ setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_table
     df$sn <- quoteIfNeeded(conn, df$sn, warn=F)
     res <- paste0(df$sn, ".", df$tn)
   }
-  return(as.character(res))
+  as.character(res)
 })
 
 if (is.null(getGeneric("dbTransaction"))) setGeneric("dbTransaction", function(conn, ...) 
@@ -296,6 +303,9 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="character"),  
           def=function(conn, statement, ..., list=NULL) {   
+  if (!conn@connenv$open) {
+    stop("This connection was closed.")
+  }
   if(!is.null(list) || length(list(...))){
     if (length(list(...))) statement <- .bindParameters(statement, list(...))
     if (!is.null(list)) statement <- .bindParameters(statement, list)
@@ -313,14 +323,13 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   if (resp$type == Q_TABLE) {
     meta <- new.env(parent=emptyenv())
     meta$type  <- Q_TABLE
-    meta$id    <- 42
+    meta$id    <- -1
     meta$rows  <- NROW(resp$tuples)
     meta$cols  <- NCOL(resp$tuples)
     meta$index <- 0
     meta$names <- names(resp$tuples)
 
     env$info <- meta
-
     env$success = TRUE
     env$conn <- conn
     env$resp <- resp
@@ -381,10 +390,6 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
   x
 }
 
-# # overload as per DBI documentation
-# setMethod("dbQuoteIdentifier", c("MonetDBConnection", "SQL"), function(conn, x, ...) {x})
-
-# adapted from RMonetDB, very useful...
 setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
   append=FALSE, csvdump=FALSE, transaction=TRUE,...) {
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value)
@@ -413,6 +418,8 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
     dbSendUpdate(conn, ct)
   }
   if (length(value[[1]])) {
+    # TODO: special handling for embedded mode
+
     if (csvdump) {
       tmp <- tempfile(fileext = ".csv")
       write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
@@ -673,18 +680,12 @@ setMethod("dbFetch", signature(res="MonetDBEmbeddedResult", n="numeric"), def=fu
   if (!dbIsValid(res)) {
     stop("Cannot fetch results from closed response.")
   }
-
   if (n > -1) {
-    stop("Cannot do partial fetch")
+    stop("No partial fetch, entire result already available")
   }
   res@env$delivered <- res@env$info$rows
   res@env$resp$tuples
 })
-
-setMethod("dbClearResult", "MonetDBEmbeddedResult", def = function(res, ...) {
-  # no need to do anything here
-  return(invisible(TRUE))
-}, valueClass = "logical")
 
 setMethod("dbClearResult", "MonetDBResult", def = function(res, ...) {
   if (res@env$info$type == Q_TABLE) {
@@ -693,6 +694,13 @@ setMethod("dbClearResult", "MonetDBResult", def = function(res, ...) {
       .mapiRequest(res@env$conn, paste0("Xclose ", resid), async=TRUE)
       res@env$open <- FALSE
     }
+  }
+  return(invisible(TRUE))
+}, valueClass = "logical")
+
+setMethod("dbClearResult", "MonetDBEmbeddedResult", def = function(res, ...) {
+  if (res@env$info$type == Q_TABLE) {
+    res@env$open <- FALSE
   }
   return(invisible(TRUE))
 }, valueClass = "logical")
@@ -712,11 +720,18 @@ setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...
 })
 
 setMethod("dbColumnInfo", "MonetDBResult", def = function(res, ...) {
-  return(data.frame(field.name=res@env$info$names, field.type=res@env$info$types, 
+  data.frame(field.name=res@env$info$names, field.type=res@env$info$types, 
                     data.type=monetTypes[res@env$info$types], r.data.type=monetTypes[res@env$info$types], 
-                    monetdb.data.type=res@env$info$types))	
+                    monetdb.data.type=res@env$info$types, stringsAsFactors=F)	
 }, 
 valueClass = "data.frame")
+
+setMethod("dbColumnInfo", "MonetDBEmbeddedResult", def = function(res, ...) {
+  data.frame(field.name=res@env$info$names, stringsAsFactors=F)  
+  # TODO: also export SQL types? Do we need this?
+}, 
+valueClass = "data.frame")
+
 
 setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
   return(list(statement=dbObj@env$query, rows.affected=0, row.count=dbObj@env$info$rows, 
