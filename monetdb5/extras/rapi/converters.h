@@ -76,7 +76,7 @@
 	} while (0)
 
 
-SEXP bat_to_sexp(BAT* b) {
+static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	switch (ATOMstorage(getColumnType(b->T->type))) {
 		case TYPE_bte:
@@ -116,7 +116,7 @@ SEXP bat_to_sexp(BAT* b) {
 	return varvalue;
 }
 
-BAT* sexp_to_bat(SEXP s, int type) {
+static BAT* sexp_to_bat(SEXP s, int type) {
 	BAT* b;
 	BUN cnt = LENGTH(s);
 	int i, j;
@@ -196,6 +196,7 @@ BAT* sexp_to_bat(SEXP s, int type) {
 			}
 		}
 		break;
+	}
 	}
 
 	if (b != NULL) {
