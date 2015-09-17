@@ -1453,6 +1453,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	return p;
 }
 
+#undef BUNdelete
 BUN
 BUNdelete(BAT *b, BUN p, bit force)
 {
@@ -1472,6 +1473,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 
 static BUN BUNlocate(BAT *b, const void *x, const void *y);
 
+#undef BUNdel
 gdk_return
 BUNdel(BAT *b, const void *x, const void *y, bit force)
 {
