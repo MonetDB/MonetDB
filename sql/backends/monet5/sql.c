@@ -1278,7 +1278,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_grant_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_REVOKE:{
@@ -1288,7 +1291,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{

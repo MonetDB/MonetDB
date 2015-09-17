@@ -24,3 +24,4 @@ grantMonetdbToSchemaOwner.Bug-3771
 grantPrivilegesNonDefaultRole.Bug-3365
 grantRole.Bug-3772
 grantMonetdb
+copyinto
