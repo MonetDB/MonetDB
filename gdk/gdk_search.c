@@ -689,7 +689,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	int tp;
 
 	if (b == NULL || (!b->tsorted && !b->trevsorted && !use_orderidx)
-	              || (use_orderidx && !b->torderidx.set))
+	              || (use_orderidx && b->torderidx))
 		return BUN_NONE;
 
 	lo = BUNfirst(b);
@@ -726,7 +726,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	tp = ATOMbasetype(b->ttype);
 
 	if (use_orderidx) {
-		o = BBPdescriptor(b->torderidx.o);
+		o = BATdescriptor(b->torderidx);
 		if (o == NULL) {
 			GDKerror("#ORDERfindwhich: order idx not found\n");
 		}
@@ -744,6 +744,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
 			 * or <= v (if revsorted), we're done */
+			if (use_orderidx) BBPunfix(o->batCacheid);
 			return lo;
 		}
 		break;
@@ -755,6 +756,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
+			if (use_orderidx) BBPunfix(o->batCacheid);
 			return hi;
 		}
 		break;
@@ -762,6 +764,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = 0;	/* not used in this case */
 		if (lo >= hi) {
 			/* empty BAT: value not found */
+			if (use_orderidx) BBPunfix(o->batCacheid);
 			return BUN_NONE;
 		}
 		break;
@@ -891,6 +894,8 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		}
 		break;
 	}
+
+	if (use_orderidx) BBPunfix(o->batCacheid);
 	return cur;
 }
 

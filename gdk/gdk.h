@@ -674,11 +674,6 @@ typedef struct {
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
-typedef struct {
-	unsigned int set:1;	/* oid index is set */
-	bat o;				/* bat with oid order map */
-} OrderIdx;
-
 typedef struct Imprints Imprints;
 
 
@@ -802,7 +797,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *hheap;           // heap for varsized head values
  *           Hash   *hhash;           // linear chained hash table on head
  *           Imprints *himprints;     // column imprints index on head
- *           OrderIdx horderidx;      // order oid index on head
+ *           orderidx horderidx;      // order oid index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -816,7 +811,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
- *           OrderIdx torderidx;      // order oid index on tail
+ *           orderidx torderidx;      // order oid index on tail
  *  } BAT;
  * @end verbatim
  *
@@ -896,7 +891,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
-	OrderIdx orderidx; 	/* order oid index */
+	bat orderidx;		/* order oid index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;

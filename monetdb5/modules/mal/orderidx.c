@@ -36,7 +36,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		return MAL_SUCCEED;
 
 	/* check if b already has index */
-	if (b->torderidx.set)
+	if (b->torderidx)
 		return MAL_SUCCEED;
 
 	if( pieces < 0 ){
@@ -109,7 +109,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	pushInstruction(smb,pack);
 	q = newAssignment(smb);
 	q->barrier = EXITsymbol;
-	q->argv[0] =loopvar;
+	q->argv[0] = loopvar;
 	pushEndInstruction(smb);
 	chkProgram(cntxt->fdout, cntxt->nspace, smb);
 	printFunction(THRdata[0], smb, 0 , 23);
@@ -170,7 +170,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 
-	*ret = b->torderidx.o;
+	*ret = b->torderidx;
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -441,9 +441,8 @@ do {																		\
 		}
 	}
 
-	m->batDirtydesc = TRUE;
-	b->torderidx.o = m->batCacheid;
-	b->torderidx.set = 1;
+	b->batDirtydesc = TRUE;
+	b->torderidx = m->batCacheid;
 	BBPincref(m->batCacheid, TRUE);
 
 	GDKfree(aid);

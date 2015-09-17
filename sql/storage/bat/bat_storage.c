@@ -1187,7 +1187,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			/* what to do with the result msg */
 			msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_oid,b->ttype), b, -1);
 			assert(msg == NULL);
-			bat->bid = b->torderidx.o;
+			bat->bid = b->torderidx;
 			(void)msg;
 			bat_destroy(b);
 		} else

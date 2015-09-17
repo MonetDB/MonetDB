@@ -699,7 +699,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	lng align;
 	lng free;
 	lng size;
-	int orderidx;
+	int orderidx = 0;
 	unsigned short storage;
 	int n;
 
@@ -777,7 +777,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
-	col->orderidx.o = orderidx;
+	col->orderidx = orderidx;
 	if (bbpversion <= GDKLIBRARY_INET_COMPARE && strcmp(type, "inet") == 0) {
 		/* don't trust ordering information on inet columns */
 		col->sorted = 0;
@@ -1230,7 +1230,7 @@ static inline int
 heap_entry(FILE *fp, COLrec *col)
 {
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d %d ", 
+		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d %d",
 		       col->type >= 0 ? BATatoms[col->type].name : ATOMunknown_name(col->type),
 		       col->width,
 		       col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
@@ -1249,7 +1249,7 @@ heap_entry(FILE *fp, COLrec *col)
 		       col->heap.free,
 		       col->heap.size,
 		       (int) col->heap.newstorage,
-		       (int)col->orderidx.o);
+		       (int) col->orderidx);
 }
 
 static inline int
