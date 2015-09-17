@@ -299,7 +299,7 @@ static str monetdb_get_columns(const char* schema_name, const char *table_name, 
 SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	const char *schema = NULL, *name = NULL;
 	str msg;
-	int col_ct, row_ct, i, j;
+	int col_ct, row_ct, i;
 	BAT *b = NULL;
 	append_data *ad = NULL;
 	int t_column_count;

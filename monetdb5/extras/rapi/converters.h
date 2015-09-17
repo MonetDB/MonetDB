@@ -51,7 +51,7 @@
 
 #define SXP_TO_BAT(tpe,access_fun,na_check)								\
 	do {																\
-		tpe *p, prev = tpe##_nil; int i,j;								\
+		tpe *p, prev = tpe##_nil; int j;								\
 		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
 		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
 		b->tsorted = 1; b->trevsorted = 1;								\
