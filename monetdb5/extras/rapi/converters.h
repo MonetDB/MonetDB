@@ -51,7 +51,7 @@
 
 #define SXP_TO_BAT(tpe,access_fun,na_check)								\
 	do {																\
-		tpe *p, prev = tpe##_nil;										\
+		tpe *p, prev = tpe##_nil; int i,j;								\
 		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
 		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
 		b->tsorted = 1; b->trevsorted = 1;								\
@@ -119,7 +119,6 @@ static SEXP bat_to_sexp(BAT* b) {
 static BAT* sexp_to_bat(SEXP s, int type) {
 	BAT* b;
 	BUN cnt = LENGTH(s);
-	int i, j;
 	switch (type) {
 	case TYPE_int: {
 		if (!IS_INTEGER(s)) {

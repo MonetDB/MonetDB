@@ -199,7 +199,6 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 		}
 	}
 	if (res == MAL_SUCCEED) {
-//		m->emod = 16;
 		(*sqlcleanup_ptr)(m, 0);
 	}
 	GDKfree(mb.var);
@@ -332,7 +331,7 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 		int bat_type = t_column_types[i];
 		b = sexp_to_bat(ret_col, bat_type);
 		if (b == NULL) {
-			msg = GDKstrdup("eek");
+			msg = GDKstrdup("eek"); // TODO: better error message here
 			goto wrapup;
 		}
 		ad[i].colname = t_column_names[i];
