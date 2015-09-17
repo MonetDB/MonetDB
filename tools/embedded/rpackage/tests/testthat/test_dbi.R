@@ -48,7 +48,6 @@ test_that("import export", {
 	expect_equal(dbColumnInfo(res)[[2,1]], "Sepal.Width")
 	expect_equal(dbGetInfo(res)$row.count, 150)
 	expect_equal(res@env$info$rows, 150)
-	expect_error(dbFetch(res,10))
 
 	data2 <- dbFetch(res,-1)
 	expect_equal(dim(data2)[[1]], 150)
@@ -172,6 +171,87 @@ test_that("evil table from survey works", {
 	dbRollback(con)
 })
 
+
+# some DBI test cases borrowed from RSQLite
+basicDf <- data.frame(
+  name = c("Alice", "Bob", "Carl", "NA", NA),
+  fldInt = as.integer(c(as.integer(1:4), NA)),
+  fldDbl = as.double(c(1.1, 2.2, 3.3, 4.4, NA)),
+  stringsAsFactors = FALSE
+)
+
+test_that("round-trip leaves data.frame unchanged", {
+	dbWriteTable(con, "t1", basicDf, row.names = FALSE)
+	expect_equal(dbGetQuery(con, "select * from t1"), basicDf)
+	expect_equal(dbReadTable(con, "t1"), basicDf)
+	dbRemoveTable(con, "t1")
+})
+
+test_that("NAs work in first row", {
+	na_first <- basicDf[c(5, 1:4), ]
+	rownames(na_first) <- NULL
+	dbWriteTable(con, "t1", na_first, row.names = FALSE)
+	expect_equal(dbReadTable(con, "t1"), na_first)
+	dbRemoveTable(con, "t1")
+})
+
+test_that("row-by-row fetch is equivalent", {
+	dbWriteTable(con, "t1", basicDf, row.names = FALSE)
+
+	rs <- dbSendQuery(con, "SELECT * FROM t1")
+	on.exit(dbClearResult(rs))
+	for (i in 1:5) {
+		row <- dbFetch(rs, 1L)
+		expect_equal(row, basicDf[i, ], check.attributes = FALSE)
+	}
+
+	row <- dbFetch(rs, 1L)
+	expect_equal(nrow(row), 0L)
+
+	expect_true(dbHasCompleted(rs))
+	dbRemoveTable(con, "t1")
+})
+
+# TODO: fix this
+# test_that("column types as expected in presence of NULLs", {
+# 	dbWriteTable(con, "t1", datasets::USArrests)
+# 	a1 <- dbGetQuery(con, "SELECT Murder/(Murder - 8.1) FROM t1 LIMIT 10")
+# 	expect_is(a1[[1]], "numeric")
+#   	dbRemoveTable(con, "t1")
+# })
+
+test_that("correct number of columns, even if 0 rows", {
+  ans <- dbGetQuery(con, "select 1 as a, 2 as b where 1=1")
+  expect_equal(dim(ans), c(1L, 2L))
+  ans <- dbGetQuery(con, "select 1 as a, 2 as b where 0=1")
+  expect_equal(dim(ans), c(0L, 2L))  
+})
+
+test_that("accessing cleared result throws error", {  
+  res <- dbSendQuery(con, "SELECT 1;")
+  dbClearResult(res)
+  expect_error(dbFetch(res))
+})
+
+test_that("fetch with no arguments gets all rows", {
+	df <- data.frame(x = 1:1000)
+	dbWriteTable(con, "test", df)
+	rs <- dbSendQuery(con, "SELECT * FROM test")
+	expect_equal(nrow(dbFetch(rs)), 1000)
+	dbRemoveTable(con, "test")
+})
+
+test_that("fetch progressively pulls in rows", {  
+	df <- data.frame(x = 1:25)
+	dbWriteTable(con, "test", df)
+	rs <- dbSendQuery(con, "SELECT * FROM test")
+	expect_equal(nrow(dbFetch(rs, 10)), 10)
+	expect_equal(nrow(dbFetch(rs, 10)), 10)
+	expect_equal(nrow(dbFetch(rs, 10)), 5)
+	dbRemoveTable(con, "test")
+})
+
+
 test_that("dis/re-connect", {
 	expect_true(dbIsValid(con))
 	dbDisconnect(con)
@@ -182,3 +262,4 @@ test_that("dis/re-connect", {
 	res <- dbSendQuery(con, "SELECT 1")
 	expect_true(dbIsValid(res))
 })
+

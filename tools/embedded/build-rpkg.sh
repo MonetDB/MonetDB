@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+#set -x
 
 STAGEDIR=/tmp/monetdb-embedded-stage
 RPKG=MonetDB_1.0.0.tar.gz

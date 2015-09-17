@@ -689,11 +689,24 @@ setMethod("dbFetch", signature(res="MonetDBEmbeddedResult", n="numeric"), def=fu
   if (!dbIsValid(res)) {
     stop("Cannot fetch results from closed response.")
   }
-  if (n > -1) {
-    stop("No partial fetch, entire result already available")
+  if (n == 0) {
+    stop("Fetch 0 rows? Really?")
   }
-  res@env$delivered <- res@env$info$rows
-  res@env$resp$tuples
+  if (res@env$delivered < 0) {
+    res@env$delivered <- 0
+  }
+  if (res@env$delivered >= res@env$info$rows) {
+    return(res@env$resp$tuples[F,, drop=F])
+  }
+  if (n > -1) {
+    n <- min(n, res@env$info$rows - res@env$delivered)
+    res@env$delivered <- res@env$delivered + n
+    return(res@env$resp$tuples[(res@env$delivered - n + 1):(res@env$delivered),, drop=F])
+  }
+  else {
+    res@env$delivered <- res@env$info$rows
+    return(res@env$resp$tuples)
+  }
 })
 
 setMethod("dbClearResult", "MonetDBResult", def = function(res, ...) {

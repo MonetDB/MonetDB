@@ -274,10 +274,10 @@ static str monetdb_get_columns(const char* schema_name, const char *table_name, 
 
 	s = (*mvc_bind_schema_ptr)(m, schema_name);
 	if (s == NULL)
-		msg = createException(MAL, "embedded", "Missing schema!");
+		return createException(MAL, "embedded", "Missing schema!");
 	t = (*mvc_bind_table_ptr)(m, s, table_name);
 	if (t == NULL)
-		msg = createException(MAL, "embedded", "Could not find table %s", table_name);
+		return createException(MAL, "embedded", "Could not find table %s", table_name);
 
 	columns = t->columns.set->cnt;
 	*column_count = columns;
