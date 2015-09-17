@@ -350,6 +350,37 @@ extern MT_Lock MT_system_lock;
 
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
+#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
+
+#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
+
+#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
+	do {						\
+		hfastins_nocheck(b, p, h, hs);		\
+		tfastins_nocheck(b, p, t, ts);		\
+		(b)->batCount++;			\
+	} while (0)
+
+#define bunfastins_nocheck_inc(b, p, h, t)				\
+	do {								\
+		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
+		p++;							\
+	} while (0)
+
+#define bunfastins(b, h, t)						\
+	do {								\
+		register BUN _p = BUNlast(b);				\
+		if (_p >= BATcapacity(b)) {				\
+			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
+				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
+				goto bunins_failed;			\
+			}						\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
+				goto bunins_failed;			\
+		}							\
+		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
+	} while (0)
+
 /* extra space in front of strings in string heaps when hashash is set
  * if at least (2*SIZEOF_BUN), also store length (heaps are then
  * incompatible) */
@@ -440,6 +471,12 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 #ifndef NDEBUG
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
+
+#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
+				(c)->seq == oid_nil ? "nil" : "void" :	\
+			 (c)->type == TYPE_oid ?			\
+				(c)->dense ? "dense" : "oid" :		\
+			 ATOMname((c)->type))
 
 #define BATkdiff(l, r)							\
 	({								\

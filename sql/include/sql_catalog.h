@@ -35,6 +35,9 @@
 #define PRIV_DELETE 8
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
+/* global privs */
+#define PRIV_COPYFROMFILE 1
+#define PRIV_COPYINTOFILE 2
 
 #define SCHEMA_DEPENDENCY 1
 #define TABLE_DEPENDENCY 2
