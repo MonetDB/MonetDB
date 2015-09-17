@@ -50,6 +50,8 @@ monetdb_embedded_query <- function(query) {
 
 monetdb_embedded_append <- function(table, tdata, schema="sys") {
 	table <- as.character(table)
+	table <- gsub("(^\"|\"$)", "", table)
+	
 	if (length(table) != 1) {
 		stop("Need a single table name as parameter.")
 	}

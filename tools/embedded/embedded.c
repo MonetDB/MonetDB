@@ -171,7 +171,7 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	assert(table != NULL && data != NULL && col_ct > 0);
 
 	// very black MAL magic below
-	mb.var = GDKmalloc(6 * sizeof(VarRecord*));
+	mb.var = GDKmalloc(nvar * sizeof(VarRecord*));
 	stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
 	pci = GDKmalloc(sizeof(InstrRecord) + nvar * sizeof(int));
 	assert(mb.var != NULL && stk != NULL && pci != NULL); // cough, cough
@@ -326,13 +326,14 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	}
 
 	ad = GDKmalloc(col_ct * sizeof(append_data));
+	assert(ad != NULL);
 
 	for (i = 0; i < col_ct; i++) {
 		SEXP ret_col = VECTOR_ELT(tabledatasexp, i);
 		int bat_type = t_column_types[i];
 		b = sexp_to_bat(ret_col, bat_type);
 		if (b == NULL) {
-			msg = GDKstrdup("eek"); // TODO: better error message here
+			msg = createException(MAL, "embedded", "Could not convert column %i %s to type %i ", i, t_column_names[i], bat_type);
 			goto wrapup;
 		}
 		ad[i].colname = t_column_names[i];
@@ -340,6 +341,7 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	}
 
 	msg = monetdb_append(schema, name, ad, col_ct);
+
 	wrapup:
 		if (t_column_names != NULL) {
 			GDKfree(t_column_names);

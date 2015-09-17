@@ -53,8 +53,24 @@ db_query_fields.MonetDBConnection <- function(con, sql, ...) {
   dbGetQuery(con, dplyr::build_sql("PREPARE SELECT * FROM ", sql))$column
 }
 
+db_query_fields.MonetDBEmbeddedConnection <- function(con, sql, ...) {
+  # PREPARE does not work in embedded mode
+  names(dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql, " WHERE 1=0")))
+}
+
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
   monetdb_queryinfo(con,sql)$rows
+}
+
+db_query_rows.MonetDBEmbeddedConnection <- function(con, sql, ...) {
+  # TODO: is there a better way of doing this?
+  if (!grepl("^\\w*SELECT.*", as.character(sql), perl=T, ignore.case=T)) {
+    sql <- dplyr::build_sql("SELECT * FROM ", sql)
+  }
+  dbGetQuery(con, dplyr::build_sql("CREATE TEMPORARY TABLE dqrv AS ", sql, " WITH DATA"))
+  ct <- dbGetQuery(con, dplyr::build_sql("SELECT COUNT(*) AS ct FROM dqrv"))$ct[[1]]
+  dbGetQuery(con, dplyr::build_sql("DROP TABLE dqrv"))
+  return(ct)
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {

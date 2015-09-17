@@ -299,7 +299,6 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   })
 
 
-
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="character"),  
           def=function(conn, statement, ..., list=NULL) {   
@@ -311,11 +310,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
     if (!is.null(list)) statement <- .bindParameters(statement, list)
   } 
   env <- NULL
-  if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
-  # make the progress bar wait for querylog.define
-  # if (getOption("monetdb.profile", T))  .profiler_arm()
-
-  # the actual request
+  if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
 
   resp <- monetdb_embedded_query(statement)
 
@@ -403,7 +398,6 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
   if (overwrite && append) {
     stop("Setting both overwrite and append to TRUE makes no sense.")
   }
-
   qname <- quoteIfNeeded(conn, name)
   if (dbExistsTable(conn, qname)) {
     if (overwrite) dbRemoveTable(conn, qname)
@@ -422,8 +416,15 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
       if (csvdump) {
         warning("Ignoring csvdump setting in embedded mode")
       }
+      # convert Date cols to characters
+      # TODO: use type mapping to select correct converters
+      classes <- unlist(lapply(value, class))
+      datecols <- names(classes[classes=="Date"])
+      for (c in datecols) {
+        value[[c]] <- as.character(value[[c]])
+      }
       insres <- monetdb_embedded_append(qname, value)
-      if (!is.logical(insres) && insres) {
+      if (!is.logical(insres)) {
         stop("Failed to insert data: ", insres)
       }
     }

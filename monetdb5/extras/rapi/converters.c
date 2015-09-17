@@ -117,7 +117,7 @@ static SEXP bat_to_sexp(BAT* b) {
 }
 
 static BAT* sexp_to_bat(SEXP s, int type) {
-	BAT* b;
+	BAT* b = NULL;
 	BUN cnt = LENGTH(s);
 	switch (type) {
 	case TYPE_int: {
@@ -143,7 +143,8 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		break;
 	}
 #endif
-	case TYPE_bte: { // only R logical types fit into bte BATs
+	case TYPE_bte:
+	case TYPE_bit: { // only R logical types fit into bit BATs
 		if (!IS_LOGICAL(s)) {
 			return NULL;
 		}
@@ -200,6 +201,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 
 	if (b != NULL) {
 		BATsetcount(b, cnt);
+		BBPkeepref(b->batCacheid);
 	}
 	return b;
 }

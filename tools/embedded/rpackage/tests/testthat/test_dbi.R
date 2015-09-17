@@ -171,13 +171,12 @@ test_that("evil table from survey works", {
 	dbRollback(con)
 })
 
-
-# some DBI test cases borrowed from RSQLite
+# below some DBI test cases 'borrowed' from RSQLite
 basicDf <- data.frame(
-  name = c("Alice", "Bob", "Carl", "NA", NA),
-  fldInt = as.integer(c(as.integer(1:4), NA)),
-  fldDbl = as.double(c(1.1, 2.2, 3.3, 4.4, NA)),
-  stringsAsFactors = FALSE
+	name = c("Alice", "Bob", "Carl", "NA", NA),
+	fldInt = as.integer(c(as.integer(1:4), NA)),
+	fldDbl = as.double(c(1.1, 2.2, 3.3, 4.4, NA)),
+	stringsAsFactors = FALSE
 )
 
 test_that("round-trip leaves data.frame unchanged", {
@@ -197,17 +196,14 @@ test_that("NAs work in first row", {
 
 test_that("row-by-row fetch is equivalent", {
 	dbWriteTable(con, "t1", basicDf, row.names = FALSE)
-
 	rs <- dbSendQuery(con, "SELECT * FROM t1")
 	on.exit(dbClearResult(rs))
 	for (i in 1:5) {
 		row <- dbFetch(rs, 1L)
 		expect_equal(row, basicDf[i, ], check.attributes = FALSE)
 	}
-
 	row <- dbFetch(rs, 1L)
 	expect_equal(nrow(row), 0L)
-
 	expect_true(dbHasCompleted(rs))
 	dbRemoveTable(con, "t1")
 })
@@ -221,16 +217,16 @@ test_that("row-by-row fetch is equivalent", {
 # })
 
 test_that("correct number of columns, even if 0 rows", {
-  ans <- dbGetQuery(con, "select 1 as a, 2 as b where 1=1")
-  expect_equal(dim(ans), c(1L, 2L))
-  ans <- dbGetQuery(con, "select 1 as a, 2 as b where 0=1")
-  expect_equal(dim(ans), c(0L, 2L))  
+	ans <- dbGetQuery(con, "select 1 as a, 2 as b where 1=1")
+	expect_equal(dim(ans), c(1L, 2L))
+	ans <- dbGetQuery(con, "select 1 as a, 2 as b where 0=1")
+	expect_equal(dim(ans), c(0L, 2L))  
 })
 
 test_that("accessing cleared result throws error", {  
-  res <- dbSendQuery(con, "SELECT 1;")
-  dbClearResult(res)
-  expect_error(dbFetch(res))
+	res <- dbSendQuery(con, "SELECT 1;")
+	dbClearResult(res)
+	expect_error(dbFetch(res))
 })
 
 test_that("fetch with no arguments gets all rows", {
@@ -250,7 +246,6 @@ test_that("fetch progressively pulls in rows", {
 	expect_equal(nrow(dbFetch(rs, 10)), 5)
 	dbRemoveTable(con, "test")
 })
-
 
 test_that("dis/re-connect", {
 	expect_true(dbIsValid(con))
