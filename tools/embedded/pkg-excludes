@@ -45,7 +45,9 @@ winredist/*.cpl
 /clients/python3
 /clients/R
 /clients/ruby
-/monetdb5/extras
+/monetdb5/extras/mal_optimizer_template
+/monetdb5/extras/pyapi
+/monetdb5/extras/sphinx
 /java/
 /testing/
 /geos/
