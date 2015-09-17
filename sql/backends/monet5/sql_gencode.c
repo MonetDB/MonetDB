@@ -798,8 +798,6 @@ static InstrPtr
 multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, int o2, int rtype)
 {
 	InstrPtr q;
-	char nme[SMALLBUFSIZ];
-	int arraySecondVar = -1;	
 
 	q = newStmt(mb, "mal", "multiplex");
 	if (q == NULL)
@@ -810,18 +808,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 	q = pushStr(mb, q, convertMultiplexFcn(name));
 
 	q = pushArgument(mb, q, o1);
-	snprintf(nme, SMALLBUFSIZ, "Y_%d", o1);
-	if((arraySecondVar = findVariable(mb, nme)) >=0) {
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-		q = pushArgument(mb, q, arraySecondVar);
-	}
-
-	q = pushArgument(mb, q, o2);
-	snprintf(nme, SMALLBUFSIZ, "Y_%d", o2);
-	if((arraySecondVar = findVariable(mb, nme)) >=0) {
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-		q = pushArgument(mb, q, arraySecondVar);
-	}
+	q = pushArgument(mb, q, o2);	
 
 	return q;
 }
@@ -1514,8 +1501,34 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					showException(GDKout, SQL, "sql", "Unknown operator");
 				}
 
-				if (!done && (q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
+				if (!done) {
+					//check if it is array related
+					snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+					if((arraySecondVar = findVariable(mb, nme)) >=0) {
+						done = 1;
+						q = newStmt(mb, mod, convertMultiplexFcn(op));
+						
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+						q = pushArgument(mb, q, l);
+						q = pushArgument(mb, q, arraySecondVar);
+					}
+				
+					snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
+					if((arraySecondVar = findVariable(mb, nme)) >=0) {
+						if(!done) {
+							q = newStmt(mb, mod, convertMultiplexFcn(op));
+							q = pushArgument(mb, q, l);
+							done = 1;
+						}
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+						q = pushArgument(mb, q, r);
+						q = pushArgument(mb, q, arraySecondVar);
+					} 
+				}
+					
+				if(!done && (q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 					return -1;
+				
 				k = getDestVar(q);
 
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
@@ -2198,7 +2211,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 				if((arraySecondVar = findVariable(mb, nme)) >=0) { 
-        		    q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+        			setVarType(mb, getArg(q, 0), TYPE_ptr);
+					setVarUDFtype(mb, getArg(q, 0));
+				    q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 					q = pushArgument(mb, q, arraySecondVar);
 				}
 
@@ -2227,6 +2242,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int special = 0;
 			sql_subfunc *f = s->op4.funcval;
 			node *n;
+
+			bool arrayRelated = 0;
+
 			/* dump operands */
 			if (_dumpstmt(sql, mb, s->op1) < 0)
 				return -1;
@@ -2235,7 +2253,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			mod = sql_func_mod(f->func);
 			fimp = sql_func_imp(f->func);
-			if (s->nrcols) {
+
+			//check if any of the arguments is array related
+			for(n=s->op1->op4.lval->h ; n ; n=n->next) {
+				stmt *op = n->data;
+				if(op->type == st_dimension) {
+					arrayRelated = 1;
+					break;
+				}
+			}
+
+			if (s->nrcols && !arrayRelated) {
 				sql_subtype *res = f->res->h->data;
 				fimp = convertMultiplexFcn(fimp);
 				q = NULL;
