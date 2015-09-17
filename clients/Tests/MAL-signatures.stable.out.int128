@@ -49652,7 +49652,7 @@ command mapi.fetch_line(hdl:int):str
 address SERVERfetch_line;
 comment Retrieve a complete line.
 
-command mapi.fetch_field_array(hdl:int):bat[:int,:str] 
+command mapi.fetch_field_array(hdl:int):bat[:oid,:str] 
 address SERVERfetch_field_bat;
 comment Retrieve all fields for a row.
 

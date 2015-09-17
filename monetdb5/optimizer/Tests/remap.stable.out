@@ -24,7 +24,7 @@ function user.tst():void;
 end user.tst;
 #WARNING To speedup calc.+ a bulk operator implementation is needed
 #    y:bat[:oid,:str] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);
-
+!TypeException:user.tst[12]:'bat.append' undefined in:     bat.append(X_19:bat[:oid,:str],X_26:int);
 function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
