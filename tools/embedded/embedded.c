@@ -212,59 +212,7 @@ void monetdb_cleanup_result(void* output) {
 	(*res_table_destroy_ptr)((res_table*) output);
 }
 
-#define BAT_TO_INTSXP(bat,tpe,retsxp)						\
-	do {													\
-		tpe v;	size_t j;									\
-		retsxp = PROTECT(NEW_INTEGER(BATcount(bat)));		\
-		for (j = 0; j < BATcount(bat); j++) {				\
-			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
-			if ( v == tpe##_nil)							\
-				INTEGER_POINTER(retsxp)[j] = 	NA_INTEGER; \
-			else											\
-				INTEGER_POINTER(retsxp)[j] = 	(int)v;		\
-		}													\
-	} while (0)
-
-#define BAT_TO_REALSXP(bat,tpe,retsxp)						\
-	do {													\
-		tpe v; size_t j;									\
-		retsxp = PROTECT(NEW_NUMERIC(BATcount(bat)));		\
-		for (j = 0; j < BATcount(bat); j++) {				\
-			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
-			if ( v == tpe##_nil)							\
-				NUMERIC_POINTER(retsxp)[j] = 	NA_REAL;	\
-			else											\
-				NUMERIC_POINTER(retsxp)[j] = 	(double)v;	\
-		}													\
-	} while (0)
-
-
-#define SXP_TO_BAT(tpe,access_fun,na_check)								\
-	do {																\
-		tpe *p, prev = tpe##_nil;										\
-		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
-		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
-		b->tsorted = 1; b->trevsorted = 1;								\
-		p = (tpe*) Tloc(b, BUNfirst(b));								\
-		for( j =0; j< (int) cnt; j++, p++){								\
-			*p = (tpe) access_fun(ret_col)[j];							\
-			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
-			if (j > 0){													\
-				if ( *p > prev && b->trevsorted){						\
-					b->trevsorted = 0;									\
-					if (*p != prev +1) b->tdense = 0;					\
-				} else													\
-					if ( *p < prev && b->tsorted){						\
-						b->tsorted = 0;									\
-						b->tdense = 0;									\
-					}													\
-			}															\
-			prev = *p;													\
-		}																\
-		BATsetcount(b,cnt);												\
-		BATsettrivprop(b);												\
-	} while (0)
-
+#include "converters.h"
 
 SEXP monetdb_query_R(SEXP query) {
 	res_table* output = NULL;
@@ -423,16 +371,84 @@ SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 		cnt = (BUN) row_ct;
 
 		// hand over the vector into a BAT
+		// TODO: This is duplicated from rapi.c
+		// move to a function in converters.h
 		switch (bat_type) {
 		case TYPE_int: {
 			if (!IS_INTEGER(ret_col)) {
-				msg =
-					createException(MAL, "rapi.eval", "boo"); // TODO: better error message
+				msg = GDKstrdup("boo");
 				goto wrapup;
 			}
 			SXP_TO_BAT(int, INTEGER_POINTER, *p==NA_INTEGER);
 			break;
 		}
+		case TYPE_lng: {
+			if (!IS_INTEGER(ret_col)) {
+				msg = GDKstrdup("boo");
+				goto wrapup;
+			}
+			SXP_TO_BAT(lng, INTEGER_POINTER, *p==NA_INTEGER);
+			break;
+		}
+		case TYPE_bte: { // only R logical types fit into bte BATs
+			if (!IS_LOGICAL(ret_col)) {
+				msg = GDKstrdup("boo");
+				goto wrapup;
+			}
+			SXP_TO_BAT(bit, LOGICAL_POINTER, *p==NA_LOGICAL);
+			break;
+		}
+		case TYPE_dbl: {
+			if (!IS_NUMERIC(ret_col)) {
+				msg = GDKstrdup("boo");
+				goto wrapup;
+			}
+			SXP_TO_BAT(dbl, NUMERIC_POINTER, ISNA(*p));
+			break;
+		}
+		case TYPE_str: {
+			SEXP levels;
+			size_t j;
+			if (!IS_CHARACTER(ret_col) && !isFactor(ret_col)) {
+				msg = GDKstrdup("boo");
+				goto wrapup;
+			}
+			b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
+			BATseqbase(b, 0);
+			b->T->nil = 0;
+			b->T->nonil = 1;
+			b->tkey = 0;
+			b->tsorted = 0;
+			b->trevsorted = 0;
+			b->tdense = 1;
+			/* get levels once, since this is a function call */
+			levels = GET_LEVELS(ret_col);
+
+			for (j = 0; j < cnt; j++) {
+				SEXP rse;
+				if (isFactor(ret_col)) {
+					int ii = INTEGER(ret_col)[j];
+					if (ii == NA_INTEGER) {
+						rse = NA_STRING;
+					} else {
+						rse = STRING_ELT(levels, ii - 1);
+					}
+				} else {
+					rse = STRING_ELT(ret_col, j);
+				}
+				if (rse == NA_STRING) {
+					b->T->nil = 1;
+					b->T->nonil = 0;
+					BUNappend(b, str_nil, FALSE);
+				} else {
+					BUNappend(b, CHAR(rse), FALSE);
+				}
+			}
+			break;
+		}
+		default:
+			msg = GDKstrdup("eek");
+			goto wrapup;
 		}
 		ad[i].colname = t_column_names[i];
 		ad[i].batid = b->batCacheid;

@@ -20,6 +20,7 @@ MTSAFE
 INCLUDES = ../../monetdb5/mal \
 		   ../../monetdb5/modules/atoms \ 
 		   ../../monetdb5/modules/mal \ 
+		   ../../monetdb5/extras/rapi \ 
 		   ../../gdk \
 		   ../../common/stream \
 		   ../../common/utils \
