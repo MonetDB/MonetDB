@@ -49,7 +49,8 @@ lib_mal = {
 		zorder.c zorder.h \
 		sample.c sample.h \
 		json_util.c json_util.h \
-		calc.c batcalc.c
+		calc.c batcalc.c \
+		calc_arrays.h calc_arrays.c
 }
 
 headers_mal = {
@@ -71,7 +72,7 @@ headers_mal = {
 headers_auto = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 01_calc.mal 01_batcalc.mal
+	SOURCES = 01_calc.mal 01_batcalc.mal calc_arrays.mal
 }
 
 headers_hge = {
@@ -89,7 +90,7 @@ EXTRA_DIST = batExtensions.mal iterator.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
 	mal_mapi.mal mat.mal tokenizer.mal \
 	batmtime.mal querylog.mal sysmon.mal \
-	01_calc.mal 01_batcalc.mal \
+	01_calc.mal 01_batcalc.mal  calc_arrays.mal \
 	00_calc_hge.mal 00_batcalc_hge.mal \
 	00_iterator_hge.mal 00_language_hge.mal \
 	00_mal_mapi_hge.mal 00_mkey_hge.mal 00_batExtensions_hge.mal

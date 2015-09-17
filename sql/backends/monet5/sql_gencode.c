@@ -811,13 +811,17 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 
 	q = pushArgument(mb, q, o1);
 	snprintf(nme, SMALLBUFSIZ, "Y_%d", o1);
-	if((arraySecondVar = findVariable(mb, nme)) >=0) 
+	if((arraySecondVar = findVariable(mb, nme)) >=0) {
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 		q = pushArgument(mb, q, arraySecondVar);
+	}
 
 	q = pushArgument(mb, q, o2);
 	snprintf(nme, SMALLBUFSIZ, "Y_%d", o2);
-	if((arraySecondVar = findVariable(mb, nme)) >=0) 
+	if((arraySecondVar = findVariable(mb, nme)) >=0) {
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 		q = pushArgument(mb, q, arraySecondVar);
+	}
 
 	return q;
 }
@@ -1514,6 +1518,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				k = getDestVar(q);
 
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+				if((arraySecondVar = findVariable(mb, nme)) >=0)
+					renameVariable(mb, getArg(q, 1), "Y_%d", k);
+
 				q = newStmt1(mb, algebraRef, "subselect");
 				q = pushArgument(mb, q, k);
 				if (sub > 0)
@@ -1526,6 +1534,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				k = getDestVar(q);
+
 			} else {
 				char *cmd = subselectRef;
 
@@ -2175,7 +2184,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else
 				q = newStmt1(mb, batcalcRef, convert);
 
-			/* convert to string is complex, we need full type info
+				/* convert to string is complex, we need full type info
 			   and mvc for the timezone */
 			if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)) {
 				q = pushInt(mb, q, f->type->eclass);
@@ -2185,7 +2194,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else if (f->type->eclass == EC_DEC)
 				/* scale of the current decimal */
 				q = pushInt(mb, q, f->scale);
-			q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, l);
+
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+				if((arraySecondVar = findVariable(mb, nme)) >=0) { 
+        		    q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+					q = pushArgument(mb, q, arraySecondVar);
+				}
 
 			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 				/* digits, scale of the result decimal */
@@ -2202,6 +2217,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			if(arraySecondVar >= 0)
+            	renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 			break;
 		}
 		case st_Nop:{
@@ -2269,10 +2286,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb, getArg(q, q->argc-1));
 				}
 				special = 0;
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", op->nr);
+				if((arraySecondVar = findVariable(mb, nme)) >=0) {
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+					q = pushArgument(mb, q, arraySecondVar);
+				}
+
 			}
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			if(arraySecondVar >= 0)
+				renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+
 			/* keep reference to instruction */
 			s->rewritten = (void *) q;
 		} break;

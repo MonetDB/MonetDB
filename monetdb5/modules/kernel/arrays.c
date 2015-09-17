@@ -946,7 +946,8 @@ str ALGprojectDimension(bat* result, const ptr *dim, const ptr *array) {
 
 str ALGprojectNonDimension(bat *result, const bat *vals, const ptr *array) {
 	const gdk_array *dimsCands = arrayCopy((gdk_array*)*array); //candidates exactly the same to the array
-	
+
+	//empty cands so that it will project all cells	
 	BAT *oidsCandsBAT = newempty("ALGprojectNonDimension");
 	bat oidsCands = oidsCandsBAT->batCacheid;
 
