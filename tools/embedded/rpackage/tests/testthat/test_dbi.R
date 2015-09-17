@@ -1,5 +1,4 @@
 library(testthat)
-library(MonetDB)
 library(MonetDB.R)
 
 tname <- "monetdbtest"

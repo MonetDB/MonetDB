@@ -187,7 +187,7 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	stk->stk[4].vtype = TYPE_str;
 	stk->stk[5].vtype = TYPE_bat;
 	mb.var[5] = &bat_varrec;
-	(*mvc_trans_ptr)(m);
+	if (!m->session->active) (*mvc_trans_ptr)(m);
 	for (i=0; i < col_ct; i++) {
 		append_data ad = data[i];
 		stk->stk[4].val.sval = ad.colname;

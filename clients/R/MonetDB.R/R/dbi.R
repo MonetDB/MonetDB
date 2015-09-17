@@ -418,26 +418,35 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
     dbSendUpdate(conn, ct)
   }
   if (length(value[[1]])) {
-    # TODO: special handling for embedded mode
-
-    if (csvdump) {
-      tmp <- tempfile(fileext = ".csv")
-      write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
-      dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
-      " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
-      file.remove(tmp) 
-    } else {
-      vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
-      if (transaction) dbBegin(conn)
-      # chunk some inserts together so we do not need to do a round trip for every one
-      splitlen <- 0:(nrow(value)-1) %/% getOption("monetdb.insert.splitsize", 1000)
-      lapply(split(value, splitlen), 
-        function(valueck) {
-        bvins <- c()
-        for (j in 1:length(valueck[[1]])) bvins <- c(bvins,.bindParameters(vins, as.list(valueck[j, ])))
-        dbSendUpdate(conn, paste0("INSERT INTO ", qname, " VALUES ",paste0(bvins, collapse=", ")))
-      })
-      if (transaction) dbCommit(conn)
+    if (inherits(conn, "MonetDBEmbeddedConnection")) {
+      if (csvdump) {
+        warning("Ignoring csvdump setting in embedded mode")
+      }
+      insres <- monetdb_embedded_append(qname, value)
+      if (!is.logical(insres) && insres) {
+        stop("Failed to insert data: ", insres)
+      }
+    }
+    else {
+      if (csvdump) {
+        tmp <- tempfile(fileext = ".csv")
+        write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
+        dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
+        " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
+        file.remove(tmp) 
+      } else {
+        vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
+        if (transaction) dbBegin(conn)
+        # chunk some inserts together so we do not need to do a round trip for every one
+        splitlen <- 0:(nrow(value)-1) %/% getOption("monetdb.insert.splitsize", 1000)
+        lapply(split(value, splitlen), 
+          function(valueck) {
+          bvins <- c()
+          for (j in 1:length(valueck[[1]])) bvins <- c(bvins,.bindParameters(vins, as.list(valueck[j, ])))
+          dbSendUpdate(conn, paste0("INSERT INTO ", qname, " VALUES ",paste0(bvins, collapse=", ")))
+        })
+        if (transaction) dbCommit(conn)
+      }
     }
   }
   return(invisible(TRUE))

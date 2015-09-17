@@ -42,7 +42,9 @@ R CMD build rpackage
 
 scp $RPKG cwi:WWW/R
 
-# install.packages("MonetDB", repos="http://homepages.cwi.nl/~hannes/R/", type="source")
+echo
+echo 'install.packages("MonetDB", repos="http://homepages.cwi.nl/~hannes/R/", type="source")'
+echo
 
 # OSX 10.10 check (check vanilla!)
 # ubuntu 14.04.02: needs bison libssl-dev libxml2-dev
