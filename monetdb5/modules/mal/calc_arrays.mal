@@ -1,0 +1,923 @@
+module calc;
+
+function not(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionsNOT
+address CMDdimensionsNOT
+comment "Bitwise not of the dimension values";
+
+function sign(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSIGN
+address CMDdimensionSIGN
+comment "Unary sign (-1,0,1) of the dimension values";
+
+function abs(dim:ptr, dims:ptr) (:ptr, :ptr)
+address CMDdimensionABS
+comment "Unary absolute value of dimension values";
+
+funcion -(dim:ptr, dims:ptr) (:ptr, :ptr)
+address CMDdimensionNEG
+comment "Unary negation of the dimension values";
+
+function ++(dim:ptr, dims:ptr) (:ptr, :ptr)
+address CMDdimensionINCRsignal
+comment "Unary dimension values + 1";
+
+function --(dim:ptr, dims:ptr) (:ptr, :ptr)
+address CMDdimensionDECRsignal
+comment "Unary dimension values - 1";
+
+#+
+pattern +(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension values, guarantee no overflow by returning larger type";
+pattern +(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension vallues, guarantee no overflow by returning larger type";
+pattern +(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension values, guarantee no overflow by returning larger type";
+pattern +(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension values, guarantee no overflow by returning larger type";
+pattern +(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension values, guarantee no overflow by returning larger type";
+pattern +(v:flt, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
+comment "Return V + dimension values, guarantee no overflow by returning larger type";
+
+#-
+pattern -(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+pattern -(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+pattern -(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+pattern -(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+pattern -(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+pattern -(v:flt, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
+comment "Return V - dimension values, guarantee no overflow by returning larger type";
+
+#*
+pattern *(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+pattern *(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+pattern *(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+pattern *(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+pattern *(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+pattern *(v:flt, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionMULsignal
+comment "Return V * dimension values, guarantee no overflow by returning larger type";
+
+#/
+pattern /(dim:ptr, dims:ptr, v:bte) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+pattern /(dim:ptr, dims:ptr, v:sht) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+pattern /(dim:ptr, dims:ptr, v:int) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+pattern /(dim:ptr, dims:ptr, v:wrd) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+pattern /(dim:ptr, dims:ptr, v:lng) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+pattern /(dim:ptr, dims:ptr, v:flt) (:ptr, :ptr) address CMDdimensionDIVsignal
+comment "Return dimension values / V, signal error on overflow";
+
+#%
+pattern %(dim:ptr, dims:ptr, v:bte) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+pattern %(dim:ptr, dims:ptr, v:sht) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+pattern %(dim:ptr, dims:ptr, v:int) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+pattern %(dim:ptr, dims:ptr, v:wrd) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+pattern %(dim:ptr, dims:ptr, v:lng) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+pattern %(dim:ptr, dims:ptr, v:flt) (:ptr, :ptr) address CMDdimensionMODsignal
+comment "Return dimension values % V, signal error on divide by zero";
+
+#and
+pattern and(v:bit, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+pattern and(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+pattern and(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+pattern and(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+pattern and(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+pattern and(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionAND
+comment "Return V AND dimension values";
+
+#or
+pattern or(v:bit, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+pattern or(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+pattern or(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+pattern or(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+pattern or(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+pattern or(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionOR
+comment "Return V OR dimension values";
+
+#xor
+pattern xor(v:bit, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+pattern xor(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+pattern xor(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+pattern xor(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+pattern xor(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+pattern xor(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionXOR
+comment "Return V XOR dimension values";
+
+#<<
+pattern <<(dim:ptr, dims:ptr, v:bit)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+pattern <<(dim:ptr, dims:ptr, v:bte)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+pattern <<(dim:ptr, dims:ptr, v:sht)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+pattern <<(dim:ptr, dims:ptr, v:int)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+pattern <<(dim:ptr, dims:ptr, v:wrd)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+pattern <<(dim:ptr, dims:ptr, v:lng)  (:ptr, :ptr) address CMDdimensionLSH
+comment "Return dimension values << V";
+
+#>>
+pattern >>(dim:ptr, dims:ptr, v:bit)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+pattern >>(dim:ptr, dims:ptr, v:bte)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+pattern >>(dim:ptr, dims:ptr, v:sht)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+pattern >>(dim:ptr, dims:ptr, v:int)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+pattern >>(dim:ptr, dims:ptr, v:wrd)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+pattern >>(dim:ptr, dims:ptr, v:lng)  (:ptr, :ptr) address CMDdimensionRSH
+comment "Return dimension values >> V";
+
+#<
+pattern <(v:bit, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:oid, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:bte, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:sht, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:int, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:wrd, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:lng, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:flt, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+pattern <(v:dbl, dim:ptr, dims:ptr) :bit address CMDdimensionLT
+comment "Return true if V < than all values in dimension";
+
+#<=
+pattern <=(v:bit, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:oid, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:bte, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:sht, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:int, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:wrd, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:lng, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:flt, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+pattern <=(v:dbl, dim:ptr, dims:ptr) :bit address CMDdimensionLE
+comment "Return true if V <= than all values in dimension";
+
+#>
+pattern >(v:bit, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:oid, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:bte, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:sht, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:int, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:wrd, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:lng, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:flt, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+pattern >(v:dbl, dim:ptr, dims:ptr) :bit address CMDdimensionGT
+comment "Return true if V > than all values in dimension";
+
+#>=
+pattern >=(v:bit, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:oid, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:bte, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:sht, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:int, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:wrd, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:lng, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:flt, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+pattern >=(v:dbl, dim:ptr, dims:ptr) :bit address CMDdimensionGE
+comment "Return true if V >= than all values in dimension";
+
+#== Do I need it?
+
+#!=
+pattern !=(v:bit, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:oid, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:bte, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:sht, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:int, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:wrd, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:lng, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:flt, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+pattern !=(v:dbl, dim:ptr, dims:ptr) :bit address CMDdimensionNE
+comment "Return true if V != than all values in dimension";
+
+#cmp
+pattern cmp(v:bit, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:oid, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:bte, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:sht, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:int, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:wrd, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:lng, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:flt, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+pattern cmp(v:dbl, dim:ptr, dims:ptr) :bte address CMDdimensionCMP
+comment "Return -1/0-/1 if V </==/> than all values in dimension";
+
+
+#between
+pattern between(dim:ptr, dims:ptr, lo:any,hi:any) :bit address CMDdimensionBETWEEN
+comment "dimension values between LO and HI inclusive";
+pattern between_symmetric(dim:ptr, dims:ptr, v1:any,v2:any) :bit address CMDdimensionBETWEENsymmetric
+comment "dimension values between V1 and V2 (or vice versa) inclusive";
+
+pattern void(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to void";
+pattern bit(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to bit";
+pattern bte(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to bte";
+pattern sht(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to sht";
+pattern int(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to int";
+pattern wrd(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to wrd";
+pattern batcalc.lng(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to lng";
+pattern flt(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to flt";
+pattern dbl(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to dbl";
+pattern oid(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to oid";
+pattern str(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT
+comment "Cast dimension values to str";
+
+pattern ptr(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERTptr
+comment "Cast dimension values to ptr";
+
+#min/max Do I need it? What does it min
+
+module aggr;
+
+pattern sum(b:bat[:oid,:bte]) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:bte]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:bte]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:bte]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:bte]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:bte]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:sht]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:sht]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:sht]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:sht]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:sht]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:int]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:int]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:int]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:int]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:wrd]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:wrd]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:wrd]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:lng]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:lng],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:lng],s:bat[:oid,:oid]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:lng]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:lng],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:lng],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:flt]) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:flt],nil_if_empty:bit) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:flt],s:bat[:oid,:oid]) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:flt]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:flt],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:flt],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern sum(b:bat[:oid,:dbl]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:dbl],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B.";
+pattern sum(b:bat[:oid,:dbl],s:bat[:oid,:oid]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:bte]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:bte],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:sht]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:sht]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:sht]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:sht]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:sht]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:sht],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:int]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:int]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:int]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:int]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:int],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:wrd]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :wrd
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:wrd]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:wrd]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:wrd],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:lng]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:lng],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:lng],s:bat[:oid,:oid]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:lng]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:lng],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:lng],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:lng],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:flt]) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:flt],nil_if_empty:bit) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:flt],s:bat[:oid,:oid]) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:flt]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:flt],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:flt],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:flt],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
+pattern prod(b:bat[:oid,:dbl]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:dbl],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B.";
+pattern prod(b:bat[:oid,:dbl],s:bat[:oid,:oid]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:oid,:dbl],s:bat[:oid,:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+
