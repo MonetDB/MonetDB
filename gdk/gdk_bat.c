@@ -1001,28 +1001,6 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		un_move(tmpp, Tloc(b, p), ts);				\
 	} while (0)
 
-/*
- * @- BUN Insertion
- * Insertion into a BAT is split into two operations BUNins and
- * BUNfastins.  The former should be used when integrity enforcement
- * and index maintenance is required.  The latter is used to quickly
- * insert the BUN into the result without any additional check.  For
- * those cases where speed is required, the type decoding can be
- * circumvented by asking for a BUN using BATbunalloc and fill it
- * directly. See gdk.mx for the bunfastins(b,h,t) macros.
- */
-gdk_return
-BUNfastins(BAT *b, const void *h, const void *t)
-{
-	bunfastins(b, h, t);
-	if (!b->batDirty)
-		b->batDirty = TRUE;
-	return GDK_SUCCEED;
-      bunins_failed:
-	return GDK_FAIL;
-}
-
-
 static void
 setcolprops(BAT *b, COLrec *col, const void *x)
 {
@@ -1475,6 +1453,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	return p;
 }
 
+#undef BUNdelete
 BUN
 BUNdelete(BAT *b, BUN p, bit force)
 {
@@ -1494,6 +1473,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 
 static BUN BUNlocate(BAT *b, const void *x, const void *y);
 
+#undef BUNdel
 gdk_return
 BUNdel(BAT *b, const void *x, const void *y, bit force)
 {

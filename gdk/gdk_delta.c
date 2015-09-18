@@ -221,12 +221,13 @@ BATprev(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
+	assert(BAThtype(b)== TYPE_void); // headless guard
+	bn = BATnew(TYPE_void, BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batInserted; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -250,12 +251,13 @@ BATalpha(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
+	assert(BAThtype(b) == TYPE_void); //headless guard
+	bn = BATnew(TYPE_void, BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}
 	for (p = b->batInserted; p < BUNlast(b); p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -279,12 +281,13 @@ BATdelta(BAT *b)
 		}
 		return bn;
 	}
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b), TRANSIENT);
+	assert(BAThtype(b)== TYPE_void);
+	bn = BATnew(TYPE_void, BATttype(b), BATcapacity(b), TRANSIENT);
 	if (bn == NULL) {
 		return bn;
 	}
 	for (p = b->batDeleted; p < b->batFirst; p++) {
-		if (BUNins(bn, BUNhead(bi, p), BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			return NULL;
 		}

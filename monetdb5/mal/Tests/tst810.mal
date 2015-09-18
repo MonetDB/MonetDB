@@ -10,7 +10,7 @@ bat.append(b,8);
 bat.append(b,9);
 io.print(b);
 
-slice1 := algebra.slice(b,nil:oid,4@0);
+slice1 := algebra.slice(b,0@0,4@0);
 io.print(slice1);
-slice2 := algebra.slice(b,4@0,nil:oid);
+slice2 := algebra.slice(b,5@0,nil:oid);
 io.print(slice2);

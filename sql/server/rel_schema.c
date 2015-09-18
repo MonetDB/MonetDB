@@ -1300,6 +1300,35 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 }
 
 static sql_rel *
+rel_grant_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	char *sname = cur->base.name;
+	dnode *gn;
+
+	if (!privs)
+		return NULL;
+	sname = cur->base.name;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		for (opn = privs->h; opn; opn = opn->next) {
+			int priv = opn->data.i_val;
+
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, DDL_GRANT))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
 rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
 	sql_rel *res = NULL;
@@ -1401,6 +1430,8 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	}
 
 	switch (token) {
+	case SQL_GRANT: 
+		return rel_grant_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
 		return rel_grant_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_NAME:
@@ -1408,6 +1439,34 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	default:
 		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
 	}
+}
+
+static sql_rel *
+rel_revoke_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	char *sname = cur->base.name;
+	dnode *gn;
+
+	if (!privs)
+		return NULL;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		for (opn = privs->h; opn; opn = opn->next) {
+			int priv = opn->data.i_val;
+
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, DDL_REVOKE))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
 }
 
 static sql_rel *
@@ -1514,6 +1573,8 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	}
 
 	switch (token) {
+	case SQL_GRANT: 
+		return rel_revoke_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
 		return rel_revoke_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_NAME:

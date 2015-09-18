@@ -1626,9 +1626,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* Handle setops */
 		if (match > 0 && getModuleId(p) == algebraRef &&
 		    (getFunctionId(p) == subdiffRef || 
-		     getFunctionId(p) == subinterRef || 
-		     getFunctionId(p) == tdiffRef || 
-		     getFunctionId(p) == tinterRef) && 
+		     getFunctionId(p) == subinterRef) && 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			mat_setop(mb, p, &ml, m, n);

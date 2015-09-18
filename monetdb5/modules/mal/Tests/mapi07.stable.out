@@ -39,7 +39,7 @@ end user.main;
 # t	t  # name
 # void	int  # type
 #--------------------------#
-[ 2@0,	nil  ]
+[ 0@0,	nil  ]
 
 # 09:12:08 >  
 # 09:12:08 >  Done.

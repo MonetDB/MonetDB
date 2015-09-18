@@ -585,12 +585,12 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-IOexport(bit *ret, bat *bid, str *fnme)
+IOexport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	stream *s;
 
-	*ret = FALSE;
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
 	
@@ -604,41 +604,37 @@ IOexport(bit *ret, bat *bid, str *fnme)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
-	BATprintf(s, b);
+    BATprintcolumns(s, 1, &b);
 	mnstr_close(s);
 	mnstr_destroy(s);
-	*ret = TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 /*
- * The import command reads a single BAT from an ASCII file. It assumes
- * a layout compatible with that produced by print or export.
+ * The import command reads a single BAT from an ASCII file produced by export.
  */
-#define COMMA ','
 str
-IOimport(bat *ret, bat *bid, str *fnme)
+IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	int (*hconvert) (const char *, int *, ptr *);
 	int (*tconvert) (const char *, int *, ptr *);
 	int n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
-	ptr h = 0, t = 0;
-	int lh = 0, lt = 0;
+	ptr t = 0;
+	int lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 	char msg[BUFSIZ];
 
+	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		if (fp)
 			fclose(fp);
 		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
 	}
 
-	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 	/*
 	 * Open the file. Memory map it to minimize buffering problems.
@@ -748,28 +744,6 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "%s", msg);
 		}
-		n = hconvert(p, &lh, (ptr*)&h);
-		if (n <= 0) {
-			BBPunfix(b->batCacheid);
-			snprintf(msg,sizeof(msg),"error in input %s",buf);
-			GDKfree(buf);
-			MT_munmap(base, end - base);
-			throw(MAL, "io.import", "%s", msg);
-		}
-		p += n;
-
-		for (;*p && *p != COMMA; p++)
-			;
-		if (*p)
-			for (p++; *p && GDKisspace(*p); p++)
-				;
-		if (*p == 0) {
-			BBPunfix(b->batCacheid);
-			snprintf(msg,sizeof(msg),"error in input %s",buf);
-			GDKfree(buf);
-			MT_munmap(base, end - base);
-			throw(MAL, "io.import", "%s", msg);
-		}
 		n = tconvert(p, &lt, (ptr*)&t);
 		if (n <= 0) {
 			BBPunfix(b->batCacheid);
@@ -779,7 +753,7 @@ IOimport(bat *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNins(b, h, t, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, t, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			MT_munmap(base, end - base);
@@ -800,13 +774,11 @@ IOimport(bat *ret, bat *bid, str *fnme)
 #endif
 	}
 	/* Cleanup and exit. Return the filled BAT.  */
-	if (h)
-		GDKfree(h);
 	if (t)
 		GDKfree(t);
 	GDKfree(buf);
 	MT_munmap(base, end - base);
-	BBPkeepref(*ret= b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

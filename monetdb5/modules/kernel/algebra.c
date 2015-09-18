@@ -689,50 +689,6 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 	return MAL_SUCCEED;
 }
 
-static str
-ALGbinaryint(bat *result, const bat *bid, const int *param, BAT *(*func)(BAT *, BUN), const char *name)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	bn = (*func)(b, *param);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty & 2))
-		BATsetaccess(bn, BAT_READ);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
-static str
-ALGbinaryestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate,
-				  BAT *(*func)(BAT *, BAT *, BUN), const char *name)
-{
-	BAT *left, *right, *bn = NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
-	}
-	bn = (*func)(left, right, estimate ? (BUN) *estimate : BUN_NONE);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	if (bn == NULL)
-		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
 static BAT *
 BATwcopy(BAT *b)
 {
@@ -890,90 +846,9 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 }
 
 str
-ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate)
-{
-	return ALGbinaryestimate(result, lid, rid, estimate, BATleftjoin, "algebra.leftjoin");
-}
-
-str
-ALGleftjoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinaryestimate(result, lid, rid, NULL, BATleftjoin, "algebra.leftjoin");
-}
-
-str
 ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATproject, "algebra.leftfetchjoin");
-}
-
-str
-ALGsemijoin(bat *result, const bat *lid, const bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATsemijoin, "algebra.semijoin");
-}
-
-str
-ALGsample(bat *result, const bat *bid, const int *param)
-{
-	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
-}
-
-/* add items missing in the kernel */
-str
-ALGtdiff(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tdiff", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATkdiff(BATmirror(b),BATmirror(b2));
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (bn) {
-		BAT *r = BATmirror(BATmark(bn,0));
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.tdiff", GDK_EXCEPTION);
-}
-
-str
-ALGtinter(bat *result, const bat *bid, const bat *bid2)
-{
-	BAT *b, *b2, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
-	if ((b2 = BATdescriptor(*bid2)) == NULL){
-		BBPunfix(*bid2);
-		throw(MAL, "algebra.tinter", RUNTIME_OBJECT_MISSING);
-	}
-
-	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
-	BBPunfix(b->batCacheid);
-	BBPunfix(b2->batCacheid);
-	if (bn) {
-		BAT *r = BATmirror(BATmark(bn,0));
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "algebra.tinter", GDK_EXCEPTION);
 }
 
 str
@@ -1179,8 +1054,7 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 	}
-	slice(&bn, b, *start, *end);
-	if (bn != NULL) {
+	if (slice(&bn, b, *start, *end) == GDK_SUCCEED) {
 		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
@@ -1214,28 +1088,10 @@ ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	BAT *b, *bn = NULL;
 	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
 	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
 
-	if (*start == oid_nil && end && *end == oid_nil) {
-		*ret = *bid;
-		BBPincref(*ret, TRUE);
-		return MAL_SUCCEED;
-	}
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
-
-	slice(&bn, b, s, e);
-	if(bn == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.slice", "Slicing failed");
-	}
-
-	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return ALGslice(ret, bid, &s, &e) ;
 }
 
 str

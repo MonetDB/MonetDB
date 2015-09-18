@@ -13,7 +13,7 @@ lib_gdk = {
 	NAME = bat
 	SOURCES = \
 		gdk.h gdk_cand.h gdk_atomic.h gdk_batop.c \
-		gdk_select.c gdk_select_legacy.c \
+		gdk_select.c \
 		gdk_search.c gdk_search.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_setop.c gdk_utils.c gdk_utils.h \
@@ -27,7 +27,7 @@ lib_gdk = {
 		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
 		gdk_aggr.c gdk_group.c gdk_mapreduce.c gdk_mapreduce.h \
 		gdk_imprints.c gdk_imprints.h \
-		gdk_join.c gdk_join_legacy.c \
+		gdk_join.c \
 		gdk_unique.c \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \

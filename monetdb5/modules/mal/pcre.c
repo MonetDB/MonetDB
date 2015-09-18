@@ -661,7 +661,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
-	assert(origin_strs->htype==TYPE_void);
+	assert(origin_strs->htype==TYPE_void); // headless guard
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
 		my_pcre_free(pcre_code);
@@ -719,10 +719,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNins(tmpbat, BUNhead(origin_strsi, p), replaced_str, FALSE);
+			BUNappend(tmpbat, replaced_str, FALSE);
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNins(tmpbat, BUNhead(origin_strsi, p), origin_str, FALSE);
+			BUNappend(tmpbat, origin_str, FALSE);
 		}
 	}
 
@@ -1198,7 +1198,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
-		if (strs->htype != r->htype) {
+		if (!BAThdense(strs)) {
+			/* legacy */
 			BAT *v = VIEWcreate(strs, r);
 
 			BBPunfix(r->batCacheid);

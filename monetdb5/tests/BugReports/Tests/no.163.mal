@@ -113,7 +113,7 @@
 	aa_a := calc.oid(20000000);
 	ba_a := calc.setoid(aa_a);
 #	io.print("");
-function tst(b:bat[:any_1,:int]):bat[:any_1,:int];
+function tst(b:bat[:oid,:int]):bat[:oid,:int];
 #	io.print("");
 	i := 0;
 #	io.print("  i := 0;");

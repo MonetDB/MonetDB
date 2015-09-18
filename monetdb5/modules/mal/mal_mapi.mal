@@ -149,7 +149,7 @@ command fetch_field(hdl:int,fnr:int):bte
 address SERVERfetch_field_bte
 comment "Retrieve a single bte field.";
 
-command fetch_field_array(hdl:int):bat[:int,:str]
+command fetch_field_array(hdl:int):bat[:oid,:str]
 address SERVERfetch_field_bat
 comment "Retrieve all fields for a row.";
 

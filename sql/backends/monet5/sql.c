@@ -1278,7 +1278,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_grant_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_REVOKE:{
@@ -1288,7 +1291,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{
@@ -1575,7 +1581,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*sid)) == NULL)
 		throw(SQL, "sql.next_value", "Cannot access descriptor");
 
-	r = BATnew(b->htype, TYPE_lng, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_lng, BATcount(b), TRANSIENT);
 	if (!r) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.next_value", "Cannot create bat");
@@ -1611,7 +1617,15 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNins(r, BUNhead(bi, p), &l, FALSE);
+		BUNappend(r, &l, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, r);
+		BBPunfix(r->batCacheid);
+		r = b2;
+	} else {
+		BATseqbase(r, b->hseqbase);
 	}
 	if (sb)
 		seqbulk_destroy(sb);
@@ -3909,7 +3923,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3927,7 +3941,15 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3948,7 +3970,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3968,7 +3990,15 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

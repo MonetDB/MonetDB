@@ -59,10 +59,7 @@ algebra_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 algebra_export str ALGcopy(bat *result, const bat *bid);
 algebra_export str ALGsubunique2(bat *result, const bat *bid, const bat *sid);
 algebra_export str ALGsubunique1(bat *result, const bat *bid);
-algebra_export str ALGleftjoinestimate(bat *result, const bat *lid, const bat *rid, const lng *estimate);
-algebra_export str ALGleftjoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid);
-algebra_export str ALGsemijoin(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
 algebra_export str ALGsample(bat *result, const bat *bid, const int *param);

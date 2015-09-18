@@ -1,6 +1,14 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATselect.  Use BATsubselect instead.
+- Removed BATsemijoin.  Use BATsubsemijoin instead.
+- Removed BATjoin.  Use BATsubjoin instead.
+- Removed BATleftjoin.  Use BATsubleftjoin or BATproject instead.
+- Removed BATleftfetchjoin.  Use BATproject instead.
+- Removed BUNins from the list of exported functions.
+
 * Thu Sep 10 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed legacy functions BATuselect and BATuselect_.
 - Removed legacy functions BATantijoin, BATbandjoin, BATouterjoin,

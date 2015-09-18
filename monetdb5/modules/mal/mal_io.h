@@ -33,8 +33,8 @@ io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 io_export str IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOexport(bit *ret, bat *bid, str *fnme);
-io_export str IOimport(bat *ret, bat *bid, str *fnme);
+io_export str IOexport(void *ret, bat *bid, str *fnme);
+io_export str IOimport(void *ret, bat *bid, str *fnme);
 io_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
