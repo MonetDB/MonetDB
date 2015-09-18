@@ -78,6 +78,7 @@ int monetdb_startup(char* dir, char silent) {
 	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");
+	GDKsetenv("sql_optimizer", "sequential_pipe"); // TODO: SELECT * FROM table should not use mitosis in the first place.
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));

@@ -105,9 +105,9 @@ static SEXP bat_to_sexp(BAT* b) {
 			BATloop(b, p, q) {
 				const char *t = (const char *) BUNtail(li, p);
 				if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
-					SET_STRING_ELT(varvalue, j, NA_STRING);
+					STRING_ELT(varvalue, j) = NA_STRING;
 				} else {
-					SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+					STRING_ELT(varvalue, j) = mkCharCE(t, CE_UTF8);
 				}
 				j++;
 			}
