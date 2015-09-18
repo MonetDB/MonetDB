@@ -1505,25 +1505,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					//check if it is array related
 					snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 					if((arraySecondVar = findVariable(mb, nme)) >=0) {
+						//if one is array then the other shoudl be an array (comparing dimensions with each other
+						//(Is there a possibility to come here without both arguments being dimensions?)
 						done = 1;
 						q = newStmt(mb, mod, convertMultiplexFcn(op));
-						
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 						q = pushArgument(mb, q, l);
 						q = pushArgument(mb, q, arraySecondVar);
-					}
-				
-					snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
-					if((arraySecondVar = findVariable(mb, nme)) >=0) {
-						if(!done) {
-							q = newStmt(mb, mod, convertMultiplexFcn(op));
-							q = pushArgument(mb, q, l);
-							done = 1;
-						}
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+
+						snprintf(nme, SMALLBUFSIZ, "Y_%d", r);
+						if((arraySecondVar = findVariable(mb, nme)) < 0)
+							showException(GDKout, SQL, "sql", "SQL2MAL: uselect with arguments that are not bot dimensions");
+
 						q = pushArgument(mb, q, r);
 						q = pushArgument(mb, q, arraySecondVar);
-					} 
+
+						setVarType(mb, getArg(q, 0), TYPE_ptr);
+						setVarUDFtype(mb, getArg(q, 0));
+						q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bit)));
+					}
 				}
 					
 				if(!done && (q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
@@ -1537,6 +1536,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, algebraRef, "subselect");
 				q = pushArgument(mb, q, k);
+				
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", k);
+				if((arraySecondVar = findVariable(mb, nme)) >=0) { 
+					q = pushArgument(mb, q, arraySecondVar);
+					setVarType(mb, getArg(q,0), TYPE_ptr);
+					setVarUDFtype(mb, getArg(q,0));
+					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+				}
 				if (sub > 0)
 					q = pushArgument(mb, q, sub);
 				q = pushBit(mb, q, !need_not);

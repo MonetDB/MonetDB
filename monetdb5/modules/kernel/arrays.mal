@@ -27,6 +27,11 @@ command algebra.subselect(dim:ptr, dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid
 address ALGdimensionSubselect2;
 command algebra.thetasubselect(dim:ptr, dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
 address ALGdimensionThetasubselect2;
+#when two dimensions have been compared to each other (e.g. =, >=, etc.) the result is a ptr with the array of the dimensions
+#a bat[:oid,:bit] that shows which cells satisfy the condition. This subselect returns the mbr of the cells that satisfy the 
+#condition and a bat with the exact oids that satisfy the condition
+command algebra.subselect(dims:ptr, vals:bat[:oid,:bit], low:bit, high:bit, li:bit, hi:bit, anti:bit) (:ptr,:bat[:oid,:oid])
+address ALGdimensionSubselect3;
 
 #subselection in non-dimensions
 command algebra.subselect(vals:bat[:oid,:any], dims:ptr, low:any, high:any, li:bit, hi:bit, anti:bit) (:ptr, :bat[:oid,:oid])
@@ -39,7 +44,6 @@ command algebra.subselect(vals:bat[:oid,:any], dims:ptr, candDims:ptr, candBAT:b
 address ALGnonDimensionSubselect2;
 command algebra.thetasubselect(vals:bat[:oid,:any], dims:ptr, candDims:ptr, candBAT:bat[:oid,:oid], val:any, op:str) (:ptr, :bat[:oid,:oid])
 address ALGnonDimensionThetasubselect2;
-
 
 #projects a dimension
 command algebra.projectArray(dim:ptr, dims:ptr) :bat[:oid,:any]

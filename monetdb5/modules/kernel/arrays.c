@@ -289,6 +289,23 @@ str ALGdimensionSubselect1(ptr *dimsRes, bat *oidsRes, const ptr *dim, const ptr
 	return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, low, high, li, hi, anti);
 }
 
+str ALGdimensionSubselect3(ptr *dimsRes, bat *oidsResi, const ptr *array, const bat *vals,
+                            const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+
+		(void)*dimsRes;
+		(void)*oidsResi;
+		(void)*array; 
+		(void)*vals;
+		(void)*(int*)low;
+		(void)*(int*)high; 
+		(void)*li; 
+		(void)*hi;
+		(void)*anti;
+
+		return MAL_SUCCEED;
+}
+
+
 str ALGdimensionThetasubselect2(ptr *dimsRes, bat *oidsRes, const ptr *dim, const ptr* dims, const ptr *dimsCands, const bat *oidsCands, const void *val, const char **opp) {
 	bit li = 0;
 	bit hi = 0;
@@ -830,19 +847,7 @@ str ALGnonDimensionSubselect2(ptr *dimsRes, bat *oidsRes, const bat* values, con
 			mbrOut->dims[d]->min = currentOid < mbrOut->dims[d]->min ? currentOid : mbrOut->dims[d]->min;
 			mbrOut->dims[d]->max = currentOid > mbrOut->dims[d]->max ? currentOid : mbrOut->dims[d]->max;
 		}
-#if 0
-		if(mbrIn) {
-			/* compare the mbr_in and mbr_out and keep the smallest one */
-			for(d=0; d<mbrOut->dimsNum; d++) {
-				mbrOut->dims[d]->min = mbrIn->dims[d]->min > mbrOut->dims[d]->min ? mbrIn->dims[d]->min : mbrOut->dims[d]->min;
-				mbrOut->dims[d]->max = mbrIn->dims[d]->max < mbrOut->dims[d]->max ? mbrIn->dims[d]->max : mbrOut->dims[d]->max;
-				mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
-			}
-		} else {
-			for(d=0; d<mbrOut->dimsNum; d++)
-				mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
-		}
-#endif
+
 		for(d=0; d<mbrOut->dimsNum; d++)
 			mbrOut->dims[d]->elsNum = floor((mbrOut->dims[d]->max-mbrOut->dims[d]->min)/mbrOut->dims[d]->step) + 1;
 

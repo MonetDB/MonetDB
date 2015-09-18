@@ -13,19 +13,6 @@ typedef struct dimensionAnalyticStruct {
 	unsigned int elsNum;
 } gdk_analytic_dimension;
 
-/*
-typedef struct dim_node {
-    struct dim_node *next;
-    gdk_dimension *data;
-} dim_node;
-
-typedef struct cells {
-    dim_node *h;
-    dim_node *t;
-    int dimsNum;
-} gdk_cells;
-*/
-
 //As long as the dimension is not projected the following info is enough
 typedef struct dimensionStruct {
 	unsigned int min; //initialy this is set to 0
