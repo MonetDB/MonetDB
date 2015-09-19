@@ -54,3 +54,4 @@ THREADS>=3?useless_casts.Bug-3756
 sum_interval.Bug-3785
 nil_cast.Bug-3787
 sql2pcre.Bug-3800
+ambiguous.Bug-3803
