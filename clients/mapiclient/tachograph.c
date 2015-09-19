@@ -14,16 +14,19 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include <math.h>
-#include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 #include "eventparser.h"
@@ -36,19 +39,15 @@
 # endif
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
 #endif
-#ifdef NATIVE_WIN32
-#include <direct.h>
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
 #endif
+
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -220,7 +219,7 @@ showBar(int level, lng clk, char *stmt)
 	putchar(level ==100?']':'>');
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
-		rendertime(clk,0);
+		rendertime(clk,1);
 		printf("  %s      ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
@@ -464,8 +463,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if ( dbname == NULL){
-		fprintf(stderr,"Database name missing\n");
+	if( dbname == NULL){
 		usageTachograph();
 		exit(-1);
 	}
@@ -510,29 +508,12 @@ main(int argc, char **argv)
 	if(debug)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	for (portnr = 50010; portnr < 62010; portnr++) 
-		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
-			break;
-	
-	if ( conn == NULL) {
-		fprintf(stderr, "!! opening stream failed: no free ports available\n");
-		fflush(stderr);
-		goto stop_disconnect;
-	}
-
-	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
-	if( debug)
-		fprintf(stderr,"--%s\n",buf);
-	doQ(buf);
-
 	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(0);");
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ-1,"profiler.start();");
+	snprintf(buf, BUFSIZ, " profiler.openstream();");
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
@@ -544,7 +525,8 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
+	conn = mapi_get_from(dbh);
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
@@ -560,7 +542,7 @@ main(int argc, char **argv)
 			}
 			response = e + 1;
 		}
-		/* handle the case that the line is too long to 
+		/* handle the case that the line is too long to
 		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
