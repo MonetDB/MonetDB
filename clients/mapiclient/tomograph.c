@@ -18,15 +18,18 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
 #include <stdio.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
 #include "eventparser.h"
@@ -82,7 +85,6 @@ static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
-static char *query = 0;
 static int beat = 5000;
 static int cpus = 0;
 static int atlas= 32;
@@ -1634,7 +1636,6 @@ main(int argc, char **argv)
 		{ "title", 1, 0, 'T' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
-		{ "query", 1, 0, 'q' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
@@ -1652,7 +1653,7 @@ main(int argc, char **argv)
 	}
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:c:Db:A:m",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:o:c:Db:A:m",
 				    long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1671,10 +1672,6 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			prefix = dbname = optarg;
-			break;
-		case 'q':
-			query = optarg;
-			atlas = 1;
 			break;
 		case 'i':
 			inputfile = optarg;
@@ -1765,7 +1762,8 @@ main(int argc, char **argv)
 	}
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
-	printf("-- Output directed towards %s%s_*\n", dirpath, prefix);
+	if( debug )
+		printf("-- Output directed towards %s%s_*\n", dirpath, prefix);
 	if (
 #ifdef NATIVE_WIN32
 	    _mkdir(dirpath) < 0
@@ -1855,25 +1853,12 @@ main(int argc, char **argv)
 		if(debug)
 			fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-		for (portnr = 50010; portnr < 62010; portnr++) 
-			if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
-				break;
-		
-		if ( conn == NULL) {
-			fprintf(stderr, "!! opening stream failed: no free ports available\n");
-			fflush(stderr);
-			goto stop_disconnect;
-		}
-
-		fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
-
-		snprintf(buf, BUFSIZ, " port := profiler.setstream(\"%s\", %d);", hostname, portnr);
+		snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
 		if( debug)
-			fprintf(stderr,"--%s\n",buf);
+			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
 
-		snprintf(buf,BUFSIZ-1,"profiler.tomograph(%d);",beat);
-
+		snprintf(buf,BUFSIZ,"profiler.openstream();");
 		if( debug)
 			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
@@ -1884,12 +1869,6 @@ main(int argc, char **argv)
 		if( tracefd == NULL)
 			fprintf(stderr,"Could not create file '%s'\n",buf);
 
-		if(query){
-			// fork and execute mclient session (TODO)
-			snprintf(buf, BUFSIZ,"mclient -d %s -s \"%s\"",dbname,query);
-			fprintf(stderr,"%s\n",buf);
-			fprintf(stderr,"Not yet implemented\n");
-		}
 		len = 0;
 		buflen = BUFSIZ;
 		buffer = malloc(buflen);
@@ -1898,7 +1877,8 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) > 0) {
+		conn = mapi_get_from(dbh);
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
