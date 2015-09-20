@@ -190,7 +190,7 @@ OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Nod
 		old[pc] = 0;
 		pushInstruction(mb, p);
 	}
-	if (getFunctionId(p) == leftjoinRef || getModuleId(p) == groupRef)
+	if (getModuleId(p) == groupRef)
 		for (i = 0; i< dep[pc]->used; i++)
 			OPTbreadthfirst(cntxt, mb, uselist[dep[pc]->pos+i], max, old, dep, uselist);
 }

@@ -25,6 +25,8 @@
 
 #define PRIV_ROLE_ADMIN 0
 
+#define GLOBAL_OBJID 0
+
 static const char *
 priv2string(int priv)
 {
@@ -59,6 +61,49 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable);
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable);
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable);
+}
+
+static int
+admin_privs(int grantor)
+{
+	if (grantor == USER_MONETDB) {
+		return 1;
+	}
+	return 0;
+}
+
+int
+schema_privs(int grantor, sql_schema *s)
+{
+	if (admin_privs(grantor) || grantor == s->auth_id) {
+		return 1;
+	}
+	return 0;
+}
+
+char *
+sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor)
+{
+	sql_trans *tr = sql->session->tr;
+	int allowed, grantee_id;
+
+	allowed = admin_privs(grantor);
+
+	if (!allowed)
+		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0);
+
+	if (!allowed) 
+		return sql_message("0L000!GRANT: grantor '%s' is not allowed to grant global privileges", stack_get_string(sql,"current_user"));
+
+	grantee_id = sql_find_auth(sql, grantee);
+	if (grantee_id <= 0) 
+		return sql_message("42M32!GRANT: user/role '%s' unknown", grantee);
+	/* first check if privilege isn't already given */
+	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs, 0))) 
+		return sql_message("42M32!GRANT: user/role '%s' already has this privilege", grantee);
+	sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
+	tr->schema_updates++;
+	return NULL;
 }
 
 char *
@@ -145,6 +190,27 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	for(rid = table_funcs.rids_next(A); rid != oid_nil; rid = table_funcs.rids_next(A)) 
 		table_funcs.table_delete(tr, privs, rid); 
 	table_funcs.rids_destroy(A);
+}
+
+char *
+sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor)
+{
+	int allowed, grantee_id;
+
+	allowed = admin_privs(grantor);
+
+	if (!allowed)
+		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0);
+
+	if (!allowed) 
+		return sql_message("0L000!REVOKE: grantor '%s' is not allowed to revoke global privileges", stack_get_string(sql,"current_user"));
+
+	grantee_id = sql_find_auth(sql, grantee);
+	if (grantee_id <= 0) 
+		return sql_message("42M32!REVOKE: user/role '%s' unknown", grantee);
+	sql_delete_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
+	sql->session->tr->schema_updates++;
+	return NULL;
 }
 
 char *
@@ -277,9 +343,12 @@ sql_privilege(mvc *m, int auth_id, int obj_id, int priv, int sub)
 }
 
 int
-schema_privs(int grantor, sql_schema *s)
+global_privs(mvc *m, int priv)
 {
-	if (grantor == USER_MONETDB || grantor == s->auth_id) {
+	if (m->user_id == USER_MONETDB || 
+	    sql_privilege(m, m->user_id, GLOBAL_OBJID, priv, 0) == priv || 
+	    sql_privilege(m, m->role_id, GLOBAL_OBJID, priv, 0) == priv || 
+	    sql_privilege(m, ROLE_PUBLIC, GLOBAL_OBJID, priv, 0) == priv) {
 		return 1;
 	}
 	return 0;
@@ -666,6 +735,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_create_role_id(m, ROLE_PUBLIC, "public", 0);
 	sql_create_role_id(m, ROLE_SYSADMIN, "sysadmin", 0);
 	sql_create_role_id(m, USER_MONETDB, "monetdb", 0);
+
 
 	pub = ROLE_PUBLIC;
 	p = PRIV_SELECT;

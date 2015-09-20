@@ -387,6 +387,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
  * The content of a BAT can be appended to (removed from) another
  * using BATins (BATdel).
  */
+#undef BATins
 #define bunins(b,h,t) if (BUNins(b,h,t,force) != GDK_SUCCEED) return GDK_FAIL;
 gdk_return
 BATins(BAT *b, BAT *n, bit force)
@@ -888,6 +889,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		}							\
 	} while (0)
 
+#undef BATdel
+#undef BUNdel
 #define bundel(b,h,t) do { if (BUNdel(b,h,t,force) != GDK_SUCCEED) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
 gdk_return
 BATdel(BAT *b, BAT *n, bit force)
@@ -925,9 +928,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * The BAT selectors are among the most heavily used operators.
  * Their efficient implementation is therefore mandatory.
  *
- * The interface supports seven operations: BATslice, BATselect,
- * BATfragment, BATproject, BATrestrict.
- *
  * BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
  * execution by avoiding to copy when the BAT is memory mapped (in
@@ -937,10 +937,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * If a new copy has to be created, this function takes care to
  * preserve void-columns (in this case, the seqbase has to be
  * recomputed in the result).
- *
- * Note that the BATslice() is used indirectly as well as a special
- * case for BATselect (range selection on sorted column) and
- * BATsemijoin (when two dense columns are semijoined).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */

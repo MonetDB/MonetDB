@@ -53,7 +53,7 @@ mitosis00
 manifold2
 
 #joinpath calls for new joinpath optimizer
-leftjoinpath
+#leftjoinpath
 joinchain
 
 ifthencst

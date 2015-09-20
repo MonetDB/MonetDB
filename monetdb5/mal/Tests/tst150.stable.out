@@ -9,10 +9,17 @@ stdout of test 'tst150` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command user.lookup(nme:str):bat[:str,:str] address CMDlookup;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35645/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15498/.s.monetdb.35645
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+command user.lookup(nme:str):bat[:oid,:str] address CMDlookup;
 !TypeException:user.sample[1]:object code for command user.lookup missing
 function user.sample(nme:str,val:any_1):bit;
     b := user.lookup(nme);

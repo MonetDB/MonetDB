@@ -1113,11 +1113,6 @@ gdk_export bte ATOMelmshift(int sz);
  * can use BUNins, BUNappend, BUNreplace, and BUNdel.  The
  * batch update operations are BATins, BATappend and BATdel.
  *
- * Only experts interested in speed may use BUNfastins, since it skips
- * most consistency checks, does not update search accelerators, and
- * does not maintain properties such as the hsorted and tsorted
- * flags. Beware!
- *
  * The routine BUNfnd provides fast access to a single BUN providing a
  * value for the tail of the binary association.
  *
@@ -1183,7 +1178,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMputFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
-#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 #define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
 #define HTreplacevalue(b, p, v, HT)					\
 	do {								\
@@ -1231,7 +1225,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMreplaceFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
-#define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
 #define HTfastins_nocheck(b, p, v, s, HT)			\
 	do {							\
@@ -1239,35 +1232,7 @@ gdk_export bte ATOMelmshift(int sz);
 		(b)->HT->heap.free += (s);			\
 		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
 	} while (0)
-#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
 #define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
-
-#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
-	do {						\
-		hfastins_nocheck(b, p, h, hs);		\
-		tfastins_nocheck(b, p, t, ts);		\
-		(b)->batCount++;			\
-	} while (0)
-
-#define bunfastins_nocheck_inc(b, p, h, t)				\
-	do {								\
-		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
-		p++;							\
-	} while (0)
-
-#define bunfastins(b, h, t)						\
-	do {								\
-		register BUN _p = BUNlast(b);				\
-		if (_p >= BATcapacity(b)) {				\
-			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
-	} while (0)
 
 #define bunfastapp_nocheck(b, p, t, ts)		\
 	do {					\
@@ -1297,8 +1262,6 @@ gdk_export bte ATOMelmshift(int sz);
 	} while (0)
 
 gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
-gdk_export gdk_return BUNfastins(BAT *b, const void *left, const void *right);
-gdk_export gdk_return BUNins(BAT *b, const void *left, const void *right, bit force);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
@@ -3064,32 +3027,6 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 
 /*
  * @- BAT relational operators
- *  @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATjoin (BAT *l, BAT *r, BUN estimate)
- * @item BAT *
- * @tab BATsemijoin (BAT *l, BAT *r)
- * @item BAT *
- * @tab BATselect (BAT *b, ptr tl, ptr th)
- * @item BAT *
- * @tab BATfragment (BAT *b, ptr l, ptr h, ptr L, ptr H)
- * @item
- * @item BAT *
- * @tab BATkdiff (BAT *b, BAT *c)
- * @end multitable
- *
- * The BAT library comes with a full-fledged collection of relational
- * operators. The two selection operators BATselect and BATfragment
- * produce a partial copy of the BAT. The former performs a search on
- * the tail; the latter considers both dimensions.  The BATselect
- * operation takes two inclusive ranges as search arguments.
- * Interpretation of a NULL argument depends on the position, i.e. a
- * domain lower or upper bound.
- *
- * The BATjoin over R[A, B] and S[C, D] performs an equi-join over B
- * and C. It results in a BAT over A and D.  The BATsemijoin over R[A,
- * B] and S[C, D] produces the subset of R[A, B] that satisfies the
- * semijoin over A and C.
  *
  * The full-materialization policy intermediate results in MonetDB
  * means that a join can produce an arbitrarily large result and choke
@@ -3112,14 +3049,9 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
-gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
-gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 
 gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
-gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
-gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
 
@@ -3135,11 +3067,8 @@ gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
-gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATsubunique(BAT *b, BAT *s);
-
-gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
@@ -3176,79 +3105,58 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 				(c)->dense ? "dense" : "oid" :		\
 			 ATOMname((c)->type))
 
-#define BATselect_(b, h, t, li, hi)					\
+#define BATins(b, n, force)						\
+	({								\
+		BAT *_b = (b), *_n = (n);				\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATins([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BATins(_b, _n, _force);					\
+	})
+
+#define BATdel(b, n, force)						\
+	({								\
+		BAT *_b = (b), *_n = (n);				\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATdel([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BATdel(_b, _n, _force);					\
+	})
+
+#define BUNdel(b, x, y, force)						\
 	({								\
 		BAT *_b = (b);						\
+		const void *_x = (x), *_y = (y);			\
+		bit _force = (force);					\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect_([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			"#BUNdel([%s,%s]#"BUNFMT","PTRFMT","PTRFMT",%d) %s[%s:%d]\n", \
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			PTRFMTCAST _x, PTRFMTCAST _y,			\
+			_force,						\
 			__func__, __FILE__, __LINE__);			\
-		BATselect_(_b, (h), (t), (li), (hi));			\
+		BUNdel(_b, _x, _y, _force);				\
 	})
 
-#define BATselect(b, h, t)						\
+#define BUNdelete(b, p, force)						\
 	({								\
 		BAT *_b = (b);						\
+		BUN _p = (p);						\
+		bit _force = (force);					\
 		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATselect([%s,%s]#"BUNFMT") %s[%s:%d]\n",	\
+			"#BUNdelete([%s,%s]#"BUNFMT","BUNFMT",%d) %s[%s:%d]\n", \
 			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_p,						\
+			_force,						\
 			__func__, __FILE__, __LINE__);			\
-		BATselect(_b, (h), (t));				\
-	})
-
-#define BATsemijoin(l, r)						\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATsemijoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATsemijoin(_l, _r);					\
-	})
-
-#define BATjoin(l, r, estimate)						\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATjoin(_l, _r, (estimate));				\
-	})
-
-#define BATleftjoin(l, r, estimate)					\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATleftjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATleftjoin(_l, _r, (estimate));			\
-	})
-
-#define BATleftfetchjoin(l, r, estimate)				\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATleftfetchjoin([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATleftfetchjoin(_l, _r, (estimate));			\
-	})
-
-#define BATkdiff(l, r)							\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATkdiff(_l, _r);					\
+		BUNdelete(_b, _p, _force);				\
 	})
 
 #endif

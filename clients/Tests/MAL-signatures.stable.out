@@ -2328,11 +2328,7 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
-pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any] 
+pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
@@ -2362,10 +2358,6 @@ command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:o
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
 
-command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3],estimate:lng):bat[:oid,:any_3] 
-address ALGleftjoinestimate;
-command algebra.leftjoin(left:bat[:oid,:any_2],right:bat[:any_2,:any_3]):bat[:oid,:any_3] 
-address ALGleftjoin;
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
@@ -2382,7 +2374,7 @@ command algebra.reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGreuse;
 comment Reuse a temporary BAT if you can. Otherwise,	allocate enough storage to accept result of an 	operation (not involving the heap)
 
-pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any] 
+pattern algebra.semijoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
 address ALGjoinPath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
@@ -2498,14 +2490,6 @@ comment Select all head values of the first input BAT for which the tail value	i
 command algebra.subselect(b:bat[:oid,:any_1],low:any_1,high:any_1,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
 address ALGsubselect1;
 comment Select all head values for which the tail value is in range.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the tail value	is between the values low and high (inclusive if li respectively	hi is set).  The output BAT is sorted on the tail value.  If low	or high is nil, the boundary is not considered (effectively - and	+ infinity).  If anti is set, the result is the complement.  Nil	values in the tail are never matched, unless low=nil, high=nil,	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,	high=nil, and li, hi are not both 1, or anti=1.	Note that the output is suitable as second input for the other	version of this function.
-
-command algebra.tdiff(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
-address ALGtdiff;
-comment Deprecated, see algebra.subdiff
-
-command algebra.tinter(left:bat[:oid,:oid],right:bat[:oid,:oid]):bat[:oid,:oid] 
-address ALGtinter;
-comment Deprecated, see algebra.semijoin
 
 command algebra.thetasubselect(b:bat[:oid,:any_1],s:bat[:oid,:oid],val:any_1,op:str):bat[:oid,:oid] 
 address ALGthetasubselect2;
@@ -31259,7 +31243,7 @@ command bat.mergecand(a:bat[:oid,:oid],b:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCmergecand;
 comment Merge two candidate lists into one
 
-command bat.mirror(b:bat[:any_1,:any_2]):bat[:any_1,:any_1] 
+command bat.mirror(b:bat[:oid,:any_2]):bat[:oid,:oid] 
 address BKCmirror;
 comment Returns the head-mirror image of a BAT (two head columns).
 
@@ -31324,10 +31308,6 @@ comment Replace the tail value of one BUN that has some head value.
 command bat.replace(b:bat[:oid,:any_1],h:oid,t:any_1):bat[:oid,:any_1] 
 address BKCbun_inplace;
 comment Replace the tail value of one BUN that has some head value.
-
-command bat.reverse(b:bat[:any_1,:any_2]):bat[:any_2,:any_1] 
-address BKCreverse;
-comment Returns the reverse view of a BAT (head is tail and tail is head).        BEWARE  no copying is involved; input and output refer to the         same object!
 
 pattern bat.single(val:any_1):bat[:oid,:any_1] 
 address CMDBATsingle;
@@ -38395,13 +38375,13 @@ command inet.#tostr():void
 address INETtoString;
 comment Convert inet to string equivalent
 
-command io.export(b:bat[:oid,:any_2],filepath:str):bit 
+command io.export(b:bat[:oid,:any_2],filepath:str):void 
 address IOexport;
 comment Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it is put into the $DBPATH directory. Success of failure is indicated.
 
-command io.import(b:bat[:oid,:any_2],filepath:str):bat[:oid,:any_2] 
+command io.import(b:bat[:oid,:any_2],filepath:str):void 
 address IOimport;
-comment Import a BAT from an ASCII dump. The new tuples are *inserted* into the parameter BAT. You have to create it! Its signature must match the dump, else parsing errors will occur and FALSE is returned.
+comment Import a BAT from an ASCII dump. The tuples are appended to the first argument. Its signature must match the dump, else parsing errors will occur as an exception.
 
 pattern io.printf(filep:streams,fmt:str):void 
 address IOprintfStream;
@@ -38745,7 +38725,7 @@ command mapi.fetch_line(hdl:int):str
 address SERVERfetch_line;
 comment Retrieve a complete line.
 
-command mapi.fetch_field_array(hdl:int):bat[:int,:str] 
+command mapi.fetch_field_array(hdl:int):bat[:oid,:str] 
 address SERVERfetch_field_bat;
 comment Retrieve all fields for a row.
 
@@ -39755,12 +39735,6 @@ comment Alias removal optimizer
 
 pattern optimizer.aliases():str 
 address OPTwrapper;
-pattern optimizer.accumulators(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Replace calculations with accumulator model
-
-pattern optimizer.accumulators():str 
-address OPTwrapper;
 pattern optimizer.clrDebug():void 
 address QOTclrdebugOptimizers;
 pattern optimizer.crackers(mod:str,fcn:str):str 
@@ -40175,7 +40149,7 @@ pattern remote.batbincopy():bat[:oid,:any]
 address RMTbincopyfrom;
 comment store the binary BAT data in the BBP and return as BAT
 
-pattern remote.batbincopy(b:BAT):void 
+pattern remote.batbincopy(b:bat[:oid,:any]):void 
 address RMTbincopyto;
 comment dump BAT b in binary form to the stream
 
@@ -40665,12 +40639,6 @@ comment truncate the floating point v to r digits behind the dot (if r < 0, befo
 pattern sql.mvc():int 
 address SQLmvc;
 comment Get the multiversion catalog context. Needed for correct statement dependencies(ie sql.update, should be after sql.bind in concurrent execution)
-
-command sql.not_uniques(b:bat[:oid,:wrd]):bat[:oid,:oid] 
-address not_unique_oids;
-command sql.not_uniques(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address not_unique_oids;
-comment return not unique oids
 
 command sql.not_unique(b:bat[:oid,:oid]):bit 
 address not_unique;

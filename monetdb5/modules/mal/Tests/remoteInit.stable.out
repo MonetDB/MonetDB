@@ -9,10 +9,17 @@ stdout of test 'remoteInit` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.remote_internal_servegetbat(type:str,o:bat[:any_1,:any_2]):void;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:37132/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8843/.s.monetdb.37132
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+function user.remote_internal_servegetbat(type:str,o:bat[:oid,:any_2]):void;
     t := inspect.getType(o);
 barrier ifpart := calc.==(type,t);
     len := aggr.count(o);

@@ -1278,7 +1278,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_grant_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_REVOKE:{
@@ -1288,7 +1291,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{
@@ -3585,109 +3591,6 @@ not_unique(bit *ret, const bat *bid)
 		throw(SQL, "not_unique", "input should be sorted");
 	}
 	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-/* later we could optimize this to start from current BUN 
-   And only search the from the first if second is not found.
- */
-static inline int
-HASHfndTwice(BAT *b, ptr v)
-{
-	BATiter bi = bat_iterator(b);
-	BUN i = BUN_NONE;
-	int first = 1;
-
-	HASHloop(bi, b->T->hash, i, v) {
-		if (!first)
-			return 1;
-		first = 0;
-	}
-	return 0;
-}
-
-str
-not_unique_oids(bat *ret, const bat *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "not_uniques", "Cannot access descriptor");
-	}
-	if (b->ttype != TYPE_oid && b->ttype != TYPE_wrd) {
-		throw(SQL, "not_uniques", "Wrong types");
-	}
-
-	assert(b->htype == TYPE_oid);
-	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
-	} else if (b->tsorted) {	/* ugh handle both wrd and oid types */
-		oid c = *(oid *) Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
-		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
-		int first = 1;
-
-		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
-		}
-		vp = (oid *) Tloc(b, BUNfirst(b));
-		ve = vp + BATcount(b);
-		rf = rh = (oid *) Hloc(bn, BUNfirst(bn));
-		rt = (oid *) Tloc(bn, BUNfirst(bn));
-		*rh++ = *h++;
-		*rt++ = *vp;
-		for (vp++; vp < ve; vp++, h++) {
-			oid v = *vp;
-			if (v == c) {
-				first = 0;
-				*rh++ = *h;
-				*rt++ = v;
-			} else if (!first) {
-				first = 1;
-				*rh++ = *h;
-				*rt++ = v;
-			} else {
-				*rh = *h;
-				*rt = v;
-			}
-			c = v;
-		}
-		if (first)
-			rh--;
-		BATsetcount(bn, (BUN) (rh - rf));
-	} else {
-		oid *rf, *rh, *rt;
-		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
-
-		if (BAThash(b, 0) != GDK_SUCCEED)
-			throw(SQL, "not_uniques", "hash creation failed");
-		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.unique_oids", MAL_MALLOC_FAIL);
-		}
-		vp = (oid *) Tloc(b, BUNfirst(b));
-		ve = vp + BATcount(b);
-		rf = rh = (oid *) Hloc(bn, BUNfirst(bn));
-		rt = (oid *) Tloc(bn, BUNfirst(bn));
-		for (; vp < ve; vp++, h++) {
-			/* try to find value twice */
-			if (HASHfndTwice(b, vp)) {
-				*rh++ = *h;
-				*rt++ = *vp;
-			}
-		}
-		BATsetcount(bn, (BUN) (rh - rf));
-	}
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

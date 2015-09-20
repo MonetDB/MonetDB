@@ -9,7 +9,7 @@ function dir():void;
 end dir;
 
 
-function tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
+function tmp1(b:bat[:oid,:any_2]):bat[:oid,:any_2];
 	tmp1:= algebra.copy(b);
 	io.print("inside tmp1");
 	i:= bbp.getLRefCount(b);
