@@ -80,6 +80,7 @@
 
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
+	// TODO: deal with SQL types (DECIMAL/DATE)
 	switch (ATOMstorage(getColumnType(b->T->type))) {
 		case TYPE_bte:
 			BAT_TO_INTSXP(b, bte, varvalue);
@@ -90,6 +91,11 @@ static SEXP bat_to_sexp(BAT* b) {
 		case TYPE_int:
 			BAT_TO_INTSXP(b, int, varvalue);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
+			BAT_TO_REALSXP(b, hge, varvalue);
+			break;
+#endif
 		case TYPE_flt:
 			BAT_TO_REALSXP(b, flt, varvalue);
 			break;
