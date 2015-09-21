@@ -1,31 +1,31 @@
 #include <Rdefines.h>
 #include "mal.h"
 
-#define BAT_TO_INTSXP(bat,tpe,retsxp)						\
-	do {													\
-		tpe v;	size_t j;									\
-		retsxp = PROTECT(NEW_INTEGER(BATcount(bat)));		\
-		for (j = 0; j < BATcount(bat); j++) {				\
-			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
-			if ( v == tpe##_nil)							\
-				INTEGER_POINTER(retsxp)[j] = 	NA_INTEGER; \
-			else											\
-				INTEGER_POINTER(retsxp)[j] = 	(int)v;		\
-		}													\
-	} while (0)
-
-#define BAT_TO_REALSXP(bat,tpe,retsxp)						\
+#define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval)\
 	do {													\
 		tpe v; size_t j;									\
-		retsxp = PROTECT(NEW_NUMERIC(BATcount(bat)));		\
+		retsxp = PROTECT(newfun(BATcount(bat)));		    \
+		if (bat->T->nonil && !bat->T->nil) {                \
+			for (j = 0; j < BATcount(bat); j++) {           \
+				ptrfun(retsxp)[j] =                         \
+				(ctype) ((tpe*) Tloc(bat, BUNfirst(bat)))[j];\
+			}                                               \
+		} else {                                            \
 		for (j = 0; j < BATcount(bat); j++) {				\
 			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
 			if ( v == tpe##_nil)							\
-				NUMERIC_POINTER(retsxp)[j] = 	NA_REAL;	\
+				ptrfun(retsxp)[j] = naval;	                \
 			else											\
-				NUMERIC_POINTER(retsxp)[j] = 	(double)v;	\
-		}													\
+				ptrfun(retsxp)[j] = (ctype)v;	            \
+		}}													\
 	} while (0)
+
+#define BAT_TO_INTSXP(bat,tpe,retsxp)						\
+	BAT_TO_SXP(bat,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER)\
+
+#define BAT_TO_REALSXP(bat,tpe,retsxp)						\
+	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL)\
+
 
 #define SCALAR_TO_INTSXP(tpe,retsxp)					\
 	do {												\
@@ -102,14 +102,23 @@ static SEXP bat_to_sexp(BAT* b) {
 			BATiter li;
 			li = bat_iterator(b);
 			varvalue = PROTECT(NEW_STRING(BATcount(b)));
-			BATloop(b, p, q) {
-				const char *t = (const char *) BUNtail(li, p);
-				if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
-					SET_STRING_ELT(varvalue, j, NA_STRING);
-				} else {
-					SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+
+			if (b->T->nonil && !b->T->nil) {
+				BATloop(b, p, q) {
+					SET_STRING_ELT(varvalue, j++, mkCharCE(
+						(const char *) BUNtail(li, p), CE_UTF8));
 				}
-				j++;
+			}
+			else {
+				BATloop(b, p, q) {
+					const char *t = (const char *) BUNtail(li, p);
+					if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
+						SET_STRING_ELT(varvalue, j, NA_STRING);
+					} else {
+						SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+					}
+					j++;
+				}
 			}
 		} 	break;
 	}

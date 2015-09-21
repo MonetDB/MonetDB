@@ -38,10 +38,10 @@ test_that("rollback works", {
 	res <- monetdb_embedded_query("SELECT i FROM foo")
 	expect_equal(res$tuples$i, 42)
 	monetdb_embedded_query("ROLLBACK")
-	res <- monetdb_embedded_query("SELECT i FROM foo")
-	expect_equal(res$type, "!")
 	res <- monetdb_embedded_query("SELECT * FROM tables WHERE name='foo'")
 	expect_equal(nrow(res$tuples), 0)
+	res <- monetdb_embedded_query("SELECT i FROM foo")
+	expect_equal(res$type, "!")
 })
 
 test_that("rollback with errors", {

@@ -24,7 +24,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query, notreally) {
+monetdb_embedded_query <- function(query, notreally=F) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
@@ -47,7 +47,9 @@ monetdb_embedded_query <- function(query, notreally) {
 	}
 	if (is.list(res)) {
 		resp$type <- 1 # Q_TABLE
-		resp$tuples <- as.data.frame(res, stringsAsFactors=F)
+		attr(res, "row.names") <- c(NA_integer_, length(res[[1]]))
+  		class(res) <- "data.frame"
+		resp$tuples <- res
 	}
 	resp
 }

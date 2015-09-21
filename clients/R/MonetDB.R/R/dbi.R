@@ -230,7 +230,7 @@ setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
   name <- quoteIfNeeded(conn, name)
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
-  dbGetQuery(conn, paste0("SELECT * FROM ", name))
+  dbGetQuery(conn, paste0("SELECT * FROM ", name), ...)
 })
 
 # This one does all the work in this class
@@ -301,7 +301,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="character"),  
-          def=function(conn, statement, ..., list=NULL) {   
+          def=function(conn, statement, ..., list=NULL, notreally=F) {   
   if (!conn@connenv$open) {
     stop("This connection was closed.")
   }
@@ -312,7 +312,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   env <- NULL
   if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
 
-  resp <- monetdb_embedded_query(statement)
+  resp <- monetdb_embedded_query(statement, notreally)
 
   env <- new.env(parent=emptyenv())
   if (resp$type == Q_TABLE) {

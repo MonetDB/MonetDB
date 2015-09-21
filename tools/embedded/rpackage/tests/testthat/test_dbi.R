@@ -181,8 +181,8 @@ basicDf <- data.frame(
 
 test_that("round-trip leaves data.frame unchanged", {
 	dbWriteTable(con, "t1", basicDf, row.names = FALSE)
-	expect_equal(dbGetQuery(con, "select * from t1"), basicDf)
-	expect_equal(dbReadTable(con, "t1"), basicDf)
+	expect_equivalent(dbGetQuery(con, "select * from t1"), basicDf)
+	expect_equivalent(dbReadTable(con, "t1"), basicDf)
 	dbRemoveTable(con, "t1")
 })
 
@@ -190,7 +190,7 @@ test_that("NAs work in first row", {
 	na_first <- basicDf[c(5, 1:4), ]
 	rownames(na_first) <- NULL
 	dbWriteTable(con, "t1", na_first, row.names = FALSE)
-	expect_equal(dbReadTable(con, "t1"), na_first)
+	expect_equivalent(dbReadTable(con, "t1"), na_first)
 	dbRemoveTable(con, "t1")
 })
 
