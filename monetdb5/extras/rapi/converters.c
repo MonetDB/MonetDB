@@ -4,19 +4,21 @@
 #define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval)\
 	do {													\
 		tpe v; size_t j;									\
+		ctype *valptr = NULL;                               \
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
+		valptr = ptrfun(retsxp);                            \
 		if (bat->T->nonil && !bat->T->nil) {                \
 			for (j = 0; j < BATcount(bat); j++) {           \
-				ptrfun(retsxp)[j] =                         \
+				valptr[j] =                         \
 				(ctype) ((tpe*) Tloc(bat, BUNfirst(bat)))[j];\
 			}                                               \
 		} else {                                            \
 		for (j = 0; j < BATcount(bat); j++) {				\
 			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
 			if ( v == tpe##_nil)							\
-				ptrfun(retsxp)[j] = naval;	                \
+				valptr[j] = naval;	                \
 			else											\
-				ptrfun(retsxp)[j] = (ctype)v;	            \
+				valptr[j] = (ctype)v;	            \
 		}}													\
 	} while (0)
 
