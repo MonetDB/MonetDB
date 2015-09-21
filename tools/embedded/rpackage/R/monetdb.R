@@ -24,14 +24,18 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query) {
+monetdb_embedded_query <- function(query, notreally) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
 	}
+	notreally <- as.logical(notreally)
+	if (length(notreally) != 1) {
+		stop("Need a single noreally flag as parameter.")
+	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
-	res <- .Call("monetdb_query_R", query)
+	res <- .Call("monetdb_query_R", query, notreally)
 
 	resp <- list()
 	if (is.character(res)) { # error

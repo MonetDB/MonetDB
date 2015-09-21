@@ -215,21 +215,27 @@ void monetdb_cleanup_result(void* output) {
 /* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
 #include "converters.c"
 
-SEXP monetdb_query_R(SEXP query) {
+SEXP monetdb_query_R(SEXP query, SEXP notreallys) {
 	res_table* output = NULL;
 	char* err = monetdb_query((char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
+	char notreally = LOGICAL(notreallys)[0];
+
 	if (err != NULL) { // there was an error
-		return ScalarString(mkCharCE(err, CE_UTF8));
+		return mkCharCE(err, CE_UTF8);
 	}
 	if (output && output->nr_cols > 0) {
 		int i;
 		SEXP retlist, names, varvalue = R_NilValue;
 		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
 		names = PROTECT(NEW_STRING(output->nr_cols));
-
+		SET_ATTR(retlist, install("__rows"),
+				Rf_ScalarReal(BATcount(BATdescriptor(output->cols[0].b))));
 		for (i = 0; i < output->nr_cols; i++) {
 			res_col col = output->cols[i];
 			BAT* b = BATdescriptor(col.b);
+			if (notreally) {
+				BATsetcount(b, 0); // hehe
+			}
 			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 			varvalue = bat_to_sexp(b);
 			if (varvalue == NULL) {
