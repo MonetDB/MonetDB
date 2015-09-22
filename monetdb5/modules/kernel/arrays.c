@@ -63,7 +63,7 @@ static int computeOids(oid** oidsRes, BUN currentOidsPos, unsigned int dimNum , 
 			}
 		}
 	} else {
-		for(idx=currDim->min; idx<=currDim->max; idx+=currDim->step, currentOidsPos++) {
+		for(idx=currDim->min; idx<=currDim->max; idx+=currDim->step) {
 			/*let the other dimensions increase as many elemens as necessary*/
 			BUN nextOidsPos = computeOids(oidsRes, currentOidsPos, dimNum-1, array, dims, jumpSize);
 			/*update all the oids that were update by the other dimensions */
