@@ -2215,24 +2215,28 @@ str CMDdimensionMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return MAL_SUCCEED;
 }
 
-#define checkEqual(TPE1, dimLeft, TPE2, dimRight) \
+#define checkEqual(TPE1, dimLeft, TPE2, dimRight, vals) \
 do { \
 	BUN i=0; \
 	TPE1 valLeft; \
 	TPE1 maxLeft = *(TPE1*)dimLeft->max; \
-	TPE1 stepLeft = *(TPE1)dimLeft->step; \
+	TPE1 stepLeft = *(TPE1*)dimLeft->step; \
 	TPE2 valRight; \
 	TPE2 maxRight = *(TPE2*)dimRight->max; \
-	TPE2 stepRight = *(TPE2)dimRight->step; \
+	TPE2 stepRight = *(TPE2*)dimRight->step; \
 \
-	for(valLeft = *(TPE1*)dimLeft->min ; valLeft<=maxLeft; valLeft += stepLeft)
-} while(0);
+	for(valLeft = *(TPE1*)dimLeft->min ; valLeft<=maxLeft; valLeft += stepLeft) {\
+		for(valRight = *(TPE2*)dimRight->min ; valRight<=maxRight; valRight += stepRight) {\
+			vals[i] = (valLeft == valRight); \
+			i++; \
+		}\
+	}\
+} while(0)
 
 str CMDdimensionEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1, const ptr* dim2, const ptr* dims2) {
 	gdk_analytic_dimension *dimLeft = (gdk_analytic_dimension*)*dim1;
 	gdk_analytic_dimension *dimRight = (gdk_analytic_dimension*)*dim2;
-
-	BUN i = 0;
+	
 
 	/* create a BAT of size equal to dimLeft->elsNum * dimRight->elsNum
  	* There is no need to add more detailed info no matter how many the 
@@ -2245,15 +2249,45 @@ str CMDdimensionEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1,
 		return createException(MAL, "calc.==", MAL_MALLOC_FAIL);
 	vals = (bit*)Tloc(resBAT, BUNfirst(resBAT));
 
-	for(i=0; i<elsNum; i++) {
-		
-	}
-	
-	(void)*dimsRes;
-	(void)*batRes;
-	(void)*dimLeft;
-	(void)*dims1;
-	(void)*dimRight;
+	if(dimLeft->type != dimRight->type)
+		return createException(MAL, "cal.==", "Dimensions of different type");
+
+	switch(dimRight->type) {
+		case TYPE_bte:
+            checkEqual(bte, dimLeft, bte, dimRight, vals);
+            break;
+        case TYPE_int:
+            checkEqual(int, dimLeft, int, dimRight, vals);
+            break;
+        case TYPE_wrd:
+            checkEqual(wrd, dimLeft, wrd, dimRight, vals);
+            break;
+        case TYPE_oid:
+            checkEqual(oid, dimLeft, oid, dimRight, vals);
+            break;
+        case TYPE_dbl:
+            checkEqual(double, dimLeft, double, dimRight, vals);
+            break;
+        case TYPE_lng:
+            checkEqual(long, dimLeft, long, dimRight, vals);
+            break;
+        case TYPE_flt:
+            checkEqual(float, dimLeft, float, dimRight, vals);
+            break;
+        default:
+            return createException(MAL, "calc.==", "Dimension type not recognised");
+    }
+
+	BATseqbase(resBAT, 0);
+	resBAT->tsorted = 0;
+    resBAT->trevsorted = 0;
+    resBAT->tkey = 0;
+    resBAT->tdense = 0;
+	BATsetcount(resBAT, elsNum);
+
+	/*the array does not change */
+	*dimsRes = arrayCopy((gdk_array*)*dims1);
+	BBPkeepref((*batRes = resBAT->batCacheid));
 	(void)*dims2;
 /*
     if (VARcalceq(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
