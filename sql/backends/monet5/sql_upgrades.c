@@ -1630,6 +1630,12 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 /* insert upgrade code here */
+	pos += snprintf(buf + pos, bufsize - pos,"drop function sys.bbp();");
+	pos += snprintf(buf + pos, bufsize - pos,"create function sys.bbp () returns table (id int, name string, "
+        "ttype string, count BIGINT, refcnt int, lrefcnt int,"
+        "location string, heat int, dirty string,"
+        "status string, kind string)"
+		"external name bbp.get;");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);

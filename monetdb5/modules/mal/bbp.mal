@@ -18,8 +18,9 @@ command getNames() :bat[:oid,:str]
 address CMDbbpNames
 comment "Map BAT into its bbp name";
 
-command get() (id:bat[:oid,:int], ns:bat[:oid,:str],
-	       ht:bat[:oid,:str], tt:bat[:oid,:str],
+command get() (id:bat[:oid,:int], 
+			ns:bat[:oid,:str],
+	       tt:bat[:oid,:str],
 	       cnt:bat[:oid,:lng], refcnt:bat[:oid,:int],
 	       lrefcnt:bat[:oid,:int], location:bat[:oid,:str],
 	       heat:bat[:oid,:int], dirty:bat[:oid,:str],
