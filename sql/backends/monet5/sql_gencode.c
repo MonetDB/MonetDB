@@ -2326,7 +2326,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 					q = pushArgument(mb, q, arraySecondVar);
 				}
-
+			}
+			if(arrayRelated) { //push the type the result should be
+				sql_subtype *res = f->res->h->data;
+				q = pushInt(mb, q, res->type->localtype);
 			}
 			if (q == NULL)
 				return -1;

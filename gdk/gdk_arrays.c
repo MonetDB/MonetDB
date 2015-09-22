@@ -1881,5 +1881,3 @@ gdk_array *cellsToArray(gdk_cells *cells) {
 	return array;
 }
 #endif
-
-
