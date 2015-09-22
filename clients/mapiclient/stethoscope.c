@@ -303,7 +303,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream();");
+	snprintf(buf, BUFSIZ, " profiler.openstream(1);");
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);

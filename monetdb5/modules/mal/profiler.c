@@ -42,7 +42,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt->fdout);
+	return openProfilerStream(cntxt->fdout, *getArgReference_int(stk,pc,1));
 }
 
 str
@@ -70,7 +70,8 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void)mb;
 	(void) stk;
 	(void) pc;
-	return startProfiler(cntxt->user, 1, -1);
+	(void) cntxt;
+	return startProfiler();
 }
 
 str
@@ -157,38 +158,6 @@ CMDgetSystemTime(lng *ret)
 	return MAL_SUCCEED;
 }
 
-str
-CMDtomograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	int beat = *getArgReference_int(stk,pc,1);
-	(void) mb;
-	if( beat < 0)
-		throw(MAL,"profiler.tomograph","negative heart beat not allowed");
-	startProfiler(cntxt->user, -1, beat);
-	return MAL_SUCCEED;
-}
-
-str
-CMDtachograph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;
-	(void) pc;
-	(void) stk;
-	(void) cntxt;
-	throw(MAL,"profiler.tachograph","NYI");
-}
-
-str
-CMDstethoscope(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	int beat = *getArgReference_int(stk,pc,1);
-
-	(void) mb;
-	if( beat < 0)
-		throw(MAL,"profiler.stethoscope","Negative heart beat not allowed");
-	startProfiler(cntxt->user, 1, beat);
-	return MAL_SUCCEED;
-}
 str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {

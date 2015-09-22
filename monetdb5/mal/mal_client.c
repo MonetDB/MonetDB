@@ -571,7 +571,8 @@ MCreadClient(Client c)
 
 str
 PROFinitClient(Client c){
-	startProfiler(c->idx,0,0);
+	(void) c;
+	startProfiler();
 	return MAL_SUCCEED;
 }
 

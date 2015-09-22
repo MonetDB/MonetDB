@@ -28,7 +28,6 @@ stream *eventstream = 0;
 static int offlineProfiling = FALSE;
 static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
-static oid user = 0;
 static int eventcounter = 0;
 
 static int TRACE_init = 0;
@@ -525,9 +524,8 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	if (usr != user) return;
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
@@ -536,20 +534,48 @@ profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	if( sqlProfiling)
 		cachedProfilerEvent(mb, stk, pci);
 		
-	renderProfilerEvent(mb, stk, pci, start);
-	if ( start && pci->pc ==0)
-		profilerHeartbeatEvent("ping");
-	if ( !start && pci->token == ENDsymbol)
-		profilerHeartbeatEvent("ping");
+	if( eventstream) {
+		renderProfilerEvent(mb, stk, pci, start);
+		if ( start && pci->pc ==0)
+			profilerHeartbeatEvent("ping");
+		if ( !start && pci->token == ENDsymbol)
+			profilerHeartbeatEvent("ping");
+	}
 }
 
+/* The first scheme dumps the events
+ * on a stream (and in the pool)
+ */
 str
-openProfilerStream(stream *fd)
+openProfilerStream(stream *fd, int mode)
 {
+	int i,j;
+	Client c;
+
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+	prevUsage = infoUsage;
+#endif
+	if (myname == 0){
+		myname = putName("profiler", 8);
+		eventcounter = 0;
+	}
 	if( eventstream)
 		closeProfilerStream();
+	setprofilerpoolsize(poolSize);
 	malProfileMode = -1;
 	eventstream = fd;
+	/* show all in progress instructions for stethoscope startup */
+	if( mode > 0){
+		for (i = 0; i < MAL_MAXCLIENTS; i++) {
+			c = mal_clients+i;
+			if ( c->active ) 
+				for(j = 0; j <THREADS; j++)
+				if( c->inprogress[j].mb)
+				/* show the event */
+					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1);
+		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -561,52 +587,26 @@ closeProfilerStream(void)
 	return MAL_SUCCEED;
 }
 
-/*
- * When we receive the message to start profiling, we
- * should wait for the next instruction the stream
- * is initiated. This is controlled by a delay-switch
+/* the second scheme is to collect the profile
+ * events in a local table for direct SQL inspection
  */
-
 str
-startProfiler(oid usr, int mode, int beat)
+startProfiler(void)
 {
-	Client c;
-	int i,j;
-
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
-	if (myname == 0)
-		myname = putName("profiler", 8);
-	setprofilerpoolsize(poolSize);
 
 	MT_lock_set(&mal_profileLock, "startProfiler");
-
-	// enable the streaming of events
-	if (eventstream != NULL) {
-		offlineProfiling = TRUE;
-		if( beat >= 0)
-			setHeartbeat(beat); 
+	if (myname == 0){
+		myname = putName("profiler", 8);
+		eventcounter = 0;
 	}
-
+	malProfileMode = 1;
+	offlineProfiling = TRUE;
 	sqlProfiling = TRUE;
-	malProfileMode = mode;
-	eventcounter = 0;
-	user = usr;
 	MT_lock_unset(&mal_profileLock, "startProfiler");
-
-	/* show all in progress instructions for stethoscope startup */
-	if( mode > 0){
-		for (i = 0; i < MAL_MAXCLIENTS; i++) {
-			c = mal_clients+i;
-			if ( c->active ) 
-				for(j = 0; j <THREADS; j++)
-				if( c->inprogress[j].mb)
-				/* show the event */
-					profilerEvent(i, c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1);
-		}
-	}
 
 	return MAL_SUCCEED;
 }
@@ -618,7 +618,6 @@ stopProfiler(void)
 	malProfileMode = 0;
 	setHeartbeat(0); // stop heartbeat
 	closeProfilerStream();
-	user = 0;
 	MT_lock_unset(&mal_profileLock, "stopProfiler");
 	return MAL_SUCCEED;
 }

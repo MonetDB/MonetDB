@@ -23,12 +23,12 @@ typedef struct rusage Rusage;
 typedef struct tms Tms;
 typedef struct Mallinfo Mallinfo;
 
-mal_export str openProfilerStream(stream *fd);
+mal_export str openProfilerStream(stream *fd, int mode);
 mal_export str closeProfilerStream(void);
 
-mal_export void profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
 
-mal_export str startProfiler(oid user, int mode, int beat);
+mal_export str startProfiler(void);
 mal_export str stopProfiler(void);
 mal_export void setHeartbeat(int delay);
 mal_export str setprofilerpoolsize(int size);

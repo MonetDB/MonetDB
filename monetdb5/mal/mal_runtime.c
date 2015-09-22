@@ -172,7 +172,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* emit the instruction upon start as well */
 	
 	if(malProfileMode > 0)
-		profilerEvent(cntxt->user, mb, stk, pci, TRUE);
+		profilerEvent(mb, stk, pci, TRUE);
 }
 
 void
@@ -198,7 +198,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		pci->wbytes += getVolume(stk, pci, 1);
 		if (pci->recycle)
 			pci->rbytes += getVolume(stk, pci, 0);
-		profilerEvent(cntxt->user, mb, stk, pci, FALSE);
+		profilerEvent(mb, stk, pci, FALSE);
 	}
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */

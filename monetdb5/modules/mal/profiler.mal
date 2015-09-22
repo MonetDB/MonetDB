@@ -6,25 +6,13 @@
 
 module profiler;
 
-pattern tomograph(b:int)
-address CMDtomograph
-comment "Start tomograph profiler with heart beat";
-
-#pattern tachograph(start:bit)
-#address CMDtachograph
-#comment "Start/stop gathering profile traces "'
-
-#pattern stethoscope(start:int)
-#address CMDstethoscope
-#comment "Start/stop gathering profile traces "'
-
 pattern start()
 address CMDstartProfiler
-comment "Start all performance profiling";
+comment "Start offline performance profiling";
 
 pattern stop():void
 address CMDstopProfiler
-comment "Stop all performance profiling";
+comment "Stop offline performance profiling";
 
 pattern setpoolsize(pool:int)
 address CMDsetProfilerPoolSize
@@ -34,13 +22,13 @@ command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-pattern openstream():void
+pattern openstream(mode:int):void
 address CMDopenProfilerStream
-comment "Send the events to output stream";
+comment "Start profiling the events, sent to output stream";
 
-command closeStream():void
+command closestream():void
 address CMDcloseProfilerStream
-comment "Stop sending the event records";
+comment "Stop offline proviling";
 
 command noop():void
 address CMDnoopProfiler
