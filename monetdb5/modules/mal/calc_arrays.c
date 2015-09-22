@@ -2289,10 +2289,91 @@ str CMDdimensionsEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1
 	*dimsRes = arrayCopy((gdk_array*)*dims1);
 	BBPkeepref((*batRes = resBAT->batCacheid));
 	(void)*dims2;
-/*
-    if (VARcalceq(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-        return mythrow(MAL, "calc.==", OPERATION_FAILED);
-*/
+
     return MAL_SUCCEED;
+}
+
+#define addDims(TPE1, dimLeft, TPE2, dimRight, vals) \
+do { \
+	BUN i=0; \
+	TPE1 valLeft; \
+	TPE1 maxLeft = *(TPE1*)dimLeft->max; \
+	TPE1 stepLeft = *(TPE1*)dimLeft->step; \
+	TPE2 valRight; \
+	TPE2 maxRight = *(TPE2*)dimRight->max; \
+	TPE2 stepRight = *(TPE2*)dimRight->step; \
+\
+	for(valLeft = *(TPE1*)dimLeft->min ; valLeft<=maxLeft; valLeft += stepLeft) {\
+		for(valRight = *(TPE2*)dimRight->min ; valRight<=maxRight; valRight += stepRight) {\
+			vals[i] = (valLeft + valRight); \
+			i++; \
+		}\
+	}\
+} while(0)
+
+
+str CMDdimensionsADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	ptr *array_out = getArgReference_ptr(stk, pci, 0);
+    bat *batRes = getArgReference_bat(stk, pci, 1);
+
+    ptr *dimLeft_ptr = getArgReference_ptr(stk, pci, 2);
+    ptr *dimsLeft = getArgReference_ptr(stk, pci, 3);
+	ptr *dimRight_ptr = getArgReference_ptr(stk, pci, 4);
+    //It is the same with dimsLeft ptr *dimsRight = getArgReference_ptr(stk, pci, 5);
+
+	gdk_analytic_dimension *dimLeft = (gdk_analytic_dimension*)*dimLeft_ptr;
+	gdk_analytic_dimension *dimRight = (gdk_analytic_dimension*)*dimRight_ptr;
+
+	BUN elsNum;
+	BAT *resBAT;
+
+	(void)cntxt;
+	(void)mb;
+
+	if(dimLeft->type != dimRight->type)
+		return createException(MAL, "calc.+", "Dimensions of different type");
+
+	elsNum = dimLeft->elsNum*dimRight->elsNum;
+	if(!(resBAT = BATnew(TYPE_void, dimLeft->type, elsNum, TRANSIENT)))
+		return createException(MAL, "calc.+", MAL_MALLOC_FAIL);
+	
+	switch(dimLeft->type) {
+		case TYPE_bte: {
+			bte *vals = (bte*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(bte, dimLeft, bte, dimRight, vals);
+            } break;
+        case TYPE_int: {
+            int *vals = (int*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(int, dimLeft, int, dimRight, vals);
+            } break;
+        case TYPE_wrd: {
+            wrd *vals = (wrd*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(wrd, dimLeft, wrd, dimRight, vals);
+            } break;
+        case TYPE_oid: {
+            oid *vals = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(oid, dimLeft, oid, dimRight, vals);
+            } break;
+        case TYPE_dbl: {
+            double *vals = (double*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(double, dimLeft, double, dimRight, vals);
+            } break;
+        case TYPE_lng: {
+            long *vals = (long*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(long, dimLeft, long, dimRight, vals);
+            } break;
+        case TYPE_flt: {
+            float *vals = (float*)Tloc(resBAT, BUNfirst(resBAT));
+            addDims(float, dimLeft, float, dimRight, vals);
+            } break;
+        default:
+            return createException(MAL, "calc.+", "Dimension type not recognised");
+	}
+
+	/*the array does not change */
+	*array_out = arrayCopy((gdk_array*)*dimsLeft);
+	BBPkeepref((*batRes = resBAT->batCacheid));
+
+	return MAL_SUCCEED;
 }
 

@@ -25,7 +25,7 @@
 #comment "Unary dimension values - 1";
 
 #+
-command calc.+(dim1:ptr, dims1:ptr, dim2:ptr, dims2:ptr) (:ptr, :bat[:oid,:dbl]) address CMDdimensionsADDsingnal_dbl
+pattern calc.+(dim1:ptr, dims1:ptr, dim2:ptr, dims2:ptr) (:ptr, :bat[:oid,:lng]) address CMDdimensionsADDsingnal
 comment "Return a bat with the sum of the two dimensions";
 #pattern +(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
 #comment "Return V + dimension values, guarantee no overflow by returning larger type";
