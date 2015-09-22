@@ -289,20 +289,10 @@ str ALGdimensionSubselect1(ptr *dimsRes, bat *oidsRes, const ptr *dim, const ptr
 	return ALGdimensionSubselect2(dimsRes, oidsRes, dim, dims, NULL, NULL, low, high, li, hi, anti);
 }
 
-str ALGdimensionSubselect3(ptr *dimsRes, bat *oidsResi, const ptr *array, const bat *vals,
+str ALGdimensionSubselect3(ptr *dimsRes, bat *oidsRes, const ptr *array, const bat *vals,
                             const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
-
-		(void)*dimsRes;
-		(void)*oidsResi;
-		(void)*array; 
-		(void)*vals;
-		(void)*(int*)low;
-		(void)*(int*)high; 
-		(void)*li; 
-		(void)*hi;
-		(void)*anti;
-
-		return MAL_SUCCEED;
+		/* it is the same with the ALGnonDimensionSubselect1 but with the array and vals argument in different order*/
+ 		return ALGnonDimensionSubselect1(dimsRes, oidsRes, vals, array, low, high, li, hi, anti);
 }
 
 
@@ -484,31 +474,43 @@ str ALGdimensionLeftfetchjoin2(bat *result, const ptr* dimsCands, const bat* oid
 	/*this function is called in case of an update after a subselection
  	* on the dimensions. In such a case only the dimsCands should have 
 	* values and the oidsCands should be empty*/
+	/*
+ 	* the above is not true. When having update a set v =1 where x=y
+ 	* then the oidsCandsBAT is not empty 
 	if(BATcount(oidsCandsBAT)) {
 		arrayDelete(dims_in);
 		throw(MAL,"algebra.dimensionLeftfetchjoin2", "oidsCands is not empty");
-	}	
+	}*/	
 
-	/*count the cells in the output*/
-	elsNum = arrayCellsNum(dims_in);
-	/*create all oids*/
-	if(!(resBAT = BATnew(TYPE_void, TYPE_oid, elsNum, TRANSIENT))) {
-		arrayDelete(dims_in);
-		throw(MAL, "algebra.dimensionLeftfetchjoin2","Problem allocating new BAT");
+	elsNum = BATcount(oidsCandsBAT);
+	if(!elsNum) { //there are no oids update - get oids from dimsCands
+		/*count the cells in the output*/
+		elsNum = arrayCellsNum(dims_in);
+		/*create all oids*/
+		if(!(resBAT = BATnew(TYPE_void, TYPE_oid, elsNum, TRANSIENT))) {
+			arrayDelete(dims_in);
+			throw(MAL, "algebra.dimensionLeftfetchjoin2","Problem allocating new BAT");
+		}
+
+		/* create the oids that should be updated based on the dimsCands */
+		resOids = (oid*)Tloc(resBAT, BUNfirst(resBAT));
+		/* fill the array with the elements in the first dimension */
+		computeOids(&resOids, 0, array->dimsNum-1 , array, dims_in, arrayCellsNum(array));
+
+		BATsetcount(resBAT, elsNum);
+		BATseqbase(resBAT, 0);
+		resBAT->tsorted = 1;
+	    resBAT->trevsorted = 0;
+    	resBAT->tkey = 1;
+	    resBAT->tdense = 0;
+
+		BBPkeepref(*result = resBAT->batCacheid);
+		BBPunfix(oidsCandsBAT->batCacheid);
+	} else {
+		//there are oids, use only them
+		BBPkeepref(*result = oidsCandsBAT->batCacheid);
 	}
-
-	/* create the oids that should be updated based on the dimsCands */
-	resOids = (oid*)Tloc(resBAT, BUNfirst(resBAT));
-	/* fill the array with the elements in the first dimension */
-	computeOids(&resOids, 0, array->dimsNum-1 , array, dims_in, arrayCellsNum(array));
-
-	BATsetcount(resBAT, elsNum);
-	BATseqbase(resBAT, 0);
-	BATderiveProps(resBAT, FALSE);
-
-	BBPkeepref(*result = resBAT->batCacheid);
-	BBPunfix(oidsCandsBAT->batCacheid);
-
+	
 	return MAL_SUCCEED;
 }
 

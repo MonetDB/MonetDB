@@ -464,6 +464,11 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 				BAT *extra = materialise_nonDimensional_column(c->type.type->localtype, neededCells-existingCells, c->def);
 				delta_append_bat(bat, extra); //append the values to the column
 			}
+
+			/* there might be that the values are more that the tids
+ 			* because the leftfetch join that created them was on a dimension
+ 			* and the tids are a subset of the dimension */
+			BATsetcount((BAT*)upd, BATcount((BAT*)tids)); 		
 		}
 		delta_update_bat(bat, tids, upd, isNew(c));
 	} else 

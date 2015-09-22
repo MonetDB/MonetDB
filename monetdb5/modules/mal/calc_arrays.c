@@ -2233,7 +2233,7 @@ do { \
 	}\
 } while(0)
 
-str CMDdimensionEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1, const ptr* dim2, const ptr* dims2) {
+str CMDdimensionsEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1, const ptr* dim2, const ptr* dims2) {
 	gdk_analytic_dimension *dimLeft = (gdk_analytic_dimension*)*dim1;
 	gdk_analytic_dimension *dimRight = (gdk_analytic_dimension*)*dim2;
 	

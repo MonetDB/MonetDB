@@ -903,8 +903,19 @@ static bool isTid(stmt *s) {
 	if(s->type == st_alias) return isTid(s->op1);
 	return false;
 }
-
 #endif
+
+static bool isDimension(stmt *s) {
+	switch(s->type) {
+		case st_dimension:
+			return true;
+		case st_convert:
+			return isDimension(s->op1);
+		default:
+			return false;
+	}
+}
+
 /*
  * @-
  * The big code generation switch.
@@ -1863,7 +1874,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
-//				if(s->op1->type == st_dimension)
 				if(arraySecondVar >= 0)//two inputs -> two outputs
 					renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 
@@ -2250,7 +2260,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_subfunc *f = s->op4.funcval;
 			node *n;
 
-			bool arrayRelated = 0;
+			int arrayRelated = 0;
 
 			/* dump operands */
 			if (_dumpstmt(sql, mb, s->op1) < 0)
@@ -2264,10 +2274,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			//check if any of the arguments is array related
 			for(n=s->op1->op4.lval->h ; n ; n=n->next) {
 				stmt *op = n->data;
-				if(op->type == st_dimension) {
-					arrayRelated = 1;
-					break;
-				}
+				arrayRelated += isDimension(op);
 			}
 
 			if (s->nrcols && !arrayRelated) {
@@ -2322,15 +2329,26 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 				special = 0;
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", op->nr);
-				if((arraySecondVar = findVariable(mb, nme)) >=0) {
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+				if((arraySecondVar = findVariable(mb, nme)) >=0)
 					q = pushArgument(mb, q, arraySecondVar);
-				}
 			}
-			if(arrayRelated) { //push the type the result should be
+			if(arrayRelated == 1) { 
+				//push the type the result should be
 				sql_subtype *res = f->res->h->data;
 				q = pushInt(mb, q, res->type->localtype);
+				setVarType(mb, getArg(q, 0), TYPE_ptr);
+                setVarUDFtype(mb, getArg(q, 0));
+				//push one more return argument
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+			} else if(arrayRelated > 1) {
+				//the second argument is a bat with the correct type
+				sql_subtype *res = f->res->h->data;
+				setVarType(mb, getArg(q, 0), TYPE_ptr);
+                setVarUDFtype(mb, getArg(q, 0));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, res->type->localtype)));
 			}
+			arrayRelated = 0;
+
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
