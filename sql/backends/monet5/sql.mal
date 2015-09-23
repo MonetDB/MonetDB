@@ -467,11 +467,11 @@ pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 
-pattern mosaic(sch:str, tbl:str):void
-address sql_mosaic;
-pattern mosaic(sch:str, tbl:str, col:str):void
-address sql_mosaic
-comment "Analyse the data for possible compression effectiveness";
+#pattern mosaic(sch:str, tbl:str):void
+#address sql_mosaic;
+#pattern mosaic(sch:str, tbl:str, col:str):void
+#address sql_mosaic
+#comment "Analyse the data for possible compression effectiveness";
 
 pattern storage()(
 	schema:bat[:oid,:str],

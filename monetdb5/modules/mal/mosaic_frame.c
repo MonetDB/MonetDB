@@ -32,16 +32,18 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_frame.h"
-#include "bitvector.h"
 
 // we use longs as the basis for bit vectors
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng);
 
+/*
+#include "bitvector.h"
 typedef struct{
 	MosaicBlk blk;
 	ValRecord reference;
 	Vector base[];
 }FrameRecord;
+*/
 
 void
 MOSadvance_frame(Client cntxt, MOStask task)
