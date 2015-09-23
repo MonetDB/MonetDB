@@ -2127,8 +2127,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if((arraySecondVar = findVariable(mb, nme)) >=0) { 
         			setVarType(mb, getArg(q, 0), TYPE_ptr);
 					setVarUDFtype(mb, getArg(q, 0));
-				    q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-					q = pushArgument(mb, q, arraySecondVar);
+				    q = pushArgument(mb, q, arraySecondVar);
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 				}
 
 			if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
