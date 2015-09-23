@@ -41,13 +41,7 @@ getTypeName(malType tpe)
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");
 	if (isaBatType(tpe)) {
-		k = getHeadIndex(tpe);
-		if (k)
-			snprintf(buf, l, "bat[:any%c%d,", TMPMARKER, k);
-		else if (getHeadType(tpe) == TYPE_any)
-			snprintf(buf, l, "bat[:any,");
-		else
-			snprintf(buf, l, "bat[:%s,", ATOMname(getHeadType(tpe)));
+		snprintf(buf, l, "bat[:oid,");
 		l -= strlen(buf);
 		s = buf + strlen(buf);
 		k = getColumnIndex(tpe);
