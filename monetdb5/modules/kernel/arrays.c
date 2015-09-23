@@ -935,6 +935,106 @@ str ALGnonDimensionThetasubselect1(ptr *dimsRes, bat *oidsRes, const bat *values
 	return ALGnonDimensionThetasubselect2(dimsRes, oidsRes, values, dims, NULL, NULL, val, op);
 }
 
+str ALGnonDimensionQRDecomposition(bat *oidsRes, ptr *dimsRes,  const bat* vals, const ptr *dims)
+{
+	gdk_array *array = (gdk_array*)*dims;
+	gdk_array *aCopy = NULL;
+	BAT *b;
+    dbl *elements = NULL, *new_elements = NULL; 
+    unsigned int max;
+    unsigned int size;
+    BUN j; 
+
+    dbl *qarray = NULL, *rarray = NULL;
+    BUN i, k;
+    dbl s = 0; 
+
+    // we do not change array structure, all dimensions must be the same
+    aCopy = arrayCopy(array);   
+    max = array->dims[0]->max;
+    *dimsRes = aCopy;  
+
+    size = max + 1;
+
+    if((b = BATnew(TYPE_void, TYPE_dbl, size*size, TRANSIENT)) == NULL)  
+        return NULL;        
+
+    elements = (dbl*) Tloc(BATdescriptor(*vals), BUNfirst(BATdescriptor(*vals)));      
+    new_elements = (dbl*) Tloc(b, BUNfirst(b));         
+
+    qarray = (double*)malloc(size*size*sizeof(double));
+    rarray = (double*)malloc(size*size*sizeof(double));
+   
+
+
+    // resulting bat calculation    
+
+    for (j = 0; j < size*size; j++)
+	{
+	    new_elements[j] = elements[j];
+	}  
+
+
+    for (k = 0; k <= max; k++)
+    {
+
+    	s = 0;
+    	for (j = 0; j <= max; j++)
+    	{
+    		s = s + new_elements[k + (max - j) * size] * new_elements[k + (max - j) * size];
+
+    	}
+    	rarray[k + k * size] = sqrt(s);
+    	for (j = 0; j <= max; j++)
+    	{
+    		qarray[k + (max - j) * size] = new_elements[k + (max - j) * size]/rarray[k + k * size];
+
+    	}
+    	for (i = k + 1; i <= max; i++)
+    	{
+    		s = 0;   	
+	    	for (j = 0; j <= max; j++)
+	    	{
+	    		s = s + new_elements[i + (max - j)  * size] * qarray[k + (max - j) * size];
+
+	    	}
+	    	rarray[i + k * size] = s;
+	    	for (j = 0; j <= max; j++)
+	    	{
+	    		new_elements[i + (max - j) * size] = new_elements[i + (max - j) * size] - rarray[i + k * size] * qarray[k + (max - j) * size];
+	    	}
+	    }
+
+    }
+    for (j = 0; j < size*size; j++)
+	{
+	    new_elements[j] = qarray[j];
+	}  
+
+
+	BATsetcount(b, size*size);
+	b->tsorted = 0;
+	b->trevsorted = b->batCount <= 1;
+	b->tkey = 1;
+	b->tdense = (b->batCount <= 1 || b->batCount == b->batCount);
+	if (b->batCount == 1 || b->batCount == b->batCount)
+		b->tseqbase = b->hseqbase;
+	b->hsorted = 1;
+	b->hdense = 1;
+	b->hseqbase = 0;
+	b->hkey = 1;
+	b->hrevsorted = b->batCount <= 1;
+
+	free(rarray);
+	free(qarray);
+
+
+	BBPkeepref(*oidsRes = b->batCacheid);
+
+
+    return MAL_SUCCEED;
+}
+
 
 
 str ALGarrayCount(wrd *res, const ptr *array) {

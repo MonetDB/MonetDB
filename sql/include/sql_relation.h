@@ -145,7 +145,8 @@ typedef enum operator_type {
 	op_sample,
 	op_insert, 	/* insert(l=table, r insert expressions) */ 
 	op_update, 	/* update(l=table, r update expressions) */
-	op_delete 	/* delete(l=table, r delete expression) */
+	op_delete, 	/* delete(l=table, r delete expression) */
+	op_qqr,
 } operator_type;
 
 #define is_atom(et) \
@@ -185,6 +186,8 @@ typedef enum operator_type {
 	(is_join(op) || is_semi(op))
 #define is_apply(op) \
 	(op == op_apply)
+#define is_qqr(op) \
+	(op == op_qqr)
 #define is_select(op) \
 	(op == op_select)
 #define is_set(op) \

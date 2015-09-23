@@ -280,6 +280,8 @@ op2string(operator_type op)
 	case op_update: 
 	case op_delete: 
 		return "modify op";
+	case op_qqr:
+		return "qqr op";
 	default:
 		return "unknown";
 	}
@@ -421,6 +423,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
+	case op_qqr:
 		r = "project";
 		if (rel->op == op_select)
 			r = "select";
@@ -428,6 +431,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			r = "group by";
 		if (rel->op == op_topn)
 			r = "top N";
+		if (rel->op == op_qqr)
+			r = "qqr op";
 		if (rel->op == op_sample)
 			r = "sample";
 		print_indent(sql, fout, depth);
@@ -528,7 +533,8 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
-	case op_sample: 
+	case op_sample:
+	case op_qqr: 
 		rel_print_refs(sql, fout, rel->l, depth, refs);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs);
@@ -1320,6 +1326,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (j != op_basetable) {
 			*pos += (int) strlen("intersect");
 			j = op_inter;
+		}
+	case 'q':
+		if (j != op_basetable) {
+			*pos += (int) strlen("qqr");
+			j = op_qqr;
 		}
 		/* fall through */
 	case 'e':

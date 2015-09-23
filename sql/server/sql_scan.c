@@ -373,6 +373,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("ARRAY", ARRAY);
 	keywords_insert("DIMENSION", DIMENSION);
+	keywords_insert("QQR", QQR);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)

@@ -93,6 +93,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 		break;
 	}
 	case op_table:
+	case op_qqr:
 		/* table func */
 		return NULL;
 	case op_ddl: 
@@ -220,6 +221,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 		break;
 	case op_join: 
 	case op_left: 
@@ -271,6 +273,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_union: 
 	case op_inter: 
 	case op_except: 
+	case op_qqr:
 		break;
 
 	case op_project:
@@ -5248,6 +5251,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 		break;
 
 	case op_topn:
@@ -5438,6 +5442,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_semi: 
 	case op_anti: 
 	case op_ddl:
+	case op_qqr:
 		return rel;
 	}
 	return rel;
@@ -5461,7 +5466,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 
 	case op_insert:
 	case op_ddl:
-
+	case op_qqr:
 		return rel;
 
 	case op_update:
@@ -5552,6 +5557,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 
 	case op_insert:
 	case op_update:
@@ -6913,6 +6919,7 @@ rel_uses_exps(sql_rel *rel, list *exps )
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 		return 0;
 	case op_join:
 	case op_left:
@@ -7132,6 +7139,8 @@ rel_rename(mvc *sql, sql_rel *rel, list *aliases)
 		nrel->r = rel_rename(sql, rel->r, naliases);
 		nrel->exps = exps_rename_up(sql, rel->exps, naliases);
 		return nrel;
+	case op_qqr:
+		return rel;
 	}
 	assert(0);
 	return nrel;
@@ -7144,6 +7153,7 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 		return rel;
 	switch(rel->op) {
 	case op_basetable:
+	case op_qqr:
 		return rel;
 	case op_table:
 		if (rel->l)
@@ -7482,6 +7492,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 		break;
 	case op_join: 
 	case op_left: 
@@ -7535,6 +7546,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+	case op_qqr:
 		break;
 	case op_join: 
 	case op_left: 

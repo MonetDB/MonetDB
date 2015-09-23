@@ -327,6 +327,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			case st_mbrselect:
 			case st_uselect:
 			case st_uselect2:
+			case st_qqr:
 				if (s->op1)
 					push(s->op1);
 				if (s->op2)
@@ -813,6 +814,18 @@ stmt* stmt_dimension(sql_allocator *sa, sql_dimension* dim) {
 	return d;
 }
 
+
+extern stmt *stmt_qqr(sql_allocator *sa, stmt *op1)
+{
+	stmt *s = stmt_create(sa, st_qqr);
+
+	s->op1 = op1;
+	s->nrcols = 2;
+
+	return s;
+
+}
+
 stmt *
 stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub)
 {
@@ -1263,6 +1276,7 @@ tail_type(stmt *st)
 	case st_alias:
 	case st_gen_group:
 	case st_order:
+	case st_qqr:
 		return tail_type(st->op1);
 
 	case st_list:

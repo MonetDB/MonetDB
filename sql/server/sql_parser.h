@@ -175,7 +175,8 @@ typedef enum tokens {
 	SQL_DROP_ARRAY,
 	SQL_ARRAY,
 	SQL_DIMENSION,	
-/*150*/	SQL_RANGE
+/*150*/	SQL_RANGE,
+	SQL_QQR
 } tokens;
 
 typedef enum jt {

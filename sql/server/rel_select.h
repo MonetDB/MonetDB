@@ -45,6 +45,8 @@ extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cna
 extern sql_exp * rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek);
 extern sql_exp * rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
+extern sql_rel *rel_qqr(sql_allocator *sa, sql_rel *l);
+
 extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e);
