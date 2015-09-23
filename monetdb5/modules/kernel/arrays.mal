@@ -64,5 +64,6 @@ address ALGarrayCount;
 
 
 command algebra.qqr_decomposition(vals:bat[:oid,:any], dims:ptr) (:bat[:oid,:dbl], :ptr)
-address ALGnonDimensionQRDecomposition;
-#comment "QQR decomposition"
+address ALGnonDimensionQRDecomposition
+comment "QQR decomposition";
+
