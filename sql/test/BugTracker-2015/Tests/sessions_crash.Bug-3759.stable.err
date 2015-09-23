@@ -30,9 +30,6 @@ stderr of test 'sessions_crash.Bug-3759` in directory 'sql/test/BugTracker-2015`
 # 16:14:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28078" "--port=38342"
 # 16:14:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28078/.s.monetdb.38342
-QUERY = select COUNT(*) from "sys"."rejects";
-ERROR = !No reject table available
 
 # 16:14:53 >  
 # 16:14:53 >  "Done."
