@@ -2958,6 +2958,31 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 
 		} break;
+		case st_qqr: {
+
+			int l = _dumpstmt(sql, mb, s->op1);
+			int arraySecondVar = -1;
+
+			if (l < 0)
+				return -1;
+
+			q = newStmt1(mb, algebraRef, "qqr_decomposition");
+
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, TYPE_dbl));
+			setVarUDFtype(mb, getArg(q, 0));
+
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+			q = pushArgument(mb, q, l);
+
+			snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
+            if((arraySecondVar = findVariable(mb, nme)) >= 0)
+			q = pushArgument(mb, q, arraySecondVar);
+
+			s->nr = getDestVar(q);
+			renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
+				return s->nr;
+		} break;
+
 		}
 		if (mb->errors)
 			return -1;

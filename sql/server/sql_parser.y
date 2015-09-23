@@ -493,7 +493,7 @@ int yydebug=1;
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
-%token <operation> FROM FOR MATCH
+%token <operation> FROM FOR MATCH QQR
 
 %token <operation> EXTRACT
 
@@ -517,6 +517,7 @@ int yydebug=1;
 
 
 /* operators */
+%left QQR
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
@@ -2801,6 +2802,13 @@ joined_table:
 	  append_symbol(l, $1);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_CROSS, l); }
+ |  QQR table_ref
+
+	{ dlist *l = L();
+	  append_symbol(l, $2);
+	  append_symbol(l, $2);
+	  $$ = _symbol_create_list( SQL_QQR, l); }
+
  |  table_ref UNIONJOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -5728,6 +5736,7 @@ char *token2string(int token)
 	SQL(XMLNAMESPACES);
 	SQL(DIMENSION);
 	SQL(RANGE);
+	SQL(QQR);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

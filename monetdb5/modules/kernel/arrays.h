@@ -43,6 +43,8 @@ algebra_export str ALGprojectDimension(bat* result, const ptr *dim, const ptr *a
 algebra_export str ALGprojectNonDimension(bat *result, const bat *vals, const ptr *array);
 
 
+algebra_export str ALGnonDimensionQRDecomposition(bat *oidsRes, ptr *dimsRes, const bat* vals, const ptr *dims);
+
 
 
 algebra_export str ALGarrayCount(wrd *res, const ptr *array);

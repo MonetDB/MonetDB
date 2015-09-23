@@ -101,7 +101,8 @@ typedef enum stmt_type {
 	st_assign,
 
 //	st_cells,
-	st_dimension
+	st_dimension,
+	st_qqr,
 } st_type;
 
 /* flag to indicate anti join/select */
@@ -186,6 +187,8 @@ extern stmt *stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmp
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
+
+extern stmt *stmt_qqr(sql_allocator *sa, stmt *op1);       
 extern stmt *stmt_uselect2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub);
 extern stmt *stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub);
 

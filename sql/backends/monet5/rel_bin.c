@@ -1421,6 +1421,7 @@ rel2bin_args( mvc *sql, sql_rel *rel, list *args)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_qqr:
 		args = rel2bin_args(sql, rel->r, args);
 		break;
 	}
@@ -1682,6 +1683,42 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op, int ne
 	res = stmt_join(sql->sa, l, r, cmp_joined);
 	return res;
 }
+
+
+static stmt *
+rel2bin_qqr(mvc *sql, sql_rel *rel, list *refs)
+{
+	node *n;
+	list *l;
+	stmt *left = NULL;
+
+
+	if (rel->l) 
+		left = subrel_bin(sql, rel->l, refs);
+	if (!left ) 
+		return NULL;
+
+	l = sa_list(sql->sa);
+	for( n = left->op4.lval->h; n; n = n->next ) {
+		stmt *s;
+		stmt *c = n->data;
+		char *rnme = table_name(sql->sa, c);
+		char *nme = column_name(sql->sa, c);
+		if (c->type == st_join)
+		{
+			s = stmt_qqr(sql->sa, column(sql->sa, c) );
+		}
+		else
+		{
+			s = column(sql->sa, c);
+		}
+		s = stmt_alias(sql->sa, s, rnme, nme);
+		list_append(l, s);
+
+	}
+	return stmt_list(sql->sa, l);
+}
+
 
 static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
@@ -4760,6 +4797,10 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		break;
 	case op_ddl:
 		s = rel2bin_ddl(sql, rel, refs);
+		break;
+	case op_qqr:
+		s = rel2bin_qqr(sql, rel, refs);
+		sql->type = Q_TABLE;
 		break;
 	}
 	if (s && rel_is_ref(rel)) {

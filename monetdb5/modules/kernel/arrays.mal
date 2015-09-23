@@ -61,3 +61,8 @@ address ALGproject;
 #the dim will be ignored. only the array will be used
 command aggr.count(array:ptr) :wrd 
 address ALGarrayCount;
+
+
+command algebra.qqr_decomposition(vals:bat[:oid,:any], dims:ptr) (:bat[:oid,:dbl], :ptr)
+address ALGnonDimensionQRDecomposition;
+#comment "QQR decomposition"

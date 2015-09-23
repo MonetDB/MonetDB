@@ -239,6 +239,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	case op_except:
 	case op_inter:
 	case op_project:
+	case op_qqr:
 		if (!is_processed(rel) && level == 0)
 			return rel_table_projections( sql, rel->l, tname, level+1);
 		/* fall through */
@@ -290,6 +291,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 	case op_select:
 	case op_topn:
 	case op_sample:
+	case op_qqr:
 		found = rel_bind_path_(rel->l, e, path);
 		break;
 
@@ -405,6 +407,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	case op_select:
 	case op_topn:
 	case op_sample:
+	case op_qqr:
 		return rel_projections(sql, rel->l, tname, settname, intern );
 	default:
 		return NULL;
@@ -442,6 +445,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	case op_anti:
 	case op_project:
 	case op_select:
+	case op_qqr:
 	default:
 		if (i->l)
 			rel->l = rel_copy(sa, i->l);
@@ -603,6 +607,19 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
+	return rel;
+}
+
+sql_rel *
+rel_qqr(sql_allocator *sa, sql_rel *l)
+{
+	sql_rel *rel = rel_create(sa);
+
+	rel->l = l;
+	rel->op = op_qqr;
+	rel->exps = NULL;
+	rel->card = CARD_MULTI;
+	rel->nrcols = l->nrcols;
 	return rel;
 }
 
@@ -1181,6 +1198,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 static sql_rel * rel_setquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
+static sql_rel * rel_qqrquery(mvc *sql, sql_rel *rel, symbol *q);
 static sql_rel * rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *sq);
 
 void
@@ -1321,6 +1339,14 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 	case SQL_CROSS:
 	{
 		sql_rel *tq = rel_crossquery(sql, r, q);
+
+		if (!tq)
+			return NULL;
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+	}
+	case SQL_QQR:
+	{
+		sql_rel *tq = rel_qqrquery(sql, r, q);
 
 		if (!tq)
 			return NULL;
@@ -6112,6 +6138,24 @@ rel_crossquery(mvc *sql, sql_rel *rel, symbol *q)
 		return NULL;
 
 	rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	return rel;
+}
+
+static sql_rel *
+rel_qqrquery(mvc *sql, sql_rel *rel, symbol *q)
+{
+	dnode *n = q->data.lval->h;
+	symbol *tab1 = n->data.sym;
+	symbol *tab2 = n->next->data.sym;
+	sql_rel *t1 = table_ref(sql, rel, tab1);
+	sql_rel *t2 = NULL;
+       
+	if (t1)
+		t2 = table_ref(sql, rel, tab2);
+	if (!t1 || !t2)
+		return NULL;
+
+	rel = rel_qqr(sql->sa, t1);
 	return rel;
 }
 	
