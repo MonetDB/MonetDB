@@ -31,7 +31,7 @@
 
 static void*
 linear_step(MOStask task, MosaicBlk blk){
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(bte));
 	case TYPE_bit : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(bit));
 	case TYPE_sht : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(sht));
@@ -62,7 +62,7 @@ MOSdump_linear(Client cntxt, MOStask task)
 	MosaicBlk blk= task->blk;
 
 	mnstr_printf(cntxt->fdout,"#linear "BUNFMT" ", MOSgetCnt(blk));
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte:
 		mnstr_printf(cntxt->fdout,"bte %hhd %hhd", *(bte*) linear_base(blk), *(bte*) linear_step(task, blk)); break;
 	case TYPE_sht:
@@ -97,7 +97,7 @@ MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	BUNappend(btech, "linear", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte); break;
 	case TYPE_bit: output = wordaligned( MosaicBlkSize + 2 * sizeof(bit),bit); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht); break;
@@ -128,7 +128,7 @@ MOSadvance_linear(Client cntxt, MOStask task)
 {
 	(void) cntxt;
 	task->start += MOSgetCnt(task->blk);
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(bit),bit)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht)); break;
@@ -176,7 +176,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	flt factor = 1.0;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: Estimate(bte); break;
 	case TYPE_bit: Estimate(bit); break;
 	case TYPE_sht: Estimate(sht); break;
@@ -239,7 +239,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_LINEAR);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: LINEARcompress(bte); break;
 	case TYPE_bit: LINEARcompress(bit); break;
 	case TYPE_sht: LINEARcompress(sht); break;
@@ -301,7 +301,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	BUN i;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: LINEARdecompress(bte); break ;
 	case TYPE_bit: LINEARdecompress(bit); break ;
 	case TYPE_sht: LINEARdecompress(sht); break;
@@ -421,7 +421,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bit: subselect_linear(bit); break;
 	case TYPE_bte: subselect_linear(bte); break;
 	case TYPE_sht: subselect_linear(sht); break;
@@ -762,7 +762,7 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bit: join_linear(bit); break;
 		case TYPE_bte: join_linear(bte); break;
 		case TYPE_sht: join_linear(sht); break;

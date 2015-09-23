@@ -43,7 +43,7 @@ MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binp
 	BUNappend(btech, "literal", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break ;
 	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit); break ;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break ;
@@ -77,7 +77,7 @@ MOSadvance_literal(Client cntxt, MOStask task)
 
 	task->start += MOSgetCnt(blk);
 	task->stop = task->elm;
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break ;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit)); break ;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht)); break ;
@@ -128,7 +128,7 @@ MOScompress_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_NONE);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: LITERALcompress(bte); break ;
 	case TYPE_bit: LITERALcompress(bit); break ;
 	case TYPE_sht: LITERALcompress(sht); break;
@@ -180,7 +180,7 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	compressed = ((char*)blk) + MosaicBlkSize;
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: LITERALdecompress(bte); break ;
 	case TYPE_bit: LITERALdecompress(bit); break ;
 	case TYPE_sht: LITERALdecompress(sht); break;
@@ -520,7 +520,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 		last = MOSgetCnt(task->blk);
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bit: thetasubselect_literal(bit); break;
 	case TYPE_bte: thetasubselect_literal(bte); break;
 	case TYPE_sht: thetasubselect_literal(sht); break;
@@ -607,7 +607,7 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bit: leftfetchjoin_literal(bit); break;
 		case TYPE_bte: leftfetchjoin_literal(bte); break;
 		case TYPE_sht: leftfetchjoin_literal(sht); break;
@@ -667,7 +667,7 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bit: join_literal(bit); break;
 		case TYPE_bte: join_literal(bte); break;
 		case TYPE_sht: join_literal(sht); break;

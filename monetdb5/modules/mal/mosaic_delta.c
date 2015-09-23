@@ -132,7 +132,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	flt factor = 1.0;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
 	case TYPE_oid: Estimate_delta(sht,  (delta > 255)); break;
@@ -198,7 +198,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_DELTA);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
@@ -262,7 +262,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	BUN i;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_int: DELTAdecompress(int); break;

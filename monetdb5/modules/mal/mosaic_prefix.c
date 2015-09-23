@@ -79,7 +79,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	int size = ATOMsize(task->type);
 
 	(void) cntxt;
-	if( ATOMstorage(task->type == TYPE_str))
+	if( ATOMbasetype(task->type == TYPE_str))
 			size =task->b->T->width;
 	BUNappend(btech, "prefix", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
@@ -135,7 +135,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
+	if( ATOMbasetype(task->type == TYPE_str))
 			size =task->b->T->width;
 	task->start += MOSgetCnt(task->blk);
 	task->stop = task->elm;
@@ -214,7 +214,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
+	if( ATOMbasetype(task->type == TYPE_str))
 			size =task->b->T->width;
 	if( task->elm >= 2)
 	switch(size){
@@ -346,7 +346,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	MOSsetTag(blk, MOSAIC_PREFIX);
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
+	if( ATOMbasetype(task->type == TYPE_str))
 			size =task->b->T->width;
 	if( task->elm >=2 )
 	switch(size){
@@ -520,7 +520,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
+	if( ATOMbasetype(task->type == TYPE_str))
 			size =task->b->T->width;
 	switch(size){
 	case 1:
@@ -728,7 +728,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bit: subselect_prefix(bit,unsigned int, 8); break;
 	case TYPE_bte: subselect_prefix(bte,unsigned int, 8); break;
 	case TYPE_sht: subselect_prefix(sht,unsigned int, 16); break;
@@ -917,7 +917,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bit: thetasubselect_prefix(bit, unsigned int, 8); break;
 	case TYPE_bte: thetasubselect_prefix(bte, unsigned int, 8); break;
 	case TYPE_sht: thetasubselect_prefix(sht, unsigned int, 16); break;
@@ -1036,7 +1036,7 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bit: leftfetchjoin_prefix(bit, unsigned char); break;
 		case TYPE_bte: leftfetchjoin_prefix(bte, unsigned char); break;
 		case TYPE_sht: leftfetchjoin_prefix(sht, unsigned short); break;
@@ -1125,7 +1125,7 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bit: join_prefix(bit,unsigned char); break;
 		case TYPE_bte: join_prefix(bte,unsigned char); break;
 		case TYPE_sht: join_prefix(sht,unsigned short); break;

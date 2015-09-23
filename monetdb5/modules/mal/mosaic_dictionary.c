@@ -51,7 +51,7 @@ MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
 {
 	void *val = (void*)task->hdr->dict;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht:
 		snprintf(buf,len,"%hd", ((sht*) val)[i]); break;
 	case TYPE_int:
@@ -202,7 +202,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	for(j=0;j<256;j++)
 		cnt[j]=0;
 	hdr->dictsize = 0;
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: makeDict(sht); break;
 	case TYPE_lng: makeDict(lng); break;
 	case TYPE_oid: makeDict(oid); break;
@@ -266,7 +266,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: estimateDict(sht); break;
 	case TYPE_lng: estimateDict(lng); break;
@@ -345,7 +345,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	MOSsetTag(blk,MOSAIC_DICT);
 	MOSsetCnt(blk,0);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTcompress(sht); break;
 	case TYPE_int: DICTcompress(int); break;
@@ -428,7 +428,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	unsigned long *base;
 	(void) cntxt;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_lng: DICTdecompress(lng); break;
@@ -916,7 +916,7 @@ MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_sht: leftfetchjoin_dictionary(sht); break;
 		case TYPE_lng: leftfetchjoin_dictionary(lng); break;
 		case TYPE_oid: leftfetchjoin_dictionary(oid); break;
@@ -974,7 +974,7 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_sht: join_dictionary(sht); break;
 		case TYPE_lng: join_dictionary(lng); break;
 		case TYPE_oid: join_dictionary(oid); break;

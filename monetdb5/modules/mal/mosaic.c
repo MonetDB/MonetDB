@@ -296,7 +296,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	if ((bcompress = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
-	switch(ATOMstorage(bcompress->ttype)){
+	switch(ATOMbasetype(bcompress->ttype)){
 	case TYPE_bit:
 	case TYPE_bte:
 	case TYPE_sht:
@@ -761,7 +761,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		BBPkeepref( *ret = bsrc->batCacheid);
 	}
 	error = 0;
-	switch( ATOMstorage(task->type)){
+	switch( ATOMbasetype(task->type)){
 	case TYPE_bte:
 		error = task->hdr->checksum.sumbte != task->hdr->checksum2.sumbte;
 		break;
