@@ -1858,6 +1858,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cnt, &cand, &candend)) !=NULL) {
 		return err;
 	}
+	assert(b->htype == TYPE_void); // headless guard
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if (BATcount(b) == 0 || ngrp == 0) {
 		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
@@ -1868,37 +1869,20 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		return NULL;
 	}
 	if (s) {
-		b = BATleftjoin(s, b, BATcount(s));
+		b = BATproject(s, b);
 		if (b == NULL) {
-			err = "internal leftjoin failed";
+			err = "internal project failed";
 			goto out;
 		}
 		freeb = 1;
-		if (b->htype != TYPE_void) {
-			t1 = BATmirror(BATmark(BATmirror(b), 0));
-			if (t1 == NULL) {
-				err = "internal mark failed";
-				goto out;
-			}
-			BBPunfix(b->batCacheid);
-			b = t1;
-		}
 		if (g) {
-			g = BATleftjoin(s, g, BATcount(s));
+			g = BATproject(s, g);
 			if (g == NULL) {
-				err = "internal leftjoin failed";
+				err = "internal project failed";
 				goto out;
 			}
 			freeg = 1;
-			if (g->htype != TYPE_void) {
-				t1 = BATmirror(BATmark(BATmirror(g), 0));
-				if (t1 == NULL) {
-					err = "internal mark failed";
-					goto out;
-				}
-				BBPunfix(g->batCacheid);
-				g = t1;
-			}
+			assert(g->htype == TYPE_void); // headless guard
 		}
 	}
 

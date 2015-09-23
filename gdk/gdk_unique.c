@@ -41,7 +41,9 @@ BATsubunique(BAT *b, BAT *s)
 	BUN hb;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
+#ifndef DISABLE_PARENT_HASH
 	bat parent;
+#endif
 
 	BATcheck(b, "BATsubunique", NULL);
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
@@ -243,9 +245,12 @@ BATsubunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    BAThash(b, 0) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
-		    BATcheckhash(BBPdescriptor(-parent)))) {
+		    BAThash(b, 0) == GDK_SUCCEED)
+#ifndef DISABLE_PARENT_HASH
+		   || ((parent = VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(-parent)))
+#endif
+		) {
 		BUN lo;
 		oid seq;
 
@@ -257,12 +262,15 @@ BATsubunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		seq = b->hseqbase;
+#ifndef DISABLE_PARENT_HASH
 		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(-parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			b = b2;
 			bi = bat_iterator(b);
-		} else {
+		} else
+#endif
+		{
 			lo = BUNfirst(b);
 		}
 		hs = b->T->hash;

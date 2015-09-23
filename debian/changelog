@@ -1,3 +1,10 @@
+monetdb (11.21.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3730: SAMPLE function not sampling randomly
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Aug 2015 12:52:24 +0200
+
 monetdb (11.21.3) unstable; urgency=low
 
   * Rebuilt.

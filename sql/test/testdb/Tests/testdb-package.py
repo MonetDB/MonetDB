@@ -1,4 +1,4 @@
-import os, sys, zipfile
+import os, sys, zipfile, socket
 
 dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
@@ -17,7 +17,7 @@ except IOError:
         f = open(os.path.join(db, 'bat', 'BBP.dir'), 'rU')
 hdr = f.readline()
 ptroid = f.readline()
-ptr, oid = ptroid.split()
+ptr, oid, hge = ptroid.split()
 f.close()
 
 try:
@@ -32,7 +32,7 @@ if rev:
     revcomment = ' (hg id %s)' % rev
 else:
     revcomment = ''
-z.comment = 'TestDB created on host %s with pointer size %s and oid size %s%s.\n' % (os.getenv('HOSTNAME', 'unknown'), ptr, oid, revcomment)
+z.comment = 'TestDB created on host %s with pointer size %s, oid size %s and largest integer size %s%s.\n' % (socket.gethostname(), ptr, oid, hge, revcomment)
 
 for root, dirs, files in os.walk(db):
     for f in files:

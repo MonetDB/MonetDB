@@ -50,10 +50,10 @@ INSERT INTO gen_keys ("x") VALUES ('boe');
 
 -- update again, we expect NO generated key, but we DO get one
 UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 1;
-1 affected row
+1 affected row, last generated key: 1
 
 UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 12;
-0 affected rows
+0 affected rows, last generated key: 1
 
 
 -- ok, cleanup a bit

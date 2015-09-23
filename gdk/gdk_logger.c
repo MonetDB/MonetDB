@@ -1167,7 +1167,7 @@ check_version(logger *lg, FILE *fp)
 	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
 		    (*lg->prefuncp)(version, lg->version) != 0) {
-			GDKerror("Incompatible database version %06d, "
+			GDKfatal("Incompatible database version %06d, "
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
@@ -1200,11 +1200,9 @@ bm_tids(BAT *b, BAT *d)
 	tids->H->dense = 1;
 
 	if (BATcount(d)) {
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		logbat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		logbat_destroy(diff);
+		tids = diff;
 	}
 	return tids;
 }
@@ -1643,6 +1641,9 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
+
+			if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
+				logger_fatal("Logger_new: commit failed", 0, 0, 0);
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1823,6 +1824,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
+	lg->local_dir = NULL;
 
 	if (shared) {
 		/* set the local logdir as well

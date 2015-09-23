@@ -59,10 +59,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				newRows(1,1,c1,0);
 			} else if (getFunctionId(p) == joinRef ||
 				getFunctionId(p) == leftfetchjoinRef ||
-				getFunctionId(p) == leftjoinRef ||
 				getFunctionId(p) == subbandjoinRef ||
-				getFunctionId(p) == leftfetchjoinPathRef ||
-				getFunctionId(p) == leftjoinPathRef ) {
+				getFunctionId(p) == leftfetchjoinPathRef ) {
 				/* assume 1-1 joins */
 				newRows(1,2,(c1 < c2 ? c1 : c2),0);
 			} else
@@ -84,11 +82,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else if (getModuleId(p) == batstrRef) {
 				newRows(1,1, c1,0);
 		} else if (getModuleId(p) == batRef) {
-			if (getFunctionId(p) == reverseRef ||
-			    getFunctionId(p) == hashRef  ||
-			    getFunctionId(p) == mirrorRef) {
-				newRows(1,1, c1,0);
-			} else if (getFunctionId(p) == appendRef ||
+			if (getFunctionId(p) == appendRef ||
 				   getFunctionId(p) == insertRef ){
 				/*
 				 * Updates are a little more complicated, because you have to

@@ -4,4 +4,4 @@
 --
 -- Copyright 2008-2015 MonetDB B.V.
 
-CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.agg;
+CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.aggr;

@@ -71,7 +71,7 @@ stderr of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracke
 # 22:45:54 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35519 
 # 22:45:54 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-23269/.s.monetdb.37617
 QUERY = alter table blabla drop constraint dada;
 ERROR = !ALTER TABLE: no such constraint 'dada'
 

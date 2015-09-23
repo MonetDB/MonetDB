@@ -32,7 +32,6 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	BAT *bn;
 	sphinx_client *client;
 	sphinx_result *res;
-	oid o = 0;
 
 	client = sphinx_create ( SPH_TRUE );
 	if (client == NULL)
@@ -51,8 +50,7 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 			throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 		for ( i = 0; i < res->num_matches; i++ ) {
 			lng sphinx_id = sphinx_get_id ( res, i );
-			o++;
-			BUNfastins(bn, &o, &sphinx_id);
+			bunfastapp(bn, &sphinx_id);
 		}
 
 	}
@@ -66,6 +64,10 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 
 	*ret = bn;
 	return MAL_SUCCEED;
+  bunins_failed:
+	BBPunfix(bn->batCacheid);
+	sphinx_destroy(client);
+	throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 }
 
 str

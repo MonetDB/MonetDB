@@ -36,11 +36,15 @@ create view sys.environment as select * from sys.environment();
 
 -- The BAT buffer pool overview
 create function sys.bbp ()
-	returns table (id int, name string, htype string,
+	returns table (id int, name string, 
 		ttype string, count BIGINT, refcnt int, lrefcnt int,
 		location string, heat int, dirty string,
 		status string, kind string)
 	external name bbp.get;
+
+create function sys.malfunctions()
+	returns table("signature" string, "address" string, "comment" string)
+	external name "manual"."functions";
 
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";

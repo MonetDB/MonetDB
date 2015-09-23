@@ -48,6 +48,10 @@ Ready.
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
 # 15:19:38 >  
@@ -187,6 +191,7 @@ SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.linefromtext
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
+SYSTEM FUNCTION  sys.malfunctions
 SYSTEM FUNCTION  sys.masklen
 SYSTEM FUNCTION  sys.mbr
 SYSTEM FUNCTION  sys.mbroverlaps
@@ -483,7 +488,7 @@ create function area(g geometry) returns float external name geom."Area";
 create function astext(g geometry) returns string external name geom."AsText";
 -- The BAT buffer pool overview
 create function sys.bbp () 
-	returns table (id int, name string, htype string, 
+	returns table (id int, name string, 
 		ttype string, count bigint, refcnt int, lrefcnt int, 
 		location string, heat int, dirty string, 
 		status string, kind string) 

@@ -1313,7 +1313,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_grant_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_REVOKE:{
@@ -1323,7 +1326,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *cname = SaveArgReference(stk, pci, 6);
 		int grant = *getArgReference_int(stk, pci, 7);
 		int grantor = *getArgReference_int(stk, pci, 8);
-		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		if (!tname || strcmp(tname, str_nil) == 0) 
+			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
+		else
+			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{
@@ -1610,7 +1616,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*sid)) == NULL)
 		throw(SQL, "sql.next_value", "Cannot access descriptor");
 
-	r = BATnew(b->htype, TYPE_lng, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_lng, BATcount(b), TRANSIENT);
 	if (!r) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.next_value", "Cannot create bat");
@@ -1646,7 +1652,15 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNins(r, BUNhead(bi, p), &l, FALSE);
+		BUNappend(r, &l, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, r);
+		BBPunfix(r->batCacheid);
+		r = b2;
+	} else {
+		BATseqbase(r, b->hseqbase);
 	}
 	if (sb)
 		seqbulk_destroy(sb);
@@ -2170,7 +2184,7 @@ setwritable(BAT *b)
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
-			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
+			bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
 		} else {
@@ -2285,21 +2299,26 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		u_id = BATdescriptor(*uid);
 		if (!u_id)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+		cminu = BATsubdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
 		}
+		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
-		res = c = BATmirror(BATmark(cminu, 0));
 		BBPunfix(cminu->batCacheid);
+		if (!res) {
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate" );
+		}
+		c = res;
 
 		if ((u_val = BATdescriptor(*uval)) == NULL) {
 			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
-		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
+		u = BATproject(u_val, u_id);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(u_id->batCacheid);
 		if (!u) {
@@ -2308,20 +2327,23 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		}
 		if (BATcount(u)) {	/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
+			gdk_return rc;
 
 			if (!c_ids){
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATsemijoin(BATmirror(u), BATmirror(c_ids));
+			rc = BATsubsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
-			BBPunfix(u->batCacheid);
-			if (!cminu) {
-				BBPunfix(c->batCacheid);
+			if (rc != GDK_SUCCEED) {
+				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			u = BATmirror(cminu);
+			c_ids = BATproject(cminu, u);
+			BBPunfix(cminu->batCacheid);
+			BBPunfix(u->batCacheid);
+			u = c_ids;
 		}
 		BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
@@ -2341,16 +2363,19 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
-			cminu = BATkdiff(BATmirror(i), BATmirror(u_id));
-			BBPunfix(i->batCacheid);
+			cminu = BATsubdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
-			if (!cminu) 
+			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-			i = BATmirror(BATmark(cminu, 0));
+			u_id = BATproject(cminu, i);
 			BBPunfix(cminu->batCacheid);
+			BBPunfix(i->batCacheid);
+			if (!u_id)
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			i = u_id;
 		}
 		if (isVIEW(res)) {
-			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE, TRANSIENT);
+			BAT *n = BATcopy(res, TYPE_void, res->ttype, TRUE, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;
 			if (res == NULL) {
@@ -2443,11 +2468,26 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	}
 
 	if (BATcount(u_val)) {
-		BAT *o = BATsemijoin(u_id, s);
-		BAT *nu_id = BATproject(o, u_id);
-		BAT *nu_val = BATproject(o, u_val);
-
+		BAT *o, *nu_id, *nu_val;
+		if (BATsubsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
+		nu_id = BATproject(o, u_id);
+		nu_val = BATproject(o, u_val);
 		BBPunfix(o->batCacheid);
+		if (nu_id == NULL || nu_val == NULL) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			if (nu_id)
+				BBPunfix(nu_id->batCacheid);
+			if (nu_val)
+				BBPunfix(nu_val->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = setwritable(res);
 		BATreplace(res, nu_id, nu_val, 0);
 		BBPunfix(nu_id->batCacheid);
@@ -2459,6 +2499,72 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 
 	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
+{
+	BAT *c, *l, *r, *res;
+	oid *p, *lp, *rp;
+	size_t cnt = 0, i;
+
+	c = BATdescriptor(*Col);
+	if (c)
+		cnt = BATcount(c);
+	l = BATdescriptor(*L);
+	r = BATdescriptor(*R);
+	res = BATnew(TYPE_void, TYPE_oid, cnt, TRANSIENT);
+	if (!c || !l || !r || !res) {
+		if (c)
+			BBPunfix(c->batCacheid);
+		if (l)
+			BBPunfix(l->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (res)
+			BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	p = (oid*)Tloc(res,0);
+	for(i=0;i<cnt; i++)
+		*p++ = oid_nil;
+	BATsetcount(res, cnt);
+
+	cnt = BATcount(l);
+	p = (oid*)Tloc(res, 0);
+	lp = (oid*)Tloc(l, 0);
+	rp = (oid*)Tloc(r, 0);
+	if (l->ttype == TYPE_void) {
+		size_t lp = l->tseqbase;
+		if (r->ttype == TYPE_void) {
+			size_t rp = r->tseqbase;
+			for(i=0;i<cnt; i++, lp++, rp++) 
+				p[lp] = rp;
+		} else {
+			for(i=0;i<cnt; i++, lp++) 
+				p[lp] = rp[i];
+		}
+	}
+	if (r->ttype == TYPE_void) {
+		size_t rp = r->tseqbase;
+		for(i=0;i<cnt; i++, rp++) 
+			p[lp[i]] = rp;
+	} else {
+		for(i=0;i<cnt; i++) 
+			p[lp[i]] = rp[i];
+	}
+	BATseqbase(res, 0);
+	res->T->sorted = 0;
+	res->T->revsorted = 0;
+	res->T->nil = 0;
+	res->T->nonil = 0;
+	res->T->key = 0;
+	BBPunfix(c->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
+	BBPkeepref(*Res = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2531,11 +2637,11 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( d == NULL)
 			throw(SQL,"sql.tid","Can not bind delete column");
 
-		diff = BATkdiff(tids, BATmirror(d));
-		BBPunfix(tids->batCacheid);
-		tids = BATmirror(BATmark(diff, sb));
-		BBPunfix(diff->batCacheid);
+		diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
+		BBPunfix(tids->batCacheid);
+		BATseqbase(diff, sb);
+		tids = diff;
 	}
 	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
@@ -3064,12 +3170,12 @@ str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	int *res = getArgReference_int(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0), error;
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
 	wrd nr;
-	str *w = getArgReference_str(stk, pci, 3), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3078,7 +3184,8 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_wrd);
 	nr = *getArgReference_wrd(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	if (mvc_export_affrows(b, b->out, nr, *w))
+	error = mvc_export_affrows(b, b->out, nr, "");
+	if (error)
 		throw(SQL, "sql.affectedRows", "failed");
 	return MAL_SUCCEED;
 }
@@ -3154,13 +3261,15 @@ str
 mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	str *w = getArgReference_str(stk, pci, 1), msg;
+	str msg;
 
 	(void) mb;		/* NOT USED */
+	(void) stk;		/* NOT USED */
+	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_operation(b, b->out, *w))
+	if (mvc_export_operation(b, b->out, ""))
 		throw(SQL, "sql.exportOperation", "failed");
 	return NULL;
 }
@@ -3520,109 +3629,6 @@ not_unique(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-/* later we could optimize this to start from current BUN 
-   And only search the from the first if second is not found.
- */
-static inline int
-HASHfndTwice(BAT *b, ptr v)
-{
-	BATiter bi = bat_iterator(b);
-	BUN i = BUN_NONE;
-	int first = 1;
-
-	HASHloop(bi, b->T->hash, i, v) {
-		if (!first)
-			return 1;
-		first = 0;
-	}
-	return 0;
-}
-
-str
-not_unique_oids(bat *ret, const bat *bid)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "not_uniques", "Cannot access descriptor");
-	}
-	if (b->ttype != TYPE_oid && b->ttype != TYPE_wrd) {
-		throw(SQL, "not_uniques", "Wrong types");
-	}
-
-	assert(b->htype == TYPE_oid);
-	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
-		}
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
-	} else if (b->tsorted) {	/* ugh handle both wrd and oid types */
-		oid c = *(oid *) Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
-		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
-		int first = 1;
-
-		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
-		}
-		vp = (oid *) Tloc(b, BUNfirst(b));
-		ve = vp + BATcount(b);
-		rf = rh = (oid *) Hloc(bn, BUNfirst(bn));
-		rt = (oid *) Tloc(bn, BUNfirst(bn));
-		*rh++ = *h++;
-		*rt++ = *vp;
-		for (vp++; vp < ve; vp++, h++) {
-			oid v = *vp;
-			if (v == c) {
-				first = 0;
-				*rh++ = *h;
-				*rt++ = v;
-			} else if (!first) {
-				first = 1;
-				*rh++ = *h;
-				*rt++ = v;
-			} else {
-				*rh = *h;
-				*rt = v;
-			}
-			c = v;
-		}
-		if (first)
-			rh--;
-		BATsetcount(bn, (BUN) (rh - rf));
-	} else {
-		oid *rf, *rh, *rt;
-		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
-
-		if (BAThash(b, 0) != GDK_SUCCEED)
-			throw(SQL, "not_uniques", "hash creation failed");
-		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b), TRANSIENT);
-		if (bn == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.unique_oids", MAL_MALLOC_FAIL);
-		}
-		vp = (oid *) Tloc(b, BUNfirst(b));
-		ve = vp + BATcount(b);
-		rf = rh = (oid *) Hloc(bn, BUNfirst(bn));
-		rt = (oid *) Tloc(bn, BUNfirst(bn));
-		for (; vp < ve; vp++, h++) {
-			/* try to find value twice */
-			if (HASHfndTwice(b, vp)) {
-				*rh++ = *h;
-				*rt++ = *vp;
-			}
-		}
-		BATsetcount(bn, (BUN) (rh - rf));
-	}
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
 /* row case */
 str
 SQLidentity(oid *ret, const void *i)
@@ -3841,7 +3847,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3859,7 +3865,15 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3880,7 +3894,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		throw(SQL, "alpha", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(b->htype, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
@@ -3900,7 +3914,15 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNins(bn, BUNhead(bi, p), &r, FALSE);
+		BUNappend(bn, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -4071,8 +4093,14 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED)
-		*res = t + m->timezone;
+	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED) {
+		t += m->timezone;
+		while (t < 0)
+			t += 24*60*60*1000;
+		while (t >= 24*60*60*1000)
+			t -= 24*60*60*1000;
+		*res = t;
+	}
 	return msg;
 }
 
@@ -4318,7 +4346,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		throw(SQL, name, "bat not sorted");
 	}
 */
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -4334,9 +4362,10 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		BUNins(r, BUNhead(bi, p), &rank, FALSE);
+		BUNappend(r, &rank, FALSE);
 		nrank += !dense || c;
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
@@ -4362,14 +4391,14 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
 	cur = BUNtail(bi, BUNfirst(b));
-	r = BATnew(TYPE_oid, TYPE_int, BATcount(b), TRANSIENT);
+	r = BATnew(TYPE_void, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, "cannot allocate result bat");
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			rank++;
 		}
 	} else {
@@ -4378,10 +4407,11 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			BUNins(r, BUNhead(bi, p), &rank, FALSE);
+			BUNappend(r, &rank, FALSE);
 			nrank += !dense || c;
 		}
 	}
+	BATseqbase(r, BAThdense(b) ? b->hseqbase : 0);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;

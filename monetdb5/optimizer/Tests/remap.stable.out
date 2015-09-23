@@ -20,8 +20,11 @@ function user.tst():void;
     d := bat.new(:oid,:str);
     a:bat[:oid,:bit]  := mal.multiplex("calc","isnil",d);
 # demonstrate an error 
-    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);
+    y:bat[:oid,:str] := mal.multiplex("calc","+",b,1);
 end user.tst;
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    y:bat[:oid,:str] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);
+!TypeException:user.tst[12]:'bat.append' undefined in:     bat.append(X_19:bat[:oid,:str],X_26:int);
 function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
@@ -35,8 +38,14 @@ function user.tst():void;               	#[0]  0
     d:bat[:oid,:str] := bat.new(:oid,:str);	#[6] CMDBATnew 13 <- 2 14 
     a:bat[:oid,:bit] := batcalc.isnil(d:bat[:oid,:str]);	#[7] CMDbatISNIL 15 <- 13 
 # demonstrate an error                  
-    y:bat[:int,:int] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);	#[9] MANIFOLDremapMultiplex 18 <- 6 7 1 8 
-end user.tst;                           	#[10]  
+    X_19:bat[:oid,:str] := bat.new(nil:oid,nil:str);	#[9] CMDBATnew 19 <- 20 21 
+barrier (X_23:oid,X_24:int) := iterator.new(b:bat[:oid,:int]);	#[10] ITRbunIterator 23 24 <- 1 
+    X_26:int := calc.+(X_24:int,1:int); 	#[11] CMDvarADDsignal 26 <- 24 8 
+    bat.append(X_19:bat[:oid,:str],X_26:int);	#[12]  27 <- 19 26 
+    redo (X_23:oid,X_24:int) := iterator.next(b:bat[:oid,:int]);	#[13]  23 24 <- 1 
+exit (X_23:oid,X_24:int);               	#[14]  23 24 
+    y:bat[:oid,:str] := X_19:bat[:oid,:str];	#[15]  18 <- 19 
+end user.tst;                           	#[16]  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

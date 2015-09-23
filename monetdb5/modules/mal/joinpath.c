@@ -17,7 +17,6 @@
  */
 #include "monetdb_config.h"
 #include "joinpath.h"
-//#include "cluster.h"
 
 /*
  * The join path optimizer takes a join sequence and
@@ -44,34 +43,14 @@
 #define SMALL_OPERAND	1024
 
 static BUN
-ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
+ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 {
 	BUN lc, rc;
 	BUN cost=0;
-#if 0
-	BUN lsize,rsize;
-	BAT *lsample, *rsample, *j; 
-#endif
 
-	(void) flag;
 	(void) cntxt;
 	lc = BATcount(l);
 	rc = BATcount(r);
-#if 0	
-	/* The sampling method */
-	if(flag < 2 && ( lc > 100000 || rc > 100000)){
-		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		lsample= BATsample(l,lsize);
-		BBPreclaim(lsample);
-		rsize= MIN(rc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
-		rsample= BATsample(r,rsize);
-		BBPreclaim(rsample);
-		j= BATjoin(l,r, MAX(lsize,rsize));
-		lsize= BATcount(j);
-		BBPreclaim(j);
-		return lsize;
-	}
-#endif
 
 	/* first use logical properties to estimate upper bound of result size */
 	if (l->tkey && r->hkey)
@@ -97,7 +76,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* orderedfetchjoin > sequential access */
 		cost /= 6;
 	else
-	if (BATtdense(l) && BAThordered(r) && flag != 0 /* no leftjoin */)
+	if (BATtdense(l) && BAThordered(r))
 		/* (reversed-) orderedfetchjoin -> sequential access */
 		cost /= 6;
 	else
@@ -105,7 +84,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* fetchjoin with random access in L1 */
 		cost /= 5;
 	else
-	if (BATtdense(l) && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+	if (BATtdense(l) && lc <= SMALL_OPERAND)
 		/* (reversed-) fetchjoin with random access in L1 */
 		cost /= 5;
 	else
@@ -117,7 +96,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* binary-lookup-join with random access in L1 */
 		cost /= 3;
 	else
-	if (BATtordered(l) && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+	if (BATtordered(l) && lc <= SMALL_OPERAND)
 		/* (reversed-) binary-lookup-join with random access in L1 */
 		cost /= 3;
 	else
@@ -129,7 +108,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* hashjoin with hashtable in L1 */
 		cost /= 3;
 	else
-	if (lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+	if (lc <= SMALL_OPERAND)
 		/* (reversed-) hashjoin with hashtable in L1 */
 		cost /= 3;
 	else
@@ -137,7 +116,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* fetchjoin with random access beyond L1 */
 		cost /= 2;
 	else
-	if (BATtdense(l) && flag != 0 /* no leftjoin */)
+	if (BATtdense(l))
 		/* (reversed-) fetchjoin with random access beyond L1 */
 		cost /= 2;
 	else
@@ -152,7 +131,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 
 
 static BAT *
-ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
+ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 {
 	BAT *b = NULL;
 	BUN estimate, e = 0;
@@ -169,12 +148,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	/* solve the join by pairing the smallest first */
 	while (top > 1) {
 		j = 0;
-		estimate = ALGjoinCost(cntxt,joins[0],joins[1],flag);
+		estimate = ALGjoinCost(cntxt,joins[0],joins[1]);
 		ALGODEBUG
 			fprintf(stderr,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[0]->batCacheid, 
 				joins[1]->batCacheid,(int)estimate, BATcount(joins[0]), postpone[0]?"postpone":"");
 		for (i = 1; i < top - 1; i++) {
-			e = ALGjoinCost(cntxt,joins[i], joins[i + 1],flag);
+			e = ALGjoinCost(cntxt,joins[i], joins[i + 1]);
 			ALGODEBUG
 				fprintf(stderr,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[i]->batCacheid, 
 					joins[i+1]->batCacheid,(int)e,BATcount(joins[i]),  postpone[i]?"postpone":"");
@@ -193,24 +172,9 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		 * against the first operand. For all others operand pairs, the cheapest join suffice.
 		 */
 
-		switch(flag){
-		case 0:
-			if ( j == 0) {
-				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
-				ALGODEBUG{
-					fprintf(stderr,"#joinpath step produces "BUNFMT"\n", BATcount(b));
-				}
-				break;
-			}
-		case 1:
-			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
-			break;
-		case 3:
-			b = BATproject(joins[j], joins[j + 1]);
-			ALGODEBUG{
-				fprintf(stderr,"#joinpath step produces "BUNFMT"\n", BATcount(b));
-			}
-			break;
+		b = BATproject(joins[j], joins[j + 1]);
+		ALGODEBUG{
+			fprintf(stderr,"#joinpath step produces "BUNFMT"\n", BATcount(b));
 		}
 		if (b==NULL){
 			if ( postpone[j] && postpone[j+1]){
@@ -277,7 +241,6 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	int error = 0;
-	str leftjoinPathRef = putName("leftjoinPath",12);
 
 	assert(pci->argc > 1);
 	if ( joins == NULL)
@@ -323,10 +286,8 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		for( --top; top>=0; top--)
 			BBPunfix(joins[top]->batCacheid);
-	} else if (getFunctionId(pci) == leftjoinPathRef) {
-		b = ALGjoinPathBody(cntxt,top,joins, 0); 
 	} else {
-		b = ALGjoinPathBody(cntxt,top,joins, 3); 
+		b = ALGjoinPathBody(cntxt,top,joins); 
 	}
 
 	GDKfree(joins);

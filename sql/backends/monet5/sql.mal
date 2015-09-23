@@ -248,6 +248,10 @@ command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], 
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
+command project( col:bat[:oid,:oid], l:bat[:oid,:oid], r:bat[:oid,:oid]) :bat[:oid,:oid]
+address BATleftproject
+comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"
+
 command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client";
@@ -340,11 +344,11 @@ pattern exportChunk{unsafe}(s:streams, res_id:int, offset:int, nr:int) :void
 address mvc_export_chunk_wrap
 comment "Export a chunk of the result set (in order) to stream s"; 
 
-pattern exportOperation{unsafe}(w:str) :void
+pattern exportOperation{unsafe}() :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(mvc:int, nr:wrd, w:str) :int
+pattern affectedRows{unsafe}(mvc:int, nr:wrd) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -390,13 +394,6 @@ end sql.subzero_or_one;
 command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
-
-command not_uniques( b:bat[:oid,:oid]) :bat[:oid,:oid] 
-address not_unique_oids 
-comment "return not unique oids" ;
-
-command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
-address not_unique_oids ;
 
 command optimizers()(:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:str])
 address getPipeCatalog;

@@ -69,7 +69,6 @@ lib__sql = {
 #	LIBS = ../../server/libsqlserver \
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
-#		   ../../storage/restrict/librestrictstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \
@@ -84,7 +83,6 @@ lib__sql = {
 #		   ../../server/libsqlserver \
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
-#		   ../../storage/restrict/librestrictstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \

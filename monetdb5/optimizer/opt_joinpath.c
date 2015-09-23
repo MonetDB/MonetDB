@@ -56,7 +56,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-		if ( getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == leftfetchjoinPathRef)
+		if ( getFunctionId(p) == leftfetchjoinPathRef)
 			for ( j= p->retc; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
@@ -86,14 +86,12 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	}
 
 	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
-		if( getFunctionId(p)== leftjoinPathRef || getFunctionId(p)== leftfetchjoinPathRef)
+		if( getFunctionId(p)== leftfetchjoinPathRef)
 			for ( j= p->retc ; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
 						if ( candidate[k].p == 0 ) {
-							if ( candidate[k].fcn == leftjoinPathRef) 
-								q= newStmt(mb, algebraRef, leftjoinRef);
-							else if ( candidate[k].fcn == leftfetchjoinPathRef)
+							if ( candidate[k].fcn == leftfetchjoinPathRef)
 								q= newStmt(mb, algebraRef, leftfetchjoinRef);
 							q= pushArgument(mb,q, candidate[k].lvar);
 							q= pushArgument(mb,q, candidate[k].rvar);
@@ -102,9 +100,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 						delArgument(p,j);
 						getArg(p,j) = getArg(candidate[k].p,0);
 						if ( p->argc == 3 ){
-							if (getFunctionId(p) == leftjoinPathRef)
-								setFunctionId(p, leftjoinRef);
-							else if ( getFunctionId(p) == leftfetchjoinPathRef)
+							if ( getFunctionId(p) == leftfetchjoinPathRef)
 								setFunctionId(p, leftfetchjoinRef);
 						}
 						actions ++;
@@ -171,11 +167,11 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			varcnt[getArg(p,j)]++;
 	}
 
-	/* assume a single pass over the plan, and only consider projection sequences composed of leftjoin and leftfetchjoin
+	/* assume a single pass over the plan, and only consider projection sequences composed of leftfetchjoin
  	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( getModuleId(p)== algebraRef && (getFunctionId(p) == leftjoinRef || getFunctionId(p) == leftfetchjoinRef) && p->argc ==3){
+		if( getModuleId(p)== algebraRef && getFunctionId(p) == leftfetchjoinRef && p->argc ==3){
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
@@ -201,13 +197,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
-				if ( getFunctionId(p) == leftjoinRef){ // ignore the estimate argument variant
-					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftjoinRef  || getFunctionId(r)== leftjoinPathRef) ){
-						for(k= r->retc; k<r->argc; k++) 
-							q = pushArgument(mb,q,getArg(r,k));
-					} else 
-						q = pushArgument(mb,q,getArg(p,j));
-				} else if ( getFunctionId(p) == leftfetchjoinRef){
+				if ( getFunctionId(p) == leftfetchjoinRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftfetchjoinRef  || getFunctionId(r)== leftfetchjoinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
@@ -239,9 +229,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* fix the type */
 			setVarUDFtype(mb, getArg(q,0));
 			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
-			if ( getFunctionId(q) == leftjoinRef )
-				setFunctionId(q,leftjoinPathRef);
-			else if ( getFunctionId(q) == leftfetchjoinRef )
+			if ( getFunctionId(q) == leftfetchjoinRef )
 				setFunctionId(q,leftfetchjoinPathRef);
 			freeInstruction(p);
 			p= q;

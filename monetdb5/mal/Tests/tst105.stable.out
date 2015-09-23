@@ -9,18 +9,25 @@ stdout of test 'tst105` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35645/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15498/.s.monetdb.35645
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+command bat2.new(t:any_2):bat[:oid,:any_2] address GDKbatnew;
 !TypeException:user.main[3]:object code for command bat2.new missing
-!TypeException:user.main[3]:'bat2.new' undefined in:     a:bat[:oid,:int] := bat2.new(:oid,:int);
+!TypeException:user.main[3]:'bat2.new' undefined in:     a:bat[:oid,:int] := bat2.new(:int);
 function user.main():void;
 # check propagation of type variables over bats 
 # can be checked after bat module has been added 
-    a := bat2.new(:oid,:int);
-    b := bat2.new(:oid,:int);
-    c := bat.new(:oid,:int);
+    a := bat2.new(:int);
+    b := bat2.new(:int);
+    c := bat.new(:int);
 end user.main;
 
 # 07:58:56 >  

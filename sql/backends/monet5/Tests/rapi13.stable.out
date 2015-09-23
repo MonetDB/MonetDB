@@ -88,7 +88,7 @@ Ready.
 % tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes # table_name
 % station,	L2,	lat,	lon,	v # name
 % clob,	sec_interval,	double,	double,	double # type
-% 8,	0,	24,	24,	24 # length
+% 8,	14,	24,	24,	24 # length
 [ "\"4CA56B\"",	1433344277.000,	52.08069,	5.86654,	11582.4	]
 [ "\"4010EA\"",	1433344277.000,	51.19084,	4.98646,	11590.02	]
 [ "\"406C71\"",	1433344277.000,	52.36768,	7.17085,	10668	]

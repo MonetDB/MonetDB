@@ -41,14 +41,9 @@ o := calc.or(f,n); bo := bat.append(bo,o);
 o := calc.or(n,t); bo := bat.append(bo,o);
 o := calc.or(n,f); bo := bat.append(bo,o);
 o := calc.or(n,n); bo := bat.append(bo,o);
-t_o := batcalc.or(t,b); bvo := bat.append(bov,t_o);
-f_o := batcalc.or(f,b); bvo := bat.append(bov,f_o);
-n_o := batcalc.or(n,b); bvo := bat.append(bov,n_o);
-o_t := batcalc.or(b,t); bov := bat.append(bov,o_t);
-o_f := batcalc.or(b,f); bov := bat.append(bov,o_f);
-o_n := batcalc.or(b,n); bov := bat.append(bov,o_n);
+
 oo := batcalc.or(bl,br);
-io.print(bl,br, bo, oo, bvo, bov);
+io.print(bl,br, bo, oo);
 
 a := calc.and(t,t); ba := bat.append(ba,a);
 a := calc.and(t,f); ba := bat.append(ba,a);
@@ -59,11 +54,6 @@ a := calc.and(f,n); ba := bat.append(ba,a);
 a := calc.and(n,t); ba := bat.append(ba,a);
 a := calc.and(n,f); ba := bat.append(ba,a);
 a := calc.and(n,n); ba := bat.append(ba,a);
-t_a := batcalc.and(t,b); bva := bat.append(bav,t_a);
-f_a := batcalc.and(f,b); bva := bat.append(bav,f_a);
-n_a := batcalc.and(n,b); bva := bat.append(bav,n_a);
-a_t := batcalc.and(b,t); bav := bat.append(bav,a_t);
-a_f := batcalc.and(b,f); bav := bat.append(bav,a_f);
-a_n := batcalc.and(b,n); bav := bat.append(bav,a_n);
+
 aa := batcalc.and(bl,br);
-io.print(bl,br, ba, aa, bva, bav);
+io.print(bl,br, ba, aa);

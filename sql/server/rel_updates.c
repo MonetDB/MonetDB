@@ -391,6 +391,14 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	return t;
 }
 
+static int 
+copy_allowed(mvc *sql, int from)
+{
+	if (!global_privs(sql, (from)?PRIV_COPYFROMFILE:PRIV_COPYINTOFILE)) 
+		return 0;
+	return 1;
+}
+
 static sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
@@ -1155,7 +1163,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		return NULL;
 	/* Only the MONETDB user is allowed copy into with 
 	   a lock and only on tables without idx */
-	if (locked && sql->user_id != USER_MONETDB) {
+	if (locked && !copy_allowed(sql, 1)) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 		    "COPY INTO from .. LOCKED requires database administrator rights");
 	}
@@ -1223,11 +1231,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (files) {
 		dnode *n = files->h;
 
-		if (sql->user_id != USER_MONETDB)
+		if (!copy_allowed(sql, 1))
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO from file(s) requires database administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
-
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
@@ -1318,7 +1325,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
 
-	if (sql->user_id != USER_MONETDB) {
+	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
@@ -1412,7 +1419,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 
 	if (filename) {
 		struct stat fs;
-		if (sql->user_id != USER_MONETDB)
+		if (!copy_allowed(sql, 0)) 
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires database administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");

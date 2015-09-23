@@ -279,7 +279,7 @@ SQLexit(Client c)
 	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 8
+#define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -318,6 +318,10 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("history", &F);
 
+	typename = "bigint";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return 0;
 }
 
@@ -407,12 +411,14 @@ SQLinitClient(Client c)
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
+	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
+	MT_lock_set(&sql_contextLock, "SQLinitClient");
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -474,6 +480,7 @@ SQLinitClient(Client c)
 		str fullname;
 
 		SQLnewcatalog = 0;
+		maybeupgrade = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -520,8 +527,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		SQLupgrades(c,m);
+		if (maybeupgrade)
+			SQLupgrades(c,m);
+		maybeupgrade = 0;
 	}
+	MT_lock_unset(&sql_contextLock, "SQLinitClient");
 	fflush(stdout);
 	fflush(stderr);
 

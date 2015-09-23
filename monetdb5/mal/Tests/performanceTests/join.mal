@@ -1,5 +1,4 @@
 # what is the overhead of MAL in multiplex situations
-profiler.setFilter("*","*");
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:int);
 t0:= alarm.usec();
@@ -13,15 +12,14 @@ barrier (v,i):= language.newRange(0:int);
 	redo (v,i):= language.nextElement(1:int,10000000:int);
 exit (v,i);
 t1:= alarm.usec();
-cr := bat.reverse(c);
 t2:= alarm.usec();
 b:= algebra.select(b,nil:int,rl);
 c:= algebra.select(c,nil:int,il);
-x:= algebra.join(b,cr);
+x:= algebra.subjoin(b,c);
 t3:= alarm.usec();
 b:= algebra.select(b,nil:int,rl);
 c:= algebra.select(c,nil:int,il);
-y:= algebra.join(b,cr);
+y:= algebra.subjoin(b,c);
 t4:= alarm.usec();
 d1:= t2-t0;
 d2:= t3-t2;

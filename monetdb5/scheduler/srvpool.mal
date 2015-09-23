@@ -4,6 +4,8 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
+module scheduler;
+
 module srvpool;
 pattern scheduler.srvpool():int
 address SRVPOOLscheduler

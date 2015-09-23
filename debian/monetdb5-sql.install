@@ -10,9 +10,11 @@ debian/tmp/usr/lib/monetdb5/sql_[!adh]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_sql.so usr/lib/monetdb5
 debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
 
-# usr/lib/monetdb5/createdb/*.sql EXCEPT: *_bam.sql, *_geom.sql, *_gsl.sql
+# usr/lib/monetdb5/createdb/*.sql EXCEPT: *_bam.sql, *_geom.sql, *_gsl.sql, *_hge.sql
 debian/tmp/usr/lib/monetdb5/createdb/??_[!abgju]*.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/??_analytics.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/??_json.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/??_generator.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/??_udf.sql usr/lib/monetdb5/createdb
+debian/tmp/usr/lib/monetdb5/createdb/??_uuid.sql usr/lib/monetdb5/createdb
+debian/tmp/usr/lib/monetdb5/createdb/??_url.sql usr/lib/monetdb5/createdb

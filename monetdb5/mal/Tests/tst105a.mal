@@ -1,7 +1,7 @@
 # check classification of functions in the proper module
 
 module bbp;
-command new(h:any_1,t:any_2):bat[:any_1,:any_2]
+command new(t:any_2):bat[:oid,:any_2]
 address GDKbatnew;
 
-b:= bbp.new(:str,:int);
+b:= bbp.new(:int);

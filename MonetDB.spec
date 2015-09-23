@@ -659,6 +659,7 @@ fi
 %exclude %{_libdir}/monetdb5/sql*.mal
 %if %{bits} == 64
 %exclude %{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
@@ -995,6 +996,10 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Aug 24 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.5-20150824
+- Rebuilt.
+- BZ#3730: SAMPLE function not sampling randomly
+
 * Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
 - Rebuilt.
 - BZ#3361: constants as MAL function parameters prevent intermediate reuse

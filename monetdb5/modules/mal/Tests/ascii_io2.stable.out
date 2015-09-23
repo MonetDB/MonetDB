@@ -17,78 +17,19 @@ function user.main():void;
     namebat := bat.new(:oid,:str);
     bat.append(namebat,"tmpdocs");
     bat.append(namebat,"tmpterms");
-    sepbat := bat.new(:oid,:str);
-    bat.append(sepbat,",");
-    bat.append(sepbat,"\n");
-    typebat := bat.new(:oid,:str);
-    bat.append(typebat,"str");
-    bat.append(typebat,"str");
-    len := 20;
-    targetdir := unix.getenv("TSTTRGDIR");
-barrier correct := calc.==(targetdir,"");
-    targetdir := unix.getenv("PWD");
-exit correct;
-barrier correct := calc.!=(targetdir,"");
-    targetdir := calc.+(targetdir,"/");
-exit correct;
-    datafile := calc.+(targetdir,"ascii_io2.load");
-    io.printf("#source:%s\n",datafile);
-    idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);
-#io.print(idxbat);
-    b1:bat[:oid,:str]  := algebra.fetch(idxbat,0@0);
-#b1:bat[:oid,:str] := bbp.bind(i1); 
-    io.print(b1);
-    b2:bat[:oid,:str]  := algebra.fetch(idxbat,1@0);
-#b2:bat[:oid,:str] := bbp.bind(i2); 
-    io.print(b2);
-end main;
-#source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load
-#-----------------------------------------#
+    io.printf("#source:%s\n","namebat");
+    io.export(namebat,"namebat");
+    z := bat.new(:oid,:str);
+    io.import(z,"namebat");
+    io.print(z);
+end user.main;
+#source:namebat
+#--------------------------#
 # h	t				  # name
 # void	str				  # type
-#-----------------------------------------#
-[ 0@0,	  "IA073-000474-B024-230"	  ]
-[ 1@0,	  "                     "	  ]
-[ 2@0,	  "IA073-000474-B024-231"	  ]
-[ 3@0,	  ""				  ]
-[ 4@0,	  "IA073-000474-B024-232"	  ]
-[ 5@0,	  "  "				  ]
-[ 6@0,	  "IA073-000474-B024-233"	  ]
-[ 7@0,	  ""				  ]
-[ 8@0,	  "IA073-000474-B024-234"	  ]
-[ 9@0,	  " "				  ]
-[ 10@0,	  "IA073-000474-B024-235"	  ]
-[ 11@0,	  ""				  ]
-[ 12@0,	  "IA073-000474-B024-236"	  ]
-[ 13@0,	  ""				  ]
-[ 14@0,	  "IA073-000474-B024-237"	  ]
-[ 15@0,	  ""				  ]
-[ 16@0,	  "IA073-000474-B024-238"	  ]
-[ 17@0,	  ""				  ]
-[ 18@0,	  "IA073-000474-B024-239"	  ]
-#-------------------------#
-# h	t		  # name
-# void	str		  # type
-#-------------------------#
-[ 0@0,	  "0-request "	  ]
-[ 1@0,	  "         "	  ]
-[ 2@0,	  "1-from"	  ]
-[ 3@0,	  ""		  ]
-[ 4@0,	  "2-library"	  ]
-[ 5@0,	  "  "		  ]
-[ 6@0,	  "3-subject"	  ]
-[ 7@0,	  ""		  ]
-[ 8@0,	  "4-listing"	  ]
-[ 9@0,	  " "		  ]
-[ 10@0,	  "5-up"	  ]
-[ 11@0,	  ""		  ]
-[ 12@0,	  "6-to"	  ]
-[ 13@0,	  ""		  ]
-[ 14@0,	  "7-index"	  ]
-[ 15@0,	  ""		  ]
-[ 16@0,	  "8-up"	  ]
-[ 17@0,	  ""		  ]
-[ 18@0,	  "9-to"	  ]
+#--------------------------#
+[ 0@0,	"tmpdocs"  ]
+[ 1@0,	"tmpterms"  ]
 
 # 21:10:47 >  
 # 21:10:47 >  Done.

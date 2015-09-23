@@ -671,14 +671,14 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
-	if (type == TYPE_any || isAnyExpression(type)) {
+	if (type == TYPE_any || type == TYPE_bat || isAnyExpression(type)) {
 		char *tpe, *msg;
 		MT_lock_unset(&c->lock, "remote.put");
 		tpe = getTypeName(type);
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type)) {
+	} else if (isaBatType(type) && *(int*) value != 0) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;

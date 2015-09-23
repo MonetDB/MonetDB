@@ -36,7 +36,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 		throw(SQL, "batcalc.str_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -49,9 +49,20 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 			timestamp r;
 		} u;
 		msg = str_2time_timestamptz(&u.r, &v, digits, tz);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -77,7 +88,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "batcalc.timestamp_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -90,9 +101,20 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			timestamp r;
 		} u;
 		msg = timestamp_2time_timestamp(&u.r, v, digits);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -111,7 +133,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "batcalc.nil_2time_timestamp", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_timestamp, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
@@ -124,9 +146,20 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			timestamp r;
 		} u;
 		msg = nil_2time_timestamp(&u.r, v, digits);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -145,7 +178,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 		throw(SQL, "batcalc.str_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
@@ -158,9 +191,20 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 			daytime r;
 		} u;
 		msg = str_2time_daytimetz(&u.r, &v, digits, tz);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -186,7 +230,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "batcalc.daytime_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
@@ -199,9 +243,20 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 			daytime r;
 		} u;
 		msg = daytime_2time_daytime(&u.r, v, digits);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -220,7 +275,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "batcalc.nil_2time_daytime", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_daytime, BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
@@ -233,9 +288,20 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 			daytime r;
 		} u;
 		msg = nil_2time_daytime(&u.r, v, digits);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &u.r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &u.r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
