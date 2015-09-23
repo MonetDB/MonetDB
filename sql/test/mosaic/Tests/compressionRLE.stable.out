@@ -278,10 +278,10 @@ end user.s13_1;
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	compress # name
 % clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean # type
 % 3,	7,	1,	9,	8,	7,	2,	1,	3,	1,	1,	5,	1,	5,	5 # length
-[ "sys",	"tmp3rle",	"i",	"int",	"readonly",	"14/1401",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
-[ "sys",	"tmp3rle",	"b",	"boolean",	"readonly",	"14/1415",	86,	1,	86,	0,	0,	false,	0,	false,	false	]
-[ "sys",	"tmp3rle",	"f",	"real",	"readonly",	"14/1416",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
-[ "sys",	"tmp3rle",	"t",	"timestamp",	"readonly",	"14/1417",	86,	8,	688,	0,	0,	false,	0,	true,	false	]
+[ "sys",	"tmp3rle",	"i",	"int",	"readonly",	"13/1306",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"b",	"boolean",	"readonly",	"13/1322",	86,	1,	86,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"f",	"real",	"readonly",	"13/1323",	86,	4,	344,	0,	0,	false,	0,	false,	false	]
+[ "sys",	"tmp3rle",	"t",	"timestamp",	"readonly",	"13/1324",	86,	8,	688,	0,	0,	false,	0,	true,	false	]
 #select count(*) from tmp3RLE;
 % sys.L1 # table_name
 % L1 # name
