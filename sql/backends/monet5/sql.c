@@ -558,11 +558,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		if (c->storage_type != nc->storage_type) {
 			bat bid = 0;
 			BAT *b = store_funcs.bind_col(sql->session->tr, nc, 0);
+			size_t cnt = BATcount(b);
 			sql_delta *d;
 			char *msg;
 
 			assert(b);
-			if (BATcount(b) <10000){
+			if (cnt <10000){
 				BBPunfix(b->batCacheid);
 				continue;
 			}
@@ -588,7 +589,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			assert(nc->base.allocated == 1);
 			d = nc->data;
 			d->bid = bid;
-			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
+			d->cnt = cnt;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
