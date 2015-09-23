@@ -2125,9 +2125,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
 				if((arraySecondVar = findVariable(mb, nme)) >=0) { 
-        			setVarType(mb, getArg(q, 0), TYPE_ptr);
+        			if(isDimension(s->op1))
+        				setVarType(mb, getArg(q, 0), TYPE_ptr);
+					else 
+					    setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, t->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
-				    q = pushArgument(mb, q, arraySecondVar);
+					q = pushArgument(mb, q, arraySecondVar);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 				}
 
@@ -2159,6 +2162,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			node *n;
 
 			int arrayRelated = 0;
+			int dimensionsInvolved =0;
 
 			/* dump operands */
 			if (_dumpstmt(sql, mb, s->op1) < 0)
@@ -2172,7 +2176,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			//check if any of the arguments is array related
 			for(n=s->op1->op4.lval->h ; n ; n=n->next) {
 				stmt *op = n->data;
-				arrayRelated += isDimension(op);
+				//check if each operator has a second argument
+				snprintf(nme, SMALLBUFSIZ, "Y_%d", op->nr);
+                arrayRelated = (findVariable(mb, nme) >= 0);
+				dimensionsInvolved += isDimension(op);
 			}
 
 			if (s->nrcols && !arrayRelated) {
@@ -2230,22 +2237,31 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if((arraySecondVar = findVariable(mb, nme)) >=0)
 					q = pushArgument(mb, q, arraySecondVar);
 			}
-			if(arrayRelated == 1) { 
-				//push the type the result should be
-				sql_subtype *res = f->res->h->data;
-				q = pushInt(mb, q, res->type->localtype);
-				setVarType(mb, getArg(q, 0), TYPE_ptr);
-                setVarUDFtype(mb, getArg(q, 0));
-				//push one more return argument
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-			} else if(arrayRelated > 1) {
-				//the second argument is a bat with the correct type
-				sql_subtype *res = f->res->h->data;
-				setVarType(mb, getArg(q, 0), TYPE_ptr);
-                setVarUDFtype(mb, getArg(q, 0));
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, res->type->localtype)));
+			if(arrayRelated) {
+				if(dimensionsInvolved == 1) { 
+					//push the type the result should be
+					sql_subtype *res = f->res->h->data;
+					q = pushInt(mb, q, res->type->localtype);
+					setVarType(mb, getArg(q, 0), TYPE_ptr);
+                	setVarUDFtype(mb, getArg(q, 0));
+					//push one more return argument
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+				} else if(dimensionsInvolved > 1) {
+					//the second argument is a bat with the correct type
+					sql_subtype *res = f->res->h->data;
+					setVarType(mb, getArg(q, 0), TYPE_ptr);
+                	setVarUDFtype(mb, getArg(q, 0));
+					q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, res->type->localtype)));
+				} else {
+					//the first argument is a BAT as was the first argument (is the nonDimensional values of the array)
+					sql_subtype *res = f->res->h->data;
+					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
+                	setVarUDFtype(mb, getArg(q, 0));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+				}
 			}
 			arrayRelated = 0;
+			dimensionsInvolved =0 ;
 
 			if (q == NULL)
 				return -1;

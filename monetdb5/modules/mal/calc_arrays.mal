@@ -25,8 +25,12 @@
 #comment "Unary dimension values - 1";
 
 #+
+#When adding two dimensions we get result similar to dimsCands (ptr) and oisdCands (bat)
 pattern calc.+(dim1:ptr, dims1:ptr, dim2:ptr, dims2:ptr) (:ptr, :bat[:oid,:lng]) address CMDdimensionsADDsingnal
 comment "Return a bat with the sum of the two dimensions";
+#when adding a constant to the nonDimensional column we get result similar to vals (bat), array (ptr)
+pattern calc.+(v:lng, vals:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionADDsingnal_lng
+comment "Add v to all values in the BAT";
 #pattern +(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
 #comment "Return V + dimension values, guarantee no overflow by returning larger type";
 #pattern +(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
@@ -67,6 +71,9 @@ pattern calc.*(v:lng, dim:ptr, dims:ptr, tp:int) (:ptr, :ptr) address CMDdimensi
 comment "Return V * dimension values, guarantee no overflow by returning larger type";
 pattern calc.*(v:flt, dim:ptr, dims:ptr, tp:int) (:ptr, :ptr) address CMDdimensionMULsignal
 comment "Return V * dimension values, guarantee no overflow by returning larger type";
+
+pattern calc.*(v:lng, vals:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionMULsingnal_lng
+comment "Return a bat with the sum of the two dimensions";
 
 ##/
 #pattern /(dim:ptr, dims:ptr, v:bte) (:ptr, :ptr) address CMDdimensionDIVsignal
@@ -319,6 +326,10 @@ command batcalc.oid(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT_
 comment "Cast dimension values to oid";
 command batcalc.str(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT_str
 comment "Cast dimension values to str";
+
+pattern batcalc.lng(:bat[:oid,:int], :ptr) (:bat[:oid,:lng], :ptr) 
+address CMDnonDimensionCONVERT_lng
+comment "Cast from int to long";
 
 #pattern ptr(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERTptr
 #comment "Cast dimension values to ptr";
