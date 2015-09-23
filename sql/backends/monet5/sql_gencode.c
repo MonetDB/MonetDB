@@ -942,20 +942,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			(void) pushInt(mb, q, 1);
 		} break;
-#if 0
-		case st_materialise: { 
-			int l;
-			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
-				return -1;
-
-			q = newStmt1(mb, sqlRef, materialiseDimRef);
-			q = pushArgument(mb, q, l);
-			if (q == NULL)
-				return -1;
-			s->nr = getDestVar(q);
-			return s->nr;
-		}
-#endif
 		case st_var:{
 			if (s->op1) {
 				if (VAR_GLOBAL(s->flag)) {	/* globals */
@@ -1359,95 +1345,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			renameVariable(mb, getArg(q, 2), "r2_%d", s->nr);
 		} break;
-		case st_mbrselect:
-#if 0
-		{
-			int l, r=-1, uval=-1, sub=-1;
-			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
-				return -1;
-	
-			if(!s->op3)
-				showException(GDKout, SQL, "sql", "SQL2MAL: error mbrsubselect without candidates\n");
-
-			snprintf(nme, SMALLBUFSIZ, "Y_%d", l);
-			uval = findVariable(mb, nme);
-			assert(uval >=0);
-			
-			q = newStmt2(mb, "algebra", "mbrsubselect");
-			q = pushArgument(mb, q, l); //all the dimensions
-			q = pushArgument(mb, q, uval); //the current dimension
-
-			if ((sub = _dumpstmt(sql, mb, s->op3)) < 0)
-				return -1;
-
-			if(s->op3->type == st_uselect || s->op3->type == st_tunion)
-				q = pushArgument(mb, q, sub);
-			else {
-				int cand = find_uselect(s->op3);
-				if(cand <0)
-					return -1;
-				q = pushArgument(mb, q, cand);
-				q = pushArgument(mb, q, sub);
-			}
-
-			if(s->op2) {
-				if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
-					return -1;
-
-				switch (s->flag) {
-					case cmp_equal:{
-						q = pushArgument(mb, q, r);
-						q = pushArgument(mb, q, r);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, FALSE);
-					
-						if (q == NULL)
-							return -1;
-						break;
-					}
-					case cmp_notequal:{
-						q = pushArgument(mb, q, r);
-						q = pushArgument(mb, q, r);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, TRUE);
-						q = pushBit(mb, q, TRUE);
-						if (q == NULL)
-							return -1;
-						break;
-					}
-					case cmp_lt:
-						q = pushArgument(mb, q, r);
-						q = pushStr(mb, q, "<");
-						if (q == NULL)
-							return -1;
-						break;
-					case cmp_lte:
-						q = pushArgument(mb, q, r);
-						q = pushStr(mb, q, "<=");
-						if (q == NULL)
-							return -1;
-						break;
-					case cmp_gt:
-						q = pushArgument(mb, q, r);
-						q = pushStr(mb, q, ">");
-						if (q == NULL)
-							return -1;
-						break;
-					case cmp_gte:
-						q = pushArgument(mb, q, r);
-						q = pushStr(mb, q, ">=");
-						if (q == NULL)
-							return -1;
-						break;
-					default:
-						showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
-				}
-			}
-			s->nr = getDestVar(q);
-		}
-#endif
-		break;
 		case st_uselect:{
 			bit need_not = FALSE;
 			int l, r, sub, anti;
@@ -2253,6 +2150,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
             	renameVariable(mb, getArg(q, 1), "Y_%d", s->nr);
 			break;
 		}
+		case st_mbrselect: break;
 		case st_Nop:{
 			char *mod, *fimp;
 			sql_subtype *tpe = NULL;
