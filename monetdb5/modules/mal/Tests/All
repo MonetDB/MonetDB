@@ -76,8 +76,8 @@ mosaic_dictionary
 mosaic_zone
 mosaic_delta
 mosaic_linear
-mosaic_prefix
 mosaic_frame
+mosaic_prefix
 
 mosaic_literal_double
 
@@ -88,6 +88,7 @@ mosaic_zone_subselect
 mosaic_delta_subselect
 mosaic_linear_subselect
 mosaic_prefix_subselect
+mosaic_frame_subselect
 mosaic_mix_subselect
 
 mosaic_literal_thetasubselect
@@ -97,6 +98,7 @@ mosaic_zone_thetasubselect
 mosaic_delta_thetasubselect
 mosaic_linear_thetasubselect
 mosaic_prefix_thetasubselect
+mosaic_frame_thetasubselect
 mosaic_mix_thetasubselect
 
 mosaic_literal_joins
@@ -106,6 +108,7 @@ mosaic_zone_joins
 mosaic_delta_joins
 mosaic_linear_joins
 mosaic_prefix_joins
+mosaic_frame_joins
 mosaic_mix_joins
 
 # might show different output if openssl is compiled without full sha2
