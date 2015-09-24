@@ -7,6 +7,60 @@
 
 #include "calc_arrays.h"
 
+static int
+calctype(int tp1, int tp2)
+{
+    int tp1s = ATOMbasetype(tp1);
+    int tp2s = ATOMbasetype(tp2);
+    if (tp1s == TYPE_str && tp2s == TYPE_str)
+        return TYPE_str;
+    if (tp1s < TYPE_flt && tp2s < TYPE_flt) {
+        if (tp1s > tp2s)
+            return tp1;
+        if (tp1s < tp2s)
+            return tp2; 
+        return MAX(tp1, tp2);
+    }
+    if (tp1s == TYPE_dbl || tp2s == TYPE_dbl)
+        return TYPE_dbl; 
+    if (tp1s == TYPE_flt || tp2s == TYPE_flt)
+        return TYPE_flt;
+#ifdef HAVE_HGE 
+    if (tp1s == TYPE_hge || tp2s == TYPE_hge)
+        return TYPE_hge;
+#endif
+    return TYPE_lng;
+}
+
+static int
+calctypeenlarge(int tp1, int tp2)
+{
+    tp1 = calctype(tp1, tp2);
+    switch (tp1) {
+    case TYPE_bte:
+        return TYPE_sht;
+    case TYPE_sht:
+        return TYPE_int;
+    case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+    case TYPE_wrd:
+#endif
+        return TYPE_lng;
+#ifdef HAVE_HGE
+#if SIZEOF_WRD == SIZEOF_LNG
+    case TYPE_wrd:
+#endif
+    case TYPE_lng:
+        return TYPE_hge;
+#endif
+    case TYPE_flt:
+        return TYPE_dbl;
+    default:
+        /* we shouldn't get here */
+        return tp1;
+    }
+}
+
 static BAT* dimension2BAT(const gdk_analytic_dimension *dim) {
 	BAT *dimBAT = BATnew(TYPE_void, dim->type, 3, TRANSIENT);
 
@@ -215,6 +269,93 @@ str CMDdimensionCONVERT_str(ptr *dimRes, ptr *dimsRes, const ptr *dim, const ptr
  
 	return CMDdimensionCONVERT((gdk_analytic_dimension**)dimRes, (gdk_analytic_dimension*)*dim, TYPE_str);
 }*/
+
+static str CMDnonDimensionalCONVERT(MalStkPtr stk, InstrPtr pci, int tp, int abort_on_error) {
+    bat *bid;
+    BAT *b, *bn, *s = NULL;
+	ptr *array_out = getArgReference_ptr(stk, pci, 1);
+	ptr *array_in = getArgReference_ptr(stk, pci, 3);
+
+    bid = getArgReference_bat(stk, pci, 2);
+    if ((b = BATdescriptor(*bid)) == NULL)
+        throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+    assert(BAThdense(b));
+
+    bn = BATconvert(b, s, tp, abort_on_error);
+    BBPunfix(b->batCacheid);
+    if (bn == NULL) 
+        return createException(MAL, "batcalc.%s", ATOMname(tp), OPERATION_FAILED);
+    
+    bid = getArgReference_bat(stk, pci, 0);
+    BBPkeepref(*bid = bn->batCacheid);
+	*array_out = arrayCopy((gdk_array*)*array_in);
+    
+	return MAL_SUCCEED;
+}
+
+
+str CMDnonDimensionalCONVERTsignal_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_bit, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_bte, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_sht, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_int, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_wrd, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_lng, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_flt, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_dbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_dbl, 1);
+}
+
+str CMDnonDimensionalCONVERTsignal_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+    (void) mb;
+
+    return CMDnonDimensionalCONVERT(stk, pci, TYPE_oid, 1);
+}
 
 
 str CMDdimensionMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -2218,7 +2359,7 @@ str CMDdimensionMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 str CMDscalarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     BAT *s=NULL;
 
-	int resType;
+	int resType, valType;
 
 	/*get the arguments */
 	bat *result = getArgReference_bat(stk, pci, 0);
@@ -2234,9 +2375,9 @@ str CMDscalarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	
 	/* get the types of the input and output arguments */
 	resType = getColumnType(getArgType(mb, pci, 0));
-//	int valType = stk->stk[getArg(pci, 1)].vtype;
-//	if (resType == TYPE_any)
-//        resType = calctype(valType, BATttype(valsBAT));
+	valType = stk->stk[getArg(pci, 1)].vtype;
+	if (resType == TYPE_any)
+        resType = calctype(valType, BATttype(valsBAT));
 
     resBAT = BATcalccstmul(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
 
@@ -2258,7 +2399,7 @@ str CMDscalarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 str CMDscalarMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *s=NULL;
 
-	int resType;
+	int resType, valType;
 
 	/*get the arguments */
 	bat *result = getArgReference_bat(stk, pci, 0);
@@ -2274,11 +2415,90 @@ str CMDscalarMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	/* get the types of the input and output arguments */
 	resType = getColumnType(getArgType(mb, pci, 0));
-//	int valType = stk->stk[getArg(pci, 1)].vtype;
-//	if (resType == TYPE_any)
-//        resType = calctypeenlarge(valType, BATttype(valsBAT));
+	valType = stk->stk[getArg(pci, 1)].vtype;
+	if (resType == TYPE_any)
+        resType = calctypeenlarge(valType, BATttype(valsBAT));
 
     resBAT = BATcalccstmul(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
+
+	if (resBAT == NULL) {
+        BBPunfix(valsBAT->batCacheid);
+        return createException(MAL, "calc.*", OPERATION_FAILED);
+    }
+
+
+	(void) cntxt;
+	BBPunfix(valsBAT->batCacheid);
+	BBPkeepref(*result = resBAT->batCacheid);
+	*array_out = arrayCopy((gdk_array*)*array_in);
+
+	return MAL_SUCCEED;
+}
+
+str CMDscalarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    BAT *s=NULL;
+
+	int resType, valType;
+
+	/*get the arguments */
+	bat *result = getArgReference_bat(stk, pci, 0);
+	BAT *resBAT = NULL;
+	
+	ptr *array_out = getArgReference(stk, pci, 1);
+	ptr *array_in = getArgReference(stk, pci, 4);
+	
+	bat *vals = getArgReference_bat(stk, pci, 3);
+	BAT *valsBAT = BATdescriptor(*vals);
+	if(!valsBAT)
+		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
+	
+	/* get the types of the input and output arguments */
+	resType = getColumnType(getArgType(mb, pci, 0));
+	valType = stk->stk[getArg(pci, 1)].vtype;
+	if (resType == TYPE_any)
+        resType = calctype(valType, BATttype(valsBAT));
+
+    resBAT = BATcalccstadd(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
+
+	if (resBAT == NULL) {
+        BBPunfix(valsBAT->batCacheid);
+        return createException(MAL, "calc.*", OPERATION_FAILED);
+    }
+
+
+	(void) cntxt;
+	BBPunfix(valsBAT->batCacheid);
+	BBPkeepref(*result = resBAT->batCacheid);
+	*array_out = arrayCopy((gdk_array*)*array_in);
+
+	return MAL_SUCCEED;
+}
+
+
+str CMDscalarADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	BAT *s=NULL;
+
+	int resType, valType;
+
+	/*get the arguments */
+	bat *result = getArgReference_bat(stk, pci, 0);
+	BAT *resBAT = NULL;
+	
+	ptr *array_out = getArgReference(stk, pci, 1);
+	ptr *array_in = getArgReference(stk, pci, 4);
+	
+	bat *vals = getArgReference_bat(stk, pci, 3);
+	BAT *valsBAT = BATdescriptor(*vals);
+	if(!valsBAT)
+		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
+	
+	/* get the types of the input and output arguments */
+	resType = getColumnType(getArgType(mb, pci, 0));
+	valType = stk->stk[getArg(pci, 1)].vtype;
+	if (resType == TYPE_any)
+        resType = calctypeenlarge(valType, BATttype(valsBAT));
+
+    resBAT = BATcalccstadd(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
 
 	if (resBAT == NULL) {
         BBPunfix(valsBAT->batCacheid);

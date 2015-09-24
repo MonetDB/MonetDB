@@ -31,19 +31,149 @@ comment "Return a bat with the sum of the two dimensions";
 #when adding a constant to the nonDimensional column we get result similar to vals (bat), array (ptr)
 pattern calc.+(v:lng, vals:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionADDsingnal_lng
 comment "Add v to all values in the BAT";
-#pattern +(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension values, guarantee no overflow by returning larger type";
-#pattern +(v:sht, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension vallues, guarantee no overflow by returning larger type";
-#pattern +(v:int, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension values, guarantee no overflow by returning larger type";
-#pattern +(v:wrd, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension values, guarantee no overflow by returning larger type";
-#pattern +(v:lng, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension values, guarantee no overflow by returning larger type";
-#pattern +(v:flt, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionADDsignal
-#comment "Return V + dimension values, guarantee no overflow by returning larger type";
-#
+
+pattern calc.+(v:bte,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:bte], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:bte,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:sht,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:int,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:int], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:wrd,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:lng,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:int], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:flt,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:int], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+pattern calc.+(v:dbl,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDsignal
+comment "Return V + B, signal error on overflow";
+
+pattern calc.+(v:bte,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:bte,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:bte,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:bte,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:sht,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:sht,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:sht,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:sht,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:int,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:int,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:int,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:int,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:lng,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:flt,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:flt,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:flt,b:bat[:oid,:int], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:flt,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+pattern calc.+(v:flt,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
+comment "Return V + B, guarantee no overflow by returning larger type";
+
+
+
+
+
+
+
 ##-
 #pattern -(v:bte, dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionSUBsignal
 #comment "Return V - dimension values, guarantee no overflow by returning larger type";
@@ -464,9 +594,195 @@ comment "Cast dimension values to oid";
 command batcalc.str(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERT_str
 comment "Cast dimension values to str";
 
-pattern batcalc.lng(:bat[:oid,:int], :ptr) (:bat[:oid,:lng], :ptr) 
-address CMDnonDimensionCONVERT_lng
-comment "Cast from int to long";
+
+pattern batcalc.bit(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from bit to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from bte to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from sht to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:int], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from int to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from wrd to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from lng to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from flt to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from dbl to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from oid to bit, signal error on overflow";
+pattern batcalc.bit(b:bat[:oid,:str], array:ptr) (:bat[:oid,:bit], :ptr) address CMDnonDimensionalCONVERTsignal_bit
+comment "cast from str to bit, signal error on overflow";
+
+pattern batcalc.bte(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from bit to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from bte to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from sht to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:int], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from int to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from wrd to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from lng to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from flt to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from dbl to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from oid to bte, signal error on overflow";
+pattern batcalc.bte(b:bat[:oid,:str], array:ptr) (:bat[:oid,:bte], :ptr) address CMDnonDimensionalCONVERTsignal_bte
+comment "cast from str to bte, signal error on overflow";
+
+pattern batcalc.sht(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from bit to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from bte to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from sht to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:int], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from int to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from wrd to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from lng to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from flt to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from dbl to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from oid to sht, signal error on overflow";
+pattern batcalc.sht(b:bat[:oid,:str], array:ptr) (:bat[:oid,:sht], :ptr) address CMDnonDimensionalCONVERTsignal_sht
+comment "cast from str to sht, signal error on overflow";
+
+pattern batcalc.int(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from bit to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from bte to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from sht to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from int to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from wrd to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from lng to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from flt to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from dbl to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from oid to int, signal error on overflow";
+pattern batcalc.int(b:bat[:oid,:str], array:ptr) (:bat[:oid,:int], :ptr) address CMDnonDimensionalCONVERTsignal_int
+comment "cast from str to int, signal error on overflow";
+
+pattern batcalc.wrd(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from bit to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from bte to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from sht to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:int], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from int to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from wrd to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from lng to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from flt to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from dbl to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from oid to wrd, signal error on overflow";
+pattern batcalc.wrd(b:bat[:oid,:str], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDnonDimensionalCONVERTsignal_wrd
+comment "cast from str to wrd, signal error on overflow";
+
+pattern batcalc.lng(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from bit to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from bte to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from sht to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from int to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from wrd to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from lng to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from flt to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from dbl to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from oid to lng, signal error on overflow";
+pattern batcalc.lng(b:bat[:oid,:str], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionalCONVERTsignal_lng
+comment "cast from str to lng, signal error on overflow";
+
+pattern batcalc.flt(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from bit to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from bte to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from sht to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:int], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from int to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from wrd to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from lng to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from flt to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from dbl to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from oid to flt, signal error on overflow";
+pattern batcalc.flt(b:bat[:oid,:str], array:ptr) (:bat[:oid,:flt], :ptr) address CMDnonDimensionalCONVERTsignal_flt
+comment "cast from str to flt, signal error on overflow";
+
+pattern batcalc.dbl(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from bit to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from bte to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from sht to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:int], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from int to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from wrd to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from lng to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from flt to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from dbl to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from oid to dbl, signal error on overflow";
+pattern batcalc.dbl(b:bat[:oid,:str], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDnonDimensionalCONVERTsignal_dbl
+comment "cast from str to dbl, signal error on overflow";
+
+pattern batcalc.oid(b:bat[:oid,:bit], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from bit to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:bte], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from bte to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:sht], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from sht to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:int], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from int to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from wrd to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:lng], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from lng to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:flt], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from flt to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from dbl to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:oid], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from oid to oid, signal error on overflow";
+pattern batcalc.oid(b:bat[:oid,:str], array:ptr) (:bat[:oid,:oid], :ptr) address CMDnonDimensionalCONVERTsignal_oid
+comment "cast from str to oid, signal error on overflow";
 
 #pattern ptr(dim:ptr, dims:ptr) (:ptr, :ptr) address CMDdimensionCONVERTptr
 #comment "Cast dimension values to ptr";
