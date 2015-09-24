@@ -72,8 +72,145 @@ comment "Return V * dimension values, guarantee no overflow by returning larger 
 pattern calc.*(v:flt, dim:ptr, dims:ptr, tp:int) (:ptr, :ptr) address CMDdimensionMULsignal
 comment "Return V * dimension values, guarantee no overflow by returning larger type";
 
-pattern calc.*(v:lng, vals:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDnonDimensionMULsingnal_lng
-comment "Return a bat with the sum of the two dimensions";
+pattern calc.*(v:bte,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:bte,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:bte,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:bte,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:sht,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:sht,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:sht,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:sht,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:int,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:int,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:int,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:int,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:lng,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:flt,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:flt,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:flt,b:bat[:oid,:int], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:flt,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+pattern calc.*(v:flt,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULenlarge
+comment "Return V * B, guarantee no overflow by returning larger type";
+
+pattern calc.*(v:bte,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:bte], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:bte,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:sht], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:sht,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:int], array:ptr) (:bat[:oid,:int], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:int,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:int], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:wrd], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:wrd,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:int], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:lng], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:lng,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:int], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:flt], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:flt,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:bte], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:sht], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:int], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:wrd], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:lng], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+pattern calc.*(v:dbl,b:bat[:oid,:dbl], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarMULsignal
+comment "Return V * B, signal error on overflow";
+
+
+
+
 
 ##/
 #pattern /(dim:ptr, dims:ptr, v:bte) (:ptr, :ptr) address CMDdimensionDIVsignal

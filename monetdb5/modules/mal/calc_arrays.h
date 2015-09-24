@@ -15,6 +15,10 @@ str CMDdimensionCONVERT_oid(ptr *dimRes, ptr *dimsRes, const ptr *dim, const ptr
 //str CMDdimensionCONVERT_str(ptr *dimRes, ptr *dimsRes, const ptr *dim, const ptr *dims);
 
 str CMDdimensionMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDscalarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDscalarMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+
 str CMDdimensionsADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDdimensionsEQ(ptr* dimsRes, bat* batRes, const ptr* dim1, const ptr* dims1, const ptr* dim2, const ptr* dims2);
 

@@ -2215,6 +2215,85 @@ str CMDdimensionMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return MAL_SUCCEED;
 }
 
+str CMDscalarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    BAT *s=NULL;
+
+	int resType;
+
+	/*get the arguments */
+	bat *result = getArgReference_bat(stk, pci, 0);
+	BAT *resBAT = NULL;
+	
+	ptr *array_out = getArgReference(stk, pci, 1);
+	ptr *array_in = getArgReference(stk, pci, 4);
+	
+	bat *vals = getArgReference_bat(stk, pci, 3);
+	BAT *valsBAT = BATdescriptor(*vals);
+	if(!valsBAT)
+		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
+	
+	/* get the types of the input and output arguments */
+	resType = getColumnType(getArgType(mb, pci, 0));
+//	int valType = stk->stk[getArg(pci, 1)].vtype;
+//	if (resType == TYPE_any)
+//        resType = calctype(valType, BATttype(valsBAT));
+
+    resBAT = BATcalccstmul(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
+
+	if (resBAT == NULL) {
+        BBPunfix(valsBAT->batCacheid);
+        return createException(MAL, "calc.*", OPERATION_FAILED);
+    }
+
+
+	(void) cntxt;
+	BBPunfix(valsBAT->batCacheid);
+	BBPkeepref(*result = resBAT->batCacheid);
+	*array_out = arrayCopy((gdk_array*)*array_in);
+
+	return MAL_SUCCEED;
+}
+
+
+str CMDscalarMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	BAT *s=NULL;
+
+	int resType;
+
+	/*get the arguments */
+	bat *result = getArgReference_bat(stk, pci, 0);
+	BAT *resBAT = NULL;
+	
+	ptr *array_out = getArgReference(stk, pci, 1);
+	ptr *array_in = getArgReference(stk, pci, 4);
+	
+	bat *vals = getArgReference_bat(stk, pci, 3);
+	BAT *valsBAT = BATdescriptor(*vals);
+	if(!valsBAT)
+		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
+	
+	/* get the types of the input and output arguments */
+	resType = getColumnType(getArgType(mb, pci, 0));
+//	int valType = stk->stk[getArg(pci, 1)].vtype;
+//	if (resType == TYPE_any)
+//        resType = calctypeenlarge(valType, BATttype(valsBAT));
+
+    resBAT = BATcalccstmul(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
+
+	if (resBAT == NULL) {
+        BBPunfix(valsBAT->batCacheid);
+        return createException(MAL, "calc.*", OPERATION_FAILED);
+    }
+
+
+	(void) cntxt;
+	BBPunfix(valsBAT->batCacheid);
+	BBPkeepref(*result = resBAT->batCacheid);
+	*array_out = arrayCopy((gdk_array*)*array_in);
+
+	return MAL_SUCCEED;
+}
+
 #define checkEqual(TPE1, dimLeft, TPE2, dimRight, vals) \
 do { \
 	BUN i=0; \
