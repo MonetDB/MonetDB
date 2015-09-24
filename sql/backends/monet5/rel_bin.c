@@ -1729,10 +1729,71 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 	stmt *ld = NULL, *rd = NULL;
 	int need_left = (rel->flag == LEFT_JOIN);
 
-	if (rel->l) /* first construct the left sub relation */
+	stmt *leftArray = NULL, *rightArray = NULL;
+	if (rel->l) { /* first construct the left sub relation */
+		sql_rel *rtmp;
 		left = subrel_bin(sql, rel->l, refs);
-	if (rel->r) /* first construct the right sub relation */
+		
+		rtmp = (sql_rel*)rel->l;
+		if(rtmp->op == op_basetable) {
+			sql_table *t = (sql_table*)rtmp->l;
+			if(isArray(t))
+				leftArray = rel2bin_basetable(sql, rel->l);
+		}
+	}
+
+	if (rel->r) {/* first construct the right sub relation */
+		sql_rel *rtmp;
 		right = subrel_bin(sql, rel->r, refs);
+		
+		rtmp = (sql_rel*)rel->r;
+		if(rtmp->op == op_basetable) {
+			sql_table *t = (sql_table*)rtmp->l;
+			if(isArray(t))
+				rightArray = rel2bin_basetable(sql, rel->r);
+		}
+	}
+
+	if(leftArray && rightArray) {
+		l = sa_list(sql->sa);
+
+		for( n = left->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = c; //stmt_project(sql->sa, jl, column(sql->sa, c) );
+
+			/* as append isn't save, we append to a new copy */
+			if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+				s = Column(sql->sa, s);
+			if (rel->op == op_left || rel->op == op_full)
+				s = stmt_append(sql->sa, s, stmt_project(sql->sa, ld, c));
+			if (rel->op == op_right || rel->op == op_full) 
+				s = stmt_append(sql->sa, s, stmt_const(sql->sa, rd, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(l, s);
+		}
+		for( n = right->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = c; //stmt_project(sql->sa, jr, column(sql->sa, c) );
+
+			/* as append isn't save, we append to a new copy */
+			if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+				s = Column(sql->sa, s);
+			if (rel->op == op_left || rel->op == op_full) 
+				s = stmt_append(sql->sa, s, stmt_const(sql->sa, ld, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+			if (rel->op == op_right || rel->op == op_full) 
+				s = stmt_append(sql->sa, s, stmt_project(sql->sa, rd, c));
+
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(l, s);
+		}
+		return stmt_list(sql->sa, l);
+	}
+
 	if (!left || !right) 
 		return NULL;	
 	left = row2cols(sql, left);
