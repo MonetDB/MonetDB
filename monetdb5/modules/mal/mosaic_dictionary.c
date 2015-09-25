@@ -65,7 +65,7 @@ MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
 		snprintf(buf,len,"%.40g",  (dbl) ((hge*) val)[i]); break;
 #endif
 	case  TYPE_wrd:
-		snprintf(buf,len,SZFMT,  ((wrd*) val)[i]); break;
+		snprintf(buf,len,LLFMT,  (lng)((wrd*) val)[i]); break;
 	case TYPE_flt:
 		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
 	case TYPE_dbl:
