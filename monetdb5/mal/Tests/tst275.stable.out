@@ -55,8 +55,8 @@ end user.main;
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_541"  ]
-[ 1@0,	"batCacheid",	"353"  ]
+[ 0@0,	"batId",	"tmp_434"  ]
+[ 1@0,	"batCacheid",	"284"  ]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -104,9 +104,9 @@ end user.main;
 [ 46@0,	"batFirst",	"0"  ]
 [ 47@0,	"htop",	"0"  ]
 [ 48@0,	"ttop",	"0"  ]
-[ 49@0,	"batStamp",	"165"  ]
-[ 50@0,	"lastUsed",	"1130"  ]
-[ 51@0,	"curStamp",	"167"  ]
+[ 49@0,	"batStamp",	"443"  ]
+[ 50@0,	"lastUsed",	"44218"  ]
+[ 51@0,	"curStamp",	"445"  ]
 [ 52@0,	"batCopiedtodisk",	"0"  ]
 [ 53@0,	"batDirtydesc",	"dirty"  ]
 [ 54@0,	"H->heap.dirty",	"clean"  ]
@@ -120,7 +120,7 @@ end user.main;
 [ 62@0,	"tail.size",	"1024"  ]
 [ 63@0,	"tail.storage",	"malloced"  ]
 [ 64@0,	"tail.newstorage",	"malloced"  ]
-[ 65@0,	"tail.filename",	"05/541.tail"  ]
+[ 65@0,	"tail.filename",	"04/434.tail"  ]
 [ 66@0,	"H->vheap->dirty",	"clean"  ]
 [ 67@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#
