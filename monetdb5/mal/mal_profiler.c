@@ -45,6 +45,9 @@ static struct{
 	double load;
 } corestat[256];
 
+/* the heartbeat process produces a ping event once every X milliseconds */
+static MT_Lock hbLock MT_LOCK_INITIALIZER("hbLock");
+
 /*
  * Profiler trace cache
  * The trace information for a limited collection of queries is retained in 
@@ -1015,11 +1018,6 @@ getDiskSpace(void)
 		}
 	return size;
 }
-
-/* the heartbeat process produces a ping event once every X milliseconds */
-#ifdef ATOMIC_LOCK
-static MT_Lock hbLock MT_LOCK_INITIALIZER("hbLock");
-#endif
 
 //
 // Retrieve the io statistics for the complete process group

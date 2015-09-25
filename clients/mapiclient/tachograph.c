@@ -67,7 +67,6 @@
 static stream *conn = NULL;
 static char hostname[128];
 static char *dbname;
-static int delay = 0; // ms
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static int capturing=0;
@@ -107,7 +106,6 @@ usageTachograph(void)
     fprintf(stderr, "  -u | --user=<user>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
-    fprintf(stderr, "  -w | --wait=<delay time> in milliseconds\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }
@@ -402,7 +400,6 @@ main(int argc, char **argv)
 		{ "help", 0, 0, '?' },
 		{ "output", 1, 0, 'o' },
 		{ "queries", 1, 0, 'q' },
-		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
 	};
@@ -412,14 +409,11 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:q:w:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:q:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
-		case 'w':
-			delay = atoi(optarg ? optarg : "5000");
-			break;
 		case 'D':
 			debug = 1;
 			break;
