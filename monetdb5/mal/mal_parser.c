@@ -685,7 +685,6 @@ parseTypeId(Client cntxt, int defaultType)
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
 			ht = simpleTypeId(cntxt);
-			//kh = typeAlias(cntxt, ht);
 			if( ht != TYPE_oid){
 				parseError(cntxt, "':oid' expected\n");
 				return i;
@@ -727,10 +726,12 @@ parseTypeId(Client cntxt, int defaultType)
 		return TYPE_bat;
 	}
 	// Headless definition of a column
-	if (s[0] == ':' && s[1] == 'c' && s[2] == 'o' && s[3] == 'l' && !idCharacter[(int) s[4]]) {
+	if (s[0] == ':' && s[1] == 'c' && s[2] == 'o' && s[3] == 'l' && s[4] == '[') {
 		/* parse default for :col[:any] */
-		advance(cntxt, 4);
-		return newColumnType(TYPE_any);
+		advance(cntxt, 5);
+		skipSpace(cntxt);
+		tt = simpleTypeId(cntxt);
+		return newColumnType(tt);
 	}
 	if (currChar(cntxt) == ':') {
 		ht = simpleTypeId(cntxt);

@@ -1,8 +1,8 @@
 set optimizer='minimal_pipe';
 
-select htype, ttype, count from bbp() as bbp 
+select ttype, count from bbp() as bbp 
 where kind like 'pers%'
-order by htype, ttype, count;
+order by ttype, count;
 
 select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';

@@ -2149,7 +2149,7 @@ setwritable(BAT *b)
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
-			bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
+			bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
 		} else {
@@ -2340,7 +2340,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			i = u_id;
 		}
 		if (isVIEW(res)) {
-			BAT *n = BATcopy(res, res->htype, res->ttype, TRUE, TRANSIENT);
+			BAT *n = BATcopy(res, TYPE_void, res->ttype, TRUE, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;
 			if (res == NULL) {

@@ -20,14 +20,14 @@ function user.main():void;
 #causing a sigfault  
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
-    e := nil:BAT;
+    e := nil:bat[:oid,:int];
     m:str := remote.put(conn,e);
     io.print(m);
-    v:BAT := remote.get(conn,m);
+    v:bat[:oid,:int] := remote.get(conn,m);
     io.print(v);
     mdb.var();
 end user.main;
-!MALException:remote.put:unsupported type: BAT
+
 
 
 
