@@ -2435,47 +2435,7 @@ str CMDscalarMULenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str CMDscalarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    BAT *s=NULL;
-
-	int resType, valType;
-
-	/*get the arguments */
-	bat *result = getArgReference_bat(stk, pci, 0);
-	BAT *resBAT = NULL;
-	
-	ptr *array_out = getArgReference(stk, pci, 1);
-	ptr *array_in = getArgReference(stk, pci, 4);
-	
-	bat *vals = getArgReference_bat(stk, pci, 3);
-	BAT *valsBAT = BATdescriptor(*vals);
-	if(!valsBAT)
-		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
-	
-	/* get the types of the input and output arguments */
-	resType = getColumnType(getArgType(mb, pci, 0));
-	valType = stk->stk[getArg(pci, 1)].vtype;
-	if (resType == TYPE_any)
-        resType = calctype(valType, BATttype(valsBAT));
-
-    resBAT = BATcalccstadd(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
-
-	if (resBAT == NULL) {
-        BBPunfix(valsBAT->batCacheid);
-        return createException(MAL, "calc.*", OPERATION_FAILED);
-    }
-
-
-	(void) cntxt;
-	BBPunfix(valsBAT->batCacheid);
-	BBPkeepref(*result = resBAT->batCacheid);
-	*array_out = arrayCopy((gdk_array*)*array_in);
-
-	return MAL_SUCCEED;
-}
-
-
-str CMDscalarADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CMDscalarADD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*typefunc)(int, int)) {
 	BAT *s=NULL;
 
 	int resType, valType;
@@ -2490,29 +2450,107 @@ str CMDscalarADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *vals = getArgReference_bat(stk, pci, 3);
 	BAT *valsBAT = BATdescriptor(*vals);
 	if(!valsBAT)
-		return createException(MAL, "calc.*", RUNTIME_OBJECT_MISSING);
+		return createException(MAL, "calc.+", RUNTIME_OBJECT_MISSING);
 	
 	/* get the types of the input and output arguments */
 	resType = getColumnType(getArgType(mb, pci, 0));
 	valType = stk->stk[getArg(pci, 1)].vtype;
 	if (resType == TYPE_any)
-        resType = calctypeenlarge(valType, BATttype(valsBAT));
+        resType = (*typefunc)(valType, BATttype(valsBAT));
 
-    resBAT = BATcalccstadd(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
+	resBAT = BATcalccstadd(&stk->stk[getArg(pci, 2)], valsBAT, s, resType, 1);
 
 	if (resBAT == NULL) {
         BBPunfix(valsBAT->batCacheid);
-        return createException(MAL, "calc.*", OPERATION_FAILED);
+        return createException(MAL, "calc.+", OPERATION_FAILED);
     }
 
-
-	(void) cntxt;
 	BBPunfix(valsBAT->batCacheid);
 	BBPkeepref(*result = resBAT->batCacheid);
 	*array_out = arrayCopy((gdk_array*)*array_in);
 
 	return MAL_SUCCEED;
 }
+
+str CMDscalarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void) cntxt;
+
+	return CMDscalarADD(mb, stk, pci, calctype);
+
+}
+
+str CMDscalarADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void) cntxt;
+	
+	return CMDscalarADD(mb, stk, pci, calctypeenlarge);
+}
+
+static str CMDarrayADD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*typefunc)(int, int)) {
+ 	BAT *resBAT, *valsLeftBAT, *valsRightBAT, *s=NULL;
+	int i;
+	int resType, valType;
+
+	bat *result = getArgReference_bat(stk, pci, 0);
+	bat *valsLeft = getArgReference_bat(stk, pci, 2);
+	bat *valsRight = getArgReference_bat(stk, pci, 4);
+	
+	ptr *array_out = getArgReference(stk, pci, 1);
+	/* there are two arrays. one of each of the columns that are being added */
+	ptr *arrayLeft = getArgReference(stk, pci, 3); 
+	ptr *arrayRight = getArgReference(stk, pci, 5);
+
+	/* compare the arrays. they should have dimension of the same size */
+	gdk_array *arL = (gdk_array*)*arrayLeft;
+	gdk_array *arR = (gdk_array*)*arrayRight;
+	int dimsNumL = arL->dimsNum;
+	int dimsNumR = arR->dimsNum;
+	
+	if(dimsNumL != dimsNumR)
+		return createException(MAL, "calc.+", "Arrays should have the same number of dimensions");
+	for(i=0; i<dimsNumL; i++)
+		if(arL->dims[i]->elsNum != arR->dims[i]->elsNum)
+			return createException(MAL, "calc.+", "Dimensions should be of the same size");
+	
+	if(!(valsLeftBAT = BATdescriptor(*valsLeft)))
+		return createException(MAL, "calc.+", RUNTIME_OBJECT_MISSING);
+	if(!(valsRightBAT = BATdescriptor(*valsRight))) {
+		BBPunfix(valsLeftBAT->batCacheid);
+		return createException(MAL, "calc.+", RUNTIME_OBJECT_MISSING);
+	}
+
+	resType = getColumnType(getArgType(mb, pci, 0));
+	valType = stk->stk[getArg(pci, 1)].vtype;
+	if (resType == TYPE_any)
+        resType = (*typefunc)(valType, BATttype(valsRightBAT));
+
+	resBAT = BATcalcadd(valsLeftBAT, valsRightBAT, s, resType, 1);
+	if (resBAT == NULL) {
+        BBPunfix(valsLeftBAT->batCacheid);
+		BBPunfix(valsRightBAT->batCacheid);
+		return createException(MAL, "calc.+", OPERATION_FAILED);
+    }
+	
+	BBPunfix(valsLeftBAT->batCacheid);
+	BBPunfix(valsRightBAT->batCacheid);
+	BBPkeepref(*result = resBAT->batCacheid);
+	*array_out = arrayCopy(arL);
+
+	return MAL_SUCCEED;
+}
+
+str CMDarrayADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void) cntxt;
+
+	return CMDarrayADD(mb, stk, pci, calctype);
+}
+
+str CMDarrayADDenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    (void) cntxt;
+
+    return CMDarrayADD(mb, stk, pci, calctypeenlarge);
+}
+
+
 
 #define checkEqual(TPE1, dimLeft, TPE2, dimRight, vals) \
 do { \

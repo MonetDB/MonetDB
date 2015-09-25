@@ -168,7 +168,141 @@ comment "Return V + B, guarantee no overflow by returning larger type";
 pattern calc.+(v:flt,b:bat[:oid,:flt], array:ptr) (:bat[:oid,:dbl], :ptr) address CMDscalarADDenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:sht], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDenlarge
+comment "Return B1 + B2, guarantee no overflow by returning larger type";
 
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:bte], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:sht], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:bte], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:sht], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:sht], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:sht], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:int], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:int], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:wrd], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:wrd], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:lng], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:lng], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:flt], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:flt], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:bte], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:sht], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:int], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:wrd], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:lng], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:flt], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
+pattern calc.+(b1:bat[:oid,:dbl], ar1:ptr, b2:bat[:oid,:dbl], ar2:ptr) (:bat[:oid,:dbl], :ptr) address CMDarrayADDsignal
+comment "Return B1 + B2, signal error on overflow";
 
 
 
@@ -1389,3 +1523,4 @@ comment "cast from str to oid, signal error on overflow";
 #address CMDBATprod
 #comment "Calculate aggregate product of B with candidate list.";
 #
+
