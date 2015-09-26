@@ -38,6 +38,7 @@ MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
 MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -79,6 +80,7 @@ int mal_init(void){
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+	MT_lock_init( &mal_beatLock, "mal_beatLock");
 #endif
 
 	tstAligned();
@@ -94,12 +96,10 @@ int mal_init(void){
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
-	initTrace();
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace ) {
+	if ( mal_trace ) 
 		openProfilerStream(mal_clients[0].fdout,0);
-	} 
 	return 0;
 }
 /*
