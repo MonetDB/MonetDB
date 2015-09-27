@@ -78,7 +78,6 @@ typedef struct {
 
 ProfilerRecord *profilerPool;
 static int poolSize= DEFAULTPOOLSIZE;
-static int poolCounter = 0;
 
 static void
 clearPool(void)
@@ -104,7 +103,6 @@ setprofilerpoolsize(int size)
 	// Always cleanout the past before you set the new pool size
 	if (profilerPool){
 		clearPool();
-		poolCounter = 0;
 		poolSize = 0;
 		GDKfree(profilerPool);
 		profilerPool = 0;
