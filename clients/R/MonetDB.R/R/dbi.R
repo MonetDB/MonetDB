@@ -88,8 +88,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
 
   if (embedded != FALSE) {
-    if (!require("MonetDB", character.only=T)) {
-      stop("MonetDB package required for embedded mode")
+    if (!require("MonetDBLite", character.only=T)) {
+      stop("MonetDBLite package required for embedded mode")
     }
     monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
     connenv <- new.env(parent=emptyenv())

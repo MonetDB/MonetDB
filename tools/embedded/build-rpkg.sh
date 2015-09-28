@@ -2,7 +2,7 @@
 #set -x
 
 STAGEDIR=/tmp/monetdb-embedded-stage
-RPKG=MonetDB_1.0.0.tar.gz
+RPKG=MonetDBLite_1.0.0.tar.gz
 
 rm -rf $STAGEDIR
 
@@ -43,7 +43,7 @@ R CMD build rpackage
 scp $RPKG cwi:WWW/R
 
 echo
-echo 'install.packages("MonetDB", repos="http://homepages.cwi.nl/~hannes/R/", type="source")'
+echo 'install.packages("MonetDBLite", repos="http://homepages.cwi.nl/~hannes/R/", type="source")'
 echo
 
 # OSX 10.10 check (check vanilla!)

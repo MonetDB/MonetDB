@@ -12,6 +12,7 @@
 - Added lower.case.names argument to monet.read.csv() in case users want to avoid quoting (a bit)
 - Fix for dbConnect() that should be more robust to invalid connections
 - Cleaned up quoting behavior in dbListTables(), dbRemoveTable() etc.
+- Initial support for running MonetDB in embedded mode (MonetDBLite)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

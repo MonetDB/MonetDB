@@ -1,6 +1,6 @@
-Package: MonetDB
+Package: MonetDBLite
 Version: 1.0.0
-Title: Connect MonetDB to R
+Title: In-Process version of MonetDB for R
 Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"))
 Author: Hannes Muehleisen [aut, cre]
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>
