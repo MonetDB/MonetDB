@@ -432,8 +432,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
       if (csvdump) {
         tmp <- tempfile(fileext = ".csv")
         write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
-        dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
-        " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
+        dbSendQuery(conn, paste0("COPY INTO ", qname, " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
         file.remove(tmp) 
       } else {
         vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
