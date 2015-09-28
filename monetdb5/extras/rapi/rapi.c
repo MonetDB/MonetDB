@@ -323,7 +323,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	SEXP varname = R_NilValue;
 	SEXP varvalue = R_NilValue;
 	ParseStatus status;
-	int i, j = 1;
+	int i = 0;
 	char argbuf[64];
 	char argnames[1000] = "";
 	size_t pos;
