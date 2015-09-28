@@ -10,6 +10,8 @@
 \alias{db_insert_into.MonetDBConnection}
 \alias{db_query_fields.MonetDBConnection}
 \alias{db_query_rows.MonetDBConnection}
+\alias{db_query_fields.MonetDBEmbeddedConnection}
+\alias{db_query_rows.MonetDBEmbeddedConnection}
 \alias{db_save_query.MonetDBConnection}
 \alias{sql_subquery.MonetDBConnection}
 

@@ -1,5 +1,5 @@
 library(testthat)
-library(MonetDB)
+library(MonetDBLite)
 
 test_that("db starts up", {
 	expect_equal(monetdb_embedded_startup(), TRUE)

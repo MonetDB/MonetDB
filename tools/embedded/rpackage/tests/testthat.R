@@ -1,4 +1,4 @@
 library(testthat)
-library(MonetDB)
+library(MonetDBLite)
 
-test_check("MonetDB")
+test_check("MonetDBLite")

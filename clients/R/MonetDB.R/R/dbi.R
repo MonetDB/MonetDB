@@ -91,7 +91,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     if (!require("MonetDBLite", character.only=T)) {
       stop("MonetDBLite package required for embedded mode")
     }
-    monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
+    MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
     connenv <- new.env(parent=emptyenv())
     connenv$open <- TRUE
     return(new("MonetDBEmbeddedConnection", connenv=connenv))
@@ -312,7 +312,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   env <- NULL
   if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
 
-  resp <- monetdb_embedded_query(statement, notreally)
+  resp <- MonetDBLite::monetdb_embedded_query(statement, notreally)
 
   env <- new.env(parent=emptyenv())
   if (resp$type == Q_TABLE) {
@@ -423,7 +423,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
       for (c in datecols) {
         value[[c]] <- as.character(value[[c]])
       }
-      insres <- monetdb_embedded_append(qname, value)
+      insres <- MonetDBLite::monetdb_embedded_append(qname, value)
       if (!is.logical(insres)) {
         stop("Failed to insert data: ", insres)
       }
