@@ -4227,12 +4227,11 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = getArgReference_int(stk, pci, 0);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGempty(ret);
+	QLOGempty(NULL);
 	return MAL_SUCCEED;
 }
 
