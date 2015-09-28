@@ -64,3 +64,4 @@ user_create_temp_table.Bug-2916
 exists-select.Bug-2933
 jena-optional-1-test.Bug-2915
 and-power.Bug-3013
+DBD-manyrows.Bug-2889
