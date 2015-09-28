@@ -489,7 +489,7 @@ create function area(g geometry) returns float external name geom."Area";
 create function astext(g geometry) returns string external name geom."AsText";
 -- The BAT buffer pool overview
 create function sys.bbp () 
-	returns table (id int, name string, htype string, 
+	returns table (id int, name string, 
 		ttype string, count bigint, refcnt int, lrefcnt int, 
 		location string, heat int, dirty string, 
 		status string, kind string) 

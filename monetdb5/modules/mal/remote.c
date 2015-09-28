@@ -678,7 +678,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type)) {
+	} else if (isaBatType(type) && *(int*) value != 0) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
