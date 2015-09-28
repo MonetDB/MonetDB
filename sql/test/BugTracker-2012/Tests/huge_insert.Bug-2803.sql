@@ -1,3 +1,5 @@
+start transaction;
+
 create table huge(
 a0  integer,
 a1  integer,
@@ -10000,3 +10002,5 @@ insert into huge values(
 4997,
 4998,
 4999);
+
+rollback;
