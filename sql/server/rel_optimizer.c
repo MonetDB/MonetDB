@@ -1028,15 +1028,21 @@ push_up_join_exps( sql_rel *rel)
 	}
 }
 
+static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
+static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
 static sql_rel *
 rel_join_order(int *changes, mvc *sql, sql_rel *rel) 
 {
-	(void)*changes;
+	int e_changes = 0;
+
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
 		if (rel->op == op_join)
 			rel->exps = push_up_join_exps(rel);
 		rel = reorder_join(sql, rel);
 	}
+	rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
+	(void)*changes;
+	(void)e_changes;
 	return rel;
 }
 

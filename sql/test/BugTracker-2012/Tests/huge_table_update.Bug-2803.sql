@@ -1,3 +1,5 @@
+start transaction;
+
 create table huge(
 a0  integer,
 a1  integer,
@@ -10001,4 +10003,4 @@ update huge set a4997 = 2 where a4997  is null;
 update huge set a4998 = 2 where a4998  is null;
 update huge set a4999 = 2 where a4999  is null;
 
-drop table huge;
+rollback;
