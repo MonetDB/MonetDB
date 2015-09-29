@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * The header block contains the mapping from OIDs to chunks
  */
 
@@ -95,6 +95,8 @@ MOSinitHeader(MOStask task)
 	int i;
 	for(i=0; i < MOSAIC_METHODS; i++){
 		hdr->elms[i] = hdr->blks[i] = 0;
+		task->range[i]=0;
+		task->factor[i]=0.0;
 	}
 	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;

@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Use a chunk that has not been compressed
  */
 
@@ -76,7 +76,6 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
-	task->stop = task->elm;
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break ;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit)); break ;

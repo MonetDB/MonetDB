@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Global dictionary encoding
  * Index value zero is not used to easy detection of filler
  * The dictionary index size is derived from the number of entries covered.
@@ -143,11 +143,21 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	TPE *dict= (TPE*)hdr->dict;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	if( task->range[MOSAIC_DICT] > task->start){\
+		i = task->range[MOSAIC_DICT] - task->start;\
+		if ( i > MOSlimit() ) i = MOSlimit();\
+		if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + i,TPE))\
+			return 0.0;\
+		if(i) factor = ((flt) i * sizeof(TPE))/ wordaligned(MosaicBlkSize + sizeof(int) + i,TPE);\
+		return factor;\
+	}\
 	for(i =0; i<limit; i++, val++){\
 		MOSfind(j,*val,0,hdr->dictsize);\
 		if( j == hdr->dictsize || dict[j] != *val )\
 			break;\
 	}\
+	if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + i,TPE))\
+		return 0.0;\
 	if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,TPE);\
 }
 
@@ -260,9 +270,9 @@ MOScreatedictionary(Client cntxt, MOStask task)
 // calculate the expected reduction using DICT in terms of elements compressed
 flt
 MOSestimate_dictionary(Client cntxt, MOStask task)
-{	BUN i = -1;
+{	BUN i = 0;
 	int j;
-	flt factor= 1.0;
+	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
 	(void) cntxt;
 
@@ -280,6 +290,16 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start;
 			int *dict = (int*)hdr->dict;
+			// assume uniform compression statistics
+			if( task->range[MOSAIC_DICT] > task->start){
+				i = task->range[MOSAIC_DICT] - task->start;
+				if ( i > MOSlimit() ) i = MOSlimit();
+				if( i * sizeof(int) <= wordaligned( MosaicBlkSize + i,int))
+					return 0.0;
+				if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i,int);
+				return factor;
+			}
+
 			for(i =task->start; i<task->stop; i++, val++){
 				MOSfind(j,*val,0,hdr->dictsize);
 				if( j == hdr->dictsize || dict[j] != *val)
@@ -287,12 +307,16 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 			}
 			i -= task->start;
 			if ( i > MOSlimit() ) i = MOSlimit();
-			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,lng);
+			if( i * sizeof(int) < wordaligned( MosaicBlkSize + i,int))
+				return 0.0;
+			if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + i,int);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
 #endif
+	task->factor[MOSAIC_DICT] = factor;
+	task->range[MOSAIC_DICT] = task->start + i;
 	return factor; 
 }
 
@@ -348,7 +372,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTcompress(sht); break;
-	case TYPE_int: DICTcompress(int); break;
+	case TYPE_lng: DICTcompress(lng); break;
 	case TYPE_oid: DICTcompress(oid); break;
 	case TYPE_wrd: DICTcompress(wrd); break;
 	case TYPE_flt: DICTcompress(flt); break;
@@ -356,16 +380,16 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTcompress(hge); break;
 #endif
-	case TYPE_lng:
-		{	lng *val = ((lng*)task->src) + task->start;
-			lng *dict = (lng*)hdr->dict;
+	case TYPE_int:
+		{	int *val = ((int*)task->src) + task->start;
+			int *dict = (int*)hdr->dict;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			base  = (unsigned long*) task->dst; // start of bit vector
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
-				hdr->checksum.sumlng += *val;
+				hdr->checksum.sumint += *val;
 				MOSfind(j,*val,0,hdr->dictsize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d bits %d\n",i, *val,j,hdr->bits);
 				if( j == hdr->dictsize || dict[j] != *val )

@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ *2014-2015 author Martin Kersten
  * Frame of reference compression with dictionary
  * A chunk is beheaded by a reference value F from the column. The elements V in the
  * chunk are replaced by an index into a global dictionary of V-F offsets.
@@ -34,7 +34,7 @@
 #include "mosaic_frame.h"
 
 // we use longs as the basis for bit vectors
-#define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng);
+#define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
 /*
 #include "bitvector.h"
@@ -79,7 +79,7 @@ MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 		snprintf(buf,len,"%.40g", (dbl) ((hge*) val)[i]); break;
 #endif
 	case  TYPE_wrd:
-		snprintf(buf,len,SZFMT, ((wrd*) val)[i]); break;
+		snprintf(buf,len,LLFMT, (lng)((wrd*) val)[i]); break;
 	case TYPE_flt:
 		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
 	case TYPE_dbl:
@@ -152,6 +152,15 @@ MOSskip_frame(Client cntxt, MOStask task)
    X= f;\
 }
 
+/* old mask may be out of date for new piece
+	if( task->range[MOSAIC_FRAME] > task->start){\
+		i = task->range[MOSAIC_FRAME] - task->start;\
+		if( i * sizeof(TPE) < chunk_size(task,i) )\
+			return 0.0;\
+		if(i) factor = (flt)((int) i * sizeof(TPE))/ chunk_size(task,i); \
+		return factor;\
+	}\
+ */
 #define estimateFrame(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	TPE *dict= (TPE*)hdr->frame;\
@@ -162,7 +171,9 @@ MOSskip_frame(Client cntxt, MOStask task)
 		if( j == hdr->framesize || dict[j] != delta )\
 			break;\
 	}\
-	if(i) factor = (flt) ((int)i * sizeof(TYPE)) / chunk_size(task,i);\
+	if( i * sizeof(TPE) <= chunk_size(task,i) )\
+		return 0.0;\
+	if(i) factor = (flt) ((int)i * sizeof(TPE)) / chunk_size(task,i);\
 }
 
 // store it in the compressed heap header directly
@@ -276,7 +287,7 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 // calculate the expected reduction using dictionary in terms of elements compressed
 flt
 MOSestimate_frame(Client cntxt, MOStask task)
-{	BUN i = -1;
+{	BUN i = 0;
 	int j;
 	flt factor= 1.0;
 	MosaicHdr hdr = task->hdr;
@@ -297,6 +308,17 @@ MOSestimate_frame(Client cntxt, MOStask task)
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
 			int *dict = (int*)hdr->frame;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+
+			/* frame mask may not be valid anymore
+			if( task->range[MOSAIC_FRAME] > task->start){
+				i = task->range[MOSAIC_FRAME] - task->start;
+				if(i) factor = (flt) ((int) i * sizeof(int))/ chunk_size(task,i); 
+				if( i * sizeof(int) < chunk_size(task,i) )
+					return 0.0;
+				return factor;
+			}
+			*/
+
 			for(i =0; i<limit; i++, val++){
 				delta= *val - frame;
 				MOSfind(j,delta,0,hdr->framesize);
@@ -304,12 +326,16 @@ MOSestimate_frame(Client cntxt, MOStask task)
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
+			if( i * sizeof(int) <= chunk_size(task,i) )
+				return 0.0;
 			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
 #endif
+	task->factor[MOSAIC_FRAME] = factor;
+	task->range[MOSAIC_FRAME] = task->start + i;
 	return factor; 
 }
 

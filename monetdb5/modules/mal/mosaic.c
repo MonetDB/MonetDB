@@ -281,15 +281,75 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
 			MOSsetCnt(TASK->blk,0);\
 			TASK->dst = ((char*) TASK->blk)+ MosaicBlkSize;
 
+/* The compression orchestration is dealt with here.
+ * We assume that the estimates for each scheme returns
+ * the number of elements it applies to. Moreover, we
+ * assume that the compression factor holds for any subsequence.
+ * This allows us to avoid expensive estimate calls when a small
+ * sequence is found with high compression factor.
+ */
+static int
+MOSoptimizer(Client cntxt, MOStask task)
+{
+	int cand = MOSAIC_NONE;
+	float ratio = 1.0, fac = 1.0;
+
+	// select candidate amongst those
+	if ( task->filter[MOSAIC_RLE]){
+		fac = MOSestimate_runlength(cntxt,task);
+		if (fac > ratio){
+			cand = MOSAIC_RLE;
+			ratio = fac;
+		}
+	}
+	if ( task->filter[MOSAIC_DICT]){
+		fac = MOSestimate_dictionary(cntxt,task);
+		if (fac > ratio){
+			cand = MOSAIC_DICT;
+			ratio = fac;
+		}
+	}
+	if ( task->filter[MOSAIC_DELTA]){
+		fac = MOSestimate_delta(cntxt,task);
+		if ( fac > ratio ){
+			cand = MOSAIC_DELTA;
+			ratio = fac;
+		}
+	}
+	if ( task->filter[MOSAIC_LINEAR]){
+		fac = MOSestimate_linear(cntxt,task);
+		if ( fac >ratio){
+			cand = MOSAIC_LINEAR;
+			ratio = fac;
+		}
+	}
+	if ( task->filter[MOSAIC_FRAME]){
+		fac = MOSestimate_frame(cntxt,task);
+		if (fac > ratio){
+			cand = MOSAIC_FRAME;
+			ratio = fac;
+		}
+	}
+	if ( task->filter[MOSAIC_PREFIX]){
+		fac = MOSestimate_prefix(cntxt,task);
+		if ( fac > ratio ){
+			cand = MOSAIC_PREFIX;
+			ratio = fac;
+		}
+		if ( fac  < 0.0)
+				task->filter[MOSAIC_PREFIX] = 0;
+	}
+	//mnstr_printf(cntxt->fdout,"#cand %d factor %f\n",cand,ratio);
+	return cand;
+}
+
 str
 MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace, int debug)
 {
 	BAT *bsrc;		// the source BAT
 	BAT *bcompress; // the BAT that will contain the compressed version
-	BUN cutoff =0;
 	str msg = MAL_SUCCEED;
 	int cand;
-	float ratio= 1.0, fac= 1.0;
 	
 	*ret = 0;
 
@@ -397,67 +457,9 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
-	cutoff = task->elm > 1000? task->elm - 1000: task->elm;
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block
-		cand = MOSAIC_NONE;
-		fac = 1.0;
-		ratio = 1.0;
-
-		// cutoff the filters, especially dictionary tests are expensive
-		if( cutoff && cutoff < task->start){
-			if( task->hdr->blks[MOSAIC_PREFIX] == 0)
-				task->filter[MOSAIC_PREFIX] = 0;
-			if( task->hdr->blks[MOSAIC_DICT] == 0)
-				task->filter[MOSAIC_DICT] = 0;
-			cutoff = 0;
-		}
-		
-		// select candidate amongst those
-		if ( task->filter[MOSAIC_RLE]){
-			fac = MOSestimate_runlength(cntxt,task);
-			if (fac > ratio){
-				cand = MOSAIC_RLE;
-				ratio = fac;
-			}
-		}
-		if ( task->filter[MOSAIC_DICT]){
-			fac = MOSestimate_dictionary(cntxt,task);
-			if (fac > ratio){
-				cand = MOSAIC_DICT;
-				ratio = fac;
-			}
-		}
-		if ( task->filter[MOSAIC_FRAME]){
-			fac = MOSestimate_frame(cntxt,task);
-			if (fac > ratio){
-				cand = MOSAIC_FRAME;
-				ratio = fac;
-			}
-		}
-		if ( task->filter[MOSAIC_DELTA]){
-			fac = MOSestimate_delta(cntxt,task);
-			if ( fac > ratio ){
-				cand = MOSAIC_DELTA;
-				ratio = fac;
-			}
-		}
-		if ( task->filter[MOSAIC_PREFIX]){
-			fac = MOSestimate_prefix(cntxt,task);
-			if ( fac > ratio ){
-				cand = MOSAIC_PREFIX;
-				ratio = fac;
-			}
-			if ( fac  < 0.0)
-					task->filter[MOSAIC_PREFIX] = 0;
-		}
-		if ( task->filter[MOSAIC_LINEAR]){
-			fac = MOSestimate_linear(cntxt,task);
-			if ( fac >ratio){
-				cand = MOSAIC_LINEAR;
-				ratio = fac;
-			}
-		}
+		cand = MOSoptimizer(cntxt,task);
 
 		// wrapup previous block
 		switch(cand){
@@ -490,16 +492,16 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		}
 		// apply the compression to a chunk
 		switch(cand){
+		case MOSAIC_RLE:
+			MOScompress_runlength(cntxt,task);
+			MOSupdateHeader(cntxt,task);
+			MOSadvance_runlength(cntxt,task);
+			MOSnewBlk(task);
+			break;
 		case MOSAIC_DICT:
 			MOScompress_dictionary(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			MOSadvance_dictionary(cntxt,task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_FRAME:
-			MOScompress_frame(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_frame(cntxt,task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DELTA:
@@ -508,22 +510,22 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 			MOSadvance_delta(cntxt,task);
 			MOSnewBlk(task);
 			break;
-		case MOSAIC_PREFIX:
-			MOScompress_prefix(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_prefix(cntxt,task);
-			MOSnewBlk(task);
-			break;
 		case MOSAIC_LINEAR:
 			MOScompress_linear(cntxt,task);
 			MOSupdateHeader(cntxt,task);
 			MOSadvance_linear(cntxt,task);
 			MOSnewBlk(task);
 			break;
-		case MOSAIC_RLE:
-			MOScompress_runlength(cntxt,task);
+		case MOSAIC_FRAME:
+			MOScompress_frame(cntxt,task);
 			MOSupdateHeader(cntxt,task);
-			MOSadvance_runlength(cntxt,task);
+			MOSadvance_frame(cntxt,task);
+			MOSnewBlk(task);
+			break;
+		case MOSAIC_PREFIX:
+			MOScompress_prefix(cntxt,task);
+			MOSupdateHeader(cntxt,task);
+			MOSadvance_prefix(cntxt,task);
 			MOSnewBlk(task);
 			break;
 		default :
@@ -704,26 +706,6 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 
 	while(task->blk){
 		switch(MOSgetTag(task->blk)){
-		case MOSAIC_DICT:
-			MOSdecompress_dictionary(cntxt,task);
-			MOSskip_dictionary(cntxt,task);
-			break;
-		case MOSAIC_FRAME:
-			MOSdecompress_frame(cntxt,task);
-			MOSskip_frame(cntxt,task);
-			break;
-		case MOSAIC_DELTA:
-			MOSdecompress_delta(cntxt,task);
-			MOSskip_delta(cntxt,task);
-			break;
-		case MOSAIC_PREFIX:
-			MOSdecompress_prefix(cntxt,task);
-			MOSskip_prefix(cntxt,task);
-			break;
-		case MOSAIC_LINEAR:
-			MOSdecompress_linear(cntxt,task);
-			MOSskip_linear(cntxt,task);
-			break;
 		case MOSAIC_NONE:
 			MOSdecompress_literal(cntxt,task);
 			MOSskip_literal(cntxt,task);
@@ -731,6 +713,26 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		case MOSAIC_RLE:
 			MOSdecompress_runlength(cntxt,task);
 			MOSskip_runlength(cntxt,task);
+			break;
+		case MOSAIC_DICT:
+			MOSdecompress_dictionary(cntxt,task);
+			MOSskip_dictionary(cntxt,task);
+			break;
+		case MOSAIC_DELTA:
+			MOSdecompress_delta(cntxt,task);
+			MOSskip_delta(cntxt,task);
+			break;
+		case MOSAIC_LINEAR:
+			MOSdecompress_linear(cntxt,task);
+			MOSskip_linear(cntxt,task);
+			break;
+		case MOSAIC_FRAME:
+			MOSdecompress_frame(cntxt,task);
+			MOSskip_frame(cntxt,task);
+			break;
+		case MOSAIC_PREFIX:
+			MOSdecompress_prefix(cntxt,task);
+			MOSskip_prefix(cntxt,task);
 			break;
 		default: assert(0);
 		}
@@ -779,6 +781,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid, int inplace)
 		break;
 	case TYPE_dbl:
 		error = task->hdr->checksum.sumdbl != task->hdr->checksum2.sumdbl;
+		break;
+	case TYPE_str:
 		break;
 	default:
 		mnstr_printf(cntxt->fdout,"#unknown compression compatibility\n");
@@ -1534,6 +1538,8 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, st
 		if( j<i ) continue;
 		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
 			task->filter[j]= (pattern[i] & bit)>0;
+			task->range[j]= 0;
+			task->factor[j]= 0.0;
 			bit *=2;
 		}
 		MOScompressInternal(cntxt, &ret, &bid, task, 0, 0);
@@ -1687,11 +1693,17 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mx = 0;
 		for( j = 0; j < top; j++){
 			if( properties[j] && !strstr(properties[j],"mosaic"))
-				for( k = 0; k< MOSAIC_METHODS; k++)
+				for( k = 0; k< MOSAIC_METHODS; k++){
 					task->filter[k]= strstr(properties[j],MOSfiltername[k]) != 0;
+					task->range[k] = 0;
+					task->factor[k] = 0.0;
+				}
 			else
-				for( k = 0; k< MOSAIC_METHODS; k++)
+				for( k = 0; k< MOSAIC_METHODS; k++){
 					task->filter[k]= 1;
+					task->range[k] = 0;
+					task->factor[k] = 0.0;
+				}
 			x+= MOSanalyseInternal(cntxt, threshold, task, bid);
 			xf[j]= task->hdr? task->ratio: 0;
 			if(xf[mx] < xf[j]) mx =j;
@@ -1708,11 +1720,17 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) 
 			for( j = 0; j < top; j++){
 				if( properties[j] && !strstr(properties[j],"mosaic"))
-					for( k = 0; k< MOSAIC_METHODS; k++)
+					for( k = 0; k< MOSAIC_METHODS; k++){
 						task->filter[k]= strstr(properties[j],MOSfiltername[k]) != 0;
+						task->range[k] = 0;
+						task->factor[k] = 0.0;
+					}
 				else
-					for( k = 0; k< MOSAIC_METHODS; k++)
+					for( k = 0; k< MOSAIC_METHODS; k++){
 						task->filter[k]= 1;
+						task->range[k] = 0;
+						task->factor[k] = 0.0;
+					}
 				x+= MOSanalyseInternal(cntxt, threshold, task, i);
 			xf[j]= task->hdr? task->ratio: 0;
 		}
@@ -1761,6 +1779,8 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( j<i ) continue;
 		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
 			task->filter[j]= (pattern[i] & bit)>0;
+			task->range[j] = 0;
+			task->factor[j] = 0.0;
 			bit *=2;
 		}
 #define _DEBUG_MOSAIC_
@@ -1769,6 +1789,7 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( j = 0; j < MOSAIC_METHODS -1; j++)
 			mnstr_printf(cntxt->fdout,"%d",task->filter[j]?1:0);
 		mnstr_printf(cntxt->fdout,"\t");
+		mnstr_flush(cntxt->fdout);
 #else
 		(void) cntxt;
 #endif

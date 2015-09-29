@@ -100,9 +100,9 @@ typedef struct MOSAICHEADER{
 // bit stuffed header block, currently 4 bytes wide and chunks should be 4-byte aligned
 #define MOSAICMAXCNT (1<<23)
 
-typedef struct{
+typedef struct MOSAICBLK{
 	unsigned int tag:8, cnt:24, free:32;
-} *MosaicBlk;
+} MosaicBlkRec, *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
@@ -123,6 +123,8 @@ typedef struct{
 typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
 	int filter[MOSAIC_METHODS];// algorithmic mix
+	BUN range[MOSAIC_METHODS]; // end of compression range
+	float factor[MOSAIC_METHODS];// compression factor of last range
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan

@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Linear encoding
  * Replace a well-behaving series by its [start,step] value.
  */
@@ -163,9 +163,18 @@ MOSskip_linear(Client cntxt, MOStask task)
 {	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
 	TYPE step = *v - val;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	if( task->range[MOSAIC_LINEAR] > task->start + 1){\
+		i = task->range[MOSAIC_LINEAR] - task->start;\
+		if (i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
+			return 0.0;\
+		factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
+		return factor;\
+	}\
 	for( i=1; i < limit; i++, val = *v, v++)\
 	if (  *v - val != step)\
 		break;\
+	if(i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
+		return 0.0;\
 	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
 }
 
@@ -173,7 +182,7 @@ MOSskip_linear(Client cntxt, MOStask task)
 flt
 MOSestimate_linear(Client cntxt, MOStask task)
 {	BUN i = -1;
-	flt factor = 1.0;
+	flt factor = 0.0;
 	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
@@ -201,15 +210,26 @@ MOSestimate_linear(Client cntxt, MOStask task)
 		{	int *v = ((int*)task->src)+ task->start, val= *v++;
 			int step = *v - val;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			if( task->range[MOSAIC_LINEAR] > task->start + 1){
+				i = task->range[MOSAIC_LINEAR] - task->start;
+				if(i * sizeof(int) <= wordaligned( MosaicBlkSize + 2 * sizeof(int),int))
+					return 0.0;
+				factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + 2 * sizeof(int),int);
+				return factor;
+			}
 			for(i=1; i<limit; i++, val = *v++)
 			if ( *v -val != step)
 				break;
+			if(i * sizeof(int) <= wordaligned( MosaicBlkSize + 2 * sizeof(int),int))
+				return 0.0;
 			factor =  ( (flt)i * sizeof(int))/wordaligned( MosaicBlkSize + 2 * sizeof(int),int);
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate linear "BUNFMT" elm %4.2f factor\n",i,factor);
 #endif
+	task->factor[MOSAIC_LINEAR] = factor;
+	task->range[MOSAIC_LINEAR] = task->start + i;
 	return factor;
 }
 
@@ -225,7 +245,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 		if (  *v - val != step)\
 			break;\
 	} MOSsetCnt(blk, i);\
-	task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TYPE),TYPE);\
+	task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TYPE),MosaicBlkRec);\
 }
 
 	//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TYPE);
@@ -264,7 +284,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 			}
 			MOSsetCnt(blk,i);
 			//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(int);
-			task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(int),int);\
+			task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(int),MosaicBlkRec);\
 		}
 		break;
 	case  TYPE_str:

@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Byte-wise delta encoding for SHT,INT,LNG, OID, WRD, STR-offsets, TIMESTAMP
  */
 
@@ -112,6 +112,15 @@ MOSskip_delta(Client cntxt, MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
+/* we can not re-use the old stat, because the starting value may be different
+	if( task->range[MOSAIC_DELTA] > task->start + 1){\
+		i = task->range[MOSAIC_DELTA] - task->start;\
+		if( i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
+			return 0.0;\
+		if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
+		return factor;\
+	}\
+*/
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
@@ -122,7 +131,9 @@ MOSskip_delta(Client cntxt, MOStask task)
 			break;\
 		val = *v;\
 	}\
-	if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,TYPE);\
+	if( i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
+		return 0.0;\
+	if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
 }
 
 // estimate the compression level 
@@ -132,34 +143,47 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	flt factor = 1.0;
 	(void) cntxt;
 
-	switch(ATOMbasetype(task->type)){
-	//case TYPE_bte: case TYPE_bit: no compression achievable
-	case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
-	case TYPE_oid: Estimate_delta(sht,  (delta > 255)); break;
-	case TYPE_wrd: Estimate_delta(wrd,  (delta < -127 || delta >127)); break;
-	case TYPE_lng: Estimate_delta(lng,  (delta < -127 || delta >127)); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
-#endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
-		//case 1:  no compression achievable
-		case 2: Estimate_delta(sht, (delta > 255)); break;
-		case 4: Estimate_delta(int, (delta > 255)); break;
+	switch(ATOMstorage(task->type)){
+		//case TYPE_bte: case TYPE_bit: no compression achievable
+		case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
+		case TYPE_oid: Estimate_delta(sht,  (delta > 255)); break;
+		case TYPE_wrd: Estimate_delta(wrd,  (delta < -127 || delta >127)); break;
+		case TYPE_lng: Estimate_delta(lng,  (delta < -127 || delta >127)); break;
+	#ifdef HAVE_HGE
+		case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
+	#endif
+		case  TYPE_str:
+			// we only have to look at the index width, not the values
+			switch(task->b->T->width){
+			//case 1:  no compression achievable
+			case 2: Estimate_delta(sht, (delta > 255)); break;
+			case 4: Estimate_delta(int, (delta > 255)); break;
 		case 8: Estimate_delta(lng, (delta > 255)); break;
 		}
 	break;
 	case TYPE_int:
 		{	int *v = ((int*)task->src) + task->start, val= *v, delta=0;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop-task->start;
+
+			/* see above
+			if( task->range[MOSAIC_DELTA] > task->start + 1){
+				i = task->range[MOSAIC_DELTA] - task->start;
+				if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec);
+				if( i * sizeof(int) <= wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec))
+					return 0.0;
+				return factor;
+			}
+			*/
+
 			for(v++,i =1; i<limit; i++,v++){
 				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
 				val = *v;
 			}
-			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,int);
+			if( i * sizeof(int) <= wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec))
+				return 0.0;
+			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
@@ -167,6 +191,8 @@ MOSestimate_delta(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate delta "BUNFMT" elm %.3f factor\n",i,factor);
 #endif
+	task->factor[MOSAIC_DELTA] = factor;
+	task->range[MOSAIC_DELTA] = task->start + i;
 	return factor;
 }
 
@@ -198,7 +224,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_DELTA);
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
@@ -262,7 +288,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	BUN i;
 	(void) cntxt;
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_int: DELTAdecompress(int); break;

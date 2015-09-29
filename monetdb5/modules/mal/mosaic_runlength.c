@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Run-length encoding framework for a single chunk
  */
 
@@ -112,7 +112,7 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
-	task->stop = task->elm;
+	//task->stop = task->elm;
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bit),bit)); break;
@@ -149,17 +149,24 @@ MOSskip_runlength(Client cntxt, MOStask task)
 #define Estimate(TYPE)\
 {	TYPE *v = ((TYPE*) task->src) + task->start, val = *v;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	if( task->range[MOSAIC_RLE] > task->start+1 ){\
+		if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(TYPE) < wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )return 0.0;\
+		factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE),TYPE);\
+		return factor;\
+	}\
 	for(v++,i = 1; i < limit; i++,v++)\
 	if ( *v != val)\
 		break;\
+	if( i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )\
+		return 0.0;\
 	factor = ( (flt)i * sizeof(TYPE))/ wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE);\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
 flt
 MOSestimate_runlength(Client cntxt, MOStask task)
-{	BUN i = -1;
-	flt factor = 1.0;
+{	BUN i = 0;
+	flt factor = 0.0;
 	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
@@ -177,9 +184,17 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *v = ((int*)task->src)+ task->start, val = *v;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			if( task->range[MOSAIC_RLE] > task->start+1){
+				if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(int) < wordaligned(MosaicBlkSize + sizeof(int),int))
+					return 0.0;
+				factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int),int);
+				return factor;
+			}
 			for(v++,i =1; i<limit; i++, v++)
 			if ( *v != val)
 				break;
+			if( i *sizeof(int) <= wordaligned( MosaicBlkSize + sizeof(int),int) )
+				return 0.0;
 			factor = ( (flt)i * sizeof(int))/ wordaligned( MosaicBlkSize + sizeof(int),int);
 		}
 		break;
@@ -195,6 +210,8 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate rle "BUNFMT" elm %4.3f factor\n",i,factor);
 #endif
+	task->factor[MOSAIC_RLE] = factor;
+	task->range[MOSAIC_RLE] = task->start + i;
 	return factor;
 }
 

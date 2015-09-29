@@ -18,7 +18,7 @@
  */
 
 /*
- * (c)2014 author Martin Kersten
+ * 2014-2015 author Martin Kersten
  * Blocked bit_prefix compression
  * Factor out the leading bits from a series of values.
  * The prefix size is determined by the first two non-identical values.
@@ -79,7 +79,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	int size = ATOMsize(task->type);
 
 	(void) cntxt;
-	if( ATOMbasetype(task->type == TYPE_str))
+	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	BUNappend(btech, "prefix", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
@@ -135,7 +135,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMbasetype(task->type == TYPE_str))
+	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	task->start += MOSgetCnt(task->blk);
 	task->stop = task->elm;
@@ -207,14 +207,14 @@ MOSskip_prefix(Client cntxt, MOStask task)
 flt
 MOSestimate_prefix(Client cntxt, MOStask task)
 {	BUN i = 0;
-	flt factor = -1.0;
+	flt factor = 0.0;
 	int bits, size;
 	lng store;
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMbasetype(task->type == TYPE_str))
+	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	if( task->elm >= 2)
 	switch(size){
@@ -231,6 +231,16 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			Prefix(bits, mask, val, val2, 8);
 			if( bits == 0)
 				break;
+
+			if( task->range[MOSAIC_PREFIX] > task->start +1 /* need at least two*/){
+				bits = task->range[MOSAIC_PREFIX - task->start] * (8-bits);
+				store = bits/8 + ((bits % 8) >0);
+				store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
+				if( store >= (flt)i * sizeof(bte))
+					return 0.0;
+				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(bte))/ store;
+			}
+			
 			val = *v & mask;
 			for(w=v, i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
@@ -239,6 +249,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			bits = i * (8-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
+			if( store >= (flt)i * sizeof(bte))
+				return 0.0;
 			factor = ( (flt)i * sizeof(bte))/ store;
 		}
 		break;
@@ -255,6 +267,16 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			Prefix(bits, mask, val, val2, 16);
 			if( bits == 0)
 				break;
+
+			if( task->range[MOSAIC_PREFIX] > task->start + 1){
+				bits = task->range[MOSAIC_PREFIX - task->start] * (16-bits);
+				store = bits/8 + ((bits % 8) >0);
+				store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
+				if( store >= (flt)i * sizeof(sht))
+					return 0.0;
+				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(sht))/ store;
+			}
+			
 			val = *v & mask;
 			for(w=v,i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
@@ -263,6 +285,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			bits = i * (16-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
+			if( store >= (flt)i * sizeof(sht))
+				return 0.0;
 			factor = ( (flt)i * sizeof(sht))/ store;
 		}
 		break;
@@ -279,6 +303,16 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			Prefix(bits, mask, val, val2, 32);
 			if( bits == 0)
 				break;
+
+			if( task->range[MOSAIC_PREFIX] > task->start + 1){
+				bits = task->range[MOSAIC_PREFIX - task->start] * (32-bits);
+				store = bits/8 + ((bits % 8) >0);
+				store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
+				if( store > (flt)i * sizeof(int))
+					return 0.0;
+				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(int))/ store;
+			}
+			
 			val = *v & mask;
 			for(w=v,i = 0; i < limit; w++, i++){
 				if ( val != (*w & mask) )
@@ -287,6 +321,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			bits = i * (32-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
+			if( store >= (flt)i * sizeof(int))
+				return 0.0;
 			factor = ( (flt)i * sizeof(int))/ store;
 		}
 		break;
@@ -303,6 +339,16 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			Prefix(bits, mask, val, val2, 64);
 			if( bits == 0)
 				break;
+
+			if( task->range[MOSAIC_PREFIX] > task->start + 1){
+				bits = task->range[MOSAIC_PREFIX - task->start] * (64-bits);
+				store = bits/8 + ((bits % 8) >0);
+				store = wordaligned( MosaicBlkSize + 2 * sizeof(lng) +  store,lng);
+				if( store >= (flt)i * sizeof(lng))
+					return 0.0;
+				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(lng))/ store;
+			}
+			
 			val = *v & mask;
 			if( bits)
 			for(w=v, i = 0; i < limit ; w++, i++){
@@ -312,12 +358,16 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			bits = i * (64-bits);
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned(MosaicBlkSize + 2 * sizeof(lng) + store,lng);
+			if( store >= (flt)i * sizeof(lng))
+				return 0.0;
 			factor = ( (flt)i * sizeof(lng))/ store;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate prefix "BUNFMT" elm %4.3f factor\n",i,factor);
 #endif
+	task->factor[MOSAIC_PREFIX] = factor;
+	task->range[MOSAIC_PREFIX] = task->start + i;
 	return factor;
 }
 
@@ -346,7 +396,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	MOSsetTag(blk, MOSAIC_PREFIX);
 
 	size = ATOMsize(task->type);
-	if( ATOMbasetype(task->type == TYPE_str))
+	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	if( task->elm >=2 )
 	switch(size){
@@ -520,7 +570,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
-	if( ATOMbasetype(task->type == TYPE_str))
+	if( ATOMstorage(task->type == TYPE_str))
 			size =task->b->T->width;
 	switch(size){
 	case 1:
@@ -728,7 +778,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	}
 	o = task->lb;
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bit: subselect_prefix(bit,unsigned int, 8); break;
 	case TYPE_bte: subselect_prefix(bte,unsigned int, 8); break;
 	case TYPE_sht: subselect_prefix(sht,unsigned int, 16); break;
@@ -917,7 +967,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bit: thetasubselect_prefix(bit, unsigned int, 8); break;
 	case TYPE_bte: thetasubselect_prefix(bte, unsigned int, 8); break;
 	case TYPE_sht: thetasubselect_prefix(sht, unsigned int, 16); break;
@@ -1036,7 +1086,7 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: leftfetchjoin_prefix(bit, unsigned char); break;
 		case TYPE_bte: leftfetchjoin_prefix(bte, unsigned char); break;
 		case TYPE_sht: leftfetchjoin_prefix(sht, unsigned short); break;
@@ -1125,7 +1175,7 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bit: join_prefix(bit,unsigned char); break;
 		case TYPE_bte: join_prefix(bte,unsigned char); break;
 		case TYPE_sht: join_prefix(sht,unsigned short); break;
