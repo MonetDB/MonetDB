@@ -990,10 +990,10 @@ SQLload_parse_line(READERtask *task, int idx)
 	errmsg[0] = 0;
 
 	if (task->quote || task->seplen != 1) {
-		for (i = 0; *line && i < as->nr_attrs; i++) {
+		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
-			if (*line == task->quote) {
+			if (*line && *line == task->quote) {
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
