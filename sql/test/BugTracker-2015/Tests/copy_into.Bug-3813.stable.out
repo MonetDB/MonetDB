@@ -66,11 +66,17 @@ Ready.
 
 #START TRANSACTION;
 #CREATE TABLE bug3813 ("playerID" STRING, "yearID" INTEGER, stint INTEGER, "teamID" STRING, "lgID" STRING, "G" INTEGER, "AB" INTEGER, "R" INTEGER, "H" INTEGER, "X2B" INTEGER, "X3B" INTEGER, "HR" INTEGER, "RBI" INTEGER, "SB" INTEGER, "CS" INTEGER, "BB" INTEGER, "SO" INTEGER, "IBB" INTEGER, "HBP" INTEGER, "SH" INTEGER, "SF" INTEGER, "GIDP" INTEGER);
+#COPY INTO bug3813 FROM '/home/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2015/Tests/batting.csv.gz' USING DELIMITERS ',','\n','"' NULL AS '';
+[ 99846	]
+#SELECT COUNT(*) FROM bug3813;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 5 # length
+[ 99846	]
 #ROLLBACK;
 
-! Correct/expected stable output need to provided/approved !
-
-# 15:06:50 >  
-# 15:06:50 >  "Done."
-# 15:06:50 >  
+# 13:29:23 >  
+# 13:29:23 >  "Done."
+# 13:29:23 >  
 
