@@ -446,7 +446,6 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
-#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, os, os, ns, __FILE__, __LINE__)
 static inline void *
 GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
 {
@@ -462,6 +461,7 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 			filename, lineno);
 	return res;
 }
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
 
 #endif
 #endif
