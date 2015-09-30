@@ -29,15 +29,6 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 str traceFcnName = "____";
 int tracefcn;
 int polyVector[MAXTYPEVAR];
-#if 0
-void
-polyInit(void)
-{
-	int i;
-	for (i = 0; i < MAXTYPEVAR; i++)
-		polyVector[i] = TYPE_any;
-}
-#endif
 
 /*
  * We found the proper function. Copy some properties. In particular,
