@@ -426,6 +426,25 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#define GDKmremap(p, m, oa, os, ns)					\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		void *_oa = (oa);					\
+		size_t _os = (os);					\
+		size_t *_ns = (ns);					\
+		size_t _ons = *_ns;					\
+		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				_path ? _path : "NULL", _mode,		\
+				PTRFMTCAST _oa, _os, _ons, *_ns,	\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
 #else
 static inline void *
 GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
@@ -462,6 +481,23 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, os, os, ns, __FILE__, __LINE__)
+static inline void *
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+{
+	size_t orig_new_size = *new_size;
+	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
+	ALLOCDEBUG
+		fprintf(stderr,
+			"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT
+			" [%s:%d]\n",
+			path ? path : "NULL", mode,
+			PTRFMTCAST old_address, old_size, orig_new_size, *new_size,
+			PTRFMTCAST res,
+			filename, lineno);
+	return res;
+}
+
 #endif
 #endif
 
