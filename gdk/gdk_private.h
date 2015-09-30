@@ -460,7 +460,7 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 			PTRFMTCAST old_address, old_size, orig_new_size, *new_size,
 			PTRFMTCAST res,
 			filename, lineno);
-	_res;
+	return res;
 }
 
 #endif
