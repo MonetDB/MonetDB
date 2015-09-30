@@ -451,19 +451,19 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	MT_lock_set(&mal_profileLock, "TRACEtable");
-	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
-	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
-	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
-	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
-	r[4] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	r[5] = BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	r[7] = BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	r[8] = BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	r[9] = BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	r[10] = BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	r[11] = BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	r[12] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	r[0] = BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
+	r[1] = BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
+	r[2] = BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
+	r[3] = BATcopy(TRACE_id_thread, TYPE_void, TRACE_id_thread->ttype, 0, TRANSIENT);
+	r[4] = BATcopy(TRACE_id_ticks, TYPE_void, TRACE_id_ticks->ttype, 0, TRANSIENT);
+	r[5] = BATcopy(TRACE_id_rssMB, TYPE_void, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+	r[6] = BATcopy(TRACE_id_tmpspace, TYPE_void, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+	r[7] = BATcopy(TRACE_id_inblock, TYPE_void, TRACE_id_inblock->ttype, 0, TRANSIENT);
+	r[8] = BATcopy(TRACE_id_oublock, TYPE_void, TRACE_id_oublock->ttype, 0, TRANSIENT);
+	r[9] = BATcopy(TRACE_id_minflt, TYPE_void, TRACE_id_minflt->ttype, 0, TRANSIENT);
+	r[10] = BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
+	r[11] = BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+	r[12] = BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "TRACEtable");
 }
 
@@ -600,31 +600,31 @@ getTrace(const char *nme)
 	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
-		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "time") == 0)
-		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "pc") == 0)
-		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "thread") == 0)
-		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_thread, TYPE_void, TRACE_id_thread->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "ticks") == 0)
-		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_ticks, TYPE_void, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "rssMB") == 0)
-		return BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_rssMB, TYPE_void, TRACE_id_rssMB->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "tmpspace") == 0)
-		return BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_tmpspace, TYPE_void, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "reads") == 0)
-		return BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_inblock, TYPE_void, TRACE_id_inblock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "writes") == 0)
-		return BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_oublock, TYPE_void, TRACE_id_oublock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "minflt") == 0)
-		return BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_minflt, TYPE_void, TRACE_id_minflt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "majflt") == 0)
-		return BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "nvcsw") == 0)
-		return BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "stmt") == 0)
-		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
+		return BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	return NULL;
 }
 

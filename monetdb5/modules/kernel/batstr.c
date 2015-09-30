@@ -1274,12 +1274,6 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		BUNappend(bn, *vp, FALSE);
 		GDKfree(*vp);
 	}
-	if (left->htype != bn->htype) {
-		BAT *r = VIEWcreate(left,bn);
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
-	}
 	bn->T->nonil = 0;
 	BBPunfix(start->batCacheid);
 	BBPunfix(length->batCacheid);

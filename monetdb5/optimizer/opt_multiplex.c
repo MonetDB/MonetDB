@@ -44,9 +44,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
-		ht = getHeadType(getArgType(mb, pci, i));
-		if (ht != TYPE_oid)
-			throw(MAL, "optimizer.multiplex", "Target head type is missing");
+		ht = TYPE_oid;
 		tt = getColumnType(getArgType(mb, pci, i));
 		if (tt== TYPE_any)
 			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
@@ -67,8 +65,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc+2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
-			if (getHeadType(getVarType(mb,iter)) != TYPE_oid)
-				throw(MAL, "optimizer.multiplex", "Iterator BAT is not OID-headed");
 			break;
 		}
 	if( i == pci->argc)
@@ -102,7 +98,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = newFcnCall(mb, batRef, newRef);
 		resB[i] = getArg(q, 0);
 
-		ht = getHeadType(getArgType(mb, pci, i));
+		ht = TYPE_oid;
 		tt = getColumnType(getArgType(mb, pci, i));
 
 		setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -135,7 +131,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
-			ht = getHeadType(getArgType(mb, pci, i));
+			ht = TYPE_oid;
 			tt = getColumnType(getArgType(mb, pci, i));
 			nvar = newTmpVariable(mb, newBatType(ht, tt));
 		} else {
