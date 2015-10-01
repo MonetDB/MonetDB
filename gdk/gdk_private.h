@@ -67,8 +67,6 @@ __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, 
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATkdiff(BAT *b, BAT *c)
-	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATmaterialize(BAT *b)
@@ -508,17 +506,6 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 #ifndef NDEBUG
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
-
-#define BATkdiff(l, r)							\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATkdiff(_l, _r);					\
-	})
 
 #define BATmaterializeh(b)						\
 	({								\
