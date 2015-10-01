@@ -114,7 +114,7 @@ function user.main():void;
     b := bat.append(b,b);
     io.print(b);
     x := mosaic.compress(b);
-    mosaic.dump(x);
+#mosaic.dump(x); 
     z := mosaic.decompress(x);
     io.print(z);
 end user.main;
