@@ -64,13 +64,15 @@ QUERY = INSERT INTO OID_TBL(f1) VALUES ('32958209582039852935');
 ERROR = !conversion of string '32958209582039852935' to type oid failed.
 MAPI  = (monetdb) /var/tmp/mtest-17898/.s.monetdb.31237
 QUERY = INSERT INTO OID_TBL(f1) VALUES (32958209582039852935);
-ERROR = !overflow in conversion of 32958209582039851008 to int.
-MAPI  = (monetdb) /var/tmp/mtest-17898/.s.monetdb.31237
+ERROR = !integer value too large or not a number (32958209582039852935) in: "insert into oid_tbl(f1) values (32958209582039852935"
+        !syntax error, unexpected ')' in: ")"
+MAPI  = (monetdb) /var/tmp/mtest-28183/.s.monetdb.33906
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
 ERROR = !conversion of string '-23582358720398502385' to type oid failed.
 MAPI  = (monetdb) /var/tmp/mtest-17898/.s.monetdb.31237
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-23582358720398502385);
-ERROR = !overflow in conversion of -23582358720398503936 to int.
+ERROR = !integer value too large or not a number (23582358720398502385) in: "insert into oid_tbl(f1) values (-23582358720398502385"
+        !syntax error, unexpected ')' in: ")"
 
 # 16:41:57 >  
 # 16:41:57 >  "Done."
