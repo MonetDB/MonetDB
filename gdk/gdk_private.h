@@ -108,9 +108,13 @@ __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextendf(int fd, size_t size, const char *fn)
 	__attribute__((__visibility__("hidden")));
+__hidden  int GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
+	__attribute__((__visibility__("hidden")));
 __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
+	__attribute__((__visibility__("hidden")));
+__hidden char *GDKfilepath_long(int farmid, const char *dir, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 	__attribute__((__visibility__("hidden")));
