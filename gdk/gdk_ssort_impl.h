@@ -749,8 +749,10 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
 			while (ms->n > 1) {
 				ssize_t i = ms->n - 2;
 
-				if (i > 0 &&
-				    p[i - 1].len <= p[i].len + p[i + 1].len) {
+				if ((i > 0 &&
+				     p[i-1].len <= p[i].len + p[i+1].len) ||
+				    (i > 1 &&
+				     p[i-2].len <= p[i-1].len + p[i].len)) {
 					if (p[i - 1].len < p[i + 1].len)
 						--i;
 					if (merge_at(ms, i) < 0)
