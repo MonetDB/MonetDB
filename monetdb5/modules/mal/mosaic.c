@@ -465,6 +465,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		switch(cand){
 		case MOSAIC_RLE:
 		case MOSAIC_DICT:
+		case MOSAIC_FRAME:
 		case MOSAIC_DELTA:
 		case MOSAIC_LINEAR:
 		case MOSAIC_PREFIX:
@@ -541,9 +542,10 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		MOSsetTag(task->blk,MOSAIC_EOL);
 	} else
 		task->dst = ((char*) task->blk)+ MosaicBlkSize;
-	task->xsize = (task->dst - (char*)task->hdr) + MosaicHdrSize;
+	task->xsize = (task->dst - (char*)task->hdr);
 	task->timer = GDKusec() - task->timer;
-	if(debug) MOSdumpTask(cntxt,task);
+	if(debug) 
+		MOSdumpTask(cntxt,task);
 	// if we couldnt compress well enough, ignore the result
 	// TODO
 
