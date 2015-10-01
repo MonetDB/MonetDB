@@ -40,3 +40,7 @@ comment "Test a string for a UUID format";
 command calc.==(l:uuid,r:uuid):bit
 address UUIDequal
 comment "Compare two UUID values for equality";
+
+function calc.uuid(u:uuid):uuid;
+ return u;
+end calc.uuid;
