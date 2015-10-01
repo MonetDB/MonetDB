@@ -36,15 +36,6 @@
 // we use longs as the basis for bit vectors
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
-/*
-#include "bitvector.h"
-typedef struct{
-	MosaicBlk blk;
-	ValRecord reference;
-	Vector base[];
-}FrameRecord;
-*/
-
 void
 MOSadvance_frame(Client cntxt, MOStask task)
 {
@@ -55,7 +46,7 @@ MOSadvance_frame(Client cntxt, MOStask task)
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
-	task->stop = task->elm;
+	//task->stop = task->elm;
 	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(unsigned long);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 }
@@ -279,8 +270,8 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			}
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
 	MOSdump_frame(cntxt, task);
+#ifdef _DEBUG_MOSAIC_
 #endif
 }
 
@@ -392,7 +383,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: FRAMEcompress(sht); break;
-	case TYPE_int: FRAMEcompress(int); break;
+	case TYPE_lng: FRAMEcompress(lng); break;
 	case TYPE_oid: FRAMEcompress(oid); break;
 	case TYPE_wrd: FRAMEcompress(wrd); break;
 	case TYPE_flt: FRAMEcompress(flt); break;
@@ -400,19 +391,19 @@ MOScompress_frame(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: FRAMEcompress(hge); break;
 #endif
-	case TYPE_lng:
-		{	lng *val = ((lng*)task->src) + task->start, frame = *val, delta;
-			lng *dict = (lng*)hdr->frame;
+	case TYPE_int:
+		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
+			int *dict = (int*)hdr->frame;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
-			*(lng*) task->dst = frame;	// keep the frame reference value
-			task->dst += sizeof(lng);
-			base = (unsigned long*) (((char*) task->blk) + MosaicBlkSize +  wordaligned(sizeof(lng),lng)); // start of bit vector
+			*(int*) task->dst = frame;	// keep the frame reference value
+			task->dst += sizeof(int);
+			base = (unsigned long*) (((char*) task->blk) + MosaicBlkSize +  wordaligned(sizeof(int),lng)); // start of bit vector
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
 				delta = *val - frame;
-				hdr->checksum.sumlng += delta;
+				hdr->checksum.sumint += delta;
 				MOSfind(j,delta,0,hdr->framesize);
 				//mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val "LLFMT" index %d framebits %d\n",i, *val,j,hdr->framebits);
 				if( j == hdr->framesize || dict[j] != delta )
