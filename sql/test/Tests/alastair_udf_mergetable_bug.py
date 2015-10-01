@@ -23,7 +23,7 @@ insert into tab2 values (1,111),(2,222),(3,333),(4,444);
 
 set optimizer='default_pipe';
 select optimizer;
-select tab1.group_by_col,SUM(fuse(tab1.f,tab2.f)) from tab2 inner join tab1 on tab1.index_col = tab2.index_col group by tab1.group_by_col;
+select tab1.group_by_col,SUM(fuse(cast (tab1.f as INT),cast (tab2.f as INT))) from tab2 inner join tab1 on tab1.index_col = tab2.index_col group by tab1.group_by_col;
 
 drop table tab1;
 drop table tab2;
