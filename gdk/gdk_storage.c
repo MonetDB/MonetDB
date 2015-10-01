@@ -93,7 +93,7 @@ GDKfilepath_long(int farmid, const char *dir, const char *ext) {
 	char last_dir_parent[BUFSIZ] = "";
 	char last_dir[BUFSIZ] = "";
 
-	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir)) {
+	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir) == GDK_SUCCEED) {
 		return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
 	}
 	return NULL;
