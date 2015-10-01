@@ -40460,7 +40460,7 @@ command bbp.getName(b:bat[:oid,:any_1]):str
 address CMDbbpName;
 comment Map a BAT into its internal name
 
-command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],ht:bat[:oid,:str],tt:bat[:oid,:str],cnt:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]) 
+command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],tt:bat[:oid,:str],cnt:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]) 
 address CMDbbp;
 comment bpp
 
@@ -51574,12 +51574,6 @@ comment truncate the floating point v to r digits behind the dot (if r < 0, befo
 pattern sql.mvc():int 
 address SQLmvc;
 comment Get the multiversion catalog context. Needed for correct statement dependencies(ie sql.update, should be after sql.bind in concurrent execution)
-
-command sql.not_uniques(b:bat[:oid,:wrd]):bat[:oid,:oid] 
-address not_unique_oids;
-command sql.not_uniques(b:bat[:oid,:oid]):bat[:oid,:oid] 
-address not_unique_oids;
-comment return not unique oids
 
 command sql.not_unique(b:bat[:oid,:oid]):bit 
 address not_unique;

@@ -65,3 +65,7 @@ order_by_incorrect_error.Bug-3630
 incorrect_floating_point_cast.Bug-3633
 acidity-fail.Bug-3635
 BOM-in-string.Bug-3641
+combined_WHERE_conditions.Bug-3642
+copy-into.Bug-3481
+empty_intermediate_quantile.Bug-3611
+uppercaseboolean.Bug-3519

@@ -1537,7 +1537,6 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
-gdk_export char *GDKfilepath_long(int farmid, const char *dir, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*
@@ -2494,7 +2493,7 @@ gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
-gdk_export Thread THRnew(str name);
+gdk_export Thread THRnew(const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
@@ -3103,5 +3102,72 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
  *
  */
 #define MAXPARAMS	32
+
+#ifndef NDEBUG
+#ifdef __GNUC__
+/* in debug builds, complain (warn) about usage of legacy functions */
+
+#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
+				(c)->seq == oid_nil ? "nil" : "void" :	\
+			 (c)->type == TYPE_oid ?			\
+				(c)->dense ? "dense" : "oid" :		\
+			 ATOMname((c)->type))
+
+#define BATins(b, n, force)						\
+	({								\
+		BAT *_b = (b), *_n = (n);				\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATins([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BATins(_b, _n, _force);					\
+	})
+
+#define BATdel(b, n, force)						\
+	({								\
+		BAT *_b = (b), *_n = (n);				\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATdel([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BATdel(_b, _n, _force);					\
+	})
+
+#define BUNdel(b, x, y, force)						\
+	({								\
+		BAT *_b = (b);						\
+		const void *_x = (x), *_y = (y);			\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BUNdel([%s,%s]#"BUNFMT","PTRFMT","PTRFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			PTRFMTCAST _x, PTRFMTCAST _y,			\
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BUNdel(_b, _x, _y, _force);				\
+	})
+
+#define BUNdelete(b, p, force)						\
+	({								\
+		BAT *_b = (b);						\
+		BUN _p = (p);						\
+		bit _force = (force);					\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BUNdelete([%s,%s]#"BUNFMT","BUNFMT",%d) %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			_p,						\
+			_force,						\
+			__func__, __FILE__, __LINE__);			\
+		BUNdelete(_b, _p, _force);				\
+	})
+
+#endif
+#endif
 
 #endif /* _GDK_H_ */

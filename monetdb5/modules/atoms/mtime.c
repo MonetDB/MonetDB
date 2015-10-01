@@ -2065,14 +2065,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, BUNfirst(bn))));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	if (b1->htype != bn->htype) {
-		/* temporarily reuse b2 */
-		b2 = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b1->hseqbase);
-	}
+	BATseqbase(bn, b1->hseqbase);
 	BBPunfix(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;
@@ -2152,14 +2145,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, BUNfirst(bn))));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	if (b1->htype != bn->htype) {
-		/* temporarily reuse b2 */
-		b2 = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b1->hseqbase);
-	}
+	BATseqbase(bn, b1->hseqbase);
 	BBPunfix(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;

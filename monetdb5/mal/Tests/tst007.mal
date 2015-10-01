@@ -35,14 +35,14 @@ exit	N;
 
 # de if-then en if-then-else constructies
 
-barrier	FT:= booleanexpr;
+barrier	FT:= false;
 	# thenpart
 exit	FT;
 
-barrier	FTE:= booleanexpr;
+barrier	FTE:= false;
 	# thenpart
 exit	FTE;
-barrier FS:= batcalc.not(FTE);
+barrier FS:= calc.not(FTE);
 	#elsepart
 exit	FS;
 

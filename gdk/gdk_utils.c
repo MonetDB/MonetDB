@@ -83,7 +83,7 @@ static void GDKunlockHome(void);
  */
 
 static int
-GDKenvironment(str dbpath)
+GDKenvironment(const char *dbpath)
 {
 	if (dbpath == 0) {
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
@@ -1666,7 +1666,7 @@ GDK_find_thread(MT_Id pid)
 }
 
 Thread
-THRnew(str name)
+THRnew(const char *name)
 {
 	int tid = 0;
 	Thread t;
@@ -1706,7 +1706,7 @@ THRnew(str name)
 
 		GDKnrofthreads++;
 	}
-	s->name = name;
+	s->name = GDKstrdup(name);
 	MT_lock_unset(&GDKthreadLock, "THRnew");
 
 	return s;
@@ -1721,6 +1721,8 @@ THRdel(Thread t)
 	MT_lock_set(&GDKthreadLock, "THRdel");
 	PARDEBUG fprintf(stderr, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 
+	GDKfree(t->name);
+	t->name = NULL;
 	t->pid = 0;
 	GDKnrofthreads--;
 	MT_lock_unset(&GDKthreadLock, "THRdel");
@@ -1880,24 +1882,24 @@ GDKversion(void)
  * the last directory (name) without a leading separators in last_dir.
  * Returns 1 for success, 0 on failure.
  */
-int
+gdk_return
 GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir) {
 	char *last_dir_with_sep;
 	ptrdiff_t last_dirsep_index;
 
 	if (path == NULL || *path == 0) {
-		return 0;
+		return GDK_FAIL;
 	}
 
 	last_dir_with_sep = strrchr(path, DIR_SEP);
 	if (last_dir_with_sep == NULL) {
 		/* it wasn't a path, can't work with that */
-		return 0;
+		return GDK_FAIL;
 	}
 	last_dirsep_index = last_dir_with_sep - path;
 	/* split the dir string into absolute parent dir path and (relative) log dir name */
 	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
 	strncpy(last_dir_parent, path, last_dirsep_index);
 
-	return 1;
+	return GDK_SUCCEED;
 }

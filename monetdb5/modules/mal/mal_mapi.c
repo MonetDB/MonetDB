@@ -1642,7 +1642,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		}
 
 		/* reconstruct the object */
-		ht = getTypeName(getHeadType(tpe));
+		ht = getTypeName(TYPE_oid);
 		tt = getTypeName(getColumnType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
@@ -1736,7 +1736,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
-		hn= getTypeName(getHeadType(target));
+		hn= getTypeName(TYPE_oid);
 		tn= getTypeName(getColumnType(target));
 		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)), hn,tn, *nme);

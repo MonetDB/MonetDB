@@ -36,7 +36,7 @@ create view sys.environment as select * from sys.environment();
 
 -- The BAT buffer pool overview
 create function sys.bbp ()
-	returns table (id int, name string, htype string,
+	returns table (id int, name string, 
 		ttype string, count BIGINT, refcnt int, lrefcnt int,
 		location string, heat int, dirty string,
 		status string, kind string)

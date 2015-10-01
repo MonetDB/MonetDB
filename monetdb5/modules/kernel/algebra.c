@@ -692,7 +692,7 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 static BAT *
 BATwcopy(BAT *b)
 {
-	return BATcopy(b, b->htype, b->ttype, 1, TRANSIENT);
+	return BATcopy(b, TYPE_void, b->ttype, 1, TRANSIENT);
 }
 
 str
@@ -1252,14 +1252,14 @@ str ALGreuse(bat *ret, const bat *bid)
 		throw(MAL, "algebra.reuse", RUNTIME_OBJECT_MISSING);
 
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
-		if( ATOMvarsized(b->ttype) || b->htype != TYPE_void){
+		if( ATOMvarsized(b->ttype) ){
 			bn= BATwcopy(b);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 		} else {
-			bn = BATnew(b->htype,b->ttype,BATcount(b), TRANSIENT);
+			bn = BATnew(TYPE_void,b->ttype,BATcount(b), TRANSIENT);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);

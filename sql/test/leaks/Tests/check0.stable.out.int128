@@ -57,23 +57,23 @@ Ready.
 #set optimizer='minimal_pipe';
 #select htype, ttype, count from bbp() as bbp 
 #where kind like 'pers%'
-#order by htype, ttype, count;
-% .bbp,	.bbp,	.bbp # table_name
-% htype,	ttype,	count # name
-% clob,	clob,	bigint # type
-% 3,	3,	3 # length
-[ "oid",	"int",	0	]
-[ "oid",	"int",	0	]
-[ "oid",	"int",	1	]
-[ "oid",	"int",	1	]
+#order by ttype, count;
+% .bbp,	.bbp # table_name
+% ttype,	count # name
+% clob,	bigint # type
+% 3,	3 # length
+[ "int",	0	]
+[ "int",	0	]
+[ "int",	1	]
+[ "int",	1	]
 [ "oid",	"int",	246	]
-[ "oid",	"lng",	1	]
-[ "oid",	"oid",	0	]
-[ "oid",	"oid",	0	]
-[ "oid",	"oid",	0	]
-[ "oid",	"str",	1	]
-[ "oid",	"str",	1	]
-[ "oid",	"str",	1	]
+[ "lng",	1	]
+[ "oid",	0	]
+[ "oid",	0	]
+[ "oid",	0	]
+[ "str",	1	]
+[ "str",	1	]
+[ "str",	1	]
 [ "oid",	"str",	246	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.L2 # table_name
