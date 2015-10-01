@@ -2287,6 +2287,7 @@ int malBootstrap(void);
 str malCommandCall(MalStkPtr stk, InstrPtr pci);
 int malProfileMode;
 str malRef;
+MT_Lock mal_beatLock;
 ClientRec *mal_clients;
 MT_Lock mal_contextLock;
 MT_Lock mal_copyLock;

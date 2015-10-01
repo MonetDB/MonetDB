@@ -25,7 +25,6 @@ static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 stream *eventstream = 0;
 
-static int offlineProfiling = FALSE;
 static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
@@ -607,7 +606,6 @@ startProfiler(void)
 		eventcounter = 0;
 	}
 	malProfileMode = 1;
-	offlineProfiling = TRUE;
 	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock, "startProfiler");
 

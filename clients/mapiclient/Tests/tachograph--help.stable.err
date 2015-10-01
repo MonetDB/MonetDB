@@ -15,7 +15,6 @@ tachograph [options]
   -u | --user=<user>
   -p | --port=<portnr>
   -h | --host=<hostname>
-  -w | --wait=<delay time> in milliseconds
   -? | --help
 
 # 23:54:13 >  
