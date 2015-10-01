@@ -83,7 +83,7 @@ static void GDKunlockHome(void);
  */
 
 static int
-GDKenvironment(str dbpath)
+GDKenvironment(const char *dbpath)
 {
 	if (dbpath == 0) {
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
