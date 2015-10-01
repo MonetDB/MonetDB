@@ -5532,47 +5532,6 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				return sql_error(sql, 02, "Subquery result missing");
 			return NULL;
 		}
-#if 0
-		if(rel->op == op_basetable) {
-			sql_table *t = (sql_table*)rel->l;
-			if(isArray(t)) {
-			/* if it is an array we need to add filtering condition on the dimensional columns 
-	 		 * so that we can create a bounding box over the qualifying values. We do not need
- 			 * to add something in case filter conditions are on dimensional columns. */
-				node *whereExpNode;
-				list *newFilters = new_exp_list(sql->sa);
-				for(whereExpNode=r->exps->h; whereExpNode; whereExpNode=whereExpNode->next) {
-					sql_exp *whereExp = whereExpNode->data;
-					if(isColumn(whereExp)) {
-							if(!newFilters->cnt) {
-								/*Assuming a single array add all dimensions of it to the filtering condition*/
-								node *basetableExps;
-								for(basetableExps = rel->exps->h ; basetableExps; basetableExps = basetableExps->next) {
-									sql_exp* dimExp = basetableExps->data;
-									if(dimExp->type == e_dimension) {
-										append(newFilters, exp_mbr(sql->sa, dimExp));
-									}
-								}
-							}
-					}
-					if(newFilters->cnt)
-						break;
-				}
-
-				//add the newFilters to the where conditions
-				for(whereExpNode=newFilters->h; whereExpNode; whereExpNode=whereExpNode->next) {
-					sql_exp *exp = whereExpNode->data;
-					append(r->exps, exp);
-				}
-			}
-		} else {
-			sql_table *t = (sql_table*)rel->l;
-			if(t && isArray(t)) {
-				fprintf(stderr, "Array but not basetable\n");
-				return NULL;
-			}
-		}
-#endif
 		rel = r;
 	}
 

@@ -1719,7 +1719,19 @@ rel2bin_qqr(mvc *sql, sql_rel *rel, list *refs)
 	return stmt_list(sql->sa, l);
 }
 
+static bool isArrayBasetable(sql_rel *r) {
+	switch(r->op) {
+		case op_basetable: {
+			sql_table *t = (sql_table*)r->l;
+			return isArray(t);
+		} case op_select:
+			return isArrayBasetable(r->l);
+		default:
+			return 0;
+	}
 
+	return 0;
+}
 static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 {
@@ -1729,29 +1741,15 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 	stmt *ld = NULL, *rd = NULL;
 	int need_left = (rel->flag == LEFT_JOIN);
 
-	stmt *leftArray = NULL, *rightArray = NULL;
+	bool leftArray = 0, rightArray = 0;
 	if (rel->l) { /* first construct the left sub relation */
-		sql_rel *rtmp;
 		left = subrel_bin(sql, rel->l, refs);
-		
-		rtmp = (sql_rel*)rel->l;
-		if(rtmp->op == op_basetable) {
-			sql_table *t = (sql_table*)rtmp->l;
-			if(isArray(t))
-				leftArray = rel2bin_basetable(sql, rel->l);
-		}
+		leftArray = isArrayBasetable((sql_rel*)rel->l);
 	}
 
 	if (rel->r) {/* first construct the right sub relation */
-		sql_rel *rtmp;
 		right = subrel_bin(sql, rel->r, refs);
-		
-		rtmp = (sql_rel*)rel->r;
-		if(rtmp->op == op_basetable) {
-			sql_table *t = (sql_table*)rtmp->l;
-			if(isArray(t))
-				rightArray = rel2bin_basetable(sql, rel->r);
-		}
+		rightArray = isArrayBasetable((sql_rel*)rel->l);
 	}
 
 	if(leftArray && rightArray) {
