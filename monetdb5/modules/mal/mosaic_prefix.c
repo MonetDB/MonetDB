@@ -147,7 +147,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			bits = val & (~mask);
 			// be aware that we use longs as bit vectors
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
-			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,bte)); 
+			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
 		break;
@@ -157,7 +157,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			sht val = *dst++;
 			bits = val & (~mask);
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
-			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,sht)); 
+			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
 		break;
@@ -167,7 +167,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			int val = *dst++;
 			bits = val & (~mask);
 			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
-			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
+			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
 		break;
@@ -233,7 +233,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 
 			if( task->range[MOSAIC_PREFIX] > task->start +1 /* need at least two*/){
-				bits = task->range[MOSAIC_PREFIX - task->start] * (8-bits);
+				bits = task->range[MOSAIC_PREFIX] - task->start * (8-bits);
 				store = bits/8 + ((bits % 8) >0);
 				store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
 				if( store >= (flt)i * sizeof(bte))
@@ -269,7 +269,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = task->range[MOSAIC_PREFIX - task->start] * (16-bits);
+				bits = task->range[MOSAIC_PREFIX] - task->start * (16-bits);
 				store = bits/8 + ((bits % 8) >0);
 				store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
 				if( store >= (flt)i * sizeof(sht))
@@ -284,7 +284,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			bits = i * (16-bits);
 			store = bits/8 + ((bits % 8) >0);
-			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,sht);
+			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,lng);
 			if( store >= (flt)i * sizeof(sht))
 				return 0.0;
 			factor = ( (flt)i * sizeof(sht))/ store;
@@ -305,9 +305,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = task->range[MOSAIC_PREFIX - task->start] * (32-bits);
+				bits = task->range[MOSAIC_PREFIX] - task->start * (32-bits);
 				store = bits/8 + ((bits % 8) >0);
-				store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
+				store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,lng);
 				if( store > (flt)i * sizeof(int))
 					return 0.0;
 				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(int))/ store;
@@ -320,7 +320,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			bits = i * (32-bits);
 			store = bits/8 + ((bits % 8) >0);
-			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,int);
+			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,lng);
 			if( store >= (flt)i * sizeof(int))
 				return 0.0;
 			factor = ( (flt)i * sizeof(int))/ store;
@@ -341,7 +341,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				break;
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = task->range[MOSAIC_PREFIX - task->start] * (64-bits);
+				bits = task->range[MOSAIC_PREFIX] - task->start * (64-bits);
 				store = bits/8 + ((bits % 8) >0);
 				store = wordaligned( MosaicBlkSize + 2 * sizeof(lng) +  store,lng);
 				if( store >= (flt)i * sizeof(lng))
