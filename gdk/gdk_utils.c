@@ -83,7 +83,7 @@ static void GDKunlockHome(void);
  */
 
 static int
-GDKenvironment(str dbpath)
+GDKenvironment(const char *dbpath)
 {
 	if (dbpath == 0) {
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
@@ -1706,7 +1706,7 @@ THRnew(str name)
 
 		GDKnrofthreads++;
 	}
-	s->name = name;
+	s->name = GDKstrdup(name);
 	MT_lock_unset(&GDKthreadLock, "THRnew");
 
 	return s;
@@ -1721,6 +1721,8 @@ THRdel(Thread t)
 	MT_lock_set(&GDKthreadLock, "THRdel");
 	PARDEBUG fprintf(stderr, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 
+	GDKfree(t->name);
+	t->name = NULL;
 	t->pid = 0;
 	GDKnrofthreads--;
 	MT_lock_unset(&GDKthreadLock, "THRdel");
