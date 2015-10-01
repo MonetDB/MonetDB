@@ -31415,7 +31415,7 @@ command bbp.getName(b:bat[:oid,:any_1]):str
 address CMDbbpName;
 comment Map a BAT into its internal name
 
-command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],ht:bat[:oid,:str],tt:bat[:oid,:str],cnt:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]) 
+command bbp.get() (id:bat[:oid,:int],ns:bat[:oid,:str],tt:bat[:oid,:str],cnt:bat[:oid,:lng],refcnt:bat[:oid,:int],lrefcnt:bat[:oid,:int],location:bat[:oid,:str],heat:bat[:oid,:int],dirty:bat[:oid,:str],status:bat[:oid,:str],kind:bat[:oid,:str]) 
 address CMDbbp;
 comment bpp
 
