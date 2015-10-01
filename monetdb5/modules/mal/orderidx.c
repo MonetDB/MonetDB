@@ -112,7 +112,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	q->argv[0] = loopvar;
 	pushEndInstruction(smb);
 	chkProgram(cntxt->fdout, cntxt->nspace, smb);
-	printFunction(THRdata[0], smb, 0 , 23);
+	//printFunction(THRdata[0], smb, 0 , 23);
 	if (smb->errors) {
 		msg = createException(MAL, "bat.orderidx",
 		                           "Type errors in generated code");
