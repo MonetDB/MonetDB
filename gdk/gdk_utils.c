@@ -1666,7 +1666,7 @@ GDK_find_thread(MT_Id pid)
 }
 
 Thread
-THRnew(str name)
+THRnew(const char *name)
 {
 	int tid = 0;
 	Thread t;

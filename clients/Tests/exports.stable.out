@@ -297,7 +297,7 @@ Thread THRget(int tid);
 void *THRgetdata(int);
 int THRgettid(void);
 int THRhighwater(void);
-Thread THRnew(str name);
+Thread THRnew(const char *name);
 int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
 void THRsetdata(int, ptr);
 gdk_return TMabort(void);

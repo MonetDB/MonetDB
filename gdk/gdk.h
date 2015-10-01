@@ -2485,7 +2485,7 @@ gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
-gdk_export Thread THRnew(str name);
+gdk_export Thread THRnew(const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
