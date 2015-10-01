@@ -270,8 +270,8 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			}
 		}
 	}
-	MOSdump_frame(cntxt, task);
 #ifdef _DEBUG_MOSAIC_
+	MOSdump_frame(cntxt, task);
 #endif
 }
 
