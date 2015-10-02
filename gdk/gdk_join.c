@@ -1223,7 +1223,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * we're at the end of r, v is NULL */
 			if (v == NULL) {
 				if (lcand) {
-					nlx = lcandend - lcand;
+					nlx = (BUN) (lcandend - lcand);
 					lcand = lcandend;
 				} else {
 					nlx = lend - lstart;
