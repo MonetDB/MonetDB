@@ -289,7 +289,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
  * sequence is found with high compression factor.
  */
 static int
-MOSoptimizer(Client cntxt, MOStask task)
+MOSoptimizer(Client cntxt, MOStask task, int typewidth)
 {
 	int cand = MOSAIC_NONE;
 	float ratio = 1.0, fac = 1.0;
@@ -302,20 +302,6 @@ MOSoptimizer(Client cntxt, MOStask task)
 			ratio = fac;
 		}
 	}
-	if ( task->filter[MOSAIC_DICT]){
-		fac = MOSestimate_dictionary(cntxt,task);
-		if (fac > ratio){
-			cand = MOSAIC_DICT;
-			ratio = fac;
-		}
-	}
-	if ( task->filter[MOSAIC_DELTA]){
-		fac = MOSestimate_delta(cntxt,task);
-		if ( fac > ratio ){
-			cand = MOSAIC_DELTA;
-			ratio = fac;
-		}
-	}
 	if ( task->filter[MOSAIC_LINEAR]){
 		fac = MOSestimate_linear(cntxt,task);
 		if ( fac >ratio){
@@ -323,14 +309,8 @@ MOSoptimizer(Client cntxt, MOStask task)
 			ratio = fac;
 		}
 	}
-	if ( task->filter[MOSAIC_FRAME]){
-		fac = MOSestimate_frame(cntxt,task);
-		if (fac > ratio){
-			cand = MOSAIC_FRAME;
-			ratio = fac;
-		}
-	}
-	if ( task->filter[MOSAIC_PREFIX]){
+	// max achievable compression factor is 64x
+	if (ratio < typewidth && task->filter[MOSAIC_PREFIX]){
 		fac = MOSestimate_prefix(cntxt,task);
 		if ( fac > ratio ){
 			cand = MOSAIC_PREFIX;
@@ -338,6 +318,30 @@ MOSoptimizer(Client cntxt, MOStask task)
 		}
 		if ( fac  < 0.0)
 				task->filter[MOSAIC_PREFIX] = 0;
+	}
+	// max achievable compression factor is 8x
+	if (ratio < 8 && task->filter[MOSAIC_DICT]){
+		fac = MOSestimate_dictionary(cntxt,task);
+		if (fac > ratio){
+			cand = MOSAIC_DICT;
+			ratio = fac;
+		}
+	}
+	// max achievable compression factor is 8x
+	if (ratio < 8 && task->filter[MOSAIC_FRAME]){
+		fac = MOSestimate_frame(cntxt,task);
+		if (fac > ratio){
+			cand = MOSAIC_FRAME;
+			ratio = fac;
+		}
+	}
+	// max achievable compression factor is 8x
+	if (ratio < 8 && task->filter[MOSAIC_DELTA]){
+		fac = MOSestimate_delta(cntxt,task);
+		if ( fac > ratio ){
+			cand = MOSAIC_DELTA;
+			ratio = fac;
+		}
 	}
 	//mnstr_printf(cntxt->fdout,"#cand %d factor %f\n",cand,ratio);
 	return cand;
@@ -350,13 +354,14 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	BAT *bcompress; // the BAT that will contain the compressed version
 	str msg = MAL_SUCCEED;
 	int cand;
+	int tpe, typewidth;
 	
 	*ret = 0;
 
 	if ((bcompress = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
-	switch(ATOMbasetype(bcompress->ttype)){
+	switch( tpe =ATOMbasetype(bcompress->ttype)){
 	case TYPE_bit:
 	case TYPE_bte:
 	case TYPE_sht:
@@ -370,6 +375,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 	case TYPE_flt:
 	case TYPE_dbl:
 	case TYPE_str:
+		typewidth = ATOMsize(tpe) * 8;
 		break;
 	default:
 		// don't compress them
@@ -391,7 +397,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#compress bat %d \n",*bid);
 #endif
-	bsrc = BATcopy(bcompress, bcompress->htype, bcompress->ttype, TRUE,TRANSIENT);
+	bsrc = BATcopy(bcompress, TYPE_void, bcompress->ttype, TRUE,TRANSIENT);
 
 	if (bsrc == NULL) {
 		BBPunfix(bcompress->batCacheid);
@@ -459,7 +465,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block
-		cand = MOSoptimizer(cntxt,task);
+		cand = MOSoptimizer(cntxt, task, typewidth);
 
 		// wrapup previous block
 		switch(cand){
