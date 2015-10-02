@@ -101,7 +101,7 @@ typedef struct MOSAICHEADER{
 #define MOSAICMAXCNT (1<<23)
 
 typedef struct MOSAICBLK{
-	unsigned int tag:8, cnt:24, free:32;
+	unsigned int tag:8, cnt:24;//, free:32;
 } MosaicBlkRec, *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
@@ -117,7 +117,7 @@ typedef struct MOSAICBLK{
 	 ((SZ) +  ((SZ) % sizeof(TYPE)? sizeof(TYPE) - ((SZ)%sizeof(TYPE)) : 0))
 
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),lng)
-#define MosaicBlkSize  wordaligned(sizeof(MosaicBlk *),lng)
+#define MosaicBlkSize  sizeof(MosaicBlk *)
 
 
 typedef struct MOSTASK{
