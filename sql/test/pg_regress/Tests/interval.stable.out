@@ -80,13 +80,6 @@ Ready.
 [ "",	-1.000	]
 [ "",	-1363962815083169.272	]
 [ "",	-5670419503621183.312	]
-#select avg(cast(f1 as decimal)) from interval_tbl;
-% sys. # table_name
-# sys.L2 # table_name
-% L2 # name
-% double # type
-% 24 # length
-[ 1.399119099e+13       ]
 #select min(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name

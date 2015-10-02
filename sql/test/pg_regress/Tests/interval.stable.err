@@ -114,14 +114,17 @@ ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
 MAPI  = (monetdb) /var/tmp/mtest-21889/.s.monetdb.34286
 QUERY = select avg(cast(f1 as double)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-MAPI  = (monetdb) /var/tmp/mtest-21889/.s.monetdb.34286
+MAPI  = (monetdb) /var/tmp/mtest-11560/.s.monetdb.36606
+QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
+ERROR = !too many digits (22 > 18)
+MAPI  = (monetdb) /var/tmp/mtest-11560/.s.monetdb.36606
 QUERY = select avg(cast(f1 as decimal(22,3))) from interval_tbl;
 ERROR = !decimal(22,3) isn't supported because P=22 > 18 in: "select avg(cast(f1 as decimal(22,3)"
-        !syntax/parse error, 
-MAPI  = (monetdb) /var/tmp/mtest-21889/.s.monetdb.34286
+        !syntax error, unexpected ')' in: ")"
+MAPI  = (monetdb) /var/tmp/mtest-11560/.s.monetdb.36606
 QUERY = select sum(cast(f1 as decimal(22,3))) from interval_tbl;
 ERROR = !decimal(22,3) isn't supported because P=22 > 18 in: "select sum(cast(f1 as decimal(22,3)"
-        !syntax/parse error, 
+        !syntax error, unexpected ')' in: ")"
 
 # 15:52:24 >  
 # 15:52:24 >  "Done."
