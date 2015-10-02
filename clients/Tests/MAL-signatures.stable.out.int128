@@ -48207,6 +48207,7 @@ command calc.timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 command calc.timestamp(s:str):timestamp 
 address MTIMEtimestamp_fromstr;
+function calc.uuid(u:uuid):uuid;
 command calc.uuid(s:str):uuid 
 address UUIDstr2uuid;
 comment Coerce a string to a uuid, validating its format
