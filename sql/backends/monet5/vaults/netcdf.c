@@ -656,9 +656,13 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fname = (str)table_funcs.column_find_value(m->session->tr, col, rid);
 
 	/* Open NetCDF file  */
-	if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
-		return createException(MAL, "netcdf.importvar", "Cannot open NetCDF file %s: %s", 
+	if ((retval = nc_open(fname, NC_NOWRITE, &ncid))) {
+		char *msg = createException(MAL, "netcdf.importvar", "Cannot open NetCDF file %s: %s", 
 			   fname, nc_strerror(retval));
+		GDKfree(fname);
+		return msg;
+	}
+	GDKfree(fname);
 
 	/* Get info for variable vname from NetCDF file */
 	if ( (retval = nc_inq_varid(ncid, vname, &varid)) )

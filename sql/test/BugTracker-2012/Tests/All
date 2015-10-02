@@ -84,3 +84,5 @@ fixed_limit_for_prepare.Bug-3208
 exp_bin_assertion.Bug-3209
 querycache.Bug-3212.sql
 url_script_test.Bug-2972
+huge_insert.Bug-2803
+huge_table_update.Bug-2803

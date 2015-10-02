@@ -54,3 +54,15 @@ THREADS>=3?useless_casts.Bug-3756
 sum_interval.Bug-3785
 nil_cast.Bug-3787
 sql2pcre.Bug-3800
+ambiguous.Bug-3803
+large_join.Bug-3809
+float-space-parse.Bug-3691
+insert_into_merge_table_crash.Bug-3703
+local-remotetable-crash.Bug-3754
+savepoint.Bug-3738-1
+savepoint.Bug-3738-2
+string_split.Bug-3564
+schemadiff.Bug-3778
+not-like-without-wildcard.Bug-3811
+copy_into.Bug-3813
+select-tilde-arg.Bug-3814

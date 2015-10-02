@@ -1753,12 +1753,8 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 
 	if (force == FALSE && tpe == TYPE_any)
 		return;
-	if (isaBatType(tpe)) {
-		if (getHeadIndex(tpe) > 0)
-			c1 = getHeadIndex(tpe);
-		else if (getHeadType(tpe) == TYPE_any)
-			c1 = 1;
-	}
+	if (isaBatType(tpe)) 
+		c1= TYPE_oid;
 	if (getColumnIndex(tpe) > 0)
 		c2 = getColumnIndex(tpe);
 	else if (getColumnType(tpe) == TYPE_any)

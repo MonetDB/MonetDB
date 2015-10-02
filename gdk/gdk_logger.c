@@ -1300,7 +1300,7 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 		char logdir_parent_path[BUFSIZ] = "";
 		char logdir_name[BUFSIZ] = "";
 		/* split the logdir string into absolute parent dir path and (relative) log dir name */
-		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name)) {
+		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
 			/* set the new relative logdir locaiton including the logger function name subdir */
 			snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
 

@@ -18,7 +18,6 @@ stdout of test 'tst007` in directory 'monetdb5/mal` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 !TypeException:user.foo[16]:'entry_or_exittest' may not be used before being initialized
-!TypeException:user.foo[29]:'booleanexpr' may not be used before being initialized
 function user.foo():void;
     b := bat.new(:oid,:int);
 barrier H := true;
@@ -48,13 +47,13 @@ barrier N := calc.<(i,10);
     redo N;
 exit N;
 # de if-then en if-then-else constructies 
-barrier FT := booleanexpr;
+barrier FT := false;
 # thenpart 
 exit FT;
-barrier FTE := booleanexpr;
+barrier FTE := false;
 # thenpart 
 exit FTE;
-barrier FS := batcalc.not(FTE);
+barrier FS := calc.not(FTE);
 #elsepart 
 exit FS;
 end user.foo;

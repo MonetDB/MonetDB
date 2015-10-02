@@ -162,7 +162,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 12 # length
+% 13 # length
 [ "#xxxxxxxxhi#"	]
 [ "#xxxxxxxxhi#"	]
 [ "#xxxxxxxxhi#"	]
@@ -171,7 +171,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 11 # length
+% 12 # length
 [ "#xxxxhi#"	]
 [ "#xxxxxhi#"	]
 [ "#xxxxxxhi#"	]
@@ -180,7 +180,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 12 # length
+% 13 # length
 [ "#xyaxyaxyhi#"	]
 [ "#xyäxyäxyhi#"	]
 [ "#xy颖äbcdehi#"	]
@@ -189,7 +189,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 11 # length
+% 12 # length
 [ "#xyaxhi#"	]
 [ "#xyäxyhi#"	]
 [ "#xy颖äbchi#"	]
@@ -198,7 +198,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 12 # length
+% 13 # length
 [ "#hixxxxxxxx#"	]
 [ "#hixxxxxxxx#"	]
 [ "#hixxxxxxxx#"	]
@@ -207,7 +207,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 11 # length
+% 12 # length
 [ "#hixxxx#"	]
 [ "#hixxxxx#"	]
 [ "#hixxxxxx#"	]
@@ -216,7 +216,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 12 # length
+% 13 # length
 [ "#hixyaxyaxy#"	]
 [ "#hixyäxyäxy#"	]
 [ "#hixy颖äbcde#"	]
@@ -225,7 +225,7 @@ Ready.
 % .L # table_name
 % concat_single_value # name
 % varchar # type
-% 11 # length
+% 12 # length
 [ "#hixyax#"	]
 [ "#hixyäxy#"	]
 [ "#hixy颖äbc#"	]

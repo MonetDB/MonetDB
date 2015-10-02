@@ -501,7 +501,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str var;
 		BAT *b;
 
-		snprintf(qbuf, BUFSIZ, "io.table(%s);", ident);
+		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
 		mnstr_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
 #else
@@ -717,19 +717,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BATloop(b, p, q) {
 				tailv = NULL;
 				ATOMformat(getColumnType(type), BUNtail(bi, p), &tailv);
-				if (getColumnType(type) <= TYPE_str &&
-						getHeadType(type) <= TYPE_str)
-				{
-					mnstr_printf(sout, "%s\n", tailv);
-				} else if (getColumnType(type) > TYPE_str &&
-						getHeadType(type) > TYPE_str)
-				{
+				if (getColumnType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
-				} else if (getColumnType(type) > TYPE_str) {
-					mnstr_printf(sout, "\"%s\"\n", tailv);
-				} else {
+				else
 					mnstr_printf(sout, "%s\n", tailv);
-				}
 				GDKfree(tailv);
 			}
 			BBPunfix(b->batCacheid);
@@ -1020,9 +1011,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* mirror when argument is mirrored */
 	if (bid < 0)
 		b = BATmirror(b);
-
-	if (b->htype != TYPE_void && b->hvarsized)
-		throw(ILLARG, "remote.bincopyto", "varsized-headed BATs are not supported");
 
 	BBPfix(bid);
 

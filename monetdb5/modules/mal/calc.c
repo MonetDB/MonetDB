@@ -803,7 +803,6 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
-	assert(BAThdense(b) && b->htype == TYPE_void); // headless guard
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, 1, 1, nil_if_empty);
 	BBPunfix(b->batCacheid);
 	if (s)

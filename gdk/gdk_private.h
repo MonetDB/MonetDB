@@ -67,8 +67,6 @@ __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, 
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATkdiff(BAT *b, BAT *c)
-	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, int lock)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATmaterialize(BAT *b)
@@ -108,9 +106,13 @@ __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextendf(int fd, size_t size, const char *fn)
 	__attribute__((__visibility__("hidden")));
+__hidden  gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
+	__attribute__((__visibility__("hidden")));
 __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
+	__attribute__((__visibility__("hidden")));
+__hidden char *GDKfilepath_long(int farmid, const char *dir, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 	__attribute__((__visibility__("hidden")));
@@ -426,6 +428,25 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#define GDKmremap(p, m, oa, os, ns)					\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		void *_oa = (oa);					\
+		size_t _os = (os);					\
+		size_t *_ns = (ns);					\
+		size_t _ons = *_ns;					\
+		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				_path ? _path : "NULL", _mode,		\
+				PTRFMTCAST _oa, _os, _ons, *_ns,	\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
 #else
 static inline void *
 GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
@@ -462,23 +483,29 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+static inline void *
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+{
+	size_t orig_new_size = *new_size;
+	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
+	ALLOCDEBUG
+		fprintf(stderr,
+			"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT
+			" [%s:%d]\n",
+			path ? path : "NULL", mode,
+			PTRFMTCAST old_address, old_size, orig_new_size, *new_size,
+			PTRFMTCAST res,
+			filename, lineno);
+	return res;
+}
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+
 #endif
 #endif
 
 #ifndef NDEBUG
 #ifdef __GNUC__
 /* in debug builds, complain (warn) about usage of legacy functions */
-
-#define BATkdiff(l, r)							\
-	({								\
-		BAT *_l = (l), *_r = (r);				\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATkdiff([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT") %s[%s:%d]\n", \
-			_COL_TYPE(_l->H), _COL_TYPE(_l->T), BATcount(_l), \
-			_COL_TYPE(_r->H), _COL_TYPE(_r->T), BATcount(_r), \
-			__func__, __FILE__, __LINE__);			\
-		BATkdiff(_l, _r);					\
-	})
 
 #define BATmaterializeh(b)						\
 	({								\
