@@ -2472,7 +2472,7 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 {
 	BAT *c, *l, *r, *res;
 	oid *p, *lp, *rp;
-	size_t cnt = 0, i;
+	BUN cnt = 0, i;
 
 	c = BATdescriptor(*Col);
 	if (c)
@@ -2501,9 +2501,9 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	lp = (oid*)Tloc(l, 0);
 	rp = (oid*)Tloc(r, 0);
 	if (l->ttype == TYPE_void) {
-		size_t lp = l->tseqbase;
+		oid lp = l->tseqbase;
 		if (r->ttype == TYPE_void) {
-			size_t rp = r->tseqbase;
+			oid rp = r->tseqbase;
 			for(i=0;i<cnt; i++, lp++, rp++) 
 				p[lp] = rp;
 		} else {
@@ -2512,7 +2512,7 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		}
 	}
 	if (r->ttype == TYPE_void) {
-		size_t rp = r->tseqbase;
+		oid rp = r->tseqbase;
 		for(i=0;i<cnt; i++, rp++) 
 			p[lp[i]] = rp;
 	} else {
