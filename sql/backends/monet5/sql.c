@@ -4839,7 +4839,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 								/*printf(" width %d", bn->T->width); */
 								w = bn->T->width;
-								if (bn->ttype == TYPE_str) {
+								if (bn->ttype == TYPE_str && !bn->T->heap.compressed) {
 									BUN p, q;
 									double sum = 0;
 									BATiter bi = bat_iterator(bn);
@@ -4925,7 +4925,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 									/*printf(" width %d", bn->T->width); */
 									w = bn->T->width;
-									if (bn->ttype == TYPE_str) {
+									if (bn->ttype == TYPE_str && !bn->T->heap.compressed) {
 										BUN p, q;
 										double sum = 0;
 										BATiter bi = bat_iterator(bn);
