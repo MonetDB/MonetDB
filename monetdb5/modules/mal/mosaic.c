@@ -1522,7 +1522,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 
 #define CANDIDATES 256  /* all three combinations */
 void
-MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, str compressions)
+MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *brun, str compressions)
 {
 	int i,j,k,cases, bit=1, ret, bid= b->batCacheid;
 	BUN cnt=  BATcount(b);
@@ -1531,6 +1531,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, st
 	int pattern[CANDIDATES];
 	char technique[CANDIDATES]={0}, *t =  technique;
 	dbl xf[CANDIDATES], ratio;
+	lng clk;
 
 	cases = makepatterns(pattern,CANDIDATES, compressions);
 	task = (MOStask) GDKzalloc(sizeof(*task));
@@ -1550,7 +1551,9 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, st
 			task->factor[j]= 0.0;
 			bit *=2;
 		}
+		clk = GDKms();
 		MOScompressInternal(cntxt, &ret, &bid, task, 0, 0);
+		clk = GDKms() - clk;
 		
 		// analyse result to detect a new combination
 		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
@@ -1579,6 +1582,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, st
 		if( task->xsize)
 			ratio = (input + 0.0)/task->xsize;
 		BUNappend(bratio,&ratio,FALSE);
+		BUNappend(brun,&clk,FALSE);
 
 		// get rid of temporary compressed BAT
 		if( ret != bid)

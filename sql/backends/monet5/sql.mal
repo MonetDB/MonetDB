@@ -467,12 +467,6 @@ pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 
-#pattern mosaic(sch:str, tbl:str):void
-#address sql_mosaic;
-#pattern mosaic(sch:str, tbl:str, col:str):void
-#address sql_mosaic
-#comment "Analyse the data for possible compression effectiveness";
-
 pattern storage()(
 	schema:bat[:oid,:str],
 	table:bat[:oid,:str],
@@ -511,12 +505,14 @@ comment "Return a table with detailed compression information ";
 pattern mosaicAnalysis(sch:str,tbl:str,col:str,compression:str)(
 	technique:bat[:oid,:str],
 	outputsize:bat[:oid,:lng],
-	factor:bat[:oid,:dbl])
+	factor:bat[:oid,:dbl],
+	run:bat[:oid,:lng])
 address sql_mosaicAnalysis;
 pattern mosaicAnalysis(sch:str,tbl:str,col:str)(
 	technique:bat[:oid,:str],
 	outputsize:bat[:oid,:lng],
-	factor:bat[:oid,:dbl])
+	factor:bat[:oid,:dbl],
+	run:bat[:oid,:lng])
 address sql_mosaicAnalysis
 comment "Return a table with compression opportunities for the column";
 

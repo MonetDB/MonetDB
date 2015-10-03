@@ -139,8 +139,8 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	str sch = 0, tbl = 0, col = 0;
-	int *tech,*output, *factor;
-	BAT *bn, *btech, *boutput, *bfactor;
+	int *tech,*output, *factor, *run;
+	BAT *bn, *btech, *boutput, *bfactor, *brun;
 	str compressions = NULL;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
@@ -172,12 +172,23 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	factor = getArgReference_bat(stk, pci, 2);
 	*factor = bfactor->batCacheid;
 
-	sch = *getArgReference_str(stk, pci, 3);
-	tbl = *getArgReference_str(stk, pci, 4);
-	col = *getArgReference_str(stk, pci, 5);
-	if ( pci->argc == 7){
+	brun = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	if( brun == NULL){
+		BBPunfix(btech->batCacheid);
+		BBPunfix(boutput->batCacheid);
+		BBPunfix(bfactor->batCacheid);
+		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(brun,0);
+	run = getArgReference_bat(stk, pci, 3);
+	*run = brun->batCacheid;
+
+	sch = *getArgReference_str(stk, pci, 4);
+	tbl = *getArgReference_str(stk, pci, 5);
+	col = *getArgReference_str(stk, pci, 6);
+	if ( pci->argc == 8){
 		// use a predefined collection of compression schemes.
-		compressions = *getArgReference_str(stk,pci,6);
+		compressions = *getArgReference_str(stk,pci,7);
 	}
 
 #ifdef DEBUG_SQL_MOSAIC
@@ -186,6 +197,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
+		
 		if (!isalpha((int) b->name[0]))
 			continue;
 		if (sch && strcmp(sch, b->name))
@@ -205,7 +217,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSanalyseReport(cntxt, bn, btech, boutput, bfactor, compressions);
+						MOSanalyseReport(cntxt, bn, btech, boutput, bfactor, brun, compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}
@@ -214,5 +226,6 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*tech);
 	BBPkeepref(*output);
 	BBPkeepref(*factor);
+	BBPkeepref(*run);
 	return MAL_SUCCEED;
 }

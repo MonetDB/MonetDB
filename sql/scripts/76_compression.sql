@@ -45,12 +45,14 @@ create function mosaic.analysis(sch string, tbl string, col string)
 returns table(
 	technique string, 	-- compression techniques being used
 	outputsize bigint,	-- after compression
-	factor double		-- compression factor
+	factor double,		-- compression factor
+	run	bigint -- time spent in msec
 ) external name sql."mosaicAnalysis";
 
 create function mosaic.analysis(sch string, tbl string, col string, compressions string)
 returns table(
 	technique string, 	-- compression techniques being used
 	outputsize bigint,	-- after compression
-	factor double		-- compression factor
+	factor double,		-- compression factor
+	run	bigint -- time spent in msec
 ) external name sql."mosaicAnalysis";
