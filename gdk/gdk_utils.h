@@ -93,7 +93,7 @@ gdk_export int GDKexiting(void);
 
 gdk_export const char *GDKversion(void);
 
-gdk_export int GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);
+gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
