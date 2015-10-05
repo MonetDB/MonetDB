@@ -171,7 +171,9 @@ UUIDgenerateUuid(uuid **retval)
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes(u->u, 16) < 0) {
+#endif
 		/* if it failed, use rand */
 		int i, r;
 
@@ -180,7 +182,9 @@ UUIDgenerateUuid(uuid **retval)
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
+#ifdef HAVE_OPENSSL
 	}
+#endif
 #endif
 	return MAL_SUCCEED;
 }

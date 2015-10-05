@@ -36,7 +36,6 @@
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
 #endif
-
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
 #else           /* UNIX specific */
@@ -78,19 +77,25 @@ static void generateChallenge(str buf, int min, int max) {
 
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#endif
 		size = rand();
 	size = (size % (max - min)) + min;
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
 	} else {
+#endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
+#ifdef HAVE_OPENSSL
 	}
+#endif
 	buf[i] = '\0';
 }
 
