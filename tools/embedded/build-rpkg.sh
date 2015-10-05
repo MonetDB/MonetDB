@@ -22,19 +22,19 @@ cd ..
 mv sourcetree/tools/embedded/rpackage .
 rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
 
-# generate sql_parser.tab.c/h to remove our dependency on bison on Windows.
+# generate sql_parser.tab.c/h to remove our dependency on bison.
 cd sourcetree
 ./configure
 cd sql/server/
 make sql_parser.tab.h
 make sql_parser.tab.c
 cd ../../../
-cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/tools/embedded/windows/
+cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/sql/server/
 
 # bundle pcre for windows (TODO: also iconv/zlib/ ...?)
-wget http://dev.monetdb.org/downloads/Windows/Libraries/libs-win64.zip
-7z x libs-win64.zip
-cp -r pcre-8.37.win64 rpackage/src/tools/embedded/windows/
+# wget http://dev.monetdb.org/downloads/Windows/Libraries/libs-win64.zip
+# 7z x libs-win64.zip
+# cp -r pcre-8.37.win64 rpackage/src/tools/embedded/windows/
 
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
@@ -47,5 +47,3 @@ echo 'install.packages("MonetDBLite", repos="http://homepages.cwi.nl/~hannes/R/"
 echo
 
 # OSX 10.10 check (check vanilla!)
-# ubuntu 14.04.02: needs bison libssl-dev libxml2-dev
-# fedora 22: bison openssl-devel libxml2-devel
