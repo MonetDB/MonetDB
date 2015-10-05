@@ -1511,12 +1511,17 @@ case "$YACC" in
 		fi
 	;;
 	*)
-		if test "x$enable_sql" = xyes; then
-			AC_MSG_ERROR([MonetDB/SQL requires bison])
-		fi
-		enable_sql=no
-		if test "x$disable_sql" = x; then
-			disable_sql="(MonetDB/SQL requires bison)"
+		# in embedded mode, we ship the bison-generated files
+		if test "x$enable_embedded" = xno; then
+			if test "x$enable_sql" = xyes; then
+				AC_MSG_ERROR([MonetDB/SQL requires bison])
+			fi
+			enable_sql=no
+			if test "x$disable_sql" = x; then
+				disable_sql="(MonetDB/SQL requires bison)"
+			fi
+		else
+			AC_MSG_WARN([ignoring missing bison in embedded configuration])
 		fi
 	;;
 esac
