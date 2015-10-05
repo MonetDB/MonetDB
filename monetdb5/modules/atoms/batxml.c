@@ -1221,7 +1221,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			goto out;
 		}
 		freeb = 1;
-		assert(b->htype); //headless guard
 		if (g) {
 			g = BATproject(s, g);
 			if (g == NULL) {
@@ -1229,7 +1228,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto out;
 			}
 			freeg = 1;
-			assert(g->htype == TYPE_void);// headless guard
 		}
 	}
 	if (g && BATtdense(g)) {

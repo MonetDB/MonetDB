@@ -988,51 +988,6 @@ int mdbSession(void)
 {
 	return mdbSessionActive;
 }
-/*
- * It may be relevant to trap against dangerous situations, such
- * as underlying types not being aligned with what is expected
- * at the MAL level. Since such tests can be quite expensive
- * it should be used with care.
- */
-#if 0
-void
-mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-{
-	int i;
-	VarPtr n;
-	ValPtr v;
-	str nme, nmeOnStk;
-
-	(void) stk;
-	(void) pc;
-	(void) mb;
-	for (i = 1; i < mb->vtop; i++) {
-		n = getVar(mb, i);
-		v = stk->stk + i;
-		if (isaBatType(n->type) && v->val.ival) {
-			int i = v->val.ival;
-			BAT *b;
-
-			b = BBPquickdesc(abs(i), TRUE);
-			if (i < 0)
-				b = BATmirror(b);
-			if (b) {
-				nme = getTypeName(n->type);
-				nmeOnStk = getTypeName(newColumnType(b->ttype));
-				if (strcmp(nme, nmeOnStk)) {
-					printTraceCall(cntxt->fdout, mb, stk, pc, cntxt->flags);
-					mnstr_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
-							nme, nmeOnStk);
-					stk->cmd = 'n';
-				}
-				GDKfree(nme);
-				GDKfree(nmeOnStk);
-			}
-		}
-	}
-}
-#endif
-
 static Client trapped_cntxt;
 static MalBlkPtr trapped_mb;
 static MalStkPtr trapped_stk;
@@ -1424,74 +1379,6 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		}
 	}
 }
-
-#if 0							/* these are not referenced anywhere */
-/*
- * The memory positions for the BATs is useful information to
- * assess for memory fragmentation.
- */
-static str
-memProfileVector(stream *out, int cells)
-{
-	str v;
-	bat i;
-
-	if (cells <= 0)
-		return GDKstrdup("");
-	v = GDKmalloc(cells + 1);
-	if (v == 0)
-		return NULL;
-
-	for (i = 0; i < cells; i++)
-		v[i] = '.';
-	v[i] = 0;
-
-	for (i = 1; i < getBBPsize(); i++)
-		if (BBP_status(i) & BBPLOADED) {
-			BAT *b = BATdescriptor(i);
-			Heap *hp;
-			Hash *h;
-
-			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
-			hp = &b->T->heap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\thead=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
-
-			hp = b->T->vheap;
-			if (hp && hp->base) {
-				mnstr_printf(out, "\ttheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
-			}
-			h = b->T->hash;
-			if (h && h->mask) {
-				mnstr_printf(out, "\tthash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
-				mnstr_printf(out, "\tthashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
-						(h->mask + h->lim + 1) * sizeof(int));
-			}
-			BBPunfix(b->batCacheid);
-		}
-
-	return v;
-}
-
-void
-printBBPinfo(stream *out)
-{
-	str v;
-
-	mnstr_printf(out, "#BBP memory layout\n");
-	v = memProfileVector(out, 32);
-	if (v) {
-		mnstr_printf(out, "#%s\n", v);
-		GDKfree(v);
-	}
-#ifdef GDK_VM_KEEPHISTO
-	mnstr_printf(out, "#BBP VM history available\n");
-#else
-	mnstr_printf(out, "#BBP VM history not available\n");
-#endif
-}
-#endif
 
 static void
 mdbHelp(stream *f)

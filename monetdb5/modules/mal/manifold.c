@@ -334,10 +334,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-	if ( mat[mut.fvar].b->htype == TYPE_void)
-		BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
-	else
-		BATseqbase(mat[0].b, 0);
+	BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
 
 	mut.pci = copyInstruction(pci);
 	mut.pci->fcn = fcn;

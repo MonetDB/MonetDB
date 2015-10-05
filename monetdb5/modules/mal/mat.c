@@ -192,7 +192,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bat *ret = getArgReference_bat(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0, fst, lst, cnt, c;
-	int ht = TYPE_any, tt = TYPE_any;
+	int tt = TYPE_any;
 
 	assert(p->argc > 3);
 	switch getArgType(mb,p,1) {
@@ -249,10 +249,8 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			b = BATmirror(b);
 		if (b == NULL)
 			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
-		if (ht == TYPE_any){
-			ht = b->htype;
+		if (tt == TYPE_any)
 			tt = b->ttype;
-		}
 		c = BATcount(b);
 		if (cap <= fst) {
 			/* The optimal case is when the requested slice falls completely in one BAT.
@@ -288,7 +286,6 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cap -= fst;
 	cnt = MIN(cnt, cap);
 
-	assert(ht== TYPE_void);
 	bn = BATnew(TYPE_void, tt, cnt, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
@@ -334,7 +331,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
+	bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);

@@ -16,7 +16,7 @@ lib_gdk = {
 		gdk_select.c \
 		gdk_search.c gdk_search.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
-		gdk_heap.c gdk_setop.c gdk_utils.c gdk_utils.h \
+		gdk_heap.c gdk_utils.c gdk_utils.h \
 		gdk_atoms.c gdk_atoms.h \
 		gdk_qsort.c gdk_qsort_impl.h gdk_ssort.c gdk_ssort_impl.h \
 		gdk_storage.c gdk_bat.c \

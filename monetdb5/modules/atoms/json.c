@@ -1858,7 +1858,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cnt, &cand, &candend)) !=NULL) {
 		return err;
 	}
-	assert(b->htype == TYPE_void); // headless guard
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if (BATcount(b) == 0 || ngrp == 0) {
 		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
@@ -1882,7 +1881,6 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto out;
 			}
 			freeg = 1;
-			assert(g->htype == TYPE_void); // headless guard
 		}
 	}
 

@@ -1,20 +1,20 @@
-stdout of test 'copy_into.Bug-3813` in directory 'sql/test/BugTracker-2015` itself:
+stdout of test 'not-like-without-wildcard.Bug-3811` in directory 'sql/test/BugTracker-2015` itself:
 
 
-# 15:06:49 >  
-# 15:06:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38280" "--set" "mapi_usock=/var/tmp/mtest-1013/.s.monetdb.38280" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/default/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 15:06:49 >  
+# 14:01:49 >  
+# 14:01:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39434" "--set" "mapi_usock=/var/tmp/mtest-23077/.s.monetdb.39434" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:01:49 >  
 
-# MonetDB 5 server v11.22.0
+# MonetDB 5 server v11.21.6 (hg id: f593d28ab836+)
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2015', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 15.590 GiB available main-memory.
+# Found 7.733 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:38280/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1013/.s.monetdb.38280
+# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:39434/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23077/.s.monetdb.39434
 # MonetDB/GIS module loaded
 # Start processing logs sql/sql_logs version 52200
 # Finished processing logs sql/sql_logs
@@ -60,23 +60,39 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 15:06:49 >  
-# 15:06:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1013" "--port=38280"
-# 15:06:49 >  
+# 14:01:50 >  
+# 14:01:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23077" "--port=39434"
+# 14:01:50 >  
 
-#START TRANSACTION;
-#CREATE TABLE bug3813 ("playerID" STRING, "yearID" INTEGER, stint INTEGER, "teamID" STRING, "lgID" STRING, "G" INTEGER, "AB" INTEGER, "R" INTEGER, "H" INTEGER, "X2B" INTEGER, "X3B" INTEGER, "HR" INTEGER, "RBI" INTEGER, "SB" INTEGER, "CS" INTEGER, "BB" INTEGER, "SO" INTEGER, "IBB" INTEGER, "HBP" INTEGER, "SH" INTEGER, "SF" INTEGER, "GIDP" INTEGER);
-#COPY INTO bug3813 FROM '/home/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2015/Tests/batting.csv.gz' USING DELIMITERS ',','\n','"' NULL AS '';
-[ 99846	]
-#SELECT COUNT(*) FROM bug3813;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
-% 5 # length
-[ 99846	]
-#ROLLBACK;
+#start transaction;
+#create table test (id int, value text);
+#insert into test values (1, 'Alice'), (2, 'Bob'), (3, 'Carol');
+[ 3	]
+#select * from test;
+% sys.test,	sys.test # table_name
+% id,	value # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"Alice"	]
+[ 2,	"Bob"	]
+[ 3,	"Carol"	]
+#select * from test where value not like 'Bob';
+% sys.test,	sys.test # table_name
+% id,	value # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"Alice"	]
+[ 3,	"Carol"	]
+#select * from test where value not ilike 'Bob';
+% sys.test,	sys.test # table_name
+% id,	value # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"Alice"	]
+[ 3,	"Carol"	]
+#rollback;
 
-# 13:29:23 >  
-# 13:29:23 >  "Done."
-# 13:29:23 >  
+# 14:01:50 >  
+# 14:01:50 >  "Done."
+# 14:01:50 >  
 

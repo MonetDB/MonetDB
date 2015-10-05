@@ -1,2 +1,2 @@
 ssbm
-partition_elim
+THREADS>=2?partition_elim

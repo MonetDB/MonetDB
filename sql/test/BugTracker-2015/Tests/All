@@ -63,4 +63,6 @@ savepoint.Bug-3738-1
 savepoint.Bug-3738-2
 string_split.Bug-3564
 schemadiff.Bug-3778
+not-like-without-wildcard.Bug-3811
 copy_into.Bug-3813
+select-tilde-arg.Bug-3814

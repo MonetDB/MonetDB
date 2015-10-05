@@ -382,7 +382,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
             s = args[i+1].partition('=')[0]
             for j in range(len(cmd)):
                 if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
-                    del cmd[i:i+2]
+                    del cmd[j:j+2]
                     break
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')

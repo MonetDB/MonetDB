@@ -39,8 +39,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
-	if( b->htype== TYPE_void)											\
-		BATseqbase(bn, b->hseqbase);									\
+	BATseqbase(bn, b->hseqbase);									\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
 	bn->T->nil = 0;														\

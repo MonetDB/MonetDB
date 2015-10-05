@@ -1530,7 +1530,6 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
-gdk_export char *GDKfilepath_long(int farmid, const char *dir, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
 /*
@@ -2485,7 +2484,7 @@ gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
-gdk_export Thread THRnew(str name);
+gdk_export Thread THRnew(const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
