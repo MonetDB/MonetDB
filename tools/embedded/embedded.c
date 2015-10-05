@@ -20,6 +20,7 @@
 #include "mal_linker.h"
 #include "msabaoth.h"
 #include "sql_scenario.h"
+#include "gdk_utils.h"
 
 typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
 SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
@@ -63,6 +64,17 @@ int monetdb_startup(char* dir, char silent) {
 	void* res = NULL;
 	char mod_path[1000];
 
+	if(setjmp(GDKfataljump) != 0) {
+		// we will get here if GDKfatal was called.
+		if (GDKfatalmsg != NULL) {
+			fputs(GDKfatalmsg, stderr);
+			fputs("\n", stderr);
+			GDKfree(GDKfatalmsg);
+		}
+		retval = -2;
+		goto cleanup;
+	}
+
 	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
 	MT_lock_set(&monetdb_embedded_lock, "monetdb.startup");
 	if (monetdb_embedded_initialized) goto cleanup;
@@ -70,7 +82,7 @@ int monetdb_startup(char* dir, char silent) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
 	if (GDKinit(set, setlen) == 0) {
-		retval = -2;
+		retval = -3;
 		goto cleanup;
 	}
 
@@ -83,7 +95,7 @@ int monetdb_startup(char* dir, char silent) {
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 	if (mal_init() != 0) {
-		retval = -3;
+		retval = -4;
 		goto cleanup;
 	}
 	if (silent) mal_clients[0].fdout = THRdata[0];
@@ -106,7 +118,7 @@ int monetdb_startup(char* dir, char silent) {
 			res_table_destroy_ptr == NULL || mvc_append_wrap_ptr == NULL ||
 			mvc_bind_schema_ptr == NULL || mvc_bind_table_ptr == NULL ||
 			sqlcleanup_ptr == NULL || mvc_trans_ptr == NULL) {
-		retval = -4;
+		retval = -5;
 		goto cleanup;
 	}
 	// call this, otherwise c->sqlcontext is empty
@@ -116,7 +128,7 @@ int monetdb_startup(char* dir, char silent) {
 	// sanity check, run a SQL query
 	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
 		monetdb_embedded_initialized = false;
-		retval = -5;
+		retval = -6;
 		goto cleanup;
 	}
 	retval = 0;
@@ -133,6 +145,14 @@ char* monetdb_query(char* query, void** result) {
 	if (!monetdb_embedded_initialized) {
 		fprintf(stderr, "Embedded MonetDB is not started.\n");
 		return NULL;
+	}
+
+	if(setjmp(GDKfataljump) != 0) {
+		// we will get here if GDKfatal was called.
+		if (GDKfatalmsg == NULL) {
+			return GDKstrdup("Fatal GDK error. This is bad. ");
+		}
+		return GDKfatalmsg;
 	}
 
 	while (*query == ' ' || *query == '\t') query++;

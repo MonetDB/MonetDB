@@ -1574,6 +1574,9 @@ GDKclrerr(void)
 		*buf = 0;
 }
 
+jmp_buf GDKfataljump;
+str GDKfatalmsg;
+
 /* coverity[+kill] */
 void
 GDKfatal(const char *format, ...)
@@ -1595,12 +1598,13 @@ GDKfatal(const char *format, ...)
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
+#ifndef HAVE_EMBEDDED
 	fputs(message, stderr);
 	fputs("\n", stderr);
 	fflush(stderr);
 
 	/*
-	 * Real errors should be saved in the lock file for post-crash
+	 * Real errors should be saved in the log file for post-crash
 	 * inspection.
 	 */
 	if (GDKexiting()) {
@@ -1615,6 +1619,10 @@ GDKfatal(const char *format, ...)
 		GDKexit(1);
 #endif
 	}
+#else // in embedded mode, we really don't want to kill our host
+	GDKfatalmsg = GDKstrdup(message);
+    longjmp(GDKfataljump, 42);
+#endif
 }
 
 
