@@ -32,7 +32,7 @@ MOSdumpHeader(Client cntxt, MOStask task)
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	int i=0;
 
-#ifdef _DEBGUG_MOSAIC_
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#header block version %d\n", hdr->version);
 	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
 	for(i= 0; i< hdr->top; i++)
@@ -71,17 +71,17 @@ MOSupdateHeader(Client cntxt, MOStask task)
 	hdr->oidbase[hdr->top] = MOSgetCnt(task->blk) + hdr->oidbase[hdr->top-1];
 	hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 	minsize = hdr->offset[2];
-	j = 0;
-	for( i = 0; i < hdr->top-1; i++)
-	if ( hdr->offset[i] - hdr->offset[i+2] < minsize ){
-		minsize = hdr->offset[i] - hdr->offset[i+2];
-		j = i;
+	j = 1;
+	for( i = 1; i+2 <= hdr->top; i++)
+	if ( hdr->offset[i+2] - hdr->offset[i] < minsize ){
+		minsize = hdr->offset[i+2] - hdr->offset[i];
+		j = i+1;
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#ditch entry %d\n",j);
 #endif
 	// simply remove on element
-	for( i = j+1; i < hdr->top; i++){
+	for( i = j; i < hdr->top; i++){
 		hdr->oidbase[i]  = hdr->oidbase[i+1];
 		hdr->offset[i] = hdr->offset[i+1];
 	}
@@ -103,6 +103,10 @@ MOSinitHeader(MOStask task)
 	hdr->top = 0;
 	hdr->checksum.sumlng = 0;
 	hdr->checksum2.sumlng = 0;
+	for(i=0; i < MOSAICINDEX; i++){
+		hdr->oidbase[i] = 0;
+		hdr->offset[i] = 0;
+	}
 	for(i=0; i < 256; i++){
 		hdr->dictfreq[i]=0;
 		hdr->framefreq[i]=0;
