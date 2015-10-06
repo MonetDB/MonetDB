@@ -1830,22 +1830,42 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			int width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
-				if( as->format[attr].c->ttype == TYPE_str)
-					width = as->format[attr].c->T->width;
-				else
-					width = ATOMsize(as->format[attr].c->ttype);
+				width = as->format[attr].c->T->width;
 				switch (width){
 				case 1:
-					trimerrors(unsigned char);
+					trimerrors(bte);
 					break;
 				case 2:
-					trimerrors(unsigned short);
+					trimerrors(sht);
 					break;
 				case 4:
-					trimerrors(unsigned int);
+					trimerrors(int);
 					break;
 				case 8:
-					trimerrors(unsigned long);
+					trimerrors(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					trimerrors(hge);
+					break;
+#endif
+				default:
+					{
+						char *src, *dst;
+						leftover= BATcount(task->as->format[attr].c);
+						limit = leftover - cntstart;
+						dst = src= BUNtloc(task->as->format[attr].ci,cntstart);
+						for(j = 0; j < (int) limit; j++, src += width){
+							if ( task->rowerror[j]){
+								leftover--;
+								continue;
+							}
+							if (dst != src)
+								memcpy(dst, src, width);
+							dst += width;
+						}
+						BATsetcount(task->as->format[attr].c, leftover );
+					}
 					break;
 				}
 			}
