@@ -127,7 +127,6 @@ TKNZRopen(void *ret, str *in)
 		b = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
-		BATkey(b, FALSE);
 		BATseqbase(b, 0);
 		tokenBAT[INDEX].val = b;
 		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED)
