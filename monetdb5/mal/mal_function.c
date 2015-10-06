@@ -288,17 +288,15 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
 		if( isaBatType(x)){
-			int head,tail;
+			int tail;
 			int tx;
-			head = TYPE_oid;
 			tail = getColumnType(x);
 			tx = getColumnIndex(x);
-			head = TYPE_oid;
 			if(v && tx == v && tail == TYPE_any){
 			    tx= 0;
 			    tail = t;
 			}
-			y= newBatType(head,tail);
+			y= newBatType(TYPE_oid,tail);
 			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN

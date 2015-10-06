@@ -689,8 +689,7 @@ parseTypeId(Client cntxt, int defaultType)
 				parseError(cntxt, "':oid' expected\n");
 				return i;
 			}
-		} else
-			ht = TYPE_any;
+		} 
 
 		if (currChar(cntxt) != ',') {
 			parseError(cntxt, "',' expected\n");
@@ -704,7 +703,7 @@ parseTypeId(Client cntxt, int defaultType)
 		} else
 			tt = TYPE_any;
 
-		i = newBatType(ht, tt);
+		i = newBatType(TYPE_oid, tt);
 		if (kh > 0)
 			setAnyHeadIndex(i, kh);
 		if (kt > 0)

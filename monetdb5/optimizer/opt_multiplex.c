@@ -38,13 +38,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str mod, fcn;
 	int *alias, *resB;
 	InstrPtr q;
-	int ht, tt;
+	int tt;
 	int bat = (getModuleId(pci) == batmalRef) ;
 
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
-		ht = TYPE_oid;
 		tt = getColumnType(getArgType(mb, pci, i));
 		if (tt== TYPE_any)
 			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
@@ -98,11 +97,10 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = newFcnCall(mb, batRef, newRef);
 		resB[i] = getArg(q, 0);
 
-		ht = TYPE_oid;
 		tt = getColumnType(getArgType(mb, pci, i));
 
-		setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-		q = pushType(mb, q, ht);
+		setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+		q = pushType(mb, q, TYPE_oid);
 		q = pushType(mb, q, tt);
 	}
 
@@ -131,9 +129,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
-			ht = TYPE_oid;
 			tt = getColumnType(getArgType(mb, pci, i));
-			nvar = newTmpVariable(mb, newBatType(ht, tt));
+			nvar = newTmpVariable(mb, newBatType(TYPE_oid, tt));
 		} else {
 			nvar = newTmpVariable(mb, TYPE_any);
 		}
