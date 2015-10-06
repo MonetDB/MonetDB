@@ -932,7 +932,8 @@ MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
-	bte j,m1,m2;
+	unsigned short j;
+	bte m1,m2;
 	int cid, lshift, rshift;
 	unsigned long *base;
 	(void) cntxt;
@@ -992,7 +993,8 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 	BUN i,n,limit;
 	oid o, oo;
 	MosaicHdr hdr = task->hdr;
-	bte j,m1,m2;
+	unsigned short j;
+	bte m1,m2;
 	int cid, lshift, rshift;
 	unsigned long *base;
 	(void) cntxt;
