@@ -56,7 +56,7 @@
  * The header is reserved for meta information, e.g. oid indices.
  * The block header encodes the information needed for the chunk decompressor
  */
-#define MOSAICINDEX 4  //> 2 elements
+#define MOSAICINDEX 8  //> 2 elements
 typedef struct MOSAICHEADER{
 	int version;
 	union{

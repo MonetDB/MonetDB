@@ -43,7 +43,7 @@ MOSinit(MOStask task, BAT *b){
 	if( isVIEW(b))
 		b= BATdescriptor(VIEWtparent(b));
 	assert(b);
-	base = Tloc(b,BUNfirst(b));
+	base = b->T->heap.base;
 	assert(base);
 	task->type = b->ttype;
 	task->b = b;
@@ -566,6 +566,8 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int inplace,
 		BBPunfix(bsrc->batCacheid);
 	} else {
 		BATsetcount(bsrc,BATcount(bcompress));
+		// fake capacity
+		BATsetcapacity(bsrc,BATcount(bcompress));
 		// retain the stringwidth
 		bsrc->T->width = bcompress->T->width ;
 		bsrc->T->shift = bcompress->T->shift ;
@@ -846,9 +848,11 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
 	*nrofparts = 1;
 	for( i = 1; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid){
-			*part = getVarConstant(mb,getArg(p,6)).val.ival;
-			*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
+		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid ){
+			if( p->argc > 6){
+				*part = getVarConstant(mb,getArg(p,6)).val.ival;
+				*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
+			}
 		} else
 		if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
 			MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
@@ -984,6 +988,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	// derive the filling
 	cnt = (BUN) (task->lb - (oid*) Tloc(bn,BUNfirst(bn)));
+	assert(bn->batCapacity >= cnt);
 	BATsetcount(bn,cnt);
 	BATseqbase(bn,b->hseqbase);
     bn->hdense = 1;
@@ -1005,7 +1010,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx;
 	bat *cid =0,  *ret, *bid;
 	int startblk, stopblk; // block range to scan
-	int part,nrofparts;
+	int part=0,nrofparts=0;
 	BAT *b = 0, *cand = 0, *bn = NULL;
 	BUN cnt=0;
 	str msg= MAL_SUCCEED;
@@ -1591,7 +1596,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 	GDKfree(task);
 }
 
-/* slice a fixed size atom into thin columns*/
+/* slice a fixed size atom into thin bte-wide columns, used for experiments */
 str
 MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
 {
