@@ -225,29 +225,14 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int canBeCrackedProp;
-int canBeJoinselectProp;
-int sidewaysSelectProp;
-int headProp;
-int pivotProp;
-int pivotDisjunctiveProp;
-int removeProp;
-int tableProp;
 int sqlfunctionProp;
 
 int inlineProp;
-int keepProp;
-int notnilProp;
 int rowsProp;
 int fileProp;
 int runonceProp;
 int unsafeProp;
 int orderDependendProp;
-
-int stableProp;
-int insertionsProp;
-int updatesProp;
-int deletesProp;
 
 int hlbProp;
 int hubProp;
@@ -255,7 +240,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
-int mtProp;			
+int mtProp;
 
 void optimizerInit(void)
 {
@@ -469,29 +454,13 @@ void optimizerInit(void)
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	canBeCrackedProp = PropertyIndex("canBeCracked");
-	canBeJoinselectProp = PropertyIndex("canBeJoinselect");
-	sidewaysSelectProp = PropertyIndex("sidewaysSelect");
-	headProp = PropertyIndex("head");
-	pivotProp = PropertyIndex("pivot");
-	pivotDisjunctiveProp = PropertyIndex("pivotDisjunctive");
-	removeProp = PropertyIndex("remove");
-	tableProp = PropertyIndex("table");
-
 	fileProp = PropertyIndex("file");
 	inlineProp = PropertyIndex("inline");
-	keepProp = PropertyIndex("keep");
-	notnilProp = PropertyIndex("notnil");
 	rowsProp = PropertyIndex("rows");
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
 	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
-
-	stableProp = PropertyIndex("stableProp");
-	insertionsProp = PropertyIndex("insertionsProp");
-	updatesProp = PropertyIndex("updatesProp");
-	deletesProp = PropertyIndex("deletesProp");
 
 	hlbProp = PropertyIndex("hlb");
 	hubProp = PropertyIndex("hub");
@@ -502,7 +471,6 @@ void optimizerInit(void)
 	toriginProp = PropertyIndex("torigin");
 	mtProp = PropertyIndex("mergetable");
 	/*
-	 * @-
 	 * Set the optimizer debugging flag
 	 */
 	{
