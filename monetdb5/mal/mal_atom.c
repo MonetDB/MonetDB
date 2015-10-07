@@ -121,7 +121,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 's':
 		if (idcmp("storage", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].storage = (*(long (*)(void))pci->fcn)();
+			BATatoms[tpe].storage = (*(int (*)(void))pci->fcn)();
 			setAtomName(pci);
 			return 1;
 		}
