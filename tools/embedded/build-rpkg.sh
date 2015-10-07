@@ -40,7 +40,8 @@ mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
 R CMD build rpackage
 
-scp $RPKG cwi:WWW/R
+#scp $RPKG cwi:WWW/R
+scp $RPKG release@dev.monetdb.org:/var/www/html/Assets/R/
 
 echo
 echo 'install.packages("MonetDBLite", repos="http://homepages.cwi.nl/~hannes/R/", type="source")'
