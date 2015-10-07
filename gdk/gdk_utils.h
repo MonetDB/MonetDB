@@ -98,5 +98,7 @@ gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
 gdk_export str GDKfatalmsg;
+gdk_export bit GDKfataljumpenable;
+
 
 #endif /* _GDK_UTILS_H_ */

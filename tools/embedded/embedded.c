@@ -63,7 +63,7 @@ int monetdb_startup(char* dir, char silent) {
 	int retval = -1;
 	void* res = NULL;
 	char mod_path[1000];
-
+	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
 		// we will get here if GDKfatal was called.
 		if (GDKfatalmsg != NULL) {
@@ -125,6 +125,9 @@ int monetdb_startup(char* dir, char silent) {
 	(*SQLinitClient_ptr)(&mal_clients[0]);
 	((backend *) mal_clients[0].sqlcontext)->mvc->session->auto_commit = 1;
 	monetdb_embedded_initialized = true;
+
+	GDKfataljumpenable = 0;
+
 	// sanity check, run a SQL query
 	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
 		monetdb_embedded_initialized = false;
@@ -145,14 +148,6 @@ char* monetdb_query(char* query, void** result) {
 	if (!monetdb_embedded_initialized) {
 		fprintf(stderr, "Embedded MonetDB is not started.\n");
 		return NULL;
-	}
-
-	if(setjmp(GDKfataljump) != 0) {
-		// we will get here if GDKfatal was called.
-		if (GDKfatalmsg == NULL) {
-			return GDKstrdup("Fatal GDK error. This is bad. ");
-		}
-		return GDKfatalmsg;
 	}
 
 	while (*query == ' ' || *query == '\t') query++;
