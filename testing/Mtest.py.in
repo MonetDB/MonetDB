@@ -1127,12 +1127,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         testlist = tl
     else:
         for tc in open(os.path.join(TSTSRCDIR,"All")):
-            if tc.find('#') >= 0:
+            if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
             tc = tc.strip()
             if tc:
-                if tc.find('?') > -1:
+                if '?' in tc:
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
@@ -3935,7 +3935,7 @@ def main(argv) :
                 #TODO:
                 #else:
                     # WARNING/ERROR
-            elif args[0].find(os.sep) != -1:
+            elif os.sep in args[0]:
                 ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
             elif args[0] != "All":
                 #TODO:
@@ -3953,7 +3953,7 @@ def main(argv) :
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
                 while i < len(args):
-                    if args[i].find(os.sep) == -1:
+                    if os.sep not in args[i]:
                         #TODO:
                         # check, whether args[i] in All
                         testlist.append(args[i])
