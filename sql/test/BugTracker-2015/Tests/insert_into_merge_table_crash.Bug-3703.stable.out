@@ -59,8 +59,6 @@ Ready.
 #create merge table m (i int);
 #alter table m add table t1;
 #alter table m add table t2;
-#insert into m values (1);
-[ "error message expected here" ]
 #drop table m;
 #drop table t2;
 #drop table t1;
