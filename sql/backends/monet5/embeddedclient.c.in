@@ -26,7 +26,6 @@
 #include <monetdb_config.h>
 #include "gdk.h"
 #include "embeddedclient.h"
-#include "monet_options.h"
 
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
