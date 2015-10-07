@@ -484,7 +484,7 @@ do {									\
 	}								\
 } while (0)
 
-static int
+static void
 imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
@@ -529,8 +529,6 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 
 	*dictcnt = dcnt;
 	*impcnt = icnt;
-
-	return 1;
 }
 
 #define FILL_HISTOGRAM(TYPE)						\
@@ -819,22 +817,14 @@ BATimprints(BAT *b)
 
 		BBPunfix(smp->batCacheid);
 
-		if (!imprints_create(b,
-				     imprints->bins,
-				     imprints->stats,
-				     imprints->bits,
-				     imprints->imps,
-				     &imprints->impcnt,
-				     imprints->dict,
-				     &imprints->dictcnt)) {
-			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->imprints, 1);
-			GDKfree(imprints->imprints);
-			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-				      "BATimprints");
-			return GDK_FAIL;
-		}
+		imprints_create(b,
+				imprints->bins,
+				imprints->stats,
+				imprints->bits,
+				imprints->imps,
+				&imprints->impcnt,
+				imprints->dict,
+				&imprints->dictcnt);
 		assert(imprints->impcnt <= pages);
 		assert(imprints->dictcnt <= pages);
 		imprints->imprints->free = (size_t) ((char *) ((cchdc_t *) imprints->dict + imprints->dictcnt) - imprints->imprints->base);
