@@ -79,7 +79,6 @@ algebra_export str ALGcount_no_nil(wrd *result, const bat *bid);
 algebra_export str ALGtmark(bat *result, const bat *bid, const oid *base);
 algebra_export str ALGtmark_default(bat *result, const bat *bid);
 algebra_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
-algebra_export str ALGlike(bat *ret, const bat *bid, const str *k);
 algebra_export str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 algebra_export str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);
 algebra_export str ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end);

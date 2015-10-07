@@ -63,14 +63,14 @@ exit  MALException;
 	v45:= algebra.slice(b,v43,v44);
 	v46:= io.print(v45);
 
-	v75:= algebra.like(b,"ox");
+	v75:= algebra.likesubselect(b, nil:bat, "ox", nil:str, false, false);
 	v76:= io.print(v75);
 
-	v78:= algebra.like(b,"fo");
+	v78:= algebra.likesubselect(b, nil:bat, "fo", nil:str, false, false);
 	v79:= io.print(v78);
 
-	v81:= algebra.like(b,"fox");
+	v81:= algebra.likesubselect(b, nil:bat, "fox", nil:str, false, false);
 	v82:= io.print(v81);
 
-	v84:= algebra.like(b," fox");
+	v84:= algebra.likesubselect(b, nil:bat, " fox", nil:str, false, false);
 	v85:= io.print(v84);

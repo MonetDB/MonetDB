@@ -101,67 +101,6 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 }
 
 
-/*
- * The string pattern matching routine has been added. It should be
- * dynamically linked.
- * A simple string matcher is included. It should be refined later on
- */
-static inline int
-like(const char *x, const char *y, BUN ylen)
-{
-	const char *r;
-
-	if (x == (char *) NULL) {
-		return 0;
-	}
-	for (r = x + strlen(x) - ylen; x <= r; x++) {
-		int ok = 1;
-		const char *s = x;
-		const char *q;
-
-		for (q = y; *q; q++, s++)
-			if (*q != tolower(*s)) {
-				ok = 0;
-				break;
-			}
-		if (ok)
-			return 1;
-	}
-	return 0;
-}
-
-static gdk_return
-CMDlike(BAT **ret, BAT *b, const char *s)
-{
-	BATiter bi = bat_iterator(b);
-	BAT *c = BATnew(TYPE_void, TYPE_oid, BATcount(b) / 10, TRANSIENT);
-	str t, p;
-	BUN u, v;
-	BUN yy = 0;
-
-	if (c == NULL)
-		return GDK_FAIL;
-	t = GDKstrdup(s);
-	for (p = t; *p; p++, yy++)
-		*p = tolower(*p);
-
-	BATloop(b, u, v) {
-		p = BUNtvar(bi, u);
-		if (like(p, t, yy) &&
-			BUNappend(c, &u, TRUE) != GDK_SUCCEED) {
-				BBPreclaim(c);
-				GDKfree(t);
-				return GDK_FAIL;
-			}
-	}
-	c->tsorted = BATtordered(b);
-	c->trevsorted = BATtrevordered(b);
-	c->T->nonil = b->T->nonil;
-	*ret = c;
-	GDKfree(t);
-	return GDK_SUCCEED;
-}
-
 static gdk_return
 slice(BAT **retval, BAT *b, lng start, lng end)
 {
@@ -1024,26 +963,6 @@ ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
 	base /= *nr_parts;
 	base *= *part_nr;
 	return ALGtmark(result, bid, &base);
-}
-
-str
-ALGlike(bat *ret, const bat *bid, const str *k)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.like", RUNTIME_OBJECT_MISSING);
-	}
-	CMDlike(&bn, b, *k);
-	if (bn) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
-		*ret = bn->batCacheid;
-		BBPkeepref(*ret);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.like", GDK_EXCEPTION);
 }
 
 str
