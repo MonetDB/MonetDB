@@ -116,7 +116,9 @@ initParser(void)
 static int
 idLength(Client cntxt)
 {
-	str s, t;
+	str s,t;
+	int len = 0;
+	
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
 	t = s;
@@ -128,9 +130,15 @@ idLength(Client cntxt)
 		s[0] = REFMARKER;
 	/* prepare escape of temporary names */
 	s++;
-	while (idCharacter2[(int) (*s)])
+	while (len < IDLENGTH && idCharacter2[(int) (*s)]){
 		s++;
-	return (int) (s - t);
+		len++;
+	}
+	if( len == IDLENGTH)
+		// skip remainder
+		while (idCharacter2[(int) (*s)])
+			s++;
+	return (int) (s-t);;
 }
 
 /* Simple type identifiers can not be marked with a type variable. */
