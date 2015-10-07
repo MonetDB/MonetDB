@@ -1363,7 +1363,6 @@ str MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MATsortReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
