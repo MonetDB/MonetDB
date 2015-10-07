@@ -155,7 +155,7 @@ __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 __hidden int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden int HEAPfree(Heap *h, int remove)
+__hidden void HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__visibility__("hidden")));

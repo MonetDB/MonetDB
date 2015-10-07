@@ -553,7 +553,7 @@ HEAPcopy(Heap *dst, Heap *src)
 
 /* Free the memory associated with the heap H.
  * Unlinks (removes) the associated file if the remove flag is set. */
-int
+void
 HEAPfree(Heap *h, int remove)
 {
 	if (h->base) {
@@ -587,7 +587,6 @@ HEAPfree(Heap *h, int remove)
 		GDKfree(h->filename);
 		h->filename = NULL;
 	}
-	return 0;
 }
 
 /*
