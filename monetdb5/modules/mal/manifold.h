@@ -12,7 +12,6 @@
  */
 #ifndef _MANIFOLD_LIB_
 #define _MANIFOLD_LIB_
-#include "monetdb_config.h"
 #include <string.h>
 
 #include "mal.h"
