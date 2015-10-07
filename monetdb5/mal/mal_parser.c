@@ -155,7 +155,7 @@ typeidLength(Client cntxt)
 	l = 1;
 	s++;
 	idCharacter[TMPMARKER] = 0;
-	while (idCharacter[(int) (*s)] || isdigit(*s)) {
+	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
 		s++;
 		l++;
 	}
