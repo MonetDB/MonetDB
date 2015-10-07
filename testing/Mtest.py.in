@@ -3527,6 +3527,8 @@ def main(argv) :
              'Do not pass --forcemito to server'),
             ('jenkins', None, 'jenkins', None,
              'special handling for Jenkins'),
+            ('addreqs', None, 'addreqs', None,
+             'automatically add required tests when testing individual tests'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3607,6 +3609,7 @@ def main(argv) :
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
+    addreqs = False
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3649,6 +3652,7 @@ def main(argv) :
         if a is not None:
             env['MULTIFARM'] = 'True'
         jenkins = opts.get('jenkins', False)
+        addreqs = opts.get('addreqs', False)
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -4003,6 +4007,23 @@ def main(argv) :
         if not testdirs:
             Warn("No tests found in %s!" % ', '.join(dirlist))
             sys.exit(1)
+
+        if len(testdirs) == 1 and len(testlist) > 0 and addreqs:
+            added = True
+            while added:
+                added = False
+                i = 0
+                while i < len(testlist):
+                    if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                        for t in open(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                            t = t[:-1] # remove newline
+                            if t not in testlist[:i]:
+                                testlist.insert(i, t)
+                                i = i + 1
+                                added = True
+                            #elif t in testlist:
+                                # WARNING: tests in wrong order
+                    i = i + 1
 
         BusyPorts = []
 
