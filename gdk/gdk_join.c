@@ -122,8 +122,7 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
  * number of outputs that could possibly be generated. */
 static BUN
 joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
-		int semi, int nil_on_miss, int only_misses, BUN estimate,
-		const char *func)
+		int semi, int nil_on_miss, int only_misses, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize, size;
@@ -168,7 +167,6 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 
 	r1 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 	if (r1 == NULL) {
-		GDKerror("%s: cannot create output BATs.\n", func);
 		return BUN_NONE;
 	}
 	BATseqbase(r1, 0);
@@ -183,7 +181,6 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 		r2 = BATnew(TYPE_void, TYPE_oid, size, TRANSIENT);
 		if (r2 == NULL) {
 			BBPreclaim(r1);
-			GDKerror("%s: cannot create output BATs.\n", func);
 			return BUN_NONE;
 		}
 		BATseqbase(r2, 0);
@@ -2734,6 +2731,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			return GDK_SUCCEED;
 		break;
 	default:
+		GDKerror("BATsubbandjoin: unsupported type\n");
 		goto bailout;
 	}
 
@@ -3069,8 +3067,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, lcount, rcount,
 				       l->tkey, r->tkey, semi, nil_on_miss,
-				       only_misses, estimate,
-				       name)) == BUN_NONE)
+				       only_misses, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	if (r2p)
@@ -3185,7 +3182,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 	*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate, "BATsubthetajoin")) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3233,7 +3230,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, 0, 0, 0, estimate, "BATsubjoin")) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3354,7 +3351,7 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate, "BATsubbandjoin")) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3373,7 +3370,7 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	*r2p = NULL;
 	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), 0, 0, 0, 0, 0, estimate, "BATsubrangejoin")) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;

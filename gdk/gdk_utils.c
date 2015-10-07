@@ -813,10 +813,8 @@ ptr
 GDKrealloc(void *blk, size_t size)
 {
 	size_t sz = size;
-	void *p;
 
-	p = GDKreallocmax(blk, sz, &size, 0);
-	return p;
+	return GDKreallocmax(blk, sz, &size, 0);
 }
 
 #undef GDKstrdup
@@ -848,7 +846,10 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 void *
 GDKmalloc(size_t size)
 {
-	return malloc(size);
+	void *p = malloc(size);
+	if (p == NULL)
+		GDKerror("GDKmalloc: failed for " SZFMT " bytes", size);
+	return p;
 }
 
 void
@@ -864,6 +865,8 @@ GDKzalloc(size_t size)
 	void *ptr = malloc(size);
 	if (ptr)
 		memset(ptr, 0, size);
+	else
+		GDKerror("GDKzalloc: failed for " SZFMT " bytes", size);
 	return ptr;
 }
 
@@ -872,21 +875,32 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 {
 	void *ptr = realloc(blk, size);
 	*maxsize = size;
-	if (ptr == 0 && emergency)
-		GDKfatal("fatal\n");
+	if (ptr == 0) {
+		if (emergency)
+			GDKfatal("fatal\n");
+		else
+			GDKerror("GDKreallocmax: failed for "
+				 SZFMT " bytes", newsize);
+	}
 	return ptr;
 }
 
 void *
 GDKrealloc(void *ptr, size_t size)
 {
-	return realloc(ptr, size);
+	void *p = realloc(ptr, size);
+	if (p == NULL)
+		GDKerror("GDKrealloc: failed for " SZFMT " bytes", size);
+	return p;
 }
 
 char *
 GDKstrdup(const char *s)
 {
-	return strdup(s);
+	char *p = strdup(s);
+	if (p == NULL)
+		GDKerror("GDKstrdup failed for %s\n", s);
+	return p;
 }
 
 #endif	/* STATIC_CODE_ANALYSIS */
@@ -1017,7 +1031,7 @@ GDKvmtrim(void *limit)
 	} while (!GDKexiting());
 }
 
-static int THRinit(void);
+static void THRinit(void);
 static void GDKlockHome(void);
 
 int
@@ -1691,6 +1705,7 @@ THRnew(const char *name)
 		if (s == t) {
 			MT_lock_unset(&GDKthreadLock, "THRnew");
 			IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+			GDKerror("THRnew: too many threads\n");
 			return NULL;
 		}
 		tid = s->tid;
@@ -1753,7 +1768,7 @@ THRhighwater(void)
  * the network.  The code below should be improved to gain speed.
  */
 
-static int
+static void
 THRinit(void)
 {
 	int i = 0;
@@ -1763,7 +1778,6 @@ THRinit(void)
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
 	}
-	return 0;
 }
 
 void
@@ -1889,12 +1903,14 @@ GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char
 	ptrdiff_t last_dirsep_index;
 
 	if (path == NULL || *path == 0) {
+		GDKerror("GDKextractParentAndLastDirFromPath: no path\n");
 		return GDK_FAIL;
 	}
 
 	last_dir_with_sep = strrchr(path, DIR_SEP);
 	if (last_dir_with_sep == NULL) {
 		/* it wasn't a path, can't work with that */
+		GDKerror("GDKextractParentAndLastDirFromPath: no separator\n");
 		return GDK_FAIL;
 	}
 	last_dirsep_index = last_dir_with_sep - path;
