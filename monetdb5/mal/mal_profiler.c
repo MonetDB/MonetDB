@@ -164,9 +164,6 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	/* make basic profile event tuple  */
 	lognew();
 
-	/* without this cast, compilation on Windows fails with
-	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-	 */
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -177,7 +174,9 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"%s.%06ld\",\t", tbuf+11, (long)clock.tv_usec);
+	/* there should be less than 10^6 == 1M usecs in 1 sec */
+	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
+	logadd("\"%s.%06d\",\t", tbuf+11, (int) clock.tv_usec);
 	if( alter){
 		logadd("\"user.%s[0]0\",\t",alter);
 	} else {
@@ -690,9 +689,6 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getModuleId(getInstrPtr(mb, 0)),
 	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 
-	/* without this cast, compilation on Windows fails with
-	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-	 */
 #ifdef HAVE_CTIME_R3
 	if (ctime_r(&clk, ctm, sizeof(ctm)) == NULL)
 		strncpy(ctm, "", sizeof(ctm));
