@@ -399,8 +399,7 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 	if (*src == TYPE##_nil) {			\
 		return snprintf(*dst, *len, "nil");	\
 	}						\
-	snprintf(*dst, *len, FMT, FMTCAST *src);	\
-	return (int) strlen(*dst);			\
+	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
 
 #define num08(x)	((x) >= '0' && (x) <= '7')
