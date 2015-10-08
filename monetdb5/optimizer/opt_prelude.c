@@ -462,11 +462,6 @@ void optimizerInit(void)
 	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
-	hlbProp = PropertyIndex("hlb");
-	hubProp = PropertyIndex("hub");
-	tlbProp = PropertyIndex("tlb");
-	tubProp = PropertyIndex("tub");
-
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
 	mtProp = PropertyIndex("mergetable");

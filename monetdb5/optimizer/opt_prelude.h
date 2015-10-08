@@ -234,10 +234,6 @@ opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
 opt_export int orderDependendProp;	/* binary */
 
-opt_export int hlbProp;			/* any (head lower bound) */
-opt_export int hubProp;			/* any (head upper bound) */
-opt_export int tlbProp;			/* any (tail lower bound) */
-opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
 opt_export int mtProp;		

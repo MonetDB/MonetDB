@@ -184,17 +184,17 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
 
 			{
-				int lowprop = hlbProp, highprop = hubProp;
+				//int lowprop = hlbProp, highprop = hubProp;
 				/* rows == cnt has been checked above to be <= GDK_oid_max */
-				oid low = 0, high = low + (oid) rows;
+				//oid low = 0, high = low + (oid) rows;
 				pushInstruction(mb, p);
 
-				if (mode == RD_INS) {
-					low = high;
-					high += 1024 * 1024;
-				}
-				varSetProp(mb, getArg(p, 0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
-				varSetProp(mb, getArg(p, 0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
+				//if (mode == RD_INS) {
+					//low = high;
+					//high += 1024 * 1024;
+				//}
+				//varSetProp(mb, getArg(p, 0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
+				//varSetProp(mb, getArg(p, 0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
 			}
 		} else {
 			pushInstruction(mb, p);
