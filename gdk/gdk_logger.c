@@ -1066,8 +1066,8 @@ logger_readlog(logger *lg, char *filename)
 }
 
 /*
- * The log files are incrementally numbered, starting from 2. They are processed in the
- * same sequence.
+ * The log files are incrementally numbered, starting from 2. They are
+ * processed in the same sequence.
  */
 static int
 logger_readlogs(logger *lg, FILE *fp, char *filename)
@@ -1102,22 +1102,31 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			while (lid >= lg->id && res != LOG_ERR) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
 				if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
-					/* The only special case is if the files is missing altogether
-					 * and the logger is a shared one,
-					 * then we have missing transactions and we should abort.
-					 * Yeah, and we also ignore the 1st files it most likely never exists. */
+					/* The only special case is if
+					 * the files is missing
+					 * altogether and the logger
+					 * is a shared one, then we
+					 * have missing transactions
+					 * and we should abort.  Yeah,
+					 * and we also ignore the 1st
+					 * files it most likely never
+					 * exists. */
 					res = LOG_ERR;
 					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
 				}
-				/* Increment the id only at the end, since we want to re-read the last file.
-				 * That is because last time we read it, it was empty, since the logger creates empty files
-				 * and fills them in later. */
+				/* Increment the id only at the end,
+				 * since we want to re-read the last
+				 * file.  That is because last time we
+				 * read it, it was empty, since the
+				 * logger creates empty files and
+				 * fills them in later. */
 				lg->id++;
 			}
 			if (lid < lg->id) {
 				lg->id = lid;
 			}
-			/* if this is a shared logger, write the id in the shared file */
+			/* if this is a shared logger, write the id in
+			 * the shared file */
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
 	}
@@ -1295,26 +1304,31 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int shared) {
+logger_set_logdir_path(char *filename, const char *fn,
+		       const char *logdir, int shared)
+{
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
 		char logdir_parent_path[MAXPATHLEN] = "";
 		char logdir_name[MAXPATHLEN] = "";
-		/* split the logdir string into absolute parent dir path and (relative) log dir name */
+
+		/* split the logdir string into absolute parent dir
+		 * path and (relative) log dir name */
 		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
-			/* set the new relative logdir locaiton including the logger function name subdir */
+			/* set the new relative logdir location
+			 * including the logger function name
+			 * subdir */
 			snprintf(filename, MAXPATHLEN, "%s%c%s%c",
 				 logdir_name, DIR_SEP, fn, DIR_SEP);
 
-			/* add a new dbfarm for the logger directory using the parent dir path,
-			 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
-			 * or at least it appears so to (multi)dbfarm aware functions */
-			if (!shared) {
-				role = LOG_DIR;
-			} else {
-				role = SHARED_LOG_DIR;
-			}
+			/* add a new dbfarm for the logger directory
+			 * using the parent dir path, assuming it is
+			 * set, s.t. the logs are stored in a location
+			 * other than the default dbfarm, or at least
+			 * it appears so to (multi)dbfarm aware
+			 * functions */
+			role = shared ? SHARED_LOG_DIR : LOG_DIR;
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			logger_fatal("logger_set_logdir_path: logdir path is not correct (%s)."

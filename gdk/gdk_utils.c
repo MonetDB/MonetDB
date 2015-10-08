@@ -1883,7 +1883,8 @@ GDKversion(void)
  * Returns GDK_SUCCEED for success, GDK_FAIL on failure.
  */
 gdk_return
-GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir) {
+GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
+{
 	char *last_dir_with_sep;
 	ptrdiff_t last_dirsep_index;
 
@@ -1897,7 +1898,8 @@ GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char
 		return GDK_FAIL;
 	}
 	last_dirsep_index = last_dir_with_sep - path;
-	/* split the dir string into absolute parent dir path and (relative) log dir name */
+	/* split the dir string into absolute parent dir path and
+	 * (relative) log dir name */
 	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
 	strncpy(last_dir_parent, path, last_dirsep_index);
 	last_dir_parent[last_dirsep_index] = 0;

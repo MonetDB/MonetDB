@@ -232,7 +232,8 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 }
 
 FILE *
-GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode) {
+GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode)
+{
 	char *path;
 
 	/* if name is null, try to get one from dir (in case it was a path) */
