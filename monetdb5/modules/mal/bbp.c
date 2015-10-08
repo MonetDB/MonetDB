@@ -165,10 +165,10 @@ CMDbbpLocation(bat *ret)
 {
 	BAT *b;
 	int i;
-	char buf[MAXPATHLEN];
-	char cwd[MAXPATHLEN];
+	char buf[PATHLENGTH];
+	char cwd[PATHLENGTH];
 
-	if (getcwd(cwd, MAXPATHLEN) == NULL)
+	if (getcwd(cwd, PATHLENGTH) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
@@ -180,7 +180,7 @@ CMDbbpLocation(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
+				snprintf(buf,PATHLENGTH,"%s/bat/%s",cwd,BBP_physical(i));
 				BUNappend(b, buf, FALSE);
 			}
 		}
@@ -393,7 +393,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 {
 	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	int	i;
-	char buf[MAXPATHLEN];
+	char buf[PATHLENGTH];
 
 	id = BATnew(TYPE_void, TYPE_int, getBBPsize(), TRANSIENT);
 	ns = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
@@ -445,7 +445,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				snprintf(buf, MAXPATHLEN, "%s", BBP_physical(i));
+				snprintf(buf, PATHLENGTH, "%s", BBP_physical(i));
 				BUNappend(id, &i, FALSE);
 				BUNappend(ns, BBP_logical(i), FALSE);
 				BUNappend(tt, BATatoms[BATttype(bn)].name, FALSE);

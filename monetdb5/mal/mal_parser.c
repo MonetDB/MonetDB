@@ -1854,7 +1854,7 @@ parseTuple(Client cntxt)
 	MalBlkPtr curBlk;
 	Symbol curPrg;
 	FILE *f = 0;
-	char buf[MAXPATHLEN];
+	char buf[PATHLENGTH];
 	int c;
 
 	sprintf(buf, "input%d", (int) (cntxt - mal_clients));

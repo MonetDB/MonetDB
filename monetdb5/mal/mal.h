@@ -107,10 +107,6 @@ mal_export void mal_exit(void);
 #define STRUCT_ALIGNED
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif
-
 /* The MAL instruction block type definitions */
 /* Variable properties */
 #define VAR_CONSTANT 	1
