@@ -50681,6 +50681,12 @@ comment Duplicate constant removal optimizer
 
 pattern optimizer.constants():str 
 address OPTwrapper;
+pattern optimizer.candidates(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Mark candidate list variables
+
+pattern optimizer.candidates():str 
+address OPTwrapper;
 pattern optimizer.commonTerms(mod:any_1,fcn:any_2):str 
 address OPTwrapper;
 comment Common sub-expression optimizer
@@ -51756,11 +51762,11 @@ pattern sql.start():void
 address SQLsession;
 comment Switch to processing SQL statements
 
-pattern sql.tid(mvc:int,sname:str,tname:str,part_nr:int,nr_parts:int):bat[:oid,:any_3] 
+pattern sql.tid(mvc:int,sname:str,tname:str,part_nr:int,nr_parts:int):bat[:oid,:oid] 
 address SQLtid;
 comment Return the tables tid column.
 
-pattern sql.tid(mvc:int,sname:str,tname:str):bat[:oid,:any_3] 
+pattern sql.tid(mvc:int,sname:str,tname:str):bat[:oid,:oid] 
 address SQLtid;
 comment Return the tables tid column.
 
