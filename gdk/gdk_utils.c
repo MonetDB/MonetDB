@@ -1864,7 +1864,7 @@ THRprintf(stream *s, const char *format, ...)
 	return n;
 }
 
-static char *_gdk_version_string = VERSION;
+static const char *_gdk_version_string = VERSION;
 /**
  * Returns the GDK version as internally allocated string.  Hence the
  * string does not have to (and should not) be freed.  Do not inline
