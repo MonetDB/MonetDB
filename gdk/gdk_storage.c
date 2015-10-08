@@ -255,8 +255,11 @@ GDKfileopen(int farmid, const char * dir, const char *name, const char *extensio
 	}
 
 	if (path != NULL) {
-        IODEBUG THRprintf(GDKstdout, "#GDKfileopen(%s)\n", path);
-		return fopen(path, mode);
+		FILE *f;
+		IODEBUG fprintf(stderr, "#GDKfileopen(%s)\n", path);
+		f = fopen(path, mode);
+		GDKfree(path);
+		return f;
 	}
 	return NULL;
 }
