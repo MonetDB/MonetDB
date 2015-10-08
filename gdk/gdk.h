@@ -2628,7 +2628,7 @@ BATmirror(register BAT *b)
  * needs the rollback mechanism).
  */
 gdk_export gdk_return TMcommit(void);
-gdk_export gdk_return TMabort(void);
+gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
 
