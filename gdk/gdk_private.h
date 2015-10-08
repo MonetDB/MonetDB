@@ -317,38 +317,6 @@ extern MT_Lock MT_system_lock;
 #define GDKcacheLock(y)	GDKbbpLock[y].alloc
 #define BBP_free(y)	GDKbbpLock[y].free
 
-#define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
-	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_bte(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, bte)
-#define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
-#define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
-#define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
-#ifdef HAVE_HGE
-#define SORTloop_hge(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, hge)
-#endif
-#define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
-#define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
-#define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)
-#define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
-
-#define SORTloop_loc(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
-
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
-
 #define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 
 #define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
