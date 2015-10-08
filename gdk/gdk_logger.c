@@ -934,7 +934,7 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char* path = GDKfilepath_long(BBPselectfarm(lg->dbfarm_role, 0, offheap), filename, NULL);
+	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1347,14 +1347,14 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, filename, NULL, NULL, "r");
+	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1709,7 +1709,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				fseek(fp, off, SEEK_SET);
 
 
-				if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+				if ((fp1 = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 					/* file indicating that we need to do
 					 * a 32->64 bit OID conversion exists;
 					 * record the fact in case we get
@@ -1718,7 +1718,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					fclose(fp1);
 					/* first create a versioned file using
 					 * the current log id */
-					if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
+					if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
 					    fprintf(fp1, "%d\n", curid) < 2 ||
 					    fflush(fp1) != 0 || /* make sure it's save on disk */
 #if defined(_MSC_VER)
@@ -1736,7 +1736,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					unlink(bak);
 					/* set the flag that we need to convert */
 					lg->read32bitoid = 1;
-				} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
+				} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
 					/* the versioned conversion file
 					 * exists: check version */
 					int newid;
@@ -1995,7 +1995,7 @@ logger_exit(logger *lg)
 	}
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "w")) != NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
 		char ext[BUFSIZ];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
@@ -2112,7 +2112,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	if (keep_persisted_log_files == 0) {
 		// If keep_persisted_log_files is 0, remove the last persisted WAL files as well
 		// to reduce the work for the logger_cleanup_old()
-		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
+		if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
 		}
@@ -2165,7 +2165,7 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 	int farmid = BBPselectfarm(role, 0, offheap);
 
 	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "r")) == NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}
