@@ -1880,7 +1880,7 @@ GDKversion(void)
  * Extracts the last directory from a path string, if possible.
  * Stores the parent directory (path) in last_dir_parent and
  * the last directory (name) without a leading separators in last_dir.
- * Returns 1 for success, 0 on failure.
+ * Returns GDK_SUCCEED for success, GDK_FAIL on failure.
  */
 gdk_return
 GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir) {
