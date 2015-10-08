@@ -1080,7 +1080,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, sizeof(id), fp) != NULL) {
-		char log_filename[BUFSIZ];
+		char log_filename[MAXPATHLEN];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1299,12 +1299,13 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[BUFSIZ] = "";
-		char logdir_name[BUFSIZ] = "";
+		char logdir_parent_path[MAXPATHLEN] = "";
+		char logdir_name[MAXPATHLEN] = "";
 		/* split the logdir string into absolute parent dir path and (relative) log dir name */
 		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
 			/* set the new relative logdir locaiton including the logger function name subdir */
-			snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
+			snprintf(filename, MAXPATHLEN, "%s%c%s%c",
+				 logdir_name, DIR_SEP, fn, DIR_SEP);
 
 			/* add a new dbfarm for the logger directory using the parent dir path,
 			 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
@@ -1321,7 +1322,8 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
+		snprintf(filename, MAXPATHLEN, "%s%c%s%c",
+			 logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
 	return role;
@@ -1332,16 +1334,16 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
  * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
-logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
+logger_load(int debug, const char* fn, char filename[MAXPATHLEN], logger* lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
-	char bak[BUFSIZ];
+	char bak[MAXPATHLEN];
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	snprintf(filename, MAXPATHLEN, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 
 	/* try to open logfile backup, or failing that, the file
@@ -1658,7 +1660,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
-		char cvfile[BUFSIZ];
+		char cvfile[MAXPATHLEN];
 #endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
@@ -1790,8 +1792,8 @@ static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	char filename[BUFSIZ];
-	char shared_log_filename[BUFSIZ];
+	char filename[MAXPATHLEN];
+	char shared_log_filename[MAXPATHLEN];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -1894,7 +1896,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 int
 logger_reload(logger *lg)
 {
-	char filename[BUFSIZ];
+	char filename[MAXPATHLEN];
 
 	snprintf(filename, sizeof(filename), "%s", lg->dir);
 	if (lg->debug & 1) {
@@ -1984,7 +1986,7 @@ int
 logger_exit(logger *lg)
 {
 	FILE *fp;
-	char filename[BUFSIZ];
+	char filename[MAXPATHLEN];
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
@@ -1996,7 +1998,7 @@ logger_exit(logger *lg)
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
-		char ext[BUFSIZ];
+		char ext[MAXPATHLEN];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
@@ -2158,7 +2160,7 @@ logger_changes(logger *lg)
 lng
 logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
-	char filename[BUFSIZ];
+	char filename[MAXPATHLEN];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = LOG_ERR;
