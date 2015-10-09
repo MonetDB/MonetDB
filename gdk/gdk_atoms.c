@@ -315,23 +315,27 @@ int
 ATOMprint(int t, const void *p, stream *s)
 {
 	int (*tostr) (str *, int *, const void *);
+	ssize_t res;
 
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		if (t != TYPE_bat && t < TYPE_str) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
 
-			return (int) mnstr_write(s, buf, l, 1);
+			res = mnstr_write(s, buf, l, 1);
 		} else {
 			str buf = 0;
 			int sz = 0, l = (*tostr) (&buf, &sz, p);
 
-			l = (int) mnstr_write(s, buf, l, 1);
+			res = mnstr_write(s, buf, l, 1);
 			GDKfree(buf);
-			return l;
 		}
+	} else {
+		res = mnstr_write(s, "nil", 1, 3);
 	}
-	return (int) mnstr_write(s, "nil", 1, 3);
+	if (res < 0)
+		GDKsyserror("ATOMprint: write failure\n");
+	return (int) res;
 }
 
 
@@ -395,8 +399,7 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 	if (*src == TYPE##_nil) {			\
 		return snprintf(*dst, *len, "nil");	\
 	}						\
-	snprintf(*dst, *len, FMT, FMTCAST *src);	\
-	return (int) strlen(*dst);			\
+	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
 
 #define num08(x)	((x) >= '0' && (x) <= '7')
@@ -507,8 +510,10 @@ bitWrite(const bit *a, stream *s, size_t cnt)
 {
 	if (mnstr_write(s, (const char *) a, 1, cnt) == (ssize_t) cnt)
 		return GDK_SUCCEED;
-	else
+	else {
+		GDKsyserror("bitWrite: write failure\n");
 		return GDK_FAIL;
+	}
 }
 
 int

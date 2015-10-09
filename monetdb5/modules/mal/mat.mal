@@ -61,9 +61,6 @@ pattern sortReverse(b:bat[:oid,:any_2]...)
 address MATsortReverse
 comment "Returns a BAT copy sorted on the tail column.";
 
-pattern print(b:bat[:oid,:any_2]...):void
-address MATprint;
-
 pattern newIterator(grp:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATnewIterator
 comment "Create an iterator over a MAT";

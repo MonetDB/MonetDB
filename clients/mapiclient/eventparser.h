@@ -19,8 +19,6 @@
 #ifndef _EVENT_PARSER_
 #define _EVENT_PARSER_
 
-#include "monetdb_config.h"
-#include "monet_options.h"
 #include <mapi.h>
 #include <stream.h>
 #include <stdio.h>

@@ -648,12 +648,12 @@ inline str
 getVarName(MalBlkPtr mb, int i)
 {
 	str nme;
-	char buf[PATHLENGTH];
+	char buf[IDLENGTH];
 
 	nme = mb->var[i]->name;
 
 	if (nme == 0 || *nme =='_') {
-		snprintf(buf, PATHLENGTH, "%c_%d", REFMARKER, mb->var[i]->tmpindex);
+		snprintf(buf, IDLENGTH, "%c_%d", refMarker(mb,i), mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
 	return nme;
@@ -662,13 +662,13 @@ getVarName(MalBlkPtr mb, int i)
 inline void
 setVarName(MalBlkPtr mb, int i, str nme)
 {
-	char buf[PATHLENGTH];
+	char buf[IDLENGTH];
 
 	if ( mb->var[i]->name)
 		GDKfree(mb->var[i]->name);
 
 	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+		snprintf(buf, IDLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
 		nme = buf;
 	}
 	mb->var[i]->name = GDKstrdup(nme);
@@ -678,7 +678,7 @@ inline void
 resetVarName(MalBlkPtr mb, int i)
 {
 	str nme;
-	char buf[PATHLENGTH];
+	char buf[IDLENGTH];
 
 	nme = mb->var[i]->name;
 	if (mb->var[i]->tmpindex && nme) {
@@ -687,7 +687,7 @@ resetVarName(MalBlkPtr mb, int i)
 	}
 
 	if (nme == 0) {
-		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+		snprintf(buf, IDLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
 		mb->var[i]->name = GDKstrdup(buf);
 	}
 }

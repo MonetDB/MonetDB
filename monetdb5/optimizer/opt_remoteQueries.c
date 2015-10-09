@@ -39,7 +39,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 			GDKfree(tpe);
 		} else
 		if (isTmpVar(mb, getArg(p,k)))
-			sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
+			sprintf(msg+len, "%c%d", refMarker(mb, getArg(p,k)), v->tmpindex);
 		else
 			sprintf(msg+len, "%s", v->name);
 		if (k < p->retc - 1)
@@ -65,7 +65,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				}
 
 			} else if (isTmpVar(mb, getArg(p,k)))
-				sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
+				sprintf(msg+len, "%c%d", refMarker(mb,getArg(p,k)), v->tmpindex);
 			else
 				sprintf(msg+len, "%s", v->name);
 			if (k < p->argc - 1)

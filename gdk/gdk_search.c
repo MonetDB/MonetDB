@@ -299,6 +299,7 @@ BATcheckhash(BAT *b)
 			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
+		GDKclrerr();	/* we're not currently interested in errors */
 	}
 #endif
 	ret = b->T->hash != NULL;
@@ -361,6 +362,7 @@ BAThash(BAT *b, BUN masksize)
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				GDKfree(hp->filename);
 				GDKfree(hp);
+				GDKerror("BAThash: no hash on void/nil column\n");
 				return GDK_FAIL;
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");

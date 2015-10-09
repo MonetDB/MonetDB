@@ -30,6 +30,9 @@ stderr of test 'insert_into_merge_table_crash.Bug-3703` in directory 'sql/test/B
 # 16:55:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1086" "--port=39600"
 # 16:55:06 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-5390/.s.monetdb.38366
+QUERY = insert into m values (1);
+ERROR = !INSERT INTO: cannot insert into merge table 'm'
 
 # 16:55:06 >  
 # 16:55:06 >  "Done."

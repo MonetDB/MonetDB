@@ -49,7 +49,7 @@ Ready.
 #SELECT CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, a+b*2+c*3+d*4, a+b*2+c*3, c, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c) FROM t1 WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b) OR b>c OR d NOT BETWEEN 110 AND 150 ORDER BY 4,1,5,2,6,3,7;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	c,	L6,	L7 # name
-% smallint,	smallint,	hugeint,	hugeint,	int,	bigint,	bigint # type
+% smallint,	smallint,	bigint,	bigint,	int,	bigint,	bigint # type
 % 3,	3,	4,	3,	3,	4,	1 # length
 [ 555,	444,	1014,	610,	102,	1000,	2	]
 [ 333,	333,	1067,	635,	106,	1050,	1	]
@@ -62,7 +62,7 @@ Ready.
 #SELECT a, a+b*2+c*3+d*4+e*5, c-d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, b-c, a+b*2 FROM t1 ORDER BY 6,2,4,5,3,1;
 % sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6 # table_name
 % a,	L1,	L2,	L4,	L5,	L6 # name
-% int,	hugeint,	bigint,	bigint,	bigint,	hugeint # type
+% int,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	4,	2,	4,	2,	3 # length
 [ 104,	1529,	1,	1000,	-2,	304	]
 [ 107,	1612,	-2,	1050,	-1,	317	]
@@ -75,7 +75,7 @@ Ready.
 #SELECT a+b*2+c*3+d*4+e*5, CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, a, abs(b-c), a+b*2, d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE (e>c OR e<d) OR a>b ORDER BY 4,5,3,7,1,6,2;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.t1,	sys.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	d,	L6 # name
-% hugeint,	smallint,	int,	bigint,	hugeint,	int,	bigint # type
+% bigint,	smallint,	int,	bigint,	bigint,	int,	bigint # type
 % 4,	3,	3,	1,	3,	3,	4 # length
 [ 1612,	333,	107,	1,	317,	108,	1050	]
 [ 1680,	222,	111,	1,	335,	114,	1120	]
@@ -100,7 +100,7 @@ Ready.
 #SELECT d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c), a+b*2+c*3+d*4+e*5, CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, d-e FROM t1 ORDER BY 1,6,2,3,5,4;
 % sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % d,	L2,	L3,	L4,	L5,	L6 # name
-% int,	bigint,	bigint,	hugeint,	smallint,	bigint # type
+% int,	bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	4,	1,	4,	3,	2 # length
 [ 101,	1000,	2,	1529,	444,	-2	]
 [ 108,	1050,	1,	1612,	333,	-1	]
@@ -113,7 +113,7 @@ Ready.
 #SELECT a+b*2+c*3+d*4+e*5, a, abs(a), a-b, d-e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b) AND b>c ORDER BY 4,6,3,1,5,2;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
 % L1,	a,	L2,	L3,	L4,	L6 # name
-% hugeint,	int,	int,	bigint,	bigint,	bigint # type
+% bigint,	int,	int,	bigint,	bigint,	bigint # type
 % 4,	3,	3,	2,	1,	3 # length
 [ 1826,	121,	121,	-3,	2,	242	]
 [ 1902,	127,	127,	-2,	2,	254	]
@@ -121,7 +121,7 @@ Ready.
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, a+b*2+c*3+d*4+e*5, a, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), d FROM t1 WHERE a>b AND (e>a AND e<b) ORDER BY 7,2,4,6,1,3,5;
 % .L1,	.L2,	.t1,	.L3,	.L5,	.L7,	.t1 # table_name
 % L1,	L2,	a,	L3,	L5,	L7,	d # name
-% smallint,	hugeint,	int,	smallint,	bigint,	wrd,	int # type
+% smallint,	bigint,	int,	smallint,	bigint,	wrd,	int # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT e, (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, a-b, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d) FROM t1 WHERE a>b AND (c<=d-2 OR c>=d+2) AND c>d ORDER BY 6,5,4,2,3,1;
 % .t1,	.L2,	.L4,	.L5,	.L6,	.L10 # table_name
@@ -143,7 +143,7 @@ Ready.
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), b, a, a+b*2+c*3+d*4+e*5, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, a+b*2+c*3 FROM t1 WHERE a>b AND (e>c OR e<d) ORDER BY 3,7,2,5,6,4,1;
 % .L1,	.t1,	.t1,	.L2,	.L4,	.L5,	.L6 # table_name
 % L1,	b,	a,	L2,	L4,	L5,	L6 # name
-% wrd,	int,	int,	hugeint,	bigint,	smallint,	hugeint # type
+% wrd,	int,	int,	bigint,	bigint,	smallint,	bigint # type
 % 1,	3,	3,	4,	4,	3,	3 # length
 [ 0,	100,	104,	1529,	1000,	555,	610	]
 [ 0,	105,	107,	1612,	1050,	333,	635	]
@@ -151,7 +151,7 @@ Ready.
 #SELECT c-d, a-b, b, b-c, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, c, a+b*2 FROM t1 ORDER BY 1,5,4,3,2,6,7;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L1,	L2,	b,	L3,	L5,	c,	L6 # name
-% bigint,	bigint,	int,	bigint,	bigint,	int,	hugeint # type
+% bigint,	bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	2,	3,	2,	4,	3,	3 # length
 [ -3,	-2,	129,	4,	254,	125,	385	]
 [ -2,	2,	105,	-1,	1050,	106,	317	]
@@ -164,7 +164,7 @@ Ready.
 #SELECT a+b*2+c*3+d*4, a, c-d, abs(b-c), b, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE (e>c OR e<d) OR (c<=d-2 OR c>=d+2) ORDER BY 4,3,2,5,1,6;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L5 # table_name
 % L1,	a,	L2,	L3,	b,	L5 # name
-% hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 4,	3,	2,	1,	3,	4 # length
 [ 1067,	107,	-2,	1,	105,	1050	]
 [ 1130,	111,	-1,	1,	112,	1120	]
@@ -177,7 +177,7 @@ Ready.
 #SELECT a, a+b*2+c*3+d*4+e*5, b, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, e, a-b FROM t1 ORDER BY 1,4,5,3,6,2;
 % sys.t1,	sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
 % a,	L1,	b,	L3,	e,	L4 # name
-% int,	hugeint,	int,	bigint,	int,	bigint # type
+% int,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	4,	3,	4,	3,	2 # length
 [ 104,	1529,	100,	1000,	103,	4	]
 [ 107,	1612,	105,	1050,	109,	2	]
@@ -190,7 +190,7 @@ Ready.
 #SELECT d, d-e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, a+b*2, a+b*2+c*3+d*4+e*5, CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, a+b*2+c*3 FROM t1 ORDER BY 3,2,4,5,7,1,6;
 % sys.t1,	sys.L1,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
 % d,	L1,	L3,	L4,	L5,	L6,	L7 # name
-% int,	bigint,	bigint,	hugeint,	hugeint,	smallint,	hugeint # type
+% int,	bigint,	bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	2,	4,	3,	4,	3,	3 # length
 [ 122,	2,	242,	369,	1826,	222,	738	]
 [ 128,	2,	254,	385,	1902,	222,	760	]
@@ -203,7 +203,7 @@ Ready.
 #SELECT a, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), a+b*2+c*3+d*4, b FROM t1 WHERE c>d OR d>e ORDER BY 2,5,1,3,4;
 % .t1,	.L2,	.L4,	.L5,	.t1 # table_name
 % a,	L2,	L4,	L5,	b # name
-% int,	bigint,	wrd,	hugeint,	int # type
+% int,	bigint,	wrd,	bigint,	int # type
 % 3,	4,	1,	4,	3 # length
 [ 121,	242,	0,	1226,	124	]
 [ 127,	254,	0,	1272,	129	]
@@ -215,7 +215,7 @@ Ready.
 #SELECT c, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, a+b*2+c*3+d*4 FROM t1 WHERE b>c OR (e>c OR e<d) OR d NOT BETWEEN 110 AND 150 ORDER BY 3,2,1,4;
 % .t1,	.L2,	.L4,	.L5 # table_name
 % c,	L2,	L4,	L5 # name
-% int,	wrd,	bigint,	hugeint # type
+% int,	wrd,	bigint,	bigint # type
 % 3,	1,	4,	4 # length
 [ 123,	0,	242,	1226	]
 [ 125,	0,	254,	1272	]

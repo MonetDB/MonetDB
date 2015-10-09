@@ -267,13 +267,16 @@ str
 CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
+	gdk_return r;
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
-	BATimprints(b);
+	r = BATimprints(b);
 	BBPunfix(b->batCacheid);
+	if (r == GDK_FAIL)
+		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 str

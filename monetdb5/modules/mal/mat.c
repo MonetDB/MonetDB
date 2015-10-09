@@ -85,15 +85,11 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
 		b = BBPquickdesc(abs(bid),FALSE);
-		if (b && bid < 0)
-			b = BATmirror(b);
 		if( b ){
-			assert(BAThdense(b));
-			if (tt == TYPE_any){
+			if (tt == TYPE_any)
 				tt = b->ttype;
-			}
-			if (!tt && tt != b->ttype)
-				tt = b->ttype;
+			if (tt != b->ttype)
+				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}
 	}
@@ -117,7 +113,6 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
-	assert(!bn->H->nil || !bn->H->nonil);
 	assert(!bn->T->nil || !bn->T->nonil);
 	BATsettrivprop(bn);
 	BATderiveProps(bn,FALSE);
@@ -289,7 +284,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bn = BATnew(TYPE_void, tt, cnt, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
-	/* must set seqbase or else BATins will not materialize column */
+	/* must set seqbase else BATins will not materialize column */
 	BATseqbase(bn, 0);
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
@@ -513,13 +508,6 @@ MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MATpackSliceInternal(mb,stk,p);
 }
 
-
-str
-MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt; (void) mb; (void) stk; (void) p;
-	return MAL_SUCCEED;
-}
 
 str
 MATinfo(bat *ret, str *grp, str *elm){

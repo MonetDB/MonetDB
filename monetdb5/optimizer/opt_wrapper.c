@@ -29,6 +29,7 @@
 #include "opt_aliases.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
+#include "opt_candidates.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
@@ -61,6 +62,7 @@ struct{
 	{"aliases", &OPTaliasesImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
+	{"candidates", &OPTcandidatesImplementation},
 	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
