@@ -85,15 +85,11 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
 		b = BBPquickdesc(abs(bid),FALSE);
-		if (b && bid < 0)
-			b = BATmirror(b);
 		if( b ){
-			assert(BAThdense(b));
-			if (tt == TYPE_any){
+			if (tt == TYPE_any)
 				tt = b->ttype;
-			}
-			if (!tt && tt != b->ttype)
-				tt = b->ttype;
+			if (tt != b->ttype)
+				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}
 	}
@@ -117,7 +113,6 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
-	assert(!bn->H->nil || !bn->H->nonil);
 	assert(!bn->T->nil || !bn->T->nonil);
 	BATsettrivprop(bn);
 	BATderiveProps(bn,FALSE);
@@ -192,7 +187,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bat *ret = getArgReference_bat(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0, fst, lst, cnt, c;
-	int ht = TYPE_any, tt = TYPE_any;
+	int tt = TYPE_any;
 
 	assert(p->argc > 3);
 	switch getArgType(mb,p,1) {
@@ -249,10 +244,8 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			b = BATmirror(b);
 		if (b == NULL)
 			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
-		if (ht == TYPE_any){
-			ht = b->htype;
+		if (tt == TYPE_any)
 			tt = b->ttype;
-		}
 		c = BATcount(b);
 		if (cap <= fst) {
 			/* The optimal case is when the requested slice falls completely in one BAT.
@@ -288,11 +281,10 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cap -= fst;
 	cnt = MIN(cnt, cap);
 
-	assert(ht== TYPE_void);
 	bn = BATnew(TYPE_void, tt, cnt, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
-	/* must set seqbase or else BATins will not materialize column */
+	/* must set seqbase else BATins will not materialize column */
 	BATseqbase(bn, 0);
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
@@ -334,7 +326,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-	bn = BATcopy(b, b->htype, b->ttype, TRUE, TRANSIENT);
+	bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
@@ -516,13 +508,6 @@ MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MATpackSliceInternal(mb,stk,p);
 }
 
-
-str
-MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt; (void) mb; (void) stk; (void) p;
-	return MAL_SUCCEED;
-}
 
 str
 MATinfo(bat *ret, str *grp, str *elm){

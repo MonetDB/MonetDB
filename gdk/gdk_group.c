@@ -840,6 +840,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BUN mask = HASHmask(b->batCount) >> 3;
 		int bits = 3;
 
+		GDKclrerr();	/* not interested in BAThash errors */
 		/* when combining value and group-id hashes,
 		 * we left-shift one of them by half the hash-mask width
 		 * to better spread bits and use the entire hash-mask,

@@ -117,7 +117,6 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 		*allocedp = need;
 		return 0;
 	}
-	GDKerror("GDKssort: not enough memory\n");
 	merge_freemem(ms);	/* reset to sane state */
 	return -1;
 }

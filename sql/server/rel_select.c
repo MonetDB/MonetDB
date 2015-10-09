@@ -2788,6 +2788,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				} else if (f == sql_sel) { /* allways add left side in case of selections phase */
 					if (!l->processed) { /* add all expressions to the project */
 						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
+						l->exps = list_distinct(l->exps, (fcmp)exp_equal, (fdup)NULL);
 						set_processed(l);
 					}
 					if (!rel_find_exp(l, ls))

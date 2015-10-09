@@ -116,7 +116,9 @@ initParser(void)
 static int
 idLength(Client cntxt)
 {
-	str s, t;
+	str s,t;
+	int len = 0;
+	
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
 	t = s;
@@ -128,9 +130,15 @@ idLength(Client cntxt)
 		s[0] = REFMARKER;
 	/* prepare escape of temporary names */
 	s++;
-	while (idCharacter2[(int) (*s)])
+	while (len < IDLENGTH && idCharacter2[(int) (*s)]){
 		s++;
-	return (int) (s - t);
+		len++;
+	}
+	if( len == IDLENGTH)
+		// skip remainder
+		while (idCharacter2[(int) (*s)])
+			s++;
+	return (int) (s-t);;
 }
 
 /* Simple type identifiers can not be marked with a type variable. */
@@ -147,7 +155,7 @@ typeidLength(Client cntxt)
 	l = 1;
 	s++;
 	idCharacter[TMPMARKER] = 0;
-	while (idCharacter[(int) (*s)] || isdigit(*s)) {
+	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
 		s++;
 		l++;
 	}
@@ -689,8 +697,7 @@ parseTypeId(Client cntxt, int defaultType)
 				parseError(cntxt, "':oid' expected\n");
 				return i;
 			}
-		} else
-			ht = TYPE_any;
+		} 
 
 		if (currChar(cntxt) != ',') {
 			parseError(cntxt, "',' expected\n");
@@ -704,7 +711,7 @@ parseTypeId(Client cntxt, int defaultType)
 		} else
 			tt = TYPE_any;
 
-		i = newBatType(ht, tt);
+		i = newBatType(TYPE_oid, tt);
 		if (kh > 0)
 			setAnyHeadIndex(i, kh);
 		if (kt > 0)
@@ -1847,7 +1854,7 @@ parseTuple(Client cntxt)
 	MalBlkPtr curBlk;
 	Symbol curPrg;
 	FILE *f = 0;
-	char buf[MAXPATHLEN];
+	char buf[PATHLENGTH];
 	int c;
 
 	sprintf(buf, "input%d", (int) (cntxt - mal_clients));

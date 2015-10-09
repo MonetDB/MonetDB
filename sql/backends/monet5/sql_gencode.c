@@ -956,7 +956,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_single:{
-			int ht = TYPE_oid;
 			int tt = s->op4.typeval.type->localtype;
 			int val = _dumpstmt(sql, mb, s->op1);
 
@@ -965,22 +964,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt1(mb, sqlRef, "single");
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 			q = pushArgument(mb, q, val);
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
 		} break;
 		case st_temp:{
-			int ht = TYPE_oid;
 			int tt = s->op4.typeval.type->localtype;
 
 			q = newStmt1(mb, batRef, "new");
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 			setVarUDFtype(mb, getArg(q, 0));
-			q = pushType(mb, q, ht);
+			q = pushType(mb, q, TYPE_oid);
 			q = pushType(mb, q, tt);
 			if (q == NULL)
 				return -1;
@@ -988,14 +986,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_tid:{
-			int ht = TYPE_oid;
 			int tt = TYPE_oid;
 			sql_table *t = s->op4.tval;
 
 			q = newStmt1(mb, sqlRef, "tid");
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 			setVarUDFtype(mb, getArg(q, 0));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
@@ -1006,7 +1003,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_bat:{
-			int ht = TYPE_oid;
 			int tt = s->op4.cval->type.type->localtype;
 			sql_table *t = s->op4.cval->t;
 
@@ -1014,9 +1010,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -1035,7 +1031,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_idxbat:{
-			int ht = TYPE_oid;
 			int tt = tail_type(s)->type->localtype;
 			sql_table *t = s->op4.idxval->t;
 
@@ -1043,9 +1038,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 
@@ -1106,16 +1101,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			assert(s->nrcols);
 			if (s->nrcols == 0) {
 				int k;
-				int ht = TYPE_oid;
 				int tt = tail_type(s->op1)->type->localtype;
 
 				assert(0);
 				q = newStmt1(mb, batRef, "new");
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushType(mb, q, ht);
+				q = pushType(mb, q, TYPE_oid);
 				q = pushType(mb, q, tt);
 				if (q == NULL)
 					return -1;

@@ -988,10 +988,10 @@ SQLload_parse_line(READERtask *task, int idx)
 	errmsg[0] = 0;
 
 	if (task->quote || task->seplen != 1) {
-		for (i = 0; *line && i < as->nr_attrs; i++) {
+		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
-			if (*line == task->quote) {
+			if (*line && *line == task->quote) {
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
@@ -1555,6 +1555,38 @@ SQLproducer(void *p)
 	}
 }
 
+static void
+create_rejects_table(Client cntxt)
+{
+	MT_lock_set(&mal_contextLock, "copy.initialization");
+	if (cntxt->error_row == NULL) {
+		cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+		BATseqbase(cntxt->error_row, 0);
+		cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
+		BATseqbase(cntxt->error_fld, 0);
+		cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+		BATseqbase(cntxt->error_msg, 0);
+		cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+		BATseqbase(cntxt->error_input, 0);
+		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
+			if (cntxt->error_row)
+				BBPunfix(cntxt->error_row->batCacheid);
+			if (cntxt->error_fld)
+				BBPunfix(cntxt->error_fld->batCacheid);
+			if (cntxt->error_msg)
+				BBPunfix(cntxt->error_msg->batCacheid);
+			if (cntxt->error_input)
+				BBPunfix(cntxt->error_input->batCacheid);
+		} else {
+			BBPkeepref(cntxt->error_row->batCacheid);
+			BBPkeepref(cntxt->error_fld->batCacheid);
+			BBPkeepref(cntxt->error_msg->batCacheid);
+			BBPkeepref(cntxt->error_input->batCacheid);
+		}
+	}
+	MT_lock_unset(&mal_contextLock, "copy.initialization");
+}
+
 BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best)
 {
@@ -1581,33 +1613,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->cntxt = cntxt;
 
 	/* create the reject tables */
-	MT_lock_set(&mal_contextLock, "copy.initialization");
-	if (task->cntxt->error_row == NULL) {
-		task->cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_row, 0);
-		task->cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_fld, 0);
-		task->cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_msg, 0);
-		task->cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_input, 0);
-		if (task->cntxt->error_row == NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL) {
-			if (task->cntxt->error_row)
-				BBPunfix(task->cntxt->error_row->batCacheid);
-			if (task->cntxt->error_fld)
-				BBPunfix(task->cntxt->error_fld->batCacheid);
-			if (task->cntxt->error_msg)
-				BBPunfix(task->cntxt->error_msg->batCacheid);
-			if (task->cntxt->error_input)
-				BBPunfix(task->cntxt->error_input->batCacheid);
-		} else {
-			BBPkeepref(task->cntxt->error_row->batCacheid);
-			BBPkeepref(task->cntxt->error_fld->batCacheid);
-			BBPkeepref(task->cntxt->error_msg->batCacheid);
-			BBPkeepref(task->cntxt->error_input->batCacheid);
-		}
-	}
-	MT_lock_unset(&mal_contextLock, "copy.initialization");
+	create_rejects_table(task->cntxt);
 	if (task->cntxt->error_row == NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL) {
 		tablet_error(task, lng_nil, int_nil, NULL, "SQLload initialization failed");
 		goto bailout;
@@ -1824,22 +1830,42 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			int width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
-				if( as->format[attr].c->ttype == TYPE_str)
-					width = as->format[attr].c->T->width;
-				else
-					width = ATOMsize(as->format[attr].c->ttype);
+				width = as->format[attr].c->T->width;
 				switch (width){
 				case 1:
-					trimerrors(unsigned char);
+					trimerrors(bte);
 					break;
 				case 2:
-					trimerrors(unsigned short);
+					trimerrors(sht);
 					break;
 				case 4:
-					trimerrors(unsigned int);
+					trimerrors(int);
 					break;
 				case 8:
-					trimerrors(unsigned long);
+					trimerrors(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					trimerrors(hge);
+					break;
+#endif
+				default:
+					{
+						char *src, *dst;
+						leftover= BATcount(task->as->format[attr].c);
+						limit = leftover - cntstart;
+						dst = src= BUNtloc(task->as->format[attr].ci,cntstart);
+						for(j = 0; j < (int) limit; j++, src += width){
+							if ( task->rowerror[j]){
+								leftover--;
+								continue;
+							}
+							if (dst != src)
+								memcpy(dst, src, width);
+							dst += width;
+						}
+						BATsetcount(task->as->format[attr].c, leftover );
+					}
 					break;
 				}
 			}
@@ -1987,6 +2013,8 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *fld = getArgReference_bat(stk, pci, 1);
 	bat *msg = getArgReference_bat(stk, pci, 2);
 	bat *inp = getArgReference_bat(stk, pci, 3);
+
+	create_rejects_table(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
 	BBPincref(*row = cntxt->error_row->batCacheid, TRUE);

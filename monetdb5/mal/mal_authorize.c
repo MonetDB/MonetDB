@@ -565,7 +565,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = BATcopy(user, user->htype, user->ttype, FALSE, TRANSIENT);
+		*ret2 = BATcopy(user, TYPE_void, user->ttype, FALSE, TRANSIENT);
 	}
 	return(NULL);
 }

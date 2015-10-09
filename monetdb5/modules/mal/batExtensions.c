@@ -56,9 +56,9 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = (BUN) lcap;
 	}
 
-	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
+	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
 }
 
 str
@@ -90,16 +90,16 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = (BUN) lcap;
 	}
 
-	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &ht, &tt, &cap, PERSISTENT);
+	return (str) BKCnewBAT(res, &tt, &cap, PERSISTENT);
 }
 
 str
 CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	bat bid;
-	int ht, tt;
+	int tt;
 	BUN cap = 0;
 	int *res;
 	BAT *b;
@@ -111,14 +111,6 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	bid = *getArgReference_bat(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	}
-
-	if (bid > 0) {
-		ht = b->htype;
-		tt = b->ttype;
-	} else {
-		tt = b->htype;
-		ht = b->ttype;
 	}
 
 	if (p->argc > 2) {
@@ -135,15 +127,14 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	BBPunfix(b->batCacheid);
 
 	res = getArgReference_int(s, p, 0);
-	msg = (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
-	if (msg == MAL_SUCCEED && ht == TYPE_void) {
+	msg = (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
+	if (msg == MAL_SUCCEED ){
 		b = BATdescriptor(*res);
 		if ( b == NULL )
 			throw(MAL, "bat.new", RUNTIME_OBJECT_MISSING);
 		BATseqbase(b, o);
 		BBPunfix(b->batCacheid);
 	}
-
 	return msg;
 }
 
@@ -276,13 +267,16 @@ str
 CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
+	gdk_return r;
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
-	BATimprints(b);
+	r = BATimprints(b);
 	BBPunfix(b->batCacheid);
+	if (r == GDK_FAIL)
+		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 str

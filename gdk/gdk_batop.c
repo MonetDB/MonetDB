@@ -461,13 +461,8 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	if (b->T->hash == NULL &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
-	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
+	    (b->hkey & BOUND2BTRUE) == 0 &&
 	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
-		if (b->hkey & BOUND2BTRUE && b->batCount > 0) {
-			tmp = n = BATkdiff(n, b);
-			if (n == NULL)
-				return GDK_FAIL;
-		}
 		fastpath = 1;
 	}
 

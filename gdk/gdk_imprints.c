@@ -484,7 +484,7 @@ do {									\
 	}								\
 } while (0)
 
-static int
+static void
 imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
@@ -529,8 +529,6 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 
 	*dictcnt = dcnt;
 	*impcnt = icnt;
-
-	return 1;
 }
 
 #define FILL_HISTOGRAM(TYPE)						\
@@ -627,6 +625,7 @@ BATcheckimprints(BAT *b)
 			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
+		GDKclrerr();	/* we're not currently interested in errors */
 	}
 	ret = b->T->imprints != NULL;
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATcheckimprints");
@@ -657,6 +656,7 @@ BATimprints(BAT *b)
 		break;
 	default:		/* type not supported */
 		/* doesn't look enough like base type: do nothing */
+		GDKerror("BATimprints: unsupported type\n");
 		return GDK_FAIL;
 	}
 
@@ -675,6 +675,7 @@ BATimprints(BAT *b)
 		 * this shouldn't really happen */
 		if (o)
 			BBPunfix(b->batCacheid);
+		GDKerror("BATimprints: imprints not supported if batFirst > 0\n");
 		return GDK_FAIL;
 	}
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
@@ -692,7 +693,6 @@ BATimprints(BAT *b)
 
 		imprints = (Imprints *) GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {
-			GDKerror("#BATimprints: memory allocation error.\n");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return GDK_FAIL;
@@ -703,7 +703,6 @@ BATimprints(BAT *b)
 		     GDKmalloc(strlen(nme) + 12)) == NULL) {
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
-			GDKerror("#BATimprints: memory allocation error.\n");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return GDK_FAIL;
@@ -778,7 +777,6 @@ BATimprints(BAT *b)
 			      1) != GDK_SUCCEED) {
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
-			GDKerror("#BATimprints: memory allocation error");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			return GDK_FAIL;
@@ -819,22 +817,14 @@ BATimprints(BAT *b)
 
 		BBPunfix(smp->batCacheid);
 
-		if (!imprints_create(b,
-				     imprints->bins,
-				     imprints->stats,
-				     imprints->bits,
-				     imprints->imps,
-				     &imprints->impcnt,
-				     imprints->dict,
-				     &imprints->dictcnt)) {
-			GDKerror("#BATimprints: failed to create imprints");
-			HEAPfree(imprints->imprints, 1);
-			GDKfree(imprints->imprints);
-			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
-				      "BATimprints");
-			return GDK_FAIL;
-		}
+		imprints_create(b,
+				imprints->bins,
+				imprints->stats,
+				imprints->bits,
+				imprints->imps,
+				&imprints->impcnt,
+				imprints->dict,
+				&imprints->dictcnt);
 		assert(imprints->impcnt <= pages);
 		assert(imprints->dictcnt <= pages);
 		imprints->imprints->free = (size_t) ((char *) ((cchdc_t *) imprints->dict + imprints->dictcnt) - imprints->imprints->base);
@@ -979,8 +969,6 @@ IMPSremove(BAT *b)
 	}
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-
-	return;
 }
 
 void
@@ -995,8 +983,6 @@ IMPSdestroy(BAT *b)
 			IMPSremove(BATmirror(b));
 		}
 	}
-
-	return;
 }
 
 #ifndef NDEBUG
@@ -1022,8 +1008,10 @@ IMPSprint(BAT *b)
 	bte j;
 	int i;
 
-	if (BATimprints(b) != GDK_SUCCEED)
+	if (BATimprints(b) != GDK_SUCCEED) {
+		GDKclrerr(); /* not interested in BATimprints errors */
 		return;
+	}
 	imprints = b->T->imprints;
 	d = (cchdc_t *) imprints->dict;
 	min_bins = imprints->stats;

@@ -276,17 +276,6 @@ Ready.
 [ "",   1       ]
 [ "",   1.351511513e+15 ]
 [ "",   1       ]
-#SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
-% .,    sys. # table_name
-# .L,   sys.L # table_name
-% bad,  exp_f1 # name
-% char, double # type
-% 0,    24 # length
-[ "",   1       ]
-[ "",   0       ]
-[ "",   7.399123061e-16 ]
-[ "",   0       ]
-[ "",   1       ]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
 % .L,	sys.float8_tbl # table_name
 % five,	f1 # name

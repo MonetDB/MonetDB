@@ -37,7 +37,7 @@
  * name of a database farm.
  * The arguments are the farmID or -1, the name of a subdirectory
  * within the farm (i.e., something like BATDIR or BAKDIR -- see
- * gdk.h) or NULL, the name of a BAT (i.e. the name that is store in
+ * gdk.h) or NULL, the name of a BAT (i.e. the name that is stored in
  * BBP.dir -- something like 07/714), and finally the file extension.
  *
  * If farmid is >= 0, GDKfilepath returns the complete path to the
@@ -56,8 +56,10 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
-	if (MT_path_absolute(name))
+	if (MT_path_absolute(name)) {
+		GDKerror("GDKfilepath: name should not be absolute\n");
 		return NULL;
+	}
 	if (dir && *dir == DIR_SEP)
 		dir++;
 	if (dir == NULL || dir[0] == 0 || dir[strlen(dir) - 1] == DIR_SEP) {
@@ -85,53 +87,46 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	return path;
 }
 
-/* Same as GDKfilepath, but tries to extract a filename from multilevel dir paths. */
-char *
-GDKfilepath_long(int farmid, const char *dir, const char *ext) {
-	char last_dir_parent[BUFSIZ] = "";
-	char last_dir[BUFSIZ] = "";
-
-	if (GDKextractParentAndLastDirFromPath(dir, last_dir_parent, last_dir)) {
-		return GDKfilepath(farmid, last_dir_parent, last_dir, ext);
-	}
-	return NULL;
-}
-
+/* make sure the parent directory of DIR exists (the argument itself
+ * is usually a file that is to be created) */
 gdk_return
 GDKcreatedir(const char *dir)
 {
 	char path[PATHLENGTH];
 	char *r;
-	int ret = 0;
+	DIR *dirp;
 
-	assert(strlen(dir) < sizeof(path));
-	strncpy(path, dir, sizeof(path)-1);
-	path[sizeof(path)-1] = 0;
-	r = strrchr(path, DIR_SEP);
-	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", path);
+	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
 
-	if (r) {
-		DIR *dirp;
-
-		*r = 0;
-		dirp = opendir(path);
-		if (dirp) {
-			closedir(dirp);
-		} else {
-			GDKcreatedir(path);
-			ret = mkdir(path, 0755);
-			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", path, ret);
-			if (ret < 0 && (dirp = opendir(path)) != NULL) {
-				/* resolve race */
-				ret = 0;
-				closedir(dirp);
-			}
-		}
-		*r = DIR_SEP;
+	if (strlen(dir) >= PATHLENGTH) {
+		GDKerror("GDKcreatedir: directory name too long\n");
+		return GDK_FAIL;
 	}
-	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
+	strcpy(path, dir);	/* we know this fits (see above) */
+	/* skip initial /, if any */
+	for (r = strchr(path + 1, DIR_SEP); r; r = strchr(r, DIR_SEP)) {
+		*r = 0;
+		if (mkdir(path, 0755) < 0) {
+			if (errno != EEXIST) {
+				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
+				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
+				return GDK_FAIL;
+			}
+			if ((dirp = opendir(path)) == NULL) {
+				GDKerror("GDKcreatedir: %s not a directory\n", path);
+				IODEBUG fprintf(stderr, "#GDKcreatedir: opendir(%s) failed\n", path);
+				return GDK_FAIL;
+			}
+			/* it's a directory, we can continue */
+			closedir(dirp);
+		}
+		*r++ = DIR_SEP;
+	}
+	return GDK_SUCCEED;
 }
 
+/* remove the directory DIRNAME with its file contents; does not
+ * recurse into subdirectories */
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
@@ -145,7 +140,10 @@ GDKremovedir(int farmid, const char *dirname)
 	if (dirp == NULL)
 		return GDK_SUCCEED;
 	while ((dent = readdir(dirp)) != NULL) {
-		if ((dent->d_name[0] == '.') && ((dent->d_name[1] == 0) || (dent->d_name[1] == '.' && dent->d_name[2] == 0))) {
+		if (dent->d_name[0] == '.' &&
+		    (dent->d_name[1] == 0 ||
+		     (dent->d_name[1] == '.' && dent->d_name[2] == 0))) {
+			/* skip . and .. */
 			continue;
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
@@ -155,9 +153,8 @@ GDKremovedir(int farmid, const char *dirname)
 	}
 	closedir(dirp);
 	ret = rmdir(dirname);
-	if (ret < 0) {
+	if (ret < 0)
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
-	}
 	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirname, ret);
 
 	return ret ? GDK_FAIL : GDK_SUCCEED;
@@ -167,6 +164,9 @@ GDKremovedir(int farmid, const char *dirname)
 #define _FWRTHR		0x080000
 #define _FRDSEQ		0x100000
 
+/* open a file and return its file descriptor; the file is specified
+ * using farmid, name and extension; if opening for writing, we create
+ * the parent directory if necessary */
 int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
@@ -177,6 +177,8 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		return -1;
 
 	path = GDKfilepath(farmid, BATDIR, nme, extension);
+	if (path == NULL)
+		return -1;
 
 	if (*mode == 'm') {	/* file open for mmap? */
 		mode++;
@@ -201,12 +203,16 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(path) == GDK_SUCCEED) {
 			fd = open(path, flags, MONETDB_MODE);
+			if (fd < 0)
+				GDKsyserror("GDKfdlocate: cannot open file %s\n", path);
 		}
 	}
+	/* don't generate error if we can't open a file for reading */
 	GDKfree(path);
 	return fd;
 }
 
+/* like GDKfdlocate, except return a FILE pointer */
 FILE *
 GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
@@ -218,6 +224,7 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 	if (*mode == 'm')
 		mode++;
 	if ((f = fdopen(fd, mode)) == NULL) {
+		GDKsyserror("GDKfilelocate: cannot fdopen file\n");
 		close(fd);
 		return NULL;
 	}
@@ -225,26 +232,24 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 }
 
 FILE *
-GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode) {
+GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode)
+{
 	char *path;
 
 	/* if name is null, try to get one from dir (in case it was a path) */
-	if ((name == NULL) || (*name == 0)) {
-		path = GDKfilepath_long(farmid, dir, extension);
-	} else {
-		path = GDKfilepath(farmid, dir, name, extension);
-	}
+	path = GDKfilepath(farmid, dir, name, extension);
 
 	if (path != NULL) {
-        IODEBUG THRprintf(GDKstdout, "#GDKfileopen(%s)\n", path);
-		return fopen(path, mode);
+		FILE *f;
+		IODEBUG fprintf(stderr, "#GDKfileopen(%s)\n", path);
+		f = fopen(path, mode);
+		GDKfree(path);
+		return f;
 	}
 	return NULL;
 }
 
-/*
- * Unlink the file.
- */
+/* unlink the file */
 gdk_return
 GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 {
@@ -283,10 +288,15 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
 	path2 = GDKfilepath(farmid, dir2, nme2, ext2);
-	ret = rename(path1, path2);
+	if (path1 && path2) {
+		ret = rename(path1, path2);
+		if (ret < 0)
+			GDKsyserror("GDKmove: cannot rename %s to %s\n", path1, path2);
 
-	IODEBUG fprintf(stderr, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
-
+		IODEBUG fprintf(stderr, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+	} else {
+		ret = -1;
+	}
 	GDKfree(path1);
 	GDKfree(path2);
 	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
@@ -301,6 +311,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 
 	if (fstat(fd, &stb) < 0) {
 		/* shouldn't happen */
+		GDKsyserror("GDKextendf: fstat unexpectedly failed\n");
 		return GDK_FAIL;
 	}
 	/* if necessary, extend the underlying file */
@@ -314,6 +325,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 			 * file system doesn't support the operation,
 			 * so use fallocate instead and just resize
 			 * the file if it fails */
+#else
 #ifdef HAVE_POSIX_FALLOCATE
 		/* posix_fallocate returns error number on failure,
 		 * not -1 :-( */
@@ -327,10 +339,12 @@ GDKextendf(int fd, size_t size, const char *fn)
 		 * is not supported on the file system, or if neither
 		 * function exists */
 		rt = ftruncate(fd, (off_t) size);
+		if (rt != 0)
+			GDKsyserror("GDKextendf: could not extend file\n");
 	}
 	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
 			fn, (size_t) stb.st_size, size,
-			GDKms() - t0, rt < 0 ? " (failed)" : "");
+			GDKms() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
 	 * ftruncate return -1 on failure, but all three return 0 on
 	 * success */
@@ -343,13 +357,16 @@ GDKextend(const char *fn, size_t size)
 	int fd, flags = O_RDWR;
 	gdk_return rt = GDK_FAIL;
 
-#ifdef WIN32
-	/* On Windows, open() fails if the file is bigger than 2^32 bytes without O_BINARY. */
+#ifdef O_BINARY
+	/* On Windows, open() fails if the file is bigger than 2^32
+	 * bytes without O_BINARY. */
 	flags |= O_BINARY;
 #endif
 	if ((fd = open(fn, flags)) >= 0) {
 		rt = GDKextendf(fd, size, fn);
 		close(fd);
+	} else {
+		GDKsyserror("GDKextend: cannot open file %s\n", fn);
 	}
 	return rt;
 }
@@ -478,6 +495,8 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				 * only accepts int */
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
+					if (n < 0)
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
 #ifndef STATIC_CODE_ANALYSIS
 					/* Coverity doesn't seem to
 					 * recognize that we're just
@@ -491,8 +510,9 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					dst += n;
 				}
 				if (n_expected > 0) {
+					/* we couldn't read all, error
+					 * already generated */
 					GDKfree(ret);
-					GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -504,7 +524,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			}
 			close(fd);
 		} else {
-			GDKsyserror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
+			GDKerror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
 		}
 	} else {
 		char *path;
@@ -686,7 +706,11 @@ BATmsync(BAT *b)
 		arg->h = &b->T->heap;
 		BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED);
+		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			/* don't bother if we can't create a thread */
+			BBPunfix(b->batCacheid);
+			GDKfree(arg);
+		}
 #else
 		BATmsyncImplementation(arg);
 #endif
@@ -698,7 +722,11 @@ BATmsync(BAT *b)
 		arg->h = b->T->vheap;
 		BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED);
+		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			/* don't bother if we can't create a thread */
+			BBPunfix(b->batCacheid);
+			GDKfree(arg);
+		}
 #else
 		BATmsyncImplementation(arg);
 #endif

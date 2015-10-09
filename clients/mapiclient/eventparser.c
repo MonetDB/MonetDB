@@ -8,6 +8,7 @@
 
 /* (c) M Kersten */
 
+#include "monetdb_config.h"
 #include "eventparser.h"
 
 char *statenames[]= {"","start","done","action","ping","wait","system"};

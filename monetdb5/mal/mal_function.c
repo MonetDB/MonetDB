@@ -288,22 +288,15 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
 		if( isaBatType(x)){
-			int head,tail;
-			int hx,tx;
-			head = getHeadType(x);
+			int tail;
+			int tx;
 			tail = getColumnType(x);
-			hx = getHeadIndex(x);
 			tx = getColumnIndex(x);
-			if(v && hx == v && head == TYPE_any){
-			    hx =0;
-			    head =t;
-			}
 			if(v && tx == v && tail == TYPE_any){
 			    tx= 0;
 			    tail = t;
 			}
-			y= newBatType(head,tail);
-			setAnyHeadIndex(y,hx);
+			y= newBatType(TYPE_oid,tail);
 			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
@@ -409,8 +402,6 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			if (v == TYPE_any)
 				replaceTypeVar(new->def, pp, v, t);
 			if (isaBatType(v)) {
-				if (getHeadIndex(v))
-					replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
 				if (getColumnIndex(v))
 					replaceTypeVar(new->def, pp, getColumnIndex(v), getColumnType(t));
 			} else

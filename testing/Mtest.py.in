@@ -1127,12 +1127,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         testlist = tl
     else:
         for tc in open(os.path.join(TSTSRCDIR,"All")):
-            if tc.find('#') >= 0:
+            if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
             tc = tc.strip()
             if tc:
-                if tc.find('?') > -1:
+                if '?' in tc:
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
@@ -3527,6 +3527,8 @@ def main(argv) :
              'Do not pass --forcemito to server'),
             ('jenkins', None, 'jenkins', None,
              'special handling for Jenkins'),
+            ('addreqs', None, 'addreqs', None,
+             'automatically add required tests when testing individual tests'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3607,6 +3609,7 @@ def main(argv) :
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
+    addreqs = False
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3649,6 +3652,7 @@ def main(argv) :
         if a is not None:
             env['MULTIFARM'] = 'True'
         jenkins = opts.get('jenkins', False)
+        addreqs = opts.get('addreqs', False)
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3935,7 +3939,7 @@ def main(argv) :
                 #TODO:
                 #else:
                     # WARNING/ERROR
-            elif args[0].find(os.sep) != -1:
+            elif os.sep in args[0]:
                 ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
             elif args[0] != "All":
                 #TODO:
@@ -3953,7 +3957,7 @@ def main(argv) :
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
                 while i < len(args):
-                    if args[i].find(os.sep) == -1:
+                    if os.sep not in args[i]:
                         #TODO:
                         # check, whether args[i] in All
                         testlist.append(args[i])
@@ -4003,6 +4007,23 @@ def main(argv) :
         if not testdirs:
             Warn("No tests found in %s!" % ', '.join(dirlist))
             sys.exit(1)
+
+        if len(testdirs) == 1 and len(testlist) > 0 and addreqs:
+            added = True
+            while added:
+                added = False
+                i = 0
+                while i < len(testlist):
+                    if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                        for t in open(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                            t = t[:-1] # remove newline
+                            if t not in testlist[:i]:
+                                testlist.insert(i, t)
+                                i = i + 1
+                                added = True
+                            #elif t in testlist:
+                                # WARNING: tests in wrong order
+                    i = i + 1
 
         BusyPorts = []
 

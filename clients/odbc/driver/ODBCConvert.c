@@ -511,7 +511,7 @@ parseoptionalbracketednumber(char **svalp,
 			return SQL_ERROR;
 		slen -= (int) (eptr - sval);
 		sval = eptr;
-		*val2p = val;
+		*val2p = (int) val;
 	}
 
 	if (slen == 0 || *sval != ')')

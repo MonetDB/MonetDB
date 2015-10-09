@@ -1,6 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Oct  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed all versions of the SORTloop macro.
+
+* Thu Oct  1 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed Batkdiff.  Use BATsubdiff instead.
+
 * Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed BATselect.  Use BATsubselect instead.
 - Removed BATsemijoin.  Use BATsubsemijoin instead.
@@ -24,8 +30,7 @@
 * Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented BATsubdiff which returns a list of OIDs (sorted, i.e. usable
   as candidate list) of tuples in the left input whose value does not
-  occur in the right input.  Reimplemented BATkdiff (to be removed later)
-  using this new function.
+  occur in the right input.
 
 * Fri Sep  4 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function BATkintersect.  It wasn't used anymore.  It's

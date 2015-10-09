@@ -3427,7 +3427,7 @@ simple_scalar_exp:
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_not")));
 	  		  append_symbol(l, $2);
-	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 

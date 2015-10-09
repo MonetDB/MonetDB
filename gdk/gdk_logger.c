@@ -904,6 +904,7 @@ logger_open(logger *lg)
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
+	GDKfree(filename);
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) {
@@ -933,13 +934,14 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char* path = GDKfilepath_long(BBPselectfarm(lg->dbfarm_role, 0, offheap), filename, NULL);
+	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
 
 	lg->log = open_rstream(path);
+	GDKfree(path);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -1064,8 +1066,8 @@ logger_readlog(logger *lg, char *filename)
 }
 
 /*
- * The log files are incrementally numbered, starting from 2. They are processed in the
- * same sequence.
+ * The log files are incrementally numbered, starting from 2. They are
+ * processed in the same sequence.
  */
 static int
 logger_readlogs(logger *lg, FILE *fp, char *filename)
@@ -1078,7 +1080,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, sizeof(id), fp) != NULL) {
-		char log_filename[BUFSIZ];
+		char log_filename[PATHLENGTH];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1100,22 +1102,31 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			while (lid >= lg->id && res != LOG_ERR) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
 				if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
-					/* The only special case is if the files is missing altogether
-					 * and the logger is a shared one,
-					 * then we have missing transactions and we should abort.
-					 * Yeah, and we also ignore the 1st files it most likely never exists. */
+					/* The only special case is if
+					 * the files is missing
+					 * altogether and the logger
+					 * is a shared one, then we
+					 * have missing transactions
+					 * and we should abort.  Yeah,
+					 * and we also ignore the 1st
+					 * files it most likely never
+					 * exists. */
 					res = LOG_ERR;
 					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
 				}
-				/* Increment the id only at the end, since we want to re-read the last file.
-				 * That is because last time we read it, it was empty, since the logger creates empty files
-				 * and fills them in later. */
+				/* Increment the id only at the end,
+				 * since we want to re-read the last
+				 * file.  That is because last time we
+				 * read it, it was empty, since the
+				 * logger creates empty files and
+				 * fills them in later. */
 				lg->id++;
 			}
 			if (lid < lg->id) {
 				lg->id = lid;
 			}
-			/* if this is a shared logger, write the id in the shared file */
+			/* if this is a shared logger, write the id in
+			 * the shared file */
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
 	}
@@ -1293,25 +1304,31 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int shared) {
+logger_set_logdir_path(char *filename, const char *fn,
+		       const char *logdir, int shared)
+{
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[BUFSIZ] = "";
-		char logdir_name[BUFSIZ] = "";
-		/* split the logdir string into absolute parent dir path and (relative) log dir name */
-		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name)) {
-			/* set the new relative logdir locaiton including the logger function name subdir */
-			snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
+		char logdir_parent_path[PATHLENGTH] = "";
+		char logdir_name[PATHLENGTH] = "";
 
-			/* add a new dbfarm for the logger directory using the parent dir path,
-			 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
-			 * or at least it appears so to (multi)dbfarm aware functions */
-			if (!shared) {
-				role = LOG_DIR;
-			} else {
-				role = SHARED_LOG_DIR;
-			}
+		/* split the logdir string into absolute parent dir
+		 * path and (relative) log dir name */
+		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
+			/* set the new relative logdir location
+			 * including the logger function name
+			 * subdir */
+			snprintf(filename, PATHLENGTH, "%s%c%s%c",
+				 logdir_name, DIR_SEP, fn, DIR_SEP);
+
+			/* add a new dbfarm for the logger directory
+			 * using the parent dir path, assuming it is
+			 * set, s.t. the logs are stored in a location
+			 * other than the default dbfarm, or at least
+			 * it appears so to (multi)dbfarm aware
+			 * functions */
+			role = shared ? SHARED_LOG_DIR : LOG_DIR;
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			logger_fatal("logger_set_logdir_path: logdir path is not correct (%s)."
@@ -1319,7 +1336,8 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
+		snprintf(filename, PATHLENGTH, "%s%c%s%c",
+			 logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
 	return role;
@@ -1330,29 +1348,29 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
  * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
-logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
+logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
-	char bak[BUFSIZ];
+	char bak[PATHLENGTH];
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	snprintf(filename, PATHLENGTH, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, filename, NULL, NULL, "r");
+	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1656,7 +1674,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
-		char cvfile[BUFSIZ];
+		char cvfile[PATHLENGTH];
 #endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
@@ -1707,7 +1725,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				fseek(fp, off, SEEK_SET);
 
 
-				if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+				if ((fp1 = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 					/* file indicating that we need to do
 					 * a 32->64 bit OID conversion exists;
 					 * record the fact in case we get
@@ -1716,7 +1734,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					fclose(fp1);
 					/* first create a versioned file using
 					 * the current log id */
-					if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
+					if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
 					    fprintf(fp1, "%d\n", curid) < 2 ||
 					    fflush(fp1) != 0 || /* make sure it's save on disk */
 #if defined(_MSC_VER)
@@ -1734,7 +1752,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					unlink(bak);
 					/* set the flag that we need to convert */
 					lg->read32bitoid = 1;
-				} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
+				} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
 					/* the versioned conversion file
 					 * exists: check version */
 					int newid;
@@ -1788,8 +1806,8 @@ static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	char filename[BUFSIZ];
-	char shared_log_filename[BUFSIZ];
+	char filename[PATHLENGTH];
+	char shared_log_filename[PATHLENGTH];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -1892,7 +1910,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 int
 logger_reload(logger *lg)
 {
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 
 	snprintf(filename, sizeof(filename), "%s", lg->dir);
 	if (lg->debug & 1) {
@@ -1982,7 +2000,7 @@ int
 logger_exit(logger *lg)
 {
 	FILE *fp;
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
@@ -1993,8 +2011,8 @@ logger_exit(logger *lg)
 	}
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "w")) != NULL) {
-		char ext[BUFSIZ];
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
+		char ext[PATHLENGTH];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
@@ -2110,7 +2128,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	if (keep_persisted_log_files == 0) {
 		// If keep_persisted_log_files is 0, remove the last persisted WAL files as well
 		// to reduce the work for the logger_cleanup_old()
-		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
+		if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
 		}
@@ -2156,14 +2174,14 @@ logger_changes(logger *lg)
 lng
 logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = LOG_ERR;
 	int farmid = BBPselectfarm(role, 0, offheap);
 
 	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "r")) == NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}

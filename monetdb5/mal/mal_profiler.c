@@ -245,9 +245,6 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	lognew();
 	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
 
-	/* without this cast, compilation on Windows fails with
-	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-	 */
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -258,6 +255,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 #endif
 #endif
 	tbuf[19]=0;
+	/* there should be less than 10^6 == 1M usecs in 1 sec */
+	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
 	logadd("\"thread\":%d,\n", THRgettid());
 
@@ -671,19 +670,19 @@ TRACEtable(BAT **r)
 	if (TRACE_init == 0)
 		return ;       /* not initialized */
 	MT_lock_set(&mal_profileLock, "TRACEtable");
-	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
-	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
-	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
-	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
-	r[4] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	r[5] = BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	r[7] = BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	r[8] = BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	r[9] = BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	r[10] = BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	r[11] = BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	r[12] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	r[0] = BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
+	r[1] = BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
+	r[2] = BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
+	r[3] = BATcopy(TRACE_id_thread, TYPE_void, TRACE_id_thread->ttype, 0, TRANSIENT);
+	r[4] = BATcopy(TRACE_id_ticks, TYPE_void, TRACE_id_ticks->ttype, 0, TRANSIENT);
+	r[5] = BATcopy(TRACE_id_rssMB, TYPE_void, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+	r[6] = BATcopy(TRACE_id_tmpspace, TYPE_void, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+	r[7] = BATcopy(TRACE_id_inblock, TYPE_void, TRACE_id_inblock->ttype, 0, TRANSIENT);
+	r[8] = BATcopy(TRACE_id_oublock, TYPE_void, TRACE_id_oublock->ttype, 0, TRANSIENT);
+	r[9] = BATcopy(TRACE_id_minflt, TYPE_void, TRACE_id_minflt->ttype, 0, TRANSIENT);
+	r[10] = BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
+	r[11] = BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+	r[12] = BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock, "TRACEtable");
 }
 
@@ -883,9 +882,6 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getModuleId(getInstrPtr(mb, 0)),
 	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 
-	/* without this cast, compilation on Windows fails with
-	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-	 */
 #ifdef HAVE_CTIME_R3
 	if (ctime_r(&clk, ctm, sizeof(ctm)) == NULL)
 		strncpy(ctm, "", sizeof(ctm));
