@@ -2362,6 +2362,7 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
+function algebra.orderidx(bv:bat[:oid,:any_1],reverse:bit,stable:bit):bat[:oid,:oid];
 pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant
@@ -31151,6 +31152,10 @@ command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
+pattern bat.getorderidx(bv:bat[:oid,:any_1]):bat[:oid,:oid] 
+address OIDXgetorderidx;
+comment Return the order index oid bat if exists (not safe, for debug)
+
 command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
@@ -31272,6 +31277,18 @@ address CMDBATnew;
 pattern bat.new(ht:oid,tt:any_1):bat[:oid,:any_1] 
 address CMDBATnew;
 comment Creates a new empty transient BAT, with head- and tail-types as indicated.
+
+pattern bat.orderidx(bv:bat[:oid,:any_1],l:bat[:oid,:oid]...):void 
+address OIDXmerge;
+comment Consolidates the OID index arrangement
+
+pattern bat.orderidx(bv:bat[:oid,:any_1],pieces:int):void 
+address OIDXcreate;
+comment Introduces the OID index arrangement of ordered values
+
+pattern bat.orderidx(bv:bat[:oid,:any_1]):void 
+address OIDXcreate;
+comment Introduces the OID index arrangement of ordered values
 
 pattern bat.partition(b:bat[:oid,:any_1],pieces:int,n:int):bat[:oid,:any_1] 
 address CMDBATpartition2;
@@ -40768,7 +40785,7 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:oid,:lng],user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int],status:bat[:oid,:str],tag:bat[:oid,:oid],query:bat[:oid,:str]) 
 address SYSMONqueue;
-pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],phash:bat[:oid,:bit],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit]) 
+pattern sql.storage() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],type:bat[:oid,:str],mode:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],atomwidth:bat[:oid,:int],columnsize:bat[:oid,:lng],heap:bat[:oid,:lng],hashes:bat[:oid,:lng],phash:bat[:oid,:bit],imprints:bat[:oid,:lng],sorted:bat[:oid,:bit],orderidx:bat[:oid,:lng]) 
 address sql_storage;
 comment return a table with storage information 
 
