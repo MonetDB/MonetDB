@@ -1212,6 +1212,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	const void *nil;
 	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
+	oid vwl, vwh;
 	int use_orderidx = 0 , use_imprints = 0;
 	union {
 		bte v_bte;
@@ -1421,16 +1422,40 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	/* If there is an order index and the bat is not tsorted or trevstorted
-	 * then use the order index.
-	 * HOWEVER, if query is not very very selective, then is better to use
-	 * imprints or scan.
-	 * Selective queries are the ones below 0.1% and less than 1000 results
-	 * TODO: Test if this heuristic works in practice
+	/* If there is an order index or it is a view and the parent has an ordered
+	 * index, and the bat is not tsorted or trevstorted then use the order
+	 * index.
 	 * TODO: we do not support anti-select with order index */
-	if (!anti && b->torderidx && !(b->tsorted || b->trevsorted) &&
-	    ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000)))
-		use_orderidx = 1;
+	if (!anti &&
+	    !(b->tsorted || b->trevsorted) &&
+	    (b->torderidx ||
+	     (VIEWtparent(b) && BBPquickdesc(abs(VIEWtparent(b)), 0)->torderidx)))
+	{
+		BAT *view = NULL;
+		if (VIEWtparent(b)) {
+			view = b;
+			b = BBPdescriptor(abs(VIEWtparent(b)));
+		}
+		/* Is query selective enough to use the ordered index ? */
+		/* TODO: Test if this heuristic works in practice */
+		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))
+		{
+			use_orderidx = 1;
+			if (view) {
+				vwl = view->hseqbase;
+				vwh = vwl + view->batCount;
+				//BBPunfix(view->batCacheid);
+			} else {
+				vwl = b->hseqbase;
+				vwh = vwl + b->batCount;
+			}
+		} else {
+			if (view) {
+				BBPunfix(b->batCacheid);
+				b = view;
+			}
+		}
+	}
 
 	if (b->tsorted || b->trevsorted || use_orderidx) {
 		BUN low = 0;
@@ -1555,29 +1580,54 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			if (use_orderidx) {
-				BAT *order;
+				BUN i;
+				BUN cnt = 0;
+				BAT *order, *slice;
+				oid *rbn, *rs;
 
 				if ((order = BATdescriptor(b->torderidx)) == NULL) {
 					GDKerror("Runtime object (order index) not found");
 				}
-				bn = BATslice(order, low + order->hseqbase,
+				slice = BATslice(order, low + order->hseqbase,
 				                     high + order->hseqbase);
-				if (s) {
-					BUN i, cnt;
-					oid *rbn = (oid *) Tloc((bn), 0);
-					oid *rn = (oid *) Tloc((bn), 0);
+				bn = BATnew(TYPE_void, TYPE_oid, high-low, TRANSIENT);
+				if (bn == NULL)
+					GDKerror("memory allocation error");
+
+				rbn = (oid *) Tloc((bn), 0);
+				rs = (oid *) Tloc((slice), 0);
+
+				if (s && !BATtdense(s)) {
 					const oid *rcand = (const oid *) Tloc((s), 0);
 
-					cnt = 0;
-					for (i = 0; i < bn->batCount; i++) {
-						if (binsearchcand(rcand, 0, s->batCount, *rbn)) {
-							*rn++ = *rbn;
+					for (i = 0; i < slice->batCount; i++) {
+						if ((vwl <= *rs) && (*rs < vwh) &&
+							binsearchcand(rcand, 0, s->batCount, *rbn)) {
+							*rbn++ = *rs;
 							cnt++;
 						}
-						rbn++;
+						rs++;
+					}
+					BATsetcount(bn, cnt);
+
+				} else {
+					if (s) {
+						assert(BATtdense(s));
+						if (vwl < s->tseqbase)
+							vwl = s->tseqbase;
+						if (s->tseqbase + BATcount(s) < vwh)
+							vwh = s->tseqbase + BATcount(s);
+					}
+					for (i = 0; i < slice->batCount; i++) {
+						if ((vwl <= *rs) && (*rs < vwh)) {
+							*rbn++ = *rs;
+							cnt++;
+						}
+						rs++;
 					}
 					BATsetcount(bn, cnt);
 				}
+
 				/* output must be sorted */
 				GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
@@ -1588,6 +1638,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->T->nonil = 1;
 
 				BBPunfix(order->batCacheid);
+				BBPunfix(slice->batCacheid);
 			} else {
 				/* match: [low..high) */
 				if (s) {

@@ -689,7 +689,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	int tp;
 
 	if (b == NULL || (!b->tsorted && !b->trevsorted && !use_orderidx)
-	              || (use_orderidx && b->torderidx))
+	              || (use_orderidx && !b->torderidx))
 		return BUN_NONE;
 
 	lo = BUNfirst(b);
