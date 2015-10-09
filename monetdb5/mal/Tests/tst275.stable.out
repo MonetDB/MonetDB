@@ -48,9 +48,6 @@ function user.main():void;
     profiler.stop();
 end user.main;
 #~BeginVariableOutput~#
-#-------------------------------------------------#
-# h	t			t		  # name
-# oid	str			str		  # type
 #--------------------------#
 # t	t	t  # name
 # void	str	str  # type
