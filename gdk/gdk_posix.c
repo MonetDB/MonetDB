@@ -397,7 +397,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (munmap((char *) old_address + *new_size,
 			   old_size - *new_size) < 0) {
 			GDKsyserror("MT_mremap: munmap("PTRFMT","SZFMT") failed\n",
-				    PTRFMTCAST (char *) old_address + *new_size,
+				    PTRFMTCAST ((char *) old_address + *new_size),
 				    old_size - *new_size);
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
 			return NULL;
@@ -544,7 +544,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					fd = open(p, O_RDWR | O_CREAT,
 						  MONETDB_MODE);
 					if (fd < 0) {
-						GDKsyserror("MT_mremap: open(%s) failed\n", p);
+						GDKsyserror("MT_mremap: open(%s) failed\n", (char *) p);
 						free(p);
 						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): fd < 0\n", __FILE__, __LINE__, path, PTRFMTCAST old_address, old_size, *new_size);
 						return NULL;
