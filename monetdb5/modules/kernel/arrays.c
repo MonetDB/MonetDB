@@ -962,80 +962,73 @@ str ALGprojectNonDimension(bat *result, const bat *vals, const ptr *array) {
 str ALGnonDimensionQRDecomposition(bat *oidsRes, ptr *dimsRes,  const bat* vals, const ptr *dims)
 {
     gdk_array *array = (gdk_array*)*dims;
-    gdk_array *aCopy = NULL;
-    BAT *b;
+	gdk_array *array_out = arrayCopy(array); //TODO: Remove this. No need to return array
+	double *qarray, *rarray, *els;
+	unsigned int rowsNum, colsNum, rowNum, colNum, cellsNum;
+
+	BAT *b;
     dbl *elements = NULL, *new_elements = NULL;
-    unsigned int maxX, maxY;
-    unsigned int sizeX, sizeY;
-    BUN j;
 
-    dbl *qarray = NULL, *rarray = NULL;
-    BUN i, k;
-    dbl s = 0;
+	rowsNum = array->dims[0]->elsNum;
+	colsNum = array->dims[1]->elsNum;
+	cellsNum = rowsNum*colsNum;
 
-    // we do not change array structure, all dimensions must be the same
-    aCopy = arrayCopy(array);
-    maxX = array->dims[0]->max;
-    sizeX = maxX + 1;
+	qarray = (dbl*)GDKmalloc(rowsNum*colsNum*sizeof(double));
+	rarray = (dbl*)GDKmalloc(colsNum*colsNum*sizeof(double));
+	els = (dbl*)GDKmalloc(rowsNum*colsNum*sizeof(double));
 
-    maxY = array->dims[1]->max;
-    sizeY = maxY + 1;
+	/* copy the elements in column major to fit the access pattern */
+	elements = (dbl*) Tloc(BATdescriptor(*vals), BUNfirst(BATdescriptor(*vals)));
+	for(rowNum=0; rowNum<rowsNum; rowNum++) {
+		unsigned int skip = rowNum*colsNum;
+		for(colNum=0; colNum<colsNum; colNum++) 
+			*(els+colNum*rowsNum+rowNum) = elements[colNum+skip];
+	}
+ 
+	/* For each column */
+	for(colNum =0 ; colNum<colsNum; colNum++) {
+		double s=0.0;
+		unsigned int colNum_tmp;
 
-    *dimsRes = aCopy;
+		unsigned int skip = colNum*rowsNum;
+		unsigned int rSkip = colNum*colNum;
 
-    if((b = BATnew(TYPE_void, TYPE_dbl, sizeX*sizeY, TRANSIENT)) == NULL)
-        return NULL;
+		/*get all rows*/
+		for(rowNum=0; rowNum<rowsNum; rowNum++)
+			s+=(*(els+skip+rowNum))*(*(els+skip+rowNum));
 
-    elements = (dbl*) Tloc(BATdescriptor(*vals), BUNfirst(BATdescriptor(*vals)));
-    new_elements = (dbl*) Tloc(b, BUNfirst(b));
+		*(rarray+rSkip+colNum) = sqrt(s);
 
-    qarray = (double*)malloc(sizeX*sizeY*sizeof(double));
-    rarray = (double*)malloc(sizeY*sizeY*sizeof(double));
+		/* get all rows */
+		for(rowNum=0; rowNum<rowsNum; rowNum++)
+			*(qarray+skip+rowNum) = (*(els+skip+rowNum))/(*(rarray+rSkip+colNum));
 
+		for(colNum_tmp=colNum+1; colNum_tmp<colsNum; colNum_tmp++) {
+			unsigned int skip_tmp = colNum_tmp*rowsNum;
+			s = 0.0;
 
-    // resulting bat calculation    
+			for(rowNum=0; rowNum<rowsNum; rowNum++)
+				s+=(*(els+skip_tmp+rowNum))*(*(qarray+skip+rowNum));
 
-    for (j = 0; j < sizeX*sizeY; j++)
-    {
-        new_elements[j] = elements[j];
-    }
+			*(rarray+rSkip+colNum_tmp) = s;
 
-    for (k = 0; k <= maxY; k++)
-    {
-
-        s = 0;
-        for (j = 0; j <= maxX; j++)
-        {
-            s = s + new_elements[j + k * sizeX] * new_elements[j + k * sizeX];
-        }
-
-        rarray[k + k * sizeY] = sqrt(s);
-        for (j = 0; j <= maxX; j++)
-        {
-            qarray[j + k * sizeX] = new_elements[j + k * sizeX]/rarray[k + k * sizeY];
-
-        }
-        for (i = k + 1; i <= maxY; i++)
-        {
-            s = 0;
-            for (j = 0; j <= maxX; j++)
-            {
-                s = s + new_elements[j + i * sizeX] * qarray[j + k * sizeX];
-            }
-            rarray[k + i * sizeY] = s;
-            for (j = 0; j <= maxX; j++)
-            {
-                new_elements[j + i * sizeX] = new_elements[j + i * sizeX] - rarray[k + i * sizeY] * qarray[j + k * sizeX];
-            }
-        }
-    }
-    for (j = 0; j < sizeX*sizeY; j++)
-    {
-        new_elements[j] = qarray[j];
-    }
+			for(rowNum=0; rowNum<rowsNum; rowNum++)
+				*(els+skip_tmp+rowNum) -= s*(*(qarray+skip+rowNum));
+		}
+	}
 
 
-    BATsetcount(b, sizeX*sizeY);
+	if((b = BATnew(TYPE_void, TYPE_dbl, cellsNum, TRANSIENT)) == NULL)
+        return createException(MAL, "arrays.QQR", "Problem creating BAT");
+	new_elements = (dbl*) Tloc(b, BUNfirst(b));
+
+	for(rowNum=0; rowNum<rowsNum; rowNum++) {
+		for(colNum=0; colNum<colsNum; colNum++) {
+			new_elements[rowNum+colNum*rowsNum] = *(qarray+colNum*rowsNum+rowNum);
+		}
+	}
+
+    BATsetcount(b, cellsNum);
     b->tsorted = 0;
     b->trevsorted = b->batCount <= 1;
     b->tkey = 1;
@@ -1048,12 +1041,13 @@ str ALGnonDimensionQRDecomposition(bat *oidsRes, ptr *dimsRes,  const bat* vals,
     b->hkey = 1;
     b->hrevsorted = b->batCount <= 1;
 
-    free(rarray);
-    free(qarray);
-
+    GDKfree(rarray);
+    GDKfree(qarray);
+	GDKfree(els);
 
     BBPkeepref(*oidsRes = b->batCacheid);
 
+	*dimsRes = array_out;
 
     return MAL_SUCCEED;
 }
