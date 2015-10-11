@@ -251,31 +251,39 @@ BAT *projectCells(gdk_array* dimCands, gdk_array *array) {
  	* as needed to fill the resOIDs */
 	dim = dimCands->dims[0];
 	if(dim->idxs) {
-		for(j=0; j<resSize;)
-			for(i=0; i<dim->elsNum ; i++, j++)
-				resOIDs[j] = dim->idxs[i];
+//		for(j=0; j<resSize;)
+		/*add each element one */
+		for(i=0; i<dim->elsNum ; i++, j++)
+			resOIDs[j] = dim->idxs[i];
 	} else {
-		for(j=0; j<resSize;)
-			for(i=dim->min; i<=dim->max ; i+=dim->step, j++)
-				resOIDs[j] = i;
+//		for(j=0; j<resSize;)
+		/* add each element once */
+		for(i=dim->min; i<=dim->max ; i+=dim->step, j++)
+			resOIDs[j] = i;
 	}
 	/* iterate over the rest of the dimensoins and add the values needed to make the correct oids */
 	for(i=1; i<dimCands->dimsNum; i++) {
 		dim = dimCands->dims[i];
 		jumpSize *= array->dims[i-1]->elsNum; //each oid is increased by jumpSize * the idx of the dimension
-		elsR *= dimCands->dims[i-1]->elsNum; //each element is repeated elsR times
+		elsR *= dimCands->dims[i-1]->elsNum; //each element is repeated elsR times, this equals the number of elements that have been aready in the array
 
 		if(dim->idxs) {
-			for(j=0; j<resSize; ) //until all elements have been set, repeat the groups
-				for(k=0; k<dim->elsNum; k++) //each qualifying idx
-					for(elsRi=0; elsRi<elsR; elsRi++, j++) //repeat it jumpSize times
-						resOIDs[j] += jumpSize*dim->idxs[k];
-		} else {
-			for(j=0; j<resSize; ) //until all elements have been set, repeat the groups
-				for(k=dim->min; k<=dim->max; k+=dim->step) //each qualifying idx
-					for(elsRi=0; elsRi<elsR; elsRi++, j++) //repeat it jumpSize times
-						resOIDs[j] += jumpSize*k;
+//			for(j=0; j<resSize; ) //until all elements have been set, repeat the groups
+			for(k=1; k<dim->elsNum; k++) //skip the first qualifying idx to avoid updating cells which need to be re-used
+				for(elsRi=0; elsRi<elsR; elsRi++, j++) //repeat it elsR times
+					resOIDs[j] = resOIDs[elsRi] + jumpSize*dim->idxs[k];
+			/* now update the first elsR values */
+			for(elsRi=0; elsRi<elsR; elsRi++)
+				resOIDs[elsRi] += jumpSize*dim->idxs[0];
 
+		} else {
+//			for(j=0; j<resSize; ) //until all elements have been set, repeat the groups
+			for(k=dim->min+dim->step; k<=dim->max; k+=dim->step) //skip the first value to avoid updating cells which need to be re-used
+				for(elsRi=0; elsRi<elsR; elsRi++, j++) //repeat it jumpSize times
+					resOIDs[j] = resOIDs[elsRi]+jumpSize*k;
+			/* update the first elsR elements */
+			for(elsRi=0; elsRi<elsR; elsRi++, j++) //repeat it jumpSize times
+				resOIDs[elsRi] += jumpSize*dim->min;
 		}
 	}
 
