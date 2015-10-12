@@ -1213,7 +1213,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	const void *nil;
 	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
-	oid vwl, vwh;
+	oid vwl = 0, vwh = 0;
 	int use_orderidx = 0 , use_imprints = 0;
 	union {
 		bte v_bte;
