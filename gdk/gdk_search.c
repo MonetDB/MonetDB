@@ -685,7 +685,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	BUN lo, hi, mid;
 	int cmp;
 	BUN cur;
-	BAT *o;
+	BAT *o = NULL;
 	BATiter bi, bio;
 	BUN diff, end;
 	int tp;
