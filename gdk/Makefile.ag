@@ -25,7 +25,7 @@ lib_gdk = {
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_system_private.h gdk_tm.h gdk_storage.h \
 		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
-		gdk_aggr.c gdk_group.c gdk_mapreduce.c gdk_mapreduce.h \
+		gdk_aggr.c gdk_group.c \
 		gdk_imprints.c gdk_imprints.h \
 		gdk_join.c \
 		gdk_unique.c \
