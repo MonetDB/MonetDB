@@ -1172,7 +1172,7 @@ updatecolormap(int idx)
 	if (fnd == 0 && i < NUM_COLORS) {
 		/* not found, but still free slot: add new one */
 		fnd = i;
-		colors[fnd].mod = mod?strdup(mod): 0;
+		colors[fnd].mod = strdup(mod);
 		colors[fnd].fcn = strdup(fcn);
 		if( debug) 
 			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, mod, fcn);
