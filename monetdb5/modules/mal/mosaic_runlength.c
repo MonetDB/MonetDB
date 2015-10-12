@@ -224,7 +224,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	for(v++, i =1; i<limit; i++,v++)\
 	if ( *v != val)\
 		break;\
-	hdr->checksum.sum##TYPE += i * val;\
+	hdr->checksum.sum##TYPE += (TYPE) (i * val);\
 	MOSsetCnt(blk, i);\
 	task->dst +=  sizeof(TYPE);\
 }
