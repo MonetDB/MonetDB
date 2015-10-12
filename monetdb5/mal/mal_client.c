@@ -495,6 +495,7 @@ MCstartMaintenance(Client cntxt, lng timeout, int abort)
 	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
 	if( cntxt != c)
 		c-> itrace = 'S';
+	// wait for all running users to stop
 	while (active && timeout > 0){
 		active = 0;
 		for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
@@ -508,6 +509,8 @@ MCstartMaintenance(Client cntxt, lng timeout, int abort)
 		} else
 		if (cntxt!= c &&  c->mode == FINISHCLIENT)
 			active++;
+		if( active == 0)
+			break;
 		MT_sleep_ms(1000);
 		timeout--;
 	}
