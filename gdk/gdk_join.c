@@ -447,13 +447,12 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	if (must_match) {
 		GDKerror("%s(%s,%s) does not hit always => can't use fetchjoin.\n",
 			 func, BATgetId(l), BATgetId(r));
-		BBPreclaim(r1);
-		BBPreclaim(r2);
-		return GDK_FAIL;
+		goto bailout;
 	}
 	if (lcand) {
 		cnt = (BUN) (lcandend - lcand);
-		BATextend(r1, cnt);
+		if (BATextend(r1, cnt) != GDK_SUCCEED)
+			goto bailout;
 		memcpy(Tloc(r1, BUNfirst(r1)), lcand, (lcandend - lcand) * sizeof(oid));
 		BATsetcount(r1, cnt);
 		r1->tkey = 1;
@@ -470,7 +469,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r1->T->width = 0;
 		r1->T->shift = 0;
 		r1->tdense = 0;
-		BATextend(r1, cnt);
+		if (BATextend(r1, cnt) != GDK_SUCCEED)
+			goto bailout;
 		BATsetcount(r1, cnt);
 		BATseqbase(BATmirror(r1), lstart + l->hseqbase);
 	}
@@ -480,7 +480,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	r2->T->width = 0;
 	r2->T->shift = 0;
 	r2->tdense = 0;
-	BATextend(r2, cnt);
+	if (BATextend(r2, cnt) != GDK_SUCCEED)
+		goto bailout;
 	BATsetcount(r2, cnt);
 	BATseqbase(BATmirror(r2), oid_nil);
 	ALGODEBUG fprintf(stderr,
@@ -494,6 +495,11 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 			  r2->tsorted ? "-sorted" : "",
 			  r2->trevsorted ? "-revsorted" : "");
 	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 static gdk_return
