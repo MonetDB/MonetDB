@@ -123,28 +123,27 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
   
   # make new socket with user-specified timeout
-  socket <- .mapiConnect(host, port, timeout) 
-  .mapiAuthenticate(socket, dbname, user, password, language=language)
+
   connenv <- new.env(parent=emptyenv())
   connenv$lock <- 0
   connenv$deferred <- list()
   connenv$exception <- list()
+  connenv$params <- list(host=host, port=port, timeout=timeout, dbname=dbname, user=user, password=password, language=language)
+  connenv$socket <- .mapiConnect(host, port, timeout) 
+  .mapiAuthenticate(connenv$socket, dbname, user, password, language=language)
   
-  conn <- new("MonetDBConnection", socket=socket, connenv=connenv)
+  conn <- new("MonetDBConnection", connenv=connenv)
   if (getOption("monetdb.sequential", F)) {
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
-
-  # if (getOption("monetdb.profile", T)) .profiler_enable(conn)
   conn
 }, 
 valueClass="MonetDBConnection")
 
 
 ### MonetDBConnection
-setClass("MonetDBConnection", representation("DBIConnection", socket="ANY", 
-                                             connenv="environment"))
+setClass("MonetDBConnection", representation("DBIConnection", connenv="environment"))
 
 setClass("MonetDBEmbeddedConnection", representation("MonetDBConnection", connenv="environment"))
 
@@ -162,7 +161,7 @@ setMethod("dbIsValid", "MonetDBConnection", def=function(dbObj, ...) {
 })
 
 setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
-  .mapiDisconnect(conn@socket)
+  .mapiDisconnect(conn@connenv$socket)
   invisible(TRUE)
 })
 
@@ -247,8 +246,25 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   # if (getOption("monetdb.profile", T))  .profiler_arm()
 
   # the actual request
-  mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
-  resp <- .mapiParseResponse(mresp)
+  resp <- NA
+  tryCatch({
+    mresp <- .mapiRequest(conn, paste0("s", statement, "\n;"), async=async)
+    resp <- .mapiParseResponse(mresp)
+  }, interrupt = function(ex) {
+    message("Interrupted query execution. Attempting to fix connection....")
+    
+    conn@connenv$params[[1]] <- NULL
+    conn@connenv$params$drv <- MonetDB.R()
+    
+    newconn <- do.call("dbConnect", conn@connenv$params)
+    dbDisconnect(conn)
+    conn@connenv$socket <- newconn@connenv$socket
+    conn@connenv$lock <- 0
+    conn@connenv$deferred <- list()
+    conn@connenv$exception <- list()
+
+    stop("No query result for now.")
+  })
 
   env <- new.env(parent=emptyenv())
 

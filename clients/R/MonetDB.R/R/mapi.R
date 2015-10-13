@@ -61,16 +61,16 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   
   # send payload and read response		
  
-  .mapiWrite(conObj@socket, msg)
-  resp <- .mapiRead(conObj@socket)
+  .mapiWrite(conObj@connenv$socket, msg)
+  resp <- .mapiRead(conObj@connenv$socket)
   
   # get deferred statements from deferred list and execute
   while (length(conObj@connenv$deferred) > 0) {
     # take element, execute, check response for prompt
     dmesg <- conObj@connenv$deferred[[1]]
     conObj@connenv$deferred[[1]] <- NULL
-    .mapiWrite(conObj@socket, dmesg)
-    dresp <- .mapiParseResponse(.mapiRead(conObj@socket))
+    .mapiWrite(conObj@connenv$socket, dmesg)
+    dresp <- .mapiParseResponse(.mapiRead(conObj@connenv$socket))
     if (dresp$type == MSG_MESSAGE) {
       conObj@connenv$lock <- 0
       warning(paste("II: Failed to execute deferred statement '", dmesg, "'. Server said: '", 
