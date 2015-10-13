@@ -2861,10 +2861,6 @@ command algebra.like(s:str,pat:str):bit
 address PCRElike2;
 command algebra.like(s:str,pat:str,esc:str):bit 
 address PCRElike3;
-command algebra.like(b:bat[:oid,:str],substr:str):bat[:oid,:oid] 
-address ALGlike;
-comment Selects all elements that have 'substr' as in the tail.
-
 command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGleftfetchjoin;
 comment Hook directly into the left fetch join implementation.
@@ -49835,8 +49831,6 @@ pattern mat.new(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack;
 comment Define a Merge Association Table (MAT). Faal back to the pack operationwhen this is called 
 
-pattern mat.print(b:bat[:oid,:any_2]...):void 
-address MATprint;
 pattern mat.project(map:bat[:oid,:bte],b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATproject;
 comment project using the map bat (contains which bat to use in scan order)
@@ -50686,6 +50680,12 @@ address OPTwrapper;
 comment Duplicate constant removal optimizer
 
 pattern optimizer.constants():str 
+address OPTwrapper;
+pattern optimizer.candidates(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Mark candidate list variables
+
+pattern optimizer.candidates():str 
 address OPTwrapper;
 pattern optimizer.commonTerms(mod:any_1,fcn:any_2):str 
 address OPTwrapper;
@@ -51762,11 +51762,11 @@ pattern sql.start():void
 address SQLsession;
 comment Switch to processing SQL statements
 
-pattern sql.tid(mvc:int,sname:str,tname:str,part_nr:int,nr_parts:int):bat[:oid,:any_3] 
+pattern sql.tid(mvc:int,sname:str,tname:str,part_nr:int,nr_parts:int):bat[:oid,:oid] 
 address SQLtid;
 comment Return the tables tid column.
 
-pattern sql.tid(mvc:int,sname:str,tname:str):bat[:oid,:any_3] 
+pattern sql.tid(mvc:int,sname:str,tname:str):bat[:oid,:oid] 
 address SQLtid;
 comment Return the tables tid column.
 

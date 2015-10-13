@@ -112,8 +112,6 @@ __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const ch
 	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden char *GDKfilepath_long(int farmid, const char *dir, const char *ext)
-	__attribute__((__visibility__("hidden")));
 __hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 	__attribute__((__visibility__("hidden")));
 __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
@@ -155,7 +153,7 @@ __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 __hidden int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden int HEAPfree(Heap *h, int remove)
+__hidden void HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__visibility__("hidden")));
@@ -316,38 +314,6 @@ extern MT_Lock MT_system_lock;
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].alloc
 #define BBP_free(y)	GDKbbpLock[y].free
-
-#define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
-	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_bte(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, bte)
-#define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
-#define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
-#define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
-#ifdef HAVE_HGE
-#define SORTloop_hge(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, hge)
-#endif
-#define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
-#define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
-#define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)
-#define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
-
-#define SORTloop_loc(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
-
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
 #define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 

@@ -748,10 +748,8 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	BUN cnt;
 	BATiter bi = bat_iterator(b);
 
-	if (b == NULL || view == NULL) {
-		GDKerror("VIEWbounds: bat argument missing");
+	if (b == NULL || view == NULL)
 		return;
-	}
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)

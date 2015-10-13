@@ -91,8 +91,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			for (k = 0; k < vlimit; k++) {
 				if (getBeginLifespan(span,k) > 0  &&
 					getEndLifespan(span,k) == i &&
-					isaBatType(getVarType(mb,k)) &&
-					varGetProp(mb, k, keepProp) == NULL){
+					isaBatType(getVarType(mb,k)) ){
 						q= newAssignment(mb);
 						getArg(q,0) = k;
 						setVarUDFtype(mb,k);

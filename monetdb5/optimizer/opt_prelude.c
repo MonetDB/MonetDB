@@ -114,10 +114,10 @@ str kdifferenceRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
-str likeselectRef;
-str ilikeselectRef;
-str likeuselectRef;
-str ilikeuselectRef;
+str likesubselectRef;
+str likethetasubselectRef;
+str ilikesubselectRef;
+str ilikethetasubselectRef;
 str likeRef;
 str ilikeRef;
 str not_likeRef;
@@ -211,6 +211,7 @@ str subavgRef;
 str subsortRef;
 str takeRef;
 str not_uniqueRef;
+str subuniqueRef;
 str unlockRef;
 str unpackRef;
 str unpinRef;
@@ -224,29 +225,14 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int canBeCrackedProp;
-int canBeJoinselectProp;
-int sidewaysSelectProp;
-int headProp;
-int pivotProp;
-int pivotDisjunctiveProp;
-int removeProp;
-int tableProp;
 int sqlfunctionProp;
 
 int inlineProp;
-int keepProp;
-int notnilProp;
 int rowsProp;
 int fileProp;
 int runonceProp;
 int unsafeProp;
 int orderDependendProp;
-
-int stableProp;
-int insertionsProp;
-int updatesProp;
-int deletesProp;
 
 int hlbProp;
 int hubProp;
@@ -254,7 +240,7 @@ int tlbProp;
 int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
-int mtProp;			
+int mtProp;
 
 void optimizerInit(void)
 {
@@ -357,10 +343,8 @@ void optimizerInit(void)
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
-	likeselectRef = putName("like_select",11);
-	ilikeselectRef = putName("ilike_select",12);
-	likeuselectRef = putName("like_uselect",12);
-	ilikeuselectRef = putName("ilike_uselect",13);
+	likesubselectRef = putName("likesubselect",13);
+	ilikesubselectRef = putName("ilikesubselect",14);
 	listRef = putName("list",4);
 	likeRef = putName("like",4);
 	ilikeRef = putName("ilike",5);
@@ -455,6 +439,7 @@ void optimizerInit(void)
 	takeRef= putName("take",5);
 	timestampRef = putName("timestamp", 9);
 	not_uniqueRef= putName("not_unique",10);
+	subuniqueRef= putName("subunique",9);
 	unlockRef= putName("unlock",6);
 	unpackRef = putName("unpack",6);
 	unpinRef = putName("unpin",5);
@@ -462,45 +447,25 @@ void optimizerInit(void)
 	subselectRef = putName("subselect",9);
 	thetasubselectRef = putName("thetasubselect",14);
 	likesubselectRef = putName("likesubselect",13);
+	likethetasubselectRef = putName("likethetasubselect",18);
 	ilikesubselectRef = putName("ilikesubselect",14);
+	ilikethetasubselectRef = putName("ilikethetasubselect",19);
 	vectorRef = putName("vector",6);
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	canBeCrackedProp = PropertyIndex("canBeCracked");
-	canBeJoinselectProp = PropertyIndex("canBeJoinselect");
-	sidewaysSelectProp = PropertyIndex("sidewaysSelect");
-	headProp = PropertyIndex("head");
-	pivotProp = PropertyIndex("pivot");
-	pivotDisjunctiveProp = PropertyIndex("pivotDisjunctive");
-	removeProp = PropertyIndex("remove");
-	tableProp = PropertyIndex("table");
-
 	fileProp = PropertyIndex("file");
 	inlineProp = PropertyIndex("inline");
-	keepProp = PropertyIndex("keep");
-	notnilProp = PropertyIndex("notnil");
 	rowsProp = PropertyIndex("rows");
 	runonceProp = PropertyIndex("runonce");
 	unsafeProp = PropertyIndex("unsafe");
 	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
-	stableProp = PropertyIndex("stableProp");
-	insertionsProp = PropertyIndex("insertionsProp");
-	updatesProp = PropertyIndex("updatesProp");
-	deletesProp = PropertyIndex("deletesProp");
-
-	hlbProp = PropertyIndex("hlb");
-	hubProp = PropertyIndex("hub");
-	tlbProp = PropertyIndex("tlb");
-	tubProp = PropertyIndex("tub");
-
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
 	mtProp = PropertyIndex("mergetable");
 	/*
-	 * @-
 	 * Set the optimizer debugging flag
 	 */
 	{

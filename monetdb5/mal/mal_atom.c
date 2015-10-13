@@ -25,14 +25,10 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif
-
 static void setAtomName(InstrPtr pci)
 {
-	char buf[MAXPATHLEN];
-	snprintf(buf, MAXPATHLEN, "#%s", getFunctionId(pci));
+	char buf[PATHLENGTH];
+	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf, strlen(buf)));
 }
 
@@ -121,7 +117,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 's':
 		if (idcmp("storage", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].storage = (*(long (*)(void))pci->fcn)();
+			BATatoms[tpe].storage = (*(int (*)(void))pci->fcn)();
 			setAtomName(pci);
 			return 1;
 		}

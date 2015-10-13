@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Oct  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed all versions of the SORTloop macro.
+
 * Thu Oct  1 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed Batkdiff.  Use BATsubdiff instead.
 

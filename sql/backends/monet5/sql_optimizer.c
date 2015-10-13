@@ -124,7 +124,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			char *sname = getVarConstant(mb, getArg(p, 2 + upd)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;
 			char *cname = NULL;
-			int not_null = 0, mt_member = 0;
+			int mt_member = 0;
 			wrd rows = 1;	/* default to cope with delta bats */
 			int mode = 0;
 			int k = getArg(p, 0);
@@ -163,8 +163,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				sql_column *c = mvc_bind_column(m, t, cname);
 
 				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-					not_null = !c->null;
-
 					cnt = store_funcs.count_col(tr, c, 1);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_col(m->session->tr, c, RDONLY);
@@ -182,27 +180,22 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 			if (rows > 1 && mode != RD_INS)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
-			if (not_null)
-				varSetProp(mb, k, notnilProp, op_eq, NULL);
 			if (mt_member && mode != RD_INS)
 				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
 
 			{
-				int lowprop = hlbProp, highprop = hubProp;
+				//int lowprop = hlbProp, highprop = hubProp;
 				/* rows == cnt has been checked above to be <= GDK_oid_max */
-				oid low = 0, high = low + (oid) rows;
+				//oid low = 0, high = low + (oid) rows;
 				pushInstruction(mb, p);
 
-				if (mode == RD_INS) {
-					low = high;
-					high += 1024 * 1024;
-				}
-				varSetProp(mb, getArg(p, 0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
-				varSetProp(mb, getArg(p, 0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
+				//if (mode == RD_INS) {
+					//low = high;
+					//high += 1024 * 1024;
+				//}
+				//varSetProp(mb, getArg(p, 0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
+				//varSetProp(mb, getArg(p, 0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
 			}
-
-			if (not_null)
-				actions++;
 		} else {
 			pushInstruction(mb, p);
 		}

@@ -117,10 +117,6 @@ opt_export  str ilikeselectRef;
 opt_export  str likeuselectRef;
 opt_export  str ilikeuselectRef;
 opt_export  str listRef;
-opt_export  str likeRef;
-opt_export  str ilikeRef;
-opt_export  str not_likeRef;
-opt_export  str not_ilikeRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
 opt_export  str malRef;
@@ -210,6 +206,7 @@ opt_export  str subsortRef;
 opt_export  str timestampRef;
 opt_export  str takeRef;
 opt_export  str not_uniqueRef;
+opt_export  str subuniqueRef;
 opt_export  str unpackRef;
 opt_export  str unpinRef;
 opt_export  str unlockRef;
@@ -217,40 +214,27 @@ opt_export  str updateRef;
 opt_export  str subselectRef;
 opt_export  str thetasubselectRef;
 opt_export  str likesubselectRef;
+opt_export  str likethetasubselectRef;
 opt_export  str ilikesubselectRef;
+opt_export  str ilikethetasubselectRef;
+opt_export  str likeRef;
+opt_export  str ilikeRef;
+opt_export  str not_likeRef;
+opt_export  str not_ilikeRef;
 opt_export  str userRef;
 opt_export  str vectorRef;
 opt_export  str zero_or_oneRef;
 
-opt_export int canBeCrackedProp;	/* binary */
-opt_export int canBeJoinselectProp;	/* binary */
-opt_export int sidewaysSelectProp;	/* int */
-opt_export int headProp;		/* int */
-opt_export int pivotProp;		/* int */
-opt_export int pivotDisjunctiveProp;	/* int */
-opt_export int removeProp;		/* int */
-opt_export int tableProp;	        /* str */
 opt_export int sqlfunctionProp;
 
 opt_export int inlineProp;		/* binary */
-opt_export int keepProp;		/* binary */
-opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
 opt_export int fileProp;		/* str */
 opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
 opt_export int orderDependendProp;	/* binary */
 
-opt_export int stableProp;		/* binary */
-opt_export int insertionsProp;		/* binary */
-opt_export int updatesProp;		/* binary */
-opt_export int deletesProp;		/* binary */
-
-opt_export int hlbProp;			/* any (head lower bound) */
-opt_export int hubProp;			/* any (head upper bound) */
-opt_export int tlbProp;			/* any (tail lower bound) */
-opt_export int tubProp;			/* any (tail upper bound) */
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
-opt_export int mtProp;			/* enclosing merge table (id) */
+opt_export int mtProp;		
 #endif

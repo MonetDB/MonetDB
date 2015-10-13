@@ -15,6 +15,8 @@
 #define malVARG " malVARG"
 #define TMPMARKER '_'
 #define REFMARKER 'X'
+#define REFMARKERC 'C'
+#define refMarker(M,I)  (isVarCList(M,I)? 'C':'X')
 
 #define newBatType(H,T)  (1<<16 | (((TYPE_oid & 0377) <<8) | (T & 0377) ))
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)

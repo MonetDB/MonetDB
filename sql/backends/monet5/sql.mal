@@ -268,10 +268,10 @@ pattern clear_table{unsafe}(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
-pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:any_3] 
+pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:oid] 
 address SQLtid
 comment "Return the tables tid column.";
-pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:any_3] 
+pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:oid] 
 address SQLtid
 comment "Return the tables tid column.";
 

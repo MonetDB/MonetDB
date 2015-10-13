@@ -1983,7 +1983,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
+					setVarType(mb, getArg(q, 0), newBatType(TYPE_any, res->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			} else {
@@ -2081,7 +2081,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, mod, aggrfunc);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, restype));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
 				q = newStmt(mb, mod, aggrfunc);

@@ -30,6 +30,13 @@ pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
 address OPTwrapper
 comment "Common sub-expression optimizer"
 
+#opt_candidates
+pattern optimizer.candidates():str
+address OPTwrapper;
+pattern optimizer.candidates(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Mark candidate list variables";
+
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;

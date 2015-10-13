@@ -30,8 +30,9 @@ stderr of test 'local-remotetable-crash.Bug-3754` in directory 'sql/test/BugTrac
 # 18:16:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19202" "--port=37515"
 # 18:16:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19202/.s.monetdb.37515
+MAPI  = (monetdb) /var/tmp/mtest-5390/.s.monetdb.38366
 QUERY = SELECT * FROM rt;
+ERROR = !unable to connect to 'mapi:monetdb://localhost:50000/test': could not connect to localhost:50000: Connection refused
 
 
 # 18:16:20 >  
