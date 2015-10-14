@@ -1005,7 +1005,6 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 		list *l, *r;
 
 		if (rel_is_ref(rl) && rel_is_ref(rr)) {
-			assert(0);
 			l = rel->exps;
 			rel->exps = NULL;
 			return l;
