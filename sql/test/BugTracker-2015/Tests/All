@@ -65,4 +65,5 @@ string_split.Bug-3564
 not-like-without-wildcard.Bug-3811
 copy_into.Bug-3813
 select-tilde-arg.Bug-3814
+crash_in_reduce_groupby.Bug-3818
 case_type.Bug-3821

@@ -4437,7 +4437,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
 
-					if (is_column(e->type)) {
+					if (e->type == e_column) {
 						if (e->l) 
 							ne = exps_bind_column2(dgbe, e->l, e->r);
 						else
