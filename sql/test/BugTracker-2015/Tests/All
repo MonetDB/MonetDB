@@ -62,6 +62,7 @@ local-remotetable-crash.Bug-3754
 savepoint.Bug-3738-1
 savepoint.Bug-3738-2
 string_split.Bug-3564
+fractional_precision_limitation.Bug-3808
 not-like-without-wildcard.Bug-3811
 copy_into.Bug-3813
 select-tilde-arg.Bug-3814
