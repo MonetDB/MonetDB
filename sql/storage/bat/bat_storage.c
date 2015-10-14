@@ -1381,6 +1381,24 @@ destroy_idx(sql_trans *tr, sql_idx *i)
 
 	if (i->data && i->base.allocated) {
 		i->base.allocated = 0;
+		if (i->type == ordered_idx) {
+			sql_column *c = ((sql_kc*)i->columns->h->data)->c;
+			sql_delta *d;
+			BAT *b;
+
+			if (!c->data || !c->base.allocated) {
+				int type = c->type.type->localtype;
+				sql_column *oc = tr_find_column(tr->parent, c);
+				sql_delta *bat = c->data = ZNEW(sql_delta), *obat = oc->data;
+				ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
+				c->base.allocated = 1;
+			}
+			d = c->data;
+			b = temp_descriptor(d->bid);
+			b->torderidx = 0;
+			b->batDirtydesc = TRUE;
+			bat_destroy(b);
+		}
        		ok = destroy_bat(tr, i->data);
 	}
 	i->data = NULL;
