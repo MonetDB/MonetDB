@@ -65,6 +65,8 @@ string_split.Bug-3564
 not-like-without-wildcard.Bug-3811
 copy_into.Bug-3813
 select-tilde-arg.Bug-3814
+timestamp_convert.Bug-3815
+crash_timestamp_convert.Bug-3816
 crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820
 case_type.Bug-3821
