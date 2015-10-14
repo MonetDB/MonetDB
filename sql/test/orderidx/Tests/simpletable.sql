@@ -3,7 +3,8 @@ insert into xtmp1 values (1),(2),(4),(0);
 select * from xtmp1;
 
 select * from storage where "table"= 'xtmp1';
-call orderidx('sys','xtmp1','i');
+alter table xtmp1 set READ ONLY;
+create ordered index sys_xtmp1_i_oidx on xtmp1 (i);
 
 select * from storage where "table"= 'xtmp1';
 
