@@ -30,6 +30,7 @@ lib_gdk = {
 		gdk_join.c \
 		gdk_unique.c \
 		gdk_firstn.c \
+		gdk_mosaic.c \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

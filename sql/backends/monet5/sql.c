@@ -579,9 +579,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					task->filter[i]= 1;
 
 			if( c->storage_type)
-				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, task, 1, 0);
+				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, task, 0);
 			else
-				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid,1);
+				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
 			BBPunfix(b->batCacheid);
 			if (msg)
 				return msg;
@@ -4839,7 +4839,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 								/*printf(" width %d", bn->T->width); */
 								w = bn->T->width;
-								if (bn->ttype == TYPE_str && !bn->T->heap.compressed) {
+								if (bn->ttype == TYPE_str) {
 									BUN p, q;
 									double sum = 0;
 									BATiter bi = bat_iterator(bn);
@@ -4884,7 +4884,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
 
-								w = bn->T->heap.compressed;
+								w = bn->T->mosaic != NULL;
 								BUNappend(compressed, &w, FALSE);
 
 								BBPunfix(bn->batCacheid);
@@ -4925,7 +4925,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 									/*printf(" width %d", bn->T->width); */
 									w = bn->T->width;
-									if (bn->ttype == TYPE_str && !bn->T->heap.compressed) {
+									if (bn->ttype == TYPE_str) {
 										BUN p, q;
 										double sum = 0;
 										BATiter bi = bat_iterator(bn);
@@ -4966,7 +4966,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
-									w = bn->T->heap.compressed;
+									w = bn->T->mosaic != NULL;
 									BUNappend(compressed, &w, FALSE);
 									BBPunfix(bn->batCacheid);
 								}

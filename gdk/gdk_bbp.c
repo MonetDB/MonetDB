@@ -752,9 +752,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->dense = (properties & 0x0200) != 0;
 	col->nonil = (properties & 0x0400) != 0;
 	col->nil = (properties & 0x0800) != 0;
-	if ((col->heap.compressed = (properties & 0x1000) != 0) != 0 &&
-	    bbpversion <= GDKLIBRARY_NOCOMPRESS)
-		GDKfatal("BBPinit: inconsistent entry in BBP.dir: compression flag set in version without compression\n");
 	col->nosorted = (BUN) nosorted;
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
@@ -1228,8 +1225,7 @@ heap_entry(FILE *fp, COLrec *col)
 			   (((unsigned short) col->key & 0x01) << 8) |
 			   ((unsigned short) col->dense << 9) |
 			   ((unsigned short) col->nonil << 10) |
-			   ((unsigned short) col->nil << 11) |
-			   ((unsigned short) col->heap.compressed << 12),
+			   ((unsigned short) col->nil << 11) ,
 		       col->nokey[0],
 		       col->nokey[1],
 		       col->nosorted,

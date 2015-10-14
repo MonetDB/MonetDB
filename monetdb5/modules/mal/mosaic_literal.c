@@ -57,7 +57,7 @@ MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binp
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt); break ;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl); break;
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break ;
 		case 2: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break ;
 		case 4: output = wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int); break ;
@@ -90,7 +90,7 @@ MOSadvance_literal(Client cntxt, MOStask task)
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break ;
 		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht)); break ;
 		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int)); break ;
@@ -147,7 +147,7 @@ MOScompress_literal(Client cntxt, MOStask task)
 	}
 	break;
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: LITERALcompress(bte); break ;
 		case 2: LITERALcompress(sht); break ;
 		case 4: LITERALcompress(int); break ;
@@ -201,7 +201,7 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	}
 	break;
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: LITERALdecompress(bte); break ;
 		case 2: LITERALdecompress(sht); break ;
 		case 4: LITERALdecompress(int); break ;
@@ -376,7 +376,7 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 			break;
 	case TYPE_str:
 		// beware we should look at the value
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break ;
 		case 2: break ;
 		case 4: break ;
@@ -572,7 +572,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	break;
 	case TYPE_str:
 		// beware we should look at the value
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break ;
 		case 2: break ;
 		case 4: break ;
@@ -632,7 +632,7 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 		}
 	break;
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: leftfetchjoin_literal(bte); break ;
 		case 2: leftfetchjoin_literal(sht); break ;
 		case 4: leftfetchjoin_literal(int); break ;
@@ -693,7 +693,7 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 	break;
 	case TYPE_str:
 		// beware we should look at the value
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: join_literal(bte); break ;
 		case 2: join_literal(sht); break ;
 		case 4: join_literal(int); break ;

@@ -45,7 +45,7 @@ linear_step(MOStask task, MosaicBlk blk){
 	case TYPE_hge : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(hge));
 #endif
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(bte)); break ;
 		case 2: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(sht)); break ;
 		case 4: return (void*)( ((char*) blk) + MosaicBlkSize + sizeof(int)); break ;
@@ -111,7 +111,7 @@ MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case TYPE_hge: output = wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge); break;
 #endif
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: output = wordaligned( MosaicBlkSize + 2 *sizeof(bte),bte); break ;
 		case 2: output = wordaligned( MosaicBlkSize + 2 *sizeof(sht),sht); break ;
 		case 4: output = wordaligned( MosaicBlkSize + 2 *sizeof(int),int); break ;
@@ -142,7 +142,7 @@ MOSadvance_linear(Client cntxt, MOStask task)
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge)); break;
 #endif
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(bte),bte)); break ;
 		case 2: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(sht),sht)); break ;
 		case 4: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + 2 *sizeof(int),int)); break ;
@@ -199,7 +199,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 #endif
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: Estimate(bte); break;
 		case 2: Estimate(sht); break;
 		case 4: Estimate(int); break;
@@ -289,7 +289,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: LINEARcompress(bte); break;
 		case 2: LINEARcompress(sht); break;
 		case 4: LINEARcompress(int); break;
@@ -346,7 +346,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: LINEARdecompress(bte); break;
 		case 2: LINEARdecompress(sht); break;
 		case 4: LINEARdecompress(int); break;
@@ -522,7 +522,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: subselect_linear(bte); break;
 		case 2: subselect_linear(sht); break;
 		case 4: subselect_linear(int); break;
@@ -657,7 +657,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: thetasubselect_linear(bte); break;
 		case 2: thetasubselect_linear(sht); break;
 		case 4: thetasubselect_linear(int); break;
@@ -728,7 +728,7 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 		break;
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
-			switch(task->b->T->width){
+			switch(task->bsrc->T->width){
 			case 1: break;
 			case 2: break;
 			case 4: break;
@@ -810,7 +810,7 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 		break;
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
-			switch(task->b->T->width){
+			switch(task->bsrc->T->width){
 			case 1: break;
 			case 2: break;
 			case 4: break;

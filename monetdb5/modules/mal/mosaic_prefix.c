@@ -80,7 +80,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 
 	(void) cntxt;
 	if( ATOMstorage(task->type == TYPE_str))
-			size =task->b->T->width;
+			size =task->bsrc->T->width;
 	BUNappend(btech, "prefix", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
@@ -136,7 +136,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
-			size =task->b->T->width;
+			size =task->bsrc->T->width;
 	task->start += MOSgetCnt(task->blk);
 	task->stop = task->elm;
 	switch(size){
@@ -215,7 +215,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
-			size =task->b->T->width;
+			size =task->bsrc->T->width;
 	if( task->elm >= 2)
 	switch(size){
 	case 1:
@@ -397,7 +397,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
-			size =task->b->T->width;
+			size =task->bsrc->T->width;
 	if( task->elm >=2 )
 	switch(size){
 	case 1:
@@ -571,7 +571,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
-			size =task->b->T->width;
+			size =task->bsrc->T->width;
 	switch(size){
 	case 1:
 		{	bte *dst =  (bte*)  (((char*) blk) + MosaicBlkSize);
@@ -874,7 +874,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 /*
 	break;
 	case  TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break;
 		case 2: break;
 		case 4: break;
@@ -1037,7 +1037,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break;
 		case 2: break;
 		case 4: break;
@@ -1125,7 +1125,7 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: leftfetchjoin_prefix(bte, unsigned char); break;
 		case 2: leftfetchjoin_prefix(sht, unsigned short); break;
 		case 4: leftfetchjoin_prefix(int, unsigned int); break;
@@ -1216,7 +1216,7 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 		break;
 		case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: join_prefix(bte, unsigned char); break;
 		case 2: join_prefix(sht, unsigned short); break;
 		case 4: join_prefix(int, unsigned int); break;

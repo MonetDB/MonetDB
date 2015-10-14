@@ -51,12 +51,14 @@
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
+#define MOSAICINDEX 8  //> 2 elements
 
 /*
  * The header is reserved for meta information, e.g. oid indices.
  * The block header encodes the information needed for the chunk decompressor
  */
-#define MOSAICINDEX 8  //> 2 elements
+typedef Heap *mosaic;	// compressed data is stored on a heap.
+
 typedef struct MOSAICHEADER{
 	int version;
 	union{
@@ -72,14 +74,14 @@ typedef struct MOSAICHEADER{
 		wrd sumwrd;
 		flt sumflt;
 		dbl sumdbl;
-	} checksum, checksum2;
+	} checksum, checksum2;	// for validity checks
 	int top;
-	// skip index for OID access
+	// skip list for direct OID-based access
 	oid oidbase[MOSAICINDEX];	// to speedup localization
 	BUN offset[MOSAICINDEX];
-	bte mask, bits, framebits;	// global compression type properties
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
+	bte mask, bits, framebits;	// global compression type properties
 	int dictsize;		// used by dictionary compression
 	int framesize;		// used by frame compression
 #ifdef HAVE_HGE
@@ -120,27 +122,29 @@ typedef struct MOSAICBLK{
 #define MosaicBlkSize  sizeof(MosaicBlk *)
 
 
+/* The (de) compression task descriptor */
 typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
-	int filter[MOSAIC_METHODS];// algorithmic mix
+	int filter[MOSAIC_METHODS];// algorithmic (de)compression mix
+
+	/* collect the range being applied for the last compression call */
 	BUN range[MOSAIC_METHODS]; // end of compression range
 	float factor[MOSAIC_METHODS];// compression factor of last range
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
-	oid start;		// oid of first element in current blk
-	oid stop;		// last oid of range to be scanned
-	flt ratio;		// compression ratio encountered
+	char 	 *dst;		// write pointer into current compressed blocks
+	oid 	start;		// oid of first element in current blk
+	oid		stop;		// last oid of range to be scanned
+	flt		ratio;		// compression ratio encountered
 
-	char *dst;		// write pointer into current compressed blocks
 
-	BAT *b;			// source column
-	BUN	elm;		// (sample) elements left to compress
+	BAT *bsrc;		// target column to extended with compressed heap
+	BUN	elm;		// number of elements left to be compress
 	char *src;		// read pointer into source
-	BAT *index;		// collection of unique elements
-	BAT *freq;		// frequency of these elements
+	//BAT *index;		// collection of unique elements
+	//BAT *freq;		// frequency of these elements
 
-	lng  xsize,size;// original and compressed size
 	lng timer;		// compression time
 
 	oid *lb, *rb;	// Collected oids from operations
@@ -214,10 +218,10 @@ if ( task->n && task->cl ){\
 mosaic_export char *MOSfiltername[];
 mosaic_export BUN MOSblocklimit;
 mosaic_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOScompressInternal(Client cntxt, int *ret, int *bid, MOStask task,int inplace,int flg);
 mosaic_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSdecompressInternal(Client cntxt, bat *ret, bat *bid);
 mosaic_export str MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mosaic_export str MOSdecompressInternal(Client cntxt, int *ret, int *bid,int inplace);
+mosaic_export str MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug);
 mosaic_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

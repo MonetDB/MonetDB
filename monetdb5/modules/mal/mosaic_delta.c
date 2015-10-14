@@ -46,7 +46,7 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
 #endif
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(bte)+ MosaicBlkSize + MOSgetCnt(blk)-1,bte)); break ;
 		case 2: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(sht)+ MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
 		case 4: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(int)+ MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
@@ -92,7 +92,7 @@ MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
 #endif
 	case TYPE_str:
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: output = wordaligned(sizeof(bte)+ MosaicBlkSize + MOSgetCnt(blk)-1,bte); break ;
 		case 2: output = wordaligned(sizeof(sht)+ MosaicBlkSize + MOSgetCnt(blk)-1,sht); break ;
 		case 4: output = wordaligned(sizeof(int)+ MosaicBlkSize + MOSgetCnt(blk)-1,int); break ;
@@ -154,7 +154,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	#endif
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
-			switch(task->b->T->width){
+			switch(task->bsrc->T->width){
 			//case 1:  no compression achievable
 			case 2: Estimate_delta(sht, (delta > 255)); break;
 			case 4: Estimate_delta(int, (delta > 255)); break;
@@ -252,7 +252,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		//case 1: no compression achievable
 		case 2: DELTAcompress(sht,(delta > 255)); break;
 		case 4: DELTAcompress(int,(delta > 255)); break;
@@ -313,7 +313,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		// case 1: no compression achievable
 		case 2: DELTAdecompress(sht); break;
 		case 4: DELTAdecompress(int); break;
@@ -486,7 +486,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 2: break;
 		case 4: break;
 		case 8: break;
@@ -685,7 +685,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 2: break;
 		case 4: break;
 		case 8: break;
@@ -746,7 +746,7 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 		break;
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
-			switch(task->b->T->width){
+			switch(task->bsrc->T->width){
 			case 2: leftfetchjoin_delta(sht); break;
 			case 4: leftfetchjoin_delta(int); break;
 			case 8: leftfetchjoin_delta(lng); break;
@@ -813,7 +813,7 @@ MOSjoin_delta(Client cntxt,  MOStask task)
 		break;
 		case  TYPE_str:
 		// we only have to look at the index width, not the values
-			switch(task->b->T->width){
+			switch(task->bsrc->T->width){
 				case 2: break;
 				case 4: break;
 				case 8: break;

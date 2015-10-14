@@ -439,6 +439,7 @@ BATmaterializet(BAT *b)
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSheapDestroy(b);
 
 	b->T->heap.filename = NULL;
 	if (HEAPalloc(&b->T->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
@@ -781,6 +782,7 @@ VIEWdestroy(BAT *b)
 	if (b->T->hash)
 		HASHremove(b);
 	IMPSdestroy(b);
+	MOSheapDestroy(b);
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {

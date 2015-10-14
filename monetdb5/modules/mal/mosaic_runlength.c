@@ -93,7 +93,7 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 #endif
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
 		case 2: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
 		case 4: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
@@ -128,7 +128,7 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 #endif
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(sht),sht)); break;
 		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
@@ -200,7 +200,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: Estimate(bte); break;
 		case 2: Estimate(sht); break;
 		case 4: Estimate(int); break;
@@ -266,7 +266,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: RLEcompress(bte); break;
 		case 2: RLEcompress(sht); break;
 		case 4: RLEcompress(int); break;
@@ -321,7 +321,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: RLEdecompress(bte); break;
 		case 2: RLEdecompress(sht); break;
 		case 4: RLEdecompress(int); break;
@@ -495,7 +495,7 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break;
 		case 2: break;
 		case 4: break;
@@ -627,7 +627,7 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break;
 		case 2: break;
 		case 4: break;
@@ -690,7 +690,7 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: leftfetchjoin_runlength(bte); break;
 		case 2: leftfetchjoin_runlength(sht); break;
 		case 4: leftfetchjoin_runlength(int); break;
@@ -751,7 +751,7 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 			break;
 		case  TYPE_str:
 		// we only have to look at the index width, not the values
-		switch(task->b->T->width){
+		switch(task->bsrc->T->width){
 		case 1: break;
 		case 2: break;
 		case 4: break;

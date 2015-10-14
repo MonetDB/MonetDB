@@ -655,8 +655,7 @@ typedef struct {
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
-		      forcemap:1,  /* force STORE_MMAP even if heap exists */
-		      compressed:1; /* compress heaps */
+		      forcemap:1;  /* force STORE_MMAP even if heap exists */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
@@ -890,6 +889,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
+	Heap *mosaic;	/* compressed representation */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -2010,6 +2010,9 @@ gdk_export oid OIDnew(oid inc);
  * upon failure to create the supportive structures.
  */
 gdk_export gdk_return BAThash(BAT *b, BUN masksize);
+
+/* support routines for the mosaic approach */
+gdk_export gdk_return MOSheapAlloc(BAT *b, BUN cap);
 
 /*
  * @- Column Imprints Functions

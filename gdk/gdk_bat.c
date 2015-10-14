@@ -449,6 +449,7 @@ BATextend(BAT *b, BUN newcap)
 		return GDK_FAIL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSheapDestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -492,6 +493,7 @@ BATclear(BAT *b, int force)
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSheapDestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if ((b->batDeleted == b->batInserted || force) &&
@@ -592,6 +594,7 @@ BATfree(BAT *b)
 	b->T->props = NULL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSheapDestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap, 0);
 	else
@@ -1179,6 +1182,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	MOSheapDestroy(b);
 	return GDK_SUCCEED;
       bunins_failed:
 	return GDK_FAIL;
@@ -1272,6 +1276,7 @@ BUNappend(BAT *b, const void *t, bit force)
 
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	MOSheapDestroy(b);
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes!
@@ -1450,6 +1455,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	b->batCount--;
 	b->batDirty = 1;	/* bat is dirty */
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	MOSheapDestroy(b);
 	return p;
 }
 
@@ -2757,7 +2763,7 @@ BATassertHeadProps(BAT *b)
 	p = BUNfirst(b);
 	q = BUNlast(b);
 
-	assert(b->H->heap.compressed || b->H->heap.free >= headsize(b, BUNlast(b)));
+	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
 	if (b->htype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->H->heap.size >= b->H->heap.free);
@@ -2822,7 +2828,7 @@ BATassertHeadProps(BAT *b)
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
 		/* if compressed, don't look at the data */
-		if (!b->H->heap.compressed && (b->hsorted || b->hrevsorted || !b->hkey)) {
+		if ((b->hsorted || b->hrevsorted || !b->hkey)) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */
