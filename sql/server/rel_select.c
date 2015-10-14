@@ -4271,11 +4271,12 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 	list *conds = new_exp_list(sql->sa);
 	list *results = new_exp_list(sql->sa);
 	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL, rtype;
+	sql_subtype *restype = NULL, rtype, bt;
 	sql_exp *res = NULL, *else_exp = NULL;
 	node *n, *m;
 	exp_kind ek = {type_value, card_column, FALSE};
 
+	sql_find_subtype(&bt, "boolean", 0, 0);
 	if (dn) {
 		sql_exp *cond = NULL, *result = NULL;
 
@@ -4395,6 +4396,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		sql_exp *result = m->data;
 
 		if (!(result = rel_check_type(sql, restype, result, type_equal))) 
+			return NULL;
+
+		if (!(cond = rel_check_type(sql, &bt, cond, type_equal))) 
 			return NULL;
 
 		/* remove any null's in the condition */
