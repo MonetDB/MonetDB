@@ -682,7 +682,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The SQLreader is called from two places: the SQL parser and
  * the MAL debugger.
  * The former only occurs during the parsing phase and the
- * second only during exection.
+ * second only during execution.
  * This means we can safely change the language setting for
  * the duration of these calls.
  */

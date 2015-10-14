@@ -128,7 +128,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   connenv$lock <- 0
   connenv$deferred <- list()
   connenv$exception <- list()
-  connenv$params <- list(host=host, port=port, timeout=timeout, dbname=dbname, user=user, password=password, language=language)
+  connenv$params <- list(drv=drv, host=host, port=port, timeout=timeout, dbname=dbname, user=user, password=password, language=language)
   connenv$socket <- .mapiConnect(host, port, timeout) 
   .mapiAuthenticate(connenv$socket, dbname, user, password, language=language)
   
@@ -252,10 +252,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
     resp <- .mapiParseResponse(mresp)
   }, interrupt = function(ex) {
     message("Interrupted query execution. Attempting to fix connection....")
-    
-    conn@connenv$params[[1]] <- NULL
-    conn@connenv$params$drv <- MonetDB.R()
-    
+      
     newconn <- do.call("dbConnect", conn@connenv$params)
     dbDisconnect(conn)
     conn@connenv$socket <- newconn@connenv$socket

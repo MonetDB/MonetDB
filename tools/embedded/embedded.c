@@ -57,21 +57,20 @@ static void* lookup_function(char* lib, char* func) {
 	return fun;
 }
 
-int monetdb_startup(char* dir, char silent) {
+char* monetdb_startup(char* dir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
-	int retval = -1;
+	char* retval = NULL;
+	char* sqres = NULL;
 	void* res = NULL;
 	char mod_path[1000];
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
+		retval = GDKfatalmsg;
 		// we will get here if GDKfatal was called.
-		if (GDKfatalmsg != NULL) {
-			fputs(GDKfatalmsg, stderr);
-			fputs("\n", stderr);
-			GDKfree(GDKfatalmsg);
+		if (retval != NULL) {
+			retval = GDKstrdup("GDKfatal() with unspecified error?");
 		}
-		retval = -2;
 		goto cleanup;
 	}
 
@@ -82,7 +81,7 @@ int monetdb_startup(char* dir, char silent) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
 	if (GDKinit(set, setlen) == 0) {
-		retval = -3;
+		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
 
@@ -95,7 +94,7 @@ int monetdb_startup(char* dir, char silent) {
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 	if (mal_init() != 0) {
-		retval = -4;
+		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
 	if (silent) mal_clients[0].fdout = THRdata[0];
@@ -118,23 +117,23 @@ int monetdb_startup(char* dir, char silent) {
 			res_table_destroy_ptr == NULL || mvc_append_wrap_ptr == NULL ||
 			mvc_bind_schema_ptr == NULL || mvc_bind_table_ptr == NULL ||
 			sqlcleanup_ptr == NULL || mvc_trans_ptr == NULL) {
-		retval = -5;
+		retval = GDKstrdup("Dynamic function lookup failed");
 		goto cleanup;
 	}
 	// call this, otherwise c->sqlcontext is empty
 	(*SQLinitClient_ptr)(&mal_clients[0]);
 	((backend *) mal_clients[0].sqlcontext)->mvc->session->auto_commit = 1;
 	monetdb_embedded_initialized = true;
-
+	// we do not want to jump after this point, since we cannot do so between threads
 	GDKfataljumpenable = 0;
 
 	// sanity check, run a SQL query
-	if (monetdb_query("SELECT * FROM tables;", res) != NULL) {
+	sqres = monetdb_query("SELECT * FROM tables;", res);
+	if (sqres != NULL) {
 		monetdb_embedded_initialized = false;
-		retval = -6;
+		retval = sqres;
 		goto cleanup;
 	}
-	retval = 0;
 cleanup:
 	mo_free_options(set, setlen);
 	MT_lock_unset(&monetdb_embedded_lock, "monetdb.startup");
@@ -146,8 +145,7 @@ char* monetdb_query(char* query, void** result) {
 	Client c = &mal_clients[0];
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	if (!monetdb_embedded_initialized) {
-		fprintf(stderr, "Embedded MonetDB is not started.\n");
-		return NULL;
+		return GDKstrdup("Embedded MonetDB is not started");
 	}
 
 	while (*query == ' ' || *query == '\t') query++;
@@ -271,14 +269,18 @@ SEXP monetdb_query_R(SEXP query, SEXP notreallys) {
 SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
 	const char* dir = NULL;
 	char silent = 0;
-	int res = 0;
-	if (!IS_CHARACTER(dirsexp) || !IS_LOGICAL(silentsexp)) {
-		return ScalarInteger(-1);
+	char* res = NULL;
+	if (monetdb_embedded_initialized) {
+		return ScalarLogical(0);
 	}
 	dir = CHAR(STRING_ELT(dirsexp, 0));
 	silent = LOGICAL(silentsexp)[0];
 	res = monetdb_startup((char*) dir, silent);
-	return ScalarInteger(res);
+	if (res == NULL) {
+		return ScalarLogical(1);
+	}  else {
+		return ScalarString(mkCharCE(res, CE_UTF8));
+	}
 }
 
 static str monetdb_get_columns(const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types) {

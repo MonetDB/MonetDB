@@ -2,7 +2,7 @@
 	dyn.load(file.path(libname, pkgname, "libs", "MonetDB.so"), local=F, now=F)
 }
 
-monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
+monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	dir <- as.character(dir)
 	quiet <- as.logical(quiet)
 	if (length(dir) != 1) {
@@ -15,16 +15,16 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=T) {
 		stop("Cannot write to ", dir)
 	}
 	res <- .Call("monetdb_startup_R", dir, quiet)
-	if (res < -1) {
-		stop("Failed to initialize embedded MonetDB.")
+	if (is.character(res)) {
+		stop("Failed to initialize embedded MonetDB ", res)
 	}
-	if (res == -1) {
+	if (res == FALSE) {
 		warning("monetdb_embedded_startup() was already called. Ignoring this invocation.")
 	}
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query, notreally=F) {
+monetdb_embedded_query <- function(query, notreally=FALSE) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
