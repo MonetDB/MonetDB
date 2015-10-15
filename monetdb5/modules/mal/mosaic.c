@@ -399,10 +399,11 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		if( bsrc->T->mosaic == NULL)
 			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
 		// create the heap for the compressed data
-		// It should always take less space than the orginal column.
-		// But be prepared that a header and last block header may  be stored
-		// use a size overshoot. Also be aware of possible dictionary headers
-		//BATextend(bsrc,BATcapacity(bsrc) + MosaicHdrSize/Tsize(bsrc));
+		// The final size should be smaller then the original
+		// It may, however, be the case that we mix a lot of LITERAL and, say, DELTA small blocks
+		// Then we total size may go beyond the original size and we should terminate the process.
+		// This should be detected before we compress a block, in the estimate functions
+		// or when we extend the non-compressed collector block
 		if( MOSheapAlloc(bsrc, BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL)
 			throw(MAL,"mosaic.compress", "heap construction failes");
 	}
@@ -431,9 +432,15 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
 	while(task->start < task->stop ){
-		assert (task->dst < bsrc->T->mosaic->base + bsrc->T->mosaic->size - MosaicBlkSize);
-		// default is to extend the non-compressed block
+		// default is to extend the non-compressed block with a single element
 		cand = MOSoptimizer(cntxt, task, typewidth);
+		if( task->dst >= bsrc->T->mosaic->base + bsrc->T->mosaic->size - 16 ){
+			MOSheapDestroy(bsrc);
+			msg= createException(MAL,"mosaic","abort compression due to size");
+			task->hdr = 0;
+			goto finalize;
+		}
+		assert (task->dst < bsrc->T->mosaic->base + bsrc->T->mosaic->size );
 
 		// wrapup previous block
 		switch(cand){
@@ -524,11 +531,12 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	// TODO
 
 	bsrc->batDirty = 1;
+	task->ratio = task->hdr->ratio = (flt)task->bsrc->T->heap.free/ task->bsrc->T->mosaic->free;
+finalize:
 	MCexitMaintenance(cntxt);
 	*ret= bsrc->batCacheid;
 	BBPkeepref(bsrc->batCacheid);
 
-	task->ratio = task->hdr->ratio = (flt)task->bsrc->T->heap.free/ task->bsrc->T->mosaic->free;
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bsrc);
 #endif
@@ -684,6 +692,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
 	GDKfree(task);
 
+	task->timer = GDKusec() - task->timer;
 	return MAL_SUCCEED;
 }
 
@@ -1439,6 +1448,9 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		MOScompressInternal(cntxt, &ret, &bid, task, 0);
 		clk = GDKms() - clk;
 		
+		if( task->hdr == NULL)
+			// aborted compression
+			continue;
 		// analyse result to detect a new combination
 		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
 			if ( task->filter[j] && task->hdr->blks[j])
@@ -1451,7 +1463,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		if( j<i)
 			continue;
 
-		xf[i]= task->hdr? task->ratio: 0;
+		xf[i]= task->ratio;
 		if( xf[i] == 0)
 			continue;
 		xsize = task->bsrc->T->mosaic->free;

@@ -164,6 +164,8 @@ MOSskip_frame(Client cntxt, MOStask task)
 	}\
 	if( i * sizeof(TPE) <= chunk_size(task,i) )\
 		return 0.0;\
+	if( task->dst +  chunk_size(task,i) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)\
+		return 0.0;\
 	if(i) factor = (flt) ((int)i * sizeof(TPE)) / chunk_size(task,i);\
 }
 
@@ -318,6 +320,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
 			if( i * sizeof(int) <= chunk_size(task,i) )
+				return 0.0;
+			if( task->dst +  chunk_size(task,i) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
 				return 0.0;
 			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
 		}

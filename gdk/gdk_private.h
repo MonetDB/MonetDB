@@ -167,8 +167,6 @@ __hidden int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 __hidden void IMPSdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void MOSheapDestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG

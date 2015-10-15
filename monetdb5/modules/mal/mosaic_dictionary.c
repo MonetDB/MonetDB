@@ -148,6 +148,8 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 		if ( i > MOSlimit() ) i = MOSlimit();\
 		if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + i,TPE))\
 			return 0.0;\
+		if( task->dst +  wordaligned(MosaicBlkSize + i,sizeof(TPE)) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)\
+			return 0.0;\
 		if(i) factor = ((flt) i * sizeof(TPE))/ wordaligned(MosaicBlkSize + sizeof(int) + i,TPE);\
 		return factor;\
 	}\
@@ -295,6 +297,8 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 				i = task->range[MOSAIC_DICT] - task->start;
 				if ( i > MOSlimit() ) i = MOSlimit();
 				if( i * sizeof(int) <= wordaligned( MosaicBlkSize + i,int))
+					return 0.0;
+				if( task->dst +  wordaligned(MosaicBlkSize + i,sizeof(int)) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
 					return 0.0;
 				if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i,int);
 				return factor;

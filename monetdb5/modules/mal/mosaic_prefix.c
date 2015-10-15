@@ -251,6 +251,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(bte) +  store,bte);
 			if( store >= (flt)i * sizeof(bte))
 				return 0.0;
+			if( task->dst +  store >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
+				return 0.0;
 			factor = ( (flt)i * sizeof(bte))/ store;
 		}
 		break;
@@ -286,6 +288,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(sht) +  store,lng);
 			if( store >= (flt)i * sizeof(sht))
+				return 0.0;
+			if( task->dst +  store >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
 				return 0.0;
 			factor = ( (flt)i * sizeof(sht))/ store;
 		}
@@ -323,6 +327,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			store = wordaligned( MosaicBlkSize + 2 * sizeof(int) +  store,lng);
 			if( store >= (flt)i * sizeof(int))
 				return 0.0;
+			if( task->dst +  store >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
+				return 0.0;
 			factor = ( (flt)i * sizeof(int))/ store;
 		}
 		break;
@@ -359,6 +365,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned(MosaicBlkSize + 2 * sizeof(lng) + store,lng);
 			if( store >= (flt)i * sizeof(lng))
+				return 0.0;
+			if( task->dst +  store >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
 				return 0.0;
 			factor = ( (flt)i * sizeof(lng))/ store;
 		}

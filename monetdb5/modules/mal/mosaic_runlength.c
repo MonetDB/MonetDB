@@ -159,6 +159,8 @@ MOSskip_runlength(Client cntxt, MOStask task)
 		break;\
 	if( i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )\
 		return 0.0;\
+	if( task->dst +  wordaligned(MosaicBlkSize + sizeof(TYPE),sizeof(TYPE)) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)\
+		return 0.0;\
 	factor = ( (flt)i * sizeof(TYPE))/ wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE);\
 }
 
@@ -194,6 +196,8 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 			if ( *v != val)
 				break;
 			if( i *sizeof(int) <= wordaligned( MosaicBlkSize + sizeof(int),int) )
+				return 0.0;
+			if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int),sizeof(int)) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
 				return 0.0;
 			factor = ( (flt)i * sizeof(int))/ wordaligned( MosaicBlkSize + sizeof(int),int);
 		}

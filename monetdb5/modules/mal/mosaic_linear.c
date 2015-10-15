@@ -175,6 +175,8 @@ MOSskip_linear(Client cntxt, MOStask task)
 		break;\
 	if(i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
 		return 0.0;\
+	if( task->dst +  wordaligned(MosaicBlkSize + 2 * sizeof(TYPE),TYPE) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)\
+		return 0.0;\
 	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
 }
 
@@ -220,6 +222,8 @@ MOSestimate_linear(Client cntxt, MOStask task)
 			for(i=1; i<limit; i++, val = *v++)
 			if ( *v -val != step)
 				break;
+			if( task->dst +  wordaligned(MosaicBlkSize + 2 * sizeof(int),int) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
+				return 0.0;
 			if(i * sizeof(int) <= wordaligned( MosaicBlkSize + 2 * sizeof(int),int))
 				return 0.0;
 			factor =  ( (flt)i * sizeof(int))/wordaligned( MosaicBlkSize + 2 * sizeof(int),int);

@@ -131,9 +131,11 @@ MOSskip_delta(Client cntxt, MOStask task)
 			break;\
 		val = *v;\
 	}\
-	if( i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
+	if( i == 1 || i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
 		return 0.0;\
-	if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
+	if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec) >=task->bsrc->T->mosaic->base+ task->bsrc->T->mosaic->size)\
+		return 0.0;\
+	factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
 }
 
 // estimate the compression level 
@@ -181,9 +183,11 @@ MOSestimate_delta(Client cntxt, MOStask task)
 					break;
 				val = *v;
 			}
-			if( i * sizeof(int) <= wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec))
+			if(i == 1 ||  i * sizeof(int) <= wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec))
 				return 0.0;
-			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec);
+			if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec) >= task->bsrc->T->mosaic->base + task->bsrc->T->mosaic->size)
+				return 0.0;
+			factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec);
 		}
 		break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.

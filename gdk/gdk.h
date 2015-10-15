@@ -2013,6 +2013,7 @@ gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 /* support routines for the mosaic approach */
 gdk_export gdk_return MOSheapAlloc(BAT *b, BUN cap);
+gdk_export void MOSheapDestroy(BAT *b);
 
 /*
  * @- Column Imprints Functions
