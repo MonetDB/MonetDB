@@ -66,20 +66,36 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 static int
 admin_privs(int grantor)
 {
-	if (grantor == USER_MONETDB) {
+	if (grantor == USER_MONETDB || grantor == ROLE_SYSADMIN) {
 		return 1;
 	}
 	return 0;
 }
 
 int
-schema_privs(int grantor, sql_schema *s)
+mvc_schema_privs(mvc *m, sql_schema *s)
 {
-	if (admin_privs(grantor) || grantor == s->auth_id) {
+	if (admin_privs(m->user_id) || admin_privs(m->role_id)) 
 		return 1;
-	}
+	if (!s)
+		return 0;
+	if (m->user_id == s->auth_id || m->role_id == s->auth_id) 
+		return 1;
 	return 0;
 }
+
+static int
+schema_privs(int grantor, sql_schema *s)
+{
+	if (admin_privs(grantor)) 
+		return 1;
+	if (!s)
+		return 0;
+	if (grantor == s->auth_id) 
+		return 1;
+	return 0;
+}
+
 
 char *
 sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor)
@@ -288,7 +304,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 
-	if (grantor != USER_MONETDB) 
+	if (admin_privs(grantor)) 
 		return sql_message("0P000!CREATE ROLE: insufficient privileges to create role '%s'", auth);
 
 	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
@@ -345,7 +361,7 @@ sql_privilege(mvc *m, int auth_id, int obj_id, int priv, int sub)
 int
 global_privs(mvc *m, int priv)
 {
-	if (m->user_id == USER_MONETDB || 
+	if (admin_privs(m->user_id) || admin_privs(m->role_id) ||
 	    sql_privilege(m, m->user_id, GLOBAL_OBJID, priv, 0) == priv || 
 	    sql_privilege(m, m->role_id, GLOBAL_OBJID, priv, 0) == priv || 
 	    sql_privilege(m, ROLE_PUBLIC, GLOBAL_OBJID, priv, 0) == priv) {
@@ -360,7 +376,7 @@ table_privs(mvc *m, sql_table *t, int priv)
 	/* temporary tables are owned by the session user */
 	if (t->persistence != SQL_PERSIST || t->commit_action)
 		return 1;
-	if (m->user_id == USER_MONETDB || m->user_id == t->s->auth_id || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
+	if (admin_privs(m->user_id) || admin_privs(m->role_id) || m->user_id == t->s->auth_id || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
 		return 1;
 	}
 	return 0;
@@ -407,7 +423,7 @@ sql_grant_role(mvc *m, str grantee, str auth, int grantor, int admin)
 	auth_id = *(int*)val; 
 	_DELETE(val);
 
-	if (grantor != USER_MONETDB && !role_granting_privs(m, rid, auth_id, grantor)) 
+	if (!admin_privs(grantor) && !role_granting_privs(m, rid, auth_id, grantor)) 
 		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", auth);
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
@@ -455,7 +471,7 @@ sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin)
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	auth_id = *(int*)val; 
 	_DELETE(val);
-	if (grantor != USER_MONETDB && !role_granting_privs(m, rid, auth_id, grantor)) 
+	if (!admin_privs(grantor) && !role_granting_privs(m, rid, auth_id, grantor)) 
 		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", auth);
 
 	if (!admin) { 
@@ -558,7 +574,7 @@ sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 int
 sql_grantable(mvc *m, int grantorid, int obj_id, int privs, int sub)
 {
-	if (m->user_id == USER_MONETDB)
+	if (admin_privs(m->user_id) || admin_privs(m->role_id))
 		return 1;
 	return sql_grantable_(m, grantorid, obj_id, privs, sub);
 }
@@ -626,7 +642,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	char *err; 
 	int schema_id = 0;
 
-	if (sql->user_id != USER_MONETDB) 
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id)) 
 		return sql_message("42M31!CREATE USER: insufficient privileges to create user '%s'", user);
 
 	if (backend_find_user(sql, user) >= 0) {
@@ -679,7 +695,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc,
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		return sql_message("42M32!ALTER USER: no such user '%s'", user);
 
-	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && user != NULL && strcmp(user, stack_get_string(sql, "current_user")) != 0)
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, stack_get_string(sql, "current_user")) != 0)
 		return sql_message("M1M05!ALTER USER: insufficient privileges to change user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_message("3F000!ALTER USER: no such schema '%s'", schema);
@@ -696,7 +712,7 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 		return sql_message("42M32!ALTER USER: no such user '%s'", olduser);
 	if (backend_find_user(sql, newuser) >= 0)
 		return sql_message("42M31!ALTER USER: user '%s' already exists", newuser);
-	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		return sql_message("M1M05!ALTER USER: insufficient privileges to "
 				"rename user '%s'", olduser);
 

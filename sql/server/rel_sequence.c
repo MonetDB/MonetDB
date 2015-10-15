@@ -93,7 +93,7 @@ rel_create_seq(
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: "
 				"name '%s' already in use", name);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
@@ -223,7 +223,7 @@ rel_alter_seq(
 				"ALTER SEQUENCE: "
 				"no such sequence '%s'", name);
 	}
-	if (!schema_privs(sql->role_id, s)) {
+	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02,
 				"ALTER SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);

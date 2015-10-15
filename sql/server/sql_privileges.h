@@ -22,7 +22,7 @@ extern int mvc_set_role(mvc *m, char *role);
 extern int mvc_set_schema(mvc *m, char *schema);
 
 extern int global_privs(mvc *m, int privs);
-extern int schema_privs(int grantor, sql_schema *t);
+extern int mvc_schema_privs(mvc *m, sql_schema *t);
 extern int table_privs(mvc *m, sql_table *t, int privs);
 
 extern int sql_privilege(mvc *m, int auth_id, int obj_id, int privs, int sub);
