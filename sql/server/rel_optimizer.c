@@ -993,7 +993,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 }
 
 static list *
-push_up_join_exps( sql_rel *rel) 
+push_up_join_exps( mvc *sql, sql_rel *rel) 
 {
 	if (rel_is_ref(rel))
 		return NULL;
@@ -1009,8 +1009,8 @@ push_up_join_exps( sql_rel *rel)
 			rel->exps = NULL;
 			return l;
 		}
-		l = push_up_join_exps(rl);
-		r = push_up_join_exps(rr);
+		l = push_up_join_exps(sql, rl);
+		r = push_up_join_exps(sql, rr);
 		if (l && r) {
 			l = list_merge(l, r, (fdup)NULL);
 			r = NULL;
@@ -1036,11 +1036,11 @@ rel_join_order(int *changes, mvc *sql, sql_rel *rel)
 	int e_changes = 0;
 
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
+		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 		if (rel->op == op_join)
-			rel->exps = push_up_join_exps(rel);
+			rel->exps = push_up_join_exps(sql, rel);
 		rel = reorder_join(sql, rel);
 	}
-	rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	(void)*changes;
 	(void)e_changes;
 	return rel;
@@ -4437,7 +4437,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
 
-					if (is_column(e->type)) {
+					if (e->type == e_column) {
 						if (e->l) 
 							ne = exps_bind_column2(dgbe, e->l, e->r);
 						else

@@ -1,0 +1,60 @@
+stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 11:28:41 >  
+# 11:28:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34815" "--set" "mapi_usock=/var/tmp/mtest-10633/.s.monetdb.34815" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/scratch/niels/build/rc/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:28:41 >  
+
+# MonetDB 5 server v11.21.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.586 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks101.scilens.private:34815/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10633/.s.monetdb.34815
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.45'
+# Finished reading the write-ahead log 'sql_logs/sql/log.45'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:28:41 >  
+# 11:28:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10633" "--port=34815"
+# 11:28:41 >  
+
+#CREATE TABLE t1a (cods int, elrik int, ether int, jaelen int, otter int, sora int);
+#CREATE TABLE t2a (tib0 int);
+#SELECT cods, elrik, ether, jaelen, sora, SUM(otter)
+#  FROM t1a
+#  GROUP BY cods, elrik, ether, jaelen, sora
+#  UNION ALL
+#  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
+#  FROM t2a
+#  GROUP BY cods, elrik, ether, jaelen, sora;
+% .L2,	.L2,	.L2,	.L2,	.L2,	.L2 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	L1 # name
+% int,	int,	int,	int,	int,	hugeint # type
+% 1,	1,	1,	1,	1,	1 # length
+[ 0,	0,	0,	0,	0,	NULL	]
+#SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
+# FROM t2a
+#GROUP BY cods, elrik, ether, jaelen, sora;
+% .L,	.L,	.L,	.L,	.L,	sys.L1 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	L1 # name
+% tinyint,	tinyint,	tinyint,	tinyint,	tinyint,	hugeint # type
+% 1,	1,	1,	1,	1,	40 # length
+[ 0,	0,	0,	0,	0,	NULL	]
+#drop table t2a;
+#drop table t1a;
+
+# 11:28:42 >  
+# 11:28:42 >  "Done."
+# 11:28:42 >  
+

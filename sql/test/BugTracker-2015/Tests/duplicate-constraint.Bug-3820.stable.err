@@ -1,0 +1,49 @@
+stderr of test 'duplicate-constraint.Bug-3820` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 13:08:15 >  
+# 13:08:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33935" "--set" "mapi_usock=/var/tmp/mtest-7920/.s.monetdb.33935" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:08:15 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33935
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7920/.s.monetdb.33935
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:08:16 >  
+# 13:08:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7920" "--port=33935"
+# 13:08:16 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7920/.s.monetdb.33935
+QUERY = CREATE TABLE instrument (
+            pk_uuid UUID NOT NULL,
+            symbol VARCHAR(32) NOT NULL,
+            fk_exchange VARCHAR(16) NOT NULL,
+            fk_entity_uuid UUID NOT NULL,
+            CONSTRAINT instrument_pk PRIMARY KEY (pk_uuid),
+        -- INCORRECT DOUBLE CONSTRAINT
+            CONSTRAINT instrument_exchange_fk FOREIGN KEY (fk_exchange) REFERENCES exchange (pk_symbol),
+            CONSTRAINT instrument_exchange_fk FOREIGN KEY (fk_exchange) REFERENCES exchange (pk_symbol),
+            CONSTRAINT instrument_entity_fk FOREIGN KEY (fk_entity_uuid) REFERENCES entity (pk_uuid)
+ERROR = !CONSTRAINT FOREIGN KEY: key 'instrument_exchange_fk' already exists
+
+# 13:08:16 >  
+# 13:08:16 >  "Done."
+# 13:08:16 >  
+

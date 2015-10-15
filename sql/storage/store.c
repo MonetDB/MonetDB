@@ -1876,10 +1876,8 @@ key_dup_(sql_trans *tr, int flag, sql_key *k, sql_table *t, int copy)
 			}
 	}
 	list_append(t->s->keys, nk);
-	if (!copy && flag == TR_NEW && tr->parent == gtrans) {
+	if (!copy && flag == TR_NEW && tr->parent == gtrans) 
 		k->base.flag = TR_OLD;
-		nk->base.flag = TR_OLD;
-	}
 	return nk;
 }
 
@@ -1950,10 +1948,8 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 		if (isTable(ni->t)) 
 			store_funcs.dup_idx(tr, i, ni);
 
-	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
-		ni->base.flag = TR_OLD;
-	}
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
@@ -2040,10 +2036,8 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 		list_append(nt->columns, kc_dup(tr, flag, okc, t));
 	}
 	list_append(t->s->triggers, nt);
-	if (flag == TR_NEW && tr->parent == gtrans) {
+	if (flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
-		nt->base.flag = TR_OLD;
-	}
 	return nt;
 }
 
@@ -2072,10 +2066,8 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	    (oc->base.allocated && tr->parent != gtrans))
 		if (isTable(c->t)) 
 			store_funcs.dup_col(tr, oc, c);
-	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
 		oc->base.flag = TR_OLD;
-		c->base.flag = TR_OLD;
-	}
 	return c;
 }
 
@@ -2294,10 +2286,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (tr->parent == gtrans)
 			ot->triggers.nelm = NULL;
 	}
-	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) 
 		ot->base.flag = TR_OLD;
-		t->base.flag = TR_OLD;
-	}
 	return t;
 }
 
@@ -2447,10 +2437,8 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		if (tr->parent == gtrans)
 			os->seqs.nelm = NULL;
 	}
-	if (flag == TR_NEW && tr->parent == gtrans) {
+	if (flag == TR_NEW && tr->parent == gtrans) 
 		os->base.flag = TR_OLD;
-		s->base.flag = TR_OLD;
-	}
 	return s;
 }
 
@@ -2603,6 +2591,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ok = LOG_ERR;
 						fb->flag = TR_OLD;
 					}
+					tb->flag = TR_OLD;
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
 				}
@@ -2734,7 +2723,7 @@ rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_col(tr, c) != LOG_OK) ||
 		    (p && mode == R_LOG && store_funcs.log_create_col(tr, c) != LOG_OK) ||
-		    (mode == R_APPLY &&  store_funcs.create_col(tr, c) != LOG_OK))
+		    (mode == R_APPLY && store_funcs.create_col(tr, c) != LOG_OK))
 		return NULL;
 	}
 	return c;

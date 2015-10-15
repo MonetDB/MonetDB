@@ -1126,7 +1126,9 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else {
+#ifndef STATIC_CODE_ANALYSIS
 		size_t hsize = 0, tsize = 0;
+#endif
 
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
@@ -1140,10 +1142,12 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 
 		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
+#ifndef STATIC_CODE_ANALYSIS
 		if (b->H->hash && b->H->vheap)
 			hsize = b->H->vheap->size;
 		if (b->T->hash && b->T->vheap)
 			tsize = b->T->vheap->size;
+#endif
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);

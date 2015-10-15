@@ -78,7 +78,6 @@ project (
 | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L6.id, bidder.open_auction_id NOT NULL as L6.open_auction_id ] COUNT ,
 | | | | | | project (
 | | | | | | | crossproduct (
-| | | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L5.id, bidder.increase NOT NULL as L5.increase ] COUNT ,
 | | | | | | | | project (
 | | | | | | | | | select (
 | | | | | | | | | | group by (
@@ -98,7 +97,8 @@ project (
 | | | | | | | | | | | ) [ b3a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
 | | | | | | | | | | ) [ L7.L7, L10.L10 ] [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, L7.L7 HASHCOL , sys.min no nil (b3a.id NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
 | | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L1 NOT NULL ]
-| | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L2.L2, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L12.L12 ]
+| | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L2.L2, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L12.L12 ],
+| | | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L5.id, bidder.increase NOT NULL as L5.increase ] COUNT 
 | | | | | | | ) [  ]
 | | | | | | ) [ L2.L2 NOT NULL, L12.L12 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L11.L11 ]
 | | | | | ) [ L6.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]

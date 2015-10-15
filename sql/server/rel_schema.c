@@ -459,6 +459,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
+	} else if (list_find_name(t->keys.set, name)) {
+		sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
 		sql_fkey *fk;
