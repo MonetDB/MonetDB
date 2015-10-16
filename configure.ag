@@ -2168,9 +2168,14 @@ fi
 AM_CONDITIONAL(HAVE_CURL, test x"$have_curl" != xno)
 
 PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
+if test x"$have_zlib" = x"no" ; then
+	# Solaris doesn't provide zlib.pc, but zlib may well be present
+	AC_CHECK_LIB(z, gzopen, [ have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])
+elif test x"$have_zlib" = x"yes" ; then
+	AC_SUBST(PKG_ZLIB, zlib)
+fi
 if test x"$have_zlib" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
-	AC_SUBST(PKG_ZLIB, zlib)
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
