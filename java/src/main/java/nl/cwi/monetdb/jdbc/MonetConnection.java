@@ -1318,7 +1318,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public void setSchema(String schema) throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
-		createStatement().executeUpdate("SET SCHEMA = \"" + schema + "\"");
+		createStatement().executeUpdate("SET SCHEMA \"" + schema + "\"");
 	}
 
 	/**
