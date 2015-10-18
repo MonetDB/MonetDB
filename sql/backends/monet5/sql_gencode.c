@@ -41,6 +41,7 @@
 #include <rel_prop.h>
 #include <rel_exp.h>
 #include <rel_bin.h>
+#include <rel_dump.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
@@ -110,17 +111,11 @@ argumentZero(MalBlkPtr mb, int tpe)
 /*
  * To speedup code generation we freeze the references to the major module names.
  */
-static str exportValueRef;
-static str exportResultRef;
 
 void
 initSQLreferences(void)
 {
-	if (exportValueRef == NULL) {
-		exportValueRef = putName("exportValue", 11);
-		exportResultRef = putName("exportResult", 12);
-	}
-	if (algebraRef == NULL || exportValueRef == NULL || exportResultRef == NULL)
+	if (algebraRef == NULL)
 		GDKfatal("error initSQLreferences");
 }
 
@@ -421,7 +416,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -448,7 +443,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	s = stmt_return(m->sa, s, 0);
 
 	backup = c->curprg;
-	c->curprg = newFunction(userRef, putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -457,10 +452,15 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
-	if (call->op1->type == st_list) {
+	if (call && (call->type == st_list || call->op1->type == st_list)) {
 		node *n;
+		list *ops = NULL;
 
-		for (n = call->op1->op4.lval->h; n; n = n->next) {
+		if (call->type == st_list)
+			ops = call->op4.lval;
+		else
+			ops = call->op1->op4.lval;
+		for (n = ops->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
@@ -488,7 +488,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 
 /* stub and remote function */
 static int
-_create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *prp)
+_create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, prop *prp)
 {
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
@@ -510,13 +510,13 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	/* dirty hack, rename (change first char of name) L->l, local
 	 * functions name start with 'l'         */
 	name[0] = 'l';
-	if (_create_relational_function(m, name, rel, call) < 0)
+	if (_create_relational_function(m, mod, name, rel, call) < 0)
 		return -1;
 
 	/* create stub */
 	name[0] = old;
 	backup = c->curprg;
-	c->curprg = newFunction(userRef, putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
 	name[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -563,18 +563,76 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
+#define REL
+#ifndef REL
 	/* remote.register(q, "mod", "fcn"); */
 	p = newStmt(curBlk, remoteRef, putName("register", 8));
 	p = pushArgument(curBlk, p, q);
-	p = pushStr(curBlk, p, userRef);
+	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
+#else
+	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan"); */
+	p = newInstruction(curBlk, ASSIGNsymbol);
+	setModuleId(p, remoteRef);
+	setFunctionId(p, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, sqlRef);
+	p = pushStr(curBlk, p, putName("register", 8));
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushInt(curBlk, o, TYPE_str); /* dummy result type */
+	p = pushReturn(curBlk, p, getArg(o, 0));
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, mod);
+	p = pushArgument(curBlk, p, getArg(o,0));
+
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, name);
+	p = pushArgument(curBlk, p, getArg(o,0));
+
+	{ 
+	int len = 1024, nr = 0;
+	char *s, *buf = GDKmalloc(len);
+	s = rel2str(m, rel);
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, s);	/* relational plan */
+	p = pushArgument(curBlk, p, getArg(o,0));
+	free(s); 
+
+	s = "";
+	if (call->op1->type == st_list) {
+		node *n;
+
+		buf[0] = 0;
+		for (n = call->op1->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+			sql_subtype *t = tail_type(op);
+			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+
+			nr += snprintf(buf+nr, len-nr, "%s %s(%d,%d)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
+		}
+		s = buf;
+	}
+	o = newFcnCall(curBlk, remoteRef, putRef);
+	o = pushArgument(curBlk, o, q);
+	o = pushStr(curBlk, o, s);	/* signature */
+	p = pushArgument(curBlk, p, getArg(o,0));
+	GDKfree(buf);
+	}
+	pushInstruction(curBlk, p);
+#endif
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, ASSIGNsymbol);
 	setModuleId(p, remoteRef);
 	setFunctionId(p, execRef);
 	p = pushArgument(curBlk, p, q);
-	p = pushStr(curBlk, p, userRef);
+	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
 
 	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
@@ -630,15 +688,15 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	return 0;
 }
 
-static int
-monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+int
+monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
 {
 	prop *p = NULL;
 
 	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
-		return _create_relational_remote(m, name, rel, call, p);
+		return _create_relational_remote(m, mod, name, rel, call, p);
 	else
-		return _create_relational_function(m, name, rel, call);
+		return _create_relational_function(m, mod, name, rel, call);
 }
 
 /*
@@ -1987,9 +2045,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			} else {
+
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
+				
+				if (f->res && list_length(f->res)) {
+					sql_subtype *res = f->res->h->data;
 
+					setVarType(mb, getArg(q, 0), res->type->localtype);
+					setVarUDFtype(mb, getArg(q, 0));
+				}
 			}
 			if (LANG_EXT(f->func->lang))
 				q = pushPtr(mb, q, f->func);
@@ -2030,7 +2095,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump args */
 			if (s->op1 && _dumpstmt(sql, mb, s->op1) < 0)
 				return -1;
-			if (monet5_create_relational_function(sql->mvc, fimp, rel, s) < 0)
+			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s) < 0)
 				 return -1;
 
 			q = newStmt(mb, mod, fimp);

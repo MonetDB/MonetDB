@@ -1447,6 +1447,16 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "xor", "calc", "xor", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "not", "calc", "not", BIT, NULL,BIT, SCALE_FIX);
 
+	/* allow smaller types for arguments of mul/div */
+	for (t = numerical, t++; t != decimals; t++) {
+		sql_type **u;
+		for (u = numerical, u++; u != decimals; u++) {
+			if (t != u && (*t)->localtype >  (*u)->localtype) {
+				sql_create_func(sa, "sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
+				sql_create_func(sa, "sql_div", "calc", "/", *t, *u, *t, SCALE_DIV);
+			}
+		}
+	}
 	/* all numericals */
 	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt = sql_bind_localtype((*t)->base.name);

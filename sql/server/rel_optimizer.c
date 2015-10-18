@@ -1792,6 +1792,12 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
+
+			if (need_distinct(r)) {
+				set_distinct(ul);
+				set_distinct(ur);
+			}
+
 			/* zap names */
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
@@ -1799,6 +1805,10 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
 			ur->r = r->r;
 			r->l = NULL;
+
+			if (need_distinct(r)) 
+				set_distinct(ur);
+
 			rel_destroy(r);
 			rel->l = ur;
 			(*changes)++;

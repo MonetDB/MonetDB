@@ -4981,6 +4981,80 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+str
+RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *mod = getArgReference_str(stk, pci, 1);
+	str *nme = getArgReference_str(stk, pci, 2);
+	str *expr = getArgReference_str(stk, pci, 3);
+	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg;
+	sql_rel *rel;
+	list *refs, *ops;
+	char buf[BUFSIZ];
+
+	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!m->sa)
+		m->sa = sa_create();
+
+       	ops = sa_list(m->sa);
+	//fprintf(stderr, "'%s' %s\n", *sig, *expr);
+	//fflush(stderr);
+	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
+	while (c && *c && !isspace(*c)) {
+		char *vnme = c, *tnme; 
+		char *p = strchr(++c, (int)' ');
+		int d,s,nr;
+		sql_subtype t;
+		atom *a;
+
+		*p++ = 0;
+		vnme = sa_strdup(m->sa, vnme);
+		nr = strtol(vnme+1, NULL, 10);
+		tnme = p;
+		p = strchr(p, (int)'(');
+		*p++ = 0;
+		tnme = sa_strdup(m->sa, tnme);
+
+		d = strtol(p, &p, 10);
+		p++; /* skip , */
+		s = strtol(p, &p, 10);
+		
+		sql_find_subtype(&t, tnme, d, s);
+		a = atom_general(m->sa, &t, NULL);
+		/* the argument list may have holes and maybe out of order, ie
+		 * done use sql_add_arg, but special numbered version
+		 * sql_set_arg(m, a, nr);
+		 * */
+		sql_set_arg(m, nr, a);
+		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
+		c = strchr(p, (int)',');
+		if (c)
+			c++;
+	}
+	//fprintf(stderr, "2: %d %s\n", list_length(ops), *expr);
+	//fflush(stderr);
+	refs = sa_list(m->sa);
+	rel = rel_read(m, *expr, &pos, refs);
+	//fprintf(stderr, "3: %d %s\n", list_length(ops), rel2str(m, rel));
+	//fflush(stderr);
+	if (!rel)
+		throw(SQL, "sql.register", "Cannot register %s", buf);
+	if (rel) {
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops));
+		rel_destroy(rel);
+	}
+	sqlcleanup(m, 0);
+	return msg;
+}
+
+
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 {

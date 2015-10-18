@@ -282,8 +282,9 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 }
 
 static int
-sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
+sql_create_auth_id(mvc *m, unsigned int id, str auth)
 {
+	int grantor = 0; /* no grantor */
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
@@ -304,7 +305,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 
-	if (admin_privs(grantor)) 
+	if (!admin_privs(grantor)) 
 		return sql_message("0P000!CREATE ROLE: insufficient privileges to create role '%s'", auth);
 
 	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
@@ -405,7 +406,7 @@ role_granting_privs(mvc *m, oid role_rid, int role_id, int grantor_id)
 }
 
 char *
-sql_grant_role(mvc *m, str grantee, str auth, int grantor, int admin)
+sql_grant_role(mvc *m, str grantee, str role, int grantor, int admin)
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
@@ -413,39 +414,41 @@ sql_grant_role(mvc *m, str grantee, str auth, int grantor, int admin)
 	sql_table *roles = find_sql_table(sys, "user_role");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sql_column *auths_id = find_sql_column(auths, "id");
-	int auth_id, grantee_id;
+	int role_id, grantee_id;
 	void *val;
 
-	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
+	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (rid == oid_nil) 
-		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", auth, grantee);
+		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
-	auth_id = *(int*)val; 
+	role_id = *(int*)val; 
 	_DELETE(val);
 
-	if (!admin_privs(grantor) && !role_granting_privs(m, rid, auth_id, grantor)) 
-		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", auth);
+	if (backend_find_user(m, role) >= 0) 
+		return sql_message("M1M05!GRANT: '%s' is a USER not a ROLE", role);
+	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
+		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", role);
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
-		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", auth, grantee);
+		return sql_message("M1M05!GRANT: cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	grantee_id = *(int*)val; 
 	_DELETE(val);
 
-	table_funcs.table_insert(m->session->tr, roles, &grantee_id, &auth_id);
+	table_funcs.table_insert(m->session->tr, roles, &grantee_id, &role_id);
 	if (admin) { 
 		int priv = PRIV_ROLE_ADMIN, one = 1;
 		sql_table *privs = find_sql_table(sys, "privileges");
 
-		table_funcs.table_insert(m->session->tr, privs, &auth_id, &grantee_id, &priv, &grantor, &one);
+		table_funcs.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one);
 	}
 	m->session->tr->schema_updates++;
 	return NULL;
 }
 
 char *
-sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin)
-/* grantee no longer belongs the role (auth) */
+sql_revoke_role(mvc *m, str grantee, str role, int grantor, int admin)
+/* grantee no longer belongs the role (role) */
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
@@ -453,33 +456,33 @@ sql_revoke_role(mvc *m, str grantee, str auth, int grantor, int admin)
 	sql_table *roles = find_sql_table(sys, "user_role");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sql_column *auths_id = find_sql_column(auths, "id");
-	sql_column *role_id = find_sql_column(roles, "role_id");
-	sql_column *login_id = find_sql_column(roles, "login_id");
-	int auth_id, grantee_id;
+	sql_column *roles_role_id = find_sql_column(roles, "role_id");
+	sql_column *roles_login_id = find_sql_column(roles, "login_id");
+	int role_id, grantee_id;
 	void *val;
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
-		return sql_message("42M32!REVOKE: no such role '%s' or grantee '%s'", auth, grantee);
+		return sql_message("42M32!REVOKE: no such role '%s' or grantee '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	grantee_id = *(int*)val; 
 	_DELETE(val);
 
-	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
+	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (rid == oid_nil) 
-		return sql_message("42M32!REVOKE: no such role '%s' or grantee '%s'", auth, grantee);
+		return sql_message("42M32!REVOKE: no such role '%s' or grantee '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
-	auth_id = *(int*)val; 
+	role_id = *(int*)val; 
 	_DELETE(val);
-	if (!admin_privs(grantor) && !role_granting_privs(m, rid, auth_id, grantor)) 
-		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", auth);
+	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
+		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", role);
 
 	if (!admin) { 
-		rid = table_funcs.column_find_row(m->session->tr, login_id, &grantee_id, role_id, &auth_id, NULL);
+		rid = table_funcs.column_find_row(m->session->tr, roles_login_id, &grantee_id, roles_role_id, &role_id, NULL);
 		if (rid != oid_nil) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	} else {
-		rid = sql_privilege_rid(m, grantee_id, auth_id, PRIV_ROLE_ADMIN, 0);
+		rid = sql_privilege_rid(m, grantee_id, role_id, PRIV_ROLE_ADMIN, 0);
 		if (rid != oid_nil) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	}
@@ -747,11 +750,10 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	mvc_create_column_(m, t, "grantor", "int", 32);
 	mvc_create_column_(m, t, "grantable", "int", 32);
 
-	/* add sysadmin roles */
-	sql_create_role_id(m, ROLE_PUBLIC, "public", 0);
-	sql_create_role_id(m, ROLE_SYSADMIN, "sysadmin", 0);
-	sql_create_role_id(m, USER_MONETDB, "monetdb", 0);
-
+	/* add roles public and sysadmin and user monetdb */
+	sql_create_auth_id(m, ROLE_PUBLIC, "public");
+	sql_create_auth_id(m, ROLE_SYSADMIN, "sysadmin");
+	sql_create_auth_id(m, USER_MONETDB, "monetdb");
 
 	pub = ROLE_PUBLIC;
 	p = PRIV_SELECT;
