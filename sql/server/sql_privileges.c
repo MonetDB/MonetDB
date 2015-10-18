@@ -467,7 +467,7 @@ sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 	int priv;
 
 	(void) sub;
-	for (priv = 1; priv < privs; priv <<= 1) {
+	for (priv = 1; priv <= privs; priv <<= 1) {
 		if (!(priv & privs))
 			continue;
 		rid = table_funcs.column_find_row(m->session->tr, priv_obj, &obj_id, priv_auth, &grantorid, priv_priv, &priv, NULL);
