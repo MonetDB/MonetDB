@@ -4534,8 +4534,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
-			list *args = e->l;
-			sql_exp *v = args->h->data;
+			sql_exp *v;
 			sql_subaggr *f = e->f;
 			int cnt = strcmp(f->aggr->base.name,"count")==0;
 			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
