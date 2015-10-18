@@ -1,3 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Sun Oct 18 2015 Jennie Zhang <y.zhang@cwi.nl>
+- Extended grantable schema privileges: when a user is granted the
+  "sysadmin" role, the user now hcan not only create schemas, but
+  also drop schemas.
+- Introduced COPY INTO/ COPY FROM global privileges. These privileges
+  allows other users than 'monetdb' to be granted the privileges
+  to use the MonetDB bulk data loading/exporting features, i.e.,
+  COPY FROM <file> and COPY INTO <file>.
+
