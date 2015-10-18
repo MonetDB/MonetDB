@@ -721,8 +721,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
+			BATiter bi = bat_iterator(b);
+
 			VALinit(&stk->stk[pci->argv[i]], bat_type,
-					Tloc(b, BUNfirst(b)));
+					BUNtail(bi, BUNfirst(b)));
 		}
 		msg = MAL_SUCCEED;
 	}
