@@ -263,7 +263,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 			for(v++,i = 1; i<limit; i++, v++)
 			if ( *v != val)
 				break;
-			hdr->checksum.sumint += i * val;
+			hdr->checksum.sumint += (int)(i * val);
 			MOSsetCnt(blk,i);
 			task->dst +=  sizeof(int);
 		}

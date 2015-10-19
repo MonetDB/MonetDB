@@ -90,15 +90,16 @@ MOSdump_dictionary(Client cntxt, MOStask task)
 void
 MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
-	lng cnt=0,i;
+	lng zero=0;
+	int i;
 	char buf[BUFSIZ];
 
 	(void) cntxt;
 	for(i=0; i< task->hdr->dictsize; i++){
 		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
 		BUNappend(btech, "dictionary_hdr", FALSE);
-		BUNappend(bcount, &i, FALSE);
-		BUNappend(binput, &cnt, FALSE);
+		BUNappend(bcount, &zero, FALSE);
+		BUNappend(binput, &zero, FALSE);
 		BUNappend(boutput, &task->hdr->dictfreq[i], FALSE);
 		BUNappend(bproperties, buf, FALSE);
 	}
