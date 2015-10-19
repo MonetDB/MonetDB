@@ -18,7 +18,7 @@
 \title{dplyr integration from MonetDB.R}
 \usage{
 src_monetdb(dbname, host = "localhost", port = 50000L, user = "monetdb",
-  password = "monetdb", ...)
+  password = "monetdb", con=FALSE, ...)
 
 \method{tbl}{src_monetdb}(src, from, ...)
 }
@@ -28,6 +28,8 @@ src_monetdb(dbname, host = "localhost", port = 50000L, user = "monetdb",
 \item{host,port}{Host name and port number of database (defaults to localhost:50000)}
 
 \item{user,password}{User name and password (if needed)}
+
+\item{con}{Existing DBI connection to MonetDB to be re-used}
 
 \item{...}{for the src, other arguments passed on to the underlying
 database connector, \code{dbConnect}.}
