@@ -1,3 +1,7 @@
+#echo $R_INCLUDE_DIR
+#echo $R_PACKAGE_DIR
+#echo $R_ARCH
+
 if [ $# -eq 1 ]; then
 	NN=`echo $1 | sed 's/.in$//'`
 	echo $1

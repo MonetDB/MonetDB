@@ -1,7 +1,6 @@
 shift
 # this rewrites libtool linker commands into ar commands 
 # because windows gcc cannot have dangling references
-
 if [ "$1" = "--mode=link" ]; then
 	shift
 	shift
@@ -13,7 +12,7 @@ if [ "$1" = "--mode=link" ]; then
 	do
 		case "$1" in
 		-rpath) 
-		#shift # cough, cough
+		shift # cough, cough
 		# TODO
 		;;
 		-version-info) ;;
@@ -35,7 +34,8 @@ if [ "$1" = "--mode=link" ]; then
 	done
 	echo $call
 	$call
-	
+elif [ "$1" = "cp" ]; then
+	"$@"
 else
 	shift
 	echo "$@"
