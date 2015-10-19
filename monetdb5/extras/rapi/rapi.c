@@ -520,7 +520,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
 			VALinit(&stk->stk[pci->argv[i]], bat_type,
 					Tloc(b, BUNfirst(b)));
