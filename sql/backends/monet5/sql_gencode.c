@@ -614,7 +614,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			sql_subtype *t = tail_type(op);
 			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			nr += snprintf(buf+nr, len-nr, "%s %s(%d,%d)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
+			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;
 	}
