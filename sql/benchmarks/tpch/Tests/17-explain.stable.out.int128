@@ -105,7 +105,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:dbl):void;
     X_98:hge := aggr.sum(X_97);
     X_99 := calc.hge(2,X_98,39,5);
     X_102 := calc.hge(1,A0,39,2);
-    X_103 := calc./(X_99,X_102);
+    X_103:hge := calc./(X_99,X_102);
     sql.resultSet("sys.L3","avg_yearly","decimal",39,3,10,X_103);
 end user.s2_1;
 

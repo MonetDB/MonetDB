@@ -70,10 +70,10 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     X_67:bat[:oid,:int] := sql.bind(X_42,"sys","part","p_size",1);
     X_68 := sql.delta(X_63,X_65,r1_67,X_67);
     X_69 := algebra.leftfetchjoin(X_43,X_68);
-    X_70 := calc.min(A22,A35);
-    X_71 := calc.min(A9,X_70);
-    X_72 := calc.max(A23,A36);
-    X_73 := calc.max(A10,X_72);
+    X_70:int := calc.min(A22,A35);
+    X_71:int := calc.min(A9,X_70);
+    X_72:int := calc.max(A23,A36);
+    X_73:int := calc.max(A10,X_72);
     X_74 := algebra.subselect(X_69,X_71,X_73,true,true,false);
     X_77 := algebra.subselect(X_62,X_74,A1,A1,true,false,false);
     X_78 := algebra.subselect(X_62,X_74,A14,A14,true,false,false);
@@ -161,7 +161,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     X_196 := bat.mergecand(X_194,X_195);
     X_184 := calc.lng(A6,15,2);
     X_197 := algebra.thetasubselect(X_179,X_196,X_184,">=");
-    X_180 := calc.+(A7,A8);
+    X_180:sht := calc.+(A7,A8);
     X_181 := calc.lng(X_180,15,2);
     X_199 := algebra.thetasubselect(X_179,X_197,X_181,"<=");
     X_201 := algebra.subselect(X_172,X_199,A9,A10,true,true,false);
@@ -179,7 +179,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     X_220 := bat.mergecand(X_218,X_219);
     X_210 := calc.lng(A19,15,2);
     X_221 := algebra.thetasubselect(X_179,X_220,X_210,">=");
-    X_206 := calc.+(A20,A21);
+    X_206:sht := calc.+(A20,A21);
     X_207 := calc.lng(X_206,15,2);
     X_223 := algebra.thetasubselect(X_179,X_221,X_207,"<=");
     X_225 := algebra.subselect(X_172,X_223,A22,A23,true,true,false);
@@ -197,7 +197,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6
     X_244 := bat.mergecand(X_242,X_243);
     X_234 := calc.lng(A32,15,2);
     X_245 := algebra.thetasubselect(X_179,X_244,X_234,">=");
-    X_230 := calc.+(A33,A34);
+    X_230:sht := calc.+(A33,A34);
     X_231 := calc.lng(X_230,15,2);
     X_247 := algebra.thetasubselect(X_179,X_245,X_231,"<=");
     X_249 := algebra.subselect(X_172,X_247,A35,A36,true,true,false);

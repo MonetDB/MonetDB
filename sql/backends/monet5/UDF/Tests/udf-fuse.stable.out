@@ -30,7 +30,7 @@ Ready.
 % 82 # length
 function user.s2_1{autoCommit=true}(A0:bte,A1:bte):void;
     X_12:void := querylog.define("explain select fuse(1,2);","sequential_pipe",5);
-    X_4 := udf.fuse(A0,A1);
+    X_4:sht := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","smallint",16,0,7,X_4);
 end user.s2_1;
 #select fuse(1,2);
@@ -46,7 +46,7 @@ end user.s2_1;
 % 88 # length
 function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
     X_12:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",5);
-    X_4 := udf.fuse(A0,A1);
+    X_4:int := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","int",32,0,7,X_4);
 end user.s3_1;
 #select fuse(1000,2000);
@@ -62,7 +62,7 @@ end user.s3_1;
 % 94 # length
 function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
     X_12:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",5);
-    X_4 := udf.fuse(A0,A1);
+    X_4:lng := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","bigint",64,0,7,X_4);
 end user.s4_1;
 #select fuse(1000000,2000000);

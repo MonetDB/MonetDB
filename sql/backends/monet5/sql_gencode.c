@@ -1986,7 +1986,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
+				
+				if (f->res && list_length(f->res)) {
+					sql_subtype *res = f->res->h->data;
 
+					setVarType(mb, getArg(q, 0), res->type->localtype);
+					setVarUDFtype(mb, getArg(q, 0));
+				}
 			}
 			if (LANG_EXT(f->func->lang))
 				q = pushPtr(mb, q, f->func);
