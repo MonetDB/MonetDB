@@ -14,6 +14,7 @@
 - Cleaned up quoting behavior in dbListTables(), dbRemoveTable() etc.
 - Initial support for running MonetDB in embedded mode (MonetDBLite)
 - Now re-establishing connection if interrupt (CMD-C or ESC) occurs
+- Fixed a bug in monetdb.read.csv for multiple CSV files without headers
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
