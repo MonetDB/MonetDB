@@ -11,41 +11,41 @@ require 'socket'
 require 'time'
 require 'hasher'
 require 'MonetDBExceptions'
-require 'iconv' # utf-8 support
 require 'uri'   # parse merovingian redirects
 
-Q_TABLE               = "1" # SELECT operation
-Q_UPDATE              = "2" # INSERT/UPDATE operations
-Q_CREATE              = "3" # CREATE/DROP TABLE operations
-Q_TRANSACTION         = "4" # TRANSACTION
-Q_PREPARE             = "5"
-Q_BLOCK               = "6" # QBLOCK message
-
-MSG_REDIRECT          = '^' # auth redirection through merovingian
-MSG_QUERY             = '&'
-MSG_SCHEMA_HEADER     = '%'
-MSG_INFO              = '!' # info response from mserver
-MSG_TUPLE             = '['
-MSG_PROMPT            =  ""
-
-
-REPLY_SIZE            = '-1'
-
-MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
- 
-MONET_ERROR           = -1
-
-LANG_SQL = "sql"
-
-# Protocols
-MAPIv9 = 9
-
-MONETDB_MEROVINGIAN = "merovingian"
-MONETDB_MSERVER     = "monetdb"
-
-MEROVINGIAN_MAX_ITERATIONS = 10
-
 class MonetDBConnection
+  Q_TABLE               = "1" # SELECT operation
+  Q_UPDATE              = "2" # INSERT/UPDATE operations
+  Q_CREATE              = "3" # CREATE/DROP TABLE operations
+  Q_TRANSACTION         = "4" # TRANSACTION
+  Q_PREPARE             = "5"
+  Q_BLOCK               = "6" # QBLOCK message
+
+  MSG_REDIRECT          = '^' # auth redirection through merovingian
+  MSG_QUERY             = '&'
+  MSG_SCHEMA_HEADER     = '%'
+  MSG_INFO              = '!' # info response from mserver
+  MSG_TUPLE             = '['
+  MSG_PROMPT            =  ""
+
+
+  REPLY_SIZE            = '-1'
+
+  MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
+   
+  MONET_ERROR           = -1
+
+  LANG_SQL = "sql"
+
+  # Protocols
+  MAPIv9 = 9
+
+  MONETDB_MEROVINGIAN = "merovingian"
+  MONETDB_MSERVER     = "monetdb"
+
+  MEROVINGIAN_MAX_ITERATIONS = 10
+
+  
   # enable debug output
   @@DEBUG               = false
 
@@ -59,7 +59,7 @@ class MonetDBConnection
   @@CLIENT_ENDIANNESS   = "BIG"
   
   # MAPI protocols supported by the driver
-  @@SUPPORTED_PROTOCOLS = [ MAPIv9 ]
+  @@SUPPORTED_PROTOCOLS = [ MonetDBConnection::MAPIv9 ]
   
   attr_reader :socket, :auto_commit, :transactions, :lang
   
@@ -121,7 +121,7 @@ class MonetDBConnection
       @protocol = server_challenge.split(':')[2].to_i
       @supported_auth_types = server_challenge.split(':')[3].split(',')
       @server_endianness = server_challenge.split(':')[4]
-      if @@SUPPORTED_PROTOCOLS.include?(@protocol) == False
+      if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
         raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
       end
       @pwhash = server_challenge.split(':')[5]
@@ -149,7 +149,7 @@ class MonetDBConnection
         # auth succedeed
         true
       else
-        if monetdb_auth[0].chr == MSG_REDIRECT
+        if monetdb_auth[0].chr == MonetDBConnection::MSG_REDIRECT
         #redirection
           
           redirects = [] # store a list of possible redirects
@@ -191,14 +191,14 @@ class MonetDBConnection
             end
           end
           
-          if server_name == MONETDB_MEROVINGIAN
-            if @auth_iteration <= MEROVINGIAN_MAX_ITERATIONS
+          if server_name == MonetDBConnection::MONETDB_MEROVINGIAN
+            if @auth_iteration <= MonetDBConnection::MEROVINGIAN_MAX_ITERATIONS
               @auth_iteration += 1
               real_connect
             else
               raise MonetDBConnectionError, "Merovingian: too many iterations while proxying."
             end
-          elsif server_name == MONETDB_MSERVER
+          elsif server_name == MonetDBConnection::MONETDB_MSERVER
             begin
               @socket.close
             rescue
@@ -206,19 +206,20 @@ class MonetDBConnection
             end
             # reinitialize a connection
             @host = host
-	          @port = port
+            @port = port
             
             connect(database, @auth_type)
           else
             @connection_established = false
             raise MonetDBConnectionError, monetdb_auth
           end
-        elsif monetdb_auth[0].chr == MSG_INFO
+        elsif monetdb_auth[0].chr == MonetDBConnection::MSG_INFO
           raise MonetDBConnectionError, monetdb_auth
         end
       end
     end
   end
+
   def savepoint
     @transactions.savepoint
   end
@@ -236,13 +237,13 @@ class MonetDBConnection
   
   # send a 'reply_size' command to the server
   def set_reply_size
-    send(format_command(("reply_size " + REPLY_SIZE)))
+    send(format_command(("reply_size " + MonetDBConnection::REPLY_SIZE)))
     
     response = receive
   
-    if response == MSG_PROMPT
+    if response == MonetDBConnection::MSG_PROMPT
       true
-    elsif response[0] == MSG_INFO
+    elsif response[0] == MonetDBConnection::MSG_INFO
       raise MonetDBCommandError, "Unable to set reply_size: #{response}"
     end
     
@@ -277,7 +278,7 @@ class MonetDBConnection
     is_final, chunk_size = recv_decode_hdr
 
     if chunk_size == 0
-	    return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
+      return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
     end
     
     data = @socket.recv(chunk_size)
@@ -409,9 +410,9 @@ class MonetDBConnection
     send(query_tz)
     response = receive
     
-    if response == MSG_PROMPT
+    if response == MonetDBConnection::MSG_PROMPT
       true
-    elsif response[0].chr == MSG_INFO
+    elsif response[0].chr == MonetDBConnection::MSG_INFO
       raise MonetDBQueryError, response
     end
   end
@@ -427,9 +428,9 @@ class MonetDBConnection
     send(format_command("auto_commit " + ac))
     
     response = receive
-    if response == MSG_PROMPT
+    if response == MonetDBConnection::MSG_PROMPT
       @auto_commit = flag
-    elsif response[0].chr == MSG_INFO
+    elsif response[0].chr == MonetDBConnection::MSG_INFO
       raise MonetDBCommandError, response
       return 
     end
@@ -443,7 +444,7 @@ class MonetDBConnection
   
   # Check if monetdb is running behind the merovingian proxy and forward the connection in case
   def merovingian?
-    if @server_name.downcase == MONETDB_MEROVINGIAN
+    if @server_name.downcase == MonetDBConnection::MONETDB_MEROVINGIAN
       true
     else
       false
@@ -451,7 +452,7 @@ class MonetDBConnection
   end
   
   def mserver?
-    if @server_name.downcase == MONETDB_MSERVER
+    if @server_name.downcase == MonetDBConnection::MONETDB_MSERVER
       true
     else
       false

@@ -69,7 +69,7 @@ Ready.
 % like_single_value # name
 % boolean # type
 % 5 # length
-[ true	]
+[ false	]
 #SELECT '\\a' LIKE '\\\\\\\\a';
 % .L # table_name
 % like_single_value # name

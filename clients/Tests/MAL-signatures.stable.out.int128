@@ -51682,6 +51682,10 @@ pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng
 address mvc_restart_seq;
 comment restart the sequence with value start
 
+pattern sql.register(mod:str,fname:str,rel_stmt:str,sig:str):int 
+address RAstatement2;
+comment Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)
+
 function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
 pattern sql.shrink(sch:str,tbl:str):void 
 address SQLshrink;

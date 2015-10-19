@@ -1038,7 +1038,7 @@ PCRElike3(bit *ret, const str *s, const str *pat, const str *esc)
 str
 PCRElike2(bit *ret, const str *s, const str *pat)
 {
-	char *esc = "\\";
+	char *esc = "";
 
 	return PCRElike3(ret, s, pat, &esc);
 }

@@ -14,14 +14,14 @@ CREATE SCHEMA a_brand_new_schema_with_a_longer_name_than_usual;
 CREATE table a_brand_new_schema_with_a_longer_name_than_usual.testTable(v1 int, v2 int);
 
 -- Grant delete rights.
-GRANT monetdb to user_with_many_rights;
+GRANT sysadmin to user_with_many_rights;
 
 """)
 
 sql_test_client('user_with_many_rights', 'ThisIsAS3m1S3cur3P4ssw0rd', input = """\
 -- Check delete.
 set schema a_brand_new_schema_with_a_longer_name_than_usual;
-set role monetdb;
+set role sysadmin;
 
 DROP TABLE testTable;
 CREATE TABLE testTable(v1 INT);

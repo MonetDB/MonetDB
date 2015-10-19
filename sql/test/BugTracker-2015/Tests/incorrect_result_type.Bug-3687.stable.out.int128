@@ -30,7 +30,7 @@ Ready.
 [ 3	]
 #select 100*v from (select sum(1) as v from foo group by a) as t;
 % .L1 # table_name
-% sql_mul_single_value # name
+% sql_mul_L1 # name
 % hugeint # type
 % 3 # length
 [ 100	]

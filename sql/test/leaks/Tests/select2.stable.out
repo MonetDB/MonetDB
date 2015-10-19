@@ -37,7 +37,7 @@ Ready.
 % L1 # name
 % wrd # type
 % 3 # length
-[ 417	]
+[ 416	]
 #select 1; 
 % .L # table_name
 % single_value # name
@@ -49,7 +49,7 @@ Ready.
 % L1 # name
 % wrd # type
 % 3 # length
-[ 417	]
+[ 416	]
 
 # 16:21:20 >  
 # 16:21:20 >  "Done."

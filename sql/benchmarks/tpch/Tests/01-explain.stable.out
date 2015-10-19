@@ -111,7 +111,7 @@ function user.s2_1{autoCommit=true}(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     X_7 := sql.mvc();
     X_11:bat[:oid,:date]  := sql.bind(X_7,"sys","lineitem","l_shipdate",0);
     C_8:bat[:oid,:oid] := sql.tid(X_7,"sys","lineitem");
-    X_19 := mtime.date_sub_msec_interval(A3,A4);
+    X_19:date := mtime.date_sub_msec_interval(A3,A4);
     C_212 := algebra.thetasubselect(X_11,C_8,X_19,"<=");
     (C_14,r1_14) := sql.bind(X_7,"sys","lineitem","l_shipdate",2);
     C_213 := algebra.thetasubselect(r1_14,nil:bat[:oid,:oid],X_19,"<=");

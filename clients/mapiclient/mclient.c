@@ -2911,12 +2911,22 @@ static void
 set_timezone(Mapi mid)
 {
 	char buf[128];
-	time_t t, lt, gt;
-	struct tm *tmp;
 	int tzone;
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
+#ifdef HAVE__GET_TIMEZONE
+	long tz;
+	int dst;
+
+	_tzset();
+	_get_timezone(&tz);
+	_get_dstbias(&dst);
+	tzone = (int) (tz + dst);
+#else
+	time_t t, lt, gt;
+	struct tm *tmp;
+
 	t = time(NULL);
 	tmp = gmtime(&t);
 	gt = mktime(tmp);
@@ -2925,6 +2935,7 @@ set_timezone(Mapi mid)
 	lt = mktime(tmp);
 	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
 	tzone = (int) (gt - lt);
+#endif
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",

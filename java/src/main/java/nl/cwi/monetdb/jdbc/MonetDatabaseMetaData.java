@@ -384,8 +384,43 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getSQLKeywords() {
-		/* return same list as returned in odbc/driver/SQLGetInfo.c case SQL_KEYWORDS: */
-		return  "ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC," +
+		StringBuilder sb = new StringBuilder(1000);
+		Statement st = null;
+		ResultSet rs = null;
+		try {
+			st = getStmt();
+			rs = st.executeQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
+			// Fetch the keywords and concatenate them into a StringBuffer separated by comma's
+			boolean isfirst = true;
+			while (rs.next()) {
+				String keyword = rs.getString(1);
+				if (keyword != null) {
+					if (isfirst) {
+						isfirst = false;
+					} else {
+						sb.append(",");
+					}
+					sb.append(keyword);
+				}
+			}
+		} catch (SQLException e) {
+			/* This may occur for old (before Jul2015 release) MonetDB servers which do not have the sys.keywords table. */
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) { /* ignore */ }
+			}
+			if (st != null) {
+				try {
+					 st.close();
+				} catch (SQLException e) { /* ignore */ }
+			}
+		}
+
+		return (sb.length() > 0) ? sb.toString() :
+			/* else fallback and return old static list (as returned in clients/odbc/driver/SQLGetInfo.c case SQL_KEYWORDS:) */
+			"ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC," +
 			"AUTO_INCREMENT,BEFORE,BIGINT,BIGSERIAL,BINARY,BLOB," +
 			"CALL,CHAIN,CLOB,COMMITTED,COPY,CORR,CUME_DIST," +
 			"CURRENT_ROLE,CYCLE,DATABASE,DELIMITERS,DENSE_RANK," +
