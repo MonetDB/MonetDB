@@ -176,7 +176,7 @@
   class MonetDB
     DEFAULT_USERNAME = "monetdb"
     DEFAULT_PASSWORD = "monetdb"
-    DEFAULT_LANG     = LANG_SQL
+    DEFAULT_LANG     = MonetDBConnection::LANG_SQL
     DEFAULT_HOST     = "127.0.0.1"
     DEFAULT_PORT     = 50000
     DEFAULT_DATABASE = "test"

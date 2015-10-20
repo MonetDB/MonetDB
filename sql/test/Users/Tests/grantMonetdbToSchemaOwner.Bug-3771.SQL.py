@@ -14,7 +14,7 @@ CREATE SCHEMA schemaForOwner AUTHORIZATION owner;
 CREATE table schemaForOwner.testTable(v1 int, v2 int);
 
 -- Grant delete rights.
-GRANT monetdb to owner;
+GRANT sysadmin to owner;
 
 """)
 

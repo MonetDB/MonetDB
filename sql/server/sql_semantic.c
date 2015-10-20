@@ -44,6 +44,20 @@ sql_add_arg(mvc *sql, atom *v)
 }
 
 void
+sql_set_arg(mvc *sql, int nr, atom *v)
+{
+	if (nr >= sql->argmax) {
+		sql->argmax *= 2;
+		if (nr >= sql->argmax)
+			sql->argmax = nr*2;
+		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
+	}
+	if (sql->argc < nr+1)
+		sql->argc = nr+1;
+	sql->args[nr] = v;
+}
+
+void
 sql_add_param(mvc *sql, char *name, sql_subtype *st)
 {
 	sql_arg *a = SA_ZNEW(sql->sa, sql_arg);

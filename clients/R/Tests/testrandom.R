@@ -18,7 +18,7 @@ stopifnot(dbIsValid(db))
 # End Mtest boilerplate
 
 out <- NULL
-for ( i in 1:1000 ){
+for ( i in 1:100 ){
 	out <- c(out, dbGetQuery(db , "SELECT * FROM (SELECT 1 AS col UNION ALL SELECT 2 AS col) AS temp SAMPLE 0.5"))
 }
 dbDisconnect(db)

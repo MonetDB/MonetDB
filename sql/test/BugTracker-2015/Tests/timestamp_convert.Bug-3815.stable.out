@@ -1,0 +1,54 @@
+stdout of test 'timestamp_convert.Bug-3815` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 19:04:37 >  
+# 19:04:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33045" "--set" "mapi_usock=/var/tmp/mtest-17747/.s.monetdb.33045" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/scratch/niels/build/rc/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 19:04:37 >  
+
+# MonetDB 5 server v11.21.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.586 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks101.scilens.private:33045/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17747/.s.monetdb.33045
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.46'
+# Finished reading the write-ahead log 'sql_logs/sql/log.46'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 19:04:38 >  
+# 19:04:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17747" "--port=33045"
+# 19:04:38 >  
+
+#SELECT CONVERT( CONVERT( (str_to_timestamp('2015-10-01', '%Y-%m-%d') - str_to_timestamp('2015-09-30', '%Y-%m-%d')), BIGINT) /86400, BIGINT);
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 4 # length
+[ 1	]
+#SELECT CONVERT( (str_to_timestamp('2015-10-01', '%Y-%m-%d') - str_to_timestamp('2015-09-30', '%Y-%m-%d'))/86400, BIGINT);
+% .L1 # table_name
+% L1 # name
+% bigint # type
+% 4 # length
+[ 1	]
+#SELECT (str_to_timestamp('2015-10-01', '%Y-%m-%d') - str_to_timestamp('2015-09-30', '%Y-%m-%d'))/86400.0;
+% .L # table_name
+% str_to_timestamp_single_value # name
+% sec_interval # type
+% 5 # length
+[ 1.000	]
+
+# 19:04:38 >  
+# 19:04:38 >  "Done."
+# 19:04:38 >  
+

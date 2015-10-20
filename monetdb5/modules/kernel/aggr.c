@@ -67,6 +67,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			return s;
 		}
 		bn = (*quantilefunc)(b, g, e, NULL, tp, qvalue, skip_nils, 1);
+		BBPunfix(quantile->batCacheid);
 	}
 	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, NULL, tp, skip_nils, 1) != GDK_SUCCEED)
 		bn = NULL;
@@ -664,6 +665,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			}
 		}
 		bn = (*quantilefunc)(b, g, e, s, tp, qvalue, skip_nils, abort_on_error);
+		BBPunfix(q->batCacheid);
 	}
 	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) != GDK_SUCCEED)
 		bn = NULL;

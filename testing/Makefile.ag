@@ -4,8 +4,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
-	     MkillUsers.in testing_getopt.c
+EXTRA_DIST = testing_getopt.c
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
@@ -28,18 +27,18 @@ scripts_bat = {
 
 scripts_py = {
 	DIR = bindir
-	SOURCES = Mtest.py Mfilter.py 
+	SOURCES = Mtest.py.in
 }
 
 headers_python = {
 	HEADERS = py
 	DIR = $(prefix)/$(PYTHON2_LIBDIR)/MonetDBtesting
-	SOURCES = trace.py process.py monet_options.py.in __init__.py listexports.py.in exportutils.py malcheck.py
+	SOURCES = Mfilter.py trace.py process.py monet_options.py.in __init__.py listexports.py.in exportutils.py malcheck.py
 }
 
 scripts_sh = {
 	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
-	SOURCES = Mlog MkillUsers
+	SOURCES = Mlog.in MkillUsers.in
 }

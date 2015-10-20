@@ -74,6 +74,24 @@ Ready.
 #GRANT INSERT on table schemaTest.testTable to user_insert;
 #GRANT UPDATE on table schemaTest.testTable to user_update;
 #GRANT SELECT on table schemaTest.testTable to user_select;
+#DELETE FROM testTable where v1 = 2; -- should work
+[ 1	]
+#SELECT * FROM testTable; -- not enough privileges
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+#UPDATE testTable set v1 = 2 where v2 = 7;
+[ 0	]
+#SELECT * FROM testTable; -- not enough privileges
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
 #INSERT into testTable values (3, 3);
 [ 1	]
 #SELECT * FROM testTable;
@@ -82,7 +100,6 @@ Ready.
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
-[ 2,	2	]
 [ 3,	3	]
 [ 3,	3	]
 #SELECT * FROM schemaTest.testTable;
@@ -91,7 +108,6 @@ Ready.
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
-[ 2,	2	]
 [ 3,	3	]
 [ 3,	3	]
 #REVOKE DELETE on schemaTest.testTable from user_delete;
@@ -104,20 +120,19 @@ Ready.
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
-[ 2,	2	]
 [ 3,	3	]
 [ 3,	3	]
 #GRANT DELETE on table schemaTest.testTable to user_delete;
 #GRANT INSERT on table schemaTest.testTable to user_insert;
 #GRANT UPDATE on table schemaTest.testTable to user_update;
 #GRANT SELECT on table schemaTest.testTable to user_select;
-#DELETE FROM testTable where v1 = 42;
-[ 0	]
-#UPDATE testTable set v1 = 42 where v2 = 42;
+#DELETE from testTable where v1 = 42; -- privilege granted
 [ 0	]
 #INSERT into testTable values (42, 42); -- privilege granted
 [ 1	]
-#SELECT * FROM testTable;
+#UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
+[ 1	]
+#SELECT * FROM testTable where v1 = 42; -- privilege granted
 % schematest.testtable,	schematest.testtable # table_name
 % v1,	v2 # name
 % int,	int # type

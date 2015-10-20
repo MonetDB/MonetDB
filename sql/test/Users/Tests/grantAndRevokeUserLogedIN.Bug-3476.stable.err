@@ -30,18 +30,6 @@ stderr of test 'grantAndRevokeUserLogedIN.Bug-3476` in directory 'sql/test/Users
 # 10:42:59 >  "/usr/bin/python2" "grantAndRevokeUserLogedIN.SQL.py" "grantAndRevokeUserLogedIN"
 # 10:42:59 >  
 
-Traceback (most recent call last):
-  File "grantAndRevokeUserLogedIN.Bug-3476.SQL.py", line 54, in <module>
-    run(c2, 'UPDATE test SET x = -66 WHERE y = 66')
-  File "grantAndRevokeUserLogedIN.Bug-3476.SQL.py", line 26, in run
-    r = conn.execute(sql)
-  File "/home/vera/Desktop/MonetDB/BUILD/lib/python2.7/site-packages/monetdb/sql/connections.py", line 127, in execute
-    return self.command('s' + query + '\n;')
-  File "/home/vera/Desktop/MonetDB/BUILD/lib/python2.7/site-packages/monetdb/sql/connections.py", line 132, in command
-    return self.mapi.cmd(command)
-  File "/home/vera/Desktop/MonetDB/BUILD/lib/python2.7/site-packages/monetdb/mapi.py", line 178, in cmd
-    raise OperationalError(response[1:])
-monetdb.exceptions.OperationalError: UPDATE: insufficient privileges for user 'new_user' to update table 'test'
 
 
 # 10:42:59 >  

@@ -267,7 +267,6 @@ gdk_return HEAPextend(Heap *h, size_t size, int mayshare);
 size_t HEAPmemsize(Heap *h);
 size_t HEAPvmsize(Heap *h);
 lng IMPSimprintsize(BAT *b);
-void MRschedule(int taskcnt, void **arg, void( *cmd)(void *p));
 int MT_check_nr_cores(void);
 int MT_create_thread(MT_Id *t, void( *function)(void *), void *arg, enum MT_thr_detach d);
 void MT_exiting_thread(void);

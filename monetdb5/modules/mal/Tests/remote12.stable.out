@@ -27,6 +27,7 @@ function user.main():void;
     io.print(v);
     mdb.var();
 end user.main;
+!MALException:remote.put:Object not found
 
 
 

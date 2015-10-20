@@ -31,7 +31,7 @@ class MonetDBData
     
     @row_count = 0
     @row_offset = 10
-    @row_index = Integer(REPLY_SIZE)
+    @row_index = Integer(MonetDBConnection::REPLY_SIZE)
   end
   
   # Fire a query and return the server response
@@ -45,10 +45,10 @@ class MonetDBData
     record_set = "" # temporarly store retrieved rows
     record_set = receive_record_set(data)
 
-    if (@lang == LANG_SQL)
+    if (@lang == MonetDBConnection::LANG_SQL)
       rows = receive_record_set(data)
       # the fired query is a SELECT; store and return the whole record set
-      if @action == Q_TABLE
+      if @action == MonetDBConnection::Q_TABLE
         @header = parse_header_table(@header)
         @header.freeze
       
@@ -84,7 +84,7 @@ class MonetDBData
     @index = 0 # Position of the last returned record
 
 
-    @row_index = Integer(REPLY_SIZE)
+    @row_index = Integer(MonetDBConnection::REPLY_SIZE)
     @row_count = 0
     @row_offset = 10
     
@@ -122,7 +122,7 @@ class MonetDBData
      col = Array.new
      # Scan the record set by row
      @record_set.each do |row|
-       col << parse_tuple(row[position])
+       col << parse_tuple(row)[position]
      end
 
      return col
@@ -130,18 +130,21 @@ class MonetDBData
 
 
   def fetch()
-     @index
-     if @index > @query['rows'].to_i 
-       false
+    result = ""
+
+     if @index >= @query['rows'].to_i
+       result = false
      else
-       parse_tuple(@record_set[@index])
+       result = parse_tuple(@record_set[@index])
        @index += 1
      end
+
+     return result
    end
 
   # Cursor method that retrieves all the records present in a table and stores them in a cache.
   def fetch_all()
-     if @query['type'] == Q_TABLE 
+     if @query['type'] == MonetDBConnection::Q_TABLE 
         rows = Array.new
         @record_set.each do |row| 
            rows << parse_tuple(row)
@@ -180,29 +183,29 @@ class MonetDBData
   def receive_record_set(response)
     rows = ""
     response.each_line do |row|   
-      if row[0].chr == MSG_QUERY      
-        if row[1].chr == Q_TABLE
-          @action = Q_TABLE
+      if row[0].chr == MonetDBConnection::MSG_QUERY      
+        if row[1].chr == MonetDBConnection::Q_TABLE
+          @action = MonetDBConnection::Q_TABLE
           @query = parse_header_query(row)
           @query.freeze
           @row_count = @query['rows'].to_i #total number of rows in table            
-        elsif row[1].chr == Q_BLOCK
+        elsif row[1].chr == MonetDBConnection::Q_BLOCK
           # strip the block header from data
-          @action = Q_BLOCK
+          @action = MonetDBConnection::Q_BLOCK
           @block = parse_header_query(row)          
-        elsif row[1].chr == Q_TRANSACTION
-          @action = Q_TRANSACTION
-        elsif row[1].chr == Q_CREATE
-          @action = Q_CREATE
+        elsif row[1].chr == MonetDBConnection::Q_TRANSACTION
+          @action = MonetDBConnection::Q_TRANSACTION
+        elsif row[1].chr == MonetDBConnection::Q_CREATE
+          @action = MonetDBConnection::Q_CREATE
         end
-      elsif row[0].chr == MSG_INFO
+      elsif row[0].chr == MonetDBConnection::MSG_INFO
         raise MonetDBQueryError, row
-      elsif row[0].chr == MSG_SCHEMA_HEADER
+      elsif row[0].chr == MonetDBConnection::MSG_SCHEMA_HEADER
         # process header data
         @header << row
-      elsif row[0].chr == MSG_TUPLE
+      elsif row[0].chr == MonetDBConnection::MSG_TUPLE
         rows += row
-      elsif row[0] == MSG_PROMPT
+      elsif row[0] == MonetDBConnection::MSG_PROMPT
         return rows
       end
     end 
@@ -229,7 +232,7 @@ class MonetDBData
   
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
-    if @lang == LANG_SQL
+    if @lang == MonetDBConnection::LANG_SQL
         return "s" + q + "\n;"
     else
       raise LanguageNotSupported, @lang
@@ -295,7 +298,7 @@ class MonetDBData
   # Parses a query header and returns information about the query.
   def parse_header_query(row)
     type = row[1].chr
-    if type == Q_TABLE
+    if type == MonetDBConnection::Q_TABLE
       # Performing a SELECT: store informations about the table size, query id, total number of records and returned.
       id = row.split(' ')[1]
       rows = row.split(' ')[2]
@@ -303,7 +306,7 @@ class MonetDBData
       returned = row.split(' ')[4]
       
       header = { "id" => id, "type" => type, "rows" => rows, "columns" => columns, "returned" => returned }
-    elsif  type == Q_BLOCK
+    elsif  type == MonetDBConnection::Q_BLOCK
       # processing block header
     
       id = row.split(' ')[1]
@@ -321,7 +324,7 @@ class MonetDBData
   
   # Parses a Q_TABLE header and returns information about the schema.
   def parse_header_table(header_t)
-    if @query["type"] == Q_TABLE
+    if @query["type"] == MonetDBConnection::Q_TABLE
       if header_t != nil
         name_t = header_t[0].split(' ')[1].gsub(/,$/, '')
         name_cols = Array.new

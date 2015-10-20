@@ -993,7 +993,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 }
 
 static list *
-push_up_join_exps( sql_rel *rel) 
+push_up_join_exps( mvc *sql, sql_rel *rel) 
 {
 	if (rel_is_ref(rel))
 		return NULL;
@@ -1009,8 +1009,8 @@ push_up_join_exps( sql_rel *rel)
 			rel->exps = NULL;
 			return l;
 		}
-		l = push_up_join_exps(rl);
-		r = push_up_join_exps(rr);
+		l = push_up_join_exps(sql, rl);
+		r = push_up_join_exps(sql, rr);
 		if (l && r) {
 			l = list_merge(l, r, (fdup)NULL);
 			r = NULL;
@@ -1036,11 +1036,11 @@ rel_join_order(int *changes, mvc *sql, sql_rel *rel)
 	int e_changes = 0;
 
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
+		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 		if (rel->op == op_join)
-			rel->exps = push_up_join_exps(rel);
+			rel->exps = push_up_join_exps(sql, rel);
 		rel = reorder_join(sql, rel);
 	}
-	rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	(void)*changes;
 	(void)e_changes;
 	return rel;
@@ -1792,6 +1792,12 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
+
+			if (need_distinct(r)) {
+				set_distinct(ul);
+				set_distinct(ur);
+			}
+
 			/* zap names */
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
@@ -1799,6 +1805,10 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
 			ur->r = r->r;
 			r->l = NULL;
+
+			if (need_distinct(r)) 
+				set_distinct(ur);
+
 			rel_destroy(r);
 			rel->l = ur;
 			(*changes)++;
@@ -4437,7 +4447,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
 
-					if (is_column(e->type)) {
+					if (e->type == e_column) {
 						if (e->l) 
 							ne = exps_bind_column2(dgbe, e->l, e->r);
 						else
@@ -4524,8 +4534,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
-			list *args = e->l;
-			sql_exp *v = args->h->data;
+			sql_exp *v;
 			sql_subaggr *f = e->f;
 			int cnt = strcmp(f->aggr->base.name,"count")==0;
 			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
