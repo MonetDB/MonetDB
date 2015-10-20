@@ -335,7 +335,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	int evalErr;
 	char *msg = MAL_SUCCEED;
 	BAT *b;
-	BUN cnt;
 	node * argnode;
 	int seengrp = FALSE;
 
@@ -508,7 +507,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 									  "Unknown return value, possibly projecting with no parameters.");
 			goto wrapup;
 		}
-		cnt = (BUN) ret_rows;
 
 		// hand over the vector into a BAT
 		b = sexp_to_bat(ret_col, bat_type);
