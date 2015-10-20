@@ -12,7 +12,7 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* #define DISABLE_PARENT_HASH 1 */
+#define DISABLE_PARENT_HASH 1
 
 #include "gdk_system_private.h"
 
