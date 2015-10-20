@@ -1,4 +1,6 @@
 .onLoad <- function(libname, pkgname){
+	# TODO: DLL on Windows
+	# TODO: save pkg path here to use in startup for monetdb_startup_R
 	dyn.load(file.path(libname, pkgname, "libs", "MonetDB.so"), local=F, now=F)
 }
 

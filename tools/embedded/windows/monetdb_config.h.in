@@ -329,6 +329,7 @@
 /* #define HAVE_LONG_LONG 1 */
 #endif
 #endif
+#define HAVE_LONG_LONG 1
 
 /* Define to 1 if you have the <mach/mach_init.h> header file. */
 /* #undef HAVE_MACH_MACH_INIT_H */
