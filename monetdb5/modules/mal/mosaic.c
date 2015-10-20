@@ -1466,7 +1466,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		xf[i]= task->ratio;
 		if( xf[i] == 0)
 			continue;
-		xsize = task->bsrc->T->mosaic->free;
+		xsize = (BUN) task->bsrc->T->mosaic->free;
 		BUNappend(boutput,&xsize,FALSE);
 
 		t= technique;

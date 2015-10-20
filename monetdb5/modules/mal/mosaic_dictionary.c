@@ -328,7 +328,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 // insert a series of values into the compressor block using dictionary
 #define dictcompress(Vector,I,Bits,Value)\
 {int cid,lshift,rshift;\
-	cid = (I * Bits)/64;\
+	cid = (int) (I * Bits)/64;\
 	lshift= 63 -((I * Bits) % 64) ;\
 	if ( lshift >= Bits){\
 		Vector[cid]= Vector[cid] | (((unsigned long) Value) << (lshift- Bits));\
@@ -1024,7 +1024,7 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 			for( o=0, n= task->elm; n-- > 0; o++,w++ ){
 				for(oo = task->start,i=0; i < limit; i++,oo++){
 					//dictdecompress(i);
-					cid = (i * hdr->bits)/64;
+					cid = (int) (i * hdr->bits)/64;
 					lshift= 63 -((i * hdr->bits) % 64) ;
 					if ( lshift >= hdr->bits){
 						j = (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask);

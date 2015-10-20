@@ -244,7 +244,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 			*(lng*)task->dst = val;
 			task->dst += sizeof(lng);
 			for(v++, i =1; i<limit; i++, v++){
-				hdr->checksum.sumint += *v;
+				hdr->checksum.sumlng += *v;
 				delta = *v -val;
 				if ( delta < -127 || delta >127)
 					break;
