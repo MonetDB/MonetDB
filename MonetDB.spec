@@ -920,7 +920,6 @@ developer, but if you do want to test, this is the package you need.
 # %exclude %{_bindir}/*.pyc
 # %exclude %{_bindir}/*.pyo
 %{_bindir}/Mapprove.py
-%{_bindir}/Mfilter.py
 %{_bindir}/Mtest.py
 %dir %{python_sitelib}/MonetDBtesting
 %{python_sitelib}/MonetDBtesting/*
