@@ -48,7 +48,7 @@ function user.s2_1{autoCommit=true}(A0:sht,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A
     X_10 := sql.mvc();
     X_14:bat[:oid,:date]  := sql.bind(X_10,"sys","lineitem","l_shipdate",0);
     X_11:bat[:oid,:oid]  := sql.tid(X_10,"sys","lineitem");
-    X_22 := mtime.addmonths(A6,A7);
+    X_22:date := mtime.addmonths(A6,A7);
     X_121 := algebra.subselect(X_14,X_11,A5,X_22,true,false,false);
     (X_17,r1_18) := sql.bind(X_10,"sys","lineitem","l_shipdate",2);
     X_122 := algebra.subselect(r1_18,nil:bat[:oid,:oid],A5,X_22,true,false,false);
@@ -89,13 +89,13 @@ function user.s2_1{autoCommit=true}(A0:sht,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A
     X_81 := calc.lng(A3,19,4);
     X_84:bat[:oid,:lng] := batcalc.ifthenelse(X_57,X_80,X_81);
     X_85:lng := aggr.sum(X_84);
-    X_86 := calc.*(A0,X_85);
+    X_86:lng := calc.*(A0,X_85);
     X_87 := calc.lng(5,X_86,19,9);
     X_90 := calc.lng(A4,15,2);
     X_91:bat[:oid,:lng] := batcalc.-(X_90,X_78);
     X_92:bat[:oid,:lng] := batcalc.*(X_66,X_91);
     X_93:lng := aggr.sum(X_92);
-    X_94 := calc./(X_87,X_93);
+    X_94:lng := calc./(X_87,X_93);
     sql.resultSet(".L2","promo_revenue","decimal",19,5,10,X_94);
 end user.s2_1;
 
