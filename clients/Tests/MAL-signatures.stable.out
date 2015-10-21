@@ -3149,6 +3149,30 @@ command batxml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLstr2xml;
 comment Cast the string to an xml compliant string.
 
+command batmtime.diff(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:lng] 
+address MTIMEtimestamp_diff_bulk;
+comment Difference of two sets of timestamp.
+
+command batmtime.diff(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:int] 
+address MTIMEdate_diff_bulk;
+comment Difference of two sets of date.
+
+command batmtime.day(d:bat[:oid,:date]):bat[:oid,:int] 
+address MTIMEdate_extract_day_bulk;
+command batmtime.hours(d:bat[:oid,:daytime]):bat[:oid,:int] 
+address MTIMEdaytime_extract_hours_bulk;
+command batmtime.milliseconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
+address MTIMEdaytime_extract_milliseconds_bulk;
+command batmtime.minutes(d:bat[:oid,:daytime]):bat[:oid,:int] 
+address MTIMEdaytime_extract_minutes_bulk;
+command batmtime.month(d:bat[:oid,:date]):bat[:oid,:int] 
+address MTIMEdate_extract_month_bulk;
+command batmtime.sql_seconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
+address MTIMEdaytime_extract_sql_seconds_bulk;
+command batmtime.seconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
+address MTIMEdaytime_extract_seconds_bulk;
+command batmtime.year(d:bat[:oid,:date]):bat[:oid,:int] 
+address MTIMEdate_extract_year_bulk;
 pattern batcalc.!=(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
@@ -4466,6 +4490,10 @@ address CMDbatNE;
 comment Return B1 != B2 with candidates list
 
 pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
+pattern batcalc.!=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return B1 != B2
 
@@ -15077,6 +15105,14 @@ pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit]
 address CMDbatLT;
 comment Return B1 < B2
 
+pattern batcalc.<=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2
+
+pattern batcalc.<(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2
+
 pattern batcalc.==(v:dbl,b:bat[:oid,:dbl],s:bat[:oid,:oid]):bat[:oid,:bit] 
 address CMDbatEQ;
 comment Return V == B with candidates list
@@ -16394,6 +16430,10 @@ address CMDbatEQ;
 comment Return B1 == B2 with candidates list
 
 pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2
+
+pattern batcalc.==(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
 address CMDbatEQ;
 comment Return B1 == B2
 
@@ -19634,6 +19674,14 @@ address CMDbatGT;
 comment Return B1 > B2 with candidates list
 
 pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2
+
+pattern batcalc.>=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2
+
+pattern batcalc.>(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
 address CMDbatGT;
 comment Return B1 > B2
 
@@ -30734,6 +30782,7 @@ command batcalc.timestamp(secs:bat[:oid,:int]):bat[:oid,:timestamp]
 address MTIMEtimestamp_bulk;
 command batcalc.timestamp(d:bat[:oid,:date]):bat[:oid,:timestamp] 
 address MTIMEtimestamp_create_from_date_bulk;
+function batcalc.uuid(u:bat[:oid,:uuid]):bat[:oid,:uuid];
 command batcalc.wrd(s1:int,v:bat[:oid,:lng],d2:int,s2:int):bat[:oid,:wrd] 
 address batlng_dec2dec_wrd;
 comment cast decimal(lng) to decimal(wrd) and check for overflow
@@ -31124,30 +31173,6 @@ comment Return B1 XOR B2
 
 command batcalc.xml(src:bat[:oid,:str]):bat[:oid,:xml] 
 address BATXMLstr2xml;
-command batmtime.diff(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]):bat[:oid,:lng] 
-address MTIMEtimestamp_diff_bulk;
-comment Difference of two sets of timestamp.
-
-command batmtime.diff(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:int] 
-address MTIMEdate_diff_bulk;
-comment Difference of two sets of date.
-
-command batmtime.day(d:bat[:oid,:date]):bat[:oid,:int] 
-address MTIMEdate_extract_day_bulk;
-command batmtime.hours(d:bat[:oid,:daytime]):bat[:oid,:int] 
-address MTIMEdaytime_extract_hours_bulk;
-command batmtime.milliseconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
-address MTIMEdaytime_extract_milliseconds_bulk;
-command batmtime.minutes(d:bat[:oid,:daytime]):bat[:oid,:int] 
-address MTIMEdaytime_extract_minutes_bulk;
-command batmtime.month(d:bat[:oid,:date]):bat[:oid,:int] 
-address MTIMEdate_extract_month_bulk;
-command batmtime.sql_seconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
-address MTIMEdaytime_extract_sql_seconds_bulk;
-command batmtime.seconds(d:bat[:oid,:daytime]):bat[:oid,:int] 
-address MTIMEdaytime_extract_seconds_bulk;
-command batmtime.year(d:bat[:oid,:date]):bat[:oid,:int] 
-address MTIMEdate_extract_year_bulk;
 command batmkey.hash(b:bat[:oid,:any_1]):bat[:oid,:wrd] 
 address MKEYbathash;
 comment calculate a hash value
@@ -31753,6 +31778,10 @@ comment Equality of two daytimes
 pattern calc.!=(v:date,w:date):bit 
 address CMDvarNE;
 comment Equality of two dates
+
+pattern calc.!=(l:uuid,r:uuid):bit 
+address CMDvarNE;
+comment Return V1 != V2
 
 pattern calc.%(v1:dbl,v2:dbl):dbl 
 address CMDvarMODsignal;
@@ -33858,6 +33887,14 @@ pattern calc.<(v:date,w:date):bit
 address CMDvarLT;
 comment Equality of two dates
 
+pattern calc.<=(l:uuid,r:uuid):bit 
+address CMDvarLE;
+comment Return V1 <= V2
+
+pattern calc.<(l:uuid,r:uuid):bit 
+address CMDvarLT;
+comment Return V1 < V2
+
 pattern calc.==(v1:dbl,v2:dbl):bit 
 address CMDvarEQ;
 comment Return V1 == V2
@@ -34082,9 +34119,9 @@ pattern calc.==(v:date,w:date):bit
 address CMDvarEQ;
 comment Equality of two dates
 
-command calc.==(l:uuid,r:uuid):bit 
-address UUIDequal;
-comment Compare two UUID values for equality
+pattern calc.==(l:uuid,r:uuid):bit 
+address CMDvarEQ;
+comment Return V1 == V2
 
 pattern calc.>=(v1:dbl,v2:dbl):bit 
 address CMDvarGE;
@@ -34633,6 +34670,14 @@ comment Equality of two dates
 pattern calc.>(v:date,w:date):bit 
 address CMDvarGT;
 comment Equality of two dates
+
+pattern calc.>=(l:uuid,r:uuid):bit 
+address CMDvarGE;
+comment Return V1 >= V2
+
+pattern calc.>(l:uuid,r:uuid):bit 
+address CMDvarGT;
+comment Return V1 > V2
 
 pattern calc.and(v1:lng,v2:lng):lng 
 address CMDvarAND;
@@ -35944,6 +35989,10 @@ comment Convert a string to an inet
 command calc.inet(s:inet):inet 
 address INET_inet;
 comment Convert a inet to an inet
+
+command calc.isaUUID(u:str):bit 
+address UUIDisaUUID;
+comment Test a string for a UUID format
 
 command calc.json(j:json):json 
 address JSONstr2json;
@@ -41560,10 +41609,6 @@ command uuid.#fromstr():void
 address UUIDfromString;
 command uuid.#hash():void 
 address UUIDhash;
-command uuid.isaUUID(u:str):bit 
-address UUIDisaUUID;
-comment Test a string for a UUID format
-
 command uuid.new():uuid 
 address UUIDgenerateUuid;
 comment Generate a new uuid
