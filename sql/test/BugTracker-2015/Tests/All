@@ -73,3 +73,4 @@ crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820
 case_type.Bug-3821
 like-escape.Bug-3822
+uuid-compare.Bug-3827

@@ -40,11 +40,11 @@ comment "Convert JSON values to their plain string equivalent, injecting a separ
 
 command number(j:json):dbl
 address JSONjson2number
-comment "Convert sinple JSON values to a double, return nil upon error.";
+comment "Convert simple JSON values to a double, return nil upon error.";
 
 command integer(j:json):lng
 address JSONjson2integer
-comment "Convert sinple JSON values to an integer, return nil upon error.";
+comment "Convert simple JSON values to an integer, return nil upon error.";
 
 command dump(j:json):void
 address JSONdump;
@@ -176,5 +176,57 @@ comment "Grouped aggregation of values with candidates list.";
 command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
+
+module calc;
+
+pattern ==(l:json,r:json):bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern !=(l:json,r:json):bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern <(l:json,r:json):bit
+address CMDvarLT
+comment "Return V1 < V2";
+
+pattern <=(l:json,r:json):bit
+address CMDvarLE
+comment "Return V1 <= V2";
+
+pattern >(l:json,r:json):bit
+address CMDvarGT
+comment "Return V1 > V2";
+
+pattern >=(l:json,r:json):bit
+address CMDvarGE
+comment "Return V1 >= V2";
+
+module batcalc;
+
+pattern ==(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatEQ
+comment "Return B1 == B2";
+
+pattern !=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatNE
+comment "Return B1 != B2";
+
+pattern <(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatLT
+comment "Return B1 < B2";
+
+pattern <=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatLE
+comment "Return B1 <= B2";
+
+pattern >(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatGT
+comment "Return B1 > B2";
+
+pattern >=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+address CMDbatGE
+comment "Return B1 >= B2";
 
 json.prelude();
