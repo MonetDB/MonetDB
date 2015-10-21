@@ -14,7 +14,7 @@ echo "SUBDIRS = embedded" > tools/Makefile.ag
 echo "SUBDIRS = mapilib" > clients/Makefile.ag
 echo "SUBDIRS = mal modules optimizer scheduler tools" > monetdb5/Makefile.ag
 echo "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = bootstrap configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
-sed -i "/^SUBDIRS = .*/d" sql/backends/Makefile.ag
+sed -i -e "/^SUBDIRS = .*$/d" sql/backends/monet5/Makefile.ag
 
 ./bootstrap
 # we need this directory since sql/server depends on it
