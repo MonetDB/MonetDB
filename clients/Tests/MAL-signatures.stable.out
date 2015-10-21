@@ -4493,6 +4493,10 @@ pattern batcalc.!=(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit]
 address CMDbatNE;
 comment Return B1 != B2
 
+pattern batcalc.!=(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
+address CMDbatNE;
+comment Return B1 != B2
+
 pattern batcalc.!=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
 address CMDbatNE;
 comment Return B1 != B2
@@ -15105,6 +15109,14 @@ pattern batcalc.<(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit]
 address CMDbatLT;
 comment Return B1 < B2
 
+pattern batcalc.<=(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
+address CMDbatLE;
+comment Return B1 <= B2
+
+pattern batcalc.<(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
+address CMDbatLT;
+comment Return B1 < B2
+
 pattern batcalc.<=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]):bat[:oid,:bit] 
 address CMDbatLE;
 comment Return B1 <= B2
@@ -16430,6 +16442,10 @@ address CMDbatEQ;
 comment Return B1 == B2 with candidates list
 
 pattern batcalc.==(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatEQ;
+comment Return B1 == B2
+
+pattern batcalc.==(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
 address CMDbatEQ;
 comment Return B1 == B2
 
@@ -19674,6 +19690,14 @@ address CMDbatGT;
 comment Return B1 > B2 with candidates list
 
 pattern batcalc.>(b1:bat[:oid,:date],b2:bat[:oid,:date]):bat[:oid,:bit] 
+address CMDbatGT;
+comment Return B1 > B2
+
+pattern batcalc.>=(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
+address CMDbatGE;
+comment Return B1 >= B2
+
+pattern batcalc.>(b1:bat[:oid,:json],b2:bat[:oid,:json]):bat[:oid,:bit] 
 address CMDbatGT;
 comment Return B1 > B2
 
@@ -31779,6 +31803,10 @@ pattern calc.!=(v:date,w:date):bit
 address CMDvarNE;
 comment Equality of two dates
 
+pattern calc.!=(l:json,r:json):bit 
+address CMDvarNE;
+comment Return V1 != V2
+
 pattern calc.!=(l:uuid,r:uuid):bit 
 address CMDvarNE;
 comment Return V1 != V2
@@ -33887,6 +33915,14 @@ pattern calc.<(v:date,w:date):bit
 address CMDvarLT;
 comment Equality of two dates
 
+pattern calc.<=(l:json,r:json):bit 
+address CMDvarLE;
+comment Return V1 <= V2
+
+pattern calc.<(l:json,r:json):bit 
+address CMDvarLT;
+comment Return V1 < V2
+
 pattern calc.<=(l:uuid,r:uuid):bit 
 address CMDvarLE;
 comment Return V1 <= V2
@@ -34118,6 +34154,10 @@ comment Equality of two daytimes
 pattern calc.==(v:date,w:date):bit 
 address CMDvarEQ;
 comment Equality of two dates
+
+pattern calc.==(l:json,r:json):bit 
+address CMDvarEQ;
+comment Return V1 == V2
 
 pattern calc.==(l:uuid,r:uuid):bit 
 address CMDvarEQ;
@@ -34670,6 +34710,14 @@ comment Equality of two dates
 pattern calc.>(v:date,w:date):bit 
 address CMDvarGT;
 comment Equality of two dates
+
+pattern calc.>=(l:json,r:json):bit 
+address CMDvarGE;
+comment Return V1 >= V2
+
+pattern calc.>(l:json,r:json):bit 
+address CMDvarGT;
+comment Return V1 > V2
 
 pattern calc.>=(l:uuid,r:uuid):bit 
 address CMDvarGE;
@@ -38650,7 +38698,7 @@ comment Validate the string as a valid JSON document
 
 command json.integer(j:json):lng 
 address JSONjson2integer;
-comment Convert sinple JSON values to an integer, return nil upon error.
+comment Convert simple JSON values to an integer, return nil upon error.
 
 command json.keys(val:json):bat[:oid,:str] 
 address JSONkeyTable;
@@ -38666,7 +38714,7 @@ comment Returns the number of elements in the outermost JSON object.
 
 command json.number(j:json):dbl 
 address JSONjson2number;
-comment Convert sinple JSON values to a double, return nil upon error.
+comment Convert simple JSON values to a double, return nil upon error.
 
 command json.new(j:str):json 
 address JSONstr2json;
