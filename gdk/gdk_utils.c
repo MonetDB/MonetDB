@@ -404,7 +404,7 @@ MT_init(void)
 	/* NetBSD, OpenBSD, Darwin, 32-bits; FreeBSD 32 & 64-bits */
 	{
 # ifdef __FreeBSD__
-		unsigned long size = 0;
+		unsigned long size = 0; /* type long required by sysctl() (?) */
 # else
 		int size = 0;
 # endif

@@ -112,7 +112,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 	{ // cigar
 		str s, t;
 		int i, op;
-		long x;
+		long x; /* type long returned by strtol() */
 		c->n_cigar = 0;
 		if (cigar[0] != '*') {
 			uint32_t *cigar_enc;

@@ -1632,7 +1632,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
 			FILE *fp1;
-			long off;
+			long off; /* type long required by ftell() & fseek() */
 			int curid;
 
 			/* read the current log id without disturbing

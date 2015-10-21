@@ -2914,7 +2914,7 @@ set_timezone(Mapi mid)
 
 	/* figure out our current timezone */
 #ifdef HAVE__GET_TIMEZONE
-	long tz;
+	long tz; /* type long required by _get_timezone() */
 	int dst;
 
 	_tzset();
