@@ -1,0 +1,8 @@
+
+# manually created
+
+#select actiontype, propertytype, loanpurpose, count(*) as num_records from hmda_14 group by actiontype, propertytype, loanpurpose;
+% sys.hmda_14,	sys.hmda_14,	sys.hmda_14,	sys.L1 # table_name
+% actiontype,	propertytype,	loanpurpose,	num_records # name
+% double,	varchar,	double,	wrd # type
+% 24,	0,	24,	1 # length
