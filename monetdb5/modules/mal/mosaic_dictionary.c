@@ -423,15 +423,15 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define dictdecompress(I)\
-cid = (I * hdr->bits)/64;\
+cid = (int) (I * hdr->bits)/64;\
 lshift= 63 -((I * hdr->bits) % 64) ;\
 if ( lshift >= hdr->bits){\
-	j = (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask);\
+	j =(unsigned short)( (base[cid]>> (lshift-hdr->bits)) & ((unsigned long)hdr->mask));\
   }else{ \
 	rshift= 63 -  ((I+1) * hdr->bits) % 64;\
 	m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->bits-lshift)));\
 	m2 = (base[cid+1] >>rshift) & 0377;\
-	j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;\
+	j= (unsigned short)( ((m1 <<(hdr->bits-lshift)) | m2) & 0377);\
   }
 
 #define DICTdecompress(TPE)\

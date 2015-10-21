@@ -437,15 +437,15 @@ MOScompress_frame(Client cntxt, MOStask task)
 
 // the inverse operator, extend the src
 #define framedecompress(I)\
-cid = (I * hdr->framebits)/64;\
+cid = (int) (I * hdr->framebits)/64;\
 lshift= 63 -((I * hdr->framebits) % 64) ;\
 if ( lshift >= hdr->framebits){\
-	j = (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask);\
+	j = (unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask));\
   }else{ \
 	rshift= 63 -  ((I+1) * hdr->framebits) % 64;\
 	m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->framebits-lshift)));\
 	m2 = base[cid+1] >>rshift;\
-	j= ((m1 <<(hdr->framebits-lshift)) | m2) & 0377;\
+	j= (unsigned int) ( ((m1 <<(hdr->framebits-lshift)) | m2) & 0377);\
   }
 
 #define FRAMEdecompress(TPE)\
@@ -492,16 +492,16 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 
 			for(i = 0; i < lim; i++){
 				//mnstr_printf(cntxt->fdout,"decompress ["BUNFMT"] val "LLFMT" framebits %d\n",i, frame,hdr->framebits);
-				cid = (i * hdr->framebits)/64;
+				cid = (int)(i * hdr->framebits)/64;
 				lshift= 63 -((i * hdr->framebits) % 64) ;
 				if ( lshift >= hdr->framebits){
-					j = (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask);
+					j =(unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask));
 					//mnstr_printf(cntxt->fdout,"decompress [%d] lshift %d m %d\n", cid,  lshift,j);
 				  }else{ 
 					rshift= 63 -  ((i+1) * hdr->framebits) % 64;
 					m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->framebits-lshift)));
 					m2 = (base[cid+1] >>rshift);
-					j= ((m1 <<(hdr->framebits-lshift)) | m2) & 0377;\
+					j= (unsigned int) ( ((m1 <<(hdr->framebits-lshift)) | m2) & 0377);
 					//mnstr_printf(cntxt->fdout,"decompress [%d] shift %d %d val "LLFMT"cid %lo %lo idx %d\n", cid, lshift, rshift,frame,base[cid],base[cid+1], j);
 				  }
 				hdr->checksum2.sumint += dict[j];

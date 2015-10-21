@@ -311,7 +311,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	TYPE step = *(TYPE*) linear_step(task,blk);\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++) {\
-		((TYPE*)task->src)[i] = val + (int) i * step;\
+		((TYPE*)task->src)[i] = val + (TYPE) (i * step);\
 		hdr->checksum2.sum##TYPE += ((TYPE*)task->src)[i];\
 	}\
 	task->src += i * sizeof(TYPE);\
