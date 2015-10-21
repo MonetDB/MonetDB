@@ -75,3 +75,4 @@ duplicate-constraint.Bug-3820
 case_type.Bug-3821
 like-escape.Bug-3822
 uuid-compare.Bug-3827
+select-push-crash.Bug-3829
