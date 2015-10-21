@@ -1,3 +1,5 @@
+alter-table.Bug-3828-part1.sql
+alter-table.Bug-3828-part2.sql
 inet-ordering.Bug-3646
 sharp-alias.Bug-3467
 name_conflict.Bug-3650
