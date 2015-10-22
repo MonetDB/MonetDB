@@ -112,7 +112,7 @@ XMLunquotestring(const char **p, char q, char *buf)
 			} else if (*s == '#') {
 				char *e;
 				int base;
-				unsigned long n;
+				unsigned long n; /* type unsigned long returned by strtoul() */
 
 				s++;
 				if (*s == 'x' || *s == 'X') {

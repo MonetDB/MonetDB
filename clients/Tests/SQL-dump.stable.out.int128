@@ -506,6 +506,8 @@ create function buffer(a geometry, distance float) returns geometry external nam
 -- Calculate Chi squared probability
 create function sys.chi2prob(chi2 double, datapoints double)
 returns double external name gsl."chi2prob";
+create procedure sys.clearrejects()
+external name sql.copy_rejects_clear;
 -- The predicted storage footprint of the complete database
 -- determines the amount of diskspace needed for persistent storage
 -- and the upperbound when all possible index structures are created.
@@ -656,10 +658,27 @@ create function envelope(g geometry) returns geometry external name geom."Envelo
 create function sys.environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+--
+-- Copyright 2008-2015 MonetDB B.V.
+
+-- assume milliseconds when converted to TIMESTAMP
+create function sys."epoch"(sec bigint) returns timestamp
+	external name timestamp."epoch";
+create function sys."epoch"(sec int) returns timestamp
+	external name timestamp."epoch";
+create function sys."epoch"(ts timestamp) returns int
+	external name timestamp."epoch";
+create function sys."epoch"(ts timestamp with time zone) returns int
+	external name timestamp."epoch";
 -- ogc spatial relation methods
 create function equals(a geometry, b geometry) returns boolean external name geom."Equals";
 create procedure sys.evalalgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
+create procedure fitsattach(fname string) external name fits.attach;
+create procedure fitsload(tname string) external name fits.load;
 -- fuse two (1-byte) tinyint values into one (2-byte) smallint value
 create function fuse(one tinyint, two tinyint)
 returns smallint external name udf.fuse;
@@ -822,6 +841,10 @@ create function sys.isauuid(u string)
 returns uuid external name uuid."isaUUID";
 create function isempty(g geometry) returns boolean external name geom."IsEmpty";
 create function issimple(g geometry) returns boolean external name geom."IsSimple";
+create function "left_shift"(i1 inet, i2 inet) returns boolean
+	external name inet."<<";
+create function "left_shift_assign"(i1 inet, i2 inet) returns boolean
+	external name inet."<<=";
 create function length(g geometry) returns float external name geom."Length";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -832,6 +855,10 @@ create function length(g geometry) returns float external name geom."Length";
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 create function linefromtext(wkt string, srid smallint) returns linestring external name geom."LineFromText";
+
+
+create procedure listdir(dirname string) external name fits.listdir;
+create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
 create function "masklen" (p inet) returns int
 	external name inet."masklen";
 -- currently we only use mbr instead of
@@ -917,6 +944,17 @@ end;
 create function ms_trunc(num double, prc int)
 returns double
 external name sql.ms_trunc;
+-- gr_name is "GLOBAL" or "ROOT" for classic NetCDF files
+-- used for groups in HDF5 files
+-- global attributes have obj_name=""
+
+-- create function netcdfvar (fname varchar(256)) 
+--	returns int external name netcdf.test;
+
+create procedure netcdf_attach(fname varchar(256))
+    external name netcdf.attach;
+create procedure netcdf_importvar(fid integer, varnname varchar(256))
+    external name netcdf.importvariable;
 create function "netmask" (p inet) returns inet
 	external name inet."netmask";
 create function "network" (p inet) returns inet
@@ -962,6 +1000,8 @@ create function pointfromtext(wkt string, srid smallint) returns point external 
 create function polyfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 -- alias
 create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
+create procedure profiler_openstream(host string, port int) external name profiler."openStream";
+create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;
 create aggregate quantile(val tinyint, q double) returns tinyint
  	external name "aggr"."quantile";
 create aggregate quantile(val smallint, q double) returns smallint
@@ -1079,6 +1119,22 @@ external name sql.sysmon_queue;
 create function radians(d double) 
 returns double
 	return d*pi()/180;
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+--
+-- Copyright 2008-2015 MonetDB B.V.
+
+-- COPY into reject management
+
+create function sys.rejects()
+returns table(
+	rowid bigint,
+	fldid int,
+	"message" string,
+	"input" string
+)
+external name sql.copy_rejects;
 create function relate(a geometry, b geometry, pattern string) returns boolean external name geom."Relate";
 create procedure sys.resume(tag int)
 external name sql.sysmon_resume;
@@ -1098,6 +1154,10 @@ create procedure reuse(sys string, tab string)
 -- Reverse a string
 create function reverse(src string)
 returns string external name udf.reverse;
+create function "right_shift"(i1 inet, i2 inet) returns boolean
+	external name inet.">>";
+create function "right_shift_assign"(i1 inet, i2 inet) returns boolean
+	external name inet.">>=";
 create function sys.sessions()
 returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
 external name sql.sessions;
@@ -1283,9 +1343,15 @@ end;
 
 create function str_to_date(s string, format string) returns date
 	external name mtime."str_to_date";
+create function str_to_time(s string, format string) returns time
+	external name mtime."str_to_time";
+create function str_to_timestamp(s string, format string) returns timestamp
+	external name mtime."str_to_timestamp";
 create function symdifference(a geometry, b geometry) returns geometry external name geom."SymDifference";
 create function "text" (p inet) returns clob
 	external name inet."text";
+create function time_to_str(d time, format string) returns string
+	external name mtime."time_to_str";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1297,6 +1363,8 @@ create function "text" (p inet) returns clob
 
 create procedure times()
 external name sql.times;
+create function timestamp_to_str(d timestamp, format string) returns string
+	external name mtime."timestamp_to_str";
 create function touches(a geometry, b geometry) returns boolean external name geom."Touches";
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this

@@ -30,9 +30,21 @@ import time
 import socket
 import struct
 import signal
-import Mfilter
 import fnmatch
 import glob
+
+try:
+    import Mfilter
+except ImportError:
+    try:
+        import MonetDBtesting.Mfilter as Mfilter
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.Mfilter as Mfilter
+        if os.environ.has_key('PYTHONPATH'):
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 procdebug = False
 verbose = False
@@ -114,15 +126,7 @@ def _configure(str):
 try:
     import process
 except ImportError:
-    try:
-        import MonetDBtesting.process as process
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.process as process
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    import MonetDBtesting.process as process
 
 # Replace os.fork by a version that forks but also sets the process
 # group in the child.  This is done so that we can easily kill a
@@ -248,15 +252,7 @@ def CheckExec(cmd) :
 try:
     import monet_options
 except ImportError:
-    try:
-        from MonetDBtesting import monet_options
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        from MonetDBtesting import monet_options
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    from MonetDBtesting import monet_options
 
 import threading
 
