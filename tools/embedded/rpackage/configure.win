@@ -24,6 +24,7 @@ cd ../../..
 mkdir -p $R_PACKAGE_DIR/libs/x64
 cp src/tools/embedded/libmonetdb5.dll  src/
 cp src/tools/embedded/windows/pcre-8.37/libs/x64/pcre.dll $R_PACKAGE_DIR/libs/x64/
+cp src/tools/embedded/windows/msvcr100.dll $R_PACKAGE_DIR/libs/x64/
 
 # we have all of those in our fat DLL, so delete
 find ${R_PACKAGE_DIR}/libs -name "*.la" -delete

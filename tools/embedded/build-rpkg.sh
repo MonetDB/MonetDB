@@ -35,6 +35,8 @@ cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/sql/server/
 wget http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip
 unzip pcre-8.37.zip
 mv pcre-8.37 rpackage/src/tools/embedded/windows/
+wget http://dev.monetdb.org/Assets/R/misc/msvcr100.dll
+mv msvcr100.dll rpackage/src/tools/embedded/windows/
 
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
