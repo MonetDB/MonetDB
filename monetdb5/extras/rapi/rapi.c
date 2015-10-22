@@ -325,7 +325,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	ParseStatus status;
 	int i = 0;
 	char argbuf[64];
-	char argnames[1000] = "";
+	char argnames[10000] = "";
 	size_t pos;
 	char* rcall;
 	size_t rcalllen;

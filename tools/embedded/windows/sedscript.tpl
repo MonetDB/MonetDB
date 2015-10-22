@@ -43,7 +43,7 @@ s|@CC@|gcc|
 s|@CCDEPMODE@||
 s|@cfitsio_CFLAGS@||
 s|@cfitsio_LIBS@||
-s|@CFLAGS@|-m64 -O3 -I"C:/Program Files/R/R-3.2.1/include"|
+s|@CFLAGS@|-m64 -O3 -I"%RINCLUDE%"|
 s|@CLASSPATH@||
 s|@compilercall@||
 s|@configure_input@||
@@ -169,7 +169,7 @@ s|@PACKAGE_VERSION@||
 s|@PATHSEP@|;|
 s|@PATH_SEPARATOR@|;|
 s|@pcreversion@|8.3.7|
-s|@pcre_CFLAGS@|-I$(top_builddir)/tools/embedded/windows/pcre-8.37.win64/include|
+s|@pcre_CFLAGS@|-I$(top_builddir)/tools/embedded/windows/pcre-8.37/include|
 s|@pcre_LIBS@||
 s|@pdfdir@||
 s|@PERL@||
@@ -179,7 +179,7 @@ s|@PKG_CONFIG_LIBDIR@||
 s|@PKG_CONFIG_PATH@||
 s|@PKG_CURL@||
 s|@PKG_ZLIB@||
-s|@prefix@|C:/Users/Vanilla/ta-install/|
+s|@prefix@|%PREFIX%|
 s|@program_transform_name@||
 s|@psdir@||
 s|@PTHREAD_INCS@||
@@ -262,7 +262,7 @@ s|@thread_safe_flag_spec@||
 s|@THREAD_SAVE_FLAGS@||
 s|@top_builddir@|$(top_srcdir)|
 s|@top_build_prefix@||
-s|@top_srcdir@|c:/Users/Vanilla/MonetDB-2/src|
+s|@top_srcdir@|%SRCDIR%|
 s|@translatepath@||
 s|@UUID_LIBS@||
 s|@valgrind_CFLAGS@||

@@ -77,10 +77,6 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 	MT_lock_set(&monetdb_embedded_lock, "monetdb.startup");
 	if (monetdb_embedded_initialized) goto cleanup;
 
-#ifdef NATIVE_WIN32
-	SetDllDirectory(installdir);
-#endif
-
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 	if (GDKinit(set, setlen) == 0) {

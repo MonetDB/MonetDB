@@ -31,13 +31,15 @@ make sql_parser.tab.c
 cd ../../../
 cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/sql/server/
 
-# bundle pcre for windows (TODO: also iconv/zlib/ ...?)
-# wget http://dev.monetdb.org/downloads/Windows/Libraries/libs-win64.zip
-# 7z x libs-win64.zip
-# cp -r pcre-8.37.win64 rpackage/src/tools/embedded/windows/
+# bundle pcre for windows
+wget http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip
+unzip pcre-8.37.zip
+mv pcre-8.37 rpackage/src/tools/embedded/windows/
 
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
+# rm "rpackage/src/buildtools/conf/lt~obsolete.m4"
+
 R CMD build rpackage
 
 #scp $RPKG cwi:WWW/R
