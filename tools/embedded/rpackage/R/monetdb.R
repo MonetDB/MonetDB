@@ -1,7 +1,8 @@
+# we need this to find our MAL scripts and DLLs on Windows
+installdir <- ""
+
 .onLoad <- function(libname, pkgname){
-	# TODO: DLL on Windows
-	# TODO: save pkg path here to use in startup for monetdb_startup_R
-	dyn.load(file.path(libname, pkgname, "libs", "MonetDB.so"), local=F, now=F)
+	installdir <<- file.path(libname, pkgname, "libs")
 }
 
 monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
@@ -16,7 +17,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
-	res <- .Call("monetdb_startup_R", dir, quiet)
+	res <- .Call("monetdb_startup_R", installdir, dir, quiet)
 	if (is.character(res)) {
 		stop("Failed to initialize embedded MonetDB ", res)
 	}

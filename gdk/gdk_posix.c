@@ -943,10 +943,9 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 #endif
 
 void *
-mdlopen(const char *library, int mode)
+mdlopen(const char *file, int mode)
 {
-	(void) mode;
-	return GetModuleHandle(library);
+	return dlopen(file, mode);
 }
 
 void *

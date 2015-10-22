@@ -1,4 +1,4 @@
-useDynLib(MonetDB)
+useDynLib(libmonetdb5)
 export(monetdb_embedded_startup)
 export(monetdb_embedded_query)
 export(monetdb_embedded_append)

@@ -1,13 +1,21 @@
+# FIXME
+# patch sedscript for paths
+
+#sh src/tools/embedded/windows/pmc.sh
 cd src
-sh tools/embedded/windows/pmc.sh
+# FIXME
+find . -name "*.la" -delete
+# FIXME
 make
 cd tools/embedded
-rm MonetDB.dll
-rm MonetDB.o
-cp libembedded_la-embedded.lo MonetDB.o
-"${R_HOME}/bin/R.exe" CMD SHLIB -o MonetDB.dll MonetDB.o ../../common/stream/libstream.la ../../common/utils/libmsabaoth.la ../../common/utils/libmutils.la ../../common/utils/libmcrypt.la ../../gdk/libbat.la ../../monetdb5/tools/libmonetdb5.la ../../sql/server/libsqlserver.la ../../sql/backends/monet5/lib_sql.la ../../sql/storage/libstore.la ../../sql/storage/bat/libbatstore.la ../../sql/common/libsqlcommon.la -lpthread -lpsapi -lws2_32 -static-libgcc -static-libstdc++
+cp libembedded_la-embedded.lo libmonetdb5.o
+cp libembedded.la libembedded.a
+cp ../../sql/backends/monet5/lib_sql.la ../../sql/backends/monet5/libsql.a
+
+"${R_HOME}/bin/R.exe" CMD SHLIB -o libmonetdb5.dll libmonetdb5.o -L. -L../../sql/backends/monet5 -Wl,--whole-archive -lembedded -lsql -Wl,--no-whole-archive -lpthread -lpsapi -lws2_32 -static-libgcc -static-libstdc++ -Wl,--export-all-symbols -Wl,--allow-multiple-definition -Lwindows/pcre-8.37.win64/bin -lpcre
+
 cd ../../..
 mkdir -p $R_PACKAGE_DIR/libs
-cp src/tools/embedded/MonetDB.dll  $R_PACKAGE_DIR/libs
+cp src/tools/embedded/libmonetdb5.dll  src/
 
 # When configure.win is run the environment variables R_HOME (which uses ‘/’ as the file separator), R_ARCH and Use R_ARCH_BIN will be set. Use R_ARCH to decide if this is a 64-bit build (its value there is ‘/x64’) and to install DLLs to the correct place (${R_HOME}/libs${R_ARCH}). Use R_ARCH_BIN to find the correct place under the bin directory, e.g. ${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe.

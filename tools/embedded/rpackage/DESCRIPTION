@@ -1,7 +1,7 @@
 Package: MonetDBLite
-Version: 1.0.0
+Version: 0.1.0
 Title: In-Process version of MonetDB for R
-Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"))
+Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"), email = "hannes@cwi.nl"))
 Author: Hannes Muehleisen [aut, cre]
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>
 Description: Blarg.

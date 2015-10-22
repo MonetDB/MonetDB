@@ -46,9 +46,9 @@ mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
 static bit monetdb_embedded_initialized = 0;
 static MT_Lock monetdb_embedded_lock;
 
-static void* lookup_function(char* lib, char* func) {
+static void* lookup_function(char* func) {
 	void *dl, *fun;
-	dl = mdlopen(lib, RTLD_NOW | RTLD_GLOBAL);
+	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
 	if (dl == NULL) {
 		return NULL;
 	}
@@ -57,7 +57,7 @@ static void* lookup_function(char* lib, char* func) {
 	return fun;
 }
 
-char* monetdb_startup(char* dir, char silent) {
+char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
 	char* retval = NULL;
@@ -73,44 +73,47 @@ char* monetdb_startup(char* dir, char silent) {
 		}
 		goto cleanup;
 	}
-
 	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
 	MT_lock_set(&monetdb_embedded_lock, "monetdb.startup");
 	if (monetdb_embedded_initialized) goto cleanup;
 
+#ifdef NATIVE_WIN32
+	SetDllDirectory(installdir);
+#endif
+
 	setlen = mo_builtin_settings(&set);
-	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dir);
+	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 	if (GDKinit(set, setlen) == 0) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
-
-	snprintf(mod_path, 1000, "%s/../lib/monetdb5", BINDIR);
+	snprintf(mod_path, 1000, "%s/lib/monetdb5", installdir);
 	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");
-	GDKsetenv("sql_optimizer", "sequential_pipe"); // TODO: SELECT * FROM table should not use mitosis in the first place.
+	// TODO: SELECT * FROM table should not use mitosis in the first place (?).
+	GDKsetenv("sql_optimizer", "sequential_pipe");
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
-	if (mal_init() != 0) {
+
+	if (mal_init() != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
 	if (silent) mal_clients[0].fdout = THRdata[0];
 
-	// This dynamically looks up functions, because the library containing them is loaded at runtime.
-	// argh
-	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("lib_sql",  "SQLstatementIntern");
-	SQLautocommit_ptr = (SQLautocommit_ptr_tpe) lookup_function("lib_sql",  "SQLautocommit");
-	SQLinitClient_ptr = (SQLinitClient_ptr_tpe) lookup_function("lib_sql",  "SQLinitClient");
-	getSQLContext_ptr = (getSQLContext_ptr_tpe) lookup_function("lib_sql",  "getSQLContext");
-	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("libstore", "res_table_destroy");
-	mvc_append_wrap_ptr = (mvc_append_wrap_ptr_tpe)  lookup_function("lib_sql", "mvc_append_wrap");
-	mvc_bind_schema_ptr = (mvc_bind_schema_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_schema");
-	mvc_bind_table_ptr = (mvc_bind_table_ptr_tpe)  lookup_function("lib_sql", "mvc_bind_table");
-	sqlcleanup_ptr = (sqlcleanup_ptr_tpe)  lookup_function("lib_sql", "sqlcleanup");
-	mvc_trans_ptr = (mvc_trans_ptr_tpe) lookup_function("lib_sql", "mvc_trans");
+	// This dynamically looks up functions, because the libraries containing them are loaded at runtime.
+	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("SQLstatementIntern");
+	SQLautocommit_ptr      = (SQLautocommit_ptr_tpe)      lookup_function("SQLautocommit");
+	SQLinitClient_ptr      = (SQLinitClient_ptr_tpe)      lookup_function("SQLinitClient");
+	getSQLContext_ptr      = (getSQLContext_ptr_tpe)      lookup_function("getSQLContext");
+	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("res_table_destroy");
+	mvc_append_wrap_ptr    = (mvc_append_wrap_ptr_tpe)    lookup_function("mvc_append_wrap");
+	mvc_bind_schema_ptr    = (mvc_bind_schema_ptr_tpe)    lookup_function("mvc_bind_schema");
+	mvc_bind_table_ptr     = (mvc_bind_table_ptr_tpe)     lookup_function("mvc_bind_table");
+	sqlcleanup_ptr         = (sqlcleanup_ptr_tpe)         lookup_function("sqlcleanup");
+	mvc_trans_ptr          = (mvc_trans_ptr_tpe)          lookup_function("mvc_trans");
 
 	if (SQLstatementIntern_ptr == NULL || SQLautocommit_ptr == NULL ||
 			SQLinitClient_ptr == NULL || getSQLContext_ptr == NULL ||
@@ -266,16 +269,21 @@ SEXP monetdb_query_R(SEXP query, SEXP notreallys) {
 	return ScalarLogical(1);
 }
 
-SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp) {
-	const char* dir = NULL;
+SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp) {
+	const char* installdir = NULL;
+	const char* dbdir=NULL;
 	char silent = 0;
 	char* res = NULL;
+
 	if (monetdb_embedded_initialized) {
 		return ScalarLogical(0);
 	}
-	dir = CHAR(STRING_ELT(dirsexp, 0));
+	installdir = CHAR(STRING_ELT(installdirsexp, 0));
+	dbdir = CHAR(STRING_ELT(dbdirsexp, 0));
 	silent = LOGICAL(silentsexp)[0];
-	res = monetdb_startup((char*) dir, silent);
+
+	res = monetdb_startup((char*) installdir, (char*) dbdir, silent);
+
 	if (res == NULL) {
 		return ScalarLogical(1);
 	}  else {

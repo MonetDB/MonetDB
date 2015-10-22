@@ -20,12 +20,12 @@ typedef struct append_data {
 	ssize_t batid;
 } append_data;
 
-char* monetdb_startup(char* dir, char silent);
+char* monetdb_startup(char* installdir, char* dbdir, char silent);
 char* monetdb_query(char* query, void** result);
 char* monetdb_append(const char* schema, const char* table, append_data *ad, int ncols);
 void monetdb_cleanup_result(void* output);
 SEXP monetdb_query_R(SEXP querysexp, SEXP notreally);
-SEXP monetdb_startup_R(SEXP dirsexp, SEXP silentsexp);
+SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp);
 SEXP monetdb_append_R(SEXP schemaname, SEXP tablename, SEXP tabledata);
 
 #endif

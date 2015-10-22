@@ -1,7 +1,7 @@
 #!/bin/sh
 cd src
 
-CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/install \
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/libs \
 --enable-embedded --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
@@ -19,14 +19,14 @@ cd ..
 mkdir -p $R_PACKAGE_DIR/libs/
 
 # and finally put the embedded library where R expects it
-RDYNLIB=$R_PACKAGE_DIR/libs/MonetDB.so
+RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 # TODO: this number should probably be pulled from automake and friends
 VER=1
-if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.$VER.dylib" ]; then
-    ln -s $R_PACKAGE_DIR/install/lib/libembedded.$VER.dylib $RDYNLIB
+if [ -f "$R_PACKAGE_DIR/libs/lib/libembedded.$VER.dylib" ]; then
+    ln -s $R_PACKAGE_DIR/libs/lib/libembedded.$VER.dylib $RDYNLIB
 fi
-if [ -f "$R_PACKAGE_DIR/install/lib/libembedded.so.$VER" ]; then
-    ln -s $R_PACKAGE_DIR/install/lib/libembedded.so.$VER $RDYNLIB
+if [ -f "$R_PACKAGE_DIR/libs/lib/libembedded.so.$VER" ]; then
+    ln -s $R_PACKAGE_DIR/libs/lib/libembedded.so.$VER $RDYNLIB
 fi
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
