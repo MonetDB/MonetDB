@@ -14,10 +14,6 @@ pattern stop():void
 address CMDstopProfiler
 comment "Stop offline performance profiling";
 
-pattern setpoolsize(pool:int)
-address CMDsetProfilerPoolSize
-comment "Re-initialize the profiler pool";
-
 command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";

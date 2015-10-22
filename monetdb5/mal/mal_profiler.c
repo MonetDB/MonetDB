@@ -49,71 +49,6 @@ static struct{
 //static MT_Lock mal_beatLock MT_LOCK_INITIALIZER("beatLock");
 //#endif
 
-/*
- * Profiler trace cache
- * The trace information for a limited collection of queries is retained in 
- * a profiler cache, located in the database directory profiler_logs.
- * It can be used for post-mortem analysis. It actually should be a profiler_vault.
- *
- * The cache file name is simply derived from the MAL block invocation tag,
- * which is assured to be unique.
- * 
- * The JSON structures are also sent to the single stream upon request.
- *
- * The old profiler cache structures are removed when you
- * start of the profiler.
- */
-
-#define MAXJSONEVENTS (1000000) /* cut off large JSON traces */
-#define DEFAULTPOOLSIZE 10
-
-typedef struct {
-	int tag;
-	int cnt;	// number of events in this bucket
-	lng start,finish;
-	char fname[BUFSIZ];
-	stream *trace;
-} ProfilerRecord;
-
-ProfilerRecord *profilerPool;
-static int poolSize= DEFAULTPOOLSIZE;
-
-static void
-clearPool(void)
-{	int i;
-	
-	// remove old profiler traces
-	if( profilerPool )
-	for( i = 0; i < poolSize; i++){
-		if ( profilerPool[i].trace)
-			close_stream(profilerPool[i].trace);
-		if( profilerPool[i].fname[0])
-		(void) unlink(profilerPool[i].fname);
-	}
-}
-
-// setting the poolsize re-initializes the pool
-str 
-setprofilerpoolsize(int size)
-{
-	if( size < 1)
-		throw(MAL,"profiler.setPool", "invalid pool size");
-	MT_lock_set(&mal_profileLock, "profilerpool");
-	// Always cleanout the past before you set the new pool size
-	if (profilerPool){
-		clearPool();
-		poolSize = 0;
-		GDKfree(profilerPool);
-		profilerPool = 0;
-	}
-	profilerPool = GDKzalloc(size * sizeof(ProfilerRecord));
-	MT_lock_unset(&mal_profileLock, "profilerpool");
-	if( profilerPool == 0)
-		throw(MAL,"profiler.setPool", MAL_MALLOC_FAIL);
-	poolSize = size;
-	return MAL_SUCCEED;
-}
-
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
@@ -125,20 +60,21 @@ setprofilerpoolsize(int size)
 
 
 // The heart beat events should be sent to all outstanding channels.
-static void logjsonInternal(int k, char *logbuffer, InstrPtr p)
+static void logjsonInternal(char *logbuffer)
 {	
 	char buf[BUFSIZ], *s;
 	size_t len, lenhdr;
 
-	snprintf(buf,BUFSIZ,"%d",eventcounter);
 	s = strchr(logbuffer,(int) ':');
 	if( s == NULL){
 		return;
 	}
-	strncpy(s+1, buf,strlen(buf));
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock, "logjson");
+	snprintf(buf,BUFSIZ,"%d",eventcounter);
+	strncpy(s+1, buf,strlen(buf));
+
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
 		if( eventcounter == 0){
@@ -149,57 +85,8 @@ static void logjsonInternal(int k, char *logbuffer, InstrPtr p)
 		(void) mnstr_write(eventstream, logbuffer, 1, len);
 		(void) mnstr_flush(eventstream);
 	}
-
-	// all queries are assembled in a performance trace pool
-	if( profilerPool){
-		if( profilerPool[k].trace == NULL){
-			if( profilerPool[k].fname[0]== 0)
-				(void) mkdir("profiler_logs", 0755);
-			if( profilerPool[k].fname[0]== 0)
-				snprintf(profilerPool[k].fname, BUFSIZ,"profiler_logs/%d.json",k);
-			
-			profilerPool[k].trace = open_wastream(profilerPool[k].fname);
-			if( profilerPool[k].trace == NULL){
-				GDKerror("could not create profiler file");
-				MT_lock_unset(&mal_profileLock, "logjson");
-				return;
-			}
-			profilerPool[k].start = GDKusec();
-			snprintf(buf,BUFSIZ,"%s\n",monetdb_characteristics);
-			(void) mnstr_write(profilerPool[k].trace, buf, 1, strlen(buf));
-		}
-		if( profilerPool[k].trace){
-			(void) mnstr_write(profilerPool[k].trace,logbuffer,1,len);
-			(void) mnstr_flush(profilerPool[k].trace);
-		}
-		if ( profilerPool[k].trace && (( p && p->barrier == ENDsymbol && strstr(logbuffer,"done")) || profilerPool[k].cnt > MAXJSONEVENTS) ){
-			(void) mnstr_flush(profilerPool[k].trace);
-			(void) close_stream(profilerPool[k].trace);
-			profilerPool[k].cnt = 0;
-			profilerPool[k].trace = NULL;
-			profilerPool[k].finish = GDKusec();
-		}
-	}
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock, "logjson");
-}
-
-static void logjson(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char *logbuffer)
-{	
-	int i,k;	
-
-	(void) mb;
-	if (stk){
-		logjsonInternal( k = stk->tag % poolSize, logbuffer,p);
-		if (profilerPool)
-			profilerPool[k].tag = stk->tag;
-	} else if (profilerPool) {
-// The heart beat events should be sent to all outstanding channels.
-// But only once to the stream
-		for(i=0; i< poolSize; i++)
-			if (profilerPool[i].trace)
-				logjsonInternal( i, logbuffer, 0);
-	}
 }
 
 /* JSON rendering method of performance data. 
@@ -403,7 +290,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 #endif
 	}
 	logadd("}\n"); // end marker
-	logjson(mb,stk,pci,logbuffer);
+	logjsonInternal(logbuffer);
 }
 
 static int
@@ -521,7 +408,7 @@ profilerHeartbeatEvent(char *alter)
 	logadd("\"state\":\"%s\",\n",alter);
 	logadd("\"cpuload\":\"%s\",\n",cpuload);
 	logadd("}\n"); // end marker
-	logjson(0,0,0,logbuffer);
+	logjsonInternal(logbuffer);
 }
 
 void
@@ -563,7 +450,6 @@ openProfilerStream(stream *fd, int mode)
 	}
 	if( eventstream)
 		closeProfilerStream();
-	setprofilerpoolsize(poolSize);
 	malProfileMode = -1;
 	eventstream = fd;
 	/* show all in progress instructions for stethoscope startup */

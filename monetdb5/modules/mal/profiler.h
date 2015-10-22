@@ -42,7 +42,6 @@ profiler_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 profiler_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDnoopProfiler(void *res);
 profiler_export str CMDsetHeartbeat(void *res, int *ev);
-profiler_export str CMDsetProfilerPoolSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDcloseProfilerStream(void *res);
 profiler_export str CMDcleanup(void *ret);

@@ -323,6 +323,8 @@ main(int argc, char **argv)
 	conn = mapi_get_from(dbh);
 	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
+		if(debug)
+			printf("%s",buffer);
 		if( trace) 
 			fprintf(trace,"%s",buffer);
 		response = buffer;

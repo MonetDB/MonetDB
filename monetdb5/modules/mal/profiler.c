@@ -52,17 +52,6 @@ CMDcloseProfilerStream(void *res)
 	return closeProfilerStream();
 }
 
-str
-CMDsetProfilerPoolSize (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int poolsize = *getArgReference_int(stk,pci,1);
-	(void) mb;		/* fool compiler */
-	(void) cntxt;
-	if( poolsize < 0)
-		throw(MAL,"profiler","Trace pool size should be positive");
-	return setprofilerpoolsize(poolsize);
-}
-
 // initialize SQL tracing
 str
 CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
