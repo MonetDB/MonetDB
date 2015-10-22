@@ -396,7 +396,7 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 		return sql_message("42S01!%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
 		return sql_message("42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message("42000!DECLARE TABLE: '%s' cannot have constraints", t->base.name);
@@ -503,7 +503,7 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
 		return sql_message("42S02!ALTER TABLE: no such table '%s'", t->base.name);
 
-	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
+	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
 		return sql_message("42000!ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -616,7 +616,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
 		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
-	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
+	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
 		return sql_message("42000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if (!drop_action && t->keys.set) {
@@ -661,7 +661,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 
 	t = mvc_bind_table(sql, ss, tname);
 
-	if (!schema_privs(sql->role_id, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
+	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
 		return sql_message("42000!DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
 		return sql_message("42S02!DROP VIEW: unknown view '%s'", tname);
@@ -708,7 +708,7 @@ drop_index(mvc *sql, char *sname, char *iname)
 	i = mvc_bind_idx(sql, s, iname);
 	if (!i) {
 		return sql_message("42S12!DROP INDEX: no such index '%s'", iname);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		mvc_drop_idx(sql, s, i);
@@ -727,7 +727,7 @@ create_seq(mvc *sql, char *sname, sql_sequence *seq)
 		s = cur_schema(sql);
 	if (find_sql_sequence(s, seq->base.name)) {
 		return sql_message("42000!CREATE SEQUENCE: name '%s' already in use", seq->base.name);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
@@ -746,7 +746,7 @@ alter_seq(mvc *sql, char *sname, sql_sequence *seq, lng *val)
 		s = cur_schema(sql);
 	if (!(nseq = find_sql_sequence(s, seq->base.name))) {
 		return sql_message("42000!ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -769,7 +769,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 		s = cur_schema(sql);
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_message("42M35!DROP SEQUENCE: no such sequence '%s'", name);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
@@ -799,7 +799,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 		if (n) {
 			sql_func *func = n->data;
 
-			if (!schema_privs(sql->role_id, s)) {
+			if (!mvc_schema_privs(sql, s)) {
 				return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
@@ -811,7 +811,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
 
-		if (!schema_privs(sql->role_id, s)) {
+		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
 			return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		}
@@ -962,7 +962,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
-	if (!schema_privs(sql->role_id, s))
+	if (!mvc_schema_privs(sql, s))
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if (mvc_bind_trigger(sql, s, triggername) != NULL)
 		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
@@ -1012,7 +1012,7 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 	if (!s)
 		s = cur_schema(sql);
 	assert(s);
-	if (!schema_privs(sql->role_id, s))
+	if (!mvc_schema_privs(sql, s))
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
@@ -1197,7 +1197,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!s) {
 			msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
-		} else if (!schema_privs(sql->role_id, s)) {
+		} else if (!mvc_schema_privs(sql, s)) {
 			msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 		} else if (s == cur_schema(sql)) {
 			msg = sql_message("42000!DROP SCHEMA: cannot drop current schema");
@@ -4980,6 +4980,80 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
+
+str
+RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *mod = getArgReference_str(stk, pci, 1);
+	str *nme = getArgReference_str(stk, pci, 2);
+	str *expr = getArgReference_str(stk, pci, 3);
+	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg;
+	sql_rel *rel;
+	list *refs, *ops;
+	char buf[BUFSIZ];
+
+	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!m->sa)
+		m->sa = sa_create();
+
+       	ops = sa_list(m->sa);
+	//fprintf(stderr, "'%s' %s\n", *sig, *expr);
+	//fflush(stderr);
+	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
+	while (c && *c && !isspace(*c)) {
+		char *vnme = c, *tnme; 
+		char *p = strchr(++c, (int)' ');
+		int d,s,nr;
+		sql_subtype t;
+		atom *a;
+
+		*p++ = 0;
+		vnme = sa_strdup(m->sa, vnme);
+		nr = strtol(vnme+1, NULL, 10);
+		tnme = p;
+		p = strchr(p, (int)'(');
+		*p++ = 0;
+		tnme = sa_strdup(m->sa, tnme);
+
+		d = strtol(p, &p, 10);
+		p++; /* skip , */
+		s = strtol(p, &p, 10);
+		
+		sql_find_subtype(&t, tnme, d, s);
+		a = atom_general(m->sa, &t, NULL);
+		/* the argument list may have holes and maybe out of order, ie
+		 * done use sql_add_arg, but special numbered version
+		 * sql_set_arg(m, a, nr);
+		 * */
+		sql_set_arg(m, nr, a);
+		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
+		c = strchr(p, (int)',');
+		if (c)
+			c++;
+	}
+	//fprintf(stderr, "2: %d %s\n", list_length(ops), *expr);
+	//fflush(stderr);
+	refs = sa_list(m->sa);
+	rel = rel_read(m, *expr, &pos, refs);
+	//fprintf(stderr, "3: %d %s\n", list_length(ops), rel2str(m, rel));
+	//fflush(stderr);
+	if (!rel)
+		throw(SQL, "sql.register", "Cannot register %s", buf);
+	if (rel) {
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops));
+		rel_destroy(rel);
+	}
+	sqlcleanup(m, 0);
+	return msg;
+}
+
 
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)

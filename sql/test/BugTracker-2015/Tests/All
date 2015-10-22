@@ -1,3 +1,5 @@
+alter-table.Bug-3828-part1
+alter-table.Bug-3828-part2
 inet-ordering.Bug-3646
 sharp-alias.Bug-3467
 name_conflict.Bug-3650
@@ -63,6 +65,16 @@ savepoint.Bug-3738-1
 savepoint.Bug-3738-2
 string_split.Bug-3564
 schemadiff.Bug-3778
+fractional_precision_limitation.Bug-3808
 not-like-without-wildcard.Bug-3811
-copy_into.Bug-3813
+HAVE_LIBZ?copy_into.Bug-3813
 select-tilde-arg.Bug-3814
+timestamp_convert.Bug-3815
+crash_timestamp_convert.Bug-3816
+crash_in_reduce_groupby.Bug-3818
+duplicate-constraint.Bug-3820
+case_type.Bug-3821
+like-escape.Bug-3822
+uuid-compare.Bug-3827
+select-push-crash.Bug-3829
+coalesce.Bug-3830

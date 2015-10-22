@@ -30,55 +30,46 @@ stderr of test 'grantRevokeAndGrantAgain.Bug-3765` in directory 'sql/test/Users`
 # 10:09:33 >  "/usr/bin/python2" "grantRevokeAndGrantAgain.SQL.py" "grantRevokeAndGrantAgain"
 # 10:09:33 >  
 
-MAPI  = (user_delete) /var/tmp/mtest-23132/.s.monetdb.35725
-QUERY = SELECT * FROM testTable; -- not enough privileges
-ERROR = !SELECT: access denied for user_delete to table 'schematest.testtable'
-MAPI  = (user_delete) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_delete) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
-ERROR = !UPDATE: insufficient privileges for user 'user_delete' to update table 'testtable'
-MAPI  = (user_delete) /var/tmp/mtest-23132/.s.monetdb.35725
+ERROR = !UPDATE: insufficient privileges for user 'user_delete' to update table 'testtable' on column 'v1'
+MAPI  = (user_delete) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = INSERT into testTable values (3, 3); -- not enough privileges
 ERROR = !INSERT INTO: insufficient privileges for user 'user_delete' to insert into table 'testtable'
-MAPI  = (user_update) /var/tmp/mtest-23132/.s.monetdb.35725
-QUERY = UPDATE testTable set v1 = 2 where v2 = 7;
-ERROR = !UPDATE: insufficient privileges for user 'user_update' to update table 'testtable'
-MAPI  = (user_update) /var/tmp/mtest-23132/.s.monetdb.35725
-QUERY = SELECT * FROM testTable; -- not enough privileges
-ERROR = !SELECT: access denied for user_update to table 'schematest.testtable'
-MAPI  = (user_update) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_update) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = INSERT into testTable values (3, 3); -- not enough privileges
 ERROR = !INSERT INTO: insufficient privileges for user 'user_update' to insert into table 'testtable'
-MAPI  = (user_update) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_update) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = DELETE FROM testTable where v1 = 2; -- not enough privileges
 ERROR = !DELETE FROM: insufficient privileges for user 'user_update' to delete from table 'testtable'
-MAPI  = (user_insert) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_insert) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = SELECT * FROM testTable; -- not enough privileges
 ERROR = !SELECT: access denied for user_insert to table 'schematest.testtable'
-MAPI  = (user_insert) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_insert) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
 ERROR = !UPDATE: insufficient privileges for user 'user_insert' to update table 'testtable'
-MAPI  = (user_insert) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_insert) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = DELETE FROM testTable where v1 = 2; -- not enough privileges
 ERROR = !DELETE FROM: insufficient privileges for user 'user_insert' to delete from table 'testtable'
-MAPI  = (user_select) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_select) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = INSERT into testTable values (3, 3); -- not enough privileges
 ERROR = !INSERT INTO: insufficient privileges for user 'user_select' to insert into table 'testtable'
-MAPI  = (user_select) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_select) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
 ERROR = !UPDATE: insufficient privileges for user 'user_select' to update table 'testtable' on column 'v1'
-MAPI  = (user_select) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_select) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = DELETE FROM testTable where v1 = 2; -- not enough privileges
 ERROR = !DELETE FROM: insufficient privileges for user 'user_select' to delete from table 'testtable'
-MAPI  = (user_delete) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_delete) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = DELETE from testTable where v2 = 666; -- not enough privileges
 ERROR = !DELETE FROM: insufficient privileges for user 'user_delete' to delete from table 'testtable'
-MAPI  = (user_insert) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_insert) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = INSERT into testTable values (666, 666); -- not enough privileges
 ERROR = !INSERT INTO: insufficient privileges for user 'user_insert' to insert into table 'testtable'
-MAPI  = (user_update) /var/tmp/mtest-23132/.s.monetdb.35725
+MAPI  = (user_update) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges
-ERROR = !UPDATE: insufficient privileges for user 'user_update' to update table 'testtable'
-MAPI  = (user_select) /var/tmp/mtest-23132/.s.monetdb.35725
+ERROR = !UPDATE: insufficient privileges for user 'user_update' to update table 'testtable' on column 'v1'
+MAPI  = (user_select) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = SELECT * FROM testTable where v1 = 666; -- not enough privileges
 ERROR = !SELECT: access denied for user_select to table 'schematest.testtable'
 

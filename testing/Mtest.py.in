@@ -30,7 +30,6 @@ import time
 import socket
 import struct
 import signal
-import Mfilter
 import fnmatch
 import glob
 
@@ -110,19 +109,24 @@ def _configure(str):
             str = nstr
     return str
 
+try:
+    import Mfilter
+except ImportError:
+    try:
+        import MonetDBtesting.Mfilter as Mfilter
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.Mfilter as Mfilter
+        if os.environ.has_key('PYTHONPATH'):
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
+
 # use our own process module because it has _BufferedPipe
 try:
     import process
 except ImportError:
-    try:
-        import MonetDBtesting.process as process
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.process as process
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    import MonetDBtesting.process as process
 
 # Replace os.fork by a version that forks but also sets the process
 # group in the child.  This is done so that we can easily kill a
@@ -248,15 +252,7 @@ def CheckExec(cmd) :
 try:
     import monet_options
 except ImportError:
-    try:
-        from MonetDBtesting import monet_options
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        from MonetDBtesting import monet_options
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    from MonetDBtesting import monet_options
 
 import threading
 
@@ -924,7 +920,7 @@ def CreateSrcIndex (env, TST, EXT) :
                  Element('th', {'class': 'header'},
                          Text(TST)))
     for s in os.listdir(TSTSRCDIR):
-        if len(s) >= len(TST)  and  s[:len(TST)] == TST:
+        if s.startswith(TST):
             slink = Text(s)
             if URLPREFIX:
                 slink = Element('a',
@@ -1338,8 +1334,10 @@ def ApproveOutput (env, TST) :
                         f.write(l[:1] + '\n')
                         Warn('Rejecting (error) message: "%s"' % l[1:].replace(os.linesep, ''))
                     elif len(l) < 2  or  \
-                       ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  \
-                         l[:8] != '+ERROR: '  and  l[:10] != '+WARNING: ' ) :        # or  filter.match(ln):
+                         (l[:2] not in ['+!','+='] and
+                          not l.startswith('+ERROR = !') and
+                          not l.startswith('+ERROR: ') and
+                          not l.startswith('+WARNING: ')): # or  filter.match(ln):
                         f.write(l)
                     else:
                         if FORCE:
@@ -1432,7 +1430,7 @@ def expandvars(path, environ = os.environ):
             path = path[:i] + val
             i = len(path)
             path += tail
-        elif name[:1] == 'Q' and name[1:] in environ:
+        elif name.startswith('Q') and name[1:] in environ:
             tail = path[j:]
             val = environ[name[1:]].replace('\\', '\\\\')
             path = path[:i] + val
@@ -1649,7 +1647,7 @@ def CheckTests(env, TST, oktests):
 
     for test in open(TST + '.reqtests'):
         test = test.strip()
-        if not test or test[:1] == '#':
+        if not test or test.startswith('#'):
             continue
         if not test in oktests:
             missing.append(test)
@@ -1695,11 +1693,11 @@ def CategorizeResult(TST, SockTime):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.out.diff.html" % TST):
         pass
-    if   l[:14] == '<!--NoDiffs-->':
+    if   l.startswith('<!--NoDiffs-->'):
         o = F_OK
-    elif l[:17] == '<!--MinorDiffs-->':
+    elif l.startswith('<!--MinorDiffs-->'):
         o = F_WARN
-    elif l[:17] == '<!--MajorDiffs-->':
+    elif l.startswith('<!--MajorDiffs-->'):
         o = F_ERROR
     else:
         Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
@@ -1710,11 +1708,11 @@ def CategorizeResult(TST, SockTime):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.err.diff.html" % TST):
         pass
-    if   l[:14] == '<!--NoDiffs-->':
+    if   l.startswith('<!--NoDiffs-->'):
         e = F_OK
-    elif l[:17] == '<!--MinorDiffs-->':
+    elif l.startswith('<!--MinorDiffs-->'):
         e = F_WARN
-    elif l[:17] == '<!--MajorDiffs-->':
+    elif l.startswith('<!--MajorDiffs-->'):
         e = F_ERROR
     else:
         Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
@@ -1818,7 +1816,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = CALL = SERVER = ""
         if COND:
             for cond in COND.split('&'):
-                if cond[:1] == '!':
+                if cond.startswith('!'):
                     negate = True
                     cond = cond[1:]
                 else:
@@ -1888,7 +1886,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     if COND:
         for cond in COND.split('&'):
-            if cond[:1] == '!':
+            if cond.startswith('!'):
                 negate = True
                 cond = cond[1:]
             else:
@@ -2826,11 +2824,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
-            while 0 < len(ln) and ln[:6] != 'Ready.':
+            while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
-            if ln[:6] != 'Ready.':
+            if not ln.startswith('Ready.'):
                 # If not ready, it may be that there are far too many
                 # network connections in use, all in TIME_WAIT status.
                 # We'll just wait a while for that to clear and try
@@ -2843,11 +2841,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     time.sleep(120)
                     pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
                     ln="dummy"
-                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                    while 0 < len(ln) and not ln.startswith('Ready.'):
                         ln=pSrvr.stdout.readline()
                         SrvrOut.write(ln)
                         SrvrOut.flush()
-                if ln[:6] != 'Ready.':
+                if not ln.startswith('Ready.'):
                     ServerReady = False
 
             if ServerReady:
@@ -2863,11 +2861,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         ServerReady = True
                         pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
                         ln="dummy"
-                        while 0 < len(ln) and ln[:6] != 'Ready.':
+                        while 0 < len(ln) and not ln.startswith('Ready.'):
                             ln=pSrvr.stdout.readline()
                             SrvrOut.write(ln)
                             SrvrOut.flush()
-                    if ln[:6] != 'Ready.':
+                    if not ln.startswith('Ready.'):
                         ServerReady = False
 
                     if ServerReady:
@@ -2919,7 +2917,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if test.match(f):
                         TSTs.append(f)
 
-                if CALL[:3] == "mal":
+                if CALL.startswith("mal"):
                     Clnt = splitcommand(exe['MAL_Client'][1])
                 else:
                     Clnt = []   # cannot happen
@@ -2970,7 +2968,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                     EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
                 ln="dummy"
-                while 0 < len(ln) and ln[:6] != 'Done..':
+                while 0 < len(ln) and not ln.startswith('Done..'):
                     ln=pSrvr.stdout.readline()
                     SrvrOut.write(ln)
                     SrvrOut.flush()
@@ -3111,13 +3109,13 @@ def Check(command, input) :
                        re.MULTILINE)
     noErr = []
     for l in qOut+qErr:
-        if l[:1] == "!":
+        if l.startswith("!"):
             if test.match(l):
-                if l[:10] != "!WARNING: ":
+                if not l.startswith("!WARNING: "):
                     noErr.append(l+"\n")
             else:
                 ErrMsg('"%s" failed:' % '" "'.join(command))
-                if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
+                if qOut and qOut[-1].startswith("! Exit 1"):
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
                     STDERR.write(l)

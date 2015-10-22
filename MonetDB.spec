@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -920,7 +920,6 @@ developer, but if you do want to test, this is the package you need.
 # %exclude %{_bindir}/*.pyc
 # %exclude %{_bindir}/*.pyo
 %{_bindir}/Mapprove.py
-%{_bindir}/Mfilter.py
 %{_bindir}/Mtest.py
 %dir %{python_sitelib}/MonetDBtesting
 %{python_sitelib}/MonetDBtesting/*
@@ -996,6 +995,42 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Oct 20 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
+- Rebuilt.
+- BZ#3789: Query on large string table fails on HEAPextend
+- BZ#3794: table function sys.rejects() and view sys.rejects() are listed
+  are metadata objects but give an (incorrect) error when they are queried
+- BZ#3797: COPY INTO with incorrect number columns
+- BZ#3798: SELECT query with INTERSECT causes assertion failure
+- BZ#3800: LIKE is broken for many patterns
+- BZ#3802: Disk space never freed: a logical ref is keeped on a deleted
+  BATs
+- BZ#3803: SQL query parser fails to parse valid SELECT query with a
+  CASE .. END in it. It fails with parser error: identifier 'x' ambiguous
+- BZ#3804: `monetdb status` command crashes under certain conditions
+- BZ#3809: Inefficient plan is generated for queries with many (>= 24)
+  joined tables which take a long time or an HEAPalloc error. I get Error:
+  GDK reported error. HEAPalloc: Insufficient space for HEAP of 400000000
+  bytes.
+- BZ#3810: Fix statistics gathering
+- BZ#3811: NOT LIKE not working if the operand doesn't contains wildcards.
+- BZ#3813: COPY INTO fails on perfectly clean CSV file
+- BZ#3814: Server crash when using bitwise NOT operation in SQL query
+- BZ#3818: Crash when performing UNION/GROUP BY over tables with
+  different columns
+- BZ#3819: order of tables in FROM-clause has negative impact on generated
+  plan (using crossproducts instead of joins)
+- BZ#3820: mclient accepts table with repeated constraint which causes
+  crash on insert
+- BZ#3821: Unexpected error when using a number instead of a boolean
+- BZ#3822: Yet another LIKE operator issue
+- BZ#3825: MonetDB not cleaning intermediate results which leads to
+  filling up disk space and ultimately server crash
+
+* Sun Aug 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
+- clients: In the SQL formatter of mclient (the default) we now properly align
+  East Asian wide characters.
+
 * Mon Aug 24 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.5-20150824
 - Rebuilt.
 - BZ#3730: SAMPLE function not sampling randomly

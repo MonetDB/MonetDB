@@ -1,0 +1,45 @@
+stdout of test 'rapi17` in directory 'sql/backends/monet5` itself:
+
+
+# 19:11:49 >  
+# 19:11:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34107" "--set" "mapi_usock=/var/tmp/mtest-5415/.s.monetdb.34107" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 19:11:49 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34107/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5415/.s.monetdb.34107
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 19:11:49 >  
+# 19:11:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5415" "--port=34107"
+# 19:11:49 >  
+
+#START TRANSACTION;
+#create function dt(d date) returns string language R { class(d) };
+#select dt( cast('2015-09-21' as date) );
+% .L1 # table_name
+% dt_single_value # name
+% clob # type
+% 7 # length
+[ "integer"	]
+#ROLLBACK;
+
+# 19:11:49 >  
+# 19:11:49 >  "Done."
+# 19:11:49 >  
+

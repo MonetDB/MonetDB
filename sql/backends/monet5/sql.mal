@@ -122,6 +122,10 @@ pattern evalAlgebra(cmd:str, optimize:bit):void
 address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
+pattern register(mod:str, fname:str, rel_stmt:str, sig:str):int
+address RAstatement2
+comment "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)";
+
 command flush_log( ) :void
 address SQLflush_log
 comment "flush the log now";

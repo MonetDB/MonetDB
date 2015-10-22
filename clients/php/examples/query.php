@@ -17,7 +17,7 @@ require '../lib/php_monetdb.php';
 define("DB", "php_demo");
 
 /* Establish a connection and report errors in case they occour */
-$db = monetdb_connect($host = "127.0.0.1", $port = "50000", $database = DB , $username = "monetdb", $password = "monetdb" ) or trigger_error(monetdb_last_error());
+$db = monetdb_connect($lang = "sql", $host = "127.0.0.1", $port = "50000", $database = DB , $username = "monetdb", $password = "monetdb" ) or trigger_error(monetdb_last_error());
 
 /* Fire a query */
 

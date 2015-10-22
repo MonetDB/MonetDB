@@ -1147,8 +1147,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	for (i = 0; i < cnt; i++) {
 		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "json") == 0);
+			     strcmp(mapi_get_type(hdl, i), "clob") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *s;
