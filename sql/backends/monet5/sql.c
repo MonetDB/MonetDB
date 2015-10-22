@@ -4817,7 +4817,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
-								if (c->type != no_idx) {
+								if (idx_has_column(c->type)) {
 									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
