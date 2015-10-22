@@ -21,23 +21,27 @@ command uuid(s:str):uuid
 address UUIDstr2uuid
 comment "Coerce a string to a uuid, validating its format";
 
-command calc.uuid(s:str):uuid
-address UUIDstr2uuid
-comment "Coerce a string to a uuid, validating its format";
-
 command str(u:uuid):str
 address UUIDuuid2str
 comment "Coerce a uuid to its string type";
 
+command isaUUID(u:str):bit
+address UUIDisaUUID
+comment "Test a string for a UUID format";
+
 module calc;
+
+command uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+function uuid(u:uuid):uuid;
+ return u;
+end uuid;
 
 command str(s:uuid):str
 address UUIDuuid2str
 comment "Coerce a uuid to a string type";
-
-command isaUUID(u:str):bit
-address UUIDisaUUID
-comment "Test a string for a UUID format";
 
 pattern ==(l:uuid,r:uuid):bit
 address CMDvarEQ
@@ -62,10 +66,6 @@ comment "Return V1 > V2";
 pattern >=(l:uuid,r:uuid):bit
 address CMDvarGE
 comment "Return V1 >= V2";
-
-function uuid(u:uuid):uuid;
- return u;
-end uuid;
 
 module batcalc;
 
