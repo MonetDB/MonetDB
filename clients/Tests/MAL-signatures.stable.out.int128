@@ -46512,10 +46512,6 @@ command calc.inet(s:inet):inet
 address INET_inet;
 comment Convert a inet to an inet
 
-command calc.isaUUID(u:str):bit 
-address UUIDisaUUID;
-comment Test a string for a UUID format
-
 command calc.json(j:json):json 
 address JSONstr2json;
 comment Convert JSON to JSON. Dealing with escape characters
@@ -52495,6 +52491,10 @@ command uuid.#fromstr():void
 address UUIDfromString;
 command uuid.#hash():void 
 address UUIDhash;
+command uuid.isaUUID(u:str):bit 
+address UUIDisaUUID;
+comment Test a string for a UUID format
+
 command uuid.new():uuid 
 address UUIDgenerateUuid;
 comment Generate a new uuid

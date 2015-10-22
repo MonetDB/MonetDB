@@ -3387,7 +3387,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 
 	/* merge 2 selects */
 	r = rel->l;
-	if (is_select(rel->op) && r && is_select(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r))) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
