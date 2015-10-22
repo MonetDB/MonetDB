@@ -33,19 +33,6 @@ import signal
 import fnmatch
 import glob
 
-try:
-    import Mfilter
-except ImportError:
-    try:
-        import MonetDBtesting.Mfilter as Mfilter
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.Mfilter as Mfilter
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
-
 procdebug = False
 verbose = False
 quiet = False
@@ -121,6 +108,19 @@ def _configure(str):
             changed = changed or str != nstr
             str = nstr
     return str
+
+try:
+    import Mfilter
+except ImportError:
+    try:
+        import MonetDBtesting.Mfilter as Mfilter
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.Mfilter as Mfilter
+        if os.environ.has_key('PYTHONPATH'):
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 # use our own process module because it has _BufferedPipe
 try:
