@@ -2392,7 +2392,6 @@ str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
 str optimizerRef;
 str optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-int orderDependendProp;
 str pack2Ref;
 str packRef;
 str parametersRef;

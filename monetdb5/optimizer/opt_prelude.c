@@ -233,7 +233,6 @@ int sqlfunctionProp;
 int inlineProp;
 int rowsProp;
 int unsafeProp;
-int orderDependendProp;
 
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
@@ -457,7 +456,6 @@ void optimizerInit(void)
 	inlineProp = PropertyIndex("inline");
 	rowsProp = PropertyIndex("rows");
 	unsafeProp = PropertyIndex("unsafe");
-	orderDependendProp = PropertyIndex("orderdependend");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	horiginProp = PropertyIndex("horigin");

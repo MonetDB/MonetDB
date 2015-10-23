@@ -233,7 +233,6 @@ opt_export int sqlfunctionProp;
 opt_export int inlineProp;		/* binary */
 opt_export int rowsProp;		/* long */
 opt_export int unsafeProp;		/* binary */
-opt_export int orderDependendProp;	/* binary */
 
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
