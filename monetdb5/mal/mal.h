@@ -216,7 +216,6 @@ typedef struct MALBLK {
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */
 	lng recid;					/* Recycler identifier */
-	lng legid;					/* Octopus control */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */
