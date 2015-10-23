@@ -23,19 +23,6 @@
  * with the debugger.
  * Its lifetime then is identical to that of the main program call.
  *
- * The first example create a private copy, leaving out the scheduler call.
- * @example
- * @code{
- * function f();
- *     i@{runonce, rows>4@}:=1;	# just properties
- *     mdb.list();
- *     io.print("start running\n");
- *     scheduler.isolation();
- *     io.print("done\n");
- *     mdb.list();
- * end f;
- * f(); #shows self-modification in action
- * }
  * @end example
  * This function with its history remain available as long as f()
  * is defined.

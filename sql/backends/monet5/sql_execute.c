@@ -357,8 +357,6 @@ SQLengineIntern(Client c, backend *be)
 	MalStkPtr oldglb = c->glb;
 	char oldlang = be->language;
 	mvc *m = be->mvc;
-	InstrPtr p;
-	MalBlkPtr mb;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
@@ -445,17 +443,9 @@ cleanup_engine:
 		m->session->status = -10;
 	}
 
-	mb = c->curprg->def;
 	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q);
-	} else if (m->type != Q_SCHEMA && be->q && mb && varGetProp(mb, getArg(p = getInstrPtr(mb, 0), 0), runonceProp)) {
-		msg = SQLCacheRemove(c, getFunctionId(p));
-		qc_delete(be->mvc->qc, be->q);
-		///* this should invalidate any match */
-		//be->q->key= -1;
-		//be->q->paramlen = -1;
-		///* qc_delete(be->q) */
-	}
+	} 
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);

@@ -1453,7 +1453,7 @@ debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 			snprintf(name, BUFSIZ, "%s ", getVar(mb, i)->name);
 		mnstr_printf(cntxt->fdout, "#%8s eolife=%4d range %4d - %4d  ",
 				name,
-				mb->var[i]->eolife,
+				getEndOfLife(mb,i),
 				getBeginLifespan(span, i),
 				getEndLifespan(span, i));
 		if (getLastUpdate(span, i))
