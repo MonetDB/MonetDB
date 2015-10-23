@@ -28,11 +28,11 @@ opt_export  str arrayRef;
 opt_export  str basketRef;
 opt_export  str batcalcRef;
 opt_export  str batRef;
-opt_export  str boxRef;
 opt_export  str batstrRef;
 opt_export  str batmtimeRef;
 opt_export  str batmmathRef;
 opt_export  str batxmlRef;
+opt_export  str batsqlRef;
 opt_export  str bbpRef;
 opt_export  str tidRef;
 opt_export  str dateRef;
@@ -68,6 +68,7 @@ opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str subdiffRef;
+opt_export  str diffRef;
 opt_export  str subinterRef;
 opt_export  str mergecandRef;
 opt_export  str mergepackRef;
@@ -108,7 +109,6 @@ opt_export  str subantijoinRef;
 opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
-opt_export  str kdifferenceRef;
 opt_export  str languageRef;
 opt_export  str leftfetchjoinRef;
 opt_export  str leftfetchjoinPathRef;
@@ -169,6 +169,8 @@ opt_export  str putRef;
 opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
+opt_export  str rankRef;
+opt_export  str dense_rankRef;
 opt_export  str reconnectRef;
 opt_export  str recycleRef;
 opt_export  str refineRef;
@@ -179,6 +181,7 @@ opt_export  str replaceRef;
 opt_export  str replicatorRef;
 opt_export  str resultSetRef;
 opt_export  str reuseRef;
+opt_export  str row_numberRef;
 opt_export  str rpcRef;
 opt_export  str rsColumnRef;
 opt_export  str schedulerRef;
@@ -229,8 +232,6 @@ opt_export int sqlfunctionProp;
 
 opt_export int inlineProp;		/* binary */
 opt_export int rowsProp;		/* long */
-opt_export int fileProp;		/* str */
-opt_export int runonceProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
 opt_export int orderDependendProp;	/* binary */
 
