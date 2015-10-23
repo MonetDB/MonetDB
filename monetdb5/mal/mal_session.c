@@ -31,7 +31,7 @@ int
 malBootstrap(void)
 {
 	Client c;
-	str msg, bootfile = "mal_init", s;
+	str msg, bootfile = "mal_init", s = NULL;
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);

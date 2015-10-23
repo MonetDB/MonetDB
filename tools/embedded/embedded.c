@@ -79,6 +79,8 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
+	BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT));
+
 	if (GDKinit(set, setlen) == 0) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
@@ -91,7 +93,7 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 	GDKsetenv("sql_optimizer", "sequential_pipe");
 
 	if (silent) THRdata[0] = stream_blackhole_create();
-	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
+	msab_dbpathinit(dbdir);
 
 	if (mal_init() != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");

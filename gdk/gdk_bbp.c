@@ -1038,6 +1038,8 @@ BBPinit(void)
 	int bbpversion;
 	int oidsize;
 	oid BBPoid;
+	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
+	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1055,17 +1057,16 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly recover_subdir process %s. Please check whether your disk is full or write-protected", SUBDIR);
 
 	/* try to obtain a BBP.dir from bakdir */
-
-	if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) == 0) {
+	if (stat(backupbbpdirstr, &st) == 0) {
 		/* backup exists; *must* use it */
-		if (recover_dir(0, stat(BATDIR DIR_SEP_STR "BBP.dir", &st) == 0) != GDK_SUCCEED)
+		if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED)
 			goto bailout;
 		if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL)
 			GDKfatal("BBPinit: cannot open recovered BBP.dir.");
 	} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 		/* there was no BBP.dir either. Panic! try to use a
 		 * BBP.bak */
-		if (stat(BAKDIR DIR_SEP_STR "BBP.dir", &st) < 0) {
+		if (stat(backupbbpdirstr, &st) < 0) {
 			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 			 * create a new one */
 			IODEBUG fprintf(stderr, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
@@ -1110,7 +1111,7 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
-	BBPdiskscan(BATDIR);
+	BBPdiskscan(GDKfilepath(0, NULL, BATDIR, NULL));
 
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
 	if (oidsize == SIZEOF_INT)
@@ -1120,7 +1121,8 @@ BBPinit(void)
 #endif
 	if (bbpversion < GDKLIBRARY)
 		TMcommit();
-
+	GDKfree(bbpdirstr);
+	GDKfree(backupbbpdirstr);
 	return;
 
       bailout:
@@ -1333,8 +1335,8 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	/* we need to copy the backup BBP.dir to the new, but
 	 * replacing the entries for the subcommitted bats */
-	if ((obbpf = fopen(SUBDIR DIR_SEP_STR "BBP.dir", "r")) == NULL) {
-		if ((obbpf = fopen(BAKDIR DIR_SEP_STR "BBP.dir", "r")) == NULL)
+	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL) {
+		if ((obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL)
 			GDKfatal("BBPdir: subcommit attempted without backup BBP.dir.");
 	}
 	/* read first three lines */
@@ -3264,6 +3266,9 @@ static gdk_return
 BBPprepare(bit subcommit)
 {
 	int start_subcommit, set = 1 + subcommit;
+	str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
+	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+
 	gdk_return ret = GDK_SUCCEED;
 
 	/* tmLock is only used here, helds usually very shortly just
@@ -3280,21 +3285,21 @@ BBPprepare(bit subcommit)
 		backup_dir = 0;
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
-			if (mkdir(BAKDIR, 0755) < 0 && errno != EEXIST) {
-				GDKsyserror("BBPprepare: cannot create directory %s\n", BAKDIR);
+			if (mkdir(bakdirpath, 0755) < 0 && errno != EEXIST) {
+				GDKsyserror("BBPprepare: cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
 			/* if BAKDIR already exists, don't signal error */
-			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", BAKDIR, (int) ret);
+			IODEBUG fprintf(stderr, "#mkdir %s = %d\n", bakdirpath, (int) ret);
 		}
 	}
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		if (mkdir(SUBDIR, 0755) < 0) {
-			GDKsyserror("BBPprepare: cannot create directory %s\n", SUBDIR);
+		if (mkdir(subdirpath, 0755) < 0) {
+			GDKsyserror("BBPprepare: cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
-		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", SUBDIR, (int) ret);
+		IODEBUG fprintf(stderr, "#mkdir %s = %d\n", subdirpath, (int) ret);
 	}
 	if (ret == GDK_SUCCEED && backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
@@ -3308,7 +3313,8 @@ BBPprepare(bit subcommit)
 		backup_files++;
 	}
 	MT_lock_unset(&GDKtmLock, "BBPprepare");
-
+	GDKfree(bakdirpath);
+	GDKfree(subdirpath);
 	return ret;
 }
 
@@ -3500,25 +3506,27 @@ BBPsync(int cnt, bat *subcommit)
 	}
 
 	PERFDEBUG fprintf(stderr, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPsync"));
+	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
+	str deldir = GDKfilepath(0, NULL, DELDIR, NULL);
 
 	if (bbpdirty || backup_files > 0) {
 		if (ret == GDK_SUCCEED) {
-			char *bakdir = subcommit ? SUBDIR : BAKDIR;
 
 			/* atomic switchover */
 			/* this is the big one: this call determines
 			 * whether the operation of this function
 			 * succeeded, so no changing of ret after this
 			 * call anymore */
-			if (rename(bakdir, DELDIR) < 0)
+
+			if (rename(bakdir, deldir) < 0)
 				ret = GDK_FAIL;
 			if (ret != GDK_SUCCEED &&
 			    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
-			    rename(bakdir, DELDIR) < 0)
+			    rename(bakdir, deldir) < 0)
 				ret = GDK_FAIL;
 			if (ret != GDK_SUCCEED)
-				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, DELDIR);
-			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, DELDIR, (int) ret);
+				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);
+			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, deldir, (int) ret);
 		}
 
 		/* AFTERMATH */
@@ -3535,7 +3543,8 @@ BBPsync(int cnt, bat *subcommit)
 		}
 	}
 	PERFDEBUG fprintf(stderr, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
-
+	GDKfree(bakdir);
+	GDKfree(deldir);
 	return ret;
 }
 
@@ -3608,7 +3617,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 gdk_return
 BBPrecover(int farmid)
 {
-	DIR *dirp = opendir(BAKDIR);
+	str bakdirpath = GDKfilepath(farmid, NULL, BAKDIR, NULL);
+	str leftdirpath = GDKfilepath(farmid, NULL, LEFTDIR, NULL);
+
+	DIR *dirp = opendir(bakdirpath);
 	struct dirent *dent;
 	long_str path, dstpath;
 	bat i;
@@ -3626,8 +3638,8 @@ BBPrecover(int farmid)
 	dstdir = dstpath + j;
 	IODEBUG fprintf(stderr, "#BBPrecover(start)\n");
 
-	if (mkdir(LEFTDIR, 0755) < 0 && errno != EEXIST) {
-		GDKsyserror("BBPrecover: cannot create directory %s\n", LEFTDIR);
+	if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
+		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		return GDK_FAIL;
 	}
@@ -3688,17 +3700,18 @@ BBPrecover(int farmid)
 	}
 
 	if (ret == GDK_SUCCEED) {
-		if (rmdir(BAKDIR) < 0) {
-			GDKsyserror("BBPrecover: cannot remove directory %s\n", BAKDIR);
+		if (rmdir(bakdirpath) < 0) {
+			GDKsyserror("BBPrecover: cannot remove directory %s\n", bakdirpath);
 			ret = GDK_FAIL;
 		}
-		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", BAKDIR, (int) ret);
+		IODEBUG fprintf(stderr, "#rmdir %s = %d\n", bakdirpath, (int) ret);
 	}
 	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover: recovery failed. Please check whether your disk is full or write-protected.\n");
 
 	IODEBUG fprintf(stderr, "#BBPrecover(end)\n");
-
+	GDKfree(bakdirpath);
+	GDKfree(leftdirpath);
 	return ret;
 }
 
@@ -3710,7 +3723,8 @@ BBPrecover(int farmid)
 gdk_return
 BBPrecover_subdir(void)
 {
-	DIR *dirp = opendir(SUBDIR);
+	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+	DIR *dirp = opendir(subdirpath);
 	struct dirent *dent;
 	gdk_return ret = GDK_SUCCEED;
 
@@ -3743,6 +3757,7 @@ BBPrecover_subdir(void)
 
 	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover_subdir: recovery failed. Please check whether your disk is full or write-protected.\n");
+	GDKfree(subdirpath);
 	return ret;
 }
 

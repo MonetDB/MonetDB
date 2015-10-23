@@ -934,14 +934,12 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
 
-	lg->log = open_rstream(path);
-	GDKfree(path);
+	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -1357,24 +1355,27 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 	int id = LOG_SID;
 	FILE *fp;
 	char bak[PATHLENGTH];
+	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, PATHLENGTH, "%s%s", lg->dir, LOGFILE);
+	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
+	snprintf(filename, PATHLENGTH, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
+	GDKfree(filenamestr);
 
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
+	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
+	fp = fopen(filename, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1830,7 +1831,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->read32bitoid = 0;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;

@@ -1324,29 +1324,25 @@ static void
 GDKlockHome(void)
 {
 	int fd;
+	struct stat st;
+	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+	char GDKdirStr[PATHLENGTH];
 
 	assert(GDKlockFile == NULL);
-	/*
-	 * Go there and obtain the global database lock.
-	 */
-	if (chdir(GDKdbpathStr) < 0) {
-		char GDKdirStr[PATHLENGTH];
+	assert(GDKdbpathStr != NULL);
 
-		/* The DIR_SEP at the end of the path is needed for a
-		 * successful call to GDKcreatedir */
-		snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
-		if (GDKcreatedir(GDKdirStr) != GDK_SUCCEED)
-			GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
-		if (chdir(GDKdbpathStr) < 0)
-			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
-		IODEBUG fprintf(stderr, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
+	snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
+	/*
+	 * Obtain the global database lock.
+	 */
+	if (stat(GDKdbpathStr, &st) < 0 && GDKcreatedir(GDKdirStr) != GDK_SUCCEED) {
+		GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
 	}
-	if ((fd = MT_lockf(GDKLOCK, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
 	}
 
 	/* now we have the lock on the database */
-
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKfatal("GDKlockHome: Could not open %s\n", GDKLOCK);
@@ -1365,16 +1361,19 @@ GDKlockHome(void)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
+	GDKfree(gdklockpath);
 }
 
 static void
 GDKunlockHome(void)
 {
+	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
 	if (GDKlockFile) {
-		MT_lockf(GDKLOCK, F_ULOCK, 4, 1);
+		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
 		fclose(GDKlockFile);
 		GDKlockFile = 0;
 	}
+	GDKfree(gdklockpath);
 }
 
 /*

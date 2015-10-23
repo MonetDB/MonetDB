@@ -127,15 +127,17 @@ GDKcreatedir(const char *dir)
 
 /* remove the directory DIRNAME with its file contents; does not
  * recurse into subdirectories */
+// FIXME: this function is very confused -- HM
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	DIR *dirp = opendir(dirname);
+	str dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL);
+	DIR *dirp = opendir(dirnamestr);
 	char *path;
 	struct dirent *dent;
 	int ret;
 
-	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirname);
+	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
 
 	if (dirp == NULL)
 		return GDK_SUCCEED;
@@ -152,11 +154,11 @@ GDKremovedir(int farmid, const char *dirname)
 		GDKfree(path);
 	}
 	closedir(dirp);
-	ret = rmdir(dirname);
+	ret = rmdir(dirnamestr);
 	if (ret < 0)
-		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
-	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirname, ret);
-
+		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
+	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirnamestr, ret);
+	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
