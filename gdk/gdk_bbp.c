@@ -3801,7 +3801,7 @@ BBPdiskscan(const char *parent)
 {
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
-	long_str fullname;
+	char fullname[PATHLENGTH];
 	str dst = fullname;
 	size_t dstlen = sizeof(fullname);
 	const char *src = parent;
