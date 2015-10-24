@@ -99,7 +99,7 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	dlclose(dl);
-	if( adr != NULL)
+	if(adr != NULL)
 		return adr; /* found it */
 
 	if (!silent)
