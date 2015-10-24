@@ -533,14 +533,14 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 Lifespan
 setLifespan(MalBlkPtr mb)
 {
-	int pc, k, depth=0, prop;
+	int pc, k, depth=0, dflow= -1;
 	InstrPtr p;
 	int *blk;
 	Lifespan span= newLifespan(mb);
+	str lang = putName("language",8), dataflow= putName("dataflow",8);
 
 	if (span == NULL)
 		return NULL;
-	prop = PropertyIndex("transparent");
 
 	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
 	if( blk == NULL){
@@ -554,8 +554,16 @@ setLifespan(MalBlkPtr mb)
 		if( p->token == NOOPsymbol)
 			continue;
 
-		if( blockStart(p) && varGetProp(mb, getArg(p,0), prop) == NULL)
-			depth++;
+		if( blockStart(p)){
+			if (getModuleId(p) == lang && getFunctionId(p) == dataflow){
+				if( dflow != -1){
+					GDKerror("setLifeSpan nested dataflow blocks not allowed" );
+					mb->errors++;
+				}
+				dflow= depth;
+			} else
+				depth++;
+		}
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
@@ -579,13 +587,14 @@ setLifespan(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( span[k].endLifespan == -1)
+			if ( span[k].endLifespan == -1 )
 				span[k].endLifespan = pc;
 			else
-			if ( span[k].endLifespan == 0 && blk[k]==depth)
+			if ( span[k].endLifespan == 0 && blk[k]==depth )
 				span[k].endLifespan = pc;
-			if (varGetProp(mb, getArg(p,0), prop) == NULL )
-				depth--;
+			if( dflow == depth)
+				dflow= -1;
+			else depth--;
 		}
 	}
 	for (k = 0; k < mb->vtop; k++)
@@ -706,6 +715,8 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int *decl;
+	str lang = putName("language",8), dataflow= putName("dataflow",8);
+	int dflow = -1;
 
 	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if ( decl == NULL) {
@@ -789,25 +800,33 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				setVarUsed(mb, l);
 		}
 		if( p->barrier){
-			if ( blockStart(p) &&
-			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
-				if( top <MAXDEPTH-2){
-					blks[++top]= ++blkId;
-#ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"new block %d at top %d\n",blks[top], top);
-#endif
-				} else {
+			if ( blockStart(p)){
+				if( top == MAXDEPTH-2){
 					showScriptException(out, mb,pc,SYNTAX, "too deeply nested  MAL program");
 					mb->errors++;
 					GDKfree(decl);
 					return;
 				}
+				blkId++;
+				if (getModuleId(p) == lang && getFunctionId(p) == dataflow){
+					if( dflow != -1){
+						GDKerror("setLifeSpan nested dataflow blocks not allowed" );
+						mb->errors++;
+					}
+					dflow= blkId;
+				} 
+				blks[++top]= blkId;
+#ifdef DEBUG_MAL_FCN
+				mnstr_printf(out,"new block %d at top %d\n",blks[top], top);
+#endif
 			}
-			if( blockExit(p) && top > 0 &&
-			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
+			if( blockExit(p) && top > 0 ){
 #ifdef DEBUG_MAL_FCN
 				mnstr_printf(out,"leave block %d at top %d\n",blks[top], top);
 #endif
+				if( dflow == blkId){
+					dflow = -1;
+				} else
 				/*
 				 * At the end of the block we should reset the status of all variables
 				 * defined within the block. For, the block could have been skipped

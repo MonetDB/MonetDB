@@ -25,6 +25,7 @@ c:= aggr.count(z);
 io.print(c);
 io.print("done");
 end tst;
+optimizer.dataflow("user","tst");
 optimizer.garbageCollector("user","tst");
 mdb.List("user","tst");
 tst();
