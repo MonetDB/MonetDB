@@ -77,3 +77,4 @@ like-escape.Bug-3822
 uuid-compare.Bug-3827
 select-push-crash.Bug-3829
 coalesce.Bug-3830
+null.Bug-3833

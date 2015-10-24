@@ -384,8 +384,26 @@ column_option(
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
-		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
+		symbol *sym = s->data.sym;
+		char *err = NULL, *r;
 
+		if (sym->token == SQL_COLUMN) {
+			sql_exp *e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
+			
+			if (e && is_atom(e->type)) {
+				atom *a = exp_value(e, sql->args, sql->argc);
+
+				if (atom_null(a)) {
+					mvc_default(sql, cs, NULL);
+					res = SQL_OK;
+					break;
+				}
+			}
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		}
+	       	r = symbol2string(sql, s->data.sym, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -399,6 +417,7 @@ column_option(
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) s;
 
+		assert(0);
 		if (!an || !an->a) {
 			mvc_default(sql, cs, NULL);
 		} else {
