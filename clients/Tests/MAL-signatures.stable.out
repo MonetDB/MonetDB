@@ -2627,15 +2627,15 @@ command batsql.alpha(dec:bat[:oid,:dbl],theta:dbl):bat[:oid,:dbl]
 address SQLbat_alpha_cst;
 comment BAT implementation of astronomy alpha function
 
-pattern batsql.dense_rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.dense_rank(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLdense_rank;
 comment return the densely ranked groups
 
-pattern batsql.diff{orderdependend}(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batsql.diff(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
 address SQLdiff;
 comment return true if cur != prev row
 
-pattern batsql.diff{orderdependend}(b:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batsql.diff(b:bat[:oid,:any_1]):bat[:oid,:bit] 
 address SQLdiff;
 comment return true if cur != prev row
 
@@ -2671,11 +2671,11 @@ pattern batsql.next_value(sname:bat[:oid,:str],sequence:str):bat[:oid,:lng]
 address mvc_bat_next_value;
 comment return the next value of the sequence
 
-pattern batsql.rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.rank(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLrank;
 comment return the ranked groups
 
-pattern batsql.row_number{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.row_number(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLrow_number;
 comment return the row_numer-ed groups
 

@@ -3146,15 +3146,15 @@ command batsql.dec_round(v:bat[:oid,:hge],r:hge):bat[:oid,:hge]
 address hge_bat_dec_round_wrap;
 comment round off the value v to nearests multiple of r
 
-pattern batsql.dense_rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.dense_rank(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLdense_rank;
 comment return the densely ranked groups
 
-pattern batsql.diff{orderdependend}(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batsql.diff(p:bat[:oid,:bit],b:bat[:oid,:any_1]):bat[:oid,:bit] 
 address SQLdiff;
 comment return true if cur != prev row
 
-pattern batsql.diff{orderdependend}(b:bat[:oid,:any_1]):bat[:oid,:bit] 
+pattern batsql.diff(b:bat[:oid,:any_1]):bat[:oid,:bit] 
 address SQLdiff;
 comment return true if cur != prev row
 
@@ -3194,11 +3194,11 @@ command batsql.round(v:bat[:oid,:hge],d:int,s:int,r:bte):bat[:oid,:hge]
 address hge_bat_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-pattern batsql.rank{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.rank(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLrank;
 comment return the ranked groups
 
-pattern batsql.row_number{orderdependend}(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
+pattern batsql.row_number(b:bat[:oid,:any_1],p:any_2,o:any_3):bat[:oid,:int] 
 address SQLrow_number;
 comment return the row_numer-ed groups
 
