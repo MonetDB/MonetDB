@@ -132,7 +132,6 @@ stopifnot(errorThrown)
 errorThrown <- F
 tryCatch(dbWriteTable(conn,tname,mtcars,overwrite=T,append=T),error=function(e){errorThrown <<- T})
 stopifnot(errorThrown)
-
 # this should be fine
 dbWriteTable(conn,tname,mtcars,append=F,overwrite=T)
 stopifnot(dbExistsTable(conn,tname))

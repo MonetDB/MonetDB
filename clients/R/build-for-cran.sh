@@ -2,8 +2,8 @@
 
 # set this to a path where the latest svn version or R was installed. 
 # CRAN policies state that R CMD check must use the latest version
-R=~/r-trunk-install/R.framework/Resources/bin/R
-
+#R=~/r-trunk-install/R.framework/Resources/bin/R
+R=R
 # can't have these in a R package, it wont build
 find MonetDB.R -name "Makefile*" -exec rm {} \;
 find MonetDB.R -name ".DS_Store" -exec rm {} \;

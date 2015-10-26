@@ -16,6 +16,8 @@
 - Now re-establishing connection if interrupt (CMD-C or ESC) occurs
 - Fixed a bug in monetdb.read.csv for multiple CSV files without headers
 - dplyr src_monetdb now has a con parameter to pass an existing DBI connection
+- Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
+- Fixed a bug when dbWriteTable would not adhere to transactional semantics (Thanks, Anthony)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
