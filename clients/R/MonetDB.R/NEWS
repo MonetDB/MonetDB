@@ -18,6 +18,7 @@
 - dplyr src_monetdb now has a con parameter to pass an existing DBI connection
 - Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
 - Fixed a bug when dbWriteTable would not adhere to transactional semantics (Thanks, Anthony)
+- Added transactions to monetdb.read.csv so no empty tables are left over (Thanks, Anthony)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

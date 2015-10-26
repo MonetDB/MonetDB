@@ -470,7 +470,10 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
       }
     }
   }
-  if (transaction) dbCommit(conn)
+  if (transaction) {
+    dbCommit(conn)
+    on.exit(NULL)
+  }
   return(invisible(TRUE))
 })
 
@@ -803,7 +806,9 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     types <- sapply(headers, function(df) sapply(df, dbDataType, dbObj=conn))
     if(!all(types==types[, 1])) stop("Files have different variable types")
   } 
-  if (create){
+  dbBegin(conn)
+  on.exit(tryCatch(dbRollback(conn), error=function(e){}))
+  if (create) {
   tablename <- quoteIfNeeded(conn, tablename)
     if(lower.case.names) names(headers[[1]]) <- tolower(names(headers[[1]]))
     if(!is.null(col.names)) {
@@ -817,7 +822,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
       }
       names(headers[[1]]) <- quoteIfNeeded(conn, col.names)
     }
-    dbWriteTable(conn, tablename, headers[[1]][FALSE, ])
+    dbWriteTable(conn, tablename, headers[[1]][FALSE, ], transaction=F)
   }
   
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
@@ -829,5 +834,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
       na.strings[1], "'", sep=""), if(locked) "LOCKED"))
   }
   dbGetQuery(conn, paste("SELECT COUNT(*) FROM", tablename))[[1]]
+  dbCommit(conn)
+  on.exit(NULL)
 }
 
