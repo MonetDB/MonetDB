@@ -91,6 +91,15 @@
 #include <bzlib.h>
 #endif
 
+#ifdef HAVE_ICONV
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+#endif
+
 #ifndef SHUT_RD
 #define SHUT_RD		0
 #define SHUT_WR		1
@@ -188,6 +197,126 @@ mnstr_init(void)
 
 /* #define STREAM_DEBUG 1  */
 /* #define BSTREAM_DEBUG 1 */
+
+#ifdef HAVE__WFOPEN
+/* convert a string from UTF-8 to wide characters; the return value is
+ * freshly allocated */
+static wchar_t *
+utf8towchar(const char *s)
+{
+	wchar_t *ws;
+	size_t i = 0;
+	size_t j = 0;
+
+	ws = malloc((strlen(s) + 1) * sizeof(wchar_t));
+	if (ws == NULL)
+		return NULL;
+	while (s[j]) {
+		if ((s[j] & 0x80) == 0) {
+			ws[i++] = s[j++];
+		} else if ((s[j] & 0xC0) == 0x80) {
+			free(ws);
+			return NULL;
+		} else if ((s[j] & 0xE0) == 0xC0) {
+			ws[i] = (s[j++] & 0x1F) << 6;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i++] |= s[j++] & 0x3F;
+		} else if ((s[j] & 0xF0) == 0xE0) {
+			ws[i] = (s[j++] & 0x0F) << 12;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i] |= (s[j++] & 0x3F) << 6;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i++] |= s[j++] & 0x3F;
+		} else if ((s[j] & 0xF8) == 0xF0) {
+#if SIZEOF_WCHAR_T == 2
+			ws[i] = (s[j++] & 0x07) << 8;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i] |= (s[j++] & 0x3F) << 2;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i] |= (s[j] & 0x30) >> 4;
+			ws[i] -= 0x0040;
+			ws[i++] |= 0xD800;
+			ws[i] = 0xDC00 | ((s[j++] & 0x0F) << 6);
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i++] |= s[j++] & 0x3F;
+#else
+			ws[i] = (s[j++] & 0x07) << 18;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i] |= (s[j++] & 0x3F) << 12;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i] |= (s[j++] & 0x3F) << 6;
+			if ((s[j] & 0xC0) != 0x80) {
+				free(ws);
+				return NULL;
+			}
+			ws[i++] |= s[j++] & 0x3F;
+#endif
+		} else {
+			free(ws);
+			return NULL;
+		}
+	}
+	ws[i] = L'\0';
+	return ws;
+}
+#else
+static char *
+cvfilename(const char *filename)
+{
+#if defined(HAVE_NL_LANGINFO) && defined(HAVE_ICONV)
+	char *code_set = nl_langinfo(CODESET);
+
+	if (code_set != NULL && strcmp(code_set, "UTF-8") != 0) {
+		iconv_t cd = iconv_open("UTF-8", code_set);
+
+		if (cd != (iconv_t) -1) {
+			size_t len = strlen(filename);
+			size_t size = 4 * len;
+			ICONV_CONST char *from = (ICONV_CONST char *) filename;
+			char *r = malloc(size);
+
+			if (r &&
+			    iconv(cd, &from, &len, &r, &size) != (size_t) -1) {
+				iconv_close(cd);
+				return r;
+			} else if (r)
+				free(r);
+			iconv_close(cd);
+		}
+	}
+#endif
+	/* couldn't use iconv for whatever reason; alternative is to
+	 * use utf8towchar above to convert to a wide character string
+	 * (wcs) and convert that to the locale-specific encoding
+	 * using wcstombs or wcsrtombs (but preferably only if the
+	 * locale's encoding is not UTF-8) */
+	return strdup(filename);
+}
+#endif
 
 /* Read at most cnt elements of size elmsize from the stream.  Returns
  * the number of elements actually read or < 0 on failure. */
@@ -752,7 +881,30 @@ open_stream(const char *filename, const char *flags)
 
 	if ((s = create_stream(filename)) == NULL)
 		return NULL;
-	if ((fp = fopen(filename, flags)) == NULL) {
+#ifdef HAVE__WFOPEN
+	{
+		wchar_t *wfname = utf8towchar(filename);
+		wchar_t *wflags = utf8towchar(flags);
+		if (wfname != NULL && wflags != NULL)
+			fp = _wfopen(wfname, wflags);
+		else
+			fp = NULL;
+		if (wfname)
+			free(wfname);
+		if (wflags)
+			free(wflags);
+	}
+#else
+	{
+		char *fname = cvfilename(filename);
+		if (fname) {
+			fp = fopen(fname, flags);
+			free(fname);
+		} else
+			fp = NULL;
+	}
+#endif
+	if (fp == NULL) {
 		destroy(s);
 		return NULL;
 	}
@@ -881,7 +1033,26 @@ open_gzstream(const char *filename, const char *flags)
 
 	if ((s = create_stream(filename)) == NULL)
 		return NULL;
-	if ((fp = gzopen(filename, flags)) == NULL) {
+#ifdef HAVE__WFOPEN
+	{
+		wchar_t *wfname = utf8towchar(filename);
+		if (wfname != NULL) {
+			fp = gzopen_w(wfname, flags);
+			free(wfname);
+		} else
+			fp = NULL;
+	}
+#else
+	{
+		char *fname = cvfilename(filename);
+		if (fname) {
+			fp = gzopen(fname, flags);
+			free(fname);
+		} else
+			fp = NULL;
+	}
+#endif
+	if (fp == NULL) {
 		destroy(s);
 		return NULL;
 	}
@@ -1084,7 +1255,30 @@ open_bzstream(const char *filename, const char *flags)
 		free(bzp);
 		return NULL;
 	}
-	if ((bzp->f = fopen(filename, flags)) == NULL) {
+#ifdef HAVE__WFOPEN
+	{
+		wchar_t *wfname = utf8towchar(filename);
+		wchar_t *wflags = utf8towchar(flags);
+		if (wfname != NULL && wflags != NULL)
+			bzp->f = _wfopen(wfname, wflags);
+		else
+			bzp->f = NULL;
+		if (wfname)
+			free(wfname);
+		if (wflags)
+			free(wflags);
+	}
+#else
+	{
+		char *fname = cvfilename(filename);
+		if (fname) {
+			bzp->f = fopen(fname, flags);
+			free(fname);
+		} else
+			bzp->f = NULL;
+	}
+#endif
+	if (bzp->f == NULL) {
 		destroy(s);
 		free(bzp);
 		return NULL;
@@ -2242,10 +2436,6 @@ file_wastream(FILE *fp, const char *name)
 /* streams working on a substream, converting character sets using iconv */
 
 #ifdef HAVE_ICONV
-
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
 
 struct icstream {
 	iconv_t cd;

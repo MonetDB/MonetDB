@@ -40990,10 +40990,6 @@ command str.ascii(s:str):int
 address STRascii;
 comment Return unicode of head of string
 
-command str.codeset():str 
-address STRcodeset;
-comment Return the locale's codeset
-
 command str.endsWith(s:str,suffix:str):bit 
 address STRSuffix;
 comment Suffix check.
@@ -41001,10 +40997,6 @@ comment Suffix check.
 command str.insert(s:str,start:int,l:int,s2:str):str 
 address STRinsert;
 comment Insert a string into another
-
-command str.iconv(org:str,fromCs:str,toCs:str):str 
-address STRIconv;
-comment String codeset conversion
 
 command str.locate(s1:str,s2:str,start:int):int 
 address STRlocate2;

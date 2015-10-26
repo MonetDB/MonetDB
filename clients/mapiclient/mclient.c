@@ -2152,7 +2152,7 @@ enum hmyesno { UNKNOWN, YES, NO };
 #define READBLOCK 8192
 
 static int
-doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_history)
+doFile(Mapi mid, FILE *fp, int useinserts, int interactive, int save_history)
 {
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
@@ -2163,7 +2163,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
 	enum hmyesno hasschemsys = UNKNOWN;
-	FILE *fp;
 	char *prompt = NULL;
 	int prepno = 0;
 #ifdef HAVE_ICONV
@@ -2171,20 +2170,14 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 #endif
 
 	(void) save_history;	/* not used if no readline */
-	if (strcmp(file, "-") == 0) {
-		fp = stdin;
-		if (isatty(fileno(fp))) {
-			interactive = 1;
-			setPrompt();
-			prompt = promptbuf;
+	if (isatty(fileno(fp))) {
+		interactive = 1;
+		setPrompt();
+		prompt = promptbuf;
 #ifdef HAVE_LIBREADLINE
-			init_readline(mid, language, save_history);
+		init_readline(mid, language, save_history);
 #endif
-			fromConsole = stdin;
-		}
-	} else if ((fp = fopen(file, "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", file);
-		return 1;
+		fromConsole = stdin;
 	}
 
 	if (!interactive && !echoquery)
@@ -2706,14 +2699,28 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 #endif
 					continue;
 				}
-				case '<':
+				case '<': {
+					stream *s;
 					/* read commands from file */
 					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
 					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
-					doFile(mid, line, 0, 0, 0);
+					/* use open_rastream to
+					 * convert filename from UTF-8
+					 * to locale */
+					if ((s = open_rastream(line)) == NULL ||
+					    mnstr_errnr(s)) {
+						fprintf(stderr, "%s: cannot open\n", line);
+						close_stream(s);
+					} else {
+						FILE *fp = getFile(s);
+						mnstr_destroy(s);
+						doFile(mid, fp, 0, 0, 0);
+						fclose(fp);
+					}
 					continue;
+				}
 				case '>':
 					/* redirect output to file */
 					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
@@ -3428,14 +3435,21 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			c |= doFile(mid, argv[optind], useinserts, interactive, save_history);
+			FILE *fp = fopen(argv[optind], "r");
+			if (fp == NULL) {
+				fprintf(stderr, "%s: cannot open\n", argv[optind]);
+				c |= 1;
+			} else {
+				c |= doFile(mid, fp, useinserts, interactive, save_history);
+				fclose(fp);
+			}
 			optind++;
 		}
 	} else if (command && mapi_get_active(mid))
 		c = doFileBulk(mid, NULL);
 
 	if (!has_fileargs && command == NULL)
-		c = doFile(mid, "-", useinserts, interactive, save_history);
+		c = doFile(mid, stdin, useinserts, interactive, save_history);
 
 	mapi_destroy(mid);
 	mnstr_destroy(stdout_stream);

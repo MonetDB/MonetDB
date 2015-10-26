@@ -33,8 +33,6 @@ str_export str STRTail(str *res, const str *arg1, const int *offset);
 str_export str STRSubString(str *res, const str *arg1, const int *offset, const int *length);
 str_export str STRFromWChr(str *res, const int *at);
 str_export str STRWChrAt(int *res, const str *arg1, const int *at);
-str_export str STRcodeset(str *res);
-str_export str STRIconv(str *res, const str *o, const str *fp, const str *tp);
 str_export str STRPrefix(bit *res, const str *arg1, const str *arg2);
 str_export str STRSuffix(bit *res, const str *arg1, const str *arg2);
 str_export str STRLower(str *res, const str *arg1);
