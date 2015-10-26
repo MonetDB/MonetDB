@@ -26,13 +26,6 @@
 #include "mal_exception.h"
 #include "str.h"
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
-
 #ifdef WIN32
 #define batstr_export extern __declspec(dllexport)
 #else

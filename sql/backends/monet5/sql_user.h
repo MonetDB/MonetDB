@@ -11,7 +11,8 @@
 #include "sql.h"		/* includes sql_backend.h */
 
 sql5_export void monet5_user_init(backend_functions *be_funcs);
-sql5_export str monet5_user_get_def_schema(mvc *m, oid user);
+sql5_export str monet5_user_set_def_schema(mvc *m, oid user /* mal user id */);
+sql5_export str monet5_user_get_def_schema(mvc *m, oid user /* sql user id */);
 
 sql5_export str db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

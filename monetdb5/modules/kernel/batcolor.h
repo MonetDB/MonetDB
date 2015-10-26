@@ -25,13 +25,6 @@
 #define batcolor_export extern
 #endif
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
-
 batcolor_export str CLRbatColor(bat *ret, const bat *l);
 batcolor_export str CLRbatStr(bat *ret, const bat *l);
 batcolor_export str CLRbatRed(bat *ret, const bat *l);
