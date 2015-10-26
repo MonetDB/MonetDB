@@ -995,6 +995,18 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Oct 26 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.9-20151026
+- Rebuilt.
+- BZ#3816: Server crashes when trying to convert timestamp to str with
+  incorrect format
+- BZ#3823: JDBC Connection to a schema - setSchema() error
+- BZ#3827: Certains comparisons between UUID produce a MAL error
+- BZ#3829: Certains simple WHERE clause cause MonetDB to segfault
+  without explanation
+- BZ#3830: Coalesce typing inconsistencies
+- BZ#3833: NULL literals refused at many places
+- BZ#3834: Date comparison returns incorrect results
+
 * Tue Oct 20 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
 - Rebuilt.
 - BZ#3789: Query on large string table fails on HEAPextend
