@@ -1,5 +1,10 @@
-library(testthat)
+basedir <- Sys.getenv("TSTTRGDIR")
+if (basedir == "") {
+	stop("Need TSTTRGDIR environment vars")
+}
+library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
 library(MonetDB.R)
+library(testthat)
 
 tname <- "monetdbtest"
 data(iris)

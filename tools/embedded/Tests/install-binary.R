@@ -4,15 +4,19 @@ if (basedir == "" || srcdir == "") {
 	stop("Need TSTTRGDIR and TSTSRCDIR environment vars")
 }
 
-builddir   <- file.path(basedir, "rbuilddir")
 installdir <- file.path(basedir, "rlibdir")
-dir.create(builddir)
+if (file.exists(installdir)) file.remove(installdir, recursive=T, showWarnings=F)
 dir.create(installdir)
-file.remove(file.path(builddir, "MonetDB.R"), recursive=T, showWarnings=F)
-file.copy(from=file.path(srcdir, "..", "MonetDB.R"), to=builddir, recursive=T)
+
 dd <- capture.output(suppressMessages( {
 	sink(file=file(tempfile(), open = "wt"), type = "message") 
-	install.packages(file.path(builddir, "MonetDB.R"), repos=NULL, lib=installdir, quiet=T)
+
+	install.packages(c("MonetDBLite"), repos=c("http://dev.monetdb.org/Assets/R/", "http://cran.rstudio.com/"), type="binary", lib=installdir, quiet=T)
+
 	sink(type = "message") 
 }))
-library(MonetDB.R,quietly=T,lib.loc=installdir)
+
+library(MonetDBLite, quietly=T, lib.loc=installdir)
+
+stopifnot(!is.null(sessionInfo()$otherPkgs$MonetDBLite))
+print("SUCCESS")

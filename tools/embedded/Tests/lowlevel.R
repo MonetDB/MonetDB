@@ -1,5 +1,10 @@
+basedir <- Sys.getenv("TSTTRGDIR")
+if (basedir == "") {
+	stop("Need TSTTRGDIR environment vars")
+}
+library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
+
 library(testthat)
-library(MonetDBLite)
 
 test_that("db starts up", {
 	expect_error(monetdb_embedded_startup("/dev/null"))
