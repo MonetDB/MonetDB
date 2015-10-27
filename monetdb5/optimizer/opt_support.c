@@ -646,16 +646,16 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
  */
 
 static int 
-instrHasProp(InstrPtr p, int prop)
+isOrderDepenent(InstrPtr p)
 {
-	int i;
-	MalBlkPtr mb = p->blk;
-	
-	for (i = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].idx == prop)
-			return 1;
-	}
-	return 0;
+    if( getModuleId(p) != batsqlRef)
+        return 0;
+    if ( getFunctionId(p) == diffRef ||
+        getFunctionId(p) == row_numberRef ||
+        getFunctionId(p) == rankRef ||
+        getFunctionId(p) == dense_rankRef)
+        return 1;
+    return 0;
 }
 
 int isMapOp(InstrPtr p){
@@ -664,7 +664,7 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && (!instrHasProp(p, orderDependendProp)) &&
+		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != rapiRef;
 }
 

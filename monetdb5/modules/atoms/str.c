@@ -62,13 +62,6 @@
 #include "str.h"
 #include <string.h>
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#endif
-
 /*
  * UTF-8 Handling
  * UTF-8 is a way to store Unicode strings in zero-terminated byte
@@ -1723,62 +1716,6 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 	u = (const unsigned char *) s;
 	UTF8_GETCHAR(*res, u);
 	return MAL_SUCCEED;
-}
-
-str
-STRcodeset(str *res)
-{
-#ifdef HAVE_NL_LANGINFO
-	const char *code_set = nl_langinfo(CODESET);
-
-	if (code_set == NULL)
-		throw(MAL, "str.codeset", "impossible return value from nl_langinfo");
-	*res = GDKstrdup(code_set);
-#else
-	*res = GDKstrdup("UTF-8");
-#endif
-	if (*res == NULL)
-		throw(MAL, "str.codeset", "Allocation failed");
-	return MAL_SUCCEED;
-}
-
-str
-STRIconv(str *res, const str *o, const str *fp, const str *tp)
-{
-	const char *f = *fp;
-	const char *t = *tp;
-#ifdef HAVE_ICONV
-	size_t len = strlen(*o);
-	iconv_t cd = iconv_open(t, f);
-	size_t size = 4 * len;	/* make sure enough memory is claimed */
-	char *r;
-	ICONV_CONST char *from = *o;
-
-	if (cd == (iconv_t)(-1)) {
-		throw(MAL, "str.iconv", "Cannot convert strings from (%s) to (%s)", f, t);
-	}
-	*res = r = GDKmalloc(size);
-	if (iconv(cd, &from, &len, &r, &size) == (size_t) - 1) {
-		GDKfree(*res);
-		*res = NULL;
-		iconv_close(cd);
-		throw(MAL, "str.iconv", "String conversion failed from (%s) to (%s)", f, t);
-	}
-	*r = 0;
-	iconv_close(cd);
-	return MAL_SUCCEED;
-#else
-	const char *org = *o;
-
-	*res = NULL;
-	if (strcmp(f, t) == 0) {
-		*res = GDKstrdup(org);
-		if (*res == NULL)
-			throw(MAL, "str.iconv", "Allocation failed");
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "str.iconv", "Unsupported encoding");
-#endif
 }
 
 str

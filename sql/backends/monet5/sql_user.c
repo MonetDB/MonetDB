@@ -395,6 +395,52 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	sql_column *schemas_name = NULL;
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
+	sql_column *auths_id = NULL;
+	sql_column *auths_name = NULL;
+	void *p = 0;
+	str username = NULL;
+	str schema = NULL;
+
+	sys = find_sql_schema(m->session->tr, "sys");
+	auths = find_sql_table(sys, "auths");
+	auths_id = find_sql_column(auths, "id");
+	auths_name = find_sql_column(auths, "name");
+	if ((rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL)) != oid_nil)
+		username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
+
+	user_info = find_sql_table(sys, "db_user_info");
+	users_name = find_sql_column(user_info, "name");
+	users_schema = find_sql_column(user_info, "default_schema");
+	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL)) != oid_nil)
+		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
+
+	assert(p);
+	schema_id = *(sqlid *) p;
+	_DELETE(p);
+
+	schemas = find_sql_table(sys, "schemas");
+	schemas_name = find_sql_column(schemas, "name");
+	schemas_id = find_sql_column(schemas, "id");
+
+	if ((rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) != oid_nil)
+		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
+	stack_set_string(m, "current_schema", schema);
+	return schema;
+}
+
+str
+monet5_user_set_def_schema(mvc *m, oid user)
+{
+	oid rid;
+	sqlid schema_id;
+	sql_schema *sys = NULL;
+	sql_table *user_info = NULL;
+	sql_column *users_name = NULL;
+	sql_column *users_schema = NULL;
+	sql_table *schemas = NULL;
+	sql_column *schemas_name = NULL;
+	sql_column *schemas_id = NULL;
+	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
 
 	void *p = 0;
