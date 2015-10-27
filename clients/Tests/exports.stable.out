@@ -2159,7 +2159,6 @@ int getTypeIndex(str nme, int len, int deftpe);
 str getTypeName(malType tpe);
 lng getUserTime(void);
 str getVarName(MalBlkPtr mb, int i);
-wrd getVarRows(MalBlkPtr mb, int v);
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 int getWrdConstant(MalBlkPtr mb, wrd val);
 MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);

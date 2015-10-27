@@ -155,6 +155,7 @@ typedef struct VARRECORD {
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
+	BUN rowcnt;					/* estimated row count*/
 	int propc, maxprop;			/* proc count and max number of properties */
 	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
 } *VarPtr, VarRecord;

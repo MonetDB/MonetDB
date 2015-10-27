@@ -105,7 +105,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * table and passes them on as a row property.  All pieces for a
 		 * single subplan should ideally fit together.
 		 */
-		r = getVarRows(mb, getArg(p, 0));
+		r = getRowCnt(mb, getArg(p, 0));
 		if (r >= rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getColumnType(getArgType(mb,p,0)));

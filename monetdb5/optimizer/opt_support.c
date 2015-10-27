@@ -789,35 +789,4 @@ isOptimizerEnabled(MalBlkPtr mb, str opt)
 	}
 	return 0;
 }
-wrd
-getVarRows(MalBlkPtr mb, int v)
-{
-	VarPtr p = varGetProp(mb, v, rowsProp);
-
-	if (!p)
-		return -1;
-	if (p->value.vtype == TYPE_wrd
-#if SIZEOF_BUN <= SIZEOF_WRD
-		    && p->value.val.wval <= (wrd) BUN_MAX
-#endif
-		)
-		return p->value.val.wval;
-	if (p->value.vtype == TYPE_lng
-#if SIZEOF_BUN <= SIZEOF_LNG
-		    && p->value.val.lval <= (lng) BUN_MAX
-#endif
-		)
-		return (wrd)p->value.val.lval;
-	if (p->value.vtype == TYPE_int
-#if SIZEOF_BUN <= SIZEOF_INT
-		    && p->value.val.ival <= (int) BUN_MAX
-#endif
-		)
-		return p->value.val.ival;
-	if (p->value.vtype == TYPE_sht)
-		return p->value.val.shval;
-	if (p->value.vtype == TYPE_bte)
-		return p->value.val.btval;
-	return -1;
-}
 

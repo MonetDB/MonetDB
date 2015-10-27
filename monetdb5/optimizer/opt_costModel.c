@@ -14,8 +14,8 @@
  */
 #define newRows(W,X,Y,Z) {\
 		ValRecord v;\
-		c1 = getVarRows(mb, getArg(p,W));\
-		c2 = getVarRows(mb, getArg(p,X));\
+		c1 = getRowCnt(mb, getArg(p,W));\
+		c2 = getRowCnt(mb, getArg(p,X));\
 		if (c1 == -1 || c2 == -1) \
 			continue;\
 		k = (Y);\
@@ -132,7 +132,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 		} else if( p->token == ASSIGNsymbol && p->argc== 2){
 			/* copy the rows property */
-			c1 = getVarRows(mb, getArg(p,1));
+			c1 = getRowCnt(mb, getArg(p,1));
 			if (c1 != -1) {
 				ValRecord v;
 				
