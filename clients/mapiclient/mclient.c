@@ -1978,8 +1978,6 @@ doFileBulk(Mapi mid, FILE *fp)
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		if (fp != stdin && fp != NULL)
-			fclose(fp);
 		return 1;
 	}
 
@@ -1993,10 +1991,6 @@ doFileBulk(Mapi mid, FILE *fp)
 			buf[0] = 0;
 		} else if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
-			if (fp != stdin) {
-				fclose(fp);
-				fp = NULL;
-			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
 			buf[0] = 0;
@@ -2099,8 +2093,6 @@ doFileBulk(Mapi mid, FILE *fp)
 	timerEnd();
 
 	free(buf);
-	if (fp != NULL && fp != stdin)
-		fclose(fp);
 	mnstr_flush(toConsole);
 	return errseen;
 }
@@ -2909,8 +2901,6 @@ doFile(Mapi mid, FILE *fp, int useinserts, int interactive, int save_history)
 	if (prompt)
 		deinit_readline();
 #endif
-	if (fp != stdin)
-		fclose(fp);
 	return errseen;
 }
 
