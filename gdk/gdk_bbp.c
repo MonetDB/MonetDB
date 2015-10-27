@@ -3445,6 +3445,9 @@ BBPsync(int cnt, bat *subcommit)
 	int bbpdirty = 0;
 	int t0 = 0, t1 = 0;
 
+	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
+	str deldir = GDKfilepath(0, NULL, DELDIR, NULL);
+
 	PERFDEBUG t0 = t1 = GDKms();
 
 	ret = BBPprepare(subcommit != NULL);
@@ -3506,8 +3509,6 @@ BBPsync(int cnt, bat *subcommit)
 	}
 
 	PERFDEBUG fprintf(stderr, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(BBPsize, BBPsizeLock, "BBPsync"));
-	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
-	str deldir = GDKfilepath(0, NULL, DELDIR, NULL);
 
 	if (bbpdirty || backup_files > 0) {
 		if (ret == GDK_SUCCEED) {
