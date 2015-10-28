@@ -2585,6 +2585,7 @@ file_rastream(FILE *fp, const char *name)
 	stream *s;
 	lng pos;
 	char buf[UTF8BOMLENGTH + 1];
+	struct stat stb;
 
 	if (fp == NULL)
 		return NULL;
@@ -2595,7 +2596,7 @@ file_rastream(FILE *fp, const char *name)
 		return NULL;
 	s->type = ST_ASCII;
 	s->stream_data.p = (void *) fp;
-	if (!isatty(fileno(fp)) && file_fgetpos(s, &pos) == 0) {
+	if (fstat(fileno(fp), &stb) == 0 && S_ISREG(stb.st_mode) && file_fgetpos(s, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = 1;
