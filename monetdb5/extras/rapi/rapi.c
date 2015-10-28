@@ -329,7 +329,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	size_t pos;
 	char* rcall;
 	size_t rcalllen;
-	size_t ret_rows = 0;
 	int ret_cols = 0; /* int because pci->retc is int, too*/
 	str *args;
 	int evalErr;
@@ -490,7 +489,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	// ret should be a data frame with exactly as many columns as we need from retc
 	ret_cols = LENGTH(retval);
-	ret_rows = LENGTH(VECTOR_ELT(retval, 0));
 	if (ret_cols != pci->retc) {
 		msg = createException(MAL, "rapi.eval",
 							  "Expected result of %d columns, got %d", pci->retc, ret_cols);
