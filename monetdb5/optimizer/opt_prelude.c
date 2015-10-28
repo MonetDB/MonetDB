@@ -233,7 +233,6 @@ str zero_or_oneRef;
 int sqlfunctionProp;
 
 int inlineProp;
-int rowsProp;
 int unsafeProp;
 
 int horiginProp;		/* original oid source */
@@ -458,7 +457,6 @@ void optimizerInit(void)
 	userRef = putName("user",4);
 
 	inlineProp = PropertyIndex("inline");
-	rowsProp = PropertyIndex("rows");
 	unsafeProp = PropertyIndex("unsafe");
 	sqlfunctionProp = PropertyIndex("sqlfunction");
 

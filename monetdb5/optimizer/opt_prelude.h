@@ -233,7 +233,6 @@ opt_export  str zero_or_oneRef;
 opt_export int sqlfunctionProp;
 
 opt_export int inlineProp;		/* binary */
-opt_export int rowsProp;		/* long */
 opt_export int unsafeProp;		/* binary */
 
 opt_export int horiginProp;		/* original oid source */

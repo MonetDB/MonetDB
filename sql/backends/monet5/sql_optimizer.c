@@ -144,7 +144,6 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				}
 			}
 			if (rows > 1 && mode != RD_INS)
-				//varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				setRowCnt(mb,k,rows);
 			if (mt_member && mode != RD_INS)
 				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));

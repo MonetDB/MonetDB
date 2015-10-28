@@ -2476,7 +2476,6 @@ str resultSetRef;
 str reuseRef;
 malType reverseBatType(malType v);
 str row_numberRef;
-int rowsProp;
 str rpcRef;
 str rsColumnRef;
 int rule_fromstr(const char *buf, int *len, rule **d);
