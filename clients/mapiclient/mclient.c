@@ -936,9 +936,24 @@ classify(const char *s, size_t l)
 	    (l == 5 && strcmp(s, "false") == 0))
 		return "bit";
 	while (l != 0) {
-		if (*s == 0 || !isascii(*s))
+		if (*s == 0)
 			return "str";
-		if (isdigit((int) *s)) {
+		switch (*s) {
+		case '0':
+			if (state == 12) {
+				state = 13;	/* int + '@0' (oid) */
+				break;
+			}
+			/* fall through */
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
 			switch (state) {
 			case 0:
 			case 1:
@@ -951,36 +966,43 @@ classify(const char *s, size_t l)
 			case 6:
 				state = 7;	/* digit after exponent marker and optional sign */
 				break;
-			case 12:
-				if (*s == '0')	/* only @0 allowed */
-					state = 13;
-				else
-					return "str";
-				break;
+			case 2:
+			case 4:
+			case 7:
+				break;		/* more digits */
+			default:
+				return "str";
 			}
-		} else if (*s == '.') {
+			break;
+		case '.':
 			if (state == 2)
 				state = 3;	/* decimal point */
 			else
 				return "str";
-		} else if (*s == 'e' || *s == 'E') {
+			break;
+		case 'e':
+		case 'E':
 			if (state == 2 || state == 4)
 				state = 5;	/* exponent marker */
 			else
 				return "str";
-		} else if (*s == '+' || *s == '-') {
+			break;
+		case '+':
+		case '-':
 			if (state == 0)
 				state = 1;	/* sign at start */
 			else if (state == 5)
 				state = 6;	/* sign after exponent marker */
 			else
 				return "str";
-		} else if (*s == '@') {
+			break;
+		case '@':
 			if (state == 2)
 				state = 12;	/* OID marker */
 			else
 				return "str";
-		} else if (*s == 'L') {
+			break;
+		case 'L':
 			switch (state) {
 			case 2:
 				state = 8;	/* int + 'L' */
@@ -998,6 +1020,9 @@ classify(const char *s, size_t l)
 			default:
 				return "str";
 			}
+			break;
+		default:
+			return "str";
 		}
 		s++;
 		l--;

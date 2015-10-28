@@ -372,13 +372,13 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			int on_update;
 			int on_delete;
 
-			if (action > 0 &&
-			    (on_delete = action & 255) < NR_ACTIONS &&
+			if ((on_delete = action & 255) != 0 &&
+			    on_delete < NR_ACTIONS &&
 			    on_delete != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON DELETE %s",
 					     actions[on_delete]);
-			if (action > 0 &&
-			    (on_update = (action >> 8) & 255) < NR_ACTIONS &&
+			if ((on_update = (action >> 8) & 255) != 0 &&
+			    on_update < NR_ACTIONS &&
 			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
