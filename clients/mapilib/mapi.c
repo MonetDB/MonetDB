@@ -1437,8 +1437,7 @@ mapi_log(Mapi mid, const char *nme)
 {
 	mapi_clrError(mid);
 	if (mid->tracelog) {
-		mnstr_close(mid->tracelog);
-		mnstr_destroy(mid->tracelog);
+		close_stream(mid->tracelog);
 		mid->tracelog = NULL;
 	}
 	if (nme == NULL)
@@ -2969,13 +2968,11 @@ close_connection(Mapi mid)
 	 * socket; see also src/common/stream.mx:socket_close .
 	 */
 	if (mid->to) {
-		mnstr_close(mid->to);
-		mnstr_destroy(mid->to);
+		close_stream(mid->to);
 		mid->to = 0;
 	}
 	if (mid->from) {
-		mnstr_close(mid->from);
-		mnstr_destroy(mid->from);
+		close_stream(mid->from);
 		mid->from = 0;
 	}
 	mapi_log_record(mid, "Connection closed\n");
