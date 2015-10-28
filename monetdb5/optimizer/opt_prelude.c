@@ -230,8 +230,6 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int sqlfunctionProp;
-
 int inlineProp;
 int unsafeProp;
 
@@ -458,7 +456,6 @@ void optimizerInit(void)
 
 	inlineProp = PropertyIndex("inline");
 	unsafeProp = PropertyIndex("unsafe");
-	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
