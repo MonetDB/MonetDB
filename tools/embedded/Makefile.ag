@@ -33,7 +33,8 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../sql/backends/monet5 \ 
 		   $(pcre_CFLAGS)
 
-lib_embedded  =  {
+lib_embedded  = {
+	COND = HAVE_EMBEDDED
 	SOURCES = embedded.c embedded.h
 	VERSION = 1
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
