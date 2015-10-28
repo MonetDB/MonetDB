@@ -7,7 +7,7 @@ installdir <- ""
 }
 
 monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
-	dir <- normalizePath(as.character(dir))
+	dir <- normalizePath(as.character(dir), mustWork=FALSE)
 	quiet <- as.logical(quiet)
 	if (length(dir) != 1) {
 		stop("Need a single directory name as parameter.")
