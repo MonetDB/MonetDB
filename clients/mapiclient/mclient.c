@@ -185,7 +185,6 @@ static char *nullstring = default_nullstring;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define fileno _fileno
-#define isatty _isatty
 #endif
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')

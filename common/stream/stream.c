@@ -844,7 +844,6 @@ file_fsetpos(stream *s, lng p)
 
 #ifdef NATIVE_WIN32
 #define fileno(fd) _fileno(fd)
-#define isatty(fd) _isatty(fd)
 #endif
 
 size_t
