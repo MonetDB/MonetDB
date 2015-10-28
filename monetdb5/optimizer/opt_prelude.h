@@ -169,6 +169,8 @@ opt_export  str putRef;
 opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
+opt_export  str batrapiRef;
+opt_export  str subeval_aggrRef;
 opt_export  str rankRef;
 opt_export  str dense_rankRef;
 opt_export  str reconnectRef;
