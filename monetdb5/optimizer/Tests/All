@@ -59,7 +59,7 @@ joinchain
 ifthencst
 #CXerror1 transaction primitives removed
 #the remainder are snippets used in the reference manual
-CMexample
+#CMexample rowcount is only set by SQL optimizer
 #CRexample push range optimizer is out of date
 ARexample
 DCexample
@@ -74,4 +74,3 @@ dataflow
 dataflow3
 dataflow4
 dataflow5
-garbage

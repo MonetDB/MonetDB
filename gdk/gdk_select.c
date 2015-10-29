@@ -1953,14 +1953,14 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				high -= BUNfirst(l);
 			} else {
 				if (li)
-					low = SORTfndlast(l, vrl);
+					low = SORTfndlast(l, vrh);
 				else
-					low = SORTfndfirst(l, vrl);
+					low = SORTfndfirst(l, vrh);
 				low -= BUNfirst(l);
 				if (hi)
-					high = SORTfndfirst(l, vrh);
+					high = SORTfndfirst(l, vrl);
 				else
-					high = SORTfndlast(l, vrh);
+					high = SORTfndlast(l, vrl);
 				high -= BUNfirst(l);
 			}
 			if (high <= low)

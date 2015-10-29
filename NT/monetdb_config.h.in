@@ -688,6 +688,9 @@
 /* Define if you have valgrind installed and want to use it */
 /* #undef HAVE_VALGRIND */
 
+/* Define to 1 if you have the `_wfopen' function. */
+#define HAVE__WFOPEN 1
+
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1
 

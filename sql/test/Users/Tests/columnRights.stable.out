@@ -30,11 +30,6 @@ Ready.
 
 #GRANT SELECT (price) ON library.orders TO alice;
 #GRANT UPDATE (name)  ON library.orders TO alice;
-#QUERY = SELECT price FROM orders;
-% orders # table_name
-% price # name
-% int # type
-% 1 # length
 #UPDATE orders SET name = 'book title goes here';
 [ 0	]
 

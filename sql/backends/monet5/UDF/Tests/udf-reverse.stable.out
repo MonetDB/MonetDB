@@ -51,7 +51,7 @@ Ready.
 % 95 # length
 function user.s2_1{autoCommit=true}(A0:str):void;
     X_10:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
-    X_3 := udf.reverse(A0);
+    X_3:str := udf.reverse(A0);
     sql.resultSet(".L","reverse_single_value","clob",0,0,4,X_3);
 end user.s2_1;
 #select reverse('MonetDB');

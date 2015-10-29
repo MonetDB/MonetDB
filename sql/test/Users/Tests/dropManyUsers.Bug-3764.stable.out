@@ -75,10 +75,10 @@ Ready.
 % varchar,	varchar,	int # type
 % 7,	13,	4 # length
 [ "monetdb",	"MonetDB Admin",	2000	]
-[ "user1",	"1st user",	7307	]
-[ "user2",	"2nd user",	7307	]
-[ "user3",	"3rd user",	7307	]
-[ "user4",	"4th user",	7307	]
+[ "user1",	"1st user",	7401	]
+[ "user2",	"2nd user",	7401	]
+[ "user3",	"3rd user",	7401	]
+[ "user4",	"4th user",	7401	]
 #DROP USER user1;
 #DROP USER user2;
 #DROP USER user3;

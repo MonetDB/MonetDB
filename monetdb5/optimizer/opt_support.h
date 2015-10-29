@@ -113,7 +113,6 @@ opt_export int isSubJoin(InstrPtr q);
 opt_export int isMultiplex(InstrPtr q);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
 opt_export str OPTsetDebugStr(void *ret, str *nme);
-opt_export wrd getVarRows(MalBlkPtr mb, int v);
 
 #endif /* _OPT_SUPPORT_H */
 

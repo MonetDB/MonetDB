@@ -691,29 +691,25 @@ Ready.
 [ "yaoo" ]
 
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";
-% . # table_name
-# .L # table_name
+% .L # table_name
 % joeuser # name
 % char # type
 % 18 # length
 [ "joeuser"     ]
 #select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
-% . # table_name
-# .L # table_name
+% .L # table_name
 % mydatabase # name
 % char # type
 % 18 # length
 [ "mydatabase"  ]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
-% . # table_name
-# .L # table_name
+% .L # table_name
 % empty string # name
 % char # type
 % 18 # length
 [ ""    ]
 #select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
-% . # table_name
-# .L # table_name
+% .L # table_name
 % joeuser # name
 % char # type
 % 18 # length

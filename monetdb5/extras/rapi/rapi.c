@@ -499,6 +499,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		varname = PROTECT(Rf_install(args[i]));
 
 		switch (ATOMstorage(getColumnType(getArgType(mb,pci,i)))) {
+		case TYPE_bit:
+			BAT_TO_INTSXP(b, bit, varvalue);
+			break;
 		case TYPE_bte:
 			BAT_TO_INTSXP(b, bte, varvalue);
 			break;
@@ -668,6 +671,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 									i, rtypename(TYPEOF(ret_col)));
 				goto wrapup;
 			}
+			bat_type = TYPE_bit;
 			SXP_TO_BAT(bit, LOGICAL_POINTER, *p==NA_LOGICAL);
 			break;
 		}
@@ -739,8 +743,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else { // single value return, only for non-grouped aggregations
+			BATiter bi = bat_iterator(b);
+
 			VALinit(&stk->stk[pci->argv[i]], bat_type,
-					Tloc(b, BUNfirst(b)));
+					BUNtail(bi, BUNfirst(b)));
 		}
 		msg = MAL_SUCCEED;
 	}

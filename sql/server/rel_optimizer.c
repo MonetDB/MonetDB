@@ -1792,6 +1792,12 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
+
+			if (need_distinct(r)) {
+				set_distinct(ul);
+				set_distinct(ur);
+			}
+
 			/* zap names */
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
@@ -1799,6 +1805,10 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
 			ur->r = r->r;
 			r->l = NULL;
+
+			if (need_distinct(r)) 
+				set_distinct(ur);
+
 			rel_destroy(r);
 			rel->l = ur;
 			(*changes)++;
@@ -3377,7 +3387,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 
 	/* merge 2 selects */
 	r = rel->l;
-	if (is_select(rel->op) && r && is_select(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r))) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -4524,8 +4534,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
-			list *args = e->l;
-			sql_exp *v = args->h->data;
+			sql_exp *v;
 			sql_subaggr *f = e->f;
 			int cnt = strcmp(f->aggr->base.name,"count")==0;
 			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));

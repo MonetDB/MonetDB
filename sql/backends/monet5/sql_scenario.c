@@ -398,8 +398,18 @@ void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (!m->session->active)
+	if (!m->session->active) {
+		sql_session *s;
+
 		mvc_trans(m);
+		s = m->session;
+		if (!s->schema) {
+			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			assert(s->schema_name);
+			s->schema = find_sql_schema(s->tr, s->schema_name);
+			assert(s->schema);
+		}
+	}
 }
 
 str
@@ -449,7 +459,7 @@ SQLinitClient(Client c)
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
-	schema = monet5_user_get_def_schema(m, c->user);
+	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
 		throw(PERMD, "SQLinitClient", "08004!schema authorization error");

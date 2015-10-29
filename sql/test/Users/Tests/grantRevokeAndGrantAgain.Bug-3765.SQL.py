@@ -21,10 +21,12 @@ INSERT into schemaTest.testTable values(1, 1);
 INSERT into schemaTest.testTable values(2, 2);
 INSERT into schemaTest.testTable values(3, 3);
 
--- Grant delete rights.
+-- Grant rights.
 GRANT DELETE on table schemaTest.testTable to user_delete;
 GRANT INSERT on table schemaTest.testTable to user_insert;
 GRANT UPDATE on table schemaTest.testTable to user_update;
+GRANT SELECT on table schemaTest.testTable to user_delete;
+GRANT SELECT on table schemaTest.testTable to user_update;
 GRANT SELECT on table schemaTest.testTable to user_select;
 
 """)

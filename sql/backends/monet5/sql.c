@@ -3292,7 +3292,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **b = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str filename = NULL, cs;
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
 	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
 	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
@@ -3306,7 +3305,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
-	str utf8 = "UTF-8";
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3349,26 +3347,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
-		/* convert UTF-8 encoded file name to the character set of our
-	 	 * own locale before passing it on to the system call */
-		if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
-			GDKfree(tsep);
-			GDKfree(rsep);
-			GDKfree(ssep);
-			GDKfree(ns);
-			return msg;
-		}
-		msg = STRIconv(&filename, fname, &utf8, &cs);
-		GDKfree(cs);
-		if (msg != MAL_SUCCEED) {
-			GDKfree(tsep);
-			GDKfree(rsep);
-			GDKfree(ssep);
-			GDKfree(ns);
-			return msg;
-		}
-
-		ss = open_rastream(filename);
+		ss = open_rastream(*fname);
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
 			if (ss)
@@ -3377,8 +3356,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			GDKfree(ssep);
 			GDKfree(ns);
-			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
-			GDKfree(filename);
+			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", *fname, strerror(errnr));
 			return msg;
 		}
 #if SIZEOF_VOID_P == 4
@@ -3395,7 +3373,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 			bstream_destroy(s);
 		}
-		GDKfree(filename);
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
@@ -4839,7 +4816,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
-								if (c->type != no_idx) {
+								if (idx_has_column(c->type)) {
 									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
@@ -4980,6 +4957,80 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
+
+str
+RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *mod = getArgReference_str(stk, pci, 1);
+	str *nme = getArgReference_str(stk, pci, 2);
+	str *expr = getArgReference_str(stk, pci, 3);
+	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg;
+	sql_rel *rel;
+	list *refs, *ops;
+	char buf[BUFSIZ];
+
+	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!m->sa)
+		m->sa = sa_create();
+
+       	ops = sa_list(m->sa);
+	//fprintf(stderr, "'%s' %s\n", *sig, *expr);
+	//fflush(stderr);
+	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
+	while (c && *c && !isspace(*c)) {
+		char *vnme = c, *tnme; 
+		char *p = strchr(++c, (int)' ');
+		int d,s,nr;
+		sql_subtype t;
+		atom *a;
+
+		*p++ = 0;
+		vnme = sa_strdup(m->sa, vnme);
+		nr = strtol(vnme+1, NULL, 10);
+		tnme = p;
+		p = strchr(p, (int)'(');
+		*p++ = 0;
+		tnme = sa_strdup(m->sa, tnme);
+
+		d = strtol(p, &p, 10);
+		p++; /* skip , */
+		s = strtol(p, &p, 10);
+		
+		sql_find_subtype(&t, tnme, d, s);
+		a = atom_general(m->sa, &t, NULL);
+		/* the argument list may have holes and maybe out of order, ie
+		 * done use sql_add_arg, but special numbered version
+		 * sql_set_arg(m, a, nr);
+		 * */
+		sql_set_arg(m, nr, a);
+		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
+		c = strchr(p, (int)',');
+		if (c)
+			c++;
+	}
+	//fprintf(stderr, "2: %d %s\n", list_length(ops), *expr);
+	//fflush(stderr);
+	refs = sa_list(m->sa);
+	rel = rel_read(m, *expr, &pos, refs);
+	//fprintf(stderr, "3: %d %s\n", list_length(ops), rel2str(m, rel));
+	//fflush(stderr);
+	if (!rel)
+		throw(SQL, "sql.register", "Cannot register %s", buf);
+	if (rel) {
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops));
+		rel_destroy(rel);
+	}
+	sqlcleanup(m, 0);
+	return msg;
+}
+
 
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)

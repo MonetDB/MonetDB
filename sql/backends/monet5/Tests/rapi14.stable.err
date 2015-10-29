@@ -30,9 +30,6 @@ stderr of test 'rapi14` in directory 'sql/backends/monet5` itself:
 # 10:57:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-36459" "--port=30595"
 # 10:57:32 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-36459/.s.monetdb.30595
-QUERY = SELECT rapi14() FROM dval;
-ERROR = !Unknown return value, possibly projecting with no parameters.
 
 # 10:57:33 >  
 # 10:57:33 >  "Done."
