@@ -1,9 +1,11 @@
-basedir <- Sys.getenv("TSTTRGDIR")
-if (basedir == "") {
-	stop("Need TSTTRGDIR environment vars")
-}
-library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
 library(testthat)
+
+basedir <- Sys.getenv("TSTTRGDIR")
+if (basedir != "") {
+	library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
+} else {
+	library(MonetDBLite)
+}
 
 test_that("db starts up", {
 	expect_error(monetdb_embedded_startup("/dev/null"))
@@ -74,6 +76,18 @@ test_that("rollback with errors", {
 	res <- monetdb_embedded_query(con, "SELECT 1")
 	expect_equal(res$type, "!")
 	monetdb_embedded_query(con, "ROLLBACK")
+	res <- monetdb_embedded_query(con, "SELECT 42")
+	expect_equal(res$type, 1)
+	monetdb_embedded_disconnect(con)
+})
+
+test_that("transaction immediately after rollback", {
+	con <- monetdb_embedded_connect()
+	monetdb_embedded_query(con, "START TRANSACTION")
+	res <- monetdb_embedded_query(con, "SELECT 42")
+	expect_equal(res$type, 1)
+	monetdb_embedded_query(con, "ROLLBACK")
+	monetdb_embedded_query(con, "START TRANSACTION")
 	res <- monetdb_embedded_query(con, "SELECT 42")
 	expect_equal(res$type, 1)
 	monetdb_embedded_disconnect(con)

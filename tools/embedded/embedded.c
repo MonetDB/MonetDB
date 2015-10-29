@@ -174,6 +174,7 @@ char* monetdb_query(void* conn, char* query, void** result) {
 	while (*query == ' ' || *query == '\t') query++;
 	if (strncasecmp(query, "START", 5) == 0) { // START TRANSACTION
 		m->session->auto_commit = 0;
+		m->session->status = 0;
 	}
 	else if (strncasecmp(query, "ROLLBACK", 8) == 0) {
 		m->session->status = -1;
@@ -185,7 +186,7 @@ char* monetdb_query(void* conn, char* query, void** result) {
 	else if (strncasecmp(query, "SHIBBOLEET", 10) == 0) {
 		res = GDKstrdup("\x46\x6f\x72\x20\x69\x6d\x6d\x65\x64\x69\x61\x74\x65\x20\x74\x65\x63\x68\x6e\x69\x63\x61\x6c\x20\x73\x75\x70\x70\x6f\x72\x74\x20\x63\x61\x6c\x6c\x20\x2b\x33\x31\x20\x32\x30\x20\x35\x39\x32\x20\x34\x30\x33\x39");
 	}
-	else if (m->session->status < 0 && m->session->auto_commit ==0){
+	else if (m->session->status < 0 && m->session->auto_commit == 0){
 		res = GDKstrdup("Current transaction is aborted (please ROLLBACK)");
 	} else {
 		res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);

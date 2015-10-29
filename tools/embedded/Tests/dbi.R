@@ -1,8 +1,9 @@
 basedir <- Sys.getenv("TSTTRGDIR")
-if (basedir == "") {
-	stop("Need TSTTRGDIR environment vars")
+if (basedir != "") {
+	library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
+} else {
+	library(MonetDBLite)
 }
-library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
 library(MonetDB.R)
 library(testthat)
 
@@ -258,7 +259,7 @@ test_that("dis/re-connect", {
 	expect_false(dbIsValid(con))
 	expect_error(dbSendQuery(con, "SELECT 1"))
 	# this throws a warning because we cannot re-initialize embedded monetdb
-	expect_warning(con <- dbConnect(MonetDB.R::MonetDB.R(), embedded=tempdir()))
+	expect_warning(con <- dbConnect(MonetDB.R::MonetDB.R(), embedded="/tmp"))
 	res <- dbSendQuery(con, "SELECT 1")
 	expect_true(dbIsValid(res))
 })
