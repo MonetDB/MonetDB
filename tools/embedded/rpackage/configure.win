@@ -14,11 +14,11 @@ cd src
 make 
 make install
 cd tools/embedded
-cp libembedded_la-embedded.lo libmonetdb5.o
-cp libembedded.la libembedded.a
+cp libembeddedr_la-embeddedr.lo libmonetdb5.o
+cp libembeddedr.la libembeddedr.a
 cp ../../sql/backends/monet5/lib_sql.la ../../sql/backends/monet5/libsql.a
 
-"${R_HOME}/bin/R.exe" CMD SHLIB -o libmonetdb5.dll libmonetdb5.o -L. -L../../sql/backends/monet5 -Wl,--whole-archive -lembedded -lsql -Wl,--no-whole-archive -lpthread -lpsapi -lws2_32 -static-libgcc -static-libstdc++ -Wl,--export-all-symbols -Wl,--allow-multiple-definition -Lwindows/pcre-8.37/libs/x64/ -lpcre
+"${R_HOME}/bin/R.exe" CMD SHLIB -o libmonetdb5.dll libmonetdb5.o -L. -L../../sql/backends/monet5 -Wl,--whole-archive -lembeddedr -lsql -Wl,--no-whole-archive -lpthread -lpsapi -lws2_32 -static-libgcc -static-libstdc++ -Wl,--export-all-symbols -Wl,--allow-multiple-definition -Lwindows/pcre-8.37/libs/x64/ -lpcre
 
 cd ../../..
 mkdir -p $R_PACKAGE_DIR/libs/x64
