@@ -10,7 +10,9 @@ src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monet
 
 src_translate_env.src_monetdb <- function(x) {
   dplyr::sql_variant(
-    dplyr::base_scalar,
+    dplyr::sql_translator(.parent = dplyr::base_scalar,
+    `!=` = dplyr::sql_infix("<>")
+    ),
     dplyr::sql_translator(.parent = dplyr::base_agg,
       n = function() dplyr::sql("COUNT(*)"),
       sd =  dplyr::sql_prefix("STDDEV_SAMP"),
