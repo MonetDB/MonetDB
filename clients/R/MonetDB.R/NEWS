@@ -4,10 +4,10 @@
 - Now creating actual R integers if data fits
 - dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
 - New mdbapply function to automatically create and run embedded R functions in MonetDB
-- Fixes for dplyr backend (Thanks, Anthony)
+- Fixes for dplyr backend
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
-- Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
+- Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey
 - Added col.names argument to monet.read.csv()
 - Added lower.case.names argument to monet.read.csv() in case users want to avoid quoting (a bit)
 - Fix for dbConnect() that should be more robust to invalid connections
@@ -17,9 +17,9 @@
 - Fixed a bug in monetdb.read.csv for multiple CSV files without headers
 - dplyr src_monetdb now has a con parameter to pass an existing DBI connection
 - Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
-- Fixed a bug when dbWriteTable would not adhere to transactional semantics (Thanks, Anthony)
-- Added transactions to monetdb.read.csv so no empty tables are left over (Thanks, Anthony)
-- Fixed != comparisions in dplyr (Thanks, Anthony)
+- Fixed a bug when dbWriteTable would not adhere to transactional semantics
+- Added transactions to monetdb.read.csv so no empty tables are left over
+- Fixed != comparisions in dplyr (Thanks, David)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
