@@ -12,7 +12,7 @@
 #
 # Tests examples have been taken from the python and java internfaces and mysql driver.
 
-require 'MonetDB'
+require_relative '../MonetDB'
 require 'test/unit'
 
 require 'time'

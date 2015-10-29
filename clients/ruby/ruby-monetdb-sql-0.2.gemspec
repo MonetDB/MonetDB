@@ -2,9 +2,9 @@
 Gem::Specification.new do |s|
    s.required_ruby_version = '>= 1.8.0'
    s.name = %q{ruby-monetdb-sql}
-   s.version = "0.1"
-   s.date = %q{2009-04-27}
-   s.authors = ["G Modena"]
+   s.version = "0.2"
+   s.date = %q{2015-10-29}
+   s.authors = ["G Modena", "R Koopmanschap"]
    s.email = "info@monetdb.org"
    s.license = "MPL-1.1"
    s.summary = %q{Pure Ruby database driver for MonetDB/SQL}
