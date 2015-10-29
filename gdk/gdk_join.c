@@ -1074,6 +1074,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (sl)
 		r1->tdense = sl->tdense;
+	if (sr)
+		r2->tdense = sr->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (!nil_on_miss && !must_match && lscan > 0) {
 			/* If l is sorted (lscan > 0), we look at the
