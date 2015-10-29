@@ -10,22 +10,22 @@
  * H. Muehleisen, M. Raasveldt
  * Inverse RAPI
  */
-#ifndef _INVERSE_RAPI_LIB_
-#define _INVERSE_RAPI_LIB_
-
-#include <Rdefines.h>
+#ifndef _EMBEDDED_LIB_
+#define _EMBEDDED_LIB_
 
 typedef struct append_data {
 	char* colname;
-	ssize_t batid;
+	int batid; /* Disclaimer: this header is GDK-free */
 } append_data;
 
+extern int monetdb_embedded_initialized;
+
+void* monetdb_connect();
+void  monetdb_disconnect(void* conn);
 char* monetdb_startup(char* installdir, char* dbdir, char silent);
-char* monetdb_query(char* query, void** result);
-char* monetdb_append(const char* schema, const char* table, append_data *ad, int ncols);
-void monetdb_cleanup_result(void* output);
-SEXP monetdb_query_R(SEXP querysexp, SEXP notreally);
-SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp);
-SEXP monetdb_append_R(SEXP schemaname, SEXP tablename, SEXP tabledata);
+char* monetdb_query(void* conn, char* query, void** result);
+char* monetdb_append(void* conn, const char* schema, const char* table, append_data *data, int ncols);
+void  monetdb_cleanup_result(void* conn, void* output);
+char* monetdb_get_columns(void* conn, const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types);
 
 #endif

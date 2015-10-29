@@ -22,11 +22,11 @@ mkdir -p $R_PACKAGE_DIR/libs/
 RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 # TODO: this number should probably be pulled from automake and friends
 VER=1
-if [ -f "$R_PACKAGE_DIR/libs/lib/libembedded.$VER.dylib" ]; then
-    ln -s $R_PACKAGE_DIR/libs/lib/libembedded.$VER.dylib $RDYNLIB
+if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib" ]; then
+    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib $RDYNLIB
 fi
-if [ -f "$R_PACKAGE_DIR/libs/lib/libembedded.so.$VER" ]; then
-    ln -s $R_PACKAGE_DIR/libs/lib/libembedded.so.$VER $RDYNLIB
+if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER" ]; then
+    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER $RDYNLIB
 fi
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"

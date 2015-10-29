@@ -1,3 +1,5 @@
 export(monetdb_embedded_startup)
 export(monetdb_embedded_query)
 export(monetdb_embedded_append)
+export(monetdb_embedded_connect)
+export(monetdb_embedded_disconnect)

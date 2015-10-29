@@ -254,7 +254,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	if ((c = MCnewClient()) == NULL)
 		return NULL;
-	return MCinitClientRecord(c, user, fin,fout);
+	return MCinitClientRecord(c, user, fin, fout);
 }
 
 /*

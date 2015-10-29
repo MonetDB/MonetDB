@@ -41,3 +41,12 @@ lib_embedded  = {
 		$(pcre_LIBS) $(PSAPILIB) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
 }
+
+lib_embeddedr  = {
+	SOURCES = embeddedr.c embeddedr.h
+	VERSION = 1
+	LIBS = libembedded \
+		../../gdk/libbat \
+		$(pcre_LIBS) $(PSAPILIB) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
+}

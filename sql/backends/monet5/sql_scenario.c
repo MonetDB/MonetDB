@@ -449,7 +449,7 @@ SQLinitClient(Client c)
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
-	if (!isAdministrator(c)) {
+	if (c->user != 0) {
 		schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);

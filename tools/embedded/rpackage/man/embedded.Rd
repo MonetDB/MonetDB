@@ -11,12 +11,15 @@ TODO
 }
 \usage{
 monetdb_embedded_startup(dir=tempdir(), quiet=TRUE)
-monetdb_embedded_query(query, notreally=FALSE)
-monetdb_embedded_append(table, tdata, schema="sys")
+monetdb_embedded_query(conn, query, notreally=FALSE)
+monetdb_embedded_append(conn, table, tdata, schema="sys")
+monetdb_embedded_connect()
+monetdb_embedded_disconnect(conn)
 }
 \arguments{
   \item{dir}{Path to the directory where the database will be created. Must be writeable or createable.}
    \item{quiet}{Suppress MonetDB startup messages?}
+   \item{conn}{Connection as obtained by calling \code{monetdb_embedded_connect()}}
    \item{query}{SQL query, DDL statement or transaction statement}
    \item{notreally}{Skip result conversion?}
    \item{table}{Database table name}

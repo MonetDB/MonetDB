@@ -6,6 +6,8 @@ installdir <- ""
 	library.dynam("libmonetdb5", pkgname, lib.loc=libname, now=T, local=F)
 }
 
+classname <- "monetdb_embedded_connection"
+
 monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	dir <- normalizePath(as.character(dir), mustWork=FALSE)
 	quiet <- as.logical(quiet)
@@ -28,7 +30,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(query, notreally=FALSE) {
+monetdb_embedded_query <- function(conn, query, notreally=FALSE) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
@@ -37,9 +39,12 @@ monetdb_embedded_query <- function(query, notreally=FALSE) {
 	if (length(notreally) != 1) {
 		stop("Need a single noreally flag as parameter.")
 	}
+	if (!inherits(conn, classname)) {
+		stop("Need a embedded monetdb connection as parameter")
+	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
-	res <- .Call("monetdb_query_R", query, notreally, PACKAGE="libmonetdb5")
+	res <- .Call("monetdb_query_R", conn, query, notreally, PACKAGE="libmonetdb5")
 
 	resp <- list()
 	if (is.character(res)) { # error
@@ -58,7 +63,7 @@ monetdb_embedded_query <- function(query, notreally=FALSE) {
 	resp
 }
 
-monetdb_embedded_append <- function(table, tdata, schema="sys") {
+monetdb_embedded_append <- function(conn, table, tdata, schema="sys") {
 	table <- as.character(table)
 	table <- gsub("(^\"|\"$)", "", table)
 	
@@ -72,6 +77,24 @@ monetdb_embedded_append <- function(table, tdata, schema="sys") {
 	if (!is.data.frame(tdata)) {
 		stop("Need a data frame as tdata parameter.")
 	}
-
-	.Call("monetdb_append_R", schema, table, tdata, PACKAGE="libmonetdb5")
+	if (!inherits(conn, classname)) {
+		stop("Need a embedded monetdb connection as parameter")
+	}
+	.Call("monetdb_append_R", conn, schema, table, tdata, PACKAGE="libmonetdb5")
 }
+
+
+monetdb_embedded_connect <- function() {
+	res <- .Call("monetdb_connect_R", PACKAGE="libmonetdb5")
+	class(res) <- classname
+	return(res)
+}
+
+monetdb_embedded_disconnect <- function(conn) {
+	if (!inherits(conn, classname)) {
+		stop("Need a embedded monetdb connection as parameter")
+	}
+	.Call("monetdb_disconnect_R", conn,  PACKAGE="libmonetdb5")
+	return(invisible(TRUE))
+}
+

@@ -43,8 +43,8 @@ sqlcleanup_ptr_tpe sqlcleanup_ptr = NULL;
 typedef void (*mvc_trans_ptr_tpe)(mvc*);
 mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
 
-static bit monetdb_embedded_initialized = 0;
 static MT_Lock monetdb_embedded_lock;
+int monetdb_embedded_initialized = 0;
 
 static void* lookup_function(char* func) {
 	void *dl, *fun;
@@ -57,12 +57,29 @@ static void* lookup_function(char* func) {
 	return fun;
 }
 
+void* monetdb_connect() {
+	Client c = MCforkClient(&mal_clients[0]);
+	if ((*SQLinitClient_ptr)(c) != MAL_SUCCEED) {
+		return NULL;
+	}
+	((backend *) c->sqlcontext)->mvc->session->auto_commit = 1;
+	return c;
+}
+
+void monetdb_disconnect(void* conn) {
+	if (conn == NULL) {
+		return;
+	}
+	MCcloseClient((Client) conn);
+}
+
 char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
-	char* retval = NULL;
+	str retval = MAL_SUCCEED;
 	char* sqres = NULL;
 	void* res = NULL;
+	void* c;
 	char mod_path[1000];
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
@@ -99,6 +116,7 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
+
 	if (silent) mal_clients[0].fdout = THRdata[0];
 
 	// This dynamically looks up functions, because the libraries containing them are loaded at runtime.
@@ -121,29 +139,33 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 		retval = GDKstrdup("Dynamic function lookup failed");
 		goto cleanup;
 	}
-	// call this, otherwise c->sqlcontext is empty
-	(*SQLinitClient_ptr)(&mal_clients[0]);
-	((backend *) mal_clients[0].sqlcontext)->mvc->session->auto_commit = 1;
+
+	c = monetdb_connect();
+	if (c == NULL) {
+		retval = GDKstrdup("Failed to initialize client");
+		goto cleanup;
+	}
 	monetdb_embedded_initialized = true;
 	// we do not want to jump after this point, since we cannot do so between threads
 	GDKfataljumpenable = 0;
-
 	// sanity check, run a SQL query
-	sqres = monetdb_query("SELECT * FROM tables;", res);
+	sqres = monetdb_query(c, "SELECT * FROM tables;", &res);
 	if (sqres != NULL) {
 		monetdb_embedded_initialized = false;
 		retval = sqres;
 		goto cleanup;
 	}
+	monetdb_cleanup_result(c, res);
+	monetdb_disconnect(c);
 cleanup:
 	mo_free_options(set, setlen);
 	MT_lock_unset(&monetdb_embedded_lock, "monetdb.startup");
 	return retval;
 }
 
-char* monetdb_query(char* query, void** result) {
+char* monetdb_query(void* conn, char* query, void** result) {
 	str res = MAL_SUCCEED;
-	Client c = &mal_clients[0];
+	Client c = (Client) conn;
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	if (!monetdb_embedded_initialized) {
 		return GDKstrdup("Embedded MonetDB is not started");
@@ -173,7 +195,7 @@ char* monetdb_query(char* query, void** result) {
 	return res;
 }
 
-char* monetdb_append(const char* schema, const char* table, append_data *data, int col_ct) {
+char* monetdb_append(void* conn, const char* schema, const char* table, append_data *data, int ncols) {
 	int i;
 	int nvar = 6; // variables we need to make up
 	MalBlkRecord mb;
@@ -181,9 +203,10 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	InstrRecord*  pci = NULL;
 	str res = MAL_SUCCEED;
 	VarRecord bat_varrec;
-	mvc* m = ((backend *) mal_clients[0].sqlcontext)->mvc;
+	Client c = (Client) conn;
+	mvc* m = ((backend *) c->sqlcontext)->mvc;
 
-	assert(table != NULL && data != NULL && col_ct > 0);
+	assert(table != NULL && data != NULL && ncols > 0);
 
 	// very black MAL magic below
 	mb.var = GDKmalloc(nvar * sizeof(VarRecord*));
@@ -203,12 +226,12 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	stk->stk[5].vtype = TYPE_bat;
 	mb.var[5] = &bat_varrec;
 	if (!m->session->active) (*mvc_trans_ptr)(m);
-	for (i=0; i < col_ct; i++) {
+	for (i=0; i < ncols; i++) {
 		append_data ad = data[i];
 		stk->stk[4].val.sval = ad.colname;
 		stk->stk[5].val.bval = ad.batid;
 
-		res = (*mvc_append_wrap_ptr)(&mal_clients[0], &mb, stk, pci);
+		res = (*mvc_append_wrap_ptr)(c, &mb, stk, pci);
 		if (res != NULL) {
 			break;
 		}
@@ -222,81 +245,21 @@ char* monetdb_append(const char* schema, const char* table, append_data *data, i
 	return res;
 }
 
-void monetdb_cleanup_result(void* output) {
+void  monetdb_cleanup_result(void* conn, void* output) {
+	(void) conn; // not needing conn here (but perhaps someday)
 	(*res_table_destroy_ptr)((res_table*) output);
 }
 
-/* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
-#include "converters.c"
 
-SEXP monetdb_query_R(SEXP query, SEXP notreallys) {
-	res_table* output = NULL;
-	char* err = monetdb_query((char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
-	char notreally = LOGICAL(notreallys)[0];
 
-	if (err != NULL) { // there was an error
-		return ScalarString(mkCharCE(err, CE_UTF8));
-	}
-	if (output && output->nr_cols > 0) {
-		int i;
-		SEXP retlist, names, varvalue = R_NilValue;
-		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
-		names = PROTECT(NEW_STRING(output->nr_cols));
-		SET_ATTR(retlist, install("__rows"),
-			Rf_ScalarReal(BATcount(BATdescriptor(output->cols[0].b))));
-		for (i = 0; i < output->nr_cols; i++) {
-			res_col col = output->cols[i];
-			BAT* b = BATdescriptor(col.b);
-			if (notreally) {
-				BATsetcount(b, 0); // hehe
-			}
-			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
-			varvalue = bat_to_sexp(b);
-			if (varvalue == NULL) {
-				UNPROTECT(i + 3);
-				return ScalarString(mkCharCE("Conversion error", CE_UTF8));
-			}
-			SET_VECTOR_ELT(retlist, i, varvalue);
-		}
-		SET_NAMES(retlist, names);
-		UNPROTECT(output->nr_cols + 2);
-
-		monetdb_cleanup_result(output);
-		return retlist;
-	}
-	return ScalarLogical(1);
-}
-
-SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp) {
-	const char* installdir = NULL;
-	const char* dbdir=NULL;
-	char silent = 0;
-	char* res = NULL;
-
-	if (monetdb_embedded_initialized) {
-		return ScalarLogical(0);
-	}
-	installdir = CHAR(STRING_ELT(installdirsexp, 0));
-	dbdir = CHAR(STRING_ELT(dbdirsexp, 0));
-	silent = LOGICAL(silentsexp)[0];
-
-	res = monetdb_startup((char*) installdir, (char*) dbdir, silent);
-
-	if (res == NULL) {
-		return ScalarLogical(1);
-	}  else {
-		return ScalarString(mkCharCE(res, CE_UTF8));
-	}
-}
-
-static str monetdb_get_columns(const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types) {
-	Client c = &mal_clients[0];
+str monetdb_get_columns(void* conn, const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types) {
 	mvc *m;
 	sql_schema *s;
 	sql_table *t;
 	char *msg = MAL_SUCCEED;
 	int columns;
 	node *n;
+	Client c = (Client) conn;
 
 	assert(column_count != NULL && column_names != NULL && column_types != NULL);
 
@@ -327,62 +290,3 @@ static str monetdb_get_columns(const char* schema_name, const char *table_name, 
 
 	return msg;
 }
-
-SEXP monetdb_append_R(SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
-	const char *schema = NULL, *name = NULL;
-	str msg;
-	int col_ct, row_ct, i;
-	BAT *b = NULL;
-	append_data *ad = NULL;
-	int t_column_count;
-	char** t_column_names = NULL;
-	int* t_column_types = NULL;
-
-	if (!IS_CHARACTER(schemasexp) || !IS_CHARACTER(namesexp)) {
-		return ScalarInteger(-1);
-	}
-	schema = CHAR(STRING_ELT(schemasexp, 0));
-	name = CHAR(STRING_ELT(namesexp, 0));
-
-	col_ct = LENGTH(tabledatasexp);
-	row_ct = LENGTH(VECTOR_ELT(tabledatasexp, 0));
-
-	msg = monetdb_get_columns(schema, name, &t_column_count, &t_column_names, &t_column_types);
-	if (msg != MAL_SUCCEED)
-		goto wrapup;
-
-	if (t_column_count != col_ct) {
-		msg = GDKstrdup("Unequal number of columns"); // TODO: add counts here
-		goto wrapup;
-	}
-
-	ad = GDKmalloc(col_ct * sizeof(append_data));
-	assert(ad != NULL);
-
-	for (i = 0; i < col_ct; i++) {
-		SEXP ret_col = VECTOR_ELT(tabledatasexp, i);
-		int bat_type = t_column_types[i];
-		b = sexp_to_bat(ret_col, bat_type);
-		if (b == NULL) {
-			msg = createException(MAL, "embedded", "Could not convert column %i %s to type %i ", i, t_column_names[i], bat_type);
-			goto wrapup;
-		}
-		ad[i].colname = t_column_names[i];
-		ad[i].batid = b->batCacheid;
-	}
-
-	msg = monetdb_append(schema, name, ad, col_ct);
-
-	wrapup:
-		if (t_column_names != NULL) {
-			GDKfree(t_column_names);
-		}
-		if (t_column_types != NULL) {
-			GDKfree(t_column_types);
-		}
-		if (msg == NULL) {
-			return ScalarLogical(1);
-		}
-		return ScalarString(mkCharCE(msg, CE_UTF8));
-}
-
