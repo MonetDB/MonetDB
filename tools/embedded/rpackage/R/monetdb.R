@@ -1,10 +1,12 @@
 # we need this to find our MAL scripts and DLLs on Windows
-installdir <- ""
-is_started <- FALSE
-started_dir <- ""
+
+monetdb_embedded_env <- new.env(parent=emptyenv())
+monetdb_embedded_env$is_started <- FALSE
+monetdb_embedded_env$started_dir <- ""
+monetdb_embedded_env$install_dir <- ""
 
 .onLoad <- function(libname, pkgname){
-	installdir <<- file.path(libname, pkgname, "libs")
+	monetdb_embedded_env$install_dir <- file.path(libname, pkgname, "libs")
 	library.dynam("libmonetdb5", pkgname, lib.loc=libname, now=T, local=F)
 }
 
@@ -22,22 +24,20 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
-	if (!is_started) {
-		res <- .Call("monetdb_startup_R", installdir, dir, quiet, PACKAGE="libmonetdb5")
+	if (!monetdb_embedded_env$is_started) {
+		res <- .Call("monetdb_startup_R", monetdb_embedded_env$install_dir, dir, quiet, PACKAGE="libmonetdb5")
 	} else {
-		if (!identical(dir, started_dir)) {
-			stop("MonetDBLite cannot change database directories (already started in ", started_dir, ").")
+		if (dir != monetdb_embedded_env$started_dir) {
+			warning("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ").")
 		}
 		return(invisible(TRUE))
 	}
 	if (is.character(res)) {
 		stop("Failed to initialize embedded MonetDB ", res)
 	}
-	if (res == FALSE) {
-		warning("monetdb_embedded_startup() was already called. Ignoring this invocation.")
-	}
-	is_started <<- TRUE
-	started_dir <<- dir
+
+	monetdb_embedded_env$is_started <- TRUE
+	monetdb_embedded_env$started_dir <- dir
 	invisible(TRUE)
 }
 
@@ -96,6 +96,9 @@ monetdb_embedded_append <- function(conn, table, tdata, schema="sys") {
 
 
 monetdb_embedded_connect <- function() {
+	if (!monetdb_embedded_env$is_started) {
+		stop("Call monetdb_embedded_startup() first")
+	}
 	res <- .Call("monetdb_connect_R", PACKAGE="libmonetdb5")
 	class(res) <- classname
 	return(res)

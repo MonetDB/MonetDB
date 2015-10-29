@@ -3,13 +3,14 @@ if (basedir == "") {
 	stop("Need TSTTRGDIR environment vars")
 }
 library(MonetDBLite, quietly=T, lib.loc=file.path(basedir, "rlibdir"))
-
 library(testthat)
 
 test_that("db starts up", {
 	expect_error(monetdb_embedded_startup("/dev/null"))
-	expect_equal(monetdb_embedded_startup(), TRUE)
-	expect_warning(monetdb_embedded_startup())
+	dbdir <- tempdir()
+	expect_equal(monetdb_embedded_startup(dbdir), TRUE)
+	expect_warning(monetdb_embedded_startup("/tmp"))
+	expect_equal(monetdb_embedded_startup(dbdir), TRUE)
 })
 
 
@@ -31,6 +32,7 @@ test_that("db runs queries and returns results", {
 	expect_is(res$tuples, "data.frame")
 	expect_true(nrow(res$tuples) > 0)
 	expect_true(ncol(res$tuples) > 0)
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("commit", {
@@ -46,6 +48,7 @@ test_that("commit", {
 	res <- monetdb_embedded_query(con, "SELECT * FROM tables WHERE name='foo'")
 	expect_equal(nrow(res$tuples), 1)
 	monetdb_embedded_query(con, "DROP TABLE foo")
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("rollback works", {
@@ -60,6 +63,7 @@ test_that("rollback works", {
 	expect_equal(nrow(res$tuples), 0)
 	res <- monetdb_embedded_query(con, "SELECT i FROM foo")
 	expect_equal(res$type, "!")
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("rollback with errors", {
@@ -72,6 +76,7 @@ test_that("rollback with errors", {
 	monetdb_embedded_query(con, "ROLLBACK")
 	res <- monetdb_embedded_query(con, "SELECT 42")
 	expect_equal(res$type, 1)
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("pointless rollback/commit", {
@@ -81,6 +86,7 @@ test_that("pointless rollback/commit", {
 	expect_equal(monetdb_embedded_query(con, "SELECT 1")$type, 1)
 	monetdb_embedded_query(con, "ROLLBACK")
 	expect_equal(monetdb_embedded_query(con, "SELECT 1")$type, 1)
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("inserting data", {
@@ -93,12 +99,15 @@ test_that("inserting data", {
 	expect_equal(res$tuples$i, 1:10)
 	expect_equal(res$tuples$j, 21:30)
 	monetdb_embedded_query(con, "DROP TABLE foo")
+	monetdb_embedded_disconnect(con)
 })
 
 test_that("the logger does not misbehave", {
+	con <- monetdb_embedded_connect()
 	monetdb_embedded_query(con, "CREATE TABLE foo(i INTEGER, j INTEGER)")
 	Sys.sleep(5)
 	monetdb_embedded_query(con, "DROP TABLE foo")
+	monetdb_embedded_disconnect(con)
 })
 
 

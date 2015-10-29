@@ -404,12 +404,13 @@ scanner_query_processed(struct scanner *s)
 		s->rs->buf[s->rs->pos + s->yycur] = s->yybak;
 		s->yybak = 0;
 	}
-
-	s->rs->pos += s->yycur;
-	/* completely eat the query including white space after the ; */
-	while (s->rs->pos < s->rs->len &&
-	       (cur = s->rs->buf[s->rs->pos], iswspace(cur))) {
-		s->rs->pos++;
+	if (s->rs) {
+		s->rs->pos += s->yycur;
+		/* completely eat the query including white space after the ; */
+		while (s->rs->pos < s->rs->len &&
+			   (cur = s->rs->buf[s->rs->pos], iswspace(cur))) {
+			s->rs->pos++;
+		}
 	}
 	/*assert(s->rs->pos <= s->rs->len);*/
 	s->yycur = 0;
