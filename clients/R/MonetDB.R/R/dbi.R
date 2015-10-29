@@ -93,6 +93,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     }
     MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
     connenv <- new.env(parent=emptyenv())
+    connenv$conn <- MonetDBLite::monetdb_embedded_connect()
     connenv$open <- TRUE
     return(new("MonetDBEmbeddedConnection", connenv=connenv))
   }
@@ -167,6 +168,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 
 setMethod("dbDisconnect", "MonetDBEmbeddedConnection", def=function(conn, ...) {
   conn@connenv$open <- FALSE
+  MonetDBLite::monetdb_embedded_disconnect(conn@connenv$conn)
   invisible(TRUE)
 })
 
@@ -325,7 +327,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   env <- NULL
   if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
 
-  resp <- MonetDBLite::monetdb_embedded_query(statement, notreally)
+  resp <- MonetDBLite::monetdb_embedded_query(conn@connenv$conn, statement, notreally)
 
   env <- new.env(parent=emptyenv())
   if (resp$type == Q_TABLE) {
@@ -446,7 +448,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
         value[[c]] <- as.character(value[[c]])
       }
 
-      insres <- MonetDBLite::monetdb_embedded_append(qname, value)
+      insres <- MonetDBLite::monetdb_embedded_append(conn@connenv$conn, qname, value)
       if (!is.logical(insres)) {
         stop("Failed to insert data: ", insres)
       }

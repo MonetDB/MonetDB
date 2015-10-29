@@ -1,5 +1,7 @@
 # we need this to find our MAL scripts and DLLs on Windows
 installdir <- ""
+is_started <- FALSE
+started_dir <- ""
 
 .onLoad <- function(libname, pkgname){
 	installdir <<- file.path(libname, pkgname, "libs")
@@ -20,13 +22,22 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
-	res <- .Call("monetdb_startup_R", installdir, dir, quiet, PACKAGE="libmonetdb5")
+	if (!is_started) {
+		res <- .Call("monetdb_startup_R", installdir, dir, quiet, PACKAGE="libmonetdb5")
+	} else {
+		if (!identical(dir, started_dir)) {
+			stop("MonetDBLite cannot change database directories (already started in ", started_dir, ").")
+		}
+		return(invisible(TRUE))
+	}
 	if (is.character(res)) {
 		stop("Failed to initialize embedded MonetDB ", res)
 	}
 	if (res == FALSE) {
 		warning("monetdb_embedded_startup() was already called. Ignoring this invocation.")
 	}
+	is_started <<- TRUE
+	started_dir <<- dir
 	invisible(TRUE)
 }
 
