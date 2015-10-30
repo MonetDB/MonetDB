@@ -2154,7 +2154,6 @@ myread(void *private, void *buf, size_t elmsize, size_t cnt)
 		free(p->buf);
 		p->buf = NULL;
 	}
-	((char *) buf)[cpsize] = '\0';
 	return cpsize / elmsize;
 }
 
@@ -2195,6 +2194,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #ifdef HAVE_LIBREADLINE
 		init_readline(mid, language, save_history);
 		rl.s = fp;
+		rl.buf = NULL;
 		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
 #endif
 	}
