@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
    s.summary = %q{Pure Ruby database driver for MonetDB/SQL}
    s.homepage = %q{http://www.monetdb.org/}
    s.description = %q{Pure Ruby database driver for the MonetDB/SQL columnar database management system}
-   s.files = ["README", "lib/MonetDB.rb", "lib/MonetDBConnection.rb", "lib/MonetDBData.rb", "lib/MonetDBExceptions.rb", "lib/hasher.rb"]
+   s.files = ["lib/MonetDB.rb", "lib/MonetDBConnection.rb", "lib/MonetDBData.rb", "lib/MonetDBExceptions.rb", "lib/hasher.rb"]
    s.has_rdoc = true
    s.require_path = './lib'
    # placeholder project to avoid warning about not having a rubyforge_project
