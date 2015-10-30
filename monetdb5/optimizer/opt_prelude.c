@@ -176,6 +176,8 @@ str putRef;
 str querylogRef;
 str queryRef;
 str rapiRef;
+str batrapiRef;
+str subeval_aggrRef;
 str rankRef;
 str dense_rankRef;
 str reconnectRef;
@@ -228,10 +230,7 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int sqlfunctionProp;
-
 int inlineProp;
-int rowsProp;
 int unsafeProp;
 
 int horiginProp;		/* original oid source */
@@ -397,7 +396,9 @@ void optimizerInit(void)
 	putRef = putName("put",3);
 	querylogRef = putName("querylog",8);
 	queryRef = putName("query",5);
-	rapiRef = putName("batrapi", 7);
+	rapiRef = putName("rapi", 4);
+	batrapiRef = putName("batrapi", 7);
+	subeval_aggrRef = putName("subeval_aggr", 12);
 	rankRef = putName("rank", 4);
 	dense_rankRef = putName("dense_rank", 10);
 	reconnectRef = putName("reconnect",9);
@@ -454,9 +455,7 @@ void optimizerInit(void)
 	userRef = putName("user",4);
 
 	inlineProp = PropertyIndex("inline");
-	rowsProp = PropertyIndex("rows");
 	unsafeProp = PropertyIndex("unsafe");
-	sqlfunctionProp = PropertyIndex("sqlfunction");
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");

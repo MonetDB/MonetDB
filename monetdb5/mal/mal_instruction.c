@@ -929,6 +929,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	mb->var[n]->propc = 0;
 	mb->var[n]->maxprop = MAXARG;
 
+	setRowCnt(mb,n,0);
 	setVarType(mb, n, type);
 	clrVarFixed(mb, n);
 	clrVarUsed(mb, n);
@@ -1065,6 +1066,7 @@ copyProperties(MalBlkPtr mb, int src, int dst)
         mb->var[dst] = w;
         w->maxprop = v->maxprop;
     }
+	w->rowcnt = v->rowcnt;
     w->propc = v->propc;
     for ( i= 0; i< v->propc; i++)
         w->prps[i] = v->prps[i];
@@ -1084,6 +1086,7 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->type = v->type;
 	w->flags = v->flags;
 	w->tmpindex = v->tmpindex;
+	w->rowcnt = v->rowcnt;
 	w->propc = v->propc;
 	w->maxprop = v->maxprop;
 	for (i = 0; i < v->propc; i++)
@@ -1134,6 +1137,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->type = 0;
 	v->flags = 0;
 	v->tmpindex = 0;
+	v->rowcnt = 0;
 	v->propc = 0;
 	v->eolife = 0;
 }

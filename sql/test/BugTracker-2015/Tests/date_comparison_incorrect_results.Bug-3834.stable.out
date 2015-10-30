@@ -76,6 +76,24 @@ Ready.
 % date,	boolean,	char,	date,	date,	char # type
 % 10,	5,	8,	10,	10,	8 # length
 [ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_wrong
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_wrong
+#	) AS B
+#	WHERE datepoint_wrong.mydate >= B.startdate
+#	AND datepoint_wrong.mydate <= B.enddate
+#);
+[ 1	]
+#SELECT * FROM datepoint_wrong;
+% sys.datepoint_wrong,	sys.datepoint_wrong,	sys.datepoint_wrong # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-05-09,	false,	NULL	]
+[ 2012-03-09,	true,	"A"	]
 #CREATE TABLE datepoint_correct1 (mydate DATE, insiderange BOOLEAN DEFAULT FALSE, rangename CHAR(8));
 #INSERT INTO datepoint_correct1 (mydate) VALUES ('2012-05-09');
 [ 1	]
@@ -92,6 +110,25 @@ Ready.
 % date,	boolean,	char,	date,	date,	char # type
 % 10,	5,	8,	10,	10,	8 # length
 [ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_correct1
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_correct1
+#	) AS B
+#	WHERE datepoint_correct1.mydate >= B.startdate
+#	AND datepoint_correct1.mydate <= B.enddate
+#);
+[ 1	]
+#SELECT * FROM datepoint_correct1;
+% sys.datepoint_correct1,	sys.datepoint_correct1,	sys.datepoint_correct1 # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-05-09,	false,	NULL	]
+[ 2012-03-09,	true,	"A"	]
+[ 2012-04-09,	false,	NULL	]
 #CREATE TABLE datepoint_correct2 (mydate DATE, insiderange BOOLEAN DEFAULT FALSE, rangename CHAR(8));
 #INSERT INTO datepoint_correct2 (mydate) VALUES ('2012-03-09');
 [ 1	]
@@ -106,6 +143,24 @@ Ready.
 % date,	boolean,	char,	date,	date,	char # type
 % 10,	5,	8,	10,	10,	8 # length
 [ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_correct2
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_correct2
+#	) AS B
+#	WHERE datepoint_correct2.mydate >= B.startdate
+#	AND datepoint_correct2.mydate <= B.enddate
+#);
+[ 1	]
+#SELECT * FROM datepoint_correct2;
+% sys.datepoint_correct2,	sys.datepoint_correct2,	sys.datepoint_correct2 # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-03-09,	true,	"A"	]
+[ 2012-05-09,	false,	NULL	]
 #DROP TABLE datepoint_wrong;
 #DROP TABLE datepoint_correct1;
 #DROP TABLE datepoint_correct2;

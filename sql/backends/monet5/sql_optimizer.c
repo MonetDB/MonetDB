@@ -96,7 +96,7 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;
 			char *cname = NULL;
 			int mt_member = 0;
-			wrd rows = 1;	/* default to cope with delta bats */
+			BUN rows = 1;	/* default to cope with delta bats */
 			int mode = 0;
 			int k = getArg(p, 0);
 			sql_schema *s = mvc_bind_schema(m, sname);
@@ -121,7 +121,7 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						cnt = BATcount(b);
 						BBPunfix(b->batCacheid);
 					}
-					rows = (wrd) cnt;
+					rows = (BUN) cnt;
 					if (i->t->p) 
 						mt_member = i->t->p->base.id;
 				}
@@ -138,29 +138,17 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						cnt = BATcount(b);
 						BBPunfix(b->batCacheid);
 					}
-					rows = (wrd) cnt;
+					rows = (BUN) cnt;
 					if (c->t->p) 
 						mt_member = c->t->p->base.id;
 				}
 			}
 			if (rows > 1 && mode != RD_INS)
-				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
+				setRowCnt(mb,k,rows);
 			if (mt_member && mode != RD_INS)
 				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
 
-			{
-				//int lowprop = hlbProp, highprop = hubProp;
-				/* rows == cnt has been checked above to be <= GDK_oid_max */
-				//oid low = 0, high = low + (oid) rows;
-				pushInstruction(mb, p);
-
-				//if (mode == RD_INS) {
-					//low = high;
-					//high += 1024 * 1024;
-				//}
-				//varSetProp(mb, getArg(p, 0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
-				//varSetProp(mb, getArg(p, 0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
-			}
+			pushInstruction(mb, p);
 		} else {
 			pushInstruction(mb, p);
 		}

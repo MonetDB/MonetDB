@@ -1802,6 +1802,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".R"
         CALL = "R"
         SERVER = "SQL"
+    elif os.path.isfile(TST+".rb"):
+        EXT = ".rb"
+        CALL = "ruby"
+        SERVER = "SQL"
 
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
@@ -1874,7 +1878,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`")
         return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -2067,7 +2071,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
             SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
-        if   CALL in ["other", "python"]:
+        if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
         elif CALL in ["malXs", "sqlXs"]:
@@ -2947,6 +2951,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif CALL == "R":
                 Clnt = splitcommand(exe['R_Client'][1])
                 RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+            elif CALL == "ruby":
+                Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
+
+                Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
+                Clnt.append(env['TSTDB'])
+
+                RunIt(Clnt, "", ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
@@ -3053,7 +3064,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 return err
         return returncode or pSrvrCode # remaining error (shouldn't get here)
 
-    if CALL not in ('python', 'other'):
+    if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
         return None
 
@@ -3431,7 +3442,7 @@ def main(argv) :
 
     vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3449,6 +3460,7 @@ def main(argv) :
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
         dft['RCLIENT']        = "'R --vanilla --slave'"
+        dft['RUBYCLIENT']        = "'ruby'"
 
     #par = {}
     # get current environment
@@ -3507,6 +3519,8 @@ def main(argv) :
              'default: %s' % dft['SQLDUMP']),
             ('RCLIENT', None, 'RCLIENT', '<R program>',
              'default: %s' % dft['RCLIENT']),
+            ('RUBYCLIENT', None, 'RUBYCLIENT', '<ruby program>',
+             'default: %s' % dft['RUBYCLIENT']),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
@@ -3912,6 +3926,7 @@ def main(argv) :
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
+            exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
             exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])

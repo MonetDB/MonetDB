@@ -169,6 +169,8 @@ opt_export  str putRef;
 opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
+opt_export  str batrapiRef;
+opt_export  str subeval_aggrRef;
 opt_export  str rankRef;
 opt_export  str dense_rankRef;
 opt_export  str reconnectRef;
@@ -228,10 +230,7 @@ opt_export  str userRef;
 opt_export  str vectorRef;
 opt_export  str zero_or_oneRef;
 
-opt_export int sqlfunctionProp;
-
 opt_export int inlineProp;		/* binary */
-opt_export int rowsProp;		/* long */
 opt_export int unsafeProp;		/* binary */
 
 opt_export int horiginProp;		/* original oid source */

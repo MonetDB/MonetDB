@@ -9,8 +9,8 @@
 
 require 'socket'
 require 'time'
-require 'hasher'
-require 'MonetDBExceptions'
+require_relative 'hasher'
+require_relative 'MonetDBExceptions'
 require 'uri'   # parse merovingian redirects
 
 class MonetDBConnection
@@ -101,7 +101,7 @@ class MonetDBConnection
     
     @socket = TCPSocket.new(@host, @port.to_i)  
     if real_connect
-      if @lang == LANG_SQL
+      if @lang == MonetDBConnection::LANG_SQL
         set_timezone 
         set_reply_size
       end

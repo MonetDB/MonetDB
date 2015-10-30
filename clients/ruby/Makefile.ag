@@ -4,12 +4,10 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-SUBDIRS = adapter
-
 gem_monetdb = {
-	FILES = ruby-monetdb-sql-0.1.gemspec
+	FILES = ruby-monetdb-sql-0.2.gemspec
 	DIR = $(RUBY_DIR)
 }
 
-EXTRA_DIST = Changelog README TODO ruby-monetdb-sql-0.1.gemspec
+EXTRA_DIST = Changelog TODO ruby-monetdb-sql-0.2.gemspec
 EXTRA_DIST_DIR = examples lib

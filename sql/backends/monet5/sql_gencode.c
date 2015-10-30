@@ -479,7 +479,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		return -1;
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -680,7 +680,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant f r inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -3086,7 +3086,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (sideeffects)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	f->sa = sa;
 	m->sa = osa;
 	addQueryToCache(c);

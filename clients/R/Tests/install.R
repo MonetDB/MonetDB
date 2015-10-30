@@ -12,7 +12,7 @@ dir.create(installdir)
 file.copy(from=file.path(srcdir, "..", "MonetDB.R"), to=builddir, recursive=T)
 dd <- capture.output(suppressMessages( {
 	sink(file=file(tempfile(), open = "wt"), type = "message") 
-	install.packages(file.path(builddir, "MonetDB.R"), repos=NULL, lib=installdir, quiet=T)
+	install.packages(file.path(builddir, "MonetDB.R"), repos=NULL, lib=installdir, quiet=T, type="source")
 	sink(type = "message") 
 }))
 library(MonetDB.R,quietly=T,lib.loc=installdir)
