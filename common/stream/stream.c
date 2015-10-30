@@ -298,9 +298,10 @@ cvfilename(const char *filename)
 			size_t size = 4 * len;
 			ICONV_CONST char *from = (ICONV_CONST char *) filename;
 			char *r = malloc(size);
+			char *p = r;
 
 			if (r &&
-			    iconv(cd, &from, &len, &r, &size) != (size_t) -1) {
+			    iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
 				iconv_close(cd);
 				return r;
 			} else if (r)
