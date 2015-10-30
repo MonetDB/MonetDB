@@ -362,7 +362,10 @@ freeClient(Client c)
 	c->prompt = NULL;
 	c->promptlength = -1;
 	if (c->errbuf) {
+/* no client threads in embedded mode */
+#ifndef HAVE_EMBEDDED
 		GDKsetbuf(0);
+#endif
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;

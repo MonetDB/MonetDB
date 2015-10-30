@@ -448,6 +448,7 @@ SQLinitClient(Client c)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+#ifndef HAVE_EMBEDDED
 	/* pass through credentials of the user if not console */
 	if (c->user != 0) {
 		schema = monet5_user_get_def_schema(m, c->user);
@@ -457,6 +458,7 @@ SQLinitClient(Client c)
 		}
 		_DELETE(schema);
 	}
+#endif
 	/*expect SQL text first */
 	be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
