@@ -102,63 +102,32 @@ static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
 static BUN
-log_find_int(BAT *b, BAT *d, int val)
+log_find(BAT *b, BAT *d, int val)
 {
-#if 0
-	BUN p, q;
-	int *t = (int *) Tloc(b, BUNfirst(b));
-
-	for (p = 0, q = BATcount(b); p < q; p++) {
-		oid pos = p + BUNfirst(b);
-
-		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
-			return pos;
-	}
-	return BUN_NONE;
-#else
 	BATiter cni = bat_iterator(b);
 	BUN p;
 
-	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
-		HASHloop_int(cni, cni.b->T->hash, p, &val) {
-			oid pos = p;
-			if (BUNfnd(d, &pos) == BUN_NONE)
-				return p;
-//MK So, if the BAThash construction fails, the BAT b still could have information
-//?? protect against failing BAThash() with non-empty b required
-		}
-	} 
-	return BUN_NONE;
-#endif
-}
-
-static BUN
-log_find_bid(BAT *b, BAT *d, log_bid val)
-{
-#if 0
-	BUN p, q;
-	log_bid *t = (log_bid *) Tloc(b, BUNfirst(b));
-
-	for (p = 0, q = BATcount(b); p < q; p++) {
-		oid pos = p + BUNfirst(b);
-
-		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
-			return pos;
-	}
-	return BUN_NONE;
-#else
-	BATiter cni = bat_iterator(b);
-	BUN p;
-
+	assert(b->ttype == TYPE_int);
+	assert(d->ttype == TYPE_oid);
 	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
 		HASHloop_int(cni, cni.b->T->hash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
 		}
-	} 
+	} else {		/* unlikely: BAThash failed */
+		BUN q;
+		int *t = (int *) Tloc(b, 0);
+
+		for (p = BUNfirst(b), q = BUNlast(b); p < q; p++) {
+			if (t[p] == val) {
+				oid pos = p;
+				if (BUNfnd(d, &pos) == BUN_NONE)
+					return p;
+			}
+		}
+	}
 	return BUN_NONE;
-#endif
 }
 
 static void
@@ -264,7 +233,7 @@ static int
 avoid_snapshot( logger *lg, log_bid bid ) 
 {
 	if (BATcount(lg->snapshots_bid)-BATcount(lg->dsnapshots)) {
-		BUN p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid);
+		BUN p = log_find(lg->snapshots_bid, lg->dsnapshots, bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -312,7 +281,7 @@ log_read_seq(logger *lg, logformat *l)
 		return LOG_ERR;
 	}
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
@@ -578,7 +547,7 @@ la_bat_destroy(logger *lg, logaction *la)
 
 		logger_del_bat(lg, bid);
 
-		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -703,7 +672,7 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
-	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 	    p >= lg->snapshots_bid->batInserted) {
 		BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 	} else {
@@ -1053,7 +1022,7 @@ logger_commit(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
 
-	p = log_find_int(lg->seqs_id, lg->dseqs, id);
+	p = log_find(lg->seqs_id, lg->dseqs, id);
 	if (p >= lg->seqs_val->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &lg->id, FALSE);
 	} else {
@@ -1894,7 +1863,7 @@ logger_changes(logger *lg)
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
-	BUN p = log_find_int(lg->seqs_id, lg->dseqs, seq);
+	BUN p = log_find(lg->seqs_id, lg->dseqs, seq);
 
 	if (p != BUN_NONE) {
 		*id = *(lng *) Tloc(lg->seqs_val, p);
@@ -1959,7 +1928,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
-		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 		} else {
@@ -2009,7 +1978,7 @@ log_bat_transient(logger *lg, const char *name)
 	lg->changes++;
 
 	/* if this is a snapshot bat, we need to skip all changes */
-	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 	//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
@@ -2361,7 +2330,7 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
@@ -2469,14 +2438,14 @@ void
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
-	BUN p = log_find_bid(lg->catalog_bid, lg->dcatalog, bid), q;
+	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid), q;
 
 	assert(p != BUN_NONE);
 
 	/* if this is a not logger commited snapshot bat, make it
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
-	    (q = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 		
 		BUNappend(lg->dsnapshots, &q, FALSE);
 		if (lg->debug & 1)
