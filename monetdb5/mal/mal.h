@@ -155,6 +155,7 @@ typedef struct VARRECORD {
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
+	BUN rowcnt;					/* estimated row count*/
 	int propc, maxprop;			/* proc count and max number of properties */
 	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
 } *VarPtr, VarRecord;
@@ -216,7 +217,6 @@ typedef struct MALBLK {
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */
 	lng recid;					/* Recycler identifier */
-	lng legid;					/* Octopus control */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */

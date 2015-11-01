@@ -242,8 +242,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
-	if (varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL &&
-	    varGetProp( mb, getArg(getInstrPtr(mb,0),0), sqlfunctionProp ) != NULL)
+	if (varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL )
         	return 0;
 
 
@@ -646,16 +645,16 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
  */
 
 static int 
-instrHasProp(InstrPtr p, int prop)
+isOrderDepenent(InstrPtr p)
 {
-	int i;
-	MalBlkPtr mb = p->blk;
-	
-	for (i = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].idx == prop)
-			return 1;
-	}
-	return 0;
+    if( getModuleId(p) != batsqlRef)
+        return 0;
+    if ( getFunctionId(p) == diffRef ||
+        getFunctionId(p) == row_numberRef ||
+        getFunctionId(p) == rankRef ||
+        getFunctionId(p) == dense_rankRef)
+        return 1;
+    return 0;
 }
 
 int isMapOp(InstrPtr p){
@@ -664,8 +663,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
-		 (getModuleId(p) == mkeyRef)) && (!instrHasProp(p, orderDependendProp)) &&
-		 getModuleId(p) != rapiRef;
+		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 getModuleId(p) != batrapiRef;
 }
 
 int isLikeOp(InstrPtr p){
@@ -788,36 +787,5 @@ isOptimizerEnabled(MalBlkPtr mb, str opt)
 			return 1;
 	}
 	return 0;
-}
-wrd
-getVarRows(MalBlkPtr mb, int v)
-{
-	VarPtr p = varGetProp(mb, v, rowsProp);
-
-	if (!p)
-		return -1;
-	if (p->value.vtype == TYPE_wrd
-#if SIZEOF_BUN <= SIZEOF_WRD
-		    && p->value.val.wval <= (wrd) BUN_MAX
-#endif
-		)
-		return p->value.val.wval;
-	if (p->value.vtype == TYPE_lng
-#if SIZEOF_BUN <= SIZEOF_LNG
-		    && p->value.val.lval <= (lng) BUN_MAX
-#endif
-		)
-		return (wrd)p->value.val.lval;
-	if (p->value.vtype == TYPE_int
-#if SIZEOF_BUN <= SIZEOF_INT
-		    && p->value.val.ival <= (int) BUN_MAX
-#endif
-		)
-		return p->value.val.ival;
-	if (p->value.vtype == TYPE_sht)
-		return p->value.val.shval;
-	if (p->value.vtype == TYPE_bte)
-		return p->value.val.btval;
-	return -1;
 }
 

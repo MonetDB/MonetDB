@@ -5,6 +5,10 @@
 SET australian_timezones = 'off';
 SET DateStyle = 'Postgres, MDY';
 
+-- set time zone to CET
+SET TIME ZONE INTERVAL '+1:0' HOUR TO MINUTE;
+SELECT CURRENT_TIMEZONE;
+
 --
 -- Test various input formats
 --

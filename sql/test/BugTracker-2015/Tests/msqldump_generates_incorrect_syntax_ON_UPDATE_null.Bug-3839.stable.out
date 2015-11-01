@@ -1,0 +1,92 @@
+stdout of test 'msqldump_generates_incorrect_syntax_ON_UPDATE_null.Bug-3839` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 16:37:05 >  
+# 16:37:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38280" "--set" "mapi_usock=/var/tmp/mtest-57130/.s.monetdb.38280" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/jennie/scratch/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:37:05 >  
+
+# MonetDB 5 server v11.21.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 2 threads
+# Compiled for x86_64-apple-darwin14.5.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 4.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-33.eduroam.cwi.nl:38280/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-57130/.s.monetdb.38280
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_143:bat[:oid,:str]{horigin=1} := mal.multiplex("sql":str,"password":str,X_139:bat[:oid,:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_144:bat[:oid,:str]{horigin=2} := mal.multiplex("sql":str,"password":str,X_140:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_198:bat[:oid,:lng]{horigin=1} := mal.multiplex("sql":str,"get_value":str,X_196:bat[:oid,:str],X_192:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_199:bat[:oid,:lng]{horigin=2} := mal.multiplex("sql":str,"get_value":str,X_197:bat[:oid,:str],X_193:bat[:oid,:str]);
+
+# 16:37:06 >  
+# 16:37:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-57130" "--port=38280"
+# 16:37:06 >  
+
+#CREATE TABLE bar (name CHAR(8) PRIMARY KEY);
+#CREATE TABLE foo (id INTEGER, barname CHAR(8));
+#ALTER TABLE foo ADD CONSTRAINT "fname" FOREIGN KEY ("barname") REFERENCES bar ("name") ON DELETE CASCADE;
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."bar" (
+	"name" CHAR(8)       NOT NULL,
+	CONSTRAINT "bar_name_pkey" PRIMARY KEY ("name")
+);
+CREATE TABLE "sys"."foo" (
+	"id"      INTEGER,
+	"barname" CHAR(8)
+);
+ALTER TABLE "sys"."foo" ADD CONSTRAINT "fname" FOREIGN KEY ("barname") REFERENCES "sys"."bar" ("name") ON DELETE CASCADE ON UPDATE SET NULL;
+COMMIT;
+
+# 16:37:07 >  
+# 16:37:07 >  "Done."
+# 16:37:07 >  
+

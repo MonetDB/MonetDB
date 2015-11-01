@@ -29,7 +29,6 @@ int have_hge;
 #include "mal_recycle.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
-#include "mal_http_daemon.h"
 #include "mal_private.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");

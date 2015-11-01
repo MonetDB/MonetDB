@@ -33,10 +33,10 @@ function user.main():void;
     mdb.List("user","tst");
 end user.main;
 function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
-barrier X_9:bit{transparent} := language.dataflow();	#[1] MALstartDataflow 9 
+barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
     c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
     c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
-exit X_9:bit{transparent};              	#[4]  9 
+exit X_9:bit;                           	#[4]  9 
     X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
 barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
     X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
@@ -61,10 +61,10 @@ end user.tst;                           	#[14]
 #[19]   _19 =  :dbl  
 #[21]   _21 =  :dbl  
 function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
-barrier X_9:bit{transparent} := language.dataflow();	#[1] MALstartDataflow 9 
+barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
     c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
     c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
-exit X_9:bit{transparent};              	#[4]  9 
+exit X_9:bit;                           	#[4]  9 
     X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
 barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
     X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 

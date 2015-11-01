@@ -1990,13 +1990,8 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				break;
 			}
 			goto allLeft;
-		case 'H': case 'h':
-			if (MALkeyword(cntxt, "handler", 5)) {
-				skipToEnd(cntxt);
-				cntxt->blkmode++;
-				break;
-			}
-		case 'i': if (parseInclude(cntxt))
+		case 'I': case 'i': 
+			if (parseInclude(cntxt))
 				continue;
 			goto allLeft;
 		case 'L': case 'l':

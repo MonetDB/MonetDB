@@ -240,4 +240,15 @@ typedef enum mnstr_errors {
 	MNSTR_TIMEOUT
 } mnstr_errors;
 
+/* Callback stream is a read-only stream where the read function is
+ * provided by the caller.  close and destroy are also provided.  The
+ * private pointer is passed on to the callback functions when they
+ * are invoked. */
+stream_export stream *callback_stream(
+	void *private,
+	ssize_t (*read) (void *private, void *buf, size_t elmsize, size_t cnt),
+	void (*close) (void *private),
+	void (*destroy) (void *private),
+	const char *name);
+
 #endif /*_STREAM_H_*/

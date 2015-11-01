@@ -88,6 +88,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != subsumRef &&
 		    	getFunctionId(p) != subprodRef)
 			return 0;
+
+		if (p->argc > 2 && getModuleId(p) == rapiRef && 
+		        getFunctionId(p) == subeval_aggrRef)
+			return 0;
+
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) 
 			return 0;
@@ -105,7 +110,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * table and passes them on as a row property.  All pieces for a
 		 * single subplan should ideally fit together.
 		 */
-		r = getVarRows(mb, getArg(p, 0));
+		r = getRowCnt(mb, getArg(p, 0));
 		if (r >= rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getColumnType(getArgType(mb,p,0)));

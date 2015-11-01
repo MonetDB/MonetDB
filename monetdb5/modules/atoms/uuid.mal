@@ -21,26 +21,78 @@ command uuid(s:str):uuid
 address UUIDstr2uuid
 comment "Coerce a string to a uuid, validating its format";
 
-command calc.uuid(s:str):uuid
-address UUIDstr2uuid
-comment "Coerce a string to a uuid, validating its format";
-
 command str(u:uuid):str
 address UUIDuuid2str
 comment "Coerce a uuid to its string type";
-
-command calc.str(s:uuid):str
-address UUIDuuid2str
-comment "Coerce a uuid to a string type";
 
 command isaUUID(u:str):bit
 address UUIDisaUUID
 comment "Test a string for a UUID format";
 
-command calc.==(l:uuid,r:uuid):bit
-address UUIDequal
-comment "Compare two UUID values for equality";
+module calc;
 
-function calc.uuid(u:uuid):uuid;
+command uuid(s:str):uuid
+address UUIDstr2uuid
+comment "Coerce a string to a uuid, validating its format";
+
+function uuid(u:uuid):uuid;
  return u;
-end calc.uuid;
+end uuid;
+
+command str(s:uuid):str
+address UUIDuuid2str
+comment "Coerce a uuid to a string type";
+
+pattern ==(l:uuid,r:uuid):bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern !=(l:uuid,r:uuid):bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern <(l:uuid,r:uuid):bit
+address CMDvarLT
+comment "Return V1 < V2";
+
+pattern <=(l:uuid,r:uuid):bit
+address CMDvarLE
+comment "Return V1 <= V2";
+
+pattern >(l:uuid,r:uuid):bit
+address CMDvarGT
+comment "Return V1 > V2";
+
+pattern >=(l:uuid,r:uuid):bit
+address CMDvarGE
+comment "Return V1 >= V2";
+
+module batcalc;
+
+pattern ==(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatEQ
+comment "Return B1 == B2";
+
+pattern !=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatNE
+comment "Return B1 != B2";
+
+pattern <(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatLT
+comment "Return B1 < B2";
+
+pattern <=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatLE
+comment "Return B1 <= B2";
+
+pattern >(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatGT
+comment "Return B1 > B2";
+
+pattern >=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+address CMDbatGE
+comment "Return B1 >= B2";
+
+function uuid(u:bat[:oid,:uuid]):bat[:oid,:uuid];
+ return u;
+end uuid;

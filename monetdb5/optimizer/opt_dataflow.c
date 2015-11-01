@@ -283,7 +283,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				q= newFcnCall(mb,languageRef,dataflowRef);\
 				q->barrier= BARRIERsymbol;\
 				getArg(q,0)= flowblock;\
-				varSetProperty(mb, getArg(q,0), "transparent",0,0);
 			}
 			//copyblock 
 			for( j=start ; j<i; j++) 

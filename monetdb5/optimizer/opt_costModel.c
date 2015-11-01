@@ -13,13 +13,11 @@
  * The cost formula are repetative
  */
 #define newRows(W,X,Y,Z) {\
-		ValRecord v;\
-		c1 = getVarRows(mb, getArg(p,W));\
-		c2 = getVarRows(mb, getArg(p,X));\
+		c1 = getRowCnt(mb, getArg(p,W));\
+		c2 = getRowCnt(mb, getArg(p,X));\
 		if (c1 == -1 || c2 == -1) \
 			continue;\
-		k = (Y);\
-		varSetProp(mb, getArg(p,Z), rowsProp, op_eq, VALset(&v,TYPE_wrd,&k));\
+		setRowCnt(mb, getArg(p,Z), (BUN)(Y));\
 }
 /*
  * The cost will be used in many places to make decisions.
@@ -35,7 +33,7 @@ int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	wrd k, c1, c2;
+	wrd c1, c2;
 	InstrPtr p;
 
 	(void) cntxt;
@@ -132,12 +130,9 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 		} else if( p->token == ASSIGNsymbol && p->argc== 2){
 			/* copy the rows property */
-			c1 = getVarRows(mb, getArg(p,1));
-			if (c1 != -1) {
-				ValRecord v;
-				
-				varSetProp(mb, getArg(p,0), rowsProp, op_eq, VALset(&v, TYPE_wrd, &c1));
-			}
+			c1 = getRowCnt(mb, getArg(p,1));
+			if (c1 != -1)
+				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}
 	return 1;

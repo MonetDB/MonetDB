@@ -1,3 +1,5 @@
+alter-table.Bug-3828-part1
+alter-table.Bug-3828-part2
 inet-ordering.Bug-3646
 sharp-alias.Bug-3467
 name_conflict.Bug-3650
@@ -73,3 +75,8 @@ crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820
 case_type.Bug-3821
 like-escape.Bug-3822
+uuid-compare.Bug-3827
+select-push-crash.Bug-3829
+coalesce.Bug-3830
+null.Bug-3833
+date_comparison_incorrect_results.Bug-3834
