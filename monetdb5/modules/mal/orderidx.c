@@ -242,6 +242,19 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(bid);
 			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 		}
+		if (BATcount(a[i]) == 0) {
+			BBPunfix(aid[i]);
+			a[i] = NULL;
+		}
+	}
+	for (i = 0; i < n_ar; i++) {
+		if (a[i] == NULL) {
+			if (i < n_ar - 1)
+				a[i] = a[--n_ar];
+			else
+				n_ar--;
+			i--;
+		}
 	}
 
 	if (n_ar == 1) {
