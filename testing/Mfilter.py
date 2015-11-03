@@ -39,6 +39,9 @@ test = (
                     r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                 # dplyr (R package) includes the MonetDB version in its output, ignore
                     r"^Source: MonetDB .*$",
+                # ignore random seed and timings echoed by ruby (e.g., clients/ruby/Tests/rubytest.*
+                    r"^Run options: --seed [0-9]*$",
+                    r"^Finished tests in [0-9\.]*s, [0-9\.]* tests/s, [0-9\.]* assertions/s\.$",
                  ])+')',  re.MULTILINE),
         # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
