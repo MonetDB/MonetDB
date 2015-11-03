@@ -134,8 +134,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else if( p->token == ASSIGNsymbol && p->argc== 2){
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
-			/* just to ensure that rowcnt was/is never set to -1 */\
-			assert(c1 != (BUN) -1);\
+			/* just to ensure that rowcnt was/is never set to -1 */
+			assert(c1 != (BUN) -1);
 			if (c1 != BUN_NONE)
 				setRowCnt(mb, getArg(p,0), c1);
 		}
