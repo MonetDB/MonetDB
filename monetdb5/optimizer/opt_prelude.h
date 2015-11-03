@@ -235,5 +235,4 @@ opt_export int unsafeProp;		/* binary */
 
 opt_export int horiginProp;		/* original oid source */
 opt_export int toriginProp;		/* original oid source */
-opt_export int mtProp;		
 #endif

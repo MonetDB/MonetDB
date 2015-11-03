@@ -29,19 +29,6 @@ eligible(MalBlkPtr mb)
 	return 1;
 }
 
-static int
-getVarMergeTableId(MalBlkPtr mb, int v)
-{
-	VarPtr p = varGetProp(mb, v, mtProp);
-
-	if (!p)
-		return -1;
-	if (p->value.vtype == TYPE_int)
-		return p->value.val.ival;
-	return -1;
-}
-
-
 /* The plans are marked with the concurrent user load.
  *  * If this has changed, we may want to recompile the query
  *   */
@@ -190,7 +177,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
-	mt = getVarMergeTableId(mb, getArg(target, 0));
 	for (i = 0; i < limit; i++) {
 		int upd = 0, qtpe, rtpe = 0, qv, rv;
 		InstrPtr matq, matr = NULL;
@@ -216,12 +202,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
+		if( mt == -1)
+			mt = getMitosisPartition(p);
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
 			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
 			pushInstruction(mb, p);
 			continue;
 		}
-		if (mt >= 0 && getVarMergeTableId(mb, getArg(p, 0)) != mt) {
+		if (mt >= 0 && getMitosisPartition(p) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}

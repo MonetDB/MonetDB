@@ -480,6 +480,7 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->recycle = 0;
 	p->argc = 1;
 	p->retc = 1;
+	p->mitosis = -1;
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
