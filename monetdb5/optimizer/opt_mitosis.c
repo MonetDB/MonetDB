@@ -61,7 +61,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
 	str schema = 0, table = 0;
-	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
+	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng);
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
@@ -136,7 +136,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
-	r = (wrd) (monet_memory / argsize);
+	r = monet_memory / argsize;
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
 	 * i.e., (rowcnt > monet_memory/argsize = r) */
@@ -151,13 +151,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else if (rowcnt > MINPARTCNT) {
 	/* exploit parallelism, but ensure minimal partition size to
 	 * limit overhead */
-		pieces = (int) MIN((rowcnt / MINPARTCNT), (wrd) threads);
+		pieces = (int) MIN(rowcnt / MINPARTCNT, (BUN) threads);
 	}
 	/* when testing, always aim for full parallelism, but avoid
 	 * empty pieces */
 	FORCEMITODEBUG
 	if (pieces < threads)
-		pieces = (int) MIN((wrd) threads, rowcnt);
+		pieces = (int) MIN((BUN) threads, rowcnt);
 	/* prevent plan explosion */
 	if (pieces > MAXSLICES)
 		pieces = MAXSLICES;
@@ -173,7 +173,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
-							   " with " SSZFMT " rows of size %d into " SSZFMT 
+							   " with " BUNFMT " rows of size %d into " BUNFMT
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
