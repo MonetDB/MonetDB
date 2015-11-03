@@ -1218,8 +1218,7 @@ static void
 TIMERrenderer(MapiHdl hdl)
 {
 	SQLqueryEcho(hdl);
-	while (fetch_line(hdl) != 0)
-		;
+	mapi_next_result(hdl);
 	printf("%s\n", timerHuman());
 }
 
