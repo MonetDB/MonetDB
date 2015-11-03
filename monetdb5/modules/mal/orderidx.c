@@ -185,7 +185,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *b;
-	bat *aid;
 	BAT **a;
 	BAT *m; /* merged oid's */
 	int i, j, n_ar;
@@ -193,8 +192,10 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
+	assert(pci->retc == 1);
 	assert(pci->argc > 2);
-	n_ar = pci->argc-2;
+
+	n_ar = pci->argc - 2;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
@@ -221,38 +222,30 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 	}
 
-	if ((aid = (bat *) GDKzalloc(n_ar*sizeof(bat))) == NULL ) {
+	if ((a = (BAT **) GDKmalloc(n_ar*sizeof(BAT *))) == NULL) {
 		BBPunfix(bid);
-		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
-	}
-	if ((a = (BAT **) GDKzalloc(n_ar*sizeof(BAT *))) == NULL) {
-		BBPunfix(bid);
-		GDKfree(aid);
 		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
 	}
 	for (i = 0; i < n_ar; i++) {
-		aid[i] = *getArgReference_bat(stk, pci, i+2);
-		a[i] = BATdescriptor(aid[i]);
+		a[i] = BATdescriptor(*getArgReference_bat(stk, pci, i+2));
 		if (a[i] == NULL) {
 			for (j = i-1; j >= 0; j--) {
-				BBPunfix(aid[j]);
+				BBPunfix(a[j]->batCacheid);
 			}
-			GDKfree(aid);
 			GDKfree(a);
 			BBPunfix(bid);
 			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 		}
 		if (BATcount(a[i]) == 0) {
-			BBPunfix(aid[i]);
+			BBPunfix(a[i]->batCacheid);
 			a[i] = NULL;
 		}
 	}
 	for (i = 0; i < n_ar; i++) {
 		if (a[i] == NULL) {
-			if (i < n_ar - 1)
-				a[i] = a[--n_ar];
-			else
-				n_ar--;
+			n_ar--;
+			if (i < n_ar)
+				a[i] = a[n_ar];
 			i--;
 		}
 	}
@@ -261,7 +254,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* One oid order bat, nothing to merge */
 		if (a[0]->batRole != PERSISTENT) {
 			m = BATcopy(a[0], a[0]->htype, a[0]->ttype, 0, PERSISTENT);
-			BBPunfix(aid[0]);
+			BBPunfix(a[0]->batCacheid);
 		} else {
 			m = a[0];
 		}
@@ -271,13 +264,12 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		for (i=0, m_sz = 0; i < n_ar; i++)
 			m_sz += BATcount(a[i]);
-		
+
 		m = BATnew(TYPE_void, TYPE_oid, m_sz, PERSISTENT);
 		if (m == NULL) {
 			for (i = 0; i < n_ar; i++)
-				BBPunfix(aid[i]);
+				BBPunfix(a[i]->batCacheid);
 			BBPunfix(bid);
-			GDKfree(aid);
 			GDKfree(a);
 			throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
 		}
@@ -291,23 +283,23 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			p1 = (oid *) Tloc(a[1], BUNfirst(a[1]));
 			q1 = (oid *) Tloc(a[1], BUNlast(a[1]));
 
-#define BINARY_MERGE(TYPE)													\
-do {																		\
-	TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));								\
-	for (; p0 < q0 && p1 < q1; ) {											\
-		if (v[*p0] < v[*p1]) {												\
-			*mv++ = *p0++;													\
-		} else {															\
-			*mv++ = *p1++;													\
-		}																	\
-	}																		\
-	while (p0 < q0) {														\
-		*mv++ = *p0++;														\
-	}																		\
-	while (p1 < q1) {														\
-		*mv++ = *p1++;														\
-	}																		\
-} while(0)
+#define BINARY_MERGE(TYPE)										\
+	do {														\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));				\
+		while (p0 < q0 && p1 < q1) {							\
+			if (v[*p0 - b->hseqbase] < v[*p1 - b->hseqbase]) {	\
+				*mv++ = *p0++;									\
+			} else {											\
+				*mv++ = *p1++;									\
+			}													\
+		}														\
+		while (p0 < q0) {										\
+			*mv++ = *p0++;										\
+		}														\
+		while (p1 < q1) {										\
+			*mv++ = *p1++;										\
+		}														\
+	} while(0)
 
 			switch (ATOMstorage(b->ttype)) {
 			case TYPE_bte: BINARY_MERGE(bte); break;
@@ -329,23 +321,17 @@ do {																		\
 		} else {
 			oid **p, **q, *t_oid;
 
-			if ((p = (oid **) GDKzalloc(n_ar*sizeof(oid *))) == NULL) {
-				for (i = 0; i < n_ar; i++)
-					BBPunfix(aid[i]);
+			p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+			q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+			if (p == NULL || q == NULL) {
+bailout:
 				BBPunfix(bid);
-				BBPunfix(m->batCacheid);
-				GDKfree(aid);
-				GDKfree(a);
-				throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
-			}
-			if ((q = (oid **) GDKzalloc(n_ar*sizeof(oid *))) == NULL) {
+				BBPreclaim(m);
 				for (i = 0; i < n_ar; i++)
-					BBPunfix(aid[i]);
-				BBPunfix(bid);
-				BBPunfix(m->batCacheid);
-				GDKfree(aid);
+					BBPunfix(a[i]->batCacheid);
 				GDKfree(a);
 				GDKfree(p);
+				GDKfree(q);
 				throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
 			}
 			for (i = 0; i < n_ar; i++) {
@@ -358,67 +344,59 @@ do {																		\
 #define left_child(X)  (2*(X)+1)
 #define right_child(X) (2*(X)+2)
 
-#define HEAPIFY(X)															\
-do {																		\
-	int __cur, __min = X;													\
-	do {																	\
-		__cur = __min;														\
-		if (left_child(__cur) < n_ar &&										\
-			minhp[left_child(__cur)] < minhp[(__min)]) {					\
-			__min = left_child(__cur);										\
-		}																	\
-		if (right_child(__cur) < n_ar &&									\
-			minhp[right_child(__cur)] < minhp[(__min)]) {					\
-			__min = right_child(__cur);										\
-		}																	\
-		if (__min != __cur) {												\
-			swap(minhp[__cur], minhp[__min], t);							\
-			swap(p[__cur], p[__min], t_oid);								\
-			swap(q[__cur], q[__min], t_oid);								\
-		}																	\
-	} while (__cur != __min);												\
-} while (0)
+#define HEAPIFY(X)												\
+	do {														\
+		int __cur, __min = X;									\
+		do {													\
+			__cur = __min;										\
+			if (left_child(__cur) < n_ar &&						\
+				minhp[left_child(__cur)] < minhp[(__min)]) {	\
+				__min = left_child(__cur);						\
+			}													\
+			if (right_child(__cur) < n_ar &&					\
+				minhp[right_child(__cur)] < minhp[(__min)]) {	\
+				__min = right_child(__cur);						\
+			}													\
+			if (__min != __cur) {								\
+				swap(minhp[__cur], minhp[__min], t);			\
+				swap(p[__cur], p[__min], t_oid);				\
+				swap(q[__cur], q[__min], t_oid);				\
+			}													\
+		} while (__cur != __min);								\
+	} while (0)
 
-#define NWAY_MERGE(TYPE)													\
-do {																		\
-	TYPE *minhp, t;															\
-	TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));								\
-	if ((minhp = (TYPE *) GDKzalloc(sizeof(TYPE)*n_ar)) == NULL) {			\
-		for (i = 0; i < n_ar; i++)											\
-			BBPunfix(aid[i]);												\
-		BBPunfix(bid);														\
-		BBPunfix(m->batCacheid);											\
-		GDKfree(aid);														\
-		GDKfree(a);															\
-		GDKfree(p);															\
-		GDKfree(q);															\
-		throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);							\
-	}																		\
-	/* init min heap */														\
-	for (i = 0; i < n_ar; i++) {											\
-		minhp[i] = v[*p[i]];												\
-	}																		\
-	for (i = n_ar/2; i >=0 ; i--) {											\
-		HEAPIFY(i);															\
-	}																		\
-	/* merge */																\
-	while (n_ar > 1) {														\
-		*mv++ = *(p[0])++;													\
-		if (p[0] < q[0]) {													\
-			minhp[0] = v[*p[0]];											\
-		} else {															\
-			swap(minhp[0], minhp[n_ar-1], t);								\
-			swap(p[0], p[n_ar-1], t_oid);									\
-			swap(q[0], q[n_ar-1], t_oid);									\
-			n_ar--;															\
-		}																	\
-		HEAPIFY(0);															\
-	}																		\
-	while (p[0] < q[0]) {													\
-		*mv++ = *(p[0])++;													\
-	}																		\
-	GDKfree(minhp);															\
-} while (0)
+#define NWAY_MERGE(TYPE)												\
+	do {																\
+		TYPE *minhp, t;													\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));						\
+		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
+			goto bailout;												\
+		}																\
+		/* init min heap */												\
+		for (i = 0; i < n_ar; i++) {									\
+			minhp[i] = v[*p[i] - b->hseqbase];							\
+		}																\
+		for (i = n_ar/2; i >=0 ; i--) {									\
+			HEAPIFY(i);													\
+		}																\
+		/* merge */														\
+		while (n_ar > 1) {												\
+			*mv++ = *(p[0])++;											\
+			if (p[0] < q[0]) {											\
+				minhp[0] = v[*p[0] - b->hseqbase];						\
+			} else {													\
+				swap(minhp[0], minhp[n_ar-1], t);						\
+				swap(p[0], p[n_ar-1], t_oid);							\
+				swap(q[0], q[n_ar-1], t_oid);							\
+				n_ar--;													\
+			}															\
+			HEAPIFY(0);													\
+		}																\
+		while (p[0] < q[0]) {											\
+			*mv++ = *(p[0])++;											\
+		}																\
+		GDKfree(minhp);													\
+	} while (0)
 
 			switch (ATOMstorage(b->ttype)) {
 			case TYPE_bte: NWAY_MERGE(bte); break;
@@ -443,14 +421,13 @@ do {																		\
 		/* fix m properties */
 		BATsetcount(m, m_sz);
 		BATseqbase(m, b->hseqbase);
-		BATseqbase(BATmirror(m), b->hseqbase);
 		m->tkey = 1;
 		m->T->nil = 0;
 		m->T->nonil = 1;
-		m->tsorted = m->trevsorted = 0;
+		m->tsorted = m->trevsorted = BATcount(m) <= 1;
 		m->tdense = 0;
 		for (i = 0; i < n_ar; i++) {
-			BBPunfix(aid[i]);
+			BBPunfix(a[i]->batCacheid);
 		}
 	}
 
@@ -458,7 +435,6 @@ do {																		\
 	b->torderidx = m->batCacheid;
 	BBPincref(m->batCacheid, TRUE);
 
-	GDKfree(aid);
 	GDKfree(a);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
