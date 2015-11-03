@@ -3259,6 +3259,9 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
+	if (formatter == TIMERformatter) {
+		mapi_cache_limit(mid, 1);
+	}
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
