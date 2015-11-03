@@ -50,7 +50,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng);
+	size_t argsize = 6 * sizeof(lng), m = 0;
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
@@ -123,18 +123,18 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
-	r = monet_memory / argsize;
+	m = monet_memory / argsize;
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
-	 * i.e., (rowcnt > monet_memory/argsize = r) */
-	if (rowcnt > r && r / threads / activeClients > 0) {
+	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	if (rowcnt > m && m / threads / activeClients > 0) {
 		/* create |pieces| > |threads| partitions such that
 		 * |threads| partitions at a time fit in memory,
-		 * i.e., (threads*(rowcnt/pieces) <= r),
-		 * i.e., (rowcnt/pieces <= r/threads),
-		 * i.e., (pieces => rowcnt/(r/threads))
-		 * (assuming that (r > threads*MINPARTCNT)) */
-		pieces = (int) (rowcnt / (r / threads / activeClients)) + 1;
+		 * i.e., (threads*(rowcnt/pieces) <= m),
+		 * i.e., (rowcnt/pieces <= m/threads),
+		 * i.e., (pieces => rowcnt/(m/threads))
+		 * (assuming that (m > threads*MINPARTCNT)) */
+		pieces = (int) (rowcnt / (m / threads / activeClients)) + 1;
 	} else if (rowcnt > MINPARTCNT) {
 	/* exploit parallelism, but ensure minimal partition size to
 	 * limit overhead */
@@ -160,12 +160,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
-							   " with " BUNFMT " rows of size %d into " BUNFMT
+							   " with " BUNFMT " rows of size %d into " SZFMT
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
-				 rowcnt, row_size, r, threads, pieces, mito_parts, mito_size);
+				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size);
 	if (pieces <= 1)
 		return 0;
 
