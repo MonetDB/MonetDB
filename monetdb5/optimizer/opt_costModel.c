@@ -108,10 +108,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (getFunctionId(p) == deleteRef){
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* delete BAT */
-					newRows(1,2, (c1 - c2 ==0? 1: c1-c2),1);
+					newRows(1, 2, (c2 == c1 ? 1 : c1 - c2), 1);
 				} else {
 					/* insert scalars */
-					newRows(1,1, (c1==1?1: c1-1),1);
+					newRows(1, 1, (c1 == 1 ? 1 : c1 - 1), 1);
 				}
 			} else if (getFunctionId(p) == insertRef){
 				newRows(1,1,( c1 + 1),0); /* faked */
@@ -127,7 +127,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getFunctionId(p) == minRef ||
 				getFunctionId(p) == maxRef ||
 				getFunctionId(p) == avgRef) {
-				newRows(1,1, ( c1?c1:c1+1),0);
+				newRows(1, 1, (c1 != 0 ? c1 : 1), 0);
 			} else	if (getFunctionId(p) == countRef){
 				newRows(1,1, 1,0);
 			}
