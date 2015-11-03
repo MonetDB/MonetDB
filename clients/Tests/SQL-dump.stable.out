@@ -1869,7 +1869,6 @@ CREATE TABLE "sys"."args" (
 	"number"      INTEGER
 );
 COPY 3799 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
-======= end
 2155	28	"res_0"	"oid"	63	0	0	0
 2156	28	"arg_1"	"wrd"	64	0	1	1
 2157	29	"res_0"	"oid"	63	0	0	0
