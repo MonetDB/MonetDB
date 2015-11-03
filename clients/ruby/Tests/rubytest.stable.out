@@ -62,12 +62,15 @@ Ready.
 # 11:46:09 >  "ruby" "rubytest.rb" "33382" "mTests_clients_ruby"
 # 11:46:09 >  
 
-# Running:
+Run options: --seed 42454
+
+# Running tests:
+
 ...........
 
+Finished tests in 0.242699s, 45.3236 tests/s, 45.3236 assertions/s.
 
-
-11 runs, 11 assertions, 0 failures, 0 errors, 0 skips
+11 tests, 11 assertions, 0 failures, 0 errors, 0 skips
 
 # 11:46:09 >  
 # 11:46:09 >  "Done."
