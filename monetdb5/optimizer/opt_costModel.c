@@ -132,7 +132,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
 			if (c1 != -1)
-				setRowCnt(mb, getArg(p,0), c1);
+				setRowCnt(mb, getArg(p,0), (BUN) c1);
 		}
 	}
 	return 1;

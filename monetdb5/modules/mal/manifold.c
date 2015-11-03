@@ -358,10 +358,12 @@ wrapup:
 }
 
 // The old code
-str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    char buf[BUFSIZ];
+str
+MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
     (void) mb;
     (void) cntxt;
-    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *) getArgReference(stk,p,p->retc), (char *) getArgReference(stk,p,p->retc+1));
-    throw(MAL, "opt.remap", "%s",buf);
+    throw(MAL, "opt.remap", "Function '%s.%s' not defined",
+		  *getArgReference_str(stk, p, p->retc),
+		  *getArgReference_str(stk, p, p->retc + 1));
 }

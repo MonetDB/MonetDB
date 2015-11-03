@@ -995,6 +995,12 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.11-20151030
+- Rebuilt.
+- BZ#3828: Schema corruption after several ALTER TABLE statements and
+  server restart
+- BZ#3839: msqldump generates incorrect syntax ON UPDATE (null)
+
 * Mon Oct 26 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.9-20151026
 - Rebuilt.
 - BZ#3816: Server crashes when trying to convert timestamp to str with
