@@ -10,4 +10,4 @@ gem_monetdb = {
 }
 
 EXTRA_DIST = Changelog TODO ruby-monetdb-sql-0.2.gemspec
-EXTRA_DIST_DIR = examples lib
+EXTRA_DIST_DIR = lib
