@@ -2135,11 +2135,19 @@ myread(void *private, void *buf, size_t elmsize, size_t cnt)
 	if (size == 0)
 		return cnt;
 	if (p->buf == NULL) {
+		rl_completion_func_t *func = NULL;
+
+		if (strcmp(p->prompt, "more>") == 0)
+			func = suspend_completion();
 		p->buf = readline(p->prompt);
+		if (func)
+			continue_completion(func);
 		if (p->buf == NULL)
 			return 0;
 		p->len = strlen(p->buf);
 		p->read = 0;
+		if (p->len > 1)
+			save_line(p->buf);
 	}
 	if (p->read < p->len) {
 		if (p->len - p->read < size)
