@@ -45,7 +45,6 @@ QUERY = copy 4 records into cik2 from stdin USING DELIMITERS ',','\n','\"' NULL 
         9,1
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik2.cik2_i_j_pkey' violated
 
-
 # 18:36:17 >  
 # 18:36:17 >  "Done."
 # 18:36:17 >  
