@@ -403,12 +403,12 @@ program.
 
 %files -n rubygem-monetdb-sql
 %defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
-%{gem_dir}/doc/ruby-monetdb-sql-0.1/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.1.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/specifications/ruby-monetdb-sql-0.1.gemspec
+%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
+%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
+%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
+# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
 
 %package -n rubygem-activerecord-monetdb-adapter
 Summary: MonetDB ruby interface
