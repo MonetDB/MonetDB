@@ -16,6 +16,9 @@ export(monetdb.server.stop)
 export(monetdbd.liststatus)
 export(monetdb.liststatus)
 
+# mclient.R
+export(mclient)
+
 # dplyr.R
 export(src_monetdb)
 export(src_translate_env.src_monetdb)

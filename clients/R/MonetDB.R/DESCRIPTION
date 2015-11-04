@@ -8,9 +8,9 @@ Author: Hannes Muehleisen [aut, cre], Thomas Lumley [ctb], Anthony Damico [ctb]
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>
 Depends: DBI (>= 0.3.1)
 Imports: digest (>= 0.6.4), methods, codetools
-Enhances: dplyr (>= 0.3.0)
+Enhances: dplyr (>= 0.3.0), MonetDBLite
 Description: Allows to pull data from MonetDB into R. Includes a DBI implementation and a dplyr backend.
 License: MPL (== 1.1)
 URL: http://monetr.r-forge.r-project.org
 SystemRequirements: MonetDB, available from http://www.monetdb.org
-Collate: mapi.R dbi.R dbapply.R dplyr.R control.R
+Collate: mapi.R dbi.R dbapply.R dplyr.R control.R mclient.R

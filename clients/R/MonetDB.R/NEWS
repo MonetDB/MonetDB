@@ -20,6 +20,7 @@
 - Fixed a bug when dbWriteTable would not adhere to transactional semantics
 - Added transactions to monetdb.read.csv so no empty tables are left over
 - Fixed != comparisions in dplyr (Thanks, David)
+- New "mclient" function to get a shell-like DB interface
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
