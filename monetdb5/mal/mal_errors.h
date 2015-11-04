@@ -79,7 +79,6 @@
 #define RUNTIME_STREAM_INPUT "Could not read from stream"
 
 #define RUNTIME_LOAD_ERROR "Loading error"
-#define RUNTIME_LOAD_ERROR "Loading error"
 #define RUNTIME_OBJECT_MISSING "Object not found"
 #define RUNTIME_SIGNATURE_MISSING "The <module>.<function> not found"
 #define RUNTIME_OBJECT_UNDEFINED "Object not found"
