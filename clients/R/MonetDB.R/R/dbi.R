@@ -155,7 +155,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F, quote=F) {
   q <- "select schemas.name as sn, tables.name as tn from sys.tables join sys.schemas on tables.schema_id=schemas.id"
-  if (!sys_tables) q <- paste0(q, " where tables.system=false")
+  if (!sys_tables) q <- paste0(q, " where tables.system=false order by sn, tn")
   df <- dbGetQuery(conn, q)
   if (quote) {
     df$tn <- paste0("\"", df$tn, "\"")
