@@ -461,10 +461,10 @@ bitFromStr(const char *src, int *len, bit **dst)
 	while (GDKisspace(*p))
 		p++;
 	**dst = bit_nil;
-	if (*p == '0' || *p == 0) {
+	if (*p == '0') {
 		**dst = FALSE;
 		p++;
-	} else if (*p == '1' || *p == 1) {
+	} else if (*p == '1') {
 		**dst = TRUE;
 		p++;
 	} else if (strncasecmp(p, "true",  4) == 0) {
