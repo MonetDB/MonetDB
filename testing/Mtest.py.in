@@ -3702,6 +3702,10 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
+    if CheckExec('ruby'):
+        CONDITIONALS['HAVE_RUBY'] = '#'
+#     else:
+#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
