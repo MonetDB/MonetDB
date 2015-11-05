@@ -73,7 +73,7 @@ void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
-char* monetdb_startup(char* installdir, char* dbdir, char silent) {
+char* monetdb_startup(char* libdir, char* dbdir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
 	str retval = MAL_SUCCEED;
@@ -102,7 +102,7 @@ char* monetdb_startup(char* installdir, char* dbdir, char silent) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
-	snprintf(mod_path, 1000, "%s/lib/monetdb5", installdir);
+	snprintf(mod_path, 1000, "%s/monetdb5", libdir);
 	GDKsetenv("monet_mod_path", mod_path);
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");

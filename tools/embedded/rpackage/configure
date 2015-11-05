@@ -1,7 +1,7 @@
 #!/bin/sh
 cd src
 
-CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/libs \
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/iprefix \
 --enable-embedded --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
@@ -15,31 +15,36 @@ make -j install
 echo -e "dummytarget:\n\ttrue\n" > Makefile
 cd ..
 
-# Normally, the installer would create the libs dir, but only after make, so we need to create this as well
-mkdir -p $R_PACKAGE_DIR/libs/
-
 # and finally put the embedded library where R expects it
 RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 # TODO: this number should probably be pulled from automake and friends
 VER=1
-if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib" ]; then
-    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib $RDYNLIB
-    # patch loader paths so installed pkg can be moved around in fs
-	for dylb in `find $R_PACKAGE_DIR/libs/lib/ -type f -name "*.dylib" -o -name "*.so"` ; do
+mv $R_PACKAGE_DIR/iprefix/lib $R_PACKAGE_DIR/libs	
+
+# OSX: patch loader paths so installed pkg can be moved around in FS
+if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib" ]; then
+	mv $R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib $RDYNLIB
+	for dylb in `find $R_PACKAGE_DIR/libs -type f -name "*.dylib" -o -name "*.so"` ; do
 		echo "Now checking dynamic library $dylb"
 		install_name_tool -id `basename $dylb` $dylb
+		dylbdir=`dirname $dylb`
 		for ref in `otool -L $dylb | \
 			tail -n +2 | grep MonetDBLite | sed -e "s/[[:blank:]]//g" -e "s/([^)]*)//g"` ; do
-			curlibdir=`dirname $dylb`
-			relref=@loader_path/`realpath --relative-to $curlibdir $ref`
+			relpath=`realpath --relative-to $dylbdir $R_PACKAGE_DIR/libs`
+			relref=@loader_path/$relpath/`basename $ref`
 			echo "Found absolute linker reference to $ref, changing to $relref"
 			install_name_tool -change $ref $relref $dylb
 		done
 	done
+	find $R_PACKAGE_DIR/libs/ -type l -delete
+	find $R_PACKAGE_DIR/libs/ -name "*.la" -delete
+	rm -r $R_PACKAGE_DIR/libs/pkgconfig
 fi
-if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER" ]; then
-    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER $RDYNLIB
+if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.so.$VER" ]; then
+    mv $R_PACKAGE_DIR/libs/libembeddedr.so.$VER $RDYNLIB
 fi
+rm -r $R_PACKAGE_DIR/iprefix
+
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
     exit -1
