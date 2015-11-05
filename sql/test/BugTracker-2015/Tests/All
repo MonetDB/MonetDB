@@ -81,3 +81,5 @@ select-push-crash.Bug-3829
 coalesce.Bug-3830
 null.Bug-3833
 date_comparison_incorrect_results.Bug-3834
+hugeint-wrong-value.Bug-3849
+dump-DELETE.Bug-3850

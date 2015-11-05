@@ -770,7 +770,7 @@ hgeToStr(char **dst, int *len, const hge *src)
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
-	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
+	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
 		return lngToStr(dst, len, &s);
 	} else {
