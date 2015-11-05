@@ -410,32 +410,6 @@ program.
 %{gem_dir}/gems/ruby-monetdb-sql-0.2
 %{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
 
-%package -n rubygem-activerecord-monetdb-adapter
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Requires: rubygem-activerecord
-Requires: rubygem-monetdb-sql
-BuildArch: noarch
-
-%description -n rubygem-activerecord-monetdb-adapter
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the activerecord adapter for MonetDB.
-
-%files -n rubygem-activerecord-monetdb-adapter
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
-%{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
-%{gem_dir}/cache/activerecord-monetdb-adapter-0.1.gem
-# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
-%endif
-
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
