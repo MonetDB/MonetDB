@@ -133,7 +133,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 
 
 SEXP monetdb_connect_R() {
-	return R_MakeExternalPtr(monetdb_connect(), NULL, NULL);
+	return R_MakeExternalPtr(monetdb_connect(), R_NilValue, R_NilValue);
 }
 
 SEXP monetdb_disconnect_R(SEXP connsexp) {
