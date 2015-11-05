@@ -322,8 +322,8 @@ str
 closeProfilerStream(void)
 {
 	if (eventstream && eventstream != mal_clients[0].fdout && eventstream != GDKout && eventstream != GDKerr) {
-		(void)mnstr_close(eventstream);
-		(void)mnstr_destroy(eventstream);
+		mnstr_close(eventstream);
+		mnstr_destroy(eventstream);
 	}
 	eventstream = NULL;
 	malProfileMode = 0;
