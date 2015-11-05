@@ -23,10 +23,22 @@ RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 # TODO: this number should probably be pulled from automake and friends
 VER=1
 if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib" ]; then
-    cp $R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib $RDYNLIB
+    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.$VER.dylib $RDYNLIB
+    # patch loader paths so installed pkg can be moved around in fs
+	for dylb in `find $R_PACKAGE_DIR/libs/lib/ -type f -name "*.dylib" -o -name "*.so"` ; do
+		echo "Now checking dynamic library $dylb"
+		install_name_tool -id `basename $dylb` $dylb
+		for ref in `otool -L $dylb | \
+			tail -n +2 | grep MonetDBLite | sed -e "s/[[:blank:]]//g" -e "s/([^)]*)//g"` ; do
+			curlibdir=`dirname $dylb`
+			relref=@loader_path/`realpath --relative-to $curlibdir $ref`
+			echo "Found absolute linker reference to $ref, changing to $relref"
+			install_name_tool -change $ref $relref $dylb
+		done
+	done
 fi
 if [ -f "$R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER" ]; then
-    cp $R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER $RDYNLIB
+    ln -s $R_PACKAGE_DIR/libs/lib/libembeddedr.so.$VER $RDYNLIB
 fi
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
