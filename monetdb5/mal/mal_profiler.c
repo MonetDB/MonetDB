@@ -212,7 +212,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 		//GDKfree(stmt);
 
 		// ship the beautified version as well
-/*
+
 		stmt = shortStmtRendering(mb, stk, pci);
 		stmtq = mal_quote(stmt, strlen(stmt));
 		if (stmtq != NULL) {
@@ -220,7 +220,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 			GDKfree(stmtq);
 		} 
 		GDKfree(stmt);
-*/
+
 
 		// collect the prerequisite pre-requisite statements
 		prereq[0]='[';
