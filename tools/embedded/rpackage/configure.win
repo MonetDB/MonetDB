@@ -29,5 +29,7 @@ cp src/tools/embedded/windows/msvcr100.dll $R_PACKAGE_DIR/libs/x64/
 # we have all of those in our fat DLL, so delete
 find ${R_PACKAGE_DIR}/libs -name "*.la" -delete
 rm -r $R_PACKAGE_DIR/libs/include $R_PACKAGE_DIR/libs/share
+mv $R_PACKAGE_DIR/libs/lib/monetdb5 $R_PACKAGE_DIR/libs/
+rm -r $R_PACKAGE_DIR/libs/lib
 
 # When configure.win is run the environment variables R_HOME (which uses ‘/’ as the file separator), R_ARCH and Use R_ARCH_BIN will be set. Use R_ARCH to decide if this is a 64-bit build (its value there is ‘/x64’) and to install DLLs to the correct place (${R_HOME}/libs${R_ARCH}). Use R_ARCH_BIN to find the correct place under the bin directory, e.g. ${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe.
