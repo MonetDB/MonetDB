@@ -1,7 +1,7 @@
 #!/bin/sh
 cd src
 
-CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/iprefix \
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/iprefix --libdir=$R_PACKAGE_DIR/libs \
 --enable-embedded --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
@@ -19,7 +19,6 @@ cd ..
 RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 # TODO: this number should probably be pulled from automake and friends
 VER=1
-mv $R_PACKAGE_DIR/iprefix/lib $R_PACKAGE_DIR/libs	
 
 # OSX: patch loader paths so installed pkg can be moved around in FS
 if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib" ]; then
@@ -37,13 +36,13 @@ if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib" ]; then
 		done
 	done
 	find $R_PACKAGE_DIR/libs/ -type l -delete
-	find $R_PACKAGE_DIR/libs/ -name "*.la" -delete
-	rm -r $R_PACKAGE_DIR/libs/pkgconfig
 fi
 if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.so.$VER" ]; then
     mv $R_PACKAGE_DIR/libs/libembeddedr.so.$VER $RDYNLIB
 fi
 rm -r $R_PACKAGE_DIR/iprefix
+find $R_PACKAGE_DIR/libs/ -name "*.la" -delete
+rm -r $R_PACKAGE_DIR/libs/pkgconfig
 
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
