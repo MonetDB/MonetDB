@@ -29,19 +29,6 @@ eligible(MalBlkPtr mb)
 	return 1;
 }
 
-static int
-getVarMergeTableId(MalBlkPtr mb, int v)
-{
-	VarPtr p = varGetProp(mb, v, mtProp);
-
-	if (!p)
-		return -1;
-	if (p->value.vtype == TYPE_int)
-		return p->value.val.ival;
-	return -1;
-}
-
-
 /* The plans are marked with the concurrent user load.
  *  * If this has changed, we may want to recompile the query
  *   */
@@ -61,9 +48,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
 	str schema = 0, table = 0;
-	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
+	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng);
+	size_t argsize = 6 * sizeof(lng), m = 0;
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
@@ -136,28 +123,28 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
-	r = (wrd) (monet_memory / argsize);
+	m = monet_memory / argsize;
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
-	 * i.e., (rowcnt > monet_memory/argsize = r) */
-	if (rowcnt > r && r / threads / activeClients > 0) {
+	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	if (rowcnt > m && m / threads / activeClients > 0) {
 		/* create |pieces| > |threads| partitions such that
 		 * |threads| partitions at a time fit in memory,
-		 * i.e., (threads*(rowcnt/pieces) <= r),
-		 * i.e., (rowcnt/pieces <= r/threads),
-		 * i.e., (pieces => rowcnt/(r/threads))
-		 * (assuming that (r > threads*MINPARTCNT)) */
-		pieces = (int) (rowcnt / (r / threads / activeClients)) + 1;
+		 * i.e., (threads*(rowcnt/pieces) <= m),
+		 * i.e., (rowcnt/pieces <= m/threads),
+		 * i.e., (pieces => rowcnt/(m/threads))
+		 * (assuming that (m > threads*MINPARTCNT)) */
+		pieces = (int) (rowcnt / (m / threads / activeClients)) + 1;
 	} else if (rowcnt > MINPARTCNT) {
 	/* exploit parallelism, but ensure minimal partition size to
 	 * limit overhead */
-		pieces = (int) MIN((rowcnt / MINPARTCNT), (wrd) threads);
+		pieces = (int) MIN(rowcnt / MINPARTCNT, (BUN) threads);
 	}
 	/* when testing, always aim for full parallelism, but avoid
 	 * empty pieces */
 	FORCEMITODEBUG
 	if (pieces < threads)
-		pieces = (int) MIN((wrd) threads, rowcnt);
+		pieces = (int) MIN((BUN) threads, rowcnt);
 	/* prevent plan explosion */
 	if (pieces > MAXSLICES)
 		pieces = MAXSLICES;
@@ -173,12 +160,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
-							   " with " SSZFMT " rows of size %d into " SSZFMT 
+							   " with " BUNFMT " rows of size %d into " SZFMT
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
-				 rowcnt, row_size, r, threads, pieces, mito_parts, mito_size);
+				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size);
 	if (pieces <= 1)
 		return 0;
 
@@ -190,7 +177,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
-	mt = getVarMergeTableId(mb, getArg(target, 0));
 	for (i = 0; i < limit; i++) {
 		int upd = 0, qtpe, rtpe = 0, qv, rv;
 		InstrPtr matq, matr = NULL;
@@ -216,12 +202,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
+		if( mt == -1)
+			mt = getMitosisPartition(p);
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
 			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
 			pushInstruction(mb, p);
 			continue;
 		}
-		if (mt >= 0 && getVarMergeTableId(mb, getArg(p, 0)) != mt) {
+		if (mt >= 0 && getMitosisPartition(p) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}

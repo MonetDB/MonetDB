@@ -15,9 +15,12 @@
 #define newRows(W,X,Y,Z) {\
 		c1 = getRowCnt(mb, getArg(p,W));\
 		c2 = getRowCnt(mb, getArg(p,X));\
-		if (c1 == -1 || c2 == -1) \
+		/* just to ensure that rowcnt was/is never set to -1 */\
+		assert(c1 != (BUN) -1);\
+		assert(c2 != (BUN) -1);\
+		if (c1 == BUN_NONE || c2 == BUN_NONE) \
 			continue;\
-		setRowCnt(mb, getArg(p,Z), (BUN)(Y));\
+		setRowCnt(mb, getArg(p,Z), (Y));\
 }
 /*
  * The cost will be used in many places to make decisions.
@@ -33,7 +36,7 @@ int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	wrd c1, c2;
+	BUN c1, c2;
 	InstrPtr p;
 
 	(void) cntxt;
@@ -105,10 +108,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (getFunctionId(p) == deleteRef){
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* delete BAT */
-					newRows(1,2, (c1 - c2 ==0? 1: c1-c2),1);
+					newRows(1, 2, (c2 == c1 ? 1 : c1 - c2), 1);
 				} else {
 					/* insert scalars */
-					newRows(1,1, (c1==1?1: c1-1),1);
+					newRows(1, 1, (c1 == 1 ? 1 : c1 - 1), 1);
 				}
 			} else if (getFunctionId(p) == insertRef){
 				newRows(1,1,( c1 + 1),0); /* faked */
@@ -124,15 +127,17 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getFunctionId(p) == minRef ||
 				getFunctionId(p) == maxRef ||
 				getFunctionId(p) == avgRef) {
-				newRows(1,1, ( c1?c1:c1+1),0);
+				newRows(1, 1, (c1 != 0 ? c1 : 1), 0);
 			} else	if (getFunctionId(p) == countRef){
 				newRows(1,1, 1,0);
 			}
 		} else if( p->token == ASSIGNsymbol && p->argc== 2){
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
-			if (c1 != -1)
-				setRowCnt(mb, getArg(p,0), (BUN) c1);
+			/* just to ensure that rowcnt was/is never set to -1 */
+			assert(c1 != (BUN) -1);
+			if (c1 != BUN_NONE)
+				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}
 	return 1;

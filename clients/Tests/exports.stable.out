@@ -2342,7 +2342,6 @@ char monet_characteristics[PATHLENGTH];
 char monet_cwd[PATHLENGTH];
 size_t monet_memory;
 void moveInstruction(MalBlkPtr mb, int pc, int target);
-int mtProp;
 str mtimeRef;
 str mulRef;
 str multicolumnRef;
