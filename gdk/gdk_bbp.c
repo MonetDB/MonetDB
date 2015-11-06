@@ -770,6 +770,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		col->sorted = 0;
 		col->revsorted = 0;
 	}
+	if (col->heap.free > col->heap.size)
+		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
 	return n;
 }
 
@@ -800,6 +802,8 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 		col->vheap->dirty = 0;
 		col->vheap->parentid = bid;
 		col->vheap->farmid = BBPselectfarm(PERSISTENT, col->type, varheap);
+		if (col->vheap->free > col->vheap->size)
+			GDKfatal("BBPinit: \"free\" value larger than \"size\" in var heap of bat %d\n", (int) bid);
 	}
 	return n;
 }
