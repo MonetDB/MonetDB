@@ -230,9 +230,6 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int inlineProp;
-int unsafeProp;
-
 void optimizerInit(void)
 {
 	assert(batRef == NULL);
@@ -450,8 +447,6 @@ void optimizerInit(void)
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	inlineProp = PropertyIndex("inline");
-	unsafeProp = PropertyIndex("unsafe");
 	/*
 	 * Set the optimizer debugging flag
 	 */
