@@ -43,7 +43,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+	if ( mb->inlineProp )
 		return 0;
 
 	for (i = 0; i < mb->stop; i++) {

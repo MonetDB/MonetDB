@@ -30,16 +30,16 @@ stderr of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 # 22:58:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36275"
 # 22:58:57 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-3121/.s.monetdb.38104
+MAPI  = (monetdb) /var/tmp/mtest-5888/.s.monetdb.37748
 QUERY = explain copy into ttt from '\tmp/xyz';
 ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-3121/.s.monetdb.38104
+MAPI  = (monetdb) /var/tmp/mtest-5888/.s.monetdb.37748
 QUERY = explain copy into ttt from 'a:\tmp/xyz';
 ERROR = !COPY INTO: filename must have absolute path: a:\tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-3121/.s.monetdb.38104
+MAPI  = (monetdb) /var/tmp/mtest-5888/.s.monetdb.37748
 QUERY = explain copy into ttt from '\tmp/xyz';
 ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-3121/.s.monetdb.38104
+MAPI  = (monetdb) /var/tmp/mtest-5888/.s.monetdb.37748
 QUERY = explain copy into ttt from 'Z:/tmp/xyz';
 ERROR = !COPY INTO: filename must have absolute path: Z:/tmp/xyz
 

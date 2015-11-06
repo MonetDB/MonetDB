@@ -64,7 +64,7 @@ Ready.
 % mal # name
 % clob # type
 % 789 # length
-function user.s2_1{autoCommit=true}(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
+function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
     X_211:void := querylog.define("explain select\n\ts_name,\n\ts_address\nfrom\n\tsupplier,\n\tnation\nwhere\n\ts_suppkey in (\n\t\tselect\n\t\t\tps_suppkey\n\t\tfrom\n\t\t\tpartsupp\n\t\twhere\n\t\t\tps_partkey in (\n\t\t\t\tselect\n\t\t\t\t\tp_partkey\n\t\t\t\tfrom\n\t\t\t\t\tpart\n\t\t\t\twhere\n\t\t\t\t\tp_name like \\'forest%\\'\n\t\t\t)\n\t\t\tand ps_availqty > (\n\t\t\t\tselect\n\t\t\t\t\t0.5 * sum(l_quantity)\n\t\t\t\tfrom\n\t\t\t\t\tlineitem\n\t\t\t\twhere\n\t\t\t\t\tl_partkey = ps_partkey\n\t\t\t\t\tand l_suppkey = ps_suppkey\n\t\t\t\t\tand l_shipdate >= date \\'1994-01-01\\'\n\t\t\t\t\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\t\t\t)\n\t)\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'CANADA\\'\norder by\n\ts_name;","sequential_pipe",142);
     X_188 := bat.new(nil:oid,nil:str);
     X_196 := bat.append(X_188,"sys.supplier");

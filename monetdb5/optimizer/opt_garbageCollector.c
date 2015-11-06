@@ -29,7 +29,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void) pci;
 	(void) cntxt;
 	(void) stk;
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+	if ( mb->inlineProp)
 		return 0;
 
 

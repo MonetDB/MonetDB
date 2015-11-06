@@ -242,7 +242,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
-	if (varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL )
+	if ( mb->inlineProp)
         	return 0;
 
 
@@ -286,7 +286,7 @@ MALoptimizer(Client c)
 {
 	str msg;
 
-	if ( varGetProp(c->curprg->def,0,inlineProp))
+	if ( c->curprg->def->inlineProp)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
@@ -381,8 +381,7 @@ isUnsafeFunction(InstrPtr q)
 	p= getInstrPtr(q->blk,0);
 	if( p->retc== 0)
 		return TRUE;
-	return (varGetProp( q->blk, getArg(p,0), unsafeProp ) != NULL);
-	/* check also arguments for 'unsafe' property */
+	return q->blk->unsafeProp;
 }
 
 /*
@@ -482,8 +481,7 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 {
 	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
 		return TRUE;
-/*	if (p->retc == 1 && (varGetProp( q->blk, getArg(p,0), unsafeProp ) != NULL))
-		return TRUE; */
+	//if( mb->unsafeProp) return TRUE;
 	return FALSE;
 }
 
@@ -504,11 +502,6 @@ hasSideEffects(InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
-/*
-	if ( getModuleId(p) == algebraRef &&
-		 getFunctionId(p) == reuseRef)
-			return TRUE;
-*/
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 	     (getFunctionId(p) == setAccessRef ||
 	 	  getFunctionId(p) == setWriteModeRef ||

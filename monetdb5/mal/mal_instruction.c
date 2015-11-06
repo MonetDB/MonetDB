@@ -122,6 +122,8 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
+	mb->inlineProp = 0;
+	mb->unsafeProp = 0;
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
 	mb->replica = NULL;
@@ -214,6 +216,8 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
+	mb->inlineProp = 0;
+	mb->unsafeProp = 0;
 	GDKfree(mb);
 }
 
@@ -285,6 +289,8 @@ copyMalBlk(MalBlkPtr old)
 	mb->optimize = old->optimize;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
+	mb->inlineProp = old->inlineProp;
+	mb->unsafeProp = old->unsafeProp;
 
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;

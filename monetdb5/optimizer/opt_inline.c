@@ -51,14 +51,12 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
 					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				}
-
-			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
+				mb->inlineProp = 1;
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
 			 */
-			if (sig->token == FUNCTIONsymbol &&
-			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL &&
+			if (sig->token == FUNCTIONsymbol && q->blk->inlineProp &&
 				isCorrectInline(q->blk) ) {
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
@@ -72,7 +70,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/*
 			 * Check if the local call is tagged as being inlined.
 			 */
-			if (varGetProp(mb, getArg(q,0), inlineProp) != NULL) {
+			if ( q->blk->inlineProp ){
 				inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
@@ -106,7 +104,6 @@ int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	 * In general, this is a hard problem. For now, we just expand.
 	 */
 	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
-	res= varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
-				inlineProp) != NULL;
+	res = s->def->inlineProp;
 	return res;
 }

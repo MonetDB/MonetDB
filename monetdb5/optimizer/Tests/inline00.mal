@@ -1,4 +1,4 @@
-function help{inline}();
+inline function help();
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:int);
 bat.append(b,1);
@@ -21,6 +21,7 @@ function user.qry();
 	user.help();
 end qry;
 
+mdb.List("user","help");
 optimizer.inline("user","qry");
 optimizer.remap("user","qry");
 mdb.List("user","qry");

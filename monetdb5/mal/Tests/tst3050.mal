@@ -1,13 +1,13 @@
 #Parsing properties and keeping them around
-function dummy(a:int{unsafe=true,sorted=true},b:int{sequence=true}):int{dense=true};
+unsafe function dummy(a:int,b:int):int;
 	return dummy:=1;
 end dummy;
-function myprint{unsafe,optimizer}():void;
+unsafe function myprint():void;
 end myprint;
 
 a:= 0;
 b:= 2;
-t:= user.dummy(a{sorted=true},b{sequence=true});
+t:= user.dummy(a,b);
 
 mdb.var("user","myprint");
 

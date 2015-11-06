@@ -18,7 +18,7 @@ stdout of test 'inlineFunction1` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.my_case{inline}(Av:int):int;
+inline function user.my_case(Av:int):int;
     X3 := calc.==(Av,1);
 barrier X4 := X3;
     X6 := calc.int(100);

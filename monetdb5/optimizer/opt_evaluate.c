@@ -28,7 +28,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++) {
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-		if ( varGetProp(mb, getArg(p,i), unsafeProp) != NULL )
+		if ( mb->unsafeProp ) 
 			return FALSE;
 	}
 	return TRUE;
@@ -129,7 +129,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)stk;
 	(void)pci;
 
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+	if ( mb->inlineProp )
 		return 0;
 
 	(void)cntxt;

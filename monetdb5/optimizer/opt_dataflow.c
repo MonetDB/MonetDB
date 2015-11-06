@@ -208,7 +208,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
-	if ( varGetProp(mb, getArg(getInstrPtr(mb,0),0),inlineProp)!= NULL) 
+	if ( mb->inlineProp)
 		return 0;
 	OPTDEBUGdataflow{
 		mnstr_printf(cntxt->fdout,"#dataflow input\n");

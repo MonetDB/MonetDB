@@ -1,4 +1,4 @@
-function my{inline}(A:int,B:int):int;
+inline function my(A:int,B:int):int;
     X3 := A+B;
 	return my:= X3;
 end my;
