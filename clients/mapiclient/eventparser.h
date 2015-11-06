@@ -82,7 +82,8 @@ typedef struct  {
 	int tag;	// unique MAL block invocation tag
 	lng eventnr;// serial event number
 	int thread;	// worker thread involved
-	char *clk;	// string rep of clock
+	lng clk;	// usec since start of session
+	char *time;	// string rep of clock
 	lng clkticks;
 	lng ticks;
 	lng rss;

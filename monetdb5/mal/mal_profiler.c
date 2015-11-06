@@ -144,7 +144,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	tbuf[19]=0;
 	/* there should be less than 10^6 == 1M usecs in 1 sec */
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
-	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
+	logadd("\"clk\":"LLFMT",\n",GDKusec());
+	logadd("\"ctime\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
 	logadd("\"thread\":%d,\n", THRgettid());
 
 	logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));

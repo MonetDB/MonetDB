@@ -110,7 +110,7 @@ renderEvent(EventRecord *ev){
 		return;
 	fprintf(s, "[ ");
 	fprintf(s, LLFMT",	", ev->eventnr);
-	fprintf(s, "\"%s\",	", ev->clk);
+	printf("\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
 	else

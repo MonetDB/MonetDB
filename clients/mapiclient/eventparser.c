@@ -106,7 +106,7 @@ resetEventRecord(EventRecord *ev)
 	if( ev->package) free(ev->package);
 
 	if( ev->function) free(ev->function);
-	if( ev->clk) free(ev->clk);
+	if( ev->time) free(ev->time);
 	if( ev->stmt) free(ev->stmt);
 	if( ev->fcn) free(ev->fcn);
 	if( ev->numa) free(ev->numa);
@@ -202,9 +202,13 @@ keyvalueparser(char *txt, EventRecord *ev)
 	} else val =c;
 
 	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
-	if( strstr(key,"time")){
+	if( strstr(key,"clk")){
+		ev->clk = atoll(val); 
+		return 0;
+	}
+	if( strstr(key,"ctime")){
 		/* convert time to epoch in seconds*/
-		ev->clk= strdup(val);
+		ev->time= strdup(val);
 		memset(&stm, 0, sizeof(struct tm));
 		c = strptime(val + 1, "%H:%M:%S", &stm);
 		ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
