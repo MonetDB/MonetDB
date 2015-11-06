@@ -233,9 +233,6 @@ str zero_or_oneRef;
 int inlineProp;
 int unsafeProp;
 
-int horiginProp;		/* original oid source */
-int toriginProp;		/* original oid source */
-
 void optimizerInit(void)
 {
 	assert(batRef == NULL);
@@ -455,9 +452,6 @@ void optimizerInit(void)
 
 	inlineProp = PropertyIndex("inline");
 	unsafeProp = PropertyIndex("unsafe");
-
-	horiginProp = PropertyIndex("horigin");
-	toriginProp = PropertyIndex("torigin");
 	/*
 	 * Set the optimizer debugging flag
 	 */
