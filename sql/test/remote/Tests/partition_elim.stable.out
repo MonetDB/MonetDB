@@ -135,7 +135,7 @@ Ready.
 % mal # name
 % clob # type
 % 65 # length
-function user.SQLanalyze{autoCommit=true}():void;
+function user.SQLanalyze():void;
 barrier X_94 := language.dataflow();
     X_25 := bat.new(nil:oid,nil:str);
     X_32 := bat.append(X_25,".test");
@@ -152,41 +152,41 @@ barrier X_94 := language.dataflow();
     X_31 := bat.new(nil:oid,nil:int);
     X_39 := bat.append(X_31,0);
     X_44 := bat.append(X_39,0);
-    X_5:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);
-    X_4 := sql.mvc();
-    X_55:bat[:oid,:dbl] := sql.bind(X_4,"sys","test2","x",0,0,2);
-    X_52:bat[:oid,:oid] := sql.tid(X_4,"sys","test2",0,2);
+    X_4:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);
+    X_3 := sql.mvc();
+    X_55:bat[:oid,:dbl] := sql.bind(X_3,"sys","test2","x",0,0,2);
+    X_52:bat[:oid,:oid] := sql.tid(X_3,"sys","test2",0,2);
     X_65 := algebra.subselect(X_55,X_52,4,6,true,true,false);
     X_67 := algebra.leftfetchjoin(X_65,X_55);
-    X_56:bat[:oid,:dbl] := sql.bind(X_4,"sys","test2","x",0,1,2);
-    X_54:bat[:oid,:oid] := sql.tid(X_4,"sys","test2",1,2);
+    X_56:bat[:oid,:dbl] := sql.bind(X_3,"sys","test2","x",0,1,2);
+    X_54:bat[:oid,:oid] := sql.tid(X_3,"sys","test2",1,2);
     X_66 := algebra.subselect(X_56,X_54,4,6,true,true,false);
     X_68 := algebra.leftfetchjoin(X_66,X_56);
     X_77 := mat.packIncrement(X_67,2);
     X_13 := mat.packIncrement(X_77,X_68);
-    X_14 := bat.append(X_5,X_13,true);
-    X_59:bat[:oid,:dbl] := sql.bind(X_4,"sys","test3","x",0,0,2);
-    X_57:bat[:oid,:oid] := sql.tid(X_4,"sys","test3",0,2);
+    X_14 := bat.append(X_4,X_13,true);
+    X_59:bat[:oid,:dbl] := sql.bind(X_3,"sys","test3","x",0,0,2);
+    X_57:bat[:oid,:oid] := sql.tid(X_3,"sys","test3",0,2);
     X_69 := algebra.subselect(X_59,X_57,4,6,true,true,false);
     X_71 := algebra.leftfetchjoin(X_69,X_59);
-    X_60:bat[:oid,:dbl] := sql.bind(X_4,"sys","test3","x",0,1,2);
-    X_58:bat[:oid,:oid] := sql.tid(X_4,"sys","test3",1,2);
+    X_60:bat[:oid,:dbl] := sql.bind(X_3,"sys","test3","x",0,1,2);
+    X_58:bat[:oid,:oid] := sql.tid(X_3,"sys","test3",1,2);
     X_70 := algebra.subselect(X_60,X_58,4,6,true,true,false);
     X_72 := algebra.leftfetchjoin(X_70,X_60);
     X_79 := mat.packIncrement(X_71,2);
     X_16 := mat.packIncrement(X_79,X_72);
     X_17 := bat.append(X_14,X_16,true);
     X_18:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);
-    X_61:bat[:oid,:dbl] := sql.bind(X_4,"sys","test2","y",0,0,2);
+    X_61:bat[:oid,:dbl] := sql.bind(X_3,"sys","test2","y",0,0,2);
     X_73 := algebra.leftfetchjoin(X_65,X_61);
-    X_62:bat[:oid,:dbl] := sql.bind(X_4,"sys","test2","y",0,1,2);
+    X_62:bat[:oid,:dbl] := sql.bind(X_3,"sys","test2","y",0,1,2);
     X_74 := algebra.leftfetchjoin(X_66,X_62);
     X_81 := mat.packIncrement(X_73,2);
     X_20 := mat.packIncrement(X_81,X_74);
     X_21 := bat.append(X_18,X_20,true);
-    X_63:bat[:oid,:dbl] := sql.bind(X_4,"sys","test3","y",0,0,2);
+    X_63:bat[:oid,:dbl] := sql.bind(X_3,"sys","test3","y",0,0,2);
     X_75 := algebra.leftfetchjoin(X_69,X_63);
-    X_64:bat[:oid,:dbl] := sql.bind(X_4,"sys","test3","y",0,1,2);
+    X_64:bat[:oid,:dbl] := sql.bind(X_3,"sys","test3","y",0,1,2);
     X_76 := algebra.leftfetchjoin(X_70,X_64);
     X_83 := mat.packIncrement(X_75,2);
     X_22 := mat.packIncrement(X_83,X_76);
@@ -207,7 +207,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 69 # length
-function user.SQLanalyze{autoCommit=nil:oid}():void;
+function user.SQLanalyze():void;
 barrier X_94 := language.dataflow();
     X_23 := bat.new(nil:oid,nil:str);
     X_30 := bat.append(X_23,".test");
@@ -279,7 +279,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 65 # length
-function user.SQLanalyze{autoCommit=0}():void;
+function user.SQLanalyze():void;
 barrier X_69 := language.dataflow();
     X_16 := bat.new(nil:oid,nil:str);
     X_24 := bat.append(X_16,"sys.test");
@@ -329,7 +329,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 69 # length
-function user.SQLanalyze{autoCommit=0}():void;
+function user.SQLanalyze():void;
 barrier X_69 := language.dataflow();
     X_15 := bat.new(nil:oid,nil:str);
     X_23 := bat.append(X_15,"sys.test");
@@ -379,7 +379,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 69 # length
-function user.SQLanalyze{autoCommit="test3"}():void;
+function user.SQLanalyze():void;
 barrier X_69 := language.dataflow();
     X_13 := bat.new(nil:oid,nil:str);
     X_21 := bat.append(X_13,"sys.test");
