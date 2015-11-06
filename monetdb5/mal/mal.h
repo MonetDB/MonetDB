@@ -207,6 +207,9 @@ typedef struct MALBLK {
 	int ptop;					/* next free slot */
 	int psize;					/* byte size of arena */
 	MalProp *prps;				/* property table */
+	int inlineProp;				/* inline property */
+	int unsafeProp;				/* unsafe property */
+
 	int errors;					/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */

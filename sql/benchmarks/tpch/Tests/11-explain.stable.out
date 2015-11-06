@@ -57,7 +57,7 @@ Ready.
 % mal # name
 % clob # type
 % 812 # length
-function user.s2_1{autoCommit=true}(A0:str,A1:sht,A2:str):void;
+function user.s2_1(A0:str,A1:sht,A2:str):void;
     X_127:void := querylog.define("explain select\n\tps_partkey,\n\tsum(ps_supplycost * ps_availqty) as value\nfrom\n\tpartsupp,\n\tsupplier,\n\tnation\nwhere\n\tps_suppkey = s_suppkey\n\tand s_nationkey = n_nationkey\n\tand n_name = \\'GERMANY\\'\ngroup by\n\tps_partkey having\n\t\tsum(ps_supplycost * ps_availqty) > (\n\t\t\tselect\n\t\t\t\tsum(ps_supplycost * ps_availqty) * 0.0100000000\n\t\t\t--\t                                   ^^^^^^^^^^^^\n\t\t\t-- The above constant needs to be adjusted according\n\t\t\t-- to the scale factor (SF): constant = 0.0001 / SF.\n\t\t\tfrom\n\t\t\t\tpartsupp,\n\t\t\t\tsupplier,\n\t\t\t\tnation\n\t\t\twhere\n\t\t\t\tps_suppkey = s_suppkey\n\t\t\t\tand s_nationkey = n_nationkey\n\t\t\t\tand n_name = \\'GERMANY\\'\n\t\t)\norder by\n\tvalue desc;","sequential_pipe",83);
     X_5 := sql.mvc();
     C_6:bat[:oid,:oid] := sql.tid(X_5,"sys","supplier");

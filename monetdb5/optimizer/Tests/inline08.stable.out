@@ -5,13 +5,23 @@ stdout of test 'inline08` in directory 'monetdb5/optimizer` itself:
 # 20:02:17 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30645 --set xrpc_port=40491 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline08.mal
 # 20:02:17 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_src_optimizer'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.foo{inline}(a:str):str;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33568/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10161/.s.monetdb.33568
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+inline function user.foo(a:str):str;
     a := str.replace(a,"A","");
     a := str.replace(a,"E","");
     a := str.replace(a,"I","");
@@ -20,7 +30,7 @@ function user.foo{inline}(a:str):str;
     a := str.replace(a," ","");
     return foo := a;
 end user.foo;
-function user.bar{inline}(a:str,b:str):str;
+inline function user.bar(a:str,b:str):str;
     sa := user.foo(a);
     sb := user.foo(b);
     c := calc.+(sa,sb);

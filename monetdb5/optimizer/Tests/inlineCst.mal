@@ -1,4 +1,4 @@
-function user.foo{inline}(b:int):int;
+inline function user.foo(b:int):int;
    i:= 213;
    return foo:=i;
 end foo;

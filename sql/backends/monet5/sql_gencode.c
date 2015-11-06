@@ -479,7 +479,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		return -1;
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
+	curBlk->inlineProp =1;
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -680,7 +680,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant f r inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
+	curBlk->inlineProp = 1;
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -2680,17 +2680,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
  */
-static void
-setCommitProperty(MalBlkPtr mb)
-{
-	ValRecord cst;
-
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), PropertyIndex("autoCommit")))
-		 return;	/* already set */
-	cst.vtype = TYPE_bit;
-	cst.val.btval = TRUE;
-	varSetProperty(mb, getArg(getInstrPtr(mb, 0), 0), "autoCommit", "=", &cst);
-}
 
 static int
 backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
@@ -2701,8 +2690,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	int old_mv = be->mvc_var, nr = 0;
 
 	/* announce the transaction mode */
-	if (top && c->session->auto_commit)
-		setCommitProperty(mb);
 	q = newStmt1(mb, sqlRef, "mvc");
 	if (q == NULL)
 		return -1;
@@ -3063,8 +3050,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		}
 	}
 	/* announce the transaction mode */
-	if (m->session->auto_commit)
-		setCommitProperty(curBlk);
 
 	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
 		return -1;
@@ -3082,11 +3067,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION)
-		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
+		curBlk->inlineProp =1;
 	if (sideeffects)
-		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
-	/* SQL function definitions meant for inlineing should not be optimized before */
-	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
+		curBlk->unsafeProp = 1;
 	f->sa = sa;
 	m->sa = osa;
 	addQueryToCache(c);

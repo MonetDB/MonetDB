@@ -230,9 +230,6 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int inlineProp;
-int unsafeProp;
-
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
 
@@ -452,9 +449,6 @@ void optimizerInit(void)
 	vectorRef = putName("vector",6);
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
-
-	inlineProp = PropertyIndex("inline");
-	unsafeProp = PropertyIndex("unsafe");
 
 	horiginProp = PropertyIndex("horigin");
 	toriginProp = PropertyIndex("torigin");
