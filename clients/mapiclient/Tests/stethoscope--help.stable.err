@@ -19,7 +19,8 @@ stethoscope [options]
   -j | --json
   -o | --output=<file>
   -b | --beat=<delay> in milliseconds (default 50)
-  -D | --debug  -? | --help
+  -D | --debug
+  -? | --help
 
 # 17:08:24 >  
 # 17:08:24 >  "Done."

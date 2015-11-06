@@ -146,7 +146,7 @@ usageStethoscope(void)
     fprintf(stderr, "  -j | --json\n");
     fprintf(stderr, "  -o | --output=<file>\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
-	fprintf(stderr, "  -D | --debug");
+	fprintf(stderr, "  -D | --debug\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }
