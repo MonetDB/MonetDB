@@ -2672,7 +2672,7 @@ mapi_start_talking(Mapi mid)
 			}
 
 			free(mid->password);
-			mid->password = malloc(sizeof(char) * (1 + strlen(pwdhash) + 1));
+			mid->password = malloc(1 + strlen(pwdhash) + 1);
 			sprintf(mid->password, "\1%s", pwdhash);
 			free(pwdhash);
 		}
@@ -2688,7 +2688,7 @@ mapi_start_talking(Mapi mid)
 				if (pwh == NULL)
 					continue;
 				len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
-				hash = malloc(sizeof(char) * len);
+				hash = malloc(len);
 				snprintf(hash, len, "{%s}%s", *algs, pwh);
 				free(pwh);
 				break;
@@ -2781,7 +2781,7 @@ mapi_start_talking(Mapi mid)
 					break;
 				case '^':{
 					char **r = mid->redirects;
-					int m = sizeof(mid->redirects) - 1;
+					int m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
 					for (; *r != NULL && m > 0; r++)
 						m--;
 					if (m == 0)
