@@ -11,7 +11,7 @@
 
 #include "mal_type.h"
 #include "mal_stack.h"
-#include "mal_properties.h"
+#include "mal_namespace.h"
 
 #define isaSignature(P)  ((P)->token >=COMMANDsymbol)
 

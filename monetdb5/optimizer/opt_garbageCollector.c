@@ -11,7 +11,6 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "mal_properties.h"
 
 /*
  * Keeping variables around beyond their end-of-life-span

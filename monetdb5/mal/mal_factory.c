@@ -18,6 +18,7 @@
 #include "mal_exception.h"
 #include "mal_session.h"
 #include "mal_debugger.h"
+#include "mal_namespace.h"
 #include "mal_private.h"
 
 typedef struct {
