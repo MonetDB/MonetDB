@@ -361,7 +361,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	int i, k;
+	int i;
 	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
 	if( used == NULL){
 		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
@@ -373,12 +373,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
 			if (used[i] || !isTmpVar(mb, i)) {
-				VarPtr v = getVar(mb, i);
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
-
-				/* keep all properties as well */
-				for (k = 0; k < v->propc; k++)
-					used[mb->prps[k].var] = 1;
 				used[i] = 1;
 			}
 			if (glb && !used[i]) {

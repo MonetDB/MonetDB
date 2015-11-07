@@ -5035,7 +5035,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	int i, j;
+	int i;
 
 	for (i = start; i < mb->vtop;) {
 		if (glb) {
@@ -5050,14 +5050,6 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 		i++;
 	}
 	mb->vtop = start;
-	for (i = j = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].var <start) {
-			if (i > j)
-				mb->prps[j] = mb->prps[i];
-			j++;
-		}
-	}
-	mb->ptop = j;
 }
 
 /* if at least (2*SIZEOF_BUN), also store length (heaps are then
