@@ -203,7 +203,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 
 	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
 	if( strstr(key,"clk")){
-		ev->clk = atoll(val); 
+		ev->clk = atol(val); 
 		return 0;
 	}
 	if( strstr(key,"ctime")){
