@@ -3006,7 +3006,7 @@ command algebra.thetasubselect(b:bat[:oid,:any_1],val:any_1,op:str):bat[:oid,:oi
 address ALGthetasubselect1;
 comment Select all head values for which the tail value obeys the relation	value OP VAL.	Input is a dense-headed BAT, output is a dense-headed BAT with in	the tail the head value of the input BAT for which the	relationship holds.  The output BAT is sorted on the tail value.
 
-command alarm.ctime{unsafe}():str 
+command alarm.ctime():str 
 address ALARMctime;
 comment Return the current time as a C-time string.
 
@@ -3014,7 +3014,7 @@ command alarm.epilogue():void
 address ALARMepilogue;
 comment Finalize alarm module.
 
-command alarm.epoch{unsafe}():int 
+command alarm.epoch():int 
 address ALARMepoch;
 comment Return the current time as UNIX epoch.
 
@@ -3022,15 +3022,15 @@ command alarm.prelude():void
 address ALARMprelude;
 comment Initialize alarm module.
 
-command alarm.sleep{unsafe}(secs:int):void 
+command alarm.sleep(secs:int):void 
 address ALARMsleep;
 comment Sleep a few seconds
 
-command alarm.time{unsafe}():int 
+command alarm.time():int 
 address ALARMtime;
 comment Return time in milliseconds.
 
-command alarm.usec{unsafe}():lng 
+command alarm.usec():lng 
 address ALARMusec;
 comment Return time in microseconds.
 
@@ -40563,15 +40563,15 @@ command blob.#tostr():void
 address BLOBtostr;
 command blob.#write():void 
 address BLOBwrite;
-command bstream.create{unsafe}(s:streams,bufsize:int):bstream 
+command bstream.create(s:streams,bufsize:int):bstream 
 address bstream_create_wrapwrap;
 comment create a buffered stream
 
-command bstream.destroy{unsafe}(s:bstream):void 
+command bstream.destroy(s:bstream):void 
 address bstream_destroy_wrapwrap;
 comment destroy bstream
 
-command bstream.read{unsafe}(s:bstream,size:int):int 
+command bstream.read(s:bstream,size:int):int 
 address bstream_read_wrapwrap;
 comment read at least size bytes into the buffer of s
 
@@ -45315,7 +45315,7 @@ command calc.blob(s:str):blob
 address BLOBblob_fromstr;
 command calc.blob(b:blob):blob 
 address BLOBblob_blob;
-function calc.curve{unsafe}(wkt:str):wkb;
+unsafe function calc.curve(wkt:str):wkb;
 pattern calc.cmp(v1:dbl,v2:dbl):bte 
 address CMDvarCMP;
 comment Return -1/0/1 if V1 </==/> V2
@@ -46134,8 +46134,8 @@ pattern calc.flt(v:hge):flt
 address CMDvarCONVERT;
 comment Cast VALUE to flt
 
-function calc.geomcollection{unsafe}(wkt:str):wkb;
-function calc.geometry{unsafe}(wkt:str):wkb;
+unsafe function calc.geomcollection(wkt:str):wkb;
+unsafe function calc.geometry(wkt:str):wkb;
 command calc.hge(s1:int,v:hge,d2:int,s2:int):hge 
 address hge_dec2dec_hge;
 comment cast decimal(hge) to decimal(hge) and check for overflow
@@ -46616,7 +46616,7 @@ command calc.lng(v:void,digits:int):lng
 address nil_2num_lng;
 comment cast to lng and check for overflow
 
-function calc.linestring{unsafe}(wkt:str):wkb;
+unsafe function calc.linestring(wkt:str):wkb;
 command calc.length(s:str):int 
 address CMDstrlength;
 comment Length of STRING
@@ -46841,14 +46841,14 @@ command calc.month_interval(v:str,ek:int,sk:int):int
 address month_interval_str;
 comment cast str to a month_interval and check for overflow
 
-function calc.multipolygon{unsafe}(wkt:str):wkb;
-function calc.multisurface{unsafe}(wkt:str):wkb;
-function calc.multilinestring{unsafe}(wkt:str):wkb;
-function calc.multicurve{unsafe}(wkt:str):wkb;
-function calc.multipoint{unsafe}(wkt:str):wkb;
+unsafe function calc.multipolygon(wkt:str):wkb;
+unsafe function calc.multisurface(wkt:str):wkb;
+unsafe function calc.multilinestring(wkt:str):wkb;
+unsafe function calc.multicurve(wkt:str):wkb;
+unsafe function calc.multipoint(wkt:str):wkb;
 command calc.mbr(v:mbr):mbr 
 address mbrFromMBR;
-command calc.mbr{unsafe}(v:str):mbr 
+command calc.mbr(v:str):mbr 
 address mbrFromString;
 pattern calc.max_no_nil(v1:any_1,v2:any_1):any_1 
 address CALCmax_no_nil;
@@ -47482,8 +47482,8 @@ pattern calc.or(v1:hge,v2:hge):hge
 address CMDvarOR;
 comment Return V1 OR V2
 
-function calc.polygon{unsafe}(wkt:str):wkb;
-function calc.point{unsafe}(wkt:str):wkb;
+unsafe function calc.polygon(wkt:str):wkb;
+unsafe function calc.point(wkt:str):wkb;
 command calc.ptr(v:ptr):ptr 
 address CMDvarCONVERTptr;
 comment Cast VALUE to ptr
@@ -47814,7 +47814,7 @@ command calc.second_interval(sc:int,v:bte,ek:int,sk:int):lng
 address bte_dec2second_interval;
 comment cast bte decimal to a second_interval
 
-function calc.surface{unsafe}(wkt:str):wkb;
+unsafe function calc.surface(wkt:str):wkb;
 pattern calc.setoid(v:lng):void 
 address CMDsetoid;
 pattern calc.setoid(v:oid):void 
@@ -48410,7 +48410,7 @@ comment cast to wrd and check for overflow
 
 command calc.wkb(v:wkb):wkb 
 address wkbFromWKB;
-command calc.wkb{unsafe}(v:str):wkb 
+command calc.wkb(v:str):wkb 
 address wkbFromString;
 pattern calc.wrd(v:str):wrd 
 address CMDvarCONVERT;
@@ -49052,7 +49052,7 @@ command geom.Crosses(a:wkb,b:wkb):bit
 address wkbCrosses;
 comment Returns true if the Geometry a 'spatially crosses' Geometry b
 
-function geom.CurveFromText{unsafe}(wkt:str,srid:sht):wkb;
+unsafe function geom.CurveFromText(wkt:str,srid:sht):wkb;
 command geom.Difference(a:wkb,b:wkb):wkb 
 address wkbDifference;
 comment Returns a geometry that represents the point set difference of Geometry a with b.
@@ -49081,8 +49081,8 @@ command geom.GeometryTypeId(w:wkb):int
 address wkbGeometryTypeId;
 comment Returns the name of the instantiable subtype of Geometry of which this Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string.
 
-function geom.GeomCollectionFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.GeomFromText{unsafe}(wkt:str,srid:sht):wkb;
+unsafe function geom.GeomCollectionFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.GeomFromText(wkt:str,srid:sht):wkb;
 command geom.Intersection(a:wkb,b:wkb):wkb 
 address wkbIntersection;
 comment Returns a geometry that represents the point set intersection of Geometry a with b.
@@ -49103,18 +49103,18 @@ command geom.Length(g:wkb):dbl
 address wkbLength;
 comment Returns the length of the geometry.
 
-function geom.LineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiSurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiLineFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiCurveFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.MultiPointFromText{unsafe}(wkt:str,srid:sht):wkb;
+unsafe function geom.LineFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.MultiPolyFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.MultiSurfaceFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.MultiLineFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.MultiCurveFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.MultiPointFromText(wkt:str,srid:sht):wkb;
 command geom.Overlaps(a:wkb,b:wkb):bit 
 address wkbOverlaps;
 comment Returns true if the Geometry a 'spatially overlaps' Geometry b
 
-function geom.PolyFromText{unsafe}(wkt:str,srid:sht):wkb;
-function geom.PointFromText{unsafe}(wkt:str,srid:sht):wkb;
+unsafe function geom.PolyFromText(wkt:str,srid:sht):wkb;
+unsafe function geom.PointFromText(wkt:str,srid:sht):wkb;
 command geom.Relate(a:wkb,b:wkb,intersectionPatternMatrix:str):bit 
 address wkbRelate;
 comment Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.
@@ -49127,7 +49127,7 @@ command geom.SRID(w:wkb):int
 address wkbSRID;
 comment Returns the Spatial Reference System ID for this Geometry.
 
-function geom.SurfaceFromText{unsafe}(wkt:str,srid:sht):wkb;
+unsafe function geom.SurfaceFromText(wkt:str,srid:sht):wkb;
 command geom.Touches(a:wkb,b:wkb):bit 
 address wkbTouches;
 comment Returns true if these Geometries 'spatially touch' each other
@@ -50318,11 +50318,11 @@ comment The pow(x,y) function  returns the value of x raised to the power of y.
 
 command mmath.pow(x:flt,y:flt):flt 
 address MATHbinary_POWflt;
-command mmath.rand{unsafe}(v:int):int 
+command mmath.rand(v:int):int 
 address MATHrandintarg;
 comment return a random number
 
-command mmath.rand{unsafe}():int 
+command mmath.rand():int 
 address MATHrandint;
 comment return a random number
 
@@ -50544,7 +50544,7 @@ command mtime.local_timezone():lng
 address MTIMElocal_timezone;
 comment get the local timezone in seconds
 
-command mtime.msec{unsafe}():lng 
+command mtime.msec():lng 
 address MTIMEmsec;
 comment get time of day in msec since 1-1-1970.
 
@@ -51345,7 +51345,7 @@ pattern sql.argRecord():str
 address SQLargRecord;
 comment Glue together the calling sequence
 
-pattern sql.affectedRows{unsafe}(mvc:int,nr:wrd):int 
+pattern sql.affectedRows(mvc:int,nr:wrd):int 
 address mvc_affected_rows_wrap;
 comment export the number of affected rows by the current query
 
@@ -51429,7 +51429,7 @@ pattern sql.create_func_upgrade_oct2014(sname:str,f:str):int
 address UPGcreate_func;
 comment Create the function described by f, needed for the Oct2014 upgrade
 
-pattern sql.clear_table{unsafe}(sname:str,tname:str):wrd 
+pattern sql.clear_table(sname:str,tname:str):wrd 
 address mvc_clear_table_wrap;
 comment Clear table
 
@@ -51557,21 +51557,21 @@ pattern sql.drop_func_upgrade_oct2014(id:int):int
 address UPGdrop_func;
 comment Drop the function identified by id, needed for the Oct2014 upgrade
 
-pattern sql.dropDeclaredTables{unsafe}(nr:int):void 
+pattern sql.dropDeclaredTables(nr:int):void 
 address mvc_drop_declared_tables_wrap;
 comment drop top n declared tables
 
-pattern sql.dropDeclaredTable{unsafe}(name:str):void 
+pattern sql.dropDeclaredTable(name:str):void 
 address mvc_drop_declared_table_wrap;
 comment drop a declared table
 
-pattern sql.dtColumn{unsafe}(rs:int,tname:str,name:str,typename:str,digits:int,scale:int):void 
+pattern sql.dtColumn(rs:int,tname:str,name:str,typename:str,digits:int,scale:int):void 
 address mvc_declared_table_column_wrap;
-pattern sql.declaredTable{unsafe}(name:str):int 
+pattern sql.declaredTable(name:str):int 
 address mvc_declared_table_wrap;
 comment Prepare a declared table
 
-pattern sql.delete{unsafe}(mvc:int,sname:str,tname:str,b:any):int 
+pattern sql.delete(mvc:int,sname:str,tname:str,b:any):int 
 address mvc_delete_wrap;
 comment delete from table
 
@@ -51585,31 +51585,31 @@ comment Return column bat with delta's applied.
 
 command sql.epilogue():void 
 address SQLepilogue;
-pattern sql.exportOperation{unsafe}():void 
+pattern sql.exportOperation():void 
 address mvc_export_operation_wrap;
 comment Export result of schema/transaction queries
 
-pattern sql.exportChunk{unsafe}(s:streams,res_id:int,offset:int,nr:int):void 
+pattern sql.exportChunk(s:streams,res_id:int,offset:int,nr:int):void 
 address mvc_export_chunk_wrap;
 comment Export a chunk of the result set (in order) to stream s
 
-pattern sql.exportChunk{unsafe}(s:streams,res_id:int):void 
+pattern sql.exportChunk(s:streams,res_id:int):void 
 address mvc_export_chunk_wrap;
 comment Export a chunk of the result set (in order) to stream s
 
-pattern sql.exportResult{unsafe}(s:streams,res_id:int):void 
+pattern sql.exportResult(s:streams,res_id:int):void 
 address mvc_export_result_wrap;
 comment Export a result (in order) to stream s
 
-pattern sql.exportHead{unsafe}(s:streams,res_id:int):void 
+pattern sql.exportHead(s:streams,res_id:int):void 
 address mvc_export_head_wrap;
 comment Export a result (in order) to stream s
 
-pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+pattern sql.export_table(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
 address mvc_export_table_wrap;
 comment Prepare a table result set for the COPY INTO stream
 
-pattern sql.export_table{unsafe}(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+pattern sql.export_table(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullrep:str,tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
 address mvc_export_row_wrap;
 comment Prepare a table result set for the COPY INTO stream
 
@@ -51653,7 +51653,7 @@ pattern sql.init():void
 address SQLinitEnvironment;
 comment Initialize the environment for MAL
 
-pattern sql.logfile{unsafe}(filename:str):void 
+pattern sql.logfile(filename:str):void 
 address mvc_logfile;
 comment Enable/disable saving the sql statement traces
 
@@ -51759,19 +51759,19 @@ command sql.round(v:bte,d:int,s:int,r:bte):bte
 address bte_round_wrap;
 comment round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)
 
-pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
+pattern sql.resultSet(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:bat[:oid,:any]...):int 
 address mvc_table_result_wrap;
 comment Prepare a table result set for the client in default CSV format
 
-pattern sql.resultSet{unsafe}(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
+pattern sql.resultSet(tbl:bat[:oid,:str],attr:bat[:oid,:str],tpe:bat[:oid,:str],len:bat[:oid,:int],scale:bat[:oid,:int],cols:any...):int 
 address mvc_row_result_wrap;
 comment Prepare a table result set
 
-pattern sql.resultSet{unsafe}(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
+pattern sql.resultSet(tbl:str,attr:str,tpe:str,len:int,scale:int,eclass:int,val:any):int 
 address mvc_scalar_value_wrap;
 comment Prepare a table result set
 
-pattern sql.restart{unsafe}(sname:str,sequence:str,start:lng):lng 
+pattern sql.restart(sname:str,sequence:str,start:lng):lng 
 address mvc_restart_seq;
 comment restart the sequence with value start
 
@@ -51779,7 +51779,7 @@ pattern sql.register(mod:str,fname:str,rel_stmt:str,sig:str):int
 address RAstatement2;
 comment Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)
 
-function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
+inline function sql.sql_environment() (name:bat[:oid,:str],value:bat[:oid,:str]);
 pattern sql.shrink(sch:str,tbl:str):void 
 address SQLshrink;
 comment Consolidate the deletion table over all columns using shrinking
@@ -51824,7 +51824,7 @@ pattern sql.sql_variables():bat[:oid,:str]
 address sql_variables;
 comment return the table with session variables
 
-function sql.subzero_or_one{inline}(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
+inline function sql.subzero_or_one(b:bat[:oid,:any_1],gp:bat[:oid,:oid],gpe:bat[:oid,:oid],no_nil:bit):bat[:oid,:any_1];
 pattern sql.single(x:any_2):bat[:oid,:any_2] 
 address CMDBATsingle;
 command sql.subdelta(col:bat[:oid,:oid],cand:bat[:oid,:oid],uid:bat[:oid,:oid],uval:bat[:oid,:oid]):bat[:oid,:oid] 
@@ -51867,7 +51867,7 @@ pattern sql.tid(mvc:int,sname:str,tname:str):bat[:oid,:oid]
 address SQLtid;
 comment Return the tables tid column.
 
-pattern sql.transaction{unsafe}():void 
+pattern sql.transaction():void 
 address SQLtransaction2;
 comment Start an autocommit transaction
 
@@ -52135,71 +52135,71 @@ command status.vmStatistics(minsize:lng) (X_2:bat[:oid,:str],X_3:bat[:oid,:lng])
 address SYSvm_usage;
 comment Get a split-up of how much virtual memory blocks are in use
 
-command streams.blocked{unsafe}(s:streams):streams 
+command streams.blocked(s:streams):streams 
 address open_block_streamwrap;
 comment open a block based stream
 
-command streams.close{unsafe}(s:streams):void 
+command streams.close(s:streams):void 
 address mnstr_close_streamwrap;
 comment close and destroy the stream s
 
-command streams.flush{unsafe}(s:streams):void 
+command streams.flush(s:streams):void 
 address mnstr_flush_streamwrap;
 comment flush the stream
 
-command streams.openWrite{unsafe}(s:streams):streams 
+command streams.openWrite(s:streams):streams 
 address mnstr_stream_wstreamwrap;
 comment convert an ascii stream to binary
 
-command streams.openRead{unsafe}(s:streams):streams 
+command streams.openRead(s:streams):streams 
 address mnstr_stream_rstreamwrap;
 comment convert an ascii stream to binary
 
-command streams.openWrite{unsafe}(filename:str):streams 
+command streams.openWrite(filename:str):streams 
 address mnstr_open_wastreamwrap;
 comment open ascii file stream for writing
 
-command streams.openRead{unsafe}(filename:str):streams 
+command streams.openRead(filename:str):streams 
 address mnstr_open_rastreamwrap;
 comment open ascii file stream for reading
 
-command streams.openWriteBytes{unsafe}(filename:str):streams 
+command streams.openWriteBytes(filename:str):streams 
 address mnstr_open_wstreamwrap;
 comment open a file stream for writing
 
-command streams.openReadBytes{unsafe}(filename:str):streams 
+command streams.openReadBytes(filename:str):streams 
 address mnstr_open_rstreamwrap;
 comment open a file stream for reading
 
-command streams.readInt{unsafe}(s:streams):int 
+command streams.readInt(s:streams):int 
 address mnstr_readIntwrap;
 comment read integer data from the stream
 
-command streams.readStr{unsafe}(s:streams):str 
+command streams.readStr(s:streams):str 
 address mnstr_read_stringwrap;
 comment read string data from the stream
 
-command streams.socketWrite{unsafe}(skt:int,name:str):streams 
+command streams.socketWrite(skt:int,name:str):streams 
 address mnstr_socket_wastreamwrap;
 comment open ascii socket stream for writing
 
-command streams.socketRead{unsafe}(skt:int,name:str):streams 
+command streams.socketRead(skt:int,name:str):streams 
 address mnstr_socket_rastreamwrap;
 comment open ascii socket stream for reading
 
-command streams.socketWriteBytes{unsafe}(skt:int,name:str):streams 
+command streams.socketWriteBytes(skt:int,name:str):streams 
 address mnstr_socket_wstreamwrap;
 comment open a socket stream for writing
 
-command streams.socketReadBytes{unsafe}(skt:int,name:str):streams 
+command streams.socketReadBytes(skt:int,name:str):streams 
 address mnstr_socket_rstreamwrap;
 comment open a socket stream for reading
 
-command streams.writeInt{unsafe}(s:streams,data:int):void 
+command streams.writeInt(s:streams,data:int):void 
 address mnstr_writeIntwrap;
 comment write data on the stream
 
-command streams.writeStr{unsafe}(s:streams,data:str):void 
+command streams.writeStr(s:streams,data:str):void 
 address mnstr_write_stringwrap;
 comment write data on the stream
 
@@ -52277,7 +52277,7 @@ command timestamp.epoch(t:timestamp):int
 address MTIMEepoch2int;
 comment unix-time (epoch) support: seconds since epoch
 
-command timestamp.epoch{unsafe}():timestamp 
+command timestamp.epoch():timestamp 
 address MTIMEcurrent_timestamp;
 comment unix-time (epoch) support: seconds since the Unix epoch
 
@@ -52289,7 +52289,7 @@ comment Nil test for timestamp value
 
 command timestamp.#tostr():void 
 address timestamp_tostr;
-command timestamp.unix_epoch{unsafe}():timestamp 
+command timestamp.unix_epoch():timestamp 
 address MTIMEunix_epoch;
 comment The Unix epoch time (00:00:00 UTC on January 1, 1970)
 
@@ -52509,7 +52509,7 @@ comment Coerce a string to a uuid, validating its format
 
 command uuid.#write():void 
 address UUIDwrite;
-command wkb.FromText{unsafe}(w:str,type:int):wkb 
+command wkb.FromText(w:str,type:int):wkb 
 address wkbFromText;
 command wkb.#cmp():void 
 address wkbCOMP;
@@ -52531,7 +52531,7 @@ command wkb.#read():void
 address wkbREAD;
 command wkb.#tostr():void 
 address wkbTOSTR;
-command wkb.wkb{unsafe}(v:str):wkb 
+command wkb.wkb(v:str):wkb 
 address wkbFromString;
 command wkb.#write():void 
 address wkbWRITE;
