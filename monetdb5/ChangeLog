@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sat Nov  7 2015 Martin Kersten <mk@cwi.nl>
+- The generic property handling scheme has been removed. It was used in
+  just a few places, for widely different purposes and contained cruft.
+
 * Mon Oct 26 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed functions str.iconv and str.codeset.  Internally, strings are
   always in UTF-8 encoding, so we can't allow code set conversions.
