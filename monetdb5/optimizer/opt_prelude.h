@@ -229,10 +229,4 @@ opt_export  str not_ilikeRef;
 opt_export  str userRef;
 opt_export  str vectorRef;
 opt_export  str zero_or_oneRef;
-
-opt_export int inlineProp;		/* binary */
-opt_export int unsafeProp;		/* binary */
-
-opt_export int horiginProp;		/* original oid source */
-opt_export int toriginProp;		/* original oid source */
 #endif

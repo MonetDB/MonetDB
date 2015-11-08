@@ -1,20 +1,20 @@
 stdout of test 'rubytest` in directory 'clients/ruby` itself:
 
 
-# 11:46:08 >  
-# 11:46:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33382" "--set" "mapi_usock=/var/tmp/mtest-44013/.s.monetdb.33382" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/rkoopmanschap/projects/MonetDB-installation/var/MonetDB/mTests_clients_ruby" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 11:46:08 >  
+# 11:01:32 >  
+# 11:01:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31445" "--set" "mapi_usock=/var/tmp/mtest-29264/.s.monetdb.31445" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/rkoopmanschap/projects/MonetDB-installation/var/MonetDB/mTests_." "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:01:32 >  
 
 # MonetDB 5 server v11.22.0
 # This is an unreleased version
-# Serving database 'mTests_clients_ruby', using 4 threads
+# Serving database 'mTests_.', using 4 threads
 # Compiled for x86_64-apple-darwin14.5.0/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 16.000 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://gup-129-196.cwi.nl:33382/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-44013/.s.monetdb.33382
+# Listening for connection requests on mapi:monetdb://gup-129-196.cwi.nl:31445/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29264/.s.monetdb.31445
 # MonetDB/GIS module loaded
 # Start processing logs sql/sql_logs version 52200
 # Finished processing logs sql/sql_logs
@@ -58,21 +58,17 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 11:46:09 >  
-# 11:46:09 >  "ruby" "rubytest.rb" "33382" "mTests_clients_ruby"
-# 11:46:09 >  
+# 11:01:32 >  
+# 11:01:32 >  "ruby" "rubytest.rb" "31445" "mTests_."
+# 11:01:32 >  
 
-Run options: --seed 42454
 
-# Running tests:
+# Running tests
 
-...........
+Tests Failed: 0
 
-Finished tests in 0.242699s, 45.3236 tests/s, 45.3236 assertions/s.
 
-11 tests, 11 assertions, 0 failures, 0 errors, 0 skips
-
-# 11:46:09 >  
-# 11:46:09 >  "Done."
-# 11:46:09 >  
+# 11:01:33 >  
+# 11:01:33 >  "Done."
+# 11:01:33 >  
 

@@ -326,7 +326,10 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'HAVE_PHP'             : "",
+    'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
+    'RELEASERUN'           : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -3702,6 +3705,10 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
+    if CheckExec('ruby'):
+        CONDITIONALS['HAVE_RUBY'] = '#'
+#     else:
+#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary

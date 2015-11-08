@@ -5,16 +5,26 @@ stdout of test 'inline09` in directory 'monetdb5/optimizer` itself:
 # 11:53:00 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36453 --set xrpc_port=42260 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline09.mal
 # 11:53:00 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_src_optimizer'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.foo{inline}(a:str):str;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39909/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2983/.s.monetdb.39909
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+inline function user.foo(a:str):str;
     return foo := a;
 end user.foo;
-function user.bar{inline}(a:str,b:str):str;
+inline function user.bar(a:str,b:str):str;
     sa := user.foo(a);
     sa := str.substring(sa,1,5);
     sb := user.foo(b);
@@ -31,7 +41,7 @@ function user.main():void;
 # remapping inline functions 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               	#[0]  0 
+inline function user.qry():void;        	#[0]  0 
     b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:str],"HELLO WORLD":str);	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_12:bat[:oid,:str] := b:bat[:oid,:str];	#[3]  12 <- 1 
@@ -39,7 +49,7 @@ function user.qry():void;               	#[0]  0
     X_15:bat[:oid,:str] := b:bat[:oid,:str];	#[5]  15 <- 1 
     X_15:bat[:oid,:str] := batstr.substring(X_15:bat[:oid,:str],1:int,3:int);	#[6] STRbatsubstringcst 15 <- 15 13 16 
     X_17:bat[:oid,:str] := batcalc.+(X_12:bat[:oid,:str],X_15:bat[:oid,:str]);	#[7] CMDbatADD 17 <- 12 15 
-    z:bat[:oid,:str]{inline} := X_17:bat[:oid,:str];	#[8]  6 <- 17 
+    z:bat[:oid,:str] := X_17:bat[:oid,:str];	#[8]  6 <- 17 
 end user.qry;                           	#[9]  
 
 # 11:53:00 >  

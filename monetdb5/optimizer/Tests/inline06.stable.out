@@ -5,13 +5,23 @@ stdout of test 'inline06` in directory 'monetdb5/optimizer` itself:
 # 18:00:44 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34223 --set xrpc_port=43286 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline06.mal
 # 18:00:44 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_src_optimizer'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.foo{inline}(a:int,b:int):int;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39909/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2983/.s.monetdb.39909
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+inline function user.foo(a:int,b:int):int;
     c := calc.+(a,b);
     base := mmath.rand();
 # this has a memory-side effect 
@@ -29,19 +39,19 @@ function user.main():void;
 # the crucial part is to recognize valid inlines 
     mdb.List("user","qry");
 end user.main;
-function user.qry():void;               	#[0]  0 
+inline function user.qry():void;        	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_14:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
     X_15:int := mmath.rand();           	#[4] MATHrandint 15 
 #                                       
     X_14:bat[:oid,:int] := batcalc.*(X_14:bat[:oid,:int],X_15:int);	#[6] CMDbatMULsignal 14 <- 14 15 
-    z:bat[:oid,:int]{inline} := X_14:bat[:oid,:int];	#[7]  6 <- 14 
+    z:bat[:oid,:int] := X_14:bat[:oid,:int];	#[7]  6 <- 14 
     X_20:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
     X_21:int := mmath.rand();           	#[9] MATHrandint 21 
 #                                       
     X_20:bat[:oid,:int] := batcalc.*(X_20:bat[:oid,:int],X_21:int);	#[11] CMDbatMULsignal 20 <- 20 21 
-    z:bat[:oid,:int]{inline} := X_20:bat[:oid,:int];	#[12]  6 <- 20 
+    z:bat[:oid,:int] := X_20:bat[:oid,:int];	#[12]  6 <- 20 
 end user.qry;                           	#[13]  
 
 # 18:00:44 >  

@@ -12,7 +12,6 @@
 #include "mal.h"
 #include <math.h>
 #include "mal_interpreter.h"
-#include "mal_properties.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 

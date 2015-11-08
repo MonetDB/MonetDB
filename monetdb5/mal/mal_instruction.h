@@ -11,7 +11,7 @@
 
 #include "mal_type.h"
 #include "mal_stack.h"
-#include "mal_properties.h"
+#include "mal_namespace.h"
 
 #define isaSignature(P)  ((P)->token >=COMMANDsymbol)
 
@@ -155,7 +155,6 @@ mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
 mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export int copyVariable(MalBlkPtr dst, VarPtr v);
-mal_export void copyProperties(MalBlkPtr mb, int src, int dst);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
@@ -167,13 +166,6 @@ mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
 mal_export str convertConstant(malType type, ValPtr vr);
-
-mal_export int newProperty(MalBlkPtr mb);
-#define varSetProperty(mb, var, name, opname, cst) \
-	varSetProp(mb, var, PropertyIndex(name), PropertyOperator(opname), cst)
-mal_export void varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst);
-mal_export str varGetPropStr(MalBlkPtr mb, int var);
-mal_export VarPtr varGetProp(MalBlkPtr mb, int var, int prop);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);

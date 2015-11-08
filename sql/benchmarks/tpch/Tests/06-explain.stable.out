@@ -39,7 +39,7 @@ Ready.
 % mal # name
 % clob # type
 % 326 # length
-function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
+function user.s2_1(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
     X_63:void := querylog.define("explain select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date \\'1994-01-01\\'\n\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;","sequential_pipe",42);
     X_10 := sql.mvc();
     X_14:bat[:oid,:lng]  := sql.bind(X_10,"sys","lineitem","l_quantity",0);

@@ -133,12 +133,6 @@ mal_export void mal_exit(void);
 typedef int malType;
 typedef str (*MALfcn) ();
 
-typedef struct MalProp {
-	bte idx;
-	bte op;
-	int var;
-} *MalPropPtr, MalProp;
-
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
@@ -156,8 +150,6 @@ typedef struct VARRECORD {
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
 	BUN rowcnt;					/* estimated row count*/
-	int propc, maxprop;			/* proc count and max number of properties */
-	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
 } *VarPtr, VarRecord;
 
 /* For performance analysis we keep track of the number of calls and
@@ -206,7 +198,9 @@ typedef struct MALBLK {
 	InstrPtr *stmt;				/* Instruction location */
 	int ptop;					/* next free slot */
 	int psize;					/* byte size of arena */
-	MalProp *prps;				/* property table */
+	int inlineProp;				/* inline property */
+	int unsafeProp;				/* unsafe property */
+
 	int errors;					/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */

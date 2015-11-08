@@ -38,7 +38,7 @@ quoted_print(stream *f, const char *s, const char singleq)
 			mnstr_write(f, "\\t", 1, 2);
 			break;
 		default:
-			if ((0 < *s && *s < 32) || *s == '\377')
+			if ((0 < *s && *s < 32) || *s == '\177')
 				mnstr_printf(f, "\\%03o", *s & 0377);
 			else
 				mnstr_write(f, s, 1, 1);

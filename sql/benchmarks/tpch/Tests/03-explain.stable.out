@@ -53,7 +53,7 @@ Ready.
 % mal # name
 % clob # type
 % 517 # length
-function user.s2_1{autoCommit=true}(A0:bte,A1:str,A2:date,A3:date):void;
+function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
     X_160:void := querylog.define("explain select\n\tl_orderkey,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\to_orderdate,\n\to_shippriority\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\tc_mktsegment = \\'BUILDING\\'\n\tand c_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate < date \\'1995-03-15\\'\n\tand l_shipdate > date \\'1995-03-15\\'\ngroup by\n\tl_orderkey,\n\to_orderdate,\n\to_shippriority\norder by\n\trevenue desc,\n\to_orderdate\nlimit 10;","sequential_pipe",107);
     X_122 := bat.new(nil:oid,nil:str);
     X_130 := bat.append(X_122,"sys.lineitem");
