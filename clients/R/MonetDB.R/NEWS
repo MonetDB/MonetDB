@@ -12,7 +12,6 @@
 - Added lower.case.names argument to monet.read.csv() in case users want to avoid quoting (a bit)
 - Fix for dbConnect() that should be more robust to invalid connections
 - Cleaned up quoting behavior in dbListTables(), dbRemoveTable() etc.
-- Initial support for running MonetDB in embedded mode (MonetDBLite)
 - Now re-establishing connection if interrupt (CMD-C or ESC) occurs
 - Fixed a bug in monetdb.read.csv for multiple CSV files without headers
 - dplyr src_monetdb now has a con parameter to pass an existing DBI connection
@@ -21,6 +20,9 @@
 - Added transactions to monetdb.read.csv so no empty tables are left over
 - Fixed != comparisions in dplyr (Thanks, David)
 - New "mclient" function to get a shell-like DB interface
+- Support for running MonetDB in embedded mode (MonetDBLite)
+- Support for monetdblite:/some/path URLs in dbConnect()
+- Fixed an off-by-one error in type conversion (Thanks, Kirill)
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

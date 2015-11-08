@@ -224,7 +224,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       
       env$type	<- Q_UPDATE
       env$id		<- header$id
-      
+      env$rows  <- 0
       return(env)			
     }
     

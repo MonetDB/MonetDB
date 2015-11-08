@@ -46,7 +46,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
                                                      password="monetdb", host="localhost", port=50000L, timeout=86400L, wait=FALSE, language="sql", embedded=FALSE,
                                                      ..., url="") {
   
-  if (substring(url, 1, 10) == "monetdb://") {
+  if (substring(url, 1, 10) == "monetdb://" || substring(url, 1, 12) == "monetdblite:") {
     dbname <- url
   }
   timeout <- as.integer(timeout)
@@ -81,10 +81,14 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
   # this is important, otherwise we'll trip an assertion
   port <- as.integer(port)
-
   # validate port number
   if (length(port) != 1 || port < 1 || port > 65535) {
     stop("Illegal port number ",port)
+  }
+
+  # support monetdblite:/db/dir urls to fool sqlsurvey
+  if (substring(dbname, 1, 12) == "monetdblite:") {
+    embedded <- substring(dbname, 13, nchar(dbname))
   }
 
   if (embedded != FALSE) {
@@ -95,7 +99,9 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     connenv <- new.env(parent=emptyenv())
     connenv$conn <- MonetDBLite::monetdb_embedded_connect()
     connenv$open <- TRUE
-    return(new("MonetDBEmbeddedConnection", connenv=connenv))
+    conn <- new("MonetDBEmbeddedConnection", connenv=connenv)
+    attr(conn, "dbPreExists") <- TRUE
+    return(conn)
   }
   
   if (getOption("monetdb.debug.mapi", F)) message("II: Connecting to MonetDB on host ", host, " at "
@@ -138,6 +144,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
+  attr(conn, "dbPreExists") <- TRUE
   conn
 }, 
 valueClass="MonetDBConnection")
@@ -352,7 +359,6 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
     env$conn <- conn
     env$query <- statement
     env$info <- resp
-
   }
   if (resp$type == MSG_MESSAGE) {
     env$success = FALSE
@@ -575,7 +581,7 @@ setClass("MonetDBEmbeddedResult", representation("MonetDBResult", env="environme
 .CT_RAW <- 5L
 
 # type mapping matrix
-monetTypes <- rep(c("integer", "numeric", "character", "character", "logical", "raw"), c(6, 5, 4, 6, 1, 1))
+monetTypes <- rep(c("integer", "numeric", "character", "character", "logical", "raw"), c(5, 6, 4, 6, 1, 1))
 names(monetTypes) <- c(c("WRD", "TINYINT", "SMALLINT", "INT", "MONTH_INTERVAL"), # month_interval is the diff between date cols, int
   c("BIGINT", "HUGEINT", "REAL", "DOUBLE", "DECIMAL", "SEC_INTERVAL"),  # sec_interval is the difference between timestamps, float
   c("CHAR", "VARCHAR", "CLOB", "STR"), 
@@ -606,9 +612,13 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   if (!dbIsValid(res)) {
     stop("Cannot fetch results from closed response.")
   }
-  
+ 
   # okay, so we arrive here with the tuples from the first result in res@env$data as a list
   info <- res@env$info
+  # apparently, one should be able to fetch results sets from ddl ops
+  if (info$type == Q_UPDATE) { 
+    return(data.frame())
+  }
   if (res@env$delivered < 0) {
     res@env$delivered <- 0
   }
