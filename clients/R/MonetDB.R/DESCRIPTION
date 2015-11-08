@@ -2,9 +2,9 @@ Package: MonetDB.R
 Version: 1.0.0
 Title: Connect MonetDB to R
 Authors@R: c(person("Hannes Muehleisen", role = c("aut", "cre"),email = "hannes@cwi.nl"),
-	person("Thomas Lumley", role = "ctb"),
-	person("Anthony Damico", role = "ctb"))
-Author: Hannes Muehleisen [aut, cre], Thomas Lumley [ctb], Anthony Damico [ctb]
+	person("Anthony Damico", role = "aut"),
+	person("Thomas Lumley", role = "ctb"))
+Author: Hannes Muehleisen [aut, cre], Anthony Damico [aut], Thomas Lumley [ctb]
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>
 Depends: DBI (>= 0.3.1)
 Imports: digest (>= 0.6.4), methods, codetools
