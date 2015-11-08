@@ -1843,8 +1843,9 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 		case 'C': case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
-				cntxt->curprg->def->inlineProp = inlineProp;
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				if( inlineProp )
+					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
 				continue;
@@ -1875,6 +1876,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
+				if( inlineProp )
+					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
+				if( unsafeProp)
+					showException(cntxt->fdout, SYNTAX, "parseError", "UNSAFE ignored");
+				inlineProp = 0;
+				unsafeProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1904,8 +1911,9 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 			goto allLeft;
 		case 'P': case 'p':
 			if (MALkeyword(cntxt, "pattern", 7)) {
+				if( inlineProp )
+					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				parseCommandPattern(cntxt, PATTERNsymbol);
-				cntxt->curprg->def->inlineProp = inlineProp;
 				cntxt->curprg->def->unsafeProp = unsafeProp;
 				inlineProp = 0;
 				unsafeProp = 0;
