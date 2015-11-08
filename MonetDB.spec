@@ -409,6 +409,7 @@ program.
 # %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
 %{gem_dir}/gems/ruby-monetdb-sql-0.2
 %{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
+%endif
 
 %package client-tests
 Summary: MonetDB Client tests package
