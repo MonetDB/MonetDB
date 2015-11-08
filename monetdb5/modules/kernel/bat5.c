@@ -870,8 +870,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, local_itoa((ssize_t)BAThrevordered(b)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "hident", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, b->hident, FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "hdense", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BAThdense(b))), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "hseqbase", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->hseqbase), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "hkey", FALSE) != GDK_SUCCEED ||

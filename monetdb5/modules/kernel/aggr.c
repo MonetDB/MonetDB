@@ -48,9 +48,6 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			BBPunfix(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
-	assert(BAThdense(b));
-	assert(BAThdense(g));
-	assert(BAThdense(e));
 	assert(b->hseqbase == g->hseqbase);
 	assert(BATcount(b) == BATcount(g));
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
@@ -638,17 +635,8 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 				BBPunfix(e->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-	} else {
-		if (!BAThdense(b)) {
-			/* XXX backward compatibility code: ignore non-dense head, but
-			 * only if no candidate list */
-			//s = BATmirror(BATmark(BATmirror(b), 0));
-			s = b;
-			BBPunfix(b->batCacheid);
-			b = s;
-		}
+	} else 
 		s = NULL;
-	}
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils, abort_on_error);
 	if (quantilefunc) {
