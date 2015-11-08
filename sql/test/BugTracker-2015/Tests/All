@@ -83,3 +83,5 @@ null.Bug-3833
 date_comparison_incorrect_results.Bug-3834
 hugeint-wrong-value.Bug-3849
 dump-DELETE.Bug-3850
+missed-error.Bug-3842
+constant-random.Bug-3836
