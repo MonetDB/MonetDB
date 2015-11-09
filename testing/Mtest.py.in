@@ -3836,8 +3836,13 @@ def main(argv) :
         if os.environ.has_key('GEM_PATH'):
             gem_path = os.environ['GEM_PATH']
         else:
-            proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
-            gem_path, gem_err = proc.communicate()
+            if CheckExec('gem'):
+                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
+                gem_path, gem_err = proc.communicate()
+            else:
+                gem_path = ''
+        if gem_path:
+            gem_path = os.pathsep + gem_path
         env['GEM_PATH'] = _configure('@RUBY_DIR@') + os.pathsep + gem_path.strip()
         vars_ = vars_ + ['GEM_PATH']
 
