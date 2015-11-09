@@ -3706,7 +3706,12 @@ def main(argv) :
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
     if CheckExec('ruby'):
-        CONDITIONALS['HAVE_RUBY'] = '#'
+        # also check ruby version; we require >= 1.9 for "require_relative"
+        proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
+        ruby_ver, ruby_err = proc.communicate()
+        # 'ruby 1.2.3 ...'
+        if float(ruby_ver[5:8]) >= 1.9:
+            CONDITIONALS['HAVE_RUBY'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
