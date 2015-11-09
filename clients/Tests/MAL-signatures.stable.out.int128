@@ -31937,6 +31937,18 @@ pattern batcalc.ifthenelse(b:bat[:oid,:bit],v1:any_1,v2:any_1):bat[:oid,:any_1]
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
+pattern batcalc.ifthenelse(v:bit,b1:bat[:oid,:any_1],v2:any_1):bat[:oid,:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,b1:bat[:oid,:any_1],b2:bat[:oid,:any_1]):bat[:oid,:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
 pattern batcalc.int_noerror(b:bat[:oid,:str],s:bat[:oid,:oid]):bat[:oid,:int] 
 address CMDconvert_int;
 comment cast from str to int with candidates list
