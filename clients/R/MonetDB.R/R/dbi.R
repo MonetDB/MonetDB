@@ -6,19 +6,16 @@ setOldClass(c("sockconn", "connection", "monetdb_mapi_conn"))
 
 ### MonetDBDriver
 setClass("MonetDBDriver", representation("DBIDriver"))
+setClass("MonetDBEmbeddedDriver", representation("MonetDBDriver"))
 
 # allow instantiation of this driver with MonetDB to allow existing programs to work
-MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() {
-  new("MonetDBDriver")
-}
+MonetR <- MonetDB <- MonetDBR <- MonetDB.R <- function() new("MonetDBDriver")
 
-setMethod("dbIsValid", "MonetDBDriver", def=function(dbObj, ...) {
-  return(invisible(TRUE)) # driver object cannot be invalid
-})
+MonetDBLite <- monetdblite <- RMonetDBLite <- rmonetdblite <- function() new("MonetDBEmbeddedDriver")
 
-setMethod("dbUnloadDriver", "MonetDBDriver", def=function(drv, ...) {
-  return(invisible(TRUE)) # there is nothing to really unload here...
-})
+setMethod("dbIsValid", "MonetDBDriver", def=function(dbObj, ...) invisible(TRUE))
+
+setMethod("dbUnloadDriver", "MonetDBDriver", def=function(drv, ...) invisible(TRUE))
 
 setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
   list(name="MonetDBDriver", 
@@ -89,6 +86,11 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   # support monetdblite:/db/dir urls to fool sqlsurvey
   if (substring(dbname, 1, 12) == "monetdblite:") {
     embedded <- substring(dbname, 13, nchar(dbname))
+  }
+
+  if (inherits(drv, "MonetDBEmbeddedDriver")) {
+    if (missing(dbname)) embedded <- tempdir()
+    else embedded <- dbname
   }
 
   if (embedded != FALSE) {

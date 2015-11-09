@@ -2,6 +2,7 @@ import(DBI,digest,methods,codetools,utils)
 
 # export only driver constructor, everything else is DBI stuff..
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
+export(MonetDBLite,monetdblite,RMonetDBLite,rmonetdblite)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
 exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,mdbapply)

@@ -13,7 +13,7 @@ tsize <- function(conn, tname)
 	as.integer(dbGetQuery(conn, paste0("SELECT COUNT(*) FROM ",tname))[[1]])
 
 test_that("db starts up and accepts queries", {
-	con <<- dbConnect(MonetDB.R::MonetDB.R(), embedded=tempdir())
+	con <<- dbConnect(MonetDBLite(), tempdir())
 	expect_is(con, "MonetDBEmbeddedConnection")
 	expect_true(dbIsValid(con))
 	res <- dbGetQuery(con, "SELECT 42")
