@@ -3831,6 +3831,15 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
+    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
+       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
+        if os.environ.has_key('GEM_PATH'):
+            gem_path = os.environ['GEM_PATH']
+        else:
+            proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
+            gem_path, gem_err = proc.communicate()
+        env['GEM_PATH'] = _configure('@RUBY_DIR@') + os.pathsep + gem_path.strip()
+        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()
