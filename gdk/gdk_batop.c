@@ -1703,7 +1703,7 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	if (bn == NULL)
 		return NULL;
 	p = Tloc(bn, bn->batFirst);
-	switch (ATOMstorage(tailtype)) {
+	switch (ATOMbasetype(tailtype)) {
 	case TYPE_void:
 		v = &oid_nil;
 		BATseqbase(BATmirror(bn), oid_nil);
@@ -1732,7 +1732,6 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
 			((hge *) p)[i] = *(hge *) v;
-		bn->T->nil = n >= 1 && *(hge *) v == hge_nil;
 		break;
 #endif
 	default:
