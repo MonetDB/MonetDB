@@ -65,8 +65,8 @@ Ready.
 #CREATE TABLE test (pid INTEGER);
 #INSERT INTO test VALUES (1);
 [ 1	]
-#SELECT t.pid FROM test t WHERE FALSE AND (FALSE OR TRUE) AND (FALSE OR TRUE) AND ( (FALSE AND (FALSE OR FALSE)) OR TRUE );
-% .t # table_name
+#SELECT t.pid FROM test t WHERE FALSE AND (FALSE OR TRUE) AND ( (FALSE AND (FALSE OR FALSE)) OR TRUE );
+% sys.t # table_name
 % pid # name
 % int # type
 % 1 # length
