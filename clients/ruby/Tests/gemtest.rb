@@ -1,8 +1,8 @@
 # tests rubytest.rb & gemtest.rb are (and shoudl be kept!) identical,
 # except the following two lines:
 
- require_relative '../lib/MonetDB' # rubytest.rb
-#require                 'MonetDB' #  gemtest.rb
+#require_relative '../lib/MonetDB' # rubytest.rb
+ require                 'MonetDB' #  gemtest.rb
 
 class MapiRubyInterfaceTestCase
 
