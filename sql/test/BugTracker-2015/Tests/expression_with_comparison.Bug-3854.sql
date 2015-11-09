@@ -6,3 +6,4 @@ SELECT t.id, t.foo FROM test t
       AND ((FALSE AND (TRUE OR FALSE))
         OR (15 > t.foo)
       );
+DROP TABLE test;
