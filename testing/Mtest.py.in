@@ -3843,7 +3843,7 @@ def main(argv) :
                 gem_path = ''
         if gem_path:
             gem_path = os.pathsep + gem_path
-        env['GEM_PATH'] = _configure('@RUBY_DIR@') + os.pathsep + gem_path.strip()
+        env['GEM_PATH'] = _configure('@RUBY_DIR@') + gem_path.strip()
         vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
