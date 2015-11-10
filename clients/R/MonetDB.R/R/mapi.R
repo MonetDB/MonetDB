@@ -183,7 +183,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (typeKey == Q_TABLE || typeKey == Q_PREPARE) {
       header <- .mapiParseHeader(lines[1])
       if (getOption("monetdb.debug.query", F)) message("QQ: Query result for query ", header$id, 
-                                                       " with ", header$rows, " rows and ", header$cols, " cols, ", header$index, " rows.")
+                                                       " with ", .mapiLongInt(header$rows), " rows and ", 
+                                                       header$cols, " cols, ", header$index, " rows.")
       
       env$type	<- Q_TABLE
       env$id		<- header$id
@@ -196,8 +197,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       env$lengths	<- .mapiParseTableHeader(lines[5])
       
       if (env$rows > 0) env$tuples <- lines[6:length(lines)]
-      
-      stopifnot(length(env$tuples) == header$index)
+
       return(env)
     }
     # Continuation of Q_TABLE without headers describing table structure

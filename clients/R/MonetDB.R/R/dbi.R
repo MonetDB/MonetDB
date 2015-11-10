@@ -361,6 +361,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
     env$conn <- conn
     env$query <- statement
     env$info <- resp
+    env$info$rows <- 0
   }
   if (resp$type == MSG_MESSAGE) {
     env$success = FALSE
