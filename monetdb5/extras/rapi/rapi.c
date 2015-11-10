@@ -222,6 +222,8 @@ static char *RAPIinitialize(void) {
 }
 #else
 
+#define	S_IRWXU		0000700
+
 static char *RAPIinitialize(void) {
 	return "Sorry, no R API on Windows";
 }
