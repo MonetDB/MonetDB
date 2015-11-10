@@ -356,6 +356,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBZ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_LIDAR
+	$(ECHO) HAVE_LIDAR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_MONETDB5
 	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
