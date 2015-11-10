@@ -3708,9 +3708,11 @@ def main(argv) :
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
         proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
-        ruby_ver, ruby_err = proc.communicate()
-        # 'ruby 1.2.3 ...'
-        if float(ruby_ver[5:8]) >= 1.9:
+        ruby_out, ruby_err = proc.communicate()
+        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_ver = ruby_reg.match(ruby_out)
+        if ruby_ver and \
+           100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
             CONDITIONALS['HAVE_RUBY'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_RUBY'] = ''
