@@ -69,7 +69,6 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	for (i = 0; i < oldtop; i++) {
 		InstrPtr p = old[i];
 		char *f = getFunctionId(p);
-		ValRecord vr;
 
 		if (getModuleId(p) == sqlRef && f == tidRef) {
 			char *sname = getVarConstant(mb, getArg(p, 2)).val.sval;
@@ -85,9 +84,8 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		       	t = mvc_bind_table(m, s, tname);
 
 			if (t && (!isRemote(t) && !isMergeTable(t)) && t->p) {
-				int k = getArg(p, 0), mt_member = t->p->base.id;
-
-				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
+				int mt_member = t->p->base.id;
+				setMitosisPartition(p,mt_member);
 			}
 		}
 		if (getModuleId(p) == sqlRef && (f == bindRef || f == bindidxRef)) {
@@ -146,7 +144,7 @@ static void SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			if (rows > 1 && mode != RD_INS)
 				setRowCnt(mb,k,rows);
 			if (mt_member && mode != RD_INS)
-				varSetProp(mb, k, mtProp, op_eq, VALset(&vr, TYPE_int, &mt_member));
+				setMitosisPartition(p,mt_member);
 
 			pushInstruction(mb, p);
 		} else {

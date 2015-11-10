@@ -119,14 +119,7 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 	X->tsorted=0;									\
 	X->trevsorted=0;
 #define finalizeResult(X,Y,Z)								\
-	if (!BAThdense(Z)) {									\
-		/* legacy */										\
-		BAT *b2 = VIEWcreate((Z), (Y));						\
-		BBPunfix((Y)->batCacheid);							\
-		(Y) = b2;											\
-	} else {												\
-		BATseqbase((Y), (Z)->hseqbase);						\
-	}														\
+	BATseqbase((Y), (Z)->hseqbase);						\
 	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);	\
 	*X = (Y)->batCacheid;									\
 	BBPkeepref(*(X));										\
@@ -1200,14 +1193,6 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 			goto bunins_failed;
 		BUNappend(bn, (ptr)res, FALSE);
 		GDKfree(res);
-	}
-
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *r = VIEWcreate(b,bn);
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
 	}
 
 	bn->T->nonil = 0;

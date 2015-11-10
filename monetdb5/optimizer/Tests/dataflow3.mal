@@ -2,7 +2,7 @@
 function mvc():int;
 	return mvc:=1;
 end mvc;
-function user.s1_0{autoCommit=true}():void;
+function user.s1_0():void;
     _17 := bat.new(nil:oid,nil:wrd);
     _54 := bat.new(nil:oid,nil:wrd);
     _55 := bat.new(nil:oid,nil:wrd);

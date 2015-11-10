@@ -39,7 +39,6 @@ lib_mal = {
 		mal_namespace.c mal_namespace.h \
 		mal_parser.c mal_parser.h \
 		mal_profiler.c mal_profiler.h \
-		mal_properties.c mal_properties.h \
 		mal_readline.c mal_readline.h \
 		mal_recycle.c mal_recycle.h \
 		mal_resolve.c mal_resolve.h \
@@ -61,7 +60,6 @@ headers_h = {
 		mal_exception.h \
 		mal_instruction.h \
 		mal_namespace.h \
-		mal_properties.h \
 		mal_stack.h \
 		mal_type.h
 }

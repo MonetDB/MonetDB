@@ -63,7 +63,7 @@ Ready.
 % mal # name
 % clob # type
 % 566 # length
-function user.s2_1{autoCommit=true}(A0:sht):void;
+function user.s2_1(A0:sht):void;
     X_177:void := querylog.define("explain select\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice,\n\tsum(l_quantity)\nfrom\n\tcustomer,\n\torders,\n\tlineitem\nwhere\n\to_orderkey in (\n\t\tselect\n\t\t\tl_orderkey\n\t\tfrom\n\t\t\tlineitem\n\t\tgroup by\n\t\t\tl_orderkey having\n\t\t\t\tsum(l_quantity) > 300\n\t)\n\tand c_custkey = o_custkey\n\tand o_orderkey = l_orderkey\ngroup by\n\tc_name,\n\tc_custkey,\n\to_orderkey,\n\to_orderdate,\n\to_totalprice\norder by\n\to_totalprice desc,\n\to_orderdate\nlimit 100;","sequential_pipe",117);
     X_128 := bat.new(nil:oid,nil:str);
     X_136 := bat.append(X_128,"sys.customer");

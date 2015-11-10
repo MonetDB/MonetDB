@@ -464,10 +464,10 @@ bitFromStr(const char *src, int *len, bit **dst)
 	while (GDKisspace(*p))
 		p++;
 	**dst = bit_nil;
-	if (*p == '0' || *p == 0) {
+	if (*p == '0') {
 		**dst = FALSE;
 		p++;
-	} else if (*p == '1' || *p == 1) {
+	} else if (*p == '1') {
 		**dst = TRUE;
 		p++;
 	} else if (strncasecmp(p, "true",  4) == 0) {
@@ -770,7 +770,7 @@ hgeToStr(char **dst, int *len, const hge *src)
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
-	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
+	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
 		return lngToStr(dst, len, &s);
 	} else {

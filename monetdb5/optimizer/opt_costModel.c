@@ -43,7 +43,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+	if ( mb->inlineProp )
 		return 0;
 
 	for (i = 0; i < mb->stop; i++) {
@@ -108,10 +108,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (getFunctionId(p) == deleteRef){
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* delete BAT */
-					newRows(1, 2, (c2 == c1 ? 1 : c1 - c2), 1);
+					newRows(1, 2, (c2 >= c1 ? 1 : c1 - c2), 1);
 				} else {
 					/* insert scalars */
-					newRows(1, 1, (c1 == 1 ? 1 : c1 - 1), 1);
+					newRows(1, 1, (c1 <= 1 ? 1 : c1 - 1), 1);
 				}
 			} else if (getFunctionId(p) == insertRef){
 				newRows(1,1,( c1 + 1),0); /* faked */
@@ -134,8 +134,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else if( p->token == ASSIGNsymbol && p->argc== 2){
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
-			/* just to ensure that rowcnt was/is never set to -1 */\
-			assert(c1 != (BUN) -1);\
+			/* just to ensure that rowcnt was/is never set to -1 */
+			assert(c1 != (BUN) -1);
 			if (c1 != BUN_NONE)
 				setRowCnt(mb, getArg(p,0), c1);
 		}

@@ -230,13 +230,6 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int inlineProp;
-int unsafeProp;
-
-int horiginProp;		/* original oid source */
-int toriginProp;		/* original oid source */
-int mtProp;
-
 void optimizerInit(void)
 {
 	assert(batRef == NULL);
@@ -454,12 +447,6 @@ void optimizerInit(void)
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	inlineProp = PropertyIndex("inline");
-	unsafeProp = PropertyIndex("unsafe");
-
-	horiginProp = PropertyIndex("horigin");
-	toriginProp = PropertyIndex("torigin");
-	mtProp = PropertyIndex("mergetable");
 	/*
 	 * Set the optimizer debugging flag
 	 */

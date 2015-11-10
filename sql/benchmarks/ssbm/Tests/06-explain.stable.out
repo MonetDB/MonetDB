@@ -42,7 +42,7 @@ Ready.
 % mal # name
 % clob # type
 % 457 # length
-function user.s2_1{autoCommit=true}(A0:str,A1:str):void;
+function user.s2_1(A0:str,A1:str):void;
     X_125:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n\tfrom lineorder, dwdate, part, supplier\n\twhere lo_orderdate = d_datekey\n\t\tand lo_partkey = p_partkey\n\t\tand lo_suppkey = s_suppkey\n\t\t-- OK to add p_mfgr=’MFGR#2’\n\t\t-- OK to add p_category=’MFGR#22’\n\t\tand p_brand1 = \\'MFGR#2221\\'\n\t\tand s_region = \\'EUROPE\\'\n\tgroup by d_year, p_brand1\n\torder by d_year, p_brand1;","sequential_pipe",82);
     X_93 := bat.new(nil:oid,nil:str);
     X_101 := bat.append(X_93,"sys.L1");

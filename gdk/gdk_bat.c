@@ -2825,6 +2825,8 @@ BATassertHeadProps(BAT *b)
 	/* only linear atoms can be sorted */
 	assert(!b->hsorted || ATOMlinear(b->htype));
 	assert(!b->hrevsorted || ATOMlinear(b->htype));
+	/* var heaps must have sane sizes */
+	assert(b->H->vheap == NULL || b->H->vheap->free <= b->H->vheap->size);
 
 	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
 	    !b->H->nonil && !b->H->nil) {

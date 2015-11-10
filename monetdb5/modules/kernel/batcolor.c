@@ -57,14 +57,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			FUNC(yp,x);													\
 		bunfastapp(bn, yp);												\
 	}																	\
-	if (!BAThdense(b)) {												\
-		/* legacy */													\
-		BAT *b2 = VIEWcreate(b, bn);									\
-		BBPunfix(bn->batCacheid);										\
-		bn = b2;														\
-	} else {															\
-		BATseqbase(bn, b->hseqbase);									\
-	}																	\
+	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
@@ -151,14 +144,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		p2++;															\
 		p3++;															\
 	}																	\
-	if (!BAThdense(b)) {												\
-		/* legacy */													\
-		BAT *b2 = VIEWcreate(b, bn);									\
-		BBPunfix(bn->batCacheid);										\
-		bn = b2;														\
-	} else {															\
-		BATseqbase(bn, b->hseqbase);									\
-	}																	\
+	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\

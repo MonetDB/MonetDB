@@ -16,7 +16,7 @@ stdout of test 'inlineFunction2` in directory 'monetdb5/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35482/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.my{inline}(A:int,B:int):int;
+inline function user.my(A:int,B:int):int;
     X3 := calc.+(A,B);
     return my := X3;
 end user.my;

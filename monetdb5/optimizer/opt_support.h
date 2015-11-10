@@ -13,7 +13,6 @@
 #include "mal_function.h"
 #include "mal_scenario.h"
 #include "mal_builder.h"
-#include "mal_properties.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)

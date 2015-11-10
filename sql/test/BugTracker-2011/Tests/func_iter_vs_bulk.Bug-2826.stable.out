@@ -33,30 +33,30 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 112 # length
-function user.s5_1{autoCommit=true}(A0:flt):void;
-    X_37:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",24);
-    X_21 := bat.new(nil:oid,nil:str);
-    X_29 := bat.append(X_21,"sys.tab_2826");
+% 93 # length
+inline function user.s5_1(A0:flt):void;
+    X_20 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_20,"sys.tab_2826");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"d");
     X_24 := bat.new(nil:oid,nil:str);
-    X_31 := bat.append(X_24,"d");
-    X_25 := bat.new(nil:oid,nil:str);
-    X_32 := bat.append(X_25,"double");
-    X_26 := bat.new(nil:oid,nil:int);
-    X_34 := bat.append(X_26,53);
-    X_28 := bat.new(nil:oid,nil:int);
-    X_36 := bat.append(X_28,0);
-    X_3 := sql.mvc();
-    X_7:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
-    (C_10,r1_10) := sql.bind(X_3,"sys","tab_2826","d",2);
-    X_13:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",1);
-    X_15 := sql.delta(X_7,C_10,r1_10,X_13);
-    X_16 := batcalc.flt(X_15);
-    X_46:bat[:oid,:flt] := batmmath.log10(X_16);
-    C_4:bat[:oid,:oid] := sql.tid(X_3,"sys","tab_2826");
-    C_17 := algebra.thetasubselect(X_46,C_4,A0,">");
-    X_19 := sql.projectdelta(C_17,X_7,C_10,r1_10,X_13);
-    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_19);
+    X_31 := bat.append(X_24,"double");
+    X_25 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_25,53);
+    X_27 := bat.new(nil:oid,nil:int);
+    X_35 := bat.append(X_27,0);
+    X_2 := sql.mvc();
+    X_6:bat[:oid,:dbl] := sql.bind(X_2,"sys","tab_2826","d",0);
+    (C_9,r1_9) := sql.bind(X_2,"sys","tab_2826","d",2);
+    X_12:bat[:oid,:dbl] := sql.bind(X_2,"sys","tab_2826","d",1);
+    X_14 := sql.delta(X_6,C_9,r1_9,X_12);
+    X_15 := batcalc.flt(X_14);
+    X_45:bat[:oid,:flt] := batmmath.log10(X_15);
+    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","tab_2826");
+    C_16 := algebra.thetasubselect(X_45,C_3,A0,">");
+    X_18 := sql.projectdelta(C_16,X_6,C_9,r1_9,X_12);
+    sql.mvc();
+    sql.resultSet(X_28,X_30,X_31,X_33,X_35,X_18);
 end user.s5_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name

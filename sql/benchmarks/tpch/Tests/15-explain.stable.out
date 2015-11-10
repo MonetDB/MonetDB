@@ -60,7 +60,7 @@ Ready.
 % mal # name
 % clob # type
 % 324 # length
-function user.s3_1{autoCommit=true}():void;
+function user.s3_1():void;
     X_147:void := querylog.define("explain select\n\ts_suppkey,\n\ts_name,\n\ts_address,\n\ts_phone,\n\ttotal_revenue\nfrom\n\tsupplier,\n\trevenue0\nwhere\n\ts_suppkey = supplier_no\n\tand total_revenue = (\n\t\tselect\n\t\t\tmax(total_revenue)\n\t\tfrom\n\t\t\trevenue0\n\t)\norder by\n\ts_suppkey;","sequential_pipe",99);
     X_102 := bat.new(nil:oid,nil:str);
     X_110 := bat.append(X_102,"sys.supplier");

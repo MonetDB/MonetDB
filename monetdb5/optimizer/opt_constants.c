@@ -56,6 +56,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for( k= n-1; k>=0; k--){
 				y= cst[k];
 				if ( x->type == y->type &&
+					 x->rowcnt == y->rowcnt &&
 					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
 					OPTDEBUGconstants {

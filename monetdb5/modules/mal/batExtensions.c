@@ -183,7 +183,6 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *ret;
 	int i;
 	bat bid;
-	VarPtr low, hgh;
 	oid lval,hval=0, step;
 
 	(void) mb;
@@ -197,16 +196,8 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	for(i=0; i<pci->retc; i++){
-		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
-		if (low== NULL )
-			lval = i*step;
-		else
-			lval = low->value.val.oval;
-		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
-		if (hgh== NULL )
-			hval = lval + step;
-		else
-			hval = hgh->value.val.oval;
+		lval = i*step;
+		hval = lval + step;
 		if (i == pci->retc-1)
 			hval = BATcount(b);
 		bn =  BATslice(b, lval,hval);
@@ -218,7 +209,6 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
-		low= hgh;
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

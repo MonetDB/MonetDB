@@ -326,7 +326,10 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'HAVE_PHP'             : "",
+    'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
+    'RELEASERUN'           : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -2823,7 +2826,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
-            if CONDITIONALS['HAVE_LIBR']:
+            if CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3702,6 +3705,17 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
+    if CheckExec('ruby'):
+        # also check ruby version; we require >= 1.9 for "require_relative"
+        proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
+        ruby_out, ruby_err = proc.communicate()
+        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_ver = ruby_reg.match(ruby_out)
+        if ruby_ver and \
+           100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
+            CONDITIONALS['HAVE_RUBY'] = '#'
+#     else:
+#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
@@ -3824,6 +3838,20 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
+    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
+       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
+        if os.environ.has_key('GEM_PATH'):
+            gem_path = os.environ['GEM_PATH']
+        else:
+            if CheckExec('gem'):
+                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
+                gem_path, gem_err = proc.communicate()
+            else:
+                gem_path = ''
+        if gem_path:
+            gem_path = os.pathsep + gem_path
+        env['GEM_PATH'] = _configure('@RUBY_DIR@') + gem_path.strip()
+        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()

@@ -1,10 +1,10 @@
 
 # remapping inline functions
-function foo{inline}(a:str):str;
+inline function foo(a:str):str;
 	return foo:=a;
 end foo;
 
-function bar{inline}(a:str,b:str):str;
+inline function bar(a:str,b:str):str;
 	sa:= user.foo(a);
 	sa:= str.substring(sa, 1, 5);
 	sb:= user.foo(b);

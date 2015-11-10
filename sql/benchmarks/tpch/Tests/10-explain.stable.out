@@ -62,7 +62,7 @@ Ready.
 % mal # name
 % clob # type
 % 645 # length
-function user.s2_1{autoCommit=true}(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
+function user.s2_1(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     X_215:void := querylog.define("explain select\n\tc_custkey,\n\tc_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue,\n\tc_acctbal,\n\tn_name,\n\tc_address,\n\tc_phone,\n\tc_comment\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tnation\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand o_orderdate >= date \\'1993-10-01\\'\n\tand o_orderdate < date \\'1993-10-01\\' + interval \\'3\\' month\n\tand l_returnflag = \\'R\\'\n\tand c_nationkey = n_nationkey\ngroup by\n\tc_custkey,\n\tc_name,\n\tc_acctbal,\n\tc_phone,\n\tn_name,\n\tc_address,\n\tc_comment\norder by\n\trevenue desc\nlimit 20;","sequential_pipe",148);
     X_153 := bat.new(nil:oid,nil:str);
     X_161 := bat.append(X_153,"sys.customer");

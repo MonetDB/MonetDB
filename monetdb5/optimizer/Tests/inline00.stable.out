@@ -5,13 +5,23 @@ stdout of test 'inline00` in directory 'monetdb5/optimizer` itself:
 # 00:18:07 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=31500 --set xrpc_port=46952 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline00.mal
 # 00:18:07 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.help{inline}():void;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31052/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8467/.s.monetdb.31052
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+inline function user.help():void;
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:int);
     bat.append(b,1);
@@ -31,8 +41,25 @@ function user.qry():void;
     user.help();
 end user.qry;
 function user.main():void;
+    mdb.List("user","help");
     mdb.List("user","qry");
 end user.main;
+inline function user.help():void;       	#[0]  0 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 4 <- 2 3 
+    bat.append(b:bat[:oid,:int],1:int); 	#[3] BKCappend_val_wrap 5 <- 1 6 
+barrier (y:oid,z:int) := iterator.new(b:bat[:oid,:int]);	#[4] ITRbunIterator 7 8 <- 1 
+    io.print(y:oid);                    	#[5] IOprint_val 9 <- 7 
+catch MALException:str;                 	#[6]  10 
+exit MALException:str;                  	#[7]  10 
+exit (y:oid,z:int);                     	#[8]  7 8 
+barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);	#[9] ITRbunIterator 11 8 <- 4 
+    io.print(x:oid);                    	#[10] IOprint_val 12 <- 11 
+    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);	#[11] ITRbunNext 11 8 <- 4 
+catch MALException:str;                 	#[12]  10 
+exit MALException:str;                  	#[13]  10 
+exit (x:oid,z:int);                     	#[14]  11 8 
+end user.help;                          	#[15]  
 function user.qry():void;               	#[0]  0 
     X_3:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 3 <- 4 5 
     X_6:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 6 <- 4 5 

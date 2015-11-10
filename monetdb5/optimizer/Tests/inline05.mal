@@ -1,6 +1,6 @@
 # remapping inline functions
 # the crucial part is to recognize valid inlines
-function foo{inline}(a:int,b:int):int;
+inline function foo(a:int,b:int):int;
 	c:= a+b;
 	io.print(c); # this has a memory-less side effect
 	return foo:=1;

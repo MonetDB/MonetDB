@@ -184,11 +184,11 @@ comment "The finite(x) function returns true if x is neither infinite
         nor a 'not-a-number' (NaN) value, and false otherwise.";
 
 # @+ Random numbers
-command rand{unsafe} () :int 
+unsafe command rand () :int 
 address MATHrandint
 comment "return a random number";
 
-command rand{unsafe} (v:int) :int 
+unsafe command rand (v:int) :int 
 address MATHrandintarg
 comment "return a random number";
 

@@ -1455,7 +1455,6 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
 			((hge *) p)[i] = *(hge *) v;
-		bn->T->nil = n >= 1 && *(hge *) v == hge_nil;
 		break;
 #endif
 	default:

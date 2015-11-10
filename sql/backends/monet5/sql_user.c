@@ -383,7 +383,7 @@ monet5_user_init(backend_functions *be_funcs)
 }
 
 str
-monet5_user_get_def_schema(mvc *m, oid user)
+monet5_user_get_def_schema(mvc *m, int user)
 {
 	oid rid;
 	sqlid schema_id;
@@ -450,7 +450,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	str err = NULL;
 
 	if (m->debug &1)
-		fprintf(stderr, "monet5_user_get_def_schema " OIDFMT "\n", user);
+		fprintf(stderr, "monet5_user_set_def_schema " OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, &user)) !=MAL_SUCCEED) {
 		GDKfree(err);
