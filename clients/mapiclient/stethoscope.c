@@ -342,10 +342,12 @@ main(int argc, char **argv)
 		buffer[len + n] = 0;
 		response = buffer;
 		if(json) {
-			if(trace != NULL)
+			if(trace != NULL) {
 				fprintf(trace, "%s", response);
-			else
+			} else {
 				printf("%s", response);
+				fflush(stdout);
+			}
 		}
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
