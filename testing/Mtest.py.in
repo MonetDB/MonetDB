@@ -3843,10 +3843,10 @@ def main(argv) :
         if os.environ.has_key('GEM_PATH'):
             gem_path = os.environ['GEM_PATH']
         else:
-            if CheckExec('gem'):
+            try:
                 proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
                 gem_path, gem_err = proc.communicate()
-            else:
+            except:
                 gem_path = ''
         if gem_path:
             gem_path = os.pathsep + gem_path
