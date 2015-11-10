@@ -477,9 +477,13 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   if (!dbIsValid(res)) {
     stop("Cannot fetch results from closed response.")
   }
-  
+
   # okay, so we arrive here with the tuples from the first result in res@env$data as a list
   info <- res@env$info
+  # apparently, one should be able to fetch results sets from ddl ops
+  if (info$type == Q_UPDATE) {
+    return(data.frame())
+  }
   if (res@env$delivered < 0) {
     res@env$delivered <- 0
   }

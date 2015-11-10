@@ -79,3 +79,6 @@ COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS '\t','\n','"';
 
 SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t;
 SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t;
+
+DROP TABLE schms;
+DROP TABLE tbls;

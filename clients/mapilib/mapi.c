@@ -2114,7 +2114,10 @@ mapi_mapi(const char *host, int port, const char *username,
 			struct dirent *e;
 			struct stat st;
 			char found = 0;
-			int socks[24];
+			struct {
+				int port;
+				uid_t owner;
+			} socks[24];
 			int i = 0;
 			int len;
 			uid_t me = getuid();
@@ -2126,56 +2129,55 @@ mapi_mapi(const char *host, int port, const char *username,
 						continue;
 					if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
 						continue; /* ignore long name */
-					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
-						socks[i++] = atoi(e->d_name + 11);
-					if (i == sizeof(socks))
+					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode)) {
+						socks[i].owner = st.st_uid;
+						socks[i++].port = atoi(e->d_name + 11);
+					}
+					if (i == sizeof(socks) / sizeof(socks[0]))
 						break;
 				}
 				closedir(d);
 				len = i;
 				/* case 2bI) first those with a matching owner */
 				for (i = 0; found == 0 && i < len; i++) {
-					snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i]);
-					if (socks[i] != 0 &&
-							stat(buf, &st) != -1 && st.st_uid == me)
-					{
+					if (socks[i].port != 0 &&
+					    socks[i].owner == me) {
 						Mapi tmid;
 						/* try this server for the database */
-						tmid = mapi_mapi("/tmp", socks[i], "mero", "mero",
-								lang, dbname);
+						tmid = mapi_mapi("/tmp", socks[i].port, "mero", "mero",
+								 lang, dbname);
 						tmid->redirmax = 0;
 						if (connect_to_server(tmid) == MOK &&
-								(mapi_start_talking(tmid) == MOK ||
-								 *tmid->redirects != NULL ||
-								 (tmid->errorstr != NULL &&
-								  strstr(tmid->errorstr, "under maintenance") != NULL)))
-						{
+						    (mapi_start_talking(tmid) == MOK ||
+						     *tmid->redirects != NULL ||
+						     (tmid->errorstr != NULL &&
+						      strstr(tmid->errorstr, "under maintenance") != NULL))) {
+							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
 							host = buf;
-							port = socks[i];
+							port = socks[i].port;
 							found = 1;
 						}
 						mapi_disconnect(tmid);
 						mapi_destroy(tmid);
-						socks[i] = 0; /* don't need to try again */
+						socks[i].port = 0; /* don't need to try again */
 					}
 				}
 				/* case 2bII) the other sockets */
 				for (i = 0; found == 0 && i < len; i++) {
-					snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i]);
-					if (socks[i] != 0 && stat(buf, &st) != -1) {
+					if (socks[i].port != 0) {
 						Mapi tmid;
 						/* try this server for the database */
-						tmid = mapi_mapi("/tmp", socks[i], "mero", "mero",
+						tmid = mapi_mapi("/tmp", socks[i].port, "mero", "mero",
 								lang, dbname);
 						tmid->redirmax = 0;
 						if (connect_to_server(tmid) == MOK &&
-								(mapi_start_talking(tmid) == MOK ||
-								 *tmid->redirects != NULL ||
-								 (tmid->errorstr != NULL &&
-								  strstr(tmid->errorstr, "under maintenance") != NULL)))
-						{
+						    (mapi_start_talking(tmid) == MOK ||
+						     *tmid->redirects != NULL ||
+						     (tmid->errorstr != NULL &&
+						      strstr(tmid->errorstr, "under maintenance") != NULL))) {
+							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
 							host = buf;
-							port = socks[i];
+							port = socks[i].port;
 							found = 1;
 						}
 						mapi_disconnect(tmid);
@@ -2548,6 +2550,7 @@ mapi_start_talking(Mapi mid)
 	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
 
 	assert(len < BLOCK);
+	buf[len] = 0;
 
 	if (len == 0){
 		mapi_setError(mid, "Challenge string is not valid, it is empty", "mapi_start_talking", MERROR);
@@ -2662,7 +2665,7 @@ mapi_start_talking(Mapi mid)
 			}
 
 			free(mid->password);
-			mid->password = malloc(sizeof(char) * (1 + strlen(pwdhash) + 1));
+			mid->password = malloc(1 + strlen(pwdhash) + 1);
 			sprintf(mid->password, "\1%s", pwdhash);
 			free(pwdhash);
 		}
@@ -2678,7 +2681,7 @@ mapi_start_talking(Mapi mid)
 				if (pwh == NULL)
 					continue;
 				len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
-				hash = malloc(sizeof(char) * len);
+				hash = malloc(len);
 				snprintf(hash, len, "{%s}%s", *algs, pwh);
 				free(pwh);
 				break;
@@ -2771,7 +2774,7 @@ mapi_start_talking(Mapi mid)
 					break;
 				case '^':{
 					char **r = mid->redirects;
-					int m = sizeof(mid->redirects) - 1;
+					int m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
 					for (; *r != NULL && m > 0; r++)
 						m--;
 					if (m == 0)
