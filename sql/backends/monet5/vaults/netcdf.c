@@ -222,7 +222,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *tfiles = NULL, *tdims = NULL, *tvars = NULL, *tvardim = NULL, *tattrs = NULL;
 	sql_column *col;
 	str msg = MAL_SUCCEED;
-	str fname = *(str*)getArgReference(stk, pci, 1);
+	str fname = *getArgReference_str(stk, pci, 1);
 	char buf[BUFSIZ], *s= buf;
 	oid fid, rid = oid_nil;
 	sql_trans *tr;
@@ -618,9 +618,9 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *tfiles = NULL, *arr_table = NULL;
 	sql_column *col;
 
-	str msg = MAL_SUCCEED, vname = *(str*)getArgReference(stk, pci, 2);
+	str msg = MAL_SUCCEED, vname = *getArgReference_str(stk, pci, 2);
 	str fname = NULL, dimtype = NULL, aname_sys = NULL;
-	int fid = *(int*)getArgReference(stk, pci, 1);
+	int fid = *getArgReference_int(stk, pci, 1);
 	int varid, vndims, vnatts, i, j, retval;
 	char buf[BUFSIZ], *s= buf, aname[256], **dname;
 	oid rid = oid_nil;
