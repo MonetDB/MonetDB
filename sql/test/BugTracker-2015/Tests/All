@@ -85,3 +85,4 @@ date_comparison_incorrect_results.Bug-3834
 HAVE_HGE?hugeint-wrong-value.Bug-3849
 dump-DELETE.Bug-3850
 limit_dbl.Bug-3847
+limit_too_large_value.Bug-3857
