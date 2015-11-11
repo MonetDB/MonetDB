@@ -17,6 +17,10 @@
 
 module lidar;
 
+command prelude() :void
+address LIDARprelude;
+lidar.prelude();
+
 pattern attach(fname:str):void
 address LIDARattach
 comment "Open a LIDAR file and return catalog of the table HDUs";
@@ -24,3 +28,4 @@ comment "Open a LIDAR file and return catalog of the table HDUs";
 pattern load(tablename:str):void
 address LIDARloadTable
 comment "Load a LIDAR table from an attached file";
+
