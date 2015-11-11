@@ -1806,7 +1806,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".R"
         CALL = "R"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".rb"):
+    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
         EXT = ".rb"
         CALL = "ruby"
         SERVER = "SQL"
