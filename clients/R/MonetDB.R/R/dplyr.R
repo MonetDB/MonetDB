@@ -1,4 +1,4 @@
-src_monetdb <- function(dbname, host = "localhost", port = 50000L, user = "monetdb",
+src_monetdb <- function(dbname="demo", host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", con = FALSE, ...) {
   if (!inherits(con, "MonetDBConnection") || !dbIsValid(con)) {
     con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,

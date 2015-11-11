@@ -392,13 +392,31 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   })
 
 
+reserved_monetdb_keywords <- c(.SQL92Keywords, 
+"ADMIN", "AFTER", "AGGREGATE", "ALWAYS", "ASYMMETRIC", "ATOMIC", 
+"AUTO_INCREMENT", "BEFORE", "BEST", "BIGINT", "BIGSERIAL", "BINARY", 
+"BLOB", "CALL", "CHAIN", "CLOB", "COMMITTED", "COPY", "CROSS", 
+"CURRENT_ROLE", "CURRENT_TIME", "CURRENT_USER", "DELIMITERS", 
+"DO", "EACH", "EFFORT", "ELSEIF", "ENCRYPTED", "EXCLUDE", "FOLLOWING", 
+"FUNCTION", "GENERATED", "HUGEINT", "IF", "ILIKE", "LIMIT", "LOCALTIME", 
+"LOCALTIMESTAMP", "LOCKED", "MERGE", "NATURAL", "NEW", "NOCYCLE", 
+"NOMAXVALUE", "NOMINVALUE", "OFFSET", "OLD", "ON", "OTHERS", 
+"OVER", "PARTITION", "PRECEDING", "RANGE", "RECORDS", "REFERENCING", 
+"REMOTE", "RENAME", "REPEATABLE", "REPLICA", "RESTART", "RETURN", 
+"RETURNS", "SAMPLE", "SAVEPOINT", "SEQUENCE", "SERIAL", "SERIALIZABLE", 
+"SESSION_USER", "SIMPLE", "SPLIT_PART", "STDIN", "STDOUT", "STREAM", 
+"SYMMETRIC", "TIES", "TINYINT", "TRIGGER", "UNBOUNDED", "UNCOMMITTED", 
+"UNENCRYPTED", "WHILE", "XMLAGG", "XMLATTRIBUTES", "XMLCOMMENT", 
+"XMLCONCAT", "XMLDOCUMENT", "XMLELEMENT", "XMLFOREST", "XMLNAMESPACES", 
+"XMLPARSE", "XMLPI", "XMLQUERY", "XMLSCHEMA", "XMLTEXT", "XMLVALIDATE")
+
 # quoting
 quoteIfNeeded <- function(conn, x, warn=T, ...) {
   chars <- !grepl("^[a-z_][a-z0-9_]*$", x, perl=T) & !grepl("^\"[^\"]*\"$", x, perl=T)
   if (any(chars) && warn) {
     message("Identifier(s) ", paste("\"", x[chars],"\"", collapse=", ", sep=""), " contain uppercase or reserved SQL characters and need(s) to be quoted in queries.")
   }
-  reserved <- toupper(x) %in% .SQL92Keywords
+  reserved <- toupper(x) %in% reserved_monetdb_keywords
   if (any(reserved) && warn) {
     message("Identifier(s) ", paste("\"", x[reserved],"\"", collapse=", ", sep=""), " are reserved SQL keywords and need(s) to be quoted in queries.")
   }
@@ -801,17 +819,13 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 }, valueClass="list")
 
 # adapted from RMonetDB, no java-specific things in here...
-monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA, header=TRUE, 
-                                               locked=FALSE, na.strings="", nrow.check=500, 
+monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, header=TRUE, 
+                                               locked=FALSE, best.effort=FALSE, na.strings="", nrow.check=500, 
                                                delim=",", newline="\\n", quote="\"", create=TRUE, 
                                                col.names=NULL, lower.case.names=FALSE, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
   headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, header=header, ...)
-
-  if (!missing(nrows)) {
-    warning("monetdb.read.csv(): nrows parameter is not neccessary any more and deprecated.")
-  }
 
   if (length(files)>1){
     nn <- sapply(headers, ncol)
@@ -846,7 +860,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
     thefile <- normalizePath(files[i])
     dbSendUpdate(conn, paste("COPY", if(header) "OFFSET 2", "INTO", 
       tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
-      na.strings[1], "'", sep=""), if(locked) "LOCKED"))
+      na.strings[1], "'", sep=""), if(locked) "LOCKED", if(best.effort) "BEST EFFORT"))
   }
   dbGetQuery(conn, paste("SELECT COUNT(*) FROM", tablename))[[1]]
   dbCommit(conn)

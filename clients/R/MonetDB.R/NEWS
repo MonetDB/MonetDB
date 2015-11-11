@@ -8,16 +8,17 @@
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
 - Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey
-- Added col.names argument to monet.read.csv()
 - Added lower.case.names argument to monet.read.csv() in case users want to avoid quoting (a bit)
 - Fix for dbConnect() that should be more robust to invalid connections
 - Cleaned up quoting behavior in dbListTables(), dbRemoveTable() etc.
 - Now re-establishing connection if interrupt (CMD-C or ESC) occurs
 - Fixed a bug in monetdb.read.csv for multiple CSV files without headers
+- Added transactions to monetdb.read.csv so no empty tables are left over
+- Removed nrows parameter to monetdb.read.csv
+- Added col.names argument to monetdb.read.csv
 - dplyr src_monetdb now has a con parameter to pass an existing DBI connection
 - Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
 - Fixed a bug when dbWriteTable would not adhere to transactional semantics
-- Added transactions to monetdb.read.csv so no empty tables are left over
 - Fixed != comparisions in dplyr (Thanks, David)
 - New "mclient" function to get a shell-like DB interface
 - Support for running MonetDB in embedded mode (MonetDBLite)
