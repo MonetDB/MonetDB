@@ -2448,7 +2448,6 @@ str recycleRef;
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
 str refineRef;
 str registerRef;
-void register_http_handler(http_request_handler handler);
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 str remapRef;
 str remoteRef;
