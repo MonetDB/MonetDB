@@ -3866,12 +3866,16 @@ def main(argv) :
             os.environ[v] = env[v]
             if verbose:
                 print "%s = %s" % (v, env[v])
-    if verbose:
+    if verbose or testweb:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
         if os.environ.has_key('CLASSPATH'):
             print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
+    if testweb:
+        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+            if os.environ.has_key(v):
+                print "%s = %s" % (v, os.environ[v])
     STDOUT.flush()
 
     # add QUIET par to env
