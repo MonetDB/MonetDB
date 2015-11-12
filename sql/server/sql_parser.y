@@ -5020,7 +5020,7 @@ wrdval:
 			YYABORT;
 		}
 #endif
-		$$ = l; 
+		$$ = (wrd) l;
 	}
 ;
 
