@@ -1806,7 +1806,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".R"
         CALL = "R"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".rb"):
+    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
         EXT = ".rb"
         CALL = "ruby"
         SERVER = "SQL"
@@ -3866,12 +3866,16 @@ def main(argv) :
             os.environ[v] = env[v]
             if verbose:
                 print "%s = %s" % (v, env[v])
-    if verbose:
+    if verbose or testweb:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
         if os.environ.has_key('CLASSPATH'):
             print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
+    if testweb:
+        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+            if os.environ.has_key(v):
+                print "%s = %s" % (v, os.environ[v])
     STDOUT.flush()
 
     # add QUIET par to env
