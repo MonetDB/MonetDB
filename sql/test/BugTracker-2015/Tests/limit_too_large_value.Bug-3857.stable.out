@@ -1,0 +1,36 @@
+stdout of test 'limit_too_large_value.Bug-3857` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 15:49:12 >  
+# 15:49:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31933" "--set" "mapi_usock=/var/tmp/mtest-521/.s.monetdb.31933" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:49:12 >  
+
+# MonetDB 5 server v11.21.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31933/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-521/.s.monetdb.31933
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.54'
+# Finished reading the write-ahead log 'sql_logs/sql/log.54'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:49:13 >  
+# 15:49:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-521" "--port=31933"
+# 15:49:13 >  
+
+
+# 15:49:13 >  
+# 15:49:13 >  "Done."
+# 15:49:13 >  
+

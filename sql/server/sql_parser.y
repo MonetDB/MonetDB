@@ -4907,22 +4907,67 @@ name_commalist:
 			{ $$ = append_string($1, $3); }
  ;
 
-lngval:
-	sqlINT	{ $$ = strtoll($1,NULL,10); }
+wrdval:
+	lngval 	{ 
+		lng l = $1;
+#if SIZEOF_WRD == SIZEOF_INT
+
+		if (l > GDK_int_max) {
+			char *msg = sql_message("\b22000!constant (" LLFMT ") has wrong type (number expected)", l);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$ = 0;
+			YYABORT;
+		}
+#endif
+		$$ = (wrd) l;
+	}
 ;
 
-wrdval:
-	sqlINT  {
-#if SIZEOF_WRD == SIZEOF_INT
-		  $$ = strtol($1,NULL,10);
-#else /* SIZEOF_WRD == SIZEOF_LNG a*/
-		  $$ = strtoll($1,NULL,10);
-#endif
+lngval:
+	sqlINT	
+ 		{
+		  char *end = NULL, *s = $1;
+		  int l = _strlen(s);
+
+		  if (l <= 19) {
+		  	$$ = strtoll(s,&end,10);
+		  } else {
+			$$ = 0;
+		  }
+		  if (s+l != end || errno == ERANGE) {
+			char *msg = sql_message("\b22003!integer value too large or not a number (%s)", $1);
+
+			errno = 0;
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$ = 0;
+			YYABORT;
+		  }
 		}
-;
 
 intval:
-	sqlINT	{ $$ = strtol($1,NULL,10); }
+	sqlINT	
+ 		{
+		  char *end = NULL, *s = $1;
+		  int l = _strlen(s);
+
+		  if (l <= 10) {
+		  	$$ = strtol(s,&end,10);
+		  } else {
+			$$ = 0;
+		  }
+		  if (s+l != end || errno == ERANGE) {
+			char *msg = sql_message("\b22003!integer value too large or not a number (%s)", $1);
+
+			errno = 0;
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$ = 0;
+			YYABORT;
+		  }
+		}
  |	IDENT	{
 		  char *name = $1;
 		  sql_subtype *tpe;

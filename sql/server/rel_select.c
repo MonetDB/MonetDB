@@ -4587,11 +4587,10 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	sql_exp *e = NULL;
 	dlist *l = column_r->data.lval;
 
-	if (column_r->type == type_int)
+	if (!r || !is_project(r->op) || column_r->type == type_int)
 		return NULL;
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
-	assert(is_project(r->op));
 	r = r->l;
 	if (!r)
 		return e;
