@@ -2514,6 +2514,7 @@ esac
 AC_SUBST(GEOS_INCS)
 AC_SUBST(GEOS_LIBS)
 
+# fits, only used by sql
 org_have_cfitsio=no
 have_cfitsio=$org_have_cfitsio
 if test "x$enable_fits" != xno; then
@@ -2525,6 +2526,7 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_FITS, test x"$have_cfitsio" != xno)
 
+# netcdf, only used by sql
 org_have_netcdf=no
 have_netcdf=$org_have_netcdf
 if test "x$enable_netcdf" != xno; then
@@ -3406,21 +3408,12 @@ for comp in \
 	'sql         ' \
 	'geom        ' \
 	'console     ' \
-	'gsl         ' \
-	'fits        ' \
-	'netcdf      ' \
-	'lidar       ' \
 	'microhttpd  ' \
 	'rintegration' \
 	'odbc        ' \
 	'jdbc        ' \
 	'control     ' \
 	'testing     ' \
-	'developer   ' \
-	'strict      ' \
-	'debug       ' \
-	'assert      ' \
-	'optimize    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3438,6 +3431,7 @@ for comp in \
 	'atomic_ops   ' \
 	'bz2          ' \
 	'curl         ' \
+	'fits         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
 	'java         ' \
@@ -3445,6 +3439,8 @@ for comp in \
 	'java_jdbc    ' \
 	'liblas       ' \
 	'libxml2      ' \
+	'lidar        ' \
+	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
