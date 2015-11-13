@@ -1,0 +1,52 @@
+stdout of test 'query2.8` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:43 >  
+# 10:22:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:43 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:22:43 >  
+# 10:22:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:43 >  
+
+#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
+#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
+#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
+#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
+#FROM (
+#    SELECT *
+#    FROM bam.alignments_1
+% bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+% qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT f1.qname AS qname, f1.flag AS f1_flag, f1.rname AS f1_rname, f1.pos AS f1_pos, f1.mapq AS f1_mapq, f1.cigar AS f1_cigar, 
+#    f1.rnext AS f1_rnext, f1.pnext AS f1_pnext, f1.tlen AS f1_tlen, f1.seq AS f1_seq, f1.qual AS f1_qual, 
+#                          f2.flag AS f2_flag, f2.rname AS f2_rname, f2.pos AS f2_pos, f2.mapq AS f2_mapq, f2.cigar AS f2_cigar, 
+#    f2.rnext AS f2_rnext, f2.pnext AS f2_pnext, f2.tlen AS f2_tlen, f2.seq AS f2_seq, f2.qual AS f2_qual
+#FROM (
+#   SELECT *
+#   FROM bam.unpaired_primary_alignments_3
+% .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
+% qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+
+# 10:22:43 >  
+# 10:22:43 >  "Done."
+# 10:22:43 >  
+

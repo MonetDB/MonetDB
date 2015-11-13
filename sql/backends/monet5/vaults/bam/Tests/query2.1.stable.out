@@ -1,0 +1,60 @@
+stdout of test 'query2.1` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:41 >  
+# 10:22:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:41 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:22:41 >  
+# 10:22:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:41 >  
+
+#WITH alig AS (
+#    SELECT qname, flag, seq, qual
+#    FROM bam.alignments_1
+#    WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+#      AND bam.bam_flag(flag, 'seco_alig') = False
+#      AND mapq < 100
+#), alig_proj AS (
+#    SELECT qname, flag,
+#        CASE WHEN bam.bam_flag(flag, 'segm_reve') THEN bam.reverse_seq(seq)   ELSE seq  END AS seq,
+#        CASE WHEN bam.bam_flag(flag, 'segm_reve') THEN bam.reverse_qual(qual) ELSE qual END AS qual
+#    FROM alig
+#    WHERE qname IN (
+#        SELECT qname
+% bam.L15,	bam.L15,	bam.L15,	bam.L15,	bam.L15 # table_name
+% qname,	l_seq,	qual1,	r_seq,	qual2 # name
+% clob,	clob,	clob,	clob,	clob # type
+% 0,	0,	0,	0,	0 # length
+#SELECT qname,
+#    CASE WHEN bam.bam_flag(l_flag, 'segm_reve') THEN bam.reverse_seq(l_seq)   ELSE l_seq  END AS l_seq,
+#    CASE WHEN bam.bam_flag(l_flag, 'segm_reve') THEN bam.reverse_qual(l_qual) ELSE l_qual END AS l_qual,
+#    CASE WHEN bam.bam_flag(r_flag, 'segm_reve') THEN bam.reverse_seq(r_seq)   ELSE r_seq  END AS r_seq,
+#    CASE WHEN bam.bam_flag(r_flag, 'segm_reve') THEN bam.reverse_qual(r_qual) ELSE r_qual END AS r_qual
+#FROM bam.paired_primary_alignments_3
+#WHERE l_mapq < 100
+#  AND r_mapq < 100
+#ORDER BY qname;
+% bam.paired_primary_alignments_3,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+% qname,	l_seq,	l_qual,	r_seq,	r_qual # name
+% clob,	clob,	clob,	clob,	clob # type
+% 0,	0,	0,	0,	0 # length
+
+# 10:22:41 >  
+# 10:22:41 >  "Done."
+# 10:22:41 >  
+

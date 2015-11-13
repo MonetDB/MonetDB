@@ -1,0 +1,382 @@
+stderr of test 'bam_loader_repos` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 13:29:49 >  
+# 13:29:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37021" "--set" "mapi_usock=/var/tmp/mtest-21062/.s.monetdb.37021" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 13:29:49 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37021
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21062/.s.monetdb.37021
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+# <bam_loader>: Loader started for 2 BAM files...
+# # <bam_loader> Retrieving next file id...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file2.sam'...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file1.bam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file2.sam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file1.bam'...
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file2.sam'...
+# # CREATE TABLE bam.alignments_9 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT alignments_9_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_9 ( 
+# 		tag						   CHAR(2)	 NOT NULL, 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		type						  CHAR(1)	 NOT NULL, 
+# 		value						 STRING, 
+# 		CONSTRAINT alignments_extra_9_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), 
+# 		CONSTRAINT alignments_extra_9_fkey_virtual_offset FOREIGN KEY (virtual_offset) 
+# 			REFERENCES bam.alignments_9 (virtual_offset) 
+# 	);
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file1.bam'...
+# # CREATE TABLE bam.alignments_10 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT alignments_10_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_10 ( 
+# 		tag						   CHAR(2)	 NOT NULL, 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		type						  CHAR(1)	 NOT NULL, 
+# 		value						 STRING, 
+# 		CONSTRAINT alignments_extra_10_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), 
+# 		CONSTRAINT alignments_extra_10_fkey_virtual_offset FOREIGN KEY (virtual_offset) 
+# 			REFERENCES bam.alignments_10 (virtual_offset) 
+# 	);
+# # <bam_loader> Creating reader threads...
+# # <Thread 0> Starting on next file...
+# # <Thread 0> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file2.sam' (file id 9)...
+# # <Thread 1> Starting on next file...
+# # <bam_loader> Waiting for reader threads to finish...
+# # <Thread 1> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file1.bam' (file id 10)...
+# # <Thread 3> Starting on next file...
+# # <Thread 2> Starting on next file...
+# # <Thread 3> No files left to work on; thread done
+# # <Thread 2> No files left to work on; thread done
+# # <Thread 1> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file1.bam' (file id 10) processed!
+# # <Thread 1> Starting on next file...
+# # <Thread 1> No files left to work on; thread done
+# # <Thread 0> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/file2.sam' (file id 9) processed!
+# # <Thread 0> Starting on next file...
+# # <Thread 0> No files left to work on; thread done
+# # <bam_loader> Copying data into DB...
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/9/files_0', 'bam_binaries/9/files_1', 'bam_binaries/9/files_2', 'bam_binaries/9/files_3', 'bam_binaries/9/files_4', 'bam_binaries/9/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/9/sq_0', 'bam_binaries/9/sq_1', 'bam_binaries/9/sq_2', 'bam_binaries/9/sq_3', 'bam_binaries/9/sq_4', 'bam_binaries/9/sq_5', 'bam_binaries/9/sq_6');
+# COPY BINARY INTO bam.pg	FROM ('bam_binaries/9/pg_0', 'bam_binaries/9/pg_1', 'bam_binaries/9/pg_2', 'bam_binaries/9/pg_3', 'bam_binaries/9/pg_4', 'bam_binaries/9/pg_5');
+# COPY BINARY INTO bam.alignments_9 FROM 	('bam_binaries/9/alignments_0', 'bam_binaries/9/alignments_1', 'bam_binaries/9/alignments_2', 'bam_binaries/9/alignments_3', 'bam_binaries/9/alignments_4', 'bam_binaries/9/alignments_5', 'bam_binaries/9/alignments_6', 'bam_binaries/9/alignments_7', 'bam_binaries/9/alignments_8', 'bam_binaries/9/alignments_9', 'bam_binaries/9/alignments_10', 'bam_binaries/9/alignments_11');
+# COPY BINARY INTO bam.alignments_extra_9 FROM ('bam_binaries/9/alignments_extra_0', 'bam_binaries/9/alignments_extra_1', 'bam_binaries/9/alignments_extra_2', 'bam_binaries/9/alignments_extra_3');
+# 
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/10/files_0', 'bam_binaries/10/files_1', 'bam_binaries/10/files_2', 'bam_binaries/10/files_3', 'bam_binaries/10/files_4', 'bam_binaries/10/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/10/sq_0', 'bam_binaries/10/sq_1', 'bam_binaries/10/sq_2', 'bam_binaries/10/sq_3', 'bam_binaries/10/sq_4', 'bam_binaries/10/sq_5', 'bam_binaries/10/sq_6');
+# COPY BINARY INTO bam.pg	FROM ('bam_binaries/10/pg_0', 'bam_binaries/10/pg_1', 'bam_binaries/10/pg_2', 'bam_binaries/10/pg_3', 'bam_binaries/10/pg_4', 'bam_binaries/10/pg_5');
+# COPY BINARY INTO bam.alignments_10 FROM 	('bam_binaries/10/alignments_0', 'bam_binaries/10/alignments_1', 'bam_binaries/10/alignments_2', 'bam_binaries/10/alignments_3', 'bam_binaries/10/alignments_4', 'bam_binaries/10/alignments_5', 'bam_binaries/10/alignments_6', 'bam_binaries/10/alignments_7', 'bam_binaries/10/alignments_8', 'bam_binaries/10/alignments_9', 'bam_binaries/10/alignments_10', 'bam_binaries/10/alignments_11');
+# COPY BINARY INTO bam.alignments_extra_10 FROM ('bam_binaries/10/alignments_extra_0', 'bam_binaries/10/alignments_extra_1', 'bam_binaries/10/alignments_extra_2', 'bam_binaries/10/alignments_extra_3');
+# 
+# # <bam_loader>: Loader finished processing 2 BAM files...
+# # <bam_loader>: Loader started for 2 BAM files...
+# # <bam_loader> Retrieving next file id...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam'...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam'...
+# # <bam_loader> Checking sortedness for BAM file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam'...
+# # <bam_loader> Checking sortedness for BAM file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam'...
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam'...
+# # CREATE TABLE bam.paired_primary_alignments_11 ( 
+# 		l_virtual_offset			  BIGINT	  NOT NULL, 
+# 		r_virtual_offset			  BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		l_flag						SMALLINT	NOT NULL, 
+# 		l_rname					   STRING	  NOT NULL, 
+# 		l_pos						 INT		 NOT NULL, 
+# 		l_mapq						SMALLINT	NOT NULL, 
+# 		l_cigar					   STRING	  NOT NULL, 
+# 		l_rnext					   STRING	  NOT NULL, 
+# 		l_pnext					   INT		 NOT NULL, 
+# 		l_tlen						INT		 NOT NULL, 
+# 		l_seq						 STRING	  NOT NULL, 
+# 		l_qual						STRING	  NOT NULL, 
+# 		r_flag						SMALLINT	NOT NULL, 
+# 		r_rname					   STRING	  NOT NULL, 
+# 		r_pos						 INT		 NOT NULL, 
+# 		r_mapq						SMALLINT	NOT NULL, 
+# 		r_cigar					   STRING	  NOT NULL, 
+# 		r_rnext					   STRING	  NOT NULL, 
+# 		r_pnext					   INT		 NOT NULL, 
+# 		r_tlen						INT		 NOT NULL, 
+# 		r_seq						 STRING	  NOT NULL, 
+# 		r_qual						STRING	  NOT NULL, 
+# 		CONSTRAINT paired_primary_alignments_11_pkey_l_virtual_offset_r_virtual_offset 
+# 			PRIMARY KEY (l_virtual_offset, r_virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.paired_secondary_alignments_11 ( 
+# 		l_virtual_offset			  BIGINT	  NOT NULL, 
+# 		r_virtual_offset			  BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		l_flag						SMALLINT	NOT NULL, 
+# 		l_rname					   STRING	  NOT NULL, 
+# 		l_pos						 INT		 NOT NULL, 
+# 		l_mapq						SMALLINT	NOT NULL, 
+# 		l_cigar					   STRING	  NOT NULL, 
+# 		l_rnext					   STRING	  NOT NULL, 
+# 		l_pnext					   INT		 NOT NULL, 
+# 		l_tlen						INT		 NOT NULL, 
+# 		l_seq						 STRING	  NOT NULL, 
+# 		l_qual						STRING	  NOT NULL, 
+# 		r_flag						SMALLINT	NOT NULL, 
+# 		r_rname					   STRING	  NOT NULL, 
+# 		r_pos						 INT		 NOT NULL, 
+# 		r_mapq						SMALLINT	NOT NULL, 
+# 		r_cigar					   STRING	  NOT NULL, 
+# 		r_rnext					   STRING	  NOT NULL, 
+# 		r_pnext					   INT		 NOT NULL, 
+# 		r_tlen						INT		 NOT NULL, 
+# 		r_seq						 STRING	  NOT NULL, 
+# 		r_qual						STRING	  NOT NULL, 
+# 		CONSTRAINT paired_secondary_alignments_11_pkey_l_virtual_offset_r_virtual_offset 
+# 			PRIMARY KEY (l_virtual_offset, r_virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.unpaired_alignments_11 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT unpaired_alignments_11_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_11 ( 
+# 	tag						   CHAR(2)	 NOT NULL, 
+# 	virtual_offset				BIGINT	  NOT NULL, 
+# 	type						  CHAR(1)	 NOT NULL, 
+# 	value						 STRING, 
+# 	CONSTRAINT alignments_extra_11_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset) 
+# 	); 
+# 	
+# 	CREATE VIEW bam.unpaired_primary_alignments_11 AS 
+# 		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, 
+# 			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual 
+# 		FROM bam.paired_primary_alignments_11 
+# 		UNION ALL 
+# 		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, 
+# 			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual 
+# 		FROM bam.paired_primary_alignments_11; 
+# 	
+# 	CREATE VIEW bam.unpaired_secondary_alignments_11 AS 
+# 		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, 
+# 			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual 
+# 		FROM bam.paired_secondary_alignments_11 
+# 		UNION ALL 
+# 		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, 
+# 			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual 
+# 		FROM bam.paired_secondary_alignments_11; 
+# 	
+# 	CREATE VIEW bam.unpaired_all_alignments_11 AS 
+# 	SELECT * 
+# 	FROM bam.unpaired_primary_alignments_11 
+# 	UNION ALL 
+# 	SELECT * 
+# 	FROM bam.unpaired_secondary_alignments_11 
+# 	UNION ALL 
+# 	SELECT * 
+# 	FROM bam.unpaired_alignments_11;
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam'...
+# # CREATE TABLE bam.paired_primary_alignments_12 ( 
+# 		l_virtual_offset			  BIGINT	  NOT NULL, 
+# 		r_virtual_offset			  BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		l_flag						SMALLINT	NOT NULL, 
+# 		l_rname					   STRING	  NOT NULL, 
+# 		l_pos						 INT		 NOT NULL, 
+# 		l_mapq						SMALLINT	NOT NULL, 
+# 		l_cigar					   STRING	  NOT NULL, 
+# 		l_rnext					   STRING	  NOT NULL, 
+# 		l_pnext					   INT		 NOT NULL, 
+# 		l_tlen						INT		 NOT NULL, 
+# 		l_seq						 STRING	  NOT NULL, 
+# 		l_qual						STRING	  NOT NULL, 
+# 		r_flag						SMALLINT	NOT NULL, 
+# 		r_rname					   STRING	  NOT NULL, 
+# 		r_pos						 INT		 NOT NULL, 
+# 		r_mapq						SMALLINT	NOT NULL, 
+# 		r_cigar					   STRING	  NOT NULL, 
+# 		r_rnext					   STRING	  NOT NULL, 
+# 		r_pnext					   INT		 NOT NULL, 
+# 		r_tlen						INT		 NOT NULL, 
+# 		r_seq						 STRING	  NOT NULL, 
+# 		r_qual						STRING	  NOT NULL, 
+# 		CONSTRAINT paired_primary_alignments_12_pkey_l_virtual_offset_r_virtual_offset 
+# 			PRIMARY KEY (l_virtual_offset, r_virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.paired_secondary_alignments_12 ( 
+# 		l_virtual_offset			  BIGINT	  NOT NULL, 
+# 		r_virtual_offset			  BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		l_flag						SMALLINT	NOT NULL, 
+# 		l_rname					   STRING	  NOT NULL, 
+# 		l_pos						 INT		 NOT NULL, 
+# 		l_mapq						SMALLINT	NOT NULL, 
+# 		l_cigar					   STRING	  NOT NULL, 
+# 		l_rnext					   STRING	  NOT NULL, 
+# 		l_pnext					   INT		 NOT NULL, 
+# 		l_tlen						INT		 NOT NULL, 
+# 		l_seq						 STRING	  NOT NULL, 
+# 		l_qual						STRING	  NOT NULL, 
+# 		r_flag						SMALLINT	NOT NULL, 
+# 		r_rname					   STRING	  NOT NULL, 
+# 		r_pos						 INT		 NOT NULL, 
+# 		r_mapq						SMALLINT	NOT NULL, 
+# 		r_cigar					   STRING	  NOT NULL, 
+# 		r_rnext					   STRING	  NOT NULL, 
+# 		r_pnext					   INT		 NOT NULL, 
+# 		r_tlen						INT		 NOT NULL, 
+# 		r_seq						 STRING	  NOT NULL, 
+# 		r_qual						STRING	  NOT NULL, 
+# 		CONSTRAINT paired_secondary_alignments_12_pkey_l_virtual_offset_r_virtual_offset 
+# 			PRIMARY KEY (l_virtual_offset, r_virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.unpaired_alignments_12 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT unpaired_alignments_12_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_12 ( 
+# 	tag						   CHAR(2)	 NOT NULL, 
+# 	virtual_offset				BIGINT	  NOT NULL, 
+# 	type						  CHAR(1)	 NOT NULL, 
+# 	value						 STRING, 
+# 	CONSTRAINT alignments_extra_12_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset) 
+# 	); 
+# 	
+# 	CREATE VIEW bam.unpaired_primary_alignments_12 AS 
+# 		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, 
+# 			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual 
+# 		FROM bam.paired_primary_alignments_12 
+# 		UNION ALL 
+# 		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, 
+# 			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual 
+# 		FROM bam.paired_primary_alignments_12; 
+# 	
+# 	CREATE VIEW bam.unpaired_secondary_alignments_12 AS 
+# 		SELECT l_virtual_offset AS virtual_offset, qname, l_flag AS flag, l_rname AS rname, l_pos AS pos, l_mapq AS mapq, 
+# 			l_cigar AS cigar, l_rnext AS rnext, l_pnext AS pnext, l_tlen AS tlen, l_seq AS seq, l_qual AS qual 
+# 		FROM bam.paired_secondary_alignments_12 
+# 		UNION ALL 
+# 		SELECT r_virtual_offset AS virtual_offset, qname, r_flag AS flag, r_rname AS rname, r_pos AS pos, r_mapq AS mapq, 
+# 			r_cigar AS cigar, r_rnext AS rnext, r_pnext AS pnext, r_tlen AS tlen, r_seq AS seq, r_qual AS qual 
+# 		FROM bam.paired_secondary_alignments_12; 
+# 	
+# 	CREATE VIEW bam.unpaired_all_alignments_12 AS 
+# 	SELECT * 
+# 	FROM bam.unpaired_primary_alignments_12 
+# 	UNION ALL 
+# 	SELECT * 
+# 	FROM bam.unpaired_secondary_alignments_12 
+# 	UNION ALL 
+# 	SELECT * 
+# 	FROM bam.unpaired_alignments_12;
+# # <bam_loader> Creating reader threads...
+# # <Thread 0> Starting on next file...
+# # <Thread 0> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam' (file id 11)...
+# # <Thread 1> Starting on next file...
+# # <Thread 1> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam' (file id 12)...
+# # <Thread 2> Starting on next file...
+# # <Thread 2> No files left to work on; thread done
+# # <bam_loader> Waiting for reader threads to finish...
+# # <Thread 3> Starting on next file...
+# # <Thread 3> No files left to work on; thread done
+# # <Thread 1> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file1.bam' (file id 12) processed!
+# # <Thread 1> Starting on next file...
+# # <Thread 1> No files left to work on; thread done
+# # <Thread 0> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/queryname/file2.sam' (file id 11) processed!
+# # <Thread 0> Starting on next file...
+# # <Thread 0> No files left to work on; thread done
+# # <bam_loader> Copying data into DB...
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/11/files_0', 'bam_binaries/11/files_1', 'bam_binaries/11/files_2', 'bam_binaries/11/files_3', 'bam_binaries/11/files_4', 'bam_binaries/11/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/11/sq_0', 'bam_binaries/11/sq_1', 'bam_binaries/11/sq_2', 'bam_binaries/11/sq_3', 'bam_binaries/11/sq_4', 'bam_binaries/11/sq_5', 'bam_binaries/11/sq_6');
+# COPY BINARY INTO bam.pg	FROM ('bam_binaries/11/pg_0', 'bam_binaries/11/pg_1', 'bam_binaries/11/pg_2', 'bam_binaries/11/pg_3', 'bam_binaries/11/pg_4', 'bam_binaries/11/pg_5');
+# COPY BINARY INTO bam.unpaired_alignments_11 FROM 	('bam_binaries/11/alignments_0', 'bam_binaries/11/alignments_1', 'bam_binaries/11/alignments_2', 'bam_binaries/11/alignments_3', 'bam_binaries/11/alignments_4', 'bam_binaries/11/alignments_5', 'bam_binaries/11/alignments_6', 'bam_binaries/11/alignments_7', 'bam_binaries/11/alignments_8', 'bam_binaries/11/alignments_9', 'bam_binaries/11/alignments_10', 'bam_binaries/11/alignments_11');
+# COPY BINARY INTO bam.paired_primary_alignments_11 FROM 	('bam_binaries/11/alignments_paired_primary_0', 'bam_binaries/11/alignments_paired_primary_1', 'bam_binaries/11/alignments_paired_primary_2', 'bam_binaries/11/alignments_paired_primary_3', 'bam_binaries/11/alignments_paired_primary_4', 'bam_binaries/11/alignments_paired_primary_5', 'bam_binaries/11/alignments_paired_primary_6', 'bam_binaries/11/alignments_paired_primary_7', 'bam_binaries/11/alignments_paired_primary_8', 'bam_binaries/11/alignments_paired_primary_9', 'bam_binaries/11/alignments_paired_primary_10', 'bam_binaries/11/alignments_paired_primary_11', 	 'bam_binaries/11/alignments_paired_primary_12', 'bam_binaries/11/alignments_paired_primary_13', 'bam_binaries/11/alignments_paired_primary_14', 'bam_binaries/11/alignments_paired_primary_15', 'bam_binaries/11/alignments_paired_primary_16', 'bam_binaries/11/alignments_paired_primary_17', 'bam_binaries/11/alignments_paired_primary_18', 'bam_binaries/11/alignments_paired_primary_19', 'bam_binaries/11/alignments_paired_primary_20', 'bam_binaries/11/alignments_paired_primary_21', 'bam_binaries/11/alignments_paired_primary_22');
+# COPY BINARY INTO bam.paired_secondary_alignments_11 FROM 	('bam_binaries/11/alignments_paired_secondary_0', 'bam_binaries/11/alignments_paired_secondary_1', 'bam_binaries/11/alignments_paired_secondary_2', 'bam_binaries/11/alignments_paired_secondary_3', 'bam_binaries/11/alignments_paired_secondary_4', 'bam_binaries/11/alignments_paired_secondary_5', 'bam_binaries/11/alignments_paired_secondary_6', 'bam_binaries/11/alignments_paired_secondary_7', 'bam_binaries/11/alignments_paired_secondary_8', 'bam_binaries/11/alignments_paired_secondary_9', 'bam_binaries/11/alignments_paired_secondary_10', 'bam_binaries/11/alignments_paired_secondary_11', 	 'bam_binaries/11/alignments_paired_secondary_12', 'bam_binaries/11/alignments_paired_secondary_13', 'bam_binaries/11/alignments_paired_secondary_14', 'bam_binaries/11/alignments_paired_secondary_15', 'bam_binaries/11/alignments_paired_secondary_16', 'bam_binaries/11/alignments_paired_secondary_17', 'bam_binaries/11/alignments_paired_secondary_18', 'bam_binaries/11/alignments_paired_secondary_19', 'bam_binaries/11/alignments_paired_secondary_20', 'bam_binaries/11/alignments_paired_secondary_21', 'bam_binaries/11/alignments_paired_secondary_22');
+# COPY BINARY INTO bam.alignments_extra_11 FROM ('bam_binaries/11/alignments_extra_0', 'bam_binaries/11/alignments_extra_1', 'bam_binaries/11/alignments_extra_2', 'bam_binaries/11/alignments_extra_3');
+# 
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/12/files_0', 'bam_binaries/12/files_1', 'bam_binaries/12/files_2', 'bam_binaries/12/files_3', 'bam_binaries/12/files_4', 'bam_binaries/12/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/12/sq_0', 'bam_binaries/12/sq_1', 'bam_binaries/12/sq_2', 'bam_binaries/12/sq_3', 'bam_binaries/12/sq_4', 'bam_binaries/12/sq_5', 'bam_binaries/12/sq_6');
+# COPY BINARY INTO bam.pg	FROM ('bam_binaries/12/pg_0', 'bam_binaries/12/pg_1', 'bam_binaries/12/pg_2', 'bam_binaries/12/pg_3', 'bam_binaries/12/pg_4', 'bam_binaries/12/pg_5');
+# COPY BINARY INTO bam.unpaired_alignments_12 FROM 	('bam_binaries/12/alignments_0', 'bam_binaries/12/alignments_1', 'bam_binaries/12/alignments_2', 'bam_binaries/12/alignments_3', 'bam_binaries/12/alignments_4', 'bam_binaries/12/alignments_5', 'bam_binaries/12/alignments_6', 'bam_binaries/12/alignments_7', 'bam_binaries/12/alignments_8', 'bam_binaries/12/alignments_9', 'bam_binaries/12/alignments_10', 'bam_binaries/12/alignments_11');
+# COPY BINARY INTO bam.paired_primary_alignments_12 FROM 	('bam_binaries/12/alignments_paired_primary_0', 'bam_binaries/12/alignments_paired_primary_1', 'bam_binaries/12/alignments_paired_primary_2', 'bam_binaries/12/alignments_paired_primary_3', 'bam_binaries/12/alignments_paired_primary_4', 'bam_binaries/12/alignments_paired_primary_5', 'bam_binaries/12/alignments_paired_primary_6', 'bam_binaries/12/alignments_paired_primary_7', 'bam_binaries/12/alignments_paired_primary_8', 'bam_binaries/12/alignments_paired_primary_9', 'bam_binaries/12/alignments_paired_primary_10', 'bam_binaries/12/alignments_paired_primary_11', 	 'bam_binaries/12/alignments_paired_primary_12', 'bam_binaries/12/alignments_paired_primary_13', 'bam_binaries/12/alignments_paired_primary_14', 'bam_binaries/12/alignments_paired_primary_15', 'bam_binaries/12/alignments_paired_primary_16', 'bam_binaries/12/alignments_paired_primary_17', 'bam_binaries/12/alignments_paired_primary_18', 'bam_binaries/12/alignments_paired_primary_19', 'bam_binaries/12/alignments_paired_primary_20', 'bam_binaries/12/alignments_paired_primary_21', 'bam_binaries/12/alignments_paired_primary_22');
+# COPY BINARY INTO bam.paired_secondary_alignments_12 FROM 	('bam_binaries/12/alignments_paired_secondary_0', 'bam_binaries/12/alignments_paired_secondary_1', 'bam_binaries/12/alignments_paired_secondary_2', 'bam_binaries/12/alignments_paired_secondary_3', 'bam_binaries/12/alignments_paired_secondary_4', 'bam_binaries/12/alignments_paired_secondary_5', 'bam_binaries/12/alignments_paired_secondary_6', 'bam_binaries/12/alignments_paired_secondary_7', 'bam_binaries/12/alignments_paired_secondary_8', 'bam_binaries/12/alignments_paired_secondary_9', 'bam_binaries/12/alignments_paired_secondary_10', 'bam_binaries/12/alignments_paired_secondary_11', 	 'bam_binaries/12/alignments_paired_secondary_12', 'bam_binaries/12/alignments_paired_secondary_13', 'bam_binaries/12/alignments_paired_secondary_14', 'bam_binaries/12/alignments_paired_secondary_15', 'bam_binaries/12/alignments_paired_secondary_16', 'bam_binaries/12/alignments_paired_secondary_17', 'bam_binaries/12/alignments_paired_secondary_18', 'bam_binaries/12/alignments_paired_secondary_19', 'bam_binaries/12/alignments_paired_secondary_20', 'bam_binaries/12/alignments_paired_secondary_21', 'bam_binaries/12/alignments_paired_secondary_22');
+# COPY BINARY INTO bam.alignments_extra_12 FROM ('bam_binaries/12/alignments_extra_0', 'bam_binaries/12/alignments_extra_1', 'bam_binaries/12/alignments_extra_2', 'bam_binaries/12/alignments_extra_3');
+# 
+# # <bam_loader>: Loader finished processing 2 BAM files...
+# 
+# 13:29:49 >  
+# 13:29:49 >  "/usr/bin/python2" "bam_loader_repos.SQL.py" "bam_loader_repos"
+# 13:29:49 >  
+
+
+# 13:29:49 >  
+# 13:29:49 >  "Done."
+# 13:29:49 >  
+

@@ -4,6 +4,8 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
+SUBDIRS = HAVE_SAMTOOLS?bam
+
 INCLUDES = ../../../include \
 	   ../../../common \
 	   ../../../storage \

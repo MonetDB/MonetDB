@@ -1,0 +1,82 @@
+stdout of test 'query2.5` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:42 >  
+# 10:22:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:42 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup calc.min a bulk operator implementation is needed
+#WARNING To speedup calc.min a bulk operator implementation is needed
+
+# 10:22:42 >  
+# 10:22:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:42 >  
+
+#WITH qnames1 AS (
+#    SELECT DISTINCT qname
+#    FROM bam.alignments_1
+#), qnames2 AS (
+#    SELECT DISTINCT qname
+#    FROM bam.alignments_2
+#)
+#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
+#FROM (
+#    SELECT COUNT(*) AS count_a_insct_b
+#    FROM (
+#        SELECT *
+#        FROM qnames1
+#        INTERSECT
+#        SELECT *
+#        FROM qnames2
+#    ) AS a_insct_b
+#) AS insct_sub, (
+#    SELECT COUNT(*) AS count_qnames1
+#    FROM qnames1
+#) AS qnames1_sub, (
+% .insct_sub,	.L3,	.L3 # table_name
+% count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
+% wrd,	hugeint,	hugeint # type
+% 2,	1,	1 # length
+[ 21,	0,	0	]
+#WITH qnames1 AS (
+#    SELECT DISTINCT qname
+#    FROM bam.unpaired_all_alignments_3
+#), qnames2 AS (
+#    SELECT DISTINCT qname
+#    FROM bam.unpaired_all_alignments_4
+#)
+#SELECT count_a_insct_b, count_qnames1 - count_a_insct_b AS count_a_minus_b, count_qnames2 - count_a_insct_b AS count_b_minus_a
+#FROM (
+#    SELECT COUNT(*) AS count_a_insct_b
+#    FROM (
+#        SELECT *
+#        FROM qnames1
+#        INTERSECT
+#        SELECT *
+#        FROM qnames2
+#    ) AS a_insct_b
+#) AS insct_sub, (
+#    SELECT COUNT(*) AS count_qnames1
+% .insct_sub,	.L3,	.L3 # table_name
+% count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
+% wrd,	hugeint,	hugeint # type
+% 2,	1,	1 # length
+[ 21,	0,	0	]
+
+# 10:22:43 >  
+# 10:22:43 >  "Done."
+# 10:22:43 >  
+
