@@ -1,9 +1,20 @@
 /*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2014 MonetDB B.V.
+ * All Rights Reserved.
  */
 
 /*
@@ -15,26 +26,78 @@
 #include "monetdb_config.h"
 #include "bam_lib.h"
 
-#define flag_str2sht(flag_str)						\
-	(strcmp(flag_str, "mult_segm") == 0 ? 0 :			\
-	 (strcmp(flag_str, "prop_alig") == 0 ? 1 :			\
-	  (strcmp(flag_str, "segm_unma") == 0 ? 2 :			\
-	   (strcmp(flag_str, "next_unma") == 0 ? 3 :			\
-		(strcmp(flag_str, "segm_reve") == 0 ? 4 :			\
-		 (strcmp(flag_str, "next_reve") == 0 ? 5 :			\
-		  (strcmp(flag_str, "firs_segm") == 0 ? 6 :			\
-		   (strcmp(flag_str, "last_segm") == 0 ? 7 :		\
-		(strcmp(flag_str, "seco_alig") == 0 ? 8 :		\
-		 (strcmp(flag_str, "qual_cont") == 0 ? 9 :		\
-		  (strcmp(flag_str, "opti_dupl") == 0 ? 10 :		\
-		   (strcmp(flag_str, "supp_alig") == 0 ? 11 : -1))))))))))))
+/* Map string to integer by adding all odd and subtracting all even numbers
+ * For the strings that we want to detect, this gives the following:
+ * mult_segm -> 71
+ * prop_alig -> 101
+ * segm_unma -> 84
+ * next_unma -> 89
+ * segm_reve -> 73
+ * next_reve -> 78
+ * firs_segm -> 83
+ * last_segm -> 97
+ * seco_alig -> 106
+ * qual_cont -> 98
+ * opti_dupl -> 118
+ * supp_alig -> 102
+ *
+ * These integers fit in an array of 48 positions
+ * Define two arrays:
+ * - One that maps int position to the bit position that we
+ *   are looking for
+ * - One that maps bit position to string, so we can check if
+ *   the input really was one of the valid strings (since many)
+ *   strings will map to the same integer
+ */
+
+sht intbit_map[] = {
+	 0, -1,  4, -1, -1, -1, -1,  5, -1, -1,
+	-1, -1,  6,  2, -1, -1, -1, -1,  3, -1,
+	-1, -1, -1, -1, -1, -1,  7,  9, -1, -1,
+	 1, 11, -1, -1, -1,  8, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, 10
+};
+
+str posstr_map[] = {
+	"mult_segm",
+	"prop_alig",
+	"segm_unma",
+	"next_unma",
+	"segm_reve",
+	"next_reve",
+	"firs_segm",
+	"last_segm",
+	"seco_alig",
+	"qual_cont",
+	"opti_dupl",
+	"supp_alig"
+};
+
+static sht 
+flag_str2sht(str flag_str) {
+	int i = 0;
+	int mult = 1;
+	int strnum = -71;
+	char c;
+	sht k = -1;
+	while((c = flag_str[i++]) != '\0') {
+		strnum += mult * (int)c;
+		mult *= -1;
+	}
+	if(strnum < 0 || strnum > 47 || (k = intbit_map[strnum]) < 0 ||
+			strcmp(posstr_map[k], flag_str) != 0) {
+		k = -1;
+	}
+	return k;
+}
 
 #define kth_bit(flag, k) ((flag & (1 << k)) == (1 << k))
 
 str
 bam_flag(bit * ret, sht * flag, str * name)
 {
-	sht k = flag_str2sht(*name);
+	sht k;
+	k = flag_str2sht(*name);
 
 	if (k < 0)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
@@ -43,70 +106,56 @@ bam_flag(bit * ret, sht * flag, str * name)
 	return MAL_SUCCEED;
 }
 
-// use a simple lookup table for these mappings
+char reverse_seq_map[] = {
+	'T', //A
+	'V', //B
+	'G', //C
+	'H', //D
+	 0 , //E
+	 0 , //F
+	'C', //G
+	'D', //H
+	 0 , //I
+	 0 , //J
+	'M', //K
+	 0 , //L
+	'K', //M
+	'N', //N
+	 0 , //O
+	 0 , //P
+	 0 , //Q
+	'Y', //R
+	'S', //S
+	'A', //T
+	 0 , //U
+	'B', //V
+	'W', //W
+	 0 , //X
+	'R'  //Y
+};
+
 str
 reverse_seq(str * ret, str * seq)
 {
 	str result;
 	unsigned int i;
 	unsigned int len = strlen(*seq);
+	sht map_index;
+	str forward = *seq;
+	str backward;
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
 		throw(MAL, "reverse_seq", MAL_MALLOC_FAIL);
+
+	backward = &result[len-1];
 	for (i = 0; i < len; ++i) {
-		switch ((*seq)[i]) {
-		case 'A':
-			result[len - i - 1] = 'T';
-			break;
-		case 'T':
-			result[len - i - 1] = 'A';
-			break;
-		case 'C':
-			result[len - i - 1] = 'G';
-			break;
-		case 'G':
-			result[len - i - 1] = 'C';
-			break;
-		case 'R':
-			result[len - i - 1] = 'Y';
-			break;
-		case 'Y':
-			result[len - i - 1] = 'R';
-			break;
-		case 'S':
-			result[len - i - 1] = 'S';
-			break;
-		case 'W':
-			result[len - i - 1] = 'W';
-			break;
-		case 'K':
-			result[len - i - 1] = 'M';
-			break;
-		case 'M':
-			result[len - i - 1] = 'K';
-			break;
-		case 'H':
-			result[len - i - 1] = 'D';
-			break;
-		case 'D':
-			result[len - i - 1] = 'H';
-			break;
-		case 'V':
-			result[len - i - 1] = 'B';
-			break;
-		case 'B':
-			result[len - i - 1] = 'V';
-			break;
-		case 'N':
-			result[len - i - 1] = 'N';
-			break;
-		default:
-			GDKfree(result);
-			throw(MAL, "reverse_seq",
-				  "Invalid character found in sequence: '%c'\n",
-				  (*seq)[i]);
+		map_index = (sht)(*forward++ - 'A');
+		if(map_index < 0 || map_index > 24 ||
+				(*backward = reverse_seq_map[map_index]) == 0) {
+			*backward = '?';
 		}
+		--backward;
 	}
 	result[len] = '\0';
 	*ret = result;
@@ -119,42 +168,48 @@ reverse_qual(str * ret, str * qual)
 	str result;
 	unsigned int i;
 	unsigned int len = strlen(*qual);
+	str forward = *qual;
+	str backward;
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
 		throw(MAL, "reverse_qual", MAL_MALLOC_FAIL);
+
+	backward = &result[len-1];
 	for (i = 0; i < len; ++i)
-		result[len - i - 1] = (*qual)[i];
+		*backward-- = *forward++;
 	result[len] = '\0';
 	*ret = result;
 	return MAL_SUCCEED;
 }
 
+#define next_cigar_op(fn) { \
+	str tmp; \
+	cnt = strtol(s, &tmp, 10); \
+	if(cnt <= 0 || s == tmp || *s == '\0') { \
+		throw(MAL, fn, "Could not parse CIGAR string"); \
+	} \
+	s = tmp; \
+	op = *s++; \
+}
+
 str
-seq_length(int *ret, str * cigar)
+seq_length(int * ret, str * cigar)
 {
 	int result = 0;
-	str cigar_consumable = *cigar;
+	str s = *cigar;
+	long int cnt;
+	char op;
 
-	if (cigar_consumable[0] == '\0' || 
-			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
+	if (*s == '\0' || (*s == '*' && *(s+1) == '\0')) {
 		*ret = -1;
 		return MAL_SUCCEED;
 	}
-	while (cigar_consumable[0] != '\0') {
-		int cnt;
-		char op;
-		int nr_chars_read;
-
-		if (sscanf
-			(cigar_consumable, "%d%c%n", &cnt, &op,
-			 &nr_chars_read) != 2)
-			throw(MAL, "seq_length",
-				  "Error parsing CIGAR string '%s'\n", *cigar);
+	while (*s != '\0') {
+		next_cigar_op("seq_length");
 		if (op == 'M' || op == 'D' || op == 'N' || op == '='
 			|| op == 'X')
 			result += cnt;
-		cigar_consumable += nr_chars_read;
 	}
 	*ret = result;
 	return MAL_SUCCEED;
@@ -163,30 +218,26 @@ seq_length(int *ret, str * cigar)
 str
 seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar) 
 {
-	str cigar_consumable = *alg_cigar;
+	str s = *alg_cigar;
 	int seq_pos = -1;
 	int cur_ref_pos = *alg_pos - 1;
+
+	long int cnt;
+	char op;
 	
-	if (cigar_consumable[0] == '\0' || 
-			(cigar_consumable[0] == '*' && cigar_consumable[1] == '\0')) {
+	if (*s == '\0' || (*s == '*' && *(s+1) == '\0')) {
 		*ret = GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
 	while(TRUE) {
-		int cnt;
-		char op;
-		int nr_chars_read;
 		bit advance_ref_pos;
 		bit advance_seq_pos;
 
-		if (sscanf
-			(cigar_consumable, "%d%c%n", &cnt, &op,
-			 &nr_chars_read) != 2)
-			throw(MAL, "seq_char",
-				  "Error parsing CIGAR string '%s'\n", *alg_cigar);
+		next_cigar_op("seq_char");
+		
 		advance_ref_pos = (op == 'M' || op == 'D' || 
 			op == 'N' || op == '=' || op == 'X');
-		advance_seq_pos = (op == 'M' || op == 'I'); // TODO: Find out which chars advance the seq pos
+		advance_seq_pos = (op == 'M' || op == 'I' || op == '='); // TODO: Find out which chars advance the seq pos exactly
 		if(advance_seq_pos) {
 			seq_pos += cnt;
 		}
@@ -201,8 +252,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 				break;
 			}
 		}
-		cigar_consumable += nr_chars_read;
-		if(cigar_consumable[0] == '\0') {
+		if(*s == '\0') {
 			seq_pos = -1;
 			break;
 		}
@@ -219,16 +269,35 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 	return MAL_SUCCEED;
 }
 
+#define init_props() { \
+	output->tsorted = TRUE; \
+	output->trevsorted = TRUE; \
+}
 
+#define update_props(TPE) { \
+	output->tsorted = output->tsorted && \
+		(c == 0 || *cur_out >= prev_out); \
+	output->trevsorted = output->trevsorted && \
+		(c == 0 || *cur_out <= prev_out); \
+	output->T->nil = output->T->nil || *cur_out == TPE##_nil; \
+	output->T->nonil = output->T->nonil && *cur_out != TPE##_nil; \
+}
 
+#define finish_props() { \
+	BATsetcount(output, BATcount(input)); \
+	BATseqbase(output, input->hseqbase); \
+	output->tkey = FALSE; /* Tail values are not unique */ \
+}
 
 str
 bam_flag_bat(bat * ret, bat * bid, str * name)
 {
-	BAT *flags, *result;
-	BATiter li;
-	BUN p = 0, q = 0;
+	BAT *input, *output;
+	sht prev_out = 0;
+	sht *cur_in;
+	bit *cur_out;
 	sht k;
+	BUN c;
 
 	assert(ret != NULL && bid != NULL && name != NULL);
 
@@ -237,242 +306,198 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
 			  *name);
 
-	if ((flags = BATdescriptor(*bid)) == NULL)
+	if ((input = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_bit, BATcount(flags), TRANSIENT);
-	if (result == NULL) {
-		BBPunfix(flags->batCacheid);
+	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
+	if (output == NULL) {
+		BBPunfix(input->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(result, flags->hseqbase);
-
-	li = bat_iterator(flags);
-
-	BATloop(flags, p, q) {
-		sht t = *(sht *) BUNtail(li, p);
-		bit r = kth_bit(t, k);
-
-		BUNappend(result, (ptr) &r, FALSE);
+	
+	init_props();
+	cur_in = (sht *) Tloc(input, BUNfirst(input));
+	cur_out = (bit *) Tloc(output, BUNfirst(output));
+	for(c = 0; c < BATcount(input); ++c) {
+		*cur_out = kth_bit(*cur_in, k);
+		update_props(bit);
+		cur_in++;
+		prev_out = *cur_out++;
 	}
+	finish_props();
 
 	/* release input BAT-descriptor */
-	BBPunfix(flags->batCacheid);
+	BBPunfix(input->batCacheid);
 
-	BBPkeepref((*ret = result->batCacheid));
+	BBPkeepref((*ret = output->batCacheid));
 
 	return MAL_SUCCEED;
+}
+
+#define transform_strbat(transform_fn) { \
+	BAT *input, *output; \
+	BATiter li; \
+	BUN p = 0, q = 0; \
+ \
+	assert(ret != NULL && bid != NULL); \
+ \
+	if ((input = BATdescriptor(*bid)) == NULL) \
+		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING); \
+ \
+	/* allocate result BAT */ \
+	output = BATnew(TYPE_void, TYPE_str, BATcount(input), TRANSIENT); \
+	if (output == NULL) { \
+		BBPunfix(input->batCacheid); \
+		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL); \
+	} \
+	BATseqbase(output, input->hseqbase); \
+ \
+	li = bat_iterator(input); \
+ \
+	BATloop(input, p, q) { \
+		str t = (str) BUNtail(li, p); \
+		str r, msg; \
+ \
+		if ((msg = transform_fn(&r, &t)) != MAL_SUCCEED) { \
+			BBPunfix(input->batCacheid); \
+			BBPunfix(output->batCacheid); \
+			return msg; \
+		} \
+		BUNappend(output, (ptr) r, FALSE); \
+		GDKfree(r); \
+	} \
+ \
+	/* release input BAT-descriptor */ \
+	BBPunfix(input->batCacheid); \
+ \
+	BBPkeepref((*ret = output->batCacheid)); \
+ \
+	return MAL_SUCCEED; \
 }
 
 str
 reverse_seq_bat(bat * ret, bat * bid)
 {
-	BAT *seqs, *result;
-	BATiter li;
-	BUN p = 0, q = 0;
-
-	assert(ret != NULL && bid != NULL);
-
-	if ((seqs = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);
-
-	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(seqs), TRANSIENT);
-	if (result == NULL) {
-		BBPunfix(seqs->batCacheid);
-		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(result, seqs->hseqbase);
-
-	li = bat_iterator(seqs);
-
-	BATloop(seqs, p, q) {
-		str t = (str) BUNtail(li, p);
-		str r, msg;
-
-		if ((msg = reverse_seq(&r, &t)) != MAL_SUCCEED) {
-			BBPunfix(result->batCacheid);
-			BBPunfix(seqs->batCacheid);
-			return msg;
-		}
-		BUNappend(result, (ptr) r, FALSE);
-		GDKfree(r);
-	}
-
-	/* release input BAT-descriptor */
-	BBPunfix(seqs->batCacheid);
-
-	BBPkeepref((*ret = result->batCacheid));
-
-	return MAL_SUCCEED;
+	transform_strbat(reverse_seq);
 }
 
 str
 reverse_qual_bat(bat * ret, bat * bid)
 {
-	BAT *quals, *result;
-	BATiter li;
-	BUN p = 0, q = 0;
-
-	assert(ret != NULL && bid != NULL);
-
-	if ((quals = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "reverse_qual_bat", RUNTIME_OBJECT_MISSING);
-
-	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(quals), TRANSIENT);
-	if (result == NULL) {
-		BBPunfix(quals->batCacheid);
-		throw(MAL, "reverse_qual_bat", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(result, quals->hseqbase);
-
-	li = bat_iterator(quals);
-
-	BATloop(quals, p, q) {
-		str t = (str) BUNtail(li, p);
-		str r, msg;
-
-		if ((msg = reverse_qual(&r, &t)) != MAL_SUCCEED) {
-			BBPunfix(quals->batCacheid);
-			BBPunfix(result->batCacheid);
-			return msg;
-		}
-		BUNappend(result, (ptr) r, FALSE);
-		GDKfree(r);
-	}
-
-	/* release input BAT-descriptor */
-	BBPunfix(quals->batCacheid);
-
-	BBPkeepref((*ret = result->batCacheid));
-
-	return MAL_SUCCEED;
+	transform_strbat(reverse_qual);
 }
 
 str
 seq_length_bat(bat * ret, bat * bid)
 {
-	BAT *cigars, *result;
+	BAT *input, *output;
+	sht prev_out = 0;
+	str cur_in;
+	int *cur_out;
 	BATiter li;
-	BUN p = 0, q = 0;
+	BUN c = 0, p = 0, q = 0;
+	str msg;
 
 	assert(ret != NULL && bid != NULL);
 
-	if ((cigars = BATdescriptor(*bid)) == NULL)
+	if ((input = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_int, BATcount(cigars), TRANSIENT);
-	if (result == NULL) {
-		BBPunfix(cigars->batCacheid);
+	output = BATnew(TYPE_void, TYPE_int, BATcount(input), TRANSIENT);
+	if (output == NULL) {
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(result, cigars->hseqbase);
 
-	li = bat_iterator(cigars);
-
-	BATloop(cigars, p, q) {
-		str t = (str) BUNtail(li, p);
-		str msg;
-		int r;
-
-		if ((msg = seq_length(&r, &t)) != MAL_SUCCEED) {
-			BBPunfix(result->batCacheid);
-			BBPunfix(cigars->batCacheid);
+	init_props();
+	li = bat_iterator(input);
+	cur_out = (int *) Tloc(output, BUNfirst(output));
+	BATloop(input, p, q) {
+		cur_in = (str) BUNtail(li, p);
+		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
+			BBPunfix(output->batCacheid);
 			return msg;
 		}
-		BUNappend(result, (ptr) &r, FALSE);
+		update_props(int);
+		++c;
+		prev_out = *cur_out++;
 	}
+	finish_props();
 
 	/* release input BAT-descriptor */
-	BBPunfix(cigars->batCacheid);
+	BBPunfix(input->batCacheid);
 
-	BBPkeepref((*ret = result->batCacheid));
+	BBPkeepref((*ret = output->batCacheid));
 
 	return MAL_SUCCEED;
 }
 
-
 str
 seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_cigar)
 {
-	BAT *seqs = NULL, *poss = NULL, *refs = NULL, *cigars = NULL, *result = NULL;
-	BUN ref= 0, seq = 0, pos = 0, cigar = 0, seq_end = 0;
-	BATiter ref_it, seq_it, pos_it, cigar_it;
+	BAT *seqs = NULL, *poss = NULL, *cigars = NULL, *result = NULL;
+	BUN seq = 0, pos = 0, cigar = 0, seq_end = 0;
+	BATiter seq_it, pos_it, cigar_it;
+
+	str msg = MAL_SUCCEED;
 
 	assert(ret != NULL && ref_pos != NULL && alg_seq != NULL && alg_pos != NULL && alg_cigar != NULL);
 
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
-	    (refs = BATdescriptor(*ref_pos)) == NULL ||
 		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
-			if( seqs) BBPunfix(seqs->batCacheid);
-			if( poss) BBPunfix(poss->batCacheid);
-			if( refs) BBPunfix(refs->batCacheid);
-			throw(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+		goto cleanup;
 	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
-		BBPunfix(seqs->batCacheid);
-		BBPunfix(poss->batCacheid);
-		BBPunfix(refs->batCacheid);
-		throw(MAL, "seq_char_bat", 
+		msg = createException(MAL, "seq_char_bat", 
 			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
+		goto cleanup;
 	}
-
+	
 	/* allocate result BAT */
 	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		BBPunfix(seqs->batCacheid);
-		BBPunfix(poss->batCacheid);
-		BBPunfix(refs->batCacheid);
-		throw(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+		goto cleanup;
 	}
 	BATseqbase(result, seqs->hseqbase);
 
-	ref = BUNfirst(refs);
 	seq = BUNfirst(seqs);
 	pos = BUNfirst(poss);
 	cigar = BUNfirst(cigars);
 	seq_end = BUNlast(seqs);
 
-	ref_it = bat_iterator(refs);
 	seq_it = bat_iterator(seqs);
 	pos_it = bat_iterator(poss);
 	cigar_it = bat_iterator(cigars);
 
 	while(seq < seq_end) {
 		str seq_val = (str) BUNtail(seq_it, seq);
-		int * ref_val = (int *) BUNtail(ref_it, ref);
 		int * pos_val = (int *) BUNtail(pos_it, pos);
 		str cigar_val = (str) BUNtail(cigar_it, cigar);
 		str r;
 		str msg;
 
-		if ((msg = seq_char(&r, ref_val, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
-			BBPunfix(refs->batCacheid);
-			BBPunfix(seqs->batCacheid);
-			BBPunfix(poss->batCacheid);
-			BBPunfix(cigars->batCacheid);
-			BBPunfix(result->batCacheid);
-			return msg;
+		if ((msg = seq_char(&r, ref_pos, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
+			goto cleanup;
 		}
 		BUNappend(result, (ptr) r, FALSE);
 		++seq;
 		++pos;
 		++cigar;
 	}
-
+	
+cleanup:
 	/* release input BAT-descriptors */
-	BBPunfix(refs->batCacheid);
-	BBPunfix(seqs->batCacheid);
-	BBPunfix(poss->batCacheid);
-	BBPunfix(cigars->batCacheid);
+	if(seqs) BBPunfix(seqs->batCacheid);
+	if(poss) BBPunfix(poss->batCacheid);
+	if(cigars) BBPunfix(cigars->batCacheid);
 
-	BBPkeepref((*ret = result->batCacheid));
+	if(result) BBPkeepref((*ret = result->batCacheid));
 
-	return MAL_SUCCEED;
+	return msg;
 }

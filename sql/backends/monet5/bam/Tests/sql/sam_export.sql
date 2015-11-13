@@ -15,7 +15,7 @@ SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 FROM bam.alignments_1
 EXCEPT
 SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-FROM bam.alignments_13;
+FROM bam.alignments_73;
 
 # Verify that the export table is now empty
 SELECT * FROM bam.export;
@@ -39,7 +39,7 @@ SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 FROM bam.unpaired_all_alignments_3
 EXCEPT
 SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-FROM bam.alignments_14;
+FROM bam.alignments_74;
 
 # Verify that the export table is now empty
 SELECT * FROM bam.export;

@@ -198,10 +198,9 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 	}
 	if (nr_threads <= 0) {
-		msg = createException(MAL, "bam_loader",
-					  "We can not get the work done with only %d threads",
-					  nr_threads);
-		goto cleanup;
+		nr_threads = 1;
+	} else if(nr_threads > 4) {
+		nr_threads = 4;
 	}
 
 	/* Get SQL context */
@@ -369,7 +368,6 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	TO_LOG("<bam_loader> Copying data into DB...\n");
 	/* All threads finished succesfully, copy all data into DB */
 	for (i = 0; i < nr_files; ++i) {
-		prepare_for_copy(bws + i);
 		if ((msg = copy_into_db(cntxt, bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
@@ -409,8 +407,10 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str bam_repos = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
 	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
-	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
+	/* For now, we hard code the number of threads, since the SQL
+	   level should not bother with this */
+
+	sht nr_threads = GDKnr_threads;
 
 	str *filenames = NULL;
 	int nr_files = 0;
@@ -529,8 +529,9 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str bam_files = *getArgReference_str(stk, pci, pci->retc);
 	/* arg 2: dbschema to use */
 	sht dbschema = *getArgReference_sht(stk, pci, pci->retc + 1);
-	/* arg 3: max number of threads that will be used by bam_loader */
-	sht nr_threads = *getArgReference_sht(stk, pci, pci->retc + 2);
+	/* For now, we hard code the number of threads, since the SQL
+	   level should not bother with this */
+	sht nr_threads = GDKnr_threads;
 
 	str *filenames = NULL;
 	int nr_files = 0;

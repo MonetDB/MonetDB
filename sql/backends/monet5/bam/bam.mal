@@ -3,11 +3,11 @@ module bam;
 
 # Bam loader related signatures
 
-pattern bam_loader_repos(bam_repos:str, dbschema:sht, nr_threads:sht):void
+pattern bam_loader_repos(bam_repos:str, dbschema:sht):void
 address bam_loader_repos
 comment "Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema";
 
-pattern bam_loader_files(bam_files:str, dbschema:sht, nr_threads:sht):void
+pattern bam_loader_files(bam_files:str, dbschema:sht):void
 address bam_loader_files
 comment "Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema";
 
@@ -37,6 +37,10 @@ comment "Reverse a DNA Quality string."
 command seq_length(cigar:str):int
 address seq_length
 comment "Calculate the real length of a DNA sequence, given its CIGAR string."
+
+command seq_char(ref_pos:int, alg_seq:str, alg_pos:int, alg_cigar:str):str
+address seq_char
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string"
 
 
 # Export signatures
@@ -69,3 +73,7 @@ comment "Reverse a bat of DNA Quality strings."
 command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
 address seq_length_bat
 comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
+
+command seq_char(ref_pos:int, alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
+address seq_char_bat
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)"

@@ -15,10 +15,17 @@ c.stdin.write("SELECT file_id, dbschema FROM bam.files;")
 out, err = c.communicate()
 
 # Parse this outcome into a dictionary {DBSCHEMA_file_id -> dbschema}
-p = re.compile('^\s*\[\s*(\d+)\s*,\s*(\d)\s*\]\s*$', re.MULTILINE) # Parses raw DB output
+p = re.compile("^\s*\[\s*(\d+)\s*,\s*(\d)\s*\]\s*$", re.MULTILINE) # Parses raw DB output
 mapping = {}
+c = bam.new_client()
 for match in p.finditer(out):
-    mapping['DBSCHEMA_'+match.group(1)] = match.group(2)
+    fileId = int(match.group(1))
+    dbschema = int(match.group(2))
+    if fileId < 5:
+        continue
 
-# And now we can execute the SQL
-bam.exec_sql_file("drop_last_files.sql", mapping)
+    c.stdin.write("CALL bam.bam_drop_file(%d, %d);"% (fileId, dbschema))
+
+out, err = c.communicate()
+sys.stdout.write(out)
+sys.stdout.write(err)
