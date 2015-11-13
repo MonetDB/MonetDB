@@ -1454,12 +1454,14 @@ case "$have_rubygem_dir" in
 esac
 case "$RUBY_DIR" in
 ${prefix}/*)
-	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
-/*)	RUBY_DIR="\${prefix}$RUBY_DIR";;
-*)
-	RUBY_DIR="\${prefix}/$RUBY_DIR";;
+	RUBY_DIR="`echo "$RUBY_DIR" | sed "s|^$prefix/||"`";;
+/*)	RUBY_DIR="${RUBY_DIR#/}";;
 esac
 AC_SUBST(RUBY_DIR)
+QRUBY_DIR="$RUBY_DIR"
+XRUBY_DIR="`$translatepath "$QRUBY_DIR"`"
+QXRUBY_DIR="`echo "$XRUBY_DIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXRUBY_DIR)
 
 RUBYGEM=gem
 org_have_rubygem=auto
