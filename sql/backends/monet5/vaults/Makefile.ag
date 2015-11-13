@@ -4,7 +4,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-SUBDIRS = HAVE_SAMTOOLS?bam
+SUBDIRS = HAVE_SAMTOOLS?bam HAVE_FITS?fits HAVE_LIDAR?lidar HAVE_NETCDF?netcdf
 
 INCLUDES = ../../../include \
 	   ../../../common \
@@ -21,8 +21,7 @@ INCLUDES = ../../../include \
 	   ../../../../common/stream \
 	   ../../../../common/utils \
 	   ../../../../gdk \
-	   $(READLINE_INCS) $(cfitsio_CFLAGS) $(curl_CFLAGS) $(netcdf_CFLAGS) \
-	   $(LIBLAS_INCS)
+	   $(READLINE_INCS)
 
 lib__vault = {
 	MODULE
@@ -50,98 +49,5 @@ headers_autoload = {
 	SOURCES = 70_vault.mal
 }
 
-lib__fits = {
-	MODULE
-	COND = HAVE_FITS
-	DIR = libdir/monetdb5
-	SOURCES = fits.c
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-	       $(cfitsio_LIBS)
-}
-
-headers_fitsmal = {
-	COND = HAVE_FITS
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = fits.mal
-}
-
-headers_fitssql = {
-	COND = HAVE_FITS
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 72_fits.sql
-}
-
-headers_fitsautoload = {
-	COND = HAVE_FITS
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 72_fits.mal
-}
-
-lib__netcdf = {
-	MODULE
-	COND = HAVE_NETCDF
-	DIR = libdir/monetdb5
-	SOURCES = netcdf.c
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-	       $(netcdf_LIBS)
-}
-
-headers_netcdfmal = {
-	COND = HAVE_NETCDF
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = netcdf.mal
-}
-
-headers_netcdfsql = {
-	COND = HAVE_NETCDF
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 74_netcdf.sql
-}
-
-headers_netcdfautoload = {
-	COND = HAVE_NETCDF
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 74_netcdf.mal
-}
-
-lib__lidar = {
-	MODULE
-	COND = HAVE_LIDAR
-	DIR = libdir/monetdb5
-	SOURCES = lidar.c
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-	       $(LIBLAS_LIBS)
-}
-
-headers_lidarmal = {
-	COND = HAVE_LIDAR
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = lidar.mal
-}
-
-headers_lidarsql = {
-	COND = HAVE_LIDAR
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 75_lidar.sql
-}
-
-headers_lidarautoload = {
-	COND = HAVE_LIDAR
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 75_lidar.mal
-}
-
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal vault.mal vault.sql vault.h \
-	     72_fits.mal fits.mal 72_fits.sql fits.h \
-	     74_netcdf.mal netcdf.mal 74_netcdf.sql netcdf_vault.h \
-	     75_lidar.mal  lidar.mal  75_lidar.sql  lidar.h
+EXTRA_DIST = 70_vault.mal vault.mal vault.sql vault.h
