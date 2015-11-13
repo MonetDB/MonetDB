@@ -30,21 +30,20 @@ stderr of test 'key_copy` in directory 'sql/test/copy` itself:
 # 18:36:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6766" "--port=32293"
 # 18:36:17 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-32599/.s.monetdb.37032
+MAPI  = (monetdb) /var/tmp/mtest-27471/.s.monetdb.33963
 QUERY = copy 4 records into cik1 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
         0
         5
         5
         9
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik1.cik1_i_pkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-32599/.s.monetdb.37032
-QUERY = copy 4 records into cik1 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+MAPI  = (monetdb) /var/tmp/mtest-27471/.s.monetdb.33963
+QUERY = copy 4 records into cik2 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
         0,1
         5,1
         5,1
         9,1
-ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik1.cik1_i_pkey' violated
-
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik2.cik2_i_j_pkey' violated
 
 # 18:36:17 >  
 # 18:36:17 >  "Done."

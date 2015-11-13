@@ -30,7 +30,5 @@ i:=1:int;
 d:=i;
 z1:= inspect.equalType(i,:int);
 io.print(z1);
-z1:= inspect.equalType(d,:bat[:str,:flt]);
-io.print(z1);
 z1:= inspect.equalType(d,:int);
 io.print(z1);

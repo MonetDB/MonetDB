@@ -111,8 +111,8 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef HAVE_HGE
 str
 SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	hge *flg = (hge*) getArgReference(stk,pci, 1);
-	str *msg = (str*) getArgReference(stk,pci, 2);
+	hge *flg = getArgReference_hge(stk,pci, 1);
+	str *msg = getArgReference_str(stk,pci, 2);
 	(void) cntxt;
 	(void)mb;
 	if (*flg){

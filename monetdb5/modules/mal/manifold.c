@@ -231,7 +231,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
-		(q->blk && varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL) )
+		(q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
 	else {
 		fcn = q->fcn;
@@ -334,10 +334,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
-	if ( mat[mut.fvar].b->htype == TYPE_void)
-		BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
-	else
-		BATseqbase(mat[0].b, 0);
+	BATseqbase(mat[0].b, mat[mut.fvar].b->H->seq);
 
 	mut.pci = copyInstruction(pci);
 	mut.pci->fcn = fcn;
@@ -361,10 +358,12 @@ wrapup:
 }
 
 // The old code
-str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    char buf[BUFSIZ];
+str
+MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
     (void) mb;
     (void) cntxt;
-    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *) getArgReference(stk,p,p->retc), (char *) getArgReference(stk,p,p->retc+1));
-    throw(MAL, "opt.remap", "%s",buf);
+    throw(MAL, "opt.remap", "Function '%s.%s' not defined",
+		  *getArgReference_str(stk, p, p->retc),
+		  *getArgReference_str(stk, p, p->retc + 1));
 }

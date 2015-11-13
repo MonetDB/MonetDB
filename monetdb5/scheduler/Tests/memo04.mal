@@ -1,6 +1,7 @@
 # The first memo driven execution
 # use a built-in cost function
 # use backward scheduling
+include run_memo;
 
 
 	A:= bat.new(:int,:int);

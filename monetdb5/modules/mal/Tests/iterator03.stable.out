@@ -60,19 +60,19 @@ end user.main;
 [ 1@0,	  "http://www.cwi.nl/~monet"			  ]
 [ 2@0,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"  ]
 [ "next chunk" ]
-#-------------------------------------------------------------------------#
-# h	t								  # name
-# int	url								  # type
-#-------------------------------------------------------------------------#
-[ 3@0,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
-[ 4@0,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
-[ 5@0,	  "http://www.edgeonline.com/"					  ]
+#--------------------------#
+# t	t  # name
+# void	url  # type
+#--------------------------#
+[ 3@0,	"http://www.educ.uva.nl/schoolweb/rocloka.htm"  ]
+[ 4@0,	"http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"  ]
+[ 5@0,	"http://www.edgeonline.com/"  ]
 [ "next chunk" ]
-#-------------------------------------------------#
-# h	t					  # name
-# int	url					  # type
-#-------------------------------------------------#
-[ 6@0,	  "http://robotics.stanford.edu/icons/ "  ]
+#--------------------------#
+# t	t  # name
+# void	url  # type
+#--------------------------#
+[ 6@0,	"http://robotics.stanford.edu/icons/ "  ]
 
 # 00:03:53 >  
 # 00:03:53 >  Done.

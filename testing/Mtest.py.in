@@ -30,7 +30,6 @@ import time
 import socket
 import struct
 import signal
-import Mfilter
 import fnmatch
 import glob
 
@@ -110,19 +109,24 @@ def _configure(str):
             str = nstr
     return str
 
+try:
+    import Mfilter
+except ImportError:
+    try:
+        import MonetDBtesting.Mfilter as Mfilter
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.Mfilter as Mfilter
+        if os.environ.has_key('PYTHONPATH'):
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
+
 # use our own process module because it has _BufferedPipe
 try:
     import process
 except ImportError:
-    try:
-        import MonetDBtesting.process as process
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.process as process
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    import MonetDBtesting.process as process
 
 # Replace os.fork by a version that forks but also sets the process
 # group in the child.  This is done so that we can easily kill a
@@ -248,15 +252,7 @@ def CheckExec(cmd) :
 try:
     import monet_options
 except ImportError:
-    try:
-        from MonetDBtesting import monet_options
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-        sys.path.insert(0, p)
-        from MonetDBtesting import monet_options
-        if os.environ.has_key('PYTHONPATH'):
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    from MonetDBtesting import monet_options
 
 import threading
 
@@ -307,6 +303,7 @@ CONDITIONALS = {
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
+    'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
@@ -330,7 +327,10 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'HAVE_PHP'             : "",
+    'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
+    'RELEASERUN'           : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -924,7 +924,7 @@ def CreateSrcIndex (env, TST, EXT) :
                  Element('th', {'class': 'header'},
                          Text(TST)))
     for s in os.listdir(TSTSRCDIR):
-        if len(s) >= len(TST)  and  s[:len(TST)] == TST:
+        if s.startswith(TST):
             slink = Text(s)
             if URLPREFIX:
                 slink = Element('a',
@@ -1127,12 +1127,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         testlist = tl
     else:
         for tc in open(os.path.join(TSTSRCDIR,"All")):
-            if tc.find('#') >= 0:
+            if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
             tc = tc.strip()
             if tc:
-                if tc.find('?') > -1:
+                if '?' in tc:
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
@@ -1338,8 +1338,10 @@ def ApproveOutput (env, TST) :
                         f.write(l[:1] + '\n')
                         Warn('Rejecting (error) message: "%s"' % l[1:].replace(os.linesep, ''))
                     elif len(l) < 2  or  \
-                       ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  \
-                         l[:8] != '+ERROR: '  and  l[:10] != '+WARNING: ' ) :        # or  filter.match(ln):
+                         (l[:2] not in ['+!','+='] and
+                          not l.startswith('+ERROR = !') and
+                          not l.startswith('+ERROR: ') and
+                          not l.startswith('+WARNING: ')): # or  filter.match(ln):
                         f.write(l)
                     else:
                         if FORCE:
@@ -1432,7 +1434,7 @@ def expandvars(path, environ = os.environ):
             path = path[:i] + val
             i = len(path)
             path += tail
-        elif name[:1] == 'Q' and name[1:] in environ:
+        elif name.startswith('Q') and name[1:] in environ:
             tail = path[j:]
             val = environ[name[1:]].replace('\\', '\\\\')
             path = path[:i] + val
@@ -1565,6 +1567,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     env['TST_INT128'] = ""
     env['TST_STATIC'] = ""
     env['TST_SINGLE'] = ""
+    env['TST_THREADS'] = ""
     if qOut:
         tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;?(| and 128bit integers) ([^ ]*) linked", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
@@ -1584,9 +1587,11 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                     env['TST_STATIC'] = "STATIC"
                     os.environ['TST_STATIC'] = env['TST_STATIC']
             t = tt.match(l)
-            if t and t.group(1) == "1":
-                env['TST_SINGLE'] = "single"
-                os.environ['TST_SINGLE'] = env['TST_SINGLE']
+            if t:
+                if t.group(1) == "1":
+                    env['TST_SINGLE'] = "single"
+                    os.environ['TST_SINGLE'] = env['TST_SINGLE']
+                env['TST_THREADS'] = t.group(1)
             m = tm.match(l)
             if m:
                 env['TST_MODS'] = eval(m.group(1))
@@ -1646,7 +1651,7 @@ def CheckTests(env, TST, oktests):
 
     for test in open(TST + '.reqtests'):
         test = test.strip()
-        if not test or test[:1] == '#':
+        if not test or test.startswith('#'):
             continue
         if not test in oktests:
             missing.append(test)
@@ -1692,11 +1697,11 @@ def CategorizeResult(TST, SockTime):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.out.diff.html" % TST):
         pass
-    if   l[:14] == '<!--NoDiffs-->':
+    if   l.startswith('<!--NoDiffs-->'):
         o = F_OK
-    elif l[:17] == '<!--MinorDiffs-->':
+    elif l.startswith('<!--MinorDiffs-->'):
         o = F_WARN
-    elif l[:17] == '<!--MajorDiffs-->':
+    elif l.startswith('<!--MajorDiffs-->'):
         o = F_ERROR
     else:
         Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
@@ -1707,11 +1712,11 @@ def CategorizeResult(TST, SockTime):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.err.diff.html" % TST):
         pass
-    if   l[:14] == '<!--NoDiffs-->':
+    if   l.startswith('<!--NoDiffs-->'):
         e = F_OK
-    elif l[:17] == '<!--MinorDiffs-->':
+    elif l.startswith('<!--MinorDiffs-->'):
         e = F_WARN
-    elif l[:17] == '<!--MajorDiffs-->':
+    elif l.startswith('<!--MajorDiffs-->'):
         e = F_ERROR
     else:
         Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
@@ -1801,6 +1806,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".R"
         CALL = "R"
         SERVER = "SQL"
+    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
+        EXT = ".rb"
+        CALL = "ruby"
+        SERVER = "SQL"
 
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
@@ -1815,7 +1824,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = CALL = SERVER = ""
         if COND:
             for cond in COND.split('&'):
-                if cond[:1] == '!':
+                if cond.startswith('!'):
                     negate = True
                     cond = cond[1:]
                 else:
@@ -1825,9 +1834,34 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         reason = "as previous release database is not available"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
+                elif cond == 'PREVHGEREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
+                        reason = "as previous hugeint release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
                 elif cond == 'PREVCHAINREL':
                     if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                        reason = "as previous release database is not available"
+                        reason = "as previous chained release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVHGECHAINREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
+                        reason = "as previous hugeint chained release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond.startswith('THREADS='):
+                    if (env['TST_THREADS'] == cond[8:]) == negate:
+                        reason = "as number of threads is wrong"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond.startswith('THREADS<='):
+                    if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
+                        reason = "as number of threads is wrong"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond.startswith('THREADS>='):
+                    if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
+                        reason = "as number of threads is wrong"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
                 elif not CONDITIONALS.has_key(cond):
@@ -1848,7 +1882,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`")
         return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -1860,7 +1894,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     if COND:
         for cond in COND.split('&'):
-            if cond[:1] == '!':
+            if cond.startswith('!'):
                 negate = True
                 cond = cond[1:]
             else:
@@ -1870,9 +1904,34 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as previous release database is not available"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond == 'PREVHGEREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
+                    reason = "as previous hugeint release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
             elif cond == 'PREVCHAINREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                    reason = "as previous release database is not available"
+                    reason = "as previous chained release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGECHAINREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
+                    reason = "as previous hugeint chained release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS='):
+                if (env['TST_THREADS'] == cond[8:]) == negate:
+                    reason = "as number of threads is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS<='):
+                if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
+                    reason = "as number of threads is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('THREADS>='):
+                if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
+                    reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif not CONDITIONALS.has_key(cond):
@@ -2016,7 +2075,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
             SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
-        if   CALL in ["other", "python"]:
+        if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
         elif CALL in ["malXs", "sqlXs"]:
@@ -2768,16 +2827,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
-            if CONDITIONALS['HAVE_LIBR']:
+            if CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
-            while 0 < len(ln) and ln[:6] != 'Ready.':
+            while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
-            if ln[:6] != 'Ready.':
+            if not ln.startswith('Ready.'):
                 # If not ready, it may be that there are far too many
                 # network connections in use, all in TIME_WAIT status.
                 # We'll just wait a while for that to clear and try
@@ -2790,11 +2849,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     time.sleep(120)
                     pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
                     ln="dummy"
-                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                    while 0 < len(ln) and not ln.startswith('Ready.'):
                         ln=pSrvr.stdout.readline()
                         SrvrOut.write(ln)
                         SrvrOut.flush()
-                if ln[:6] != 'Ready.':
+                if not ln.startswith('Ready.'):
                     ServerReady = False
 
             if ServerReady:
@@ -2810,11 +2869,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         ServerReady = True
                         pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
                         ln="dummy"
-                        while 0 < len(ln) and ln[:6] != 'Ready.':
+                        while 0 < len(ln) and not ln.startswith('Ready.'):
                             ln=pSrvr.stdout.readline()
                             SrvrOut.write(ln)
                             SrvrOut.flush()
-                    if ln[:6] != 'Ready.':
+                    if not ln.startswith('Ready.'):
                         ServerReady = False
 
                     if ServerReady:
@@ -2866,7 +2925,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if test.match(f):
                         TSTs.append(f)
 
-                if CALL[:3] == "mal":
+                if CALL.startswith("mal"):
                     Clnt = splitcommand(exe['MAL_Client'][1])
                 else:
                     Clnt = []   # cannot happen
@@ -2896,6 +2955,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif CALL == "R":
                 Clnt = splitcommand(exe['R_Client'][1])
                 RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+            elif CALL == "ruby":
+                Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
+
+                Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
+                Clnt.append(env['TSTDB'])
+
+                RunIt(Clnt, "", ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
@@ -2917,7 +2983,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                     EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
                 ln="dummy"
-                while 0 < len(ln) and ln[:6] != 'Done..':
+                while 0 < len(ln) and not ln.startswith('Done..'):
                     ln=pSrvr.stdout.readline()
                     SrvrOut.write(ln)
                     SrvrOut.flush()
@@ -3002,7 +3068,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 return err
         return returncode or pSrvrCode # remaining error (shouldn't get here)
 
-    if CALL not in ('python', 'other'):
+    if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
         return None
 
@@ -3058,13 +3124,13 @@ def Check(command, input) :
                        re.MULTILINE)
     noErr = []
     for l in qOut+qErr:
-        if l[:1] == "!":
+        if l.startswith("!"):
             if test.match(l):
-                if l[:10] != "!WARNING: ":
+                if not l.startswith("!WARNING: "):
                     noErr.append(l+"\n")
             else:
                 ErrMsg('"%s" failed:' % '" "'.join(command))
-                if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
+                if qOut and qOut[-1].startswith("! Exit 1"):
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
                     STDERR.write(l)
@@ -3380,7 +3446,7 @@ def main(argv) :
 
     vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3398,6 +3464,7 @@ def main(argv) :
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
         dft['RCLIENT']        = "'R --vanilla --slave'"
+        dft['RUBYCLIENT']        = "'ruby'"
 
     #par = {}
     # get current environment
@@ -3456,6 +3523,8 @@ def main(argv) :
              'default: %s' % dft['SQLDUMP']),
             ('RCLIENT', None, 'RCLIENT', '<R program>',
              'default: %s' % dft['RCLIENT']),
+            ('RUBYCLIENT', None, 'RUBYCLIENT', '<ruby program>',
+             'default: %s' % dft['RUBYCLIENT']),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
@@ -3472,6 +3541,10 @@ def main(argv) :
              'use multiple dbfarms (developers only)'),
             ('nomito', None, 'nomito', None,
              'Do not pass --forcemito to server'),
+            ('jenkins', None, 'jenkins', None,
+             'special handling for Jenkins'),
+            ('addreqs', None, 'addreqs', None,
+             'automatically add required tests when testing individual tests'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3551,6 +3624,8 @@ def main(argv) :
     releaserun = opts.get('releaserun', releaserun)
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
+    jenkins = False
+    addreqs = False
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3592,6 +3667,8 @@ def main(argv) :
         a = opts.get('multifarm')
         if a is not None:
             env['MULTIFARM'] = 'True'
+        jenkins = opts.get('jenkins', False)
+        addreqs = opts.get('addreqs', False)
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3629,6 +3706,17 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
+    if CheckExec('ruby'):
+        # also check ruby version; we require >= 1.9 for "require_relative"
+        proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
+        ruby_out, ruby_err = proc.communicate()
+        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_ver = ruby_reg.match(ruby_out)
+        if ruby_ver and \
+           100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
+            CONDITIONALS['HAVE_RUBY'] = '#'
+#     else:
+#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
@@ -3751,6 +3839,20 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
+    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
+       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
+        if os.environ.has_key('GEM_PATH'):
+            gem_path = os.environ['GEM_PATH']
+        else:
+            try:
+                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
+                gem_path, gem_err = proc.communicate()
+            except:
+                gem_path = ''
+        if gem_path:
+            gem_path = os.pathsep + gem_path
+        env['GEM_PATH'] = _configure(os.path.join('@QXprefix@', '@QXRUBY_DIR@')) + gem_path.strip()
+        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()
@@ -3764,12 +3866,16 @@ def main(argv) :
             os.environ[v] = env[v]
             if verbose:
                 print "%s = %s" % (v, env[v])
-    if verbose:
+    if verbose or testweb:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
         if os.environ.has_key('CLASSPATH'):
             print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
+    if testweb:
+        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+            if os.environ.has_key(v):
+                print "%s = %s" % (v, os.environ[v])
     STDOUT.flush()
 
     # add QUIET par to env
@@ -3853,6 +3959,7 @@ def main(argv) :
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
+            exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
             exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
@@ -3878,7 +3985,7 @@ def main(argv) :
                 #TODO:
                 #else:
                     # WARNING/ERROR
-            elif args[0].find(os.sep) != -1:
+            elif os.sep in args[0]:
                 ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
             elif args[0] != "All":
                 #TODO:
@@ -3896,7 +4003,7 @@ def main(argv) :
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
                 while i < len(args):
-                    if args[i].find(os.sep) == -1:
+                    if os.sep not in args[i]:
                         #TODO:
                         # check, whether args[i] in All
                         testlist.append(args[i])
@@ -3947,6 +4054,23 @@ def main(argv) :
             Warn("No tests found in %s!" % ', '.join(dirlist))
             sys.exit(1)
 
+        if len(testdirs) == 1 and len(testlist) > 0 and addreqs:
+            added = True
+            while added:
+                added = False
+                i = 0
+                while i < len(testlist):
+                    if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                        for t in open(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                            t = t[:-1] # remove newline
+                            if t not in testlist[:i]:
+                                testlist.insert(i, t)
+                                i = i + 1
+                                added = True
+                            #elif t in testlist:
+                                # WARNING: tests in wrong order
+                    i = i + 1
+
         BusyPorts = []
 
         if THISFILE == "Mtest.py":
@@ -3990,6 +4114,7 @@ def main(argv) :
             env['TST_OIDS'] = ""
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
+            env['TST_THREADS'] = ""
             env['TST_STATIC'] = ""
             cmd = splitcommand(env['exe']['Mserver'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
@@ -4212,6 +4337,8 @@ VALUES (%s, '%s', '%s', '%s',
 
  After that, re-run Mtest.
 """ % os.path.join(TSTTRGBASE, TSTPREF, "index.html")
+                if jenkins:
+                    sys.exit(0)
                 sys.exit(1)
             else:
                 if quiet:

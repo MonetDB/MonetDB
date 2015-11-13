@@ -107,10 +107,6 @@ mal_export void mal_exit(void);
 #define STRUCT_ALIGNED
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif
-
 /* The MAL instruction block type definitions */
 /* Variable properties */
 #define VAR_CONSTANT 	1
@@ -120,7 +116,8 @@ mal_export void mal_exit(void);
 #define VAR_CLEANUP	16
 #define VAR_INIT	32
 #define VAR_USED	64
-#define VAR_DISABLED	128		/* used for comments and scheduler */
+#define VAR_CLIST 	128	/* Candidate list variable */
+#define VAR_DISABLED	256		/* used for comments and scheduler */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -135,12 +132,6 @@ mal_export void mal_exit(void);
 
 typedef int malType;
 typedef str (*MALfcn) ();
-
-typedef struct MalProp {
-	bte idx;
-	bte op;
-	int var;
-} *MalPropPtr, MalProp;
 
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
@@ -158,8 +149,7 @@ typedef struct VARRECORD {
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
-	int propc, maxprop;			/* proc count and max number of properties */
-	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
+	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 
 /* For performance analysis we keep track of the number of calls and
@@ -180,6 +170,7 @@ typedef struct {
 	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
+	int mitosis;				/* old mtProp value */
 	/* inline statistics */
 	struct timeval clock;		/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */
@@ -207,7 +198,9 @@ typedef struct MALBLK {
 	InstrPtr *stmt;				/* Instruction location */
 	int ptop;					/* next free slot */
 	int psize;					/* byte size of arena */
-	MalProp *prps;				/* property table */
+	int inlineProp;				/* inline property */
+	int unsafeProp;				/* unsafe property */
+
 	int errors;					/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */
@@ -219,7 +212,6 @@ typedef struct MALBLK {
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */
 	lng recid;					/* Recycler identifier */
-	lng legid;					/* Octopus control */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */

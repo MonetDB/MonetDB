@@ -384,8 +384,26 @@ column_option(
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
-		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
+		symbol *sym = s->data.sym;
+		char *err = NULL, *r;
 
+		if (sym->token == SQL_COLUMN) {
+			sql_exp *e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
+			
+			if (e && is_atom(e->type)) {
+				atom *a = exp_value(e, sql->args, sql->argc);
+
+				if (atom_null(a)) {
+					mvc_default(sql, cs, NULL);
+					res = SQL_OK;
+					break;
+				}
+			}
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		}
+	       	r = symbol2string(sql, s->data.sym, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -399,6 +417,7 @@ column_option(
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) s;
 
+		assert(0);
 		if (!an || !an->a) {
 			mvc_default(sql, cs, NULL);
 		} else {
@@ -458,6 +477,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		ft = t;
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+		return SQL_ERR;
+	} else if (list_find_name(t->keys.set, name)) {
+		sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
@@ -857,7 +879,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	if (mvc_bind_table(sql, s, name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
-	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
@@ -928,7 +950,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
 		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
-	} else if (create && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
+	} else if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		sql_rel *sq = NULL;
@@ -1300,6 +1322,35 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 }
 
 static sql_rel *
+rel_grant_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	char *sname = cur->base.name;
+	dnode *gn;
+
+	if (!privs)
+		return NULL;
+	sname = cur->base.name;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		for (opn = privs->h; opn; opn = opn->next) {
+			int priv = opn->data.i_val;
+
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, DDL_GRANT))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
 rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
 	sql_rel *res = NULL;
@@ -1401,6 +1452,8 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	}
 
 	switch (token) {
+	case SQL_GRANT: 
+		return rel_grant_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
 		return rel_grant_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_NAME:
@@ -1408,6 +1461,34 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	default:
 		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
 	}
+}
+
+static sql_rel *
+rel_revoke_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	char *sname = cur->base.name;
+	dnode *gn;
+
+	if (!privs)
+		return NULL;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		for (opn = privs->h; opn; opn = opn->next) {
+			int priv = opn->data.i_val;
+
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, DDL_REVOKE))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
 }
 
 static sql_rel *
@@ -1514,6 +1595,8 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	}
 
 	switch (token) {
+	case SQL_GRANT: 
+		return rel_revoke_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
 		return rel_revoke_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_NAME:

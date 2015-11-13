@@ -25,14 +25,10 @@
 bat5_export char *BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export char *BKCdelete(bat *r, const bat *bid, const oid *h);
 bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t);
-bat5_export str BKCnewBAT(bat *res, const int *ht, const int *tt, const BUN *cap, int role);
+bat5_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
 bat5_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 bat5_export str BKCdensebat(bat *ret, const wrd *size);
-bat5_export str BKCreverse(bat *ret, const bat *bid);
 bat5_export str BKCmirror(bat *ret, const bat *bid);
-bat5_export str BKCrevert(bat *ret, const bat *bid);
-bat5_export str BKCorder(bat *ret, const bat *bid);
-bat5_export str BKCorder_rev(bat *ret, const bat *bid);
 bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);
@@ -47,7 +43,6 @@ bat5_export str BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat
 bat5_export str BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const bit *force);
 bat5_export str BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, const bit *force);
 bat5_export str BKCgetCapacity(lng *res, const bat *bid);
-bat5_export str BKCgetHeadType(str *res, const bat *bid);
 bat5_export str BKCgetColumnType(str *res, const bat *bid);
 bat5_export str BKCgetRole(str *res, const bat *bid);
 bat5_export str BKCsetkey(bat *res, const bat *bid, const bit *param);

@@ -56,5 +56,5 @@ barrier go:= language.dataflow();
 exit go;
 	redo v := iterator.next(1:int,25:int);
 exit v;
-z:=clients.getUsers();
-io.print(z);
+z,n:=clients.getUsers();
+io.print(z,n);

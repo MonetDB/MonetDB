@@ -56,9 +56,9 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = (BUN) lcap;
 	}
 
-	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
+	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
 }
 
 str
@@ -90,16 +90,16 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = (BUN) lcap;
 	}
 
-	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &ht, &tt, &cap, PERSISTENT);
+	return (str) BKCnewBAT(res, &tt, &cap, PERSISTENT);
 }
 
 str
 CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	bat bid;
-	int ht, tt;
+	int tt;
 	BUN cap = 0;
 	int *res;
 	BAT *b;
@@ -111,14 +111,6 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	bid = *getArgReference_bat(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	}
-
-	if (bid > 0) {
-		ht = b->htype;
-		tt = b->ttype;
-	} else {
-		tt = b->htype;
-		ht = b->ttype;
 	}
 
 	if (p->argc > 2) {
@@ -135,15 +127,14 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	BBPunfix(b->batCacheid);
 
 	res = getArgReference_int(s, p, 0);
-	msg = (str) BKCnewBAT(res, &ht, &tt, &cap, TRANSIENT);
-	if (msg == MAL_SUCCEED && ht == TYPE_void) {
+	msg = (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
+	if (msg == MAL_SUCCEED ){
 		b = BATdescriptor(*res);
 		if ( b == NULL )
 			throw(MAL, "bat.new", RUNTIME_OBJECT_MISSING);
 		BATseqbase(b, o);
 		BBPunfix(b->batCacheid);
 	}
-
 	return msg;
 }
 
@@ -169,9 +160,10 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 
-	b = BATnew(TYPE_oid,getArgType(mb,pci,1),0, TRANSIENT);
+	b = BATnew(TYPE_void,getArgType(mb,pci,1),0, TRANSIENT);
 	if( b == 0)
 		throw(MAL,"bat.single","Could not create it");
+	BATseqbase(b, 0);
     if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
         if (u == 0 || *(str*)u == 0)
             u = (ptr) str_nil;
@@ -191,7 +183,6 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *ret;
 	int i;
 	bat bid;
-	VarPtr low, hgh;
 	oid lval,hval=0, step;
 
 	(void) mb;
@@ -205,16 +196,8 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	for(i=0; i<pci->retc; i++){
-		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
-		if (low== NULL )
-			lval = i*step;
-		else
-			lval = low->value.val.oval;
-		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
-		if (hgh== NULL )
-			hval = lval + step;
-		else
-			hval = hgh->value.val.oval;
+		lval = i*step;
+		hval = lval + step;
 		if (i == pci->retc-1)
 			hval = BATcount(b);
 		bn =  BATslice(b, lval,hval);
@@ -226,7 +209,6 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
-		low= hgh;
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -275,13 +257,16 @@ str
 CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
+	gdk_return r;
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
-	BATimprints(b);
+	r = BATimprints(b);
 	BBPunfix(b->batCacheid);
+	if (r == GDK_FAIL)
+		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 str

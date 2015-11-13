@@ -661,8 +661,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
-	assert(origin_strs->htype==TYPE_void);
-	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs), TRANSIENT);
+	tmpbat = BATnew(TYPE_void, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
 		my_pcre_free(pcre_code);
 		GDKfree(ovector);
@@ -719,18 +718,16 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNins(tmpbat, BUNhead(origin_strsi, p), replaced_str, FALSE);
+			BUNappend(tmpbat, replaced_str, FALSE);
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNins(tmpbat, BUNhead(origin_strsi, p), origin_str, FALSE);
+			BUNappend(tmpbat, origin_str, FALSE);
 		}
 	}
 
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
-	if (origin_strs->htype == TYPE_void) {
-		BATseqbase(tmpbat, origin_strs->hseqbase);
-	}
+	BATseqbase(tmpbat, origin_strs->hseqbase);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 }
@@ -790,6 +787,9 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	return MAL_SUCCEED;
 }
 
+/* special characters in PCRE that need to be escaped */
+static const char *pcre_specials = ".+?*()[]{}|^$\\";
+
 /* change SQL LIKE pattern into PCRE pattern */
 static str
 sql2pcre(str *r, const char *pat, const char *esc_str)
@@ -812,7 +812,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	 * expression.  If the user used the "+" char as escape and has "++"
 	 * in its pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
-	specials = (*esc_str && strchr( ".+*()[]|", esc) != NULL);
+	specials = (*esc_str && strchr(pcre_specials, esc) != NULL);
 
 	*ppat++ = '^';
 	while ((c = *pat++) != 0) {
@@ -829,7 +829,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 				escaped = 1;
 			}
 			hasWildcard = 1;
-		} else if (strchr(".?+*()[]|\\", c) != NULL) {
+		} else if (strchr(pcre_specials, c) != NULL) {
 			/* escape PCRE special chars, avoid double backslash if the
 			 * user uses an invalid escape sequence */
 			if (!escaped)
@@ -881,7 +881,7 @@ pat2pcre(str *r, const char *pat)
 	while (*pat) {
 		int c = *pat++;
 
-		if (strchr( ".+*()|\\", c) != NULL) {
+		if (strchr(pcre_specials, c) != NULL) {
 			*ppat++ = '\\';
 			*ppat++ = c;
 		} else if (c == '%') {
@@ -1038,7 +1038,7 @@ PCRElike3(bit *ret, const str *s, const str *pat, const str *esc)
 str
 PCRElike2(bit *ret, const str *s, const str *pat)
 {
-	char *esc = "\\";
+	char *esc = "";
 
 	return PCRElike3(ret, s, pat, &esc);
 }
@@ -1195,7 +1195,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
-		if (strs->htype != r->htype) {
+		if (!BAThdense(strs)) {
+			/* legacy */
 			BAT *v = VIEWcreate(strs, r);
 
 			BBPunfix(r->batCacheid);

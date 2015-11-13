@@ -162,6 +162,9 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 		sql_subtype *tp = typelist + i;
 		atom *a = atoms[i];
 
+		if (atom_null(a) && type != Q_UPDATE)
+			return -1;
+
 		/* NULL values match any type */
 		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
 			sql_subtype *at = atom_type(a);

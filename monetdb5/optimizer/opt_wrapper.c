@@ -26,10 +26,10 @@
 /*
  * The optimizer used so far
 */
-#include "opt_accumulators.h"
 #include "opt_aliases.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
+#include "opt_candidates.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
@@ -59,10 +59,10 @@ struct{
 	str nme;
 	int (*fcn)();
 } codes[] = {
-	{"accumulators", &OPTaccumulatorsImplementation},
 	{"aliases", &OPTaliasesImplementation},
 	{"coercions", &OPTcoercionImplementation},
 	{"commonTerms", &OPTcommonTermsImplementation},
+	{"candidates", &OPTcandidatesImplementation},
 	{"constants", &OPTconstantsImplementation},
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
@@ -161,7 +161,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
-		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* offsetof(VarRecord, prps) + mb->vsize*sizeof(VarPtr)+1023)/1024),
+		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		t);
 	QOTupdateStatistics(getModuleId(q),actions,t);
 	addtoMalBlkHistory(mb,getModuleId(q));

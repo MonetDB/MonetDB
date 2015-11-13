@@ -63,12 +63,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_09037EED43A6416AA200DF27BB53F675"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0C663F8F9CD74DE2A56C520C4E893AA2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1042,7 +1036,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_03431EDC85094776AD217020CB3E26D4"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64\\lib\\zdll.lib"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64-vs2010\\lib\\zdll.lib"
             "TargetName" = "8:zdll.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1180,26 +1174,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09037EED43A6416AA200DF27BB53F675"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\cluster.mal"
-            "TargetName" = "8:cluster.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0C663F8F9CD74DE2A56C520C4E893AA2"
             {
             "SourcePath" = "8:lib\\monetdb5\\querylog.mal"
@@ -1222,7 +1196,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0D84516ED4054FEA84A5E2C60F42AFE3"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs2010\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -1282,7 +1256,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_13440C2EDE6842BF8D9F24F554EEB87F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.9.2.win64\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.9.2.win64-vs2010\\bin\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -1342,7 +1316,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1AF238588D2D4EA5A416D48291406811"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\lib\\iconv.lib"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64-vs2010\\lib\\iconv.lib"
             "TargetName" = "8:iconv.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1582,7 +1556,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2C7B5DF9CBE642149692C67FC052ECA4"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64-vs2010\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -1622,7 +1596,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2CC8B012C0CB4DFC8F2223F62310125F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.9.2.win64\\lib\\libxml2.lib"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.9.2.win64-vs2010\\lib\\libxml2.lib"
             "TargetName" = "8:libxml2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1642,7 +1616,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E0FEE7726DA47369758C263666F3DB1"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2a.win64\\lib\\libeay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\lib\\libeay32.lib"
             "TargetName" = "8:libeay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1862,7 +1836,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_45C820B6483D494EBFE6F9A28A30760C"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2a.win64\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -2002,7 +1976,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_52DCEC5806254D3F9246489B9C5DFC27"
             {
-            "SourcePath" = "8:C:\\Libraries\\pcre-8.37.win64\\bin\\pcre.dll"
+            "SourcePath" = "8:C:\\Libraries\\pcre-8.37.win64-vs2010\\bin\\pcre.dll"
             "TargetName" = "8:pcre.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -2402,7 +2376,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_732094CE07974147A084EDD6A5F43C6F"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2a.win64\\lib\\ssleay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\lib\\ssleay32.lib"
             "TargetName" = "8:ssleay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2662,7 +2636,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88661B3BC7724CF992AC6079E040DE3A"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64-vs2010\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
@@ -3062,7 +3036,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A3D31DA50E0F4AE1873E390D5B7F1F33"
             {
-            "SourcePath" = "8:C:\\Libraries\\pcre-8.37.win64\\lib\\pcre.lib"
+            "SourcePath" = "8:C:\\Libraries\\pcre-8.37.win64-vs2010\\lib\\pcre.lib"
             "TargetName" = "8:pcre.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3422,7 +3396,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CA3CFDD1291E474EAE85329E4C5E5D45"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64\\lib\\libbz2.lib"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs2010\\lib\\libbz2.lib"
             "TargetName" = "8:libbz2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3942,7 +3916,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E80B0549492B4D76B7EB93941A6BF89D"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2a.win64\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"

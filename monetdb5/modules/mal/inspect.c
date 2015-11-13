@@ -520,7 +520,7 @@ INSPECTcalcSize(MalBlkPtr mb){
 		args += (p->argc-1)* sizeof(*p->argv);
 	}
 	size = (offsetof(InstrRecord, argv) +sizeof(InstrPtr)) * mb->stop;
-	size += (offsetof(VarRecord, prps)+ sizeof(InstrPtr)) * mb->vtop;
+	size += sizeof(VarRecord) * mb->vtop;
 	size += args;
 	return size;
 }
@@ -601,13 +601,13 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if( pci->retc== 2){
 		tn = getArgReference_str(stk, pci, 1);
-		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
+		*hn = getTypeName(TYPE_oid);
 		*tn = getTypeName(getColumnType(getArgType(mb, pci, 2)));
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
 		if ((b = BATdescriptor(*bid)) ) {
-			*hn = getTypeName(newBatType((b->htype==TYPE_void?TYPE_oid:b->htype),b->ttype));
+			*hn = getTypeName(newBatType(TYPE_oid,b->ttype));
 			BBPunfix(b->batCacheid);
 		} else
 			*hn = getTypeName(getArgType(mb, pci, 1));

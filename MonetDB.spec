@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -403,37 +403,12 @@ program.
 
 %files -n rubygem-monetdb-sql
 %defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
-%{gem_dir}/doc/ruby-monetdb-sql-0.1/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.1.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/specifications/ruby-monetdb-sql-0.1.gemspec
-
-%package -n rubygem-activerecord-monetdb-adapter
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Requires: rubygem-activerecord
-Requires: rubygem-monetdb-sql
-BuildArch: noarch
-
-%description -n rubygem-activerecord-monetdb-adapter
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the activerecord adapter for MonetDB.
-
-%files -n rubygem-activerecord-monetdb-adapter
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
-%{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
-%{gem_dir}/cache/activerecord-monetdb-adapter-0.1.gem
-# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
+%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
+%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
+%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
+# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
 %endif
 
 %package client-tests
@@ -659,6 +634,7 @@ fi
 %exclude %{_libdir}/monetdb5/sql*.mal
 %if %{bits} == 64
 %exclude %{_libdir}/monetdb5/*_hge.mal
+%exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
 %{_libdir}/monetdb5/*.mal
 %if %{?with_geos:1}%{!?with_geos:0}
@@ -919,7 +895,6 @@ developer, but if you do want to test, this is the package you need.
 # %exclude %{_bindir}/*.pyc
 # %exclude %{_bindir}/*.pyo
 %{_bindir}/Mapprove.py
-%{_bindir}/Mfilter.py
 %{_bindir}/Mtest.py
 %dir %{python_sitelib}/MonetDBtesting
 %{python_sitelib}/MonetDBtesting/*
@@ -995,6 +970,86 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.11-20151030
+- Rebuilt.
+- BZ#3828: Schema corruption after several ALTER TABLE statements and
+  server restart
+- BZ#3839: msqldump generates incorrect syntax ON UPDATE (null)
+
+* Mon Oct 26 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.9-20151026
+- Rebuilt.
+- BZ#3816: Server crashes when trying to convert timestamp to str with
+  incorrect format
+- BZ#3823: JDBC Connection to a schema - setSchema() error
+- BZ#3827: Certains comparisons between UUID produce a MAL error
+- BZ#3829: Certains simple WHERE clause cause MonetDB to segfault
+  without explanation
+- BZ#3830: Coalesce typing inconsistencies
+- BZ#3833: NULL literals refused at many places
+- BZ#3834: Date comparison returns incorrect results
+
+* Tue Oct 20 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
+- Rebuilt.
+- BZ#3789: Query on large string table fails on HEAPextend
+- BZ#3794: table function sys.rejects() and view sys.rejects() are listed
+  are metadata objects but give an (incorrect) error when they are queried
+- BZ#3797: COPY INTO with incorrect number columns
+- BZ#3798: SELECT query with INTERSECT causes assertion failure
+- BZ#3800: LIKE is broken for many patterns
+- BZ#3802: Disk space never freed: a logical ref is keeped on a deleted
+  BATs
+- BZ#3803: SQL query parser fails to parse valid SELECT query with a
+  CASE .. END in it. It fails with parser error: identifier 'x' ambiguous
+- BZ#3804: `monetdb status` command crashes under certain conditions
+- BZ#3809: Inefficient plan is generated for queries with many (>= 24)
+  joined tables which take a long time or an HEAPalloc error. I get Error:
+  GDK reported error. HEAPalloc: Insufficient space for HEAP of 400000000
+  bytes.
+- BZ#3810: Fix statistics gathering
+- BZ#3811: NOT LIKE not working if the operand doesn't contains wildcards.
+- BZ#3813: COPY INTO fails on perfectly clean CSV file
+- BZ#3814: Server crash when using bitwise NOT operation in SQL query
+- BZ#3818: Crash when performing UNION/GROUP BY over tables with
+  different columns
+- BZ#3819: order of tables in FROM-clause has negative impact on generated
+  plan (using crossproducts instead of joins)
+- BZ#3820: mclient accepts table with repeated constraint which causes
+  crash on insert
+- BZ#3821: Unexpected error when using a number instead of a boolean
+- BZ#3822: Yet another LIKE operator issue
+- BZ#3825: MonetDB not cleaning intermediate results which leads to
+  filling up disk space and ultimately server crash
+
+* Sun Aug 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
+- clients: In the SQL formatter of mclient (the default) we now properly align
+  East Asian wide characters.
+
+* Mon Aug 24 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.5-20150824
+- Rebuilt.
+- BZ#3730: SAMPLE function not sampling randomly
+
+* Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
+- Rebuilt.
+- BZ#3361: constants as MAL function parameters prevent intermediate reuse
+- BZ#3440: Sequence type errors
+- BZ#3449: mserver crash on start - Freebsd 10 amd64
+- BZ#3496: autocompletion table names does not work correctly
+- BZ#3758: "COPY INTO ..." doesn't work, if executing from 2 processes
+  concurrently.
+- BZ#3763: JDBC PreparedStatement for a table with 14 Foreign Keys
+  crashing the Database
+- BZ#3783: Behavioural change in Jul2015 for 'timestamp minus timestamp'
+- BZ#3784: Assertion failed: (bn->batCapacity >= cnt), function
+  BAT_scanselect, file gdk_select.c, line 1008.
+- BZ#3785: sum(interval) causes overflow in conversion to bte
+- BZ#3786: ResultSet.close() never sends Xclose to free resources
+- BZ#3787: "b and g must be aligned" from complex group/union query
+- BZ#3791: HEAPextend: failed to extend to 2420077101056
+
+* Tue Aug 18 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.3-20150818
+- sql: Differences between time, timestamp, and date values now return properly
+  typed interval types (second or month intervals) instead of integers.
+
 * Fri Aug 07 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
 - Rebuilt.
 - BZ#3364: Cannot set role back to a user's default role
@@ -1063,7 +1118,7 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 - java: Improved JDBC driver to not throw NullPointerException anymore
   when calling isNullable() or getPrecision() or getScale() or
   getColumnDisplaySize() or getSchemaName() or getTableName() or
-  getColumnClassName() on a ResultSet object.
+  getColumnClassName() on a ResultSetMetaData object.
 
 * Tue Jul 28 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.1-20150807
 - sql: Added support for 128-bit integers (called HUGEINT) on platforms that

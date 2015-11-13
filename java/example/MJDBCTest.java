@@ -13,7 +13,7 @@ import java.sql.*;
  * On these tables some queries are executed and the JDBC driver is tested
  * on it's accuracy and robustness against 'users'.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 public class MJDBCTest {
 	public static void main(String[] args) throws Exception {

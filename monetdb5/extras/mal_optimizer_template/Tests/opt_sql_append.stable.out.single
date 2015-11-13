@@ -55,8 +55,8 @@ Ready.
 % .L # table_name
 % def # name
 % clob # type
-% 491 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.garbageCollector();"	]
+% 514 # length
+[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -87,8 +87,8 @@ end user.s4_1;
 % .L # table_name
 % def # name
 % clob # type
-% 514 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 537 # length
+[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name

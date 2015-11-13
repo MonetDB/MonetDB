@@ -38,7 +38,7 @@ quoted_print(stream *f, const char *s, const char singleq)
 			mnstr_write(f, "\\t", 1, 2);
 			break;
 		default:
-			if ((0 < *s && *s < 32) || *s == '\377')
+			if ((0 < *s && *s < 32) || *s == '\177')
 				mnstr_printf(f, "\\%03o", *s & 0377);
 			else
 				mnstr_write(f, s, 1, 1);
@@ -147,6 +147,41 @@ has_schemas_system(Mapi mid)
 				    "t.name = 'schemas' AND "
 				    "t.schema_id = s.id AND "
 				    "s.name = 'sys'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	return ret;
+
+  bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 0;
+}
+
+/* return TRUE if the HUGEINT type exists */
+static int
+has_hugeint(Mapi mid)
+{
+	MapiHdl hdl;
+	int ret;
+
+	if ((hdl = mapi_query(mid,
+			      "SELECT id "
+			      "FROM sys.types "
+			      "WHERE sqlname = 'hugeint'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -337,13 +372,13 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			int on_update;
 			int on_delete;
 
-			if (action > 0 &&
-			    (on_delete = action & 255) < NR_ACTIONS &&
+			if ((on_delete = action & 255) != 0 &&
+			    on_delete < NR_ACTIONS &&
 			    on_delete != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON DELETE %s",
 					     actions[on_delete]);
-			if (action > 0 &&
-			    (on_update = (action >> 8) & 255) < NR_ACTIONS &&
+			if ((on_update = (action >> 8) & 255) != 0 &&
+			    on_update < NR_ACTIONS &&
 			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
@@ -394,10 +429,11 @@ static int dump_column_definition(
 	const char *schema,
 	const char *tname,
 	const char *tid,
-	int foreign);
+	int foreign,
+	int hashge);
 
 static int
-dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *c_type_scale)
+dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *c_type_scale, int hashge)
 {
 	int space = 0;
 
@@ -502,13 +538,19 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 		space = mnstr_printf(toConsole, "DECIMAL");
 	} else if (strcmp(c_type, "table") == 0) {
 		mnstr_printf(toConsole, "TABLE ");
-		dump_column_definition(mid, toConsole, NULL, NULL, c_type_digits, 1);
+		dump_column_definition(mid, toConsole, NULL, NULL, c_type_digits, 1, hashge);
 	} else if (strcmp(c_type_digits, "0") == 0) {
 		space = mnstr_printf(toConsole, "%s", toUpper(c_type));
 	} else if (strcmp(c_type_scale, "0") == 0) {
 		space = mnstr_printf(toConsole, "%s(%s)",
 				toUpper(c_type), c_type_digits);
 	} else {
+		if (strcmp(c_type, "decimal") == 0) {
+			if (strcmp(c_type_digits, "39") == 0)
+				c_type_digits = "38";
+			else if (!hashge && strcmp(c_type_digits, "19") == 0)
+				c_type_digits = "18";
+		}
 		space = mnstr_printf(toConsole, "%s(%s,%s)",
 				toUpper(c_type), c_type_digits, c_type_scale);
 	}
@@ -516,7 +558,7 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 }
 
 static int
-dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, int foreign)
+dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, int foreign, int hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query;
@@ -586,7 +628,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 
 		mnstr_printf(toConsole, "\t\"%s\"%*s ",
 			     c_name, CAP(slen - strlen(c_name)), "");
-		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale);
+		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale, hashge);
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
 					CAP(13 - space), "");
@@ -763,6 +805,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	int type = 0;
 	size_t maxquerylen;
 	char *sname = NULL;
+	int hashge;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -777,6 +820,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		}
 		schema = sname;
 	}
+
+	hashge = has_hugeint(mid);
 
 	maxquerylen = 512 + strlen(tname) + strlen(schema);
 
@@ -830,7 +875,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			     "",
 			     schema, tname);
 
-		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign))
+		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
 			goto bailout;
 		if (type == 5)
 			mnstr_printf(toConsole, " ON '%s'", view);
@@ -1147,8 +1192,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	for (i = 0; i < cnt; i++) {
 		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "json") == 0);
+			     strcmp(mapi_get_type(hdl, i), "clob") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *s;

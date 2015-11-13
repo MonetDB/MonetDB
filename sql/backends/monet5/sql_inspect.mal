@@ -4,7 +4,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
+inline function sql_environment()(name:bat[:oid,:str],value:bat[:oid,:str]);
 	(name,value):= inspect.getEnvironment();
 	return (name,value) := (name,value);
 end sql_environment;

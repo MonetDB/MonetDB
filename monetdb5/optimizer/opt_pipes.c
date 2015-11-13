@@ -46,6 +46,7 @@ static struct PIPELINES {
  */
 	{"minimal_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
@@ -63,6 +64,7 @@ static struct PIPELINES {
  */
 	{"default_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
@@ -99,6 +101,7 @@ static struct PIPELINES {
 	{"no_mitosis_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
+	 "optimizer.candidates();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -132,6 +135,7 @@ static struct PIPELINES {
  */
 	{"sequential_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
@@ -156,7 +160,6 @@ static struct PIPELINES {
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
- */
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -183,6 +186,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
+ */
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };

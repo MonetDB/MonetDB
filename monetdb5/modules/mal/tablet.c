@@ -838,14 +838,14 @@ mycpstr(char *t, const char *s)
 }
 
 static str
-SQLload_error(READERtask *task, lng idx)
+SQLload_error(READERtask *task, lng idx, BUN attrs)
 {
 	str line;
 	char *s;
 	size_t sz = 0;
-	unsigned int i;
+	BUN i;
 
-	for (i = 0; i < task->as->nr_attrs; i++) {
+	for (i = 0; i < attrs; i++) {
 		if (task->fields[i][idx])
 			sz += mystrlen(task->fields[i][idx]);
 		sz += task->seplen;
@@ -856,10 +856,10 @@ SQLload_error(READERtask *task, lng idx)
 		tablet_error(task, idx, int_nil, "SQLload malloc error", "SQLload_error");
 		return 0;
 	}
-	for (i = 0; i < task->as->nr_attrs; i++) {
+	for (i = 0; i < attrs; i++) {
 		if (task->fields[i][idx])
 			s = mycpstr(s, task->fields[i][idx]);
-		if (i < task->as->nr_attrs - 1)
+		if (i < attrs - 1)
 			s = mycpstr(s, task->csep);
 	}
 	strcat(line, task->rsep);
@@ -879,7 +879,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	const void *adt;
 	char buf[BUFSIZ];
 	char *s = task->fields[col][idx];
-	ptr key = 0;
 	char *err = NULL;
 	int ret = 0;
 
@@ -893,7 +892,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	if (adt == NULL) {
 		lng row = task->cnt + idx + 1;
 		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
-		err = SQLload_error(task, idx);
+		err = SQLload_error(task, idx, task->as->nr_attrs);
 		if (task->rowerror) {
 			MT_lock_set(&errorlock, "insert_val");
 			col++;
@@ -915,8 +914,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
 	}
-	/* key may be NULL but that's not a problem, as long as we have void */
-	bunfastins(fmt->c, key, adt);
+	bunfastapp(fmt->c, adt);
 	return ret;
   bunins_failed:
 	if (task->rowerror) {
@@ -925,7 +923,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
 		BUNappend(task->cntxt->error_msg, "insert failed", FALSE);
-		err = SQLload_error(task, idx);
+		err = SQLload_error(task, idx,task->as->nr_attrs);
 		BUNappend(task->cntxt->error_input, err, FALSE);
 		GDKfree(err);
 		task->rowerror[row - 1]++;
@@ -953,8 +951,10 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock, "tablet insert value");
 
 	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0)
-			return -1;
+		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0){
+			if(task->besteffort == 0)
+				return -1;
+		}
 	}
 
 	return 0;
@@ -984,13 +984,14 @@ SQLload_parse_line(READERtask *task, int idx)
 	//mnstr_printf(GDKout, "#SQL break line id %d  state %d\n%s", task->id, idx, line);
 #endif
 	assert(idx < task->top[task->cur]);
+	assert(line);
 	errmsg[0] = 0;
 
 	if (task->quote || task->seplen != 1) {
 		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
-			if (*line == task->quote) {
+			if (*line && *line == task->quote) {
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
@@ -1000,7 +1001,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				mnstr_printf(GDKout, "after #1 %s\n", s);
 #endif
 				if (!line) {
-					errline = SQLload_error(task, task->top[task->cur]);
+					errline = SQLload_error(task, idx, i+1);
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, (int) i, errmsg, errline);
 					GDKfree(errline);
@@ -1023,8 +1024,8 @@ SQLload_parse_line(READERtask *task, int idx)
 
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
-				errline = SQLload_error(task, task->top[task->cur]);
-				snprintf(errmsg, BUFSIZ, "Separator missing '%s' ", fmt->sep);
+				errline = SQLload_error(task, idx, i+1);
+				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing ", i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
 				error++;
@@ -1033,18 +1034,14 @@ SQLload_parse_line(READERtask *task, int idx)
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
 				i--;
-			}
+			} 
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
 			if (!fmt->skip && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
 				task->fields[i][idx] = 0;
 		}
-#ifdef _DEBUG_TABLET_
-		if (error)
-			mnstr_printf(GDKout, "#line break failed %d:%s\n", idx, line);
-#endif
-		return error ? -1 : 0;
+		goto endofline;
 	}
 	assert(!task->quote);
 	assert(task->seplen == 1);
@@ -1068,8 +1065,8 @@ SQLload_parse_line(READERtask *task, int idx)
 #endif
 		/* not enough fields */
 		if (i < as->nr_attrs - 1) {
-			errline = SQLload_error(task, task->top[task->cur]);
-			snprintf(errmsg, BUFSIZ, "Separator missing '%s' ", fmt->sep);
+			errline = SQLload_error(task, idx,i+1);
+			snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
 			tablet_error(task, idx, (int) i, errmsg, errline);
 			GDKfree(errline);
 			error++;
@@ -1084,6 +1081,15 @@ SQLload_parse_line(READERtask *task, int idx)
 		if (fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
 			task->fields[i][idx] = 0;
 		}
+	}
+endofline:
+	/* check for too many values as well*/
+	if (*line && i == as->nr_attrs) {
+		errline = SQLload_error(task, idx, task->as->nr_attrs);
+		snprintf(errmsg, BUFSIZ, "Leftover data '%s'",line);
+		tablet_error(task, idx, (int) i, errmsg, errline);
+		GDKfree(errline);
+		error++;
 	}
 #ifdef _DEBUG_TABLET_
 	if (error)
@@ -1125,8 +1131,10 @@ SQLworker(void *arg)
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]) {
 					if (SQLload_parse_line(task, j) < 0) {
-						task->error++;
-						break;
+						task->errorcnt++;
+						// early break unless best effort
+						if(task->besteffort == 0)
+							break;
 					}
 				}
 			task->wtime = GDKusec() - t0;
@@ -1547,10 +1555,42 @@ SQLproducer(void *p)
 	}
 }
 
+static void
+create_rejects_table(Client cntxt)
+{
+	MT_lock_set(&mal_contextLock, "copy.initialization");
+	if (cntxt->error_row == NULL) {
+		cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+		BATseqbase(cntxt->error_row, 0);
+		cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
+		BATseqbase(cntxt->error_fld, 0);
+		cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+		BATseqbase(cntxt->error_msg, 0);
+		cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+		BATseqbase(cntxt->error_input, 0);
+		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
+			if (cntxt->error_row)
+				BBPunfix(cntxt->error_row->batCacheid);
+			if (cntxt->error_fld)
+				BBPunfix(cntxt->error_fld->batCacheid);
+			if (cntxt->error_msg)
+				BBPunfix(cntxt->error_msg->batCacheid);
+			if (cntxt->error_input)
+				BBPunfix(cntxt->error_input->batCacheid);
+		} else {
+			BBPkeepref(cntxt->error_row->batCacheid);
+			BBPkeepref(cntxt->error_fld->batCacheid);
+			BBPkeepref(cntxt->error_msg->batCacheid);
+			BBPkeepref(cntxt->error_input->batCacheid);
+		}
+	}
+	MT_lock_unset(&mal_contextLock, "copy.initialization");
+}
+
 BUN
 SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best)
 {
-	BUN cnt = 0, cntstart = 0;
+	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
 	BUN i, attr;
@@ -1573,33 +1613,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->cntxt = cntxt;
 
 	/* create the reject tables */
-	MT_lock_set(&mal_contextLock, "copy.initialization");
-	if (task->cntxt->error_row == NULL) {
-		task->cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_row, 0);
-		task->cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_fld, 0);
-		task->cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_msg, 0);
-		task->cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(task->cntxt->error_input, 0);
-		if (task->cntxt->error_row == NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL) {
-			if (task->cntxt->error_row)
-				BBPunfix(task->cntxt->error_row->batCacheid);
-			if (task->cntxt->error_fld)
-				BBPunfix(task->cntxt->error_fld->batCacheid);
-			if (task->cntxt->error_msg)
-				BBPunfix(task->cntxt->error_msg->batCacheid);
-			if (task->cntxt->error_input)
-				BBPunfix(task->cntxt->error_input->batCacheid);
-		} else {
-			BBPkeepref(task->cntxt->error_row->batCacheid);
-			BBPkeepref(task->cntxt->error_fld->batCacheid);
-			BBPkeepref(task->cntxt->error_msg->batCacheid);
-			BBPkeepref(task->cntxt->error_input->batCacheid);
-		}
-	}
-	MT_lock_unset(&mal_contextLock, "copy.initialization");
+	create_rejects_table(task->cntxt);
 	if (task->cntxt->error_row == NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL) {
 		tablet_error(task, lng_nil, int_nil, NULL, "SQLload initialization failed");
 		goto bailout;
@@ -1794,7 +1808,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #define trimerrors(TYPE)												\
 		do {															\
 			TYPE *src, *dst;											\
-			BUN leftover= BATcount(task->as->format[attr].c);			\
+			leftover= BATcount(task->as->format[attr].c);			\
 			limit = leftover - cntstart;								\
 			dst =src= (TYPE *) BUNtloc(task->as->format[attr].ci,cntstart);	\
 			for(j = 0; j < (int) limit; j++, src++){					\
@@ -1813,19 +1827,45 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #endif
 		if (best && BATcount(as->format[0].c)) {
 			BUN limit;
+			int width;
+
 			for (attr = 0; attr < as->nr_attrs; attr++) {
-				switch (ATOMsize(as->format[attr].c->ttype)) {
+				width = as->format[attr].c->T->width;
+				switch (width){
 				case 1:
-					trimerrors(unsigned char);
+					trimerrors(bte);
 					break;
 				case 2:
-					trimerrors(unsigned short);
+					trimerrors(sht);
 					break;
 				case 4:
-					trimerrors(unsigned int);
+					trimerrors(int);
 					break;
 				case 8:
-					trimerrors(unsigned long);
+					trimerrors(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					trimerrors(hge);
+					break;
+#endif
+				default:
+					{
+						char *src, *dst;
+						leftover= BATcount(task->as->format[attr].c);
+						limit = leftover - cntstart;
+						dst = src= BUNtloc(task->as->format[attr].ci,cntstart);
+						for(j = 0; j < (int) limit; j++, src += width){
+							if ( task->rowerror[j]){
+								leftover--;
+								continue;
+							}
+							if (dst != src)
+								memcpy(dst, src, width);
+							dst += width;
+						}
+						BATsetcount(task->as->format[attr].c, leftover );
+					}
 					break;
 				}
 			}
@@ -1973,6 +2013,8 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *fld = getArgReference_bat(stk, pci, 1);
 	bat *msg = getArgReference_bat(stk, pci, 2);
 	bat *inp = getArgReference_bat(stk, pci, 3);
+
+	create_rejects_table(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
 	BBPincref(*row = cntxt->error_row->batCacheid, TRUE);

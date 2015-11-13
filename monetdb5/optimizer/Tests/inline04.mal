@@ -2,7 +2,7 @@
 # the crucial part is to recognize valid inlines
 # here the inlined function contains more then
 # just multiplex callable functions.
-function foo{inline}(a:int,b:int):int;
+inline function foo(a:int,b:int):int;
 	c:= a+b;
 	base:=1;
 barrier loop:= true;

@@ -1,5 +1,5 @@
 # remapping inline functions
-function foo{inline}(a:int,b:bat[:oid,:int]):dbl;
+inline function foo(a:int,b:bat[:oid,:int]):dbl;
 	s:= aggr.sum(b);
 	c:= a+s;
 	return foo:=c;

@@ -13,13 +13,16 @@
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 
+extern char * sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);
+extern char * sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);
 extern char * sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor);
 extern char * sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor);
 
 extern int mvc_set_role(mvc *m, char *role);
 extern int mvc_set_schema(mvc *m, char *schema);
 
-extern int schema_privs(int grantor, sql_schema *t);
+extern int global_privs(mvc *m, int privs);
+extern int mvc_schema_privs(mvc *m, sql_schema *t);
 extern int table_privs(mvc *m, sql_table *t, int privs);
 
 extern int sql_privilege(mvc *m, int auth_id, int obj_id, int privs, int sub);

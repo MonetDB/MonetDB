@@ -27,8 +27,7 @@
  * (likewise, @emph{BATcopy()}, which makes a copy, instead of
  * in-place shuffling, has the same alignment effect, @emph{BATmark()}
  * marks the tail column as synced with the head of the original
- * @emph{BAT}, and for instance @emph{BATsemijoin()} marks both return
- * columns as aligned with its left parameter).
+ * @emph{BAT}).
  *
  * Each alignment sequence is given a unique identifier, so as to
  * easily detect this situation. It is retained in the @emph{BAT
@@ -412,74 +411,77 @@ VIEWcombine(BAT *b)
  */
 
 gdk_return
-BATmaterializeh(BAT *b)
+BATmaterializet(BAT *b)
 {
-	int ht;
+	int tt;
 	BUN cnt;
-	Heap head;
+	Heap tail;
 	BUN p, q;
-	oid h, *x;
-	bte tshift;
+	oid t, *x;
+	bte hshift;
 
 	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
-	ht = b->htype;
+	tt = b->ttype;
 	cnt = BATcapacity(b);
-	head = b->H->heap;
+	tail = b->T->heap;
 	p = BUNfirst(b);
 	q = BUNlast(b);
 	assert(cnt >= q - p);
 	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
-	if (!BAThdense(b) || ht != TYPE_void) {
+	if (!BATtdense(b) || tt != TYPE_void) {
 		/* no voids */
 		return GDK_SUCCEED;
 	}
-	ht = TYPE_oid;
+	tt = TYPE_oid;
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
 
-	b->H->heap.filename = NULL;
-	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
-		b->H->heap = head;
+	b->T->heap.filename = NULL;
+	if (HEAPalloc(&b->T->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
+		b->T->heap = tail;
 		return GDK_FAIL;
 	}
 
 	/* point of no return */
-	b->htype = ht;
-	tshift = b->T->shift;
+	b->ttype = tt;
+	hshift = b->H->shift;
 	BATsetdims(b);
-	if (b->ttype) {
-		b->T->shift = tshift;	/* restore in case it got changed */
-		b->T->width = 1 << tshift;
+	if (b->htype) {
+		b->H->shift = hshift;	/* restore in case it got changed */
+		b->H->width = 1 << hshift;
 	}
 	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
-	b->H->heap.dirty = TRUE;
+	b->T->heap.dirty = TRUE;
 
 	/* set the correct dense info */
-	b->hdense = TRUE;
+	b->tdense = TRUE;
 
-	/* So now generate [h..h+cnt-1] */
-	h = b->hseqbase;
-	x = (oid *) b->H->heap.base;
+	/* So now generate [t..t+cnt-1] */
+	t = b->tseqbase;
+	x = (oid *) b->T->heap.base;
 	for (; p < q; p++)
-		*x++ = h++;
-	cnt = h - b->hseqbase;
+		*x++ = t++;
+	cnt = t - b->tseqbase;
 	BATsetcount(b, cnt);
 
 	/* cleanup the old heaps */
-	HEAPfree(&head, 0);
+	HEAPfree(&tail, 0);
 	return GDK_SUCCEED;
 }
 
+#undef BATmaterializeh
+#undef BATmaterialize
+
 /* only materialize the tail */
 gdk_return
-BATmaterializet(BAT *b)
+BATmaterializeh(BAT *b)
 {
-	return BATmaterializeh(BATmirror(b));
+	return BATmaterializet(BATmirror(b));
 }
 
 gdk_return
@@ -746,10 +748,8 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	BUN cnt;
 	BATiter bi = bat_iterator(b);
 
-	if (b == NULL || view == NULL) {
-		GDKerror("VIEWbounds: bat argument missing");
+	if (b == NULL || view == NULL)
 		return;
-	}
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)

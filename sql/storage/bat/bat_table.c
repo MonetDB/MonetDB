@@ -32,12 +32,10 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
-		bat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		bat_destroy(diff);
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		bat_destroy(d);
+		bat_destroy(tids);
+		tids = diff;
 	}
 	return tids;
 }
@@ -255,51 +253,6 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 }
 
 
-#if 0
-static int
-table_dump(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	int i, l = cs_size(&t->columns);
-	BAT **b = (BAT**)GDKzalloc(sizeof(BAT*) * l);
-	
-	(void)tr;
-	for (i = 0; n; n = n->next, i++) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-
-		b[i] = temp_descriptor(bat->bid);
-	}
-	BATmultiprintf(GDKstdout, l +1, b, TRUE, 0, 1);
-	for (i = 0; i < l; i++)
-		bat_destroy(b[i]);
-	GDKfree(b);
-	return 0;
-}
-
-static int
-table_check(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	BUN cnt = BUN_NONE;
-
-	(void)tr;
-	for (; n; n = n->next) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-		BAT *b = temp_descriptor(bat->bid);
-
-		if (cnt == BUN_NONE) {
-			cnt = BATcount(b);
-		} else if (cnt != BATcount(b)) {
-			assert(0);
-			return (int)(cnt - BATcount(b));
-		}
-		bat_destroy(b);
-	}
-	return 0;
-}
-#endif
 
 /* returns table rids, for the given select ranges */
 static rids *
@@ -497,7 +450,7 @@ subrids_destroy(subrids *r )
 static rids *
 rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 {
-	BAT *lcb = full_column(tr, lc), *s, *d, *rids;
+	BAT *lcb = full_column(tr, lc), *s, *d, *rids, *diff;
 	BAT *rcb = full_column(tr, rc);
 
 	s = BATproject(r->rids, rcb);
@@ -506,13 +459,10 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 
 	s = BATproject(l->data, lcb);
 
-	d = BATkdiff(BATmirror(s), BATmirror(rcb));
-	bat_destroy(s);
-	s = BATmirror(BATmark(d, 0));
-	bat_destroy(d);
-	bat_destroy(rcb);
+	diff = BATsubdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
 
-	BATsubjoin(&rids, &d, lcb, s, NULL, NULL, FALSE, BATcount(s));
+	BATsubjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	bat_destroy(diff);
 	bat_destroy(d);
 	full_destroy(lc, lcb);
 	bat_destroy(s);

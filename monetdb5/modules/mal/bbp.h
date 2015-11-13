@@ -53,5 +53,5 @@ bbp_export str CMDbbpLRefCount(bat *ret);
 bbp_export str CMDbbpgetIndex(int *res, bat *bid);
 bbp_export str CMDgetBATrefcnt(int *res, bat *bid);
 bbp_export str CMDgetBATlrefcnt(int *res, bat *bid);
-bbp_export str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
+bbp_export str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
 #endif /* _BBP_H_*/

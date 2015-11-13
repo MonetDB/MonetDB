@@ -121,7 +121,7 @@ fits2mtype(int t)
 }
 
 static int
-fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
+fits2subtype(sql_subtype *tpe, int t, long rep, long wid) /* type long used by fits library */
 {
 	(void)rep;
 	switch (t) {
@@ -176,22 +176,24 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str type, name, *colname, *tform;
 	fitsfile *fptr;
 	char filename[BUFSIZ];
-	long nrows = 0, optimal;
+	size_t nrows = 0;
+	long optimal; /* type long used by fits library */
 	rids * rs;
 
-	int tm0, texportboolean=0, texportchar=0, texportstring=0, texportshort=0, texportint=0, texportlong=0, texportfloat=0, texportdouble=0;
-	int numberrow = 0, cc = 0, status = 0, j = 0, columns, fid, dimension = 0, block = 0;
-	int boolcols = 0, charcols = 0, strcols = 0, shortcols = 0, intcols = 0, longcols = 0, floatcols = 0, doublecols = 0;
+	int tm0, texportboolean=0, texportchar=0, texportstring=0, texportshort=0, texportint=0, texportlng=0, texportfloat=0, texportdouble=0;
+	size_t numberrow = 0, dimension = 0;
+	int cc = 0, status = 0, j = 0, columns, *fid, block = 0;
+	int boolcols = 0, charcols = 0, strcols = 0, shortcols = 0, intcols = 0, lngcols = 0, floatcols = 0, doublecols = 0;
 	int hdutype;
 
-	char charvalue, *readcharrows;
+	char *charvalue, *readcharrows;
 	str strvalue; char **readstrrows;
-	short shortvalue, *readshortrows;
-	int intvalue, *readintrows;
-	long longvalue, *readlongrows;
-	float realvalue, *readfloatrows;
-	double doublevalue, *readdoublerows;
-	_Bool boolvalue, *readboolrows;
+	short *shortvalue, *readshortrows;
+	int *intvalue, *readintrows;
+	lng *lngvalue, *readlngrows;
+	float *realvalue, *readfloatrows;
+	double *doublevalue, *readdoublerows;
+	_Bool *boolvalue, *readboolrows;
 	struct list * set;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
@@ -223,18 +225,20 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
 
 	col = mvc_bind_column(m, tables, "id");
-	fid = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	fid = (int*) table_funcs.column_find_value(m->session->tr, col, rid);
 
 	column =  mvc_bind_table(m, sch, "_columns");
 	col = mvc_bind_column(m, column, "table_id");
 
-	rs = table_funcs.rids_select(m->session->tr, col, (void *) &fid, (void *) &fid, NULL);
+	rs = table_funcs.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
+	GDKfree(fid);
 
 	while ((rid = table_funcs.rids_next(rs)) != oid_nil)
 	{
 		col = mvc_bind_column(m, column, "name");
 		name = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
 		colname[j] = toLower(name);
+		GDKfree(name);
 
 		col = mvc_bind_column(m, column, "type");
 		type = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
@@ -254,6 +258,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (strcmp(type,"real")==0) tform[j] = "1E";
 
 		if (strcmp(type,"double")==0) tform[j] = "1D";
+		GDKfree(type);
 
 		j++;
 	}
@@ -261,6 +266,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, tbl, colname[0]);
 
 	nrows = store_funcs.count_col(tr, col, 1);
+	assert(nrows <= (size_t) GDK_oid_max);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
 	fprintf(stderr, "Filename: %s\n", filename);
@@ -291,11 +297,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				boolvalue = *(_Bool*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readboolrows[dimension] = boolvalue;
+				boolvalue = (_Bool*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readboolrows[dimension] = *boolvalue;
+				GDKfree(boolvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -320,11 +327,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				charvalue = *(char*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readcharrows[dimension] = charvalue;
+				charvalue = (char*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readcharrows[dimension] = *charvalue;
+				GDKfree(charvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -349,16 +357,19 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				strvalue = (char *) table_funcs.column_find_value(m->session->tr, col, numberrow);
+				strvalue = (char *) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
 				readstrrows[dimension] = strvalue;
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
 					fits_write_col_str(fptr, cc+1, (optimal*block)+1, 1, optimal, readstrrows, &status);
 					texportstring += GDKms() - tm0;
+					for (dimension = 0; dimension < (size_t) optimal; dimension++)
+						GDKfree(readstrrows[dimension]);
+					dimension = 0;
 					GDKfree(readstrrows);
 					readstrrows = (char **) GDKmalloc(sizeof(char *) * optimal);
 					block++;
@@ -367,6 +378,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm0 = GDKms();
 			fits_write_col_str(fptr, cc+1, (optimal*block)+1, 1, dimension, readstrrows, &status);
 			texportstring += GDKms() - tm0;
+			for (numberrow = 0; numberrow < dimension; numberrow++)
+				GDKfree(readstrrows[numberrow]);
 			GDKfree(readstrrows);
 		}
 
@@ -378,11 +391,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				shortvalue = *(short*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readshortrows[dimension] = shortvalue;
+				shortvalue = (short*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readshortrows[dimension] = *shortvalue;
+				GDKfree(shortvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -407,11 +421,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				intvalue = *(int*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readintrows[dimension] = intvalue;
+				intvalue = (int*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readintrows[dimension] = *intvalue;
+				GDKfree(intvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -430,31 +445,32 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (strcmp(columntype,"bigint")==0)
 		{
-			longcols++; dimension = 0; block = 0;
+			lngcols++; dimension = 0; block = 0;
 			fits_get_rowsize(fptr,&optimal,&status);
-			readlongrows = (long *) GDKmalloc (sizeof(long) * optimal);
+			readlngrows = (lng *) GDKmalloc (sizeof(lng) * optimal);
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				longvalue = *(long*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readlongrows[dimension] = longvalue;
+				lngvalue = (lng*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readlngrows[dimension] = *lngvalue;
+				GDKfree(lngvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
-					fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, optimal, readlongrows, &status);
-					texportlong += GDKms() - tm0;
-					GDKfree(readlongrows);
-					readlongrows = (long *) GDKmalloc (sizeof(long) * optimal);
+					fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, optimal, readlngrows, &status);
+					texportlng += GDKms() - tm0;
+					GDKfree(readlngrows);
+					readlngrows = (lng *) GDKmalloc (sizeof(lng) * optimal);
 					block++;
 				}
 			} 
 			tm0 = GDKms();
-			fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlongrows, &status);
-			texportlong += GDKms() - tm0;
-			GDKfree(readlongrows);
+			fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlngrows, &status);
+			texportlng += GDKms() - tm0;
+			GDKfree(readlngrows);
 		}
 
 		if (strcmp(columntype,"real")==0)
@@ -465,11 +481,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				realvalue = *(float*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readfloatrows[dimension] = realvalue;
+				realvalue = (float*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readfloatrows[dimension] = *realvalue;
+				GDKfree(realvalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -494,11 +511,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				doublevalue = *(double*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readdoublerows[dimension] = doublevalue;
+				doublevalue = (double*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				readdoublerows[dimension] = *doublevalue;
+				GDKfree(doublevalue);
 				dimension++;
 
-				if (dimension == optimal)
+				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
 					tm0 = GDKms();
@@ -524,7 +542,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (texportstring > 0)		fprintf(stderr, "%d String\tcolumn(s) exported in %d ms\n",  strcols,    texportstring);
 	if (texportshort > 0)		fprintf(stderr, "%d Short\t\tcolumn(s) exported in %d ms\n",   shortcols,  texportshort);
 	if (texportint > 0)		fprintf(stderr, "%d Integer\tcolumn(s) exported in %d ms\n", intcols,    texportint);
-	if (texportlong > 0)		fprintf(stderr, "%d Long\t\tcolumn(s) exported in %d ms\n",    longcols,   texportlong);
+	if (texportlng > 0)		fprintf(stderr, "%d Long\t\tcolumn(s) exported in %d ms\n",    lngcols,   texportlng);
 	if (texportfloat > 0)		fprintf(stderr, "%d Float\t\tcolumn(s) exported in %d ms\n",   floatcols,  texportfloat);
 	if (texportdouble > 0) 		fprintf(stderr, "%d Double\tcolumn(s) exported in %d ms\n",  doublecols, texportdouble);
 	*/
@@ -643,7 +661,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0, bitpixnumber = 0;
 	oid fid, tid, cid, rid = oid_nil;
 	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ], stmt[BUFSIZ];
-	long tbcol;
+	long tbcol; /* type long used by fits library */
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	double tscal, tzero;
 	char xtensionname[BUFSIZ] = "", stilversion[BUFSIZ] = "";
@@ -814,9 +832,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fname;
 	str msg = MAL_SUCCEED;
 	oid rid = oid_nil, frid = oid_nil;
-	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull = 0, mtype;
+	int status = 0, cnum = 0, *fid, *hdu, hdutype, j, anynull = 0, mtype;
 	int *tpcode = NULL;
-	long *rep = NULL, *wid = NULL, rows;
+	long *rep = NULL, *wid = NULL, rows; /* type long used by fits library */
 	char keywrd[80], **cname, nm[FLEN_VALUE];
 	ptr nilptr;
 
@@ -847,26 +865,31 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open FITS file and move to the table HDU */
 	col = mvc_bind_column(m, fits_tbl, "file_id");
-	fid = *(int*)table_funcs.column_find_value(m->session->tr, col, rid);
+	fid = (int*)table_funcs.column_find_value(m->session->tr, col, rid);
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	col = mvc_bind_column(m, fits_fl, "id");
-	frid = table_funcs.column_find_row(m->session->tr, col, (void *)&fid, NULL);
+	frid = table_funcs.column_find_row(m->session->tr, col, (void *)fid, NULL);
+	GDKfree(fid);
 	col = mvc_bind_column(m, fits_fl, "name");
 	fname = (char *)table_funcs.column_find_value(m->session->tr, col, frid);
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
 		msg = createException(MAL, "fits.loadtable", "Missing FITS file %s.\n", fname);
+		GDKfree(fname);
 		return msg;
 	}
+	GDKfree(fname);
 
 	col = mvc_bind_column(m, fits_tbl, "hdu");
-	hdu = *(int*)table_funcs.column_find_value(m->session->tr, col, rid);
-	fits_movabs_hdu(fptr, hdu, &hdutype, &status);
+	hdu = (int*)table_funcs.column_find_value(m->session->tr, col, rid);
+	fits_movabs_hdu(fptr, *hdu, &hdutype, &status);
 	if (hdutype != ASCII_TBL && hdutype != BINARY_TBL) {
-		msg = createException(MAL, "fits.loadtable", "HDU %d is not a table.\n", hdu);
+		msg = createException(MAL, "fits.loadtable", "HDU %d is not a table.\n", *hdu);
+		GDKfree(hdu);
 		fits_close_file(fptr, &status);
 		return msg;
 	}
+	GDKfree(hdu);
 
 	/* create a SQL table to hold the FITS table */
 	/*	col = mvc_bind_column(m, fits_tbl, "columns");
@@ -922,9 +945,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tmp->trevsorted = 0;
 		} else {
 /*			char *v = GDKzalloc(wid[j-1]);*/
-			int bsize = 50;
+			/* type long demanded by "rows", i.e., by fits library */
+			long bsize = 50, batch = bsize, k, i;
 			int tm0, tloadtm = 0, tattachtm = 0;
-			int batch = bsize, k;
 			char **v = (char **) GDKzalloc(sizeof(char *) * bsize);
 			for(i = 0; i < bsize; i++)
 				v[i] = GDKzalloc(wid[j-1]);

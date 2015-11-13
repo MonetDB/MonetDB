@@ -841,7 +841,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write('\tpython "$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
@@ -927,7 +927,7 @@ def msc_libs(fd, var, libsmap, msc):
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_DEPS)\n")
-        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write('\tpython "$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
@@ -969,7 +969,6 @@ def msc_gem(fd, var, gem, msc):
     if 'DIR' in gem:
         rd = gem['DIR'][0]
     rd = msc_translate_dir(rd, msc)
-    rd = '$(prefix)\\' + rd
     fd.write('!IF defined(HAVE_RUBYGEM)\n')
     for f in gem['FILES']:
         msc['SCRIPTS'].append(f[:-4])

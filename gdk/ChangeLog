@@ -1,3 +1,41 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Oct  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed all versions of the SORTloop macro.
+
+* Thu Oct  1 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed Batkdiff.  Use BATsubdiff instead.
+
+* Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATselect.  Use BATsubselect instead.
+- Removed BATsemijoin.  Use BATsubsemijoin instead.
+- Removed BATjoin.  Use BATsubjoin instead.
+- Removed BATleftjoin.  Use BATsubleftjoin or BATproject instead.
+- Removed BATleftfetchjoin.  Use BATproject instead.
+- Removed BUNins from the list of exported functions.
+
+* Thu Sep 10 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed legacy functions BATuselect and BATuselect_.
+- Removed legacy functions BATantijoin, BATbandjoin, BATouterjoin,
+  BATrangejoin, and BATthetajoin.
+
+* Wed Sep  9 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATrevert.
+- BATordered now works on the TAIL column.
+
+* Tue Sep  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed obsolete functions BATorder() and BATorder_rev().
+
+* Sat Sep  5 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented BATsubdiff which returns a list of OIDs (sorted, i.e. usable
+  as candidate list) of tuples in the left input whose value does not
+  occur in the right input.
+
+* Fri Sep  4 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATkintersect.  It wasn't used anymore.  It's
+  functionality can be obtained by using BATsubsemijoin.
+
+* Fri Aug 14 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the function BATkunion.
+

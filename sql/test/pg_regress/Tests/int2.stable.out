@@ -176,7 +176,7 @@ Ready.
 [ "",	1234,	2468	]
 [ "",	-1234,	-2468 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L,	sys.i,	.L1 # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length

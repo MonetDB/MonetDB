@@ -13,7 +13,6 @@
 #include "mal_function.h"
 #include "mal_scenario.h"
 #include "mal_builder.h"
-#include "mal_properties.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -34,6 +33,7 @@
 #define DEBUG_OPT_ALIASES			3
 #define DEBUG_OPT_REDUCE			4
 #define DEBUG_OPT_COMMONTERMS		5
+#define DEBUG_OPT_CANDIDATES		6
 #define DEBUG_OPT_CONSTANTS			7
 #define DEBUG_OPT_COSTMODEL			8
 #define DEBUG_OPT_CRACK				9
@@ -66,7 +66,6 @@
 #define DEBUG_OPT_HISTORY			40
 #define DEBUG_OPT_MITOSIS			41
 #define DEBUG_OPT_MULTIPLEX			42
-#define DEBUG_OPT_ACCUMULATORS		43
 #define DEBUG_OPT_SELCRACK			46
 #define DEBUG_OPT_SIDCRACK			47
 #define DEBUG_OPT_TRACE				48
@@ -113,7 +112,6 @@ opt_export int isSubJoin(InstrPtr q);
 opt_export int isMultiplex(InstrPtr q);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
 opt_export str OPTsetDebugStr(void *ret, str *nme);
-opt_export wrd getVarRows(MalBlkPtr mb, int v);
 
 #endif /* _OPT_SUPPORT_H */
 

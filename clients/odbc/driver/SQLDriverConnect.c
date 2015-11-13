@@ -217,16 +217,17 @@ ODBCConnectionString(SQLRETURN rc,
 
 	/* calculate how much space was needed */
 	if (StringLength2Ptr)
-		*StringLength2Ptr = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
-					   (uid ? strlen(uid) + 5 : 0) +
-					   (pwd ? strlen(pwd) + 5 : 0) +
-					   (host ? strlen(host) + 6 : 0) +
-					   (port ? port + 6 : 0) +
-					   (database ? strlen(database) + 10 : 0)
+		*StringLength2Ptr = (SQLSMALLINT)
+			(strlen(dsn ? dsn : "DEFAULT") + 5 +
+			 (uid ? strlen(uid) + 5 : 0) +
+			 (pwd ? strlen(pwd) + 5 : 0) +
+			 (host ? strlen(host) + 6 : 0) +
+			 (port ? port + 6 : 0) +
+			 (database ? strlen(database) + 10 : 0)
 #ifdef ODBCDEBUG
-					   + (ODBCdebug && getenv("ODBCDEBUG") == NULL ? strlen(ODBCdebug) + 9 : 0)
+			 + (ODBCdebug && getenv("ODBCDEBUG") == NULL ? strlen(ODBCdebug) + 9 : 0)
 #endif
-			);
+				);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? (char *) buf : "(null)", buflen);

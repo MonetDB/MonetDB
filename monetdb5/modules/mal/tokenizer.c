@@ -127,7 +127,6 @@ TKNZRopen(void *ret, str *in)
 		b = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
-		BATkey(b, FALSE);
 		BATseqbase(b, 0);
 		tokenBAT[INDEX].val = b;
 		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED)
@@ -262,7 +261,6 @@ TKNZRappend(oid *pos, str *s)
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			BATkey(bVal, FALSE);
 			BATseqbase(bVal, 0);
 			
 			tokenBAT[i].val = bVal;
@@ -289,7 +287,6 @@ TKNZRappend(oid *pos, str *s)
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			BATkey(bIdx, FALSE);
 			BATseqbase(bIdx, 0);
 			
 			tokenBAT[i].idx = bIdx;
@@ -580,7 +577,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
-	view = VIEWcreate(BATmirror(tokenBAT[*level].idx),tokenBAT[*level].val);
+	view = VIEWcreate(tokenBAT[*level].idx, tokenBAT[*level].val);
 	*r = view->batCacheid;
 
 	BBPincref(*r, TRUE);

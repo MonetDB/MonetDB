@@ -74,7 +74,7 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TPE(TP2), BATcount(b), TRANSIENT);
+	dst = BATnew(TYPE_void, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
@@ -84,9 +84,20 @@ FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *
 		TP1 *v = (TP1 *) BUNtail(bi, p);
 		TP2 r;
 		msg = FUN(,TP1,_num2dec_,TP2) (&r, v, d2, s2);
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi, p), &r, FALSE);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		BUNappend(dst, &r, FALSE);
+	}
+	if (!BAThdense(b)) {
+		/* legacy */
+		BAT *b2 = VIEWcreate(b, dst);
+		BBPunfix(dst->batCacheid);
+		dst = b2;
+	} else {
+		BATseqbase(dst, b->hseqbase);
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

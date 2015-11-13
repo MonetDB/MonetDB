@@ -360,7 +360,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * such as the calculator functions. It is particularly
 			 * geared at handling the PSM code.
 			 */
-			if (varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
+			if ( mb->inlineProp ){
 				OPTDEBUGremap{
 					mnstr_printf(cntxt->fdout,"#Multiplex inline\n");
 					printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);

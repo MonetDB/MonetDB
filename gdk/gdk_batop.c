@@ -387,6 +387,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
  * The content of a BAT can be appended to (removed from) another
  * using BATins (BATdel).
  */
+#undef BATins
 #define bunins(b,h,t) if (BUNins(b,h,t,force) != GDK_SUCCEED) return GDK_FAIL;
 gdk_return
 BATins(BAT *b, BAT *n, bit force)
@@ -460,13 +461,8 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	if (b->T->hash == NULL &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
-	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
+	    (b->hkey & BOUND2BTRUE) == 0 &&
 	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
-		if (b->hkey & BOUND2BTRUE && b->batCount > 0) {
-			tmp = n = BATkdiff(n, b);
-			if (n == NULL)
-				return GDK_FAIL;
-		}
 		fastpath = 1;
 	}
 
@@ -888,6 +884,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		}							\
 	} while (0)
 
+#undef BATdel
+#undef BUNdel
 #define bundel(b,h,t) do { if (BUNdel(b,h,t,force) != GDK_SUCCEED) { GDKerror("BATdel: BUN does not occur.\n"); return GDK_FAIL; } } while (0)
 gdk_return
 BATdel(BAT *b, BAT *n, bit force)
@@ -925,9 +923,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * The BAT selectors are among the most heavily used operators.
  * Their efficient implementation is therefore mandatory.
  *
- * The interface supports seven operations: BATslice, BATselect,
- * BATfragment, BATproject, BATrestrict.
- *
  * BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
  * execution by avoiding to copy when the BAT is memory mapped (in
@@ -937,10 +932,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  * If a new copy has to be created, this function takes care to
  * preserve void-columns (in this case, the seqbase has to be
  * recomputed in the result).
- *
- * Note that the BATslice() is used indirectly as well as a special
- * case for BATselect (range selection on sorted column) and
- * BATsemijoin (when two dense columns are semijoined).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */
@@ -1080,22 +1071,21 @@ BATslice(BAT *b, BUN l, BUN h)
 
 /*
  *  BAT Sorting
- * BATsort returns a sorted copy. BATorder sorts the BAT itself.
  */
 int
 BATordered(BAT *b)
 {
-	if (!b->hsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hsorted;
+	if (!b->tsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->tsorted;
 }
 
 int
 BATordered_rev(BAT *b)
 {
-	if (!b->hrevsorted)
-		BATderiveHeadProps(b, 0);
-	return b->hrevsorted;
+	if (!b->trevsorted)
+		BATderiveHeadProps(BATmirror(b), 0);
+	return b->trevsorted;
 }
 
 /* figure out which sort function is to be called
@@ -1125,116 +1115,6 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 		}
 	}
 	return GDK_SUCCEED;
-}
-
-/* Sort b according to stable and reverse, do it in-place if copy is
- * unset, otherwise do it on a copy */
-static BAT *
-BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
-{
-	BATcheck(b, func, NULL);
-	/* set some trivial properties (probably not necessary, but
-	 * it's cheap) */
-	if (b->htype == TYPE_void) {
-		b->hsorted = 1;
-		b->hrevsorted = b->hseqbase == oid_nil || b->batCount <= 1;
-		b->hkey |= b->hseqbase != oid_nil;
-	} else if (b->batCount <= 1) {
-		b->hsorted = b->hrevsorted = 1;
-	}
-	if (reverse ? b->hrevsorted : b->hsorted) {
-		/* b is already ordered as desired, hence we return b
-		 * as is */
-		return copy ? BATcopy(b, b->htype, b->ttype, FALSE, TRANSIENT) : b;
-	}
-	if (copy) {
-		/* now make a writable copy that we're going to sort
-		 * materialize any VOID columns while we're at it */
-		b = BATcopy(b, BAThtype(b), BATttype(b), TRUE, TRANSIENT);
-	} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-		/* materialize void-tail in-place */
-		/* note, we don't need to materialize the head column:
-		 * if it is void, either we didn't get here (already
-		 * sorted correctly), or we will fall into BATrevert
-		 * below which does the materialization for us */
-		if (BATmaterializet(b) != GDK_SUCCEED)
-			return NULL;
-	}
-
-	if ((reverse ? b->hsorted : b->hrevsorted) && (!stable || b->hkey)) {
-		/* b is ordered in the opposite direction, hence we
-		 * revert b (note that if requesting stable sort, the
-		 * column needs to be key) */
-		return BATrevert(b) == GDK_SUCCEED ? b : NULL;
-	}
-	if (!(reverse ? b->hrevsorted : b->hsorted) &&
-	    do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
-		    b->H->vheap ? b->H->vheap->base : NULL,
-		    BATcount(b), Hsize(b), Tsize(b), b->htype,
-		    reverse, stable) != GDK_SUCCEED) {
-		if (copy)
-			BBPreclaim(b);
-		return NULL;
-	}
-	if (reverse) {
-		b->hrevsorted = 1;
-		b->hsorted = b->batCount <= 1;
-	} else {
-		b->hsorted = 1;
-		b->hrevsorted = b->batCount <= 1;
-	}
-	b->tsorted = b->trevsorted = 0;
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	ALIGNdel(b, func, FALSE, NULL);
-	b->hdense = 0;
-	b->tdense = 0;
-	b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = TRUE;
-
-	return b;
-}
-
-#undef BATorder
-#undef BATorder_rev
-#undef BATsort
-#undef BATsort_rev
-#undef BATssort
-#undef BATssort_rev
-
-gdk_return
-BATorder(BAT *b)
-{
-	return BATorder_internal(b, 0, 0, 0, "BATorder") ? GDK_SUCCEED : GDK_FAIL;
-}
-
-gdk_return
-BATorder_rev(BAT *b)
-{
-	return BATorder_internal(b, 0, 1, 0, "BATorder_rev") ? GDK_SUCCEED : GDK_FAIL;
-}
-
-BAT *
-BATsort(BAT *b)
-{
-	return BATorder_internal(b, 0, 0, 1, "BATsort");
-}
-
-BAT *
-BATsort_rev(BAT *b)
-{
-	return BATorder_internal(b, 0, 1, 1, "BATsort_rev");
-}
-
-BAT *
-BATssort(BAT *b)
-{
-	return BATorder_internal(b, 1, 0, 1, "BATssort");
-}
-
-BAT *
-BATssort_rev(BAT *b)
-{
-	return BATorder_internal(b, 1, 1, 1, "BATssort_rev");
 }
 
 /* subsort the bat b according to both o and g.  The stable and
@@ -1507,72 +1387,6 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 }
 
 /*
- * Reverse a BAT
- * BATrevert rearranges a BAT in reverse order.
- */
-gdk_return
-BATrevert(BAT *b)
-{
-	char *h, *t;
-	BUN p, q;
-	BATiter bi = bat_iterator(b);
-	size_t s;
-	int x;
-
-	BATcheck(b, "BATrevert", GDK_FAIL);
-	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
-		/* materialize void columns in-place */
-		if (BATmaterialize(b) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	ALIGNdel(b, "BATrevert", FALSE, GDK_FAIL);
-	s = Hsize(b);
-	if (s > 0) {
-		h = (char *) GDKmalloc(s);
-		if (!h) {
-			return GDK_FAIL;
-		}
-		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
-			char *ph = BUNhloc(bi, p);
-			char *qh = BUNhloc(bi, q);
-
-			memcpy(h, ph, s);
-			memcpy(ph, qh, s);
-			memcpy(qh, h, s);
-		}
-		GDKfree(h);
-	}
-	s = Tsize(b);
-	if (s > 0) {
-		t = (char *) GDKmalloc(s);
-		if (!t) {
-			return GDK_FAIL;
-		}
-		for (p = BUNlast(b) ? BUNlast(b) - 1 : 0, q = BUNfirst(b); p > q; p--, q++) {
-			char *pt = BUNtloc(bi, p);
-			char *qt = BUNtloc(bi, q);
-
-			memcpy(t, pt, s);
-			memcpy(pt, qt, s);
-			memcpy(qt, t, s);
-		}
-		GDKfree(t);
-	}
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	/* interchange sorted and revsorted */
-	x = b->hrevsorted;
-	b->hrevsorted = b->hsorted;
-	b->hsorted = x;
-	x = b->trevsorted;
-	b->trevsorted = b->tsorted;
-	b->tsorted = x;
-	b->hdense = FALSE;
-	b->tdense = FALSE;
-	return GDK_SUCCEED;
-}
-
-/*
  * return a view on b consisting of the head of b and a new dense tail
  * starting at oid_base.
  */
@@ -1641,7 +1455,6 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
 			((hge *) p)[i] = *(hge *) v;
-		bn->T->nil = n >= 1 && *(hge *) v == hge_nil;
 		break;
 #endif
 	default:
@@ -1675,7 +1488,8 @@ BATconst(BAT *b, int tailtype, const void *v, int role)
 	bn = BATconstant(tailtype, v, BATcount(b), role);
 	if (bn == NULL)
 		return NULL;
-	if (b->H->type != bn->H->type) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *bnn = VIEWcreate(b, bn);
 
 		BBPunfix(bn->batCacheid);

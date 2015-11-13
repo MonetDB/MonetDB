@@ -7,7 +7,7 @@
 CREATE TYPE xml EXTERNAL NAME xml;
 CREATE FUNCTION xml (s STRING) RETURNS xml external name xml.xml;
 CREATE FUNCTION str (s XML) RETURNS STRING external name xml.str;
-CREATE FUNCTION comment (s STRING) RETURNS xml external name xml.comment;
+CREATE FUNCTION "comment" (s STRING) RETURNS xml external name xml.comment;
 CREATE FUNCTION parse (doccont STRING, val STRING, "option" STRING) RETURNS xml external name xml.parse;
 CREATE FUNCTION pi (nme STRING, val STRING) RETURNS xml external name xml.pi;
 CREATE FUNCTION root (val STRING, version STRING, standalone STRING) RETURNS xml external name xml.root;

@@ -11,7 +11,7 @@ import java.sql.*;
 /**
  * This example shows the use of the PreparedStatement
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 public class PreparedExample {
 	public static void main(String[] args) throws Exception {

@@ -30,11 +30,11 @@ str arrayRef;
 str basketRef;
 str batcalcRef;
 str batRef;
-str boxRef;
 str batstrRef;
 str batmtimeRef;
 str batmmathRef;
 str batxmlRef;
+str batsqlRef;
 str bbpRef;
 str tidRef;
 str dateRef;
@@ -69,11 +69,9 @@ str dblRef;
 str defineRef;
 str deleteRef;
 str depositRef;
-str differenceRef;
-str tdifferenceRef;
-str tintersectRef;
-str tdiffRef;
-str tinterRef;
+str subdiffRef;
+str diffRef;
+str subinterRef;
 str mergecandRef;
 str mergepackRef;
 str intersectcandRef;
@@ -113,17 +111,13 @@ str subantijoinRef;
 str subbandjoinRef;
 str subrangejoinRef;
 str subthetajoinRef;
-str kdifferenceRef;
-str kunionRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
-str leftjoinRef;
-str leftjoinPathRef;
-str likeselectRef;
-str ilikeselectRef;
-str likeuselectRef;
-str ilikeuselectRef;
+str likesubselectRef;
+str likethetasubselectRef;
+str ilikesubselectRef;
+str ilikethetasubselectRef;
 str likeRef;
 str ilikeRef;
 str not_likeRef;
@@ -135,10 +129,8 @@ str malRef;
 str batmalRef;
 str mapiRef;
 str markRef;
-str mark_grpRef;
 str mtimeRef;
 str multicolumnRef;
-str dense_rank_grpRef;
 str matRef;
 str max_no_nilRef;
 str maxRef;
@@ -183,13 +175,14 @@ str projectRef;
 str putRef;
 str querylogRef;
 str queryRef;
-str rankRef;
-str rank_grpRef;
 str rapiRef;
+str batrapiRef;
+str subeval_aggrRef;
+str rankRef;
+str dense_rankRef;
 str reconnectRef;
 str recycleRef;
 str refineRef;
-str refine_reverseRef;
 str registerRef;
 str remapRef;
 str remoteRef;
@@ -197,7 +190,7 @@ str replaceRef;
 str replicatorRef;
 str resultSetRef;
 str reuseRef;
-str reverseRef;
+str row_numberRef;
 str rpcRef;
 str rsColumnRef;
 str schedulerRef;
@@ -223,6 +216,7 @@ str subavgRef;
 str subsortRef;
 str takeRef;
 str not_uniqueRef;
+str subuniqueRef;
 str unlockRef;
 str unpackRef;
 str unpinRef;
@@ -235,38 +229,6 @@ str ilikesubselectRef;
 str userRef;
 str vectorRef;
 str zero_or_oneRef;
-
-int canBeCrackedProp;
-int canBeJoinselectProp;
-int sidewaysSelectProp;
-int headProp;
-int pivotProp;
-int pivotDisjunctiveProp;
-int removeProp;
-int tableProp;
-int sqlfunctionProp;
-
-int inlineProp;
-int keepProp;
-int notnilProp;
-int rowsProp;
-int fileProp;
-int runonceProp;
-int unsafeProp;
-int orderDependendProp;
-
-int stableProp;
-int insertionsProp;
-int updatesProp;
-int deletesProp;
-
-int hlbProp;
-int hubProp;
-int tlbProp;
-int tubProp;
-int horiginProp;		/* original oid source */
-int toriginProp;		/* original oid source */
-int mtProp;			
 
 void optimizerInit(void)
 {
@@ -285,11 +247,11 @@ void optimizerInit(void)
 	arrayRef = putName("array",4);
 	batcalcRef = putName("batcalc",7);
 	basketRef = putName("basket",6);
-	boxRef = putName("box",3);
 	batstrRef = putName("batstr",6);
 	batmtimeRef = putName("batmtime",8);
 	batmmathRef = putName("batmmath",8);
 	batxmlRef = putName("batxml",6);
+	batsqlRef = putName("batsql",6);
 	bbpRef = putName("bbp",3);
 	tidRef = putName("tid",3);
 	deltaRef = putName("delta",5);
@@ -324,11 +286,9 @@ void optimizerInit(void)
 	defineRef = putName("define",6);
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
-	differenceRef= putName("difference",10);
-	tdifferenceRef= putName("tdifference",11);
-	tintersectRef= putName("tintersect",10);
-	tdiffRef= putName("tdiff",5);
-	tinterRef= putName("tinter",6);
+	subdiffRef = putName("subdiff",7);
+	diffRef = putName("diff",4);
+	subinterRef = putName("subinter",8);
 	mergecandRef= putName("mergecand",9);
 	mergepackRef= putName("mergepack",9);
 	intersectcandRef= putName("intersectcand",13);
@@ -368,17 +328,11 @@ void optimizerInit(void)
 	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
-	kdifferenceRef= putName("kdifference",11);
-	kunionRef= putName("kunion",6);
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
-	leftjoinRef = putName("leftjoin",8);
-	leftjoinPathRef = putName("leftjoinPath",12);
-	likeselectRef = putName("like_select",11);
-	ilikeselectRef = putName("ilike_select",12);
-	likeuselectRef = putName("like_uselect",12);
-	ilikeuselectRef = putName("ilike_uselect",13);
+	likesubselectRef = putName("likesubselect",13);
+	ilikesubselectRef = putName("ilikesubselect",14);
 	listRef = putName("list",4);
 	likeRef = putName("like",4);
 	ilikeRef = putName("ilike",5);
@@ -390,10 +344,8 @@ void optimizerInit(void)
 	batmalRef = putName("batmal", 6);
 	mapiRef = putName("mapi", 4);
 	markRef = putName("mark", 4);
-	mark_grpRef = putName("mark_grp", 8);
 	mtimeRef = putName("mtime", 5);
 	multicolumnRef = putName("multicolumn", 11);
-	dense_rank_grpRef = putName("dense_rank_grp", 14);
 	matRef = putName("mat", 3);
 	max_no_nilRef = putName("max_no_nil", 10);
 	maxRef = putName("max", 3);
@@ -437,13 +389,14 @@ void optimizerInit(void)
 	putRef = putName("put",3);
 	querylogRef = putName("querylog",8);
 	queryRef = putName("query",5);
+	rapiRef = putName("rapi", 4);
+	batrapiRef = putName("batrapi", 7);
+	subeval_aggrRef = putName("subeval_aggr", 12);
 	rankRef = putName("rank", 4);
-	rank_grpRef = putName("rank_grp", 8);
-	rapiRef = putName("batrapi", 7);
+	dense_rankRef = putName("dense_rank", 10);
 	reconnectRef = putName("reconnect",9);
 	recycleRef = putName("recycle",7);
 	refineRef = putName("refine",6);
-	refine_reverseRef = putName("refine_reverse",14);
 	registerRef = putName("register",8);
 	remapRef = putName("remap",5);
 	remoteRef = putName("remote",6);
@@ -451,7 +404,7 @@ void optimizerInit(void)
 	replicatorRef = putName("replicator",10);
 	resultSetRef = putName("resultSet",9);
 	reuseRef = putName("reuse",5);
-	reverseRef = putName("reverse",7);
+	row_numberRef = putName("row_number",10);
 	rpcRef = putName("rpc",3);
 	rsColumnRef = putName("rsColumn",8);
 	schedulerRef = putName("scheduler",9);
@@ -479,6 +432,7 @@ void optimizerInit(void)
 	takeRef= putName("take",5);
 	timestampRef = putName("timestamp", 9);
 	not_uniqueRef= putName("not_unique",10);
+	subuniqueRef= putName("subunique",9);
 	unlockRef= putName("unlock",6);
 	unpackRef = putName("unpack",6);
 	unpinRef = putName("unpin",5);
@@ -486,45 +440,14 @@ void optimizerInit(void)
 	subselectRef = putName("subselect",9);
 	thetasubselectRef = putName("thetasubselect",14);
 	likesubselectRef = putName("likesubselect",13);
+	likethetasubselectRef = putName("likethetasubselect",18);
 	ilikesubselectRef = putName("ilikesubselect",14);
+	ilikethetasubselectRef = putName("ilikethetasubselect",19);
 	vectorRef = putName("vector",6);
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	canBeCrackedProp = PropertyIndex("canBeCracked");
-	canBeJoinselectProp = PropertyIndex("canBeJoinselect");
-	sidewaysSelectProp = PropertyIndex("sidewaysSelect");
-	headProp = PropertyIndex("head");
-	pivotProp = PropertyIndex("pivot");
-	pivotDisjunctiveProp = PropertyIndex("pivotDisjunctive");
-	removeProp = PropertyIndex("remove");
-	tableProp = PropertyIndex("table");
-
-	fileProp = PropertyIndex("file");
-	inlineProp = PropertyIndex("inline");
-	keepProp = PropertyIndex("keep");
-	notnilProp = PropertyIndex("notnil");
-	rowsProp = PropertyIndex("rows");
-	runonceProp = PropertyIndex("runonce");
-	unsafeProp = PropertyIndex("unsafe");
-	orderDependendProp = PropertyIndex("orderdependend");
-	sqlfunctionProp = PropertyIndex("sqlfunction");
-
-	stableProp = PropertyIndex("stableProp");
-	insertionsProp = PropertyIndex("insertionsProp");
-	updatesProp = PropertyIndex("updatesProp");
-	deletesProp = PropertyIndex("deletesProp");
-
-	hlbProp = PropertyIndex("hlb");
-	hubProp = PropertyIndex("hub");
-	tlbProp = PropertyIndex("tlb");
-	tubProp = PropertyIndex("tub");
-
-	horiginProp = PropertyIndex("horigin");
-	toriginProp = PropertyIndex("torigin");
-	mtProp = PropertyIndex("mergetable");
 	/*
-	 * @-
 	 * Set the optimizer debugging flag
 	 */
 	{

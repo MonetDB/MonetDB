@@ -90,7 +90,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
 		
 		BUNappend(tag, &QRYqueue[i].tag, FALSE);
-		AUTHgetUsername(&usr, &cntxt);
+		AUTHgetUsername(&usr, cntxt);
 
 		BUNappend(user, usr, FALSE);
 		BUNappend(query, QRYqueue[i].query, FALSE);

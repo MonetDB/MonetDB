@@ -24,7 +24,6 @@
 #include "mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
 #ifdef HAVE_STRING_H
@@ -69,23 +68,21 @@
 
 enum modes {
 	MAL,
-	SQL,
-	JAQL
+	SQL
 };
 
 static enum modes mode = SQL;
 static stream *toConsole;
-static stream *toConsole_raw;	/* toConsole without iconv conversion */
 static stream *stdout_stream;
 static stream *stderr_stream;
-static FILE *fromConsole = NULL;
+static stream *fromConsole = NULL;
 static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
+static int showtiming = 0;
 #ifdef HAVE_ICONV
 static char *encoding;
-static iconv_t cd_in;
 #endif
 static int errseen = 0;
 
@@ -188,8 +185,9 @@ static char *nullstring = default_nullstring;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define fileno _fileno
-#define isatty _isatty
 #endif
+
+#define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
 
 static timertype
 gettime(void)
@@ -359,36 +357,127 @@ SQLsetSpecial(const char *command)
 /* return the display length of a UTF-8 string
    if e is not NULL, return length up to e */
 static size_t
-utf8strlen(const char *s, const char *e)
+utf8strlenmax(char *s, char *e, size_t max, char **t)
 {
-	size_t len = 0;
+	size_t len = 0, len0 = 0;
+	int c;
+	int n;
+	char *t0 = s;
 
+	assert(max == 0 || t != NULL);
 	if (s == NULL)
 		return 0;
-	while (*s && (e == NULL || s < e)) {
-		/* only count first byte of a sequence */
-		if ((*s & 0xC0) != 0x80)
+	c = 0;
+	n = 0;
+	while (*s != 0 && (e == NULL || s < e)) {
+		if (*s == '\n') {
+			assert(n == 0);
+			if (max) {
+				*t = s;
+				return len;
+			}
 			len++;
+			n = 0;
+		} else if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* the following code points are all East
+				 * Asian Fullwidth and East Asian Wide
+				 * characters as defined in Unicode 8.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    c == 0x2329 ||
+				    c == 0x232A ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
 		s++;
+		if (n == 0) {
+			if (max != 0) {
+				if (len > max) {
+					*t = t0;
+					return len0;
+				}
+				if (len == max) {
+					*t = s;
+					return len;
+				}
+			}
+			t0 = s;
+			len0 = len;
+		}
 	}
+	if (max != 0)
+		*t = s;
 	return len;
+}
+
+static size_t
+utf8strlen(char *s, char *e)
+{
+	return utf8strlenmax(s, e, 0, NULL);
 }
 
 /* skip the specified number of UTF-8 characters, but stop at a newline */
 static char *
 utf8skip(char *s, size_t i)
 {
-	while (*s && i > 0) {
-		if ((*s & 0xC0) == 0xC0) {
-			s++;
-			while ((*s & 0xC0) == 0x80)
-				s++;
-		} else if (*s == '\n')
-			return s;
-		else
-			s++;
-		i--;
-	}
+	utf8strlenmax(s, NULL, i, &s);
 	return s;
 }
 
@@ -407,7 +496,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 			if ((t = rest[i]) != NULL &&
 			    utf8strlen(t, NULL) > (size_t) len[i]) {
 				/* eat leading whitespace */
-				while (*t != 0 && isascii((int) *t) && isspace((int) *t))
+				while (*t != 0 && my_isspace(*t))
 					t++;
 				rest[i] = t;
 			}
@@ -434,8 +523,11 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					 * correction for a terminal
 					 * screen (1.62 * 2 -> 3 :
 					 * 9.72~10) */
-					if (ulen > (size_t) len[i])
+					if (ulen > (size_t) len[i]) {
 						cutafter[i] = 3 * len[i] / 10;
+						if (cutafter[i] == 1)
+							cutafter[i]++;
+					}
 				}
 
 				/* on each cycle we get closer to the limit */
@@ -450,10 +542,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 
 					t = utf8skip(rest[i], len[i]);
 					if (trim == 1) {
-						while (t > rest[i] && !(isascii((int) *t) && isspace((int) *t)))
+						while (t > rest[i] && !my_isspace(*t))
 							while ((*--t & 0xC0) == 0x80)
 								;
-						if (t == rest[i] && !(isascii((int) *t) && isspace((int) *t)))
+						if (t == rest[i] && !my_isspace(*t))
 							t = utf8skip(rest[i], len[i]);
 					}
 					mnstr_printf(toConsole, "%c",
@@ -476,8 +568,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 
 					s = t;
 					if (trim == 1)
-						while (isascii((int) *s) &&
-						       isspace((int) *s))
+						while (my_isspace(*s))
 							s++;
 					if (trim == 2 && *s == '\n')
 						s++;
@@ -485,8 +576,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						t = utf8skip(rest[i], len[i] - 2);
 						s = t;
 						if (trim == 1)
-							while (isascii((int) *s) &&
-							       isspace((int) *s))
+							while (my_isspace(*s))
 								s++;
 						if (trim == 2 && *s == '\n')
 							s++;
@@ -570,17 +660,17 @@ XMLprdata(const char *val)
 		return;
 	while (*val) {
 		if (*val == '&')
-			mnstr_printf(toConsole_raw, "&amp;");
+			mnstr_printf(toConsole, "&amp;");
 		else if (*val == '<')
-			mnstr_printf(toConsole_raw, "&lt;");
+			mnstr_printf(toConsole, "&lt;");
 		else if (*val == '>')
-			mnstr_printf(toConsole_raw, "&gt;");
+			mnstr_printf(toConsole, "&gt;");
 		else if (*val == '"')
-			mnstr_printf(toConsole_raw, "&quot;");
+			mnstr_printf(toConsole, "&quot;");
 		else if (*val == '\'')
-			mnstr_printf(toConsole_raw, "&apos;");
+			mnstr_printf(toConsole, "&apos;");
 		else if ((*val & 0xFF) < 0x20)	/* control character */
-			mnstr_printf(toConsole_raw, "&#%d;", *val & 0xFF);
+			mnstr_printf(toConsole, "&#%d;", *val & 0xFF);
 		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
 			int n;
 			unsigned int m;
@@ -590,9 +680,9 @@ XMLprdata(const char *val)
 				c &= ~m;
 			while (--n >= 0)
 				c = (c << 6) | (*++val & 0x3F);
-			mnstr_printf(toConsole_raw, "&#x%x;", c);
+			mnstr_printf(toConsole, "&#x%x;", c);
 		} else
-			mnstr_write(toConsole_raw, val, 1, 1);
+			mnstr_write(toConsole, val, 1, 1);
 		val++;
 	}
 }
@@ -600,9 +690,9 @@ XMLprdata(const char *val)
 static void
 XMLprattr(const char *name, const char *val)
 {
-	mnstr_printf(toConsole_raw, " %s=\"", name);
+	mnstr_printf(toConsole, " %s=\"", name);
 	XMLprdata(val);
-	mnstr_write(toConsole_raw, "\"", 1, 1);
+	mnstr_write(toConsole, "\"", 1, 1);
 }
 
 static void
@@ -611,10 +701,10 @@ XMLrenderer(MapiHdl hdl)
 	int i, fields;
 	char *name;
 
-	/* we must use toConsole_raw since the XML file is encoded in UTF-8 */
+	/* we must use toConsole since the XML file is encoded in UTF-8 */
 	mnstr_flush(toConsole);
-	mnstr_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
-	mnstr_printf(toConsole_raw,
+	mnstr_printf(toConsole, "<?xml version='1.0' encoding='UTF-8'?>\n");
+	mnstr_printf(toConsole,
 		     "<!DOCTYPE table [\n"
 		     " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
 		     " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
@@ -622,34 +712,34 @@ XMLrenderer(MapiHdl hdl)
 		     " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
 		     " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
 		     "                  isnull (true|false) 'false'>]>\n");
-	mnstr_printf(toConsole_raw, "<table");
+	mnstr_printf(toConsole, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
-	mnstr_printf(toConsole_raw, ">\n");
+	mnstr_printf(toConsole, ">\n");
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		mnstr_printf(toConsole_raw, "<row>");
+		mnstr_printf(toConsole, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
 
-			mnstr_printf(toConsole_raw, "<column");
+			mnstr_printf(toConsole, "<column");
 			name = mapi_get_name(hdl, i);
 			if (name != NULL && *name != 0)
 				XMLprattr("name", name);
 			if (data == NULL) {
 				XMLprattr("isnull", "true");
-				mnstr_write(toConsole_raw, "/", 1, 1);
+				mnstr_write(toConsole, "/", 1, 1);
 			}
-			mnstr_write(toConsole_raw, ">", 1, 1);
+			mnstr_write(toConsole, ">", 1, 1);
 			if (data) {
 				XMLprdata(data);
-				mnstr_printf(toConsole_raw, "</column>");
+				mnstr_printf(toConsole, "</column>");
 			}
 		}
-		mnstr_printf(toConsole_raw, "</row>\n");
+		mnstr_printf(toConsole, "</row>\n");
 	}
-	mnstr_printf(toConsole_raw, "</table>\n");
-	mnstr_flush(toConsole_raw);
+	mnstr_printf(toConsole, "</table>\n");
+	mnstr_flush(toConsole);
 }
 
 static void
@@ -823,7 +913,7 @@ classify(const char *s, size_t l)
 	/* state is the current state of the state machine:
 	 * 0 - initial state, no input seen
 	 * 1 - initial sign
-	 * 2 - valid integer (with optionally a sign)
+	 * 2 - valid integer (optionally preceded by a sign)
 	 * 3 - valid integer, followed by a decimal point
 	 * 4 - fixed point number of the form [sign] digits period digits
 	 * 5 - exponent marker after integer or fixed point number
@@ -842,9 +932,24 @@ classify(const char *s, size_t l)
 	    (l == 5 && strcmp(s, "false") == 0))
 		return "bit";
 	while (l != 0) {
-		if (*s == 0 || !isascii(*s))
+		if (*s == 0)
 			return "str";
-		if (isdigit((int) *s)) {
+		switch (*s) {
+		case '0':
+			if (state == 12) {
+				state = 13;	/* int + '@0' (oid) */
+				break;
+			}
+			/* fall through */
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
 			switch (state) {
 			case 0:
 			case 1:
@@ -857,36 +962,43 @@ classify(const char *s, size_t l)
 			case 6:
 				state = 7;	/* digit after exponent marker and optional sign */
 				break;
-			case 12:
-				if (*s == '0')	/* only @0 allowed */
-					state = 13;
-				else
-					return "str";
-				break;
+			case 2:
+			case 4:
+			case 7:
+				break;		/* more digits */
+			default:
+				return "str";
 			}
-		} else if (*s == '.') {
+			break;
+		case '.':
 			if (state == 2)
 				state = 3;	/* decimal point */
 			else
 				return "str";
-		} else if (*s == 'e' || *s == 'E') {
+			break;
+		case 'e':
+		case 'E':
 			if (state == 2 || state == 4)
 				state = 5;	/* exponent marker */
 			else
 				return "str";
-		} else if (*s == '+' || *s == '-') {
+			break;
+		case '+':
+		case '-':
 			if (state == 0)
 				state = 1;	/* sign at start */
 			else if (state == 5)
 				state = 6;	/* sign after exponent marker */
 			else
 				return "str";
-		} else if (*s == '@') {
+			break;
+		case '@':
 			if (state == 2)
 				state = 12;	/* OID marker */
 			else
 				return "str";
-		} else if (*s == 'L') {
+			break;
+		case 'L':
 			switch (state) {
 			case 2:
 				state = 8;	/* int + 'L' */
@@ -904,6 +1016,9 @@ classify(const char *s, size_t l)
 			default:
 				return "str";
 			}
+			break;
+		default:
+			return "str";
 		}
 		s++;
 		l--;
@@ -963,8 +1078,8 @@ TESTrenderer(MapiHdl hdl)
 				 /* NULL byte in string? */
 				 strlen(s) < l ||
 				 /* start or end with white space? */
-				 (isascii(*s) && isspace((int) *s)) ||
-				 (isascii(s[l - 1]) && isspace((int) s[l - 1])) ||
+				 my_isspace(*s) ||
+				 my_isspace(s[l - 1]) ||
 				 /* a bunch of geom types */
 				 strcmp(tp, "curve") == 0 ||
 				 strcmp(tp, "geometry") == 0 ||
@@ -1233,18 +1348,21 @@ SQLdebugRendering(MapiHdl hdl)
 static void
 SQLpagemove(int *len, int fields, int *ps, int *silent)
 {
-	int c;
+	char buf[512];
+	ssize_t sz;
 
 	SQLseparator(len, fields, '-');
 	mnstr_printf(toConsole, "next page? (continue,quit,next)");
 	mnstr_flush(toConsole);
-	c = getc(fromConsole);
-	if (c == 'c')
-		*ps = 0;
-	if (c == 'q')
-		*silent = 1;
-	while (c != EOF && c != '\n')
-		c = getc(fromConsole);
+	sz = mnstr_readline(fromConsole, buf, sizeof(buf));
+	if (sz > 0) {
+		if (buf[0] == 'c')
+			*ps = 0;
+		if (buf[0] == 'q')
+			*silent = 1;
+		while (sz > 0 && buf[sz - 1] != '\n')
+			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
+	}
 	if (*silent == 0)
 		SQLseparator(len, fields, '-');
 }
@@ -1260,6 +1378,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	int ps = rowsperpage, silent = 0;
 	mapi_int64 rows = 0;
 
+	/* in case of interactive mode, we should show timing on request */
+	singleinstr = showtiming? 1 :singleinstr;
 #if 0
 	if (mark2)
 		free(mark2);
@@ -1577,10 +1697,9 @@ setWidth(void)
 
 #ifdef HAVE_POPEN
 static void
-start_pager(stream **saveFD, stream **saveFD_raw)
+start_pager(stream **saveFD)
 {
 	*saveFD = NULL;
-	*saveFD_raw = NULL;
 
 	if (pager) {
 		FILE *p;
@@ -1597,10 +1716,8 @@ start_pager(stream **saveFD, stream **saveFD_raw)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
 		else {
 			*saveFD = toConsole;
-			*saveFD_raw = toConsole_raw;
 			/* put | in name to indicate that file should be closed with pclose */
 			toConsole = file_wastream(p, "|pager");
-			toConsole_raw = toConsole;
 #ifdef HAVE_ICONV
 			if (encoding != NULL)
 				toConsole = iconv_wstream(toConsole, encoding, "pager");
@@ -1610,13 +1727,11 @@ start_pager(stream **saveFD, stream **saveFD_raw)
 }
 
 static void
-end_pager(stream *saveFD, stream *saveFD_raw)
+end_pager(stream *saveFD)
 {
 	if (saveFD) {
-		mnstr_close(toConsole);
-		mnstr_destroy(toConsole);
+		close_stream(toConsole);
 		toConsole = saveFD;
-		toConsole_raw = saveFD_raw;
 	}
 }
 #endif
@@ -1628,9 +1743,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	mapi_int64 aff, lid;
 	char *reply;
 #ifdef HAVE_POPEN
-	stream *saveFD, *saveFD_raw;
+	stream *saveFD;
 
-	start_pager(&saveFD, &saveFD_raw);
+	start_pager(&saveFD);
 #endif
 
 	setWidth();
@@ -1790,7 +1905,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		errseen = 1;
 	}
 #ifdef HAVE_POPEN
-	end_pager(saveFD, saveFD_raw);
+	end_pager(saveFD);
 #endif
 
 	return rc;
@@ -1825,7 +1940,7 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, break_or_continue, freebuf)		\
+#define CHECK_RESULT(mid, hdl, break_or_continue, buf)			\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -1862,28 +1977,24 @@ doRequest(Mapi mid, const char *buf)
 				mapi_explain(mid, stderr);		\
 			errseen = 1;					\
 			timerEnd();					\
-			if (freebuf)					\
-				free(freebuf);				\
+			if (buf)					\
+				free(buf);				\
 			return 1;					\
 		}
 
 static int
-doFileBulk(Mapi mid, FILE *fp)
+doFileBulk(Mapi mid, stream *fp)
 {
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	size_t bufsize = 0;
-	int first = 1;		/* first line processing */
-	char *input_encoding = encoding;
 
-	bufsize = BLOCK - 1;
+	bufsize = 10240;
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		if (fp != stdin && fp != NULL)
-			fclose(fp);
 		return 1;
 	}
 
@@ -1895,61 +2006,12 @@ doFileBulk(Mapi mid, FILE *fp)
 				break;
 			length = 0;
 			buf[0] = 0;
-		} else if ((length = fread(buf, 1, bufsize, fp)) == 0) {
-			/* end of file */
-			if (fp != stdin) {
-				fclose(fp);
-				fp = NULL;
-			}
+		} else if ((length = mnstr_read(fp, buf, 1, bufsize)) <= 0) {
+			/* end of file or error */
 			if (hdl == NULL)
 				break;	/* nothing more to do */
 			buf[0] = 0;
 		} else {
-			if (first &&
-			    length >= UTF8BOMLENGTH &&
-			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-				input_encoding = NULL;
-				memmove(buf, buf + UTF8BOMLENGTH,
-					length -= UTF8BOMLENGTH);
-			}
-			first = 0;
-			if (input_encoding != NULL && cd_in != (iconv_t) -1) {
-				ICONV_CONST char *from;
-				size_t fromlen;
-				char *to, *nbuf;
-				size_t tolen = length * 4 + 1;
-				size_t otolen;
-
-				if (tolen <= bufsize)
-					tolen = bufsize + 1;
-			  retry:
-				otolen = tolen;
-				from = buf;
-				fromlen = length;
-				nbuf = to = malloc(tolen);
-				if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
-					switch (errno) {
-					case EILSEQ:
-						free(nbuf);
-						free(buf);
-						fprintf(stderr, "Illegal input sequence\n");
-						return 1;
-					case E2BIG:
-						tolen = otolen * 2;
-						free(nbuf);
-						goto retry;
-					case EINVAL:
-					default:
-						/* shouldn't happen */
-						free(nbuf);
-						free(buf);
-						return 1;
-					}
-				}
-				length = otolen - tolen;
-				free(buf);
-				buf = nbuf;
-			}
 			buf[length] = 0;
 			if (strlen(buf) < length) {
 				fprintf(stderr, "NULL byte in input\n");
@@ -1960,12 +2022,12 @@ doFileBulk(Mapi mid, FILE *fp)
 		timerResume();
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf);
 		}
 
 		assert(hdl != NULL);
 		mapi_query_part(hdl, buf, length);
-		CHECK_RESULT(mid, hdl, buf, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf);
 
 		/* if not at EOF, make sure there is a newline in the
 		 * buffer */
@@ -1984,14 +2046,14 @@ doFileBulk(Mapi mid, FILE *fp)
 				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf);
 
 		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -2003,8 +2065,6 @@ doFileBulk(Mapi mid, FILE *fp)
 	timerEnd();
 
 	free(buf);
-	if (fp != NULL && fp != stdin)
-		fclose(fp);
 	mnstr_flush(toConsole);
 	return errseen;
 }
@@ -2055,11 +2115,71 @@ enum hmyesno { UNKNOWN, YES, NO };
 
 #define READBLOCK 8192
 
+#ifdef HAVE_LIBREADLINE
+struct myread_t {
+	stream *s;
+	const char *prompt;
+	char *buf;
+	size_t read;
+	size_t len;
+};
+
+static ssize_t
+myread(void *private, void *buf, size_t elmsize, size_t cnt)
+{
+	struct myread_t *p = private;
+	size_t size = elmsize * cnt;
+	size_t cpsize = size;
+
+	assert(elmsize == 1);
+	if (size == 0)
+		return cnt;
+	if (p->buf == NULL) {
+		rl_completion_func_t *func = NULL;
+
+		if (strcmp(p->prompt, "more>") == 0)
+			func = suspend_completion();
+		p->buf = readline(p->prompt);
+		if (func)
+			continue_completion(func);
+		if (p->buf == NULL)
+			return 0;
+		p->len = strlen(p->buf);
+		p->read = 0;
+		if (p->len > 1)
+			save_line(p->buf);
+	}
+	if (p->read < p->len) {
+		if (p->len - p->read < size)
+			cpsize = p->len - p->read;
+		memcpy(buf, p->buf + p->read, cpsize);
+		p->read += cpsize;
+	} else {
+		cpsize = 0;
+	}
+	if (p->read == p->len && cpsize < size) {
+		((char *) buf)[cpsize++] = '\n';
+		free(p->buf);
+		p->buf = NULL;
+	}
+	return cpsize / elmsize;
+}
+
+static void
+mydestroy(void *private)
+{
+	struct myread_t *p = private;
+
+	if (p->buf)
+		free(p->buf);
+}
+#endif
+
 static int
-doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_history)
+doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 {
 	char *line = NULL;
-	char *oldbuf = NULL, *buf = NULL;
+	char *buf = NULL;
 	size_t length;
 	size_t bufsiz = 0;
 	MapiHdl hdl;
@@ -2067,185 +2187,80 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
 	enum hmyesno hasschemsys = UNKNOWN;
-	FILE *fp;
 	char *prompt = NULL;
 	int prepno = 0;
-#ifdef HAVE_ICONV
-	char *input_encoding = encoding;
+#ifdef HAVE_LIBREADLINE
+	struct myread_t rl;
 #endif
 
 	(void) save_history;	/* not used if no readline */
-	if (strcmp(file, "-") == 0) {
-		fp = stdin;
-		if (isatty(fileno(fp))) {
-			interactive = 1;
-			setPrompt();
-			prompt = promptbuf;
+	if (getFile(fp) && isatty(fileno(getFile(fp)))) {
+		interactive = 1;
+		setPrompt();
+		prompt = promptbuf;
+		fromConsole = fp;
 #ifdef HAVE_LIBREADLINE
-			init_readline(mid, language, save_history);
+		init_readline(mid, language, save_history);
+		rl.s = fp;
+		rl.buf = NULL;
+		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
 #endif
-			fromConsole = stdin;
-		}
-	} else if ((fp = fopen(file, "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", file);
-		return 1;
 	}
+	if (encoding)
+		fp = iconv_rstream(fp, encoding, mnstr_name(fp));
 
 	if (!interactive && !echoquery)
 		return doFileBulk(mid, fp);
 
 	hdl = mapi_get_active(mid);
 
-#ifdef HAVE_LIBREADLINE
-	if (prompt == NULL)
-#endif
-	{
-		bufsiz = READBLOCK;
-		oldbuf = buf = malloc(bufsiz);
-	}
+	bufsiz = READBLOCK;
+	buf = malloc(bufsiz);
 
 	do {
+		int seen_null_byte = 0;
+
 		if (prompt) {
+			char *p = hdl ? "more>" : prompt;
 			/* clear errors when interactive */
 			errseen = 0;
+#ifdef HAVE_LIBREADLINE
+			rl.prompt = p;
+#else
+			mnstr_write(toConsole, p, 1, strlen(p));
+#endif
 		}
 		mnstr_flush(toConsole);
 		timerPause();
-#ifdef HAVE_LIBREADLINE
-		if (prompt) {
-			rl_completion_func_t *func = NULL;
-
-			if (buf)
-				free(buf);
-			if (hdl)
-				func = suspend_completion();
-			buf = readline(hdl ? "more>" : prompt);
-			if (hdl)
-				continue_completion(func);
-			/* add a newline to the end since that makes
-			 * further processing easier */
-			/* don't store shortcut command in the history */
-			if (buf) {
-				length = strlen(buf);
-				if (length > 1)
-					save_line(buf);
-				buf = realloc(buf, length + 2);
-				buf[length++] = '\n';
-				buf[length] = 0;
+		/* read a line */
+		length = 0;
+		for (;;) {
+			ssize_t l;
+			l = mnstr_readline(fp, buf + length, bufsiz - length);
+			if (l <= 0) {
+				if (length == 0)
+					length = l;
+				break;
 			}
-			line = buf;
-		} else
-#endif
-		{
-			int c = 0;
-
-#ifndef HAVE_LIBREADLINE
-			if (prompt) {
-				fputs(hdl ? "more>" : prompt, stdout);
-				fflush(stdout);
-			}
-#endif
-			if (buf != oldbuf)
-				free(buf);
-			buf = oldbuf;
-			line = buf;
-			while ((c = getc(fp)) != EOF) {
-				if (c == 0) {
-					fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
-					/* read away rest of line */
-					while ((c = getc(fp)) != EOF &&
-					       c != '\n')
-						;
-					errseen = 1;
-					c = 0x1234; /* indicate error */
-					if (hdl) {
-						mapi_close_handle(hdl);
-						hdl = NULL;
-					}
-					break;
-				}
-				if (line == buf + bufsiz - 1) {
-					bufsiz += READBLOCK;
-					buf = realloc(buf, bufsiz);
-					line = buf + bufsiz - 1 - READBLOCK;
-					oldbuf = buf;
-				}
-				*line++ = c;
-				if (c == '\n')
-					break;
-			}
-			if (c == 0x1234)
-				continue;
-			if (line == buf)
-				line = NULL;
-			else {
-				*line = 0;
-				line = buf;
-				/* if we successfully read a line, and
-				 * it was the first one, look whether
-				 * it starts with the UTF-8 encoding
-				 * of the Unicode BOM, and if so, skip
-				 * the BOM and make sure we treat the
-				 * rest of the file as UTF-8, no
-				 * matter what encoding the user has
-				 * specified */
-				if (lineno == 1 &&
-				    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0) {
-					line += UTF8BOMLENGTH;
-#ifdef HAVE_ICONV
-					input_encoding = NULL;
-#endif
+			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
+				fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
+				seen_null_byte = 1;
+				errseen = 1;
+				if (hdl) {
+					mapi_close_handle(hdl);
+					hdl = NULL;
 				}
 			}
+			length += l;
+			if (buf[length - 1] == '\n')
+				break;
+			buf = realloc(buf, bufsiz += READBLOCK);
 		}
-#ifdef HAVE_ICONV
-		if (line != NULL &&
-		    input_encoding != NULL &&
-		    cd_in != (iconv_t) -1) {
-			ICONV_CONST char *from = line;
-			size_t fromlen = strlen(from);
-			int factor = 4;
-			size_t tolen = factor * fromlen + 1;
-			char *to = malloc(tolen);
-
-		  try_again:
-			line = to;
-			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
-				/* error */
-				switch (errno) {
-				case EILSEQ:
-					/* invalid multibyte sequence */
-					fprintf(stderr, "Illegal input sequence on line %d of input\n", lineno);
-					errseen = 1;
-					free(line);
-					continue;
-				case E2BIG:
-					/* output buffer too small */
-					from = buf;
-					fromlen = strlen(from);
-					factor *= 2;
-					tolen = factor * fromlen + 1;
-					free(line);
-					to = malloc(tolen);
-					goto try_again;
-				case EINVAL:
-					/* incomplete multibyte sequence */
-					/* shouldn't happen since we
-					 * grow the input buffer */
-					break;
-				default:
-					/* cannot happen according to docs */
-					break;
-				}
-			}
-			*to = 0;
-			if (oldbuf == NULL)
-				free(buf);
-			buf = line;
-		}
-#endif
+		line = buf;
 		lineno++;
-		if (line == NULL) {
+		if (seen_null_byte)
+			continue;
+		if (length <= 0) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
@@ -2255,18 +2270,14 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 			/* hdl != NULL, we should finish the current query */
 			length = 0;
-		} else
-			length = strlen(line);
-		/* the fp == stdin test is so that we don't treat '\\'
-		 * special for files that were passed on the command
-		 * line with -e in effect (see near the bottom of
-		 * main()) */
-		if (hdl == NULL && length > 0 && line[length - 1] == '\n' && interactive) {
+		}
+		if (hdl == NULL && length > 0 && interactive) {
 			/* test for special commands */
 			if (mode != MAL)
 				while (length > 0 &&
-				       isascii((int) *line) &&
-				       isspace((int) *line)) {
+				       (*line == '\f' ||
+					*line == '\n' ||
+					*line == ' ')) {
 					line++;
 					length--;
 				}
@@ -2331,11 +2342,10 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					char escaped = 0;
 					if (mode != SQL)
 						break;
-					while (isascii((int) line[length - 1]) &&
-					       isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
 					for (line += 2;
-					     *line && !(isascii((int) *line) && isspace((int) *line));
+					     *line && !my_isspace(*line);
 					     line++) {
 						switch (*line) {
 						case 't':
@@ -2367,7 +2377,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						continue;
 					if (x == 0) /* default to tables and views */
 						x = MD_TABLE | MD_VIEW;
-					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for ( ; *line && my_isspace(*line); line++)
 						;
 
 					/* lowercase the object, except for quoted parts */
@@ -2410,9 +2420,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 					if (*line && !hasWildcard) {
 #ifdef HAVE_POPEN
-						stream *saveFD, *saveFD_raw;
+						stream *saveFD;
 
-						start_pager(&saveFD, &saveFD_raw);
+						start_pager(&saveFD);
 #endif
 						if (x & MD_TABLE || x & MD_VIEW)
 							describe_table(mid, NULL, line, toConsole, 1);
@@ -2423,7 +2433,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						if (x & MD_SCHEMA)
 							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
-						end_pager(saveFD, saveFD_raw);
+						end_pager(saveFD);
 #endif
 					} else {
 						/* get all object names in current schema */
@@ -2563,7 +2573,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							   "" :
 							   "AND system = false"));
 						hdl = mapi_query(mid, q);
-						CHECK_RESULT(mid, hdl, buf, continue, buf);
+						CHECK_RESULT(mid, hdl, continue, buf);
 						while (fetch_row(hdl) == 5) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
@@ -2582,22 +2592,21 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 				}
 				case 'D':{
 #ifdef HAVE_POPEN
-					stream *saveFD, *saveFD_raw;
+					stream *saveFD;
 #endif
 
 					if (mode != SQL)
 						break;
-					while (isascii((int) line[length - 1]) &&
-					       isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !(isascii((int) line[2]) && isspace(line[2]))) {
+					if (line[2] && !my_isspace(line[2])) {
 						fprintf(stderr, "space required after \\D\n");
 						continue;
 					}
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
 #ifdef HAVE_POPEN
-					start_pager(&saveFD, &saveFD_raw);
+					start_pager(&saveFD);
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
@@ -2606,37 +2615,47 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					} else
 						dump_database(mid, toConsole, 0, useinserts);
 #ifdef HAVE_POPEN
-					end_pager(saveFD, saveFD_raw);
+					end_pager(saveFD);
 #endif
 					continue;
 				}
-				case '<':
+				case '<': {
+					stream *s;
 					/* read commands from file */
-					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
-					doFile(mid, line, 0, 0, 0);
+					/* use open_rastream to
+					 * convert filename from UTF-8
+					 * to locale */
+					if ((s = open_rastream(line)) == NULL ||
+					    mnstr_errnr(s))
+						fprintf(stderr, "%s: cannot open\n", line);
+					else
+						doFile(mid, s, 0, 0, 0);
+					close_stream(s);
 					continue;
+				}
 				case '>':
 					/* redirect output to file */
-					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
-					if (toConsole != stdout_stream && toConsole != stderr_stream) {
-						mnstr_close(toConsole);
-						mnstr_destroy(toConsole);
+					if (toConsole != stdout_stream &&
+					    toConsole != stderr_stream) {
+						close_stream(toConsole);
 					}
-					if (*line == 0 || strcmp(line, "stdout") == 0)
+					if (*line == 0 ||
+					    strcmp(line, "stdout") == 0)
 						toConsole = stdout_stream;
 					else if (strcmp(line, "stderr") == 0)
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
 						 mnstr_errnr(toConsole)) {
 						if (toConsole != NULL) {
-							mnstr_close(toConsole);
-							mnstr_destroy(toConsole);
+							close_stream(toConsole);
 						}
 						toConsole = stdout_stream;
 						fprintf(stderr, "Cannot open %s\n", line);
@@ -2645,9 +2664,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 				case 'L':
 					free(logfile);
 					logfile = NULL;
-					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0) {
 						/* turn of logging */
@@ -2667,9 +2686,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
-					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0)
 						continue;
@@ -2709,9 +2728,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					echoquery = 1;
 					continue;
 				case 'f':
-					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
+					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current formatter: ");
@@ -2754,7 +2773,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf);
 		} else
 			timerResume();
 
@@ -2763,7 +2782,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (length > 0) {
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, buf, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf);
 		}
 
 		/* If the server wants more but we're at the
@@ -2781,7 +2800,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 				continue;	/* done */
 			}
 		}
-		CHECK_RESULT(mid, hdl, buf, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf);
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
@@ -2793,7 +2812,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf);
 
 		timerEnd();
 		mapi_close_handle(hdl);
@@ -2806,8 +2825,6 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	if (prompt)
 		deinit_readline();
 #endif
-	if (fp != stdin)
-		fclose(fp);
 	return errseen;
 }
 
@@ -2815,12 +2832,22 @@ static void
 set_timezone(Mapi mid)
 {
 	char buf[128];
-	time_t t, lt, gt;
-	struct tm *tmp;
 	int tzone;
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
+#ifdef HAVE__GET_TIMEZONE
+	long tz; /* type long required by _get_timezone() */
+	int dst;
+
+	_tzset();
+	_get_timezone(&tz);
+	_get_dstbias(&dst);
+	tzone = (int) (tz + dst);
+#else
+	time_t t, lt, gt;
+	struct tm *tmp;
+
 	t = time(NULL);
 	tmp = gmtime(&t);
 	gt = mktime(tmp);
@@ -2829,6 +2856,7 @@ set_timezone(Mapi mid)
 	lt = mktime(tmp);
 	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
 	tzone = (int) (gt - lt);
+#endif
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",
@@ -2962,11 +2990,10 @@ main(int argc, char **argv)
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
 #ifdef HAVE_SETLOCALE
-	setlocale(LC_ALL, "");
+	setlocale(LC_CTYPE, "");
 #endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
-	toConsole_raw = toConsole;
 	stderr_stream = file_wastream(stderr, "stderr");
 
 #if 0
@@ -2982,8 +3009,6 @@ main(int argc, char **argv)
 			mode = SQL;
 		} else if (strcmp(language, "mal") == 0) {
 			mode = MAL;
-		} else if (strcmp(language, "jaql") == 0) {
-			mode = JAQL;
 		}
 	} else {
 		language = strdup("sql");
@@ -3039,13 +3064,6 @@ main(int argc, char **argv)
 				free(language);
 				language = strdup("mal");
 				mode = MAL;
-			} else if (strcmp(optarg, "jaql") == 0 ||
-				   strcmp(optarg, "jaq") == 0 ||
-				   strcmp(optarg, "ja") == 0 ||
-				   strcmp(optarg, "j") == 0) {
-				free(language);
-				language = strdup("jaql");
-				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
 				free(language);
 				language = strdup("msql");
@@ -3071,6 +3089,7 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			showtiming = 1;
 			if (optarg != NULL) {
 				if (strcmp(optarg, "ms") == 0) {
 					itimemode = T_MILLIS;
@@ -3164,18 +3183,13 @@ main(int argc, char **argv)
 	if (encoding != NULL && strcasecmp(encoding, "utf-8") == 0)
 		encoding = NULL;
 	if (encoding != NULL) {
-		toConsole = iconv_wstream(toConsole, encoding, "stdout");
-		if (toConsole == NULL || mnstr_errnr(toConsole)) {
+		stream *s = iconv_wstream(toConsole, encoding, "stdout");
+		if (s == NULL || mnstr_errnr(s)) {
 			fprintf(stderr, "warning: cannot convert local character set %s to UTF-8\n", encoding);
-			if (toConsole != NULL) {
-				mnstr_close(toConsole);
-				mnstr_destroy(toConsole);
-			}
-			toConsole = toConsole_raw;
-		}
+			close_stream(s);
+		} else
+			toConsole = s;
 		stdout_stream = toConsole;
-		if ((cd_in = iconv_open("utf-8", encoding)) == (iconv_t) -1)
-			fprintf(stderr, "warning: cannot convert UTF-8 to local character set %s\n", encoding);
 	}
 #endif /* HAVE_ICONV */
 
@@ -3250,8 +3264,6 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-		} else if (mode == JAQL) {
-			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
@@ -3262,8 +3274,6 @@ main(int argc, char **argv)
 
 		if (mode == SQL) {
 			lang = "/SQL";
-		} else if (mode == JAQL) {
-			lang = "/JAQL";
 		} else {
 			lang = "";
 		}
@@ -3287,7 +3297,10 @@ main(int argc, char **argv)
 
 	if (command != NULL) {
 #ifdef HAVE_ICONV
-		if (encoding != NULL && cd_in != (iconv_t) -1) {
+		iconv_t cd_in;
+
+		if (encoding != NULL &&
+		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
 			char *savecommand = command;
 			ICONV_CONST char *from = command;
 			size_t fromlen = strlen(from);
@@ -3321,7 +3334,9 @@ main(int argc, char **argv)
 				}
 			}
 			*to = 0;
-		}
+			iconv_close(cd_in);
+		} else if (encoding)
+			fprintf(stderr, "warning: cannot convert local character set %s to UTF-8\n", encoding);
 #endif
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
@@ -3333,14 +3348,29 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			c |= doFile(mid, argv[optind], useinserts, interactive, save_history);
+			FILE *fp;
+			stream *s;
+
+			if ((fp = fopen(argv[optind], "r")) == NULL) {
+				fprintf(stderr, "%s: cannot open\n", argv[optind]);
+				c |= 1;
+			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
+				fclose(fp);
+				c |= 1;
+			} else {
+				c |= doFile(mid, s, useinserts, interactive, save_history);
+				close_stream(s);
+			}
 			optind++;
 		}
 	} else if (command && mapi_get_active(mid))
 		c = doFileBulk(mid, NULL);
 
-	if (!has_fileargs && command == NULL)
-		c = doFile(mid, "-", useinserts, interactive, save_history);
+	if (!has_fileargs && command == NULL) {
+		stream *s = file_rastream(stdin, "<stdin>");
+		c = doFile(mid, s, useinserts, interactive, save_history);
+		mnstr_destroy(s);
+	}
 
 	mapi_destroy(mid);
 	mnstr_destroy(stdout_stream);

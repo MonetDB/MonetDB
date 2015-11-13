@@ -100,63 +100,32 @@ static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
 static BUN
-log_find_int(BAT *b, BAT *d, int val)
+log_find(BAT *b, BAT *d, int val)
 {
-#if 0
-	BUN p, q;
-	int *t = (int *) Tloc(b, BUNfirst(b));
-
-	for (p = 0, q = BATcount(b); p < q; p++) {
-		oid pos = p + BUNfirst(b);
-
-		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
-			return pos;
-	}
-	return BUN_NONE;
-#else
 	BATiter cni = bat_iterator(b);
 	BUN p;
 
-	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
-		HASHloop_int(cni, cni.b->T->hash, p, &val) {
-			oid pos = p;
-			if (BUNfnd(d, &pos) == BUN_NONE)
-				return p;
-//MK So, if the BAThash construction fails, the BAT b still could have information
-//?? protect against failing BAThash() with non-empty b required
-		}
-	}
-	return BUN_NONE;
-#endif
-}
-
-static BUN
-log_find_bid(BAT *b, BAT *d, log_bid val)
-{
-#if 0
-	BUN p, q;
-	log_bid *t = (log_bid *) Tloc(b, BUNfirst(b));
-
-	for (p = 0, q = BATcount(b); p < q; p++) {
-		oid pos = p + BUNfirst(b);
-
-		if (t[p] == val && BUNfnd(d, &pos) == BUN_NONE)
-			return pos;
-	}
-	return BUN_NONE;
-#else
-	BATiter cni = bat_iterator(b);
-	BUN p;
-
+	assert(b->ttype == TYPE_int);
+	assert(d->ttype == TYPE_oid);
 	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
 		HASHloop_int(cni, cni.b->T->hash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
 		}
+	} else {		/* unlikely: BAThash failed */
+		BUN q;
+		int *t = (int *) Tloc(b, 0);
+
+		for (p = BUNfirst(b), q = BUNlast(b); p < q; p++) {
+			if (t[p] == val) {
+				oid pos = p;
+				if (BUNfnd(d, &pos) == BUN_NONE)
+					return p;
+			}
+		}
 	}
 	return BUN_NONE;
-#endif
 }
 
 static void
@@ -262,7 +231,7 @@ static int
 avoid_snapshot(logger *lg, log_bid bid)
 {
 	if (BATcount(lg->snapshots_bid)-BATcount(lg->dsnapshots)) {
-		BUN p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid);
+		BUN p = log_find(lg->snapshots_bid, lg->dsnapshots, bid);
 
 		if (p != BUN_NONE) {
 			int tid = *(int *) Tloc(lg->snapshots_tid, p);
@@ -310,7 +279,7 @@ log_read_seq(logger *lg, logformat *l)
 		return LOG_ERR;
 	}
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
@@ -576,7 +545,7 @@ la_bat_destroy(logger *lg, logaction *la)
 
 		logger_del_bat(lg, bid);
 
-		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
@@ -701,7 +670,7 @@ la_bat_use(logger *lg, logaction *la)
 		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
-	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 	    p >= lg->snapshots_bid->batInserted) {
 		BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 	} else {
@@ -904,6 +873,7 @@ logger_open(logger *lg)
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
+	GDKfree(filename);
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) {
@@ -933,13 +903,14 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char* path = GDKfilepath_long(BBPselectfarm(lg->dbfarm_role, 0, offheap), filename, NULL);
+	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
 
 	lg->log = open_rstream(path);
+	GDKfree(path);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -1064,8 +1035,8 @@ logger_readlog(logger *lg, char *filename)
 }
 
 /*
- * The log files are incrementally numbered, starting from 2. They are processed in the
- * same sequence.
+ * The log files are incrementally numbered, starting from 2. They are
+ * processed in the same sequence.
  */
 static int
 logger_readlogs(logger *lg, FILE *fp, char *filename)
@@ -1078,7 +1049,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, sizeof(id), fp) != NULL) {
-		char log_filename[BUFSIZ];
+		char log_filename[PATHLENGTH];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1100,22 +1071,31 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			while (lid >= lg->id && res != LOG_ERR) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
 				if ((logger_readlog(lg, log_filename)) == LOG_ERR && lg->shared && lg->id > 1) {
-					/* The only special case is if the files is missing altogether
-					 * and the logger is a shared one,
-					 * then we have missing transactions and we should abort.
-					 * Yeah, and we also ignore the 1st files it most likely never exists. */
+					/* The only special case is if
+					 * the files is missing
+					 * altogether and the logger
+					 * is a shared one, then we
+					 * have missing transactions
+					 * and we should abort.  Yeah,
+					 * and we also ignore the 1st
+					 * files it most likely never
+					 * exists. */
 					res = LOG_ERR;
 					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
 				}
-				/* Increment the id only at the end, since we want to re-read the last file.
-				 * That is because last time we read it, it was empty, since the logger creates empty files
-				 * and fills them in later. */
+				/* Increment the id only at the end,
+				 * since we want to re-read the last
+				 * file.  That is because last time we
+				 * read it, it was empty, since the
+				 * logger creates empty files and
+				 * fills them in later. */
 				lg->id++;
 			}
 			if (lid < lg->id) {
 				lg->id = lid;
 			}
-			/* if this is a shared logger, write the id in the shared file */
+			/* if this is a shared logger, write the id in
+			 * the shared file */
 			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 		}
 	}
@@ -1131,7 +1111,7 @@ logger_commit(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
 
-	p = log_find_int(lg->seqs_id, lg->dseqs, id);
+	p = log_find(lg->seqs_id, lg->dseqs, id);
 	if (p >= lg->seqs_val->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &lg->id, FALSE);
 	} else {
@@ -1167,10 +1147,10 @@ check_version(logger *lg, FILE *fp)
 	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
 		    (*lg->prefuncp)(version, lg->version) != 0) {
-			GDKerror("Incompatible database version %06d, "
-				 "this server supports version %06d\n"
-				 "Please move away %s.",
-				 version, lg->version, lg->dir);
+			GDKfatal("Incompatible database version %06d, "
+				 "this server supports version %06d.\n%s",
+				 version, lg->version,
+				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 
 			return GDK_FAIL;
 		}
@@ -1200,11 +1180,9 @@ bm_tids(BAT *b, BAT *d)
 	tids->H->dense = 1;
 
 	if (BATcount(d)) {
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		logbat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		logbat_destroy(diff);
+		tids = diff;
 	}
 	return tids;
 }
@@ -1295,25 +1273,31 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int shared) {
+logger_set_logdir_path(char *filename, const char *fn,
+		       const char *logdir, int shared)
+{
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[BUFSIZ] = "";
-		char logdir_name[BUFSIZ] = "";
-		/* split the logdir string into absolute parent dir path and (relative) log dir name */
-		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name)) {
-			/* set the new relative logdir locaiton including the logger function name subdir */
-			snprintf(filename, BUFSIZ, "%s%c%s%c", logdir_name, DIR_SEP, fn, DIR_SEP);
+		char logdir_parent_path[PATHLENGTH] = "";
+		char logdir_name[PATHLENGTH] = "";
 
-			/* add a new dbfarm for the logger directory using the parent dir path,
-			 * assuming it is set, s.t. the logs are stored in a location other than the default dbfarm,
-			 * or at least it appears so to (multi)dbfarm aware functions */
-			if (!shared) {
-				role = LOG_DIR;
-			} else {
-				role = SHARED_LOG_DIR;
-			}
+		/* split the logdir string into absolute parent dir
+		 * path and (relative) log dir name */
+		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
+			/* set the new relative logdir location
+			 * including the logger function name
+			 * subdir */
+			snprintf(filename, PATHLENGTH, "%s%c%s%c",
+				 logdir_name, DIR_SEP, fn, DIR_SEP);
+
+			/* add a new dbfarm for the logger directory
+			 * using the parent dir path, assuming it is
+			 * set, s.t. the logs are stored in a location
+			 * other than the default dbfarm, or at least
+			 * it appears so to (multi)dbfarm aware
+			 * functions */
+			role = shared ? SHARED_LOG_DIR : LOG_DIR;
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			logger_fatal("logger_set_logdir_path: logdir path is not correct (%s)."
@@ -1321,7 +1305,8 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
+		snprintf(filename, PATHLENGTH, "%s%c%s%c",
+			 logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
 	return role;
@@ -1332,29 +1317,29 @@ logger_set_logdir_path(char *filename, const char *fn, const char *logdir, int s
  * Load data and persist it in the BATs
  * Convert 32bit data to 64bit, unless running in read-only mode */
 static int
-logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
+logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
-	char bak[BUFSIZ];
+	char bak[PATHLENGTH];
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	snprintf(filename, PATHLENGTH, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, filename, NULL, NULL, "r");
+	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1643,6 +1628,9 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
+
+			if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
+				logger_fatal("Logger_new: commit failed", 0, 0, 0);
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1655,7 +1643,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
-		char cvfile[BUFSIZ];
+		char cvfile[PATHLENGTH];
 #endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
@@ -1695,7 +1683,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 			{
 				FILE *fp1;
-				long off;
+				long off; /* type long required by ftell() & fseek() */
 				int curid;
 
 				/* read the current log id without disturbing
@@ -1706,7 +1694,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 				fseek(fp, off, SEEK_SET);
 
 
-				if ((fp1 = GDKfileopen(farmid, bak, NULL, NULL, "r")) != NULL) {
+				if ((fp1 = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
 					/* file indicating that we need to do
 					 * a 32->64 bit OID conversion exists;
 					 * record the fact in case we get
@@ -1715,7 +1703,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					fclose(fp1);
 					/* first create a versioned file using
 					 * the current log id */
-					if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "w")) == NULL ||
+					if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
 					    fprintf(fp1, "%d\n", curid) < 2 ||
 					    fflush(fp1) != 0 || /* make sure it's save on disk */
 #if defined(_MSC_VER)
@@ -1733,7 +1721,7 @@ logger_load(int debug, const char* fn, char filename[BUFSIZ], logger* lg)
 					unlink(bak);
 					/* set the flag that we need to convert */
 					lg->read32bitoid = 1;
-				} else if ((fp1 = GDKfileopen(farmid, cvfile, NULL, NULL, "r")) != NULL) {
+				} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
 					/* the versioned conversion file
 					 * exists: check version */
 					int newid;
@@ -1787,8 +1775,8 @@ static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	char filename[BUFSIZ];
-	char shared_log_filename[BUFSIZ];
+	char filename[PATHLENGTH];
+	char shared_log_filename[PATHLENGTH];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -1823,6 +1811,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
+	lg->local_dir = NULL;
 
 	if (shared) {
 		/* set the local logdir as well
@@ -1890,7 +1879,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 int
 logger_reload(logger *lg)
 {
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 
 	snprintf(filename, sizeof(filename), "%s", lg->dir);
 	if (lg->debug & 1) {
@@ -1980,7 +1969,7 @@ int
 logger_exit(logger *lg)
 {
 	FILE *fp;
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
@@ -1991,8 +1980,8 @@ logger_exit(logger *lg)
 	}
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "w")) != NULL) {
-		char ext[BUFSIZ];
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
+		char ext[PATHLENGTH];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
@@ -2108,7 +2097,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	if (keep_persisted_log_files == 0) {
 		// If keep_persisted_log_files is 0, remove the last persisted WAL files as well
 		// to reduce the work for the logger_cleanup_old()
-		if ((fp = GDKfileopen(farmid, buf, NULL, NULL, "r")) == NULL) {
+		if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
 			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
 			return LOG_ERR;
 		}
@@ -2154,14 +2143,14 @@ logger_changes(logger *lg)
 lng
 logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
-	char filename[BUFSIZ];
+	char filename[PATHLENGTH];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = LOG_ERR;
 	int farmid = BBPselectfarm(role, 0, offheap);
 
 	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
-	if ((fp = GDKfileopen(farmid, filename, NULL, NULL, "r")) == NULL) {
+	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		goto error;
 	}
@@ -2192,7 +2181,7 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
-	BUN p = log_find_int(lg->seqs_id, lg->dseqs, seq);
+	BUN p = log_find(lg->seqs_id, lg->dseqs, seq);
 
 	if (p != BUN_NONE) {
 		*id = *(lng *) Tloc(lg->seqs_val, p);
@@ -2257,7 +2246,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
-		if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
+		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
 		} else {
@@ -2307,7 +2296,7 @@ log_bat_transient(logger *lg, const char *name)
 	lg->changes++;
 
 	/* if this is a snapshot bat, we need to skip all changes */
-	if ((p = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 		//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
@@ -2659,7 +2648,7 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
-	if ((p = log_find_int(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
+	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
 	} else {
@@ -2767,14 +2756,14 @@ void
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
-	BUN p = log_find_bid(lg->catalog_bid, lg->dcatalog, bid), q;
+	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid), q;
 
 	assert(p != BUN_NONE);
 
 	/* if this is a not logger commited snapshot bat, make it
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
-	    (q = log_find_bid(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 
 		BUNappend(lg->dsnapshots, &q, FALSE);
 		if (lg->debug & 1)

@@ -64,7 +64,7 @@ mal_unquote(char *msg)
 char *
 mal_quote(const char *msg, size_t size)
 {
-	char *s = GDKmalloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
+	char *s = GDKmalloc(size * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
 
 	if ( s == NULL)

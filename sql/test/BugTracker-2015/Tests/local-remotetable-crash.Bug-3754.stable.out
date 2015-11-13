@@ -67,9 +67,7 @@ Ready.
 #CREATE TABLE t1 (i int);
 #CREATE REMOTE TABLE rt (LIKE t1) ON 'mapi:monetdb://localhost:50000/test';
 
-What is expected: an error message (to refuse creating a REMOTE TABLE referring to a local table) or empty result?
-
-# 18:16:20 >  
-# 18:16:20 >  "Done."
-# 18:16:20 >  
+# 14:26:57 >  
+# 14:26:57 >  "Done."
+# 14:26:57 >  
 

@@ -97,8 +97,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->free = 0;
 
 	/* check for overflow */
-	if (itemsize && nitems > (h->size / itemsize))
+	if (itemsize && nitems > (h->size / itemsize)) {
+		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
+	}
 
 	if (h->filename == NULL || h->size < GDK_mmap_minsize) {
 		h->storage = STORE_MEM;
@@ -183,7 +185,6 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
 		if ((path = GDKfilepath(h->farmid, BATDIR, nme, ext)) == NULL) {
-			GDKerror("HEAPextend: out of memory\n");
 			return GDK_FAIL;
 		}
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
@@ -412,12 +413,15 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
 
-	/* for memory mapped files, create a backup copy before widening
+	/* Create a backup copy before widening.
 	 *
-	 * this solves a problem that we don't control what's in the
-	 * actual file until the next commit happens, so a crash might
-	 * otherwise leave the file (and the database) in an
-	 * inconsistent state
+	 * If the file is memory-mapped, this solves a problem that we
+	 * don't control what's in the actual file until the next
+	 * commit happens, so a crash might otherwise leave the file
+	 * (and the database) in an inconsistent state.  If, on the
+	 * other hand, the heap is allocated, it may happen that later
+	 * on the heap is extended and converted into a memory-mapped
+	 * file.  Then the same problem arises.
 	 *
 	 * also see do_backup in gdk_bbp.c */
 	filename = strrchr(c->heap.filename, DIR_SEP);
@@ -426,9 +430,11 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 	else
 		filename++;
 	bid = strtol(filename, NULL, 8);
-	if (c->heap.storage == STORE_MMAP &&
-	    (BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL)) {
+	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
+	    !file_exists(c->heap.farmid, BAKDIR, filename, NULL) &&
+	    (c->heap.storage != STORE_MEM ||
+	     GDKmove(c->heap.farmid, BATDIR, c->heap.filename, NULL,
+		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << c->shift;
@@ -454,6 +460,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 #endif
 		    close(fd) < 0) {
 			/* something went wrong: abandon ship */
+			GDKsyserror("GDKupgradevarheap: syncing heap to disk failed\n");
 			close(fd);
 			GDKunlink(c->heap.farmid, BATDIR, c->heap.filename, "tmp");
 			return GDK_FAIL;
@@ -548,7 +555,7 @@ HEAPcopy(Heap *dst, Heap *src)
 
 /* Free the memory associated with the heap H.
  * Unlinks (removes) the associated file if the remove flag is set. */
-int
+void
 HEAPfree(Heap *h, int remove)
 {
 	if (h->base) {
@@ -582,7 +589,6 @@ HEAPfree(Heap *h, int remove)
 		GDKfree(h->filename);
 		h->filename = NULL;
 	}
-	return 0;
 }
 
 /*
@@ -691,6 +697,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	long_str extension;
 
 	if (h->base == NULL) {
+		GDKerror("HEAPsave_intern: no heap to save\n");
 		return GDK_FAIL;
 	}
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {

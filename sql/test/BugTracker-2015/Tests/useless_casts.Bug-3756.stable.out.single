@@ -1,0 +1,255 @@
+stdout of test 'useless_casts.Bug-3756` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 21:57:13 >  
+# 21:57:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33119" "--set" "mapi_usock=/var/tmp/mtest-22263/.s.monetdb.33119" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:57:13 >  
+
+# MonetDB 5 server v11.21.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33119/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22263/.s.monetdb.33119
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.34'
+# Finished reading the write-ahead log 'sql_logs/sql/log.34'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:57:14 >  
+# 21:57:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22263" "--port=33119"
+# 21:57:14 >  
+
+#create table test(value int);
+#insert into test values (1), (2), (3);
+[ 3	]
+#select * from test where value = 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+#explain select * from test where value = 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 98 # length
+function user.s3_1(A0:int):void;
+    X_35:void := querylog.define("explain select * from test where value = 1;","default_pipe",24);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.test");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"value");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"int");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_24,32);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_49 := algebra.subselect(X_7,X_4,A0,A0,true,false,false);
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_50 := algebra.subselect(r1_10,nil:bat[:oid,:oid],A0,A0,true,false,false);
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_52 := algebra.subselect(X_13,X_4,A0,A0,true,false,false);
+    X_15 := sql.subdelta(X_49,X_4,X_10,X_50,X_52);
+    X_17 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_17);
+end user.s3_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
+#select * from test where value > 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+#explain select * from test where value > 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 98 # length
+function user.s4_1{autoCommit=true}(A0:int):void;
+    X_35:void := querylog.define("explain select * from test where value > 1;","default_pipe",24);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.test");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"value");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"int");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_24,32);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_48 := algebra.thetasubselect(X_7,X_4,A0,">");
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_49 := algebra.thetasubselect(r1_10,nil:bat[:oid,:oid],A0,">");
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_51 := algebra.thetasubselect(X_13,X_4,A0,">");
+    X_15 := sql.subdelta(X_48,X_4,X_10,X_49,X_51);
+    X_17 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_17);
+end user.s4_1;
+#select * from test where value >= 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+#explain select * from test where value >= 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 99 # length
+function user.s5_1{autoCommit=true}(A0:int):void;
+    X_35:void := querylog.define("explain select * from test where value >= 1;","default_pipe",24);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.test");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"value");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"int");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_24,32);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_48 := algebra.thetasubselect(X_7,X_4,A0,">=");
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_49 := algebra.thetasubselect(r1_10,nil:bat[:oid,:oid],A0,">=");
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_51 := algebra.thetasubselect(X_13,X_4,A0,">=");
+    X_15 := sql.subdelta(X_48,X_4,X_10,X_49,X_51);
+    X_17 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_17);
+end user.s5_1;
+#select * from test where value < 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#explain select * from test where value < 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 98 # length
+function user.s6_1{autoCommit=true}(A0:int):void;
+    X_35:void := querylog.define("explain select * from test where value < 1;","default_pipe",24);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.test");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"value");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"int");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_24,32);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_48 := algebra.thetasubselect(X_7,X_4,A0,"<");
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_49 := algebra.thetasubselect(r1_10,nil:bat[:oid,:oid],A0,"<");
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_51 := algebra.thetasubselect(X_13,X_4,A0,"<");
+    X_15 := sql.subdelta(X_48,X_4,X_10,X_49,X_51);
+    X_17 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_17);
+end user.s6_1;
+#select * from test where value <= 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#explain select * from test where value <= 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 99 # length
+function user.s7_1{autoCommit=true}(A0:int):void;
+    X_35:void := querylog.define("explain select * from test where value <= 1;","default_pipe",24);
+    X_19 := bat.new(nil:oid,nil:str);
+    X_27 := bat.append(X_19,"sys.test");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"value");
+    X_23 := bat.new(nil:oid,nil:str);
+    X_30 := bat.append(X_23,"int");
+    X_24 := bat.new(nil:oid,nil:int);
+    X_32 := bat.append(X_24,32);
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_48 := algebra.thetasubselect(X_7,X_4,A0,"<=");
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_49 := algebra.thetasubselect(r1_10,nil:bat[:oid,:oid],A0,"<=");
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_51 := algebra.thetasubselect(X_13,X_4,A0,"<=");
+    X_15 := sql.subdelta(X_48,X_4,X_10,X_49,X_51);
+    X_17 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_17);
+end user.s7_1;
+#select * from test where value <> 12345678900; # value > INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#explain select * from test where value <> 1; # value < INT_MAX
+% .explain # table_name
+% mal # name
+% clob # type
+% 99 # length
+function user.s8_1{autoCommit=true}(A0:int):void;
+    X_34:void := querylog.define("explain select * from test where value <> 1;","default_pipe",24);
+    X_18 := bat.new(nil:oid,nil:str);
+    X_26 := bat.append(X_18,"sys.test");
+    X_21 := bat.new(nil:oid,nil:str);
+    X_28 := bat.append(X_21,"value");
+    X_22 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_22,"int");
+    X_23 := bat.new(nil:oid,nil:int);
+    X_31 := bat.append(X_23,32);
+    X_25 := bat.new(nil:oid,nil:int);
+    X_33 := bat.append(X_25,0);
+    X_3 := sql.mvc();
+    X_7:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",0);
+    X_4:bat[:oid,:oid] := sql.tid(X_3,"sys","test");
+    X_47 := algebra.subselect(X_7,X_4,A0,A0,true,true,true);
+    (X_10,r1_10) := sql.bind(X_3,"sys","test","value",2);
+    X_48 := algebra.subselect(r1_10,nil:bat[:oid,:oid],A0,A0,true,true,true);
+    X_13:bat[:oid,:int] := sql.bind(X_3,"sys","test","value",1);
+    X_50 := algebra.subselect(X_13,X_4,A0,A0,true,true,true);
+    X_15 := sql.subdelta(X_47,X_4,X_10,X_48,X_50);
+    X_16 := sql.projectdelta(X_15,X_7,X_10,r1_10,X_13);
+    sql.resultSet(X_26,X_28,X_29,X_31,X_33,X_16);
+end user.s8_1;
+#drop table test;
+
+# 21:57:14 >  
+# 21:57:14 >  "Done."
+# 21:57:14 >  
+

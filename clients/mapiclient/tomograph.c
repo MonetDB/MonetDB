@@ -1172,7 +1172,7 @@ updatecolormap(int idx)
 	if (fnd == 0 && i < NUM_COLORS) {
 		/* not found, but still free slot: add new one */
 		fnd = i;
-		colors[fnd].mod = mod?strdup(mod): 0;
+		colors[fnd].mod = strdup(mod);
 		colors[fnd].fcn = strdup(fcn);
 		if( debug) 
 			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, mod, fcn);
@@ -1904,7 +1904,7 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len)) > 0) {
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len - 1)) > 0) {
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
@@ -1915,7 +1915,8 @@ main(int argc, char **argv)
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
 			}
-			/* handle the case that the line is not yet completed */
+			/* handle the case that the current line is too long to
+			 * fit in the buffer */
 			if( response == buffer){
 				char *new = realloc(buffer, buflen + BUFSIZ);
 				if( new == NULL){
@@ -1924,14 +1925,18 @@ main(int argc, char **argv)
 				}
 				buffer = new;
 				buflen += BUFSIZ;
+				len += m;
 			}
-			/* handle last line in buffer */
-			if (response != buffer && *response) {
+			/* handle the case the buffer contains more than one
+                         * line, and the last line is not completely read yet.
+			 * Copy the first part of the incomplete line to the
+			 * beginning of the buffer */
+			else if (*response) {
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
 				strncpy(buffer, response, len + 1);
-			} else
+			} else /* reset this line of buffer */
 				len = 0;
 		}
 	}

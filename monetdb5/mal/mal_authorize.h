@@ -14,18 +14,17 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(oid *ret, Client *c, str *user, str *passwd, str *challenge, str *algo);
-mal_export str AUTHaddUser(oid *ret, Client *c, str *user, str *pass);
-mal_export str AUTHremoveUser(Client *c, str *username);
-mal_export str AUTHchangeUsername(Client *c, str *olduser, str *newuser);
-mal_export str AUTHchangePassword(Client *c, str *oldpass, str *passwd);
-mal_export str AUTHsetPassword(Client *c, str *username, str *passwd);
+mal_export str AUTHcheckCredentials(oid *ret, Client c, str *user, str *passwd, str *challenge, str *algo);
+mal_export str AUTHaddUser(oid *ret, Client c, str *user, str *pass);
+mal_export str AUTHremoveUser(Client c, str *username);
+mal_export str AUTHchangeUsername(Client c, str *olduser, str *newuser);
+mal_export str AUTHchangePassword(Client c, str *oldpass, str *passwd);
+mal_export str AUTHsetPassword(Client c, str *username, str *passwd);
 mal_export str AUTHresolveUser(str *ret, oid *uid);
-mal_export str AUTHgetUsername(str *ret, Client *c);
-mal_export str AUTHgetUsers(BAT **ret, Client *c);
-mal_export str AUTHgetPasswordHash(str *ret, Client *c, str *username);
+mal_export str AUTHgetUsername(str *ret, Client c);
+mal_export str AUTHgetUsers(BAT **ret1, BAT **ret2, Client c);
+mal_export str AUTHgetPasswordHash(str *ret, Client c, str *username);
 
-mal_export str AUTHrequireAdmin(Client *c);
 mal_export str AUTHinitTables(str *passwd);
 
 

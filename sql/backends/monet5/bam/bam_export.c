@@ -112,7 +112,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 	{ // cigar
 		str s, t;
 		int i, op;
-		long x;
+		long x; /* type long returned by strtol() */
 		c->n_cigar = 0;
 		if (cigar[0] != '*') {
 			uint32_t *cigar_enc;
@@ -356,7 +356,7 @@ write_header(stream *output, bam_field fields[11])
 
 	mnstr_printf(output, "@HD\tVN:1.0\tSO:%s\n",
 			BATtordered(fields[0].b) ? "queryname" :
-				(BATordered(fields[2].b) && BATordered(fields[3].b) ? "coordinate" :
+				(BATtordered(fields[2].b) && BATtordered(fields[3].b) ? "coordinate" :
 					"unsorted"));
 
 	/* Use sq_table to print SQ header lines */

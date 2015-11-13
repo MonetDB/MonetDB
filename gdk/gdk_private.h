@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+#define DISABLE_PARENT_HASH 1
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -63,8 +65,6 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN BATguess(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, int lock)
@@ -98,11 +98,15 @@ __hidden void BBPtrim(size_t delta)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BUNins(BAT *b, const void *left, const void *right, bit force)
+	__attribute__((__visibility__("hidden")));
 __hidden void GDKclrerr(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextendf(int fd, size_t size, const char *fn)
+	__attribute__((__visibility__("hidden")));
+__hidden  gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
 	__attribute__((__visibility__("hidden")));
 __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
@@ -149,7 +153,7 @@ __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 __hidden int HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden int HEAPfree(Heap *h, int remove)
+__hidden void HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__visibility__("hidden")));
@@ -185,7 +189,7 @@ __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
@@ -311,37 +315,36 @@ extern MT_Lock MT_system_lock;
 #define GDKcacheLock(y)	GDKbbpLock[y].alloc
 #define BBP_free(y)	GDKbbpLock[y].free
 
-#define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
-	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
+#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
 
-#define SORTloop_bte(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, bte)
-#define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
-#define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
-#define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
-#ifdef HAVE_HGE
-#define SORTloop_hge(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, hge)
-#endif
-#define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
-#define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
-#define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)
-#define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
+#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
 
-#define SORTloop_loc(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast(b, th); \
-		  p < q;						\
-		  p++)
+#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
+	do {						\
+		hfastins_nocheck(b, p, h, hs);		\
+		tfastins_nocheck(b, p, t, ts);		\
+		(b)->batCount++;			\
+	} while (0)
 
-#define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
+#define bunfastins_nocheck_inc(b, p, h, t)				\
+	do {								\
+		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
+		p++;							\
+	} while (0)
 
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
+#define bunfastins(b, h, t)						\
+	do {								\
+		register BUN _p = BUNlast(b);				\
+		if (_p >= BATcapacity(b)) {				\
+			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
+				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
+				goto bunins_failed;			\
+			}						\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
+				goto bunins_failed;			\
+		}							\
+		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
+	} while (0)
 
 /* extra space in front of strings in string heaps when hashash is set
  * if at least (2*SIZEOF_BUN), also store length (heaps are then
@@ -391,6 +394,25 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
+#define GDKmremap(p, m, oa, os, ns)					\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		void *_oa = (oa);					\
+		size_t _os = (os);					\
+		size_t *_ns = (ns);					\
+		size_t _ons = *_ns;					\
+		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
+		ALLOCDEBUG						\
+			fprintf(stderr,					\
+				"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT \
+				" %s[%s:%d]\n",				\
+				_path ? _path : "NULL", _mode,		\
+				PTRFMTCAST _oa, _os, _ons, *_ns,	\
+				PTRFMTCAST _res,			\
+				__func__, __FILE__, __LINE__);		\
+		_res;							\
+	 })
 #else
 static inline void *
 GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
@@ -427,5 +449,49 @@ GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
 	return res;
 }
 #define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
+static inline void *
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+{
+	size_t orig_new_size = *new_size;
+	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
+	ALLOCDEBUG
+		fprintf(stderr,
+			"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT
+			" [%s:%d]\n",
+			path ? path : "NULL", mode,
+			PTRFMTCAST old_address, old_size, orig_new_size, *new_size,
+			PTRFMTCAST res,
+			filename, lineno);
+	return res;
+}
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+
+#endif
+#endif
+
+#ifndef NDEBUG
+#ifdef __GNUC__
+/* in debug builds, complain (warn) about usage of legacy functions */
+
+#define BATmaterializeh(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterializeh([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterializeh(_b);					\
+	})
+
+#define BATmaterialize(b)						\
+	({								\
+		BAT *_b = (b);						\
+		HEADLESSDEBUG fprintf(stderr,				\
+			"#BATmaterialize([%s,%s]#"BUNFMT") %s[%s:%d]\n", \
+			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
+			__func__, __FILE__, __LINE__);			\
+		BATmaterialize(_b);					\
+	})
+
 #endif
 #endif

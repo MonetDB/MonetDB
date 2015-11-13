@@ -1615,6 +1615,41 @@ sql_update_jul2015(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+#if 0
+static str
+sql_update_dec2015(Client c)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+/* insert upgrade code here */
+	pos += snprintf(buf + pos, bufsize - pos,"drop function sys.bbp();");
+	pos += snprintf(buf + pos, bufsize - pos,"create function sys.bbp () returns table (id int, name string, "
+        "ttype string, count BIGINT, refcnt int, lrefcnt int,"
+        "location string, heat int, dirty string,"
+        "status string, kind string)"
+		"external name bbp.get;");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1713,4 +1748,14 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(err);
 		}
 	}
+
+#if 0
+	/* test for upgrade condition */
+	if (...) {
+		if ((err = sql_update_dec2015(c)) !=NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+#endif
 }

@@ -34,7 +34,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str name;
 	ValPtr lhs;
 	bat i;
-	int ht,tt;
+	int tt;
 	BAT *b;
 
 	(void) cntxt;
@@ -53,12 +53,10 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
 
 	/* check conformity of the actual type and the one requested */
-	ht= getHeadType(getArgType(mb,pci,0));
 	tt= getColumnType(getArgType(mb,pci,0));
-	if( b->htype == TYPE_void && ht== TYPE_oid) ht= TYPE_void;
 	if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
 
-	if( ht != b->htype || tt != b->ttype){
+	if( tt != b->ttype){
 		BBPunfix(i);
 		throw(MAL, "bbp.bind", SEMANTIC_TYPE_MISMATCH );
 	}
@@ -167,10 +165,10 @@ CMDbbpLocation(bat *ret)
 {
 	BAT *b;
 	int i;
-	char buf[MAXPATHLEN];
-	char cwd[MAXPATHLEN];
+	char buf[PATHLENGTH];
+	char cwd[PATHLENGTH];
 
-	if (getcwd(cwd, MAXPATHLEN) == NULL)
+	if (getcwd(cwd, PATHLENGTH) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
@@ -182,7 +180,7 @@ CMDbbpLocation(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
+				snprintf(buf,PATHLENGTH,"%s/bat/%s",cwd,BBP_physical(i));
 				BUNappend(b, buf, FALSE);
 			}
 		}
@@ -211,11 +209,11 @@ CMDbbpHeat(bat *ret)
 			if (BBP_cache(i) && !monet_modulesilent) {
 				int heat = BBP_lastused(i);
 
-				BUNins(b, &i, &heat, FALSE);
+				BUNappend(b, &heat, FALSE);
 			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				int zero = 0;
 
-				BUNins(b, &i, &zero, FALSE);
+				BUNappend(b, &zero, FALSE);
 			}
 		}
 	BBPunlock("CMDbbpHeat");
@@ -391,15 +389,14 @@ CMDgetBATlrefcnt(int *res, bat *bid)
 	return MAL_SUCCEED;
 }
 
-str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
+str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
 {
-	BAT *id, *ns, *ht, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
+	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	int	i;
-	char buf[MAXPATHLEN];
+	char buf[PATHLENGTH];
 
 	id = BATnew(TYPE_void, TYPE_int, getBBPsize(), TRANSIENT);
 	ns = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
-	ht = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
 	tt = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
 	cnt = BATnew(TYPE_void, TYPE_lng, getBBPsize(), TRANSIENT);
 	refcnt = BATnew(TYPE_void, TYPE_int, getBBPsize(), TRANSIENT);
@@ -410,10 +407,9 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 	status = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
 	kind = BATnew(TYPE_void, TYPE_str, getBBPsize(), TRANSIENT);
 
-	if (!id || !ns || !ht || !tt || !cnt || !refcnt || !lrefcnt || !location || !heat || !dirty || !status || !kind) {
+	if (!id || !ns || !tt || !cnt || !refcnt || !lrefcnt || !location || !heat || !dirty || !status || !kind) {
 		BBPreclaim(id);
 		BBPreclaim(ns);
-		BBPreclaim(ht);
 		BBPreclaim(tt);
 		BBPreclaim(cnt);
 		BBPreclaim(refcnt);
@@ -427,7 +423,6 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 	}
 	BATseqbase(id, 0);
 	BATseqbase(ns, 0);
-	BATseqbase(ht, 0);
 	BATseqbase(tt, 0);
 	BATseqbase(cnt, 0);
 	BATseqbase(refcnt, 0);
@@ -450,10 +445,9 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				snprintf(buf, MAXPATHLEN, "%s", BBP_physical(i));
+				snprintf(buf, PATHLENGTH, "%s", BBP_physical(i));
 				BUNappend(id, &i, FALSE);
 				BUNappend(ns, BBP_logical(i), FALSE);
-				BUNappend(ht, BATatoms[BAThtype(bn)].name, FALSE);
 				BUNappend(tt, BATatoms[BATttype(bn)].name, FALSE);
 				BUNappend(cnt, &l, FALSE);
 				BUNappend(refcnt, &refs, FALSE);
@@ -469,7 +463,6 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 	}
 	BBPkeepref(*ID = id->batCacheid);
 	BBPkeepref(*NS = ns->batCacheid);
-	BBPkeepref(*HT = ht->batCacheid);
 	BBPkeepref(*TT = tt->batCacheid);
 	BBPkeepref(*CNT = cnt->batCacheid);
 	BBPkeepref(*REFCNT = refcnt->batCacheid);

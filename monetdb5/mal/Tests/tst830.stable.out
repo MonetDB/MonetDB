@@ -27,13 +27,13 @@ exit MALException:str;
     id := clients.addUser("checkpoint",pw);
     io.print(id);
 # do a simple listing of users known 
-    u := clients.getUsers();
-    io.print(u);
+    (u,n) := clients.getUsers();
+    io.print(u,n);
 # should work, we're the admin here 
     clients.removeUser("checkpoint");
 # do a simple listing of users known 
-    u := clients.getUsers();
-    io.print(u);
+    (u,n) := clients.getUsers();
+    io.print(u,n);
 # forcefully set the password of the user test 
     clients.setPassword("test",pw);
 # now try to set the password for ourself, should fail 
@@ -70,19 +70,19 @@ end user.main;
 MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]
-#-------------------------#
-# h	t		  # name
-# oid	str		  # type
-#-------------------------#
-[ 0@0,	  "monetdb"	  ]
-[ 1@0,	  "test"	  ]
-[ 2@0,	  "checkpoint"	  ]
-#-------------------------#
-# h	t		  # name
-# oid	str		  # type
-#-------------------------#
-[ 0@0,	  "monetdb"	  ]
-[ 1@0,	  "test"	  ]
+#--------------------------#
+# h	t	t  # name
+# void	void	str  # type
+#--------------------------#
+[ 0@0,	0@0,	"monetdb"  ]
+[ 1@0,	1@0,	"test"  ]
+[ 2@0,	2@0,	"checkpoint"  ]
+#--------------------------#
+# h	t	t  # name
+# void	void	str  # type
+#--------------------------#
+[ 0@0,	0@0,	"monetdb"  ]
+[ 1@0,	1@0,	"test"  ]
 InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
 InvalidCredentialsException:changePassword:Access denied
 InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'

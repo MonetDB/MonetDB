@@ -90,15 +90,25 @@ dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
 # test csv import
-file <- tempfile()
-write.table(iris,file,sep=",")
-monetdb.read.csv(con,file,tname)
-unlink(file)
+tf <- tempfile()
+write.table(iris,tf,sep=",",row.names=FALSE)
+tname2 <- "Need to quote this table name"
+monetdb.read.csv(con,tf,tname)
+monetdb.read.csv(con,tf,tname2)
+###
+dbListTables(con)
+
+unlink(tf)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
+stopifnot(identical(dbExistsTable(con,tname2),TRUE))
 iris3 <- dbReadTable(con,tname)
+iris4 <- dbReadTable(con,tname2)
 stopifnot(identical(dim(iris),dim(iris3)))
+stopifnot(identical(dim(iris),dim(iris4)))
 stopifnot(identical(dbListFields(con,tname),names(iris)))
+stopifnot(identical(dbListFields(con,tname2),names(iris)))
 dbRemoveTable(con,tname)
+dbRemoveTable(con,tname2)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
 # test dbWriteTable

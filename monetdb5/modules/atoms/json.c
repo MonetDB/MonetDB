@@ -600,6 +600,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		l = 3;
 	s = GDKzalloc(l + 3);
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
+	GDKfree(result);
 
 	for (l = 0; terms[l].token; l++)
 		if (terms[l].name)
@@ -1868,37 +1869,19 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		return NULL;
 	}
 	if (s) {
-		b = BATleftjoin(s, b, BATcount(s));
+		b = BATproject(s, b);
 		if (b == NULL) {
-			err = "internal leftjoin failed";
+			err = "internal project failed";
 			goto out;
 		}
 		freeb = 1;
-		if (b->htype != TYPE_void) {
-			t1 = BATmirror(BATmark(BATmirror(b), 0));
-			if (t1 == NULL) {
-				err = "internal mark failed";
-				goto out;
-			}
-			BBPunfix(b->batCacheid);
-			b = t1;
-		}
 		if (g) {
-			g = BATleftjoin(s, g, BATcount(s));
+			g = BATproject(s, g);
 			if (g == NULL) {
-				err = "internal leftjoin failed";
+				err = "internal project failed";
 				goto out;
 			}
 			freeg = 1;
-			if (g->htype != TYPE_void) {
-				t1 = BATmirror(BATmark(BATmirror(g), 0));
-				if (t1 == NULL) {
-					err = "internal mark failed";
-					goto out;
-				}
-				BBPunfix(g->batCacheid);
-				g = t1;
-			}
 		}
 	}
 

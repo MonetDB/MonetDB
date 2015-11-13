@@ -9,16 +9,16 @@
   Instruct MonetDB to read a CSV file, optionally also create the table for it.
 }
 \usage{
-   monetdb.read.csv (conn, files, tablename, nrows, header=TRUE, 
+   monetdb.read.csv (conn, files, tablename, nrows=NA, header=TRUE, 
   locked=FALSE, na.strings="", nrow.check=500, delim=",",
-  newline = "\\\\n", quote = "\"", create=TRUE, ...)
+  newline = "\\\\n", quote = "\"", create=TRUE, col.names=NULL, lower.case.names=FALSE, ...)
 }
 \arguments{
   \item{conn}{A MonetDB.R database connection. Created using \code{\link[DBI]{dbConnect}} with the 
   \code{\link[MonetDB.R]{MonetDB.R}} database driver.}
    \item{files}{A single string or a vector of strings containing the absolute file names of the CSV files to be imported.}
    \item{tablename}{Name of the database table the CSV files should be imported in. Created if necessary.}
-   \item{nrows}{Total number of rows to import. Can be an upper bound.}
+   \item{nrows}{Total number of rows to import (deprecated).}
    \item{header}{Whether or not the CSV files contain a header line.}
    \item{locked}{Whether or not to disable transactions for import. 
    Setting this to TRUE can greatly improve the import performance.}
@@ -30,6 +30,8 @@
    \item{newline}{Newline in CSV file, usually \\n for UNIX-like systems and \\r\\r on Windows.}
    \item{quote}{Quote character(s) in CSV file.}
   \item{create}{Create table before importing?}
+  \item{lower.case.names}{Convert all column names to lowercase in the database?}
+  \item{col.names}{Optional column names in case the ones from CSV file should not be used}
  }
  
 \value{
@@ -47,6 +49,6 @@ data(iris)
 file <- tempfile()
 write.table(iris, file, sep=",")
 # create table and import CSV
-monetdb.read.csv(conn, file, "iris", 150)
+monetdb.read.csv(conn, file, "iris")
 }}
 \keyword{interface}

@@ -2,6 +2,7 @@
 # use local cost functions, which leads to a hill-climber
 # Use the backward scheduling.
 
+include run_memo;
 	A:= bat.new(:oid,:oid);
 	bat.append(A,1@0);
 	B:= algebra.copy(A);

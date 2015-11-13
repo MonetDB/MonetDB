@@ -26,20 +26,15 @@ extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int ht, int tt, BUN size, int role);
 
 extern BUN append_inserted(BAT *b, BAT *i );
-extern BUN copy_inserted(BAT *b, BAT *i );
 
 extern BAT *ebats[MAXATOMS];
-extern BAT *eubats[MAXATOMS];
 
 #define isEbat(b) 	(ebats[b->ttype] && ebats[b->ttype] == b) 
-#define isEUbat(b) 	(eubats[b->ttype] && eubats[b->ttype] == b) 
 
 extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);
 extern BAT *e_BAT(int type);
-extern log_bid e_ubat(int type);
 extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
-extern log_bid eubat_copy(log_bid b, int temp);
 extern void bat_utils_init(void);
 
 extern sql_schema * tr_find_schema( sql_trans *tr, sql_schema *s);

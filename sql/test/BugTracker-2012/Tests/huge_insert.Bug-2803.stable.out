@@ -1,0 +1,230 @@
+stdout of test 'huge_insert.Bug-2803` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 17:31:11 >  
+# 17:31:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32496" "--set" "mapi_usock=/var/tmp/mtest-29086/.s.monetdb.32496" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Jul2015/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2012" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:31:11 >  
+
+# MonetDB 5 server v11.21.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2012', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:32496/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29086/.s.monetdb.32496
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:31:11 >  
+# 17:31:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29086" "--port=32496"
+# 17:31:11 >  
+
+#create table huge(
+#a0  integer,
+#a1  integer,
+#a2  integer,
+#a3  integer,
+#a4  integer,
+#a5  integer,
+#a6  integer,
+#a7  integer,
+#a8  integer,
+#a9  integer,
+#a10  integer,
+#a11  integer,
+#a12  integer,
+#a13  integer,
+#a14  integer,
+#a15  integer,
+#a16  integer,
+#a17  integer,
+#a18  integer,
+#a19  integer,
+#a20  integer,
+#a21  integer,
+#a22  integer,
+#a23  integer,
+#a24  integer,
+#a25  integer,
+#a26  integer,
+#a27  integer,
+#a28  integer,
+#a29  integer,
+#a30  integer,
+#a31  integer,
+#a32  integer,
+#a33  integer,
+#a34  integer,
+#a35  integer,
+#insert into huge values(
+#0,
+#1,
+#2,
+#3,
+#4,
+#5,
+#6,
+#7,
+#8,
+#9,
+#10,
+#11,
+#12,
+#13,
+#14,
+#15,
+#16,
+#17,
+#18,
+#19,
+#20,
+#21,
+#22,
+#23,
+#24,
+#25,
+#26,
+#27,
+#28,
+#29,
+#30,
+#31,
+#32,
+#33,
+#34,
+#35,
+#36,
+#37,
+#38,
+#39,
+#40,
+#41,
+#42,
+#43,
+#44,
+#45,
+#46,
+#47,
+#48,
+#49,
+#50,
+#51,
+#52,
+#53,
+#54,
+#55,
+#56,
+#57,
+#58,
+#59,
+#60,
+#61,
+#62,
+#63,
+#64,
+#65,
+#66,
+#67,
+#68,
+#69,
+#70,
+#71,
+#72,
+#73,
+#74,
+#75,
+#76,
+#77,
+#78,
+#79,
+#80,
+#81,
+#82,
+#83,
+#84,
+#85,
+#86,
+#87,
+#88,
+#89,
+#90,
+#91,
+#92,
+#93,
+#94,
+#95,
+#96,
+#97,
+#98,
+#99,
+#100,
+#101,
+#102,
+#103,
+#104,
+#105,
+#106,
+#107,
+#108,
+#109,
+#110,
+#111,
+#112,
+#113,
+#114,
+#115,
+#116,
+#117,
+#118,
+#119,
+[ 1	]
+
+# 17:31:12 >  
+# 17:31:12 >  "Done."
+# 17:31:12 >  
+

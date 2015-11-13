@@ -518,6 +518,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 			shuffle_unique_with_groups(flt, GT);
 			break;
 		case TYPE_dbl:
+			shuffle_unique_with_groups(dbl, GT);
 			break;
 		default:
 			heapify(GTanygrp, SWAP2);

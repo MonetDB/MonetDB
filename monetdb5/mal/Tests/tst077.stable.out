@@ -17,7 +17,7 @@ stdout of test 'tst077` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.swap(x:bat[:any_1,:int],y:bat[:any_1,:int]) (a:str,b:bat[:any_1,:int]);
+function user.swap(x:bat[:oid,:int],y:bat[:oid,:int]) (a:str,b:bat[:oid,:int]);
     a := "done";
     return (a,b) := (a,x);
 end user.swap;

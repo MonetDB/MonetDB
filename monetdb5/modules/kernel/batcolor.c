@@ -34,15 +34,12 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
-	bn= BATnew(b->htype,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= BATnew(TYPE_void,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
-	if( b->htype== TYPE_void)											\
-		BATseqbase(bn, b->hseqbase);									\
-	bn->hsorted=b->hsorted;												\
-	bn->hrevsorted=b->hrevsorted;										\
+	BATseqbase(bn, b->hseqbase);									\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
 	bn->T->nil = 0;														\
@@ -51,7 +48,6 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bi = bat_iterator(b);												\
 																		\
 	BATloop(b, p, q) {													\
-		ptr h = BUNhead(bi,p);											\
 		x= (TYPE1 *) BUNtail(bi,p);										\
 		if (x== 0 || *x == TYPE1##_nil) {								\
 			y = (TYPE2) TYPE2##_nil;									\
@@ -59,10 +55,9 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			bn->T->nil = 1;												\
 		} else															\
 			FUNC(yp,x);													\
-		bunfastins(bn, h, yp);											\
+		bunfastapp(bn, yp);												\
 	}																	\
-	bn->H->nonil = b->H->nonil;											\
-	bn->H->nil = b->H->nil;												\
+	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
@@ -115,17 +110,13 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b3->batCacheid);									\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	}																	\
-	bn= BATnew(b->htype,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= BATnew(TYPE_void,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
 		BBPunfix(b3->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
-	if( b->htype== TYPE_void)											\
-		BATseqbase(bn, b->hseqbase);									\
-	bn->hsorted=b->hsorted;												\
-	bn->hrevsorted=b->hrevsorted;										\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
 	bn->T->nil = 0;														\
@@ -138,7 +129,6 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	p2= BUNfirst(b2);													\
 	p3= BUNfirst(b3);													\
 	BATloop(b, p, q) {													\
-		ptr h = BUNhead(bi,p);											\
 		x= (TYPE *) BUNtail(bi,p);										\
 		x2= (TYPE *) BUNtail(b2i,p);									\
 		x3= (TYPE *) BUNtail(b3i,p);									\
@@ -150,12 +140,11 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			bn->T->nil = 1;												\
 		} else															\
 			FUNC(yp,x,x2,x3);											\
-		bunfastins(bn, h, yp);											\
+		bunfastapp(bn, yp);												\
 		p2++;															\
 		p3++;															\
 	}																	\
-	bn->H->nonil = b->H->nonil;											\
-	bn->H->nil = b->H->nil;												\
+	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\

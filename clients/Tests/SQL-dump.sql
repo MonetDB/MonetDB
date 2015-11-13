@@ -52,7 +52,7 @@
 \dSv sys.tracelog
 \dSv sys.users
 
--- select distinct name from sys.functions where sql = true order by name;
+-- select distinct '\\dSf ' || s.name || '.' || f.name from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id order and s.name = 'sys' by s.name, f.name;
 \dSf sys.Intersect
 \dSf sys.Union
 \dSf sys.abbrev
@@ -65,8 +65,7 @@
 \dSf sys.broadcast
 \dSf sys.buffer
 \dSf sys.chi2prob
-\dSf sys.cluster1
-\dSf sys.cluster2
+\dSf sys.clearrejects
 \dSf sys.columnsize
 \dSf sys.contains
 \dSf sys.convexhull
@@ -99,8 +98,11 @@
 \dSf sys.env
 \dSf sys.envelope
 \dSf sys.environment
+\dSf sys.epoch
 \dSf sys.equals
 \dSf sys.evalalgebra
+\dSf sys.fitsattach
+\dSf sys.fitsload
 \dSf sys.fuse
 \dSf sys.generate_series
 \dSf sys.geomcollectionfromtext
@@ -130,9 +132,13 @@
 \dSf sys.isauuid
 \dSf sys.isempty
 \dSf sys.issimple
+\dSf sys.left_shift
+\dSf sys.left_shift_assign
 \dSf sys.length
 \dSf sys.like
 \dSf sys.linefromtext
+\dSf sys.listdir
+\dSf sys.listdirpat
 \dSf sys.masklen
 \dSf sys.mbr
 \dSf sys.mbroverlaps
@@ -145,6 +151,8 @@
 \dSf sys.ms_str
 \dSf sys.ms_stuff
 \dSf sys.ms_trunc
+\dSf sys.netcdf_attach
+\dSf sys.netcdf_importvar
 \dSf sys.netmask
 \dSf sys.network
 \dSf sys.newurl
@@ -157,6 +165,8 @@
 \dSf sys.pointfromtext
 \dSf sys.polyfromtext
 \dSf sys.polygonfromtext
+\dSf sys.profiler_openstream
+\dSf sys.profiler_stethoscope
 \dSf sys.quantile
 \dSf sys.querycache
 \dSf sys.querylog
@@ -167,10 +177,13 @@
 \dSf sys.querylog_enable
 \dSf sys.queue
 \dSf sys.radians
+\dSf sys.rejects
 \dSf sys.relate
 \dSf sys.resume
 \dSf sys.reuse
 \dSf sys.reverse
+\dSf sys.right_shift
+\dSf sys.right_shift_assign
 \dSf sys.sessions
 \dSf sys.setmasklen
 \dSf sys.setsession
@@ -185,9 +198,13 @@
 \dSf sys.storagemodel
 \dSf sys.storagemodelinit
 \dSf sys.str_to_date
+\dSf sys.str_to_time
+\dSf sys.str_to_timestamp
 \dSf sys.symdifference
 \dSf sys.text
+\dSf sys.time_to_str
 \dSf sys.times
+\dSf sys.timestamp_to_str
 \dSf sys.touches
 \dSf sys.tracelog
 \dSf sys.uuid

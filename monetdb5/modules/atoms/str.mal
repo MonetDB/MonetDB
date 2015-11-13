@@ -25,7 +25,7 @@ address STRLength
 comment "Return the length of a string.";
 
 command stringlength( s:str ) :int
-address STRstringLength
+address STRSQLLength
 comment "Return the length of a right trimed string (SQL semantics).";
 
 command nbytes( s:str ) :int
@@ -39,13 +39,6 @@ comment "get a unicode character
 command unicode(wchar:int) :str
 address STRFromWChr
 comment "convert a unicode to a character.";
-
-command codeset() :str
-address STRcodeset
-comment "Return the locale's codeset";
-command iconv(org:str,fromCs:str,toCs:str):str
-address STRIconv
-comment "String codeset conversion";
 
 command startsWith(s:str,prefix:str):bit
 address STRPrefix
