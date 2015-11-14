@@ -18,7 +18,7 @@
 
 #include "gdk.h"
 
-#ifdef HAVE_SAMTOOLS_SAM_H
+#ifdef HAVE_SAMTOOLS
 #include <samtools/sam.h>
 #else
 #include <bam/sam.h>
