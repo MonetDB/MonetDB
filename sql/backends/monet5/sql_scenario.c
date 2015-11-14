@@ -445,7 +445,7 @@ SQLinitClient(Client c)
 		MCpushClientInput(c, fdin, 0, "");
 	}
 	if (c->sqlcontext == 0) {
-		m = mvc_create(c->idx, c->idx /*0*/, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;

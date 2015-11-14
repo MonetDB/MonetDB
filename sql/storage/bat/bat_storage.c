@@ -12,7 +12,6 @@
 #include <sql_string.h>
 #include <algebra.h>
 #include <gdk_atoms.h>
-#include <orderidx.h>
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
@@ -1169,8 +1168,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		sql_column *c = ni->t->columns.set->h->data;
 		sql_delta *d;
 	       
-		if (ni->type == ordered_idx) 
-			c = ((sql_kc*)ni->columns->h->data)->c;
 		if (!c->data) {
 			sql_column *oc = tr_find_column(tr->parent, c);
 			c->data = timestamp_delta(oc->data, tr->stime);
@@ -1179,19 +1176,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		/* Here we also handle indices created through alter stmts */
 		/* These need to be created aligned to the existing data */
 
-		if (ni->type == ordered_idx) {
-			Client cntxt = mal_clients+tr->stk;
-			BAT *b = temp_descriptor(d->bid);
-			str msg;
-
-			/* what to do with the result msg */
-			msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_oid,b->ttype), b, -1);
-			assert(msg == NULL);
-			bat->bid = b->torderidx;
-			(void)msg;
-			bat_destroy(b);
-		} else
-			bat->bid = copyBat(d->bid, type, 0);
+		bat->bid = copyBat(d->bid, type, 0);
 		bat->ibid = copyBat(d->ibid, type, d->ibase);
 		bat->ibase = d->ibase;
 		bat->cnt = d->cnt;
@@ -1381,24 +1366,6 @@ destroy_idx(sql_trans *tr, sql_idx *i)
 
 	if (i->data && i->base.allocated) {
 		i->base.allocated = 0;
-		if (i->type == ordered_idx) {
-			sql_column *c = ((sql_kc*)i->columns->h->data)->c;
-			sql_delta *d;
-			BAT *b;
-
-			if (!c->data || !c->base.allocated) {
-				int type = c->type.type->localtype;
-				sql_column *oc = tr_find_column(tr->parent, c);
-				sql_delta *bat = c->data = ZNEW(sql_delta), *obat = oc->data;
-				ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
-				c->base.allocated = 1;
-			}
-			d = c->data;
-			b = temp_descriptor(d->bid);
-			b->torderidx = 0;
-			b->batDirtydesc = TRUE;
-			bat_destroy(b);
-		}
        		ok = destroy_bat(tr, i->data);
 	}
 	i->data = NULL;

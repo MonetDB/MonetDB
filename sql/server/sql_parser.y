@@ -487,7 +487,7 @@ int yydebug=1;
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
-%token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY
+%token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
@@ -1215,7 +1215,6 @@ index_def:
 
 opt_index_type:
      UNIQUE		{ $$ = hash_idx; }
- |   ORDERED		{ $$ = ordered_idx; }
  |   /* empty */	{ $$ = hash_idx; }
  ;
 
