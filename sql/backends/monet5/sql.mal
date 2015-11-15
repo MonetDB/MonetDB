@@ -483,6 +483,14 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
+pattern createorderindex(sch:str,tbl:str,col:str)
+address sql_createorderindex
+comment "Instantiate the order index on a column";
+
+pattern droporderindex(sch:str,tbl:str,col:str)
+address sql_droporderindex
+comment "Drop the order index on a column";
+
 command calc.identity(:any_2) :oid 
 address SQLidentity
 comment "Returns a unique row identitfier.";

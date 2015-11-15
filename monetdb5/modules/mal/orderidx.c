@@ -17,6 +17,18 @@
 #define MIN_PIECE 2	/* TODO use realistic size in production */
 
 str
+OIDXdropImplementation(Client cntxt, BAT *b)
+{
+	str msg = MAL_SUCCEED;
+	(void) cntxt;
+	(void) b;
+	if ( b->torderidx){
+		// drop the order index heap
+	}
+	return msg;
+}
+
+str
 OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 {
 	int i, loopvar, arg;
@@ -156,6 +168,26 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	int *ret = getArgReference_bat(stk,pci,0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+
+	(void) cntxt;
+	(void) mb;
+
+	b = BATdescriptor(bid);
+	if (b == NULL)
+		throw(MAL, "bat.hasorderidx", RUNTIME_OBJECT_MISSING);
+
+	*ret = b->torderidx;
+
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -165,12 +197,12 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 
-	*ret = b->torderidx;
+	// make a copy of the order index for inpection
+	*ret = 0;
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

@@ -4,7 +4,8 @@ select * from xtmp1;
 
 select schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage where "table" = 'xtmp1';
 alter table xtmp1 set READ ONLY;
-create ordered index sys_xtmp1_i_oidx on xtmp1 (i);
+call createorderindex('sys','xtmp1','i');
+--create ordered index sys_xtmp1_i_oidx on xtmp1 (i);
 
 select schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage where "table" = 'xtmp1';
 
@@ -17,5 +18,7 @@ select * from xtmp1 where i <8;
 select * from xtmp1 where i>=0 and i <8;
 select * from xtmp1 where i>=2 and i <=2;
 
-drop index sys_xtmp1_i_oidx;
+call droporderindex('sys','xtmp1','i');
+--drop index sys_xtmp1_i_oidx;
+
 drop table xtmp1;

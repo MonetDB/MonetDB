@@ -6,7 +6,10 @@
 
 -- Experimental oid index
 
-create procedure orderidx(sys string, tab string, col string)
-	external name sql.orderidx;
+create procedure sys.createorderindex(sys string, tab string, col string)
+	external name sql.createorderindex;
+
+create procedure sys.droporderindex(sys string, tab string, col string)
+	external name sql.droporderindex;
 
 
