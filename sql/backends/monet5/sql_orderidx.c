@@ -26,10 +26,8 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
 	str sch,tbl,col;
-	node *nsch, *ntab, *ncol;
-	BAT *bn;
+	sql_schema *s;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -41,38 +39,20 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_SQL_ORDERIDX
 	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_base *b = nsch->data;
-		sql_schema *s = (sql_schema *) nsch->data;
-		if (!isalpha((int) b->name[0]))
-			continue;
-		if (sch && strcmp(sch, b->name))
-			continue;
-		if (s->tables.set)
-			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
-				sql_base *bt = ntab->data;
-				sql_table *t = (sql_table *) bt;
+	s = mvc_bind_schema(m, sch);
+	if (s) {
+		sql_table *t = mvc_bind_table(m, s, tbl);
+		if (t && isTable(t)) {
+			sql_column *c = mvc_bind_column(m, t, col);
+			BAT *bn = store_funcs.bind_col(m->session->tr, c, 0);
 
-				if (tbl && strcmp(bt->name, tbl))
-					continue;
-				if (isTable(t) && t->columns.set)
-					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
-						sql_base *bc = ncol->data;
-						sql_column *c = (sql_column *) ncol->data;
-						if (col && strcmp(bc->name, col))
-							continue;
-						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						if ( bn == 0){
-							msg = createException(SQL,"sql","Column can not be accessed");
-							break;
-						}
-						// create the ordered index on the column
-						msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,bn->ttype), bn, -1);
-						BBPunfix(bn->batCacheid);
-						if( msg)
-							break;
-					}
+			if (bn == 0) {
+				msg = createException(SQL,"sql","Column can not be accessed");
+			} else { // create the ordered index on the column
+				msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,bn->ttype), bn, -1);
+				BBPunfix(bn->batCacheid);
 			}
+		}
 	}
 	return msg;
 }
@@ -83,9 +63,7 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	str sch,tbl,col;
-	sql_trans *tr = m->session->tr;
-	node *nsch, *ntab, *ncol;
-	BAT *bn;
+	sql_schema *s;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -97,34 +75,21 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_SQL_ORDERIDX
 	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_base *b = nsch->data;
-		sql_schema *s = (sql_schema *) nsch->data;
-		if (!isalpha((int) b->name[0]))
-			continue;
-		if (sch && strcmp(sch, b->name))
-			continue;
-		if (s->tables.set)
-			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
-				sql_base *bt = ntab->data;
-				sql_table *t = (sql_table *) bt;
+	s = mvc_bind_schema(m, sch);
+	if (s) {
+		sql_table *t = mvc_bind_table(m, s, tbl);
+		if (t && isTable(t)) {
+			sql_column *c = mvc_bind_column(m, t, col);
+			BAT *bn = store_funcs.bind_col(m->session->tr, c, 0);
 
-				if (tbl && strcmp(bt->name, tbl))
-					continue;
-				if (isTable(t) && t->columns.set)
-					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
-						sql_base *bc = ncol->data;
-						sql_column *c = (sql_column *) ncol->data;
-						if (col && strcmp(bc->name, col))
-							continue;
-						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						// create the ordered index on the column
-						msg = OIDXdropImplementation(cntxt, bn);
+			if (bn == 0) {
+				msg = createException(SQL,"sql","Column can not be accessed");
+			} else {
+				msg = OIDXdropImplementation(cntxt, bn);
 
-						BBPunfix(bn->batCacheid);
-						(void) c;
-					}
+				BBPunfix(bn->batCacheid);
 			}
+		}
 	}
 	return MAL_SUCCEED;
 }
