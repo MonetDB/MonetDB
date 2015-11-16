@@ -7,3 +7,6 @@ CREATE REMOTE  TABLE rt1 (t int)  on 'mapi:monetdb://localhost:50000/test';
 \d rt1
 \D
 
+DROP TABLE rt1;
+DROP TABLE mt1;
+DROP TABLE t1;
