@@ -1051,11 +1051,11 @@ bailout:
 		do {							\
 			__cur = __min;					\
 			if (left_child(__cur) < n_ar &&			\
-				minhp[left_child(__cur)] < minhp[(__min)]) { \
+				minhp[left_child(__cur)] < minhp[__min]) { \
 				__min = left_child(__cur);		\
 			}						\
 			if (right_child(__cur) < n_ar &&		\
-				minhp[right_child(__cur)] < minhp[(__min)]) { \
+				minhp[right_child(__cur)] < minhp[__min]) { \
 				__min = right_child(__cur);		\
 			}						\
 			if (__min != __cur) {				\

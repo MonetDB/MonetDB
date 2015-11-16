@@ -187,7 +187,6 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#if 0
 str
 OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -212,7 +211,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
 	}
-	memcpy(Tloc(bn, BUNfirst(bn)), b->torderidx->base, BATcount(b) * sizeof(oid));
+	memcpy(Tloc(bn, BUNfirst(bn)), (const oid *) b->torderidx->base + ORDERIDXOFF, BATcount(b) * sizeof(oid));
 	BATsetcount(bn, BATcount(b));
 	BATseqbase(bn, 0);
 	bn->tkey = 1;
@@ -224,7 +223,6 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-#endif
 
 /*
  * Merge the collection of sorted OID BATs into one

@@ -14,6 +14,10 @@ pattern bat.hasorderidx(bv:bat[:oid,:any_1]):bit
 address OIDXhasorderidx
 comment "Return true if order index exists";
 
+pattern bat.getorderidx(bv:bat[:oid,:any_1]):bat[:oid,:oid]
+address OIDXgetorderidx
+comment "Return the order index if it exists";
+
 function algebra.orderidx(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
 	(v,o):= algebra.subsort(bv,reverse,stable);
 	return sortorder:= o;
