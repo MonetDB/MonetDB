@@ -639,7 +639,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
-		int len;
+		int len, slen;
 
 		for (e = s; *e; e++) ;
 		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
@@ -665,7 +665,9 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 			/* or shouldn't len rather be ssize_t, here? */
 			return NULL;
 		}
-		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
+		s = c->data;
+		STRLength(&slen, (const str *) &s);
+		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
 			len = STRwidth(c->data);
 			if (len > (int) col->type.digits)
 				return NULL;

@@ -89,3 +89,7 @@ missed-error.Bug-3842
 constant-random.Bug-3836
 limit_dbl.Bug-3847
 limit_too_large_value.Bug-3857
+msqldump-merge-and-remote-tables.Bug-3774
+update_with_without_parenthesis.Bug-3838
+msqldump_generates_incorrect_syntax_ON_UPDATE_null.Bug-3839
+
