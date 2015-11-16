@@ -86,3 +86,7 @@ HAVE_HGE?hugeint-wrong-value.Bug-3849
 dump-DELETE.Bug-3850
 limit_dbl.Bug-3847
 limit_too_large_value.Bug-3857
+msqldump-merge-and-remote-tables.Bug-3774
+update_with_without_parenthesis.Bug-3838
+msqldump_generates_incorrect_syntax_ON_UPDATE_null.Bug-3839
+
