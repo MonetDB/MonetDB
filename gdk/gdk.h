@@ -896,7 +896,7 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-#define ORDERIDXOFF		1
+#define ORDERIDXOFF		2
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))

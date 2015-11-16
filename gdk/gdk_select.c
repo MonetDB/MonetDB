@@ -1429,8 +1429,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
 	    !(b->tsorted || b->trevsorted) &&
-	    (b->torderidx ||
-	     (VIEWtparent(b) && BBPquickdesc(abs(VIEWtparent(b)), 0)->torderidx)))
+	    (BATcheckorderidx(b) ||
+	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(b)), 0)))))
 	{
 		BAT *view = NULL;
 		if (VIEWtparent(b)) {
