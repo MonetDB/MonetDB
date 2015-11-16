@@ -83,7 +83,7 @@ CREATE TABLE "sys"."foo" (
 	"id"      INTEGER,
 	"barname" CHAR(8)
 );
-ALTER TABLE "sys"."foo" ADD CONSTRAINT "fname" FOREIGN KEY ("barname") REFERENCES "sys"."bar" ("name") ON DELETE CASCADE ON UPDATE SET NULL;
+ALTER TABLE "sys"."foo" ADD CONSTRAINT "fname" FOREIGN KEY ("barname") REFERENCES "sys"."bar" ("name") ON DELETE CASCADE;
 COMMIT;
 
 # 16:37:07 >  
