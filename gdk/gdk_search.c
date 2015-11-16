@@ -685,13 +685,14 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	BUN lo, hi, mid;
 	int cmp;
 	BUN cur;
-	BAT *o = NULL;
-	BATiter bi, bio;
+	const oid *o = NULL;
+	BATiter bi;
 	BUN diff, end;
 	int tp;
 
-	if (b == NULL || (!b->tsorted && !b->trevsorted && !use_orderidx)
-	              || (use_orderidx && !b->torderidx))
+	if (b == NULL ||
+	    (!b->tsorted && !b->trevsorted &&
+	     (!use_orderidx || b->torderidx == NULL)))
 		return BUN_NONE;
 
 	lo = BUNfirst(b);
@@ -728,37 +729,36 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	tp = ATOMbasetype(b->ttype);
 
 	if (use_orderidx) {
-		o = BATdescriptor(b->torderidx);
+		o = (const oid *) b->torderidx->base + ORDERIDXOFF;
 		if (o == NULL) {
 			GDKerror("#ORDERfindwhich: order idx not found\n");
 		}
-		lo = BUNfirst(o);
-		hi = BUNlast(o);
-		bio = bat_iterator(o);
+		lo = 0;
+		hi = BATcount(b);
 	}
 
 	switch (which) {
 	case FIND_FIRST:
 		end = lo;
 		if (lo >= hi ||
-		    (use_orderidx && (atom_GE(BUNtail(bi,*(oid *)BUNtail(bio,lo) - b->hseqbase + BUNfirst(b)), v, b->ttype))) ||
-		    (!use_orderidx && (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype)))) {
+		    (use_orderidx ?
+		     (atom_GE(BUNtail(bi, o[lo] - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
 			 * or <= v (if revsorted), we're done */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return lo;
 		}
 		break;
 	case FIND_LAST:
 		end = hi;
 		if (lo >= hi ||
-		    (use_orderidx && (atom_LE(BUNtail(bi,*(oid *)BUNtail(bio,hi-1) - b->hseqbase + BUNfirst(b)), v, b->ttype))) ||
-		    (!use_orderidx && (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype)))) {
+		    (use_orderidx ?
+		     (atom_LE(BUNtail(bi, o[hi - 1] - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return hi;
 		}
 		break;
@@ -766,42 +766,12 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = 0;	/* not used in this case */
 		if (lo >= hi) {
 			/* empty BAT: value not found */
-			if (use_orderidx) BBPunfix(o->batCacheid);
 			return BUN_NONE;
 		}
 		break;
 	}
 
-	if (use_orderidx) {
-		switch (tp) {
-		case TYPE_bte:
-			SORTfndloop(bte, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-		case TYPE_sht:
-			SORTfndloop(sht, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-		case TYPE_int:
-			SORTfndloop(int, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-		case TYPE_lng:
-			SORTfndloop(lng, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			SORTfndloop(hge, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-#endif
-		case TYPE_flt:
-			SORTfndloop(flt, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-		case TYPE_dbl:
-			SORTfndloop(dbl, simple_CMP, BUNtloc, *(oid *)BUNtail(bio,cur) - b->hseqbase + BUNfirst(b));
-			break;
-		default:
-			assert(0);
-			break;
-		}
-	} else if (b->tsorted) {
+	if (b->tsorted) {
 		switch (tp) {
 		case TYPE_bte:
 			SORTfndloop(bte, simple_CMP, BUNtloc, cur);
@@ -833,7 +803,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 				SORTfndloop(b->ttype, atom_CMP, BUNtloc, cur);
 			break;
 		}
-	} else {
+	} else if (b->trevsorted) {
 		switch (tp) {
 		case TYPE_bte:
 			SORTfndloop(bte, -simple_CMP, BUNtloc, cur);
@@ -865,6 +835,36 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 				SORTfndloop(b->ttype, -atom_CMP, BUNtloc, cur);
 			break;
 		}
+	} else {
+		assert(use_orderidx);
+		switch (tp) {
+		case TYPE_bte:
+			SORTfndloop(bte, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+		case TYPE_sht:
+			SORTfndloop(sht, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+		case TYPE_int:
+			SORTfndloop(int, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+		case TYPE_lng:
+			SORTfndloop(lng, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SORTfndloop(hge, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+#endif
+		case TYPE_flt:
+			SORTfndloop(flt, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+		case TYPE_dbl:
+			SORTfndloop(dbl, simple_CMP, BUNtloc, o[cur] - b->hseqbase + BUNfirst(b));
+			break;
+		default:
+			assert(0);
+			break;
+		}
 	}
 
 	switch (which) {
@@ -873,7 +873,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shift over multiple equals */
 			for (diff = cur - end; diff; diff >>= 1) {
 				while (cur >= end + diff &&
-				       atom_EQ(BUNtail(bi, use_orderidx ? *(oid *)BUNtail(bio, cur - diff) - b->hseqbase + BUNfirst(b) : cur - diff), v, b->ttype))
+				       atom_EQ(BUNtail(bi, use_orderidx ? o[cur - diff] - b->hseqbase + BUNfirst(b) : cur - diff), v, b->ttype))
 					cur -= diff;
 			}
 		}
@@ -883,7 +883,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 			/* shift over multiple equals */
 			for (diff = (end - cur) >> 1; diff; diff >>= 1) {
 				while (cur + diff < end &&
-				       atom_EQ(BUNtail(bi, use_orderidx ? *(oid *)BUNtail(bio, cur + diff) - b->hseqbase + BUNfirst(b) : cur + diff), v, b->ttype))
+				       atom_EQ(BUNtail(bi, use_orderidx ? o[cur + diff] - b->hseqbase + BUNfirst(b) : cur + diff), v, b->ttype))
 					cur += diff;
 			}
 		}
@@ -897,7 +897,6 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		break;
 	}
 
-	if (use_orderidx) BBPunfix(o->batCacheid);
 	return cur;
 }
 
@@ -946,4 +945,190 @@ BUN
 ORDERfndlast(BAT *b, const void *v)
 {
 	return SORTfndwhich(b, v, FIND_LAST, 1);
+}
+
+gdk_return
+GDKmergeidx(BAT *b, BAT**a, int n_ar)
+{
+	Heap *m;
+	int i;
+	size_t nmelen;
+	oid *restrict mv;
+
+	nmelen = strlen(BBP_physical(b->batCacheid)) + 10;
+	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
+	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
+	    (m->filename = GDKmalloc(nmelen)) == NULL ||
+	    snprintf(m->filename, nmelen, "%s.torderidx",
+		     BBP_physical(b->batCacheid)) < 0 ||
+	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
+		if (m)
+			GDKfree(m->filename);
+		GDKfree(m);
+		return GDK_FAIL;
+	}
+	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
+
+	mv = (oid *) m->base;
+	*mv++ = 0;
+
+	if (n_ar == 1) {
+		/* One oid order bat, nothing to merge */
+		memcpy(mv, Tloc(a[0], BUNfirst(a[0])), BATcount(b) * SIZEOF_OID);
+	} else {
+		/* sort merge with 1 comparison per BUN */
+		if (n_ar == 2) {
+			const oid *p0, *p1, *q0, *q1;
+			p0 = (const oid *) Tloc(a[0], BUNfirst(a[0]));
+			q0 = (const oid *) Tloc(a[0], BUNlast(a[0]));
+			p1 = (const oid *) Tloc(a[1], BUNfirst(a[1]));
+			q1 = (const oid *) Tloc(a[1], BUNlast(a[1]));
+
+#define BINARY_MERGE(TYPE)						\
+	do {								\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
+		while (p0 < q0 && p1 < q1) {				\
+			if (v[*p0 - b->hseqbase] < v[*p1 - b->hseqbase]) { \
+				*mv++ = *p0++;				\
+			} else {					\
+				*mv++ = *p1++;				\
+			}						\
+		}							\
+		while (p0 < q0) {					\
+			*mv++ = *p0++;					\
+		}							\
+		while (p1 < q1) {					\
+			*mv++ = *p1++;					\
+		}							\
+	} while(0)
+
+			switch (ATOMstorage(b->ttype)) {
+			case TYPE_bte: BINARY_MERGE(bte); break;
+			case TYPE_sht: BINARY_MERGE(sht); break;
+			case TYPE_int: BINARY_MERGE(int); break;
+			case TYPE_lng: BINARY_MERGE(lng); break;
+#ifdef HAVE_HGE
+			case TYPE_hge: BINARY_MERGE(hge); break;
+#endif
+			case TYPE_flt: BINARY_MERGE(flt); break;
+			case TYPE_dbl: BINARY_MERGE(dbl); break;
+			case TYPE_str:
+			default:
+				/* TODO: support strings, date, timestamps etc. */
+				assert(0);
+				HEAPfree(m, 1);
+				GDKfree(m);
+				return GDK_FAIL;
+			}
+
+		/* use min-heap */
+		} else {
+			oid **p, **q, *t_oid;
+
+			p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+			q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+			if (p == NULL || q == NULL) {
+bailout:
+				GDKfree(p);
+				GDKfree(q);
+				HEAPfree(m, 1);
+				GDKfree(m);
+				return GDK_FAIL;
+			}
+			for (i = 0; i < n_ar; i++) {
+				p[i] = (oid *) Tloc(a[i], BUNfirst(a[i]));
+				q[i] = (oid *) Tloc(a[i], BUNlast(a[i]));
+			}
+
+#define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
+
+#define left_child(X)  (2*(X)+1)
+#define right_child(X) (2*(X)+2)
+
+#define HEAPIFY(X)							\
+	do {								\
+		int __cur, __min = X;					\
+		do {							\
+			__cur = __min;					\
+			if (left_child(__cur) < n_ar &&			\
+				minhp[left_child(__cur)] < minhp[(__min)]) { \
+				__min = left_child(__cur);		\
+			}						\
+			if (right_child(__cur) < n_ar &&		\
+				minhp[right_child(__cur)] < minhp[(__min)]) { \
+				__min = right_child(__cur);		\
+			}						\
+			if (__min != __cur) {				\
+				swap(minhp[__cur], minhp[__min], t);	\
+				swap(p[__cur], p[__min], t_oid);	\
+				swap(q[__cur], q[__min], t_oid);	\
+			}						\
+		} while (__cur != __min);				\
+	} while (0)
+
+#define NWAY_MERGE(TYPE)						\
+	do {								\
+		TYPE *minhp, t;						\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
+		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) { \
+			goto bailout;					\
+		}							\
+		/* init min heap */					\
+		for (i = 0; i < n_ar; i++) {				\
+			minhp[i] = v[*p[i] - b->hseqbase];		\
+		}							\
+		for (i = n_ar/2; i >=0 ; i--) {				\
+			HEAPIFY(i);					\
+		}							\
+		/* merge */						\
+		while (n_ar > 1) {					\
+			*mv++ = *(p[0])++;				\
+			if (p[0] < q[0]) {				\
+				minhp[0] = v[*p[0] - b->hseqbase];	\
+			} else {					\
+				swap(minhp[0], minhp[n_ar-1], t);	\
+				swap(p[0], p[n_ar-1], t_oid);		\
+				swap(q[0], q[n_ar-1], t_oid);		\
+				n_ar--;					\
+			}						\
+			HEAPIFY(0);					\
+		}							\
+		while (p[0] < q[0]) {					\
+			*mv++ = *(p[0])++;				\
+		}							\
+		GDKfree(minhp);						\
+	} while (0)
+
+			switch (ATOMstorage(b->ttype)) {
+			case TYPE_bte: NWAY_MERGE(bte); break;
+			case TYPE_sht: NWAY_MERGE(sht); break;
+			case TYPE_int: NWAY_MERGE(int); break;
+			case TYPE_lng: NWAY_MERGE(lng); break;
+#ifdef HAVE_HGE
+			case TYPE_hge: NWAY_MERGE(hge); break;
+#endif
+			case TYPE_flt: NWAY_MERGE(flt); break;
+			case TYPE_dbl: NWAY_MERGE(dbl); break;
+			case TYPE_void:
+			case TYPE_str:
+			case TYPE_ptr:
+			default:
+				/* TODO: support strings, date, timestamps etc. */
+				assert(0);
+				goto bailout;
+			}
+			GDKfree(p);
+			GDKfree(q);
+		}
+	}
+
+	if (HEAPsave(m, BBP_physical(b->batCacheid), "torderidx") != GDK_SUCCEED) {
+		HEAPfree(m, 1);
+		GDKfree(m);
+		return GDK_FAIL;
+	}
+
+	b->batDirtydesc = TRUE;
+	b->torderidx = m;
+	return GDK_SUCCEED;
 }

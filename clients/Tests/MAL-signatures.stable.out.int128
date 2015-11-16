@@ -40254,10 +40254,6 @@ command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BKCdelete_bat_bun;
 comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
 
-pattern bat.getorderidx(bv:bat[:oid,:any_1]):bat[:oid,:oid] 
-address OIDXgetorderidx;
-comment Return the order index oid bat if exists (not safe, for debug)
-
 command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
@@ -40285,6 +40281,10 @@ comment Returns the current allocation size (in max number of elements) of a BAT
 command bat.getSize(b:bat[:oid,:any_1]):lng 
 address BKCgetSize;
 comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
+
+pattern bat.hasorderidx(bv:bat[:oid,:any_1]):bit 
+address OIDXhasorderidx;
+comment Return true if order index exists
 
 command bat.imprintsize(b:bat[:oid,:hge]):lng 
 address CMDBATimprintsize;
@@ -51446,6 +51446,10 @@ pattern sql.copy_rejects_clear():void
 address COPYrejects_clear;
 pattern sql.copy_rejects() (rowid:bat[:oid,:lng],fldid:bat[:oid,:int],msg:bat[:oid,:str],inp:bat[:oid,:str]) 
 address COPYrejects;
+pattern sql.createorderindex(sch:str,tbl:str,col:str):void 
+address sql_createorderindex;
+comment Instantiate the order index on a column
+
 pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int,best:int):bat[:oid,:any]... 
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
@@ -51565,6 +51569,10 @@ comment round off the value v to nearests multiple of r
 command sql.dec_round(v:bte,r:bte):bte 
 address bte_dec_round_wrap;
 comment round off the value v to nearests multiple of r
+
+pattern sql.droporderindex(sch:str,tbl:str,col:str):void 
+address sql_droporderindex;
+comment Drop the order index on a column
 
 pattern sql.dump_trace() (event:bat[:oid,:int],clk:bat[:oid,:str],pc:bat[:oid,:str],thread:bat[:oid,:int],ticks:bat[:oid,:lng],rssMB:bat[:oid,:lng],vmMB:bat[:oid,:lng],reads:bat[:oid,:lng],writes:bat[:oid,:lng],minflt:bat[:oid,:lng],majflt:bat[:oid,:lng],nvcsw:bat[:oid,:lng],stmt:bat[:oid,:str]) 
 address dump_trace;

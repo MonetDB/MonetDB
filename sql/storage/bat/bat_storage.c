@@ -1141,7 +1141,7 @@ snapshot_create_col(sql_trans *tr, sql_column *c)
 	return snapshot_new_persistent_bat( tr, c->data);
 }
 
-/* will be called for new idx's and when new index columns are create */
+/* will be called for new idx's and when new index columns are created */
 static int
 create_idx(sql_trans *tr, sql_idx *ni)
 {

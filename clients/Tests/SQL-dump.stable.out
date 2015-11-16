@@ -122,6 +122,7 @@ SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION  sys.contains
 SYSTEM FUNCTION  sys.convexhull
 SYSTEM FUNCTION  sys.corr
+SYSTEM FUNCTION  sys.createorderindex
 SYSTEM FUNCTION  sys.crosses
 SYSTEM FUNCTION  sys.date_to_str
 SYSTEM FUNCTION  sys.db_users
@@ -147,6 +148,7 @@ SYSTEM FUNCTION  sys.difference
 SYSTEM FUNCTION  sys.dimension
 SYSTEM FUNCTION  sys.disjoint
 SYSTEM FUNCTION  sys.distance
+SYSTEM FUNCTION  sys.droporderindex
 SYSTEM FUNCTION  sys.env
 SYSTEM FUNCTION  sys.envelope
 SYSTEM FUNCTION  sys.environment
@@ -212,7 +214,6 @@ SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
 SYSTEM FUNCTION  sys.optimizer_stats
 SYSTEM FUNCTION  sys.optimizers
-SYSTEM FUNCTION  sys.orderidx
 SYSTEM FUNCTION  sys.overlaps
 SYSTEM FUNCTION  sys.password_hash
 SYSTEM FUNCTION  sys.pause

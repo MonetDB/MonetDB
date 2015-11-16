@@ -4813,7 +4813,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
 
-								sz = bn->torderidx != 0;
+								sz = bn->torderidx ? bn->torderidx->free : 0;
 								BUNappend(oidx, &sz, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
@@ -4892,7 +4892,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
-									sz = bn->torderidx != 0;
+									sz = bn->torderidx ? bn->torderidx->free : 0;
 									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
 								}

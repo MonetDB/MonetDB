@@ -891,18 +891,19 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
-	bat orderidx;		/* order oid index */
+	Heap *orderidx;		/* order oid index */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
+
+#define ORDERIDXOFF		1
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
-#define GDKLIBRARY_NOORDERIDX	061030
-#define GDKLIBRARY		061031
+#define GDKLIBRARY		061030
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2033,6 +2034,8 @@ gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 gdk_export gdk_return BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
+
+gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 
 /*
  * @- Multilevel Storage Modes

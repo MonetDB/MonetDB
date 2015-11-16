@@ -330,8 +330,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
 	/* Order OID index */
-	bn->H->orderidx = 0;
-	bn->T->orderidx = 0;
+	bn->H->orderidx = NULL;
+	bn->T->orderidx = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {

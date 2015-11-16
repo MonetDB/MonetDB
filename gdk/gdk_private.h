@@ -21,7 +21,7 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	arngmentheap
+	orderidxheap
 };
 
 /*

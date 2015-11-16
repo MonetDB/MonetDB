@@ -1583,27 +1583,24 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (use_orderidx) {
 				BUN i;
 				BUN cnt = 0;
-				BAT *order, *slice;
-				oid *rbn, *rs;
+				const oid *rs;
+				oid *rbn;
 
-				if ((order = BATdescriptor(b->torderidx)) == NULL) {
-					GDKerror("Runtime object (order index) not found");
-				}
-				slice = BATslice(order, low + order->hseqbase,
-				                     high + order->hseqbase);
+				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
+				rs += low;
 				bn = BATnew(TYPE_void, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
 					GDKerror("memory allocation error");
 
 				rbn = (oid *) Tloc((bn), 0);
-				rs = (oid *) Tloc((slice), 0);
 
 				if (s && !BATtdense(s)) {
 					const oid *rcand = (const oid *) Tloc((s), 0);
 
-					for (i = 0; i < slice->batCount; i++) {
-						if ((vwl <= *rs) && (*rs < vwh) &&
-							binsearchcand(rcand, 0, s->batCount, *rbn)) {
+					for (i = low; i < high; i++) {
+						if (vwl <= *rs &&
+						    *rs < vwh &&
+						    binsearchcand(rcand, 0, s->batCount, *rbn)) {
 							*rbn++ = *rs;
 							cnt++;
 						}
@@ -1619,8 +1616,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 						if (s->tseqbase + BATcount(s) < vwh)
 							vwh = s->tseqbase + BATcount(s);
 					}
-					for (i = 0; i < slice->batCount; i++) {
-						if ((vwl <= *rs) && (*rs < vwh)) {
+					for (i = low; i < high; i++) {
+						if (vwl <= *rs &&
+						    *rs < vwh) {
 							*rbn++ = *rs;
 							cnt++;
 						}
@@ -1637,9 +1635,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? BUNfirst(bn) : oid_nil;
 				bn->T->nil = 0;
 				bn->T->nonil = 1;
-
-				BBPunfix(order->batCacheid);
-				BBPunfix(slice->batCacheid);
 			} else {
 				/* match: [low..high) */
 				if (s) {

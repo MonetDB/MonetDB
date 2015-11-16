@@ -135,7 +135,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		newstk->stk[arg].vtype= TYPE_bat;
 		newstk->stk[arg].val.bval= b->batCacheid;
 		BBPincref(newstk->stk[arg].val.bval, TRUE);
-        	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
+		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
 #ifdef _DEBUG_OIDX_
@@ -171,7 +171,7 @@ str
 OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
-	int *ret = getArgReference_bat(stk,pci,0);
+	bit *ret = getArgReference_bit(stk,pci,0);
 	bat bid = *getArgReference_bat(stk, pci, 1);
 
 	(void) cntxt;
@@ -181,16 +181,18 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.hasorderidx", RUNTIME_OBJECT_MISSING);
 
-	*ret = b->torderidx;
+	*ret = b->torderidx != NULL;
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
+#if 0
 str
 OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
+	BAT *bn;
 	bat *ret = getArgReference_bat(stk,pci,0);
 	bat bid = *getArgReference_bat(stk, pci, 1);
 
@@ -201,12 +203,28 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 
-	// make a copy of the order index for inpection
-	*ret = 0;
+	if (b->torderidx == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
+	}
 
+	if ((bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
+	}
+	memcpy(Tloc(bn, BUNfirst(bn)), b->torderidx->base, BATcount(b) * sizeof(oid));
+	BATsetcount(bn, BATcount(b));
+	BATseqbase(bn, 0);
+	bn->tkey = 1;
+	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+#endif
 
 /*
  * Merge the collection of sorted OID BATs into one
@@ -218,8 +236,9 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat bid;
 	BAT *b;
 	BAT **a;
-	BAT *m; /* merged oid's */
 	int i, j, n_ar;
+	BUN m_sz;
+	gdk_return rc;
 
 	(void) cntxt;
 	(void) mb;
@@ -235,6 +254,8 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
 	assert(BAThdense(b));	/* assert void headed */
+	assert(b->torderidx == NULL);
+
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
@@ -251,6 +272,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_ptr:
 	default:
 		/* TODO: support strings, date, timestamps etc. */
+		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 	}
 
@@ -258,6 +280,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
 	}
+	m_sz = 0;
 	for (i = 0; i < n_ar; i++) {
 		a[i] = BATdescriptor(*getArgReference_bat(stk, pci, i+2));
 		if (a[i] == NULL) {
@@ -268,11 +291,13 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(bid);
 			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 		}
+		m_sz += BATcount(a[i]);
 		if (BATcount(a[i]) == 0) {
 			BBPunfix(a[i]->batCacheid);
 			a[i] = NULL;
 		}
 	}
+	assert(m_sz == BATcount(b));
 	for (i = 0; i < n_ar; i++) {
 		if (a[i] == NULL) {
 			n_ar--;
@@ -281,193 +306,23 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			i--;
 		}
 	}
-
-	if (n_ar == 1) {
-		/* One oid order bat, nothing to merge */
-		if (a[0]->batRole != PERSISTENT) {
-			m = BATcopy(a[0], a[0]->htype, a[0]->ttype, 0, PERSISTENT);
-			BBPunfix(a[0]->batCacheid);
-		} else {
-			m = a[0];
-		}
-	} else {
-		oid *mv;
-		BUN m_sz;
-
-		for (i=0, m_sz = 0; i < n_ar; i++)
-			m_sz += BATcount(a[i]);
-
-		m = BATnew(TYPE_void, TYPE_oid, m_sz, PERSISTENT);
-		if (m == NULL) {
-			for (i = 0; i < n_ar; i++)
-				BBPunfix(a[i]->batCacheid);
-			BBPunfix(bid);
-			GDKfree(a);
-			throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
-		}
-		mv = (oid *) Tloc(m, BUNfirst(m));
-
-		/* sort merge with 1 comparison per BUN */
-		if (n_ar == 2) {
-			oid *p0, *p1, *q0, *q1;
-			p0 = (oid *) Tloc(a[0], BUNfirst(a[0]));
-			q0 = (oid *) Tloc(a[0], BUNlast(a[0]));
-			p1 = (oid *) Tloc(a[1], BUNfirst(a[1]));
-			q1 = (oid *) Tloc(a[1], BUNlast(a[1]));
-
-#define BINARY_MERGE(TYPE)										\
-	do {														\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));				\
-		while (p0 < q0 && p1 < q1) {							\
-			if (v[*p0 - b->hseqbase] < v[*p1 - b->hseqbase]) {	\
-				*mv++ = *p0++;									\
-			} else {											\
-				*mv++ = *p1++;									\
-			}													\
-		}														\
-		while (p0 < q0) {										\
-			*mv++ = *p0++;										\
-		}														\
-		while (p1 < q1) {										\
-			*mv++ = *p1++;										\
-		}														\
-	} while(0)
-
-			switch (ATOMstorage(b->ttype)) {
-			case TYPE_bte: BINARY_MERGE(bte); break;
-			case TYPE_sht: BINARY_MERGE(sht); break;
-			case TYPE_int: BINARY_MERGE(int); break;
-			case TYPE_lng: BINARY_MERGE(lng); break;
-#ifdef HAVE_HGE
-			case TYPE_hge: BINARY_MERGE(hge); break;
-#endif
-			case TYPE_flt: BINARY_MERGE(flt); break;
-			case TYPE_dbl: BINARY_MERGE(dbl); break;
-			case TYPE_str:
-			default:
-				/* TODO: support strings, date, timestamps etc. */
-				throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
-			}
-
-		/* use min-heap */
-		} else {
-			oid **p, **q, *t_oid;
-
-			p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-			q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-			if (p == NULL || q == NULL) {
-bailout:
-				BBPunfix(bid);
-				BBPreclaim(m);
-				for (i = 0; i < n_ar; i++)
-					BBPunfix(a[i]->batCacheid);
-				GDKfree(a);
-				GDKfree(p);
-				GDKfree(q);
-				throw(MAL,"bat.orderidx", MAL_MALLOC_FAIL);
-			}
-			for (i = 0; i < n_ar; i++) {
-				p[i] = (oid *) Tloc(a[i], BUNfirst(a[i]));
-				q[i] = (oid *) Tloc(a[i], BUNlast(a[i]));
-			}
-
-#define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
-
-#define left_child(X)  (2*(X)+1)
-#define right_child(X) (2*(X)+2)
-
-#define HEAPIFY(X)												\
-	do {														\
-		int __cur, __min = X;									\
-		do {													\
-			__cur = __min;										\
-			if (left_child(__cur) < n_ar &&						\
-				minhp[left_child(__cur)] < minhp[(__min)]) {	\
-				__min = left_child(__cur);						\
-			}													\
-			if (right_child(__cur) < n_ar &&					\
-				minhp[right_child(__cur)] < minhp[(__min)]) {	\
-				__min = right_child(__cur);						\
-			}													\
-			if (__min != __cur) {								\
-				swap(minhp[__cur], minhp[__min], t);			\
-				swap(p[__cur], p[__min], t_oid);				\
-				swap(q[__cur], q[__min], t_oid);				\
-			}													\
-		} while (__cur != __min);								\
-	} while (0)
-
-#define NWAY_MERGE(TYPE)												\
-	do {																\
-		TYPE *minhp, t;													\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));						\
-		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
-			goto bailout;												\
-		}																\
-		/* init min heap */												\
-		for (i = 0; i < n_ar; i++) {									\
-			minhp[i] = v[*p[i] - b->hseqbase];							\
-		}																\
-		for (i = n_ar/2; i >=0 ; i--) {									\
-			HEAPIFY(i);													\
-		}																\
-		/* merge */														\
-		while (n_ar > 1) {												\
-			*mv++ = *(p[0])++;											\
-			if (p[0] < q[0]) {											\
-				minhp[0] = v[*p[0] - b->hseqbase];						\
-			} else {													\
-				swap(minhp[0], minhp[n_ar-1], t);						\
-				swap(p[0], p[n_ar-1], t_oid);							\
-				swap(q[0], q[n_ar-1], t_oid);							\
-				n_ar--;													\
-			}															\
-			HEAPIFY(0);													\
-		}																\
-		while (p[0] < q[0]) {											\
-			*mv++ = *(p[0])++;											\
-		}																\
-		GDKfree(minhp);													\
-	} while (0)
-
-			switch (ATOMstorage(b->ttype)) {
-			case TYPE_bte: NWAY_MERGE(bte); break;
-			case TYPE_sht: NWAY_MERGE(sht); break;
-			case TYPE_int: NWAY_MERGE(int); break;
-			case TYPE_lng: NWAY_MERGE(lng); break;
-#ifdef HAVE_HGE
-			case TYPE_hge: NWAY_MERGE(hge); break;
-#endif
-			case TYPE_flt: NWAY_MERGE(flt); break;
-			case TYPE_dbl: NWAY_MERGE(dbl); break;
-			case TYPE_void:
-			case TYPE_str:
-			case TYPE_ptr:
-			default:
-				/* TODO: support strings, date, timestamps etc. */
-				throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
-			}
-			GDKfree(p);
-			GDKfree(q);
-		}
-		/* fix m properties */
-		BATsetcount(m, m_sz);
-		BATseqbase(m, b->hseqbase);
-		m->tkey = 1;
-		m->T->nil = 0;
-		m->T->nonil = 1;
-		m->tsorted = m->trevsorted = BATcount(m) <= 1;
-		m->tdense = 0;
-		for (i = 0; i < n_ar; i++) {
+	if (m_sz != BATcount(b)) {
+		BBPunfix(bid);
+		for (i = 0; i < n_ar; i++)
 			BBPunfix(a[i]->batCacheid);
-		}
+		GDKfree(a);
+		throw(MAL, "bat.orderidx", "count mismatch");
 	}
 
-	b->batDirtydesc = TRUE;
-	b->torderidx = m->batCacheid;
-	BBPincref(m->batCacheid, TRUE);
+	rc = GDKmergeidx(b, a, n_ar);
 
+	for (i = 0; i < n_ar; i++)
+		BBPunfix(a[i]->batCacheid);
 	GDKfree(a);
 	BBPunfix(bid);
+
+	if (rc != GDK_SUCCEED)
+		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
+
 	return MAL_SUCCEED;
 }
