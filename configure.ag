@@ -2438,7 +2438,7 @@ if test "x$have_samtools" != xno; then
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
 		SAMTOOLS_CFLAGS=
 		SAMTOOLS_LIBS="-lbam"
-		AC_CHECK_HEADERS([samtools/kstring.h])
+		AC_CHECK_HEADERS([samtools/kstring.h bam/kstring.h])
 	fi
 fi
 AC_SUBST(SAMTOOLS_CFLAGS, $SAMTOOLS_CFLAGS)
