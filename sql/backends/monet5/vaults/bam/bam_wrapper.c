@@ -15,7 +15,7 @@
 #include "stream.h"
 #include "bam_globals.h"
 
-#ifdef HAVE_SAMTOOLS
+#ifdef HAVE_SAMTOOLS_SAM_H
 #include <samtools/sam.h>
 #else
 #include <bam/sam.h>
