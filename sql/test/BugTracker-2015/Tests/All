@@ -1,3 +1,4 @@
+window_function_crash.Bug-3861
 expression_with_comparison.Bug-3854
 and_or_expression.Bug-3851
 long_insert.Bug-3845
