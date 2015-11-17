@@ -14,7 +14,7 @@
 #include "orderidx.h"
 #include "gdk.h"
 
-#define MIN_PIECE 2	/* TODO use realistic size in production */
+#define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 
 str
 OIDXdropImplementation(Client cntxt, BAT *b)
@@ -40,7 +40,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	char name[IDLENGTH];
 	str msg= MAL_SUCCEED;
 
-	if( BATcount(b) == 0)
+	if (BATcount(b) <= 1)
 		return MAL_SUCCEED;
 
 	/* check if b is sorted, then index does not make sense */
@@ -52,11 +52,29 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		return MAL_SUCCEED;
 
 	if( pieces < 0 ){
-		/* TODO estimate number of pieces */
-		pieces = 3; // should become GDKnr_threads
-	}
-	if ( BATcount(b) < MIN_PIECE || BATcount(b) <= (BUN) pieces)
+		if (GDKnr_threads <= 1) {
+			pieces = 1;
+		} else {
+			if (GDKdebug & FORCEMITOMASK) {
+				/* we want many pieces, even tiny ones */
+				if (BATcount(b) < 4)
+					pieces = 1;
+				else if (BATcount(b) / 2 < (BUN) GDKnr_threads)
+					pieces = (int) (BATcount(b) / 2);
+				else
+					pieces = GDKnr_threads;
+			} else {
+				if (BATcount(b) < 2 * MIN_PIECE)
+					pieces = 1;
+				else if (BATcount(b) / MIN_PIECE < (BUN) GDKnr_threads)
+					pieces = (int) (BATcount(b) / MIN_PIECE);
+				else
+					pieces = GDKnr_threads;
+			}
+		}
+	} else if (BATcount(b) < (BUN) pieces || BATcount(b) < MIN_PIECE) {
 		pieces = 1;
+	}
 #ifdef _DEBUG_OIDX_
 	mnstr_printf(cntxt->fdout,"#bat.orderidx pieces %d\n",pieces);
 	mnstr_printf(cntxt->fdout,"#oidx ttype %d bat %d\n", b->ttype,tpe);
@@ -104,10 +122,9 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		} else {
 			o += step;
 		}
-		q = pushOid(smb, q, o);
-		o += 1;
+		q = pushOid(smb, q, o - 1);
 	}
-	for (i=0; i< pieces; i++) {
+	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
 		q = newStmt(smb, putName("algebra",7), putName("orderidx", 8));
 		setVarType(smb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
