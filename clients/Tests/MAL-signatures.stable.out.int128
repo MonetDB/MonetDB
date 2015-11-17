@@ -3046,6 +3046,10 @@ command batbam.reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str]
 address reverse_seq_bat;
 comment Reverse a bat of DNA sequences.
 
+command batbam.seq_char(ref_pos:int,alg_seq:bat[:oid,:str],alg_pos:bat[:oid,:int],alg_cigar:bat[:oid,:str]):bat[:oid,:str] 
+address seq_char_bat;
+comment Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)
+
 command batbam.seq_length(cigars:bat[:oid,:str]):bat[:oid,:int] 
 address seq_length_bat;
 comment Calculate the real length of a bat of DNA sequences, given their CIGAR string.
@@ -3066,11 +3070,11 @@ pattern bam.bam_loader_file(bam_file:str,dbschema:sht):void
 address bam_loader_file;
 comment Read bam_file and store it in the given dbschema
 
-pattern bam.bam_loader_files(bam_files:str,dbschema:sht,nr_threads:sht):void 
+pattern bam.bam_loader_files(bam_files:str,dbschema:sht):void 
 address bam_loader_files;
 comment Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema
 
-pattern bam.bam_loader_repos(bam_repos:str,dbschema:sht,nr_threads:sht):void 
+pattern bam.bam_loader_repos(bam_repos:str,dbschema:sht):void 
 address bam_loader_repos;
 comment Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema
 
@@ -3085,6 +3089,10 @@ comment Reverse a DNA sequence.
 pattern bam.sam_export(output_path:str):void 
 address sam_exportf;
 comment Export results in the bam.export table to a SAM file
+
+command bam.seq_char(ref_pos:int,alg_seq:str,alg_pos:int,alg_cigar:str):str 
+address seq_char;
+comment Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string
 
 command bam.seq_length(cigar:str):int 
 address seq_length;
