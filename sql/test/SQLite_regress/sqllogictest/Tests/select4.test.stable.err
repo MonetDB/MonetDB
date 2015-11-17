@@ -30,7 +30,7 @@ stderr of test 'select4.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # 12:25:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32227" "--port=36911"
 # 12:25:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19873/.s.monetdb.32843
+MAPI  = (monetdb) /var/tmp/mtest-25187/.s.monetdb.39757
 QUERY = CREATE INDEX t8all ON t8(e8 DESC, d8 ASC, c8 DESC, b8 ASC, a8 DESC);
 ERROR = !syntax error, unexpected DESC, expecting ')' or ',' in: "create index t8all on t8(e8 desc"
 
