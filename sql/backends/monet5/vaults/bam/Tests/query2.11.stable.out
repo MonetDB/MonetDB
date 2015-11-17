@@ -1,0 +1,65 @@
+stdout of test 'query2.11` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:44 >  
+# 10:22:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:44 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:22:44 >  
+# 10:22:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:44 >  
+
+#WITH alig AS (
+#    SELECT *
+#    FROM bam.alignments_1
+#    WHERE bam.bam_flag(flag, 'firs_segm') <> bam.bam_flag(flag, 'last_segm')
+#      AND bam.bam_flag(flag, 'seco_alig') = True
+#      AND rname <> '*'
+#      AND pos > 0
+#      AND rnext <> '*'
+#      AND pnext > 0
+#)
+#SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
+#    l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
+#                         r.flag AS r_flag, r.rname AS r_rname, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
+% bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+% qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 11,	3,	5,	8,	1,	21,	1,	8,	1,	100,	100,	3,	5,	8,	1,	27,	1,	8,	1,	100,	100 # length
+[ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG",	419,	"chr22",	39995910,	0,	"5=1X12=307D82=",	"=",	39996123,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
+[ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG",	419,	"chr22",	39994332,	0,	"5=1X11=1885D83=",	"=",	39995061,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
+[ "sim_22_1_14",	355,	"chr22",	37296079,	0,	"92=172D6=1X1=",	"=",	37296228,	0,	"TCGGGCCTAGAACACGGAGCCTGGAGACCCGCGCGCCGTTGACCACAGGGTTTGGCGCCAAACGAGGAGGGCGGGGCGAGGACCAAGGGGCCGGGGCGGG",	"FDFGECDG?GDF=2BGEGEGEE@GGG=EEG:GFF@>EADDAFEE?::FGEGB>F>E@6EGGAE#DG#=B?(#@BCDDAEEGGFBAFFE-D#:>#:#CD7#",	403,	"chr22",	37296228,	0,	"1=1X7=104D18=1X9=1X12=1X49=",	"=",	37296079,	0,	"GGCGAGGGGGCGGGGCGAGGGCTGAGGGGCGGAAAACTAAGAGGAGCCCCCGCGGGTGGCGAGCTGGGATGACGGAGGGAGGGAGGGAGGGGCGCTGTGG",	"E##G#A=CD:.E-E.DEDE71#-5EEAGC;5-=#EE5'?DDED?:CFDFG&=?ACFB=DFGG=EBFDGCAGFGG>FG>GFGFFDFGE=AG6DAGEFFEGA"	]
+[ "sim_22_1_7",	339,	"chr22",	45060375,	0,	"41=1X56=1I1=",	"=",	45060235,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E",	419,	"chr22",	45060235,	0,	"1=1I12=72I3=1X5=1X4=",	"=",	45060375,	0,	"TAGGAATTTTTTTTTTTTTTGAGACAGAGTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAATGGTGCGATTGGCTGGAATTTTTTTTCTTGGCTGTCATAA",	"FGFCEEEGDE?CB::GE=FADFCEABEGBF>D;FGGGFFCDFGDGABCCADCDDDC;EF=:ACGGCEC#C=?=>EG@9#A@?=E;=:#B##A##@%C#D#"	]
+[ "sim_22_1_a",	339,	"chr14",	18226024,	0,	"100=",	"=",	18225784,	0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA",	"####F#EFCGEC5BE?EF#F=@?DF658;DEDG=@FBG@?E=DE=F#FDB?CCGE1GFFEDEFFDGGFE>FFCGEGGG:;B@FFG@DDGGGFGB7FBC?F",	419,	"chr14",	18225784,	0,	"5=1X31=1X62=",	"=",	18226024,	0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
+#SELECT qname, l_flag, l_rname, l_pos, l_mapq, l_cigar, l_rnext, l_pnext, l_tlen, l_seq, l_qual,
+#              r_flag, r_rname, r_pos, r_mapq, r_cigar, r_rnext, r_pnext, r_tlen, r_seq, r_qual
+#FROM bam.paired_secondary_alignments_3
+#ORDER BY qname;
+% bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3,	bam.paired_secondary_alignments_3 # table_name
+% qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 11,	3,	5,	8,	1,	21,	1,	8,	1,	100,	100,	3,	5,	8,	1,	27,	1,	8,	1,	100,	100 # length
+[ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG",	419,	"chr22",	39995910,	0,	"5=1X12=307D82=",	"=",	39996123,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
+[ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG",	419,	"chr22",	39994332,	0,	"5=1X11=1885D83=",	"=",	39995061,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
+[ "sim_22_1_14",	355,	"chr22",	37296079,	0,	"92=172D6=1X1=",	"=",	37296228,	0,	"TCGGGCCTAGAACACGGAGCCTGGAGACCCGCGCGCCGTTGACCACAGGGTTTGGCGCCAAACGAGGAGGGCGGGGCGAGGACCAAGGGGCCGGGGCGGG",	"FDFGECDG?GDF=2BGEGEGEE@GGG=EEG:GFF@>EADDAFEE?::FGEGB>F>E@6EGGAE#DG#=B?(#@BCDDAEEGGFBAFFE-D#:>#:#CD7#",	403,	"chr22",	37296228,	0,	"1=1X7=104D18=1X9=1X12=1X49=",	"=",	37296079,	0,	"GGCGAGGGGGCGGGGCGAGGGCTGAGGGGCGGAAAACTAAGAGGAGCCCCCGCGGGTGGCGAGCTGGGATGACGGAGGGAGGGAGGGAGGGGCGCTGTGG",	"E##G#A=CD:.E-E.DEDE71#-5EEAGC;5-=#EE5'?DDED?:CFDFG&=?ACFB=DFGG=EBFDGCAGFGG>FG>GFGFFDFGE=AG6DAGEFFEGA"	]
+[ "sim_22_1_7",	339,	"chr22",	45060375,	0,	"41=1X56=1I1=",	"=",	45060235,	0,	"ACCAGCCTGGCCAACATGGTGAAACGCTGTCTCTACTAAAAGTACAAAAAAATTAGCTAGGCGTGGTGGTGGGCACCTGTAATCCCAGCTACTCGGGGAG",	"5#>?CG=E,A=#AG#?#>GAEA@=DB<>ED@?CFC@A?=EG65GGD:C@EE(BFABFG5B?G;EFE?@5EG5GAGD5@;DFGG?F?7GAGGAFEFA>E-E",	419,	"chr22",	45060235,	0,	"1=1I12=72I3=1X5=1X4=",	"=",	45060375,	0,	"TAGGAATTTTTTTTTTTTTTGAGACAGAGTTTCGCTCTTGTTGCCCAGGCTGGAGTGCAATGGTGCGATTGGCTGGAATTTTTTTTCTTGGCTGTCATAA",	"FGFCEEEGDE?CB::GE=FADFCEABEGBF>D;FGGGFFCDFGDGABCCADCDDDC;EF=:ACGGCEC#C=?=>EG@9#A@?=E;=:#B##A##@%C#D#"	]
+[ "sim_22_1_a",	339,	"chr14",	18226024,	0,	"100=",	"=",	18225784,	0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA",	"####F#EFCGEC5BE?EF#F=@?DF658;DEDG=@FBG@?E=DE=F#FDB?CCGE1GFFEDEFFDGGFE>FFCGEGGG:;B@FFG@DDGGGFGB7FBC?F",	419,	"chr14",	18225784,	0,	"5=1X31=1X62=",	"=",	18226024,	0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
+
+# 10:22:44 >  
+# 10:22:44 >  "Done."
+# 10:22:44 >  
+

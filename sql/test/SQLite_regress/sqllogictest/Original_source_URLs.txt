@@ -1,0 +1,25 @@
+The SQLite sqllogictest *.test files were copied from
+http://www.sqlite.org/sqllogictest/dir?name=test
+
+The *.test files were next converted into *.test.sql variants which
+ can be processed by mclient (or any other SQL client tool which accepts .sql scripts).
+
+They are placed in the Tests/ subdir with an All file such that they can be run using Mtest.py
+
+The following issues where detected (and fixed in Jul2015 SP1 release) using the 5 select*.test.sql tests:
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3705
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3706
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3719
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3760
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3798
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3799
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3803
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3809
+ https://www.monetdb.org/bugzilla/show_bug.cgi?id=3819
+
+
+Note: we currently do not use the sqllogictest test program to do the tests.
+This could be something to add in the future (if desired).
+See: http://www.sqlite.org/sqllogictest/doc/trunk/about.wiki
+and  http://www.sqlite.org/sqllogictest/dir?name=src
+

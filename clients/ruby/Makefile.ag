@@ -6,7 +6,7 @@
 
 gem_monetdb = {
 	FILES = ruby-monetdb-sql-0.2.gemspec
-	DIR = $(RUBY_DIR)
+	DIR = $(prefix)/$(RUBY_DIR)
 }
 
 EXTRA_DIST = Changelog TODO ruby-monetdb-sql-0.2.gemspec

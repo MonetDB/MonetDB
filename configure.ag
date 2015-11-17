@@ -1454,12 +1454,14 @@ case "$have_rubygem_dir" in
 esac
 case "$RUBY_DIR" in
 ${prefix}/*)
-	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
-/*)	RUBY_DIR="\${prefix}$RUBY_DIR";;
-*)
-	RUBY_DIR="\${prefix}/$RUBY_DIR";;
+	RUBY_DIR="`echo "$RUBY_DIR" | sed "s|^$prefix/||"`";;
+/*)	RUBY_DIR="${RUBY_DIR#/}";;
 esac
 AC_SUBST(RUBY_DIR)
+QRUBY_DIR="$RUBY_DIR"
+XRUBY_DIR="`$translatepath "$QRUBY_DIR"`"
+QXRUBY_DIR="`echo "$XRUBY_DIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXRUBY_DIR)
 
 RUBYGEM=gem
 org_have_rubygem=auto
@@ -2387,19 +2389,43 @@ if test "x$have_samtools" != xno; then
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
 
 	AC_CHECK_HEADER(samtools/bam.h,
-		[ why_have_samtools= ],
-		[ why_have_samtools="samtools/bam.h header not found" ])
+		[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
+		[ why_have_samtools="bam.h header not found" ])
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/bam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
+			[ why_have_samtools="Neither bam/bam.h or bam/bam.h header not found" ])
+	fi
+	
+	if test -z "$why_have_samtools"; then
+		AC_CHECK_HEADER(samtools/sam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
+			[ why_have_samtools="sam.h header not found" ])
+	fi
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/sam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
+			[ why_have_samtools="Neither samtools/sam.h or bam/sam.h header not found" ])
+	fi
+
 	if test -z "$why_have_samtools"; then
 		AC_CHECK_HEADER(samtools/bgzf.h,
-			[ why_have_samtools= ],
-			[ why_have_samtools="samtools/bgzf.h header not found" ])
+			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
+			[ why_have_samtools="bgzf.h header not found" ])
 	fi
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/bgzf.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
+			[ why_have_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header not found" ])
+	fi
+
 	if test -z "$why_have_samtools"; then
 		AC_CHECK_LIB(bam, bam_header_read,
-			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
+			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools version 0.1.x (providing the bam library)]),
 			[ why_have_samtools="bam library not found" ],
 			[-lm -lpthread -lz])
 	fi
+
 	if test -n "$why_have_samtools"; then
 		if test "x$have_samtools" != xauto; then
 			AC_MSG_ERROR([$why_have_samtools])
@@ -2412,7 +2438,7 @@ if test "x$have_samtools" != xno; then
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
 		SAMTOOLS_CFLAGS=
 		SAMTOOLS_LIBS="-lbam"
-		AC_CHECK_HEADERS([samtools/kstring.h])
+		AC_CHECK_HEADERS([samtools/kstring.h bam/kstring.h])
 	fi
 fi
 AC_SUBST(SAMTOOLS_CFLAGS, $SAMTOOLS_CFLAGS)
@@ -2488,6 +2514,7 @@ esac
 AC_SUBST(GEOS_INCS)
 AC_SUBST(GEOS_LIBS)
 
+# fits, only used by sql
 org_have_cfitsio=no
 have_cfitsio=$org_have_cfitsio
 if test "x$enable_fits" != xno; then
@@ -2499,6 +2526,7 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_FITS, test x"$have_cfitsio" != xno)
 
+# netcdf, only used by sql
 org_have_netcdf=no
 have_netcdf=$org_have_netcdf
 if test "x$enable_netcdf" != xno; then
@@ -3380,21 +3408,12 @@ for comp in \
 	'sql         ' \
 	'geom        ' \
 	'console     ' \
-	'gsl         ' \
-	'fits        ' \
-	'netcdf      ' \
-	'lidar       ' \
 	'microhttpd  ' \
 	'rintegration' \
 	'odbc        ' \
 	'jdbc        ' \
 	'control     ' \
 	'testing     ' \
-	'developer   ' \
-	'strict      ' \
-	'debug       ' \
-	'assert      ' \
-	'optimize    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3412,6 +3431,7 @@ for comp in \
 	'atomic_ops   ' \
 	'bz2          ' \
 	'curl         ' \
+	'fits         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
 	'java         ' \
@@ -3419,6 +3439,8 @@ for comp in \
 	'java_jdbc    ' \
 	'liblas       ' \
 	'libxml2      ' \
+	'lidar        ' \
+	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
