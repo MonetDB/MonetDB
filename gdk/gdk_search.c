@@ -1019,7 +1019,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "GDKmergeidx");
 		return GDK_SUCCEED;
 	}
-	nmelen = strlen(nme) + 10;
+	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    (m->filename = GDKmalloc(nmelen)) == NULL ||
