@@ -93,4 +93,9 @@ msqldump_generates_incorrect_syntax_ON_UPDATE_null.Bug-3839
 import-non-ascii.Bug-3864
 mserver-creates-but-not-accept-column-types-decimal19-decimal39.Bug-3863
 NOT_x_LIKE-triggers-too_many_nested_operators-error.Bug-3871
+<<<<<<< /Users/jennie/monet/Jul2015/sql/test/BugTracker-2015/Tests/All
 foreignkey_over_schemas.Bug-3855
+=======
+mserver-crashes-under-specific-combination-of-JOIN-and-WHERE-conditions.Bug-3872
+
+>>>>>>> /var/folders/z9/9rzbwhc55q3b9g3hwns3s6680000gn/T/All~other.NVlgGO
