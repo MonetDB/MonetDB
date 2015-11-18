@@ -7,4 +7,7 @@ SELECT * FROM foo WHERE NOT col LIKE 'b%';
 -- This query works:
 SELECT * FROM foo WHERE (col NOT LIKE 'b%');
 
+-- Also test the combination:
+SELECT * FROM foo WHERE NOT col NOT like 'b%';
+
 DROP TABLE foo;
