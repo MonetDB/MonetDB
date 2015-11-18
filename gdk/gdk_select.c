@@ -1445,14 +1445,12 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (view) {
 				vwl = view->hseqbase;
 				vwh = vwl + view->batCount;
-				//BBPunfix(view->batCacheid);
 			} else {
 				vwl = b->hseqbase;
 				vwh = vwl + b->batCount;
 			}
 		} else {
 			if (view) {
-				BBPunfix(b->batCacheid);
 				b = view;
 			}
 		}
