@@ -1217,3 +1217,19 @@ bailout:
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "GDKmergeidx");
 	return GDK_SUCCEED;
 }
+
+void
+OIDXdestroy(BAT *b)
+{
+	if (b) {
+		Heap *hp;
+
+		MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "OIDXdestroy");
+		if ((hp = b->torderidx) != NULL) {
+			b->torderidx = NULL;
+			HEAPdelete(hp, BBP_physical(b->batCacheid), "torderidx");
+			GDKfree(hp);
+		}
+		MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "OIDXdestroy");
+	}
+}

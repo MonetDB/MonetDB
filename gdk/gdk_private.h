@@ -184,6 +184,8 @@ __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t o
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
+__hidden void OIDXdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden int OIDdirty(void)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDinit(void)

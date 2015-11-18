@@ -454,6 +454,7 @@ BATextend(BAT *b, BUN newcap)
 		return GDK_FAIL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -497,6 +498,7 @@ BATclear(BAT *b, int force)
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	OIDXdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if ((b->batDeleted == b->batInserted || force) &&
@@ -597,6 +599,7 @@ BATfree(BAT *b)
 	b->T->props = NULL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	OIDXdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap, 0);
 	else
@@ -1187,6 +1190,7 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 	}
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	OIDXdestroy(b);
 	return GDK_SUCCEED;
       bunins_failed:
 	return GDK_FAIL;
@@ -1279,6 +1283,7 @@ BUNappend(BAT *b, const void *t, bit force)
 
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	OIDXdestroy(b);
 
 	/* first adapt the hashes; then the user-defined accelerators.
 	 * REASON: some accelerator updates (qsignature) use the hashes!
@@ -1457,6 +1462,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	b->batCount--;
 	b->batDirty = 1;	/* bat is dirty */
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	OIDXdestroy(b);
 	return p;
 }
 
