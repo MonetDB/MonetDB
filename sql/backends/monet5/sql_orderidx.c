@@ -28,6 +28,9 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	str sch,tbl,col;
 	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	BAT *b;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -40,20 +43,22 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
 	s = mvc_bind_schema(m, sch);
-	if (s) {
-		sql_table *t = mvc_bind_table(m, s, tbl);
-		if (t && isTable(t)) {
-			sql_column *c = mvc_bind_column(m, t, col);
-			BAT *bn = store_funcs.bind_col(m->session->tr, c, 0);
-
-			if (bn == 0) {
-				msg = createException(SQL,"sql","Column can not be accessed");
-			} else { // create the ordered index on the column
-				msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,bn->ttype), bn, -1);
-				BBPunfix(bn->batCacheid);
-			}
-		}
-	}
+	if (s == NULL)
+		throw(SQL, "sql.createorderindex", "unknown schema %s", sch);
+	t = mvc_bind_table(m, s, tbl);
+	if (t == NULL || !isTable(t))
+		throw(SQL, "sql.createorderindex", "unknown table %s.%s",
+		      sch, tbl);
+	c = mvc_bind_column(m, t, col);
+	if (c == NULL)
+		throw(SQL, "sql.createorderindex", "unknown column %s.%s.%s",
+		      sch, tbl, col);
+	b = store_funcs.bind_col(m->session->tr, c, 0);
+	if (b == 0)
+		throw(SQL,"sql.createorderindex","Column can not be accessed");
+	/* create the ordered index on the column */
+	msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -64,6 +69,9 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	str sch,tbl,col;
 	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	BAT *b;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -76,21 +84,21 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
 	s = mvc_bind_schema(m, sch);
-	if (s) {
-		sql_table *t = mvc_bind_table(m, s, tbl);
-		if (t && isTable(t)) {
-			sql_column *c = mvc_bind_column(m, t, col);
-			BAT *bn = store_funcs.bind_col(m->session->tr, c, 0);
-
-			if (bn == 0) {
-				msg = createException(SQL,"sql","Column can not be accessed");
-			} else {
-				msg = OIDXdropImplementation(cntxt, bn);
-
-				BBPunfix(bn->batCacheid);
-			}
-		}
-	}
+	if (s == NULL)
+		throw(SQL, "sql.droporderindex", "unknown schema %s", sch);
+	t = mvc_bind_table(m, s, tbl);
+	if (t == NULL || !isTable(t))
+		throw(SQL, "sql.droporderindex", "unknown table %s.%s",
+		      sch, tbl);
+	c = mvc_bind_column(m, t, col);
+	if (c == NULL)
+		throw(SQL, "sql.droporderindex", "unknown column %s.%s.%s",
+		      sch, tbl, col);
+	b = store_funcs.bind_col(m->session->tr, c, 0);
+	if (b == 0)
+		throw(SQL,"sql.droporderindex","Column can not be accessed");
+	msg = OIDXdropImplementation(cntxt, b);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
