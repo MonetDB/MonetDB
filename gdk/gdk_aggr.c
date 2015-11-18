@@ -2598,7 +2598,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BATseqbase(bn, min);
 	} else { /* quantiles for entire BAT b, EZ */
 
-		BUN index, r = 0, p = BUNlast(b);
+		BUN index, r = 0, p = BATcount(b);
 
 		if (skip_nils) {
 			while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
