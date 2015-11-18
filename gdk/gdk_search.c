@@ -957,6 +957,7 @@ BATcheckorderidx(BAT *b)
 	int ret;
 	lng t;
 
+	assert(b->batCacheid > 0);
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckorderidx");
 	t = GDKusec() - t;

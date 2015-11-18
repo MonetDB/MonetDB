@@ -1491,7 +1491,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				low = (BUN) l;
 			if (low > high)
 				low = high;
-		} else if (b->tsorted || use_orderidx) {
+		} else if (b->tsorted) {
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 					  ",s=%s%s,anti=%d): sorted\n",
 					  BATgetId(b), BATcount(b),
@@ -1500,22 +1500,22 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  anti);
 			if (lval) {
 				if (li)
-					low = use_orderidx?ORDERfndfirst(b, tl):SORTfndfirst(b, tl);
+					low = SORTfndfirst(b, tl);
 				else
-					low = use_orderidx?ORDERfndlast(b, tl):SORTfndlast(b, tl);
+					low = SORTfndlast(b, tl);
 			} else {
 				/* skip over nils at start of column */
-				low = use_orderidx?ORDERfndlast(b, nil):SORTfndlast(b, nil);
+				low = SORTfndlast(b, nil);
 			}
 			low -= BUNfirst(b);
 			if (hval) {
 				if (hi)
-					high = use_orderidx?ORDERfndlast(b, th):SORTfndlast(b, th);
+					high = SORTfndlast(b, th);
 				else
-					high = use_orderidx?ORDERfndfirst(b, th):SORTfndfirst(b, th);
+					high = SORTfndfirst(b, th);
 				high -= BUNfirst(b);
 			}
-		} else {
+		} else if (b->trevsorted) {
 			assert(b->trevsorted);
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 					  ",s=%s%s,anti=%d): reverse sorted\n",
@@ -1539,6 +1539,31 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				else
 					low = SORTfndlast(b, th);
 				low -= BUNfirst(b);
+			}
+		} else {
+			assert(use_orderidx);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s%s,anti=%d): orderidx\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL",
+					  s && BATtdense(s) ? "(dense)" : "",
+					  anti);
+			if (lval) {
+				if (li)
+					low = ORDERfndfirst(b, tl);
+				else
+					low = ORDERfndlast(b, tl);
+			} else {
+				/* skip over nils at start of column */
+				low = ORDERfndlast(b, nil);
+			}
+			low -= BUNfirst(b);
+			if (hval) {
+				if (hi)
+					high = ORDERfndlast(b, th);
+				else
+					high = ORDERfndfirst(b, th);
+				high -= BUNfirst(b);
 			}
 		}
 		if (anti) {
