@@ -48,6 +48,7 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 #include "mal_runtime.h"
+#include "mal_authorize.h"
 #include <mapi.h> /* for PROMPT1 */
 
 
@@ -200,6 +201,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	str prompt;
 
 	c->user = user;
+	c->username = 0;
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->srcFile = NULL;
@@ -243,6 +245,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	(void) AUTHgetUsername(&c->username, c);
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -373,6 +376,10 @@ freeClient(Client c)
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->user = oid_nil;
+	if( c->username){
+		GDKfree(c->username);
+		c->username = 0;
+	}
 	c->mythread = 0;
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 	GDKfree(c->glb);

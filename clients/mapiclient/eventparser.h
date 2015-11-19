@@ -78,6 +78,7 @@ typedef struct  {
 	int index; // return/arg index
 	int state;
 	char *function;	// name of MAL block
+	char *user; 
 	int pc;		// instruction counter in block
 	int tag;	// unique MAL block invocation tag
 	lng eventnr;// serial event number

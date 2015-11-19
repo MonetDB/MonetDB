@@ -110,7 +110,7 @@ EXAMPLE:
 }
 */
 static void
-renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
@@ -144,6 +144,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 	tbuf[19]=0;
 	/* there should be less than 10^6 == 1M usecs in 1 sec */
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
+	if( usrname)
+		logadd("\"user\":\"%s\",\n",usrname);
 	logadd("\"clk\":"LLFMT",\n",GDKusec());
 	logadd("\"ctime\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
 	logadd("\"thread\":%d,\n", THRgettid());
@@ -413,7 +415,7 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	if (stk == NULL) return;
 	if (pci == NULL) return;
@@ -424,7 +426,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 		cachedProfilerEvent(mb, stk, pci);
 		
 	if( eventstream) {
-		renderProfilerEvent(mb, stk, pci, start);
+		renderProfilerEvent(mb, stk, pci, start, usrname);
 		if ( start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
 		if ( !start && pci->token == ENDsymbol)
@@ -461,7 +463,7 @@ openProfilerStream(stream *fd, int mode)
 				for(j = 0; j <THREADS; j++)
 				if( c->inprogress[j].mb)
 				/* show the event */
-					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1);
+					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
 		}
 	}
 	return MAL_SUCCEED;

@@ -106,6 +106,7 @@ resetEventRecord(EventRecord *ev)
 	if( ev->package) free(ev->package);
 
 	if( ev->function) free(ev->function);
+	if( ev->user) free(ev->user);
 	if( ev->time) free(ev->time);
 	if( ev->stmt) free(ev->stmt);
 	if( ev->fcn) free(ev->fcn);
@@ -226,6 +227,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		return 0;
 	}
 	if( strstr(key,"function")){ ev->function= strdup(val); return 0;}
+	if( strstr(key,"user")){ ev->user= strdup(val); return 0;}
 	if( strstr(key,"tag")){ ev->tag= atoi(val); return 0;}
 	if( strstr(key,"thread")){ ev->thread= atoi(val); return 0;}
 	if( strstr(key,"pc")){ ev->pc= atoi(val); return 0;}

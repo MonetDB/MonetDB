@@ -26,7 +26,7 @@ typedef struct Mallinfo Mallinfo;
 mal_export str openProfilerStream(stream *fd, int mode);
 mal_export str closeProfilerStream(void);
 
-mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
 
 mal_export str startProfiler(void);
 mal_export str stopProfiler(void);

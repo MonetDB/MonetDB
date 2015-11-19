@@ -40163,10 +40163,6 @@ command profiler.setheartbeat(b:int):void
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
-pattern profiler.setpoolsize(pool:int):void 
-address CMDsetProfilerPoolSize;
-comment Re-initialize the profiler pool
-
 pattern profiler.stop():void 
 address CMDstopProfiler;
 comment Stop offline performance profiling

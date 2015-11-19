@@ -2409,7 +2409,7 @@ str printRef;
 void printSignature(stream *fd, Symbol s, int flg);
 void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 str prodRef;
-void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 void profilerHeartbeatEvent(char *alter);
 str profilerRef;
