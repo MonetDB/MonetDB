@@ -1073,47 +1073,47 @@ INSERT INTO t1 VALUES(996,297,177,577,602,'table tn1 row 128');
 
 -- query IIIIIT rowsort all1
 SELECT * FROM t1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 768 values hashing to 5d3fe674077ba48f8afa1c6f4e61ced4
 
 -- query IIIIIT rowsort all2
 SELECT * FROM t2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 678 values hashing to 09dd0a67e7c6bbb0b2aa2bc8364b9cb8
 
 -- query IIIIIT rowsort all3
 SELECT * FROM t3
-;
+ORDER BY 1,2,3,4,5,6;
 -- 774 values hashing to a4da0dfc78895ffb5c59ae7f49afed54
 
 -- query IIIIIT rowsort all4
 SELECT * FROM t4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 666 values hashing to 66f651904b7b83fadcbddc7f15fc16b1
 
 -- query IIIIIT rowsort all5
 SELECT * FROM t5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 660 values hashing to 168733c3c947e4cd1b1cad5b997ece30
 
 -- query IIIIIT rowsort all6
 SELECT * FROM t6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 552 values hashing to 1498df6d8ab3f812e84f8e318dc53704
 
 -- query IIIIIT rowsort all7
 SELECT * FROM t7
-;
+ORDER BY 1,2,3,4,5,6;
 -- 660 values hashing to fa70f972b3a5f3339f77037444cb54d5
 
 -- query IIIIIT rowsort all8
 SELECT * FROM t8
-;
+ORDER BY 1,2,3,4,5,6;
 -- 654 values hashing to 55dc70aa8548b692aa3a7f2156fdeea5
 
 -- query IIIIIT rowsort all9
 SELECT * FROM t9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 588 values hashing to be47bb47837e44b32abdcfb5f1645153
 CREATE INDEX t1i0 ON t1(a1,b1,c1,d1,e1,x1);
 CREATE INDEX t1i1 ON t1(b1,c1,d1,e1,x1);
@@ -1134,47 +1134,47 @@ CREATE INDEX t8all ON t8(e8 DESC, d8 ASC, c8 DESC, b8 ASC, a8 DESC);
 
 -- query IIIIIT rowsort all1
 SELECT * FROM t1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 768 values hashing to 5d3fe674077ba48f8afa1c6f4e61ced4
 
 -- query IIIIIT rowsort all2
 SELECT * FROM t2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 678 values hashing to 09dd0a67e7c6bbb0b2aa2bc8364b9cb8
 
 -- query IIIIIT rowsort all3
 SELECT * FROM t3
-;
+ORDER BY 1,2,3,4,5,6;
 -- 774 values hashing to a4da0dfc78895ffb5c59ae7f49afed54
 
 -- query IIIIIT rowsort all4
 SELECT * FROM t4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 666 values hashing to 66f651904b7b83fadcbddc7f15fc16b1
 
 -- query IIIIIT rowsort all5
 SELECT * FROM t5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 660 values hashing to 168733c3c947e4cd1b1cad5b997ece30
 
 -- query IIIIIT rowsort all6
 SELECT * FROM t6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 552 values hashing to 1498df6d8ab3f812e84f8e318dc53704
 
 -- query IIIIIT rowsort all7
 SELECT * FROM t7
-;
+ORDER BY 1,2,3,4,5,6;
 -- 660 values hashing to fa70f972b3a5f3339f77037444cb54d5
 
 -- query IIIIIT rowsort all8
 SELECT * FROM t8
-;
+ORDER BY 1,2,3,4,5,6;
 -- 654 values hashing to 55dc70aa8548b692aa3a7f2156fdeea5
 
 -- query IIIIIT rowsort all9
 SELECT * FROM t9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 588 values hashing to be47bb47837e44b32abdcfb5f1645153
 
 -- query T valuesort
@@ -1214,7 +1214,7 @@ UNION
    WHERE d7 in (687,507,603,52,118)
       OR (d7=399 AND e7=408 AND 396=b7 AND a7=97 AND c7=813)
       OR (e7=605 OR 837=b7 OR e7=918)
-;
+ORDER BY 1;
 -- 41 values hashing to bbf619d1c2aae1fc385fb08bddcae829
 
 -- query T valuesort
@@ -1250,7 +1250,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT ((731=e1 OR d1=972 OR e1=89)
            OR b1 in (828,779,233,729,128,75,766,91,822,995))
-;
+ORDER BY 1;
 -- 9 values hashing to 0242ff524f6efe4a8115ad23f4d8659a
 
 -- query T valuesort
@@ -1273,7 +1273,7 @@ EXCEPT
 EXCEPT
   SELECT d8 FROM t8
    WHERE NOT ((e8=586 AND b8=324 AND 231=c8 AND a8=54 AND d8=889))
-;
+ORDER BY 1;
 -- 20 values hashing to 3766301bf3fa068cbcf5df057f20b1b4
 
 -- query T valuesort
@@ -1295,7 +1295,7 @@ EXCEPT
   SELECT c3 FROM t3
    WHERE NOT (a3 in (820,101,383,822,594,457,971,818,380,12)
            OR (964=a3 AND d3=444))
-;
+ORDER BY 1;
 -- 179
 -- 579
 -- 729
@@ -1309,7 +1309,7 @@ EXCEPT
 INTERSECT
   SELECT d1 FROM t1
    WHERE NOT ((149=b1 AND a1=776))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b1 FROM t1
@@ -1346,7 +1346,7 @@ UNION ALL
    WHERE a8 in (47,957,822,848,838,54,467,620,869)
       OR (184=a8 OR a8=400)
       OR b8 in (211,454,615,182,705,397,52,690,878,6,300)
-;
+ORDER BY 1;
 -- 54 values hashing to a67a5b11c1b84f9a132ad71cec377cbc
 
 -- query T valuesort
@@ -1385,7 +1385,7 @@ UNION ALL
 UNION
   SELECT c5 FROM t5
    WHERE (12=c5 OR 971=b5 OR e5=470)
-;
+ORDER BY 1;
 -- 27 values hashing to aeaaf7203a02879f27361a8532cf76ef
 
 -- query T valuesort
@@ -1416,7 +1416,7 @@ EXCEPT
 EXCEPT
   SELECT a7 FROM t7
    WHERE NOT (a7 in (884,998,356,854,848,592,982,622,565,879))
-;
+ORDER BY 1;
 -- 18 values hashing to 8bdfd70f5413bea85e8826e9587834a9
 
 -- query T valuesort
@@ -1437,7 +1437,7 @@ UNION
   SELECT d9 FROM t9
    WHERE a9 in (747,924,830,511,962,304,263,102,739,685,553)
       OR c9 in (801,992,87)
-;
+ORDER BY 1;
 -- 26 values hashing to fdce3b4ced0364d19f951333e78c9b78
 
 -- query T valuesort
@@ -1475,7 +1475,7 @@ UNION ALL
 UNION ALL
   SELECT b5 FROM t5
    WHERE (c5=313 OR 174=a5 OR e5=655)
-;
+ORDER BY 1;
 -- 67 values hashing to f98c2d4d2a39578f3cf26a31dce5817a
 
 -- query T valuesort
@@ -1502,7 +1502,7 @@ UNION ALL
    WHERE (d5=991 OR e5=25)
       OR (d5=792 AND 868=c5 AND 710=a5 AND e5=610)
       OR e5 in (621,716,480,436)
-;
+ORDER BY 1;
 -- 33 values hashing to fc2abaf4ef7388669cda23f4133b75de
 
 -- query T valuesort
@@ -1529,7 +1529,7 @@ UNION ALL
 UNION
   SELECT a5 FROM t5
    WHERE e5 in (522,937,561,25,944,206,352,758)
-;
+ORDER BY 1;
 -- 50 values hashing to 9a533062bf7ea86aed6fe94d816fd73d
 
 -- query T valuesort
@@ -1554,7 +1554,7 @@ UNION ALL
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((135=c7 AND e7=27 AND d7=996 AND 958=a7))
-;
+ORDER BY 1;
 -- 9 values hashing to b79423199aa8eb9f210d3da7b70c2bcb
 
 -- query T valuesort
@@ -1588,7 +1588,7 @@ UNION
   SELECT a5 FROM t5
    WHERE d5 in (940,369,369,492,780,171,557)
       OR c5 in (485,924,668,443,130,649,44)
-;
+ORDER BY 1;
 -- 30 values hashing to 26b7338cd3c4153e158aabc6f7c1697e
 
 -- query T valuesort
@@ -1610,7 +1610,7 @@ EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((348=b6 AND 35=a6)
            OR (822=d6 OR d6=355))
-;
+ORDER BY 1;
 -- 18 values hashing to b5f5121cd33b589a7c1faab9e49a32ac
 
 -- query T valuesort
@@ -1626,7 +1626,7 @@ EXCEPT
   SELECT a7 FROM t7
    WHERE NOT (e7 in (663,462,903,455,6,816,499,460)
            OR (435=c7 AND 442=d7 AND e7=988 AND 134=a7 AND 804=b7))
-;
+ORDER BY 1;
 -- 21 values hashing to 4d066eac2b56fa3445b905774d53c2d6
 
 -- query T valuesort
@@ -1672,7 +1672,7 @@ UNION
    WHERE b2 in (211,285,897,264,317,754)
       OR (a2=664 OR 546=b2 OR 783=e2)
       OR (897=b2)
-;
+ORDER BY 1;
 -- 40 values hashing to 433b7952a01f0399a526bd904b4ab6c8
 
 -- query T valuesort
@@ -1698,7 +1698,7 @@ UNION
    WHERE b4 in (708,608,114,480)
       OR (c4=783 AND a4=72 AND d4=309 AND b4=603 AND 163=e4)
       OR (e4=376)
-;
+ORDER BY 1;
 -- 38 values hashing to f73c9b6c421b82aff3603ecc86cbd48f
 
 -- query T valuesort
@@ -1711,7 +1711,7 @@ INTERSECT
    WHERE NOT ((a5=81 AND e5=440 AND 369=d5 AND b5=855)
            OR (b5=98 OR 13=e5 OR 242=a5)
            OR (413=a5))
-;
+ORDER BY 1;
 -- 657
 
 -- query T valuesort
@@ -1740,7 +1740,7 @@ EXCEPT
 UNION
   SELECT c2 FROM t2
    WHERE (e2=720 AND 676=c2 AND 987=a2 AND b2=818)
-;
+ORDER BY 1;
 -- 112
 -- 391
 -- 676
@@ -1772,7 +1772,7 @@ EXCEPT
 UNION ALL
   SELECT c8 FROM t8
    WHERE (a8=586 AND 141=d8 AND e8=874 AND 769=b8 AND 907=c8)
-;
+ORDER BY 1;
 -- 47 values hashing to bcb6d61e9a1c9b7f05e468da3966a1d1
 
 -- query T valuesort
@@ -1809,7 +1809,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT (a8 in (72,795,210)
            OR (375=c8 AND 472=a8 AND e8=349))
-;
+ORDER BY 1;
 -- 24 values hashing to 3c1a34d3c1ef00132a3573821a6fc675
 
 -- query T valuesort
@@ -1824,7 +1824,7 @@ EXCEPT
    WHERE NOT ((d6=613 OR b6=880)
            OR a6 in (829,672,825,811,683,474,355)
            OR (731=a6 OR b6=850))
-;
+ORDER BY 1;
 -- 9 values hashing to 57f08f2834649d3c0742f51693e28c6d
 
 -- query T valuesort
@@ -1841,7 +1841,7 @@ EXCEPT
 UNION
   SELECT a9 FROM t9
    WHERE b9 in (152,74,136,891,19,149,759,15)
-;
+ORDER BY 1;
 -- 9 values hashing to 3c03d2e18d1097f7b0d2d24609a53b73
 
 -- query T valuesort
@@ -1869,7 +1869,7 @@ UNION
 EXCEPT
   SELECT a4 FROM t4
    WHERE NOT (c4 in (357,513,271,238))
-;
+ORDER BY 1;
 -- 17 values hashing to a4682f3ddc8f9f22429f63279901899f
 
 -- query T valuesort
@@ -1905,7 +1905,7 @@ UNION
    WHERE d2 in (404,654,887,897,351,643,682,198,398,158,498,225,753)
       OR (838=d2 OR 729=b2 OR 725=b2)
       OR (90=b2)
-;
+ORDER BY 1;
 -- 41 values hashing to ca625b6d2b6fe8890d1edb33bf94ab08
 
 -- query T valuesort
@@ -1941,7 +1941,7 @@ UNION ALL
   SELECT c4 FROM t4
    WHERE e4 in (879,438,37,760,217,217,835,307,38,132,63)
       OR (c4=521)
-;
+ORDER BY 1;
 -- 50 values hashing to b8293b5642614e554890f5cacc142ef2
 
 -- query T valuesort
@@ -1975,7 +1975,7 @@ EXCEPT
 EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((111=d9 AND 575=c9))
-;
+ORDER BY 1;
 -- 27 values hashing to b58882b6b4221de44db9f7bee1d1d540
 
 -- query T valuesort
@@ -2007,7 +2007,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((c3=127))
-;
+ORDER BY 1;
 -- 172
 -- 196
 -- 225
@@ -2039,7 +2039,7 @@ EXCEPT
    WHERE NOT (c3 in (7,317,885,733,102,641,524,701,645,647,83,339)
            OR (e3=981 OR a3=559 OR a3=696)
            OR (641=d3))
-;
+ORDER BY 1;
 -- 11 values hashing to f825735d72a46d9f44d2a68fe96283a0
 
 -- query T valuesort
@@ -2055,7 +2055,7 @@ EXCEPT
 UNION
   SELECT e5 FROM t5
    WHERE (689=c5 AND e5=141 AND 606=b5 AND d5=59 AND a5=270)
-;
+ORDER BY 1;
 -- 141
 -- 39
 -- 391
@@ -2092,7 +2092,7 @@ EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((b2=90 OR d2=772)
            OR a2 in (254,266,651,733,508))
-;
+ORDER BY 1;
 -- 9 values hashing to f8235437c31d21e22bf6b9afeff29f46
 
 -- query T valuesort
@@ -2118,7 +2118,7 @@ EXCEPT
 UNION ALL
   SELECT e4 FROM t4
    WHERE (e4=760 OR 996=c4 OR 948=c4)
-;
+ORDER BY 1;
 -- 24 values hashing to 09951fcb097cdfd6251650ee51e6707a
 
 -- query T valuesort
@@ -2134,7 +2134,7 @@ UNION
    WHERE (902=c2 OR 476=d2)
       OR (455=a2 AND b2=681)
       OR (543=b2 OR a2=35 OR a2=916)
-;
+ORDER BY 1;
 -- 35
 -- 455
 -- 495
@@ -2155,7 +2155,7 @@ UNION ALL
 EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((710=b6))
-;
+ORDER BY 1;
 -- 31 values hashing to 21a38b5ca1d7cde124e628f9dc39127e
 
 -- query T valuesort
@@ -2183,7 +2183,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (e6=523)
       OR (b6=905 OR 707=e6)
-;
+ORDER BY 1;
 -- 14
 -- 228
 -- 520
@@ -2216,7 +2216,7 @@ UNION
   SELECT d1 FROM t1
    WHERE (17=d1 AND 393=c1 AND 944=b1 AND 997=e1 AND a1=498)
       OR e1 in (667,255,87)
-;
+ORDER BY 1;
 -- 65 values hashing to b0a3898e4cf9e6395ec980681a39e428
 
 -- query T valuesort
@@ -2257,7 +2257,7 @@ UNION
    WHERE (186=b8 AND 826=a8)
       OR (513=c8 AND 628=a8)
       OR (106=e8 AND a8=72 AND d8=805 AND c8=668 AND b8=359)
-;
+ORDER BY 1;
 -- 49 values hashing to dc64241390944e12d20ffb4146e1129b
 
 -- query T valuesort
@@ -2273,7 +2273,7 @@ EXCEPT
    WHERE NOT ((e2=945 OR e2=16)
            OR e2 in (428,162,242,707,147,720,37,564,322,307,923,118,123)
            OR (b2=275 AND 773=a2 AND 806=c2 AND d2=977 AND e2=852))
-;
+ORDER BY 1;
 -- 494
 
 -- query T valuesort
@@ -2305,7 +2305,7 @@ UNION ALL
   SELECT d2 FROM t2
    WHERE (c2=676 AND 720=e2)
       OR d2 in (209,177,334,743,8,365,398,643,60,931,404,284,153)
-;
+ORDER BY 1;
 -- 41 values hashing to c865936f8e0aac94d6455ba10bba5cec
 
 -- query T valuesort
@@ -2315,7 +2315,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (417=e6)
       OR (214=b6 OR b6=905)
-;
+ORDER BY 1;
 -- 102
 -- 14
 -- 417
@@ -2351,7 +2351,7 @@ EXCEPT
   SELECT b9 FROM t9
    WHERE NOT ((b9=348 OR c9=224)
            OR (b9=746 OR b9=171 OR b9=122))
-;
+ORDER BY 1;
 -- 23 values hashing to ea13e2d506aed36acc3f51eaf8909705
 
 -- query T valuesort
@@ -2376,7 +2376,7 @@ UNION
    WHERE d3 in (164,17,354,444,102,363,368,480,645,607,437,850,650,231)
       OR a3 in (265,952,244,576,386,275,763,720,899,379,995,710)
       OR a3 in (184,566,559,353,34,376,478,710,899,743,965,818,644,763)
-;
+ORDER BY 1;
 -- 57 values hashing to 53e7162db838c16bf0ee7fd2bc420d04
 
 -- query T valuesort
@@ -2396,7 +2396,7 @@ UNION ALL
    WHERE (d6=161 OR a6=540)
       OR (211=e6 AND a6=2 AND c6=12)
       OR (b6=604 OR 493=d6 OR a6=2)
-;
+ORDER BY 1;
 -- 28 values hashing to 954b4dda890271eda9f40468fa738bf3
 
 -- query T valuesort
@@ -2427,7 +2427,7 @@ EXCEPT
 UNION ALL
   SELECT c7 FROM t7
    WHERE (c7=41 OR 257=c7 OR 981=c7)
-;
+ORDER BY 1;
 -- 32 values hashing to 5e5770f9a8ad39106da8bcfd54fb49f6
 
 -- query T valuesort
@@ -2459,7 +2459,7 @@ UNION ALL
    WHERE (486=c8 AND 381=e8)
       OR (287=b8 AND 638=a8)
       OR (b8=487 AND 610=d8 AND a8=359 AND e8=242)
-;
+ORDER BY 1;
 -- 24 values hashing to 0dd544159b89cad7bc211836a1736026
 
 -- query T valuesort
@@ -2491,7 +2491,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT ((b5=33)
            OR (d5=965 AND 678=c5))
-;
+ORDER BY 1;
 -- 36 values hashing to 4b2fd76347a131710f2ef1acde2cf558
 
 -- query T valuesort
@@ -2519,7 +2519,7 @@ EXCEPT
    WHERE NOT ((763=e4 AND a4=31 AND 938=b4 AND 943=d4 AND 299=c4)
            OR (e4=35 OR e4=179 OR 948=c4)
            OR (237=e4))
-;
+ORDER BY 1;
 -- 35 values hashing to e119ffe25db051d6bab2819c75a39e14
 
 -- query T valuesort
@@ -2533,7 +2533,7 @@ UNION
 EXCEPT
   SELECT a1 FROM t1
    WHERE NOT (c1 in (523,57,776,736,3,915,88))
-;
+ORDER BY 1;
 -- 17 values hashing to 0c14b9e5d2837a014f52ef2b3d8c477c
 
 -- query T valuesort
@@ -2549,7 +2549,7 @@ UNION ALL
 EXCEPT
   SELECT c2 FROM t2
    WHERE NOT (c2 in (967,24,933,233,244,653,46,996))
-;
+ORDER BY 1;
 -- 13 values hashing to 83ece101bf7035182a8427bb8ed89a39
 
 -- query T valuesort
@@ -2570,7 +2570,7 @@ EXCEPT
   SELECT d4 FROM t4
    WHERE NOT ((919=a4)
            OR b4 in (331,137,469,94,294,892))
-;
+ORDER BY 1;
 -- 221
 -- 280
 -- 321
@@ -2590,7 +2590,7 @@ UNION
    WHERE (144=e7 OR c7=548 OR c7=38)
       OR (e7=122 AND c7=498 AND a7=691 AND 409=b7 AND d7=114)
       OR (e7=561 AND 660=b7 AND c7=709 AND 781=d7 AND 62=a7)
-;
+ORDER BY 1;
 -- 20 values hashing to f5ef1cc9499c56f8a16da1074d0482d1
 
 -- query T valuesort
@@ -2620,7 +2620,7 @@ EXCEPT
    WHERE NOT ((a4=558 OR 450=a4)
            OR (879=e4 AND 901=b4 AND d4=260 AND 585=c4)
            OR a4 in (921,948,271,662))
-;
+ORDER BY 1;
 -- 16 values hashing to 8e7bb7ec64ebe2f0c4c94dc88c52b4c9
 
 -- query T valuesort
@@ -2639,7 +2639,7 @@ EXCEPT
    WHERE NOT ((360=c3 AND 534=b3)
            OR (720=b3)
            OR a3 in (145,383,186))
-;
+ORDER BY 1;
 -- 18 values hashing to 84d145a13d9c678f3b885e5300a5bb4e
 
 -- query T valuesort
@@ -2669,7 +2669,7 @@ UNION
   SELECT b7 FROM t7
    WHERE d7 in (292,139,364,831,974,296,902,324)
       OR (344=e7 AND c7=419 AND 777=d7 AND a7=114)
-;
+ORDER BY 1;
 -- 47 values hashing to ff0145c9db9643db10e52853aa694f4d
 
 -- query T valuesort
@@ -2699,7 +2699,7 @@ UNION ALL
 UNION ALL
   SELECT d4 FROM t4
    WHERE (b4=748 OR 929=d4)
-;
+ORDER BY 1;
 -- 39 values hashing to a5df9620e306263d9a37d4d4c4fb717c
 
 -- query T valuesort
@@ -2729,7 +2729,7 @@ EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((d5=255 OR 944=e5)
            OR (606=b5 OR d5=977))
-;
+ORDER BY 1;
 -- 30 values hashing to f66083788254f867bdf175ec53c26848
 
 -- query T valuesort
@@ -2745,7 +2745,7 @@ UNION
 UNION ALL
   SELECT c6 FROM t6
    WHERE (a6=182 AND 737=e6 AND 232=b6 AND c6=265 AND 473=d6)
-;
+ORDER BY 1;
 -- 42 values hashing to b434eb6726d46fb3f51df3e2c2a48dec
 
 -- query T valuesort
@@ -2780,7 +2780,7 @@ EXCEPT
    WHERE NOT ((592=e8 AND 454=b8)
            OR (d8=610 AND 242=e8 AND 487=b8)
            OR (a8=150))
-;
+ORDER BY 1;
 -- 21 values hashing to a4f17e983f20abe402899302fae7feca
 
 -- query T valuesort
@@ -2798,7 +2798,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (a6=66 AND 123=c6 AND 734=d6 AND b6=449)
       OR b6 in (223,696,825,876,250,226)
-;
+ORDER BY 1;
 -- 25 values hashing to 900a39c026f5a2962590e6f7633b11c8
 
 -- query T valuesort
@@ -2807,7 +2807,7 @@ UNION ALL
 UNION ALL
   SELECT d2 FROM t2
    WHERE (b2=968 AND d2=10 AND 61=c2 AND e2=696)
-;
+ORDER BY 1;
 -- 10
 -- 109
 -- 145
@@ -2827,7 +2827,7 @@ EXCEPT
   SELECT c9 FROM t9
    WHERE NOT (a9 in (463,326,72,553,747,378,416,349,149,104,56,875)
            OR (e9=954))
-;
+ORDER BY 1;
 -- 628
 
 -- query T valuesort
@@ -2847,7 +2847,7 @@ UNION
   SELECT d1 FROM t1
    WHERE (67=c1 AND 483=e1 AND 414=b1 AND d1=992 AND a1=382)
       OR c1 in (870,57,537,683,3,787,774)
-;
+ORDER BY 1;
 -- 19 values hashing to 7a4193d407c6e05b34b01b41ad1ff27f
 
 -- query T valuesort
@@ -2867,7 +2867,7 @@ UNION
 EXCEPT
   SELECT c2 FROM t2
    WHERE NOT ((574=a2 OR b2=181))
-;
+ORDER BY 1;
 -- 18 values hashing to 65458cc9744f7a7431a83cd1247fe87d
 
 -- query T valuesort
@@ -2900,7 +2900,7 @@ EXCEPT
    WHERE NOT ((713=b3 OR e3=192 OR 890=c3)
            OR c3 in (178,580,80,986,455,272,492,947,244,844,651,317,961)
            OR b3 in (761,214,57,914,932,651,577))
-;
+ORDER BY 1;
 -- 23 values hashing to ab33e63adc541620b4948dec8419d079
 
 -- query T valuesort
@@ -2929,7 +2929,7 @@ UNION ALL
   SELECT c2 FROM t2
    WHERE b2 in (313,509,903,60,279,35,145,932,527)
       OR (c2=819 AND 415=a2)
-;
+ORDER BY 1;
 -- 47 values hashing to aaa3dc7798208effa1eb480f2cfcef94
 
 -- query T valuesort
@@ -2958,7 +2958,7 @@ EXCEPT
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((a2=775 OR a2=1))
-;
+ORDER BY 1;
 -- 29 values hashing to a1808ab7b79429ad416519eb6f0b8a2a
 
 -- query T valuesort
@@ -2984,7 +2984,7 @@ UNION
 UNION ALL
   SELECT d6 FROM t6
    WHERE (549=b6 AND 446=d6 AND c6=35 AND e6=958 AND a6=751)
-;
+ORDER BY 1;
 -- 19 values hashing to 6f4e6da3aba0b3138970c6092113e3a3
 
 -- query T valuesort
@@ -3010,7 +3010,7 @@ UNION ALL
    WHERE e9 in (383,117,426,82,368,445)
       OR (943=e9 AND 269=b9 AND d9=274 AND c9=923)
       OR e9 in (383,788,149,542,567,61)
-;
+ORDER BY 1;
 -- 35 values hashing to b738fc28b26ae7a6a92253af8f79cf61
 
 -- query T valuesort
@@ -3033,7 +3033,7 @@ UNION ALL
    WHERE (a4=74)
       OR (288=b4 OR 210=a4)
       OR (941=b4)
-;
+ORDER BY 1;
 -- 637
 -- 677
 -- 694
@@ -3072,7 +3072,7 @@ UNION ALL
 EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((b3=214 OR e3=914 OR a3=720))
-;
+ORDER BY 1;
 -- 16 values hashing to 739cd8e48a603f19a3b54381a0c6031b
 
 -- query T valuesort
@@ -3096,7 +3096,7 @@ EXCEPT
    WHERE NOT ((554=e4 AND d4=574)
            OR (c4=585)
            OR (847=b4 AND 797=d4 AND 546=e4))
-;
+ORDER BY 1;
 -- 9 values hashing to d8d786d98118f80ec7add228db2acbfe
 
 -- query T valuesort
@@ -3110,7 +3110,7 @@ EXCEPT
   SELECT e9 FROM t9
    WHERE NOT ((584=a9 OR 759=b9 OR 688=b9)
            OR (720=d9 AND 900=b9 AND e9=736))
-;
+ORDER BY 1;
 -- 14
 -- 456
 -- 81
@@ -3124,7 +3124,7 @@ UNION
   SELECT a1 FROM t1
    WHERE e1 in (56,855,468,96,72,683,158,763,298)
       OR b1 in (570,879,781,584,447,914,726)
-;
+ORDER BY 1;
 -- 27 values hashing to ec7ba277b5a4cbe3a9d6974d346d00f1
 
 -- query T valuesort
@@ -3135,7 +3135,7 @@ UNION
 UNION ALL
   SELECT a4 FROM t4
    WHERE e4 in (349,677,565)
-;
+ORDER BY 1;
 -- 210
 -- 44
 -- 513
@@ -3163,7 +3163,7 @@ UNION
    WHERE a6 in (255,971,870,1,706,801,825,518,240,396)
       OR (c6=25)
       OR (147=d6 OR c6=84 OR 91=e6)
-;
+ORDER BY 1;
 -- 35 values hashing to b4a1a74da4b61d67fa04ae57e6d7bbd7
 
 -- query T valuesort
@@ -3173,7 +3173,7 @@ UNION
 UNION ALL
   SELECT a8 FROM t8
    WHERE (b8=665 OR 866=e8)
-;
+ORDER BY 1;
 -- 197
 -- 234
 -- 302
@@ -3205,7 +3205,7 @@ EXCEPT
 EXCEPT
   SELECT a7 FROM t7
    WHERE NOT ((925=d7))
-;
+ORDER BY 1;
 -- 18 values hashing to 13489ec2b75fd7dfc7cb1525c17f0a4e
 
 -- query T valuesort
@@ -3237,7 +3237,7 @@ EXCEPT
   SELECT a7 FROM t7
    WHERE NOT ((d7=671 AND b7=220 AND 4=e7 AND 341=c7)
            OR (e7=508 OR 31=e7))
-;
+ORDER BY 1;
 -- 20 values hashing to f9a7943c052ccced9c0b4c2e074668e1
 
 -- query T valuesort
@@ -3278,7 +3278,7 @@ UNION ALL
   SELECT d9 FROM t9
    WHERE (487=c9 AND e9=854 AND 258=a9 AND b9=326)
       OR (125=b9 AND 316=d9 AND c9=894 AND 477=e9 AND 215=a9)
-;
+ORDER BY 1;
 -- 45 values hashing to 5f03e3ba729d6098d3ac0437a0c0d64d
 
 -- query T valuesort
@@ -3307,7 +3307,7 @@ EXCEPT
    WHERE NOT ((c8=775 AND d8=339 AND 761=b8)
            OR e8 in (578,422,186,349,333,106,310,296,533)
            OR c8 in (74,979,196,374,77,151,998,187,100,907))
-;
+ORDER BY 1;
 -- 23 values hashing to 8f309beab5beedf73aa6b2f203335a1a
 
 -- query T valuesort
@@ -3322,7 +3322,7 @@ EXCEPT
    WHERE NOT ((702=a8)
            OR (d8=422 AND b8=677)
            OR (a8=72 AND 359=b8 AND 668=c8 AND e8=106))
-;
+ORDER BY 1;
 -- 16 values hashing to 1f5912f2ce327e982aeb0fc270a197ed
 
 -- query T valuesort
@@ -3350,7 +3350,7 @@ UNION
    WHERE (94=b4 AND 159=a4 AND 873=c4 AND 881=d4 AND 179=e4)
       OR (e4=543)
       OR c4 in (690,162,936,728,712,482,752,0,88,720,74)
-;
+ORDER BY 1;
 -- 41 values hashing to 6d72bc6014ca90ac2ce3ea11a779980f
 
 -- query T valuesort
@@ -3362,7 +3362,7 @@ UNION
    WHERE e5 in (585,689,610,885,18,150,802,258,923,894)
       OR (b5=989 AND e5=522 AND 351=c5 AND d5=667 AND 730=a5)
       OR b5 in (559,855,33,703)
-;
+ORDER BY 1;
 -- 27 values hashing to b9b8c7119f27b61e8362c700091d5871
 
 -- query T valuesort
@@ -3374,7 +3374,7 @@ UNION ALL
   SELECT a6 FROM t6
    WHERE (e6=711 OR c6=177 OR 158=b6)
       OR e6 in (550,972,617,794,711,808,847,654,67)
-;
+ORDER BY 1;
 -- 18 values hashing to 5ff5ed7bd08a7e769f39be58a4fa44e6
 
 -- query T valuesort
@@ -3413,7 +3413,7 @@ UNION ALL
   SELECT b3 FROM t3
    WHERE (616=b3 AND c3=601 AND 552=e3 AND a3=892 AND d3=554)
       OR (826=c3)
-;
+ORDER BY 1;
 -- 42 values hashing to dd754e6c2499d191472f904d96eb7e1b
 
 -- query T valuesort
@@ -3437,7 +3437,7 @@ UNION ALL
   SELECT c3 FROM t3
    WHERE (a3=865 AND c3=887 AND 584=b3 AND 425=d3)
       OR (814=b3 AND 146=c3)
-;
+ORDER BY 1;
 -- 13 values hashing to f45c970c4bbf4d1a57bf548b6c4679fe
 
 -- query T valuesort
@@ -3453,7 +3453,7 @@ UNION
 UNION ALL
   SELECT b2 FROM t2
    WHERE d2 in (749,351,80,833,555,643,813,772,351,10,577)
-;
+ORDER BY 1;
 -- 40 values hashing to ceed9a0d3b1e499447da346b53a67ccc
 
 -- query T valuesort
@@ -3497,7 +3497,7 @@ UNION
    WHERE (578=a8 AND e8=41 AND c8=521)
       OR a8 in (894,153,952,961,171,359,210,359,127,259,591,502)
       OR (244=b8 AND 564=a8)
-;
+ORDER BY 1;
 -- 51 values hashing to c846e8e69915ff831ff077b19505f37d
 
 -- query T valuesort
@@ -3536,7 +3536,7 @@ UNION ALL
   SELECT c4 FROM t4
    WHERE (904=c4)
       OR (51=a4 AND b4=765 AND 794=c4 AND d4=498)
-;
+ORDER BY 1;
 -- 16 values hashing to 14be769842d5ce20504627c45ba64bb1
 
 -- query T valuesort
@@ -3561,7 +3561,7 @@ EXCEPT
   SELECT a3 FROM t3
    WHERE NOT ((198=b3 OR 333=e3)
            OR (e3=464 OR 892=e3 OR b3=454))
-;
+ORDER BY 1;
 -- 493
 -- 601
 -- 704
@@ -3586,7 +3586,7 @@ UNION ALL
   SELECT c7 FROM t7
    WHERE (d7=724 OR 306=b7)
       OR c7 in (857,692,375,705,931)
-;
+ORDER BY 1;
 -- 57 values hashing to ef7716ca47576dddfc0ec1cd12bfabc0
 
 -- query T valuesort
@@ -3624,7 +3624,7 @@ UNION ALL
   SELECT b2 FROM t2
    WHERE (a2=680)
       OR (a2=442)
-;
+ORDER BY 1;
 -- 20 values hashing to 08a8817a2d02ead19a900768c993bc89
 
 -- query T valuesort
@@ -3635,7 +3635,7 @@ UNION
   SELECT c1 FROM t1
    WHERE (298=e1 AND c1=57 AND 942=b1 AND 38=d1)
       OR a1 in (551,988,862,492,445,868,524)
-;
+ORDER BY 1;
 -- 32 values hashing to 9f0d7449f428cbab8bdad13cd7744268
 
 -- query T valuesort
@@ -3657,7 +3657,7 @@ EXCEPT
   SELECT e1 FROM t1
    WHERE NOT ((128=b1 AND 581=d1 AND 967=a1 AND 921=e1 AND c1=585)
            OR (b1=303))
-;
+ORDER BY 1;
 -- 20 values hashing to 282ee696866f5316001d25468c591645
 
 -- query T valuesort
@@ -3692,7 +3692,7 @@ EXCEPT
    WHERE NOT ((269=b3 OR c3=777 OR e3=794)
            OR b3 in (788,381,73,27,236,685,368,405,977,720)
            OR (e3=169 OR 260=e3 OR 696=a3))
-;
+ORDER BY 1;
 -- 42 values hashing to 9505df376c50bc3572b2f09d5abedb08
 
 -- query T valuesort
@@ -3722,7 +3722,7 @@ UNION
    WHERE b6 in (583,774,0,427,537,351,601,565,350,923,507,575,629,390)
       OR (121=a6 AND e6=139 AND b6=662 AND c6=491 AND 750=d6)
       OR (411=c6 AND d6=2 AND a6=672 AND 604=b6)
-;
+ORDER BY 1;
 -- 37 values hashing to 594e2bdf9f8b6794b7a597f9431e54e3
 
 -- query T valuesort
@@ -3743,7 +3743,7 @@ EXCEPT
    WHERE NOT ((129=a6 OR c6=938 OR 754=e6)
            OR (d6=929)
            OR a6 in (801,522,366,474,568,129))
-;
+ORDER BY 1;
 -- 46 values hashing to 944b34bab4d0c3ca1c458aa659fa8c51
 
 -- query T valuesort
@@ -3757,7 +3757,7 @@ UNION
 EXCEPT
   SELECT b1 FROM t1
    WHERE NOT ((39=c1))
-;
+ORDER BY 1;
 -- 17 values hashing to f8e1db98f83b50cbabef4ad1a8376e94
 
 -- query T valuesort
@@ -3795,7 +3795,7 @@ UNION ALL
   SELECT e3 FROM t3
    WHERE (615=a3)
       OR c3 in (845,601,146,647,296,80)
-;
+ORDER BY 1;
 -- 29 values hashing to 7457e72fa9f780de96092233b93869ae
 
 -- query T valuesort
@@ -3835,7 +3835,7 @@ UNION
    WHERE (d1=412)
       OR (a1=637 AND 125=e1)
       OR c1 in (441,208,379,608)
-;
+ORDER BY 1;
 -- 30 values hashing to f4a4d97af0198728f8eebe33955e794f
 
 -- query T valuesort
@@ -3847,7 +3847,7 @@ UNION ALL
   SELECT b7 FROM t7
    WHERE (d7=507)
       OR (e7=89)
-;
+ORDER BY 1;
 -- 141
 -- 228
 -- 24
@@ -3891,7 +3891,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT ((439=a4 AND 979=d4 AND 535=b4 AND 37=e4 AND 451=c4)
            OR (936=c4 AND b4=986 AND a4=223 AND 144=d4 AND 438=e4))
-;
+ORDER BY 1;
 -- 15 values hashing to 0751fee5cb037d422c0367e047760930
 
 -- query T valuesort
@@ -3925,7 +3925,7 @@ UNION ALL
   SELECT a8 FROM t8
    WHERE c8 in (273,821,691)
       OR b8 in (563,459,615,665,906,702,102,269,540,997,755,386,259)
-;
+ORDER BY 1;
 -- 34 values hashing to ac54f565024d8355cb6afabdb40f07b6
 
 -- query T valuesort
@@ -3954,7 +3954,7 @@ UNION
   SELECT b5 FROM t5
    WHERE (549=e5 OR 261=c5 OR 613=c5)
       OR (a5=514 OR e5=440 OR 551=c5)
-;
+ORDER BY 1;
 -- 14 values hashing to 904024ba71940e8528a83271729e4d4d
 
 -- query T valuesort
@@ -3973,7 +3973,7 @@ UNION
 UNION
   SELECT d8 FROM t8
    WHERE d8 in (14,108,108,192,384)
-;
+ORDER BY 1;
 -- 108
 -- 14
 -- 192
@@ -4017,7 +4017,7 @@ EXCEPT
   SELECT c2 FROM t2
    WHERE NOT ((65=c2 OR a2=898 OR 796=a2)
            OR (b2=820 AND 953=e2 AND 760=a2))
-;
+ORDER BY 1;
 -- 37 values hashing to 08b3db67eb4edff7c569f6b8a8f48c7f
 
 -- query T valuesort
@@ -4059,7 +4059,7 @@ EXCEPT
    WHERE NOT ((658=d3 AND e3=304 AND 349=a3 AND c3=542 AND b3=542)
            OR (b3=827 AND c3=486)
            OR a3 in (135,513,380,754,265,393,614,803,532,190,75))
-;
+ORDER BY 1;
 -- 283
 -- 291
 -- 374
@@ -4095,7 +4095,7 @@ EXCEPT
 EXCEPT
   SELECT d9 FROM t9
    WHERE NOT (a9 in (875,429,660,104,553,318,747,905,149,160,14,11,972))
-;
+ORDER BY 1;
 -- 19 values hashing to 70e141c40c1105455f9b4fac988071bb
 
 -- query T valuesort
@@ -4115,7 +4115,7 @@ EXCEPT
    WHERE NOT ((984=b8 OR a8=443)
            OR b8 in (934,690,105,269)
            OR a8 in (900,826,883,184,597,894,210,807))
-;
+ORDER BY 1;
 -- 182
 
 -- query T valuesort
@@ -4151,7 +4151,7 @@ UNION ALL
    WHERE (951=d1)
       OR (52=a1 AND c1=315 AND 25=d1 AND e1=210 AND b1=132)
       OR c1 in (343,375,416,393,69,88,417,976,272,980)
-;
+ORDER BY 1;
 -- 25 values hashing to 623ac60450e95676316cce5d5a4b6170
 
 -- query T valuesort
@@ -4183,7 +4183,7 @@ EXCEPT
    WHERE NOT (b5 in (306,729,433,159,530,186,951,975)
            OR (b5=858 OR a5=342)
            OR (a5=153 AND c5=443 AND b5=587 AND e5=98 AND d5=691))
-;
+ORDER BY 1;
 -- 25 values hashing to af9e3b28cc120e6d765410fb981d68f5
 
 -- query T valuesort
@@ -4219,7 +4219,7 @@ UNION
 EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((a7=758 AND 826=e7 AND 103=c7 AND 172=d7 AND b7=519))
-;
+ORDER BY 1;
 -- 14 values hashing to 5ffaf7de058cff4d51ebc2d0deb7c418
 
 -- query T valuesort
@@ -4240,7 +4240,7 @@ EXCEPT
 EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((514=b7))
-;
+ORDER BY 1;
 -- 665
 -- 84
 -- 998
@@ -4269,7 +4269,7 @@ UNION ALL
    WHERE a5 in (851,235,34,369,18)
       OR (41=e5 AND 530=b5)
       OR (e5=157 AND 695=b5 AND 957=d5 AND a5=721 AND 27=c5)
-;
+ORDER BY 1;
 -- 22 values hashing to 080ffaa2dd4cd20516a11ae91c0fe218
 
 -- query T valuesort
@@ -4286,7 +4286,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((b3=17 AND d3=307 AND a3=347))
-;
+ORDER BY 1;
 -- 23 values hashing to 37786cb8db201a25423bd01542a8ce16
 
 -- query T valuesort
@@ -4307,7 +4307,7 @@ UNION
   SELECT c3 FROM t3
    WHERE (480=b3 OR a3=135)
       OR (b3=720)
-;
+ORDER BY 1;
 -- 17 values hashing to 12755f1ba5727688f5d0e388d5e11eb2
 
 -- query T valuesort
@@ -4337,7 +4337,7 @@ UNION
    WHERE a5 in (153,556,519,180,685,730,320,341,330,69,89,832,976,826)
       OR (c5=922 OR 915=c5 OR d5=321)
       OR (c5=941 AND 723=b5 AND d5=313 AND e5=470)
-;
+ORDER BY 1;
 -- 19 values hashing to 199a9330af2291931370b823e469dd57
 
 -- query T valuesort
@@ -4350,7 +4350,7 @@ UNION ALL
    WHERE b7 in (820,59,374,813,612,938,837,660,105,506,827,129,636,949)
       OR (d7=148 OR d7=418 OR 781=c7)
       OR (b7=510)
-;
+ORDER BY 1;
 -- 22 values hashing to 4c5fa283e9b663bbd85446d141d4518d
 
 -- query T valuesort
@@ -4359,7 +4359,7 @@ UNION ALL
 EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((c5=443 AND d5=691 AND b5=587 AND e5=98))
-;
+ORDER BY 1;
 -- 306
 
 -- query T valuesort
@@ -4397,7 +4397,7 @@ UNION
 EXCEPT
   SELECT b3 FROM t3
    WHERE NOT ((809=c3 OR 683=d3))
-;
+ORDER BY 1;
 -- 24 values hashing to 7fa9fee68831d034715824768742f149
 
 -- query T valuesort
@@ -4413,7 +4413,7 @@ UNION
   SELECT a4 FROM t4
    WHERE (a4=513)
       OR (276=b4)
-;
+ORDER BY 1;
 -- 303
 -- 346
 -- 373
@@ -4436,7 +4436,7 @@ UNION ALL
   SELECT d5 FROM t5
    WHERE (53=a5 OR a5=447)
       OR (b5=855 AND 369=d5 AND e5=440 AND 130=c5 AND a5=81)
-;
+ORDER BY 1;
 -- 11 values hashing to df1f3e84c69b1b22292c9844bc1651f6
 
 -- query T valuesort
@@ -4457,7 +4457,7 @@ EXCEPT
   SELECT d2 FROM t2
    WHERE NOT (b2 in (812,819,725,649,72,278,820)
            OR (838=d2 OR 126=d2 OR e2=125))
-;
+ORDER BY 1;
 -- 10 values hashing to 5c757965762832ad5bc52708243eb9d4
 
 -- query T valuesort
@@ -4477,7 +4477,7 @@ EXCEPT
 UNION ALL
   SELECT a1 FROM t1
    WHERE b1 in (828,645,42,570,247,738,346,894,462,226,435,43,593)
-;
+ORDER BY 1;
 -- 34 values hashing to 6859d310f9ffd0b2e1267e712fdc035f
 
 -- query T valuesort
@@ -4486,7 +4486,7 @@ UNION ALL
 UNION
   SELECT e6 FROM t6
    WHERE (353=e6 OR e6=969 OR 766=e6)
-;
+ORDER BY 1;
 -- 175
 -- 353
 -- 700
@@ -4535,7 +4535,7 @@ UNION ALL
    WHERE c7 in (41,243,887,843,467)
       OR (c7=729 AND a7=48)
       OR (166=b7 AND 945=e7 AND c7=843)
-;
+ORDER BY 1;
 -- 61 values hashing to 83d28a8a37d9e1ce393c66fad7c8780e
 
 -- query T valuesort
@@ -4573,7 +4573,7 @@ UNION ALL
    WHERE a1 in (918,189,299,52,963,461,195,553,382,584)
       OR (640=a1)
       OR (483=e1)
-;
+ORDER BY 1;
 -- 74 values hashing to ee5b4adbbe7369ee11ab261160bd9b9d
 
 -- query T valuesort
@@ -4601,7 +4601,7 @@ EXCEPT
    WHERE NOT ((c2=878 AND b2=605 AND e2=781 AND d2=448)
            OR c2 in (27,854,729,136)
            OR (c2=282 AND 339=e2 AND 195=d2))
-;
+ORDER BY 1;
 -- 25 values hashing to 956e8df3a6a8d209ae3a72bf1d9a5353
 
 -- query T valuesort
@@ -4615,7 +4615,7 @@ EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((286=e6 OR 175=e6)
            OR b6 in (963,351,905,290,511,126,223,6,989,0,350,984,565))
-;
+ORDER BY 1;
 -- 31 values hashing to 8865e7e1f9c94932e766c5ce4523818b
 
 -- query T valuesort
@@ -4640,7 +4640,7 @@ EXCEPT
    WHERE NOT ((24=a5 AND b5=723 AND 470=e5)
            OR a5 in (24,445,749,867,675,180,319,730,757,642,826,519,921)
            OR (b5=326))
-;
+ORDER BY 1;
 -- 14 values hashing to 2e658db4781fa5b68a6d596cd70e6663
 
 -- query T valuesort
@@ -4679,7 +4679,7 @@ EXCEPT
 EXCEPT
   SELECT a8 FROM t8
    WHERE NOT (e8 in (41,179,455,859,463,310))
-;
+ORDER BY 1;
 -- 23 values hashing to e005282cf9e005fa2820aab6ccd9c0c5
 
 -- query T valuesort
@@ -4707,7 +4707,7 @@ UNION ALL
 UNION ALL
   SELECT c6 FROM t6
    WHERE (664=d6)
-;
+ORDER BY 1;
 -- 26 values hashing to e0c1a16c2e1ab2f20d9d1fbeeeca5cc1
 
 -- query T valuesort
@@ -4734,7 +4734,7 @@ UNION ALL
   SELECT b1 FROM t1
    WHERE (a1=371 AND b1=49 AND e1=146)
       OR (c1=379 OR d1=902 OR d1=212)
-;
+ORDER BY 1;
 -- 73 values hashing to 7a7514e6e27b86f3b6ebf04cd7054088
 
 -- query T valuesort
@@ -4761,7 +4761,7 @@ UNION
    WHERE c4 in (703,0,586,6,162,127,584)
       OR (132=e4 AND 119=c4)
       OR (35=e4 OR 837=e4)
-;
+ORDER BY 1;
 -- 19 values hashing to 3f4cfe26729dcb9292bd6b7a7a3164e0
 
 -- query T valuesort
@@ -4781,7 +4781,7 @@ EXCEPT
 UNION
   SELECT a6 FROM t6
    WHERE e6 in (139,747,274,511,707,595)
-;
+ORDER BY 1;
 -- 15 values hashing to e1627e3b569c880dd9ec9b1f31207524
 
 -- query T valuesort
@@ -4811,7 +4811,7 @@ UNION ALL
 EXCEPT
   SELECT c1 FROM t1
    WHERE NOT (a1 in (283,746,988,179,477,607,866,524,395))
-;
+ORDER BY 1;
 -- 47 values hashing to f8bed6e7bd280dcfe6db5ae57bd723f4
 
 -- query T valuesort
@@ -4824,7 +4824,7 @@ UNION
    WHERE (c5=437 AND d5=555 AND b5=860 AND a5=330)
       OR (c5=250 AND a5=685)
       OR (171=d5 OR 484=b5 OR 53=a5)
-;
+ORDER BY 1;
 -- 12 values hashing to 15949cc35d463fc17b3f884225ddaf35
 
 -- query T valuesort
@@ -4855,7 +4855,7 @@ UNION
   SELECT b7 FROM t7
    WHERE b7 in (66,735,720,503,514,923,679,192,655,175,426,257,896)
       OR a7 in (165,707,62,500,416)
-;
+ORDER BY 1;
 -- 48 values hashing to cb23bc086f1cca5f872ded73160cef54
 
 -- query T valuesort
@@ -4892,7 +4892,7 @@ UNION
    WHERE (d5=537)
       OR (851=a5)
       OR c5 in (934,147,27,689,441,797,147,601,672,101,471,185)
-;
+ORDER BY 1;
 -- 29 values hashing to bb525730cae750ddea0820212dccb485
 
 -- query T valuesort
@@ -4915,7 +4915,7 @@ UNION ALL
 UNION ALL
   SELECT c4 FROM t4
    WHERE (d4=639 AND a4=261 AND c4=422 AND 892=b4 AND 820=e4)
-;
+ORDER BY 1;
 -- 28 values hashing to 8c9d88cce3d13be0e09197951b922d80
 
 -- query T valuesort
@@ -4954,7 +4954,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((a8=328)
            OR (405=b8 AND 461=c8))
-;
+ORDER BY 1;
 -- 38 values hashing to ff5721e3de0fca179ac72aa3e6ca4dcf
 
 -- query T valuesort
@@ -4987,7 +4987,7 @@ EXCEPT
    WHERE NOT (a9 in (776,764,685,295,953,712,269,683,273,747,102)
            OR (272=c9 AND b9=171)
            OR (959=a9 AND 646=d9 AND b9=578))
-;
+ORDER BY 1;
 -- 34 values hashing to ba5501756c56aae7a971048724c31f38
 
 -- query T valuesort
@@ -5017,7 +5017,7 @@ UNION
   SELECT e5 FROM t5
    WHERE (d5=32 OR 725=e5 OR b5=716)
       OR b5 in (306,380,559,784)
-;
+ORDER BY 1;
 -- 31 values hashing to d5e29d5949fc7afd0eff7130160aa8cb
 
 -- query T valuesort
@@ -5055,7 +5055,7 @@ EXCEPT
   SELECT c1 FROM t1
    WHERE NOT ((362=b1 AND a1=61 AND 95=e1 AND 776=c1)
            OR (523=b1 OR a1=821))
-;
+ORDER BY 1;
 -- 41 values hashing to b904f3bebd2ccf944a0f539453443744
 
 -- query T valuesort
@@ -5072,7 +5072,7 @@ EXCEPT
 UNION ALL
   SELECT b5 FROM t5
    WHERE (c5=678 OR c5=12)
-;
+ORDER BY 1;
 -- 512
 -- 671
 -- 673
@@ -5111,7 +5111,7 @@ UNION
   SELECT d1 FROM t1
    WHERE (e1=558)
       OR (440=b1 AND c1=955 AND e1=87 AND a1=222 AND d1=602)
-;
+ORDER BY 1;
 -- 11 values hashing to d91d6b27d40a304be150797cc7babc15
 
 -- query T valuesort
@@ -5127,7 +5127,7 @@ EXCEPT
   SELECT a9 FROM t9
    WHERE NOT (c9 in (451,923,751,90,476,278,836,126,739,575,739,347,857,975)
            OR (938=d9 AND 703=b9 AND a9=982 AND c9=801 AND 15=e9))
-;
+ORDER BY 1;
 -- 18 values hashing to e0fe313f1924510546e2b4f9f7b77896
 
 -- query T valuesort
@@ -5159,7 +5159,7 @@ UNION ALL
 UNION ALL
   SELECT e8 FROM t8
    WHERE (12=a8 AND d8=50 AND e8=383)
-;
+ORDER BY 1;
 -- 39 values hashing to 5582beb38a313a58e4474a6cf19b2882
 
 -- query T valuesort
@@ -5178,7 +5178,7 @@ UNION ALL
 UNION ALL
   SELECT b1 FROM t1
    WHERE (b1=128 AND 585=c1 AND 581=d1 AND 967=a1)
-;
+ORDER BY 1;
 -- 18 values hashing to ec4cf41f3ce6b71486668c9649f54349
 
 -- query T valuesort
@@ -5197,7 +5197,7 @@ UNION
 UNION ALL
   SELECT c2 FROM t2
    WHERE (23=d2 OR e2=148 OR 537=d2)
-;
+ORDER BY 1;
 -- 23 values hashing to f544cf1e67329931e0e2160eda80e264
 
 -- query T valuesort
@@ -5216,7 +5216,7 @@ EXCEPT
 UNION
   SELECT a4 FROM t4
    WHERE e4 in (531,405,738,296,6,763,381,37,778,29,377,179,184)
-;
+ORDER BY 1;
 -- 17 values hashing to 36f92dfda5468e040515ab3ffcd98f9b
 
 -- query T valuesort
@@ -5250,7 +5250,7 @@ UNION
   SELECT e1 FROM t1
    WHERE d1 in (643,294,432,35,38,799,701,416,666,990)
       OR (c1=979 OR 943=e1 OR 328=e1)
-;
+ORDER BY 1;
 -- 24 values hashing to e9f341546ed6894ff118e90d7aa4c66a
 
 -- query T valuesort
@@ -5286,7 +5286,7 @@ EXCEPT
    WHERE NOT (e6 in (5,654,67,816,6,511,241,24,417,139)
            OR a6 in (392,818,811,787,518,355)
            OR b6 in (875,650,507,834,662))
-;
+ORDER BY 1;
 -- 33 values hashing to 8a44a8fbecb0b91e0dbe0e352b564e7a
 
 -- query T valuesort
@@ -5305,7 +5305,7 @@ EXCEPT
 UNION ALL
   SELECT e6 FROM t6
    WHERE (a6=414 AND 993=b6 AND e6=601)
-;
+ORDER BY 1;
 -- 12 values hashing to e5e5b6f727ee08861a17ea4d037a1d56
 
 -- query T valuesort
@@ -5321,7 +5321,7 @@ INTERSECT
 EXCEPT
   SELECT e7 FROM t7
    WHERE NOT (e7 in (455,827,929,462,590,503))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a6 FROM t6
@@ -5346,7 +5346,7 @@ EXCEPT
 EXCEPT
   SELECT e4 FROM t4
    WHERE NOT ((373=d4 OR d4=376 OR 107=a4))
-;
+ORDER BY 1;
 -- 21 values hashing to 6c77756faf85d95767012aa523f79db2
 
 -- query T valuesort
@@ -5370,7 +5370,7 @@ UNION ALL
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT (e7 in (462,624,595,462,456))
-;
+ORDER BY 1;
 -- 13 values hashing to 1776d086beeb1455eb31ea6d1b1b97c1
 
 -- query T valuesort
@@ -5388,7 +5388,7 @@ EXCEPT
    WHERE NOT (c5 in (443,668,868,602,756,601,86,598,250,941,634,158,351)
            OR (335=a5)
            OR (d5=667))
-;
+ORDER BY 1;
 -- 305
 -- 377
 -- 46
@@ -5414,7 +5414,7 @@ EXCEPT
 UNION ALL
   SELECT b4 FROM t4
    WHERE (c4=703 OR 933=a4 OR c4=127)
-;
+ORDER BY 1;
 -- 12 values hashing to 73d0da52e9f2f241f85354518b9b3a6e
 
 -- query T valuesort
@@ -5445,7 +5445,7 @@ UNION ALL
 UNION ALL
   SELECT c9 FROM t9
    WHERE d9 in (554,965,922,660)
-;
+ORDER BY 1;
 -- 71 values hashing to 8073c342fc058ad95015453079bf6e3a
 
 -- query T valuesort
@@ -5464,7 +5464,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT (e7 in (462,552,31,89,303,918)
            OR (a7=736 AND 506=e7 AND c7=14))
-;
+ORDER BY 1;
 -- 249
 -- 997
 
@@ -5478,7 +5478,7 @@ EXCEPT
 EXCEPT
   SELECT a2 FROM t2
    WHERE NOT ((d2=886))
-;
+ORDER BY 1;
 -- 211
 -- 459
 
@@ -5523,7 +5523,7 @@ UNION
   SELECT e9 FROM t9
    WHERE (a9=102 AND 926=d9 AND c9=469 AND 818=b9 AND e9=854)
       OR (857=c9 OR b9=746 OR 253=c9)
-;
+ORDER BY 1;
 -- 13 values hashing to 5b21d8c785bccfe06c0baf49c3f5e0fc
 
 -- query T valuesort
@@ -5545,7 +5545,7 @@ EXCEPT
   SELECT e9 FROM t9
    WHERE NOT ((737=e9)
            OR (365=a9 OR d9=720 OR 804=b9))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b6 FROM t6
@@ -5557,7 +5557,7 @@ UNION
 EXCEPT
   SELECT d4 FROM t4
    WHERE NOT ((c4=631 AND 905=d4 AND 387=b4 AND e4=147))
-;
+ORDER BY 1;
 -- 16 values hashing to 0a9c40013f959177cf27906aa3fc282c
 
 -- query T valuesort
@@ -5587,7 +5587,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE (e4=206 OR 608=b4)
       OR (884=b4 AND a4=662)
-;
+ORDER BY 1;
 -- 50 values hashing to 5689a9366ab2f369fd578670024aed9b
 
 -- query T valuesort
@@ -5623,7 +5623,7 @@ EXCEPT
 EXCEPT
   SELECT e6 FROM t6
    WHERE NOT (b6 in (427,421,696,601,993,650,0))
-;
+ORDER BY 1;
 -- 34 values hashing to 2c165a751129d74967ef7b0ca4baad58
 
 -- query T valuesort
@@ -5645,7 +5645,7 @@ UNION ALL
   SELECT e8 FROM t8
    WHERE a8 in (952,72,200,838,5,651,702,795,183,90)
       OR (a8=256)
-;
+ORDER BY 1;
 -- 26 values hashing to 0119db0141a6f08676efeb4ea811db51
 
 -- query T valuesort
@@ -5665,7 +5665,7 @@ UNION
   SELECT b8 FROM t8
    WHERE (a8=620 AND 60=d8 AND b8=704 AND e8=864 AND 973=c8)
       OR (e8=761)
-;
+ORDER BY 1;
 -- 13 values hashing to bf3a15b22668dae97a24bbe8085617c1
 
 -- query T valuesort
@@ -5675,7 +5675,7 @@ EXCEPT
   SELECT c1 FROM t1
    WHERE NOT ((c1=172 AND 899=d1)
            OR (870=c1 AND b1=711 AND 14=e1))
-;
+ORDER BY 1;
 -- 514
 
 -- query T valuesort
@@ -5691,7 +5691,7 @@ UNION
   SELECT a7 FROM t7
    WHERE a7 in (430,642,863,649,691,832,715,240,684,736)
       OR (e7=860)
-;
+ORDER BY 1;
 -- 11 values hashing to 784a98fc66dfa14dd1be7b168f7eec92
 
 -- query T valuesort
@@ -5707,7 +5707,7 @@ EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((d3=683 AND a3=396)
            OR (317=b3))
-;
+ORDER BY 1;
 -- 12 values hashing to 093619954d4f7573e51243b7cf9eb084
 
 -- query T valuesort
@@ -5747,7 +5747,7 @@ EXCEPT
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((c2=557 AND a2=308))
-;
+ORDER BY 1;
 -- 15
 -- 307
 -- 350
@@ -5779,7 +5779,7 @@ EXCEPT
    WHERE NOT ((807=d1 AND 296=c1 AND 731=e1 AND a1=294)
            OR (c1=534 OR d1=394 OR e1=442)
            OR (130=d1 AND 113=b1 AND 117=e1 AND 707=a1))
-;
+ORDER BY 1;
 -- 489
 -- 987
 
@@ -5792,7 +5792,7 @@ UNION
   SELECT c9 FROM t9
    WHERE (102=a9)
       OR (688=c9 AND e9=687)
-;
+ORDER BY 1;
 -- 381
 -- 421
 -- 469
@@ -5810,7 +5810,7 @@ UNION ALL
    WHERE c3 in (898,800,395,594,845,607,986,763,885,400)
       OR (593=e3)
       OR (d3=635 AND c3=84)
-;
+ORDER BY 1;
 -- 22 values hashing to 90b467a9f075379a60ee6901b76a64f1
 
 -- query T valuesort
@@ -5835,7 +5835,7 @@ EXCEPT
   SELECT b2 FROM t2
    WHERE NOT (e2 in (125,427,123,564,671,428,548,699,223,955,441)
            OR (b2=897 OR c2=688 OR 548=e2))
-;
+ORDER BY 1;
 -- 23 values hashing to 01f9c40abbd6f50fec6be330eaf96d20
 
 -- query T valuesort
@@ -5846,7 +5846,7 @@ UNION ALL
   SELECT e8 FROM t8
    WHERE (b8=609 AND 273=c8 AND e8=411)
       OR (894=a8 OR d8=14 OR 690=d8)
-;
+ORDER BY 1;
 -- 272
 -- 411
 -- 682
@@ -5876,7 +5876,7 @@ UNION ALL
    WHERE e9 in (687,291,944,679,799)
       OR a9 in (177,273,104,389,295,891,468,488,879,972)
       OR (e9=230 OR 148=a9)
-;
+ORDER BY 1;
 -- 28 values hashing to 43a1464838ea560b38bcb0e48d2ec92f
 
 -- query T valuesort
@@ -5885,7 +5885,7 @@ UNION ALL
 UNION
   SELECT b9 FROM t9
    WHERE e9 in (694,619,687)
-;
+ORDER BY 1;
 -- 11 values hashing to 79d64f4174aacd9de9e5cd2bd7a77ad3
 
 -- query T valuesort
@@ -5908,7 +5908,7 @@ UNION
   SELECT e7 FROM t7
    WHERE (861=b7 OR 442=a7)
       OR (120=b7 AND a7=130)
-;
+ORDER BY 1;
 -- 11 values hashing to 68d943b4d081c4fe87ecad5eada70cd2
 
 -- query T valuesort
@@ -5940,7 +5940,7 @@ UNION
   SELECT d7 FROM t7
    WHERE c7 in (333,585,238,944,853,781,508,672,488,934,887,575)
       OR (a7=936 AND 827=b7)
-;
+ORDER BY 1;
 -- 52 values hashing to a42a5dc9abe77c73906b2db127704043
 
 -- query T valuesort
@@ -5956,7 +5956,7 @@ UNION ALL
 UNION ALL
   SELECT b1 FROM t1
    WHERE (c1=366 OR 822=b1)
-;
+ORDER BY 1;
 -- 20 values hashing to b7d0664d504b7a75715c30671219816a
 
 -- query T valuesort
@@ -5986,7 +5986,7 @@ EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((b6=681 OR a6=251 OR b6=210)
            OR b6 in (923,421,296,490,243,202,575,267,739))
-;
+ORDER BY 1;
 -- 112
 -- 162
 -- 179
@@ -6016,7 +6016,7 @@ UNION
   SELECT c1 FROM t1
    WHERE (b1=808)
       OR e1 in (14,117,671)
-;
+ORDER BY 1;
 -- 9 values hashing to 0ce7fceafe35ea2c32a1484291102d4d
 
 -- query T valuesort
@@ -6035,7 +6035,7 @@ EXCEPT
   SELECT e7 FROM t7
    WHERE NOT (c7 in (589,855,103,970,705,853,377,103,78,948,364)
            OR (134=a7 AND 435=c7 AND e7=988 AND 804=b7))
-;
+ORDER BY 1;
 -- 376
 
 -- query T valuesort
@@ -6074,7 +6074,7 @@ EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((d9=23 AND 418=e9 AND b9=63)
            OR (495=d9))
-;
+ORDER BY 1;
 -- 15 values hashing to c2d1ab2e6b7fb35089328997da5df721
 
 -- query T valuesort
@@ -6090,7 +6090,7 @@ INTERSECT
    WHERE NOT ((329=e6)
            OR e6 in (230,816,154,850,766)
            OR (d6=885 OR b6=232 OR c6=749))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a2 FROM t2
@@ -6122,7 +6122,7 @@ UNION
 UNION ALL
   SELECT e3 FROM t3
    WHERE (743=a3 OR e3=829)
-;
+ORDER BY 1;
 -- 20 values hashing to 93c09c2ec67fced3f6e35171b2ca384e
 
 -- query T valuesort
@@ -6144,7 +6144,7 @@ UNION ALL
   SELECT a6 FROM t6
    WHERE (905=b6 AND 104=a6 AND e6=634)
       OR (e6=816 OR 104=a6)
-;
+ORDER BY 1;
 -- 10 values hashing to 3707e497851dc09c4e76b0fd312e80c1
 
 -- query T valuesort
@@ -6183,7 +6183,7 @@ EXCEPT
    WHERE NOT (b7 in (424,881,159,970)
            OR c7 in (341,565,931,682,41,397,249,78,435)
            OR (b7=426 OR a7=277 OR 301=e7))
-;
+ORDER BY 1;
 -- 34 values hashing to 7e71d26703b4753a02536cb5d0eeeada
 
 -- query T valuesort
@@ -6194,7 +6194,7 @@ UNION
    WHERE (952=a7 OR c7=344 OR c7=855)
       OR (a7=27)
       OR a7 in (285,982,439,863,945,62,589,416,565,593,27,848,998)
-;
+ORDER BY 1;
 -- 19 values hashing to c3a28be455c9c92c7aa3c2d72d534e8b
 
 -- query T valuesort
@@ -6220,7 +6220,7 @@ EXCEPT
 UNION
   SELECT d7 FROM t7
    WHERE (a7=452)
-;
+ORDER BY 1;
 -- 18 values hashing to 22e8ab8532b1d27e81dca0959582ec11
 
 -- query T valuesort
@@ -6243,7 +6243,7 @@ UNION ALL
    WHERE a6 in (182,46,861,33,696,829,64,128)
       OR (d6=185)
       OR (417=e6)
-;
+ORDER BY 1;
 -- 34 values hashing to 5c9a2d3ae76d751c2874b553ed9e4274
 
 -- query T valuesort
@@ -6255,7 +6255,7 @@ EXCEPT
    WHERE NOT ((581=d1 AND b1=128)
            OR a1 in (821,981,785,950,215,382,330,52)
            OR (d1=951 OR e1=949 OR 682=b1))
-;
+ORDER BY 1;
 -- 15 values hashing to 7abf92cdd99fe30fedf7995a337bbfa2
 
 -- query T valuesort
@@ -6270,7 +6270,7 @@ UNION
 UNION
   SELECT e5 FROM t5
    WHERE (c5=613 AND e5=594 AND b5=273)
-;
+ORDER BY 1;
 -- 26 values hashing to ecbaf991ed7694eb00238d2cef492745
 
 -- query T valuesort
@@ -6289,7 +6289,7 @@ EXCEPT
    WHERE NOT ((c6=411 AND d6=2)
            OR (192=d6 OR 617=e6 OR 67=e6)
            OR (d6=393 OR 620=c6 OR c6=265))
-;
+ORDER BY 1;
 -- 26 values hashing to f96188eaf33b71968040afa2d8f79556
 
 -- query T valuesort
@@ -6305,7 +6305,7 @@ EXCEPT
    WHERE NOT ((b5=569 AND 313=c5 AND e5=209 AND d5=757)
            OR a5 in (740,476,683,785,369,196,349,685,297)
            OR (b5=548))
-;
+ORDER BY 1;
 -- 373
 -- 377
 -- 416
@@ -6342,7 +6342,7 @@ EXCEPT
 UNION
   SELECT d6 FROM t6
    WHERE c6 in (161,677,446,84,54,415,65,992,399,242)
-;
+ORDER BY 1;
 -- 47 values hashing to 79293f57e9cb3b9eae4a7499afbea804
 
 -- query T valuesort
@@ -6367,7 +6367,7 @@ UNION ALL
 EXCEPT
   SELECT a3 FROM t3
    WHERE NOT ((425=d3 OR 582=d3))
-;
+ORDER BY 1;
 -- 18 values hashing to 5fedcb5d694ddaab37f2447c39b0523d
 
 -- query T valuesort
@@ -6402,7 +6402,7 @@ UNION
   SELECT b1 FROM t1
    WHERE e1 in (671,158,696,534,628,717)
       OR (a1=918 OR b1=75)
-;
+ORDER BY 1;
 -- 10 values hashing to 13757b45283baff21d03896da9ce3284
 
 -- query T valuesort
@@ -6440,7 +6440,7 @@ EXCEPT
 UNION ALL
   SELECT b4 FROM t4
    WHERE a4 in (271,337,451,708,778,136,606)
-;
+ORDER BY 1;
 -- 22 values hashing to fc6074f693c379939b67e9aeb8a7f64f
 
 -- query T valuesort
@@ -6452,7 +6452,7 @@ EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((b3=70 AND 683=d3)
            OR e3 in (145,424,984,724,829,467,7,3,836))
-;
+ORDER BY 1;
 -- 110
 -- 391
 -- 587
@@ -6464,7 +6464,7 @@ EXCEPT
 UNION
   SELECT c5 FROM t5
    WHERE (d5=745 OR e5=436)
-;
+ORDER BY 1;
 -- 16 values hashing to 454ad32007c52cf12fbd95744dcf64bf
 
 -- query T valuesort
@@ -6479,7 +6479,7 @@ UNION
   SELECT d4 FROM t4
    WHERE a4 in (558,948,337,373,968,708)
       OR (a4=598 AND c4=585 AND 901=b4 AND e4=879)
-;
+ORDER BY 1;
 -- 9 values hashing to 7f2c68d2c5d42ab9aeabf099fa37237c
 
 -- query T valuesort
@@ -6502,7 +6502,7 @@ UNION
   SELECT b2 FROM t2
    WHERE (b2=605)
       OR (860=d2 OR c2=346)
-;
+ORDER BY 1;
 -- 9 values hashing to 26370c0b2e83ae880b6f96036285b119
 
 -- query T valuesort
@@ -6537,7 +6537,7 @@ UNION ALL
    WHERE c8 in (844,166,117,907,321)
       OR (821=c8)
       OR (b8=105)
-;
+ORDER BY 1;
 -- 31 values hashing to 966a2dfdee4401a4a4c26470dd34ce71
 
 -- query T valuesort
@@ -6552,7 +6552,7 @@ UNION
    WHERE (675=a5 AND e5=923 AND d5=276 AND 705=b5)
       OR (649=c5 AND 369=d5 AND 336=b5 AND 696=a5 AND 511=e5)
       OR (b5=855)
-;
+ORDER BY 1;
 -- 336
 -- 705
 -- 814
@@ -6595,7 +6595,7 @@ EXCEPT
 EXCEPT
   SELECT d2 FROM t2
    WHERE NOT ((e2=781 OR 220=e2 OR e2=441))
-;
+ORDER BY 1;
 -- 30 values hashing to 7b30368e96ee45482db4986939195b75
 
 -- query T valuesort
@@ -6608,7 +6608,7 @@ UNION
    WHERE c8 in (442,418,113,501,229,299,381,284,374)
       OR (b8=9 AND 392=e8 AND 474=a8 AND c8=501 AND d8=291)
       OR d8 in (541,690,48,630,269,608,370,631,197)
-;
+ORDER BY 1;
 -- 20 values hashing to b12a6d46ea2d5214bf292f1f9a36a801
 
 -- query T valuesort
@@ -6624,7 +6624,7 @@ EXCEPT
 UNION
   SELECT c8 FROM t8
    WHERE a8 in (653,920,564,46,402)
-;
+ORDER BY 1;
 -- 10 values hashing to 2219fa5b82b96f38c54b2b510de110ed
 
 -- query T valuesort
@@ -6668,7 +6668,7 @@ UNION
   SELECT a1 FROM t1
    WHERE (a1=173 AND d1=86 AND c1=675 AND e1=872)
       OR b1 in (295,113,259,670,91,432,681,762,857,426,584,345,525)
-;
+ORDER BY 1;
 -- 71 values hashing to e7fc3c0a39ade70b9134a520abd6ad86
 
 -- query T valuesort
@@ -6706,7 +6706,7 @@ EXCEPT
   SELECT b6 FROM t6
    WHERE NOT ((839=a6)
            OR e6 in (766,91,257,241,808,754,469,816,14,550,489,255,634))
-;
+ORDER BY 1;
 -- 36 values hashing to 34125c448148289ce43c67174b1ccd17
 
 -- query T valuesort
@@ -6734,7 +6734,7 @@ EXCEPT
 UNION ALL
   SELECT b9 FROM t9
    WHERE (912=d9)
-;
+ORDER BY 1;
 -- 23 values hashing to 49b6596ec6e58628b1e969ca470dc8bb
 
 -- query T valuesort
@@ -6755,7 +6755,7 @@ EXCEPT
    WHERE NOT (a6 in (2,821,132,604,643,35)
            OR c6 in (242,187,522,718,673,491,454,66,961,528)
            OR (271=d6 OR b6=541))
-;
+ORDER BY 1;
 -- 19 values hashing to 43e76fd28b148a07e06ed567b1d7a592
 
 -- query T valuesort
@@ -6769,7 +6769,7 @@ EXCEPT
   SELECT a2 FROM t2
    WHERE NOT ((e2=572 OR 869=c2)
            OR c2 in (46,729,625,374,964))
-;
+ORDER BY 1;
 -- 21 values hashing to a05cd16081cc0660ce261c8b6b360db2
 
 -- query T valuesort
@@ -6791,7 +6791,7 @@ EXCEPT
 EXCEPT
   SELECT b7 FROM t7
    WHERE NOT (d7 in (500,492,891,684,114,666,325,902,395,549,296,28,939))
-;
+ORDER BY 1;
 -- 26 values hashing to d1cab18f9faeddf698945f886e061758
 
 -- query T valuesort
@@ -6807,7 +6807,7 @@ EXCEPT
   SELECT b2 FROM t2
    WHERE NOT (c2 in (137,247,758,268,894,878,337,725,150,107,837,964,466)
            OR (411=c2 OR b2=811))
-;
+ORDER BY 1;
 -- 436
 -- 858
 
@@ -6842,7 +6842,7 @@ UNION ALL
   SELECT c8 FROM t8
    WHERE c8 in (965,775,233)
       OR b8 in (219,725,523,269,696,287,992,228,642,640,889,351,469)
-;
+ORDER BY 1;
 -- 42 values hashing to 69f9864b090784b1c8af8adcd4429412
 
 -- query T valuesort
@@ -6857,7 +6857,7 @@ EXCEPT
 EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((e6=24 OR b6=974 OR b6=989))
-;
+ORDER BY 1;
 -- 295
 -- 349
 -- 660
@@ -6875,7 +6875,7 @@ EXCEPT
 UNION ALL
   SELECT e4 FROM t4
    WHERE (768=c4 OR c4=482)
-;
+ORDER BY 1;
 -- 297
 -- 38
 -- 643
@@ -6894,7 +6894,7 @@ EXCEPT
 UNION ALL
   SELECT d6 FROM t6
    WHERE e6 in (345,761,631,847,634,241,893,633,237,489,798,682,654)
-;
+ORDER BY 1;
 -- 16 values hashing to 5ac0a5375605a969aab41c8b6520a393
 
 -- query T valuesort
@@ -6925,7 +6925,7 @@ EXCEPT
   SELECT d1 FROM t1
    WHERE NOT (d1 in (55,35,574,459,972,716)
            OR b1 in (486,281,779,278,781,645))
-;
+ORDER BY 1;
 -- 30 values hashing to b069929734d462e3a13f52663d72767d
 
 -- query T valuesort
@@ -6963,7 +6963,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT ((605=a4)
            OR (a4=933))
-;
+ORDER BY 1;
 -- 9 values hashing to 39f4dbfb7b144ad480820d996e6d1309
 
 -- query T valuesort
@@ -7000,7 +7000,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((b3=790 AND c3=81))
-;
+ORDER BY 1;
 -- 23 values hashing to 351e6367013bbd76fa11f47da9c1b93c
 
 -- query T valuesort
@@ -7038,7 +7038,7 @@ UNION
   SELECT c2 FROM t2
    WHERE (c2=902 AND e2=114)
       OR a2 in (853,691,457,336,297,898,564,283,415,308,775,235,773,936)
-;
+ORDER BY 1;
 -- 53 values hashing to 9f7c12ee62c892f4ed012b78fad03edb
 
 -- query T valuesort
@@ -7079,7 +7079,7 @@ UNION ALL
    WHERE d2 in (351,263,216,404,760,723,79,260,332,847)
       OR (823=b2 OR 725=c2 OR d2=79)
       OR (b2=177)
-;
+ORDER BY 1;
 -- 28 values hashing to 0349b941bd797b33e0c8a092b8939f21
 
 -- query T valuesort
@@ -7115,7 +7115,7 @@ UNION ALL
 UNION
   SELECT b1 FROM t1
    WHERE (c1=805 AND 141=d1 AND 280=b1 AND 737=e1)
-;
+ORDER BY 1;
 -- 23 values hashing to 65f07956bd7b553aa3cd1307776790aa
 
 -- query T valuesort
@@ -7149,7 +7149,7 @@ UNION
 UNION ALL
   SELECT d6 FROM t6
    WHERE (647=d6)
-;
+ORDER BY 1;
 -- 17 values hashing to 5441659075deb5b2861adf6998821283
 
 -- query T valuesort
@@ -7175,7 +7175,7 @@ EXCEPT
    WHERE NOT (e8 in (455,866,487,305,223,533,548,377,579,632,620,561,874,678)
            OR (c8=374 OR 349=e8)
            OR b8 in (952,364,870,511,796,369,397,162,540,351,324,761,300))
-;
+ORDER BY 1;
 -- 21 values hashing to 986214feb70fcd2e5cae3789e01f476b
 
 -- query T valuesort
@@ -7219,7 +7219,7 @@ UNION ALL
    WHERE (d6=393 OR 737=e6)
       OR d6 in (36,767,931,647,991,911)
       OR a6 in (861,66,672,839)
-;
+ORDER BY 1;
 -- 56 values hashing to 13dfb0ffaedf9a913675c7746768bf9c
 
 -- query T valuesort
@@ -7243,7 +7243,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT ((168=c1 AND b1=729 AND 241=a1 AND d1=574)
            OR (255=b1))
-;
+ORDER BY 1;
 -- 894
 
 -- query T valuesort
@@ -7264,7 +7264,7 @@ EXCEPT
   SELECT c9 FROM t9
    WHERE NOT (c9 in (732,224,171,767,391,834,87,863,351,836,257,288)
            OR b9 in (456,239,893,936,864,26,15,848,818,227))
-;
+ORDER BY 1;
 -- 33 values hashing to 80ee5159e5177196903c5e768470fa95
 
 -- query T valuesort
@@ -7286,7 +7286,7 @@ UNION ALL
    WHERE c7 in (682,981,364,585,857)
       OR (455=b7 OR 924=d7 OR 280=b7)
       OR e7 in (976,422,215,971,688)
-;
+ORDER BY 1;
 -- 13 values hashing to 9443e0a039686cfb6c6c977e67602e7d
 
 -- query T valuesort
@@ -7319,7 +7319,7 @@ UNION
 UNION
   SELECT b1 FROM t1
    WHERE (e1=78 OR a1=215 OR 419=c1)
-;
+ORDER BY 1;
 -- 33 values hashing to 7d94e7b0dbfdcb16b18567102ea2abb4
 
 -- query T valuesort
@@ -7329,7 +7329,7 @@ EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((744=b5 AND e5=187 AND d5=937 AND 50=c5)
            OR (c5=72 OR e5=655))
-;
+ORDER BY 1;
 -- 10 values hashing to 0bce86719e346356aed9f182578fff59
 
 -- query T valuesort
@@ -7369,7 +7369,7 @@ EXCEPT
   SELECT a5 FROM t5
    WHERE NOT ((d5=4)
            OR (b5=874 OR 858=d5))
-;
+ORDER BY 1;
 -- 44 values hashing to 6960951e1e5588c55d596636d450e6c1
 
 -- query T valuesort
@@ -7382,7 +7382,7 @@ INTERSECT
    WHERE NOT (a1 in (61,552,76,825,109,276,785,732,579,147,479)
            OR (c1=4 OR 852=c1 OR d1=105)
            OR (d1=154))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a6 FROM t6
@@ -7422,7 +7422,7 @@ EXCEPT
    WHERE NOT ((397=c7)
            OR e7 in (455,282,439,860,862,462,929,971,689,503,422,782,587,638)
            OR (b7=306 AND 139=d7 AND 238=c7))
-;
+ORDER BY 1;
 -- 33 values hashing to aaea8a72c52118678b5d3fbb18975758
 
 -- query T valuesort
@@ -7447,7 +7447,7 @@ EXCEPT
 UNION
   SELECT b9 FROM t9
    WHERE (e9=549 AND 129=d9 AND b9=19)
-;
+ORDER BY 1;
 -- 16 values hashing to c47db80eda9cde6ca296877d2941afc7
 
 -- query T valuesort
@@ -7466,7 +7466,7 @@ EXCEPT
 UNION
   SELECT e1 FROM t1
    WHERE (b1=807)
-;
+ORDER BY 1;
 -- 10 values hashing to c72ed39e69b3fe73f10bc4996052c98d
 
 -- query T valuesort
@@ -7475,7 +7475,7 @@ UNION
 UNION
   SELECT c5 FROM t5
    WHERE (b5=674 OR 853=a5 OR 883=d5)
-;
+ORDER BY 1;
 -- 261
 -- 383
 -- 544
@@ -7499,7 +7499,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT (a1 in (380,20,866,517,352,4,678,732,249,189,461,75)
            OR d1 in (105,234,973,939,716,837,88,951))
-;
+ORDER BY 1;
 -- 20 values hashing to fe1d7eeb7b049300e860d1188ce88d46
 
 -- query T valuesort
@@ -7527,7 +7527,7 @@ EXCEPT
 UNION
   SELECT b9 FROM t9
    WHERE (575=e9 OR d9=795)
-;
+ORDER BY 1;
 -- 0
 -- 103
 -- 14
@@ -7547,7 +7547,7 @@ UNION
    WHERE (419=d5 OR a5=514)
       OR (c5=672 OR 601=c5 OR 921=a5)
       OR (874=b5 OR 357=a5 OR e5=511)
-;
+ORDER BY 1;
 -- 274
 -- 32
 -- 369
@@ -7575,7 +7575,7 @@ EXCEPT
    WHERE NOT (d1 in (432,571,662,678,75,298,217,294,922,121)
            OR (b1=556 OR a1=299)
            OR b1 in (253,836,60,956,113,440,446,579,270,226,115,569,1,440))
-;
+ORDER BY 1;
 -- 18 values hashing to 1fe5672ea7874f5b552c1234c42ef31b
 
 -- query T valuesort
@@ -7617,7 +7617,7 @@ UNION
    WHERE b6 in (290,880,281,126,739,825,243,217,662)
       OR (c6=961 AND 33=a6 AND 262=b6)
       OR (a6=45)
-;
+ORDER BY 1;
 -- 24 values hashing to adb6a3515428251e341377135eabe8a5
 
 -- query T valuesort
@@ -7642,7 +7642,7 @@ UNION ALL
    WHERE c8 in (381,789,196,100,61,32,668,187)
       OR (a8=913 OR 244=b8 OR 541=d8)
       OR e8 in (440,272,736,919,893,392,221,579,944,305,64,149,56)
-;
+ORDER BY 1;
 -- 46 values hashing to 1662d5eae706bdfbf12ca95874b658c2
 
 -- query T valuesort
@@ -7652,7 +7652,7 @@ EXCEPT
   SELECT a7 FROM t7
    WHERE NOT (a7 in (433,945,865,912,936,998,9,452,6)
            OR (c7=659 AND 183=e7))
-;
+ORDER BY 1;
 -- 769
 
 -- query T valuesort
@@ -7684,7 +7684,7 @@ UNION ALL
    WHERE d3 in (283,553,560)
       OR d3 in (399,164,524,487,522)
       OR (c3=668 OR 981=e3)
-;
+ORDER BY 1;
 -- 36 values hashing to c8a0e396c6e0a9ba5bf3b3ea74b47d8c
 
 -- query T valuesort
@@ -7705,7 +7705,7 @@ UNION
 EXCEPT
   SELECT e7 FROM t7
    WHERE NOT ((439=a7 AND c7=948))
-;
+ORDER BY 1;
 -- 11 values hashing to 1782bc8710ab6dbfad366f8a95192202
 
 -- query T valuesort
@@ -7737,7 +7737,7 @@ EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((134=d7 OR c7=305)
            OR c7 in (288,103,744,607,14,659,376,305,661,377,672,145))
-;
+ORDER BY 1;
 -- 325
 -- 394
 -- 645
@@ -7766,7 +7766,7 @@ EXCEPT
 EXCEPT
   SELECT a9 FROM t9
    WHERE NOT (c9 in (751,457,807,575,639,711,935,836,332,370))
-;
+ORDER BY 1;
 -- 200
 -- 420
 
@@ -7788,7 +7788,7 @@ EXCEPT
    WHERE NOT ((186=e8 OR 90=a8)
            OR (46=a8 OR 945=d8 OR 324=b8)
            OR (a8=728))
-;
+ORDER BY 1;
 -- 376
 -- 393
 -- 424
@@ -7825,7 +7825,7 @@ EXCEPT
    WHERE NOT ((377=e8 AND 922=b8 AND c8=799 AND a8=328 AND 899=d8)
            OR e8 in (22,377,463,175,422,223,149,296,305,561,579,833)
            OR (a8=502))
-;
+ORDER BY 1;
 -- 9 values hashing to 67484e6ec8a05ecb9d5e737935a45a73
 
 -- query T valuesort
@@ -7840,7 +7840,7 @@ EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((511=e6)
            OR (d6=489 AND a6=537 AND 283=e6))
-;
+ORDER BY 1;
 -- 18 values hashing to 320d376d922ecf0f175eb412d99a2ce7
 
 -- query T valuesort
@@ -7863,7 +7863,7 @@ UNION ALL
   SELECT d7 FROM t7
    WHERE (506=d7 AND 102=c7 AND e7=851)
       OR b7 in (720,735,781)
-;
+ORDER BY 1;
 -- 23 values hashing to 4d7492c9dff8a594ecc3475918e27054
 
 -- query T valuesort
@@ -7899,7 +7899,7 @@ EXCEPT
 UNION ALL
   SELECT e3 FROM t3
    WHERE (135=a3)
-;
+ORDER BY 1;
 -- 29 values hashing to f220317eed95443fd920fee1fdd71a5e
 
 -- query T valuesort
@@ -7922,7 +7922,7 @@ EXCEPT
    WHERE NOT (b5 in (942,771,723,26,548,998,971,657)
            OR (c5=922)
            OR (185=c5 AND d5=910 AND a5=190 AND 69=b5 AND e5=727))
-;
+ORDER BY 1;
 -- 15 values hashing to 6b68025e0700d88cc303da5cd1946395
 
 -- query T valuesort
@@ -7949,7 +7949,7 @@ EXCEPT
 UNION
   SELECT d9 FROM t9
    WHERE c9 in (188,569,857,487,905,811,75,257,955,370,151,688,515)
-;
+ORDER BY 1;
 -- 23 values hashing to 373e5c65af48e22299f827e12741c08a
 
 -- query T valuesort
@@ -7974,7 +7974,7 @@ EXCEPT
    WHERE NOT ((d9=51 OR c9=332)
            OR (711=c9 AND a9=548 AND d9=420)
            OR (224=d9 OR 452=e9))
-;
+ORDER BY 1;
 -- 635
 -- 888
 
@@ -8001,7 +8001,7 @@ UNION
   SELECT c4 FROM t4
    WHERE (c4=752 AND e4=600 AND a4=281)
       OR (e4=397)
-;
+ORDER BY 1;
 -- 17 values hashing to bd295e3a8d903f56beeb55d956b5a400
 
 -- query T valuesort
@@ -8034,7 +8034,7 @@ EXCEPT
   SELECT e7 FROM t7
    WHERE NOT ((277=a7 AND 781=c7 AND 975=e7)
            OR e7 in (841,971,499,156,587,851,460,27,156,280))
-;
+ORDER BY 1;
 -- 23 values hashing to d6d7440278c9ecc3ae24397bb85e752e
 
 -- query T valuesort
@@ -8069,7 +8069,7 @@ UNION
 EXCEPT
   SELECT e1 FROM t1
    WHERE NOT ((130=d1 OR a1=173))
-;
+ORDER BY 1;
 -- 53 values hashing to 5a449dcb9a6168db9b97552f34c4ecc1
 
 -- query T valuesort
@@ -8104,7 +8104,7 @@ EXCEPT
    WHERE NOT ((e2=73)
            OR (433=b2 AND 773=c2)
            OR a2 in (922,891,279,851,564,966,1))
-;
+ORDER BY 1;
 -- 17 values hashing to 804085a825892ee5095523866446fc7b
 
 -- query T valuesort
@@ -8133,7 +8133,7 @@ UNION
    WHERE (b7=921 AND 249=c7 AND 665=a7)
       OR (876=a7 OR 929=e7 OR b7=808)
       OR e7 in (945,826,303,793,499,462,4,955,488)
-;
+ORDER BY 1;
 -- 43 values hashing to 51bcb19cb4ea1e5b178b60ae70d6d497
 
 -- query T valuesort
@@ -8143,7 +8143,7 @@ UNION
 EXCEPT
   SELECT a1 FROM t1
    WHERE NOT ((584=b1 OR c1=168))
-;
+ORDER BY 1;
 -- 118
 -- 134
 -- 425
@@ -8166,7 +8166,7 @@ EXCEPT
   SELECT b3 FROM t3
    WHERE NOT (a3 in (499,743,186,720,513,971,959,197,549,729,754,566)
            OR (c3=80 AND 890=d3 AND b3=76))
-;
+ORDER BY 1;
 -- 25 values hashing to 11d6fb1087576a4521b8a106f55cd541
 
 -- query T valuesort
@@ -8199,7 +8199,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT ((579=b7)
            OR (d7=139 AND 306=b7 AND e7=499))
-;
+ORDER BY 1;
 -- 17 values hashing to d90cb32d46df286bfd4c2e480a0e7de8
 
 -- query T valuesort
@@ -8235,7 +8235,7 @@ EXCEPT
    WHERE NOT (d9 in (960,554,608,899,166,549,164,602,597,668,878,258)
            OR (a9=611 AND b9=912 AND 912=d9 AND 323=c9 AND 737=e9)
            OR (d9=166 AND b9=496))
-;
+ORDER BY 1;
 -- 22 values hashing to b77abbfba6f7f14d5e6649720652069d
 
 -- query T valuesort
@@ -8250,7 +8250,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT (c7 in (931,22,770,954,729,857,626,305,691,288,249)
            OR d7 in (982,996,722))
-;
+ORDER BY 1;
 -- 103
 -- 141
 -- 2
@@ -8273,7 +8273,7 @@ UNION ALL
 UNION ALL
   SELECT b5 FROM t5
    WHERE e5 in (661,150,144,929,271,232,206)
-;
+ORDER BY 1;
 -- 36 values hashing to 11dbeaa0dda808d38680b8dce3123332
 
 -- query T valuesort
@@ -8303,7 +8303,7 @@ UNION
    WHERE (281=e3)
       OR (459=e3 AND d3=560)
       OR (a3=376)
-;
+ORDER BY 1;
 -- 25 values hashing to 37709d5a975e70e366fad56413de27e7
 
 -- query T valuesort
@@ -8316,7 +8316,7 @@ UNION ALL
   SELECT d3 FROM t3
    WHERE (a3=396 OR e3=665 OR a3=836)
       OR (984=e3)
-;
+ORDER BY 1;
 -- 17 values hashing to b7c8efbd4d3a06c39b805d691678261b
 
 -- query T valuesort
@@ -8331,7 +8331,7 @@ UNION
 EXCEPT
   SELECT d2 FROM t2
    WHERE NOT ((d2=195 AND a2=56 AND 285=b2 AND e2=339))
-;
+ORDER BY 1;
 -- 10 values hashing to d689c9f46de4a70ca9d5f235358103f5
 
 -- query T valuesort
@@ -8349,7 +8349,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT (a1 in (145,241,358,330,109,637,231,853,173,847,553,746,640)
            OR (758=c1 AND a1=281))
-;
+ORDER BY 1;
 -- 11 values hashing to 55e2b5ab0ad0b9a7dd87362980c6e7da
 
 -- query T valuesort
@@ -8364,7 +8364,7 @@ EXCEPT
 UNION ALL
   SELECT b1 FROM t1
    WHERE d1 in (818,701,863,459)
-;
+ORDER BY 1;
 -- 16 values hashing to 3879412a172d041589e2a25565bac807
 
 -- query T valuesort
@@ -8382,7 +8382,7 @@ EXCEPT
   SELECT b3 FROM t3
    WHERE NOT ((792=c3 AND e3=119)
            OR (b3=130))
-;
+ORDER BY 1;
 -- 16 values hashing to 45ddb00cd57bfb254b9e88bdb024dd84
 
 -- query T valuesort
@@ -8405,7 +8405,7 @@ UNION ALL
 UNION ALL
   SELECT b9 FROM t9
    WHERE d9 in (283,420,553,821,763,439,601,345,720,268,922)
-;
+ORDER BY 1;
 -- 26 values hashing to ba0491b7cc3f6af3db502e0fe247fc48
 
 -- query T valuesort
@@ -8422,7 +8422,7 @@ EXCEPT
    WHERE NOT ((b4=660 OR e4=531 OR 916=e4)
            OR (d4=100 AND 107=b4 AND 996=c4)
            OR c4 in (936,996,768,723,675,712,82,927,749,948,783))
-;
+ORDER BY 1;
 -- 24 values hashing to a6e07ee104fcd28ed7132f412b17f72f
 
 -- query T valuesort
@@ -8444,7 +8444,7 @@ EXCEPT
 UNION
   SELECT e4 FROM t4
    WHERE (653=b4 AND 447=a4 AND 151=e4 AND c4=703 AND d4=983)
-;
+ORDER BY 1;
 -- 151
 
 -- query T valuesort
@@ -8454,7 +8454,7 @@ UNION
 EXCEPT
   SELECT b1 FROM t1
    WHERE NOT ((c1=523 OR 268=e1))
-;
+ORDER BY 1;
 -- 15 values hashing to 36457e7d581b3d215b09babd07c0d895
 
 -- query T valuesort
@@ -8466,7 +8466,7 @@ UNION
   SELECT d7 FROM t7
    WHERE b7 in (949,660,396,717,340,579,422,913,679,426,250,979,221)
       OR (a7=325 AND 478=c7)
-;
+ORDER BY 1;
 -- 29 values hashing to e09fef7711c975570a5cdd3ca1bf470d
 
 -- query T valuesort
@@ -8491,7 +8491,7 @@ EXCEPT
   SELECT b8 FROM t8
    WHERE NOT ((50=d8 AND 790=b8 AND 12=a8)
            OR b8 in (922,454,540,523,803,205,870))
-;
+ORDER BY 1;
 -- 18 values hashing to d28c31a6e9bbdfbbe374564cccaa8616
 
 -- query T valuesort
@@ -8514,7 +8514,7 @@ UNION
   SELECT e4 FROM t4
    WHERE b4 in (749,563,847,849,331,634,243,982,35,721,627,784)
       OR (837=e4 AND a4=337 AND 658=d4 AND b4=917 AND 220=c4)
-;
+ORDER BY 1;
 -- 56 values hashing to 14f58df57e7009871910868ed7acb38d
 
 -- query T valuesort
@@ -8538,7 +8538,7 @@ UNION
    WHERE c8 in (965,321,851,381,321,789)
       OR c8 in (563,283,866)
       OR (a8=129 OR a8=210)
-;
+ORDER BY 1;
 -- 32 values hashing to 18749c676476628b89220a3814b40533
 
 -- query T valuesort
@@ -8564,7 +8564,7 @@ EXCEPT
    WHERE NOT (a5 in (867,319,921,174,342,586,369,445,242,540,341,832,730)
            OR d5 in (602,520,806,114,495,309,682,542,977)
            OR (c5=625))
-;
+ORDER BY 1;
 -- 31 values hashing to 67479d68826dc2238511438c0a71da8c
 
 -- query T valuesort
@@ -8578,7 +8578,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT ((e5=696 AND b5=113)
            OR d5 in (274,343,883,977,480,634,479,42,271,520,910))
-;
+ORDER BY 1;
 -- 331
 -- 387
 -- 498
@@ -8606,7 +8606,7 @@ UNION
    WHERE (733=a2 AND e2=939 AND 711=c2 AND d2=803)
       OR (b2=635 AND 22=c2 AND 669=d2 AND a2=371)
       OR d2 in (525,914,953,351,843,498,416,260,284)
-;
+ORDER BY 1;
 -- 13 values hashing to d3a634afca5e5402c118718b6667b002
 
 -- query T valuesort
@@ -8618,7 +8618,7 @@ UNION ALL
    WHERE c1 in (172,177,980,417,136,15,852,272)
       OR (b1=569)
       OR (130=d1)
-;
+ORDER BY 1;
 -- 16 values hashing to b4e43b95ee196c92a098fa8d2c8c65ce
 
 -- query T valuesort
@@ -8630,7 +8630,7 @@ EXCEPT
    WHERE NOT (d8 in (683,384,101,735,889)
            OR (486=c8 OR a8=46)
            OR a8 in (359,127,848,46,838,248,638))
-;
+ORDER BY 1;
 -- 257
 -- 688
 -- 795
@@ -8672,7 +8672,7 @@ EXCEPT
    WHERE NOT ((b9=227 AND c9=273 AND e9=987)
            OR a9 in (273,875,450,435,457,485,830,953,841)
            OR e9 in (694,679,947,35,819,301))
-;
+ORDER BY 1;
 -- 30 values hashing to 7d394ca17d83dc70ffe4e96387d77beb
 
 -- query T valuesort
@@ -8703,7 +8703,7 @@ UNION ALL
    WHERE (987=a2 AND b2=818)
       OR b2 in (161,754,211,72,676,818,311,818,148,546,545,278)
       OR (2=d2 OR 671=e2 OR 556=e2)
-;
+ORDER BY 1;
 -- 36 values hashing to 10162f748e784e6891922b557a3cd2bc
 
 -- query T valuesort
@@ -8740,7 +8740,7 @@ EXCEPT
    WHERE NOT ((689=e7)
            OR a7 in (466,876,114,995,982,832)
            OR (912=a7 AND 234=b7 AND 215=e7 AND 682=c7 AND 79=d7))
-;
+ORDER BY 1;
 -- 21 values hashing to 25ae26ef20cd62f66304563456570df5
 
 -- query T valuesort
@@ -8773,7 +8773,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT (b3 in (788,224,437,28,713,58,677,236,368))
-;
+ORDER BY 1;
 -- 40 values hashing to ad6098b167e78c40bbccab093415f9f4
 
 -- query T valuesort
@@ -8783,7 +8783,7 @@ EXCEPT
 UNION ALL
   SELECT a6 FROM t6
    WHERE e6 in (958,211,6,747,95,634,439,237)
-;
+ORDER BY 1;
 -- 17 values hashing to 393578fe4b40e07c51130a4673e9c521
 
 -- query T valuesort
@@ -8793,7 +8793,7 @@ UNION ALL
 UNION
   SELECT e8 FROM t8
    WHERE (312=a8 AND e8=579 AND 397=b8 AND 5=c8)
-;
+ORDER BY 1;
 -- 13 values hashing to d8ea7094991ee86af0a2a1806864424a
 
 -- query T valuesort
@@ -8820,7 +8820,7 @@ EXCEPT
   SELECT c7 FROM t7
    WHERE NOT (e7 in (290,344,127,793,900,319,455,356,827,27,48)
            OR c7 in (659,94,280,376,564))
-;
+ORDER BY 1;
 -- 15 values hashing to 30aefb18f98adbd763084fbfb46feb96
 
 -- query T valuesort
@@ -8844,7 +8844,7 @@ UNION ALL
 UNION ALL
   SELECT d9 FROM t9
    WHERE (142=d9 AND c9=37 AND 356=a9)
-;
+ORDER BY 1;
 -- 23 values hashing to 80a39ccaa530cf615d7159bcfa7fec84
 
 -- query T valuesort
@@ -8863,7 +8863,7 @@ UNION
    WHERE (a2=594 OR 197=c2 OR c2=127)
       OR (751=a2 AND 328=d2 AND 489=b2)
       OR (805=b2 AND 471=a2)
-;
+ORDER BY 1;
 -- 15 values hashing to 48ed19890f70a4d95ea0fbafd2608b94
 
 -- query T valuesort
@@ -8887,7 +8887,7 @@ EXCEPT
    WHERE NOT ((701=b3 AND d3=17 AND 281=e3)
            OR b3 in (382,240,103,816,234)
            OR (a3=145))
-;
+ORDER BY 1;
 -- 21 values hashing to 4ece54a29bf5ceea54774adf431bd388
 
 -- query T valuesort
@@ -8928,7 +8928,7 @@ EXCEPT
    WHERE NOT (e4 in (531,48,600)
            OR (d4=249)
            OR (150=d4))
-;
+ORDER BY 1;
 -- 38 values hashing to 1962cb428237c53e1ca6b6311e670fda
 
 -- query T valuesort
@@ -8943,7 +8943,7 @@ EXCEPT
    WHERE NOT (a7 in (894,75,757,806,158,324,439,299,195)
            OR e7 in (356,120,971)
            OR (114=a7 AND b7=191 AND 419=c7 AND d7=777))
-;
+ORDER BY 1;
 -- 163
 -- 34
 -- 727
@@ -8973,7 +8973,7 @@ UNION ALL
    WHERE d8 in (456,20,675,711,463,950)
       OR (297=c8)
       OR (d8=624)
-;
+ORDER BY 1;
 -- 23 values hashing to 9c60df3940d860f01f01274ae3980a2c
 
 -- query T valuesort
@@ -8992,7 +8992,7 @@ UNION ALL
 UNION ALL
   SELECT b8 FROM t8
    WHERE (279=c8 AND 461=b8 AND 651=a8 AND e8=38)
-;
+ORDER BY 1;
 -- 18 values hashing to da71c8a0d35b558355283a5b37289362
 
 -- query T valuesort
@@ -9028,7 +9028,7 @@ UNION
 EXCEPT
   SELECT e8 FROM t8
    WHERE NOT (c8 in (541,404,394,790,297,775,979,501,961))
-;
+ORDER BY 1;
 -- 24 values hashing to 39a19f66db70c1ef76aa77cc337dcee0
 
 -- query T valuesort
@@ -9059,7 +9059,7 @@ UNION ALL
   SELECT e3 FROM t3
    WHERE (c3=220 AND 727=a3 AND 711=d3 AND 108=e3)
       OR (240=b3 AND d3=825 AND a3=899 AND 319=e3 AND c3=863)
-;
+ORDER BY 1;
 -- 108
 -- 18
 -- 319
@@ -9102,7 +9102,7 @@ UNION ALL
   SELECT c8 FROM t8
    WHERE (b8=603 OR c8=154 OR b8=325)
       OR a8 in (46,894,838,650,171,359,328,467)
-;
+ORDER BY 1;
 -- 22 values hashing to 43269fb25ff9d58c0cb46fb6ddd810ec
 
 -- query T valuesort
@@ -9136,7 +9136,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT (d4 in (706,277,917,728,568,549)
            OR (661=d4 AND e4=739))
-;
+ORDER BY 1;
 -- 22 values hashing to d3c029b4eb7abc33629b77de67bf01d2
 
 -- query T valuesort
@@ -9176,7 +9176,7 @@ EXCEPT
    WHERE NOT ((262=a2 OR 373=d2)
            OR (d2=448)
            OR (e2=781 AND c2=878 AND a2=709 AND d2=448 AND b2=605))
-;
+ORDER BY 1;
 -- 20 values hashing to 76e508dc44a68a4f6b6a1a8b3281ca77
 
 -- query T valuesort
@@ -9195,7 +9195,7 @@ UNION
 EXCEPT
   SELECT b5 FROM t5
    WHERE NOT (c5 in (261,681,527,941,923,774,734,855,934,27,941,313,442))
-;
+ORDER BY 1;
 -- 24 values hashing to 723f7415859108eb6f29a8100ff108f5
 
 -- query T valuesort
@@ -9210,7 +9210,7 @@ EXCEPT
    WHERE NOT ((468=a9)
            OR (142=d9 OR 18=a9 OR 711=c9)
            OR d9 in (665,909,737,681,345,678,922,720,549,489))
-;
+ORDER BY 1;
 -- 1
 -- 152
 -- 742
@@ -9235,7 +9235,7 @@ UNION
 UNION ALL
   SELECT a1 FROM t1
    WHERE (b1=696)
-;
+ORDER BY 1;
 -- 48 values hashing to cc06bd39f60b99c5736e3125a4a9e1a9
 
 -- query T valuesort
@@ -9250,7 +9250,7 @@ UNION
    WHERE (d4=524)
       OR (c4=794 OR 16=a4 OR e4=951)
       OR (451=c4)
-;
+ORDER BY 1;
 -- 18 values hashing to 615a8a395a4096685d20b835967504c7
 
 -- query T valuesort
@@ -9291,7 +9291,7 @@ UNION
    WHERE c6 in (500,561,961,12,864,832)
       OR (d6=2 AND 974=b6 AND 564=a6 AND c6=242 AND 100=e6)
       OR a6 in (787,222,672,821,572,799,300,66,751,1,829,683)
-;
+ORDER BY 1;
 -- 49 values hashing to e137c8ecf7375bc7a9ea7f6ec17e7940
 
 -- query T valuesort
@@ -9326,7 +9326,7 @@ EXCEPT
    WHERE NOT ((a9=905 OR c9=110)
            OR c9 in (118,894,834,240,975,547,151,252,90)
            OR a9 in (511,660,488,919,378,982,803,847))
-;
+ORDER BY 1;
 -- 31 values hashing to 83248851264e52c0deec94854c1d9d9e
 
 -- query T valuesort
@@ -9345,7 +9345,7 @@ UNION ALL
 EXCEPT
   SELECT e6 FROM t6
    WHERE NOT ((662=b6 AND d6=750 AND 491=c6))
-;
+ORDER BY 1;
 -- 37 values hashing to 1e006bc097742c4f2d5b23ecfe7f3477
 
 -- query T valuesort
@@ -9362,7 +9362,7 @@ EXCEPT
 UNION ALL
   SELECT c6 FROM t6
    WHERE d6 in (463,161,974,446,186,35,869,72,488,600,66,147)
-;
+ORDER BY 1;
 -- 14 values hashing to 3ebaeea6559b6bd6bdfa77ee906b9917
 
 -- query T valuesort
@@ -9382,7 +9382,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((a8=54 AND b8=324 AND 231=c8)
            OR d8 in (330,624,179,466,761,472,534,735,366,192,108,269,767))
-;
+ORDER BY 1;
 -- 13 values hashing to c58e4e9e9efc6b21339249cafc12cb39
 
 -- query T valuesort
@@ -9417,7 +9417,7 @@ EXCEPT
    WHERE NOT ((580=c3 OR 888=b3 OR 560=a3)
            OR (c3=467)
            OR (a3=576))
-;
+ORDER BY 1;
 -- 31 values hashing to fe5dae988cb0a1ee303a03415cb1622c
 
 -- query T valuesort
@@ -9428,7 +9428,7 @@ INTERSECT
   SELECT a8 FROM t8
    WHERE NOT ((a8=327 OR c8=230)
            OR (427=c8 AND 610=d8 AND 359=a8))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c9 FROM t9
@@ -9439,7 +9439,7 @@ UNION ALL
    WHERE c3 in (244,887,898)
       OR d3 in (889,599,645,662,624,139)
       OR a3 in (282,929,913,255,997,947,197,754,30,865,720)
-;
+ORDER BY 1;
 -- 25 values hashing to 9fc5f67ec16ab9568255b896808f2e74
 
 -- query T valuesort
@@ -9464,7 +9464,7 @@ EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((929=d6 AND e6=77 AND b6=350)
            OR (e6=574 OR b6=604 OR 677=c6))
-;
+ORDER BY 1;
 -- 19 values hashing to 794dcdc1430e1358fa61ae4dbc885e5e
 
 -- query T valuesort
@@ -9490,7 +9490,7 @@ EXCEPT
    WHERE NOT ((647=c3 AND 779=b3 AND d3=81)
            OR c3 in (601,455,317)
            OR (890=c3 OR e3=896))
-;
+ORDER BY 1;
 -- 18 values hashing to e26b9d38172087364d39c426d1361e13
 
 -- query T valuesort
@@ -9509,7 +9509,7 @@ UNION
    WHERE (333=c2 OR a2=56 OR 179=c2)
       OR e2 in (706,40,815,148,579,564)
       OR (c2=560 OR d2=216 OR 843=d2)
-;
+ORDER BY 1;
 -- 13 values hashing to 13e7558d952a6090609e20e38e695838
 
 -- query T valuesort
@@ -9545,7 +9545,7 @@ EXCEPT
   SELECT e6 FROM t6
    WHERE NOT ((c6=500 OR c6=441)
            OR (e6=601))
-;
+ORDER BY 1;
 -- 104
 -- 180
 -- 644
@@ -9583,7 +9583,7 @@ UNION ALL
 UNION ALL
   SELECT c8 FROM t8
    WHERE e8 in (421,495,972,533,416,329,981,260,476,242,874,41,175)
-;
+ORDER BY 1;
 -- 16 values hashing to 2074764de192d28c4078d7dc77609d58
 
 -- query T valuesort
@@ -9609,7 +9609,7 @@ UNION
    WHERE (b4=700 AND 631=e4)
       OR (b4=387 OR 768=c4 OR d4=713)
       OR b4 in (563,713,2,901,243,139,748,882)
-;
+ORDER BY 1;
 -- 16 values hashing to 34c1d1715d13000bb50a76d3572f8ce0
 
 -- query T valuesort
@@ -9643,7 +9643,7 @@ UNION ALL
    WHERE (363=d3 AND 677=b3 AND 975=e3 AND a3=341 AND c3=555)
       OR (b3=790 OR 477=c3 OR 584=b3)
       OR (193=e3)
-;
+ORDER BY 1;
 -- 17 values hashing to 0925549e0b8776aaaf2dd733f9ebd79b
 
 -- query T valuesort
@@ -9654,7 +9654,7 @@ UNION ALL
    WHERE (847=b4)
       OR c4 in (712,84,609,804,403)
       OR (b4=58 AND 188=c4 AND 170=a4 AND e4=480 AND 449=d4)
-;
+ORDER BY 1;
 -- 12 values hashing to e3d6a21a23e7c63a7f4c54dc4a4e1d1e
 
 -- query T valuesort
@@ -9666,7 +9666,7 @@ UNION ALL
   SELECT a6 FROM t6
    WHERE (992=c6 AND 390=b6 AND e6=707 AND 45=a6)
       OR c6 in (910,717,992,216,159,413,295,369,297,506,561)
-;
+ORDER BY 1;
 -- 14 values hashing to 50c310244eed628c752e060185728870
 
 -- query T valuesort
@@ -9707,7 +9707,7 @@ UNION
    WHERE d8 in (534,554,811,456,474,108,192,2)
       OR (d8=326 OR 377=e8)
       OR (d8=60)
-;
+ORDER BY 1;
 -- 28 values hashing to 357f9d31b9a5ca17d08dc9400b01748f
 
 -- query T valuesort
@@ -9747,7 +9747,7 @@ UNION
   SELECT d6 FROM t6
    WHERE (a6=251 AND d6=578 AND b6=565 AND c6=673)
       OR (e6=766)
-;
+ORDER BY 1;
 -- 172
 -- 197
 -- 246
@@ -9784,7 +9784,7 @@ EXCEPT
    WHERE NOT ((d6=822 AND b6=511)
            OR (752=c6)
            OR (c6=717 OR 495=e6))
-;
+ORDER BY 1;
 -- 28 values hashing to 2da2446ce5f5ef55b427f27ac62f4d97
 
 -- query T valuesort
@@ -9805,7 +9805,7 @@ EXCEPT
   SELECT a5 FROM t5
    WHERE NOT ((602=c5 OR 53=a5 OR b5=665)
            OR (e5=437 AND d5=282 AND a5=878 AND b5=774))
-;
+ORDER BY 1;
 -- 11 values hashing to d02ba841e80481d12978271a4ecc9c95
 
 -- query T valuesort
@@ -9827,7 +9827,7 @@ UNION ALL
    WHERE (a7=642)
       OR (452=a7 AND 175=b7 AND 288=c7 AND 272=e7 AND d7=131)
       OR d7 in (296,988,500,666,801,549,199,364,196)
-;
+ORDER BY 1;
 -- 36 values hashing to 44a0cf0130015d0195eabce7901f0f52
 
 -- query T valuesort
@@ -9841,7 +9841,7 @@ INTERSECT
   SELECT b3 FROM t3
    WHERE NOT ((d3=115 OR 665=e3)
            OR a3 in (996,784,282,865,386,12,560,899,41,162,383,995))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c2 FROM t2
@@ -9855,7 +9855,7 @@ UNION ALL
 UNION ALL
   SELECT d4 FROM t4
    WHERE (82=c4 AND 175=b4 AND 596=a4)
-;
+ORDER BY 1;
 -- 12 values hashing to b2944464551d5eefe3aa2d2b937b366f
 
 -- query T valuesort
@@ -9890,7 +9890,7 @@ EXCEPT
   SELECT a8 FROM t8
    WHERE NOT (c8 in (563,32,448,799,998,93,907,599,486,381,279,297,275)
            OR a8 in (90,306,388,579,184,848,12,923,406,841))
-;
+ORDER BY 1;
 -- 49 values hashing to df2d79507a6ad29631c6c3221a1b775f
 
 -- query T valuesort
@@ -9917,7 +9917,7 @@ EXCEPT
    WHERE NOT (d2 in (10,488,23)
            OR c2 in (450,992,103,247,374,496,758,193,560,182,728,233,45,220)
            OR e2 in (955,148,463,815,411,899,428,621,629,696,923,138))
-;
+ORDER BY 1;
 -- 327
 -- 333
 -- 457
@@ -9952,7 +9952,7 @@ UNION ALL
   SELECT a8 FROM t8
    WHERE (b8=984)
       OR b8 in (503,466,656,351,725,469,352,162,564,405)
-;
+ORDER BY 1;
 -- 22 values hashing to ec091e5f0dfa5434ab5690c30c014909
 
 -- query T valuesort
@@ -9982,7 +9982,7 @@ UNION ALL
    WHERE (b2=501 AND 9=a2)
       OR d2 in (256,813,241,790,663)
       OR (a2=785 AND e2=788 AND d2=886 AND 141=c2 AND b2=90)
-;
+ORDER BY 1;
 -- 28 values hashing to 6adb02548aa30184f3e9d0f5534bc09e
 
 -- query T valuesort
@@ -10018,7 +10018,7 @@ EXCEPT
    WHERE NOT ((c2=4 AND d2=235)
            OR (b2=811 AND 809=a2 AND 548=e2 AND d2=833)
            OR (560=c2))
-;
+ORDER BY 1;
 -- 17 values hashing to 156b786c1e3477ede9655f4c5d244890
 
 -- query T valuesort
@@ -10043,7 +10043,7 @@ UNION ALL
    WHERE (78=c7)
       OR (135=c7 OR 243=c7 OR e7=562)
       OR (e7=7 AND 59=b7 AND c7=12)
-;
+ORDER BY 1;
 -- 15 values hashing to 22fd8cd8a6f1dbf22107a0afbd529235
 
 -- query T valuesort
@@ -10053,7 +10053,7 @@ UNION ALL
 UNION
   SELECT e1 FROM t1
    WHERE (b1=981 AND 172=c1 AND e1=299 AND 283=a1)
-;
+ORDER BY 1;
 -- 209
 -- 299
 -- 558
@@ -10072,7 +10072,7 @@ UNION
    WHERE (112=d8 OR b8=984)
       OR b8 in (807,511,219,997,503,287)
       OR d8 in (833,60,512,223,781,141,472,511,48,989)
-;
+ORDER BY 1;
 -- 17 values hashing to 5ea51fac2034e07ec371745671ba2a13
 
 -- query T valuesort
@@ -10097,7 +10097,7 @@ UNION ALL
   SELECT c5 FROM t5
    WHERE (d5=1 AND a5=319)
       OR (d5=616 AND 188=e5)
-;
+ORDER BY 1;
 -- 101
 -- 147
 -- 209
@@ -10119,7 +10119,7 @@ UNION
 UNION ALL
   SELECT b3 FROM t3
    WHERE e3 in (235,265,401)
-;
+ORDER BY 1;
 -- 234
 -- 236
 -- 455
@@ -10141,7 +10141,7 @@ UNION
   SELECT a5 FROM t5
    WHERE (255=d5)
       OR (b5=657 AND a5=921 AND d5=557 AND 894=c5)
-;
+ORDER BY 1;
 -- 296
 -- 921
 
@@ -10164,7 +10164,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT ((d1=35)
            OR (b1=486))
-;
+ORDER BY 1;
 -- 13 values hashing to 94c5a09c478260687c2a37704bc7e079
 
 -- query T valuesort
@@ -10185,7 +10185,7 @@ UNION ALL
 UNION ALL
   SELECT e3 FROM t3
    WHERE (527=e3)
-;
+ORDER BY 1;
 -- 34 values hashing to 733854d00530bfad0121c88c2c58705f
 
 -- query T valuesort
@@ -10225,7 +10225,7 @@ UNION ALL
    WHERE d5 in (752,957,855,282,24)
       OR (937=d5 AND e5=187 AND a5=342 AND c5=50)
       OR (a5=53 AND 856=d5 AND 196=c5)
-;
+ORDER BY 1;
 -- 25 values hashing to 33457dd3121b635d6d6a007af7a8ec51
 
 -- query T valuesort
@@ -10263,7 +10263,7 @@ UNION
 EXCEPT
   SELECT e2 FROM t2
    WHERE NOT (d2 in (914,537,60))
-;
+ORDER BY 1;
 -- 44 values hashing to 5cfb7e0e7edeed99a5ba5bd534833439
 
 -- query T valuesort
@@ -10289,7 +10289,7 @@ UNION ALL
    WHERE (318=a9)
       OR (150=e9 OR c9=793)
       OR (b9=703 OR 25=d9)
-;
+ORDER BY 1;
 -- 127
 -- 13
 -- 211
@@ -10327,7 +10327,7 @@ UNION
   SELECT c4 FROM t4
    WHERE (c4=482 OR 415=e4 OR a4=29)
       OR (952=a4 AND b4=966 AND 728=d4)
-;
+ORDER BY 1;
 -- 42 values hashing to 654290ba7bcd07553359e7ff58a7bf8d
 
 -- query T valuesort
@@ -10343,7 +10343,7 @@ EXCEPT
   SELECT d4 FROM t4
    WHERE NOT ((721=b4)
            OR (e4=531 AND b4=966))
-;
+ORDER BY 1;
 -- 193
 -- 273
 -- 33
@@ -10374,7 +10374,7 @@ UNION ALL
 UNION
   SELECT c7 FROM t7
    WHERE b7 in (250,541,407,374,222,634,396,422)
-;
+ORDER BY 1;
 -- 19 values hashing to df16ae1898a0802276478482cebf82cc
 
 -- query T valuesort
@@ -10405,7 +10405,7 @@ EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((70=a3)
            OR (559=a3 AND 584=c3 AND 283=d3 AND e3=83))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT e3 FROM t3
@@ -10415,7 +10415,7 @@ UNION
    WHERE d8 in (456,116,682,731,108,769,161,50)
       OR e8 in (682,422,63,918,620,383,203,381,956,579,64,14)
       OR (e8=223 AND 725=b8 AND d8=116 AND 431=c8 AND a8=239)
-;
+ORDER BY 1;
 -- 25 values hashing to 419d230af7d82aec17d4ef861f156c8e
 
 -- query T valuesort
@@ -10424,7 +10424,7 @@ UNION
 UNION ALL
   SELECT a6 FROM t6
    WHERE (e6=91 OR 969=e6 OR e6=31)
-;
+ORDER BY 1;
 -- 223
 -- 251
 -- 392
@@ -10438,7 +10438,7 @@ UNION ALL
 UNION ALL
   SELECT a5 FROM t5
    WHERE (b5=874 OR c5=774)
-;
+ORDER BY 1;
 -- 235
 -- 503
 -- 818
@@ -10467,7 +10467,7 @@ UNION
 EXCEPT
   SELECT d9 FROM t9
    WHERE NOT ((445=e9 AND 122=b9))
-;
+ORDER BY 1;
 -- 16 values hashing to fda9e4e7274d7de7f03bfe19ecb7794e
 
 -- query T valuesort
@@ -10481,7 +10481,7 @@ EXCEPT
   SELECT a7 FROM t7
    WHERE NOT (c7 in (764,288,770,688,575,364,635)
            OR (c7=288))
-;
+ORDER BY 1;
 -- 218
 -- 402
 -- 425
@@ -10500,7 +10500,7 @@ INTERSECT
    WHERE NOT (c3 in (986,777,476,467,750,887,885,326,565,317,641,81)
            OR d3 in (437,737,307,560,729,764,683,273,220,944,950)
            OR d3 in (624,354,403,983,483,118,38,415))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c8 FROM t8
@@ -10509,7 +10509,7 @@ INTERSECT
 EXCEPT
   SELECT b3 FROM t3
    WHERE NOT ((d3=503 OR d3=503))
-;
+ORDER BY 1;
 -- 10 values hashing to ce491ed272fe01c6e9fbc369aafb1f81
 
 -- query T valuesort
@@ -10550,7 +10550,7 @@ EXCEPT
    WHERE NOT (e7 in (605,156,288,860,462,782,595,561,462,929,688,782,303,562)
            OR a7 in (430,134,277,715)
            OR (886=d7 AND b7=30))
-;
+ORDER BY 1;
 -- 20 values hashing to 31a358fd9e98ec935828a0ecb3329846
 
 -- query T valuesort
@@ -10574,7 +10574,7 @@ UNION ALL
 UNION
   SELECT e3 FROM t3
    WHERE c3 in (265,86,645,898,777,651,127,40)
-;
+ORDER BY 1;
 -- 38 values hashing to 70bf14ea1842b40fef6ef040ed7e6d35
 
 -- query T valuesort
@@ -10590,7 +10590,7 @@ EXCEPT
    WHERE NOT (d8 in (811,805,494,731,815,472,58,456,624,945,81)
            OR (c8=431 AND 116=d8)
            OR c8 in (119,690,74,88,513,160,273,394,229,691,693,419,720,354))
-;
+ORDER BY 1;
 -- 17
 -- 215
 -- 258
@@ -10625,7 +10625,7 @@ EXCEPT
 EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((495=e6))
-;
+ORDER BY 1;
 -- 11 values hashing to 75c4906182ded0f043f93d910735ad94
 
 -- query T valuesort
@@ -10646,7 +10646,7 @@ EXCEPT
   SELECT b6 FROM t6
    WHERE NOT (c6 in (65,490,534,416,295,84,491,122,864,187)
            OR d6 in (790,192,488,151,991,197,974,750,469,34,185))
-;
+ORDER BY 1;
 -- 11 values hashing to 4e756e1993b8e0b6ba74f2a98ca45f77
 
 -- query T valuesort
@@ -10672,7 +10672,7 @@ EXCEPT
 UNION
   SELECT c7 FROM t7
    WHERE (b7=120 OR d7=684 OR 572=d7)
-;
+ORDER BY 1;
 -- 27 values hashing to 9f3f472bd2522b6524d1253a404e23d7
 
 -- query T valuesort
@@ -10693,7 +10693,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT (a8 in (306,327,591,650,254,359,900,586,638,923,564)
            OR d8 in (366,486,542,706,48))
-;
+ORDER BY 1;
 -- 18 values hashing to db400eb8c2aeb597101896332f82ec69
 
 -- query T valuesort
@@ -10705,7 +10705,7 @@ INTERSECT
   SELECT b8 FROM t8
    WHERE NOT ((d8=554 AND 838=a8 AND b8=102 AND c8=196 AND e8=423)
            OR (d8=511 AND 920=a8 AND c8=79 AND 803=b8))
-;
+ORDER BY 1;
 -- 98
 
 -- query T valuesort
@@ -10730,7 +10730,7 @@ UNION
    WHERE (318=c2)
       OR (b2=279 AND 721=e2 AND c2=511 AND a2=445)
       OR (b2=177 AND 933=c2 AND 682=e2 AND a2=93 AND d2=209)
-;
+ORDER BY 1;
 -- 9 values hashing to 9e89893c98f45f0279978259a543b295
 
 -- query T valuesort
@@ -10758,7 +10758,7 @@ UNION ALL
    WHERE e2 in (223,671,688,939,556,386,673,777,706,521,524,945)
       OR (808=e2 OR 720=e2)
       OR (527=b2 OR a2=637)
-;
+ORDER BY 1;
 -- 32 values hashing to dc42ed5c2e42e1272bece64162ba42c2
 
 -- query T valuesort
@@ -10787,7 +10787,7 @@ UNION
    WHERE (342=a5 AND 858=b5 AND 37=c5 AND 271=e5 AND d5=811)
       OR (d5=33 AND e5=708)
       OR (d5=745 AND 319=a5 AND e5=702 AND c5=3 AND 544=b5)
-;
+ORDER BY 1;
 -- 11 values hashing to dd23ca0cb2d78589b9f967cfed81f64c
 
 -- query T valuesort
@@ -10801,7 +10801,7 @@ INTERSECT
 UNION ALL
   SELECT d7 FROM t7
    WHERE e7 in (503,197,31,455,918,887,372,156,976,460,282,127)
-;
+ORDER BY 1;
 -- 17 values hashing to b52b0560b35f1a53294df7d8e3794953
 
 -- query T valuesort
@@ -10821,7 +10821,7 @@ UNION ALL
 UNION ALL
   SELECT d9 FROM t9
    WHERE (b9=446 AND e9=542 AND a9=685 AND d9=790 AND c9=992)
-;
+ORDER BY 1;
 -- 28 values hashing to c24c88b794c3bb8cdb70717ecb9c1f9b
 
 -- query T valuesort
@@ -10831,7 +10831,7 @@ UNION ALL
   SELECT b2 FROM t2
    WHERE (544=a2)
       OR a2 in (718,56,217,76,415,35,522,283,733,455,691,691,382,268)
-;
+ORDER BY 1;
 -- 18 values hashing to 9e0e5a28bb42c3c67b1a50a0832f55ce
 
 -- query T valuesort
@@ -10855,7 +10855,7 @@ UNION
   SELECT d9 FROM t9
    WHERE b9 in (26,262,66,446,301,361,16,832,122,703,170,524)
       OR c9 in (240,579,857,370,101,327,739)
-;
+ORDER BY 1;
 -- 23 values hashing to c80223a8b081ba354a1800a9203d8c12
 
 -- query T valuesort
@@ -10887,7 +10887,7 @@ UNION
   SELECT a2 FROM t2
    WHERE b2 in (376,292,932,640,161,504,317,754,864,888)
       OR a2 in (253,725,594,91)
-;
+ORDER BY 1;
 -- 28 values hashing to 05a0096a585de0785b70d7cf5a8fa872
 
 -- query T valuesort
@@ -10913,7 +10913,7 @@ UNION
    WHERE (647=e2 AND 123=c2 AND 590=a2)
       OR (564=e2)
       OR (c2=45)
-;
+ORDER BY 1;
 -- 20 values hashing to c55b98a757baf941b10cdb607867ead1
 
 -- query T valuesort
@@ -10940,7 +10940,7 @@ EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((803=b9)
            OR (d9=549 OR 554=d9))
-;
+ORDER BY 1;
 -- 13 values hashing to 82b45f7a23590a8e2edf5ea1a01423a8
 
 -- query T valuesort
@@ -10957,7 +10957,7 @@ UNION
   SELECT d2 FROM t2
    WHERE d2 in (241,86,448,177,749,813,263,14,19)
       OR (d2=315 AND c2=87 AND e2=783 AND 805=a2 AND 818=b2)
-;
+ORDER BY 1;
 -- 16 values hashing to 4a34d2dbfbeede73d909653d8ba20e4a
 
 -- query T valuesort
@@ -10989,7 +10989,7 @@ EXCEPT
    WHERE NOT ((972=a9 OR c9=253)
            OR (e9=445)
            OR (d9=878))
-;
+ORDER BY 1;
 -- 16 values hashing to 32013961af4d7c20e7ae1e676ec939a7
 
 -- query T valuesort
@@ -11014,7 +11014,7 @@ UNION
 UNION
   SELECT c4 FROM t4
    WHERE (60=d4 AND 888=b4)
-;
+ORDER BY 1;
 -- 22 values hashing to 0d89f899d476ede53e008a928d16a86f
 
 -- query T valuesort
@@ -11029,7 +11029,7 @@ UNION ALL
   SELECT e4 FROM t4
    WHERE (31=a4)
       OR (e4=350 OR b4=607)
-;
+ORDER BY 1;
 -- 23 values hashing to a07d6387c477453aecbbaeaaff188ada
 
 -- query T valuesort
@@ -11071,7 +11071,7 @@ UNION ALL
 EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((c5=634 OR 549=e5 OR 964=d5))
-;
+ORDER BY 1;
 -- 32 values hashing to 30849ab0539164f8086dfebed74ca924
 
 -- query T valuesort
@@ -11097,7 +11097,7 @@ EXCEPT
    WHERE NOT (c2 in (290,722,160,202,887,374,557,87,346,878,653,466,551)
            OR (e2=510 AND 718=a2 AND b2=357 AND d2=241)
            OR (d2=537))
-;
+ORDER BY 1;
 -- 506
 -- 553
 -- 660
@@ -11136,7 +11136,7 @@ UNION
    WHERE (841=a8 AND 702=b8)
       OR (b8=975 AND c8=225)
       OR (416=e8 AND a8=883 AND d8=391 AND 52=b8 AND 381=c8)
-;
+ORDER BY 1;
 -- 39 values hashing to 16b4ca2ca3d1fb7b112f801d00ce5df1
 
 -- query T valuesort
@@ -11148,7 +11148,7 @@ INTERSECT
   SELECT e5 FROM t5
    WHERE NOT ((b5=661)
            OR (b5=338 AND c5=924))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c6 FROM t6
@@ -11184,7 +11184,7 @@ EXCEPT
 EXCEPT
   SELECT e3 FROM t3
    WHERE NOT (e3 in (272,321,365,989,823,765,578,592,833,271,651,526))
-;
+ORDER BY 1;
 -- 36 values hashing to 13b5c735a54f5b71df031e148469a86c
 
 -- query T valuesort
@@ -11218,7 +11218,7 @@ EXCEPT
 UNION
   SELECT b8 FROM t8
    WHERE d8 in (96,20,899,835,989,326,161,737,101,761,631,108,494,610)
-;
+ORDER BY 1;
 -- 58 values hashing to aa19c466d89fe5cdc31391d5363c3860
 
 -- query T valuesort
@@ -11229,7 +11229,7 @@ INTERSECT
   SELECT d6 FROM t6
    WHERE NOT ((825=a6 OR b6=463)
            OR (504=c6 OR 664=d6))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c4 FROM t4
@@ -11264,7 +11264,7 @@ UNION
   SELECT d2 FROM t2
    WHERE (769=e2 OR c2=625 OR b2=292)
       OR c2 in (902,793,907,511,900,444,140,318,136,830,274,966,282)
-;
+ORDER BY 1;
 -- 38 values hashing to 658c9297dbaab039c17fa3af0f61b466
 
 -- query T valuesort
@@ -11296,7 +11296,7 @@ UNION
   SELECT d8 FROM t8
    WHERE (239=a8 OR c8=544)
       OR (d8=486 AND 881=e8)
-;
+ORDER BY 1;
 -- 59 values hashing to 64698e23cca23767f9f5e8743a2b8c73
 
 -- query T valuesort
@@ -11329,7 +11329,7 @@ EXCEPT
 EXCEPT
   SELECT a4 FROM t4
    WHERE NOT (b4 in (469,964,606,319,810,498,941,678,23))
-;
+ORDER BY 1;
 -- 22 values hashing to a658a47984f6b0b8db8e4d4b8980cd24
 
 -- query T valuesort
@@ -11365,7 +11365,7 @@ UNION ALL
   SELECT a6 FROM t6
    WHERE (e6=241 OR e6=261 OR c6=938)
       OR a6 in (610,436,40,572,839,829,469,522,740,683,104,818,568)
-;
+ORDER BY 1;
 -- 49 values hashing to fcde39e3498d90f3326f954543cd6451
 
 -- query T valuesort
@@ -11394,7 +11394,7 @@ EXCEPT
   SELECT d2 FROM t2
    WHERE NOT ((d2=806 AND 168=b2 AND 150=c2 AND e2=777)
            OR (721=e2))
-;
+ORDER BY 1;
 -- 29 values hashing to 0bfe4bb0546c81b40a93a99867f19a28
 
 -- query T valuesort
@@ -11428,7 +11428,7 @@ UNION ALL
   SELECT b4 FROM t4
    WHERE (c4=0)
       OR (849=b4)
-;
+ORDER BY 1;
 -- 19 values hashing to a96075289b2b28902405b550a8982a5c
 
 -- query T valuesort
@@ -11455,7 +11455,7 @@ EXCEPT
    WHERE NOT (d9 in (909,383,226,224)
            OR e9 in (944,744,944,307,804,854,486,264)
            OR (808=d9 OR 127=b9 OR e9=149))
-;
+ORDER BY 1;
 -- 209
 -- 254
 -- 546
@@ -11492,7 +11492,7 @@ UNION
 EXCEPT
   SELECT d6 FROM t6
    WHERE NOT ((794=e6 OR 421=b6 OR b6=710))
-;
+ORDER BY 1;
 -- 49 values hashing to 92ae97c1c27aa998de57af3d25af56c1
 
 -- query T valuesort
@@ -11514,7 +11514,7 @@ UNION ALL
   SELECT a5 FROM t5
    WHERE (a5=749 OR 542=d5 OR b5=695)
       OR d5 in (274,847,443,514,782,276,757,269,98)
-;
+ORDER BY 1;
 -- 49 values hashing to 0e7c2fa3022cf20050fcc96a64d0e2b1
 
 -- query T valuesort
@@ -11548,7 +11548,7 @@ EXCEPT
 EXCEPT
   SELECT e6 FROM t6
    WHERE NOT (e6 in (14,261,90))
-;
+ORDER BY 1;
 -- 31 values hashing to 2464a8edd08b572c9db9d59fd07a0d79
 
 -- query T valuesort
@@ -11566,7 +11566,7 @@ INTERSECT
    WHERE NOT (b2 in (706,846,414)
            OR d2 in (260,367,643,454,126,315,235,137)
            OR (e2=783))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c5 FROM t5
@@ -11602,7 +11602,7 @@ UNION
    WHERE (357=b4)
       OR (c4=319 OR d4=373)
       OR b4 in (476,749,653,721,86,964,35,535,33,608,289,23)
-;
+ORDER BY 1;
 -- 41 values hashing to a50d7b4bec5e281c08350d302e2ff9c6
 
 -- query T valuesort
@@ -11629,7 +11629,7 @@ EXCEPT
   SELECT e5 FROM t5
    WHERE NOT ((809=c5 AND 934=b5 AND a5=445)
            OR a5 in (642,392,132,153,476,556,429,9,710))
-;
+ORDER BY 1;
 -- 16 values hashing to cb5063b069fd022e0b887434173e42c4
 
 -- query T valuesort
@@ -11653,7 +11653,7 @@ EXCEPT
    WHERE NOT ((c9=643 AND 171=b9 AND 660=d9 AND a9=56 AND 107=e9)
            OR (d9=912 OR 841=a9)
            OR (d9=967 AND e9=687 AND c9=688))
-;
+ORDER BY 1;
 -- 26 values hashing to 4c7663b0851fc4bba27b217e75687cc6
 
 -- query T valuesort
@@ -11687,7 +11687,7 @@ UNION ALL
 EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((419=c9))
-;
+ORDER BY 1;
 -- 20 values hashing to 7b87d8500f2cd21b15458ee9c7ea7e27
 
 -- query T valuesort
@@ -11699,7 +11699,7 @@ EXCEPT
    WHERE NOT (b9 in (912,239,746,63,549,122,66)
            OR b9 in (680,549,746,50,301,342,125,170,122,128,26,578)
            OR b9 in (66,832,2,868,239,447,142,496,12,926,77,50,759,136))
-;
+ORDER BY 1;
 -- 19 values hashing to f7d0d29748c096eb87ed8b827b0874c8
 
 -- query T valuesort
@@ -11724,7 +11724,7 @@ EXCEPT
 EXCEPT
   SELECT a8 FROM t8
    WHERE NOT ((e8=14 OR b8=992))
-;
+ORDER BY 1;
 -- 13 values hashing to 6a0d705242b0e801a8e7001a40ee2ceb
 
 -- query T valuesort
@@ -11759,7 +11759,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE (d4=820 AND 592=e4)
       OR (c4=586 OR c4=188 OR a4=105)
-;
+ORDER BY 1;
 -- 28 values hashing to 386f3b15906ee43643793e73f3c7b393
 
 -- query T valuesort
@@ -11784,7 +11784,7 @@ EXCEPT
 UNION ALL
   SELECT c6 FROM t6
    WHERE (c6=442)
-;
+ORDER BY 1;
 -- 29 values hashing to 79ba7facdf4cb4532c1873338c6ebb84
 
 -- query T valuesort
@@ -11816,7 +11816,7 @@ UNION
    WHERE d9 in (568,744,268,360,554,678,965,305)
       OR (602=d9)
       OR a9 in (660,847,764,776,830,215,879,553,435,821,683,485,326,824)
-;
+ORDER BY 1;
 -- 44 values hashing to be04d20109824f6bd599e4c5fefb4123
 
 -- query T valuesort
@@ -11840,7 +11840,7 @@ UNION ALL
 UNION
   SELECT c9 FROM t9
    WHERE (606=d9 AND 197=e9)
-;
+ORDER BY 1;
 -- 11 values hashing to 0177ce7d66ad67522dd566a321b64511
 
 -- query T valuesort
@@ -11852,7 +11852,7 @@ UNION
   SELECT e4 FROM t4
    WHERE (160=a4 OR a4=327 OR a4=234)
       OR (c4=758 AND d4=105 AND a4=442 AND e4=486 AND 408=b4)
-;
+ORDER BY 1;
 -- 19 values hashing to e9e58947b76c1eca9df07ce6d1345027
 
 -- query T valuesort
@@ -11877,7 +11877,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((220=b4)
            OR c4 in (471,768,345,804,393,417))
-;
+ORDER BY 1;
 -- 16 values hashing to 45addf811102371beff23a3be3d93149
 
 -- query T valuesort
@@ -11905,7 +11905,7 @@ UNION ALL
   SELECT d5 FROM t5
    WHERE (e5=561 AND c5=261 AND a5=853)
       OR e5 in (470,887,511,184,470,180)
-;
+ORDER BY 1;
 -- 45 values hashing to 3fae888b235f059e3b4717cf860a384e
 
 -- query T valuesort
@@ -11942,7 +11942,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT (a1 in (972,981,189,75,338)
            OR (e1=89 OR 432=d1 OR c1=690))
-;
+ORDER BY 1;
 -- 23 values hashing to 6e59fabf5fc09cb14ab8110688c7c487
 
 -- query T valuesort
@@ -11972,7 +11972,7 @@ UNION ALL
 EXCEPT
   SELECT a5 FROM t5
    WHERE NOT ((282=d5 OR b5=234))
-;
+ORDER BY 1;
 -- 24 values hashing to cd8fd62c593ffbb466023c73078bc5f4
 
 -- query T valuesort
@@ -12011,7 +12011,7 @@ EXCEPT
    WHERE NOT ((85=e4 AND 752=a4 AND b4=271 AND 0=c4 AND 665=d4)
            OR (a4=637)
            OR (c4=998 AND b4=532 AND d4=574 AND 554=e4))
-;
+ORDER BY 1;
 -- 54 values hashing to 27d10d260540599502e70f7e28c3f1b3
 
 -- query T valuesort
@@ -12026,7 +12026,7 @@ EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((51=d9 AND 128=b9 AND a9=905 AND 327=c9 AND 647=e9)
            OR (947=e9 AND 569=c9))
-;
+ORDER BY 1;
 -- 13 values hashing to a517b73a2a577074653542b4bd93e181
 
 -- query T valuesort
@@ -12060,7 +12060,7 @@ UNION
   SELECT d9 FROM t9
    WHERE (264=d9)
       OR (2=b9 AND e9=353 AND 678=d9)
-;
+ORDER BY 1;
 -- 204
 -- 264
 -- 375
@@ -12076,7 +12076,7 @@ INTERSECT
    WHERE NOT ((96=d8)
            OR d8 in (894,542,269,651,916,715,889,849,761)
            OR b8 in (397,162,705,461,704,665,790,182,677))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b2 FROM t2
@@ -12119,7 +12119,7 @@ UNION
   SELECT b1 FROM t1
    WHERE (b1=788)
       OR (b1=766)
-;
+ORDER BY 1;
 -- 45 values hashing to b4d6b137152dcf468a3aa15495117908
 
 -- query T valuesort
@@ -12142,7 +12142,7 @@ EXCEPT
    WHERE NOT (d1 in (798,265,885,947,407,955)
            OR (a1=668 OR e1=615)
            OR (847=a1 AND e1=534 AND 572=b1 AND d1=4))
-;
+ORDER BY 1;
 -- 13 values hashing to 216093550a9a292ad409d96762124792
 
 -- query T valuesort
@@ -12171,7 +12171,7 @@ UNION
 EXCEPT
   SELECT a2 FROM t2
    WHERE NOT (b2 in (818,823,897,649,211,297,546))
-;
+ORDER BY 1;
 -- 11 values hashing to b499c65b56a280ea5cb6abfd72a6ba95
 
 -- query T valuesort
@@ -12213,7 +12213,7 @@ UNION ALL
   SELECT b3 FROM t3
    WHERE c3 in (403,175,860,823,134,929,733)
       OR (d3=173)
-;
+ORDER BY 1;
 -- 11 values hashing to 802b5b9661ab997818e1c1424a0fa6f5
 
 -- query T valuesort
@@ -12240,7 +12240,7 @@ UNION ALL
    WHERE (474=a6 OR c6=287)
       OR e6 in (489,286,737,754,711,946,850,329)
       OR (2=d6)
-;
+ORDER BY 1;
 -- 12 values hashing to 62e9ddc936ac277f8634b2b3a718ccf8
 
 -- query T valuesort
@@ -12270,7 +12270,7 @@ EXCEPT
    WHERE NOT ((147=c5 AND e5=18 AND b5=661)
            OR (d5=514)
            OR (369=a5 OR c5=681 OR a5=320))
-;
+ORDER BY 1;
 -- 123
 -- 198
 -- 23
@@ -12293,7 +12293,7 @@ UNION ALL
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((a2=874 OR 537=d2 OR 463=e2))
-;
+ORDER BY 1;
 -- 14 values hashing to 173d62aa98daf64edcde7f22c46abe17
 
 -- query T valuesort
@@ -12304,7 +12304,7 @@ UNION
   SELECT a3 FROM t3
    WHERE (275=a3)
       OR (c3=372 AND 988=d3)
-;
+ORDER BY 1;
 -- 22 values hashing to 29356db569db612b7c322abfba77ef26
 
 -- query T valuesort
@@ -12335,7 +12335,7 @@ EXCEPT
 UNION ALL
   SELECT b4 FROM t4
    WHERE b4 in (535,882,577,847,678,748,941,907,498,888,603)
-;
+ORDER BY 1;
 -- 26 values hashing to 46275164a317cd04a6d66e78eeb7b785
 
 -- query T valuesort
@@ -12370,7 +12370,7 @@ EXCEPT
    WHERE NOT (e8 in (105,186,431,149,682,620,809,600,333)
            OR (534=d8)
            OR (994=a8))
-;
+ORDER BY 1;
 -- 378
 -- 793
 
@@ -12384,7 +12384,7 @@ INTERSECT
 UNION ALL
   SELECT c3 FROM t3
    WHERE (d3=515 AND 848=e3 AND 566=b3)
-;
+ORDER BY 1;
 -- 898
 
 -- query T valuesort
@@ -12422,7 +12422,7 @@ UNION
   SELECT b8 FROM t8
    WHERE (586=e8 AND 54=a8 AND 231=c8 AND 324=b8 AND d8=889)
       OR (b8=359 AND 72=a8 AND 805=d8)
-;
+ORDER BY 1;
 -- 12 values hashing to 1f6c05cb1a503a67fd26daedb1716e2c
 
 -- query T valuesort
@@ -12432,7 +12432,7 @@ UNION
   SELECT e5 FROM t5
    WHERE (682=d5)
       OR (d5=940 AND b5=231 AND e5=549 AND 18=c5)
-;
+ORDER BY 1;
 -- 34
 -- 446
 -- 549
@@ -12446,7 +12446,7 @@ INTERSECT
 UNION
   SELECT c1 FROM t1
    WHERE (c1=204)
-;
+ORDER BY 1;
 -- 159
 -- 204
 -- 442
@@ -12464,7 +12464,7 @@ INTERSECT
    WHERE NOT (b5 in (855,620,716,336,530,847)
            OR a5 in (556,929,24,602,196,637,180)
            OR (445=a5))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b8 FROM t8
@@ -12501,7 +12501,7 @@ UNION ALL
    WHERE (177=c6 OR d6=729)
       OR b6 in (774,993,604,281,601,229)
       OR (781=b6 OR e6=678 OR e6=324)
-;
+ORDER BY 1;
 -- 35 values hashing to f6f95d6cf7718590ee811d06d615b1ea
 
 -- query T valuesort
@@ -12514,7 +12514,7 @@ UNION
 UNION
   SELECT a5 FROM t5
    WHERE (924=c5 AND 851=a5 AND 732=e5 AND b5=338)
-;
+ORDER BY 1;
 -- 9 values hashing to 0f9a0f5e680993109a914b42b35a2317
 
 -- query T valuesort
@@ -12528,7 +12528,7 @@ INTERSECT
 INTERSECT
   SELECT b9 FROM t9
    WHERE NOT ((b9=524 OR c9=515 OR d9=967))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c6 FROM t6
@@ -12548,7 +12548,7 @@ EXCEPT
 UNION
   SELECT c4 FROM t4
    WHERE (d4=268)
-;
+ORDER BY 1;
 -- 221
 -- 645
 -- 931
@@ -12566,7 +12566,7 @@ UNION
    WHERE (122=e7 AND b7=409)
       OR (896=b7 AND 192=d7)
       OR (b7=612)
-;
+ORDER BY 1;
 -- 28 values hashing to 6d7c4686994aa264d0ecd25562bd4264
 
 -- query T valuesort
@@ -12586,7 +12586,7 @@ EXCEPT
   SELECT d6 FROM t6
    WHERE NOT ((d6=647 AND a6=355 AND b6=997 AND 452=c6 AND e6=754)
            OR d6 in (473,600,453,467,667))
-;
+ORDER BY 1;
 -- 266
 -- 280
 -- 296
@@ -12625,7 +12625,7 @@ UNION
    WHERE (a5=683 AND 621=e5 AND 965=d5 AND b5=98)
       OR b5 in (292,569,629,855,784,186,390,657,772,703)
       OR (d5=855 OR 104=e5)
-;
+ORDER BY 1;
 -- 46 values hashing to 19317d5e3624f3616d970e956dbe9106
 
 -- query T valuesort
@@ -12649,7 +12649,7 @@ EXCEPT
   SELECT d8 FROM t8
    WHERE NOT (d8 in (494,81,541,499,179,223,769,446)
            OR (e8=919))
-;
+ORDER BY 1;
 -- 11
 -- 9
 -- 982
@@ -12663,7 +12663,7 @@ UNION ALL
   SELECT b4 FROM t4
    WHERE (844=d4 OR a4=248)
       OR (e4=6)
-;
+ORDER BY 1;
 -- 469
 -- 577
 -- 711
@@ -12693,7 +12693,7 @@ UNION ALL
   SELECT b4 FROM t4
    WHERE d4 in (197,491,681,328,184,231,658,950,144,889,657,409,713)
       OR d4 in (819,713,907,236,60,881,770,328,309,60,889)
-;
+ORDER BY 1;
 -- 31 values hashing to 01e22e831d43c6b9ac3f2c96d71dcd99
 
 -- query T valuesort
@@ -12719,7 +12719,7 @@ UNION
    WHERE (e5=621 AND a5=683)
       OR (a5=349 OR 894=e5 OR 556=a5)
       OR e5 in (708,758,342,13,68,225,34,232,902,586,587)
-;
+ORDER BY 1;
 -- 48 values hashing to 3a85eaeefbb189f7c100692369d156f5
 
 -- query T valuesort
@@ -12730,7 +12730,7 @@ UNION
    WHERE (e4=376 AND a4=825 AND 777=d4 AND 660=c4)
       OR (d4=987 AND 804=a4 AND e4=491)
       OR d4 in (60,819,706,713,260,25,317,973,366,373,85,728,781)
-;
+ORDER BY 1;
 -- 17 values hashing to 96b8ddce376bd012924c98942fa5c381
 
 -- query T valuesort
@@ -12752,7 +12752,7 @@ EXCEPT
 UNION ALL
   SELECT a4 FROM t4
    WHERE (309=d4 OR 105=a4)
-;
+ORDER BY 1;
 -- 105
 -- 105
 -- 142
@@ -12793,7 +12793,7 @@ UNION ALL
 UNION ALL
   SELECT b6 FROM t6
    WHERE (300=a6 AND 267=b6 AND c6=34 AND d6=277 AND 95=e6)
-;
+ORDER BY 1;
 -- 28 values hashing to 0e3d62dcbcc6599c2efe38553029d92d
 
 -- query T valuesort
@@ -12821,7 +12821,7 @@ EXCEPT
    WHERE NOT (e8 in (296,384,431,221,392,942,632,776)
            OR (e8=846 AND 845=d8 AND 963=b8)
            OR (620=e8 AND d8=735 AND 402=a8 AND 168=c8 AND 542=b8))
-;
+ORDER BY 1;
 -- 20 values hashing to 07829fcd35c0d758c5a1a97f8bbe94c4
 
 -- query T valuesort
@@ -12851,7 +12851,7 @@ EXCEPT
    WHERE NOT ((e7=970)
            OR (894=a7)
            OR a7 in (89,950,936,130,97,442,114,703,589,912))
-;
+ORDER BY 1;
 -- 38 values hashing to e24407ac914188471fed523b56feb820
 
 -- query T valuesort
@@ -12882,7 +12882,7 @@ UNION ALL
    WHERE b2 in (264,966,367,211,585,755,592,643,168,148,270,812)
       OR (c2=344 AND a2=324 AND 585=b2)
       OR (b2=585)
-;
+ORDER BY 1;
 -- 58 values hashing to 8774f6eab80f44198e6eb48d9cf9d389
 
 -- query T valuesort
@@ -12913,7 +12913,7 @@ EXCEPT
    WHERE NOT ((410=b9 OR a9=240 OR c9=547)
            OR (d9=235 AND 811=c9 AND b9=66 AND 383=e9 AND a9=559)
            OR (e9=607 OR b9=170))
-;
+ORDER BY 1;
 -- 13 values hashing to 7473b75f980a81874eb0104c53c4bb8c
 
 -- query T valuesort
@@ -12926,7 +12926,7 @@ EXCEPT
 EXCEPT
   SELECT e7 FROM t7
    WHERE NOT (d7 in (192,315,939,603))
-;
+ORDER BY 1;
 -- 13 values hashing to c8c4e71a55e08ce884efdb773b36ff36
 
 -- query T valuesort
@@ -12937,7 +12937,7 @@ EXCEPT
 UNION
   SELECT c3 FROM t3
    WHERE (d3=635)
-;
+ORDER BY 1;
 -- 26 values hashing to dd687bf07f98169c283249690f39389e
 
 -- query T valuesort
@@ -12961,7 +12961,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT (e4 in (543,491,390)
            OR (602=a4 OR 794=d4))
-;
+ORDER BY 1;
 -- 22 values hashing to 73a2b61813cd8e1ccf4e9e0d8f67be75
 
 -- query T valuesort
@@ -12992,7 +12992,7 @@ UNION
   SELECT b6 FROM t6
    WHERE (e6=274 AND 328=c6 AND a6=861)
       OR (281=b6 AND e6=617)
-;
+ORDER BY 1;
 -- 30 values hashing to 6fde733e4dc783deccf64602045e6054
 
 -- query T valuesort
@@ -13020,7 +13020,7 @@ UNION
 UNION ALL
   SELECT a8 FROM t8
    WHERE (a8=597 OR e8=495)
-;
+ORDER BY 1;
 -- 24 values hashing to 5f504b3f9524a219d765c9d2fbe0cde8
 
 -- query T valuesort
@@ -13036,7 +13036,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((a4=510 AND b4=816)
            OR (267=b4))
-;
+ORDER BY 1;
 -- 169
 -- 459
 -- 494
@@ -13066,7 +13066,7 @@ EXCEPT
    WHERE NOT ((149=b9 AND a9=240 AND 476=c9 AND e9=713)
            OR (d9=602 OR 69=a9)
            OR (e9=792 AND 420=d9 AND b9=832 AND a9=548))
-;
+ORDER BY 1;
 -- 30 values hashing to 42e79be01eb6df29b9d3049fef074f7a
 
 -- query T valuesort
@@ -13097,7 +13097,7 @@ EXCEPT
    WHERE NOT (c9 in (232,126,75,37,278,252,224,252)
            OR (254=c9 AND a9=28 AND 959=d9 AND e9=195)
            OR d9 in (549,967,679,660,258,55,463,959,274,399,646))
-;
+ORDER BY 1;
 -- 18
 -- 193
 -- 215
@@ -13136,7 +13136,7 @@ UNION
    WHERE (821=a6 OR 457=d6)
       OR b6 in (144,716,875,230,997,461,629)
       OR (786=d6 OR b6=0)
-;
+ORDER BY 1;
 -- 24 values hashing to 5e69ce955ec48f3fc7ec9cdd6182e3eb
 
 -- query T valuesort
@@ -13157,7 +13157,7 @@ EXCEPT
 UNION
   SELECT b8 FROM t8
    WHERE (180=e8 AND c8=442)
-;
+ORDER BY 1;
 -- 21 values hashing to 7fd041df7d0ddc47a7c9cb7e9b79f330
 
 -- query T valuesort
@@ -13169,7 +13169,7 @@ EXCEPT
    WHERE NOT ((835=d8 AND 349=e8 AND a8=472 AND 397=b8 AND 375=c8)
            OR (b8=459 AND 957=a8)
            OR b8 in (975,656,370,8,244))
-;
+ORDER BY 1;
 -- 140
 -- 307
 -- 427
@@ -13192,7 +13192,7 @@ UNION ALL
    WHERE (95=e6 OR e6=595)
       OR (d6=560)
       OR (674=d6 OR b6=604)
-;
+ORDER BY 1;
 -- 17 values hashing to 7d584fb65b9baa76ee9dc2668b3ddc39
 
 -- query T valuesort
@@ -13224,7 +13224,7 @@ UNION ALL
   SELECT b9 FROM t9
    WHERE (c9=843)
       OR e9 in (713,146,968,788,477,944,954,841,368,947,245,845,230,353)
-;
+ORDER BY 1;
 -- 44 values hashing to 897be6756ed6d062780d5852b3a679ac
 
 -- query T valuesort
@@ -13249,7 +13249,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT (a1 in (607,732,880,109,992,981,76,996,967)
            OR c1 in (765,390,458,805,775,506,4,905,772,498,272,97,681,230))
-;
+ORDER BY 1;
 -- 29 values hashing to 207bc120534cd14da938776878c23489
 
 -- query T valuesort
@@ -13261,7 +13261,7 @@ UNION ALL
   SELECT d1 FROM t1
    WHERE (288=e1)
       OR (d1=939)
-;
+ORDER BY 1;
 -- 23 values hashing to 91d128a9a243bd7ff199acc9dfcd17cc
 
 -- query T valuesort
@@ -13296,7 +13296,7 @@ UNION
    WHERE (447=b1 OR d1=432)
       OR e1 in (117,539,763,838,284,139,858,355,125)
       OR (270=b1 AND c1=882)
-;
+ORDER BY 1;
 -- 38 values hashing to ee2bc83be71a110186e5254e058e3254
 
 -- query T valuesort
@@ -13308,7 +13308,7 @@ EXCEPT
   SELECT b3 FROM t3
    WHERE NOT (c3 in (455,84,647,986,656,733,641,133,80,477,668)
            OR c3 in (455,549,966,750,439,490,733))
-;
+ORDER BY 1;
 -- 10 values hashing to d5dc15696d5e07ab1c5af3cfbf4d3f06
 
 -- query T valuesort
@@ -13347,7 +13347,7 @@ EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((c5=599)
            OR (c5=601 AND 817=a5))
-;
+ORDER BY 1;
 -- 18 values hashing to 210d5adbe9031a859d48d217c65bad11
 
 -- query T valuesort
@@ -13364,7 +13364,7 @@ EXCEPT
 EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((377=e8 AND 799=c8 AND 899=d8 AND 328=a8 AND 922=b8))
-;
+ORDER BY 1;
 -- 198
 -- 315
 -- 576
@@ -13388,7 +13388,7 @@ EXCEPT
    WHERE NOT (e7 in (522,184,971,884,488,456,590)
            OR d7 in (620,885,524,91)
            OR a7 in (879,442,350))
-;
+ORDER BY 1;
 -- 113
 -- 170
 -- 264
@@ -13430,7 +13430,7 @@ UNION
    WHERE (341=d7)
       OR a7 in (921,325,85,879)
       OR b7 in (973,273,820,832,191,220,913)
-;
+ORDER BY 1;
 -- 48 values hashing to df21e11977447acf2af0a0a575dff1df
 
 -- query T valuesort
@@ -13459,7 +13459,7 @@ EXCEPT
 UNION ALL
   SELECT b9 FROM t9
    WHERE c9 in (278,90,515)
-;
+ORDER BY 1;
 -- 26 values hashing to 80985d1286b431c6cfe9f3cad45e80e2
 
 -- query T valuesort
@@ -13473,7 +13473,7 @@ EXCEPT
   SELECT e5 FROM t5
    WHERE NOT ((a5=99 AND 799=c5 AND e5=9)
            OR (a5=163 OR e5=342))
-;
+ORDER BY 1;
 -- 11 values hashing to de83f17f4ff5ba747f448b04f34ba54e
 
 -- query T valuesort
@@ -13490,7 +13490,7 @@ EXCEPT
 UNION
   SELECT c7 FROM t7
    WHERE (976=e7 AND c7=249 AND d7=590 AND a7=876)
-;
+ORDER BY 1;
 -- 11 values hashing to eda20392ed783e90808638bfc57f7e7a
 
 -- query T valuesort
@@ -13519,7 +13519,7 @@ UNION
 EXCEPT
   SELECT d1 FROM t1
    WHERE NOT ((c1=246 OR 237=a1 OR 717=e1))
-;
+ORDER BY 1;
 -- 23 values hashing to 9af510ee01a2d508b1db96bc203052bb
 
 -- query T valuesort
@@ -13529,7 +13529,7 @@ EXCEPT
 UNION ALL
   SELECT e9 FROM t9
    WHERE c9 in (253,526,146,349,843,278,95,739,764,323,39,87,224)
-;
+ORDER BY 1;
 -- 31 values hashing to 0dcdcf98fd540dc8c19a088fddb62bce
 
 -- query T valuesort
@@ -13549,7 +13549,7 @@ EXCEPT
 UNION
   SELECT c5 FROM t5
    WHERE (a5=362 OR 338=b5)
-;
+ORDER BY 1;
 -- 29 values hashing to 5f9472f67ed80f17f8b4489229634610
 
 -- query T valuesort
@@ -13583,7 +13583,7 @@ EXCEPT
   SELECT e5 FROM t5
    WHERE NOT (c5 in (766,696,915,196,825,797,733)
            OR (e5=554 OR d5=413 OR b5=389))
-;
+ORDER BY 1;
 -- 16 values hashing to d7f4ff1727fb5bc6dd65505ecd553366
 
 -- query T valuesort
@@ -13610,7 +13610,7 @@ EXCEPT
   SELECT a5 FROM t5
    WHERE NOT ((225=e5)
            OR c5 in (927,348,514))
-;
+ORDER BY 1;
 -- 43 values hashing to 7fccaf2f23adcef915b723fee5dca8b5
 
 -- query T valuesort
@@ -13639,7 +13639,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((d4=522 AND a4=448 AND 295=b4 AND 860=c4 AND e4=35)
            OR b4 in (288,434,607,271,924,68,925,982))
-;
+ORDER BY 1;
 -- 31 values hashing to 87f7396bf9265451d1ad6050dd787041
 
 -- query T valuesort
@@ -13649,7 +13649,7 @@ UNION
   SELECT c9 FROM t9
    WHERE c9 in (64,857,711)
       OR (a9=463)
-;
+ORDER BY 1;
 -- 18 values hashing to 1c472fcdd6b5d874e0fbb40aa36bcc0d
 
 -- query T valuesort
@@ -13660,7 +13660,7 @@ UNION
 UNION
   SELECT a8 FROM t8
    WHERE (d8=845 OR 119=c8 OR c8=541)
-;
+ORDER BY 1;
 -- 16 values hashing to cbaa5a094b2e3e843aeed6f8bd198f28
 
 -- query T valuesort
@@ -13681,7 +13681,7 @@ UNION
    WHERE (e5=708 OR d5=557)
       OR (554=e5 AND 492=d5 AND 332=a5 AND b5=161 AND 756=c5)
       OR (b5=391 OR e5=586)
-;
+ORDER BY 1;
 -- 13 values hashing to f8f66d80edcb9b98fc0fa2bf4900313d
 
 -- query T valuesort
@@ -13702,7 +13702,7 @@ UNION
 EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((d6=197 AND c6=328 AND 861=a6 AND 274=e6))
-;
+ORDER BY 1;
 -- 17 values hashing to 8d86ec6d58b8c6b2951123db6b38fb93
 
 -- query T valuesort
@@ -13731,7 +13731,7 @@ UNION ALL
    WHERE (592=e4 AND b4=708 AND 107=a4)
       OR (408=a4 OR 738=e4 OR d4=881)
       OR a4 in (105,74,804,708,16,355)
-;
+ORDER BY 1;
 -- 15 values hashing to cb1b957654a570c8c7816d35512a227c
 
 -- query T valuesort
@@ -13741,7 +13741,7 @@ EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((d3=487)
            OR c3 in (83,826,809,792,885,395,701))
-;
+ORDER BY 1;
 -- 409
 -- 441
 -- 482
@@ -13773,7 +13773,7 @@ UNION ALL
 UNION ALL
   SELECT e7 FROM t7
    WHERE (548=c7 OR d7=199 OR d7=892)
-;
+ORDER BY 1;
 -- 127
 -- 303
 -- 319
@@ -13797,7 +13797,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (c6=648)
       OR (274=e6)
-;
+ORDER BY 1;
 -- 20 values hashing to cd05030798d1846c8f3f63cfe1a4c0de
 
 -- query T valuesort
@@ -13815,7 +13815,7 @@ INTERSECT
 UNION ALL
   SELECT c9 FROM t9
    WHERE (e9=195 AND c9=254 AND 959=d9 AND 28=a9 AND b9=348)
-;
+ORDER BY 1;
 -- 254
 
 -- query T valuesort
@@ -13824,7 +13824,7 @@ UNION ALL
 INTERSECT
   SELECT e9 FROM t9
    WHERE NOT ((746=b9 OR a9=972 OR 686=d9))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a8 FROM t8
@@ -13856,7 +13856,7 @@ EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((b3=127 OR 947=a3 OR b3=159)
            OR (b3=302 AND d3=913))
-;
+ORDER BY 1;
 -- 10 values hashing to 1f486a12929a4e75272f92e7232b67b1
 
 -- query T valuesort
@@ -13867,7 +13867,7 @@ EXCEPT
    WHERE NOT ((811=b3)
            OR (600=c3 OR e3=914 OR 310=e3)
            OR (e3=765 OR 467=c3 OR 321=b3))
-;
+ORDER BY 1;
 -- 11 values hashing to 4ecc37578af9d86363a04f68d6a359b6
 
 -- query T valuesort
@@ -13897,7 +13897,7 @@ EXCEPT
 EXCEPT
   SELECT c5 FROM t5
    WHERE NOT ((685=d5))
-;
+ORDER BY 1;
 -- 414
 -- 487
 
@@ -13925,7 +13925,7 @@ UNION ALL
    WHERE (c5=18 AND d5=24 AND b5=499)
       OR (747=c5 OR c5=734)
       OR (a5=180 AND 26=b5 AND 485=c5 AND e5=708 AND d5=33)
-;
+ORDER BY 1;
 -- 24 values hashing to 44d49186ef16adf047ee62d463a585e8
 
 -- query T valuesort
@@ -13950,7 +13950,7 @@ EXCEPT
 EXCEPT
   SELECT b4 FROM t4
    WHERE NOT ((e4=381 AND d4=988 AND 982=a4 AND 581=c4 AND 627=b4))
-;
+ORDER BY 1;
 -- 33 values hashing to 764ab4cd56c396530c3dc8a43919ac54
 
 -- query T valuesort
@@ -13972,7 +13972,7 @@ UNION
   SELECT d8 FROM t8
    WHERE (c8=647 AND 241=a8)
       OR (c8=935)
-;
+ORDER BY 1;
 -- 13 values hashing to 06f2e019d3da503634d74c3be56746dc
 
 -- query T valuesort
@@ -13992,7 +13992,7 @@ UNION ALL
 UNION
   SELECT b9 FROM t9
    WHERE (744=e9 OR b9=64)
-;
+ORDER BY 1;
 -- 14 values hashing to 1d773ac49ebaff62095e8e0c96871663
 
 -- query T valuesort
@@ -14032,7 +14032,7 @@ EXCEPT
    WHERE NOT ((925=c2 OR a2=853)
            OR (d2=860 AND e2=73 AND c2=247 AND 245=a2)
            OR (527=b2 OR 495=a2))
-;
+ORDER BY 1;
 -- 16 values hashing to ee60bb2b3dd0bcd56b1ca29307157744
 
 -- query T valuesort
@@ -14064,7 +14064,7 @@ EXCEPT
 EXCEPT
   SELECT b1 FROM t1
    WHERE NOT ((a1=281))
-;
+ORDER BY 1;
 -- 13 values hashing to f568cda0ca735ec5b3068dc4da9e0c8f
 
 -- query T valuesort
@@ -14097,7 +14097,7 @@ UNION
   SELECT d1 FROM t1
    WHERE (e1=558 AND 69=c1)
       OR (e1=110 OR e1=299 OR 738=a1)
-;
+ORDER BY 1;
 -- 9 values hashing to 44b857ee788d2cea9dea6dca9bb95e5e
 
 -- query T valuesort
@@ -14111,7 +14111,7 @@ EXCEPT
   SELECT a3 FROM t3
    WHERE NOT (e3 in (449,193,731,393,837)
            OR c3 in (555,360,175,701,285,607,490,688,777,476,524,809,467))
-;
+ORDER BY 1;
 -- 15 values hashing to 6386c14bd1452cd2018e5f5c23b11232
 
 -- query T valuesort
@@ -14124,7 +14124,7 @@ UNION
 UNION ALL
   SELECT d5 FROM t5
    WHERE (d5=274 OR 661=e5 OR d5=280)
-;
+ORDER BY 1;
 -- 9 values hashing to 93392d24409fc16b1c5d4174f2b44263
 
 -- query T valuesort
@@ -14161,7 +14161,7 @@ UNION
    WHERE (897=b2)
       OR (d2=723 AND 90=b2 AND 137=c2)
       OR d2 in (216,836,86,953,235,317,80,265,2,126,448,46,137)
-;
+ORDER BY 1;
 -- 48 values hashing to 72188aefa9bd4633969b676c05306ad1
 
 -- query T valuesort
@@ -14198,7 +14198,7 @@ UNION ALL
    WHERE (706=e2)
       OR e2 in (427,940,294,117,812,434,654,524)
       OR (775=a2 AND 750=d2 AND 46=c2 AND 899=e2 AND b2=545)
-;
+ORDER BY 1;
 -- 44 values hashing to 6a54cb0c6e3c869acf573bb367e89481
 
 -- query T valuesort
@@ -14226,7 +14226,7 @@ UNION
   SELECT e7 FROM t7
    WHERE (b7=660 OR a7=709)
       OR a7 in (288,87,439,452,35,894)
-;
+ORDER BY 1;
 -- 14 values hashing to adbca4ecca538c5df7c4e976dada53cf
 
 -- query T valuesort
@@ -14248,7 +14248,7 @@ UNION ALL
   SELECT d8 FROM t8
    WHERE (c8=762 AND d8=761)
       OR (253=b8)
-;
+ORDER BY 1;
 -- 20 values hashing to 5153419d21e7d14a421963f67a72c218
 
 -- query T valuesort
@@ -14277,7 +14277,7 @@ EXCEPT
   SELECT b4 FROM t4
    WHERE NOT ((439=a4)
            OR (e4=600 OR 398=c4))
-;
+ORDER BY 1;
 -- 420
 -- 490
 -- 777
@@ -14314,7 +14314,7 @@ UNION
    WHERE (167=b4 OR 951=e4 OR a4=598)
       OR (637=a4 AND 264=d4 AND 293=c4 AND e4=377)
       OR (d4=449 AND e4=480 AND 170=a4)
-;
+ORDER BY 1;
 -- 41 values hashing to c738a02f89c85d57f9d14fc9217ae936
 
 -- query T valuesort
@@ -14337,7 +14337,7 @@ EXCEPT
   SELECT e1 FROM t1
    WHERE NOT ((a1=707 AND 117=e1 AND 880=c1 AND d1=130 AND b1=113)
            OR e1 in (152,558,546,299,161,695,313,558,268))
-;
+ORDER BY 1;
 -- 0
 -- 226
 -- 392
@@ -14367,7 +14367,7 @@ EXCEPT
    WHERE NOT (a7 in (89,439,592,433,277,925,706,267,325,950,894)
            OR (e7=929 OR d7=212)
            OR (a7=709))
-;
+ORDER BY 1;
 -- 33 values hashing to d8edcd4846d46d84ca2a20afeab4d10e
 
 -- query T valuesort
@@ -14387,7 +14387,7 @@ UNION ALL
 EXCEPT
   SELECT a3 FROM t3
    WHERE NOT (c3 in (592,53,317,10,887))
-;
+ORDER BY 1;
 -- 28 values hashing to 8187c11b5b8d5116448e237cc7882cb7
 
 -- query T valuesort
@@ -14412,7 +14412,7 @@ EXCEPT
 EXCEPT
   SELECT e9 FROM t9
    WHERE NOT (a9 in (365,847,269,435,811,776,78,685,474,463))
-;
+ORDER BY 1;
 -- 23 values hashing to 30d54b037c3c4161ea4eab28ed0c8608
 
 -- query T valuesort
@@ -14437,7 +14437,7 @@ UNION
 UNION
   SELECT d5 FROM t5
    WHERE (718=e5 OR 514=a5)
-;
+ORDER BY 1;
 -- 23 values hashing to 9e99403079efe3a18212fa07303202dc
 
 -- query T valuesort
@@ -14475,7 +14475,7 @@ UNION ALL
 UNION ALL
   SELECT d3 FROM t3
    WHERE a3 in (899,559,549,727,822,594,190,218,42,344)
-;
+ORDER BY 1;
 -- 57 values hashing to 375f2429e175350d96d9d735559f9673
 
 -- query T valuesort
@@ -14514,7 +14514,7 @@ EXCEPT
    WHERE NOT (c4 in (271,690,153,658,619,948,936,119)
            OR d4 in (498,680,781,197,820,229,100,303,989,199,356)
            OR (580=a4 OR 0=c4))
-;
+ORDER BY 1;
 -- 38 values hashing to 8be425d6175e80f2ddcf09cbdfaf171c
 
 -- query T valuesort
@@ -14551,7 +14551,7 @@ UNION ALL
   SELECT d3 FROM t3
    WHERE (c3=701 AND e3=892 AND 935=a3 AND b3=58)
       OR (e3=807)
-;
+ORDER BY 1;
 -- 34 values hashing to 456ec17a51f96b1bdc9ec863cbd905a1
 
 -- query T valuesort
@@ -14584,7 +14584,7 @@ EXCEPT
    WHERE NOT ((b6=511 AND a6=522 AND 822=d6 AND 5=e6 AND c6=177)
            OR b6 in (604,915,781)
            OR (a6=45 OR c6=135))
-;
+ORDER BY 1;
 -- 20 values hashing to 1a4de9331fb2cf08f6f7f154a9d22bc0
 
 -- query T valuesort
@@ -14612,7 +14612,7 @@ UNION
 UNION
   SELECT c2 FROM t2
    WHERE (728=c2)
-;
+ORDER BY 1;
 -- 14 values hashing to f88c3d3b04e0653684be9312e9839981
 
 -- query T valuesort
@@ -14654,7 +14654,7 @@ UNION
    WHERE d5 in (1,98,847,841,69,772,271,437)
       OR (b5=685 AND 101=c5 AND 1=d5)
       OR (d5=856 OR b5=143)
-;
+ORDER BY 1;
 -- 43 values hashing to aacbf8efef3c62881f4ba1c8852f6675
 
 -- query T valuesort
@@ -14669,7 +14669,7 @@ EXCEPT
    WHERE NOT ((67=e6)
            OR (a6=966 AND c6=807 AND e6=847 AND b6=276 AND d6=911)
            OR (683=a6))
-;
+ORDER BY 1;
 -- 161
 -- 305
 -- 591
@@ -14713,7 +14713,7 @@ UNION
    WHERE d9 in (164,464,95,732,602,305,399,388,965,360)
       OR (d9=23 AND e9=418 AND 151=c9)
       OR a9 in (811,660,148)
-;
+ORDER BY 1;
 -- 21 values hashing to 653d099b7d192ca58cde082af768532f
 
 -- query T valuesort
@@ -14735,7 +14735,7 @@ UNION
    WHERE (b6=300 OR b6=834)
       OR (565=b6 OR 846=d6)
       OR a6 in (211,870,764,740,436,452,615,270)
-;
+ORDER BY 1;
 -- 15 values hashing to acdc8b297b43da283a5bc2a820cecc2e
 
 -- query T valuesort
@@ -14763,7 +14763,7 @@ UNION ALL
 EXCEPT
   SELECT b7 FROM t7
    WHERE NOT (c7 in (376,682,954,564,626,280))
-;
+ORDER BY 1;
 -- 34 values hashing to 08f85df319360ca3cbf102aae358d903
 
 -- query T valuesort
@@ -14791,7 +14791,7 @@ UNION ALL
   SELECT c3 FROM t3
    WHERE (b3=437)
       OR (400=c3)
-;
+ORDER BY 1;
 -- 25 values hashing to 15fc39082c6fe447aa9f273e12c65e90
 
 -- query T valuesort
@@ -14814,7 +14814,7 @@ UNION
   SELECT e6 FROM t6
    WHERE (d6=970 AND b6=144 AND c6=543 AND 1=e6 AND 696=a6)
       OR d6 in (613,991,223,970,924,2,60,197)
-;
+ORDER BY 1;
 -- 16 values hashing to 33a9ca28d891c0229e56e86be679f658
 
 -- query T valuesort
@@ -14829,7 +14829,7 @@ UNION ALL
   SELECT e3 FROM t3
    WHERE (995=a3 AND 833=e3 AND 508=d3)
       OR (c3=272)
-;
+ORDER BY 1;
 -- 283
 -- 430
 -- 538
@@ -14846,7 +14846,7 @@ UNION ALL
 INTERSECT
   SELECT e4 FROM t4
    WHERE NOT ((268=d4))
-;
+ORDER BY 1;
 -- 816
 
 -- query T valuesort
@@ -14884,7 +14884,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT ((462=e7 AND a7=433)
            OR c7 in (887,855,626,145,606))
-;
+ORDER BY 1;
 -- 20 values hashing to a755868a5bb27d70b45ad27b8a552dec
 
 -- query T valuesort
@@ -14909,7 +14909,7 @@ EXCEPT
 UNION
   SELECT b5 FROM t5
    WHERE (261=c5 AND a5=853 AND d5=98 AND e5=561 AND b5=26)
-;
+ORDER BY 1;
 -- 14 values hashing to 547a4b4f247e9b2a5b993aa34a9b5110
 
 -- query T valuesort
@@ -14935,7 +14935,7 @@ EXCEPT
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((d7=341 AND 709=a7))
-;
+ORDER BY 1;
 -- 450
 -- 456
 -- 651
@@ -14959,7 +14959,7 @@ EXCEPT
 UNION ALL
   SELECT c2 FROM t2
    WHERE a2 in (505,139,64,651,637)
-;
+ORDER BY 1;
 -- 124
 -- 272
 -- 509
@@ -14983,7 +14983,7 @@ EXCEPT
 EXCEPT
   SELECT c9 FROM t9
    WHERE NOT ((a9=905 OR d9=608 OR d9=682))
-;
+ORDER BY 1;
 -- 10 values hashing to cfdf41811d0782153a5809bc17481de8
 
 -- query T valuesort
@@ -15008,7 +15008,7 @@ EXCEPT
    WHERE NOT (b7 in (804,83,627,506,949,455,827,881,562)
            OR c7 in (564,301,954,906,795,238,344,341)
            OR (303=e7 AND c7=548 AND b7=83 AND 703=a7 AND d7=680))
-;
+ORDER BY 1;
 -- 16 values hashing to ed453fd04421c7cedaaad5194432175c
 
 -- query T valuesort
@@ -15038,7 +15038,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT ((e5=104 AND 536=a5 AND 579=c5 AND d5=570 AND b5=26)
            OR (716=b5))
-;
+ORDER BY 1;
 -- 26 values hashing to 4f4daf43019d0cd39535e80043eba657
 
 -- query T valuesort
@@ -15067,7 +15067,7 @@ UNION
 EXCEPT
   SELECT d5 FROM t5
    WHERE NOT (d5 in (238,321,557,33,916,271,171,514,818,111,856))
-;
+ORDER BY 1;
 -- 25 values hashing to 8e57f2ec8ebb3ad276025d732bc0556e
 
 -- query T valuesort
@@ -15092,7 +15092,7 @@ UNION
   SELECT e3 FROM t3
    WHERE (c3=809 OR 113=b3)
       OR a3 in (576,337,803,899,551,386,16,549,959,364,644,513,30,383)
-;
+ORDER BY 1;
 -- 21 values hashing to 1036d5d70423353f18750f28dec0b898
 
 -- query T valuesort
@@ -15108,7 +15108,7 @@ UNION
   SELECT e5 FROM t5
    WHERE (a5=796 AND 527=c5 AND b5=159)
       OR (c5=222)
-;
+ORDER BY 1;
 -- 16 values hashing to ec904c9a579a2b5c72d1ee9db598a805
 
 -- query T valuesort
@@ -15149,7 +15149,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT ((e7=841 OR a7=921 OR a7=912)
            OR c7 in (78,419,284,206,280,518,966,729))
-;
+ORDER BY 1;
 -- 56 values hashing to 7839c36030ca827d8fb012901462e066
 
 -- query T valuesort
@@ -15168,7 +15168,7 @@ UNION ALL
   SELECT e5 FROM t5
    WHERE (697=e5)
       OR (806=d5)
-;
+ORDER BY 1;
 -- 36 values hashing to d6640e99b192b438776488c6c16077fd
 
 -- query T valuesort
@@ -15198,7 +15198,7 @@ EXCEPT
    WHERE NOT ((294=b4 OR b4=941 OR a4=651)
            OR (23=b4 OR e4=438 OR a4=661)
            OR a4 in (723,151,605,318,574,450,337,602))
-;
+ORDER BY 1;
 -- 29 values hashing to b1fdc6c1368c5a677764b6708e2af4ba
 
 -- query T valuesort
@@ -15222,7 +15222,7 @@ UNION
   SELECT b1 FROM t1
    WHERE (412=d1 AND b1=303 AND 51=e1 AND 388=c1)
       OR (88=b1 AND 761=d1 AND 402=c1 AND a1=330)
-;
+ORDER BY 1;
 -- 303
 -- 666
 -- 88
@@ -15235,7 +15235,7 @@ UNION ALL
    WHERE (e7=428)
       OR (d7=131)
       OR a7 in (165,267,433,699)
-;
+ORDER BY 1;
 -- 165
 -- 267
 -- 433
@@ -15270,7 +15270,7 @@ EXCEPT
    WHERE NOT ((512=d8)
            OR (d8=58 OR 199=e8)
            OR (c8=298 OR 183=a8))
-;
+ORDER BY 1;
 -- 16 values hashing to 2244785c106c20fecbc96d6b9249dc3e
 
 -- query T valuesort
@@ -15300,7 +15300,7 @@ UNION ALL
   SELECT c6 FROM t6
    WHERE b6 in (781,214,993,629,262,997,461,834,989)
       OR a6 in (877,116,211,825,680,653,643,121,731,85,683,240,751)
-;
+ORDER BY 1;
 -- 58 values hashing to 0a0a3b1be8179982cc2575665505975d
 
 -- query T valuesort
@@ -15326,7 +15326,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((b4=379 OR e4=543)
            OR d4 in (231,728,449,86,819,910,797))
-;
+ORDER BY 1;
 -- 958
 
 -- query T valuesort
@@ -15345,7 +15345,7 @@ UNION ALL
 UNION
   SELECT e9 FROM t9
    WHERE e9 in (978,19,117,161,239,255,788,150)
-;
+ORDER BY 1;
 -- 14 values hashing to ed484008dada3c36abc4099a040f82b9
 
 -- query T valuesort
@@ -15385,7 +15385,7 @@ EXCEPT
   SELECT b4 FROM t4
    WHERE NOT (a4 in (29,621,271,260,505,982,60,510)
            OR (a4=876 OR 312=e4))
-;
+ORDER BY 1;
 -- 46 values hashing to 8a88ca66b799126e9ce7879acfa86db6
 
 -- query T valuesort
@@ -15394,7 +15394,7 @@ EXCEPT
 INTERSECT
   SELECT c9 FROM t9
    WHERE NOT ((962=a9 AND 639=c9 AND 967=d9 AND 607=e9 AND b9=855))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c2 FROM t2
@@ -15406,7 +15406,7 @@ UNION
    WHERE a6 in (740,211,251,359,821)
       OR (699=b6 OR e6=754)
       OR (c6=752 AND 550=e6)
-;
+ORDER BY 1;
 -- 25 values hashing to 6613ac4620a76f7a01f3f7a7c8633ca4
 
 -- query T valuesort
@@ -15418,7 +15418,7 @@ UNION
   SELECT c8 FROM t8
    WHERE (a8=417 AND b8=755 AND 113=c8)
       OR (a8=822 AND 422=d8 AND 186=e8 AND 677=b8)
-;
+ORDER BY 1;
 -- 113
 -- 212
 -- 297
@@ -15465,7 +15465,7 @@ EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((341=c7 OR 377=c7 OR 970=e7)
            OR b7 in (276,166,808,396,541,495,510,996,924,881,222))
-;
+ORDER BY 1;
 -- 41 values hashing to 147dd040d6eba22ff0a8537d499a8cf3
 
 -- query T valuesort
@@ -15493,7 +15493,7 @@ EXCEPT
 UNION ALL
   SELECT a5 FROM t5
    WHERE (c5=689 OR 55=a5)
-;
+ORDER BY 1;
 -- 270
 -- 467
 -- 55
@@ -15535,7 +15535,7 @@ UNION
   SELECT e8 FROM t8
    WHERE e8 in (463,972,919)
       OR (b8=9 OR 564=b8)
-;
+ORDER BY 1;
 -- 27 values hashing to 3627bcb359b163d36468d64714d631fe
 
 -- query T valuesort
@@ -15568,7 +15568,7 @@ EXCEPT
   SELECT b9 FROM t9
    WHERE NOT ((e9=239)
            OR a9 in (435,610,611,811,548,694,485,847,747))
-;
+ORDER BY 1;
 -- 31 values hashing to 143af6edf2360c7e7688bfaf9124d2ab
 
 -- query T valuesort
@@ -15590,7 +15590,7 @@ EXCEPT
 EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((287=e5 OR b5=412))
-;
+ORDER BY 1;
 -- 15 values hashing to a1bfa61f51d6aa1639fe0726e41eef14
 
 -- query T valuesort
@@ -15602,7 +15602,7 @@ EXCEPT
   SELECT a7 FROM t7
    WHERE NOT ((982=a7)
            OR (981=c7))
-;
+ORDER BY 1;
 -- 149
 -- 349
 -- 608
@@ -15636,7 +15636,7 @@ EXCEPT
 UNION
   SELECT a8 FROM t8
    WHERE (d8=845 OR 794=a8 OR 14=d8)
-;
+ORDER BY 1;
 -- 13 values hashing to 7071c002916522dae8c1f994842ba7b5
 
 -- query T valuesort
@@ -15673,7 +15673,7 @@ UNION ALL
    WHERE (383=d9)
       OR d9 in (959,554,662,965,161,808,525,608,104,602,601)
       OR (953=a9 AND c9=278 AND 486=e9)
-;
+ORDER BY 1;
 -- 30 values hashing to ada957d6b39b048c35e991e90f8eb7b5
 
 -- query T valuesort
@@ -15685,7 +15685,7 @@ UNION ALL
    WHERE b3 in (339,456,73)
       OR b3 in (761,224,376,17,146,876,701)
       OR (c3=220 OR 947=a3)
-;
+ORDER BY 1;
 -- 31 values hashing to 7832ada1141f34357c48e40e6b1178f7
 
 -- query T valuesort
@@ -15717,7 +15717,7 @@ UNION
 UNION ALL
   SELECT d5 FROM t5
    WHERE (184=e5 AND 810=d5)
-;
+ORDER BY 1;
 -- 12 values hashing to 2885efbd6b06b649d099d9836c52dc88
 
 -- query T valuesort
@@ -15743,7 +15743,7 @@ UNION
   SELECT d7 FROM t7
    WHERE a7 in (500,452,466,267,879,442,35,894)
       OR c7 in (970,725,565,857,38,98,80,843,364)
-;
+ORDER BY 1;
 -- 36 values hashing to b7eda30f1cf2e97900729480b0c530b8
 
 -- query T valuesort
@@ -15787,7 +15787,7 @@ EXCEPT
    WHERE NOT (d7 in (418,892,164,108,684,777,226,886,142)
            OR (e7=4 OR c7=344)
            OR d7 in (177,328,105,134,526,79,828,666))
-;
+ORDER BY 1;
 -- 44 values hashing to 2803a2a59a39adf8e64b5402a63c4631
 
 -- query T valuesort
@@ -15808,7 +15808,7 @@ EXCEPT
    WHERE NOT (b5 in (971,674,161,587,205)
            OR (d5=634 OR 740=a5 OR 971=b5)
            OR b5 in (723,82,772,878,554,934,403,975,665,705))
-;
+ORDER BY 1;
 -- 280
 -- 469
 
@@ -15843,7 +15843,7 @@ EXCEPT
    WHERE NOT (a1 in (215,145,950,738,338,553,622)
            OR (457=d1)
            OR b1 in (822,681,43,32,662,594,579,914,233))
-;
+ORDER BY 1;
 -- 20 values hashing to bbcc52ba9453dfdfebf1c4ff57b52f3f
 
 -- query T valuesort
@@ -15884,7 +15884,7 @@ EXCEPT
    WHERE NOT ((67=e6 AND 768=c6 AND 211=a6)
            OR (e6=738 OR 139=e6)
            OR (768=c6 AND e6=67))
-;
+ORDER BY 1;
 -- 16 values hashing to 453ec6ded199ec254eb850f31c503a9e
 
 -- query T valuesort
@@ -15913,7 +15913,7 @@ EXCEPT
 UNION
   SELECT a4 FROM t4
    WHERE (146=d4)
-;
+ORDER BY 1;
 -- 15 values hashing to bec41d2927a20afd6084ea1943877d1e
 
 -- query T valuesort
@@ -15945,7 +15945,7 @@ EXCEPT
    WHERE NOT (a8 in (963,561,248,328,328,259,920,46,957,701,894,453,702,359)
            OR (c8=149 OR a8=443)
            OR (822=a8))
-;
+ORDER BY 1;
 -- 14 values hashing to 9f91af992cdc73b1f7636d9558fe7f8f
 
 -- query T valuesort
@@ -15979,7 +15979,7 @@ EXCEPT
 UNION ALL
   SELECT e7 FROM t7
    WHERE (c7=174)
-;
+ORDER BY 1;
 -- 30 values hashing to c14ed0e4f0acc3d3af02caa1382cc90e
 
 -- query T valuesort
@@ -16013,7 +16013,7 @@ EXCEPT
   SELECT c1 FROM t1
    WHERE NOT ((d1=761 AND 90=e1 AND c1=402 AND 88=b1 AND 330=a1)
            OR (158=e1 AND 282=b1 AND a1=637))
-;
+ORDER BY 1;
 -- 27 values hashing to ad55e32a5c6dd1e2d34ec14f4a8b7efe
 
 -- query T valuesort
@@ -16054,7 +16054,7 @@ UNION
   SELECT c5 FROM t5
    WHERE (812=e5 OR a5=544 OR 782=b5)
       OR c5 in (734,527,149,443,923,797,570,86,261,31,155,602,915,774)
-;
+ORDER BY 1;
 -- 30 values hashing to 20e9aa368c648bcd04a5f37ee1e474be
 
 -- query T valuesort
@@ -16063,7 +16063,7 @@ UNION
 EXCEPT
   SELECT b3 FROM t3
    WHERE NOT ((607=d3 OR e3=651))
-;
+ORDER BY 1;
 -- 374
 
 -- query T valuesort
@@ -16086,7 +16086,7 @@ UNION ALL
    WHERE b6 in (963,537,350,650,214,54,250,541,290)
       OR (e6=6 AND 185=d6 AND c6=287)
       OR b6 in (681,290,6,461,0,782,537,449,348,875,463,993,276)
-;
+ORDER BY 1;
 -- 60 values hashing to aed5e3962deb75fbac39675943b42a7e
 
 -- query T valuesort
@@ -16114,7 +16114,7 @@ UNION ALL
   SELECT b7 FROM t7
    WHERE (208=a7 OR 215=e7 OR 590=e7)
       OR (a7=982 AND 48=e7 AND 510=b7 AND 828=d7)
-;
+ORDER BY 1;
 -- 10 values hashing to 22d57ccdd19aacde280828e95cb185c5
 
 -- query T valuesort
@@ -16146,7 +16146,7 @@ UNION ALL
   SELECT a3 FROM t3
    WHERE (c3=299 AND e3=829 AND 482=b3)
       OR (b3=368 OR 651=c3 OR 146=b3)
-;
+ORDER BY 1;
 -- 23 values hashing to d247cbee425529e151cf51ec69817ef3
 
 -- query T valuesort
@@ -16164,7 +16164,7 @@ EXCEPT
    WHERE NOT (e1 in (667,78,12,811,858,436,255,95,504,312,731,693,298,210)
            OR a1 in (880,179,552,161)
            OR (e1=838))
-;
+ORDER BY 1;
 -- 773
 
 -- query T valuesort
@@ -16194,7 +16194,7 @@ UNION
   SELECT d3 FROM t3
    WHERE (c3=339 AND b3=454)
       OR d3 in (487,603,913,220,958,425,607,624,168,726,118,541)
-;
+ORDER BY 1;
 -- 26 values hashing to 87642c08d3de4d4aa4d474228accbe04
 
 -- query T valuesort
@@ -16219,7 +16219,7 @@ EXCEPT
   SELECT b3 FROM t3
    WHERE NOT ((d3=866)
            OR (836=e3 AND c3=651 AND 214=b3))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a9 FROM t9
@@ -16256,7 +16256,7 @@ EXCEPT
    WHERE NOT ((130=a7 AND d7=395 AND c7=98 AND 689=e7 AND 120=b7)
            OR d7 in (306,324,687,547,996,712,367,974)
            OR b7 in (396,924,859,693,250,750))
-;
+ORDER BY 1;
 -- 31 values hashing to d2095548f87d47a717f6712a3e9bd53d
 
 -- query T valuesort
@@ -16288,7 +16288,7 @@ EXCEPT
 EXCEPT
   SELECT d2 FROM t2
    WHERE NOT ((996=c2 OR 765=b2 OR 733=a2))
-;
+ORDER BY 1;
 -- 9 values hashing to 70f1b7922a8d2229324112580237b34d
 
 -- query T valuesort
@@ -16320,7 +16320,7 @@ EXCEPT
 EXCEPT
   SELECT e2 FROM t2
    WHERE NOT (a2 in (733,637,709,374,382,691,1,93,253,76,495,944,522))
-;
+ORDER BY 1;
 -- 28 values hashing to 041afad7a60a7b3acee3ecc356364b58
 
 -- query T valuesort
@@ -16338,7 +16338,7 @@ EXCEPT
   SELECT e1 FROM t1
    WHERE NOT (d1 in (581,163,55,691,217,105,298,215,748,701,212,0,86,990)
            OR (b1=259))
-;
+ORDER BY 1;
 -- 9 values hashing to 373467a5564680f3c455172ac7429088
 
 -- query T valuesort
@@ -16371,7 +16371,7 @@ EXCEPT
    WHERE NOT ((b4=884)
            OR (c4=215)
            OR (579=a4 AND e4=300 AND b4=961 AND 794=d4))
-;
+ORDER BY 1;
 -- 36 values hashing to 065aa3adaae8e70d281446451d521e2d
 
 -- query T valuesort
@@ -16409,7 +16409,7 @@ EXCEPT
 UNION
   SELECT a5 FROM t5
    WHERE (661=b5)
-;
+ORDER BY 1;
 -- 15 values hashing to aa5a0a4b53b6a3a6ebd32a671a2be743
 
 -- query T valuesort
@@ -16452,7 +16452,7 @@ EXCEPT
 EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((278=d7))
-;
+ORDER BY 1;
 -- 14 values hashing to a41a2ae14bf5c446bee47a20a8fed4a5
 
 -- query T valuesort
@@ -16464,7 +16464,7 @@ INTERSECT
   SELECT e4 FROM t4
    WHERE NOT (e4 in (29,476,151,512,237,252,531,739,349)
            OR (a4=408 AND 157=c4))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT d1 FROM t1
@@ -16501,7 +16501,7 @@ EXCEPT
    WHERE NOT ((a8=900 AND c8=233 AND b8=690)
            OR (d8=667)
            OR a8 in (15,90,289))
-;
+ORDER BY 1;
 -- 31 values hashing to 029ccee2ec164fb37b29fb0fa8c49d16
 
 -- query T valuesort
@@ -16529,7 +16529,7 @@ EXCEPT
   SELECT a2 FROM t2
    WHERE NOT ((b2=509 AND 336=a2 AND d2=813 AND 692=e2)
            OR b2 in (168,968,864,725,276,264,329,380,93,754))
-;
+ORDER BY 1;
 -- 17 values hashing to bc30133588d7809ae198562bcd40a694
 
 -- query T valuesort
@@ -16549,7 +16549,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((c3=472 OR 393=e3 OR 73=c3))
-;
+ORDER BY 1;
 -- 13 values hashing to 9df25d86da4aeb03b33dbe1277d0e71d
 
 -- query T valuesort
@@ -16577,7 +16577,7 @@ EXCEPT
 EXCEPT
   SELECT c3 FROM t3
    WHERE NOT ((578=e3 OR a3=892 OR 480=d3))
-;
+ORDER BY 1;
 -- 16 values hashing to b5dcfd9d8cf4a5cd3f20629af26e9720
 
 -- query T valuesort
@@ -16596,7 +16596,7 @@ EXCEPT
 UNION
   SELECT a8 FROM t8
    WHERE c8 in (291,273,851,693,279,166,775,965,377,648,284)
-;
+ORDER BY 1;
 -- 29 values hashing to a095e42ef49e78a961f91c91f97410c1
 
 -- query T valuesort
@@ -16617,7 +16617,7 @@ UNION ALL
    WHERE (a8=474 OR d8=631)
       OR (56=e8 OR 610=d8)
       OR (388=a8 OR 578=a8 OR c8=260)
-;
+ORDER BY 1;
 -- 15 values hashing to 949981173bd267696a9abfd5c52ef1f3
 
 -- query T valuesort
@@ -16653,7 +16653,7 @@ UNION ALL
 UNION ALL
   SELECT e7 FROM t7
    WHERE b7 in (460,579,220,979)
-;
+ORDER BY 1;
 -- 69 values hashing to 1f5685a145282a08c0735bffea5f4688
 
 -- query T valuesort
@@ -16685,7 +16685,7 @@ UNION ALL
   SELECT a3 FROM t3
    WHERE e3 in (221,765,7,425,932,536,871,951,25,163,3,393)
       OR d3 in (923,548,825,764,850,135)
-;
+ORDER BY 1;
 -- 52 values hashing to 8a19cacdb61eacc1d924994a3558d17f
 
 -- query T valuesort
@@ -16722,7 +16722,7 @@ UNION
   SELECT d8 FROM t8
    WHERE e8 in (635,392,106,422,944,175,7,548,972,431,46,64)
       OR (794=a8 OR 542=d8 OR 155=b8)
-;
+ORDER BY 1;
 -- 42 values hashing to cd0140b6498bc4b8bde10aefa5cb2141
 
 -- query T valuesort
@@ -16743,7 +16743,7 @@ UNION ALL
   SELECT d8 FROM t8
    WHERE a8 in (651,961,5,248,328,453,54,994)
       OR (e8=761)
-;
+ORDER BY 1;
 -- 25 values hashing to bd9b43b5d4b28b041829300c3cffb6e9
 
 -- query T valuesort
@@ -16772,7 +16772,7 @@ UNION ALL
   SELECT d9 FROM t9
    WHERE (e9=150)
       OR (d9=668)
-;
+ORDER BY 1;
 -- 17 values hashing to 2a0dd712a6089edf1014d3895f219c8b
 
 -- query T valuesort
@@ -16795,7 +16795,7 @@ EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((995=a7 OR a7=665 OR 340=b7)
            OR (705=c7 AND 832=b7 AND 197=e7))
-;
+ORDER BY 1;
 -- 174
 -- 34
 -- 597
@@ -16818,7 +16818,7 @@ UNION
    WHERE a4 in (92,752,136,151,448,982,423,489,922,509)
       OR e4 in (179,311,103,543,257,123,252,480)
       OR (d4=268 OR e4=37)
-;
+ORDER BY 1;
 -- 38 values hashing to 025b5e7ff68f03ccfbe54263f04d35dc
 
 -- query T valuesort
@@ -16841,7 +16841,7 @@ EXCEPT
   SELECT d2 FROM t2
    WHERE NOT ((c2=449)
            OR c2 in (996,823,728))
-;
+ORDER BY 1;
 -- 17 values hashing to 4819e28e969dc9de4a75fa5a1da63297
 
 -- query T valuesort
@@ -16859,7 +16859,7 @@ EXCEPT
 UNION
   SELECT d6 FROM t6
    WHERE d6 in (778,367,129,846,197,561,321,647,729,956,405)
-;
+ORDER BY 1;
 -- 14 values hashing to 00c83505ee3ccb2b8f146946a511788a
 
 -- query T valuesort
@@ -16888,7 +16888,7 @@ UNION
    WHERE (674=d6 AND 541=b6 AND a6=255 AND 154=e6)
       OR (24=e6 OR 613=d6 OR c6=832)
       OR (a6=270 OR a6=436)
-;
+ORDER BY 1;
 -- 350
 -- 541
 -- 650
@@ -16907,7 +16907,7 @@ UNION
   SELECT a4 FROM t4
    WHERE d4 in (166,264,105)
       OR (162=c4 OR c4=948 OR e4=725)
-;
+ORDER BY 1;
 -- 11 values hashing to a08e781d7b156086bc4726c37dd3f388
 
 -- query T valuesort
@@ -16919,7 +16919,7 @@ UNION ALL
   SELECT b4 FROM t4
    WHERE (585=c4 AND d4=260 AND b4=901)
       OR (627=b4 OR a4=450 OR d4=264)
-;
+ORDER BY 1;
 -- 10 values hashing to 204da8934fd463ce22910fdf498fa07e
 
 -- query T valuesort
@@ -16958,7 +16958,7 @@ EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((702=e3 OR 211=c3 OR a3=743)
            OR (a3=349 AND b3=542 AND 658=d3 AND e3=304))
-;
+ORDER BY 1;
 -- 24 values hashing to 8fec22cb884992781b274b2055a35674
 
 -- query T valuesort
@@ -16988,7 +16988,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT ((e4=81)
            OR a4 in (990,625,271,662,921,540,513,982))
-;
+ORDER BY 1;
 -- 17 values hashing to 7f5cc22a9ee8ceab3c07798ab9c4730f
 
 -- query T valuesort
@@ -17018,7 +17018,7 @@ UNION
   SELECT d8 FROM t8
    WHERE (d8=637 AND e8=180)
       OR (738=d8 AND a8=312 AND b8=397 AND 5=c8)
-;
+ORDER BY 1;
 -- 26 values hashing to 9e74497164a2d9c5b4ab189db960bc6a
 
 -- query T valuesort
@@ -17052,7 +17052,7 @@ UNION ALL
    WHERE (739=c9 OR 764=c9)
       OR (a9=549 OR e9=788 OR b9=136)
       OR d9 in (686,662,679,618,274,258,759,161,628,23,347)
-;
+ORDER BY 1;
 -- 42 values hashing to 0d84772d639bbea23ec96271b0509591
 
 -- query T valuesort
@@ -17069,7 +17069,7 @@ UNION ALL
 EXCEPT
   SELECT c9 FROM t9
    WHERE NOT ((647=e9 OR e9=934))
-;
+ORDER BY 1;
 -- 13 values hashing to 233aa7705afe9652cd15870969943599
 
 -- query T valuesort
@@ -17083,7 +17083,7 @@ INTERSECT
    WHERE NOT (b9 in (821,848,251,19,26,855,170)
            OR e9 in (799,15,845,841,968,868,335,418,291,383,750,197,647)
            OR a9 in (78,240,463,378,468,413,149))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT d5 FROM t5
@@ -17102,7 +17102,7 @@ UNION ALL
    WHERE d4 in (260,987,231,349,820,943,681,910,901,617)
       OR (229=d4 AND e4=951)
       OR (a4=629)
-;
+ORDER BY 1;
 -- 28 values hashing to 4d68499b1a920cfc4833a95952d194bf
 
 -- query T valuesort
@@ -17119,7 +17119,7 @@ EXCEPT
 UNION
   SELECT a2 FROM t2
    WHERE (245=a2)
-;
+ORDER BY 1;
 -- 245
 -- 27
 -- 302
@@ -17148,7 +17148,7 @@ UNION ALL
    WHERE d8 in (439,179,422,711,291,761,899,835,743)
       OR (a8=564)
       OR (454=b8 OR 381=e8)
-;
+ORDER BY 1;
 -- 34 values hashing to d9c0a5d30519a5a2b1d77fad26b9aa40
 
 -- query T valuesort
@@ -17173,7 +17173,7 @@ INTERSECT
    WHERE NOT (c7 in (954,94,843,970,206,243,375)
            OR (315=d7 AND b7=257 AND 290=a7)
            OR (e7=624 AND c7=22 AND a7=466 AND d7=787))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT e2 FROM t2
@@ -17202,7 +17202,7 @@ EXCEPT
 UNION
   SELECT a6 FROM t6
    WHERE (d6=750 OR e6=511)
-;
+ORDER BY 1;
 -- 11 values hashing to b0e407116153cf8667ccdd69cc932c5a
 
 -- query T valuesort
@@ -17230,7 +17230,7 @@ EXCEPT
   SELECT e1 FROM t1
    WHERE NOT ((b1=572)
            OR (e1=497))
-;
+ORDER BY 1;
 -- 26 values hashing to e0daef73d01a835baf88312961a3edc8
 
 -- query T valuesort
@@ -17249,7 +17249,7 @@ EXCEPT
 EXCEPT
   SELECT d8 FROM t8
    WHERE NOT (e8 in (700,678,349,632,233,186,578,392,646))
-;
+ORDER BY 1;
 -- 14 values hashing to 40a278bb52e3dcb2c67bd0dccfc01455
 
 -- query T valuesort
@@ -17261,7 +17261,7 @@ INTERSECT
   SELECT d5 FROM t5
    WHERE NOT ((234=b5 AND d5=361 AND c5=585 AND 339=a5)
            OR (b5=695 OR a5=174 OR e5=587))
-;
+ORDER BY 1;
 -- 818
 -- 938
 
@@ -17275,7 +17275,7 @@ UNION
    WHERE (442=a2 OR d2=215)
       OR (337=c2)
       OR (b2=634)
-;
+ORDER BY 1;
 -- 20 values hashing to 3aa5f172daa6408f40244fb05f1c7e2c
 
 -- query T valuesort
@@ -17304,7 +17304,7 @@ EXCEPT
   SELECT a8 FROM t8
    WHERE NOT ((d8=737 AND a8=127 AND c8=225 AND b8=975 AND e8=646)
            OR e8 in (510,864,809,866,533,678,463,548,956,38,175,383,431))
-;
+ORDER BY 1;
 -- 26 values hashing to 1bdc3479121e32694204c9a70c6a3b74
 
 -- query T valuesort
@@ -17344,7 +17344,7 @@ UNION ALL
   SELECT b8 FROM t8
    WHERE (273=c8 OR 876=d8 OR 889=b8)
       OR (187=c8 AND b8=386 AND a8=848 AND 761=e8)
-;
+ORDER BY 1;
 -- 53 values hashing to 5f884b661df42ffecc21ebd1b5ccf453
 
 -- query T valuesort
@@ -17389,7 +17389,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE a4 in (637,540,16,107,337,31,60,373,990,933,857,159,509)
       OR e4 in (465,977,350,397,381,63,546,212)
-;
+ORDER BY 1;
 -- 108 values hashing to d193787840b15bf3b33770c3a8a43efd
 
 -- query T valuesort
@@ -17406,7 +17406,7 @@ EXCEPT
 UNION
   SELECT a9 FROM t9
    WHERE (104=d9)
-;
+ORDER BY 1;
 -- 14 values hashing to 98726083841da5d318c47af5d34f7e99
 
 -- query T valuesort
@@ -17429,7 +17429,7 @@ UNION
 UNION ALL
   SELECT b7 FROM t7
    WHERE d7 in (485,28,436,785,205,276,891,524,183,902,177,673,787,212)
-;
+ORDER BY 1;
 -- 36 values hashing to 8f9aa3a348f2f42a95c3f8a952911fa8
 
 -- query T valuesort
@@ -17466,7 +17466,7 @@ EXCEPT
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((221=b7 AND c7=305 AND e7=301))
-;
+ORDER BY 1;
 -- 40 values hashing to c081f2e94c75a874894a25c91dbefdbf
 
 -- query T valuesort
@@ -17495,7 +17495,7 @@ EXCEPT
   SELECT b4 FROM t4
    WHERE NOT (b4 in (587,941,982,407,961,319,323,721,402,802,68,538,888,624)
            OR (e4=677 AND 513=a4 AND 929=d4))
-;
+ORDER BY 1;
 -- 21 values hashing to fe24fbd828412985a77e00b61b43c6d8
 
 -- query T valuesort
@@ -17519,7 +17519,7 @@ UNION
    WHERE (851=e7 OR e7=432)
       OR d7 in (772,500,765,777,885,328,539,79,817,902,603,292,837)
       OR (c7=887 OR d7=34)
-;
+ORDER BY 1;
 -- 24 values hashing to 49110e01eb8fbccb44045ddc177b9d49
 
 -- query T valuesort
@@ -17540,7 +17540,7 @@ EXCEPT
 EXCEPT
   SELECT a7 FROM t7
    WHERE NOT ((648=c7 AND 39=e7))
-;
+ORDER BY 1;
 -- 11 values hashing to 0a6397320ec1fa2939577d046fb9e585
 
 -- query T valuesort
@@ -17564,7 +17564,7 @@ EXCEPT
 UNION
   SELECT d2 FROM t2
    WHERE (575=c2 OR e2=547)
-;
+ORDER BY 1;
 -- 24 values hashing to 4c6fae035c97faf780efbe801d3a8ec4
 
 -- query T valuesort
@@ -17601,7 +17601,7 @@ EXCEPT
    WHERE NOT ((850=b6)
            OR (161=d6 OR e6=754 OR d6=60)
            OR (b6=629 OR b6=933))
-;
+ORDER BY 1;
 -- 44 values hashing to 77fadb8e304bc6215bbde57c1b08409b
 
 -- query T valuesort
@@ -17630,7 +17630,7 @@ EXCEPT
   SELECT c3 FROM t3
    WHERE NOT ((d3=624 AND a3=863 AND 467=c3 AND 592=b3 AND 665=e3)
            OR e3 in (821,466,854,401,536,169))
-;
+ORDER BY 1;
 -- 13
 -- 19
 -- 289
@@ -17664,7 +17664,7 @@ EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((a9=907 AND d9=164 AND 245=e9 AND 60=c9)
            OR (e9=854))
-;
+ORDER BY 1;
 -- 28 values hashing to c72ed749b6c03447f37ad39a8fcf6ab6
 
 -- query T valuesort
@@ -17692,7 +17692,7 @@ UNION
    WHERE (b2=170)
       OR (73=e2 AND 860=d2)
       OR e2 in (965,682,535,638,40,699)
-;
+ORDER BY 1;
 -- 12 values hashing to f5ecd579fa8aadad0b4cabef749fd835
 
 -- query T valuesort
@@ -17720,7 +17720,7 @@ EXCEPT
 EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((d8=494))
-;
+ORDER BY 1;
 -- 13 values hashing to 4b233deaef2c80bb2573a4cf0abaaa86
 
 -- query T valuesort
@@ -17730,7 +17730,7 @@ EXCEPT
   SELECT a8 FROM t8
    WHERE NOT ((a8=474)
            OR (314=a8 OR b8=98))
-;
+ORDER BY 1;
 -- 439
 
 -- query T valuesort
@@ -17756,7 +17756,7 @@ UNION ALL
   SELECT a5 FROM t5
    WHERE (c5=598 AND 72=e5 AND b5=412 AND 757=a5 AND d5=521)
       OR (271=d5)
-;
+ORDER BY 1;
 -- 14 values hashing to 88dd8e224c531e2b19ab235ec482370f
 
 -- query T valuesort
@@ -17792,7 +17792,7 @@ EXCEPT
 EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((1=e6 AND b6=144 AND 543=c6 AND d6=970))
-;
+ORDER BY 1;
 -- 13 values hashing to 414f7c585d8d8310149d84e7f6759df6
 
 -- query T valuesort
@@ -17825,7 +17825,7 @@ UNION ALL
   SELECT a1 FROM t1
    WHERE c1 in (526,530,253,393,980,482,299,776,585)
       OR c1 in (284,775,670,955,683)
-;
+ORDER BY 1;
 -- 35 values hashing to 6011219aee990d68785547959e1bf7cb
 
 -- query T valuesort
@@ -17847,7 +17847,7 @@ EXCEPT
    WHERE NOT ((c4=586 OR d4=777 OR a4=746)
            OR (a4=378 OR e4=185 OR 979=b4)
            OR (d4=212 OR c4=483))
-;
+ORDER BY 1;
 -- 140
 -- 267
 -- 290
@@ -17888,7 +17888,7 @@ UNION ALL
 EXCEPT
   SELECT a8 FROM t8
    WHERE NOT ((e8=833))
-;
+ORDER BY 1;
 -- 16 values hashing to 3370ab0edaf518cff1caa7a27a4ee137
 
 -- query T valuesort
@@ -17903,7 +17903,7 @@ UNION ALL
    WHERE e4 in (372,397,438,592,206,29,543,81)
       OR (31=a4 AND d4=943)
       OR (a4=637 AND 293=c4 AND d4=264 AND b4=907 AND 377=e4)
-;
+ORDER BY 1;
 -- 11 values hashing to 653938ced116aba23c9d2d6c2b0fa7ce
 
 -- query T valuesort
@@ -17939,7 +17939,7 @@ UNION ALL
 EXCEPT
   SELECT c3 FROM t3
    WHERE NOT ((e3=592 AND 350=b3 AND 238=d3 AND 477=c3))
-;
+ORDER BY 1;
 -- 41 values hashing to ce029deeb611551c31338332207d6533
 
 -- query T valuesort
@@ -17964,7 +17964,7 @@ UNION ALL
    WHERE a4 in (473,723,159,502,92,378,509)
       OR (e4=552 OR 804=a4)
       OR a4 in (160,447,982,876)
-;
+ORDER BY 1;
 -- 22 values hashing to 99c9256eb2a5fdfd49bf623f415361af
 
 -- query T valuesort
@@ -17989,7 +17989,7 @@ UNION
    WHERE (a5=296 AND 198=c5 AND 906=e5)
       OR (a5=513 OR b5=321)
       OR (b5=69 AND a5=190 AND 185=c5)
-;
+ORDER BY 1;
 -- 162
 -- 727
 -- 9
@@ -18010,7 +18010,7 @@ EXCEPT
    WHERE NOT ((127=b9 OR a9=511)
            OR (864=b9 AND 535=a9)
            OR (d9=389 AND 973=c9 AND 679=e9 AND 95=b9 AND a9=450))
-;
+ORDER BY 1;
 -- 131
 -- 680
 
@@ -18024,7 +18024,7 @@ UNION ALL
    WHERE (868=b9 AND 268=d9 AND 474=a9)
       OR a9 in (757,584,18,694)
       OR (c9=973)
-;
+ORDER BY 1;
 -- 22 values hashing to 4a1c44eeaee615330f32e37c8dc6fae6
 
 -- query T valuesort
@@ -18041,7 +18041,7 @@ UNION
    WHERE (e4=358)
       OR (a4=841)
       OR (804=c4 AND 81=e4 AND d4=86 AND 845=a4)
-;
+ORDER BY 1;
 -- 14 values hashing to 338ef1f23af2af847c3e2774e37fd571
 
 -- query T valuesort
@@ -18062,7 +18062,7 @@ EXCEPT
 UNION ALL
   SELECT c6 FROM t6
    WHERE d6 in (161,929,993)
-;
+ORDER BY 1;
 -- 175
 -- 416
 -- 670
@@ -18097,7 +18097,7 @@ UNION
    WHERE (e2=707 AND 900=c2 AND 784=b2)
       OR (d2=546 OR 837=c2)
       OR (706=b2)
-;
+ORDER BY 1;
 -- 46 values hashing to 10a3115654b3a7983223487c883a3325
 
 -- query T valuesort
@@ -18128,7 +18128,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT (d5 in (321,685,667,991,4,33,479,745,910,238,729,964,570,818)
            OR (c5=820 OR 293=c5 OR b5=640))
-;
+ORDER BY 1;
 -- 16 values hashing to 89fd38ebc08d92acb7eea9d62a4c3289
 
 -- query T valuesort
@@ -18160,7 +18160,7 @@ EXCEPT
    WHERE NOT ((480=b3)
            OR (e3=211 OR b3=813 OR 558=b3)
            OR (854=e3))
-;
+ORDER BY 1;
 -- 30 values hashing to 89ad80999332838bbe1ba0b078209620
 
 -- query T valuesort
@@ -18170,7 +18170,7 @@ UNION ALL
   SELECT b5 FROM t5
    WHERE (d5=964 OR a5=163)
       OR b5 in (234,861,951,26,820,393,759,717,789)
-;
+ORDER BY 1;
 -- 15 values hashing to 50fb1c4a40884fa13fb30b2a3ae2cd2c
 
 -- query T valuesort
@@ -18193,7 +18193,7 @@ EXCEPT
 UNION
   SELECT c9 FROM t9
    WHERE b9 in (803,227,125,858,214,178,170,361,864,16,171,127)
-;
+ORDER BY 1;
 -- 45 values hashing to 1f86ffa01756e7cdee142a330a5c47c3
 
 -- query T valuesort
@@ -18216,7 +18216,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT (d5 in (805,649,313,789,114,565,855,360,616,742,171,938,98,682)
            OR (805=d5 AND b5=193 AND c5=44))
-;
+ORDER BY 1;
 -- 11 values hashing to d625df15b97b8975e79d3fda09b76e2d
 
 -- query T valuesort
@@ -18231,7 +18231,7 @@ INTERSECT
 UNION
   SELECT d8 FROM t8
    WHERE (e8=981)
-;
+ORDER BY 1;
 -- 223
 -- 35
 -- 81
@@ -18266,7 +18266,7 @@ EXCEPT
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((422=e7))
-;
+ORDER BY 1;
 -- 10 values hashing to 5e2c05299ece9eec09a7dfde18785e5d
 
 -- query T valuesort
@@ -18280,7 +18280,7 @@ EXCEPT
    WHERE NOT ((840=e6)
            OR d6 in (35,185,463,367,488,366,590)
            OR (647=d6 AND 355=a6))
-;
+ORDER BY 1;
 -- 16 values hashing to cb7082e2742ff2c9b395f6007b63fcb1
 
 -- query T valuesort
@@ -18310,7 +18310,7 @@ EXCEPT
 UNION
   SELECT a1 FROM t1
    WHERE a1 in (445,195,477,767,382,953,170,538,314,147,972,498,109)
-;
+ORDER BY 1;
 -- 29 values hashing to cdc366790677c18e168767606cf1882d
 
 -- query T valuesort
@@ -18343,7 +18343,7 @@ UNION
   SELECT a9 FROM t9
    WHERE (c9=526 AND 86=d9 AND 361=b9 AND 14=a9)
       OR (142=d9 OR 117=e9)
-;
+ORDER BY 1;
 -- 14
 -- 356
 -- 72
@@ -18377,7 +18377,7 @@ UNION
    WHERE a4 in (708,228,151,602,981,510,235,651,933,792)
       OR (409=d4 OR a4=625 OR d4=917)
       OR e4 in (179,188,512)
-;
+ORDER BY 1;
 -- 60 values hashing to f774253c7931a8d7f9f0795b7dfb00ce
 
 -- query T valuesort
@@ -18394,7 +18394,7 @@ EXCEPT
 UNION ALL
   SELECT d5 FROM t5
    WHERE (e5=655 AND 978=c5 AND d5=280 AND b5=389)
-;
+ORDER BY 1;
 -- 280
 -- 283
 -- 402
@@ -18422,7 +18422,7 @@ UNION
 UNION
   SELECT c6 FROM t6
    WHERE b6 in (923,0,781,549,716,392,933)
-;
+ORDER BY 1;
 -- 72 values hashing to ae26a660e7b23d0c09397ca5f4335757
 
 -- query T valuesort
@@ -18462,7 +18462,7 @@ UNION
    WHERE b7 in (178,519,321,105,517)
       OR b7 in (861,896,426)
       OR e7 in (288,31,39,7,6,552,508,562,522,168,979,103,462,67)
-;
+ORDER BY 1;
 -- 46 values hashing to 51f603637b3067a92a96511d3dae6a8f
 
 -- query T valuesort
@@ -18482,7 +18482,7 @@ EXCEPT
 UNION ALL
   SELECT c4 FROM t4
    WHERE (449=d4 OR 948=c4 OR 208=c4)
-;
+ORDER BY 1;
 -- 9 values hashing to 2e9abe3a0ebe4cd00d77d5406bed518c
 
 -- query T valuesort
@@ -18517,7 +18517,7 @@ UNION
 UNION ALL
   SELECT c9 FROM t9
    WHERE c9 in (254,793,923)
-;
+ORDER BY 1;
 -- 55 values hashing to 4f7089429ff8e5b57bbf561f30f06463
 
 -- query T valuesort
@@ -18547,7 +18547,7 @@ UNION ALL
 EXCEPT
   SELECT c9 FROM t9
    WHERE NOT ((326=a9))
-;
+ORDER BY 1;
 -- 14 values hashing to 2e339480b8277cdc78ef4b1303870d73
 
 -- query T valuesort
@@ -18562,7 +18562,7 @@ EXCEPT
   SELECT d8 FROM t8
    WHERE NOT ((c8=965)
            OR e8 in (635,333,700,678,980,421,600,874,485))
-;
+ORDER BY 1;
 -- 185
 -- 450
 -- 502
@@ -18579,7 +18579,7 @@ EXCEPT
 UNION
   SELECT b1 FROM t1
    WHERE (a1=879 AND c1=553 AND 254=e1 AND 519=d1)
-;
+ORDER BY 1;
 -- 21 values hashing to 5796e4a61c45c4b2f1d67ba90a648551
 
 -- query T valuesort
@@ -18623,7 +18623,7 @@ EXCEPT
    WHERE NOT (d3 in (982,135,483,423,719,1,164,503,737,871,866,231,283,850)
            OR (a3=576 OR e3=192)
            OR d3 in (641,168,913,118,645,889))
-;
+ORDER BY 1;
 -- 24 values hashing to b4bca2d38d5de7db80884145774d077f
 
 -- query T valuesort
@@ -18647,7 +18647,7 @@ UNION
    WHERE (a7=231 OR a7=48)
       OR (e7=663 AND b7=938 AND 572=d7)
       OR b7 in (878,636,813,120,409,222,519,693,820,396)
-;
+ORDER BY 1;
 -- 20 values hashing to 5aab643faff4c43911c05c8c4a3faad0
 
 -- query T valuesort
@@ -18686,7 +18686,7 @@ UNION ALL
    WHERE c5 in (723,668,149,697,18,50,585,443,634)
       OR (733=c5)
       OR a5 in (421,540,904,357,89,602,319,851)
-;
+ORDER BY 1;
 -- 48 values hashing to 6fb5bb9ba2e8d0b2f85587372ffb7d3e
 
 -- query T valuesort
@@ -18721,7 +18721,7 @@ UNION
    WHERE a7 in (950,736,748,180)
       OR e7 in (816,103,851,7,815,689,595,408,624,288,303,522)
       OR c7 in (344,78,523,435,302,145,635)
-;
+ORDER BY 1;
 -- 41 values hashing to 53a45541b6433ba8fb5e8b3d4ba0aa0b
 
 -- query T valuesort
@@ -18738,7 +18738,7 @@ EXCEPT
    WHERE NOT ((a6=414 OR 173=a6 OR 24=e6)
            OR e6 in (24,511,360,808,840,466,707,91,5,257,585,395)
            OR d6 in (689,807,36,2,376,667,60,393,488))
-;
+ORDER BY 1;
 -- 22 values hashing to 20f90e15fb13bdd07885bdbc42c48c67
 
 -- query T valuesort
@@ -18752,7 +18752,7 @@ UNION ALL
   SELECT d8 FROM t8
    WHERE d8 in (269,486,93,950,883,48,327,466,675)
       OR (260=c8 OR c8=136)
-;
+ORDER BY 1;
 -- 29 values hashing to 35dd257f67deb6fbe842ea336ce68d3c
 
 -- query T valuesort
@@ -18793,7 +18793,7 @@ EXCEPT
   SELECT c5 FROM t5
    WHERE NOT (d5 in (152,401,24,910,470,745,811)
            OR (132=a5 AND e5=874))
-;
+ORDER BY 1;
 -- 47 values hashing to a3bd77c48febee2c52ce4c45314da50b
 
 -- query T valuesort
@@ -18817,7 +18817,7 @@ EXCEPT
 UNION ALL
   SELECT c9 FROM t9
    WHERE (127=b9)
-;
+ORDER BY 1;
 -- 19 values hashing to 3ec1c0bb5e04fe7c744d96f7d7d0f44e
 
 -- query T valuesort
@@ -18857,7 +18857,7 @@ UNION
   SELECT e5 FROM t5
    WHERE d5 in (780,271,779,847,738,682,479,855,69,685)
       OR (b5=971 AND 522=a5 AND e5=640 AND 797=c5)
-;
+ORDER BY 1;
 -- 39 values hashing to 01eb702eb2eacc60ec1308bacce3054f
 
 -- query T valuesort
@@ -18895,7 +18895,7 @@ EXCEPT
    WHERE NOT ((78=c7 OR 826=e7 OR c7=553)
            OR (14=c7)
            OR (e7=290))
-;
+ORDER BY 1;
 -- 100
 -- 659
 -- 850
@@ -18922,7 +18922,7 @@ UNION ALL
 UNION ALL
   SELECT d2 FROM t2
    WHERE (d2=404 AND 511=c2 AND 279=b2)
-;
+ORDER BY 1;
 -- 19 values hashing to ef338b152f9fd41837c0bffb06f90cf6
 
 -- query T valuesort
@@ -18940,7 +18940,7 @@ EXCEPT
    WHERE NOT (e2 in (433,815,499,679)
            OR a2 in (760,779,869,505,590,735,936,159,209)
            OR (b2=90 OR b2=217 OR e2=117))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT a8 FROM t8
@@ -18966,7 +18966,7 @@ EXCEPT
 UNION
   SELECT a5 FROM t5
    WHERE (545=c5)
-;
+ORDER BY 1;
 -- 211
 -- 5
 -- 572
@@ -18997,7 +18997,7 @@ UNION
   SELECT b4 FROM t4
    WHERE b4 in (678,765,921,802,167,243,408,389,563,708)
       OR (b4=624)
-;
+ORDER BY 1;
 -- 33 values hashing to 6f3ccc9ca3698a687e3483321ea4349d
 
 -- query T valuesort
@@ -19037,7 +19037,7 @@ UNION
   SELECT c3 FROM t3
    WHERE c3 in (53,651,970)
       OR a3 in (699,971,347,525,143,997,865)
-;
+ORDER BY 1;
 -- 24 values hashing to b726edf6eadb5f58e7f284c9239514ac
 
 -- query T valuesort
@@ -19050,7 +19050,7 @@ UNION
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT (d2 in (651,377,546,86,454,682,643,598,158,931,723))
-;
+ORDER BY 1;
 -- 14 values hashing to d40c037938b4961b06ba24b5a84c7429
 
 -- query T valuesort
@@ -19074,7 +19074,7 @@ UNION ALL
    WHERE (166=b7 OR 979=e7)
       OR (360=b7 AND d7=801 AND 439=a7 AND e7=462)
       OR e7 in (979,900,782,841,499,844,462,827,976)
-;
+ORDER BY 1;
 -- 29 values hashing to b7bdd1ed17ccb963555323e1e1014e33
 
 -- query T valuesort
@@ -19092,7 +19092,7 @@ INTERSECT
    WHERE NOT ((82=a4 AND 417=c4 AND 617=d4)
            OR a4 in (92,439,505,473,596,423)
            OR (d4=376 OR 667=c4 OR 996=c4))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT d7 FROM t7
@@ -19130,7 +19130,7 @@ UNION ALL
   SELECT a3 FROM t3
    WHERE (145=e3 AND a3=34 AND 166=b3 AND 541=d3 AND c3=134)
       OR (e3=977 OR 591=a3 OR 499=a3)
-;
+ORDER BY 1;
 -- 26 values hashing to c301a4c30b9033c60db8214417345e98
 
 -- query T valuesort
@@ -19146,7 +19146,7 @@ UNION ALL
    WHERE (d4=429 OR 931=e4)
       OR (261=a4)
       OR c4 in (451,357,768,436,513,752,484,752,904,6,319,88,162,44)
-;
+ORDER BY 1;
 -- 18 values hashing to ea4045757ec82d89cd3c3142b49fb50f
 
 -- query T valuesort
@@ -19171,7 +19171,7 @@ UNION
 UNION
   SELECT c4 FROM t4
    WHERE a4 in (439,228,442,950,223,509,469,606)
-;
+ORDER BY 1;
 -- 48 values hashing to f58c3497ea97c3719f61a6bf97b7f34d
 
 -- query T valuesort
@@ -19202,7 +19202,7 @@ EXCEPT
   SELECT d9 FROM t9
    WHERE NOT ((487=c9 AND 326=b9 AND 258=a9)
            OR (e9=799 AND c9=767 AND 474=a9))
-;
+ORDER BY 1;
 -- 17 values hashing to 08e7f5c62fd65ea780cd34335a6c642d
 
 -- query T valuesort
@@ -19221,7 +19221,7 @@ EXCEPT
 UNION
   SELECT b3 FROM t3
    WHERE (c3=607 AND e3=424 AND 245=a3 AND 816=b3)
-;
+ORDER BY 1;
 -- 11 values hashing to ef354b1c20d21d92be1c21b88e72d653
 
 -- query T valuesort
@@ -19245,7 +19245,7 @@ UNION
 UNION
   SELECT a6 FROM t6
    WHERE e6 in (731,654,95,24,1,617,601,230,329,353,24)
-;
+ORDER BY 1;
 -- 45 values hashing to c7ec61acde03eb185a82860e5a4e5cf0
 
 -- query T valuesort
@@ -19273,7 +19273,7 @@ EXCEPT
    WHERE NOT (a3 in (349,476,788,101,275,566,551,184,727,515,995)
            OR c3 in (885,360,929,455,146,133,372,647)
            OR (e3=972 AND b3=837))
-;
+ORDER BY 1;
 -- 9 values hashing to 33e4c3f5de1928085f41a31c1a4539cd
 
 -- query T valuesort
@@ -19307,7 +19307,7 @@ UNION ALL
   SELECT b8 FROM t8
    WHERE b8 in (182,461,806)
       OR d8 in (580,525,630,269,197,141,366,192)
-;
+ORDER BY 1;
 -- 42 values hashing to 8ce36abf4e1d83f99ff75ad5aad9fb66
 
 -- query T valuesort
@@ -19332,7 +19332,7 @@ EXCEPT
    WHERE NOT ((274=d1)
            OR e1 in (117,956,522,733,602,763,463,523,117,539,158,772,693,52)
            OR (b1=993 AND 779=e1 AND d1=213 AND 853=a1))
-;
+ORDER BY 1;
 -- 127
 -- 342
 -- 563
@@ -19350,7 +19350,7 @@ EXCEPT
   SELECT a1 FROM t1
    WHERE NOT ((805=c1 AND e1=858 AND b1=355 AND 274=d1)
            OR (d1=900 AND c1=758 AND e1=811 AND 420=b1 AND a1=281))
-;
+ORDER BY 1;
 -- 32 values hashing to ad82138e09dfb5282e9a56858e14cb61
 
 -- query T valuesort
@@ -19364,7 +19364,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT (b7 in (273,859,266,868,276,407,360,30)
            OR (22=a7))
-;
+ORDER BY 1;
 -- 130
 -- 329
 -- 554
@@ -19392,7 +19392,7 @@ UNION
    WHERE (d1=96 OR 289=c1 OR a1=4)
       OR c1 in (482,420,814,626,876,765,787,680,639,136,530,67)
       OR b1 in (213,355,280,682,37,75)
-;
+ORDER BY 1;
 -- 25 values hashing to 23dfac8f7751792177a482fee192fbb1
 
 -- query T valuesort
@@ -19410,7 +19410,7 @@ EXCEPT
    WHERE NOT (a2 in (802,185,262,910,415,91,495,735)
            OR (499=e2 AND 123=a2 AND 592=b2)
            OR c2 in (337,807,793,290,933))
-;
+ORDER BY 1;
 -- 13 values hashing to fcfeda48ae94e3534982b721ed6b70e5
 
 -- query T valuesort
@@ -19441,7 +19441,7 @@ UNION
    WHERE e4 in (352,1,565,677,38,377,37,312,223,184,252,122,372)
       OR (147=e4 OR 565=e4)
       OR (31=d4 AND 509=a4 AND 698=e4 AND 725=c4)
-;
+ORDER BY 1;
 -- 51 values hashing to d279138b974e659217e04fb230e20b83
 
 -- query T valuesort
@@ -19463,7 +19463,7 @@ UNION
    WHERE e2 in (815,547,820,572,117,162,706,938,812)
       OR (548=e2 AND 864=b2 AND a2=853 AND c2=182)
       OR a2 in (245,235,223,898,304,966,471,927)
-;
+ORDER BY 1;
 -- 20 values hashing to c251cd3154c8445c2399175a288c5a1b
 
 -- query T valuesort
@@ -19486,7 +19486,7 @@ UNION ALL
 EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((361=d5 AND 339=a5 AND c5=585))
-;
+ORDER BY 1;
 -- 18 values hashing to b354188f6a9fc1a26018559535d58166
 
 -- query T valuesort
@@ -19496,7 +19496,7 @@ INTERSECT
   SELECT e3 FROM t3
    WHERE NOT ((376=a3)
            OR c3 in (711,986,898,763,326,555,929,844,651,10,800))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c8 FROM t8
@@ -19535,7 +19535,7 @@ UNION
   SELECT d9 FROM t9
    WHERE (e9=150 AND 90=c9 AND 421=b9)
       OR (602=d9)
-;
+ORDER BY 1;
 -- 25 values hashing to 60d71382672b0ae08e14ff0964b7cc0b
 
 -- query T valuesort
@@ -19551,7 +19551,7 @@ EXCEPT
 UNION
   SELECT b3 FROM t3
    WHERE (701=b3 AND a3=979 AND 7=c3 AND e3=702)
-;
+ORDER BY 1;
 -- 701
 
 -- query T valuesort
@@ -19585,7 +19585,7 @@ EXCEPT
    WHERE NOT ((312=e1 OR 988=a1)
            OR e1 in (645,12,313,816,95,747,255,811,117,89,52,943,696,402)
            OR (407=d1 OR c1=787 OR 414=d1))
-;
+ORDER BY 1;
 -- 18 values hashing to 8ecd9c29ebc1e4ad355bfd2bbaed971b
 
 -- query T valuesort
@@ -19598,7 +19598,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT (b7 in (720,996,868,679,308,422,579,426)
            OR (e7=929 AND d7=196 AND 827=b7 AND 585=c7))
-;
+ORDER BY 1;
 -- 231
 -- 774
 
@@ -19615,7 +19615,7 @@ INTERSECT
 UNION
   SELECT d9 FROM t9
    WHERE (e9=858 OR 619=e9 OR 739=c9)
-;
+ORDER BY 1;
 -- 152
 -- 313
 -- 495
@@ -19639,7 +19639,7 @@ UNION
   SELECT d3 FROM t3
    WHERE (12=a3)
       OR (a3=727)
-;
+ORDER BY 1;
 -- 156
 -- 462
 -- 508
@@ -19674,7 +19674,7 @@ EXCEPT
   SELECT d6 FROM t6
    WHERE NOT (b6 in (974,126,421,461,144,461,348,350,782)
            OR (277=d6))
-;
+ORDER BY 1;
 -- 24 values hashing to 444717e1019141f244c032cc28a78fb6
 
 -- query T valuesort
@@ -19703,7 +19703,7 @@ UNION ALL
    WHERE e9 in (801,736,477)
       OR (d9=258)
       OR c9 in (807,180,531,587,601,569)
-;
+ORDER BY 1;
 -- 16 values hashing to 2a5eee2ab3017f364810d53ee81d7e27
 
 -- query T valuesort
@@ -19718,7 +19718,7 @@ UNION
   SELECT b9 FROM t9
    WHERE (b9=312)
       OR (264=d9 OR 218=a9)
-;
+ORDER BY 1;
 -- 21 values hashing to 4e85a9126cc96cdc71e7235c658245d1
 
 -- query T valuesort
@@ -19734,7 +19734,7 @@ UNION
 EXCEPT
   SELECT c9 FROM t9
    WHERE NOT ((d9=922 OR 142=b9))
-;
+ORDER BY 1;
 -- 21 values hashing to ce08510689551564f6a3ca9147774a1c
 
 -- query T valuesort
@@ -19769,7 +19769,7 @@ UNION
    WHERE (366=b8)
       OR (60=d8)
       OR (a8=72)
-;
+ORDER BY 1;
 -- 41 values hashing to f7bbb30e8d1793c740cedfa10f74a65b
 
 -- query T valuesort
@@ -19791,7 +19791,7 @@ EXCEPT
    WHERE NOT ((140=c2)
            OR (a2=564 OR a2=76 OR 476=d2)
            OR c2 in (773,140,136,346,161,244,87,992,150,197,344,925))
-;
+ORDER BY 1;
 -- 13 values hashing to 16b0c6830534db5e3b8bd90941ce4e9e
 
 -- query T valuesort
@@ -19833,7 +19833,7 @@ EXCEPT
 UNION ALL
   SELECT b4 FROM t4
    WHERE (377=e4 AND d4=264)
-;
+ORDER BY 1;
 -- 26 values hashing to a4aa6e9861fe24640415a6e229b37df2
 
 -- query T valuesort
@@ -19842,7 +19842,7 @@ UNION ALL
 INTERSECT
   SELECT d3 FROM t3
    WHERE NOT ((c3=900 OR 476=c3 OR a3=697))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b7 FROM t7
@@ -19860,7 +19860,7 @@ UNION ALL
   SELECT c4 FROM t4
    WHERE (987=d4)
       OR (936=c4 OR 484=c4)
-;
+ORDER BY 1;
 -- 22 values hashing to 8d22b677b7cabef1ce77dc59323ea192
 
 -- query T valuesort
@@ -19885,7 +19885,7 @@ UNION
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((e2=463 OR 621=d2))
-;
+ORDER BY 1;
 -- 38 values hashing to be7aaf9b2845707d71e08500019861a1
 
 -- query T valuesort
@@ -19899,7 +19899,7 @@ UNION ALL
   SELECT a3 FROM t3
    WHERE (b3=178)
       OR (972=e3 AND 792=c3 AND 38=d3)
-;
+ORDER BY 1;
 -- 22 values hashing to 7657a36e1a12805a892602cfdcf63e56
 
 -- query T valuesort
@@ -19939,7 +19939,7 @@ UNION ALL
   SELECT d8 FROM t8
    WHERE (d8=876 OR 809=e8 OR 702=b8)
       OR (225=c8 AND 127=a8 AND b8=975 AND 737=d8)
-;
+ORDER BY 1;
 -- 29 values hashing to f27bc3271db9c8fd14591496b4397b25
 
 -- query T valuesort
@@ -19962,7 +19962,7 @@ EXCEPT
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT (b2 in (285,811,275,113,605,635,367,357))
-;
+ORDER BY 1;
 -- 11 values hashing to 889346cf88d41ec5402614e809954cf6
 
 -- query T valuesort
@@ -19973,7 +19973,7 @@ INTERSECT
   SELECT d1 FROM t1
    WHERE NOT ((299=e1 OR 442=e1)
            OR c1 in (346,36,548,289,246))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT c6 FROM t6
@@ -20008,7 +20008,7 @@ UNION ALL
 EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((e5=894 AND d5=480 AND c5=187))
-;
+ORDER BY 1;
 -- 48 values hashing to 38b9b3123896f9a3ef4b25c0e2b53ace
 
 -- query T valuesort
@@ -20026,7 +20026,7 @@ INTERSECT
 INTERSECT
   SELECT c1 FROM t1
    WHERE NOT (b1 in (807,432,696,350))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b7 FROM t7
@@ -20049,7 +20049,7 @@ UNION ALL
   SELECT e3 FROM t3
    WHERE (977=e3 OR c3=565 OR 614=a3)
       OR d3 in (896,650,826,520,134,495,46,720,247,283)
-;
+ORDER BY 1;
 -- 16 values hashing to 653ef8e3e3c8af2d50cf6c085a6632c2
 
 -- query T valuesort
@@ -20073,7 +20073,7 @@ EXCEPT
 UNION ALL
   SELECT d6 FROM t6
    WHERE (46=a6 AND 699=b6 AND c6=377 AND 286=d6 AND 738=e6)
-;
+ORDER BY 1;
 -- 14 values hashing to e4c21dbb0f205d00846dcb5ac11fe41f
 
 -- query T valuesort
@@ -20082,7 +20082,7 @@ UNION ALL
 EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((346=d7 AND 638=e7 AND c7=145))
-;
+ORDER BY 1;
 -- 149
 -- 247
 
@@ -20100,7 +20100,7 @@ EXCEPT
 UNION
   SELECT e5 FROM t5
    WHERE d5 in (789,957,369,413,847,855,806,858,521,616)
-;
+ORDER BY 1;
 -- 23 values hashing to 709ae165da6b77b2317fb1c8a25e3eab
 
 -- query T valuesort
@@ -20128,7 +20128,7 @@ EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((a5=297)
            OR (976=a5))
-;
+ORDER BY 1;
 -- 15 values hashing to 784aec9b3c07d556f9f466beec76c619
 
 -- query T valuesort
@@ -20158,7 +20158,7 @@ UNION ALL
   SELECT d6 FROM t6
    WHERE (648=c6 AND 825=a6 AND d6=424)
       OR (65=c6 AND 877=a6 AND d6=590 AND e6=329 AND 601=b6)
-;
+ORDER BY 1;
 -- 32 values hashing to 45da682dec0927daf855c3712ebfd989
 
 -- query T valuesort
@@ -20168,7 +20168,7 @@ EXCEPT
   SELECT a6 FROM t6
    WHERE NOT (c6 in (963,65,910,287,430)
            OR b6 in (276,629,54,549,541,262,974,962,875,774,601,232,0))
-;
+ORDER BY 1;
 -- 11 values hashing to 1c56f2241ea744bb8f436964c2aaa877
 
 -- query T valuesort
@@ -20205,7 +20205,7 @@ EXCEPT
    WHERE NOT ((e4=698 AND 509=a4 AND 434=b4 AND c4=725 AND 31=d4)
            OR (273=e4 AND 235=a4 AND d4=583 AND b4=982 AND 153=c4)
            OR (c4=758 AND 105=d4 AND 442=a4))
-;
+ORDER BY 1;
 -- 25 values hashing to 068a6938341be6cfc044da56627ada15
 
 -- query T valuesort
@@ -20234,7 +20234,7 @@ UNION
 UNION ALL
   SELECT e4 FROM t4
    WHERE b4 in (434,551,733,634,986,941)
-;
+ORDER BY 1;
 -- 22 values hashing to 086b092011e2ffbaa709325ea93f4ced
 
 -- query T valuesort
@@ -20263,7 +20263,7 @@ UNION ALL
    WHERE (386=b3 OR 38=d3 OR 889=d3)
       OR (c3=584 OR c3=970 OR c3=86)
       OR (e3=275 OR 596=e3)
-;
+ORDER BY 1;
 -- 21 values hashing to 46014cf3d85d13cf64f7e05d58fd071b
 
 -- query T valuesort
@@ -20281,7 +20281,7 @@ UNION ALL
    WHERE c2 in (374,728,496,150,444,127,964,807,182,141,878,511,27)
       OR (560=e2)
       OR (a2=802 AND 812=b2 AND 27=c2)
-;
+ORDER BY 1;
 -- 19 values hashing to 23725923adc38a473adb35fe34e86fcb
 
 -- query T valuesort
@@ -20311,7 +20311,7 @@ UNION ALL
    WHERE (b8=34 OR e8=423 OR c8=404)
       OR b8 in (796,889,211,984,469,963,503,228,862)
       OR (351=b8)
-;
+ORDER BY 1;
 -- 68 values hashing to 5cbc18e65c76803c7269cd1df009ec57
 
 -- query T valuesort
@@ -20343,7 +20343,7 @@ EXCEPT
    WHERE NOT ((678=d9 AND 110=c9)
            OR (458=a9)
            OR b9 in (783,312,289,171,251,827,524))
-;
+ORDER BY 1;
 -- 19 values hashing to 90af2f0aa760e043cc2229da46a850ed
 
 -- query T valuesort
@@ -20375,7 +20375,7 @@ EXCEPT
 UNION ALL
   SELECT b7 FROM t7
    WHERE (89=e7 AND a7=452 AND b7=24 AND d7=599 AND 934=c7)
-;
+ORDER BY 1;
 -- 12
 -- 24
 -- 60
@@ -20392,7 +20392,7 @@ UNION ALL
   SELECT d8 FROM t8
    WHERE (328=a8 AND 846=e8)
       OR d8 in (523,124,862,667,20)
-;
+ORDER BY 1;
 -- 18 values hashing to ef6dadfc41e319b3e7877b0c71f71f0b
 
 -- query T valuesort
@@ -20407,7 +20407,7 @@ UNION ALL
    WHERE b6 in (461,461,202,549,350,250)
       OR (731=a6 OR 682=e6)
       OR b6 in (696,452,716,984)
-;
+ORDER BY 1;
 -- 36 values hashing to 186a2b72e5f61693786a8bc0fdd02b26
 
 -- query T valuesort
@@ -20439,7 +20439,7 @@ EXCEPT
    WHERE NOT ((855=c5 AND 874=b5 AND 856=d5)
            OR (667=d5 AND 351=c5 AND a5=730)
            OR (a5=242))
-;
+ORDER BY 1;
 -- 21 values hashing to 2d147a9ea0668899b2e805a72781cca4
 
 -- query T valuesort
@@ -20474,7 +20474,7 @@ EXCEPT
   SELECT d1 FROM t1
    WHERE NOT (e1 in (117,96,483,72,313,247,221,210,931,381,95,12,747,943)
            OR b1 in (49,447,662,620,788,226,422,894,426,254))
-;
+ORDER BY 1;
 -- 28 values hashing to 5b1a32622b768819fb4df6408659419b
 
 -- query T valuesort
@@ -20487,7 +20487,7 @@ UNION
 UNION
   SELECT c6 FROM t6
    WHERE (910=c6)
-;
+ORDER BY 1;
 -- 545
 -- 553
 -- 629
@@ -20509,7 +20509,7 @@ UNION
 UNION
   SELECT b5 FROM t5
    WHERE (c5=613)
-;
+ORDER BY 1;
 -- 33 values hashing to dd34fe41b2b855a13d046557d193c41f
 
 -- query T valuesort
@@ -20549,7 +20549,7 @@ EXCEPT
   SELECT d5 FROM t5
    WHERE NOT ((242=a5 AND 634=d5 AND e5=68 AND b5=559)
            OR (342=a5 OR a5=332))
-;
+ORDER BY 1;
 -- 38 values hashing to 4ccfbd64992495806b500597ef281a62
 
 -- query T valuesort
@@ -20590,7 +20590,7 @@ UNION ALL
 EXCEPT
   SELECT b4 FROM t4
    WHERE NOT (b4 in (35,678,434,469,442,40,323))
-;
+ORDER BY 1;
 -- 49 values hashing to 0b39be4eded3298438e215ef933ce37f
 
 -- query T valuesort
@@ -20602,7 +20602,7 @@ UNION
    WHERE (177=d7 AND 503=b7 AND e7=955 AND a7=707)
       OR a7 in (565,208,995,97,744,879,998,952,277,699)
       OR (b7=480 OR 707=a7 OR e7=975)
-;
+ORDER BY 1;
 -- 17 values hashing to e77bb70e7e32bdbc9df3c7a8fad0b2dc
 
 -- query T valuesort
@@ -20639,7 +20639,7 @@ EXCEPT
    WHERE NOT ((613=c5 AND 594=e5 AND 273=b5)
            OR (492=d5 OR 616=d5)
            OR (579=c5 OR c5=485 OR 188=e5))
-;
+ORDER BY 1;
 -- 27 values hashing to 3dcf0d75748b3d184612abab336521fe
 
 -- query T valuesort
@@ -20668,7 +20668,7 @@ EXCEPT
   SELECT d9 FROM t9
    WHERE NOT ((a9=905 AND 647=e9 AND d9=51 AND 128=b9 AND c9=327)
            OR (351=c9))
-;
+ORDER BY 1;
 -- 29 values hashing to ed5f3d230e70d8b31e7eccdf741346b7
 
 -- query T valuesort
@@ -20693,7 +20693,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (e6=972 OR 129=d6 OR 731=e6)
       OR (e6=261 AND 731=a6 AND 146=c6 AND d6=664)
-;
+ORDER BY 1;
 -- 12 values hashing to 066f0f647016dd9928074965bb4c703e
 
 -- query T valuesort
@@ -20710,7 +20710,7 @@ UNION
    WHERE c2 in (360,27,46)
       OR (c2=22 AND 669=d2 AND b2=635)
       OR c2 in (283,729,312,560,900,290,61,274)
-;
+ORDER BY 1;
 -- 13 values hashing to afc0a93b8b390e7f45ee672592402dea
 
 -- query T valuesort
@@ -20750,7 +20750,7 @@ UNION ALL
    WHERE (c1=388 OR c1=585 OR 565=d1)
       OR (e1=89 AND d1=297 AND a1=674 AND c1=774 AND 346=b1)
       OR e1 in (181,731,328,367,921,210,766)
-;
+ORDER BY 1;
 -- 28 values hashing to 310a3c1fcf7871975e7ff72ea35c7408
 
 -- query T valuesort
@@ -20769,7 +20769,7 @@ UNION ALL
    WHERE d1 in (619,586,175,481,212,863,223,798,4,18,717,187,346,186)
       OR d1 in (913,529,38,942,315)
       OR (a1=779 OR e1=897)
-;
+ORDER BY 1;
 -- 37 values hashing to eba923fa58e717cd0e81370351a1dda1
 
 -- query T valuesort
@@ -20787,7 +20787,7 @@ UNION ALL
   SELECT c2 FROM t2
    WHERE e2 in (647,242,428,939,720,427,556)
       OR (e2=535)
-;
+ORDER BY 1;
 -- 22 values hashing to 6c4464649bff757dcc2da6fa59bdcb61
 
 -- query T valuesort
@@ -20815,7 +20815,7 @@ EXCEPT
    WHERE NOT ((241=a8 AND d8=767 AND c8=647 AND e8=455)
            OR (e8=561)
            OR (445=a8))
-;
+ORDER BY 1;
 -- 15 values hashing to 4daa5253af86202064935b8dd7849812
 
 -- query T valuesort
@@ -20834,7 +20834,7 @@ EXCEPT
 EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((586=a8 OR e8=966 OR d8=637))
-;
+ORDER BY 1;
 -- 27 values hashing to 736efe073e81f16b4411e7766980cb21
 
 -- query T valuesort
@@ -20851,7 +20851,7 @@ EXCEPT
    WHERE NOT ((e7=455)
            OR c7 in (92,135,305,606,626,934)
            OR (87=a7))
-;
+ORDER BY 1;
 -- 9 values hashing to c21cfed15e3e7901aab32b7dfd59ee5e
 
 -- query T valuesort
@@ -20867,7 +20867,7 @@ UNION
    WHERE c5 in (924,147,384,678,844,18,934)
       OR (c5=579 AND 570=d5 AND 536=a5)
       OR (443=d5 AND a5=740 AND e5=390 AND c5=696)
-;
+ORDER BY 1;
 -- 12 values hashing to b5f99273500868f3221838a59ec9689e
 
 -- query T valuesort
@@ -20907,7 +20907,7 @@ UNION ALL
 EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((349=d4 AND 723=a4 AND e4=767 AND 660=b4))
-;
+ORDER BY 1;
 -- 32 values hashing to 7cbff4f947ac48e596b3237a7a54cff8
 
 -- query T valuesort
@@ -20921,7 +20921,7 @@ UNION
    WHERE (b2=173)
       OR (e2=434)
       OR (37=e2 OR 688=c2 OR b2=729)
-;
+ORDER BY 1;
 -- 186
 -- 35
 -- 544
@@ -20953,7 +20953,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE (901=b4 AND 585=c4 AND a4=598 AND 879=e4)
       OR (835=e4 AND 409=d4)
-;
+ORDER BY 1;
 -- 35 values hashing to 48e9e097ca7aa012f2c4a54bb7476bfa
 
 -- query T valuesort
@@ -20973,7 +20973,7 @@ UNION ALL
    WHERE d1 in (87,298,432,105,187,806)
       OR (b1=362 AND 0=d1)
       OR (b1=736)
-;
+ORDER BY 1;
 -- 289
 -- 368
 -- 416
@@ -21020,7 +21020,7 @@ UNION ALL
    WHERE (d8=463 AND a8=99 AND c8=790 AND e8=608)
       OR (d8=899 OR d8=370 OR 609=b8)
       OR b8 in (155,162,563,934,964,511,725,300,862,259)
-;
+ORDER BY 1;
 -- 27 values hashing to 553ba1c0c1522077972b38b37fc047ff
 
 -- query T valuesort
@@ -21048,7 +21048,7 @@ UNION ALL
    WHERE (193=b5 OR c5=856)
       OR (e5=943)
       OR (d5=42 AND b5=847 AND c5=210 AND 718=e5 AND 749=a5)
-;
+ORDER BY 1;
 -- 39 values hashing to 3724c77360e7ccfee4f536e5ffffa6cb
 
 -- query T valuesort
@@ -21071,7 +21071,7 @@ EXCEPT
 EXCEPT
   SELECT a9 FROM t9
    WHERE NOT ((d9=720 OR e9=978))
-;
+ORDER BY 1;
 -- 32 values hashing to 0bf8ffdb9db7db2a1c57b8df39f7708c
 
 -- query T valuesort
@@ -21094,7 +21094,7 @@ UNION
    WHERE (934=c7 OR e7=201 OR 682=c7)
       OR (921=a7)
       OR b7 in (514,804,266,579,67,583,66,973)
-;
+ORDER BY 1;
 -- 20 values hashing to dcb4e383f7d3682a7b3b55c428c23189
 
 -- query T valuesort
@@ -21131,7 +21131,7 @@ UNION
   SELECT e7 FROM t7
    WHERE (418=d7 AND 257=c7 AND e7=904 AND a7=11 AND b7=679)
       OR e7 in (918,144,816,638,27,851,79)
-;
+ORDER BY 1;
 -- 32 values hashing to 0876cf2d4b2a57ede4a1085da43bbfb0
 
 -- query T valuesort
@@ -21172,7 +21172,7 @@ EXCEPT
 EXCEPT
   SELECT d8 FROM t8
    WHERE NOT ((665=b8 OR 608=d8))
-;
+ORDER BY 1;
 -- 18 values hashing to a3c1527956980c1045a5ca8a5b858323
 
 -- query T valuesort
@@ -21187,7 +21187,7 @@ UNION ALL
    WHERE a8 in (242,127,47,359,514,46,855,474)
       OR e8 in (105,548,381,944,533,510,512,579,776,223,455,175,411,918)
       OR (b8=244)
-;
+ORDER BY 1;
 -- 36 values hashing to bb57b1b2fa618e2874536a93ab7e79a1
 
 -- query T valuesort
@@ -21203,7 +21203,7 @@ EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((a5=373 OR b5=685)
            OR e5 in (18,888,206,558,587))
-;
+ORDER BY 1;
 -- 26 values hashing to aa877d191fd52af28b535f1d5ce88d0a
 
 -- query T valuesort
@@ -21246,7 +21246,7 @@ UNION
    WHERE (639=c1 AND 20=a1)
       OR (d1=323 OR b1=788)
       OR (767=a1 OR c1=152 OR a1=607)
-;
+ORDER BY 1;
 -- 67 values hashing to 087862b06e7b2bffcd5a9aea8268304d
 
 -- query T valuesort
@@ -21256,7 +21256,7 @@ UNION
   SELECT a8 FROM t8
    WHERE (942=e8 AND 200=a8)
       OR c8 in (249,196,501,690,266)
-;
+ORDER BY 1;
 -- 200
 -- 306
 -- 47
@@ -21282,7 +21282,7 @@ EXCEPT
   SELECT d5 FROM t5
    WHERE NOT (e5 in (470,130,874,894,184)
            OR (81=a5))
-;
+ORDER BY 1;
 -- 16 values hashing to 7f51feb113d4b01a29115558eed05373
 
 -- query T valuesort
@@ -21312,7 +21312,7 @@ EXCEPT
    WHERE NOT (b7 in (720,323,266,480,276)
            OR c7 in (934,970,174,691,488,853,596,305)
            OR (430=a7 OR a7=22 OR 541=b7))
-;
+ORDER BY 1;
 -- 9 values hashing to 889736fd1f52bbc36fe29b08e35a004f
 
 -- query T valuesort
@@ -21344,7 +21344,7 @@ UNION
 EXCEPT
   SELECT b9 FROM t9
    WHERE NOT ((345=d9 OR b9=524))
-;
+ORDER BY 1;
 -- 51 values hashing to 01a0a22a173eeb9c544f37a48d766824
 
 -- query T valuesort
@@ -21363,7 +21363,7 @@ EXCEPT
    WHERE NOT ((d3=483 OR b3=339 OR 708=d3)
            OR (800=c3 AND d3=170 AND e3=303 AND b3=70)
            OR a3 in (515,699,979,997,30,368,341,754,386,560))
-;
+ORDER BY 1;
 -- 480
 
 -- query T valuesort
@@ -21393,7 +21393,7 @@ UNION
 UNION
   SELECT b4 FROM t4
    WHERE (a4=922)
-;
+ORDER BY 1;
 -- 32 values hashing to ca89b56788973d169449b79fbc989f0e
 
 -- query T valuesort
@@ -21424,7 +21424,7 @@ UNION
 EXCEPT
   SELECT a9 FROM t9
    WHERE NOT (d9 in (554,919,967,628,129))
-;
+ORDER BY 1;
 -- 155
 -- 296
 -- 603
@@ -21465,7 +21465,7 @@ UNION ALL
   SELECT d5 FROM t5
    WHERE a5 in (89,958,69,267,826,81,683,174,330,332)
       OR (d5=269)
-;
+ORDER BY 1;
 -- 31 values hashing to c931f4d8182e0aba4f75aadc58f8652f
 
 -- query T valuesort
@@ -21497,7 +21497,7 @@ UNION ALL
 EXCEPT
   SELECT e1 FROM t1
    WHERE NOT (a1 in (445,23,461,918,552,640,294,499))
-;
+ORDER BY 1;
 -- 24 values hashing to 649211f12cc7b21cbd5a9111e184d043
 
 -- query T valuesort
@@ -21538,7 +21538,7 @@ UNION
   SELECT c4 FROM t4
    WHERE (a4=378)
       OR b4 in (608,884,917,847,903,35,635,829,606,220)
-;
+ORDER BY 1;
 -- 20 values hashing to 0d64e1971e7bb53370f3035893734717
 
 -- query T valuesort
@@ -21550,7 +21550,7 @@ UNION ALL
    WHERE (a2=382)
       OR b2 in (674,414,966)
       OR (b2=812)
-;
+ORDER BY 1;
 -- 11 values hashing to 9b64820abd4536e50e33e787916b7964
 
 -- query T valuesort
@@ -21586,7 +21586,7 @@ UNION
   SELECT c4 FROM t4
    WHERE (e4=816 AND 469=b4 AND 597=d4 AND a4=92 AND 671=c4)
       OR (e4=1 OR 412=a4 OR e4=677)
-;
+ORDER BY 1;
 -- 39 values hashing to c70a98255a78fdef14366367127360e4
 
 -- query T valuesort
@@ -21618,7 +21618,7 @@ UNION ALL
    WHERE (54=a5 OR e5=812)
       OR b5 in (665,657,640,336,56,186,998,193,971,548,874,569)
       OR c5 in (649,774,922,819,941,734,249,210,855,443)
-;
+ORDER BY 1;
 -- 32 values hashing to c12ea071f8bf578551265b764332c8f6
 
 -- query T valuesort
@@ -21636,7 +21636,7 @@ UNION
 EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((a2=651 AND b2=725))
-;
+ORDER BY 1;
 -- 17 values hashing to 264d395ce8029a674f002dff00fbe50d
 
 -- query T valuesort
@@ -21667,7 +21667,7 @@ UNION ALL
 UNION
   SELECT b4 FROM t4
    WHERE (160=a4)
-;
+ORDER BY 1;
 -- 23 values hashing to 300f75e01eed8114a0274f0749a0da79
 
 -- query T valuesort
@@ -21702,7 +21702,7 @@ EXCEPT
 UNION
   SELECT d5 FROM t5
    WHERE b5 in (260,554,569,338,605,380,56,784,930,989,424,326,657)
-;
+ORDER BY 1;
 -- 47 values hashing to 8d12e231dffc45c108b7e81c1db0b9d4
 
 -- query T valuesort
@@ -21712,7 +21712,7 @@ UNION
 UNION
   SELECT b3 FROM t3
    WHERE a3 in (429,743,337,549,515,244,997,34,892,98,697,255,335,699)
-;
+ORDER BY 1;
 -- 20 values hashing to ec5562c74a7b6c5e39049425863c28d7
 
 -- query T valuesort
@@ -21726,7 +21726,7 @@ UNION
 UNION
   SELECT d7 FROM t7
    WHERE (30=b7 AND 886=d7 AND e7=590 AND c7=931 AND 31=a7)
-;
+ORDER BY 1;
 -- 9 values hashing to cb52679f1ec4ad31f82b24059d524309
 
 -- query T valuesort
@@ -21763,7 +21763,7 @@ EXCEPT
    WHERE NOT ((b8=609 AND c8=273 AND d8=472)
            OR e8 in (221,904,7,646,204,579,295,38,411)
            OR (700=e8 AND 563=c8 AND b8=702))
-;
+ORDER BY 1;
 -- 36 values hashing to 1eb8b13470f68c1318bc87312014bedd
 
 -- query T valuesort
@@ -21782,7 +21782,7 @@ INTERSECT
 INTERSECT
   SELECT a3 FROM t3
    WHERE NOT (a3 in (763,515,822,41))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT e7 FROM t7
@@ -21819,7 +21819,7 @@ UNION ALL
    WHERE (a8=99)
       OR (259=b8)
       OR c8 in (961,229,233,168,844,332,79)
-;
+ORDER BY 1;
 -- 54 values hashing to dc551fa12f621694f929c170b01dee1c
 
 -- query T valuesort
@@ -21851,7 +21851,7 @@ EXCEPT
    WHERE NOT ((c2=722 AND d2=843 AND b2=823)
            OR (a2=664 OR 806=d2 OR a2=268)
            OR (a2=279 AND b2=846 AND 223=e2))
-;
+ORDER BY 1;
 -- 14 values hashing to f40cd36a065b3acbed2e71f993eb4829
 
 -- query T valuesort
@@ -21884,7 +21884,7 @@ UNION
   SELECT b1 FROM t1
    WHERE d1 in (25,154,17,992,581,121)
       OR (733=e1)
-;
+ORDER BY 1;
 -- 65 values hashing to f43315b2532dd990d265bfc3f8289b0e
 
 -- query T valuesort
@@ -21916,7 +21916,7 @@ UNION
    WHERE (583=b6 AND d6=869 AND 366=a6 AND e6=255)
       OR a6 in (537,973,293,518,300,233,811,129,696,40,585)
       OR a6 in (64,787,672)
-;
+ORDER BY 1;
 -- 31 values hashing to 964729407c52b43f0f2a41a56036e0d5
 
 -- query T valuesort
@@ -21944,7 +21944,7 @@ EXCEPT
   SELECT c2 FROM t2
    WHERE NOT (b2 in (545,549,820,270)
            OR (d2=2 OR 441=e2))
-;
+ORDER BY 1;
 -- 495
 -- 555
 
@@ -21964,7 +21964,7 @@ UNION
 UNION ALL
   SELECT d9 FROM t9
    WHERE (e9=230)
-;
+ORDER BY 1;
 -- 142
 -- 166
 -- 230
@@ -22003,7 +22003,7 @@ UNION
 UNION
   SELECT c5 FROM t5
    WHERE e5 in (812,13,386,141,522,155,764,894,716,25,499,271,511,758)
-;
+ORDER BY 1;
 -- 41 values hashing to 85b31bcf0f29acf813a5bb7a897613b8
 
 -- query T valuesort
@@ -22031,7 +22031,7 @@ EXCEPT
   SELECT b3 FROM t3
    WHERE NOT (e3 in (135,425,467,457,249,470,846,177,975,833,459)
            OR (a3=245 AND 538=d3 AND c3=607))
-;
+ORDER BY 1;
 -- 276
 -- 418
 -- 426
@@ -22050,7 +22050,7 @@ INTERSECT
    WHERE NOT ((e6=95 OR 617=e6 OR d6=196)
            OR (355=a6 AND e6=754 AND d6=647)
            OR c6 in (159,609,292,769,480))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT e4 FROM t4
@@ -22068,7 +22068,7 @@ EXCEPT
    WHERE NOT (d5 in (856,321,616,557,570,957,32,344,4)
            OR (b5=336 AND 904=a5 AND d5=616 AND c5=147)
            OR (858=d5 OR 502=b5))
-;
+ORDER BY 1;
 -- 27 values hashing to 1f79ce810f342469501c0d210130c755
 
 -- query T valuesort
@@ -22110,7 +22110,7 @@ UNION
   SELECT c1 FROM t1
    WHERE (e1=546 AND a1=643 AND b1=435 AND 654=c1)
       OR a1 in (829,499,754,785,779,498,880,742,276,853,147)
-;
+ORDER BY 1;
 -- 46 values hashing to 2cda820585c6ec3bfa69ca42be34814f
 
 -- query T valuesort
@@ -22122,7 +22122,7 @@ UNION ALL
   SELECT d7 FROM t7
    WHERE b7 in (750,460,305,660,726,735,129,495,837)
       OR (e7=183 OR 144=e7)
-;
+ORDER BY 1;
 -- 16 values hashing to a3c988f1d954550195c0f40a0a418a72
 
 -- query T valuesort
@@ -22145,7 +22145,7 @@ EXCEPT
   SELECT c9 FROM t9
    WHERE NOT ((776=a9 AND e9=704 AND 960=d9 AND b9=680)
            OR b9 in (426,251,891,152,210,312,5,803,832,821))
-;
+ORDER BY 1;
 -- 16 values hashing to e4ae89306e1f4943620c9661391d5e14
 
 -- query T valuesort
@@ -22182,7 +22182,7 @@ EXCEPT
   SELECT d1 FROM t1
    WHERE NOT ((a1=23 OR 862=b1 OR 337=a1)
            OR e1 in (625,313,737))
-;
+ORDER BY 1;
 -- 28 values hashing to 3fa886c974eff3738d85a6f764e41da4
 
 -- query T valuesort
@@ -22216,7 +22216,7 @@ EXCEPT
   SELECT a5 FROM t5
    WHERE NOT (d5 in (806,752,789,841,731,792,542,916,963,553,4,59)
            OR (c5=820))
-;
+ORDER BY 1;
 -- 15 values hashing to 62dead13f3b069662358a1f70c7258a8
 
 -- query T valuesort
@@ -22245,7 +22245,7 @@ UNION ALL
    WHERE c1 in (608,765,284)
       OR e1 in (209,732,763,504,779,430,484,117)
       OR e1 in (695,683,221,12,443,539,300,625,956,166,284)
-;
+ORDER BY 1;
 -- 66 values hashing to ee9deeee0aff70450d2ff6eb01b47fcc
 
 -- query T valuesort
@@ -22269,7 +22269,7 @@ EXCEPT
   SELECT d3 FROM t3
    WHERE NOT (d3 in (134,683,890,729,624)
            OR (c3=961))
-;
+ORDER BY 1;
 -- 18 values hashing to 044f92eb89e421c03d7d7567dbdda3b6
 
 -- query T valuesort
@@ -22289,7 +22289,7 @@ EXCEPT
 EXCEPT
   SELECT b6 FROM t6
    WHERE NOT ((b6=6))
-;
+ORDER BY 1;
 -- 695
 -- 768
 -- 89
@@ -22333,7 +22333,7 @@ EXCEPT
 UNION
   SELECT c3 FROM t3
    WHERE b3 in (927,827,464,145,649,273,130,392,57,269,505)
-;
+ORDER BY 1;
 -- 57 values hashing to c34408b3a783f9c007e26e17a39c1970
 
 -- query T valuesort
@@ -22346,7 +22346,7 @@ UNION
    WHERE (a1=521 AND 281=b1 AND d1=221 AND e1=628)
       OR (853=a1 OR d1=407)
       OR (825=a1 AND b1=247 AND d1=565 AND 486=c1)
-;
+ORDER BY 1;
 -- 18 values hashing to 0ea67f3934e1182c90fa04e621beeb38
 
 -- query T valuesort
@@ -22369,7 +22369,7 @@ UNION ALL
 EXCEPT
   SELECT a2 FROM t2
    WHERE NOT (d2 in (416,813,806,541,10,315))
-;
+ORDER BY 1;
 -- 17 values hashing to daff8915cc0a7e586dfe943c3d3f8fd8
 
 -- query T valuesort
@@ -22404,7 +22404,7 @@ EXCEPT
 EXCEPT
   SELECT b4 FROM t4
    WHERE NOT (a4 in (637,502,82,152,589,139,31,408,450,602,922))
-;
+ORDER BY 1;
 -- 14 values hashing to e538c1671aa76a660bdce1b1c9ab7a76
 
 -- query T valuesort
@@ -22430,7 +22430,7 @@ UNION
    WHERE a7 in (87,62,757,439,982,11,97,748,916,430,120,490,452,703)
       OR (e7=344 AND b7=191)
       OR (832=a7 AND 455=e7 AND 547=d7 AND c7=206 AND b7=105)
-;
+ORDER BY 1;
 -- 41 values hashing to 6536a47a634d199417e6d3037f0c61f7
 
 -- query T valuesort
@@ -22471,7 +22471,7 @@ UNION ALL
    WHERE b3 in (360,685,445,355,617,73)
       OR (914=b3 AND d3=495 AND c3=801 AND 513=a3)
       OR c3 in (455,86,83,145,435,555,459,697,863,305,403)
-;
+ORDER BY 1;
 -- 58 values hashing to bd26a7231e1da351fdde68d529232fdf
 
 -- query T valuesort
@@ -22483,7 +22483,7 @@ INTERSECT
    WHERE NOT ((133=d3)
            OR c3 in (929,900,954,324,549,592,439)
            OR (464=b3 AND 403=c3 AND a3=41))
-;
+ORDER BY 1;
 -- 310
 -- 592
 -- 833
@@ -22500,7 +22500,7 @@ EXCEPT
    WHERE NOT ((b3=740)
            OR (211=b3 OR 548=a3)
            OR (779=b3 AND 303=a3))
-;
+ORDER BY 1;
 -- 735
 
 -- query T valuesort
@@ -22536,7 +22536,7 @@ UNION
   SELECT e9 FROM t9
    WHERE (d9=959 OR 968=e9)
       OR (a9=811 AND 732=c9 AND 936=e9)
-;
+ORDER BY 1;
 -- 43 values hashing to 10ba8b820893aaeb47eb971d98e4ef32
 
 -- query T valuesort
@@ -22548,7 +22548,7 @@ UNION ALL
   SELECT d5 FROM t5
    WHERE (897=b5 OR a5=429)
       OR (e5=143 AND d5=769 AND 335=a5 AND 747=c5)
-;
+ORDER BY 1;
 -- 27 values hashing to 5a1f73e385757ad33f434e6c017e2494
 
 -- query T valuesort
@@ -22580,7 +22580,7 @@ UNION ALL
   SELECT b4 FROM t4
    WHERE (b4=434 OR c4=581)
       OR d4 in (929,597,247,583,481,223)
-;
+ORDER BY 1;
 -- 31 values hashing to c8fc0d49ac90c46ae81a31ca805b3582
 
 -- query T valuesort
@@ -22603,7 +22603,7 @@ EXCEPT
    WHERE NOT ((351=c5 AND 522=e5 AND a5=730 AND b5=989 AND 667=d5)
            OR d5 in (779,682,155)
            OR (e5=446 AND d5=682))
-;
+ORDER BY 1;
 -- 14 values hashing to 6b3ba3ecce4b756aed270561d876fc75
 
 -- query T valuesort
@@ -22627,7 +22627,7 @@ UNION ALL
 UNION
   SELECT c1 FROM t1
    WHERE d1 in (394,298,973,519,407)
-;
+ORDER BY 1;
 -- 19 values hashing to 4c50e4de45f83be1cf445d16da09eac5
 
 -- query T valuesort
@@ -22646,7 +22646,7 @@ EXCEPT
   SELECT b4 FROM t4
    WHERE NOT ((598=a4)
            OR (208=c4))
-;
+ORDER BY 1;
 -- 270
 -- 403
 -- 641
@@ -22680,7 +22680,7 @@ EXCEPT
 EXCEPT
   SELECT d6 FROM t6
    WHERE NOT (c6 in (265,504,615))
-;
+ORDER BY 1;
 -- 12 values hashing to 8da95f6adc3934ef546c36c384b28ea0
 
 -- query T valuesort
@@ -22697,7 +22697,7 @@ EXCEPT
 EXCEPT
   SELECT b5 FROM t5
    WHERE NOT (b5 in (56,336,391,321,193,874,159,623))
-;
+ORDER BY 1;
 -- 101
 -- 321
 -- 364
@@ -22713,7 +22713,7 @@ INTERSECT
   SELECT a1 FROM t1
    WHERE NOT (e1 in (161,152,880,855,158,813,268,300)
            OR d1 in (96,678,234,990,215,213,130))
-;
+ORDER BY 1;
 -- 352
 -- 732
 
@@ -22745,7 +22745,7 @@ EXCEPT
    WHERE NOT ((254=d1)
            OR (a1=231 AND e1=795 AND b1=468)
            OR c1 in (498,172,482,177,97,915,62,617,252))
-;
+ORDER BY 1;
 -- 35 values hashing to 2a0e8eaca3b5486d863209f7f889c8d0
 
 -- query T valuesort
@@ -22774,7 +22774,7 @@ UNION ALL
    WHERE (681=b2 OR 810=c2 OR 136=c2)
       OR (b2=729 AND 292=d2 AND e2=769 AND a2=35 AND c2=197)
       OR (a2=789 OR c2=179)
-;
+ORDER BY 1;
 -- 17 values hashing to 238a5e593568dca51b89566b8253c920
 
 -- query T valuesort
@@ -22790,7 +22790,7 @@ UNION
 EXCEPT
   SELECT c8 FROM t8
    WHERE NOT ((493=b8))
-;
+ORDER BY 1;
 -- 16 values hashing to 65274a60928933ed6cb1a7ea64262df6
 
 -- query T valuesort
@@ -22821,7 +22821,7 @@ UNION ALL
 EXCEPT
   SELECT d8 FROM t8
    WHERE NOT ((52=b8))
-;
+ORDER BY 1;
 -- 49 values hashing to 300b2a556558e7f5a9d48708abfecb09
 
 -- query T valuesort
@@ -22840,7 +22840,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((840=c4)
            OR (236=d4))
-;
+ORDER BY 1;
 -- 13 values hashing to f582e1a517a967ffc871634a0a76ab51
 
 -- query T valuesort
@@ -22873,7 +22873,7 @@ UNION ALL
 EXCEPT
   SELECT a6 FROM t6
    WHERE NOT (a6 in (683,436,518,692,672,801,751,764,222,132,973,851,128))
-;
+ORDER BY 1;
 -- 22 values hashing to e2904e1014360108508c2ba239c5670d
 
 -- query T valuesort
@@ -22893,7 +22893,7 @@ UNION ALL
    WHERE b4 in (379,986,826,627,892,603,707,271,635,114,961,86)
       OR (e4=179 AND c4=873 AND b4=94 AND d4=881)
       OR (c4=948 AND 63=e4 AND 474=a4)
-;
+ORDER BY 1;
 -- 19 values hashing to 92b6be3ed26d034acf369ecbb4b067c3
 
 -- query T valuesort
@@ -22916,7 +22916,7 @@ EXCEPT
 EXCEPT
   SELECT e3 FROM t3
    WHERE NOT (b3 in (445,874,814,57,159,202,983,41,542))
-;
+ORDER BY 1;
 -- 31 values hashing to 066d96d6c02c792151b89820ac369aad
 
 -- query T valuesort
@@ -22957,7 +22957,7 @@ UNION
    WHERE (902=c1)
       OR b1 in (384,593,857,420,426,280,594,310,836,283,556,808,803)
       OR (d1=992)
-;
+ORDER BY 1;
 -- 54 values hashing to 56dd80ac39e76f2f7210ebd9dc22ac88
 
 -- query T valuesort
@@ -22997,7 +22997,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE (167=b4)
       OR (508=c4 AND 950=a4 AND d4=985 AND e4=543 AND 86=b4)
-;
+ORDER BY 1;
 -- 10 values hashing to c7bdd0103014b7b80013ae9b3db147c5
 
 -- query T valuesort
@@ -23028,7 +23028,7 @@ UNION
 UNION
   SELECT c7 FROM t7
    WHERE a7 in (884,703,27,896,288,649,500,912,31,757)
-;
+ORDER BY 1;
 -- 42 values hashing to b7cad216721dac2df68edb84cb4d57de
 
 -- query T valuesort
@@ -23058,7 +23058,7 @@ EXCEPT
    WHERE NOT ((701=b3 AND d3=17 AND c3=885 AND 281=e3 AND 218=a3)
            OR a3 in (899,803,566,42,777,971,651,836,5,614,396)
            OR (c3=692 AND d3=102 AND 197=a3 AND 273=b3))
-;
+ORDER BY 1;
 -- 22 values hashing to 8c09d9fe04cf4a06e4dd8ed85dc6b7ae
 
 -- query T valuesort
@@ -23074,7 +23074,7 @@ UNION ALL
   SELECT e9 FROM t9
    WHERE (b9=746 OR e9=672)
       OR (e9=607)
-;
+ORDER BY 1;
 -- 158
 -- 388
 -- 606
@@ -23108,7 +23108,7 @@ EXCEPT
   SELECT c6 FROM t6
    WHERE NOT ((d6=767 AND b6=782 AND c6=258 AND 969=e6)
            OR (e6=439))
-;
+ORDER BY 1;
 -- 29 values hashing to 9b2980c9e68976efe50dee6706139c10
 
 -- query T valuesort
@@ -23146,7 +23146,7 @@ UNION
   SELECT d3 FROM t3
    WHERE d3 in (603,782,825,553,764,923)
       OR b3 in (266,790,122,273,156,236,701,17,566,480)
-;
+ORDER BY 1;
 -- 57 values hashing to ab715221a6c1dbb90986f9a2b0be3f3b
 
 -- query T valuesort
@@ -23170,7 +23170,7 @@ UNION
 UNION ALL
   SELECT c5 FROM t5
    WHERE c5 in (56,545,442,868,551,579,570,250,585,443,625,601,799,351)
-;
+ORDER BY 1;
 -- 28 values hashing to 953b4a20a6cf3396bbfce364bf4544a7
 
 -- query T valuesort
@@ -23207,7 +23207,7 @@ EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((e3=319 OR a3=30)
            OR (b3=505 AND a3=42 AND 285=c3))
-;
+ORDER BY 1;
 -- 34 values hashing to f2ab2b32dc74fb841f08dd38d1b6ca1d
 
 -- query T valuesort
@@ -23239,7 +23239,7 @@ EXCEPT
   SELECT a3 FROM t3
    WHERE NOT ((816=b3)
            OR (964=a3 AND 888=b3 AND e3=131 AND 970=c3 AND d3=444))
-;
+ORDER BY 1;
 -- 17 values hashing to ac53af03467af937496cb5387efb620f
 
 -- query T valuesort
@@ -23250,7 +23250,7 @@ INTERSECT
    WHERE NOT ((b5=205)
            OR (d5=537 AND b5=674 AND 975=e5)
            OR (373=a5 AND b5=231 AND e5=549))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT e6 FROM t6
@@ -23266,7 +23266,7 @@ UNION
 EXCEPT
   SELECT e5 FROM t5
    WHERE NOT (d5 in (780,814,521,313,59,787,602,938,413))
-;
+ORDER BY 1;
 -- 14 values hashing to c04ea51b65343d28a7c4ccfe8971dcb9
 
 -- query T valuesort
@@ -23302,7 +23302,7 @@ EXCEPT
    WHERE NOT (a3 in (879,899,995,347,255,872,551,162)
            OR (e3=977 AND a3=143 AND b3=145 AND 826=d3 AND c3=656)
            OR c3 in (7,353,368,555,565,117,455,656,601,178,777,809,947,966))
-;
+ORDER BY 1;
 -- 17 values hashing to 33a529ca157b2be5c71a0277f1f08efd
 
 -- query T valuesort
@@ -23324,7 +23324,7 @@ UNION ALL
   SELECT e5 FROM t5
    WHERE (c5=734 OR 319=a5)
       OR (a5=882 OR 897=b5)
-;
+ORDER BY 1;
 -- 13 values hashing to 445f2b2868f14ccc3ab911fe77fdd885
 
 -- query T valuesort
@@ -23354,7 +23354,7 @@ UNION ALL
    WHERE b7 in (798,166,913,827,392,670,820,924)
       OR c7 in (102,78,377,238,764,302,341,498,575)
       OR d7 in (527,148,547,94,842,722,916,399,306,114)
-;
+ORDER BY 1;
 -- 55 values hashing to 7e10b275a12940e36614f3a1ac969b84
 
 -- query T valuesort
@@ -23386,7 +23386,7 @@ UNION ALL
    WHERE (d7=712 AND c7=565)
       OR (b7=159 OR 24=b7 OR 488=b7)
       OR e7 in (31,168,522,428,98)
-;
+ORDER BY 1;
 -- 61 values hashing to 622781ff665ce0652bf04b4dace6e88d
 
 -- query T valuesort
@@ -23422,7 +23422,7 @@ EXCEPT
 UNION ALL
   SELECT e6 FROM t6
    WHERE (1=e6 AND 696=a6 AND 144=b6)
-;
+ORDER BY 1;
 -- 35 values hashing to 7c5b0a417782c7268b244b6efa7cbe02
 
 -- query T valuesort
@@ -23458,7 +23458,7 @@ EXCEPT
 UNION ALL
   SELECT b2 FROM t2
    WHERE c2 in (900,992,374,177,107)
-;
+ORDER BY 1;
 -- 25 values hashing to ca81d594a7fab0ac345cd687ef6c8267
 
 -- query T valuesort
@@ -23492,7 +23492,7 @@ UNION ALL
    WHERE (c5=747 OR b5=82 OR 72=e5)
       OR (24=d5 AND a5=413 AND e5=287 AND b5=499 AND 18=c5)
       OR a5 in (929,685,730)
-;
+ORDER BY 1;
 -- 20 values hashing to ed1863ade53e9266f002bf414603e6ca
 
 -- query T valuesort
@@ -23522,7 +23522,7 @@ EXCEPT
 EXCEPT
   SELECT a8 FROM t8
    WHERE NOT (b8 in (705,647,145,365,615,219,364,287))
-;
+ORDER BY 1;
 -- 1
 -- 374
 -- 588
@@ -23553,7 +23553,7 @@ UNION
    WHERE (881=b7 AND 317=c7 AND e7=156 AND 299=a7)
       OR a7 in (758,894,865,565,120,500,896,884,75,998,952,925,665)
       OR (462=e7 OR 308=b7)
-;
+ORDER BY 1;
 -- 65 values hashing to 7e6b263f0305fb7437eff21333a76961
 
 -- query T valuesort
@@ -23586,7 +23586,7 @@ UNION ALL
    WHERE (d5=171 AND 470=e5)
       OR (155=c5 OR a5=721)
       OR a5 in (242,878,132,513,882,960,615,696,514,148)
-;
+ORDER BY 1;
 -- 45 values hashing to d9341e5badde73fce37b0c0e85c15bd2
 
 -- query T valuesort
@@ -23613,7 +23613,7 @@ UNION
   SELECT c5 FROM t5
    WHERE a5 in (69,18,615,114,851,721,485,148,514,740,675)
       OR (923=e5 OR 470=e5 OR b5=858)
-;
+ORDER BY 1;
 -- 43 values hashing to 7ff42eceac848f3d6943d2b46a57b263
 
 -- query T valuesort
@@ -23626,7 +23626,7 @@ EXCEPT
   SELECT b8 FROM t8
    WHERE NOT (d8 in (862,484,192,494,96,446,50,945)
            OR e8 in (463,866,272,592,881,63,199,579,149,46))
-;
+ORDER BY 1;
 -- 12
 -- 267
 
@@ -23646,7 +23646,7 @@ UNION ALL
    WHERE (e9=744)
       OR (a9=776 AND b9=680 AND 960=d9 AND 704=e9 AND c9=834)
       OR c9 in (252,843,801,75,253,601,688,419,884,739,252,973,975,272)
-;
+ORDER BY 1;
 -- 36 values hashing to b44be021da567eab4a216c566ba59c20
 
 -- query T valuesort
@@ -23667,7 +23667,7 @@ EXCEPT
   SELECT d4 FROM t4
    WHERE NOT (c4 in (854,936,752,238,44,948,609,482)
            OR (825=a4))
-;
+ORDER BY 1;
 -- 269
 -- 623
 -- 683
@@ -23697,7 +23697,7 @@ EXCEPT
   SELECT e7 FROM t7
    WHERE NOT (d7 in (52,666,805,177,795,276,837,278,924,485,296,114,599)
            OR (c7=744 AND a7=9 AND 278=d7 AND 522=e7))
-;
+ORDER BY 1;
 -- 19 values hashing to 8214a1e4d6592455dfae0321d1cc47e5
 
 -- query T valuesort
@@ -23708,7 +23708,7 @@ EXCEPT
 UNION
   SELECT e3 FROM t3
    WHERE (d3=967 OR 991=c3)
-;
+ORDER BY 1;
 -- 15 values hashing to 43dc374cdcfdb5019f907cb1b5327b70
 
 -- query T valuesort
@@ -23728,7 +23728,7 @@ EXCEPT
 EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((d6=197))
-;
+ORDER BY 1;
 -- 21 values hashing to 85c58df9cac22d6d1e564ab719beed94
 
 -- query T valuesort
@@ -23747,7 +23747,7 @@ UNION ALL
    WHERE c7 in (364,553,232)
       OR (257=b7)
       OR c7 in (816,280,180,970,857,564)
-;
+ORDER BY 1;
 -- 19 values hashing to 6830371d4375ef9d17a979f6dc98ea53
 
 -- query T valuesort
@@ -23780,7 +23780,7 @@ EXCEPT
    WHERE NOT ((c5=485 AND 180=a5 AND 33=d5 AND 26=b5 AND 708=e5)
            OR (606=b5 OR e5=436)
            OR c5 in (250,797,18,809,941,894,185,149,3,681))
-;
+ORDER BY 1;
 -- 37 values hashing to cabaa08b87383bd8451bad85ff93068e
 
 -- query T valuesort
@@ -23800,7 +23800,7 @@ EXCEPT
   SELECT d1 FROM t1
    WHERE NOT ((e1=313 OR a1=862 OR 815=e1)
            OR (61=a1 OR 811=e1))
-;
+ORDER BY 1;
 -- 17 values hashing to 279b566dae80900b864ffd1179054e39
 
 -- query T valuesort
@@ -23817,7 +23817,7 @@ UNION ALL
   SELECT a7 FROM t7
    WHERE (a7=854)
       OR c7 in (432,92,288,341)
-;
+ORDER BY 1;
 -- 147
 -- 158
 -- 212
@@ -23851,7 +23851,7 @@ EXCEPT
    WHERE NOT (b6 in (984,243,507,6,696,716,882,461,825,214,427,210)
            OR c6 in (297,424,34,292,648,430,975,146,938,942)
            OR (33=a6 AND 262=b6 AND c6=961))
-;
+ORDER BY 1;
 -- 899
 
 -- query T valuesort
@@ -23862,7 +23862,7 @@ EXCEPT
 UNION ALL
   SELECT d3 FROM t3
    WHERE (811=b3 AND e3=989 AND d3=603 AND a3=532)
-;
+ORDER BY 1;
 -- 174
 -- 603
 -- 661
@@ -23891,7 +23891,7 @@ EXCEPT
    WHERE NOT (c1 in (570,871,204,639,465,366,534,530,846,57,246)
            OR (e1=148 AND a1=179 AND 246=c1)
            OR (668=a1 AND e1=51 AND d1=412))
-;
+ORDER BY 1;
 -- 343
 -- 555
 -- 769
@@ -23930,7 +23930,7 @@ UNION
   SELECT e5 FROM t5
    WHERE (502=b5)
       OR a5 in (335,796,586,917,478,878,18,696,743,330,832,921)
-;
+ORDER BY 1;
 -- 57 values hashing to 525e8fdbfb297f138204cf827d90d75d
 
 -- query T valuesort
@@ -23960,7 +23960,7 @@ EXCEPT
 EXCEPT
   SELECT a2 FROM t2
    WHERE NOT (b2 in (509,501,145,329,367,932,161,605,554,649))
-;
+ORDER BY 1;
 -- 11 values hashing to 55b31573fea4374645c4e9358389dc01
 
 -- query T valuesort
@@ -23989,7 +23989,7 @@ UNION
 EXCEPT
   SELECT e3 FROM t3
    WHERE NOT ((c3=711 AND 914=e3 AND d3=399 AND 997=a3 AND 998=b3))
-;
+ORDER BY 1;
 -- 23 values hashing to ad673a5682a86a3bcb9067b33918112d
 
 -- query T valuesort
@@ -24004,7 +24004,7 @@ UNION ALL
    WHERE d5 in (542,792,117)
       OR e5 in (906,104,758,188,25,592,887,589)
       OR c5 in (222,927,149)
-;
+ORDER BY 1;
 -- 23 values hashing to 9e8f77c50aef8c4d128a5ffcd442a454
 
 -- query T valuesort
@@ -24016,7 +24016,7 @@ EXCEPT
   SELECT c2 FROM t2
    WHERE NOT ((a2=718 OR 448=d2 OR 625=c2)
            OR (223=a2 OR 140=c2))
-;
+ORDER BY 1;
 -- 416
 -- 463
 -- 811
@@ -24044,7 +24044,7 @@ UNION ALL
 EXCEPT
   SELECT d6 FROM t6
    WHERE NOT ((e6=230 AND 54=c6 AND a6=839))
-;
+ORDER BY 1;
 -- 9 values hashing to 661a652f25fd6d7f52259ae2e531c342
 
 -- query T valuesort
@@ -24053,7 +24053,7 @@ EXCEPT
 EXCEPT
   SELECT e4 FROM t4
    WHERE NOT ((436=c4))
-;
+ORDER BY 1;
 -- 10 values hashing to db93109cbd654042b3d96bfda2aba34d
 
 -- query T valuesort
@@ -24088,7 +24088,7 @@ UNION
   SELECT d3 FROM t3
    WHERE (788=b3 OR d3=283)
       OR (647=d3 OR 602=e3 OR 581=a3)
-;
+ORDER BY 1;
 -- 67 values hashing to 8e5e9e845f4fc5bbf3f1cae45819580d
 
 -- query T valuesort
@@ -24115,7 +24115,7 @@ UNION
    WHERE (433=a7)
       OR (488=c7 OR d7=837 OR d7=341)
       OR (249=c7 OR a7=744)
-;
+ORDER BY 1;
 -- 31 values hashing to 67c4a51de3da14e3cbcb491188390f15
 
 -- query T valuesort
@@ -24131,7 +24131,7 @@ UNION ALL
    WHERE (d4=236)
       OR d4 in (498,328,491,25,60,199)
       OR (e4=349 OR 631=e4)
-;
+ORDER BY 1;
 -- 17 values hashing to 1a37c4562cf000cca9779ccb6013367f
 
 -- query T valuesort
@@ -24142,7 +24142,7 @@ EXCEPT
   SELECT d9 FROM t9
    WHERE NOT ((c9=349 OR 269=a9 OR a9=273)
            OR (d9=347 OR d9=305))
-;
+ORDER BY 1;
 -- 10 values hashing to 67933971d741a77ddfd06ce3aece5c0a
 
 -- query T valuesort
@@ -24155,7 +24155,7 @@ UNION ALL
    WHERE d3 in (944,560,60,662,115,428,826,102,658,260,17,118,231)
       OR e3 in (467,977,221,702,578,833)
       OR (295=b3)
-;
+ORDER BY 1;
 -- 30 values hashing to 50b1ff702fa8a795e17995d7a77e3587
 
 -- query T valuesort
@@ -24189,7 +24189,7 @@ EXCEPT
   SELECT c2 FROM t2
    WHERE NOT ((a2=324 AND b2=585 AND 228=e2 AND 260=d2 AND 344=c2)
            OR (c2=87 OR b2=276))
-;
+ORDER BY 1;
 -- 46 values hashing to ea359559a4c7fa8423e43919f61a3c8b
 
 -- query T valuesort
@@ -24218,7 +24218,7 @@ EXCEPT
    WHERE NOT ((66=c6 AND d6=488 AND 348=b6 AND 678=e6 AND a6=35)
            OR (e6=750 OR d6=35)
            OR (e6=766 AND c6=528))
-;
+ORDER BY 1;
 -- 332
 -- 485
 -- 586
@@ -24250,7 +24250,7 @@ UNION
 UNION ALL
   SELECT e2 FROM t2
    WHERE (765=b2 AND a2=304 AND 537=d2)
-;
+ORDER BY 1;
 -- 17 values hashing to a0ad5428bb48478c076f8dba499869ad
 
 -- query T valuesort
@@ -24273,7 +24273,7 @@ UNION ALL
    WHERE d9 in (142,305,525,264,104)
       OR (272=c9 AND 464=d9)
       OR c9 in (257,469,75,224,254,273,90,894,696,711,457,935,95)
-;
+ORDER BY 1;
 -- 33 values hashing to b6e12ce8a6c2e01e3d8ba8e7c170ee2d
 
 -- query T valuesort
@@ -24305,7 +24305,7 @@ UNION ALL
    WHERE (820=e4 AND 261=a4 AND b4=892 AND 639=d4 AND 422=c4)
       OR b4 in (748,901,644,919,331,476)
       OR (c4=451 AND a4=439 AND d4=979 AND b4=535 AND 37=e4)
-;
+ORDER BY 1;
 -- 30 values hashing to 20e82e933e2011b2961c064ed85267a2
 
 -- query T valuesort
@@ -24337,7 +24337,7 @@ EXCEPT
 EXCEPT
   SELECT e4 FROM t4
    WHERE NOT (d4 in (653,323,777))
-;
+ORDER BY 1;
 -- 186
 -- 579
 
@@ -24364,7 +24364,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT (d4 in (60,146,185,328,781)
            OR (a4=243 AND 723=c4 AND 402=b4 AND 680=d4))
-;
+ORDER BY 1;
 -- 181
 -- 443
 -- 468
@@ -24405,7 +24405,7 @@ EXCEPT
   SELECT e7 FROM t7
    WHERE NOT ((456=e7)
            OR (103=c7))
-;
+ORDER BY 1;
 -- 26 values hashing to 6486c2ee576f2000891f87ae07925239
 
 -- query T valuesort
@@ -24417,7 +24417,7 @@ UNION ALL
   SELECT e6 FROM t6
    WHERE (751=c6 OR 876=b6)
       OR (a6=359 AND 942=c6 AND e6=798)
-;
+ORDER BY 1;
 -- 26 values hashing to 8c145631398e4d1904e88a8e6c748222
 
 -- query T valuesort
@@ -24445,7 +24445,7 @@ UNION ALL
   SELECT b3 FROM t3
    WHERE b3 in (152,811,234)
       OR (c3=733)
-;
+ORDER BY 1;
 -- 37 values hashing to df1b43e0fed2e758b47b31c19552fab3
 
 -- query T valuesort
@@ -24481,7 +24481,7 @@ EXCEPT
    WHERE NOT ((b4=535 AND 439=a4 AND 979=d4 AND 451=c4 AND 37=e4)
            OR (d4=376 OR e4=312)
            OR c4 in (188,84,157,964,403,44,489,482,345,671,483,471,201,585))
-;
+ORDER BY 1;
 -- 49 values hashing to b10c68c40777660d922be594af39bed7
 
 -- query T valuesort
@@ -24499,7 +24499,7 @@ UNION ALL
 EXCEPT
   SELECT c4 FROM t4
    WHERE NOT ((c4=483))
-;
+ORDER BY 1;
 -- 25 values hashing to bd1023683eb9391bb9828386715928b5
 
 -- query T valuesort
@@ -24536,7 +24536,7 @@ EXCEPT
 EXCEPT
   SELECT c5 FROM t5
    WHERE NOT (d5 in (810,682,470,649,938,769,369,514,779,940,855,811,782,738))
-;
+ORDER BY 1;
 -- 33 values hashing to 6d5bf4e99b1604ecfb0188e66b22427e
 
 -- query T valuesort
@@ -24575,7 +24575,7 @@ UNION ALL
   SELECT c6 FROM t6
    WHERE (359=a6 OR 646=e6)
       OR (511=b6 AND a6=522 AND 5=e6 AND c6=177 AND 822=d6)
-;
+ORDER BY 1;
 -- 33 values hashing to fc11ac0c7a7cf741ec176129c8c4d7a9
 
 -- query T valuesort
@@ -24605,7 +24605,7 @@ EXCEPT
 EXCEPT
   SELECT b1 FROM t1
    WHERE NOT (a1 in (972,479,281,746,88))
-;
+ORDER BY 1;
 -- 23 values hashing to c48f5f1840e91ea1920feb7d763fea6d
 
 -- query T valuesort
@@ -24625,7 +24625,7 @@ EXCEPT
   SELECT a6 FROM t6
    WHERE NOT ((241=e6)
            OR (822=d6 AND e6=5 AND 177=c6 AND a6=522 AND b6=511))
-;
+ORDER BY 1;
 -- 111
 -- 26
 -- 420
@@ -24673,7 +24673,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT (d8 in (179,141,446,630,706,2,637,124,738,494)
            OR (b8=806))
-;
+ORDER BY 1;
 -- 18 values hashing to be4ffe61b6ed9977364cfbb84a15c555
 
 -- query T valuesort
@@ -24684,7 +24684,7 @@ INTERSECT
   SELECT b9 FROM t9
    WHERE NOT (a9 in (457,41,553,712,511,584,488,747)
            OR (e9=619 OR 526=c9 OR c9=252))
-;
+ORDER BY 1;
 -- 549
 
 -- query T valuesort
@@ -24708,7 +24708,7 @@ UNION
    WHERE (c5=384)
       OR (a5=597 AND 978=c5 AND 389=b5 AND e5=655 AND d5=280)
       OR (a5=556 OR 271=e5)
-;
+ORDER BY 1;
 -- 30 values hashing to a9d695a936238a5cf3d6d7ed24f3deb8
 
 -- query T valuesort
@@ -24719,7 +24719,7 @@ UNION ALL
    WHERE (a3=181 OR c3=467 OR b3=156)
       OR (542=b3)
       OR (a3=929 AND 986=c3)
-;
+ORDER BY 1;
 -- 9 values hashing to e3fd7999a1848f6fa65439823874eac4
 
 -- query T valuesort
@@ -24733,7 +24733,7 @@ UNION ALL
 EXCEPT
   SELECT c5 FROM t5
    WHERE NOT ((357=a5 AND 470=d5 AND 922=c5 AND b5=548))
-;
+ORDER BY 1;
 -- 12 values hashing to b926983a0e29d237cfc7bedf2477525e
 
 -- query T valuesort
@@ -24757,7 +24757,7 @@ UNION ALL
    WHERE (794=e6 OR c6=513 OR 734=d6)
       OR (a6=128 AND c6=480 AND d6=186)
       OR e6 in (737,154,489,808)
-;
+ORDER BY 1;
 -- 33 values hashing to 98328cfe28888e152d308c8f3d28098a
 
 -- query T valuesort
@@ -24775,7 +24775,7 @@ UNION ALL
 UNION ALL
   SELECT c8 FROM t8
    WHERE (a8=400 AND 6=b8 AND d8=197 AND e8=381)
-;
+ORDER BY 1;
 -- 27 values hashing to 527622d8d23a01833f28c6b2939368a9
 
 -- query T valuesort
@@ -24784,7 +24784,7 @@ UNION ALL
 EXCEPT
   SELECT b8 FROM t8
    WHERE NOT ((b8=878 AND c8=250 AND 341=a8))
-;
+ORDER BY 1;
 -- 150
 -- 246
 -- 85
@@ -24804,7 +24804,7 @@ UNION ALL
 EXCEPT
   SELECT c6 FROM t6
    WHERE NOT (b6 in (880,511,963,716,463,962,825))
-;
+ORDER BY 1;
 -- 12 values hashing to 287fc74a8b49018fbe43c6cf57acab91
 
 -- query T valuesort
@@ -24823,7 +24823,7 @@ EXCEPT
    WHERE NOT (b6 in (0,214,662,993,606,296,250,232,290,449,537,44,850)
            OR (210=b6 OR 967=b6 OR d6=393)
            OR (d6=35))
-;
+ORDER BY 1;
 -- 12 values hashing to 92272ec0c83354365795020d9e659fe4
 
 -- query T valuesort
@@ -24856,7 +24856,7 @@ UNION ALL
    WHERE c8 in (648,151,563,160,299,275,461,521)
       OR (c8=442 OR 486=c8)
       OR b8 in (487,992,647,952,852,184,761,244,186,405,253,397,984)
-;
+ORDER BY 1;
 -- 73 values hashing to 82eda9cd3d1ca58c68e5b3dcc0cca00a
 
 -- query T valuesort
@@ -24879,7 +24879,7 @@ EXCEPT
 EXCEPT
   SELECT d3 FROM t3
    WHERE NOT ((e3=467 AND 407=b3 AND 337=a3 AND 860=c3))
-;
+ORDER BY 1;
 -- 16 values hashing to abe609b541ccac4cf4ea7ac15a194dde
 
 -- query T valuesort
@@ -24898,7 +24898,7 @@ UNION
    WHERE b9 in (936,214,361,379,19,95,426,64,868,446,848,178,142,19)
       OR (c9=327 OR c9=327)
       OR (534=c9)
-;
+ORDER BY 1;
 -- 23 values hashing to f8149cbbd4759d87c75029f9bfef1a64
 
 -- query T valuesort
@@ -24919,7 +24919,7 @@ EXCEPT
 UNION ALL
   SELECT d4 FROM t4
    WHERE (a4=804 AND b4=357)
-;
+ORDER BY 1;
 -- 249
 -- 536
 -- 557
@@ -24961,7 +24961,7 @@ EXCEPT
   SELECT d6 FROM t6
    WHERE NOT ((768=c6 AND 211=a6)
            OR e6 in (77,431,893,469,617,95,489,353,915,274,211,574,511,946))
-;
+ORDER BY 1;
 -- 41 values hashing to f2a833f92e08b5f9e4f0495d967c06c7
 
 -- query T valuesort
@@ -24988,7 +24988,7 @@ UNION ALL
   SELECT c3 FROM t3
    WHERE (b3=302 AND c3=73)
       OR (642=d3 AND b3=595 AND a3=727)
-;
+ORDER BY 1;
 -- 102
 -- 73
 
@@ -25009,7 +25009,7 @@ UNION ALL
 UNION ALL
   SELECT a6 FROM t6
    WHERE (e6=678)
-;
+ORDER BY 1;
 -- 10 values hashing to 5edb0724131a0069ab7e40deac3179d3
 
 -- query T valuesort
@@ -25031,7 +25031,7 @@ UNION ALL
   SELECT e5 FROM t5
    WHERE d5 in (682,437,565,269,412,919,810,369,789,238,361)
       OR a5 in (882,749,626,544,297,99,319,976,413,54,24,362,69)
-;
+ORDER BY 1;
 -- 55 values hashing to 4aebaf00f7266c648a71b43b57cb6679
 
 -- query T valuesort
@@ -25044,7 +25044,7 @@ UNION ALL
    WHERE (d8=511)
       OR c8 in (260,404,544,187,998,461)
       OR (756=d8 AND e8=933)
-;
+ORDER BY 1;
 -- 29 values hashing to 880109fe3c0001eba0458dc9a8e1946e
 
 -- query T valuesort
@@ -25067,7 +25067,7 @@ UNION
   SELECT d1 FROM t1
    WHERE (281=b1 AND 628=e1 AND 221=d1 AND c1=375 AND a1=521)
       OR (a1=640 OR e1=14)
-;
+ORDER BY 1;
 -- 13 values hashing to 23713eeda999c090b77da80bc6f0b59c
 
 -- query T valuesort
@@ -25097,7 +25097,7 @@ EXCEPT
   SELECT d7 FROM t7
    WHERE NOT (b7 in (660,120,837)
            OR a7 in (691,356,114,945,136,167,277,593,865,158,806))
-;
+ORDER BY 1;
 -- 18 values hashing to b5a7ccc69bcfde2ec731c416cd586395
 
 -- query T valuesort
@@ -25113,7 +25113,7 @@ EXCEPT
    WHERE NOT (d3 in (109,149,170)
            OR (e3=459 AND 360=c3 AND 560=d3 AND 776=a3 AND b3=534)
            OR a3 in (892,101,935,697,349,364,396,275,696))
-;
+ORDER BY 1;
 -- 10 values hashing to d38129b5c45c70b4a6ac8593d265ae8e
 
 -- query T valuesort
@@ -25131,7 +25131,7 @@ UNION ALL
 UNION
   SELECT c4 FROM t4
    WHERE b4 in (288,765,748,986,184,708,289,941,925,295,319,408,538,35)
-;
+ORDER BY 1;
 -- 19 values hashing to e2ef3a95f14abfefa18a39a44cf94825
 
 -- query T valuesort
@@ -25155,7 +25155,7 @@ UNION
    WHERE (c2=148 AND 776=b2 AND e2=621)
       OR (988=c2 OR b2=276 OR a2=775)
       OR (b2=8 OR a2=268)
-;
+ORDER BY 1;
 -- 14 values hashing to 75119968ec84d0847b16565d87088a2f
 
 -- query T valuesort
@@ -25184,7 +25184,7 @@ EXCEPT
   SELECT e8 FROM t8
    WHERE NOT ((b8=155 OR d8=474)
            OR e8 in (729,811,431,608,918,260,455,411,421,586,620))
-;
+ORDER BY 1;
 -- 15 values hashing to 3a3d0207b4a76ec5ce23c7ed6349f397
 
 -- query T valuesort
@@ -25216,7 +25216,7 @@ UNION
    WHERE (e5=206)
       OR a5 in (342,267,429,342,800,536)
       OR d5 in (649,937,729,757,309)
-;
+ORDER BY 1;
 -- 25 values hashing to c46f2ffb926436f878dfdda448044ddc
 
 -- query T valuesort
@@ -25239,7 +25239,7 @@ EXCEPT
 UNION
   SELECT d4 FROM t4
    WHERE (736=d4 AND 964=c4 AND 903=b4 AND 103=e4 AND a4=386)
-;
+ORDER BY 1;
 -- 213
 -- 426
 -- 736
@@ -25269,7 +25269,7 @@ UNION
   SELECT c6 FROM t6
    WHERE (e6=345 AND d6=172 AND c6=434 AND b6=834)
       OR (469=a6 OR e6=633)
-;
+ORDER BY 1;
 -- 161
 -- 424
 -- 434
@@ -25298,7 +25298,7 @@ UNION ALL
 EXCEPT
   SELECT e4 FROM t4
    WHERE NOT (e4 in (480,816,9,37,179,35,531,252,619,592,931,257))
-;
+ORDER BY 1;
 -- 28 values hashing to 5d7d946d227ded9dc58ad37af1cb2703
 
 -- query T valuesort
@@ -25320,7 +25320,7 @@ UNION
 UNION ALL
   SELECT d9 FROM t9
    WHERE c9 in (323,764,547,836,187,419,224,288,252,732,843)
-;
+ORDER BY 1;
 -- 39 values hashing to 2c3c87bbca45f17f27ba4ca93b07fc7e
 
 -- query T valuesort
@@ -25347,7 +25347,7 @@ UNION
 UNION
   SELECT d6 FROM t6
    WHERE (e6=550 OR d6=185 OR b6=905)
-;
+ORDER BY 1;
 -- 53 values hashing to 16459627685bc07abadb31788c09b0f0
 
 -- query T valuesort
@@ -25372,7 +25372,7 @@ EXCEPT
   SELECT b5 FROM t5
    WHERE NOT ((d5=810 OR 476=a5 OR d5=495)
            OR (e5=661))
-;
+ORDER BY 1;
 -- 43 values hashing to 99a14f91e636cbfff807ccc7e34ca51d
 
 -- query T valuesort
@@ -25397,7 +25397,7 @@ UNION
    WHERE (e8=859 AND c8=332)
       OR (c8=154 OR 795=a8)
       OR b8 in (461,182,992,7,487,523,741,352,975,493,981,359)
-;
+ORDER BY 1;
 -- 20 values hashing to c4f8de2a408fde8aac88b35f670046d5
 
 -- query T valuesort
@@ -25442,7 +25442,7 @@ EXCEPT
    WHERE NOT (d5 in (779,132,238,274,742,789,155,553,401,271)
            OR (d5=991 OR b5=772 OR 413=d5)
            OR (e5=729 OR 554=e5 OR b5=855))
-;
+ORDER BY 1;
 -- 46 values hashing to 438588ec05b593cf74143d2292aa49c2
 
 -- query T valuesort
@@ -25453,7 +25453,7 @@ EXCEPT
    WHERE NOT ((974=d6 OR 534=c6 OR a6=35)
            OR a6 in (293,300,877,610,238,971,564,366,1)
            OR (367=d6 AND c6=522))
-;
+ORDER BY 1;
 -- 813
 
 -- query T valuesort
@@ -25464,7 +25464,7 @@ UNION
    WHERE c3 in (869,472,77)
       OR (480=b3 AND c3=845 AND a3=353 AND d3=375 AND e3=853)
       OR b3 in (214,127,334,558,386,124,584,339)
-;
+ORDER BY 1;
 -- 13 values hashing to 5ee58ccf47db330571f971c33ccf324b
 
 -- query T valuesort
@@ -25504,7 +25504,7 @@ UNION ALL
   SELECT d4 FROM t4
    WHERE (123=e4 AND b4=402)
       OR (40=b4 AND 950=d4)
-;
+ORDER BY 1;
 -- 56 values hashing to 620d5f5afea639214516edefb3785e81
 
 -- query T valuesort
@@ -25518,7 +25518,7 @@ EXCEPT
 UNION
   SELECT d8 FROM t8
    WHERE (a8=637 AND 228=b8 AND d8=269 AND 947=e8)
-;
+ORDER BY 1;
 -- 16 values hashing to 605bb8dafa25d87f85867cee7d26cefd
 
 -- query T valuesort
@@ -25538,7 +25538,7 @@ EXCEPT
   SELECT c7 FROM t7
    WHERE NOT ((c7=364)
            OR d7 in (28,817,777,939,324,205,225,192,956,572,114,837,199))
-;
+ORDER BY 1;
 -- 21 values hashing to 1bf1bebb21dea1d53c0f443389ad021d
 
 -- query T valuesort
@@ -25553,7 +25553,7 @@ UNION ALL
 EXCEPT
   SELECT c3 FROM t3
    WHERE NOT ((e3=260 OR 296=a3 OR 269=b3))
-;
+ORDER BY 1;
 -- 26 values hashing to 864cecc550be90b47fe8414b41dfff17
 
 -- query T valuesort
@@ -25570,7 +25570,7 @@ EXCEPT
 UNION
   SELECT d4 FROM t4
    WHERE e4 in (951,405,38,29,9,12,480,38)
-;
+ORDER BY 1;
 -- 24 values hashing to 8e5f6b73a62b780d35aa87c6424e05ca
 
 -- query T valuesort
@@ -25585,7 +25585,7 @@ UNION
    WHERE (c5=44 AND 193=b5)
       OR (598=c5 AND a5=757 AND d5=521)
       OR (601=c5 AND b5=56)
-;
+ORDER BY 1;
 -- 22 values hashing to 38f969120b6e654856150657fb054214
 
 -- query T valuesort
@@ -25596,7 +25596,7 @@ UNION ALL
   SELECT d1 FROM t1
    WHERE (b1=468 OR d1=457 OR e1=14)
       OR (d1=691)
-;
+ORDER BY 1;
 -- 25 values hashing to 8035cc4360eaa234b2407b8e77d2437f
 
 -- query T valuesort
@@ -25606,7 +25606,7 @@ UNION
   SELECT e2 FROM t2
    WHERE d2 in (790,790,332,19)
       OR e2 in (463,781,307,554,953,936,721,151)
-;
+ORDER BY 1;
 -- 13 values hashing to 621af9a9e801011bbce1474bc77b1b22
 
 -- query T valuesort
@@ -25642,7 +25642,7 @@ EXCEPT
 UNION ALL
   SELECT e7 FROM t7
    WHERE (e7=4)
-;
+ORDER BY 1;
 -- 29 values hashing to e9ad9c488697693b49c350e481a7f05d
 
 -- query T valuesort
@@ -25682,7 +25682,7 @@ UNION
    WHERE (816=b3 OR e3=87 OR 234=b3)
       OR (214=b3 OR 935=a3)
       OR e3 in (375,318,147,526,470,712,913,593,169,853,981)
-;
+ORDER BY 1;
 -- 67 values hashing to f08e84d3429e4b2332eb90d5e4521b34
 
 -- query T valuesort
@@ -25700,7 +25700,7 @@ EXCEPT
    WHERE NOT (b3 in (832,411,392,558,296,266,445,977,224,686,166,73,73,58)
            OR (a3=265 AND d3=913 AND b3=302)
            OR c3 in (651,792,963,455,711,647,339,247,701,490))
-;
+ORDER BY 1;
 -- 17 values hashing to e99fcaea7cd2152995e9407053bc4609
 
 -- query T valuesort
@@ -25729,7 +25729,7 @@ UNION ALL
    WHERE d5 in (957,32,991)
       OR e5 in (98,104,807,589,725,188,689,446,586,25,72)
       OR (921=a5 AND c5=894 AND 657=b5 AND 772=e5 AND 557=d5)
-;
+ORDER BY 1;
 -- 34 values hashing to 5d803ecf8eb5be1a6a3982ca861abefd
 
 -- query T valuesort
@@ -25759,7 +25759,7 @@ EXCEPT
   SELECT b2 FROM t2
    WHERE NOT ((508=a2 OR 217=b2 OR a2=779)
            OR (a2=495))
-;
+ORDER BY 1;
 -- 37 values hashing to 08a40e3810c0d942fca2b834e72ca482
 
 -- query T valuesort
@@ -25797,7 +25797,7 @@ UNION ALL
    WHERE c4 in (299,489,188,806,609,82,712,768,964,984,996,39,215)
       OR (a4=505 AND c4=799 AND e4=546)
       OR (e4=350)
-;
+ORDER BY 1;
 -- 31 values hashing to 3d35014dfeee5cd1cd1a560635d64dfc
 
 -- query T valuesort
@@ -25810,7 +25810,7 @@ INTERSECT
    WHERE NOT ((b1=42 OR c1=441 OR a1=371)
            OR (a1=513 AND 885=d1 AND 736=c1 AND 284=e1 AND 211=b1)
            OR (b1=310))
-;
+ORDER BY 1;
 -- 265
 -- 602
 -- 818
@@ -25838,7 +25838,7 @@ UNION
    WHERE (b6=511 OR e6=31 OR 764=a6)
       OR (d6=924 OR c6=452)
       OR (126=b6)
-;
+ORDER BY 1;
 -- 44 values hashing to cdc1807629f588dd5331306bb0740482
 
 -- query T valuesort
@@ -25863,7 +25863,7 @@ EXCEPT
 UNION ALL
   SELECT d5 FROM t5
    WHERE (d5=883 OR e5=480 OR 721=c5)
-;
+ORDER BY 1;
 -- 16 values hashing to 6328507f720925eb2e9d8c6521d937c7
 
 -- query T valuesort
@@ -25893,7 +25893,7 @@ UNION ALL
   SELECT d3 FROM t3
    WHERE (c3=40 AND a3=16 AND 487=d3 AND 28=b3)
       OR c3 in (668,467,317)
-;
+ORDER BY 1;
 -- 46 values hashing to 955162f146ef0ecf58986d6d3d7d457b
 
 -- query T valuesort
@@ -25908,7 +25908,7 @@ UNION ALL
    WHERE (c6=500 OR 801=a6 OR c6=287)
       OR (d6=560 OR e6=574 OR c6=161)
       OR (518=a6 OR a6=680 OR e6=673)
-;
+ORDER BY 1;
 -- 17 values hashing to cda6daba9f1c38d80ad92b4febeff59a
 
 -- query T valuesort
@@ -25943,7 +25943,7 @@ EXCEPT
   SELECT b4 FROM t4
    WHERE NOT ((47=c4 AND 234=a4 AND 858=e4 AND 68=b4 AND 877=d4)
            OR (c4=584))
-;
+ORDER BY 1;
 -- 29 values hashing to 31f683cdc6b37eb392a48b1a8478e006
 
 -- query T valuesort
@@ -25982,7 +25982,7 @@ UNION ALL
   SELECT b2 FROM t2
    WHERE (d2=488 AND 688=e2 AND a2=944)
       OR (d2=723 OR c2=275)
-;
+ORDER BY 1;
 -- 40 values hashing to 86d7a4a808615bcb19ba295b98dd649a
 
 -- query T valuesort
@@ -26020,7 +26020,7 @@ EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((d7=524 AND a7=350 AND 764=c7 AND 793=e7)
            OR (815=e7))
-;
+ORDER BY 1;
 -- 21 values hashing to 832fdb6dd07d2bcd82950427d509d4f3
 
 -- query T valuesort
@@ -26049,7 +26049,7 @@ EXCEPT
   SELECT d8 FROM t8
    WHERE NOT ((671=a8)
            OR (c8=683 OR 136=c8 OR 211=b8))
-;
+ORDER BY 1;
 -- 12
 -- 239
 -- 349
@@ -26072,7 +26072,7 @@ UNION ALL
 EXCEPT
   SELECT e2 FROM t2
    WHERE NOT ((b2=864 OR 268=a2 OR 818=b2))
-;
+ORDER BY 1;
 -- 31 values hashing to ae1c29cf8aee0f14cd737f9c57dc466a
 
 -- query T valuesort
@@ -26102,7 +26102,7 @@ EXCEPT
   SELECT b9 FROM t9
    WHERE NOT (d9 in (912,316,601,270,660,439,688,142)
            OR (a9=11 OR 218=a9 OR 239=b9))
-;
+ORDER BY 1;
 -- 367
 -- 516
 -- 654
@@ -26143,7 +26143,7 @@ EXCEPT
   SELECT b6 FROM t6
    WHERE NOT ((463=d6 AND a6=971)
            OR b6 in (967,6,232,276,202,993,350,601,511,0,214,583,876,716))
-;
+ORDER BY 1;
 -- 319
 -- 522
 -- 667
@@ -26190,7 +26190,7 @@ UNION
   SELECT c9 FROM t9
    WHERE e9 in (445,195,995,965)
       OR (368=e9 OR d9=732)
-;
+ORDER BY 1;
 -- 21 values hashing to e32fb86428c3f20aa504d9f14e847934
 
 -- query T valuesort
@@ -26203,7 +26203,7 @@ INTERSECT
 UNION
   SELECT a3 FROM t3
    WHERE a3 in (186,644,197,995,296,895,275,379,818,429,727)
-;
+ORDER BY 1;
 -- 11 values hashing to 02a0d162ad76abc96c568645ee24075d
 
 -- query T valuesort
@@ -26224,7 +26224,7 @@ UNION
 UNION
   SELECT b1 FROM t1
    WHERE (a1=853 OR b1=523)
-;
+ORDER BY 1;
 -- 20 values hashing to a550e915d63a409187331dadda54a72a
 
 -- query T valuesort
@@ -26244,7 +26244,7 @@ EXCEPT
   SELECT b7 FROM t7
    WHERE NOT ((878=b7 AND d7=457 AND 661=c7 AND 795=a7 AND e7=98)
            OR (d7=594))
-;
+ORDER BY 1;
 -- 651
 -- 882
 
@@ -26282,7 +26282,7 @@ UNION
   SELECT c7 FROM t7
    WHERE d7 in (526,891,594,142,134,785,781,442,114,675,722,795)
       OR b7 in (191,867,396,636,693,813,30,396,374,808,480)
-;
+ORDER BY 1;
 -- 48 values hashing to 9eee3504cd9350fa05a9437c3b6fb5c2
 
 -- query T valuesort
@@ -26298,7 +26298,7 @@ UNION ALL
   SELECT a4 FROM t4
    WHERE d4 in (706,777,364)
       OR (e4=376 OR 163=e4)
-;
+ORDER BY 1;
 -- 24 values hashing to cf5248583e074c10ccf5cd5de5105931
 
 -- query T valuesort
@@ -26334,7 +26334,7 @@ UNION ALL
    WHERE (868=c5 AND b5=393 AND 710=a5 AND 792=d5 AND 610=e5)
       OR c5 in (130,634,489,443,697,570,756,187,689,441,437,514,924)
       OR (b5=424 OR 242=a5 OR b5=336)
-;
+ORDER BY 1;
 -- 81 values hashing to 3a53b938f4b4ae58df57dda92aa74679
 
 -- query T valuesort
@@ -26360,7 +26360,7 @@ UNION ALL
   SELECT c2 FROM t2
    WHERE (714=b2 AND 251=c2)
       OR (e2=777 AND c2=150)
-;
+ORDER BY 1;
 -- 150
 -- 251
 -- 391
@@ -26403,7 +26403,7 @@ EXCEPT
    WHERE NOT ((e1=747 OR b1=283 OR 717=e1)
            OR e1 in (838,717,625,772,222,436,402,921,815,56)
            OR c1 in (864,481,486,805))
-;
+ORDER BY 1;
 -- 37 values hashing to ac2a6d6dc147eaea96959e7f1a5c71fd
 
 -- query T valuesort
@@ -26420,7 +26420,7 @@ UNION
    WHERE b8 in (992,487,394)
       OR c8 in (789,821,225,117,188,461,534,233,648,790,647,901)
       OR c8 in (321,160,273,979,705,374,93,321,762,394,799,88,789,196)
-;
+ORDER BY 1;
 -- 40 values hashing to d3bc81ba2e320179a49d4183447d7ea2
 
 -- query T valuesort
@@ -26457,7 +26457,7 @@ EXCEPT
 UNION ALL
   SELECT a7 FROM t7
    WHERE (552=e7 AND 916=a7)
-;
+ORDER BY 1;
 -- 40 values hashing to a60ed26c01d28120f1feb092f7d8c42a
 
 -- query T valuesort
@@ -26483,7 +26483,7 @@ UNION ALL
 UNION ALL
   SELECT a4 FROM t4
    WHERE (105=d4)
-;
+ORDER BY 1;
 -- 38 values hashing to 321277d6063fb07b19d71f1e86036ba5
 
 -- query T valuesort
@@ -26517,7 +26517,7 @@ EXCEPT
   SELECT a4 FROM t4
    WHERE NOT ((e4=372 OR a4=450)
            OR (a4=513))
-;
+ORDER BY 1;
 -- 150
 -- 211
 -- 255
@@ -26537,7 +26537,7 @@ EXCEPT
 UNION
   SELECT c7 FROM t7
    WHERE (e7=971 OR a7=62)
-;
+ORDER BY 1;
 -- 31 values hashing to 9b36c0ca63b5413a0d571ca6855f9234
 
 -- query T valuesort
@@ -26555,7 +26555,7 @@ UNION ALL
 EXCEPT
   SELECT e2 FROM t2
    WHERE NOT (e2 in (512,925,524,673,654,963))
-;
+ORDER BY 1;
 -- 23 values hashing to 2586988bbe7c8a76b6c87de66d414ede
 
 -- query T valuesort
@@ -26568,7 +26568,7 @@ INTERSECT
    WHERE NOT ((b7=191)
            OR (78=c7 AND a7=854 AND 939=d7)
            OR (e7=553 OR c7=257 OR 638=e7))
-;
+ORDER BY 1;
 -- 262
 -- 508
 -- 691
@@ -26613,7 +26613,7 @@ UNION ALL
 EXCEPT
   SELECT a3 FROM t3
    WHERE NOT ((c3=353 AND b3=434))
-;
+ORDER BY 1;
 -- 53 values hashing to 4a602fd9036f5f1a90b927fdeafa398f
 
 -- query T valuesort
@@ -26636,7 +26636,7 @@ UNION
    WHERE (b1=857 AND c1=379 AND d1=942)
       OR b1 in (227,420,956,853,115,569,269,42,278,944,255,674)
       OR b1 in (850,670,762,440,914,589)
-;
+ORDER BY 1;
 -- 31 values hashing to dcef4b83d4a0efe42c6cd4f06314777a
 
 -- query T valuesort
@@ -26656,7 +26656,7 @@ UNION
   SELECT d6 FROM t6
    WHERE d6 in (600,463,578,590,428,855,151,991,66,36,797)
       OR (946=e6 AND 585=a6 AND c6=308 AND b6=378 AND 901=d6)
-;
+ORDER BY 1;
 -- 13 values hashing to c2304ef02005ea21db5fa00cd7ff69e5
 
 -- query T valuesort
@@ -26686,7 +26686,7 @@ UNION ALL
   SELECT d3 FROM t3
    WHERE (e3=823 AND d3=662 AND 788=a3 AND 334=b3 AND c3=243)
       OR (192=e3 OR 560=a3)
-;
+ORDER BY 1;
 -- 11 values hashing to c37f4fa70e811aa29f8d96fed521c741
 
 -- query T valuesort
@@ -26712,7 +26712,7 @@ UNION ALL
    WHERE b1 in (525,254,584,26,944,523,213,132,563,43,255,857,853,350)
       OR (732=e1 AND 446=b1 AND d1=323)
       OR (d1=215)
-;
+ORDER BY 1;
 -- 18 values hashing to f7a61fc7b8d046d8eacfcc4e94b831fd
 
 -- query T valuesort
@@ -26735,7 +26735,7 @@ UNION ALL
   SELECT e3 FROM t3
    WHERE (76=b3 AND c3=80 AND 600=e3)
       OR (355=b3)
-;
+ORDER BY 1;
 -- 34 values hashing to 38145e7acc71c6d32c9ef025f0dcc717
 
 -- query T valuesort
@@ -26768,7 +26768,7 @@ EXCEPT
    WHERE NOT ((761=d8)
            OR (640=b8 AND d8=682 AND 942=e8 AND 541=c8)
            OR e8 in (463,859,476,646,221))
-;
+ORDER BY 1;
 -- 23 values hashing to 4045a09ddf58b5df9fe19c3840fa3bac
 
 -- query T valuesort
@@ -26808,7 +26808,7 @@ EXCEPT
   SELECT c4 FROM t4
    WHERE NOT (e4 in (349,123,677,491)
            OR (e4=438 OR c4=84))
-;
+ORDER BY 1;
 -- 28 values hashing to 42279c66fe84a92432cbaeec5f73bb8d
 
 -- query T valuesort
@@ -26837,7 +26837,7 @@ EXCEPT
 UNION
   SELECT d4 FROM t4
    WHERE (290=e4 AND d4=317 AND 778=a4 AND 587=b4)
-;
+ORDER BY 1;
 -- 14 values hashing to 5d3db96e8989632f29e40ae1f232f5d9
 
 -- query T valuesort
@@ -26846,7 +26846,7 @@ UNION
 INTERSECT
   SELECT c1 FROM t1
    WHERE NOT ((787=c1 OR d1=274))
-;
+ORDER BY 1;
 
 -- query T valuesort
   SELECT b9 FROM t9
@@ -26882,7 +26882,7 @@ EXCEPT
    WHERE NOT ((e6=431)
            OR d6 in (974,337,467)
            OR (b6=974 AND 564=a6))
-;
+ORDER BY 1;
 -- 41 values hashing to 0bd4a8b628cbcba4e08032ed5a724a5b
 
 -- query T valuesort
@@ -26917,7 +26917,7 @@ UNION ALL
   SELECT c6 FROM t6
    WHERE (34=d6 AND 84=c6)
       OR d6 in (797,446,277,366,689,560,453,852,151,197)
-;
+ORDER BY 1;
 -- 51 values hashing to 1592e08c559b402e6f5106b523390ce7
 
 -- query T valuesort
@@ -26931,7 +26931,7 @@ EXCEPT
   SELECT d1 FROM t1
    WHERE NOT ((762=c1)
            OR (d1=254 AND 552=a1 AND c1=629 AND b1=310))
-;
+ORDER BY 1;
 -- 23 values hashing to b4c9dc32c6f5af7ba749121e6e49a4ea
 
 -- query T valuesort
@@ -26942,7 +26942,7 @@ UNION
    WHERE (821=a6)
       OR e6 in (946,737,840)
       OR d6 in (469,424,674,807,405,711,974,974,192,869,970,991)
-;
+ORDER BY 1;
 -- 28 values hashing to ad5440a6e3b946b0aee911b4c7c5da2d
 
 -- query T valuesort
@@ -26970,7 +26970,7 @@ UNION ALL
    WHERE (352=a1 AND 523=b1 AND 816=e1)
       OR c1 in (530,172,915,177,168,531)
       OR (267=a1)
-;
+ORDER BY 1;
 -- 9 values hashing to 95e3c4b9c11661c5b188b389f58ce979
 
 -- query T valuesort
@@ -27001,7 +27001,7 @@ EXCEPT
   SELECT b9 FROM t9
    WHERE NOT (c9 in (87,272,836,288,734,811,60,905,547,601,98,992)
            OR (301=b9 AND 349=a9))
-;
+ORDER BY 1;
 -- 16 values hashing to 1bf0db59ff45657900b31732948cfdee
 
 -- query II rowsort join0
@@ -27009,7 +27009,7 @@ SELECT e3+491, a7
   FROM t3, t7
  WHERE a3 in (637,591,710,644)
    AND e7=280
-;
+ORDER BY 1,2;
 -- 1298
 -- 894
 -- 638
@@ -27024,7 +27024,7 @@ SELECT e3+491, a7
   FROM t7, t3
  WHERE a3 in (637,591,710,644)
    AND e7=280
-;
+ORDER BY 1,2;
 -- 1298
 -- 894
 -- 638
@@ -27039,7 +27039,7 @@ SELECT e3+491, a7
   FROM t3, t7
  WHERE e7=280
    AND a3 in (637,591,710,644)
-;
+ORDER BY 1,2;
 -- 1298
 -- 894
 -- 638
@@ -27054,7 +27054,7 @@ SELECT e3+491, a7
   FROM t7, t3
  WHERE e7=280
    AND a3 in (637,591,710,644)
-;
+ORDER BY 1,2;
 -- 1298
 -- 894
 -- 638
@@ -27070,7 +27070,7 @@ SELECT b7, d5+18+d5, c2
  WHERE c5=733
    AND a2 in (336,268,304,574,980)
    AND 460=e7
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to dae220d54c5b90910cefa98781a9d006
 
 -- query III rowsort join1
@@ -27079,7 +27079,7 @@ SELECT b7, d5+18+d5, c2
  WHERE a2 in (336,268,304,574,980)
    AND c5=733
    AND 460=e7
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to dae220d54c5b90910cefa98781a9d006
 
 -- query III rowsort join1
@@ -27088,7 +27088,7 @@ SELECT b7, d5+18+d5, c2
  WHERE c5=733
    AND 460=e7
    AND a2 in (336,268,304,574,980)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to dae220d54c5b90910cefa98781a9d006
 
 -- query III rowsort join1
@@ -27097,7 +27097,7 @@ SELECT b7, d5+18+d5, c2
  WHERE 460=e7
    AND a2 in (336,268,304,574,980)
    AND c5=733
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to dae220d54c5b90910cefa98781a9d006
 
 -- query TT rowsort join2
@@ -27105,7 +27105,7 @@ SELECT x7, x6
   FROM t6, t7
  WHERE e7=506
    AND 269=d6
-;
+ORDER BY 1,2;
 -- table tn7 row 51
 -- table tn6 row 17
 
@@ -27114,7 +27114,7 @@ SELECT x7, x6
   FROM t7, t6
  WHERE e7=506
    AND 269=d6
-;
+ORDER BY 1,2;
 -- table tn7 row 51
 -- table tn6 row 17
 
@@ -27123,7 +27123,7 @@ SELECT x7, x6
   FROM t7, t6
  WHERE 269=d6
    AND e7=506
-;
+ORDER BY 1,2;
 -- table tn7 row 51
 -- table tn6 row 17
 
@@ -27132,7 +27132,7 @@ SELECT x7, x6
   FROM t6, t7
  WHERE 269=d6
    AND e7=506
-;
+ORDER BY 1,2;
 -- table tn7 row 51
 -- table tn6 row 17
 
@@ -27144,7 +27144,7 @@ SELECT b2, d6, b9*398, c1, e3*353+b9
    AND a3=b9
    AND c9=688
    AND a1=d9
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 3f0bc2a1ad4729886d99681904129d71
 
 -- query IIIII rowsort join3
@@ -27155,7 +27155,7 @@ SELECT b2, d6, b9*398, c1, e3*353+b9
    AND c9=688
    AND 488=d2
    AND a1=d9
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 3f0bc2a1ad4729886d99681904129d71
 
 -- query IIIII rowsort join3
@@ -27166,7 +27166,7 @@ SELECT b2, d6, b9*398, c1, e3*353+b9
    AND a1=d9
    AND c9=688
    AND a3=b9
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 3f0bc2a1ad4729886d99681904129d71
 
 -- query IIIII rowsort join3
@@ -27177,7 +27177,7 @@ SELECT b2, d6, b9*398, c1, e3*353+b9
    AND c9=688
    AND a3=b9
    AND d6 in (885,924,457,578,786,664)
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 3f0bc2a1ad4729886d99681904129d71
 
 -- query III rowsort join4
@@ -27186,7 +27186,7 @@ SELECT d3+805+a3, d1+426, d2
  WHERE 395=a1
    AND 913=a3
    AND c2 in (283,810,823,582,233,878,411)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to f0b6d842c479cba040f7b497f18d8a8e
 
 -- query III rowsort join4
@@ -27195,7 +27195,7 @@ SELECT d3+805+a3, d1+426, d2
  WHERE 395=a1
    AND 913=a3
    AND c2 in (283,810,823,582,233,878,411)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to f0b6d842c479cba040f7b497f18d8a8e
 
 -- query III rowsort join4
@@ -27204,7 +27204,7 @@ SELECT d3+805+a3, d1+426, d2
  WHERE 913=a3
    AND c2 in (283,810,823,582,233,878,411)
    AND 395=a1
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to f0b6d842c479cba040f7b497f18d8a8e
 
 -- query III rowsort join4
@@ -27213,7 +27213,7 @@ SELECT d3+805+a3, d1+426, d2
  WHERE c2 in (283,810,823,582,233,878,411)
    AND 913=a3
    AND 395=a1
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to f0b6d842c479cba040f7b497f18d8a8e
 
 -- query IIIIIT rowsort join5
@@ -27225,7 +27225,7 @@ SELECT a3, a2, e1, a9+b9, e4*658+b1, x8
    AND b4 in (408,261,877,33)
    AND e8 in (874,329,487,242,533,56,203,893)
    AND a1 in (380,992,32,189,338,358,161,538)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 576 values hashing to c789dacd971282b5b5ae05dea9f4dd1b
 
 -- query IIIIIT rowsort join5
@@ -27237,7 +27237,7 @@ SELECT a3, a2, e1, a9+b9, e4*658+b1, x8
    AND a3=e1
    AND (e9=245 OR 35=e9 OR 799=e9)
    AND a1 in (380,992,32,189,338,358,161,538)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 576 values hashing to c789dacd971282b5b5ae05dea9f4dd1b
 
 -- query IIIIIT rowsort join5
@@ -27249,7 +27249,7 @@ SELECT a3, a2, e1, a9+b9, e4*658+b1, x8
    AND a1 in (380,992,32,189,338,358,161,538)
    AND e8 in (874,329,487,242,533,56,203,893)
    AND a3=e1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 576 values hashing to c789dacd971282b5b5ae05dea9f4dd1b
 
 -- query IIIIIT rowsort join5
@@ -27261,7 +27261,7 @@ SELECT a3, a2, e1, a9+b9, e4*658+b1, x8
    AND c2=374
    AND (e9=245 OR 35=e9 OR 799=e9)
    AND b4 in (408,261,877,33)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 576 values hashing to c789dacd971282b5b5ae05dea9f4dd1b
 
 -- query II rowsort join6
@@ -27269,7 +27269,7 @@ SELECT d3, c2
   FROM t3, t2
  WHERE a3 in (349,162,576,98,5,376,476,341)
    AND a2=c3
-;
+ORDER BY 1,2;
 -- 701
 -- 711
 -- 944
@@ -27280,7 +27280,7 @@ SELECT d3, c2
   FROM t3, t2
  WHERE a2=c3
    AND a3 in (349,162,576,98,5,376,476,341)
-;
+ORDER BY 1,2;
 -- 701
 -- 711
 -- 944
@@ -27291,7 +27291,7 @@ SELECT d3, c2
   FROM t2, t3
  WHERE a2=c3
    AND a3 in (349,162,576,98,5,376,476,341)
-;
+ORDER BY 1,2;
 -- 701
 -- 711
 -- 944
@@ -27302,7 +27302,7 @@ SELECT d3, c2
   FROM t2, t3
  WHERE a3 in (349,162,576,98,5,376,476,341)
    AND a2=c3
-;
+ORDER BY 1,2;
 -- 701
 -- 711
 -- 944
@@ -27314,7 +27314,7 @@ SELECT x7, x2, a9+792
  WHERE 643=c9
    AND e2=692
    AND e7 in (89,587,851,168,503)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 39b7d37f63cc92191f43997ed9f1e1fe
 
 -- query TTI rowsort join7
@@ -27323,7 +27323,7 @@ SELECT x7, x2, a9+792
  WHERE e7 in (89,587,851,168,503)
    AND 643=c9
    AND e2=692
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 39b7d37f63cc92191f43997ed9f1e1fe
 
 -- query TTI rowsort join7
@@ -27332,7 +27332,7 @@ SELECT x7, x2, a9+792
  WHERE 643=c9
    AND e7 in (89,587,851,168,503)
    AND e2=692
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 39b7d37f63cc92191f43997ed9f1e1fe
 
 -- query III rowsort join8
@@ -27341,7 +27341,7 @@ SELECT d4, e3+b4, e6
  WHERE d6=424
    AND a3=190
    AND 476=b4
-;
+ORDER BY 1,2,3;
 -- 303
 -- 851
 -- 225
@@ -27352,7 +27352,7 @@ SELECT d4, e3+b4, e6
  WHERE d6=424
    AND a3=190
    AND 476=b4
-;
+ORDER BY 1,2,3;
 -- 303
 -- 851
 -- 225
@@ -27363,7 +27363,7 @@ SELECT d4, e3+b4, e6
  WHERE 476=b4
    AND a3=190
    AND d6=424
-;
+ORDER BY 1,2,3;
 -- 303
 -- 851
 -- 225
@@ -27374,7 +27374,7 @@ SELECT d4, e3+b4, e6
  WHERE d6=424
    AND a3=190
    AND 476=b4
-;
+ORDER BY 1,2,3;
 -- 303
 -- 851
 -- 225
@@ -27385,7 +27385,7 @@ SELECT x2, e4*388, d3
  WHERE 579=b4
    AND 284=d2
    AND (644=a3 OR a3=197)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 7d74dedfbfe43b9281ce6465c3b4a997
 
 -- query TII rowsort join9
@@ -27394,7 +27394,7 @@ SELECT x2, e4*388, d3
  WHERE (644=a3 OR a3=197)
    AND 284=d2
    AND 579=b4
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 7d74dedfbfe43b9281ce6465c3b4a997
 
 -- query TII rowsort join9
@@ -27403,7 +27403,7 @@ SELECT x2, e4*388, d3
  WHERE 579=b4
    AND 284=d2
    AND (644=a3 OR a3=197)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 7d74dedfbfe43b9281ce6465c3b4a997
 
 -- query TII rowsort join9
@@ -27412,7 +27412,7 @@ SELECT x2, e4*388, d3
  WHERE (644=a3 OR a3=197)
    AND 284=d2
    AND 579=b4
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 7d74dedfbfe43b9281ce6465c3b4a997
 
 -- query IIITII rowsort join10
@@ -27424,7 +27424,7 @@ SELECT d1*631, a4+637+a1, a8, x6, c2, e3
    AND (a3=490 OR a3=697)
    AND (114=b4 OR b4=802)
    AND a1=553
-;
+ORDER BY 1,2,3,4,5,6;
 -- 7560 values hashing to 4ea5f1efff695a63e2d1be8d9b4978cf
 
 -- query IIITII rowsort join10
@@ -27436,7 +27436,7 @@ SELECT d1*631, a4+637+a1, a8, x6, c2, e3
    AND a1=553
    AND a2 in (651,814,709,445,863)
    AND (a3=490 OR a3=697)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 7560 values hashing to 4ea5f1efff695a63e2d1be8d9b4978cf
 
 -- query IIITII rowsort join10
@@ -27448,7 +27448,7 @@ SELECT d1*631, a4+637+a1, a8, x6, c2, e3
    AND a2 in (651,814,709,445,863)
    AND d6 in (729,729,924,807,458,956)
    AND (114=b4 OR b4=802)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 7560 values hashing to 4ea5f1efff695a63e2d1be8d9b4978cf
 
 -- query IIITII rowsort join10
@@ -27460,7 +27460,7 @@ SELECT d1*631, a4+637+a1, a8, x6, c2, e3
    AND d6 in (729,729,924,807,458,956)
    AND (114=b4 OR b4=802)
    AND (a3=490 OR a3=697)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 7560 values hashing to 4ea5f1efff695a63e2d1be8d9b4978cf
 
 -- query ITIII rowsort join11
@@ -27471,7 +27471,7 @@ SELECT e2+569, x6, c8, c7+737, d3
    AND a3=729
    AND d6=a3
    AND e7 in (851,975,900,319,976)
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 47f3d7a6b0e18302dedf1f1c936d8e0c
 
 -- query ITIII rowsort join11
@@ -27482,7 +27482,7 @@ SELECT e2+569, x6, c8, c7+737, d3
    AND (e8=349 OR e8=859 OR e8=944)
    AND e7 in (851,975,900,319,976)
    AND (a2=324 OR a2=680 OR 588=a2 OR a2=415)
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 47f3d7a6b0e18302dedf1f1c936d8e0c
 
 -- query ITIII rowsort join11
@@ -27493,7 +27493,7 @@ SELECT e2+569, x6, c8, c7+737, d3
    AND a3=729
    AND e7 in (851,975,900,319,976)
    AND d6=a3
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 47f3d7a6b0e18302dedf1f1c936d8e0c
 
 -- query ITIII rowsort join11
@@ -27504,7 +27504,7 @@ SELECT e2+569, x6, c8, c7+737, d3
    AND a3=729
    AND d6=a3
    AND (a2=324 OR a2=680 OR 588=a2 OR a2=415)
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 47f3d7a6b0e18302dedf1f1c936d8e0c
 
 -- query IITIIII rowsort join12
@@ -27517,7 +27517,7 @@ SELECT e4, a8+11+c7, x2, c7*208, a1+e2, a6, b5+297
    AND e7 in (197,929,976,89,904,183,624)
    AND c5 in (442,805,825)
    AND b4=295
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 983713d7c610bf1e56b81accf7bee4f3
 
 -- query IITIIII rowsort join12
@@ -27530,7 +27530,7 @@ SELECT e4, a8+11+c7, x2, c7*208, a1+e2, a6, b5+297
    AND 349=e8
    AND c5 in (442,805,825)
    AND a1=179
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 983713d7c610bf1e56b81accf7bee4f3
 
 -- query IITIIII rowsort join12
@@ -27543,7 +27543,7 @@ SELECT e4, a8+11+c7, x2, c7*208, a1+e2, a6, b5+297
    AND (186=d6 OR 885=d6 OR 822=d6 OR 473=d6)
    AND (c2=337 OR c2=806)
    AND a1=179
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 983713d7c610bf1e56b81accf7bee4f3
 
 -- query IITIIII rowsort join12
@@ -27556,7 +27556,7 @@ SELECT e4, a8+11+c7, x2, c7*208, a1+e2, a6, b5+297
    AND b4=295
    AND (c2=337 OR c2=806)
    AND (186=d6 OR 885=d6 OR 822=d6 OR 473=d6)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 983713d7c610bf1e56b81accf7bee4f3
 
 -- query II rowsort join13
@@ -27564,7 +27564,7 @@ SELECT e5, d1+856
   FROM t5, t1
  WHERE c5 in (187,442,723)
    AND 249=a1
-;
+ORDER BY 1,2;
 -- 104
 -- 1517
 -- 68
@@ -27577,7 +27577,7 @@ SELECT e5, d1+856
   FROM t5, t1
  WHERE 249=a1
    AND c5 in (187,442,723)
-;
+ORDER BY 1,2;
 -- 104
 -- 1517
 -- 68
@@ -27590,7 +27590,7 @@ SELECT e5, d1+856
   FROM t1, t5
  WHERE 249=a1
    AND c5 in (187,442,723)
-;
+ORDER BY 1,2;
 -- 104
 -- 1517
 -- 68
@@ -27606,7 +27606,7 @@ SELECT c5+277, e4+c9, b9+671+c1, a1+c4, x6
    AND 729=c5
    AND d6 in (489,822,852,674,729,35,778,578)
    AND d9 in (450,332,808,464,694,665,55,899)
-;
+ORDER BY 1,2,3,4,5;
 -- 6480 values hashing to dca42c811fc0000ebb3371ca18dec5ee
 
 -- query IIIIT rowsort join14
@@ -27617,7 +27617,7 @@ SELECT c5+277, e4+c9, b9+671+c1, a1+c4, x6
    AND d6 in (489,822,852,674,729,35,778,578)
    AND 729=c5
    AND (a1=776 OR 668=a1 OR 280=a1)
-;
+ORDER BY 1,2,3,4,5;
 -- 6480 values hashing to dca42c811fc0000ebb3371ca18dec5ee
 
 -- query IIIIT rowsort join14
@@ -27628,7 +27628,7 @@ SELECT c5+277, e4+c9, b9+671+c1, a1+c4, x6
    AND (a1=776 OR 668=a1 OR 280=a1)
    AND b4 in (826,877,476,765,733)
    AND 729=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 6480 values hashing to dca42c811fc0000ebb3371ca18dec5ee
 
 -- query IIIIT rowsort join14
@@ -27639,7 +27639,7 @@ SELECT c5+277, e4+c9, b9+671+c1, a1+c4, x6
    AND b4 in (826,877,476,765,733)
    AND d9 in (450,332,808,464,694,665,55,899)
    AND (a1=776 OR 668=a1 OR 280=a1)
-;
+ORDER BY 1,2,3,4,5;
 -- 6480 values hashing to dca42c811fc0000ebb3371ca18dec5ee
 
 -- query IT rowsort join15
@@ -27647,7 +27647,7 @@ SELECT c3*366, x4
   FROM t3, t4
  WHERE (947=a3 OR a3=145 OR a3=637 OR a3=892)
    AND b4=986
-;
+ORDER BY 1,2;
 -- 109434
 -- table tn4 row 83
 -- 174216
@@ -27662,7 +27662,7 @@ SELECT c3*366, x4
   FROM t4, t3
  WHERE b4=986
    AND (947=a3 OR a3=145 OR a3=637 OR a3=892)
-;
+ORDER BY 1,2;
 -- 109434
 -- table tn4 row 83
 -- 174216
@@ -27677,7 +27677,7 @@ SELECT c3*366, x4
   FROM t3, t4
  WHERE b4=986
    AND (947=a3 OR a3=145 OR a3=637 OR a3=892)
-;
+ORDER BY 1,2;
 -- 109434
 -- table tn4 row 83
 -- 174216
@@ -27696,7 +27696,7 @@ SELECT b9*644+c9, x8, x5, a1*796, x3, e4*628
    AND 337=a3
    AND b4=901
    AND c5=c9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 42 values hashing to 342eb5e8a8cf34b5985d9d877058cf6e
 
 -- query ITTITI rowsort join16
@@ -27708,7 +27708,7 @@ SELECT b9*644+c9, x8, x5, a1*796, x3, e4*628
    AND a1 in (864,544,637,553,451,640)
    AND 337=a3
    AND a9 in (847,757,919,953)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 42 values hashing to 342eb5e8a8cf34b5985d9d877058cf6e
 
 -- query ITTITI rowsort join16
@@ -27720,7 +27720,7 @@ SELECT b9*644+c9, x8, x5, a1*796, x3, e4*628
    AND c5=c9
    AND a1 in (864,544,637,553,451,640)
    AND 337=a3
-;
+ORDER BY 1,2,3,4,5,6;
 -- 42 values hashing to 342eb5e8a8cf34b5985d9d877058cf6e
 
 -- query ITTITI rowsort join16
@@ -27732,7 +27732,7 @@ SELECT b9*644+c9, x8, x5, a1*796, x3, e4*628
    AND c5=c9
    AND a9 in (847,757,919,953)
    AND a1 in (864,544,637,553,451,640)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 42 values hashing to 342eb5e8a8cf34b5985d9d877058cf6e
 
 -- query IIIIITI rowsort join17
@@ -27745,7 +27745,7 @@ SELECT b2, e3, c4, b1+994, d9*370, x6, e7
    AND a3 in (777,184,899,500,729,197,710,186)
    AND a1 in (170,825,810,637,283)
    AND (824=a9 OR a9=335 OR 660=a9)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 18144 values hashing to 371f43aa4c56525a1d865561aad1a84c
 
 -- query IIIIITI rowsort join17
@@ -27758,7 +27758,7 @@ SELECT b2, e3, c4, b1+994, d9*370, x6, e7
    AND b4 in (847,816,907,323,627,260,765)
    AND e7=929
    AND a1 in (170,825,810,637,283)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 18144 values hashing to 371f43aa4c56525a1d865561aad1a84c
 
 -- query IIIIITI rowsort join17
@@ -27771,7 +27771,7 @@ SELECT b2, e3, c4, b1+994, d9*370, x6, e7
    AND b4 in (847,816,907,323,627,260,765)
    AND (824=a9 OR a9=335 OR 660=a9)
    AND a1 in (170,825,810,637,283)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 18144 values hashing to 371f43aa4c56525a1d865561aad1a84c
 
 -- query IIIIITI rowsort join17
@@ -27784,7 +27784,7 @@ SELECT b2, e3, c4, b1+994, d9*370, x6, e7
    AND 933=c2
    AND (824=a9 OR a9=335 OR 660=a9)
    AND a1 in (170,825,810,637,283)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 18144 values hashing to 371f43aa4c56525a1d865561aad1a84c
 
 -- query III rowsort join18
@@ -27793,7 +27793,7 @@ SELECT e8+d8, d2*558+b2, c4*409
  WHERE e8=792
    AND 498=b4
    AND d2=488
-;
+ORDER BY 1,2,3;
 -- 1119
 -- 272397
 -- 272803
@@ -27804,7 +27804,7 @@ SELECT e8+d8, d2*558+b2, c4*409
  WHERE d2=488
    AND e8=792
    AND 498=b4
-;
+ORDER BY 1,2,3;
 -- 1119
 -- 272397
 -- 272803
@@ -27815,7 +27815,7 @@ SELECT e8+d8, d2*558+b2, c4*409
  WHERE 498=b4
    AND e8=792
    AND d2=488
-;
+ORDER BY 1,2,3;
 -- 1119
 -- 272397
 -- 272803
@@ -27826,7 +27826,7 @@ SELECT e8+d8, d2*558+b2, c4*409
  WHERE 498=b4
    AND d2=488
    AND e8=792
-;
+ORDER BY 1,2,3;
 -- 1119
 -- 272397
 -- 272803
@@ -27839,7 +27839,7 @@ SELECT x3, e1, x8, c9, b5+935
    AND e8=a9
    AND a3 in (198,872,16,457,244,964,836)
    AND 352=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to af3ba9d35ca371bfa3a56853ddd97161
 
 -- query TITII rowsort join19
@@ -27850,7 +27850,7 @@ SELECT x3, e1, x8, c9, b5+935
    AND 352=a1
    AND a3 in (198,872,16,457,244,964,836)
    AND b9 in (19,171,103,239,864)
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to af3ba9d35ca371bfa3a56853ddd97161
 
 -- query TITII rowsort join19
@@ -27861,7 +27861,7 @@ SELECT x3, e1, x8, c9, b5+935
    AND a3 in (198,872,16,457,244,964,836)
    AND 72=c5
    AND 352=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to af3ba9d35ca371bfa3a56853ddd97161
 
 -- query TITII rowsort join19
@@ -27872,7 +27872,7 @@ SELECT x3, e1, x8, c9, b5+935
    AND b9 in (19,171,103,239,864)
    AND e8=a9
    AND 352=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to af3ba9d35ca371bfa3a56853ddd97161
 
 -- query II rowsort join20
@@ -27880,7 +27880,7 @@ SELECT e9, a5+37
   FROM t5, t9
  WHERE (e9=19 OR 845=e9 OR 278=e9)
    AND c5=585
-;
+ORDER BY 1,2;
 -- 19
 -- 376
 -- 19
@@ -27895,7 +27895,7 @@ SELECT e9, a5+37
   FROM t9, t5
  WHERE (e9=19 OR 845=e9 OR 278=e9)
    AND c5=585
-;
+ORDER BY 1,2;
 -- 19
 -- 376
 -- 19
@@ -27910,7 +27910,7 @@ SELECT e9, a5+37
   FROM t5, t9
  WHERE c5=585
    AND (e9=19 OR 845=e9 OR 278=e9)
-;
+ORDER BY 1,2;
 -- 19
 -- 376
 -- 19
@@ -27925,7 +27925,7 @@ SELECT d6*383, b8
   FROM t6, t8
  WHERE e8 in (846,736,22,476,349,242,7)
    AND d6 in (778,822,867,66)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 627e316660dcbd6bae4ced947acf80d8
 
 -- query II rowsort join21
@@ -27933,7 +27933,7 @@ SELECT d6*383, b8
   FROM t8, t6
  WHERE e8 in (846,736,22,476,349,242,7)
    AND d6 in (778,822,867,66)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 627e316660dcbd6bae4ced947acf80d8
 
 -- query II rowsort join21
@@ -27941,7 +27941,7 @@ SELECT d6*383, b8
   FROM t6, t8
  WHERE d6 in (778,822,867,66)
    AND e8 in (846,736,22,476,349,242,7)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 627e316660dcbd6bae4ced947acf80d8
 
 -- query II rowsort join22
@@ -27949,7 +27949,7 @@ SELECT e5, b2*474
   FROM t2, t5
  WHERE 428=e2
    AND 147=c5
-;
+ORDER BY 1,2;
 -- 12 values hashing to d82a71c91b7fcb0a3165fb049b7faabe
 
 -- query II rowsort join22
@@ -27957,7 +27957,7 @@ SELECT e5, b2*474
   FROM t5, t2
  WHERE 428=e2
    AND 147=c5
-;
+ORDER BY 1,2;
 -- 12 values hashing to d82a71c91b7fcb0a3165fb049b7faabe
 
 -- query II rowsort join22
@@ -27965,7 +27965,7 @@ SELECT e5, b2*474
   FROM t5, t2
  WHERE 147=c5
    AND 428=e2
-;
+ORDER BY 1,2;
 -- 12 values hashing to d82a71c91b7fcb0a3165fb049b7faabe
 
 -- query III rowsort join23
@@ -27974,7 +27974,7 @@ SELECT c5, a1, e4*501
  WHERE b4=267
    AND c5 in (50,185,733,585)
    AND a1 in (371,622,283)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 66468e00b798ae09c1259a25dfb6bff1
 
 -- query III rowsort join23
@@ -27983,7 +27983,7 @@ SELECT c5, a1, e4*501
  WHERE b4=267
    AND a1 in (371,622,283)
    AND c5 in (50,185,733,585)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 66468e00b798ae09c1259a25dfb6bff1
 
 -- query III rowsort join23
@@ -27992,7 +27992,7 @@ SELECT c5, a1, e4*501
  WHERE b4=267
    AND a1 in (371,622,283)
    AND c5 in (50,185,733,585)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 66468e00b798ae09c1259a25dfb6bff1
 
 -- query III rowsort join23
@@ -28001,7 +28001,7 @@ SELECT c5, a1, e4*501
  WHERE a1 in (371,622,283)
    AND c5 in (50,185,733,585)
    AND b4=267
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 66468e00b798ae09c1259a25dfb6bff1
 
 -- query ITI rowsort join24
@@ -28010,7 +28010,7 @@ SELECT a2*628+b1, x1, c5
  WHERE (696=c5 OR c5=799 OR c5=152)
    AND 148=c2
    AND a1 in (109,4,702,868,825,294)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to bfa32593ba8495f62e9e74359e2aba03
 
 -- query ITI rowsort join24
@@ -28019,7 +28019,7 @@ SELECT a2*628+b1, x1, c5
  WHERE a1 in (109,4,702,868,825,294)
    AND (696=c5 OR c5=799 OR c5=152)
    AND 148=c2
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to bfa32593ba8495f62e9e74359e2aba03
 
 -- query ITI rowsort join24
@@ -28028,7 +28028,7 @@ SELECT a2*628+b1, x1, c5
  WHERE (696=c5 OR c5=799 OR c5=152)
    AND a1 in (109,4,702,868,825,294)
    AND 148=c2
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to bfa32593ba8495f62e9e74359e2aba03
 
 -- query ITI rowsort join24
@@ -28037,7 +28037,7 @@ SELECT a2*628+b1, x1, c5
  WHERE (696=c5 OR c5=799 OR c5=152)
    AND a1 in (109,4,702,868,825,294)
    AND 148=c2
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to bfa32593ba8495f62e9e74359e2aba03
 
 -- query IIIII rowsort join25
@@ -28048,7 +28048,7 @@ SELECT a9+c4, b4+124+d8, c3, d8+558, d1
    AND e8 in (792,14,646)
    AND 729=a3
    AND a1 in (622,380,862,52,640,776,268,536)
-;
+ORDER BY 1,2,3,4,5;
 -- 5670 values hashing to 79a362a92bfe33c39023ad993f1ef0b9
 
 -- query IIIII rowsort join25
@@ -28059,7 +28059,7 @@ SELECT a9+c4, b4+124+d8, c3, d8+558, d1
    AND b4 in (532,593,289,476,749,35,816)
    AND e8 in (792,14,646)
    AND a1 in (622,380,862,52,640,776,268,536)
-;
+ORDER BY 1,2,3,4,5;
 -- 5670 values hashing to 79a362a92bfe33c39023ad993f1ef0b9
 
 -- query IIIII rowsort join25
@@ -28070,7 +28070,7 @@ SELECT a9+c4, b4+124+d8, c3, d8+558, d1
    AND d9 in (808,662,597,682,628,568)
    AND a1 in (622,380,862,52,640,776,268,536)
    AND e8 in (792,14,646)
-;
+ORDER BY 1,2,3,4,5;
 -- 5670 values hashing to 79a362a92bfe33c39023ad993f1ef0b9
 
 -- query IIIII rowsort join25
@@ -28081,7 +28081,7 @@ SELECT a9+c4, b4+124+d8, c3, d8+558, d1
    AND d9 in (808,662,597,682,628,568)
    AND b4 in (532,593,289,476,749,35,816)
    AND a1 in (622,380,862,52,640,776,268,536)
-;
+ORDER BY 1,2,3,4,5;
 -- 5670 values hashing to 79a362a92bfe33c39023ad993f1ef0b9
 
 -- query II rowsort join26
@@ -28089,7 +28089,7 @@ SELECT d7+e7, d6+b7
   FROM t7, t6
  WHERE e7=d6
    AND d6 in (172,428,993,674,846,613,405)
-;
+ORDER BY 1,2;
 -- 1410
 -- 749
 
@@ -28098,7 +28098,7 @@ SELECT d7+e7, d6+b7
   FROM t7, t6
  WHERE d6 in (172,428,993,674,846,613,405)
    AND e7=d6
-;
+ORDER BY 1,2;
 -- 1410
 -- 749
 
@@ -28107,7 +28107,7 @@ SELECT d7+e7, d6+b7
   FROM t6, t7
  WHERE e7=d6
    AND d6 in (172,428,993,674,846,613,405)
-;
+ORDER BY 1,2;
 -- 1410
 -- 749
 
@@ -28116,7 +28116,7 @@ SELECT d7+e7, d6+b7
   FROM t6, t7
  WHERE d6 in (172,428,993,674,846,613,405)
    AND e7=d6
-;
+ORDER BY 1,2;
 -- 1410
 -- 749
 
@@ -28130,7 +28130,7 @@ SELECT x4, d6*132, d1+d7, x3, x9, b7, b5+287+b1
    AND 935=a3
    AND (e7=955 OR e7=562)
    AND 286=b4
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28 values hashing to d7ae101369432434e7d9c031ea6a8885
 
 -- query TIITTII rowsort join27
@@ -28143,7 +28143,7 @@ SELECT x4, d6*132, d1+d7, x3, x9, b7, b5+287+b1
    AND a1=d9
    AND (d6=822 OR 822=d6)
    AND 286=b4
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28 values hashing to d7ae101369432434e7d9c031ea6a8885
 
 -- query TIITTII rowsort join27
@@ -28156,7 +28156,7 @@ SELECT x4, d6*132, d1+d7, x3, x9, b7, b5+287+b1
    AND 286=b4
    AND a1=d9
    AND c5=922
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28 values hashing to d7ae101369432434e7d9c031ea6a8885
 
 -- query TIITTII rowsort join27
@@ -28169,7 +28169,7 @@ SELECT x4, d6*132, d1+d7, x3, x9, b7, b5+287+b1
    AND d9 in (23,855,960,316,679)
    AND c5=922
    AND (e7=955 OR e7=562)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28 values hashing to d7ae101369432434e7d9c031ea6a8885
 
 -- query IIT rowsort join28
@@ -28178,7 +28178,7 @@ SELECT c5, e8*970, x7
  WHERE e7 in (103,595,988,92,979,234)
    AND (310=e8 OR 63=e8 OR 22=e8)
    AND c5=668
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 37e16c11ef4ffca43f86999a22cf5b76
 
 -- query IIT rowsort join28
@@ -28187,7 +28187,7 @@ SELECT c5, e8*970, x7
  WHERE (310=e8 OR 63=e8 OR 22=e8)
    AND e7 in (103,595,988,92,979,234)
    AND c5=668
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 37e16c11ef4ffca43f86999a22cf5b76
 
 -- query IIT rowsort join28
@@ -28196,7 +28196,7 @@ SELECT c5, e8*970, x7
  WHERE c5=668
    AND (310=e8 OR 63=e8 OR 22=e8)
    AND e7 in (103,595,988,92,979,234)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 37e16c11ef4ffca43f86999a22cf5b76
 
 -- query IIT rowsort join28
@@ -28205,7 +28205,7 @@ SELECT c5, e8*970, x7
  WHERE e7 in (103,595,988,92,979,234)
    AND (310=e8 OR 63=e8 OR 22=e8)
    AND c5=668
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 37e16c11ef4ffca43f86999a22cf5b76
 
 -- query III rowsort join29
@@ -28214,7 +28214,7 @@ SELECT b1, e4+c4, d5
  WHERE 152=c5
    AND b4=c1
    AND a1 in (538,629,637,776)
-;
+ORDER BY 1,2,3;
 -- 213
 -- 1064
 -- 437
@@ -28225,7 +28225,7 @@ SELECT b1, e4+c4, d5
  WHERE a1 in (538,629,637,776)
    AND b4=c1
    AND 152=c5
-;
+ORDER BY 1,2,3;
 -- 213
 -- 1064
 -- 437
@@ -28236,7 +28236,7 @@ SELECT b1, e4+c4, d5
  WHERE b4=c1
    AND a1 in (538,629,637,776)
    AND 152=c5
-;
+ORDER BY 1,2,3;
 -- 213
 -- 1064
 -- 437
@@ -28247,7 +28247,7 @@ SELECT a5+416, d9, b7
  WHERE e7 in (156,319,945,122,197,587,689)
    AND c5 in (927,437,187)
    AND 145=d9
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 94b390650a4034740651fc3a9d5e4113
 
 -- query III rowsort join30
@@ -28256,7 +28256,7 @@ SELECT a5+416, d9, b7
  WHERE c5 in (927,437,187)
    AND 145=d9
    AND e7 in (156,319,945,122,197,587,689)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 94b390650a4034740651fc3a9d5e4113
 
 -- query III rowsort join30
@@ -28265,7 +28265,7 @@ SELECT a5+416, d9, b7
  WHERE e7 in (156,319,945,122,197,587,689)
    AND 145=d9
    AND c5 in (927,437,187)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 94b390650a4034740651fc3a9d5e4113
 
 -- query III rowsort join30
@@ -28274,7 +28274,7 @@ SELECT a5+416, d9, b7
  WHERE e7 in (156,319,945,122,197,587,689)
    AND c5 in (927,437,187)
    AND 145=d9
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 94b390650a4034740651fc3a9d5e4113
 
 -- query ITI rowsort join31
@@ -28283,7 +28283,7 @@ SELECT b7, x2, d9
  WHERE e2 in (302,953,808,753,242,445)
    AND d9=681
    AND (e7=156 OR e7=979 OR 508=e7 OR e7=553)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to c4cae2d282742c8870f9cec70e533d53
 
 -- query ITI rowsort join31
@@ -28292,7 +28292,7 @@ SELECT b7, x2, d9
  WHERE d9=681
    AND (e7=156 OR e7=979 OR 508=e7 OR e7=553)
    AND e2 in (302,953,808,753,242,445)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to c4cae2d282742c8870f9cec70e533d53
 
 -- query ITI rowsort join31
@@ -28301,7 +28301,7 @@ SELECT b7, x2, d9
  WHERE (e7=156 OR e7=979 OR 508=e7 OR e7=553)
    AND e2 in (302,953,808,753,242,445)
    AND d9=681
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to c4cae2d282742c8870f9cec70e533d53
 
 -- query ITI rowsort join31
@@ -28310,7 +28310,7 @@ SELECT b7, x2, d9
  WHERE e2 in (302,953,808,753,242,445)
    AND (e7=156 OR e7=979 OR 508=e7 OR e7=553)
    AND d9=681
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to c4cae2d282742c8870f9cec70e533d53
 
 -- query IIII rowsort join32
@@ -28320,7 +28320,7 @@ SELECT e9*178, d2+e8, c8, b1
    AND a1 in (492,988,314)
    AND b9=b2
    AND (d2=844 OR d2=914 OR 760=d2 OR 743=d2)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 2ace4c29fe1f460660251bd87e8a5c03
 
 -- query IIII rowsort join32
@@ -28330,7 +28330,7 @@ SELECT e9*178, d2+e8, c8, b1
    AND a1 in (492,988,314)
    AND (d2=844 OR d2=914 OR 760=d2 OR 743=d2)
    AND b9=b2
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 2ace4c29fe1f460660251bd87e8a5c03
 
 -- query IIII rowsort join32
@@ -28340,7 +28340,7 @@ SELECT e9*178, d2+e8, c8, b1
    AND e8 in (586,38,846,422,431,918,811,44)
    AND (d2=844 OR d2=914 OR 760=d2 OR 743=d2)
    AND a1 in (492,988,314)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 2ace4c29fe1f460660251bd87e8a5c03
 
 -- query IIII rowsort join32
@@ -28350,7 +28350,7 @@ SELECT e9*178, d2+e8, c8, b1
    AND a1 in (492,988,314)
    AND e8 in (586,38,846,422,431,918,811,44)
    AND (d2=844 OR d2=914 OR 760=d2 OR 743=d2)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 2ace4c29fe1f460660251bd87e8a5c03
 
 -- query III rowsort join33
@@ -28359,7 +28359,7 @@ SELECT b4+b5, b5, e9+580
  WHERE b4=587
    AND 844=c5
    AND 799=e9
-;
+ORDER BY 1,2,3;
 -- 1071
 -- 484
 -- 1379
@@ -28370,7 +28370,7 @@ SELECT b4+b5, b5, e9+580
  WHERE 844=c5
    AND 799=e9
    AND b4=587
-;
+ORDER BY 1,2,3;
 -- 1071
 -- 484
 -- 1379
@@ -28381,7 +28381,7 @@ SELECT b4+b5, b5, e9+580
  WHERE 799=e9
    AND 844=c5
    AND b4=587
-;
+ORDER BY 1,2,3;
 -- 1071
 -- 484
 -- 1379
@@ -28392,7 +28392,7 @@ SELECT b4+b5, b5, e9+580
  WHERE b4=587
    AND 844=c5
    AND 799=e9
-;
+ORDER BY 1,2,3;
 -- 1071
 -- 484
 -- 1379
@@ -28407,7 +28407,7 @@ SELECT b1+611+d1, c8, a6+c2, e4, d2, x9, e5+d6
    AND d6 in (2,901,161,929,393,711,151)
    AND (362=d2 OR 931=d2 OR d2=488 OR d2=723)
    AND 109=a1
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 29ce5b1a1dc4771cf7e5ccb7dc46a5d0
 
 -- query IIIIITI rowsort join34
@@ -28420,7 +28420,7 @@ SELECT b1+611+d1, c8, a6+c2, e4, d2, x9, e5+d6
    AND 608=b4
    AND 109=a1
    AND (618=d9 OR d9=720)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 29ce5b1a1dc4771cf7e5ccb7dc46a5d0
 
 -- query IIIIITI rowsort join34
@@ -28433,7 +28433,7 @@ SELECT b1+611+d1, c8, a6+c2, e4, d2, x9, e5+d6
    AND c5 in (625,222,747)
    AND d6 in (2,901,161,929,393,711,151)
    AND 109=a1
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 29ce5b1a1dc4771cf7e5ccb7dc46a5d0
 
 -- query IIIIITI rowsort join34
@@ -28446,7 +28446,7 @@ SELECT b1+611+d1, c8, a6+c2, e4, d2, x9, e5+d6
    AND c5 in (625,222,747)
    AND 109=a1
    AND (618=d9 OR d9=720)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1680 values hashing to 29ce5b1a1dc4771cf7e5ccb7dc46a5d0
 
 -- query II rowsort join35
@@ -28454,7 +28454,7 @@ SELECT b4, b2+433+c4
   FROM t2, t4
  WHERE b4=735
    AND a2=b4
-;
+ORDER BY 1,2;
 -- 735
 -- 1426
 
@@ -28463,7 +28463,7 @@ SELECT b4, b2+433+c4
   FROM t4, t2
  WHERE a2=b4
    AND b4=735
-;
+ORDER BY 1,2;
 -- 735
 -- 1426
 
@@ -28472,7 +28472,7 @@ SELECT b4, b2+433+c4
   FROM t4, t2
  WHERE b4=735
    AND a2=b4
-;
+ORDER BY 1,2;
 -- 735
 -- 1426
 
@@ -28482,7 +28482,7 @@ SELECT e7, c8+454, b9+459+a7
  WHERE c9=d8
    AND (e7=31 OR 7=e7 OR e7=436)
    AND e8 in (918,38,933,64,792)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 9e51632d82d54f07c67aefde1c7ae0a8
 
 -- query III rowsort join36
@@ -28491,7 +28491,7 @@ SELECT e7, c8+454, b9+459+a7
  WHERE (e7=31 OR 7=e7 OR e7=436)
    AND c9=d8
    AND e8 in (918,38,933,64,792)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 9e51632d82d54f07c67aefde1c7ae0a8
 
 -- query III rowsort join36
@@ -28500,7 +28500,7 @@ SELECT e7, c8+454, b9+459+a7
  WHERE c9=d8
    AND e8 in (918,38,933,64,792)
    AND (e7=31 OR 7=e7 OR e7=436)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 9e51632d82d54f07c67aefde1c7ae0a8
 
 -- query II rowsort join37
@@ -28508,7 +28508,7 @@ SELECT c4, d5+e4
   FROM t4, t5
  WHERE b4=295
    AND c5 in (293,649,37,149,734,147)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 3a69b1c38ff100382fdb37160aaab538
 
 -- query II rowsort join37
@@ -28516,7 +28516,7 @@ SELECT c4, d5+e4
   FROM t5, t4
  WHERE c5 in (293,649,37,149,734,147)
    AND b4=295
-;
+ORDER BY 1,2;
 -- 16 values hashing to 3a69b1c38ff100382fdb37160aaab538
 
 -- query II rowsort join37
@@ -28524,7 +28524,7 @@ SELECT c4, d5+e4
   FROM t4, t5
  WHERE c5 in (293,649,37,149,734,147)
    AND b4=295
-;
+ORDER BY 1,2;
 -- 16 values hashing to 3a69b1c38ff100382fdb37160aaab538
 
 -- query II rowsort join37
@@ -28532,7 +28532,7 @@ SELECT c4, d5+e4
   FROM t5, t4
  WHERE b4=295
    AND c5 in (293,649,37,149,734,147)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 3a69b1c38ff100382fdb37160aaab538
 
 -- query TII rowsort join38
@@ -28541,7 +28541,7 @@ SELECT x5, d2*650+c2, a7
  WHERE c5 in (721,941,299,723,442,681,613)
    AND 760=d2
    AND (e7=590 OR e7=522 OR e7=31 OR e7=291)
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 379b6dcad26e74ab95e9252895a583c8
 
 -- query TII rowsort join38
@@ -28550,7 +28550,7 @@ SELECT x5, d2*650+c2, a7
  WHERE (e7=590 OR e7=522 OR e7=31 OR e7=291)
    AND c5 in (721,941,299,723,442,681,613)
    AND 760=d2
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 379b6dcad26e74ab95e9252895a583c8
 
 -- query TII rowsort join38
@@ -28559,7 +28559,7 @@ SELECT x5, d2*650+c2, a7
  WHERE c5 in (721,941,299,723,442,681,613)
    AND 760=d2
    AND (e7=590 OR e7=522 OR e7=31 OR e7=291)
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 379b6dcad26e74ab95e9252895a583c8
 
 -- query TII rowsort join38
@@ -28568,7 +28568,7 @@ SELECT x5, d2*650+c2, a7
  WHERE (e7=590 OR e7=522 OR e7=31 OR e7=291)
    AND c5 in (721,941,299,723,442,681,613)
    AND 760=d2
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 379b6dcad26e74ab95e9252895a583c8
 
 -- query TI rowsort join39
@@ -28576,7 +28576,7 @@ SELECT x1, d9
   FROM t1, t9
  WHERE 281=a1
    AND c9=232
-;
+ORDER BY 1,2;
 -- table tn1 row 86
 -- 283
 
@@ -28585,7 +28585,7 @@ SELECT x1, d9
   FROM t9, t1
  WHERE c9=232
    AND 281=a1
-;
+ORDER BY 1,2;
 -- table tn1 row 86
 -- 283
 
@@ -28594,7 +28594,7 @@ SELECT x1, d9
   FROM t1, t9
  WHERE c9=232
    AND 281=a1
-;
+ORDER BY 1,2;
 -- table tn1 row 86
 -- 283
 
@@ -28603,7 +28603,7 @@ SELECT c2*543+d2, d6+19
   FROM t2, t6
  WHERE b2 in (292,779,501,846,264)
    AND d6=129
-;
+ORDER BY 1,2;
 -- 12 values hashing to aac67e211487cfbbc89920e6f280875d
 
 -- query II rowsort join40
@@ -28611,7 +28611,7 @@ SELECT c2*543+d2, d6+19
   FROM t2, t6
  WHERE d6=129
    AND b2 in (292,779,501,846,264)
-;
+ORDER BY 1,2;
 -- 12 values hashing to aac67e211487cfbbc89920e6f280875d
 
 -- query II rowsort join40
@@ -28619,7 +28619,7 @@ SELECT c2*543+d2, d6+19
   FROM t6, t2
  WHERE b2 in (292,779,501,846,264)
    AND d6=129
-;
+ORDER BY 1,2;
 -- 12 values hashing to aac67e211487cfbbc89920e6f280875d
 
 -- query IITI rowsort join41
@@ -28629,7 +28629,7 @@ SELECT d4, b7, x8, c6*47
    AND 476=e8
    AND d6=185
    AND e7 in (248,254,638,290,689,27,841)
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 9bd4e7c9a5989df25f92978e5ab99d8d
 
 -- query IITI rowsort join41
@@ -28639,7 +28639,7 @@ SELECT d4, b7, x8, c6*47
    AND e7 in (248,254,638,290,689,27,841)
    AND 476=e8
    AND (b4=735 OR 721=b4)
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 9bd4e7c9a5989df25f92978e5ab99d8d
 
 -- query IITI rowsort join41
@@ -28649,7 +28649,7 @@ SELECT d4, b7, x8, c6*47
    AND 476=e8
    AND d6=185
    AND e7 in (248,254,638,290,689,27,841)
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 9bd4e7c9a5989df25f92978e5ab99d8d
 
 -- query IITI rowsort join41
@@ -28659,7 +28659,7 @@ SELECT d4, b7, x8, c6*47
    AND 476=e8
    AND (b4=735 OR 721=b4)
    AND d6=185
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 9bd4e7c9a5989df25f92978e5ab99d8d
 
 -- query IIIIII rowsort join42
@@ -28671,7 +28671,7 @@ SELECT e1+908+c5, a7*505+b6, e5, e6+864, a9*77, d4
    AND e7 in (844,183,506,884)
    AND (b4=175 OR b4=964)
    AND c5 in (915,797,797,384,844,485,672)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 40320 values hashing to 9bb911072df6d6bd732beb5afc8c6924
 
 -- query IIIIII rowsort join42
@@ -28683,7 +28683,7 @@ SELECT e1+908+c5, a7*505+b6, e5, e6+864, a9*77, d4
    AND e9 in (149,549,737)
    AND c5 in (915,797,797,384,844,485,672)
    AND (324=a1 OR a1=668 OR 61=a1 OR 195=a1)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 40320 values hashing to 9bb911072df6d6bd732beb5afc8c6924
 
 -- query IIIIII rowsort join42
@@ -28695,7 +28695,7 @@ SELECT e1+908+c5, a7*505+b6, e5, e6+864, a9*77, d4
    AND e7 in (844,183,506,884)
    AND (324=a1 OR a1=668 OR 61=a1 OR 195=a1)
    AND c5 in (915,797,797,384,844,485,672)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 40320 values hashing to 9bb911072df6d6bd732beb5afc8c6924
 
 -- query IIIIII rowsort join42
@@ -28707,7 +28707,7 @@ SELECT e1+908+c5, a7*505+b6, e5, e6+864, a9*77, d4
    AND e7 in (844,183,506,884)
    AND e9 in (149,549,737)
    AND (324=a1 OR a1=668 OR 61=a1 OR 195=a1)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 40320 values hashing to 9bb911072df6d6bd732beb5afc8c6924
 
 -- query TIIII rowsort join43
@@ -28718,7 +28718,7 @@ SELECT x1, d4+665, b9+948, a5, d6+951
    AND d6=147
    AND b9=759
    AND b4=76
-;
+ORDER BY 1,2,3,4,5;
 -- table tn1 row 38
 -- 1582
 -- 1707
@@ -28733,7 +28733,7 @@ SELECT x1, d4+665, b9+948, a5, d6+951
    AND 384=c5
    AND b9=759
    AND a1=337
-;
+ORDER BY 1,2,3,4,5;
 -- table tn1 row 38
 -- 1582
 -- 1707
@@ -28748,7 +28748,7 @@ SELECT x1, d4+665, b9+948, a5, d6+951
    AND d6=147
    AND b9=759
    AND 384=c5
-;
+ORDER BY 1,2,3,4,5;
 -- table tn1 row 38
 -- 1582
 -- 1707
@@ -28763,7 +28763,7 @@ SELECT x1, d4+665, b9+948, a5, d6+951
    AND d6=147
    AND b9=759
    AND a1=337
-;
+ORDER BY 1,2,3,4,5;
 -- table tn1 row 38
 -- 1582
 -- 1707
@@ -28776,7 +28776,7 @@ SELECT d8+161+a9, e9+389, e2*455+d9
  WHERE 440=e8
    AND d2 in (306,351,760)
    AND e9=c2
-;
+ORDER BY 1,2,3;
 -- 1160
 -- 1226
 -- 64445
@@ -28787,7 +28787,7 @@ SELECT d8+161+a9, e9+389, e2*455+d9
  WHERE e9=c2
    AND d2 in (306,351,760)
    AND 440=e8
-;
+ORDER BY 1,2,3;
 -- 1160
 -- 1226
 -- 64445
@@ -28798,7 +28798,7 @@ SELECT d8+161+a9, e9+389, e2*455+d9
  WHERE d2 in (306,351,760)
    AND 440=e8
    AND e9=c2
-;
+ORDER BY 1,2,3;
 -- 1160
 -- 1226
 -- 64445
@@ -28809,7 +28809,7 @@ SELECT d8+161+a9, e9+389, e2*455+d9
  WHERE 440=e8
    AND e9=c2
    AND d2 in (306,351,760)
-;
+ORDER BY 1,2,3;
 -- 1160
 -- 1226
 -- 64445
@@ -28819,7 +28819,7 @@ SELECT x9, e8
   FROM t9, t8
  WHERE e8=893
    AND b9=12
-;
+ORDER BY 1,2;
 -- table tn9 row 78
 -- 893
 
@@ -28828,7 +28828,7 @@ SELECT x9, e8
   FROM t8, t9
  WHERE e8=893
    AND b9=12
-;
+ORDER BY 1,2;
 -- table tn9 row 78
 -- 893
 
@@ -28837,7 +28837,7 @@ SELECT x9, e8
   FROM t9, t8
  WHERE b9=12
    AND e8=893
-;
+ORDER BY 1,2;
 -- table tn9 row 78
 -- 893
 
@@ -28849,7 +28849,7 @@ SELECT e4, a3, e6, x2, x9
    AND d6 in (463,223,2)
    AND d9 in (602,878,439,899,668)
    AND 965=e2
-;
+ORDER BY 1,2,3,4,5;
 -- 140 values hashing to 388e7bf34d92ba291d1df9f7275b3c73
 
 -- query IIITT rowsort join46
@@ -28860,7 +28860,7 @@ SELECT e4, a3, e6, x2, x9
    AND d6 in (463,223,2)
    AND 965=e2
    AND a3=d9
-;
+ORDER BY 1,2,3,4,5;
 -- 140 values hashing to 388e7bf34d92ba291d1df9f7275b3c73
 
 -- query IIITT rowsort join46
@@ -28871,7 +28871,7 @@ SELECT e4, a3, e6, x2, x9
    AND d6 in (463,223,2)
    AND a3=d9
    AND d9 in (602,878,439,899,668)
-;
+ORDER BY 1,2,3,4,5;
 -- 140 values hashing to 388e7bf34d92ba291d1df9f7275b3c73
 
 -- query IIITT rowsort join46
@@ -28882,7 +28882,7 @@ SELECT e4, a3, e6, x2, x9
    AND d6 in (463,223,2)
    AND b4 in (593,919,884,551,608,627,271)
    AND 965=e2
-;
+ORDER BY 1,2,3,4,5;
 -- 140 values hashing to 388e7bf34d92ba291d1df9f7275b3c73
 
 -- query ITTII rowsort join47
@@ -28893,7 +28893,7 @@ SELECT e9*614+b2, x5, x2, a8, d6
    AND 443=c5
    AND b9 in (426,524,549,15,864,525,936)
    AND e8 in (904,442,381,792,204,635)
-;
+ORDER BY 1,2,3,4,5;
 -- 11520 values hashing to c53a0fc99a8aa1a3536e6a0052a98880
 
 -- query ITTII rowsort join47
@@ -28904,7 +28904,7 @@ SELECT e9*614+b2, x5, x2, a8, d6
    AND d6 in (21,337,942)
    AND a2 in (789,315,796,522,910,56,769,637)
    AND 443=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 11520 values hashing to c53a0fc99a8aa1a3536e6a0052a98880
 
 -- query ITTII rowsort join47
@@ -28915,7 +28915,7 @@ SELECT e9*614+b2, x5, x2, a8, d6
    AND d6 in (21,337,942)
    AND e8 in (904,442,381,792,204,635)
    AND b9 in (426,524,549,15,864,525,936)
-;
+ORDER BY 1,2,3,4,5;
 -- 11520 values hashing to c53a0fc99a8aa1a3536e6a0052a98880
 
 -- query ITTII rowsort join47
@@ -28926,7 +28926,7 @@ SELECT e9*614+b2, x5, x2, a8, d6
    AND 443=c5
    AND e8 in (904,442,381,792,204,635)
    AND a2 in (789,315,796,522,910,56,769,637)
-;
+ORDER BY 1,2,3,4,5;
 -- 11520 values hashing to c53a0fc99a8aa1a3536e6a0052a98880
 
 -- query IIII rowsort join48
@@ -28936,7 +28936,7 @@ SELECT c9, d4+791, d8+c8, a5
    AND 635=e8
    AND b9 in (171,50,900,211)
    AND b4 in (700,608,708,816,319,882)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to d3d8ce7d545de1940721059b1cba1c54
 
 -- query IIII rowsort join48
@@ -28946,7 +28946,7 @@ SELECT c9, d4+791, d8+c8, a5
    AND b9 in (171,50,900,211)
    AND 635=e8
    AND b4 in (700,608,708,816,319,882)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to d3d8ce7d545de1940721059b1cba1c54
 
 -- query IIII rowsort join48
@@ -28956,7 +28956,7 @@ SELECT c9, d4+791, d8+c8, a5
    AND b9 in (171,50,900,211)
    AND 635=e8
    AND 634=c5
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to d3d8ce7d545de1940721059b1cba1c54
 
 -- query IIII rowsort join48
@@ -28966,7 +28966,7 @@ SELECT c9, d4+791, d8+c8, a5
    AND 635=e8
    AND b4 in (700,608,708,816,319,882)
    AND b9 in (171,50,900,211)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to d3d8ce7d545de1940721059b1cba1c54
 
 -- query TI rowsort join49
@@ -28974,7 +28974,7 @@ SELECT x6, a2
   FROM t6, t2
  WHERE d6=405
    AND 441=e2
-;
+ORDER BY 1,2;
 -- table tn6 row 50
 -- 135
 
@@ -28983,7 +28983,7 @@ SELECT x6, a2
   FROM t2, t6
  WHERE 441=e2
    AND d6=405
-;
+ORDER BY 1,2;
 -- table tn6 row 50
 -- 135
 
@@ -28993,7 +28993,7 @@ SELECT e6, e8+988, c3+406+d6
  WHERE (a3=637 OR 364=a3)
    AND e8 in (864,186,729)
    AND d6=e8
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 489078539c02da045af35dfd06764393
 
 -- query III rowsort join50
@@ -29002,7 +29002,7 @@ SELECT e6, e8+988, c3+406+d6
  WHERE d6=e8
    AND e8 in (864,186,729)
    AND (a3=637 OR 364=a3)
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 489078539c02da045af35dfd06764393
 
 -- query III rowsort join50
@@ -29011,7 +29011,7 @@ SELECT e6, e8+988, c3+406+d6
  WHERE e8 in (864,186,729)
    AND (a3=637 OR 364=a3)
    AND d6=e8
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 489078539c02da045af35dfd06764393
 
 -- query III rowsort join50
@@ -29020,7 +29020,7 @@ SELECT e6, e8+988, c3+406+d6
  WHERE d6=e8
    AND e8 in (864,186,729)
    AND (a3=637 OR 364=a3)
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 489078539c02da045af35dfd06764393
 
 -- query ITIIIII rowsort join51
@@ -29033,7 +29033,7 @@ SELECT a3, x2, b8, b6, d1, a5+127, a4
    AND a3=344
    AND b4 in (319,295,707,979,634,892,860,907)
    AND (463=e8 OR e8=421 OR e8=305 OR 893=e8)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 7560 values hashing to a1f9d806ef701b312530c5dddbeacf6e
 
 -- query ITIIIII rowsort join51
@@ -29046,7 +29046,7 @@ SELECT a3, x2, b8, b6, d1, a5+127, a4
    AND (463=e8 OR e8=421 OR e8=305 OR 893=e8)
    AND a3=344
    AND a1=215
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 7560 values hashing to a1f9d806ef701b312530c5dddbeacf6e
 
 -- query ITIIIII rowsort join51
@@ -29059,7 +29059,7 @@ SELECT a3, x2, b8, b6, d1, a5+127, a4
    AND a1=215
    AND (d6=453 OR d6=869 OR 172=d6)
    AND c5 in (351,437,187,766,729,443,625,485)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 7560 values hashing to a1f9d806ef701b312530c5dddbeacf6e
 
 -- query ITIIIII rowsort join51
@@ -29072,7 +29072,7 @@ SELECT a3, x2, b8, b6, d1, a5+127, a4
    AND 891=a2
    AND b4 in (319,295,707,979,634,892,860,907)
    AND c5 in (351,437,187,766,729,443,625,485)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 7560 values hashing to a1f9d806ef701b312530c5dddbeacf6e
 
 -- query III rowsort join52
@@ -29081,7 +29081,7 @@ SELECT a4, d9+682, b1+e9
  WHERE 964=b4
    AND d9 in (899,495,926,967,665)
    AND a1=b9
-;
+ORDER BY 1,2,3;
 -- 845
 -- 1347
 -- 1149
@@ -29092,7 +29092,7 @@ SELECT a4, d9+682, b1+e9
  WHERE d9 in (899,495,926,967,665)
    AND a1=b9
    AND 964=b4
-;
+ORDER BY 1,2,3;
 -- 845
 -- 1347
 -- 1149
@@ -29103,7 +29103,7 @@ SELECT a4, d9+682, b1+e9
  WHERE a1=b9
    AND d9 in (899,495,926,967,665)
    AND 964=b4
-;
+ORDER BY 1,2,3;
 -- 845
 -- 1347
 -- 1149
@@ -29114,7 +29114,7 @@ SELECT a4, d9+682, b1+e9
  WHERE 964=b4
    AND d9 in (899,495,926,967,665)
    AND a1=b9
-;
+ORDER BY 1,2,3;
 -- 845
 -- 1347
 -- 1149
@@ -29124,7 +29124,7 @@ SELECT x9, b6
   FROM t6, t9
  WHERE 161=d9
    AND d6=446
-;
+ORDER BY 1,2;
 -- table tn9 row 35
 -- 549
 -- table tn9 row 38
@@ -29135,7 +29135,7 @@ SELECT x9, b6
   FROM t6, t9
  WHERE d6=446
    AND 161=d9
-;
+ORDER BY 1,2;
 -- table tn9 row 35
 -- 549
 -- table tn9 row 38
@@ -29147,7 +29147,7 @@ SELECT a5+276+d3, a3+728, x7
  WHERE e7 in (826,782,595,561,372)
    AND a3=d7
    AND c5 in (734,924,733,579,384)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 138feeabed704c57d9737e4d1974b255
 
 -- query IIT rowsort join54
@@ -29156,7 +29156,7 @@ SELECT a5+276+d3, a3+728, x7
  WHERE e7 in (826,782,595,561,372)
    AND a3=d7
    AND c5 in (734,924,733,579,384)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 138feeabed704c57d9737e4d1974b255
 
 -- query IIT rowsort join54
@@ -29165,7 +29165,7 @@ SELECT a5+276+d3, a3+728, x7
  WHERE e7 in (826,782,595,561,372)
    AND a3=d7
    AND c5 in (734,924,733,579,384)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 138feeabed704c57d9737e4d1974b255
 
 -- query IIT rowsort join54
@@ -29174,7 +29174,7 @@ SELECT a5+276+d3, a3+728, x7
  WHERE c5 in (734,924,733,579,384)
    AND e7 in (826,782,595,561,372)
    AND a3=d7
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 138feeabed704c57d9737e4d1974b255
 
 -- query IIIIT rowsort join55
@@ -29185,7 +29185,7 @@ SELECT a8, a6+e3, d7, a3, x5
    AND 720=a3
    AND (d6=446 OR d6=473 OR d6=458)
    AND (c5=485 OR c5=989)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 3400d35e04154e4695e1fd51414641af
 
 -- query IIIIT rowsort join55
@@ -29196,7 +29196,7 @@ SELECT a8, a6+e3, d7, a3, x5
    AND e7=282
    AND e8=44
    AND (c5=485 OR c5=989)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 3400d35e04154e4695e1fd51414641af
 
 -- query IIIIT rowsort join55
@@ -29207,7 +29207,7 @@ SELECT a8, a6+e3, d7, a3, x5
    AND 720=a3
    AND e8=44
    AND e7=282
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 3400d35e04154e4695e1fd51414641af
 
 -- query IIIIT rowsort join55
@@ -29218,7 +29218,7 @@ SELECT a8, a6+e3, d7, a3, x5
    AND 720=a3
    AND e7=282
    AND (d6=446 OR d6=473 OR d6=458)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 3400d35e04154e4695e1fd51414641af
 
 -- query ITII rowsort join56
@@ -29228,7 +29228,7 @@ SELECT a8+c8, x2, d4+45, d3
    AND e8 in (947,469,586,919,608,635,63,874)
    AND (b4=23 OR 532=b4 OR b4=167 OR 294=b4)
    AND 851=a2
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to a158f8c3bda2ce21b975feb6229f959a
 
 -- query ITII rowsort join56
@@ -29238,7 +29238,7 @@ SELECT a8+c8, x2, d4+45, d3
    AND a3=c2
    AND (b4=23 OR 532=b4 OR b4=167 OR 294=b4)
    AND 851=a2
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to a158f8c3bda2ce21b975feb6229f959a
 
 -- query ITII rowsort join56
@@ -29248,7 +29248,7 @@ SELECT a8+c8, x2, d4+45, d3
    AND a3=c2
    AND 851=a2
    AND (b4=23 OR 532=b4 OR b4=167 OR 294=b4)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to a158f8c3bda2ce21b975feb6229f959a
 
 -- query ITII rowsort join56
@@ -29258,7 +29258,7 @@ SELECT a8+c8, x2, d4+45, d3
    AND (b4=23 OR 532=b4 OR b4=167 OR 294=b4)
    AND 851=a2
    AND e8 in (947,469,586,919,608,635,63,874)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to a158f8c3bda2ce21b975feb6229f959a
 
 -- query II rowsort join57
@@ -29266,7 +29266,7 @@ SELECT c6, d5+b6
   FROM t5, t6
  WHERE c5 in (187,941,856)
    AND d6 in (974,867,467,463,277,72,885)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 11d420dfb9cb6eb8f372791fa73f3af8
 
 -- query II rowsort join57
@@ -29274,7 +29274,7 @@ SELECT c6, d5+b6
   FROM t6, t5
  WHERE c5 in (187,941,856)
    AND d6 in (974,867,467,463,277,72,885)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 11d420dfb9cb6eb8f372791fa73f3af8
 
 -- query IIIT rowsort join58
@@ -29284,7 +29284,7 @@ SELECT c2*895, b4, b9+651, x3
    AND a9 in (273,11,982,567,450,847,830,953)
    AND d2=753
    AND b4=a9
-;
+ORDER BY 1,2,3,4;
 -- 376795
 -- 847
 -- 670
@@ -29297,7 +29297,7 @@ SELECT c2*895, b4, b9+651, x3
    AND b4=a9
    AND a3=c9
    AND d2=753
-;
+ORDER BY 1,2,3,4;
 -- 376795
 -- 847
 -- 670
@@ -29310,7 +29310,7 @@ SELECT c2*895, b4, b9+651, x3
    AND a9 in (273,11,982,567,450,847,830,953)
    AND a3=c9
    AND d2=753
-;
+ORDER BY 1,2,3,4;
 -- 376795
 -- 847
 -- 670
@@ -29323,7 +29323,7 @@ SELECT c2*895, b4, b9+651, x3
    AND b4=a9
    AND d2=753
    AND a3=c9
-;
+ORDER BY 1,2,3,4;
 -- 376795
 -- 847
 -- 670
@@ -29336,7 +29336,7 @@ SELECT e1, e6*422, e4*142, x2
    AND d6 in (161,931,974,186,561,489)
    AND b4=925
    AND 170=b2
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 8759373bf02a82a86244f1f0209050dd
 
 -- query IIIT rowsort join59
@@ -29346,7 +29346,7 @@ SELECT e1, e6*422, e4*142, x2
    AND (a1=363 OR a1=382)
    AND d6 in (161,931,974,186,561,489)
    AND 170=b2
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 8759373bf02a82a86244f1f0209050dd
 
 -- query IIIT rowsort join59
@@ -29356,7 +29356,7 @@ SELECT e1, e6*422, e4*142, x2
    AND b4=925
    AND (a1=363 OR a1=382)
    AND 170=b2
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 8759373bf02a82a86244f1f0209050dd
 
 -- query IIIT rowsort join59
@@ -29366,7 +29366,7 @@ SELECT e1, e6*422, e4*142, x2
    AND d6 in (161,931,974,186,561,489)
    AND (a1=363 OR a1=382)
    AND 170=b2
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 8759373bf02a82a86244f1f0209050dd
 
 -- query IT rowsort join60
@@ -29374,7 +29374,7 @@ SELECT b4, x6
   FROM t4, t6
  WHERE 855=d6
    AND b4 in (986,644,901)
-;
+ORDER BY 1,2;
 -- 644
 -- table tn6 row 52
 -- 901
@@ -29387,7 +29387,7 @@ SELECT b4, x6
   FROM t6, t4
  WHERE 855=d6
    AND b4 in (986,644,901)
-;
+ORDER BY 1,2;
 -- 644
 -- table tn6 row 52
 -- 901
@@ -29405,7 +29405,7 @@ SELECT b5+342+a6, d4+810+a1, c8, a1, d6+b1, c7+554, x2
    AND d6 in (590,73,34,942,970,786,21,35)
    AND a1=b2
    AND c2=a5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3528 values hashing to 17686c55fcdb2df95d628b0ad7052c5b
 
 -- query IIIIIIT rowsort join61
@@ -29418,7 +29418,7 @@ SELECT b5+342+a6, d4+810+a1, c8, a1, d6+b1, c7+554, x2
    AND e7 in (254,456,197,851,455,356,793,624)
    AND b4 in (765,593,295,849,708,917)
    AND c5 in (527,894,649,941,101,198,313)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3528 values hashing to 17686c55fcdb2df95d628b0ad7052c5b
 
 -- query IIIIIIT rowsort join61
@@ -29431,7 +29431,7 @@ SELECT b5+342+a6, d4+810+a1, c8, a1, d6+b1, c7+554, x2
    AND e7 in (254,456,197,851,455,356,793,624)
    AND c5 in (527,894,649,941,101,198,313)
    AND c2=a5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3528 values hashing to 17686c55fcdb2df95d628b0ad7052c5b
 
 -- query IIIIIIT rowsort join61
@@ -29444,7 +29444,7 @@ SELECT b5+342+a6, d4+810+a1, c8, a1, d6+b1, c7+554, x2
    AND b4 in (765,593,295,849,708,917)
    AND d6 in (590,73,34,942,970,786,21,35)
    AND c2=a5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3528 values hashing to 17686c55fcdb2df95d628b0ad7052c5b
 
 -- query IIT rowsort join62
@@ -29453,7 +29453,7 @@ SELECT c1+563, b9, x8
  WHERE e8 in (859,487,305,320)
    AND d9 in (399,646,821,161)
    AND 579=a1
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to b0c56b9e4f7a8509541a18ced12d514f
 
 -- query IIT rowsort join62
@@ -29462,7 +29462,7 @@ SELECT c1+563, b9, x8
  WHERE d9 in (399,646,821,161)
    AND e8 in (859,487,305,320)
    AND 579=a1
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to b0c56b9e4f7a8509541a18ced12d514f
 
 -- query IIT rowsort join62
@@ -29471,7 +29471,7 @@ SELECT c1+563, b9, x8
  WHERE e8 in (859,487,305,320)
    AND d9 in (399,646,821,161)
    AND 579=a1
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to b0c56b9e4f7a8509541a18ced12d514f
 
 -- query III rowsort join63
@@ -29480,7 +29480,7 @@ SELECT d9*555+e5, a5+46+d5, d3+c5
  WHERE (164=a3 OR 754=a3 OR 727=a3 OR 892=a3)
    AND c9 in (332,252,662)
    AND c5=e9
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 5eb6182e08969b247732a02e073e4c2e
 
 -- query III rowsort join63
@@ -29489,7 +29489,7 @@ SELECT d9*555+e5, a5+46+d5, d3+c5
  WHERE c9 in (332,252,662)
    AND c5=e9
    AND (164=a3 OR 754=a3 OR 727=a3 OR 892=a3)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 5eb6182e08969b247732a02e073e4c2e
 
 -- query III rowsort join63
@@ -29498,7 +29498,7 @@ SELECT d9*555+e5, a5+46+d5, d3+c5
  WHERE c5=e9
    AND (164=a3 OR 754=a3 OR 727=a3 OR 892=a3)
    AND c9 in (332,252,662)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 5eb6182e08969b247732a02e073e4c2e
 
 -- query III rowsort join63
@@ -29507,7 +29507,7 @@ SELECT d9*555+e5, a5+46+d5, d3+c5
  WHERE c5=e9
    AND c9 in (332,252,662)
    AND (164=a3 OR 754=a3 OR 727=a3 OR 892=a3)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 5eb6182e08969b247732a02e073e4c2e
 
 -- query III rowsort join64
@@ -29516,7 +29516,7 @@ SELECT d9, d5, d8
  WHERE b9 in (301,77,446,127,19,136)
    AND 175=e8
    AND (c5=729 OR 805=c5 OR 570=c5 OR c5=437)
-;
+ORDER BY 1,2,3;
 -- 84 values hashing to f91b979cb59e2919d88ca96c740665d7
 
 -- query III rowsort join64
@@ -29525,7 +29525,7 @@ SELECT d9, d5, d8
  WHERE (c5=729 OR 805=c5 OR 570=c5 OR c5=437)
    AND 175=e8
    AND b9 in (301,77,446,127,19,136)
-;
+ORDER BY 1,2,3;
 -- 84 values hashing to f91b979cb59e2919d88ca96c740665d7
 
 -- query III rowsort join64
@@ -29534,7 +29534,7 @@ SELECT d9, d5, d8
  WHERE 175=e8
    AND (c5=729 OR 805=c5 OR 570=c5 OR c5=437)
    AND b9 in (301,77,446,127,19,136)
-;
+ORDER BY 1,2,3;
 -- 84 values hashing to f91b979cb59e2919d88ca96c740665d7
 
 -- query III rowsort join64
@@ -29543,7 +29543,7 @@ SELECT d9, d5, d8
  WHERE 175=e8
    AND (c5=729 OR 805=c5 OR 570=c5 OR c5=437)
    AND b9 in (301,77,446,127,19,136)
-;
+ORDER BY 1,2,3;
 -- 84 values hashing to f91b979cb59e2919d88ca96c740665d7
 
 -- query IIII rowsort join65
@@ -29553,7 +29553,7 @@ SELECT c9+a4, e4*349, b5, b7*667
    AND 653=b4
    AND c5=c9
    AND b9 in (858,667,77,170,122,426,262)
-;
+ORDER BY 1,2,3,4;
 -- 12 values hashing to 0eecd0ef1f7dc520d22bdfd2015f602d
 
 -- query IIII rowsort join65
@@ -29563,7 +29563,7 @@ SELECT c9+a4, e4*349, b5, b7*667
    AND b9 in (858,667,77,170,122,426,262)
    AND 653=b4
    AND c5=c9
-;
+ORDER BY 1,2,3,4;
 -- 12 values hashing to 0eecd0ef1f7dc520d22bdfd2015f602d
 
 -- query IIII rowsort join65
@@ -29573,7 +29573,7 @@ SELECT c9+a4, e4*349, b5, b7*667
    AND b9 in (858,667,77,170,122,426,262)
    AND 653=b4
    AND c5=c9
-;
+ORDER BY 1,2,3,4;
 -- 12 values hashing to 0eecd0ef1f7dc520d22bdfd2015f602d
 
 -- query IIII rowsort join65
@@ -29583,7 +29583,7 @@ SELECT c9+a4, e4*349, b5, b7*667
    AND e7=553
    AND b9 in (858,667,77,170,122,426,262)
    AND c5=c9
-;
+ORDER BY 1,2,3,4;
 -- 12 values hashing to 0eecd0ef1f7dc520d22bdfd2015f602d
 
 -- query IIIII rowsort join66
@@ -29594,7 +29594,7 @@ SELECT e6+b3, e8, e3+c3, c7+986+c7, c5*40+b3
    AND 186=e8
    AND 262=a3
    AND c5 in (844,734,18,27,598,941)
-;
+ORDER BY 1,2,3,4,5;
 -- 225 values hashing to 8e57d0fa2e80dbc740f0a5081cd89f65
 
 -- query IIIII rowsort join66
@@ -29605,7 +29605,7 @@ SELECT e6+b3, e8, e3+c3, c7+986+c7, c5*40+b3
    AND 186=e8
    AND e7 in (508,291,122,841,860)
    AND 262=a3
-;
+ORDER BY 1,2,3,4,5;
 -- 225 values hashing to 8e57d0fa2e80dbc740f0a5081cd89f65
 
 -- query IIIII rowsort join66
@@ -29616,7 +29616,7 @@ SELECT e6+b3, e8, e3+c3, c7+986+c7, c5*40+b3
    AND c5 in (844,734,18,27,598,941)
    AND d6=942
    AND e7 in (508,291,122,841,860)
-;
+ORDER BY 1,2,3,4,5;
 -- 225 values hashing to 8e57d0fa2e80dbc740f0a5081cd89f65
 
 -- query IIIII rowsort join66
@@ -29627,7 +29627,7 @@ SELECT e6+b3, e8, e3+c3, c7+986+c7, c5*40+b3
    AND c5 in (844,734,18,27,598,941)
    AND 262=a3
    AND e7 in (508,291,122,841,860)
-;
+ORDER BY 1,2,3,4,5;
 -- 225 values hashing to 8e57d0fa2e80dbc740f0a5081cd89f65
 
 -- query IIIT rowsort join67
@@ -29637,7 +29637,7 @@ SELECT e3+d5, d5*793+c4, a4+c4, x2
    AND b4 in (635,849,587,608)
    AND a3 in (396,979,5,935,997,697,581)
    AND (220=c2 OR 869=c2)
-;
+ORDER BY 1,2,3,4;
 -- 2304 values hashing to a42f0e3fdc34feea4439dd04c371a9b9
 
 -- query IIIT rowsort join67
@@ -29647,7 +29647,7 @@ SELECT e3+d5, d5*793+c4, a4+c4, x2
    AND (220=c2 OR 869=c2)
    AND b4 in (635,849,587,608)
    AND c5 in (527,149,384,734,12,599,485)
-;
+ORDER BY 1,2,3,4;
 -- 2304 values hashing to a42f0e3fdc34feea4439dd04c371a9b9
 
 -- query IIIT rowsort join67
@@ -29657,7 +29657,7 @@ SELECT e3+d5, d5*793+c4, a4+c4, x2
    AND (220=c2 OR 869=c2)
    AND b4 in (635,849,587,608)
    AND a3 in (396,979,5,935,997,697,581)
-;
+ORDER BY 1,2,3,4;
 -- 2304 values hashing to a42f0e3fdc34feea4439dd04c371a9b9
 
 -- query IIIT rowsort join67
@@ -29667,7 +29667,7 @@ SELECT e3+d5, d5*793+c4, a4+c4, x2
    AND c5 in (527,149,384,734,12,599,485)
    AND (220=c2 OR 869=c2)
    AND a3 in (396,979,5,935,997,697,581)
-;
+ORDER BY 1,2,3,4;
 -- 2304 values hashing to a42f0e3fdc34feea4439dd04c371a9b9
 
 -- query II rowsort join68
@@ -29675,7 +29675,7 @@ SELECT e4, a5
   FROM t5, t4
  WHERE 602=c5
    AND 627=b4
-;
+ORDER BY 1,2;
 -- 381
 -- 513
 
@@ -29684,7 +29684,7 @@ SELECT e4, a5
   FROM t4, t5
  WHERE 627=b4
    AND 602=c5
-;
+ORDER BY 1,2;
 -- 381
 -- 513
 
@@ -29693,7 +29693,7 @@ SELECT e4, a5
   FROM t4, t5
  WHERE 602=c5
    AND 627=b4
-;
+ORDER BY 1,2;
 -- 381
 -- 513
 
@@ -29702,7 +29702,7 @@ SELECT d7+d7, e4
   FROM t4, t7
  WHERE 901=b4
    AND (816=e7 OR e7=929 OR 688=e7 OR 301=e7)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 29480f8db5d8a6662da1a40fba108d63
 
 -- query II rowsort join69
@@ -29710,7 +29710,7 @@ SELECT d7+d7, e4
   FROM t4, t7
  WHERE (816=e7 OR e7=929 OR 688=e7 OR 301=e7)
    AND 901=b4
-;
+ORDER BY 1,2;
 -- 12 values hashing to 29480f8db5d8a6662da1a40fba108d63
 
 -- query II rowsort join69
@@ -29718,7 +29718,7 @@ SELECT d7+d7, e4
   FROM t7, t4
  WHERE 901=b4
    AND (816=e7 OR e7=929 OR 688=e7 OR 301=e7)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 29480f8db5d8a6662da1a40fba108d63
 
 -- query III rowsort join70
@@ -29727,7 +29727,7 @@ SELECT c3, e5+657, b2*767+a3
  WHERE c5=27
    AND a3 in (275,105,380,513,879)
    AND c2=582
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 926104a6a34d2b521557edfac82812f6
 
 -- query III rowsort join70
@@ -29736,7 +29736,7 @@ SELECT c3, e5+657, b2*767+a3
  WHERE c2=582
    AND a3 in (275,105,380,513,879)
    AND c5=27
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 926104a6a34d2b521557edfac82812f6
 
 -- query III rowsort join70
@@ -29745,7 +29745,7 @@ SELECT c3, e5+657, b2*767+a3
  WHERE a3 in (275,105,380,513,879)
    AND c2=582
    AND c5=27
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 926104a6a34d2b521557edfac82812f6
 
 -- query III rowsort join70
@@ -29754,7 +29754,7 @@ SELECT c3, e5+657, b2*767+a3
  WHERE a3 in (275,105,380,513,879)
    AND c2=582
    AND c5=27
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 926104a6a34d2b521557edfac82812f6
 
 -- query IIIITII rowsort join71
@@ -29767,7 +29767,7 @@ SELECT e6, c8, b2, b5+919+c2, x9, a1, a7+a1
    AND c9 in (253,534,110)
    AND a1 in (215,88,820,4,584,268,147)
    AND 193=c2
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 168 values hashing to b0e220855fbc447d60cdad8277a2fbf5
 
 -- query IIIITII rowsort join71
@@ -29780,7 +29780,7 @@ SELECT e6, c8, b2, b5+919+c2, x9, a1, a7+a1
    AND a1 in (215,88,820,4,584,268,147)
    AND e7 in (552,156,103,127,782,98,688,488)
    AND d6=d7
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 168 values hashing to b0e220855fbc447d60cdad8277a2fbf5
 
 -- query IIIITII rowsort join71
@@ -29793,7 +29793,7 @@ SELECT e6, c8, b2, b5+919+c2, x9, a1, a7+a1
    AND e7 in (552,156,103,127,782,98,688,488)
    AND c9 in (253,534,110)
    AND 149=c5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 168 values hashing to b0e220855fbc447d60cdad8277a2fbf5
 
 -- query IIIITII rowsort join71
@@ -29806,7 +29806,7 @@ SELECT e6, c8, b2, b5+919+c2, x9, a1, a7+a1
    AND a1 in (215,88,820,4,584,268,147)
    AND d6=d7
    AND e7 in (552,156,103,127,782,98,688,488)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 168 values hashing to b0e220855fbc447d60cdad8277a2fbf5
 
 -- query IIIITI rowsort join72
@@ -29818,7 +29818,7 @@ SELECT b1, b6*386, d9+595+d3, d4+a4, x3, c2+706+a1
    AND a1 in (276,280,283,438,820)
    AND d6=786
    AND 638=e2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 150 values hashing to 1014def6f1bb889c7a3c55fbaad36bc3
 
 -- query IIIITI rowsort join72
@@ -29830,7 +29830,7 @@ SELECT b1, b6*386, d9+595+d3, d4+a4, x3, c2+706+a1
    AND 638=e2
    AND d6=786
    AND c9=64
-;
+ORDER BY 1,2,3,4,5,6;
 -- 150 values hashing to 1014def6f1bb889c7a3c55fbaad36bc3
 
 -- query IIIITI rowsort join72
@@ -29842,7 +29842,7 @@ SELECT b1, b6*386, d9+595+d3, d4+a4, x3, c2+706+a1
    AND c9=64
    AND d6=786
    AND a1 in (276,280,283,438,820)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 150 values hashing to 1014def6f1bb889c7a3c55fbaad36bc3
 
 -- query IIIITI rowsort join72
@@ -29854,7 +29854,7 @@ SELECT b1, b6*386, d9+595+d3, d4+a4, x3, c2+706+a1
    AND c9=64
    AND 379=b4
    AND d6=786
-;
+ORDER BY 1,2,3,4,5,6;
 -- 150 values hashing to 1014def6f1bb889c7a3c55fbaad36bc3
 
 -- query III rowsort join73
@@ -29863,7 +29863,7 @@ SELECT d2, c5, b1*285+d5
  WHERE 963=a1
    AND c5 in (313,485,721,934,756,805)
    AND c2 in (193,274,830,466,810)
-;
+ORDER BY 1,2,3;
 -- 105 values hashing to 8340c77d9ac841a5b5d629fe257a432c
 
 -- query III rowsort join73
@@ -29872,7 +29872,7 @@ SELECT d2, c5, b1*285+d5
  WHERE 963=a1
    AND c5 in (313,485,721,934,756,805)
    AND c2 in (193,274,830,466,810)
-;
+ORDER BY 1,2,3;
 -- 105 values hashing to 8340c77d9ac841a5b5d629fe257a432c
 
 -- query III rowsort join73
@@ -29881,7 +29881,7 @@ SELECT d2, c5, b1*285+d5
  WHERE c2 in (193,274,830,466,810)
    AND 963=a1
    AND c5 in (313,485,721,934,756,805)
-;
+ORDER BY 1,2,3;
 -- 105 values hashing to 8340c77d9ac841a5b5d629fe257a432c
 
 -- query III rowsort join73
@@ -29890,7 +29890,7 @@ SELECT d2, c5, b1*285+d5
  WHERE c5 in (313,485,721,934,756,805)
    AND c2 in (193,274,830,466,810)
    AND 963=a1
-;
+ORDER BY 1,2,3;
 -- 105 values hashing to 8340c77d9ac841a5b5d629fe257a432c
 
 -- query ITII rowsort join74
@@ -29900,7 +29900,7 @@ SELECT d6+257, x8, b3*536+e8, a4*605
    AND b4=267
    AND e8 in (646,947,381,63,561,811)
    AND a3=e8
-;
+ORDER BY 1,2,3,4;
 -- 838
 -- table tn8 row 22
 -- 218027
@@ -29913,7 +29913,7 @@ SELECT d6+257, x8, b3*536+e8, a4*605
    AND e8 in (646,947,381,63,561,811)
    AND d6=581
    AND b4=267
-;
+ORDER BY 1,2,3,4;
 -- 838
 -- table tn8 row 22
 -- 218027
@@ -29926,7 +29926,7 @@ SELECT d6+257, x8, b3*536+e8, a4*605
    AND e8 in (646,947,381,63,561,811)
    AND a3=e8
    AND b4=267
-;
+ORDER BY 1,2,3,4;
 -- 838
 -- table tn8 row 22
 -- 218027
@@ -29939,7 +29939,7 @@ SELECT d6+257, x8, b3*536+e8, a4*605
    AND d6=581
    AND e8 in (646,947,381,63,561,811)
    AND b4=267
-;
+ORDER BY 1,2,3,4;
 -- 838
 -- table tn8 row 22
 -- 218027
@@ -29952,7 +29952,7 @@ SELECT a1*203+a1, e3+d3, d4*811+a1, c7*779
    AND b4 in (175,289,294,389,624,33)
    AND a3 in (784,296,386,935,872,710)
    AND e7 in (79,122,976,562,955,663)
-;
+ORDER BY 1,2,3,4;
 -- 1176 values hashing to c82da494a205c26728ea548d64746ffe
 
 -- query IIII rowsort join75
@@ -29962,7 +29962,7 @@ SELECT a1*203+a1, e3+d3, d4*811+a1, c7*779
    AND e7 in (79,122,976,562,955,663)
    AND 821=a1
    AND b4 in (175,289,294,389,624,33)
-;
+ORDER BY 1,2,3,4;
 -- 1176 values hashing to c82da494a205c26728ea548d64746ffe
 
 -- query IIII rowsort join75
@@ -29972,7 +29972,7 @@ SELECT a1*203+a1, e3+d3, d4*811+a1, c7*779
    AND a3 in (784,296,386,935,872,710)
    AND e7 in (79,122,976,562,955,663)
    AND 821=a1
-;
+ORDER BY 1,2,3,4;
 -- 1176 values hashing to c82da494a205c26728ea548d64746ffe
 
 -- query IIII rowsort join75
@@ -29982,7 +29982,7 @@ SELECT a1*203+a1, e3+d3, d4*811+a1, c7*779
    AND 821=a1
    AND a3 in (784,296,386,935,872,710)
    AND b4 in (175,289,294,389,624,33)
-;
+ORDER BY 1,2,3,4;
 -- 1176 values hashing to c82da494a205c26728ea548d64746ffe
 
 -- query IIII rowsort join76
@@ -29992,7 +29992,7 @@ SELECT d8+762, a5*605, e9, c4
    AND c9=60
    AND b4=286
    AND c5 in (734,774,819,855)
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to e0315a7ce2731e3ffd5a02c45d5719c9
 
 -- query IIII rowsort join76
@@ -30002,7 +30002,7 @@ SELECT d8+762, a5*605, e9, c4
    AND c9=60
    AND e8=333
    AND b4=286
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to e0315a7ce2731e3ffd5a02c45d5719c9
 
 -- query IIII rowsort join76
@@ -30012,7 +30012,7 @@ SELECT d8+762, a5*605, e9, c4
    AND e8=333
    AND c5 in (734,774,819,855)
    AND b4=286
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to e0315a7ce2731e3ffd5a02c45d5719c9
 
 -- query IIII rowsort join76
@@ -30022,7 +30022,7 @@ SELECT d8+762, a5*605, e9, c4
    AND c5 in (734,774,819,855)
    AND b4=286
    AND c9=60
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to e0315a7ce2731e3ffd5a02c45d5719c9
 
 -- query II rowsort join77
@@ -30030,7 +30030,7 @@ SELECT c7, e4*293
   FROM t7, t4
  WHERE e7=e4
    AND b4 in (735,387,721,765,707)
-;
+ORDER BY 1,2;
 -- 249
 -- 1758
 
@@ -30039,7 +30039,7 @@ SELECT c7, e4*293
   FROM t7, t4
  WHERE b4 in (735,387,721,765,707)
    AND e7=e4
-;
+ORDER BY 1,2;
 -- 249
 -- 1758
 
@@ -30048,7 +30048,7 @@ SELECT c7, e4*293
   FROM t4, t7
  WHERE b4 in (735,387,721,765,707)
    AND e7=e4
-;
+ORDER BY 1,2;
 -- 249
 -- 1758
 
@@ -30058,7 +30058,7 @@ SELECT c9, b6, d4+595+b9
  WHERE a9 in (335,811,964,706,660)
    AND d6 in (822,66,161,453,458,786,729,970)
    AND b4=a9
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b61b3c59bc72a94fb1897174fdcaadea
 
 -- query III rowsort join78
@@ -30067,7 +30067,7 @@ SELECT c9, b6, d4+595+b9
  WHERE b4=a9
    AND d6 in (822,66,161,453,458,786,729,970)
    AND a9 in (335,811,964,706,660)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b61b3c59bc72a94fb1897174fdcaadea
 
 -- query III rowsort join78
@@ -30076,7 +30076,7 @@ SELECT c9, b6, d4+595+b9
  WHERE a9 in (335,811,964,706,660)
    AND d6 in (822,66,161,453,458,786,729,970)
    AND b4=a9
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b61b3c59bc72a94fb1897174fdcaadea
 
 -- query III rowsort join78
@@ -30085,7 +30085,7 @@ SELECT c9, b6, d4+595+b9
  WHERE d6 in (822,66,161,453,458,786,729,970)
    AND a9 in (335,811,964,706,660)
    AND b4=a9
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b61b3c59bc72a94fb1897174fdcaadea
 
 -- query IIITII rowsort join79
@@ -30097,7 +30097,7 @@ SELECT b9, b2+766, e8, x4, d1*77, c7+c9
    AND 893=e8
    AND b9 in (936,74,880,525,211,26,900,152)
    AND a2=966
-;
+ORDER BY 1,2,3,4,5,6;
 -- 672 values hashing to a314b1b60e28b607ee75aad81988ce01
 
 -- query IIITII rowsort join79
@@ -30109,7 +30109,7 @@ SELECT b9, b2+766, e8, x4, d1*77, c7+c9
    AND a2=966
    AND b9 in (936,74,880,525,211,26,900,152)
    AND e7=31
-;
+ORDER BY 1,2,3,4,5,6;
 -- 672 values hashing to a314b1b60e28b607ee75aad81988ce01
 
 -- query IIITII rowsort join79
@@ -30121,7 +30121,7 @@ SELECT b9, b2+766, e8, x4, d1*77, c7+c9
    AND b4 in (289,243,480,76,261,765)
    AND b9 in (936,74,880,525,211,26,900,152)
    AND e7=31
-;
+ORDER BY 1,2,3,4,5,6;
 -- 672 values hashing to a314b1b60e28b607ee75aad81988ce01
 
 -- query IIITII rowsort join79
@@ -30133,7 +30133,7 @@ SELECT b9, b2+766, e8, x4, d1*77, c7+c9
    AND b9 in (936,74,880,525,211,26,900,152)
    AND a2=966
    AND 893=e8
-;
+ORDER BY 1,2,3,4,5,6;
 -- 672 values hashing to a314b1b60e28b607ee75aad81988ce01
 
 -- query IT rowsort join80
@@ -30141,7 +30141,7 @@ SELECT c4, x1
   FROM t4, t1
  WHERE b4 in (644,86,733)
    AND a1 in (382,352,406,584,161,268,640)
-;
+ORDER BY 1,2;
 -- 54 values hashing to 221e571e31a6f86f8a6a3df2880a3745
 
 -- query TIIII rowsort join81
@@ -30152,7 +30152,7 @@ SELECT x3, c5*903+d7, e7*166+c4, b4, a6*866
    AND b4 in (139,319,589,289,907,33,94,627)
    AND c5=756
    AND d6 in (463,186,393,172,778)
-;
+ORDER BY 1,2,3,4,5;
 -- 3200 values hashing to 0a8afe2fdd28c81a892a1532cd1d021b
 
 -- query TIIII rowsort join81
@@ -30163,7 +30163,7 @@ SELECT x3, c5*903+d7, e7*166+c4, b4, a6*866
    AND a3 in (499,532,913,75,262,218,244)
    AND d6 in (463,186,393,172,778)
    AND e7=92
-;
+ORDER BY 1,2,3,4,5;
 -- 3200 values hashing to 0a8afe2fdd28c81a892a1532cd1d021b
 
 -- query TIIII rowsort join81
@@ -30174,7 +30174,7 @@ SELECT x3, c5*903+d7, e7*166+c4, b4, a6*866
    AND b4 in (139,319,589,289,907,33,94,627)
    AND a3 in (499,532,913,75,262,218,244)
    AND d6 in (463,186,393,172,778)
-;
+ORDER BY 1,2,3,4,5;
 -- 3200 values hashing to 0a8afe2fdd28c81a892a1532cd1d021b
 
 -- query TIIII rowsort join81
@@ -30185,7 +30185,7 @@ SELECT x3, c5*903+d7, e7*166+c4, b4, a6*866
    AND a3 in (499,532,913,75,262,218,244)
    AND d6 in (463,186,393,172,778)
    AND b4 in (139,319,589,289,907,33,94,627)
-;
+ORDER BY 1,2,3,4,5;
 -- 3200 values hashing to 0a8afe2fdd28c81a892a1532cd1d021b
 
 -- query II rowsort join82
@@ -30193,7 +30193,7 @@ SELECT a4, b3*716
   FROM t3, t4
  WHERE a3 in (549,560,5,947)
    AND b4 in (538,319,901,476,877,816,551,919)
-;
+ORDER BY 1,2;
 -- 64 values hashing to 1dad7cfb261be87c2e807a9158118c98
 
 -- query II rowsort join82
@@ -30201,7 +30201,7 @@ SELECT a4, b3*716
   FROM t4, t3
  WHERE a3 in (549,560,5,947)
    AND b4 in (538,319,901,476,877,816,551,919)
-;
+ORDER BY 1,2;
 -- 64 values hashing to 1dad7cfb261be87c2e807a9158118c98
 
 -- query II rowsort join82
@@ -30209,7 +30209,7 @@ SELECT a4, b3*716
   FROM t3, t4
  WHERE b4 in (538,319,901,476,877,816,551,919)
    AND a3 in (549,560,5,947)
-;
+ORDER BY 1,2;
 -- 64 values hashing to 1dad7cfb261be87c2e807a9158118c98
 
 -- query ITTIIII rowsort join83
@@ -30222,7 +30222,7 @@ SELECT b1+941, x7, x9, d2*252, b4, d8+b9, a3+803+e1
    AND a9=273
    AND c2=318
    AND a1 in (213,637,249)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 588 values hashing to f66a947e009c05b192cbc71aecd55e32
 
 -- query ITTIIII rowsort join83
@@ -30235,7 +30235,7 @@ SELECT b1+941, x7, x9, d2*252, b4, d8+b9, a3+803+e1
    AND a3=822
    AND a9=273
    AND e7 in (884,280,7,39,988,168,688)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 588 values hashing to f66a947e009c05b192cbc71aecd55e32
 
 -- query ITTIIII rowsort join83
@@ -30248,7 +30248,7 @@ SELECT b1+941, x7, x9, d2*252, b4, d8+b9, a3+803+e1
    AND a3=822
    AND a1 in (213,637,249)
    AND a9=273
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 588 values hashing to f66a947e009c05b192cbc71aecd55e32
 
 -- query ITTIIII rowsort join83
@@ -30261,7 +30261,7 @@ SELECT b1+941, x7, x9, d2*252, b4, d8+b9, a3+803+e1
    AND a1 in (213,637,249)
    AND e7 in (884,280,7,39,988,168,688)
    AND b4 in (331,434,802)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 588 values hashing to f66a947e009c05b192cbc71aecd55e32
 
 -- query TI rowsort join84
@@ -30269,7 +30269,7 @@ SELECT x3, e7+b3
   FROM t7, t3
  WHERE 41=a3
    AND e7=144
-;
+ORDER BY 1,2;
 -- table tn3 row 99
 -- 608
 
@@ -30278,7 +30278,7 @@ SELECT x3, e7+b3
   FROM t3, t7
  WHERE e7=144
    AND 41=a3
-;
+ORDER BY 1,2;
 -- table tn3 row 99
 -- 608
 
@@ -30287,7 +30287,7 @@ SELECT x3, e7+b3
   FROM t7, t3
  WHERE e7=144
    AND 41=a3
-;
+ORDER BY 1,2;
 -- table tn3 row 99
 -- 608
 
@@ -30296,7 +30296,7 @@ SELECT d5+541+b5, a1+a5
   FROM t1, t5
  WHERE c5 in (628,471,422,602,585,130,3,545)
    AND a1=936
-;
+ORDER BY 1,2;
 -- 16 values hashing to 57939d44d288079efbfddbbeb99b7d64
 
 -- query II rowsort join85
@@ -30304,7 +30304,7 @@ SELECT d5+541+b5, a1+a5
   FROM t5, t1
  WHERE c5 in (628,471,422,602,585,130,3,545)
    AND a1=936
-;
+ORDER BY 1,2;
 -- 16 values hashing to 57939d44d288079efbfddbbeb99b7d64
 
 -- query II rowsort join85
@@ -30312,7 +30312,7 @@ SELECT d5+541+b5, a1+a5
   FROM t1, t5
  WHERE a1=936
    AND c5 in (628,471,422,602,585,130,3,545)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 57939d44d288079efbfddbbeb99b7d64
 
 -- query II rowsort join85
@@ -30320,7 +30320,7 @@ SELECT d5+541+b5, a1+a5
   FROM t5, t1
  WHERE a1=936
    AND c5 in (628,471,422,602,585,130,3,545)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 57939d44d288079efbfddbbeb99b7d64
 
 -- query TII rowsort join86
@@ -30329,7 +30329,7 @@ SELECT x6, a1*716, d8
  WHERE d6=a8
    AND a1 in (810,147,461,536,674,231,607,738)
    AND 617=e8
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 859b9183a2df006bc35e8f5e167885d3
 
 -- query TII rowsort join86
@@ -30338,7 +30338,7 @@ SELECT x6, a1*716, d8
  WHERE 617=e8
    AND a1 in (810,147,461,536,674,231,607,738)
    AND d6=a8
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 859b9183a2df006bc35e8f5e167885d3
 
 -- query TII rowsort join86
@@ -30347,7 +30347,7 @@ SELECT x6, a1*716, d8
  WHERE 617=e8
    AND d6=a8
    AND a1 in (810,147,461,536,674,231,607,738)
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 859b9183a2df006bc35e8f5e167885d3
 
 -- query TII rowsort join86
@@ -30356,7 +30356,7 @@ SELECT x6, a1*716, d8
  WHERE d6=a8
    AND a1 in (810,147,461,536,674,231,607,738)
    AND 617=e8
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to 859b9183a2df006bc35e8f5e167885d3
 
 -- query TII rowsort join87
@@ -30365,7 +30365,7 @@ SELECT x2, e9, e4
  WHERE b9 in (19,410,127,667,326,447)
    AND b4=267
    AND d2 in (362,448,843,80,405,306,860,198)
-;
+ORDER BY 1,2,3;
 -- 168 values hashing to af82c46b7838a2053ed7e35a56bc99de
 
 -- query TII rowsort join87
@@ -30374,7 +30374,7 @@ SELECT x2, e9, e4
  WHERE d2 in (362,448,843,80,405,306,860,198)
    AND b9 in (19,410,127,667,326,447)
    AND b4=267
-;
+ORDER BY 1,2,3;
 -- 168 values hashing to af82c46b7838a2053ed7e35a56bc99de
 
 -- query TII rowsort join87
@@ -30383,7 +30383,7 @@ SELECT x2, e9, e4
  WHERE b4=267
    AND d2 in (362,448,843,80,405,306,860,198)
    AND b9 in (19,410,127,667,326,447)
-;
+ORDER BY 1,2,3;
 -- 168 values hashing to af82c46b7838a2053ed7e35a56bc99de
 
 -- query TII rowsort join87
@@ -30392,7 +30392,7 @@ SELECT x2, e9, e4
  WHERE d2 in (362,448,843,80,405,306,860,198)
    AND b9 in (19,410,127,667,326,447)
    AND b4=267
-;
+ORDER BY 1,2,3;
 -- 168 values hashing to af82c46b7838a2053ed7e35a56bc99de
 
 -- query IIT rowsort join88
@@ -30401,7 +30401,7 @@ SELECT a8, e4+20, x2
  WHERE c2 in (346,179,46)
    AND e8=422
    AND b4 in (961,608,644,563,829,938,68)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 5ac9a9953215f51a0e1d9fae1abfa595
 
 -- query IIT rowsort join88
@@ -30410,7 +30410,7 @@ SELECT a8, e4+20, x2
  WHERE c2 in (346,179,46)
    AND e8=422
    AND b4 in (961,608,644,563,829,938,68)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 5ac9a9953215f51a0e1d9fae1abfa595
 
 -- query IIT rowsort join88
@@ -30419,7 +30419,7 @@ SELECT a8, e4+20, x2
  WHERE e8=422
    AND b4 in (961,608,644,563,829,938,68)
    AND c2 in (346,179,46)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 5ac9a9953215f51a0e1d9fae1abfa595
 
 -- query IIT rowsort join88
@@ -30428,7 +30428,7 @@ SELECT a8, e4+20, x2
  WHERE c2 in (346,179,46)
    AND e8=422
    AND b4 in (961,608,644,563,829,938,68)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 5ac9a9953215f51a0e1d9fae1abfa595
 
 -- query ITI rowsort join89
@@ -30437,7 +30437,7 @@ SELECT d5+339, x2, e9
  WHERE 149=b9
    AND (c2=793 OR c2=964 OR 511=c2)
    AND 819=c5
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 6a981dfd861496e8d58553e41c2272f1
 
 -- query ITI rowsort join89
@@ -30446,7 +30446,7 @@ SELECT d5+339, x2, e9
  WHERE 819=c5
    AND 149=b9
    AND (c2=793 OR c2=964 OR 511=c2)
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 6a981dfd861496e8d58553e41c2272f1
 
 -- query ITI rowsort join89
@@ -30455,7 +30455,7 @@ SELECT d5+339, x2, e9
  WHERE (c2=793 OR c2=964 OR 511=c2)
    AND 819=c5
    AND 149=b9
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 6a981dfd861496e8d58553e41c2272f1
 
 -- query ITI rowsort join89
@@ -30464,7 +30464,7 @@ SELECT d5+339, x2, e9
  WHERE (c2=793 OR c2=964 OR 511=c2)
    AND 149=b9
    AND 819=c5
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 6a981dfd861496e8d58553e41c2272f1
 
 -- query TITIT rowsort join90
@@ -30475,7 +30475,7 @@ SELECT x5, b9, x1, d4, x7
    AND 575=c9
    AND 250=c5
    AND 301=e7
-;
+ORDER BY 1,2,3,4,5;
 -- table tn5 row 70
 -- 289
 -- table tn1 row 27
@@ -30490,7 +30490,7 @@ SELECT x5, b9, x1, d4, x7
    AND 250=c5
    AND 575=c9
    AND a1=674
-;
+ORDER BY 1,2,3,4,5;
 -- table tn5 row 70
 -- 289
 -- table tn1 row 27
@@ -30505,7 +30505,7 @@ SELECT x5, b9, x1, d4, x7
    AND 907=b4
    AND a1=674
    AND 575=c9
-;
+ORDER BY 1,2,3,4,5;
 -- table tn5 row 70
 -- 289
 -- table tn1 row 27
@@ -30520,7 +30520,7 @@ SELECT x5, b9, x1, d4, x7
    AND a1=674
    AND 250=c5
    AND 907=b4
-;
+ORDER BY 1,2,3,4,5;
 -- table tn5 row 70
 -- 289
 -- table tn1 row 27
@@ -30532,7 +30532,7 @@ SELECT c7, a9+366
   FROM t7, t9
  WHERE e7=506
    AND c9 in (64,863,531)
-;
+ORDER BY 1,2;
 -- 14
 -- 1049
 -- 14
@@ -30545,7 +30545,7 @@ SELECT c7, a9+366
   FROM t7, t9
  WHERE c9 in (64,863,531)
    AND e7=506
-;
+ORDER BY 1,2;
 -- 14
 -- 1049
 -- 14
@@ -30558,7 +30558,7 @@ SELECT c7, a9+366
   FROM t9, t7
  WHERE c9 in (64,863,531)
    AND e7=506
-;
+ORDER BY 1,2;
 -- 14
 -- 1049
 -- 14
@@ -30574,7 +30574,7 @@ SELECT b9, e7, e6+e5, d5+c9, x2
    AND d6 in (667,36,223)
    AND 628=b2
    AND c5 in (915,922,924,196,734,37,601,820)
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to e2415886bfadbd66b117dbe17e6fd072
 
 -- query IIIIT rowsort join92
@@ -30585,7 +30585,7 @@ SELECT b9, e7, e6+e5, d5+c9, x2
    AND 628=b2
    AND d9=b7
    AND d6 in (667,36,223)
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to e2415886bfadbd66b117dbe17e6fd072
 
 -- query IIIIT rowsort join92
@@ -30596,7 +30596,7 @@ SELECT b9, e7, e6+e5, d5+c9, x2
    AND e7 in (31,456,782,455,945,688,120,455)
    AND 628=b2
    AND d6 in (667,36,223)
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to e2415886bfadbd66b117dbe17e6fd072
 
 -- query IIIIT rowsort join92
@@ -30607,7 +30607,7 @@ SELECT b9, e7, e6+e5, d5+c9, x2
    AND c5 in (915,922,924,196,734,37,601,820)
    AND d6 in (667,36,223)
    AND 628=b2
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to e2415886bfadbd66b117dbe17e6fd072
 
 -- query ITI rowsort join93
@@ -30616,7 +30616,7 @@ SELECT d6+799, x4, c5*428
  WHERE c5=894
    AND d6 in (2,197,797,822,469)
    AND 139=b4
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to ee1ab43a335f3e27207dcebe08bd6e39
 
 -- query ITI rowsort join93
@@ -30625,7 +30625,7 @@ SELECT d6+799, x4, c5*428
  WHERE d6 in (2,197,797,822,469)
    AND c5=894
    AND 139=b4
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to ee1ab43a335f3e27207dcebe08bd6e39
 
 -- query ITI rowsort join93
@@ -30634,7 +30634,7 @@ SELECT d6+799, x4, c5*428
  WHERE d6 in (2,197,797,822,469)
    AND 139=b4
    AND c5=894
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to ee1ab43a335f3e27207dcebe08bd6e39
 
 -- query ITI rowsort join93
@@ -30643,7 +30643,7 @@ SELECT d6+799, x4, c5*428
  WHERE 139=b4
    AND c5=894
    AND d6 in (2,197,797,822,469)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to ee1ab43a335f3e27207dcebe08bd6e39
 
 -- query IIII rowsort join94
@@ -30653,7 +30653,7 @@ SELECT d4, e7+58+a4, a8+674, b5+142
    AND e7=918
    AND c5 in (37,868,155,299,514)
    AND (58=b4 OR b4=434 OR 184=b4)
-;
+ORDER BY 1,2,3,4;
 -- 300 values hashing to a267b14d9f88cb0c1bb175cb14222974
 
 -- query IIII rowsort join94
@@ -30663,7 +30663,7 @@ SELECT d4, e7+58+a4, a8+674, b5+142
    AND c5 in (37,868,155,299,514)
    AND e8 in (223,579,548)
    AND (58=b4 OR b4=434 OR 184=b4)
-;
+ORDER BY 1,2,3,4;
 -- 300 values hashing to a267b14d9f88cb0c1bb175cb14222974
 
 -- query IIII rowsort join94
@@ -30673,7 +30673,7 @@ SELECT d4, e7+58+a4, a8+674, b5+142
    AND e8 in (223,579,548)
    AND e7=918
    AND (58=b4 OR b4=434 OR 184=b4)
-;
+ORDER BY 1,2,3,4;
 -- 300 values hashing to a267b14d9f88cb0c1bb175cb14222974
 
 -- query IIII rowsort join94
@@ -30683,7 +30683,7 @@ SELECT d4, e7+58+a4, a8+674, b5+142
    AND e8 in (223,579,548)
    AND (58=b4 OR b4=434 OR 184=b4)
    AND e7=918
-;
+ORDER BY 1,2,3,4;
 -- 300 values hashing to a267b14d9f88cb0c1bb175cb14222974
 
 -- query IIIT rowsort join95
@@ -30693,7 +30693,7 @@ SELECT b1*573+b1, e7+c5, b5+e7, x6
    AND d6 in (458,446,750,846,561,196)
    AND a1 in (363,895,862,742,981,810,738)
    AND c5 in (941,599,602,222)
-;
+ORDER BY 1,2,3,4;
 -- 840 values hashing to 98565528833a78f6f87f7e91820790c5
 
 -- query IIIT rowsort join95
@@ -30703,7 +30703,7 @@ SELECT b1*573+b1, e7+c5, b5+e7, x6
    AND a1 in (363,895,862,742,981,810,738)
    AND 988=e7
    AND d6 in (458,446,750,846,561,196)
-;
+ORDER BY 1,2,3,4;
 -- 840 values hashing to 98565528833a78f6f87f7e91820790c5
 
 -- query IIIT rowsort join95
@@ -30713,7 +30713,7 @@ SELECT b1*573+b1, e7+c5, b5+e7, x6
    AND c5 in (941,599,602,222)
    AND a1 in (363,895,862,742,981,810,738)
    AND 988=e7
-;
+ORDER BY 1,2,3,4;
 -- 840 values hashing to 98565528833a78f6f87f7e91820790c5
 
 -- query IIIT rowsort join95
@@ -30723,7 +30723,7 @@ SELECT b1*573+b1, e7+c5, b5+e7, x6
    AND 988=e7
    AND c5 in (941,599,602,222)
    AND d6 in (458,446,750,846,561,196)
-;
+ORDER BY 1,2,3,4;
 -- 840 values hashing to 98565528833a78f6f87f7e91820790c5
 
 -- query II rowsort join96
@@ -30731,7 +30731,7 @@ SELECT c4+a4, a7*640
   FROM t4, t7
  WHERE b4 in (903,434,289,35,2,68,114,924)
    AND e7=590
-;
+ORDER BY 1,2;
 -- 16 values hashing to 6d41d622a6ca8d3c54b8411c1b1880e4
 
 -- query II rowsort join96
@@ -30739,7 +30739,7 @@ SELECT c4+a4, a7*640
   FROM t7, t4
  WHERE e7=590
    AND b4 in (903,434,289,35,2,68,114,924)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 6d41d622a6ca8d3c54b8411c1b1880e4
 
 -- query IIII rowsort join97
@@ -30749,7 +30749,7 @@ SELECT a6, d1+892, a9, a2+b9
    AND 652=a2
    AND d6 in (186,147,590,822,578,473,489,729)
    AND a1=a9
-;
+ORDER BY 1,2,3,4;
 -- 72 values hashing to b684daad2678b14e3ce6edbf122e434a
 
 -- query IIII rowsort join97
@@ -30759,7 +30759,7 @@ SELECT a6, d1+892, a9, a2+b9
    AND 652=a2
    AND a1=a9
    AND b9 in (210,5,77,612,2,361,211)
-;
+ORDER BY 1,2,3,4;
 -- 72 values hashing to b684daad2678b14e3ce6edbf122e434a
 
 -- query IIII rowsort join97
@@ -30769,7 +30769,7 @@ SELECT a6, d1+892, a9, a2+b9
    AND d6 in (186,147,590,822,578,473,489,729)
    AND a1=a9
    AND b9 in (210,5,77,612,2,361,211)
-;
+ORDER BY 1,2,3,4;
 -- 72 values hashing to b684daad2678b14e3ce6edbf122e434a
 
 -- query II rowsort join98
@@ -30777,7 +30777,7 @@ SELECT b9, b7+142
   FROM t7, t9
  WHERE e7 in (254,826,301,282)
    AND e9=e7
-;
+ORDER BY 1,2;
 -- 12
 -- 363
 
@@ -30786,7 +30786,7 @@ SELECT b9, b7+142
   FROM t9, t7
  WHERE e9=e7
    AND e7 in (254,826,301,282)
-;
+ORDER BY 1,2;
 -- 12
 -- 363
 
@@ -30797,7 +30797,7 @@ SELECT c5, a7+841+d7, x3, a6*156
    AND 455=e7
    AND c5 in (927,689,37,293,384)
    AND d6 in (931,750,428)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to c38cf16af2878c01ed308bd9c2d8547a
 
 -- query IITI rowsort join99
@@ -30807,7 +30807,7 @@ SELECT c5, a7+841+d7, x3, a6*156
    AND d6 in (931,750,428)
    AND 455=e7
    AND a3 in (822,335,513,594,181)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to c38cf16af2878c01ed308bd9c2d8547a
 
 -- query IITI rowsort join99
@@ -30817,7 +30817,7 @@ SELECT c5, a7+841+d7, x3, a6*156
    AND d6 in (931,750,428)
    AND c5 in (927,689,37,293,384)
    AND a3 in (822,335,513,594,181)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to c38cf16af2878c01ed308bd9c2d8547a
 
 -- query IITI rowsort join99
@@ -30827,7 +30827,7 @@ SELECT c5, a7+841+d7, x3, a6*156
    AND 455=e7
    AND a3 in (822,335,513,594,181)
    AND c5 in (927,689,37,293,384)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to c38cf16af2878c01ed308bd9c2d8547a
 
 -- query ITIIII rowsort join100
@@ -30839,7 +30839,7 @@ SELECT a7, x4, c2+990, b8+223, e6*5, a1+398+a7
    AND a1=477
    AND (269=d6 OR 797=d6 OR 578=d6)
    AND (997=e2 OR e2=815 OR e2=699)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 216 values hashing to c57f763146aa98725b63a140f7d4dd1a
 
 -- query ITIIII rowsort join100
@@ -30851,7 +30851,7 @@ SELECT a7, x4, c2+990, b8+223, e6*5, a1+398+a7
    AND (269=d6 OR 797=d6 OR 578=d6)
    AND e7=689
    AND (997=e2 OR e2=815 OR e2=699)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 216 values hashing to c57f763146aa98725b63a140f7d4dd1a
 
 -- query ITIIII rowsort join100
@@ -30863,7 +30863,7 @@ SELECT a7, x4, c2+990, b8+223, e6*5, a1+398+a7
    AND a1=477
    AND (269=d6 OR 797=d6 OR 578=d6)
    AND 387=b4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 216 values hashing to c57f763146aa98725b63a140f7d4dd1a
 
 -- query ITIIII rowsort join100
@@ -30875,7 +30875,7 @@ SELECT a7, x4, c2+990, b8+223, e6*5, a1+398+a7
    AND e7=689
    AND e8 in (377,561,305,981)
    AND 387=b4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 216 values hashing to c57f763146aa98725b63a140f7d4dd1a
 
 -- query IITIIII rowsort join101
@@ -30888,7 +30888,7 @@ SELECT b5, d3, x9, c8+411, c4+e6, c6+c4, b2
    AND d6 in (197,34,974,21,689,500,428)
    AND 765=b4
    AND e8 in (846,972,646,476,469,811,349)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 94080 values hashing to ef022a56e765d1233dc2564063ffa66a
 
 -- query IITIIII rowsort join101
@@ -30901,7 +30901,7 @@ SELECT b5, d3, x9, c8+411, c4+e6, c6+c4, b2
    AND c5=a9
    AND b9 in (855,214,827,50,285,900,342,122)
    AND a2 in (789,993,954,802,545,898)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 94080 values hashing to ef022a56e765d1233dc2564063ffa66a
 
 -- query IITIIII rowsort join101
@@ -30914,7 +30914,7 @@ SELECT b5, d3, x9, c8+411, c4+e6, c6+c4, b2
    AND b9 in (855,214,827,50,285,900,342,122)
    AND c5=a9
    AND a3 in (383,892,349,959,306,303,935)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 94080 values hashing to ef022a56e765d1233dc2564063ffa66a
 
 -- query IITIIII rowsort join101
@@ -30927,7 +30927,7 @@ SELECT b5, d3, x9, c8+411, c4+e6, c6+c4, b2
    AND a2 in (789,993,954,802,545,898)
    AND e8 in (846,972,646,476,469,811,349)
    AND 765=b4
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 94080 values hashing to ef022a56e765d1233dc2564063ffa66a
 
 -- query IIIIIT rowsort join102
@@ -30939,7 +30939,7 @@ SELECT b2+31, a7+668, a5+a8, d6+637, a8*200, x3
    AND 10=d2
    AND (d6=2 OR 767=d6)
    AND e7 in (929,197,562,122,183,234)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2304 values hashing to 80097f6bc600c38755c6366490bc6be7
 
 -- query IIIIIT rowsort join102
@@ -30951,7 +30951,7 @@ SELECT b2+31, a7+668, a5+a8, d6+637, a8*200, x3
    AND a3=699
    AND 10=d2
    AND e8 in (600,56,488,947)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2304 values hashing to 80097f6bc600c38755c6366490bc6be7
 
 -- query IIIIIT rowsort join102
@@ -30963,7 +30963,7 @@ SELECT b2+31, a7+668, a5+a8, d6+637, a8*200, x3
    AND a3=699
    AND (d6=2 OR 767=d6)
    AND c5 in (856,797,489)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2304 values hashing to 80097f6bc600c38755c6366490bc6be7
 
 -- query IIIIIT rowsort join102
@@ -30975,7 +30975,7 @@ SELECT b2+31, a7+668, a5+a8, d6+637, a8*200, x3
    AND e8 in (600,56,488,947)
    AND a3=699
    AND 10=d2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2304 values hashing to 80097f6bc600c38755c6366490bc6be7
 
 -- query IIT rowsort join103
@@ -30984,7 +30984,7 @@ SELECT a9, b3*64, x5
  WHERE a3 in (992,376,818,457,349,515,335)
    AND b9 in (12,410,236,122,926,262,301,211)
    AND c5 in (820,249,602,12,27,187)
-;
+ORDER BY 1,2,3;
 -- 1260 values hashing to 19427b54065b46aefd99dfa42bc5e041
 
 -- query IIT rowsort join103
@@ -30993,7 +30993,7 @@ SELECT a9, b3*64, x5
  WHERE b9 in (12,410,236,122,926,262,301,211)
    AND c5 in (820,249,602,12,27,187)
    AND a3 in (992,376,818,457,349,515,335)
-;
+ORDER BY 1,2,3;
 -- 1260 values hashing to 19427b54065b46aefd99dfa42bc5e041
 
 -- query IIT rowsort join103
@@ -31002,7 +31002,7 @@ SELECT a9, b3*64, x5
  WHERE c5 in (820,249,602,12,27,187)
    AND a3 in (992,376,818,457,349,515,335)
    AND b9 in (12,410,236,122,926,262,301,211)
-;
+ORDER BY 1,2,3;
 -- 1260 values hashing to 19427b54065b46aefd99dfa42bc5e041
 
 -- query IIT rowsort join103
@@ -31011,7 +31011,7 @@ SELECT a9, b3*64, x5
  WHERE c5 in (820,249,602,12,27,187)
    AND a3 in (992,376,818,457,349,515,335)
    AND b9 in (12,410,236,122,926,262,301,211)
-;
+ORDER BY 1,2,3;
 -- 1260 values hashing to 19427b54065b46aefd99dfa42bc5e041
 
 -- query IIII rowsort join104
@@ -31021,7 +31021,7 @@ SELECT a1+381, b6*441, a3*360+a6, a2
    AND d6 in (197,855,192,467,453,469,147,901)
    AND a1=e6
    AND a3 in (275,499,380,776)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to 436d08c6ed159017fff99857e90835e0
 
 -- query IIII rowsort join104
@@ -31031,7 +31031,7 @@ SELECT a1+381, b6*441, a3*360+a6, a2
    AND a3 in (275,499,380,776)
    AND a1=e6
    AND d6 in (197,855,192,467,453,469,147,901)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to 436d08c6ed159017fff99857e90835e0
 
 -- query IIII rowsort join104
@@ -31041,7 +31041,7 @@ SELECT a1+381, b6*441, a3*360+a6, a2
    AND d2 in (137,931,836,844,723,892)
    AND a1=e6
    AND a3 in (275,499,380,776)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to 436d08c6ed159017fff99857e90835e0
 
 -- query IIII rowsort join104
@@ -31051,7 +31051,7 @@ SELECT a1+381, b6*441, a3*360+a6, a2
    AND d6 in (197,855,192,467,453,469,147,901)
    AND a3 in (275,499,380,776)
    AND d2 in (137,931,836,844,723,892)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to 436d08c6ed159017fff99857e90835e0
 
 -- query IIIT rowsort join105
@@ -31061,7 +31061,7 @@ SELECT b9+d6, c6, a1+a6, x2
    AND d2 in (682,367,265,772,663,448,334)
    AND d9 in (464,549,23,808,967,161)
    AND a1=268
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to 96b3281d5bea9484b095ab743e901d38
 
 -- query IIIT rowsort join105
@@ -31071,7 +31071,7 @@ SELECT b9+d6, c6, a1+a6, x2
    AND d2 in (682,367,265,772,663,448,334)
    AND d6 in (405,256,924,911,790,855)
    AND a1=268
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to 96b3281d5bea9484b095ab743e901d38
 
 -- query IIIT rowsort join105
@@ -31081,7 +31081,7 @@ SELECT b9+d6, c6, a1+a6, x2
    AND d9 in (464,549,23,808,967,161)
    AND d2 in (682,367,265,772,663,448,334)
    AND d6 in (405,256,924,911,790,855)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to 96b3281d5bea9484b095ab743e901d38
 
 -- query IIIT rowsort join105
@@ -31091,7 +31091,7 @@ SELECT b9+d6, c6, a1+a6, x2
    AND d9 in (464,549,23,808,967,161)
    AND a1=268
    AND d2 in (682,367,265,772,663,448,334)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to 96b3281d5bea9484b095ab743e901d38
 
 -- query II rowsort join106
@@ -31099,7 +31099,7 @@ SELECT e4+224+a4, e8+d4
   FROM t4, t8
  WHERE b4=901
    AND e8=874
-;
+ORDER BY 1,2;
 -- 1701
 -- 1134
 
@@ -31108,7 +31108,7 @@ SELECT e4+224+a4, e8+d4
   FROM t8, t4
  WHERE b4=901
    AND e8=874
-;
+ORDER BY 1,2;
 -- 1701
 -- 1134
 
@@ -31117,7 +31117,7 @@ SELECT b4+b4, c2
   FROM t2, t4
  WHERE b4 in (33,469,357,964,535,243)
    AND e2=c4
-;
+ORDER BY 1,2;
 -- 938
 -- 360
 -- 938
@@ -31128,7 +31128,7 @@ SELECT b4+b4, c2
   FROM t2, t4
  WHERE e2=c4
    AND b4 in (33,469,357,964,535,243)
-;
+ORDER BY 1,2;
 -- 938
 -- 360
 -- 938
@@ -31139,7 +31139,7 @@ SELECT b4+b4, c2
   FROM t4, t2
  WHERE b4 in (33,469,357,964,535,243)
    AND e2=c4
-;
+ORDER BY 1,2;
 -- 938
 -- 360
 -- 938
@@ -31152,7 +31152,7 @@ SELECT c9, c8+687, x5, d6*549+d8
    AND c9 in (935,739,180,732,402,253,257)
    AND (600=d6 OR d6=376)
    AND c5 in (721,657,187,443,734)
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to a6826b2b97f1b1f5c0d1d79700c20542
 
 -- query IITI rowsort join108
@@ -31162,7 +31162,7 @@ SELECT c9, c8+687, x5, d6*549+d8
    AND c5 in (721,657,187,443,734)
    AND c9 in (935,739,180,732,402,253,257)
    AND e8=c9
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to a6826b2b97f1b1f5c0d1d79700c20542
 
 -- query IITI rowsort join108
@@ -31172,7 +31172,7 @@ SELECT c9, c8+687, x5, d6*549+d8
    AND e8=c9
    AND c5 in (721,657,187,443,734)
    AND (600=d6 OR d6=376)
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to a6826b2b97f1b1f5c0d1d79700c20542
 
 -- query IITI rowsort join108
@@ -31182,7 +31182,7 @@ SELECT c9, c8+687, x5, d6*549+d8
    AND (600=d6 OR d6=376)
    AND c5 in (721,657,187,443,734)
    AND c9 in (935,739,180,732,402,253,257)
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to a6826b2b97f1b1f5c0d1d79700c20542
 
 -- query IITTIII rowsort join109
@@ -31195,7 +31195,7 @@ SELECT e6, e8+376, x4, x9, e5*680, d2+210, d3
    AND c9 in (126,992,732,811,327,800,87)
    AND e8=a5
    AND d6=d9
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to 83d338a5bb9e7d2ad8609651194890ad
 
 -- query IITTIII rowsort join109
@@ -31208,7 +31208,7 @@ SELECT e6, e8+376, x4, x9, e5*680, d2+210, d3
    AND (b4=810 OR b4=849 OR 653=b4 OR b4=288)
    AND (18=c5 OR c5=31 OR 915=c5)
    AND d6=d9
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to 83d338a5bb9e7d2ad8609651194890ad
 
 -- query IITTIII rowsort join109
@@ -31221,7 +31221,7 @@ SELECT e6, e8+376, x4, x9, e5*680, d2+210, d3
    AND d6=d9
    AND a3 in (651,964,197,234,995,364,478)
    AND e8=a5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to 83d338a5bb9e7d2ad8609651194890ad
 
 -- query IITTIII rowsort join109
@@ -31234,7 +31234,7 @@ SELECT e6, e8+376, x4, x9, e5*680, d2+210, d3
    AND c9 in (126,992,732,811,327,800,87)
    AND e8=a5
    AND d6=d9
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to 83d338a5bb9e7d2ad8609651194890ad
 
 -- query IIIII rowsort join110
@@ -31245,7 +31245,7 @@ SELECT c4, a8+664, e7+e5, b5+c4, d9+a5
    AND c5 in (668,101,723)
    AND 704=e9
    AND 296=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 315 values hashing to 9f34471b3ed57d6c8e04e17ae673f7a4
 
 -- query IIIII rowsort join110
@@ -31256,7 +31256,7 @@ SELECT c4, a8+664, e7+e5, b5+c4, d9+a5
    AND 704=e9
    AND c5 in (668,101,723)
    AND 296=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 315 values hashing to 9f34471b3ed57d6c8e04e17ae673f7a4
 
 -- query IIIII rowsort join110
@@ -31267,7 +31267,7 @@ SELECT c4, a8+664, e7+e5, b5+c4, d9+a5
    AND b4 in (606,587,982,184,532,538)
    AND 296=e8
    AND 704=e9
-;
+ORDER BY 1,2,3,4,5;
 -- 315 values hashing to 9f34471b3ed57d6c8e04e17ae673f7a4
 
 -- query IIIII rowsort join110
@@ -31278,7 +31278,7 @@ SELECT c4, a8+664, e7+e5, b5+c4, d9+a5
    AND 296=e8
    AND b4 in (606,587,982,184,532,538)
    AND c5 in (668,101,723)
-;
+ORDER BY 1,2,3,4,5;
 -- 315 values hashing to 9f34471b3ed57d6c8e04e17ae673f7a4
 
 -- query TIII rowsort join111
@@ -31288,7 +31288,7 @@ SELECT x2, e5+917+c2, d9, e7+e9
    AND d2 in (772,405,525,847,249)
    AND (156=e7 OR 945=e7 OR 439=e7)
    AND (c5=570 OR 44=c5)
-;
+ORDER BY 1,2,3,4;
 -- 1120 values hashing to 22f634ceca35e50c4803c7f5461218cd
 
 -- query TIII rowsort join111
@@ -31298,7 +31298,7 @@ SELECT x2, e5+917+c2, d9, e7+e9
    AND d2 in (772,405,525,847,249)
    AND (c5=570 OR 44=c5)
    AND e9 in (844,486,388,239,263,127)
-;
+ORDER BY 1,2,3,4;
 -- 1120 values hashing to 22f634ceca35e50c4803c7f5461218cd
 
 -- query TIII rowsort join111
@@ -31308,7 +31308,7 @@ SELECT x2, e5+917+c2, d9, e7+e9
    AND e9 in (844,486,388,239,263,127)
    AND (156=e7 OR 945=e7 OR 439=e7)
    AND (c5=570 OR 44=c5)
-;
+ORDER BY 1,2,3,4;
 -- 1120 values hashing to 22f634ceca35e50c4803c7f5461218cd
 
 -- query TIII rowsort join111
@@ -31318,7 +31318,7 @@ SELECT x2, e5+917+c2, d9, e7+e9
    AND (156=e7 OR 945=e7 OR 439=e7)
    AND d2 in (772,405,525,847,249)
    AND e9 in (844,486,388,239,263,127)
-;
+ORDER BY 1,2,3,4;
 -- 1120 values hashing to 22f634ceca35e50c4803c7f5461218cd
 
 -- query IIIIII rowsort join112
@@ -31330,7 +31330,7 @@ SELECT e3*646, b5, d6*734, c2, a9+c3, b8+e9
    AND b2=211
    AND d6 in (689,489,186,72,367,256,931,467)
    AND e8 in (700,56,956,811,586)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 6480 values hashing to c37cf28999b20a7e9ac26e3ed6a6226c
 
 -- query IIIIII rowsort join112
@@ -31342,7 +31342,7 @@ SELECT e3*646, b5, d6*734, c2, a9+c3, b8+e9
    AND 680=b9
    AND a3 in (129,720,164,396,135,895,186,364)
    AND (442=c5 OR c5=756)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 6480 values hashing to c37cf28999b20a7e9ac26e3ed6a6226c
 
 -- query IIIIII rowsort join112
@@ -31354,7 +31354,7 @@ SELECT e3*646, b5, d6*734, c2, a9+c3, b8+e9
    AND b2=211
    AND 680=b9
    AND (442=c5 OR c5=756)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 6480 values hashing to c37cf28999b20a7e9ac26e3ed6a6226c
 
 -- query IIIIII rowsort join112
@@ -31366,7 +31366,7 @@ SELECT e3*646, b5, d6*734, c2, a9+c3, b8+e9
    AND a3 in (129,720,164,396,135,895,186,364)
    AND e8 in (700,56,956,811,586)
    AND 680=b9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 6480 values hashing to c37cf28999b20a7e9ac26e3ed6a6226c
 
 -- query II rowsort join113
@@ -31374,7 +31374,7 @@ SELECT c3+c3, a1+68
   FROM t3, t1
  WHERE a1 in (895,668,179,32,237,622,779,521)
    AND a3=b1
-;
+ORDER BY 1,2;
 -- 1294
 -- 736
 -- 592
@@ -31385,7 +31385,7 @@ SELECT c3+c3, a1+68
   FROM t1, t3
  WHERE a3=b1
    AND a1 in (895,668,179,32,237,622,779,521)
-;
+ORDER BY 1,2;
 -- 1294
 -- 736
 -- 592
@@ -31396,7 +31396,7 @@ SELECT c3+c3, a1+68
   FROM t3, t1
  WHERE a3=b1
    AND a1 in (895,668,179,32,237,622,779,521)
-;
+ORDER BY 1,2;
 -- 1294
 -- 736
 -- 592
@@ -31408,7 +31408,7 @@ SELECT b7, c1, d4+c7
  WHERE 241=a1
    AND (e7=860 OR e7=553 OR 945=e7 OR e7=103)
    AND (b4=114 OR b4=402 OR b4=748)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to aabb15fa181e1e7314a3d0d47b81c527
 
 -- query III rowsort join114
@@ -31417,7 +31417,7 @@ SELECT b7, c1, d4+c7
  WHERE 241=a1
    AND (e7=860 OR e7=553 OR 945=e7 OR e7=103)
    AND (b4=114 OR b4=402 OR b4=748)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to aabb15fa181e1e7314a3d0d47b81c527
 
 -- query III rowsort join114
@@ -31426,7 +31426,7 @@ SELECT b7, c1, d4+c7
  WHERE (b4=114 OR b4=402 OR b4=748)
    AND (e7=860 OR e7=553 OR 945=e7 OR e7=103)
    AND 241=a1
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to aabb15fa181e1e7314a3d0d47b81c527
 
 -- query III rowsort join114
@@ -31435,7 +31435,7 @@ SELECT b7, c1, d4+c7
  WHERE (e7=860 OR e7=553 OR 945=e7 OR e7=103)
    AND 241=a1
    AND (b4=114 OR b4=402 OR b4=748)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to aabb15fa181e1e7314a3d0d47b81c527
 
 -- query II rowsort join115
@@ -31443,7 +31443,7 @@ SELECT d8, b9+232
   FROM t9, t8
  WHERE 936=c9
    AND e8 in (956,105,811,918)
-;
+ORDER BY 1,2;
 -- 190
 -- 533
 -- 512
@@ -31458,7 +31458,7 @@ SELECT d8, b9+232
   FROM t9, t8
  WHERE e8 in (956,105,811,918)
    AND 936=c9
-;
+ORDER BY 1,2;
 -- 190
 -- 533
 -- 512
@@ -31473,7 +31473,7 @@ SELECT d8, b9+232
   FROM t8, t9
  WHERE 936=c9
    AND e8 in (956,105,811,918)
-;
+ORDER BY 1,2;
 -- 190
 -- 533
 -- 512
@@ -31488,7 +31488,7 @@ SELECT d8, b9+232
   FROM t8, t9
  WHERE e8 in (956,105,811,918)
    AND 936=c9
-;
+ORDER BY 1,2;
 -- 190
 -- 533
 -- 512
@@ -31503,7 +31503,7 @@ SELECT x7, a4
   FROM t4, t7
  WHERE 877=b4
    AND e7=503
-;
+ORDER BY 1,2;
 -- table tn7 row 42
 -- 185
 
@@ -31512,7 +31512,7 @@ SELECT x7, a4
   FROM t7, t4
  WHERE 877=b4
    AND e7=503
-;
+ORDER BY 1,2;
 -- table tn7 row 42
 -- 185
 
@@ -31521,7 +31521,7 @@ SELECT x7, a4
   FROM t7, t4
  WHERE e7=503
    AND 877=b4
-;
+ORDER BY 1,2;
 -- table tn7 row 42
 -- 185
 
@@ -31533,7 +31533,7 @@ SELECT c3*431, a8+d6, c9+294, e6, a4+902
    AND b4 in (941,919,2)
    AND d6 in (186,993,463,192,458,901,446)
    AND a9=962
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to da6b3f503ed871fe6625b4023aeb6f0a
 
 -- query IIIII rowsort join117
@@ -31544,7 +31544,7 @@ SELECT c3*431, a8+d6, c9+294, e6, a4+902
    AND b4 in (941,919,2)
    AND e8 in (421,487,310,729)
    AND (429=a3 OR a3=262 OR 548=a3 OR 720=a3)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to da6b3f503ed871fe6625b4023aeb6f0a
 
 -- query IIIII rowsort join117
@@ -31555,7 +31555,7 @@ SELECT c3*431, a8+d6, c9+294, e6, a4+902
    AND d6 in (186,993,463,192,458,901,446)
    AND (429=a3 OR a3=262 OR 548=a3 OR 720=a3)
    AND a9=962
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to da6b3f503ed871fe6625b4023aeb6f0a
 
 -- query IIIII rowsort join117
@@ -31566,7 +31566,7 @@ SELECT c3*431, a8+d6, c9+294, e6, a4+902
    AND (429=a3 OR a3=262 OR 548=a3 OR 720=a3)
    AND b4 in (941,919,2)
    AND d6 in (186,993,463,192,458,901,446)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to da6b3f503ed871fe6625b4023aeb6f0a
 
 -- query TIITII rowsort join118
@@ -31578,7 +31578,7 @@ SELECT x4, d2+b8, e8, x3, d1*74, c6*79+b2
    AND e8 in (761,833,497,561,440)
    AND d6 in (36,185,581,269,473,147)
    AND b4=402
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1440 values hashing to bbe85507dae50fab328e50ae80896af9
 
 -- query TIITII rowsort join118
@@ -31590,7 +31590,7 @@ SELECT x4, d2+b8, e8, x3, d1*74, c6*79+b2
    AND b4=402
    AND a3 in (499,820,548)
    AND a1=75
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1440 values hashing to bbe85507dae50fab328e50ae80896af9
 
 -- query TIITII rowsort join118
@@ -31602,7 +31602,7 @@ SELECT x4, d2+b8, e8, x3, d1*74, c6*79+b2
    AND a1=75
    AND a3 in (499,820,548)
    AND (b2=519 OR b2=649)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1440 values hashing to bbe85507dae50fab328e50ae80896af9
 
 -- query TIITII rowsort join118
@@ -31614,7 +31614,7 @@ SELECT x4, d2+b8, e8, x3, d1*74, c6*79+b2
    AND b4=402
    AND a3 in (499,820,548)
    AND d6 in (36,185,581,269,473,147)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1440 values hashing to bbe85507dae50fab328e50ae80896af9
 
 -- query II rowsort join119
@@ -31622,7 +31622,7 @@ SELECT e2+d2, a7
   FROM t2, t7
  WHERE a2 in (315,954,308,664,522,805)
    AND e7 in (455,793,7,290,48,782,816,624)
-;
+ORDER BY 1,2;
 -- 132 values hashing to dc9462d989ee81cebb0fee8e5a29e6f2
 
 -- query II rowsort join119
@@ -31630,7 +31630,7 @@ SELECT e2+d2, a7
   FROM t2, t7
  WHERE e7 in (455,793,7,290,48,782,816,624)
    AND a2 in (315,954,308,664,522,805)
-;
+ORDER BY 1,2;
 -- 132 values hashing to dc9462d989ee81cebb0fee8e5a29e6f2
 
 -- query II rowsort join119
@@ -31638,7 +31638,7 @@ SELECT e2+d2, a7
   FROM t7, t2
  WHERE e7 in (455,793,7,290,48,782,816,624)
    AND a2 in (315,954,308,664,522,805)
-;
+ORDER BY 1,2;
 -- 132 values hashing to dc9462d989ee81cebb0fee8e5a29e6f2
 
 -- query ITIIIIII rowsort join120
@@ -31652,7 +31652,7 @@ SELECT d6*403+c6, x7, e8, a5+617, a1*403, e9+161, e2*506, c4+57
    AND b4 in (925,175,267,721,476)
    AND e7 in (929,344,522)
    AND (c5=855 OR c5=544 OR c5=924 OR c5=147)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 31104 values hashing to beb2acf1f6aca8c058afd134afa1ad40
 
 -- query ITIIIIII rowsort join120
@@ -31666,7 +31666,7 @@ SELECT d6*403+c6, x7, e8, a5+617, a1*403, e9+161, e2*506, c4+57
    AND b2=c7
    AND b4 in (925,175,267,721,476)
    AND 560=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 31104 values hashing to beb2acf1f6aca8c058afd134afa1ad40
 
 -- query ITIIIIII rowsort join120
@@ -31680,7 +31680,7 @@ SELECT d6*403+c6, x7, e8, a5+617, a1*403, e9+161, e2*506, c4+57
    AND 560=d6
    AND b4 in (925,175,267,721,476)
    AND b2=c7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 31104 values hashing to beb2acf1f6aca8c058afd134afa1ad40
 
 -- query ITIIIIII rowsort join120
@@ -31694,7 +31694,7 @@ SELECT d6*403+c6, x7, e8, a5+617, a1*403, e9+161, e2*506, c4+57
    AND b2=c7
    AND (c5=855 OR c5=544 OR c5=924 OR c5=147)
    AND b4 in (925,175,267,721,476)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 31104 values hashing to beb2acf1f6aca8c058afd134afa1ad40
 
 -- query IIITIT rowsort join121
@@ -31706,7 +31706,7 @@ SELECT d8+326, c5, b1, x2, e3, x6
    AND d6 in (931,34,664,35,674)
    AND 268=a1
    AND c2 in (711,779,756)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1080 values hashing to 519deb9a8544911cc75218cb8ecab73a
 
 -- query IIITIT rowsort join121
@@ -31718,7 +31718,7 @@ SELECT d8+326, c5, b1, x2, e3, x6
    AND 268=a1
    AND a3=198
    AND c2 in (711,779,756)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1080 values hashing to 519deb9a8544911cc75218cb8ecab73a
 
 -- query IIITIT rowsort join121
@@ -31730,7 +31730,7 @@ SELECT d8+326, c5, b1, x2, e3, x6
    AND e8=966
    AND c5 in (210,602,924,678,222,696)
    AND a3=198
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1080 values hashing to 519deb9a8544911cc75218cb8ecab73a
 
 -- query IIITIT rowsort join121
@@ -31742,7 +31742,7 @@ SELECT d8+326, c5, b1, x2, e3, x6
    AND d6 in (931,34,664,35,674)
    AND a3=198
    AND e8=966
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1080 values hashing to 519deb9a8544911cc75218cb8ecab73a
 
 -- query TI rowsort join122
@@ -31750,7 +31750,7 @@ SELECT x5, d8
   FROM t8, t5
  WHERE e8=295
    AND c5 in (12,774,149,657)
-;
+ORDER BY 1,2;
 -- table tn5 row 2
 -- 494
 -- table tn5 row 31
@@ -31765,7 +31765,7 @@ SELECT x5, d8
   FROM t8, t5
  WHERE c5 in (12,774,149,657)
    AND e8=295
-;
+ORDER BY 1,2;
 -- table tn5 row 2
 -- 494
 -- table tn5 row 31
@@ -31780,7 +31780,7 @@ SELECT x5, d8
   FROM t5, t8
  WHERE c5 in (12,774,149,657)
    AND e8=295
-;
+ORDER BY 1,2;
 -- table tn5 row 2
 -- 494
 -- table tn5 row 31
@@ -31797,7 +31797,7 @@ SELECT b3, a7+753, c2, x5
    AND e7 in (689,282,144,290,979,815)
    AND c5=b7
    AND (a3=863 OR 364=a3 OR 651=a3 OR 376=a3)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to 1e7f5120a88b8fca616e79967a98a97d
 
 -- query IIIT rowsort join123
@@ -31807,7 +31807,7 @@ SELECT b3, a7+753, c2, x5
    AND c5=b7
    AND a2=863
    AND e7 in (689,282,144,290,979,815)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to 1e7f5120a88b8fca616e79967a98a97d
 
 -- query IIIT rowsort join123
@@ -31817,7 +31817,7 @@ SELECT b3, a7+753, c2, x5
    AND c5=b7
    AND (a3=863 OR 364=a3 OR 651=a3 OR 376=a3)
    AND e7 in (689,282,144,290,979,815)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to 1e7f5120a88b8fca616e79967a98a97d
 
 -- query IIIT rowsort join123
@@ -31827,7 +31827,7 @@ SELECT b3, a7+753, c2, x5
    AND c5=b7
    AND e7 in (689,282,144,290,979,815)
    AND a2=863
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to 1e7f5120a88b8fca616e79967a98a97d
 
 -- query II rowsort join124
@@ -31835,7 +31835,7 @@ SELECT e9+c9, a6*322
   FROM t9, t6
  WHERE 405=d6
    AND c9=800
-;
+ORDER BY 1,2;
 -- 1768
 -- 263396
 
@@ -31844,7 +31844,7 @@ SELECT e9+c9, a6*322
   FROM t6, t9
  WHERE 405=d6
    AND c9=800
-;
+ORDER BY 1,2;
 -- 1768
 -- 263396
 
@@ -31853,7 +31853,7 @@ SELECT e9+c9, a6*322
   FROM t6, t9
  WHERE c9=800
    AND 405=d6
-;
+ORDER BY 1,2;
 -- 1768
 -- 263396
 
@@ -31863,7 +31863,7 @@ SELECT a4*399, a7, c9*469
  WHERE e7=862
    AND 372=b4
    AND c9 in (662,349,688,98,547,402,526)
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to a40f358c138c34087416a4aeb8e4ac2f
 
 -- query III rowsort join125
@@ -31872,7 +31872,7 @@ SELECT a4*399, a7, c9*469
  WHERE e7=862
    AND c9 in (662,349,688,98,547,402,526)
    AND 372=b4
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to a40f358c138c34087416a4aeb8e4ac2f
 
 -- query III rowsort join125
@@ -31881,7 +31881,7 @@ SELECT a4*399, a7, c9*469
  WHERE e7=862
    AND c9 in (662,349,688,98,547,402,526)
    AND 372=b4
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to a40f358c138c34087416a4aeb8e4ac2f
 
 -- query III rowsort join125
@@ -31890,7 +31890,7 @@ SELECT a4*399, a7, c9*469
  WHERE 372=b4
    AND e7=862
    AND c9 in (662,349,688,98,547,402,526)
-;
+ORDER BY 1,2,3;
 -- 27 values hashing to a40f358c138c34087416a4aeb8e4ac2f
 
 -- query IIT rowsort join126
@@ -31899,7 +31899,7 @@ SELECT c9, d3*843, x2
  WHERE 788=a3
    AND 5=b9
    AND c2 in (244,894,806)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 1d9d98cd212914bc7cfebd77990260a9
 
 -- query IIT rowsort join126
@@ -31908,7 +31908,7 @@ SELECT c9, d3*843, x2
  WHERE 5=b9
    AND c2 in (244,894,806)
    AND 788=a3
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 1d9d98cd212914bc7cfebd77990260a9
 
 -- query IIT rowsort join126
@@ -31917,7 +31917,7 @@ SELECT c9, d3*843, x2
  WHERE 788=a3
    AND c2 in (244,894,806)
    AND 5=b9
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 1d9d98cd212914bc7cfebd77990260a9
 
 -- query IIT rowsort join126
@@ -31926,7 +31926,7 @@ SELECT c9, d3*843, x2
  WHERE 5=b9
    AND 788=a3
    AND c2 in (244,894,806)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 1d9d98cd212914bc7cfebd77990260a9
 
 -- query ITIT rowsort join127
@@ -31936,7 +31936,7 @@ SELECT d1+d2, x7, b2+291, x4
    AND (182=c2 OR c2=793)
    AND e7 in (372,815,462,971,103)
    AND a1=524
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 2d325f46cce8c24f26fcda8ce0da4a8d
 
 -- query ITIT rowsort join127
@@ -31946,7 +31946,7 @@ SELECT d1+d2, x7, b2+291, x4
    AND e7 in (372,815,462,971,103)
    AND (182=c2 OR c2=793)
    AND a1=524
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 2d325f46cce8c24f26fcda8ce0da4a8d
 
 -- query ITIT rowsort join127
@@ -31956,7 +31956,7 @@ SELECT d1+d2, x7, b2+291, x4
    AND e7 in (372,815,462,971,103)
    AND (182=c2 OR c2=793)
    AND (b4=357 OR b4=765 OR b4=635 OR b4=765)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 2d325f46cce8c24f26fcda8ce0da4a8d
 
 -- query ITIT rowsort join127
@@ -31966,7 +31966,7 @@ SELECT d1+d2, x7, b2+291, x4
    AND (b4=357 OR b4=765 OR b4=635 OR b4=765)
    AND (182=c2 OR c2=793)
    AND a1=524
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 2d325f46cce8c24f26fcda8ce0da4a8d
 
 -- query II rowsort join128
@@ -31974,7 +31974,7 @@ SELECT d7*281, d4
   FROM t4, t7
  WHERE e7 in (860,127,456,31,970,288,462)
    AND b4=175
-;
+ORDER BY 1,2;
 -- 20 values hashing to 1d801e3498540b9684c9737a4c73b12f
 
 -- query II rowsort join128
@@ -31982,7 +31982,7 @@ SELECT d7*281, d4
   FROM t4, t7
  WHERE b4=175
    AND e7 in (860,127,456,31,970,288,462)
-;
+ORDER BY 1,2;
 -- 20 values hashing to 1d801e3498540b9684c9737a4c73b12f
 
 -- query TII rowsort join129
@@ -31991,7 +31991,7 @@ SELECT x6, d5, a7+486
  WHERE (27=e7 OR 988=e7 OR e7=976 OR 884=e7)
    AND 155=c5
    AND d6=d7
-;
+ORDER BY 1,2,3;
 -- table tn6 row 67
 -- 789
 -- 1362
@@ -32002,7 +32002,7 @@ SELECT x6, d5, a7+486
  WHERE (27=e7 OR 988=e7 OR e7=976 OR 884=e7)
    AND d6=d7
    AND 155=c5
-;
+ORDER BY 1,2,3;
 -- table tn6 row 67
 -- 789
 -- 1362
@@ -32013,7 +32013,7 @@ SELECT x6, d5, a7+486
  WHERE d6=d7
    AND (27=e7 OR 988=e7 OR e7=976 OR 884=e7)
    AND 155=c5
-;
+ORDER BY 1,2,3;
 -- table tn6 row 67
 -- 789
 -- 1362
@@ -32024,7 +32024,7 @@ SELECT x6, d5, a7+486
  WHERE 155=c5
    AND d6=d7
    AND (27=e7 OR 988=e7 OR e7=976 OR 884=e7)
-;
+ORDER BY 1,2,3;
 -- table tn6 row 67
 -- 789
 -- 1362
@@ -32036,7 +32036,7 @@ SELECT a8+b6, d3, c6, d9+243+d8
    AND (a3=457 OR 181=a3 OR 16=a3 OR 186=a3)
    AND a9 in (757,567,335,485,69,14,463)
    AND 617=e8
-;
+ORDER BY 1,2,3,4;
 -- 112 values hashing to 233d7a1320797787f48d67a469cc95c7
 
 -- query IIII rowsort join130
@@ -32046,7 +32046,7 @@ SELECT a8+b6, d3, c6, d9+243+d8
    AND 617=e8
    AND (a3=457 OR 181=a3 OR 16=a3 OR 186=a3)
    AND 560=d6
-;
+ORDER BY 1,2,3,4;
 -- 112 values hashing to 233d7a1320797787f48d67a469cc95c7
 
 -- query IIII rowsort join130
@@ -32056,7 +32056,7 @@ SELECT a8+b6, d3, c6, d9+243+d8
    AND 560=d6
    AND 617=e8
    AND a9 in (757,567,335,485,69,14,463)
-;
+ORDER BY 1,2,3,4;
 -- 112 values hashing to 233d7a1320797787f48d67a469cc95c7
 
 -- query IIII rowsort join130
@@ -32066,7 +32066,7 @@ SELECT a8+b6, d3, c6, d9+243+d8
    AND (a3=457 OR 181=a3 OR 16=a3 OR 186=a3)
    AND 560=d6
    AND a9 in (757,567,335,485,69,14,463)
-;
+ORDER BY 1,2,3,4;
 -- 112 values hashing to 233d7a1320797787f48d67a469cc95c7
 
 -- query IIIT rowsort join131
@@ -32076,7 +32076,7 @@ SELECT e8, a6*985, d2+796, x5
    AND d6 in (911,807,256)
    AND e8 in (700,423,736,296,431,497,955)
    AND c2=421
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 056fef263a693d783dd4e2915e0e6cf2
 
 -- query IIIT rowsort join131
@@ -32086,7 +32086,7 @@ SELECT e8, a6*985, d2+796, x5
    AND e8 in (700,423,736,296,431,497,955)
    AND c2=421
    AND c5=489
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 056fef263a693d783dd4e2915e0e6cf2
 
 -- query IIIT rowsort join131
@@ -32096,7 +32096,7 @@ SELECT e8, a6*985, d2+796, x5
    AND d6 in (911,807,256)
    AND c2=421
    AND c5=489
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 056fef263a693d783dd4e2915e0e6cf2
 
 -- query IIIT rowsort join131
@@ -32106,7 +32106,7 @@ SELECT e8, a6*985, d2+796, x5
    AND c2=421
    AND e8 in (700,423,736,296,431,497,955)
    AND d6 in (911,807,256)
-;
+ORDER BY 1,2,3,4;
 -- 84 values hashing to 056fef263a693d783dd4e2915e0e6cf2
 
 -- query II rowsort join132
@@ -32114,7 +32114,7 @@ SELECT a7, a8+214
   FROM t7, t8
  WHERE 975=e7
    AND 383=e8
-;
+ORDER BY 1,2;
 -- 277
 -- 226
 
@@ -32123,7 +32123,7 @@ SELECT a7, a8+214
   FROM t8, t7
  WHERE 383=e8
    AND 975=e7
-;
+ORDER BY 1,2;
 -- 277
 -- 226
 
@@ -32132,7 +32132,7 @@ SELECT b3*825, c7
   FROM t3, t7
  WHERE e7=503
    AND a3=964
-;
+ORDER BY 1,2;
 -- 732600
 -- 981
 
@@ -32141,7 +32141,7 @@ SELECT b3*825, c7
   FROM t7, t3
  WHERE a3=964
    AND e7=503
-;
+ORDER BY 1,2;
 -- 732600
 -- 981
 
@@ -32150,7 +32150,7 @@ SELECT b3*825, c7
   FROM t7, t3
  WHERE e7=503
    AND a3=964
-;
+ORDER BY 1,2;
 -- 732600
 -- 981
 
@@ -32162,7 +32162,7 @@ SELECT x5, d1+51, e3+d3, e2+589, e9
    AND a1 in (371,294,513)
    AND (501=b2 OR b2=532 OR 755=b2 OR b2=812)
    AND c9 in (739,992,515,534,884,349,252)
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 22ff2902bba3859e3f6269d53e39b221
 
 -- query TIIII rowsort join134
@@ -32173,7 +32173,7 @@ SELECT x5, d1+51, e3+d3, e2+589, e9
    AND c9 in (739,992,515,534,884,349,252)
    AND (501=b2 OR b2=532 OR 755=b2 OR b2=812)
    AND c5=678
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 22ff2902bba3859e3f6269d53e39b221
 
 -- query TIIII rowsort join134
@@ -32184,7 +32184,7 @@ SELECT x5, d1+51, e3+d3, e2+589, e9
    AND a1 in (371,294,513)
    AND c5=678
    AND (501=b2 OR b2=532 OR 755=b2 OR b2=812)
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 22ff2902bba3859e3f6269d53e39b221
 
 -- query TIIII rowsort join134
@@ -32195,7 +32195,7 @@ SELECT x5, d1+51, e3+d3, e2+589, e9
    AND (501=b2 OR b2=532 OR 755=b2 OR b2=812)
    AND 16=a3
    AND c5=678
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 22ff2902bba3859e3f6269d53e39b221
 
 -- query IIII rowsort join135
@@ -32205,7 +32205,7 @@ SELECT e7+236, b2, a1+102, d5+946
    AND (e7=31 OR e7=67 OR e7=39)
    AND b2 in (168,367,357,217,605,754)
    AND a1 in (866,525,674,643,996)
-;
+ORDER BY 1,2,3,4;
 -- 4320 values hashing to 380dc8220937b5691021fb4b90264cf2
 
 -- query IIII rowsort join135
@@ -32215,7 +32215,7 @@ SELECT e7+236, b2, a1+102, d5+946
    AND (e7=31 OR e7=67 OR e7=39)
    AND a1 in (866,525,674,643,996)
    AND b2 in (168,367,357,217,605,754)
-;
+ORDER BY 1,2,3,4;
 -- 4320 values hashing to 380dc8220937b5691021fb4b90264cf2
 
 -- query IIII rowsort join135
@@ -32225,7 +32225,7 @@ SELECT e7+236, b2, a1+102, d5+946
    AND b2 in (168,367,357,217,605,754)
    AND (e7=31 OR e7=67 OR e7=39)
    AND a1 in (866,525,674,643,996)
-;
+ORDER BY 1,2,3,4;
 -- 4320 values hashing to 380dc8220937b5691021fb4b90264cf2
 
 -- query IIII rowsort join135
@@ -32235,7 +32235,7 @@ SELECT e7+236, b2, a1+102, d5+946
    AND (e7=31 OR e7=67 OR e7=39)
    AND b2 in (168,367,357,217,605,754)
    AND a1 in (866,525,674,643,996)
-;
+ORDER BY 1,2,3,4;
 -- 4320 values hashing to 380dc8220937b5691021fb4b90264cf2
 
 -- query IT rowsort join136
@@ -32243,7 +32243,7 @@ SELECT e3, x6
   FROM t6, t3
  WHERE d6=129
    AND (699=a3 OR 959=a3)
-;
+ORDER BY 1,2;
 -- 177
 -- table tn6 row 24
 -- 221
@@ -32254,7 +32254,7 @@ SELECT e3, x6
   FROM t3, t6
  WHERE (699=a3 OR 959=a3)
    AND d6=129
-;
+ORDER BY 1,2;
 -- 177
 -- table tn6 row 24
 -- 221
@@ -32265,7 +32265,7 @@ SELECT e3, x6
   FROM t6, t3
  WHERE (699=a3 OR 959=a3)
    AND d6=129
-;
+ORDER BY 1,2;
 -- 177
 -- table tn6 row 24
 -- 221
@@ -32278,7 +32278,7 @@ SELECT c6+d6, c9, d7, x8
    AND (e7=428 OR 851=e7 OR e7=7)
    AND c9 in (402,349,240,526,187)
    AND (956=d6 OR 647=d6 OR 667=d6 OR 664=d6)
-;
+ORDER BY 1,2,3,4;
 -- 1440 values hashing to 1708af07f91b7fa47944d289623f9b79
 
 -- query IIIT rowsort join137
@@ -32288,7 +32288,7 @@ SELECT c6+d6, c9, d7, x8
    AND c9 in (402,349,240,526,187)
    AND (e7=428 OR 851=e7 OR e7=7)
    AND (e8=487 OR e8=392 OR e8=463 OR 203=e8)
-;
+ORDER BY 1,2,3,4;
 -- 1440 values hashing to 1708af07f91b7fa47944d289623f9b79
 
 -- query IIIT rowsort join137
@@ -32298,7 +32298,7 @@ SELECT c6+d6, c9, d7, x8
    AND (e7=428 OR 851=e7 OR e7=7)
    AND (956=d6 OR 647=d6 OR 667=d6 OR 664=d6)
    AND c9 in (402,349,240,526,187)
-;
+ORDER BY 1,2,3,4;
 -- 1440 values hashing to 1708af07f91b7fa47944d289623f9b79
 
 -- query IIIT rowsort join137
@@ -32308,7 +32308,7 @@ SELECT c6+d6, c9, d7, x8
    AND (e8=487 OR e8=392 OR e8=463 OR 203=e8)
    AND c9 in (402,349,240,526,187)
    AND (956=d6 OR 647=d6 OR 667=d6 OR 664=d6)
-;
+ORDER BY 1,2,3,4;
 -- 1440 values hashing to 1708af07f91b7fa47944d289623f9b79
 
 -- query II rowsort join138
@@ -32316,7 +32316,7 @@ SELECT a6, a5
   FROM t6, t5
  WHERE 163=c5
    AND (d6=271 OR 590=d6)
-;
+ORDER BY 1,2;
 -- 740
 -- 514
 -- 877
@@ -32327,7 +32327,7 @@ SELECT a6, a5
   FROM t5, t6
  WHERE 163=c5
    AND (d6=271 OR 590=d6)
-;
+ORDER BY 1,2;
 -- 740
 -- 514
 -- 877
@@ -32342,7 +32342,7 @@ SELECT a3+d5, d7+568, c2+e3, e6, e5, c4*841
    AND 663=e7
    AND 996=c2
    AND (34=d6 OR 600=d6 OR 467=d6)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to b282aa262a89edd0da4624b33c223923
 
 -- query IIIIII rowsort join139
@@ -32354,7 +32354,7 @@ SELECT a3+d5, d7+568, c2+e3, e6, e5, c4*841
    AND b4=826
    AND c5 in (585,187,672,18,766,163,44,734)
    AND 996=c2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to b282aa262a89edd0da4624b33c223923
 
 -- query IIIIII rowsort join139
@@ -32366,7 +32366,7 @@ SELECT a3+d5, d7+568, c2+e3, e6, e5, c4*841
    AND c5 in (585,187,672,18,766,163,44,734)
    AND (34=d6 OR 600=d6 OR 467=d6)
    AND 996=c2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to b282aa262a89edd0da4624b33c223923
 
 -- query IIIIII rowsort join139
@@ -32378,7 +32378,7 @@ SELECT a3+d5, d7+568, c2+e3, e6, e5, c4*841
    AND c5 in (585,187,672,18,766,163,44,734)
    AND 184=a3
    AND 996=c2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to b282aa262a89edd0da4624b33c223923
 
 -- query II rowsort join140
@@ -32386,7 +32386,7 @@ SELECT b3, d1
   FROM t1, t3
  WHERE (347=a3 OR a3=16 OR a3=697)
    AND 988=a1
-;
+ORDER BY 1,2;
 -- 124
 -- 130
 -- 17
@@ -32401,7 +32401,7 @@ SELECT b3, d1
   FROM t3, t1
  WHERE (347=a3 OR a3=16 OR a3=697)
    AND 988=a1
-;
+ORDER BY 1,2;
 -- 124
 -- 130
 -- 17
@@ -32416,7 +32416,7 @@ SELECT c9, e6
   FROM t9, t6
  WHERE d9 in (164,899,525,646,602,646)
    AND d6 in (376,321,36,458,271,453,852)
-;
+ORDER BY 1,2;
 -- 84 values hashing to 626f92d938a07b4225f2c6f9cfa88571
 
 -- query II rowsort join141
@@ -32424,7 +32424,7 @@ SELECT c9, e6
   FROM t9, t6
  WHERE d6 in (376,321,36,458,271,453,852)
    AND d9 in (164,899,525,646,602,646)
-;
+ORDER BY 1,2;
 -- 84 values hashing to 626f92d938a07b4225f2c6f9cfa88571
 
 -- query ITTITII rowsort join142
@@ -32437,7 +32437,7 @@ SELECT e9*527, x5, x6, a4, x1, b3, a2+902+c4
    AND b9=118
    AND c5 in (149,443,855,585,351,613,941,551)
    AND a3=992
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27720 values hashing to cf64126c14821741edd73a1ace70614e
 
 -- query ITTITII rowsort join142
@@ -32450,7 +32450,7 @@ SELECT e9*527, x5, x6, a4, x1, b3, a2+902+c4
    AND b9=118
    AND c5 in (149,443,855,585,351,613,941,551)
    AND (153=d2 OR d2=953 OR d2=892)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27720 values hashing to cf64126c14821741edd73a1ace70614e
 
 -- query ITTITII rowsort join142
@@ -32463,7 +32463,7 @@ SELECT e9*527, x5, x6, a4, x1, b3, a2+902+c4
    AND a3=992
    AND b4 in (551,847,23,175,532,903)
    AND (153=d2 OR d2=953 OR d2=892)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27720 values hashing to cf64126c14821741edd73a1ace70614e
 
 -- query ITTITII rowsort join142
@@ -32476,7 +32476,7 @@ SELECT e9*527, x5, x6, a4, x1, b3, a2+902+c4
    AND a3=992
    AND b4 in (551,847,23,175,532,903)
    AND (153=d2 OR d2=953 OR d2=892)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27720 values hashing to cf64126c14821741edd73a1ace70614e
 
 -- query IIIIIIII rowsort join143
@@ -32490,7 +32490,7 @@ SELECT c9, e8+c4, e5*465, b1, c4+b3, e6, c3+a1, b2+b6
    AND 527=c5
    AND e2=213
    AND a3=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 64 values hashing to 314e841107a5f48017a5313dc67ac885
 
 -- query IIIIIIII rowsort join143
@@ -32504,7 +32504,7 @@ SELECT c9, e8+c4, e5*465, b1, c4+b3, e6, c3+a1, b2+b6
    AND a3=d6
    AND e2=213
    AND 527=c5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 64 values hashing to 314e841107a5f48017a5313dc67ac885
 
 -- query IIIIIIII rowsort join143
@@ -32518,7 +32518,7 @@ SELECT c9, e8+c4, e5*465, b1, c4+b3, e6, c3+a1, b2+b6
    AND a3=d6
    AND d6=d4
    AND (e8=440 OR 600=e8)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 64 values hashing to 314e841107a5f48017a5313dc67ac885
 
 -- query IIIIIIII rowsort join143
@@ -32532,7 +32532,7 @@ SELECT c9, e8+c4, e5*465, b1, c4+b3, e6, c3+a1, b2+b6
    AND b4 in (849,184,372,888,982,748,35,261)
    AND (e8=440 OR 600=e8)
    AND a3=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 64 values hashing to 314e841107a5f48017a5313dc67ac885
 
 -- query II rowsort join144
@@ -32540,7 +32540,7 @@ SELECT b6+903, c8+598
   FROM t6, t8
  WHERE d6 in (197,734,493,846,613,974,500)
    AND e8=488
-;
+ORDER BY 1,2;
 -- 20 values hashing to eabda749eba7b76f06ad70dd32a845ee
 
 -- query II rowsort join144
@@ -32548,7 +32548,7 @@ SELECT b6+903, c8+598
   FROM t8, t6
  WHERE d6 in (197,734,493,846,613,974,500)
    AND e8=488
-;
+ORDER BY 1,2;
 -- 20 values hashing to eabda749eba7b76f06ad70dd32a845ee
 
 -- query II rowsort join144
@@ -32556,7 +32556,7 @@ SELECT b6+903, c8+598
   FROM t8, t6
  WHERE e8=488
    AND d6 in (197,734,493,846,613,974,500)
-;
+ORDER BY 1,2;
 -- 20 values hashing to eabda749eba7b76f06ad70dd32a845ee
 
 -- query II rowsort join145
@@ -32564,7 +32564,7 @@ SELECT c3, e6+784
   FROM t6, t3
  WHERE d6=269
    AND a3 in (935,763,98,788,720,699)
-;
+ORDER BY 1,2;
 -- 14 values hashing to 728f90a06e1126076769fdb737717c25
 
 -- query IIIII rowsort join146
@@ -32575,7 +32575,7 @@ SELECT b5+c5, d2, c9+297+e9, b1, b3+756
    AND 824=c5
    AND (a1=4 OR a1=395)
    AND d9 in (164,161,525,224,628,602,305,495)
-;
+ORDER BY 1,2,3,4,5;
 -- 600 values hashing to 7b124c37854b6f0ee17f3371811fcce6
 
 -- query IIIII rowsort join146
@@ -32586,7 +32586,7 @@ SELECT b5+c5, d2, c9+297+e9, b1, b3+756
    AND (244=a3 OR a3=899)
    AND (a1=4 OR a1=395)
    AND 824=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 600 values hashing to 7b124c37854b6f0ee17f3371811fcce6
 
 -- query IIIII rowsort join146
@@ -32597,7 +32597,7 @@ SELECT b5+c5, d2, c9+297+e9, b1, b3+756
    AND e2 in (699,852,707)
    AND (a1=4 OR a1=395)
    AND 824=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 600 values hashing to 7b124c37854b6f0ee17f3371811fcce6
 
 -- query IIIII rowsort join146
@@ -32608,7 +32608,7 @@ SELECT b5+c5, d2, c9+297+e9, b1, b3+756
    AND 824=c5
    AND (244=a3 OR a3=899)
    AND d9 in (164,161,525,224,628,602,305,495)
-;
+ORDER BY 1,2,3,4,5;
 -- 600 values hashing to 7b124c37854b6f0ee17f3371811fcce6
 
 -- query III rowsort join147
@@ -32617,7 +32617,7 @@ SELECT b7*217+a9, a9+a7, a3+c7
  WHERE e7=816
    AND 184=a3
    AND b9 in (15,426,125)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 00a2d05ebcb6dbd19ed14930dab1e7d5
 
 -- query III rowsort join147
@@ -32626,7 +32626,7 @@ SELECT b7*217+a9, a9+a7, a3+c7
  WHERE e7=816
    AND b9 in (15,426,125)
    AND 184=a3
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 00a2d05ebcb6dbd19ed14930dab1e7d5
 
 -- query III rowsort join147
@@ -32635,7 +32635,7 @@ SELECT b7*217+a9, a9+a7, a3+c7
  WHERE 184=a3
    AND e7=816
    AND b9 in (15,426,125)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 00a2d05ebcb6dbd19ed14930dab1e7d5
 
 -- query II rowsort join148
@@ -32643,7 +32643,7 @@ SELECT b8, d7*339+c8
   FROM t7, t8
  WHERE (508=e7 OR e7=248 OR e7=904)
    AND e8 in (463,38,377,41,199,295)
-;
+ORDER BY 1,2;
 -- 42 values hashing to 4c8365739b39c0a52c43995b99dff3c4
 
 -- query II rowsort join148
@@ -32651,7 +32651,7 @@ SELECT b8, d7*339+c8
   FROM t8, t7
  WHERE (508=e7 OR e7=248 OR e7=904)
    AND e8 in (463,38,377,41,199,295)
-;
+ORDER BY 1,2;
 -- 42 values hashing to 4c8365739b39c0a52c43995b99dff3c4
 
 -- query II rowsort join148
@@ -32659,7 +32659,7 @@ SELECT b8, d7*339+c8
   FROM t8, t7
  WHERE e8 in (463,38,377,41,199,295)
    AND (508=e7 OR e7=248 OR e7=904)
-;
+ORDER BY 1,2;
 -- 42 values hashing to 4c8365739b39c0a52c43995b99dff3c4
 
 -- query TI rowsort join149
@@ -32667,7 +32667,7 @@ SELECT x5, d9*699
   FROM t9, t5
  WHERE b9 in (751,118,818)
    AND c5 in (18,820,437,915)
-;
+ORDER BY 1,2;
 -- 30 values hashing to 7293a9c8bfbb9fcca96a5bfbf81570f8
 
 -- query TI rowsort join149
@@ -32675,7 +32675,7 @@ SELECT x5, d9*699
   FROM t5, t9
  WHERE c5 in (18,820,437,915)
    AND b9 in (751,118,818)
-;
+ORDER BY 1,2;
 -- 30 values hashing to 7293a9c8bfbb9fcca96a5bfbf81570f8
 
 -- query II rowsort join150
@@ -32683,7 +32683,7 @@ SELECT e7+c7, e4
   FROM t7, t4
  WHERE e7 in (860,31,39,945,344,844,904,372)
    AND 941=b4
-;
+ORDER BY 1,2;
 -- 18 values hashing to e4639a4590a891c64f36c7dd3dbdc766
 
 -- query II rowsort join150
@@ -32691,7 +32691,7 @@ SELECT e7+c7, e4
   FROM t7, t4
  WHERE 941=b4
    AND e7 in (860,31,39,945,344,844,904,372)
-;
+ORDER BY 1,2;
 -- 18 values hashing to e4639a4590a891c64f36c7dd3dbdc766
 
 -- query ITTIIIII rowsort join151
@@ -32705,7 +32705,7 @@ SELECT b3, x5, x9, c4+b8, b1, b7, c8*346, b2+367
    AND b2 in (592,820,729,504,501,414,353,113)
    AND e8=497
    AND c5 in (602,442,729,774,799,689,196,544)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 40320 values hashing to 42f36e938c5dd3cf75d490ef209a320b
 
 -- query ITTIIIII rowsort join151
@@ -32719,7 +32719,7 @@ SELECT b3, x5, x9, c4+b8, b1, b7, c8*346, b2+367
    AND b4 in (748,372,33)
    AND e7=288
    AND e9=e5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 40320 values hashing to 42f36e938c5dd3cf75d490ef209a320b
 
 -- query ITTIIIII rowsort join151
@@ -32733,7 +32733,7 @@ SELECT b3, x5, x9, c4+b8, b1, b7, c8*346, b2+367
    AND b4 in (748,372,33)
    AND e8=497
    AND a3 in (576,5,164,70,386,697)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 40320 values hashing to 42f36e938c5dd3cf75d490ef209a320b
 
 -- query ITTIIIII rowsort join151
@@ -32747,7 +32747,7 @@ SELECT b3, x5, x9, c4+b8, b1, b7, c8*346, b2+367
    AND b4 in (748,372,33)
    AND c5 in (602,442,729,774,799,689,196,544)
    AND e7=288
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 40320 values hashing to 42f36e938c5dd3cf75d490ef209a320b
 
 -- query III rowsort join152
@@ -32756,7 +32756,7 @@ SELECT a7, e1, d3+966+e1
  WHERE 296=a3
    AND a1 in (862,521,88,380,477)
    AND e7=156
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to ab0fb187c74b807fa9844ba45e15e1e0
 
 -- query III rowsort join152
@@ -32765,7 +32765,7 @@ SELECT a7, e1, d3+966+e1
  WHERE 296=a3
    AND a1 in (862,521,88,380,477)
    AND e7=156
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to ab0fb187c74b807fa9844ba45e15e1e0
 
 -- query III rowsort join152
@@ -32774,7 +32774,7 @@ SELECT a7, e1, d3+966+e1
  WHERE a1 in (862,521,88,380,477)
    AND 296=a3
    AND e7=156
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to ab0fb187c74b807fa9844ba45e15e1e0
 
 -- query III rowsort join152
@@ -32783,7 +32783,7 @@ SELECT a7, e1, d3+966+e1
  WHERE e7=156
    AND 296=a3
    AND a1 in (862,521,88,380,477)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to ab0fb187c74b807fa9844ba45e15e1e0
 
 -- query III rowsort join153
@@ -32792,7 +32792,7 @@ SELECT a7, d6+b7, e1
  WHERE (816=e7 OR 31=e7 OR 302=e7)
    AND d6 in (473,711,147,197,561,489)
    AND (a1=280 OR 742=a1 OR a1=498 OR a1=776)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to 35d5dc98f8a8df0e68ea7d4a37936d2c
 
 -- query III rowsort join153
@@ -32801,7 +32801,7 @@ SELECT a7, d6+b7, e1
  WHERE (a1=280 OR 742=a1 OR a1=498 OR a1=776)
    AND (816=e7 OR 31=e7 OR 302=e7)
    AND d6 in (473,711,147,197,561,489)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to 35d5dc98f8a8df0e68ea7d4a37936d2c
 
 -- query III rowsort join153
@@ -32810,7 +32810,7 @@ SELECT a7, d6+b7, e1
  WHERE (816=e7 OR 31=e7 OR 302=e7)
    AND (a1=280 OR 742=a1 OR a1=498 OR a1=776)
    AND d6 in (473,711,147,197,561,489)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to 35d5dc98f8a8df0e68ea7d4a37936d2c
 
 -- query III rowsort join153
@@ -32819,7 +32819,7 @@ SELECT a7, d6+b7, e1
  WHERE d6 in (473,711,147,197,561,489)
    AND (816=e7 OR 31=e7 OR 302=e7)
    AND (a1=280 OR 742=a1 OR a1=498 OR a1=776)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to 35d5dc98f8a8df0e68ea7d4a37936d2c
 
 -- query IITI rowsort join154
@@ -32829,7 +32829,7 @@ SELECT d9, e2+54, x3, c7
    AND a2=93
    AND e7 in (288,92,988,553,561,638,79,663)
    AND a3 in (551,162,30,872)
-;
+ORDER BY 1,2,3,4;
 -- 768 values hashing to 6f3ffc0c09834e898e91f5a363a9dc2b
 
 -- query IITI rowsort join154
@@ -32839,7 +32839,7 @@ SELECT d9, e2+54, x3, c7
    AND e7 in (288,92,988,553,561,638,79,663)
    AND a3 in (551,162,30,872)
    AND a2=93
-;
+ORDER BY 1,2,3,4;
 -- 768 values hashing to 6f3ffc0c09834e898e91f5a363a9dc2b
 
 -- query IITI rowsort join154
@@ -32849,7 +32849,7 @@ SELECT d9, e2+54, x3, c7
    AND b9 in (848,549,103,361,456)
    AND a2=93
    AND a3 in (551,162,30,872)
-;
+ORDER BY 1,2,3,4;
 -- 768 values hashing to 6f3ffc0c09834e898e91f5a363a9dc2b
 
 -- query IITI rowsort join154
@@ -32859,7 +32859,7 @@ SELECT d9, e2+54, x3, c7
    AND e7 in (288,92,988,553,561,638,79,663)
    AND a2=93
    AND a3 in (551,162,30,872)
-;
+ORDER BY 1,2,3,4;
 -- 768 values hashing to 6f3ffc0c09834e898e91f5a363a9dc2b
 
 -- query IITIIII rowsort join155
@@ -32872,7 +32872,7 @@ SELECT a6+30, a8, x1, d2+e6, d4, d9+e2, b3+a4
    AND a3=368
    AND d6 in (600,393,613,901,489)
    AND a9 in (747,172,160,553)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3024 values hashing to 0c4cc07441ad02155b035bc7dfd7954a
 
 -- query IITIIII rowsort join155
@@ -32885,7 +32885,7 @@ SELECT a6+30, a8, x1, d2+e6, d4, d9+e2, b3+a4
    AND d2 in (598,886,977)
    AND b4=d6
    AND (e8=495 OR e8=221 OR e8=296)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3024 values hashing to 0c4cc07441ad02155b035bc7dfd7954a
 
 -- query IITIIII rowsort join155
@@ -32898,7 +32898,7 @@ SELECT a6+30, a8, x1, d2+e6, d4, d9+e2, b3+a4
    AND a1 in (707,607,492,281,338,637,622,767)
    AND d6 in (600,393,613,901,489)
    AND (e8=495 OR e8=221 OR e8=296)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3024 values hashing to 0c4cc07441ad02155b035bc7dfd7954a
 
 -- query IITIIII rowsort join155
@@ -32911,7 +32911,7 @@ SELECT a6+30, a8, x1, d2+e6, d4, d9+e2, b3+a4
    AND d2 in (598,886,977)
    AND d6 in (600,393,613,901,489)
    AND (e8=495 OR e8=221 OR e8=296)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 3024 values hashing to 0c4cc07441ad02155b035bc7dfd7954a
 
 -- query IIIITIII rowsort join156
@@ -32925,7 +32925,7 @@ SELECT a3+652+a4, b1*211, a7*405, e8, x4, c6, b5+403+a5, a9+382
    AND e9 in (987,936,737,687,230,301)
    AND a1=829
    AND e8=533
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 480 values hashing to 3816515f9f3500a560ad8cbe61c4dd73
 
 -- query IIIITIII rowsort join156
@@ -32939,7 +32939,7 @@ SELECT a3+652+a4, b1*211, a7*405, e8, x4, c6, b5+403+a5, a9+382
    AND a3 in (244,559,135,353,379)
    AND a1=829
    AND e9 in (987,936,737,687,230,301)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 480 values hashing to 3816515f9f3500a560ad8cbe61c4dd73
 
 -- query IIIITIII rowsort join156
@@ -32953,7 +32953,7 @@ SELECT a3+652+a4, b1*211, a7*405, e8, x4, c6, b5+403+a5, a9+382
    AND e8=533
    AND d6=463
    AND a1=829
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 480 values hashing to 3816515f9f3500a560ad8cbe61c4dd73
 
 -- query IIIITIII rowsort join156
@@ -32967,7 +32967,7 @@ SELECT a3+652+a4, b1*211, a7*405, e8, x4, c6, b5+403+a5, a9+382
    AND 455=e7
    AND b4=829
    AND d6=463
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 480 values hashing to 3816515f9f3500a560ad8cbe61c4dd73
 
 -- query IIII rowsort join157
@@ -32977,7 +32977,7 @@ SELECT c6+c6, b2+376+d6, b9, e4+361+b2
    AND b4=c2
    AND 72=a9
    AND d6 in (405,674,852,196)
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to c80559de153846d54783d0a7589c7bea
 
 -- query IIII rowsort join157
@@ -32987,7 +32987,7 @@ SELECT c6+c6, b2+376+d6, b9, e4+361+b2
    AND 72=a9
    AND b4=c2
    AND d2 in (46,643,215,669,838,414)
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to c80559de153846d54783d0a7589c7bea
 
 -- query IIII rowsort join157
@@ -32997,7 +32997,7 @@ SELECT c6+c6, b2+376+d6, b9, e4+361+b2
    AND b4=c2
    AND d6 in (405,674,852,196)
    AND 72=a9
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to c80559de153846d54783d0a7589c7bea
 
 -- query IIII rowsort join157
@@ -33007,7 +33007,7 @@ SELECT c6+c6, b2+376+d6, b9, e4+361+b2
    AND d6 in (405,674,852,196)
    AND d2 in (46,643,215,669,838,414)
    AND 72=a9
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to c80559de153846d54783d0a7589c7bea
 
 -- query II rowsort join158
@@ -33015,7 +33015,7 @@ SELECT b4*625, e7+299+a4
   FROM t7, t4
  WHERE b4 in (593,323,551,986)
    AND e7 in (553,428,782,156,280,7,508)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 29cbb9c75c4fe2253f51f0c5140a11e9
 
 -- query II rowsort join158
@@ -33023,7 +33023,7 @@ SELECT b4*625, e7+299+a4
   FROM t4, t7
  WHERE b4 in (593,323,551,986)
    AND e7 in (553,428,782,156,280,7,508)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 29cbb9c75c4fe2253f51f0c5140a11e9
 
 -- query II rowsort join158
@@ -33031,7 +33031,7 @@ SELECT b4*625, e7+299+a4
   FROM t4, t7
  WHERE e7 in (553,428,782,156,280,7,508)
    AND b4 in (593,323,551,986)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 29cbb9c75c4fe2253f51f0c5140a11e9
 
 -- query ITIITI rowsort join159
@@ -33043,7 +33043,7 @@ SELECT d4+827, x1, c8+710, e9+360, x5, c2*231+d9
    AND c9 in (370,936,232,64,935)
    AND b4 in (267,260,551,917,408)
    AND c5 in (797,960,163,733,50,649,249,634)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 4320 values hashing to 220525bc1d642060cfd4e9748fc3ca73
 
 -- query ITIITI rowsort join159
@@ -33055,7 +33055,7 @@ SELECT d4+827, x1, c8+710, e9+360, x5, c2*231+d9
    AND c5 in (797,960,163,733,50,649,249,634)
    AND b4 in (267,260,551,917,408)
    AND d2 in (847,365,334,215)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 4320 values hashing to 220525bc1d642060cfd4e9748fc3ca73
 
 -- query ITIITI rowsort join159
@@ -33067,7 +33067,7 @@ SELECT d4+827, x1, c8+710, e9+360, x5, c2*231+d9
    AND e8=a9
    AND c9 in (370,936,232,64,935)
    AND c5 in (797,960,163,733,50,649,249,634)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 4320 values hashing to 220525bc1d642060cfd4e9748fc3ca73
 
 -- query ITIITI rowsort join159
@@ -33079,7 +33079,7 @@ SELECT d4+827, x1, c8+710, e9+360, x5, c2*231+d9
    AND e8=a9
    AND d2 in (847,365,334,215)
    AND c9 in (370,936,232,64,935)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 4320 values hashing to 220525bc1d642060cfd4e9748fc3ca73
 
 -- query IT rowsort join160
@@ -33087,7 +33087,7 @@ SELECT c9*242, x7
   FROM t9, t7
  WHERE 251=b9
    AND e7 in (815,499,201,782,904,884,561)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 671c7d9554c380460389fd307dfeffdc
 
 -- query IT rowsort join160
@@ -33095,7 +33095,7 @@ SELECT c9*242, x7
   FROM t7, t9
  WHERE 251=b9
    AND e7 in (815,499,201,782,904,884,561)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 671c7d9554c380460389fd307dfeffdc
 
 -- query TIII rowsort join161
@@ -33105,7 +33105,7 @@ SELECT x1, e2+836, a3+d1, d5+d2
    AND 237=a1
    AND d2 in (2,577,405,892)
    AND c5 in (37,299,672,140,613)
-;
+ORDER BY 1,2,3,4;
 -- 320 values hashing to 6b491a721edca6e94adb614e20070b41
 
 -- query TIII rowsort join161
@@ -33115,7 +33115,7 @@ SELECT x1, e2+836, a3+d1, d5+d2
    AND a3 in (478,559,379,820)
    AND c5 in (37,299,672,140,613)
    AND 237=a1
-;
+ORDER BY 1,2,3,4;
 -- 320 values hashing to 6b491a721edca6e94adb614e20070b41
 
 -- query TIII rowsort join161
@@ -33125,7 +33125,7 @@ SELECT x1, e2+836, a3+d1, d5+d2
    AND d2 in (2,577,405,892)
    AND c5 in (37,299,672,140,613)
    AND a3 in (478,559,379,820)
-;
+ORDER BY 1,2,3,4;
 -- 320 values hashing to 6b491a721edca6e94adb614e20070b41
 
 -- query TIII rowsort join161
@@ -33135,7 +33135,7 @@ SELECT x1, e2+836, a3+d1, d5+d2
    AND d2 in (2,577,405,892)
    AND 237=a1
    AND a3 in (478,559,379,820)
-;
+ORDER BY 1,2,3,4;
 -- 320 values hashing to 6b491a721edca6e94adb614e20070b41
 
 -- query IITI rowsort join162
@@ -33145,7 +33145,7 @@ SELECT b5, e9, x4, b8+c9
    AND c5 in (351,261,927,158,797,923,989)
    AND b4 in (243,319,261,33)
    AND a9 in (830,435,240,28,683)
-;
+ORDER BY 1,2,3,4;
 -- 1536 values hashing to 045d659246181c5a88c8cc4ea77554f4
 
 -- query IITI rowsort join162
@@ -33155,7 +33155,7 @@ SELECT b5, e9, x4, b8+c9
    AND (e8=180 OR e8=175)
    AND c5 in (351,261,927,158,797,923,989)
    AND a9 in (830,435,240,28,683)
-;
+ORDER BY 1,2,3,4;
 -- 1536 values hashing to 045d659246181c5a88c8cc4ea77554f4
 
 -- query IITI rowsort join162
@@ -33165,7 +33165,7 @@ SELECT b5, e9, x4, b8+c9
    AND a9 in (830,435,240,28,683)
    AND c5 in (351,261,927,158,797,923,989)
    AND b4 in (243,319,261,33)
-;
+ORDER BY 1,2,3,4;
 -- 1536 values hashing to 045d659246181c5a88c8cc4ea77554f4
 
 -- query IITI rowsort join162
@@ -33175,7 +33175,7 @@ SELECT b5, e9, x4, b8+c9
    AND (e8=180 OR e8=175)
    AND b4 in (243,319,261,33)
    AND a9 in (830,435,240,28,683)
-;
+ORDER BY 1,2,3,4;
 -- 1536 values hashing to 045d659246181c5a88c8cc4ea77554f4
 
 -- query II rowsort join163
@@ -33183,7 +33183,7 @@ SELECT b4+471, a8*599
   FROM t4, t8
  WHERE e8=455
    AND b4=635
-;
+ORDER BY 1,2;
 -- 1106
 -- 144359
 
@@ -33192,7 +33192,7 @@ SELECT b4+471, a8*599
   FROM t8, t4
  WHERE e8=455
    AND b4=635
-;
+ORDER BY 1,2;
 -- 1106
 -- 144359
 
@@ -33201,7 +33201,7 @@ SELECT b4+471, a8*599
   FROM t8, t4
  WHERE b4=635
    AND e8=455
-;
+ORDER BY 1,2;
 -- 1106
 -- 144359
 
@@ -33210,7 +33210,7 @@ SELECT b4+471, a8*599
   FROM t4, t8
  WHERE b4=635
    AND e8=455
-;
+ORDER BY 1,2;
 -- 1106
 -- 144359
 
@@ -33220,7 +33220,7 @@ SELECT a1, a9*493+c1, b6
  WHERE d6 in (321,581,376,192,393,767)
    AND c9 in (923,273,469,90)
    AND a1=145
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 4678392a58c892398a6e051042188203
 
 -- query III rowsort join164
@@ -33229,7 +33229,7 @@ SELECT a1, a9*493+c1, b6
  WHERE a1=145
    AND c9 in (923,273,469,90)
    AND d6 in (321,581,376,192,393,767)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 4678392a58c892398a6e051042188203
 
 -- query III rowsort join164
@@ -33238,7 +33238,7 @@ SELECT a1, a9*493+c1, b6
  WHERE d6 in (321,581,376,192,393,767)
    AND a1=145
    AND c9 in (923,273,469,90)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 4678392a58c892398a6e051042188203
 
 -- query III rowsort join164
@@ -33247,7 +33247,7 @@ SELECT a1, a9*493+c1, b6
  WHERE c9 in (923,273,469,90)
    AND a1=145
    AND d6 in (321,581,376,192,393,767)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to 4678392a58c892398a6e051042188203
 
 -- query TII rowsort join165
@@ -33256,7 +33256,7 @@ SELECT x6, a9, d2+a6
  WHERE 223=d6
    AND a2=651
    AND (c9=975 OR c9=807 OR c9=39 OR c9=688)
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 3cae1d4cc6a35d088508483e9596515d
 
 -- query TII rowsort join165
@@ -33265,7 +33265,7 @@ SELECT x6, a9, d2+a6
  WHERE a2=651
    AND 223=d6
    AND (c9=975 OR c9=807 OR c9=39 OR c9=688)
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 3cae1d4cc6a35d088508483e9596515d
 
 -- query TII rowsort join165
@@ -33274,7 +33274,7 @@ SELECT x6, a9, d2+a6
  WHERE a2=651
    AND (c9=975 OR c9=807 OR c9=39 OR c9=688)
    AND 223=d6
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 3cae1d4cc6a35d088508483e9596515d
 
 -- query TII rowsort join165
@@ -33283,7 +33283,7 @@ SELECT x6, a9, d2+a6
  WHERE (c9=975 OR c9=807 OR c9=39 OR c9=688)
    AND 223=d6
    AND a2=651
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to 3cae1d4cc6a35d088508483e9596515d
 
 -- query III rowsort join166
@@ -33292,7 +33292,7 @@ SELECT d2+e2, b1+90+e1, a8*18+a2
  WHERE e2 in (698,925,505,148,638)
    AND a1=c8
    AND e8 in (579,416,199,442,476)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 8288ba13e8d066e3f8e495fcedd8f843
 
 -- query III rowsort join166
@@ -33301,7 +33301,7 @@ SELECT d2+e2, b1+90+e1, a8*18+a2
  WHERE e8 in (579,416,199,442,476)
    AND e2 in (698,925,505,148,638)
    AND a1=c8
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 8288ba13e8d066e3f8e495fcedd8f843
 
 -- query III rowsort join166
@@ -33310,7 +33310,7 @@ SELECT d2+e2, b1+90+e1, a8*18+a2
  WHERE e2 in (698,925,505,148,638)
    AND a1=c8
    AND e8 in (579,416,199,442,476)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 8288ba13e8d066e3f8e495fcedd8f843
 
 -- query TTIIT rowsort join167
@@ -33321,7 +33321,7 @@ SELECT x5, x1, a3, b7+81, x8
    AND a3 in (490,995,776,822,608,164,515)
    AND c5 in (915,598,923,960,797,922,147,471)
    AND a1 in (866,525,538,299,918,524,981,76)
-;
+ORDER BY 1,2,3,4,5;
 -- 25200 values hashing to 7f776b68105747a160d57c5f5be5089a
 
 -- query TTIIT rowsort join167
@@ -33332,7 +33332,7 @@ SELECT x5, x1, a3, b7+81, x8
    AND a1 in (866,525,538,299,918,524,981,76)
    AND c5 in (915,598,923,960,797,922,147,471)
    AND e7 in (844,7,120,841,782,506,144,79)
-;
+ORDER BY 1,2,3,4,5;
 -- 25200 values hashing to 7f776b68105747a160d57c5f5be5089a
 
 -- query TTIIT rowsort join167
@@ -33343,7 +33343,7 @@ SELECT x5, x1, a3, b7+81, x8
    AND 933=e8
    AND a3 in (490,995,776,822,608,164,515)
    AND c5 in (915,598,923,960,797,922,147,471)
-;
+ORDER BY 1,2,3,4,5;
 -- 25200 values hashing to 7f776b68105747a160d57c5f5be5089a
 
 -- query TTIIT rowsort join167
@@ -33354,7 +33354,7 @@ SELECT x5, x1, a3, b7+81, x8
    AND c5 in (915,598,923,960,797,922,147,471)
    AND a3 in (490,995,776,822,608,164,515)
    AND 933=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 25200 values hashing to 7f776b68105747a160d57c5f5be5089a
 
 -- query IIITI rowsort join168
@@ -33365,7 +33365,7 @@ SELECT d5, d2, e9*161, x7, c3
    AND (374=c2 OR 728=c2 OR c2=272 OR 964=c2)
    AND a3 in (697,145,777,490)
    AND 122=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 4000 values hashing to 2b3016929bfe592c23b220e5a4e6b6a2
 
 -- query IIITI rowsort join168
@@ -33376,7 +33376,7 @@ SELECT d5, d2, e9*161, x7, c3
    AND 122=e7
    AND a3 in (697,145,777,490)
    AND (e9=368 OR e9=291 OR 335=e9 OR 792=e9)
-;
+ORDER BY 1,2,3,4,5;
 -- 4000 values hashing to 2b3016929bfe592c23b220e5a4e6b6a2
 
 -- query IIITI rowsort join168
@@ -33387,7 +33387,7 @@ SELECT d5, d2, e9*161, x7, c3
    AND 122=e7
    AND (e9=368 OR e9=291 OR 335=e9 OR 792=e9)
    AND a3 in (697,145,777,490)
-;
+ORDER BY 1,2,3,4,5;
 -- 4000 values hashing to 2b3016929bfe592c23b220e5a4e6b6a2
 
 -- query IIITI rowsort join168
@@ -33398,7 +33398,7 @@ SELECT d5, d2, e9*161, x7, c3
    AND 122=e7
    AND (374=c2 OR 728=c2 OR c2=272 OR 964=c2)
    AND a3 in (697,145,777,490)
-;
+ORDER BY 1,2,3,4,5;
 -- 4000 values hashing to 2b3016929bfe592c23b220e5a4e6b6a2
 
 -- query IIT rowsort join169
@@ -33407,7 +33407,7 @@ SELECT c2+218+b8, b8, x1
  WHERE 299=a1
    AND (e8=22 OR e8=792 OR 972=e8)
    AND d2 in (887,416,249,977,577,555)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 1511ca530f3db6d805fd81d7d2acd700
 
 -- query IIT rowsort join169
@@ -33416,7 +33416,7 @@ SELECT c2+218+b8, b8, x1
  WHERE (e8=22 OR e8=792 OR 972=e8)
    AND 299=a1
    AND d2 in (887,416,249,977,577,555)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 1511ca530f3db6d805fd81d7d2acd700
 
 -- query IIT rowsort join169
@@ -33425,7 +33425,7 @@ SELECT c2+218+b8, b8, x1
  WHERE 299=a1
    AND (e8=22 OR e8=792 OR 972=e8)
    AND d2 in (887,416,249,977,577,555)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 1511ca530f3db6d805fd81d7d2acd700
 
 -- query IIT rowsort join169
@@ -33434,7 +33434,7 @@ SELECT c2+218+b8, b8, x1
  WHERE 299=a1
    AND (e8=22 OR e8=792 OR 972=e8)
    AND d2 in (887,416,249,977,577,555)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 1511ca530f3db6d805fd81d7d2acd700
 
 -- query II rowsort join170
@@ -33442,7 +33442,7 @@ SELECT d1*267, a7*670+e1
   FROM t1, t7
  WHERE 154=e7
    AND a1=b7
-;
+ORDER BY 1,2;
 -- 249912
 -- 578320
 
@@ -33451,7 +33451,7 @@ SELECT d1*267, a7*670+e1
   FROM t7, t1
  WHERE 154=e7
    AND a1=b7
-;
+ORDER BY 1,2;
 -- 249912
 -- 578320
 
@@ -33462,7 +33462,7 @@ SELECT b2+237, e4, e1+720, e5
    AND c5 in (844,805,31,18,697,140)
    AND (879=a1 OR 963=a1)
    AND b4 in (907,733,498,589,917,748,33,925)
-;
+ORDER BY 1,2,3,4;
 -- 896 values hashing to 6eed2c7d8d8ee56483fc526a6ce7cd9b
 
 -- query IIII rowsort join171
@@ -33472,7 +33472,7 @@ SELECT b2+237, e4, e1+720, e5
    AND b4 in (907,733,498,589,917,748,33,925)
    AND (879=a1 OR 963=a1)
    AND b2=818
-;
+ORDER BY 1,2,3,4;
 -- 896 values hashing to 6eed2c7d8d8ee56483fc526a6ce7cd9b
 
 -- query IIII rowsort join171
@@ -33482,7 +33482,7 @@ SELECT b2+237, e4, e1+720, e5
    AND b2=818
    AND (879=a1 OR 963=a1)
    AND c5 in (844,805,31,18,697,140)
-;
+ORDER BY 1,2,3,4;
 -- 896 values hashing to 6eed2c7d8d8ee56483fc526a6ce7cd9b
 
 -- query IIII rowsort join171
@@ -33492,7 +33492,7 @@ SELECT b2+237, e4, e1+720, e5
    AND c5 in (844,805,31,18,697,140)
    AND (879=a1 OR 963=a1)
    AND b2=818
-;
+ORDER BY 1,2,3,4;
 -- 896 values hashing to 6eed2c7d8d8ee56483fc526a6ce7cd9b
 
 -- query IIIII rowsort join172
@@ -33503,7 +33503,7 @@ SELECT e4, b9*696+c4, a2+800, b8+b8, b6
    AND b4=267
    AND a9 in (251,660,694,559,982,847)
    AND 664=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to 88b7b5555e34844314ce8356e26186a7
 
 -- query IIIII rowsort join172
@@ -33514,7 +33514,7 @@ SELECT e4, b9*696+c4, a2+800, b8+b8, b6
    AND e8 in (955,586,846,41,463)
    AND a2 in (279,262,222,817,590)
    AND a9 in (251,660,694,559,982,847)
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to 88b7b5555e34844314ce8356e26186a7
 
 -- query IIIII rowsort join172
@@ -33525,7 +33525,7 @@ SELECT e4, b9*696+c4, a2+800, b8+b8, b6
    AND 664=d6
    AND a9 in (251,660,694,559,982,847)
    AND e8 in (955,586,846,41,463)
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to 88b7b5555e34844314ce8356e26186a7
 
 -- query IIIII rowsort join172
@@ -33536,7 +33536,7 @@ SELECT e4, b9*696+c4, a2+800, b8+b8, b6
    AND a2 in (279,262,222,817,590)
    AND b4=267
    AND 664=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to 88b7b5555e34844314ce8356e26186a7
 
 -- query TI rowsort join173
@@ -33544,7 +33544,7 @@ SELECT x3, b4+326
   FROM t4, t3
  WHERE b4=c3
    AND a3 in (143,729,929,581,386,865,490,935)
-;
+ORDER BY 1,2;
 -- table tn3 row 125
 -- 1312
 -- table tn3 row 93
@@ -33555,7 +33555,7 @@ SELECT x3, b4+326
   FROM t3, t4
  WHERE b4=c3
    AND a3 in (143,729,929,581,386,865,490,935)
-;
+ORDER BY 1,2;
 -- table tn3 row 125
 -- 1312
 -- table tn3 row 93
@@ -33569,7 +33569,7 @@ SELECT x4, b1, b9, a6*449+c1, x2
    AND b2=c6
    AND (a1=109 OR a1=674 OR a1=61 OR a1=492)
    AND b4=b1
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 344a257a4180e61fa2c0cb4e32285aa6
 
 -- query TIIIT rowsort join174
@@ -33580,7 +33580,7 @@ SELECT x4, b1, b9, a6*449+c1, x2
    AND (c9=809 OR c9=526 OR 613=c9)
    AND (a1=109 OR a1=674 OR a1=61 OR a1=492)
    AND (d6=337 OR 767=d6 OR 797=d6 OR d6=750)
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 344a257a4180e61fa2c0cb4e32285aa6
 
 -- query TIIIT rowsort join174
@@ -33591,7 +33591,7 @@ SELECT x4, b1, b9, a6*449+c1, x2
    AND (c9=809 OR c9=526 OR 613=c9)
    AND b2=c6
    AND (a1=109 OR a1=674 OR a1=61 OR a1=492)
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 344a257a4180e61fa2c0cb4e32285aa6
 
 -- query TIIIT rowsort join174
@@ -33602,7 +33602,7 @@ SELECT x4, b1, b9, a6*449+c1, x2
    AND (d6=337 OR 767=d6 OR 797=d6 OR d6=750)
    AND (a1=109 OR a1=674 OR a1=61 OR a1=492)
    AND (c9=809 OR c9=526 OR 613=c9)
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 344a257a4180e61fa2c0cb4e32285aa6
 
 -- query ITI rowsort join175
@@ -33611,7 +33611,7 @@ SELECT e7, x2, c6+d2
  WHERE b2=504
    AND e7 in (48,506,301,688,456,595)
    AND d6 in (286,463,271,991,734)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to 728763086e91d6df75e6318900ddacde
 
 -- query ITI rowsort join175
@@ -33620,7 +33620,7 @@ SELECT e7, x2, c6+d2
  WHERE b2=504
    AND d6 in (286,463,271,991,734)
    AND e7 in (48,506,301,688,456,595)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to 728763086e91d6df75e6318900ddacde
 
 -- query ITI rowsort join175
@@ -33629,7 +33629,7 @@ SELECT e7, x2, c6+d2
  WHERE d6 in (286,463,271,991,734)
    AND b2=504
    AND e7 in (48,506,301,688,456,595)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to 728763086e91d6df75e6318900ddacde
 
 -- query ITI rowsort join175
@@ -33638,7 +33638,7 @@ SELECT e7, x2, c6+d2
  WHERE b2=504
    AND d6 in (286,463,271,991,734)
    AND e7 in (48,506,301,688,456,595)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to 728763086e91d6df75e6318900ddacde
 
 -- query ITII rowsort join176
@@ -33648,7 +33648,7 @@ SELECT d3+58+b9, x2, a9, c4*588+c9
    AND a3=d2
    AND e2 in (428,217,434,411)
    AND b4 in (476,260,707,587,551,634)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 9e7cca2d4d07251fbc8f6b50b4a685b6
 
 -- query ITII rowsort join176
@@ -33658,7 +33658,7 @@ SELECT d3+58+b9, x2, a9, c4*588+c9
    AND e2 in (428,217,434,411)
    AND a3=d2
    AND (495=d9 OR d9=129 OR d9=628)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 9e7cca2d4d07251fbc8f6b50b4a685b6
 
 -- query ITII rowsort join176
@@ -33668,7 +33668,7 @@ SELECT d3+58+b9, x2, a9, c4*588+c9
    AND (495=d9 OR d9=129 OR d9=628)
    AND b4 in (476,260,707,587,551,634)
    AND e2 in (428,217,434,411)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 9e7cca2d4d07251fbc8f6b50b4a685b6
 
 -- query ITII rowsort join176
@@ -33678,7 +33678,7 @@ SELECT d3+58+b9, x2, a9, c4*588+c9
    AND (495=d9 OR d9=129 OR d9=628)
    AND b4 in (476,260,707,587,551,634)
    AND e2 in (428,217,434,411)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to 9e7cca2d4d07251fbc8f6b50b4a685b6
 
 -- query TIITI rowsort join177
@@ -33689,7 +33689,7 @@ SELECT x1, d5+c5, d4*271, x9, c6*41+a1
    AND d9=b6
    AND d6 in (161,852,223,581,269,931,60)
    AND c5 in (934,598,585)
-;
+ORDER BY 1,2,3,4,5;
 -- 4320 values hashing to 644b0f1bd4c3c64ef31f595ce19664f9
 
 -- query TIITI rowsort join177
@@ -33700,7 +33700,7 @@ SELECT x1, d5+c5, d4*271, x9, c6*41+a1
    AND a1 in (825,864,268,382,544,4,20)
    AND c5 in (934,598,585)
    AND d9=b6
-;
+ORDER BY 1,2,3,4,5;
 -- 4320 values hashing to 644b0f1bd4c3c64ef31f595ce19664f9
 
 -- query TIITI rowsort join177
@@ -33711,7 +33711,7 @@ SELECT x1, d5+c5, d4*271, x9, c6*41+a1
    AND d9=b6
    AND a1 in (825,864,268,382,544,4,20)
    AND b4 in (708,261,901,331,627,826,86,907)
-;
+ORDER BY 1,2,3,4,5;
 -- 4320 values hashing to 644b0f1bd4c3c64ef31f595ce19664f9
 
 -- query TIITI rowsort join177
@@ -33722,7 +33722,7 @@ SELECT x1, d5+c5, d4*271, x9, c6*41+a1
    AND c5 in (934,598,585)
    AND d6 in (161,852,223,581,269,931,60)
    AND a1 in (825,864,268,382,544,4,20)
-;
+ORDER BY 1,2,3,4,5;
 -- 4320 values hashing to 644b0f1bd4c3c64ef31f595ce19664f9
 
 -- query III rowsort join178
@@ -33731,7 +33731,7 @@ SELECT d8, b6, e9
  WHERE c9 in (457,992,696,62,64,734,171,351)
    AND e8 in (377,295,972,272,260,381,392)
    AND (d6=151 OR 974=d6 OR 911=d6 OR d6=807)
-;
+ORDER BY 1,2,3;
 -- 1008 values hashing to 1a931f052f639fbaaeab2dcb7018a60a
 
 -- query III rowsort join178
@@ -33740,7 +33740,7 @@ SELECT d8, b6, e9
  WHERE c9 in (457,992,696,62,64,734,171,351)
    AND e8 in (377,295,972,272,260,381,392)
    AND (d6=151 OR 974=d6 OR 911=d6 OR d6=807)
-;
+ORDER BY 1,2,3;
 -- 1008 values hashing to 1a931f052f639fbaaeab2dcb7018a60a
 
 -- query III rowsort join178
@@ -33749,7 +33749,7 @@ SELECT d8, b6, e9
  WHERE (d6=151 OR 974=d6 OR 911=d6 OR d6=807)
    AND e8 in (377,295,972,272,260,381,392)
    AND c9 in (457,992,696,62,64,734,171,351)
-;
+ORDER BY 1,2,3;
 -- 1008 values hashing to 1a931f052f639fbaaeab2dcb7018a60a
 
 -- query III rowsort join178
@@ -33758,7 +33758,7 @@ SELECT d8, b6, e9
  WHERE (d6=151 OR 974=d6 OR 911=d6 OR d6=807)
    AND c9 in (457,992,696,62,64,734,171,351)
    AND e8 in (377,295,972,272,260,381,392)
-;
+ORDER BY 1,2,3;
 -- 1008 values hashing to 1a931f052f639fbaaeab2dcb7018a60a
 
 -- query II rowsort join179
@@ -33766,7 +33766,7 @@ SELECT b1, e2*438
   FROM t2, t1
  WHERE c2=22
    AND 643=a1
-;
+ORDER BY 1,2;
 -- 435
 -- 187464
 
@@ -33775,7 +33775,7 @@ SELECT b1, e2*438
   FROM t1, t2
  WHERE c2=22
    AND 643=a1
-;
+ORDER BY 1,2;
 -- 435
 -- 187464
 
@@ -33784,7 +33784,7 @@ SELECT b1, e2*438
   FROM t1, t2
  WHERE 643=a1
    AND c2=22
-;
+ORDER BY 1,2;
 -- 435
 -- 187464
 
@@ -33793,7 +33793,7 @@ SELECT c4, d9*288+d4
   FROM t9, t4
  WHERE b4 in (921,603,68)
    AND 818=b9
-;
+ORDER BY 1,2;
 -- 47
 -- 267565
 -- 660
@@ -33806,7 +33806,7 @@ SELECT c4, d9*288+d4
   FROM t9, t4
  WHERE 818=b9
    AND b4 in (921,603,68)
-;
+ORDER BY 1,2;
 -- 47
 -- 267565
 -- 660
@@ -33819,7 +33819,7 @@ SELECT c4, c9*766
   FROM t9, t4
  WHERE b4=826
    AND d9 in (235,489,855,345,668,678,732)
-;
+ORDER BY 1,2;
 -- 14 values hashing to 05dfe30a0bdfd02a31cb2c98b3a289b4
 
 -- query II rowsort join181
@@ -33827,7 +33827,7 @@ SELECT c4, c9*766
   FROM t9, t4
  WHERE d9 in (235,489,855,345,668,678,732)
    AND b4=826
-;
+ORDER BY 1,2;
 -- 14 values hashing to 05dfe30a0bdfd02a31cb2c98b3a289b4
 
 -- query II rowsort join181
@@ -33835,7 +33835,7 @@ SELECT c4, c9*766
   FROM t4, t9
  WHERE b4=826
    AND d9 in (235,489,855,345,668,678,732)
-;
+ORDER BY 1,2;
 -- 14 values hashing to 05dfe30a0bdfd02a31cb2c98b3a289b4
 
 -- query II rowsort join182
@@ -33843,7 +33843,7 @@ SELECT c4, e7+308
   FROM t7, t4
  WHERE b4 in (76,938,901,802,635,289,538)
    AND e7 in (156,215,688,288,827,884)
-;
+ORDER BY 1,2;
 -- 112 values hashing to 051c3fc81a261a5766a8edc21af82784
 
 -- query II rowsort join182
@@ -33851,7 +33851,7 @@ SELECT c4, e7+308
   FROM t4, t7
  WHERE b4 in (76,938,901,802,635,289,538)
    AND e7 in (156,215,688,288,827,884)
-;
+ORDER BY 1,2;
 -- 112 values hashing to 051c3fc81a261a5766a8edc21af82784
 
 -- query II rowsort join182
@@ -33859,7 +33859,7 @@ SELECT c4, e7+308
   FROM t7, t4
  WHERE e7 in (156,215,688,288,827,884)
    AND b4 in (76,938,901,802,635,289,538)
-;
+ORDER BY 1,2;
 -- 112 values hashing to 051c3fc81a261a5766a8edc21af82784
 
 -- query II rowsort join183
@@ -33867,7 +33867,7 @@ SELECT e9+c9, e3+d9
   FROM t3, t9
  WHERE e9=15
    AND a3 in (892,865,979,341,935,499,836)
-;
+ORDER BY 1,2;
 -- 18 values hashing to b62377555c6dc737a51beed481680cb0
 
 -- query II rowsort join183
@@ -33875,7 +33875,7 @@ SELECT e9+c9, e3+d9
   FROM t9, t3
  WHERE a3 in (892,865,979,341,935,499,836)
    AND e9=15
-;
+ORDER BY 1,2;
 -- 18 values hashing to b62377555c6dc737a51beed481680cb0
 
 -- query TIIII rowsort join184
@@ -33886,7 +33886,7 @@ SELECT x5, c3, e6+d5, d9, d2+774+a5
    AND (a3=865 OR a3=754)
    AND c5=b9
    AND b9 in (348,893,64,12,239,864,524)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 63807f69a34bc890d851649d2b9e0973
 
 -- query TIIII rowsort join184
@@ -33897,7 +33897,7 @@ SELECT x5, c3, e6+d5, d9, d2+774+a5
    AND (d2=398 OR 847=d2 OR d2=813)
    AND (a3=865 OR a3=754)
    AND c5=b9
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 63807f69a34bc890d851649d2b9e0973
 
 -- query TIIII rowsort join184
@@ -33908,7 +33908,7 @@ SELECT x5, c3, e6+d5, d9, d2+774+a5
    AND (d2=398 OR 847=d2 OR d2=813)
    AND (a3=865 OR a3=754)
    AND (d6=172 OR 463=d6 OR 488=d6)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 63807f69a34bc890d851649d2b9e0973
 
 -- query TIIII rowsort join184
@@ -33919,7 +33919,7 @@ SELECT x5, c3, e6+d5, d9, d2+774+a5
    AND (a3=865 OR a3=754)
    AND c5=b9
    AND b9 in (348,893,64,12,239,864,524)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 63807f69a34bc890d851649d2b9e0973
 
 -- query IIIII rowsort join185
@@ -33930,7 +33930,7 @@ SELECT d5*80+d5, a1*190+b5, c7*53+e5, d9*375, b8+c7
    AND e7=455
    AND c5=734
    AND b9=a8
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 8bee1f8fdad15f033ac0b55d3dfe3ed3
 
 -- query IIIII rowsort join185
@@ -33941,7 +33941,7 @@ SELECT d5*80+d5, a1*190+b5, c7*53+e5, d9*375, b8+c7
    AND a1=395
    AND c5=734
    AND e7=455
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 8bee1f8fdad15f033ac0b55d3dfe3ed3
 
 -- query IIIII rowsort join185
@@ -33952,7 +33952,7 @@ SELECT d5*80+d5, a1*190+b5, c7*53+e5, d9*375, b8+c7
    AND a1=395
    AND b9=a8
    AND c5=734
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 8bee1f8fdad15f033ac0b55d3dfe3ed3
 
 -- query IIIII rowsort join185
@@ -33963,7 +33963,7 @@ SELECT d5*80+d5, a1*190+b5, c7*53+e5, d9*375, b8+c7
    AND c5=734
    AND e7=455
    AND b9=a8
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to 8bee1f8fdad15f033ac0b55d3dfe3ed3
 
 -- query IIII rowsort join186
@@ -33973,7 +33973,7 @@ SELECT b6+d6, d2, b4+480, a1+841
    AND b2 in (643,811,784)
    AND a1=314
    AND 33=b4
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to b98fa02b5d7a47ae69f2f60369bc5ecf
 
 -- query IIII rowsort join186
@@ -33983,7 +33983,7 @@ SELECT b6+d6, d2, b4+480, a1+841
    AND b2 in (643,811,784)
    AND 33=b4
    AND a1=314
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to b98fa02b5d7a47ae69f2f60369bc5ecf
 
 -- query IIII rowsort join186
@@ -33993,7 +33993,7 @@ SELECT b6+d6, d2, b4+480, a1+841
    AND (493=d6 OR 366=d6)
    AND a1=314
    AND b2 in (643,811,784)
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to b98fa02b5d7a47ae69f2f60369bc5ecf
 
 -- query IIII rowsort join186
@@ -34003,7 +34003,7 @@ SELECT b6+d6, d2, b4+480, a1+841
    AND 33=b4
    AND b2 in (643,811,784)
    AND a1=314
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to b98fa02b5d7a47ae69f2f60369bc5ecf
 
 -- query III rowsort join187
@@ -34012,7 +34012,7 @@ SELECT c5, a4+175, c6+d4
  WHERE b4=713
    AND d6=797
    AND (c5=44 OR c5=855 OR 443=c5)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 69490935614c9a742b09d4357e5f1d98
 
 -- query III rowsort join187
@@ -34021,7 +34021,7 @@ SELECT c5, a4+175, c6+d4
  WHERE (c5=44 OR c5=855 OR 443=c5)
    AND b4=713
    AND d6=797
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 69490935614c9a742b09d4357e5f1d98
 
 -- query III rowsort join187
@@ -34030,7 +34030,7 @@ SELECT c5, a4+175, c6+d4
  WHERE b4=713
    AND (c5=44 OR c5=855 OR 443=c5)
    AND d6=797
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 69490935614c9a742b09d4357e5f1d98
 
 -- query III rowsort join187
@@ -34039,7 +34039,7 @@ SELECT c5, a4+175, c6+d4
  WHERE (c5=44 OR c5=855 OR 443=c5)
    AND d6=797
    AND b4=713
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 69490935614c9a742b09d4357e5f1d98
 
 -- query II rowsort join188
@@ -34047,7 +34047,7 @@ SELECT a1+a1, b3
   FROM t1, t3
  WHERE a3 in (190,548,383,396,70,262,829)
    AND a1 in (820,637,109)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 2a0c587a765e3c85791deda3cd32c460
 
 -- query II rowsort join188
@@ -34055,7 +34055,7 @@ SELECT a1+a1, b3
   FROM t3, t1
  WHERE a3 in (190,548,383,396,70,262,829)
    AND a1 in (820,637,109)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 2a0c587a765e3c85791deda3cd32c460
 
 -- query II rowsort join188
@@ -34063,7 +34063,7 @@ SELECT a1+a1, b3
   FROM t1, t3
  WHERE a1 in (820,637,109)
    AND a3 in (190,548,383,396,70,262,829)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 2a0c587a765e3c85791deda3cd32c460
 
 -- query IIII rowsort join189
@@ -34073,7 +34073,7 @@ SELECT e9, a8, c6*671, a2+e9
    AND 310=e8
    AND (c9=254 OR 60=c9)
    AND e2=940
-;
+ORDER BY 1,2,3,4;
 -- 195
 -- 171
 -- 515999
@@ -34090,7 +34090,7 @@ SELECT e9, a8, c6*671, a2+e9
    AND e2=940
    AND 790=d6
    AND (c9=254 OR 60=c9)
-;
+ORDER BY 1,2,3,4;
 -- 195
 -- 171
 -- 515999
@@ -34107,7 +34107,7 @@ SELECT e9, a8, c6*671, a2+e9
    AND 310=e8
    AND e2=940
    AND (c9=254 OR 60=c9)
-;
+ORDER BY 1,2,3,4;
 -- 195
 -- 171
 -- 515999
@@ -34124,7 +34124,7 @@ SELECT e9, a8, c6*671, a2+e9
    AND e2=940
    AND 790=d6
    AND 310=e8
-;
+ORDER BY 1,2,3,4;
 -- 195
 -- 171
 -- 515999
@@ -34142,7 +34142,7 @@ SELECT x6, e7*707+a7, e8, c5, e1
    AND a1 in (147,898,742,525,395,767,195)
    AND e8=833
    AND 624=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 105 values hashing to e7fe06b0597406f22757d5d201f76d79
 
 -- query TIIII rowsort join190
@@ -34153,7 +34153,7 @@ SELECT x6, e7*707+a7, e8, c5, e1
    AND 624=e7
    AND e8=833
    AND 852=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 105 values hashing to e7fe06b0597406f22757d5d201f76d79
 
 -- query TIIII rowsort join190
@@ -34164,7 +34164,7 @@ SELECT x6, e7*707+a7, e8, c5, e1
    AND c5 in (384,101,989)
    AND 624=e7
    AND 852=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 105 values hashing to e7fe06b0597406f22757d5d201f76d79
 
 -- query TIIII rowsort join190
@@ -34175,7 +34175,7 @@ SELECT x6, e7*707+a7, e8, c5, e1
    AND a1 in (147,898,742,525,395,767,195)
    AND e8=833
    AND 624=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 105 values hashing to e7fe06b0597406f22757d5d201f76d79
 
 -- query TIIIIII rowsort join191
@@ -34188,7 +34188,7 @@ SELECT x8, e9+a3, a5+103+b9, c2*940+d2, c6, d3, c1*714+a6
    AND (355=d6 OR 767=d6)
    AND (833=e8 OR 488=e8)
    AND b9 in (759,410,19,525,456,19,827,2)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 896 values hashing to 72c710a99113cd35e60e6341d7dca77e
 
 -- query TIIIIII rowsort join191
@@ -34201,7 +34201,7 @@ SELECT x8, e9+a3, a5+103+b9, c2*940+d2, c6, d3, c1*714+a6
    AND a1 in (461,963,451,931)
    AND (833=e8 OR 488=e8)
    AND (a3=255 OR a3=306 OR 181=a3 OR a3=105)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 896 values hashing to 72c710a99113cd35e60e6341d7dca77e
 
 -- query TIIIIII rowsort join191
@@ -34214,7 +34214,7 @@ SELECT x8, e9+a3, a5+103+b9, c2*940+d2, c6, d3, c1*714+a6
    AND c5=d3
    AND b2=220
    AND (a3=255 OR a3=306 OR 181=a3 OR a3=105)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 896 values hashing to 72c710a99113cd35e60e6341d7dca77e
 
 -- query TIIIIII rowsort join191
@@ -34227,7 +34227,7 @@ SELECT x8, e9+a3, a5+103+b9, c2*940+d2, c6, d3, c1*714+a6
    AND a1 in (461,963,451,931)
    AND b2=220
    AND c5=d3
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 896 values hashing to 72c710a99113cd35e60e6341d7dca77e
 
 -- query II rowsort join192
@@ -34235,7 +34235,7 @@ SELECT c9, a8+471
   FROM t8, t9
  WHERE (632=e8 OR e8=179)
    AND 662=a9
-;
+ORDER BY 1,2;
 -- 807
 -- 1425
 -- 807
@@ -34246,7 +34246,7 @@ SELECT c9, a8+471
   FROM t9, t8
  WHERE (632=e8 OR e8=179)
    AND 662=a9
-;
+ORDER BY 1,2;
 -- 807
 -- 1425
 -- 807
@@ -34257,7 +34257,7 @@ SELECT c9, a8+471
   FROM t9, t8
  WHERE 662=a9
    AND (632=e8 OR e8=179)
-;
+ORDER BY 1,2;
 -- 807
 -- 1425
 -- 807
@@ -34269,7 +34269,7 @@ SELECT x7, a6+e6, b3
  WHERE a3=b7
    AND e7 in (462,851,918,590)
    AND d6=970
-;
+ORDER BY 1,2,3;
 -- table tn7 row 1
 -- 697
 -- 382
@@ -34280,7 +34280,7 @@ SELECT x7, a6+e6, b3
  WHERE e7 in (462,851,918,590)
    AND a3=b7
    AND d6=970
-;
+ORDER BY 1,2,3;
 -- table tn7 row 1
 -- 697
 -- 382
@@ -34291,7 +34291,7 @@ SELECT x7, a6+e6, b3
  WHERE e7 in (462,851,918,590)
    AND a3=b7
    AND d6=970
-;
+ORDER BY 1,2,3;
 -- table tn7 row 1
 -- 697
 -- 382
@@ -34302,7 +34302,7 @@ SELECT x7, a6+e6, b3
  WHERE d6=970
    AND a3=b7
    AND e7 in (462,851,918,590)
-;
+ORDER BY 1,2,3;
 -- table tn7 row 1
 -- 697
 -- 382
@@ -34316,7 +34316,7 @@ SELECT b6+285, a2*485, a5, a8+e2, d9, a3+e5
    AND c9=579
    AND e8 in (469,273,548,349,22,918)
    AND c5=a3
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to ff7c704645094d46b2c605a00d206553
 
 -- query IIIIII rowsort join194
@@ -34328,7 +34328,7 @@ SELECT b6+285, a2*485, a5, a8+e2, d9, a3+e5
    AND c9=579
    AND c2 in (823,676,103,793,161,312,247,160)
    AND d6 in (729,185,405,376)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to ff7c704645094d46b2c605a00d206553
 
 -- query IIIIII rowsort join194
@@ -34340,7 +34340,7 @@ SELECT b6+285, a2*485, a5, a8+e2, d9, a3+e5
    AND c5=a3
    AND c9=579
    AND e8 in (469,273,548,349,22,918)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to ff7c704645094d46b2c605a00d206553
 
 -- query IIIIII rowsort join194
@@ -34352,7 +34352,7 @@ SELECT b6+285, a2*485, a5, a8+e2, d9, a3+e5
    AND c2 in (823,676,103,793,161,312,247,160)
    AND d6 in (729,185,405,376)
    AND c5=a3
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to ff7c704645094d46b2c605a00d206553
 
 -- query IIII rowsort join195
@@ -34362,7 +34362,7 @@ SELECT b1+784+e1, d5+b5, d2*34, b7*266+b2
    AND a2 in (936,131,669,863)
    AND 988=a1
    AND c5 in (766,697,471)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 7a1550daadd9ff62d2d658474eb74c95
 
 -- query IIII rowsort join195
@@ -34372,7 +34372,7 @@ SELECT b1+784+e1, d5+b5, d2*34, b7*266+b2
    AND 638=e7
    AND c5 in (766,697,471)
    AND a2 in (936,131,669,863)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 7a1550daadd9ff62d2d658474eb74c95
 
 -- query IIII rowsort join195
@@ -34382,7 +34382,7 @@ SELECT b1+784+e1, d5+b5, d2*34, b7*266+b2
    AND c5 in (766,697,471)
    AND a2 in (936,131,669,863)
    AND 638=e7
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 7a1550daadd9ff62d2d658474eb74c95
 
 -- query IIII rowsort join195
@@ -34392,7 +34392,7 @@ SELECT b1+784+e1, d5+b5, d2*34, b7*266+b2
    AND 638=e7
    AND c5 in (766,697,471)
    AND 988=a1
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 7a1550daadd9ff62d2d658474eb74c95
 
 -- query IITIIIII rowsort join196
@@ -34406,7 +34406,7 @@ SELECT e1*390, a4, x9, a2+735, d7*523+c7, c5*208, a6+c7, c8*449
    AND c5=313
    AND 373=d2
    AND (434=b4 OR b4=294)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 672 values hashing to 95c8231b01eaa1a1ab2505e87311eaee
 
 -- query IITIIIII rowsort join196
@@ -34420,7 +34420,7 @@ SELECT e1*390, a4, x9, a2+735, d7*523+c7, c5*208, a6+c7, c8*449
    AND 575=c9
    AND e8 in (22,38,533,310,682,600,442)
    AND c5=313
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 672 values hashing to 95c8231b01eaa1a1ab2505e87311eaee
 
 -- query IITIIIII rowsort join196
@@ -34434,7 +34434,7 @@ SELECT e1*390, a4, x9, a2+735, d7*523+c7, c5*208, a6+c7, c8*449
    AND c5=313
    AND (434=b4 OR b4=294)
    AND 373=d2
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 672 values hashing to 95c8231b01eaa1a1ab2505e87311eaee
 
 -- query IITIIIII rowsort join196
@@ -34448,7 +34448,7 @@ SELECT e1*390, a4, x9, a2+735, d7*523+c7, c5*208, a6+c7, c8*449
    AND c5=313
    AND e8 in (22,38,533,310,682,600,442)
    AND d6=366
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 672 values hashing to 95c8231b01eaa1a1ab2505e87311eaee
 
 -- query IIIIIIIT rowsort join197
@@ -34462,7 +34462,7 @@ SELECT c3, e7+d2, a6+d4, d4, b1, a2+944, c8+a2, x5
    AND a1 in (637,931,194,736,918,640,972)
    AND d2=260
    AND d6=d5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1280 values hashing to b6a861d365125a807578da97a93f03f9
 
 -- query IIIIIIIT rowsort join197
@@ -34476,7 +34476,7 @@ SELECT c3, e7+d2, a6+d4, d4, b1, a2+944, c8+a2, x5
    AND c5 in (894,545,437,799,855,989,941)
    AND b4=721
    AND d6=d5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1280 values hashing to b6a861d365125a807578da97a93f03f9
 
 -- query IIIIIIIT rowsort join197
@@ -34490,7 +34490,7 @@ SELECT c3, e7+d2, a6+d4, d4, b1, a2+944, c8+a2, x5
    AND d6=d5
    AND c5 in (894,545,437,799,855,989,941)
    AND 727=a3
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1280 values hashing to b6a861d365125a807578da97a93f03f9
 
 -- query IIIIIIIT rowsort join197
@@ -34504,7 +34504,7 @@ SELECT c3, e7+d2, a6+d4, d4, b1, a2+944, c8+a2, x5
    AND d6=d5
    AND a1 in (637,931,194,736,918,640,972)
    AND e7=903
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1280 values hashing to b6a861d365125a807578da97a93f03f9
 
 -- query IT rowsort join198
@@ -34512,7 +34512,7 @@ SELECT d8, x2
   FROM t2, t8
  WHERE (881=e8 OR e8=866 OR e8=510)
    AND c2 in (233,728,318)
-;
+ORDER BY 1,2;
 -- 24 values hashing to d182f2e8d2b116d857999106f5c5cbd0
 
 -- query IT rowsort join198
@@ -34520,7 +34520,7 @@ SELECT d8, x2
   FROM t8, t2
  WHERE (881=e8 OR e8=866 OR e8=510)
    AND c2 in (233,728,318)
-;
+ORDER BY 1,2;
 -- 24 values hashing to d182f2e8d2b116d857999106f5c5cbd0
 
 -- query IT rowsort join198
@@ -34528,7 +34528,7 @@ SELECT d8, x2
   FROM t2, t8
  WHERE c2 in (233,728,318)
    AND (881=e8 OR e8=866 OR e8=510)
-;
+ORDER BY 1,2;
 -- 24 values hashing to d182f2e8d2b116d857999106f5c5cbd0
 
 -- query III rowsort join199
@@ -34537,7 +34537,7 @@ SELECT a4, d7, d5
  WHERE b4=476
    AND e7=183
    AND 514=c5
-;
+ORDER BY 1,2,3;
 -- 412
 -- 94
 -- 818
@@ -34551,7 +34551,7 @@ SELECT a4, d7, d5
  WHERE e7=183
    AND 514=c5
    AND b4=476
-;
+ORDER BY 1,2,3;
 -- 412
 -- 94
 -- 818
@@ -34565,7 +34565,7 @@ SELECT a4, d7, d5
  WHERE b4=476
    AND e7=183
    AND 514=c5
-;
+ORDER BY 1,2,3;
 -- 412
 -- 94
 -- 818
@@ -34579,7 +34579,7 @@ SELECT c5*532+c3, d3*930, b6+398
  WHERE (d6=366 OR 405=d6)
    AND a3 in (386,5,500,234,75)
    AND c5 in (585,678,672,820,805)
-;
+ORDER BY 1,2,3;
 -- 150 values hashing to 288aa8fc92fd9fc63bf7505da4407e49
 
 -- query III rowsort join200
@@ -34588,7 +34588,7 @@ SELECT c5*532+c3, d3*930, b6+398
  WHERE c5 in (585,678,672,820,805)
    AND (d6=366 OR 405=d6)
    AND a3 in (386,5,500,234,75)
-;
+ORDER BY 1,2,3;
 -- 150 values hashing to 288aa8fc92fd9fc63bf7505da4407e49
 
 -- query III rowsort join200
@@ -34597,7 +34597,7 @@ SELECT c5*532+c3, d3*930, b6+398
  WHERE (d6=366 OR 405=d6)
    AND c5 in (585,678,672,820,805)
    AND a3 in (386,5,500,234,75)
-;
+ORDER BY 1,2,3;
 -- 150 values hashing to 288aa8fc92fd9fc63bf7505da4407e49
 
 -- query III rowsort join200
@@ -34606,7 +34606,7 @@ SELECT c5*532+c3, d3*930, b6+398
  WHERE a3 in (386,5,500,234,75)
    AND c5 in (585,678,672,820,805)
    AND (d6=366 OR 405=d6)
-;
+ORDER BY 1,2,3;
 -- 150 values hashing to 288aa8fc92fd9fc63bf7505da4407e49
 
 -- query II rowsort join201
@@ -34614,7 +34614,7 @@ SELECT a5+b5, b1
   FROM t1, t5
  WHERE c5 in (50,299,149,924)
    AND a1=b5
-;
+ORDER BY 1,2;
 -- 1076
 -- 584
 -- 1189
@@ -34625,7 +34625,7 @@ SELECT a5+b5, b1
   FROM t5, t1
  WHERE a1=b5
    AND c5 in (50,299,149,924)
-;
+ORDER BY 1,2;
 -- 1076
 -- 584
 -- 1189
@@ -34636,7 +34636,7 @@ SELECT a5+b5, b1
   FROM t5, t1
  WHERE c5 in (50,299,149,924)
    AND a1=b5
-;
+ORDER BY 1,2;
 -- 1076
 -- 584
 -- 1189
@@ -34650,7 +34650,7 @@ SELECT x9, e6, x3, x2, e5+663
    AND 991=d6
    AND (27=c5 OR c5=185 OR c5=598 OR 723=c5)
    AND a3=275
-;
+ORDER BY 1,2,3,4,5;
 -- 280 values hashing to bb40da825170c002dacc38f5766bd8d6
 
 -- query TITTI rowsort join202
@@ -34661,7 +34661,7 @@ SELECT x9, e6, x3, x2, e5+663
    AND b9 in (926,95,66,128,421,301,50)
    AND (27=c5 OR c5=185 OR c5=598 OR 723=c5)
    AND (c2=87 OR c2=902)
-;
+ORDER BY 1,2,3,4,5;
 -- 280 values hashing to bb40da825170c002dacc38f5766bd8d6
 
 -- query TITTI rowsort join202
@@ -34672,7 +34672,7 @@ SELECT x9, e6, x3, x2, e5+663
    AND (27=c5 OR c5=185 OR c5=598 OR 723=c5)
    AND a3=275
    AND b9 in (926,95,66,128,421,301,50)
-;
+ORDER BY 1,2,3,4,5;
 -- 280 values hashing to bb40da825170c002dacc38f5766bd8d6
 
 -- query TITTI rowsort join202
@@ -34683,7 +34683,7 @@ SELECT x9, e6, x3, x2, e5+663
    AND 991=d6
    AND (27=c5 OR c5=185 OR c5=598 OR 723=c5)
    AND b9 in (926,95,66,128,421,301,50)
-;
+ORDER BY 1,2,3,4,5;
 -- 280 values hashing to bb40da825170c002dacc38f5766bd8d6
 
 -- query III rowsort join203
@@ -34692,7 +34692,7 @@ SELECT d2+e2, b5*972, b9*130+e5
  WHERE 158=c5
    AND c2 in (466,24,575,141,312)
    AND 19=e9
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to ab168eb678a509a93632528001abc307
 
 -- query III rowsort join203
@@ -34701,7 +34701,7 @@ SELECT d2+e2, b5*972, b9*130+e5
  WHERE c2 in (466,24,575,141,312)
    AND 158=c5
    AND 19=e9
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to ab168eb678a509a93632528001abc307
 
 -- query III rowsort join203
@@ -34710,7 +34710,7 @@ SELECT d2+e2, b5*972, b9*130+e5
  WHERE c2 in (466,24,575,141,312)
    AND 158=c5
    AND 19=e9
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to ab168eb678a509a93632528001abc307
 
 -- query III rowsort join203
@@ -34719,7 +34719,7 @@ SELECT d2+e2, b5*972, b9*130+e5
  WHERE 158=c5
    AND c2 in (466,24,575,141,312)
    AND 19=e9
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to ab168eb678a509a93632528001abc307
 
 -- query TI rowsort join204
@@ -34727,7 +34727,7 @@ SELECT x9, d4+287
   FROM t9, t4
  WHERE 679=d9
    AND b4 in (924,627,243,707,925,784,139,810)
-;
+ORDER BY 1,2;
 -- 16 values hashing to 7b4fa4e226b8334d51090f8920acb301
 
 -- query TI rowsort join204
@@ -34735,7 +34735,7 @@ SELECT x9, d4+287
   FROM t9, t4
  WHERE b4 in (924,627,243,707,925,784,139,810)
    AND 679=d9
-;
+ORDER BY 1,2;
 -- 16 values hashing to 7b4fa4e226b8334d51090f8920acb301
 
 -- query TI rowsort join204
@@ -34743,7 +34743,7 @@ SELECT x9, d4+287
   FROM t4, t9
  WHERE b4 in (924,627,243,707,925,784,139,810)
    AND 679=d9
-;
+ORDER BY 1,2;
 -- 16 values hashing to 7b4fa4e226b8334d51090f8920acb301
 
 -- query II rowsort join205
@@ -34751,7 +34751,7 @@ SELECT c6+e6, b7+119
   FROM t6, t7
  WHERE 457=d6
    AND 904=e7
-;
+ORDER BY 1,2;
 -- 893
 -- 798
 
@@ -34760,7 +34760,7 @@ SELECT c6+e6, b7+119
   FROM t7, t6
  WHERE 457=d6
    AND 904=e7
-;
+ORDER BY 1,2;
 -- 893
 -- 798
 
@@ -34769,7 +34769,7 @@ SELECT c6+e6, b7+119
   FROM t6, t7
  WHERE 904=e7
    AND 457=d6
-;
+ORDER BY 1,2;
 -- 893
 -- 798
 
@@ -34778,7 +34778,7 @@ SELECT c5*350+b5, c6
   FROM t6, t5
  WHERE c5=855
    AND d6=c5
-;
+ORDER BY 1,2;
 -- 300124
 -- 500
 -- 300180
@@ -34789,7 +34789,7 @@ SELECT c5*350+b5, c6
   FROM t5, t6
  WHERE c5=855
    AND d6=c5
-;
+ORDER BY 1,2;
 -- 300124
 -- 500
 -- 300180
@@ -34800,7 +34800,7 @@ SELECT c5*350+b5, c6
   FROM t5, t6
  WHERE d6=c5
    AND c5=855
-;
+ORDER BY 1,2;
 -- 300124
 -- 500
 -- 300180
@@ -34815,7 +34815,7 @@ SELECT a3, x5, b4*416+a6, b6, x9, c1
    AND 452=e9
    AND b4 in (476,644,267,735,295,826)
    AND d6 in (852,161,72,974,223,467,424)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to a4b14d8ce425823a90f39215a1ec2ab7
 
 -- query ITIITI rowsort join207
@@ -34827,7 +34827,7 @@ SELECT a3, x5, b4*416+a6, b6, x9, c1
    AND c5 in (44,527,989,348,422)
    AND b4 in (476,644,267,735,295,826)
    AND d6 in (852,161,72,974,223,467,424)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to a4b14d8ce425823a90f39215a1ec2ab7
 
 -- query ITIITI rowsort join207
@@ -34839,7 +34839,7 @@ SELECT a3, x5, b4*416+a6, b6, x9, c1
    AND a3=c1
    AND b4 in (476,644,267,735,295,826)
    AND 452=e9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to a4b14d8ce425823a90f39215a1ec2ab7
 
 -- query ITIITI rowsort join207
@@ -34851,7 +34851,7 @@ SELECT a3, x5, b4*416+a6, b6, x9, c1
    AND d6 in (852,161,72,974,223,467,424)
    AND c5 in (44,527,989,348,422)
    AND b4 in (476,644,267,735,295,826)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1620 values hashing to a4b14d8ce425823a90f39215a1ec2ab7
 
 -- query IIIITII rowsort join208
@@ -34864,7 +34864,7 @@ SELECT a4*829+d1, b3, d8+c3, e1, x6, b7+c7, c9*151
    AND a1 in (536,380,249,382,702,173,738,195)
    AND b4 in (700,469,442,408,137,551)
    AND (e9=942 OR e9=619)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 36288 values hashing to db419f6d01d2fa72f42019af4b4e8402
 
 -- query IIIITII rowsort join208
@@ -34877,7 +34877,7 @@ SELECT a4*829+d1, b3, d8+c3, e1, x6, b7+c7, c9*151
    AND (e9=942 OR e9=619)
    AND b4 in (700,469,442,408,137,551)
    AND a3 in (720,525,644,70)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 36288 values hashing to db419f6d01d2fa72f42019af4b4e8402
 
 -- query IIIITII rowsort join208
@@ -34890,7 +34890,7 @@ SELECT a4*829+d1, b3, d8+c3, e1, x6, b7+c7, c9*151
    AND b4 in (700,469,442,408,137,551)
    AND e7 in (408,590,67)
    AND a3 in (720,525,644,70)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 36288 values hashing to db419f6d01d2fa72f42019af4b4e8402
 
 -- query IIIITII rowsort join208
@@ -34903,7 +34903,7 @@ SELECT a4*829+d1, b3, d8+c3, e1, x6, b7+c7, c9*151
    AND a3 in (720,525,644,70)
    AND e8=392
    AND a1 in (536,380,249,382,702,173,738,195)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 36288 values hashing to db419f6d01d2fa72f42019af4b4e8402
 
 -- query TITIII rowsort join209
@@ -34915,7 +34915,7 @@ SELECT x7, e5, x2, b9+389, e4*353+a5, b3*967
    AND e7 in (793,508,92,98,27)
    AND (457=a2 OR 189=a2)
    AND a3 in (337,548,696,803,396,30,651)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 420 values hashing to 87afd77924c4412fd011187413966a75
 
 -- query TITIII rowsort join209
@@ -34927,7 +34927,7 @@ SELECT x7, e5, x2, b9+389, e4*353+a5, b3*967
    AND 707=b4
    AND (457=a2 OR 189=a2)
    AND 856=c5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 420 values hashing to 87afd77924c4412fd011187413966a75
 
 -- query TITIII rowsort join209
@@ -34939,7 +34939,7 @@ SELECT x7, e5, x2, b9+389, e4*353+a5, b3*967
    AND 856=c5
    AND 5=b9
    AND (457=a2 OR 189=a2)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 420 values hashing to 87afd77924c4412fd011187413966a75
 
 -- query TITIII rowsort join209
@@ -34951,7 +34951,7 @@ SELECT x7, e5, x2, b9+389, e4*353+a5, b3*967
    AND 5=b9
    AND (457=a2 OR 189=a2)
    AND a3 in (337,548,696,803,396,30,651)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 420 values hashing to 87afd77924c4412fd011187413966a75
 
 -- query TII rowsort join210
@@ -34960,7 +34960,7 @@ SELECT x7, b4+e7, b9*486
  WHERE b4=765
    AND d9=668
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to dc0dec178ab601a7804bbde2ac646265
 
 -- query TII rowsort join210
@@ -34969,7 +34969,7 @@ SELECT x7, b4+e7, b9*486
  WHERE d9=668
    AND b4=765
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to dc0dec178ab601a7804bbde2ac646265
 
 -- query TII rowsort join210
@@ -34978,7 +34978,7 @@ SELECT x7, b4+e7, b9*486
  WHERE b4=765
    AND d9=668
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to dc0dec178ab601a7804bbde2ac646265
 
 -- query TII rowsort join210
@@ -34987,7 +34987,7 @@ SELECT x7, b4+e7, b9*486
  WHERE b4=765
    AND 455=e7
    AND d9=668
-;
+ORDER BY 1,2,3;
 -- 12 values hashing to dc0dec178ab601a7804bbde2ac646265
 
 -- query IITIITTT rowsort join211
@@ -35001,7 +35001,7 @@ SELECT e4+e5, c5+682+e6, x6, b8, b2+e3, x7, x3, x1
    AND a1 in (189,461,195,754,330,499,544)
    AND e8=918
    AND 807=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2240 values hashing to 4c197cde6a6b4b4b6ce7f8baad7d222d
 
 -- query IITIITTT rowsort join211
@@ -35015,7 +35015,7 @@ SELECT e4+e5, c5+682+e6, x6, b8, b2+e3, x7, x3, x1
    AND a1 in (189,461,195,754,330,499,544)
    AND b4 in (986,469,323,319,357,919,964)
    AND 807=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2240 values hashing to 4c197cde6a6b4b4b6ce7f8baad7d222d
 
 -- query IITIITTT rowsort join211
@@ -35029,7 +35029,7 @@ SELECT e4+e5, c5+682+e6, x6, b8, b2+e3, x7, x3, x1
    AND e8=918
    AND 807=d6
    AND c5=809
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2240 values hashing to 4c197cde6a6b4b4b6ce7f8baad7d222d
 
 -- query IITIITTT rowsort join211
@@ -35043,7 +35043,7 @@ SELECT e4+e5, c5+682+e6, x6, b8, b2+e3, x7, x3, x1
    AND e8=918
    AND a3=262
    AND e2 in (428,688,162)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2240 values hashing to 4c197cde6a6b4b4b6ce7f8baad7d222d
 
 -- query II rowsort join212
@@ -35051,7 +35051,7 @@ SELECT b4+d4, d9+650+c4
   FROM t4, t9
  WHERE b9 in (63,361,262,125)
    AND b4 in (260,982,33,925,982,961,635)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 793768553d46fbefe560819f4933b689
 
 -- query II rowsort join212
@@ -35059,7 +35059,7 @@ SELECT b4+d4, d9+650+c4
   FROM t9, t4
  WHERE b4 in (260,982,33,925,982,961,635)
    AND b9 in (63,361,262,125)
-;
+ORDER BY 1,2;
 -- 56 values hashing to 793768553d46fbefe560819f4933b689
 
 -- query TIIII rowsort join213
@@ -35070,7 +35070,7 @@ SELECT x9, c8, a1+214, c5*643, d4
    AND e8=a1
    AND c5 in (514,915,797,50,941,855)
    AND 288=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to a3986e204b82b9ad15d9b9be54397efc
 
 -- query TIIII rowsort join213
@@ -35081,7 +35081,7 @@ SELECT x9, c8, a1+214, c5*643, d4
    AND e8=a1
    AND 288=b4
    AND d9 in (960,332,679,55,909,790)
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to a3986e204b82b9ad15d9b9be54397efc
 
 -- query TIIII rowsort join213
@@ -35092,7 +35092,7 @@ SELECT x9, c8, a1+214, c5*643, d4
    AND c5 in (514,915,797,50,941,855)
    AND 288=b4
    AND d9 in (960,332,679,55,909,790)
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to a3986e204b82b9ad15d9b9be54397efc
 
 -- query TIIII rowsort join213
@@ -35103,7 +35103,7 @@ SELECT x9, c8, a1+214, c5*643, d4
    AND c5 in (514,915,797,50,941,855)
    AND a1 in (438,337,825,972,536)
    AND e8=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 270 values hashing to a3986e204b82b9ad15d9b9be54397efc
 
 -- query IIIII rowsort join214
@@ -35114,7 +35114,7 @@ SELECT a8, e4*769, a2+a4, e5+286, a1*179
    AND a1=622
    AND b4 in (713,627,442)
    AND (e2=445 OR 572=e2 OR 945=e2 OR 37=e2)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to ba056237c9f0cf7f02ca8486b263660d
 
 -- query IIIII rowsort join214
@@ -35125,7 +35125,7 @@ SELECT a8, e4*769, a2+a4, e5+286, a1*179
    AND 485=c5
    AND (e2=445 OR 572=e2 OR 945=e2 OR 37=e2)
    AND e8=866
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to ba056237c9f0cf7f02ca8486b263660d
 
 -- query IIIII rowsort join214
@@ -35136,7 +35136,7 @@ SELECT a8, e4*769, a2+a4, e5+286, a1*179
    AND e8=866
    AND 485=c5
    AND (e2=445 OR 572=e2 OR 945=e2 OR 37=e2)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to ba056237c9f0cf7f02ca8486b263660d
 
 -- query IIIII rowsort join214
@@ -35147,7 +35147,7 @@ SELECT a8, e4*769, a2+a4, e5+286, a1*179
    AND a1=622
    AND b4 in (713,627,442)
    AND (e2=445 OR 572=e2 OR 945=e2 OR 37=e2)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to ba056237c9f0cf7f02ca8486b263660d
 
 -- query TII rowsort join215
@@ -35156,7 +35156,7 @@ SELECT x8, d9, b2
  WHERE e8 in (180,423,864,455,487,14)
    AND b9 in (170,214,496,103,821)
    AND 93=b2
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 13b8941cdf36c881a133a1960b66a0ec
 
 -- query TII rowsort join215
@@ -35165,7 +35165,7 @@ SELECT x8, d9, b2
  WHERE 93=b2
    AND b9 in (170,214,496,103,821)
    AND e8 in (180,423,864,455,487,14)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 13b8941cdf36c881a133a1960b66a0ec
 
 -- query TII rowsort join215
@@ -35174,7 +35174,7 @@ SELECT x8, d9, b2
  WHERE b9 in (170,214,496,103,821)
    AND e8 in (180,423,864,455,487,14)
    AND 93=b2
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 13b8941cdf36c881a133a1960b66a0ec
 
 -- query TII rowsort join215
@@ -35183,7 +35183,7 @@ SELECT x8, d9, b2
  WHERE b9 in (170,214,496,103,821)
    AND 93=b2
    AND e8 in (180,423,864,455,487,14)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 13b8941cdf36c881a133a1960b66a0ec
 
 -- query IIII rowsort join216
@@ -35193,7 +35193,7 @@ SELECT e1*573, a4+579+c1, b9*592, e6
    AND b4 in (434,379,829,535)
    AND (907=a9 OR 776=a9 OR a9=457 OR a9=776)
    AND 488=d6
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 152af09f13763f47a7e3fa95ffa71301
 
 -- query IIII rowsort join216
@@ -35203,7 +35203,7 @@ SELECT e1*573, a4+579+c1, b9*592, e6
    AND (907=a9 OR 776=a9 OR a9=457 OR a9=776)
    AND b4 in (434,379,829,535)
    AND 488=d6
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 152af09f13763f47a7e3fa95ffa71301
 
 -- query IIII rowsort join216
@@ -35213,7 +35213,7 @@ SELECT e1*573, a4+579+c1, b9*592, e6
    AND (907=a9 OR 776=a9 OR a9=457 OR a9=776)
    AND 488=d6
    AND b4 in (434,379,829,535)
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 152af09f13763f47a7e3fa95ffa71301
 
 -- query IIII rowsort join216
@@ -35223,7 +35223,7 @@ SELECT e1*573, a4+579+c1, b9*592, e6
    AND a1 in (276,445,746,767,637,674,88)
    AND (907=a9 OR 776=a9 OR a9=457 OR a9=776)
    AND b4 in (434,379,829,535)
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 152af09f13763f47a7e3fa95ffa71301
 
 -- query ITI rowsort join217
@@ -35232,7 +35232,7 @@ SELECT c9, x8, a6+d8
  WHERE (164=d9 OR 919=d9)
    AND d6=185
    AND e8 in (180,442,46,956,846,310,431)
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to 7b4df2dec22493a40ff3f3e95d5f555b
 
 -- query ITI rowsort join217
@@ -35241,7 +35241,7 @@ SELECT c9, x8, a6+d8
  WHERE e8 in (180,442,46,956,846,310,431)
    AND d6=185
    AND (164=d9 OR 919=d9)
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to 7b4df2dec22493a40ff3f3e95d5f555b
 
 -- query ITI rowsort join217
@@ -35250,7 +35250,7 @@ SELECT c9, x8, a6+d8
  WHERE d6=185
    AND (164=d9 OR 919=d9)
    AND e8 in (180,442,46,956,846,310,431)
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to 7b4df2dec22493a40ff3f3e95d5f555b
 
 -- query ITI rowsort join217
@@ -35259,7 +35259,7 @@ SELECT c9, x8, a6+d8
  WHERE (164=d9 OR 919=d9)
    AND d6=185
    AND e8 in (180,442,46,956,846,310,431)
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to 7b4df2dec22493a40ff3f3e95d5f555b
 
 -- query IIII rowsort join218
@@ -35269,7 +35269,7 @@ SELECT d9, e6, c1, c5*244
    AND d6 in (581,256,790,321)
    AND 44=c5
    AND (a1=552 OR 967=a1)
-;
+ORDER BY 1,2,3,4;
 -- 256 values hashing to a154df83c941b6ae2e973365dfa53d8d
 
 -- query IIII rowsort join218
@@ -35279,7 +35279,7 @@ SELECT d9, e6, c1, c5*244
    AND d6 in (581,256,790,321)
    AND (a1=552 OR 967=a1)
    AND 44=c5
-;
+ORDER BY 1,2,3,4;
 -- 256 values hashing to a154df83c941b6ae2e973365dfa53d8d
 
 -- query IIII rowsort join218
@@ -35289,7 +35289,7 @@ SELECT d9, e6, c1, c5*244
    AND a9 in (685,457,879,830,78,610,803)
    AND d6 in (581,256,790,321)
    AND (a1=552 OR 967=a1)
-;
+ORDER BY 1,2,3,4;
 -- 256 values hashing to a154df83c941b6ae2e973365dfa53d8d
 
 -- query IIII rowsort join218
@@ -35299,7 +35299,7 @@ SELECT d9, e6, c1, c5*244
    AND d6 in (581,256,790,321)
    AND a9 in (685,457,879,830,78,610,803)
    AND 44=c5
-;
+ORDER BY 1,2,3,4;
 -- 256 values hashing to a154df83c941b6ae2e973365dfa53d8d
 
 -- query TI rowsort join219
@@ -35307,7 +35307,7 @@ SELECT x6, c1
   FROM t6, t1
  WHERE d6=277
    AND (a1=20 OR a1=215 OR 754=a1 OR a1=847)
-;
+ORDER BY 1,2;
 -- table tn6 row 40
 -- 252
 -- table tn6 row 40
@@ -35322,7 +35322,7 @@ SELECT x6, c1
   FROM t6, t1
  WHERE (a1=20 OR a1=215 OR 754=a1 OR a1=847)
    AND d6=277
-;
+ORDER BY 1,2;
 -- table tn6 row 40
 -- 252
 -- table tn6 row 40
@@ -35337,7 +35337,7 @@ SELECT x6, c1
   FROM t1, t6
  WHERE (a1=20 OR a1=215 OR 754=a1 OR a1=847)
    AND d6=277
-;
+ORDER BY 1,2;
 -- table tn6 row 40
 -- 252
 -- table tn6 row 40
@@ -35354,7 +35354,7 @@ SELECT x5, b3*139, e2+878+a5, e7+e3
    AND 689=c5
    AND 515=a3
    AND c2 in (830,46,107,202,150,318)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to a15ff7e5bca678891f200d085c0e7d37
 
 -- query TIII rowsort join220
@@ -35364,7 +35364,7 @@ SELECT x5, b3*139, e2+878+a5, e7+e3
    AND e7 in (587,508,290,436,31)
    AND 689=c5
    AND c2 in (830,46,107,202,150,318)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to a15ff7e5bca678891f200d085c0e7d37
 
 -- query TIII rowsort join220
@@ -35374,7 +35374,7 @@ SELECT x5, b3*139, e2+878+a5, e7+e3
    AND 515=a3
    AND c2 in (830,46,107,202,150,318)
    AND e7 in (587,508,290,436,31)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to a15ff7e5bca678891f200d085c0e7d37
 
 -- query TIII rowsort join220
@@ -35384,7 +35384,7 @@ SELECT x5, b3*139, e2+878+a5, e7+e3
    AND 689=c5
    AND e7 in (587,508,290,436,31)
    AND c2 in (830,46,107,202,150,318)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to a15ff7e5bca678891f200d085c0e7d37
 
 -- query IITT rowsort join221
@@ -35394,7 +35394,7 @@ SELECT a2, a9, x4, x8
    AND e9 in (936,418,653)
    AND e8=c2
    AND b4 in (924,802,624,925,903,733)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to e356a853c72d9679ed40306c78ed7a97
 
 -- query IITT rowsort join221
@@ -35404,7 +35404,7 @@ SELECT a2, a9, x4, x8
    AND e8=c2
    AND e9 in (936,418,653)
    AND b4 in (924,802,624,925,903,733)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to e356a853c72d9679ed40306c78ed7a97
 
 -- query IITT rowsort join221
@@ -35414,7 +35414,7 @@ SELECT a2, a9, x4, x8
    AND b4 in (924,802,624,925,903,733)
    AND b2 in (545,592,643,859,264)
    AND e9 in (936,418,653)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to e356a853c72d9679ed40306c78ed7a97
 
 -- query IITT rowsort join221
@@ -35424,7 +35424,7 @@ SELECT a2, a9, x4, x8
    AND e9 in (936,418,653)
    AND b2 in (545,592,643,859,264)
    AND b4 in (924,802,624,925,903,733)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to e356a853c72d9679ed40306c78ed7a97
 
 -- query TIII rowsort join222
@@ -35434,7 +35434,7 @@ SELECT x9, d2, b7+998, a8
    AND e8 in (273,411,442,233,296)
    AND b2=b7
    AND c9=347
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to 4e969eaa93d68684cb73a9682b0f863c
 
 -- query TIII rowsort join222
@@ -35444,7 +35444,7 @@ SELECT x9, d2, b7+998, a8
    AND (e7=154 OR 887=e7)
    AND c9=347
    AND b2=b7
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to 4e969eaa93d68684cb73a9682b0f863c
 
 -- query TIII rowsort join222
@@ -35454,7 +35454,7 @@ SELECT x9, d2, b7+998, a8
    AND (e7=154 OR 887=e7)
    AND e8 in (273,411,442,233,296)
    AND b2=b7
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to 4e969eaa93d68684cb73a9682b0f863c
 
 -- query TIII rowsort join222
@@ -35464,7 +35464,7 @@ SELECT x9, d2, b7+998, a8
    AND (e7=154 OR 887=e7)
    AND e8 in (273,411,442,233,296)
    AND c9=347
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to 4e969eaa93d68684cb73a9682b0f863c
 
 -- query IIIITI rowsort join223
@@ -35476,7 +35476,7 @@ SELECT e9+c9, e2, e8*822, c4, x5, b6+654
    AND c5=a6
    AND 698=e2
    AND d6 in (151,192,21,197,2)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 720 values hashing to 41a58b5fbb9bbbf54b5e985e730e98db
 
 -- query IIIITI rowsort join223
@@ -35488,7 +35488,7 @@ SELECT e9+c9, e2, e8*822, c4, x5, b6+654
    AND 698=e2
    AND d6 in (151,192,21,197,2)
    AND e8 in (620,377,440,14,904)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 720 values hashing to 41a58b5fbb9bbbf54b5e985e730e98db
 
 -- query IIIITI rowsort join223
@@ -35500,7 +35500,7 @@ SELECT e9+c9, e2, e8*822, c4, x5, b6+654
    AND (749=b4 OR 961=b4 OR 184=b4 OR b4=849)
    AND (485=a9 OR 841=a9 OR 102=a9)
    AND c5=a6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 720 values hashing to 41a58b5fbb9bbbf54b5e985e730e98db
 
 -- query IIIITI rowsort join223
@@ -35512,7 +35512,7 @@ SELECT e9+c9, e2, e8*822, c4, x5, b6+654
    AND (485=a9 OR 841=a9 OR 102=a9)
    AND d6 in (151,192,21,197,2)
    AND e8 in (620,377,440,14,904)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 720 values hashing to 41a58b5fbb9bbbf54b5e985e730e98db
 
 -- query III rowsort join224
@@ -35521,7 +35521,7 @@ SELECT c2*111, a7*863, c8
  WHERE e2 in (114,427,282,629,783,820)
    AND e8=329
    AND (815=e7 OR 553=e7 OR 215=e7)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b8b6e9cf17b4d2f227c692f0faa92f65
 
 -- query III rowsort join224
@@ -35530,7 +35530,7 @@ SELECT c2*111, a7*863, c8
  WHERE e2 in (114,427,282,629,783,820)
    AND e8=329
    AND (815=e7 OR 553=e7 OR 215=e7)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b8b6e9cf17b4d2f227c692f0faa92f65
 
 -- query III rowsort join224
@@ -35539,7 +35539,7 @@ SELECT c2*111, a7*863, c8
  WHERE e8=329
    AND e2 in (114,427,282,629,783,820)
    AND (815=e7 OR 553=e7 OR 215=e7)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b8b6e9cf17b4d2f227c692f0faa92f65
 
 -- query III rowsort join224
@@ -35548,7 +35548,7 @@ SELECT c2*111, a7*863, c8
  WHERE e8=329
    AND e2 in (114,427,282,629,783,820)
    AND (815=e7 OR 553=e7 OR 215=e7)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to b8b6e9cf17b4d2f227c692f0faa92f65
 
 -- query IIIIII rowsort join225
@@ -35560,7 +35560,7 @@ SELECT c3, a2+681, e5, c7, c4+644+a5, b1+b5
    AND a2 in (279,262,457,455,874)
    AND b4 in (829,810,114)
    AND c5=50
-;
+ORDER BY 1,2,3,4,5,6;
 -- 13824 values hashing to 9e1a74b020167ac1cf31cc852b2aaa9b
 
 -- query IIIIII rowsort join225
@@ -35572,7 +35572,7 @@ SELECT c3, a2+681, e5, c7, c4+644+a5, b1+b5
    AND a3 in (784,929,836,500,337,971,234,611)
    AND a2 in (279,262,457,455,874)
    AND b4 in (829,810,114)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 13824 values hashing to 9e1a74b020167ac1cf31cc852b2aaa9b
 
 -- query IIIIII rowsort join225
@@ -35584,7 +35584,7 @@ SELECT c3, a2+681, e5, c7, c4+644+a5, b1+b5
    AND c5=50
    AND (e7=254 OR e7=971 OR 79=e7 OR e7=884)
    AND a2 in (279,262,457,455,874)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 13824 values hashing to 9e1a74b020167ac1cf31cc852b2aaa9b
 
 -- query IIIIII rowsort join225
@@ -35596,7 +35596,7 @@ SELECT c3, a2+681, e5, c7, c4+644+a5, b1+b5
    AND c5=50
    AND a2 in (279,262,457,455,874)
    AND (e7=254 OR e7=971 OR 79=e7 OR e7=884)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 13824 values hashing to 9e1a74b020167ac1cf31cc852b2aaa9b
 
 -- query II rowsort join226
@@ -35604,7 +35604,7 @@ SELECT b3*416, a7
   FROM t3, t7
  WHERE a3=727
    AND 460=e7
-;
+ORDER BY 1,2;
 -- 23712
 -- 848
 -- 247520
@@ -35615,7 +35615,7 @@ SELECT b3*416, a7
   FROM t7, t3
  WHERE 460=e7
    AND a3=727
-;
+ORDER BY 1,2;
 -- 23712
 -- 848
 -- 247520
@@ -35628,7 +35628,7 @@ SELECT d1, e7, a3*158, c5*316+e3
    AND (c5=855 OR 293=c5)
    AND 525=a1
    AND a3 in (5,186,525,651,913)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to 47a29f54daad949225311184bbe8c3b5
 
 -- query IIII rowsort join227
@@ -35638,7 +35638,7 @@ SELECT d1, e7, a3*158, c5*316+e3
    AND 525=a1
    AND (c5=855 OR 293=c5)
    AND e7 in (827,282,156,460,6,234,508)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to 47a29f54daad949225311184bbe8c3b5
 
 -- query IIII rowsort join227
@@ -35648,7 +35648,7 @@ SELECT d1, e7, a3*158, c5*316+e3
    AND 525=a1
    AND e7 in (827,282,156,460,6,234,508)
    AND (c5=855 OR 293=c5)
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to 47a29f54daad949225311184bbe8c3b5
 
 -- query IIII rowsort join227
@@ -35658,7 +35658,7 @@ SELECT d1, e7, a3*158, c5*316+e3
    AND a3 in (5,186,525,651,913)
    AND (c5=855 OR 293=c5)
    AND 525=a1
-;
+ORDER BY 1,2,3,4;
 -- 600 values hashing to 47a29f54daad949225311184bbe8c3b5
 
 -- query IIITTITI rowsort join228
@@ -35672,7 +35672,7 @@ SELECT d7, d2+406, b4, x3, x6, e9, x8, e1+467
    AND a3 in (364,282,41,129,5,393,865)
    AND b4=e6
    AND a1 in (477,821,380,294,879,109,330)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2048 values hashing to ccd0b4f0fabfbbdf42f4c4e3c2271e7b
 
 -- query IIITTITI rowsort join228
@@ -35686,7 +35686,7 @@ SELECT d7, d2+406, b4, x3, x6, e9, x8, e1+467
    AND d6=b9
    AND e9 in (944,954,672,799,19,944,383)
    AND (e8=273 OR 635=e8)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2048 values hashing to ccd0b4f0fabfbbdf42f4c4e3c2271e7b
 
 -- query IIITTITI rowsort join228
@@ -35700,7 +35700,7 @@ SELECT d7, d2+406, b4, x3, x6, e9, x8, e1+467
    AND a3 in (364,282,41,129,5,393,865)
    AND 562=e7
    AND a1 in (477,821,380,294,879,109,330)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2048 values hashing to ccd0b4f0fabfbbdf42f4c4e3c2271e7b
 
 -- query IIITTITI rowsort join228
@@ -35714,7 +35714,7 @@ SELECT d7, d2+406, b4, x3, x6, e9, x8, e1+467
    AND d6=b9
    AND a3 in (364,282,41,129,5,393,865)
    AND a1 in (477,821,380,294,879,109,330)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2048 values hashing to ccd0b4f0fabfbbdf42f4c4e3c2271e7b
 
 -- query IIIII rowsort join229
@@ -35725,7 +35725,7 @@ SELECT c5, e3, b2, b1, a9
    AND c5 in (799,825,844,989,657,934)
    AND a3 in (532,965,710,378)
    AND a9 in (511,389,485,764,450)
-;
+ORDER BY 1,2,3,4,5;
 -- 9000 values hashing to 01cbbb36480ffc38fc7c96114a185e0a
 
 -- query IIIII rowsort join229
@@ -35736,7 +35736,7 @@ SELECT c5, e3, b2, b1, a9
    AND e2 in (679,548,223,228)
    AND a3 in (532,965,710,378)
    AND a1 in (607,445,678)
-;
+ORDER BY 1,2,3,4,5;
 -- 9000 values hashing to 01cbbb36480ffc38fc7c96114a185e0a
 
 -- query IIIII rowsort join229
@@ -35747,7 +35747,7 @@ SELECT c5, e3, b2, b1, a9
    AND a9 in (511,389,485,764,450)
    AND e2 in (679,548,223,228)
    AND c5 in (799,825,844,989,657,934)
-;
+ORDER BY 1,2,3,4,5;
 -- 9000 values hashing to 01cbbb36480ffc38fc7c96114a185e0a
 
 -- query IIIII rowsort join229
@@ -35758,7 +35758,7 @@ SELECT c5, e3, b2, b1, a9
    AND a9 in (511,389,485,764,450)
    AND e2 in (679,548,223,228)
    AND a1 in (607,445,678)
-;
+ORDER BY 1,2,3,4,5;
 -- 9000 values hashing to 01cbbb36480ffc38fc7c96114a185e0a
 
 -- query IIII rowsort join230
@@ -35768,7 +35768,7 @@ SELECT e8, c3+566, a9+e8, d1+783+e3
    AND 463=e8
    AND (a1=231 OR 607=a1 OR 237=a1 OR a1=918)
    AND 135=a3
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to bab1125ebb018e8adaaf2259200e93e0
 
 -- query IIII rowsort join230
@@ -35778,7 +35778,7 @@ SELECT e8, c3+566, a9+e8, d1+783+e3
    AND 135=a3
    AND 463=e8
    AND (a1=231 OR 607=a1 OR 237=a1 OR a1=918)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to bab1125ebb018e8adaaf2259200e93e0
 
 -- query IIII rowsort join230
@@ -35788,7 +35788,7 @@ SELECT e8, c3+566, a9+e8, d1+783+e3
    AND 463=e8
    AND (a1=231 OR 607=a1 OR 237=a1 OR a1=918)
    AND a9 in (972,335,263)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to bab1125ebb018e8adaaf2259200e93e0
 
 -- query IIII rowsort join230
@@ -35798,7 +35798,7 @@ SELECT e8, c3+566, a9+e8, d1+783+e3
    AND (a1=231 OR 607=a1 OR 237=a1 OR a1=918)
    AND 463=e8
    AND a9 in (972,335,263)
-;
+ORDER BY 1,2,3,4;
 -- 120 values hashing to bab1125ebb018e8adaaf2259200e93e0
 
 -- query II rowsort join231
@@ -35806,7 +35806,7 @@ SELECT b9+350, b5*550+e9
   FROM t9, t5
  WHERE b9=688
    AND c5=545
-;
+ORDER BY 1,2;
 -- 1038
 -- 101068
 
@@ -35815,7 +35815,7 @@ SELECT b9+350, b5*550+e9
   FROM t9, t5
  WHERE c5=545
    AND b9=688
-;
+ORDER BY 1,2;
 -- 1038
 -- 101068
 
@@ -35824,7 +35824,7 @@ SELECT b9+350, b5*550+e9
   FROM t5, t9
  WHERE c5=545
    AND b9=688
-;
+ORDER BY 1,2;
 -- 1038
 -- 101068
 
@@ -35834,7 +35834,7 @@ SELECT x2, x6, e5+d2
  WHERE 345=d2
    AND c5=d6
    AND d6 in (991,711,911,729,446)
-;
+ORDER BY 1,2,3;
 -- table tn2 row 69
 -- table tn6 row 14
 -- 903
@@ -35848,7 +35848,7 @@ SELECT x2, x6, e5+d2
  WHERE 345=d2
    AND d6 in (991,711,911,729,446)
    AND c5=d6
-;
+ORDER BY 1,2,3;
 -- table tn2 row 69
 -- table tn6 row 14
 -- 903
@@ -35862,7 +35862,7 @@ SELECT x2, x6, e5+d2
  WHERE c5=d6
    AND d6 in (991,711,911,729,446)
    AND 345=d2
-;
+ORDER BY 1,2,3;
 -- table tn2 row 69
 -- table tn6 row 14
 -- 903
@@ -35876,7 +35876,7 @@ SELECT x2, x6, e5+d2
  WHERE d6 in (991,711,911,729,446)
    AND 345=d2
    AND c5=d6
-;
+ORDER BY 1,2,3;
 -- table tn2 row 69
 -- table tn6 row 14
 -- 903
@@ -35891,7 +35891,7 @@ SELECT a5*540, d7, e9, b4
    AND 578=b9
    AND c5=756
    AND b4 in (587,966,678,288,713,961,175,551)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to b827c4d272414fe50ce4a1285cc36536
 
 -- query IIII rowsort join233
@@ -35901,7 +35901,7 @@ SELECT a5*540, d7, e9, b4
    AND c5=756
    AND e7=816
    AND b4 in (587,966,678,288,713,961,175,551)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to b827c4d272414fe50ce4a1285cc36536
 
 -- query IIII rowsort join233
@@ -35911,7 +35911,7 @@ SELECT a5*540, d7, e9, b4
    AND 578=b9
    AND b4 in (587,966,678,288,713,961,175,551)
    AND c5=756
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to b827c4d272414fe50ce4a1285cc36536
 
 -- query IIII rowsort join233
@@ -35921,7 +35921,7 @@ SELECT a5*540, d7, e9, b4
    AND b4 in (587,966,678,288,713,961,175,551)
    AND c5=756
    AND e7=816
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to b827c4d272414fe50ce4a1285cc36536
 
 -- query IIII rowsort join234
@@ -35931,7 +35931,7 @@ SELECT a1*461, b8*628, d6, c2
    AND c2 in (925,878,179,282,746,692)
    AND 590=d6
    AND e8=46
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 503f81cdb77c8d18fbe8753bdd1c2f75
 
 -- query IIII rowsort join234
@@ -35941,7 +35941,7 @@ SELECT a1*461, b8*628, d6, c2
    AND e8=46
    AND a1=189
    AND 590=d6
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 503f81cdb77c8d18fbe8753bdd1c2f75
 
 -- query IIII rowsort join234
@@ -35951,7 +35951,7 @@ SELECT a1*461, b8*628, d6, c2
    AND e8=46
    AND c2 in (925,878,179,282,746,692)
    AND 590=d6
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 503f81cdb77c8d18fbe8753bdd1c2f75
 
 -- query IIII rowsort join234
@@ -35961,7 +35961,7 @@ SELECT a1*461, b8*628, d6, c2
    AND 590=d6
    AND e8=46
    AND a1=189
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 503f81cdb77c8d18fbe8753bdd1c2f75
 
 -- query II rowsort join235
@@ -35969,7 +35969,7 @@ SELECT e4+e4, d8*878+d4
   FROM t4, t8
  WHERE b4=765
    AND e8 in (204,329,846,700,431,199,881,632)
-;
+ORDER BY 1,2;
 -- 32 values hashing to f7a7e6145d5b70d5ff426c6c1f09dedd
 
 -- query II rowsort join235
@@ -35977,7 +35977,7 @@ SELECT e4+e4, d8*878+d4
   FROM t8, t4
  WHERE e8 in (204,329,846,700,431,199,881,632)
    AND b4=765
-;
+ORDER BY 1,2;
 -- 32 values hashing to f7a7e6145d5b70d5ff426c6c1f09dedd
 
 -- query II rowsort join235
@@ -35985,7 +35985,7 @@ SELECT e4+e4, d8*878+d4
   FROM t4, t8
  WHERE e8 in (204,329,846,700,431,199,881,632)
    AND b4=765
-;
+ORDER BY 1,2;
 -- 32 values hashing to f7a7e6145d5b70d5ff426c6c1f09dedd
 
 -- query II rowsort join235
@@ -35993,7 +35993,7 @@ SELECT e4+e4, d8*878+d4
   FROM t8, t4
  WHERE b4=765
    AND e8 in (204,329,846,700,431,199,881,632)
-;
+ORDER BY 1,2;
 -- 32 values hashing to f7a7e6145d5b70d5ff426c6c1f09dedd
 
 -- query II rowsort join236
@@ -36001,7 +36001,7 @@ SELECT d7, a4
   FROM t7, t4
  WHERE e7 in (183,562,27,689,234)
    AND b4 in (941,982,434,733,721,802,607,903)
-;
+ORDER BY 1,2;
 -- 120 values hashing to 4a1ec4fecd71058f8ac04a1313902fec
 
 -- query II rowsort join236
@@ -36009,7 +36009,7 @@ SELECT d7, a4
   FROM t4, t7
  WHERE e7 in (183,562,27,689,234)
    AND b4 in (941,982,434,733,721,802,607,903)
-;
+ORDER BY 1,2;
 -- 120 values hashing to 4a1ec4fecd71058f8ac04a1313902fec
 
 -- query II rowsort join236
@@ -36017,7 +36017,7 @@ SELECT d7, a4
   FROM t7, t4
  WHERE b4 in (941,982,434,733,721,802,607,903)
    AND e7 in (183,562,27,689,234)
-;
+ORDER BY 1,2;
 -- 120 values hashing to 4a1ec4fecd71058f8ac04a1313902fec
 
 -- query TII rowsort join237
@@ -36026,7 +36026,7 @@ SELECT x5, a3*222, c8*97+c5
  WHERE a3=559
    AND (3=c5 OR 613=c5)
    AND e8=561
-;
+ORDER BY 1,2,3;
 -- table tn5 row 55
 -- 124098
 -- 82550
@@ -36040,7 +36040,7 @@ SELECT x5, a3*222, c8*97+c5
  WHERE a3=559
    AND e8=561
    AND (3=c5 OR 613=c5)
-;
+ORDER BY 1,2,3;
 -- table tn5 row 55
 -- 124098
 -- 82550
@@ -36054,7 +36054,7 @@ SELECT x5, a3*222, c8*97+c5
  WHERE a3=559
    AND e8=561
    AND (3=c5 OR 613=c5)
-;
+ORDER BY 1,2,3;
 -- table tn5 row 55
 -- 124098
 -- 82550
@@ -36068,7 +36068,7 @@ SELECT x5, a3*222, c8*97+c5
  WHERE a3=559
    AND e8=561
    AND (3=c5 OR 613=c5)
-;
+ORDER BY 1,2,3;
 -- table tn5 row 55
 -- 124098
 -- 82550
@@ -36081,7 +36081,7 @@ SELECT d9, e1+403
   FROM t9, t1
  WHERE a1 in (736,551,445,868,579)
    AND b9=5
-;
+ORDER BY 1,2;
 -- 10 values hashing to 5205b575a832195c850877daebb736f5
 
 -- query II rowsort join238
@@ -36089,7 +36089,7 @@ SELECT d9, e1+403
   FROM t1, t9
  WHERE a1 in (736,551,445,868,579)
    AND b9=5
-;
+ORDER BY 1,2;
 -- 10 values hashing to 5205b575a832195c850877daebb736f5
 
 -- query II rowsort join238
@@ -36097,7 +36097,7 @@ SELECT d9, e1+403
   FROM t1, t9
  WHERE b9=5
    AND a1 in (736,551,445,868,579)
-;
+ORDER BY 1,2;
 -- 10 values hashing to 5205b575a832195c850877daebb736f5
 
 -- query IIII rowsort join239
@@ -36107,7 +36107,7 @@ SELECT a9*952, a7, a4+208, a8+797
    AND e7=782
    AND e8 in (776,561,463)
    AND e9=c7
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to c3fa54863270c4a80e5aa930ca5c762f
 
 -- query IIII rowsort join239
@@ -36117,7 +36117,7 @@ SELECT a9*952, a7, a4+208, a8+797
    AND e7=782
    AND b4 in (294,860,408,707,635)
    AND e8 in (776,561,463)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to c3fa54863270c4a80e5aa930ca5c762f
 
 -- query IIII rowsort join239
@@ -36127,7 +36127,7 @@ SELECT a9*952, a7, a4+208, a8+797
    AND e9=c7
    AND e8 in (776,561,463)
    AND e7=782
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to c3fa54863270c4a80e5aa930ca5c762f
 
 -- query IIII rowsort join239
@@ -36137,7 +36137,7 @@ SELECT a9*952, a7, a4+208, a8+797
    AND e9=c7
    AND b4 in (294,860,408,707,635)
    AND e8 in (776,561,463)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to c3fa54863270c4a80e5aa930ca5c762f
 
 -- query TTI rowsort join240
@@ -36146,7 +36146,7 @@ SELECT x4, x6, b3
  WHERE b4=407
    AND 5=a3
    AND d6 in (405,271,846,885,647,66)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 7ca690e34fbf8bd54fcbb6b933afad6a
 
 -- query TTI rowsort join240
@@ -36155,7 +36155,7 @@ SELECT x4, x6, b3
  WHERE b4=407
    AND d6 in (405,271,846,885,647,66)
    AND 5=a3
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 7ca690e34fbf8bd54fcbb6b933afad6a
 
 -- query TTI rowsort join240
@@ -36164,7 +36164,7 @@ SELECT x4, x6, b3
  WHERE 5=a3
    AND d6 in (405,271,846,885,647,66)
    AND b4=407
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 7ca690e34fbf8bd54fcbb6b933afad6a
 
 -- query TTI rowsort join240
@@ -36173,7 +36173,7 @@ SELECT x4, x6, b3
  WHERE d6 in (405,271,846,885,647,66)
    AND 5=a3
    AND b4=407
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 7ca690e34fbf8bd54fcbb6b933afad6a
 
 -- query IIIII rowsort join241
@@ -36184,7 +36184,7 @@ SELECT c8, a7+870, d2+d1, a1, d3+c2
    AND e8 in (548,260,295,893,761,495,918,729)
    AND a3 in (913,275,822)
    AND e7 in (290,422,689,826,120,979)
-;
+ORDER BY 1,2,3,4,5;
 -- 5040 values hashing to 79b28cac4768ba2833761c18d1614af3
 
 -- query IIIII rowsort join241
@@ -36195,7 +36195,7 @@ SELECT c8, a7+870, d2+d1, a1, d3+c2
    AND e7 in (290,422,689,826,120,979)
    AND d2=216
    AND a1 in (950,267,879,299,847,249)
-;
+ORDER BY 1,2,3,4,5;
 -- 5040 values hashing to 79b28cac4768ba2833761c18d1614af3
 
 -- query IIIII rowsort join241
@@ -36206,7 +36206,7 @@ SELECT c8, a7+870, d2+d1, a1, d3+c2
    AND a3 in (913,275,822)
    AND d2=216
    AND e7 in (290,422,689,826,120,979)
-;
+ORDER BY 1,2,3,4,5;
 -- 5040 values hashing to 79b28cac4768ba2833761c18d1614af3
 
 -- query IIIII rowsort join241
@@ -36217,7 +36217,7 @@ SELECT c8, a7+870, d2+d1, a1, d3+c2
    AND e8 in (548,260,295,893,761,495,918,729)
    AND a1 in (950,267,879,299,847,249)
    AND d2=216
-;
+ORDER BY 1,2,3,4,5;
 -- 5040 values hashing to 79b28cac4768ba2833761c18d1614af3
 
 -- query ITTIT rowsort join242
@@ -36228,7 +36228,7 @@ SELECT b5, x8, x7, a9+581+e5, x3
    AND 734=c5
    AND 175=e8
    AND a9 in (830,739,218,811,879,365)
-;
+ORDER BY 1,2,3,4,5;
 -- 10 values hashing to fadf2d2dec88e7b82f74aa05bb68b08d
 
 -- query ITTIT rowsort join242
@@ -36239,7 +36239,7 @@ SELECT b5, x8, x7, a9+581+e5, x3
    AND 175=e8
    AND 734=c5
    AND e7=d3
-;
+ORDER BY 1,2,3,4,5;
 -- 10 values hashing to fadf2d2dec88e7b82f74aa05bb68b08d
 
 -- query ITTIT rowsort join242
@@ -36250,7 +36250,7 @@ SELECT b5, x8, x7, a9+581+e5, x3
    AND 175=e8
    AND a9 in (830,739,218,811,879,365)
    AND a3=a9
-;
+ORDER BY 1,2,3,4,5;
 -- 10 values hashing to fadf2d2dec88e7b82f74aa05bb68b08d
 
 -- query ITTIT rowsort join242
@@ -36261,7 +36261,7 @@ SELECT b5, x8, x7, a9+581+e5, x3
    AND 734=c5
    AND 175=e8
    AND e7=d3
-;
+ORDER BY 1,2,3,4,5;
 -- 10 values hashing to fadf2d2dec88e7b82f74aa05bb68b08d
 
 -- query IIIIIIII rowsort join243
@@ -36275,7 +36275,7 @@ SELECT c5, d2+292, e1, c3+53, e6, e7, b4+356, e8
    AND e8=c1
    AND 94=b4
    AND c5 in (598,130,613,868,313,551)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1152 values hashing to 97e7a7fb4ad37a782b95475b0c2b7605
 
 -- query IIIIIIII rowsort join243
@@ -36289,7 +36289,7 @@ SELECT c5, d2+292, e1, c3+53, e6, e7, b4+356, e8
    AND a3 in (822,513,275)
    AND e8=c1
    AND c2 in (27,251,360,966,148,360,272,996)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1152 values hashing to 97e7a7fb4ad37a782b95475b0c2b7605
 
 -- query IIIIIIII rowsort join243
@@ -36303,7 +36303,7 @@ SELECT c5, d2+292, e1, c3+53, e6, e7, b4+356, e8
    AND 4=e7
    AND e8=c1
    AND c2 in (27,251,360,966,148,360,272,996)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1152 values hashing to 97e7a7fb4ad37a782b95475b0c2b7605
 
 -- query IIIIIIII rowsort join243
@@ -36317,7 +36317,7 @@ SELECT c5, d2+292, e1, c3+53, e6, e7, b4+356, e8
    AND e8=c1
    AND a3 in (822,513,275)
    AND c2 in (27,251,360,966,148,360,272,996)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1152 values hashing to 97e7a7fb4ad37a782b95475b0c2b7605
 
 -- query IITTI rowsort join244
@@ -36328,7 +36328,7 @@ SELECT b8+422, b5, x2, x6, d3+94
    AND 674=d6
    AND c5 in (844,196,868,348,198,27,799)
    AND e8 in (600,678,956,632,381)
-;
+ORDER BY 1,2,3,4,5;
 -- 6125 values hashing to 96a8fcc519d5ea2968ec3fa6ff5eb0aa
 
 -- query IITTI rowsort join244
@@ -36339,7 +36339,7 @@ SELECT b8+422, b5, x2, x6, d3+94
    AND 674=d6
    AND a3 in (576,829,383,306,997,996,763)
    AND c2 in (830,244,756,810,692)
-;
+ORDER BY 1,2,3,4,5;
 -- 6125 values hashing to 96a8fcc519d5ea2968ec3fa6ff5eb0aa
 
 -- query IITTI rowsort join244
@@ -36350,7 +36350,7 @@ SELECT b8+422, b5, x2, x6, d3+94
    AND e8 in (600,678,956,632,381)
    AND c2 in (830,244,756,810,692)
    AND a3 in (576,829,383,306,997,996,763)
-;
+ORDER BY 1,2,3,4,5;
 -- 6125 values hashing to 96a8fcc519d5ea2968ec3fa6ff5eb0aa
 
 -- query IITTI rowsort join244
@@ -36361,7 +36361,7 @@ SELECT b8+422, b5, x2, x6, d3+94
    AND c2 in (830,244,756,810,692)
    AND e8 in (600,678,956,632,381)
    AND a3 in (576,829,383,306,997,996,763)
-;
+ORDER BY 1,2,3,4,5;
 -- 6125 values hashing to 96a8fcc519d5ea2968ec3fa6ff5eb0aa
 
 -- query II rowsort join245
@@ -36369,7 +36369,7 @@ SELECT b1+489, c9
   FROM t1, t9
  WHERE e9 in (255,657,736,542,792,788,264,418)
    AND a1=d9
-;
+ORDER BY 1,2;
 -- 1470
 -- 232
 -- 716
@@ -36382,7 +36382,7 @@ SELECT b1+489, c9
   FROM t9, t1
  WHERE e9 in (255,657,736,542,792,788,264,418)
    AND a1=d9
-;
+ORDER BY 1,2;
 -- 1470
 -- 232
 -- 716
@@ -36395,7 +36395,7 @@ SELECT b1+489, c9
   FROM t9, t1
  WHERE a1=d9
    AND e9 in (255,657,736,542,792,788,264,418)
-;
+ORDER BY 1,2;
 -- 1470
 -- 232
 -- 716
@@ -36411,7 +36411,7 @@ SELECT c1, x6, x8, x9, x5
    AND e9=860
    AND a1=4
    AND c5=855
-;
+ORDER BY 1,2,3,4,5;
 -- 110 values hashing to 21caabff9887fb4620ec2d8df49c9c4c
 
 -- query ITTTT rowsort join246
@@ -36422,7 +36422,7 @@ SELECT c1, x6, x8, x9, x5
    AND e8 in (904,221,223,46,682,600,579,632)
    AND c5=855
    AND a1=4
-;
+ORDER BY 1,2,3,4,5;
 -- 110 values hashing to 21caabff9887fb4620ec2d8df49c9c4c
 
 -- query ITTTT rowsort join246
@@ -36433,7 +36433,7 @@ SELECT c1, x6, x8, x9, x5
    AND c5=855
    AND e9=860
    AND e8 in (904,221,223,46,682,600,579,632)
-;
+ORDER BY 1,2,3,4,5;
 -- 110 values hashing to 21caabff9887fb4620ec2d8df49c9c4c
 
 -- query ITTTT rowsort join246
@@ -36444,7 +36444,7 @@ SELECT c1, x6, x8, x9, x5
    AND e8 in (904,221,223,46,682,600,579,632)
    AND e9=860
    AND c5=855
-;
+ORDER BY 1,2,3,4,5;
 -- 110 values hashing to 21caabff9887fb4620ec2d8df49c9c4c
 
 -- query ITI rowsort join247
@@ -36453,7 +36453,7 @@ SELECT e6*70, x3, c7+148+d3
  WHERE 767=d6
    AND e7=201
    AND a3 in (500,820,776)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 318deeb4a635427c25245c825c469053
 
 -- query ITI rowsort join247
@@ -36462,7 +36462,7 @@ SELECT e6*70, x3, c7+148+d3
  WHERE 767=d6
    AND e7=201
    AND a3 in (500,820,776)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 318deeb4a635427c25245c825c469053
 
 -- query ITI rowsort join247
@@ -36471,7 +36471,7 @@ SELECT e6*70, x3, c7+148+d3
  WHERE 767=d6
    AND a3 in (500,820,776)
    AND e7=201
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 318deeb4a635427c25245c825c469053
 
 -- query ITI rowsort join247
@@ -36480,7 +36480,7 @@ SELECT e6*70, x3, c7+148+d3
  WHERE e7=201
    AND a3 in (500,820,776)
    AND 767=d6
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 318deeb4a635427c25245c825c469053
 
 -- query III rowsort join248
@@ -36489,7 +36489,7 @@ SELECT e8, d2+219, b9+e2
  WHERE e8 in (442,792,272,893,56)
    AND d2 in (488,362,854,621)
    AND b9 in (864,142,447,421,170,103,211)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to a99a981067dc63e2c8b21dc39ce9b6ae
 
 -- query III rowsort join248
@@ -36498,7 +36498,7 @@ SELECT e8, d2+219, b9+e2
  WHERE e8 in (442,792,272,893,56)
    AND b9 in (864,142,447,421,170,103,211)
    AND d2 in (488,362,854,621)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to a99a981067dc63e2c8b21dc39ce9b6ae
 
 -- query III rowsort join248
@@ -36507,7 +36507,7 @@ SELECT e8, d2+219, b9+e2
  WHERE b9 in (864,142,447,421,170,103,211)
    AND e8 in (442,792,272,893,56)
    AND d2 in (488,362,854,621)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to a99a981067dc63e2c8b21dc39ce9b6ae
 
 -- query III rowsort join248
@@ -36516,7 +36516,7 @@ SELECT e8, d2+219, b9+e2
  WHERE b9 in (864,142,447,421,170,103,211)
    AND d2 in (488,362,854,621)
    AND e8 in (442,792,272,893,56)
-;
+ORDER BY 1,2,3;
 -- 420 values hashing to a99a981067dc63e2c8b21dc39ce9b6ae
 
 -- query IIIIIIT rowsort join249
@@ -36529,7 +36529,7 @@ SELECT c1, c6, a3+e1, e9+a1, e4+900, c8*666, x7
    AND d9 in (959,682,967,855,688,224)
    AND b4 in (707,986,901,288,357)
    AND e8=d3
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 735 values hashing to 69de2926cc8799532af3709243204f3c
 
 -- query IIIIIIT rowsort join249
@@ -36542,7 +36542,7 @@ SELECT c1, c6, a3+e1, e9+a1, e4+900, c8*666, x7
    AND d9 in (959,682,967,855,688,224)
    AND d6 in (286,463,852)
    AND (754=a3 OR a3=515 OR a3=262 OR 608=a3)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 735 values hashing to 69de2926cc8799532af3709243204f3c
 
 -- query IIIIIIT rowsort join249
@@ -36555,7 +36555,7 @@ SELECT c1, c6, a3+e1, e9+a1, e4+900, c8*666, x7
    AND d9 in (959,682,967,855,688,224)
    AND d6 in (286,463,852)
    AND b4 in (707,986,901,288,357)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 735 values hashing to 69de2926cc8799532af3709243204f3c
 
 -- query IIIIIIT rowsort join249
@@ -36568,7 +36568,7 @@ SELECT c1, c6, a3+e1, e9+a1, e4+900, c8*666, x7
    AND e8=d3
    AND d9 in (959,682,967,855,688,224)
    AND 314=a1
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 735 values hashing to 69de2926cc8799532af3709243204f3c
 
 -- query TI rowsort join250
@@ -36576,7 +36576,7 @@ SELECT x2, c5
   FROM t2, t5
  WHERE c5 in (689,927,37)
    AND b2=b5
-;
+ORDER BY 1,2;
 -- table tn2 row 19
 -- 927
 
@@ -36585,7 +36585,7 @@ SELECT x2, c5
   FROM t5, t2
  WHERE b2=b5
    AND c5 in (689,927,37)
-;
+ORDER BY 1,2;
 -- table tn2 row 19
 -- 927
 
@@ -36595,7 +36595,7 @@ SELECT c9+b3, c3*151, d5+565
  WHERE c5=d9
    AND a9 in (905,879,553,694,356,548)
    AND a3=234
-;
+ORDER BY 1,2,3;
 -- 847
 -- 46055
 -- 836
@@ -36606,7 +36606,7 @@ SELECT c9+b3, c3*151, d5+565
  WHERE a9 in (905,879,553,694,356,548)
    AND c5=d9
    AND a3=234
-;
+ORDER BY 1,2,3;
 -- 847
 -- 46055
 -- 836
@@ -36617,7 +36617,7 @@ SELECT c9+b3, c3*151, d5+565
  WHERE a3=234
    AND c5=d9
    AND a9 in (905,879,553,694,356,548)
-;
+ORDER BY 1,2,3;
 -- 847
 -- 46055
 -- 836
@@ -36628,7 +36628,7 @@ SELECT c9+b3, c3*151, d5+565
  WHERE a3=234
    AND c5=d9
    AND a9 in (905,879,553,694,356,548)
-;
+ORDER BY 1,2,3;
 -- 847
 -- 46055
 -- 836
@@ -36640,7 +36640,7 @@ SELECT x1, a3, d9+c3, c4
    AND 788=a3
    AND e9 in (245,607,845,968,264,704,445,368)
    AND a1 in (866,551,746,853)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to d7a60b2cbe1bd8380857430f74a91c5f
 
 -- query TIII rowsort join252
@@ -36650,7 +36650,7 @@ SELECT x1, a3, d9+c3, c4
    AND e9 in (245,607,845,968,264,704,445,368)
    AND a1 in (866,551,746,853)
    AND 788=a3
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to d7a60b2cbe1bd8380857430f74a91c5f
 
 -- query TIII rowsort join252
@@ -36660,7 +36660,7 @@ SELECT x1, a3, d9+c3, c4
    AND b4=849
    AND a1 in (866,551,746,853)
    AND 788=a3
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to d7a60b2cbe1bd8380857430f74a91c5f
 
 -- query TIII rowsort join252
@@ -36670,7 +36670,7 @@ SELECT x1, a3, d9+c3, c4
    AND b4=849
    AND a1 in (866,551,746,853)
    AND e9 in (245,607,845,968,264,704,445,368)
-;
+ORDER BY 1,2,3,4;
 -- 128 values hashing to d7a60b2cbe1bd8380857430f74a91c5f
 
 -- query IIIII rowsort join253
@@ -36681,7 +36681,7 @@ SELECT b1+408, d2+c1, c7, b4, e3
    AND 439=e7
    AND a1 in (825,330,280,866,678,732)
    AND a3=d4
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to 09462296d8d4bcfcd265474a8a4c431b
 
 -- query IIIII rowsort join253
@@ -36692,7 +36692,7 @@ SELECT b1+408, d2+c1, c7, b4, e3
    AND (b2=585 OR b2=35 OR 519=b2 OR 376=b2)
    AND a1 in (825,330,280,866,678,732)
    AND 439=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to 09462296d8d4bcfcd265474a8a4c431b
 
 -- query IIIII rowsort join253
@@ -36703,7 +36703,7 @@ SELECT b1+408, d2+c1, c7, b4, e3
    AND a1 in (825,330,280,866,678,732)
    AND a3=d4
    AND 439=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to 09462296d8d4bcfcd265474a8a4c431b
 
 -- query IIIII rowsort join253
@@ -36714,7 +36714,7 @@ SELECT b1+408, d2+c1, c7, b4, e3
    AND a1 in (825,330,280,866,678,732)
    AND 439=e7
    AND b4 in (2,660,319,379,434,982,941,634)
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to 09462296d8d4bcfcd265474a8a4c431b
 
 -- query IIT rowsort join254
@@ -36723,7 +36723,7 @@ SELECT e2, b6+779+a6, x3
  WHERE a2 in (262,64,415,98,185,869,725,664)
    AND (959=a3 OR a3=614)
    AND 446=d6
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 54a482035ea1e5fabf0b47937ac916b5
 
 -- query IIT rowsort join254
@@ -36732,7 +36732,7 @@ SELECT e2, b6+779+a6, x3
  WHERE (959=a3 OR a3=614)
    AND 446=d6
    AND a2 in (262,64,415,98,185,869,725,664)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 54a482035ea1e5fabf0b47937ac916b5
 
 -- query IIT rowsort join254
@@ -36741,7 +36741,7 @@ SELECT e2, b6+779+a6, x3
  WHERE a2 in (262,64,415,98,185,869,725,664)
    AND 446=d6
    AND (959=a3 OR a3=614)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 54a482035ea1e5fabf0b47937ac916b5
 
 -- query IIT rowsort join254
@@ -36750,7 +36750,7 @@ SELECT e2, b6+779+a6, x3
  WHERE a2 in (262,64,415,98,185,869,725,664)
    AND 446=d6
    AND (959=a3 OR a3=614)
-;
+ORDER BY 1,2,3;
 -- 54 values hashing to 54a482035ea1e5fabf0b47937ac916b5
 
 -- query IIIIIIIT rowsort join255
@@ -36764,7 +36764,7 @@ SELECT e8, d7+959, b3, a5*693, e2, e6*447, b1+778, x4
    AND a1 in (358,451,479,382,330,281,953,732)
    AND b4 in (434,700,94,860)
    AND d6 in (489,911,147)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 18432 values hashing to 5a3a8601b632972939bb860c612eb383
 
 -- query IIIIIIIT rowsort join255
@@ -36778,7 +36778,7 @@ SELECT e8, d7+959, b3, a5*693, e2, e6*447, b1+778, x4
    AND e7=462
    AND d6 in (489,911,147)
    AND b4 in (434,700,94,860)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 18432 values hashing to 5a3a8601b632972939bb860c612eb383
 
 -- query IIIIIIIT rowsort join255
@@ -36792,7 +36792,7 @@ SELECT e8, d7+959, b3, a5*693, e2, e6*447, b1+778, x4
    AND b2=b1
    AND c5 in (489,250,927,855,697,130,856)
    AND d6 in (489,911,147)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 18432 values hashing to 5a3a8601b632972939bb860c612eb383
 
 -- query IIIIIIIT rowsort join255
@@ -36806,7 +36806,7 @@ SELECT e8, d7+959, b3, a5*693, e2, e6*447, b1+778, x4
    AND b4 in (434,700,94,860)
    AND a3=d1
    AND (180=e8 OR 333=e8 OR e8=38 OR e8=349)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 18432 values hashing to 5a3a8601b632972939bb860c612eb383
 
 -- query III rowsort join256
@@ -36815,7 +36815,7 @@ SELECT a6, d3*763, b1*315
  WHERE d6 in (192,767,729,467,161,223,286,35)
    AND a3 in (500,190,499,743,478,129,255)
    AND a1=821
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to a6c8ff4d6f755b0e6bd930a17707620b
 
 -- query III rowsort join256
@@ -36824,7 +36824,7 @@ SELECT a6, d3*763, b1*315
  WHERE d6 in (192,767,729,467,161,223,286,35)
    AND a3 in (500,190,499,743,478,129,255)
    AND a1=821
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to a6c8ff4d6f755b0e6bd930a17707620b
 
 -- query III rowsort join256
@@ -36833,7 +36833,7 @@ SELECT a6, d3*763, b1*315
  WHERE a3 in (500,190,499,743,478,129,255)
    AND a1=821
    AND d6 in (192,767,729,467,161,223,286,35)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to a6c8ff4d6f755b0e6bd930a17707620b
 
 -- query III rowsort join256
@@ -36842,7 +36842,7 @@ SELECT a6, d3*763, b1*315
  WHERE a3 in (500,190,499,743,478,129,255)
    AND a1=821
    AND d6 in (192,767,729,467,161,223,286,35)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to a6c8ff4d6f755b0e6bd930a17707620b
 
 -- query IIII rowsort join257
@@ -36852,7 +36852,7 @@ SELECT e1+809+d5, d5+262, a3+e3, e4
    AND a3 in (996,335,525,282)
    AND a1=732
    AND 847=b4
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 518e2950d53a70aacddd95a64580e34f
 
 -- query IIII rowsort join257
@@ -36862,7 +36862,7 @@ SELECT e1+809+d5, d5+262, a3+e3, e4
    AND c5 in (18,598,960,527,514)
    AND a1=732
    AND a3 in (996,335,525,282)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 518e2950d53a70aacddd95a64580e34f
 
 -- query IIII rowsort join257
@@ -36872,7 +36872,7 @@ SELECT e1+809+d5, d5+262, a3+e3, e4
    AND 847=b4
    AND a1=732
    AND a3 in (996,335,525,282)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 518e2950d53a70aacddd95a64580e34f
 
 -- query IIII rowsort join257
@@ -36882,7 +36882,7 @@ SELECT e1+809+d5, d5+262, a3+e3, e4
    AND a1=732
    AND a3 in (996,335,525,282)
    AND c5 in (18,598,960,527,514)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 518e2950d53a70aacddd95a64580e34f
 
 -- query TIITII rowsort join258
@@ -36894,7 +36894,7 @@ SELECT x8, a3, b7*840+e8, x4, d1+a4, c9+34
    AND 353=e9
    AND a3 in (776,729,70)
    AND a1 in (52,382,109,544,898)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to de47e1d17306c555cd29accf3f5751c6
 
 -- query TIITII rowsort join258
@@ -36906,7 +36906,7 @@ SELECT x8, a3, b7*840+e8, x4, d1+a4, c9+34
    AND e8=495
    AND 353=e9
    AND a1 in (52,382,109,544,898)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to de47e1d17306c555cd29accf3f5751c6
 
 -- query TIITII rowsort join258
@@ -36918,7 +36918,7 @@ SELECT x8, a3, b7*840+e8, x4, d1+a4, c9+34
    AND e8=495
    AND b4 in (901,58,829,407,765,323)
    AND 827=e7
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to de47e1d17306c555cd29accf3f5751c6
 
 -- query TIITII rowsort join258
@@ -36930,7 +36930,7 @@ SELECT x8, a3, b7*840+e8, x4, d1+a4, c9+34
    AND a3 in (776,729,70)
    AND a1 in (52,382,109,544,898)
    AND 353=e9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to de47e1d17306c555cd29accf3f5751c6
 
 -- query IIIT rowsort join259
@@ -36940,7 +36940,7 @@ SELECT e9+c5, d7, d5, x3
    AND b9=239
    AND e7 in (89,7,976,929)
    AND c5=734
-;
+ORDER BY 1,2,3,4;
 -- 480 values hashing to 07577a4c84be165f8c4c1fda4ba4ee3d
 
 -- query IIIT rowsort join259
@@ -36950,7 +36950,7 @@ SELECT e9+c5, d7, d5, x3
    AND b9=239
    AND e7 in (89,7,976,929)
    AND c5=734
-;
+ORDER BY 1,2,3,4;
 -- 480 values hashing to 07577a4c84be165f8c4c1fda4ba4ee3d
 
 -- query IIIT rowsort join259
@@ -36960,7 +36960,7 @@ SELECT e9+c5, d7, d5, x3
    AND b9=239
    AND e7 in (89,7,976,929)
    AND c5=734
-;
+ORDER BY 1,2,3,4;
 -- 480 values hashing to 07577a4c84be165f8c4c1fda4ba4ee3d
 
 -- query IIIT rowsort join259
@@ -36970,7 +36970,7 @@ SELECT e9+c5, d7, d5, x3
    AND a3 in (262,499,913,513,865,396,935,218)
    AND c5=734
    AND e7 in (89,7,976,929)
-;
+ORDER BY 1,2,3,4;
 -- 480 values hashing to 07577a4c84be165f8c4c1fda4ba4ee3d
 
 -- query ITIIII rowsort join260
@@ -36982,7 +36982,7 @@ SELECT d7, x9, e4+d5, e6, c5, e3+e6
    AND (600=d6 OR 924=d6 OR d6=367)
    AND (b4=271 OR b4=33)
    AND 646=d9
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to bcd56c9549152a804f440b81861b8904
 
 -- query ITIIII rowsort join260
@@ -36994,7 +36994,7 @@ SELECT d7, x9, e4+d5, e6, c5, e3+e6
    AND (b4=271 OR b4=33)
    AND c5 in (101,585,923,56,894,437)
    AND (600=d6 OR 924=d6 OR d6=367)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to bcd56c9549152a804f440b81861b8904
 
 -- query ITIIII rowsort join260
@@ -37006,7 +37006,7 @@ SELECT d7, x9, e4+d5, e6, c5, e3+e6
    AND (600=d6 OR 924=d6 OR d6=367)
    AND (b4=271 OR b4=33)
    AND c5 in (101,585,923,56,894,437)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to bcd56c9549152a804f440b81861b8904
 
 -- query ITIIII rowsort join260
@@ -37018,7 +37018,7 @@ SELECT d7, x9, e4+d5, e6, c5, e3+e6
    AND 646=d9
    AND e7 in (103,288,506,439,976,815,168)
    AND (600=d6 OR 924=d6 OR d6=367)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to bcd56c9549152a804f440b81861b8904
 
 -- query ITTTIII rowsort join261
@@ -37031,7 +37031,7 @@ SELECT d6, x4, x7, x8, a1, b9, d5*934
    AND e8 in (106,846,859,349)
    AND e7 in (248,356,503)
    AND b9 in (214,122,211,913,900,214,524,688)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 17640 values hashing to 244ea7cadbf27da5b324bc8c88623509
 
 -- query ITTTIII rowsort join261
@@ -37044,7 +37044,7 @@ SELECT d6, x4, x7, x8, a1, b9, d5*934
    AND e7 in (248,356,503)
    AND a1 in (324,241,330,352,32,829)
    AND b4=735
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 17640 values hashing to 244ea7cadbf27da5b324bc8c88623509
 
 -- query ITTTIII rowsort join261
@@ -37057,7 +37057,7 @@ SELECT d6, x4, x7, x8, a1, b9, d5*934
    AND e7 in (248,356,503)
    AND (689=c5 OR 657=c5 OR c5=187)
    AND e8 in (106,846,859,349)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 17640 values hashing to 244ea7cadbf27da5b324bc8c88623509
 
 -- query ITTTIII rowsort join261
@@ -37070,7 +37070,7 @@ SELECT d6, x4, x7, x8, a1, b9, d5*934
    AND b9 in (214,122,211,913,900,214,524,688)
    AND b4=735
    AND e8 in (106,846,859,349)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 17640 values hashing to 244ea7cadbf27da5b324bc8c88623509
 
 -- query IIIII rowsort join262
@@ -37081,7 +37081,7 @@ SELECT c8, c3+835+a1, c7+e8, e1*300, b6*868+a1
    AND d6 in (647,73,578,72,797,846)
    AND (590=e7 OR e7=103)
    AND a3 in (899,865,829,566,637,129)
-;
+ORDER BY 1,2,3,4,5;
 -- 2160 values hashing to c3c60729b5e6f85e6ef21d49514cb104
 
 -- query IIIII rowsort join262
@@ -37092,7 +37092,7 @@ SELECT c8, c3+835+a1, c7+e8, e1*300, b6*868+a1
    AND a3 in (899,865,829,566,637,129)
    AND e8 in (904,41,635,866,955,38)
    AND d6 in (647,73,578,72,797,846)
-;
+ORDER BY 1,2,3,4,5;
 -- 2160 values hashing to c3c60729b5e6f85e6ef21d49514cb104
 
 -- query IIIII rowsort join262
@@ -37103,7 +37103,7 @@ SELECT c8, c3+835+a1, c7+e8, e1*300, b6*868+a1
    AND a3 in (899,865,829,566,637,129)
    AND (590=e7 OR e7=103)
    AND e8 in (904,41,635,866,955,38)
-;
+ORDER BY 1,2,3,4,5;
 -- 2160 values hashing to c3c60729b5e6f85e6ef21d49514cb104
 
 -- query IIIII rowsort join262
@@ -37114,7 +37114,7 @@ SELECT c8, c3+835+a1, c7+e8, e1*300, b6*868+a1
    AND d6 in (647,73,578,72,797,846)
    AND a3 in (899,865,829,566,637,129)
    AND e8 in (904,41,635,866,955,38)
-;
+ORDER BY 1,2,3,4,5;
 -- 2160 values hashing to c3c60729b5e6f85e6ef21d49514cb104
 
 -- query IIIIIIII rowsort join263
@@ -37128,7 +37128,7 @@ SELECT e2+657, c5+d7, a7+260+a8, a9+b2, a6+730, d8+948+d5, e3, d1*398
    AND e7 in (120,506,900)
    AND 599=c5
    AND e9 in (567,15,801)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8640 values hashing to 777d9c1b37c5c1a00c27a092c3e4dc5a
 
 -- query IIIIIIII rowsort join263
@@ -37142,7 +37142,7 @@ SELECT e2+657, c5+d7, a7+260+a8, a9+b2, a6+730, d8+948+d5, e3, d1*398
    AND e7 in (120,506,900)
    AND 404=d2
    AND 560=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8640 values hashing to 777d9c1b37c5c1a00c27a092c3e4dc5a
 
 -- query IIIIIIII rowsort join263
@@ -37156,7 +37156,7 @@ SELECT e2+657, c5+d7, a7+260+a8, a9+b2, a6+730, d8+948+d5, e3, d1*398
    AND a3=710
    AND 560=d6
    AND e8 in (204,442,186,776,866,64)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8640 values hashing to 777d9c1b37c5c1a00c27a092c3e4dc5a
 
 -- query IIIIIIII rowsort join263
@@ -37170,7 +37170,7 @@ SELECT e2+657, c5+d7, a7+260+a8, a9+b2, a6+730, d8+948+d5, e3, d1*398
    AND a1 in (433,499,950,862,538,268,637,352)
    AND 404=d2
    AND 599=c5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8640 values hashing to 777d9c1b37c5c1a00c27a092c3e4dc5a
 
 -- query III rowsort join264
@@ -37179,7 +37179,7 @@ SELECT a8, c2, a4*696
  WHERE 586=e8
    AND e2 in (938,505,706,131,940)
    AND b4=551
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 790effd5d14b0e3038a0e34ca26d2be0
 
 -- query III rowsort join264
@@ -37188,7 +37188,7 @@ SELECT a8, c2, a4*696
  WHERE b4=551
    AND e2 in (938,505,706,131,940)
    AND 586=e8
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 790effd5d14b0e3038a0e34ca26d2be0
 
 -- query III rowsort join264
@@ -37197,7 +37197,7 @@ SELECT a8, c2, a4*696
  WHERE 586=e8
    AND b4=551
    AND e2 in (938,505,706,131,940)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 790effd5d14b0e3038a0e34ca26d2be0
 
 -- query III rowsort join264
@@ -37206,7 +37206,7 @@ SELECT a8, c2, a4*696
  WHERE b4=551
    AND e2 in (938,505,706,131,940)
    AND 586=e8
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 790effd5d14b0e3038a0e34ca26d2be0
 
 -- query IIIIII rowsort join265
@@ -37218,7 +37218,7 @@ SELECT e7*826+b1, c1, e5, a4, d2+d1, b9*924+c2
    AND b4 in (961,532,323)
    AND (a2=268 OR a2=927 OR 709=a2 OR 235=a2)
    AND c5 in (868,44,613,158,443,924,923)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 20160 values hashing to 1662ef023ab039aaa6ea0c4708eadcca
 
 -- query IIIIII rowsort join265
@@ -37230,7 +37230,7 @@ SELECT e7*826+b1, c1, e5, a4, d2+d1, b9*924+c2
    AND (a2=268 OR a2=927 OR 709=a2 OR 235=a2)
    AND c5 in (868,44,613,158,443,924,923)
    AND 887=e7
-;
+ORDER BY 1,2,3,4,5,6;
 -- 20160 values hashing to 1662ef023ab039aaa6ea0c4708eadcca
 
 -- query IIIIII rowsort join265
@@ -37242,7 +37242,7 @@ SELECT e7*826+b1, c1, e5, a4, d2+d1, b9*924+c2
    AND e9 in (799,841,197,255,264)
    AND a1 in (32,742,281,829,460,895,668)
    AND b4 in (961,532,323)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 20160 values hashing to 1662ef023ab039aaa6ea0c4708eadcca
 
 -- query IIIIII rowsort join265
@@ -37254,7 +37254,7 @@ SELECT e7*826+b1, c1, e5, a4, d2+d1, b9*924+c2
    AND 887=e7
    AND a1 in (32,742,281,829,460,895,668)
    AND c5 in (868,44,613,158,443,924,923)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 20160 values hashing to 1662ef023ab039aaa6ea0c4708eadcca
 
 -- query III rowsort join266
@@ -37263,7 +37263,7 @@ SELECT d8, e3+c8, e5
  WHERE c5 in (818,44,934,625,915)
    AND a3=727
    AND e8 in (295,806,7,38)
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 682a22eae0c9bf9db5b3270d8e83bd2d
 
 -- query III rowsort join266
@@ -37272,7 +37272,7 @@ SELECT d8, e3+c8, e5
  WHERE e8 in (295,806,7,38)
    AND c5 in (818,44,934,625,915)
    AND a3=727
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 682a22eae0c9bf9db5b3270d8e83bd2d
 
 -- query III rowsort join266
@@ -37281,7 +37281,7 @@ SELECT d8, e3+c8, e5
  WHERE a3=727
    AND e8 in (295,806,7,38)
    AND c5 in (818,44,934,625,915)
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 682a22eae0c9bf9db5b3270d8e83bd2d
 
 -- query III rowsort join266
@@ -37290,7 +37290,7 @@ SELECT d8, e3+c8, e5
  WHERE e8 in (295,806,7,38)
    AND c5 in (818,44,934,625,915)
    AND a3=727
-;
+ORDER BY 1,2,3;
 -- 120 values hashing to 682a22eae0c9bf9db5b3270d8e83bd2d
 
 -- query IIIII rowsort join267
@@ -37301,7 +37301,7 @@ SELECT e1, b7+730, d2, d9, c8+b9
    AND e7=154
    AND b9 in (803,227,688,568,136)
    AND 767=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to b29fc238ec3c0f74360d029df7ab7fce
 
 -- query IIIII rowsort join267
@@ -37312,7 +37312,7 @@ SELECT e1, b7+730, d2, d9, c8+b9
    AND c2=e9
    AND e7=154
    AND b9 in (803,227,688,568,136)
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to b29fc238ec3c0f74360d029df7ab7fce
 
 -- query IIIII rowsort join267
@@ -37323,7 +37323,7 @@ SELECT e1, b7+730, d2, d9, c8+b9
    AND 767=a1
    AND e8 in (7,981,608,421,41,955,495)
    AND c2=e9
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to b29fc238ec3c0f74360d029df7ab7fce
 
 -- query IIIII rowsort join267
@@ -37334,7 +37334,7 @@ SELECT e1, b7+730, d2, d9, c8+b9
    AND c2=e9
    AND 767=a1
    AND e8 in (7,981,608,421,41,955,495)
-;
+ORDER BY 1,2,3,4,5;
 -- 70 values hashing to b29fc238ec3c0f74360d029df7ab7fce
 
 -- query TII rowsort join268
@@ -37343,7 +37343,7 @@ SELECT x2, a4, c1*632+d4
  WHERE a1 in (249,433,707,779)
    AND c2=902
    AND b4=c1
-;
+ORDER BY 1,2,3;
 -- table tn2 row 53
 -- 589
 -- 619509
@@ -37354,7 +37354,7 @@ SELECT x2, a4, c1*632+d4
  WHERE c2=902
    AND b4=c1
    AND a1 in (249,433,707,779)
-;
+ORDER BY 1,2,3;
 -- table tn2 row 53
 -- 589
 -- 619509
@@ -37365,7 +37365,7 @@ SELECT x2, a4, c1*632+d4
  WHERE a1 in (249,433,707,779)
    AND b4=c1
    AND c2=902
-;
+ORDER BY 1,2,3;
 -- table tn2 row 53
 -- 589
 -- 619509
@@ -37376,7 +37376,7 @@ SELECT x2, a4, c1*632+d4
  WHERE a1 in (249,433,707,779)
    AND c2=902
    AND b4=c1
-;
+ORDER BY 1,2,3;
 -- table tn2 row 53
 -- 589
 -- 619509
@@ -37386,7 +37386,7 @@ SELECT c2+859, c4
   FROM t4, t2
  WHERE 700=b4
    AND a2=691
-;
+ORDER BY 1,2;
 -- 1696
 -- 433
 -- 942
@@ -37397,7 +37397,7 @@ SELECT c2+859, c4
   FROM t2, t4
  WHERE 700=b4
    AND a2=691
-;
+ORDER BY 1,2;
 -- 1696
 -- 433
 -- 942
@@ -37408,7 +37408,7 @@ SELECT c2+859, c4
   FROM t4, t2
  WHERE a2=691
    AND 700=b4
-;
+ORDER BY 1,2;
 -- 1696
 -- 433
 -- 942
@@ -37421,7 +37421,7 @@ SELECT b3+658+e8, c8+278+d8, e2+437+e8, x1
    AND a1 in (847,538,604,433)
    AND 620=e8
    AND (c2=268 OR c2=830 OR c2=746 OR c2=823)
-;
+ORDER BY 1,2,3,4;
 -- 576 values hashing to 45da07e96a5722fc744a86c935ae2baf
 
 -- query IIIT rowsort join270
@@ -37431,7 +37431,7 @@ SELECT b3+658+e8, c8+278+d8, e2+437+e8, x1
    AND (c2=268 OR c2=830 OR c2=746 OR c2=823)
    AND 620=e8
    AND a3 in (98,262,16,70,364,818,548,145)
-;
+ORDER BY 1,2,3,4;
 -- 576 values hashing to 45da07e96a5722fc744a86c935ae2baf
 
 -- query IIIT rowsort join270
@@ -37441,7 +37441,7 @@ SELECT b3+658+e8, c8+278+d8, e2+437+e8, x1
    AND (c2=268 OR c2=830 OR c2=746 OR c2=823)
    AND 620=e8
    AND a3 in (98,262,16,70,364,818,548,145)
-;
+ORDER BY 1,2,3,4;
 -- 576 values hashing to 45da07e96a5722fc744a86c935ae2baf
 
 -- query IIIT rowsort join270
@@ -37451,7 +37451,7 @@ SELECT b3+658+e8, c8+278+d8, e2+437+e8, x1
    AND a1 in (847,538,604,433)
    AND (c2=268 OR c2=830 OR c2=746 OR c2=823)
    AND a3 in (98,262,16,70,364,818,548,145)
-;
+ORDER BY 1,2,3,4;
 -- 576 values hashing to 45da07e96a5722fc744a86c935ae2baf
 
 -- query IIIITII rowsort join271
@@ -37464,8 +37464,7 @@ SELECT a1+568, b6, e5+681, d4+e4, x3, d9, c2+504
    AND (178=b9 OR b9=595 OR 496=b9)
    AND c5=a4
    AND d6 in (711,321,931,366,147,367)
- ORDER BY 1,2,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 840 values hashing to 17f6ac10a9d69b134d6adcfcf458a841
 
 -- query IIIITII rowsort join271
@@ -37478,8 +37477,7 @@ SELECT a1+568, b6, e5+681, d4+e4, x3, d9, c2+504
    AND d6 in (711,321,931,366,147,367)
    AND 40=b4
    AND (178=b9 OR b9=595 OR 496=b9)
- ORDER BY 1,2,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 840 values hashing to 17f6ac10a9d69b134d6adcfcf458a841
 
 -- query IIIITII rowsort join271
@@ -37492,8 +37490,7 @@ SELECT a1+568, b6, e5+681, d4+e4, x3, d9, c2+504
    AND d6 in (711,321,931,366,147,367)
    AND c5=a4
    AND (a3=262 OR 525=a3 OR a3=992 OR 101=a3)
- ORDER BY 1,2,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 840 values hashing to 17f6ac10a9d69b134d6adcfcf458a841
 
 -- query IIIITII rowsort join271
@@ -37506,8 +37503,7 @@ SELECT a1+568, b6, e5+681, d4+e4, x3, d9, c2+504
    AND d6 in (711,321,931,366,147,367)
    AND a1 in (604,299,382,61)
    AND (178=b9 OR b9=595 OR 496=b9)
- ORDER BY 1,2,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 840 values hashing to 17f6ac10a9d69b134d6adcfcf458a841
 
 -- query ITI rowsort join272
@@ -37516,7 +37512,7 @@ SELECT b3, x1, c4*139
  WHERE a1 in (222,380,553,544,584)
    AND b4=964
    AND a3 in (697,379,581,303,637)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to a3a4fa4207b553e078bae743e3e32a88
 
 -- query ITI rowsort join272
@@ -37525,7 +37521,7 @@ SELECT b3, x1, c4*139
  WHERE a1 in (222,380,553,544,584)
    AND a3 in (697,379,581,303,637)
    AND b4=964
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to a3a4fa4207b553e078bae743e3e32a88
 
 -- query ITI rowsort join272
@@ -37534,7 +37530,7 @@ SELECT b3, x1, c4*139
  WHERE a1 in (222,380,553,544,584)
    AND a3 in (697,379,581,303,637)
    AND b4=964
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to a3a4fa4207b553e078bae743e3e32a88
 
 -- query ITI rowsort join272
@@ -37543,7 +37539,7 @@ SELECT b3, x1, c4*139
  WHERE a3 in (697,379,581,303,637)
    AND a1 in (222,380,553,544,584)
    AND b4=964
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to a3a4fa4207b553e078bae743e3e32a88
 
 -- query III rowsort join273
@@ -37552,7 +37548,7 @@ SELECT e3+149, c2+821, e5
  WHERE 250=c5
    AND 371=a2
    AND a3 in (513,143,581,576,337,803,341,181)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 12261e4e285164a0c23bc8bf3031637e
 
 -- query III rowsort join273
@@ -37561,7 +37557,7 @@ SELECT e3+149, c2+821, e5
  WHERE 250=c5
    AND 371=a2
    AND a3 in (513,143,581,576,337,803,341,181)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 12261e4e285164a0c23bc8bf3031637e
 
 -- query III rowsort join273
@@ -37570,7 +37566,7 @@ SELECT e3+149, c2+821, e5
  WHERE 250=c5
    AND a3 in (513,143,581,576,337,803,341,181)
    AND 371=a2
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 12261e4e285164a0c23bc8bf3031637e
 
 -- query III rowsort join273
@@ -37579,7 +37575,7 @@ SELECT e3+149, c2+821, e5
  WHERE 250=c5
    AND a3 in (513,143,581,576,337,803,341,181)
    AND 371=a2
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 12261e4e285164a0c23bc8bf3031637e
 
 -- query IT rowsort join274
@@ -37587,7 +37583,7 @@ SELECT d3+621, x9
   FROM t9, t3
  WHERE (d9=682 OR 602=d9 OR d9=597)
    AND 727=a3
-;
+ORDER BY 1,2;
 -- 12 values hashing to 2a9eed9e368d3ac4f16e1933389a5857
 
 -- query IT rowsort join274
@@ -37595,7 +37591,7 @@ SELECT d3+621, x9
   FROM t9, t3
  WHERE 727=a3
    AND (d9=682 OR 602=d9 OR d9=597)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 2a9eed9e368d3ac4f16e1933389a5857
 
 -- query IT rowsort join274
@@ -37603,7 +37599,7 @@ SELECT d3+621, x9
   FROM t3, t9
  WHERE (d9=682 OR 602=d9 OR d9=597)
    AND 727=a3
-;
+ORDER BY 1,2;
 -- 12 values hashing to 2a9eed9e368d3ac4f16e1933389a5857
 
 -- query IITTI rowsort join275
@@ -37614,7 +37610,7 @@ SELECT c8+141, a7*287, x9, x4, e1
    AND e8 in (846,864,966,349)
    AND e7=154
    AND b4=137
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to e61712ab3baf1dd90b5b1dff38e2487a
 
 -- query IITTI rowsort join275
@@ -37625,7 +37621,7 @@ SELECT c8+141, a7*287, x9, x4, e1
    AND c9=809
    AND e8 in (846,864,966,349)
    AND b4=137
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to e61712ab3baf1dd90b5b1dff38e2487a
 
 -- query IITTI rowsort join275
@@ -37636,7 +37632,7 @@ SELECT c8+141, a7*287, x9, x4, e1
    AND c9=809
    AND b4=137
    AND a1=314
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to e61712ab3baf1dd90b5b1dff38e2487a
 
 -- query IITTI rowsort join275
@@ -37647,7 +37643,7 @@ SELECT c8+141, a7*287, x9, x4, e1
    AND b4=137
    AND e7=154
    AND a1=314
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to e61712ab3baf1dd90b5b1dff38e2487a
 
 -- query ITIIT rowsort join276
@@ -37658,7 +37654,7 @@ SELECT e1, x8, d9, c6, x2
    AND e8 in (646,349,620,305,846)
    AND e2=b6
    AND a9 in (172,764,549,78,435,511,429)
-;
+ORDER BY 1,2,3,4,5;
 -- 1050 values hashing to e0a50b87e246602e118b07307e5eaa36
 
 -- query ITIIT rowsort join276
@@ -37669,7 +37665,7 @@ SELECT e1, x8, d9, c6, x2
    AND a9 in (172,764,549,78,435,511,429)
    AND d6 in (2,60,453,674)
    AND e8 in (646,349,620,305,846)
-;
+ORDER BY 1,2,3,4,5;
 -- 1050 values hashing to e0a50b87e246602e118b07307e5eaa36
 
 -- query ITIIT rowsort join276
@@ -37680,7 +37676,7 @@ SELECT e1, x8, d9, c6, x2
    AND e8 in (646,349,620,305,846)
    AND d6 in (2,60,453,674)
    AND a1 in (544,538,643)
-;
+ORDER BY 1,2,3,4,5;
 -- 1050 values hashing to e0a50b87e246602e118b07307e5eaa36
 
 -- query ITIIT rowsort join276
@@ -37691,7 +37687,7 @@ SELECT e1, x8, d9, c6, x2
    AND e2=b6
    AND a9 in (172,764,549,78,435,511,429)
    AND e8 in (646,349,620,305,846)
-;
+ORDER BY 1,2,3,4,5;
 -- 1050 values hashing to e0a50b87e246602e118b07307e5eaa36
 
 -- query TIIIIIII rowsort join277
@@ -37705,7 +37701,7 @@ SELECT x5, e6+c6, d1, c8, e9+108, a7, a3+149+a5, e4+358
    AND 168=e7
    AND b4=d6
    AND a1=d8
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 168 values hashing to 34325f84dd0efa600c0be4e8e0770bc3
 
 -- query TIIIIIII rowsort join277
@@ -37719,7 +37715,7 @@ SELECT x5, e6+c6, d1, c8, e9+108, a7, a3+149+a5, e4+358
    AND a3 in (515,190,306,513,959,788,198)
    AND a9 in (28,11,739,102,413,389)
    AND 168=e7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 168 values hashing to 34325f84dd0efa600c0be4e8e0770bc3
 
 -- query TIIIIIII rowsort join277
@@ -37733,7 +37729,7 @@ SELECT x5, e6+c6, d1, c8, e9+108, a7, a3+149+a5, e4+358
    AND a3 in (515,190,306,513,959,788,198)
    AND a1=d8
    AND b4=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 168 values hashing to 34325f84dd0efa600c0be4e8e0770bc3
 
 -- query TIIIIIII rowsort join277
@@ -37747,7 +37743,7 @@ SELECT x5, e6+c6, d1, c8, e9+108, a7, a3+149+a5, e4+358
    AND a9 in (28,11,739,102,413,389)
    AND a1=d8
    AND d6 in (277,256,469,924,846,729,901,186)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 168 values hashing to 34325f84dd0efa600c0be4e8e0770bc3
 
 -- query III rowsort join278
@@ -37756,7 +37752,7 @@ SELECT d1*974, b2+e1, e8
  WHERE a1 in (179,337,406)
    AND e2 in (963,322,936,123,564,815,307,781)
    AND 761=e8
-;
+ORDER BY 1,2,3;
 -- 81 values hashing to c7d3a91f9b0f1ba862c315e9b3eecefc
 
 -- query III rowsort join278
@@ -37765,7 +37761,7 @@ SELECT d1*974, b2+e1, e8
  WHERE e2 in (963,322,936,123,564,815,307,781)
    AND a1 in (179,337,406)
    AND 761=e8
-;
+ORDER BY 1,2,3;
 -- 81 values hashing to c7d3a91f9b0f1ba862c315e9b3eecefc
 
 -- query III rowsort join278
@@ -37774,7 +37770,7 @@ SELECT d1*974, b2+e1, e8
  WHERE 761=e8
    AND e2 in (963,322,936,123,564,815,307,781)
    AND a1 in (179,337,406)
-;
+ORDER BY 1,2,3;
 -- 81 values hashing to c7d3a91f9b0f1ba862c315e9b3eecefc
 
 -- query TI rowsort join279
@@ -37782,7 +37778,7 @@ SELECT x1, a7+a1
   FROM t7, t1
  WHERE e7 in (499,595,456,432,282)
    AND a1 in (433,643,189,161,524,785,499,438)
-;
+ORDER BY 1,2;
 -- 96 values hashing to a1e5ec0a768c4d0ba34dd98056933041
 
 -- query TI rowsort join279
@@ -37790,7 +37786,7 @@ SELECT x1, a7+a1
   FROM t1, t7
  WHERE e7 in (499,595,456,432,282)
    AND a1 in (433,643,189,161,524,785,499,438)
-;
+ORDER BY 1,2;
 -- 96 values hashing to a1e5ec0a768c4d0ba34dd98056933041
 
 -- query TI rowsort join279
@@ -37798,7 +37794,7 @@ SELECT x1, a7+a1
   FROM t1, t7
  WHERE a1 in (433,643,189,161,524,785,499,438)
    AND e7 in (499,595,456,432,282)
-;
+ORDER BY 1,2;
 -- 96 values hashing to a1e5ec0a768c4d0ba34dd98056933041
 
 -- query TI rowsort join280
@@ -37806,7 +37802,7 @@ SELECT x8, e9+131
   FROM t8, t9
  WHERE 561=e8
    AND e9=383
-;
+ORDER BY 1,2;
 -- table tn8 row 23
 -- 514
 -- table tn8 row 23
@@ -37817,7 +37813,7 @@ SELECT x8, e9+131
   FROM t8, t9
  WHERE e9=383
    AND 561=e8
-;
+ORDER BY 1,2;
 -- table tn8 row 23
 -- 514
 -- table tn8 row 23
@@ -37828,7 +37824,7 @@ SELECT x8, e9+131
   FROM t9, t8
  WHERE e9=383
    AND 561=e8
-;
+ORDER BY 1,2;
 -- table tn8 row 23
 -- 514
 -- table tn8 row 23
@@ -37840,7 +37836,7 @@ SELECT x3, b6+739, d7+c3
  WHERE e7=184
    AND (a3=429 OR 368=a3)
    AND d6 in (974,129,458)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to e0c8da9b35951fb1c98e9ccd1485c693
 
 -- query TII rowsort join281
@@ -37849,7 +37845,7 @@ SELECT x3, b6+739, d7+c3
  WHERE d6 in (974,129,458)
    AND e7=184
    AND (a3=429 OR 368=a3)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to e0c8da9b35951fb1c98e9ccd1485c693
 
 -- query TII rowsort join281
@@ -37858,7 +37854,7 @@ SELECT x3, b6+739, d7+c3
  WHERE d6 in (974,129,458)
    AND e7=184
    AND (a3=429 OR 368=a3)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to e0c8da9b35951fb1c98e9ccd1485c693
 
 -- query TII rowsort join281
@@ -37867,7 +37863,7 @@ SELECT x3, b6+739, d7+c3
  WHERE e7=184
    AND d6 in (974,129,458)
    AND (a3=429 OR 368=a3)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to e0c8da9b35951fb1c98e9ccd1485c693
 
 -- query III rowsort join282
@@ -37876,7 +37872,7 @@ SELECT b2*774, c8, d6
  WHERE d6 in (767,286,590,66,277)
    AND (179=c2 OR 137=c2 OR c2=676)
    AND (942=e8 OR 972=e8 OR 592=e8 OR e8=635)
-;
+ORDER BY 1,2,3;
 -- 180 values hashing to 1f1c1dde151211e2ae20f210db74a479
 
 -- query III rowsort join282
@@ -37885,7 +37881,7 @@ SELECT b2*774, c8, d6
  WHERE d6 in (767,286,590,66,277)
    AND (179=c2 OR 137=c2 OR c2=676)
    AND (942=e8 OR 972=e8 OR 592=e8 OR e8=635)
-;
+ORDER BY 1,2,3;
 -- 180 values hashing to 1f1c1dde151211e2ae20f210db74a479
 
 -- query III rowsort join282
@@ -37894,7 +37890,7 @@ SELECT b2*774, c8, d6
  WHERE (942=e8 OR 972=e8 OR 592=e8 OR e8=635)
    AND (179=c2 OR 137=c2 OR c2=676)
    AND d6 in (767,286,590,66,277)
-;
+ORDER BY 1,2,3;
 -- 180 values hashing to 1f1c1dde151211e2ae20f210db74a479
 
 -- query III rowsort join282
@@ -37903,7 +37899,7 @@ SELECT b2*774, c8, d6
  WHERE d6 in (767,286,590,66,277)
    AND (179=c2 OR 137=c2 OR c2=676)
    AND (942=e8 OR 972=e8 OR 592=e8 OR e8=635)
-;
+ORDER BY 1,2,3;
 -- 180 values hashing to 1f1c1dde151211e2ae20f210db74a479
 
 -- query III rowsort join283
@@ -37912,7 +37908,7 @@ SELECT a2*101+b7, e7+d2, b4
  WHERE b4=e7
    AND e7=b4
    AND 93=a2
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to ce6f7319c453f132eb44517a298edce7
 
 -- query III rowsort join283
@@ -37921,7 +37917,7 @@ SELECT a2*101+b7, e7+d2, b4
  WHERE 93=a2
    AND e7=b4
    AND b4=e7
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to ce6f7319c453f132eb44517a298edce7
 
 -- query III rowsort join283
@@ -37930,7 +37926,7 @@ SELECT a2*101+b7, e7+d2, b4
  WHERE e7=b4
    AND b4=e7
    AND 93=a2
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to ce6f7319c453f132eb44517a298edce7
 
 -- query III rowsort join283
@@ -37939,7 +37935,7 @@ SELECT a2*101+b7, e7+d2, b4
  WHERE e7=b4
    AND b4=e7
    AND 93=a2
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to ce6f7319c453f132eb44517a298edce7
 
 -- query IITI rowsort join284
@@ -37949,7 +37945,7 @@ SELECT d3*920+c3, c9*31+d2, x2, d5
    AND 60=b2
    AND a3 in (337,198,197)
    AND c9 in (87,843,180,323)
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to a0e9346ec32017eae70fb85d17ac958e
 
 -- query IITI rowsort join284
@@ -37959,7 +37955,7 @@ SELECT d3*920+c3, c9*31+d2, x2, d5
    AND a3 in (337,198,197)
    AND c9 in (87,843,180,323)
    AND c5=989
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to a0e9346ec32017eae70fb85d17ac958e
 
 -- query IITI rowsort join284
@@ -37969,7 +37965,7 @@ SELECT d3*920+c3, c9*31+d2, x2, d5
    AND 60=b2
    AND a3 in (337,198,197)
    AND c5=989
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to a0e9346ec32017eae70fb85d17ac958e
 
 -- query IITI rowsort join284
@@ -37979,7 +37975,7 @@ SELECT d3*920+c3, c9*31+d2, x2, d5
    AND c9 in (87,843,180,323)
    AND a3 in (337,198,197)
    AND 60=b2
-;
+ORDER BY 1,2,3,4;
 -- 80 values hashing to a0e9346ec32017eae70fb85d17ac958e
 
 -- query IIII rowsort join285
@@ -37989,7 +37985,7 @@ SELECT c2, c1, c3+883, d7
    AND d2=e1
    AND e7 in (929,98,39,372,827,27)
    AND 338=a1
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to be0c8f9c9fe00827e5ad34c7701d5ee5
 
 -- query IIII rowsort join285
@@ -37999,7 +37995,7 @@ SELECT c2, c1, c3+883, d7
    AND d2=e1
    AND a3 in (478,996,368,935,776)
    AND e7 in (929,98,39,372,827,27)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to be0c8f9c9fe00827e5ad34c7701d5ee5
 
 -- query IIII rowsort join285
@@ -38009,7 +38005,7 @@ SELECT c2, c1, c3+883, d7
    AND e7 in (929,98,39,372,827,27)
    AND 338=a1
    AND a3 in (478,996,368,935,776)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to be0c8f9c9fe00827e5ad34c7701d5ee5
 
 -- query IIII rowsort join285
@@ -38019,7 +38015,7 @@ SELECT c2, c1, c3+883, d7
    AND a3 in (478,996,368,935,776)
    AND 338=a1
    AND d2=e1
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to be0c8f9c9fe00827e5ad34c7701d5ee5
 
 -- query IIIIITI rowsort join286
@@ -38032,8 +38028,7 @@ SELECT b7+152, d2, c4, a5+a2, d6+672, x9, e1+a4
    AND (488=d6 OR d6=72 OR 66=d6)
    AND a1=b4
    AND c5 in (27,37,756,934,844,856,797)
- ORDER BY 1,4,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to c51901c7abb580316442e3a4a177da30
 
 -- query IIIIITI rowsort join286
@@ -38046,8 +38041,7 @@ SELECT b7+152, d2, c4, a5+a2, d6+672, x9, e1+a4
    AND b9=127
    AND b2=b1
    AND c5 in (27,37,756,934,844,856,797)
- ORDER BY 1,4,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to c51901c7abb580316442e3a4a177da30
 
 -- query IIIIITI rowsort join286
@@ -38060,8 +38054,7 @@ SELECT b7+152, d2, c4, a5+a2, d6+672, x9, e1+a4
    AND b2=b1
    AND a1=b4
    AND b9=127
- ORDER BY 1,4,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to c51901c7abb580316442e3a4a177da30
 
 -- query IIIIITI rowsort join286
@@ -38074,8 +38067,7 @@ SELECT b7+152, d2, c4, a5+a2, d6+672, x9, e1+a4
    AND a1=b4
    AND b9=127
    AND b2=b1
- ORDER BY 1,4,5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 756 values hashing to c51901c7abb580316442e3a4a177da30
 
 -- query III rowsort join287
@@ -38084,7 +38076,7 @@ SELECT e5+c5, b9*40+b5, a2+b5
  WHERE (568=b9 OR b9=804 OR b9=178)
    AND c5 in (514,147,819)
    AND d2=19
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to a6b50c4a4ed9df3f2a611f21505492e2
 
 -- query III rowsort join287
@@ -38093,7 +38085,7 @@ SELECT e5+c5, b9*40+b5, a2+b5
  WHERE c5 in (514,147,819)
    AND d2=19
    AND (568=b9 OR b9=804 OR b9=178)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to a6b50c4a4ed9df3f2a611f21505492e2
 
 -- query III rowsort join287
@@ -38102,7 +38094,7 @@ SELECT e5+c5, b9*40+b5, a2+b5
  WHERE (568=b9 OR b9=804 OR b9=178)
    AND d2=19
    AND c5 in (514,147,819)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to a6b50c4a4ed9df3f2a611f21505492e2
 
 -- query III rowsort join287
@@ -38111,7 +38103,7 @@ SELECT e5+c5, b9*40+b5, a2+b5
  WHERE (568=b9 OR b9=804 OR b9=178)
    AND d2=19
    AND c5 in (514,147,819)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to a6b50c4a4ed9df3f2a611f21505492e2
 
 -- query II rowsort join288
@@ -38119,7 +38111,7 @@ SELECT e1+794, e4+e1
   FROM t1, t4
  WHERE b4 in (323,700,849,23,888,86,551)
    AND a1=c4
-;
+ORDER BY 1,2;
 -- 1477
 -- 1314
 
@@ -38128,7 +38120,7 @@ SELECT e1+794, e4+e1
   FROM t4, t1
  WHERE b4 in (323,700,849,23,888,86,551)
    AND a1=c4
-;
+ORDER BY 1,2;
 -- 1477
 -- 1314
 
@@ -38137,7 +38129,7 @@ SELECT e1+794, e4+e1
   FROM t4, t1
  WHERE a1=c4
    AND b4 in (323,700,849,23,888,86,551)
-;
+ORDER BY 1,2;
 -- 1477
 -- 1314
 
@@ -38147,7 +38139,7 @@ SELECT b1*566, b9+328, a8
  WHERE e8=981
    AND (a1=754 OR 330=a1 OR 505=a1)
    AND e9 in (750,860,968,307,704,445,713,486)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 8e0a1a7ec0bd7fbce3787bedff7507e3
 
 -- query III rowsort join289
@@ -38156,7 +38148,7 @@ SELECT b1*566, b9+328, a8
  WHERE e8=981
    AND e9 in (750,860,968,307,704,445,713,486)
    AND (a1=754 OR 330=a1 OR 505=a1)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 8e0a1a7ec0bd7fbce3787bedff7507e3
 
 -- query III rowsort join289
@@ -38165,7 +38157,7 @@ SELECT b1*566, b9+328, a8
  WHERE (a1=754 OR 330=a1 OR 505=a1)
    AND e9 in (750,860,968,307,704,445,713,486)
    AND e8=981
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 8e0a1a7ec0bd7fbce3787bedff7507e3
 
 -- query III rowsort join289
@@ -38174,7 +38166,7 @@ SELECT b1*566, b9+328, a8
  WHERE (a1=754 OR 330=a1 OR 505=a1)
    AND e8=981
    AND e9 in (750,860,968,307,704,445,713,486)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 8e0a1a7ec0bd7fbce3787bedff7507e3
 
 -- query IT rowsort join290
@@ -38182,7 +38174,7 @@ SELECT e7+934, x2
   FROM t2, t7
  WHERE e7 in (39,816,6,553,122,988,408)
    AND d2 in (803,398,126,454,310,137)
-;
+ORDER BY 1,2;
 -- 96 values hashing to 755b5928e068106cb3ef63e1f7c06599
 
 -- query IT rowsort join290
@@ -38190,7 +38182,7 @@ SELECT e7+934, x2
   FROM t2, t7
  WHERE d2 in (803,398,126,454,310,137)
    AND e7 in (39,816,6,553,122,988,408)
-;
+ORDER BY 1,2;
 -- 96 values hashing to 755b5928e068106cb3ef63e1f7c06599
 
 -- query II rowsort join291
@@ -38198,7 +38190,7 @@ SELECT b7+186+e7, e5+696
   FROM t5, t7
  WHERE e7 in (302,67,903,197,156,851,503,844)
    AND (681=c5 OR 934=c5)
-;
+ORDER BY 1,2;
 -- 36 values hashing to d95855c24096d83d69deff6fa3d7ec92
 
 -- query II rowsort join291
@@ -38206,7 +38198,7 @@ SELECT b7+186+e7, e5+696
   FROM t7, t5
  WHERE e7 in (302,67,903,197,156,851,503,844)
    AND (681=c5 OR 934=c5)
-;
+ORDER BY 1,2;
 -- 36 values hashing to d95855c24096d83d69deff6fa3d7ec92
 
 -- query II rowsort join291
@@ -38214,7 +38206,7 @@ SELECT b7+186+e7, e5+696
   FROM t7, t5
  WHERE (681=c5 OR 934=c5)
    AND e7 in (302,67,903,197,156,851,503,844)
-;
+ORDER BY 1,2;
 -- 36 values hashing to d95855c24096d83d69deff6fa3d7ec92
 
 -- query II rowsort join291
@@ -38222,7 +38214,7 @@ SELECT b7+186+e7, e5+696
   FROM t5, t7
  WHERE (681=c5 OR 934=c5)
    AND e7 in (302,67,903,197,156,851,503,844)
-;
+ORDER BY 1,2;
 -- 36 values hashing to d95855c24096d83d69deff6fa3d7ec92
 
 -- query IITIIII rowsort join292
@@ -38235,7 +38227,7 @@ SELECT d9, b7*961, x1, e2*509, e3+e5, a5, b8+361
    AND (104=a9 OR 706=a9 OR 273=a9)
    AND a1 in (829,579,866,767,746,776,280,363)
    AND (c5=696 OR c5=443)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28224 values hashing to 61f127b898800c171cb920906ff2b6ed
 
 -- query IITIIII rowsort join292
@@ -38248,7 +38240,7 @@ SELECT d9, b7*961, x1, e2*509, e3+e5, a5, b8+361
    AND e8 in (981,392,972,700,955,233,223,175)
    AND (104=a9 OR 706=a9 OR 273=a9)
    AND a3=368
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28224 values hashing to 61f127b898800c171cb920906ff2b6ed
 
 -- query IITIIII rowsort join292
@@ -38261,7 +38253,7 @@ SELECT d9, b7*961, x1, e2*509, e3+e5, a5, b8+361
    AND e8 in (981,392,972,700,955,233,223,175)
    AND e2 in (812,815,40,560,579,899)
    AND a1 in (829,579,866,767,746,776,280,363)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28224 values hashing to 61f127b898800c171cb920906ff2b6ed
 
 -- query IITIIII rowsort join292
@@ -38274,7 +38266,7 @@ SELECT d9, b7*961, x1, e2*509, e3+e5, a5, b8+361
    AND (c5=696 OR c5=443)
    AND e2 in (812,815,40,560,579,899)
    AND (104=a9 OR 706=a9 OR 273=a9)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 28224 values hashing to 61f127b898800c171cb920906ff2b6ed
 
 -- query II rowsort join293
@@ -38282,7 +38274,7 @@ SELECT d4+c4, b6+597
   FROM t4, t6
  WHERE 660=b4
    AND d6=271
-;
+ORDER BY 1,2;
 -- 587
 -- 597
 
@@ -38291,7 +38283,7 @@ SELECT d4+c4, b6+597
   FROM t4, t6
  WHERE d6=271
    AND 660=b4
-;
+ORDER BY 1,2;
 -- 587
 -- 597
 
@@ -38302,7 +38294,7 @@ SELECT x1, x8, c3, d7+766+b8
    AND e8 in (260,381,620,44)
    AND (e7=254 OR e7=156)
    AND a3=306
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to f77b222f286a402a403f61990fce17df
 
 -- query TTII rowsort join294
@@ -38312,7 +38304,7 @@ SELECT x1, x8, c3, d7+766+b8
    AND a1 in (866,988,75,241)
    AND e8 in (260,381,620,44)
    AND a3=306
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to f77b222f286a402a403f61990fce17df
 
 -- query TTII rowsort join294
@@ -38322,7 +38314,7 @@ SELECT x1, x8, c3, d7+766+b8
    AND a3=306
    AND e8 in (260,381,620,44)
    AND a1 in (866,988,75,241)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to f77b222f286a402a403f61990fce17df
 
 -- query TTII rowsort join294
@@ -38332,7 +38324,7 @@ SELECT x1, x8, c3, d7+766+b8
    AND e8 in (260,381,620,44)
    AND a3=306
    AND (e7=254 OR e7=156)
-;
+ORDER BY 1,2,3,4;
 -- 192 values hashing to f77b222f286a402a403f61990fce17df
 
 -- query ITIIITII rowsort join295
@@ -38346,7 +38338,7 @@ SELECT e6+e3, x9, b4, a3+a7, b1+c4, x2, d7, c5*484+d3
    AND 194=a1
    AND 614=a3
    AND d2 in (892,772,86,547,621,537,873,46)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 13824 values hashing to d5cd35e5a8ed9247311d1d3e0106d468
 
 -- query ITIIITII rowsort join295
@@ -38360,7 +38352,7 @@ SELECT e6+e3, x9, b4, a3+a7, b1+c4, x2, d7, c5*484+d3
    AND 443=c5
    AND 614=a3
    AND e7 in (827,605,120,127,144,508,215)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 13824 values hashing to d5cd35e5a8ed9247311d1d3e0106d468
 
 -- query ITIIITII rowsort join295
@@ -38374,7 +38366,7 @@ SELECT e6+e3, x9, b4, a3+a7, b1+c4, x2, d7, c5*484+d3
    AND 614=a3
    AND d6 in (807,578,797)
    AND 443=c5
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 13824 values hashing to d5cd35e5a8ed9247311d1d3e0106d468
 
 -- query ITIIITII rowsort join295
@@ -38388,7 +38380,7 @@ SELECT e6+e3, x9, b4, a3+a7, b1+c4, x2, d7, c5*484+d3
    AND 194=a1
    AND d6 in (807,578,797)
    AND b4 in (33,323,907,579)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 13824 values hashing to d5cd35e5a8ed9247311d1d3e0106d468
 
 -- query IITII rowsort join296
@@ -38399,7 +38391,7 @@ SELECT e9+c9, e6+c8, x3, c8+132, b2+c6
    AND e9=788
    AND a2=10
    AND a3=181
-;
+ORDER BY 1,2,3,4,5;
 -- 40 values hashing to 3fe5acbda731e8bb4d3da2639e759eec
 
 -- query IITII rowsort join296
@@ -38410,7 +38402,7 @@ SELECT e9+c9, e6+c8, x3, c8+132, b2+c6
    AND a3=181
    AND e9=788
    AND a2=10
-;
+ORDER BY 1,2,3,4,5;
 -- 40 values hashing to 3fe5acbda731e8bb4d3da2639e759eec
 
 -- query IITII rowsort join296
@@ -38421,7 +38413,7 @@ SELECT e9+c9, e6+c8, x3, c8+132, b2+c6
    AND e9=788
    AND 778=d6
    AND e8 in (485,105,761,495)
-;
+ORDER BY 1,2,3,4,5;
 -- 40 values hashing to 3fe5acbda731e8bb4d3da2639e759eec
 
 -- query IITII rowsort join296
@@ -38432,7 +38424,7 @@ SELECT e9+c9, e6+c8, x3, c8+132, b2+c6
    AND a3=181
    AND e9=788
    AND e8 in (485,105,761,495)
-;
+ORDER BY 1,2,3,4,5;
 -- 40 values hashing to 3fe5acbda731e8bb4d3da2639e759eec
 
 -- query TIII rowsort join297
@@ -38442,7 +38434,7 @@ SELECT x2, d6, a7+c7, a3
    AND e7 in (503,979,6)
    AND a3 in (591,696,376,303,952,190)
    AND 822=d6
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to f2d78aef0b5669b647a8b7c7d5e62d85
 
 -- query TIII rowsort join297
@@ -38452,7 +38444,7 @@ SELECT x2, d6, a7+c7, a3
    AND e7 in (503,979,6)
    AND 822=d6
    AND 564=e2
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to f2d78aef0b5669b647a8b7c7d5e62d85
 
 -- query TIII rowsort join297
@@ -38462,7 +38454,7 @@ SELECT x2, d6, a7+c7, a3
    AND 564=e2
    AND 822=d6
    AND a3 in (591,696,376,303,952,190)
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to f2d78aef0b5669b647a8b7c7d5e62d85
 
 -- query TIII rowsort join297
@@ -38472,7 +38464,7 @@ SELECT x2, d6, a7+c7, a3
    AND e7 in (503,979,6)
    AND 564=e2
    AND 822=d6
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to f2d78aef0b5669b647a8b7c7d5e62d85
 
 -- query IIT rowsort join298
@@ -38481,7 +38473,7 @@ SELECT e6, d4, x8
  WHERE e8=956
    AND d6 in (689,129,767,60,931,463,561)
    AND b4=535
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 4ad4036edaaf3292eb2eb5f03977fc07
 
 -- query IIT rowsort join298
@@ -38490,7 +38482,7 @@ SELECT e6, d4, x8
  WHERE d6 in (689,129,767,60,931,463,561)
    AND e8=956
    AND b4=535
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 4ad4036edaaf3292eb2eb5f03977fc07
 
 -- query IIT rowsort join298
@@ -38499,7 +38491,7 @@ SELECT e6, d4, x8
  WHERE b4=535
    AND d6 in (689,129,767,60,931,463,561)
    AND e8=956
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 4ad4036edaaf3292eb2eb5f03977fc07
 
 -- query IIT rowsort join298
@@ -38508,7 +38500,7 @@ SELECT e6, d4, x8
  WHERE d6 in (689,129,767,60,931,463,561)
    AND b4=535
    AND e8=956
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 4ad4036edaaf3292eb2eb5f03977fc07
 
 -- query IITI rowsort join299
@@ -38518,7 +38510,7 @@ SELECT c6+a7, b7, x1, a3
    AND (186=d6 OR d6=885)
    AND a3 in (190,996,262)
    AND e7 in (460,127,900,983,282)
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to 1420032d0fa3e3ad39ee29c3b3755a7b
 
 -- query IITI rowsort join299
@@ -38528,7 +38520,7 @@ SELECT c6+a7, b7, x1, a3
    AND a1=864
    AND e7 in (460,127,900,983,282)
    AND a3 in (190,996,262)
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to 1420032d0fa3e3ad39ee29c3b3755a7b
 
 -- query IITI rowsort join299
@@ -38538,7 +38530,7 @@ SELECT c6+a7, b7, x1, a3
    AND e7 in (460,127,900,983,282)
    AND a3 in (190,996,262)
    AND a1=864
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to 1420032d0fa3e3ad39ee29c3b3755a7b
 
 -- query IITI rowsort join299
@@ -38548,7 +38540,7 @@ SELECT c6+a7, b7, x1, a3
    AND e7 in (460,127,900,983,282)
    AND a3 in (190,996,262)
    AND a1=864
-;
+ORDER BY 1,2,3,4;
 -- 144 values hashing to 1420032d0fa3e3ad39ee29c3b3755a7b
 
 -- query IITI rowsort join300
@@ -38558,7 +38550,7 @@ SELECT c1, c8+64+c1, x5, e4+e8
    AND a1 in (88,579,330,276)
    AND (442=e8 OR 149=e8 OR 56=e8)
    AND (b4=260 OR 982=b4 OR 700=b4)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 9aa3c4a87eb5afc99dea8ec0081f359f
 
 -- query IITI rowsort join300
@@ -38568,7 +38560,7 @@ SELECT c1, c8+64+c1, x5, e4+e8
    AND c5=d1
    AND a1 in (88,579,330,276)
    AND (442=e8 OR 149=e8 OR 56=e8)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 9aa3c4a87eb5afc99dea8ec0081f359f
 
 -- query IITI rowsort join300
@@ -38578,7 +38570,7 @@ SELECT c1, c8+64+c1, x5, e4+e8
    AND a1 in (88,579,330,276)
    AND (442=e8 OR 149=e8 OR 56=e8)
    AND (b4=260 OR 982=b4 OR 700=b4)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 9aa3c4a87eb5afc99dea8ec0081f359f
 
 -- query IITI rowsort join300
@@ -38588,7 +38580,7 @@ SELECT c1, c8+64+c1, x5, e4+e8
    AND a1 in (88,579,330,276)
    AND (b4=260 OR 982=b4 OR 700=b4)
    AND c5=d1
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 9aa3c4a87eb5afc99dea8ec0081f359f
 
 -- query III rowsort join301
@@ -38597,7 +38589,7 @@ SELECT e8, a6+332, d7+931
  WHERE d6 in (674,993,271,667,446)
    AND e7=624
    AND e8 in (947,233,548)
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to e2400d78557eef948aff0813763fee4c
 
 -- query III rowsort join301
@@ -38606,7 +38598,7 @@ SELECT e8, a6+332, d7+931
  WHERE e7=624
    AND d6 in (674,993,271,667,446)
    AND e8 in (947,233,548)
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to e2400d78557eef948aff0813763fee4c
 
 -- query III rowsort join301
@@ -38615,7 +38607,7 @@ SELECT e8, a6+332, d7+931
  WHERE d6 in (674,993,271,667,446)
    AND e7=624
    AND e8 in (947,233,548)
-;
+ORDER BY 1,2,3;
 -- 45 values hashing to e2400d78557eef948aff0813763fee4c
 
 -- query ITII rowsort join302
@@ -38625,7 +38617,7 @@ SELECT a8*476, x3, b5, a1
    AND (609=a1 OR a1=4 OR a1=868 OR a1=32)
    AND c5 in (978,960,756,894,489,222,485,249)
    AND 476=a3
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to 2b6e52c1852cd8a85edf1fda0933872c
 
 -- query ITII rowsort join302
@@ -38635,7 +38627,7 @@ SELECT a8*476, x3, b5, a1
    AND e8 in (377,904,186,761,463,411,806)
    AND 476=a3
    AND c5 in (978,960,756,894,489,222,485,249)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to 2b6e52c1852cd8a85edf1fda0933872c
 
 -- query ITII rowsort join302
@@ -38645,7 +38637,7 @@ SELECT a8*476, x3, b5, a1
    AND c5 in (978,960,756,894,489,222,485,249)
    AND e8 in (377,904,186,761,463,411,806)
    AND (609=a1 OR a1=4 OR a1=868 OR a1=32)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to 2b6e52c1852cd8a85edf1fda0933872c
 
 -- query ITII rowsort join302
@@ -38655,7 +38647,7 @@ SELECT a8*476, x3, b5, a1
    AND e8 in (377,904,186,761,463,411,806)
    AND 476=a3
    AND (609=a1 OR a1=4 OR a1=868 OR a1=32)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to 2b6e52c1852cd8a85edf1fda0933872c
 
 -- query IIII rowsort join303
@@ -38665,7 +38657,7 @@ SELECT a5+549, c7, a4*623, a6*256
    AND c5=819
    AND 634=b4
    AND d6 in (885,161,469,2,277,581,66)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 77daf07f4dd784e0655a9b2ab914bb00
 
 -- query IIII rowsort join303
@@ -38675,7 +38667,7 @@ SELECT a5+549, c7, a4*623, a6*256
    AND 634=b4
    AND c5=819
    AND d6 in (885,161,469,2,277,581,66)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 77daf07f4dd784e0655a9b2ab914bb00
 
 -- query IIII rowsort join303
@@ -38685,7 +38677,7 @@ SELECT a5+549, c7, a4*623, a6*256
    AND c5=819
    AND 462=e7
    AND d6 in (885,161,469,2,277,581,66)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 77daf07f4dd784e0655a9b2ab914bb00
 
 -- query IIII rowsort join303
@@ -38695,7 +38687,7 @@ SELECT a5+549, c7, a4*623, a6*256
    AND 462=e7
    AND c5=819
    AND d6 in (885,161,469,2,277,581,66)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 77daf07f4dd784e0655a9b2ab914bb00
 
 -- query ITIIIIII rowsort join304
@@ -38709,7 +38701,7 @@ SELECT a6*678+c9, x1, a4, b5, c9, e2, b7*498, c3+c4
    AND 942=d6
    AND e9=d2
    AND b4 in (802,847,379,589,184,2)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2160 values hashing to ce92fc92d11d1610d114c9cec5750fc6
 
 -- query ITIIIIII rowsort join304
@@ -38723,7 +38715,7 @@ SELECT a6*678+c9, x1, a4, b5, c9, e2, b7*498, c3+c4
    AND d2 in (847,843,46,405,723,813,263)
    AND a1=591
    AND b4 in (802,847,379,589,184,2)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2160 values hashing to ce92fc92d11d1610d114c9cec5750fc6
 
 -- query ITIIIIII rowsort join304
@@ -38737,7 +38729,7 @@ SELECT a6*678+c9, x1, a4, b5, c9, e2, b7*498, c3+c4
    AND e7 in (439,79,975,428,144)
    AND e9=d2
    AND d2 in (847,843,46,405,723,813,263)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2160 values hashing to ce92fc92d11d1610d114c9cec5750fc6
 
 -- query ITIIIIII rowsort join304
@@ -38751,7 +38743,7 @@ SELECT a6*678+c9, x1, a4, b5, c9, e2, b7*498, c3+c4
    AND 570=c5
    AND e9=d2
    AND 942=d6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 2160 values hashing to ce92fc92d11d1610d114c9cec5750fc6
 
 -- query IIIIII rowsort join305
@@ -38763,7 +38755,7 @@ SELECT c9+a3, d2, c3*181+e3, b4, b7*188, b1
    AND e7 in (48,782,428,303,841,887,408)
    AND 810=b4
    AND b9 in (832,821,214,125,74,804,171,549)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 48 values hashing to 5c5324617cfa9e1a8eca3c3561ed73d1
 
 -- query IIIIII rowsort join305
@@ -38775,7 +38767,7 @@ SELECT c9+a3, d2, c3*181+e3, b4, b7*188, b1
    AND 810=b4
    AND e7 in (48,782,428,303,841,887,408)
    AND b9 in (832,821,214,125,74,804,171,549)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 48 values hashing to 5c5324617cfa9e1a8eca3c3561ed73d1
 
 -- query IIIIII rowsort join305
@@ -38787,7 +38779,7 @@ SELECT c9+a3, d2, c3*181+e3, b4, b7*188, b1
    AND b9 in (832,821,214,125,74,804,171,549)
    AND a1=c9
    AND e7 in (48,782,428,303,841,887,408)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 48 values hashing to 5c5324617cfa9e1a8eca3c3561ed73d1
 
 -- query IIIIII rowsort join305
@@ -38799,7 +38791,7 @@ SELECT c9+a3, d2, c3*181+e3, b4, b7*188, b1
    AND 829=a3
    AND 810=b4
    AND e7 in (48,782,428,303,841,887,408)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 48 values hashing to 5c5324617cfa9e1a8eca3c3561ed73d1
 
 -- query II rowsort join306
@@ -38807,7 +38799,7 @@ SELECT e9+d9, e6*530
   FROM t6, t9
  WHERE c9 in (894,110,857,688,90)
    AND d6 in (366,846,797,35,974)
-;
+ORDER BY 1,2;
 -- 70 values hashing to b89d7cc927a055870126aac8bd160118
 
 -- query II rowsort join306
@@ -38815,7 +38807,7 @@ SELECT e9+d9, e6*530
   FROM t9, t6
  WHERE c9 in (894,110,857,688,90)
    AND d6 in (366,846,797,35,974)
-;
+ORDER BY 1,2;
 -- 70 values hashing to b89d7cc927a055870126aac8bd160118
 
 -- query TTI rowsort join307
@@ -38824,7 +38816,7 @@ SELECT x5, x8, b4
  WHERE 802=b4
    AND c5=d8
    AND e8 in (7,933,811,105,635,776,497)
-;
+ORDER BY 1,2,3;
 -- table tn5 row 29
 -- table tn8 row 52
 -- 802
@@ -38838,7 +38830,7 @@ SELECT x5, x8, b4
  WHERE e8 in (7,933,811,105,635,776,497)
    AND 802=b4
    AND c5=d8
-;
+ORDER BY 1,2,3;
 -- table tn5 row 29
 -- table tn8 row 52
 -- 802
@@ -38852,7 +38844,7 @@ SELECT x5, x8, b4
  WHERE e8 in (7,933,811,105,635,776,497)
    AND c5=d8
    AND 802=b4
-;
+ORDER BY 1,2,3;
 -- table tn5 row 29
 -- table tn8 row 52
 -- 802
@@ -38866,7 +38858,7 @@ SELECT x5, x8, b4
  WHERE e8 in (7,933,811,105,635,776,497)
    AND c5=d8
    AND 802=b4
-;
+ORDER BY 1,2,3;
 -- table tn5 row 29
 -- table tn8 row 52
 -- 802
@@ -38882,7 +38874,7 @@ SELECT d5+30+b5, e7, d2*977, c4+11, b6
    AND (235=a2 OR 9=a2)
    AND (d6=734 OR d6=500)
    AND 915=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 540 values hashing to 26f8d68e0df4f52588fcb1dfc0dc92cd
 
 -- query IIIII rowsort join308
@@ -38893,7 +38885,7 @@ SELECT d5+30+b5, e7, d2*977, c4+11, b6
    AND (d6=734 OR d6=500)
    AND b4 in (271,938,387,323,765,68,903,606)
    AND 915=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 540 values hashing to 26f8d68e0df4f52588fcb1dfc0dc92cd
 
 -- query IIIII rowsort join308
@@ -38904,7 +38896,7 @@ SELECT d5+30+b5, e7, d2*977, c4+11, b6
    AND (235=a2 OR 9=a2)
    AND b4 in (271,938,387,323,765,68,903,606)
    AND (d6=734 OR d6=500)
-;
+ORDER BY 1,2,3,4,5;
 -- 540 values hashing to 26f8d68e0df4f52588fcb1dfc0dc92cd
 
 -- query IIIII rowsort join308
@@ -38915,7 +38907,7 @@ SELECT d5+30+b5, e7, d2*977, c4+11, b6
    AND b4 in (271,938,387,323,765,68,903,606)
    AND (235=a2 OR 9=a2)
    AND 915=c5
-;
+ORDER BY 1,2,3,4,5;
 -- 540 values hashing to 26f8d68e0df4f52588fcb1dfc0dc92cd
 
 -- query ITIII rowsort join309
@@ -38926,7 +38918,7 @@ SELECT d9*704, x8, c6, c5, a2
    AND 509=b2
    AND c5=d6
    AND d6 in (974,129,72,424,667,711)
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to db878112b9e7c62c3309f42493bc265b
 
 -- query ITIII rowsort join309
@@ -38937,7 +38929,7 @@ SELECT d9*704, x8, c6, c5, a2
    AND c5=d6
    AND a9=263
    AND d6 in (974,129,72,424,667,711)
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to db878112b9e7c62c3309f42493bc265b
 
 -- query ITIII rowsort join309
@@ -38948,7 +38940,7 @@ SELECT d9*704, x8, c6, c5, a2
    AND a9=263
    AND d6 in (974,129,72,424,667,711)
    AND c5=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to db878112b9e7c62c3309f42493bc265b
 
 -- query ITIII rowsort join309
@@ -38959,7 +38951,7 @@ SELECT d9*704, x8, c6, c5, a2
    AND c5=d6
    AND e8 in (578,440,497,199)
    AND a9=263
-;
+ORDER BY 1,2,3,4,5;
 -- 20 values hashing to db878112b9e7c62c3309f42493bc265b
 
 -- query II rowsort join310
@@ -38967,7 +38959,7 @@ SELECT d4, d9*840
   FROM t4, t9
  WHERE e9=e4
    AND b4 in (480,765,286,907)
-;
+ORDER BY 1,2;
 -- 223
 -- 441000
 
@@ -38976,7 +38968,7 @@ SELECT d4, d9*840
   FROM t4, t9
  WHERE b4 in (480,765,286,907)
    AND e9=e4
-;
+ORDER BY 1,2;
 -- 223
 -- 441000
 
@@ -38988,7 +38980,7 @@ SELECT d3, e1+e1, a8, x9, d2
    AND a3 in (784,549,378,162)
    AND a2 in (760,262,10,297,471,651,966,874)
    AND a1 in (898,963,299,607,88,20,281,918)
-;
+ORDER BY 1,2,3,4,5;
 -- 7200 values hashing to 31d0be7f47c54f7d8408273d631f258d
 
 -- query IIITI rowsort join311
@@ -38999,7 +38991,7 @@ SELECT d3, e1+e1, a8, x9, d2
    AND d9 in (618,987,316,959,25)
    AND a3 in (784,549,378,162)
    AND e8=635
-;
+ORDER BY 1,2,3,4,5;
 -- 7200 values hashing to 31d0be7f47c54f7d8408273d631f258d
 
 -- query IIITI rowsort join311
@@ -39010,7 +39002,7 @@ SELECT d3, e1+e1, a8, x9, d2
    AND a3 in (784,549,378,162)
    AND a2 in (760,262,10,297,471,651,966,874)
    AND a1 in (898,963,299,607,88,20,281,918)
-;
+ORDER BY 1,2,3,4,5;
 -- 7200 values hashing to 31d0be7f47c54f7d8408273d631f258d
 
 -- query IIITI rowsort join311
@@ -39021,7 +39013,7 @@ SELECT d3, e1+e1, a8, x9, d2
    AND d9 in (618,987,316,959,25)
    AND a1 in (898,963,299,607,88,20,281,918)
    AND a3 in (784,549,378,162)
-;
+ORDER BY 1,2,3,4,5;
 -- 7200 values hashing to 31d0be7f47c54f7d8408273d631f258d
 
 -- query TI rowsort join312
@@ -39029,7 +39021,7 @@ SELECT x5, e7
   FROM t5, t7
  WHERE e7=976
    AND c5=856
-;
+ORDER BY 1,2;
 -- table tn5 row 56
 -- 976
 -- table tn5 row 56
@@ -39040,7 +39032,7 @@ SELECT x5, e7
   FROM t5, t7
  WHERE c5=856
    AND e7=976
-;
+ORDER BY 1,2;
 -- table tn5 row 56
 -- 976
 -- table tn5 row 56
@@ -39053,7 +39045,7 @@ SELECT a6+b3, b3, b2+534, b5
    AND a3=551
    AND d6 in (2,60,729,457,405,581,21,974)
    AND d2=362
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 9e6312bb8fdb5e77c27caa26324e7295
 
 -- query IIII rowsort join313
@@ -39063,7 +39055,7 @@ SELECT a6+b3, b3, b2+534, b5
    AND a3=551
    AND c5 in (820,797,756,805,551,158)
    AND d6 in (2,60,729,457,405,581,21,974)
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 9e6312bb8fdb5e77c27caa26324e7295
 
 -- query IIII rowsort join313
@@ -39073,7 +39065,7 @@ SELECT a6+b3, b3, b2+534, b5
    AND d6 in (2,60,729,457,405,581,21,974)
    AND c5 in (820,797,756,805,551,158)
    AND a3=551
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 9e6312bb8fdb5e77c27caa26324e7295
 
 -- query IIII rowsort join313
@@ -39083,7 +39075,7 @@ SELECT a6+b3, b3, b2+534, b5
    AND c5 in (820,797,756,805,551,158)
    AND d6 in (2,60,729,457,405,581,21,974)
    AND d2=362
-;
+ORDER BY 1,2,3,4;
 -- 384 values hashing to 9e6312bb8fdb5e77c27caa26324e7295
 
 -- query TII rowsort join314
@@ -39092,7 +39084,7 @@ SELECT x7, e2+d7, e1*593
  WHERE d2=b1
    AND e7=6
    AND a1 in (299,499,732)
-;
+ORDER BY 1,2,3;
 -- table tn7 row 78
 -- 936
 -- 46254
@@ -39103,7 +39095,7 @@ SELECT x7, e2+d7, e1*593
  WHERE a1 in (299,499,732)
    AND e7=6
    AND d2=b1
-;
+ORDER BY 1,2,3;
 -- table tn7 row 78
 -- 936
 -- 46254
@@ -39114,7 +39106,7 @@ SELECT x7, e2+d7, e1*593
  WHERE d2=b1
    AND a1 in (299,499,732)
    AND e7=6
-;
+ORDER BY 1,2,3;
 -- table tn7 row 78
 -- 936
 -- 46254
@@ -39125,7 +39117,7 @@ SELECT x7, e2+d7, e1*593
  WHERE a1 in (299,499,732)
    AND e7=6
    AND d2=b1
-;
+ORDER BY 1,2,3;
 -- table tn7 row 78
 -- 936
 -- 46254
@@ -39136,7 +39128,7 @@ SELECT e2+d7, e7, d5*640
  WHERE (a2=315 OR 268=a2 OR 863=a2 OR a2=324)
    AND c5 in (989,86,261,3)
    AND e7 in (280,183,432,851,156)
-;
+ORDER BY 1,2,3;
 -- 336 values hashing to 1ed8b7299056040086980b874a20377d
 
 -- query III rowsort join315
@@ -39145,7 +39137,7 @@ SELECT e2+d7, e7, d5*640
  WHERE c5 in (989,86,261,3)
    AND e7 in (280,183,432,851,156)
    AND (a2=315 OR 268=a2 OR 863=a2 OR a2=324)
-;
+ORDER BY 1,2,3;
 -- 336 values hashing to 1ed8b7299056040086980b874a20377d
 
 -- query III rowsort join315
@@ -39154,7 +39146,7 @@ SELECT e2+d7, e7, d5*640
  WHERE c5 in (989,86,261,3)
    AND (a2=315 OR 268=a2 OR 863=a2 OR a2=324)
    AND e7 in (280,183,432,851,156)
-;
+ORDER BY 1,2,3;
 -- 336 values hashing to 1ed8b7299056040086980b874a20377d
 
 -- query III rowsort join315
@@ -39163,7 +39155,7 @@ SELECT e2+d7, e7, d5*640
  WHERE (a2=315 OR 268=a2 OR 863=a2 OR a2=324)
    AND c5 in (989,86,261,3)
    AND e7 in (280,183,432,851,156)
-;
+ORDER BY 1,2,3;
 -- 336 values hashing to 1ed8b7299056040086980b874a20377d
 
 -- query III rowsort join316
@@ -39172,7 +39164,7 @@ SELECT a5+902, e2, b3
  WHERE 579=c5
    AND b2 in (414,812,864,628,819,527)
    AND a3 in (979,997,262,532,164,696)
-;
+ORDER BY 1,2,3;
 -- 126 values hashing to be49c61c42a67aba90683ae08ff821f2
 
 -- query III rowsort join316
@@ -39181,7 +39173,7 @@ SELECT a5+902, e2, b3
  WHERE b2 in (414,812,864,628,819,527)
    AND 579=c5
    AND a3 in (979,997,262,532,164,696)
-;
+ORDER BY 1,2,3;
 -- 126 values hashing to be49c61c42a67aba90683ae08ff821f2
 
 -- query III rowsort join316
@@ -39190,7 +39182,7 @@ SELECT a5+902, e2, b3
  WHERE a3 in (979,997,262,532,164,696)
    AND b2 in (414,812,864,628,819,527)
    AND 579=c5
-;
+ORDER BY 1,2,3;
 -- 126 values hashing to be49c61c42a67aba90683ae08ff821f2
 
 -- query III rowsort join316
@@ -39199,7 +39191,7 @@ SELECT a5+902, e2, b3
  WHERE 579=c5
    AND b2 in (414,812,864,628,819,527)
    AND a3 in (979,997,262,532,164,696)
-;
+ORDER BY 1,2,3;
 -- 126 values hashing to be49c61c42a67aba90683ae08ff821f2
 
 -- query IIIII rowsort join317
@@ -39210,7 +39202,7 @@ SELECT e1+650+a8, e3, c9, c8, d7+c3
    AND a9=115
    AND a3=379
    AND 898=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 35 values hashing to a61458b4f0732f90762b36b395684ff4
 
 -- query IIIII rowsort join317
@@ -39221,7 +39213,7 @@ SELECT e1+650+a8, e3, c9, c8, d7+c3
    AND a9=115
    AND 898=a1
    AND e8 in (38,233,295,333,944,422,864)
-;
+ORDER BY 1,2,3,4,5;
 -- 35 values hashing to a61458b4f0732f90762b36b395684ff4
 
 -- query IIIII rowsort join317
@@ -39232,7 +39224,7 @@ SELECT e1+650+a8, e3, c9, c8, d7+c3
    AND a3=379
    AND 898=a1
    AND 689=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 35 values hashing to a61458b4f0732f90762b36b395684ff4
 
 -- query IIIII rowsort join317
@@ -39243,7 +39235,7 @@ SELECT e1+650+a8, e3, c9, c8, d7+c3
    AND a9=115
    AND e8 in (38,233,295,333,944,422,864)
    AND 689=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 35 values hashing to a61458b4f0732f90762b36b395684ff4
 
 -- query IIIIIII rowsort join318
@@ -39256,7 +39248,7 @@ SELECT d5, d9, d6+33, b2, c4+693, c1*867, b8*136
    AND b9 in (125,122,142,848,926)
    AND (86=c5 OR c5=56)
    AND 393=d6
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1764 values hashing to b45deb285f126c8286355423b40c1633
 
 -- query IIIIIII rowsort join318
@@ -39269,7 +39261,7 @@ SELECT d5, d9, d6+33, b2, c4+693, c1*867, b8*136
    AND d2=158
    AND b9 in (125,122,142,848,926)
    AND (86=c5 OR c5=56)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1764 values hashing to b45deb285f126c8286355423b40c1633
 
 -- query IIIIIII rowsort join318
@@ -39282,7 +39274,7 @@ SELECT d5, d9, d6+33, b2, c4+693, c1*867, b8*136
    AND b9 in (125,122,142,848,926)
    AND (86=c5 OR c5=56)
    AND 584=a1
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1764 values hashing to b45deb285f126c8286355423b40c1633
 
 -- query IIIIIII rowsort join318
@@ -39295,7 +39287,7 @@ SELECT d5, d9, d6+33, b2, c4+693, c1*867, b8*136
    AND (86=c5 OR c5=56)
    AND 393=d6
    AND b4=765
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 1764 values hashing to b45deb285f126c8286355423b40c1633
 
 -- query II rowsort join319
@@ -39303,7 +39295,7 @@ SELECT d2, b9
   FROM t9, t2
  WHERE b9 in (783,118,759,803)
    AND a2=651
-;
+ORDER BY 1,2;
 -- 365
 -- 118
 -- 365
@@ -39318,7 +39310,7 @@ SELECT d2, b9
   FROM t2, t9
  WHERE b9 in (783,118,759,803)
    AND a2=651
-;
+ORDER BY 1,2;
 -- 365
 -- 118
 -- 365
@@ -39333,7 +39325,7 @@ SELECT d2, b9
   FROM t2, t9
  WHERE a2=651
    AND b9 in (783,118,759,803)
-;
+ORDER BY 1,2;
 -- 365
 -- 118
 -- 365
@@ -39348,7 +39340,7 @@ SELECT d2, b9
   FROM t9, t2
  WHERE a2=651
    AND b9 in (783,118,759,803)
-;
+ORDER BY 1,2;
 -- 365
 -- 118
 -- 365
@@ -39364,7 +39356,7 @@ SELECT b2*686+b2, e7+841, x1
  WHERE e7=955
    AND d2 in (598,19,854,838)
    AND a1=a7
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 4da0177d743e010274b9209d57b7fe02
 
 -- query IIT rowsort join320
@@ -39373,7 +39365,7 @@ SELECT b2*686+b2, e7+841, x1
  WHERE a1=a7
    AND e7=955
    AND d2 in (598,19,854,838)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 4da0177d743e010274b9209d57b7fe02
 
 -- query IIT rowsort join320
@@ -39382,7 +39374,7 @@ SELECT b2*686+b2, e7+841, x1
  WHERE d2 in (598,19,854,838)
    AND a1=a7
    AND e7=955
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 4da0177d743e010274b9209d57b7fe02
 
 -- query IIIIII rowsort join321
@@ -39394,7 +39386,7 @@ SELECT c3, c6+653, e4*221, d7, b5+338+d4, e9*471+b7
    AND d6 in (846,463,711,647,2,2,911)
    AND a9 in (559,815,683)
    AND (b4=387 OR b4=961)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to 7b99cedbe32fdfe45f044f0990817752
 
 -- query IIIIII rowsort join321
@@ -39406,7 +39398,7 @@ SELECT c3, c6+653, e4*221, d7, b5+338+d4, e9*471+b7
    AND a9 in (559,815,683)
    AND d6 in (846,463,711,647,2,2,911)
    AND (197=e7 OR 184=e7 OR 826=e7 OR e7=782)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to 7b99cedbe32fdfe45f044f0990817752
 
 -- query IIIIII rowsort join321
@@ -39418,7 +39410,7 @@ SELECT c3, c6+653, e4*221, d7, b5+338+d4, e9*471+b7
    AND a3=335
    AND d6 in (846,463,711,647,2,2,911)
    AND (b4=387 OR b4=961)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to 7b99cedbe32fdfe45f044f0990817752
 
 -- query IIIIII rowsort join321
@@ -39430,7 +39422,7 @@ SELECT c3, c6+653, e4*221, d7, b5+338+d4, e9*471+b7
    AND a9 in (559,815,683)
    AND (b4=387 OR b4=961)
    AND a3=335
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1512 values hashing to 7b99cedbe32fdfe45f044f0990817752
 
 -- query IIIIIII rowsort join322
@@ -39443,7 +39435,7 @@ SELECT a8+574, d4, b5+524, a1, e2+b4, e9, c6+a2
    AND a1 in (525,281,936,294,853)
    AND e8=608
    AND c5=756
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 13440 values hashing to fa30911f6c3e18829fe6e9d9e686b5c6
 
 -- query IIIIIII rowsort join322
@@ -39456,7 +39448,7 @@ SELECT a8+574, d4, b5+524, a1, e2+b4, e9, c6+a2
    AND b4 in (589,603,563,260,551,892)
    AND c5=756
    AND d6 in (286,186,993,277,493,72,147,321)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 13440 values hashing to fa30911f6c3e18829fe6e9d9e686b5c6
 
 -- query IIIIIII rowsort join322
@@ -39469,7 +39461,7 @@ SELECT a8+574, d4, b5+524, a1, e2+b4, e9, c6+a2
    AND a1 in (525,281,936,294,853)
    AND d6 in (286,186,993,277,493,72,147,321)
    AND 247=c2
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 13440 values hashing to fa30911f6c3e18829fe6e9d9e686b5c6
 
 -- query IIIIIII rowsort join322
@@ -39482,7 +39474,7 @@ SELECT a8+574, d4, b5+524, a1, e2+b4, e9, c6+a2
    AND c5=756
    AND e8=608
    AND d6 in (286,186,993,277,493,72,147,321)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 13440 values hashing to fa30911f6c3e18829fe6e9d9e686b5c6
 
 -- query IIIII rowsort join323
@@ -39493,7 +39485,7 @@ SELECT d3+502+b2, a2, b9, b8, b6
    AND (a9=706 OR 429=a9 OR a9=953 OR a9=41)
    AND a2 in (725,735,10)
    AND d6=e3
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 2f596c296e5dca009af161e57b37c1cb
 
 -- query IIIII rowsort join323
@@ -39504,7 +39496,7 @@ SELECT d3+502+b2, a2, b9, b8, b6
    AND (a9=706 OR 429=a9 OR a9=953 OR a9=41)
    AND a3 in (743,368,971,5,947,727,935)
    AND d6=e3
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 2f596c296e5dca009af161e57b37c1cb
 
 -- query IIIII rowsort join323
@@ -39515,7 +39507,7 @@ SELECT d3+502+b2, a2, b9, b8, b6
    AND a3 in (743,368,971,5,947,727,935)
    AND (a9=706 OR 429=a9 OR a9=953 OR a9=41)
    AND a2 in (725,735,10)
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 2f596c296e5dca009af161e57b37c1cb
 
 -- query IIIII rowsort join323
@@ -39526,7 +39518,7 @@ SELECT d3+502+b2, a2, b9, b8, b6
    AND (a9=706 OR 429=a9 OR a9=953 OR a9=41)
    AND a3 in (743,368,971,5,947,727,935)
    AND e8=272
-;
+ORDER BY 1,2,3,4,5;
 -- 60 values hashing to 2f596c296e5dca009af161e57b37c1cb
 
 -- query TI rowsort join324
@@ -39534,7 +39526,7 @@ SELECT x6, a5*731
   FROM t5, t6
  WHERE d6 in (750,21,192,321,560)
    AND c5 in (825,551,766,485,756,734,628)
-;
+ORDER BY 1,2;
 -- 90 values hashing to 6bb3f3ecf7a7b89b0a095ef93e745d3d
 
 -- query TI rowsort join324
@@ -39542,7 +39534,7 @@ SELECT x6, a5*731
   FROM t5, t6
  WHERE c5 in (825,551,766,485,756,734,628)
    AND d6 in (750,21,192,321,560)
-;
+ORDER BY 1,2;
 -- 90 values hashing to 6bb3f3ecf7a7b89b0a095ef93e745d3d
 
 -- query II rowsort join325
@@ -39550,7 +39542,7 @@ SELECT e2+a2, b8*208
   FROM t8, t2
  WHERE e8=180
    AND a2=d8
-;
+ORDER BY 1,2;
 -- 842
 -- 165568
 
@@ -39559,7 +39551,7 @@ SELECT d3+134, d8+555
   FROM t8, t3
  WHERE a3 in (895,393,282,335)
    AND 811=e8
-;
+ORDER BY 1,2;
 -- 1029
 -- 1067
 -- 562
@@ -39574,7 +39566,7 @@ SELECT d3+134, d8+555
   FROM t8, t3
  WHERE 811=e8
    AND a3 in (895,393,282,335)
-;
+ORDER BY 1,2;
 -- 1029
 -- 1067
 -- 562
@@ -39589,7 +39581,7 @@ SELECT b1, x8
   FROM t8, t1
  WHERE (e8=423 OR 14=e8 OR e8=761 OR 933=e8)
    AND a1=299
-;
+ORDER BY 1,2;
 -- 307
 -- table tn8 row 10
 -- 307
@@ -39604,7 +39596,7 @@ SELECT b1, x8
   FROM t1, t8
  WHERE a1=299
    AND (e8=423 OR 14=e8 OR e8=761 OR 933=e8)
-;
+ORDER BY 1,2;
 -- 307
 -- table tn8 row 10
 -- 307
@@ -39619,7 +39611,7 @@ SELECT b1, x8
   FROM t1, t8
  WHERE (e8=423 OR 14=e8 OR e8=761 OR 933=e8)
    AND a1=299
-;
+ORDER BY 1,2;
 -- 307
 -- table tn8 row 10
 -- 307
@@ -39637,7 +39629,7 @@ SELECT e9, e4+990, x6, x8, d7+a6
    AND b4 in (907,802,644,826,476,357,184,924)
    AND d9=d6
    AND e8=46
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to 2744b9bbd5b6499c5e674d402a0f091d
 
 -- query IITTI rowsort join328
@@ -39648,7 +39640,7 @@ SELECT e9, e4+990, x6, x8, d7+a6
    AND e8=46
    AND d6 in (590,790,852,60)
    AND (e7=689 OR e7=508 OR e7=884)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to 2744b9bbd5b6499c5e674d402a0f091d
 
 -- query IITTI rowsort join328
@@ -39659,7 +39651,7 @@ SELECT e9, e4+990, x6, x8, d7+a6
    AND e8=46
    AND b4 in (907,802,644,826,476,357,184,924)
    AND (e7=689 OR e7=508 OR e7=884)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to 2744b9bbd5b6499c5e674d402a0f091d
 
 -- query IITTI rowsort join328
@@ -39670,7 +39662,7 @@ SELECT e9, e4+990, x6, x8, d7+a6
    AND d9=d6
    AND b4 in (907,802,644,826,476,357,184,924)
    AND d6 in (590,790,852,60)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to 2744b9bbd5b6499c5e674d402a0f091d
 
 -- query IIIII rowsort join329
@@ -39681,7 +39673,7 @@ SELECT b8, b6+762+a8, d7*551, e3*683, e2+a8
    AND e7=39
    AND a3=393
    AND 7=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 186
 -- 1680
 -- 218747
@@ -39696,7 +39688,7 @@ SELECT b8, b6+762+a8, d7*551, e3*683, e2+a8
    AND e7=39
    AND 7=e8
    AND 192=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 186
 -- 1680
 -- 218747
@@ -39711,7 +39703,7 @@ SELECT b8, b6+762+a8, d7*551, e3*683, e2+a8
    AND 854=c2
    AND a3=393
    AND 7=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 186
 -- 1680
 -- 218747
@@ -39726,7 +39718,7 @@ SELECT b8, b6+762+a8, d7*551, e3*683, e2+a8
    AND 7=e8
    AND a3=393
    AND 192=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 186
 -- 1680
 -- 218747
@@ -39739,7 +39731,7 @@ SELECT b8, a6, a3+515+c6
  WHERE a3 in (727,41,699,282,181,818,995,34)
    AND d6 in (797,855,807,405,467,35,36)
    AND (416=e8 OR e8=381)
-;
+ORDER BY 1,2,3;
 -- 378 values hashing to c0668acde4d1a28703d878825871e77b
 
 -- query III rowsort join330
@@ -39748,7 +39740,7 @@ SELECT b8, a6, a3+515+c6
  WHERE d6 in (797,855,807,405,467,35,36)
    AND a3 in (727,41,699,282,181,818,995,34)
    AND (416=e8 OR e8=381)
-;
+ORDER BY 1,2,3;
 -- 378 values hashing to c0668acde4d1a28703d878825871e77b
 
 -- query III rowsort join330
@@ -39757,7 +39749,7 @@ SELECT b8, a6, a3+515+c6
  WHERE a3 in (727,41,699,282,181,818,995,34)
    AND (416=e8 OR e8=381)
    AND d6 in (797,855,807,405,467,35,36)
-;
+ORDER BY 1,2,3;
 -- 378 values hashing to c0668acde4d1a28703d878825871e77b
 
 -- query III rowsort join330
@@ -39766,7 +39758,7 @@ SELECT b8, a6, a3+515+c6
  WHERE (416=e8 OR e8=381)
    AND a3 in (727,41,699,282,181,818,995,34)
    AND d6 in (797,855,807,405,467,35,36)
-;
+ORDER BY 1,2,3;
 -- 378 values hashing to c0668acde4d1a28703d878825871e77b
 
 -- query II rowsort join331
@@ -39774,7 +39766,7 @@ SELECT b8*525+a8, d3*492
   FROM t8, t3
  WHERE a3 in (777,549,935,368,296,344,892,353)
    AND (e8=431 OR e8=377 OR 421=e8 OR 956=e8)
-;
+ORDER BY 1,2;
 -- 72 values hashing to e06cecb766e98356703aa288fa837186
 
 -- query II rowsort join331
@@ -39782,7 +39774,7 @@ SELECT b8*525+a8, d3*492
   FROM t3, t8
  WHERE (e8=431 OR e8=377 OR 421=e8 OR 956=e8)
    AND a3 in (777,549,935,368,296,344,892,353)
-;
+ORDER BY 1,2;
 -- 72 values hashing to e06cecb766e98356703aa288fa837186
 
 -- query ITI rowsort join332
@@ -39791,7 +39783,7 @@ SELECT d8+330, x9, a4+618+a9
  WHERE 660=a9
    AND 295=e8
    AND (b4=40 OR 924=b4)
-;
+ORDER BY 1,2,3;
 -- 824
 -- table tn9 row 28
 -- 1359
@@ -39805,7 +39797,7 @@ SELECT d8+330, x9, a4+618+a9
  WHERE (b4=40 OR 924=b4)
    AND 660=a9
    AND 295=e8
-;
+ORDER BY 1,2,3;
 -- 824
 -- table tn9 row 28
 -- 1359
@@ -39819,7 +39811,7 @@ SELECT d8+330, x9, a4+618+a9
  WHERE 295=e8
    AND (b4=40 OR 924=b4)
    AND 660=a9
-;
+ORDER BY 1,2,3;
 -- 824
 -- table tn9 row 28
 -- 1359
@@ -39833,7 +39825,7 @@ SELECT d8+330, x9, a4+618+a9
  WHERE (b4=40 OR 924=b4)
    AND 660=a9
    AND 295=e8
-;
+ORDER BY 1,2,3;
 -- 824
 -- table tn9 row 28
 -- 1359
@@ -39849,7 +39841,7 @@ SELECT e2, c9, a5*511, a4+b2, x7
    AND 577=b4
    AND c5 in (101,489,820,774,485,733,210)
    AND 460=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 7fd8689d6ca97adbd4b3aa2d9e249196
 
 -- query IIIIT rowsort join333
@@ -39860,7 +39852,7 @@ SELECT e2, c9, a5*511, a4+b2, x7
    AND 460=e7
    AND 122=b9
    AND b2 in (285,649,73,139,888,442)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 7fd8689d6ca97adbd4b3aa2d9e249196
 
 -- query IIIIT rowsort join333
@@ -39871,7 +39863,7 @@ SELECT e2, c9, a5*511, a4+b2, x7
    AND c5 in (101,489,820,774,485,733,210)
    AND 577=b4
    AND 122=b9
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 7fd8689d6ca97adbd4b3aa2d9e249196
 
 -- query IIIIT rowsort join333
@@ -39882,7 +39874,7 @@ SELECT e2, c9, a5*511, a4+b2, x7
    AND c5 in (101,489,820,774,485,733,210)
    AND 460=e7
    AND 577=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 7fd8689d6ca97adbd4b3aa2d9e249196
 
 -- query IITI rowsort join334
@@ -39892,7 +39884,7 @@ SELECT a5, d3, x7, a8
    AND c5=18
    AND a3 in (803,751,594,614,829,129,378,306)
    AND e8 in (806,310,411,7,736,440,56,455)
-;
+ORDER BY 1,2,3,4;
 -- 3584 values hashing to 1e465d979ad12e9947dda45549664292
 
 -- query IITI rowsort join334
@@ -39902,7 +39894,7 @@ SELECT a5, d3, x7, a8
    AND e8 in (806,310,411,7,736,440,56,455)
    AND (e7=862 OR e7=344 OR 976=e7 OR 462=e7)
    AND c5=18
-;
+ORDER BY 1,2,3,4;
 -- 3584 values hashing to 1e465d979ad12e9947dda45549664292
 
 -- query IITI rowsort join334
@@ -39912,7 +39904,7 @@ SELECT a5, d3, x7, a8
    AND a3 in (803,751,594,614,829,129,378,306)
    AND (e7=862 OR e7=344 OR 976=e7 OR 462=e7)
    AND c5=18
-;
+ORDER BY 1,2,3,4;
 -- 3584 values hashing to 1e465d979ad12e9947dda45549664292
 
 -- query IITI rowsort join334
@@ -39922,7 +39914,7 @@ SELECT a5, d3, x7, a8
    AND a3 in (803,751,594,614,829,129,378,306)
    AND e8 in (806,310,411,7,736,440,56,455)
    AND c5=18
-;
+ORDER BY 1,2,3,4;
 -- 3584 values hashing to 1e465d979ad12e9947dda45549664292
 
 -- query IT rowsort join335
@@ -39930,7 +39922,7 @@ SELECT e9*368, x3
   FROM t9, t3
  WHERE a3 in (368,282,101,777,763,245)
    AND (e9=954 OR e9=61 OR e9=737 OR e9=837)
-;
+ORDER BY 1,2;
 -- 48 values hashing to c033fb2a84c058aab953ca33f39924e6
 
 -- query IT rowsort join335
@@ -39938,7 +39930,7 @@ SELECT e9*368, x3
   FROM t9, t3
  WHERE (e9=954 OR e9=61 OR e9=737 OR e9=837)
    AND a3 in (368,282,101,777,763,245)
-;
+ORDER BY 1,2;
 -- 48 values hashing to c033fb2a84c058aab953ca33f39924e6
 
 -- query IIIT rowsort join336
@@ -39948,7 +39940,7 @@ SELECT d7+980, b8*689, a9*182, x5
    AND e7 in (782,663,462)
    AND c5=527
    AND e8=512
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 9921c4b013366c1da8695fa3ef5774c0
 
 -- query IIIT rowsort join336
@@ -39958,7 +39950,7 @@ SELECT d7+980, b8*689, a9*182, x5
    AND e7 in (782,663,462)
    AND c5=527
    AND e8=512
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 9921c4b013366c1da8695fa3ef5774c0
 
 -- query IIIT rowsort join336
@@ -39968,7 +39960,7 @@ SELECT d7+980, b8*689, a9*182, x5
    AND c5=527
    AND e9=150
    AND e7 in (782,663,462)
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 9921c4b013366c1da8695fa3ef5774c0
 
 -- query IIIT rowsort join336
@@ -39978,7 +39970,7 @@ SELECT d7+980, b8*689, a9*182, x5
    AND c5=527
    AND e8=512
    AND e9=150
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 9921c4b013366c1da8695fa3ef5774c0
 
 -- query ITII rowsort join337
@@ -39988,7 +39980,7 @@ SELECT b5*782, x1, a6+d6, b4+824
    AND 598=c5
    AND a1=294
    AND (d6=2 OR d6=366 OR d6=161 OR d6=991)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to d5a0e353a7d74ef953e5ed12e0643094
 
 -- query ITII rowsort join337
@@ -39998,7 +39990,7 @@ SELECT b5*782, x1, a6+d6, b4+824
    AND a1=294
    AND b4 in (23,735,748,644,167,892,847)
    AND (d6=2 OR d6=366 OR d6=161 OR d6=991)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to d5a0e353a7d74ef953e5ed12e0643094
 
 -- query ITII rowsort join337
@@ -40008,7 +40000,7 @@ SELECT b5*782, x1, a6+d6, b4+824
    AND a1=294
    AND b4 in (23,735,748,644,167,892,847)
    AND (d6=2 OR d6=366 OR d6=161 OR d6=991)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to d5a0e353a7d74ef953e5ed12e0643094
 
 -- query ITII rowsort join337
@@ -40018,7 +40010,7 @@ SELECT b5*782, x1, a6+d6, b4+824
    AND a1=294
    AND (d6=2 OR d6=366 OR d6=161 OR d6=991)
    AND b4 in (23,735,748,644,167,892,847)
-;
+ORDER BY 1,2,3,4;
 -- 140 values hashing to d5a0e353a7d74ef953e5ed12e0643094
 
 -- query IT rowsort join338
@@ -40026,7 +40018,7 @@ SELECT a6+757+b6, x7
   FROM t7, t6
  WHERE d6=590
    AND e7 in (455,884,841,975,428,154,156)
-;
+ORDER BY 1,2;
 -- 18 values hashing to afbcceb83dcce9f6b055b44d4324a907
 
 -- query IT rowsort join338
@@ -40034,7 +40026,7 @@ SELECT a6+757+b6, x7
   FROM t6, t7
  WHERE d6=590
    AND e7 in (455,884,841,975,428,154,156)
-;
+ORDER BY 1,2;
 -- 18 values hashing to afbcceb83dcce9f6b055b44d4324a907
 
 -- query IT rowsort join338
@@ -40042,7 +40034,7 @@ SELECT a6+757+b6, x7
   FROM t7, t6
  WHERE e7 in (455,884,841,975,428,154,156)
    AND d6=590
-;
+ORDER BY 1,2;
 -- 18 values hashing to afbcceb83dcce9f6b055b44d4324a907
 
 -- query IIIII rowsort join339
@@ -40053,7 +40045,7 @@ SELECT d6+e8, d8, e4*488+e4, d3, d5
    AND e8=d6
    AND 729=d6
    AND a3=349
-;
+ORDER BY 1,2,3,4,5;
 -- 450 values hashing to ceea275a13963f1383e077669e7f0f4d
 
 -- query IIIII rowsort join339
@@ -40064,7 +40056,7 @@ SELECT d6+e8, d8, e4*488+e4, d3, d5
    AND 729=d6
    AND c5 in (723,351,756,489,625,809,766,689)
    AND a3=349
-;
+ORDER BY 1,2,3,4,5;
 -- 450 values hashing to ceea275a13963f1383e077669e7f0f4d
 
 -- query IIIII rowsort join339
@@ -40075,7 +40067,7 @@ SELECT d6+e8, d8, e4*488+e4, d3, d5
    AND c5 in (723,351,756,489,625,809,766,689)
    AND b4 in (535,532,802,603,23)
    AND e8=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 450 values hashing to ceea275a13963f1383e077669e7f0f4d
 
 -- query IIIII rowsort join339
@@ -40086,7 +40078,7 @@ SELECT d6+e8, d8, e4*488+e4, d3, d5
    AND b4 in (535,532,802,603,23)
    AND a3=349
    AND 729=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 450 values hashing to ceea275a13963f1383e077669e7f0f4d
 
 -- query IIII rowsort join340
@@ -40096,7 +40088,7 @@ SELECT b4+e2, a2*904, c9*347, d5
    AND a9=e4
    AND b4 in (538,925,33,295,408)
    AND 747=c5
-;
+ORDER BY 1,2,3,4;
 -- 32 values hashing to cba7b14d5c246848b4be939fe8692c52
 
 -- query IIII rowsort join340
@@ -40106,7 +40098,7 @@ SELECT b4+e2, a2*904, c9*347, d5
    AND b4 in (538,925,33,295,408)
    AND a9=e4
    AND 747=c5
-;
+ORDER BY 1,2,3,4;
 -- 32 values hashing to cba7b14d5c246848b4be939fe8692c52
 
 -- query IIII rowsort join340
@@ -40116,7 +40108,7 @@ SELECT b4+e2, a2*904, c9*347, d5
    AND b4 in (538,925,33,295,408)
    AND 747=c5
    AND a9=e4
-;
+ORDER BY 1,2,3,4;
 -- 32 values hashing to cba7b14d5c246848b4be939fe8692c52
 
 -- query IIII rowsort join340
@@ -40126,7 +40118,7 @@ SELECT b4+e2, a2*904, c9*347, d5
    AND e2 in (140,521,548,73,56,808,788)
    AND a9=e4
    AND 747=c5
-;
+ORDER BY 1,2,3,4;
 -- 32 values hashing to cba7b14d5c246848b4be939fe8692c52
 
 -- query ITIII rowsort join341
@@ -40137,7 +40129,7 @@ SELECT a3, x4, b7, c1+e3, a9+578+a7
    AND a1=d4
    AND b9 in (178,821,848,832)
    AND a3 in (42,244,197,218,913)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to c31341df3657606360cbdd26daef97c0
 
 -- query ITIII rowsort join341
@@ -40148,7 +40140,7 @@ SELECT a3, x4, b7, c1+e3, a9+578+a7
    AND e7 in (27,562,508,983,587,561,288)
    AND a1=d4
    AND (175=b4 OR b4=33 OR 434=b4 OR 660=b4)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to c31341df3657606360cbdd26daef97c0
 
 -- query ITIII rowsort join341
@@ -40159,7 +40151,7 @@ SELECT a3, x4, b7, c1+e3, a9+578+a7
    AND b9 in (178,821,848,832)
    AND (175=b4 OR b4=33 OR 434=b4 OR 660=b4)
    AND e7 in (27,562,508,983,587,561,288)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to c31341df3657606360cbdd26daef97c0
 
 -- query ITIII rowsort join341
@@ -40170,7 +40162,7 @@ SELECT a3, x4, b7, c1+e3, a9+578+a7
    AND (175=b4 OR b4=33 OR 434=b4 OR 660=b4)
    AND a1=d4
    AND e7 in (27,562,508,983,587,561,288)
-;
+ORDER BY 1,2,3,4,5;
 -- 1680 values hashing to c31341df3657606360cbdd26daef97c0
 
 -- query IIITI rowsort join342
@@ -40181,7 +40173,7 @@ SELECT e8*663+c5, d5, a7*507, x4, d1+c4
    AND e8=495
    AND 438=a1
    AND e7 in (506,553,291,197)
-;
+ORDER BY 1,2,3,4,5;
 -- 840 values hashing to 139cf81c185c86bdbe48fadb013b4af5
 
 -- query IIITI rowsort join342
@@ -40192,7 +40184,7 @@ SELECT e8*663+c5, d5, a7*507, x4, d1+c4
    AND e8=495
    AND 438=a1
    AND c5 in (601,147,18,657,485)
-;
+ORDER BY 1,2,3,4,5;
 -- 840 values hashing to 139cf81c185c86bdbe48fadb013b4af5
 
 -- query IIITI rowsort join342
@@ -40203,7 +40195,7 @@ SELECT e8*663+c5, d5, a7*507, x4, d1+c4
    AND 438=a1
    AND b4 in (469,606,678,532,286,319)
    AND e8=495
-;
+ORDER BY 1,2,3,4,5;
 -- 840 values hashing to 139cf81c185c86bdbe48fadb013b4af5
 
 -- query IIITI rowsort join342
@@ -40214,7 +40206,7 @@ SELECT e8*663+c5, d5, a7*507, x4, d1+c4
    AND c5 in (601,147,18,657,485)
    AND 438=a1
    AND e7 in (506,553,291,197)
-;
+ORDER BY 1,2,3,4,5;
 -- 840 values hashing to 139cf81c185c86bdbe48fadb013b4af5
 
 -- query III rowsort join343
@@ -40223,7 +40215,7 @@ SELECT d1+b7, c7+772+c1, b6+e1
  WHERE d6 in (613,600,277,36,822,446,192)
    AND a1=e6
    AND e7 in (120,503,290,976,156)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 33a5cf6db85516380c220c985941d66b
 
 -- query III rowsort join343
@@ -40232,7 +40224,7 @@ SELECT d1+b7, c7+772+c1, b6+e1
  WHERE a1=e6
    AND d6 in (613,600,277,36,822,446,192)
    AND e7 in (120,503,290,976,156)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 33a5cf6db85516380c220c985941d66b
 
 -- query III rowsort join343
@@ -40241,7 +40233,7 @@ SELECT d1+b7, c7+772+c1, b6+e1
  WHERE a1=e6
    AND d6 in (613,600,277,36,822,446,192)
    AND e7 in (120,503,290,976,156)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 33a5cf6db85516380c220c985941d66b
 
 -- query III rowsort join343
@@ -40250,7 +40242,7 @@ SELECT d1+b7, c7+772+c1, b6+e1
  WHERE d6 in (613,600,277,36,822,446,192)
    AND e7 in (120,503,290,976,156)
    AND a1=e6
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to 33a5cf6db85516380c220c985941d66b
 
 -- query ITI rowsort join344
@@ -40259,7 +40251,7 @@ SELECT d8, x6, a7+a8
  WHERE e7 in (248,98,290,979)
    AND 428=d6
    AND (e8=947 OR e8=260 OR e8=64)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 2ffe89601f7d8ff1b8b55a7a30ae4ae6
 
 -- query ITI rowsort join344
@@ -40268,7 +40260,7 @@ SELECT d8, x6, a7+a8
  WHERE (e8=947 OR e8=260 OR e8=64)
    AND 428=d6
    AND e7 in (248,98,290,979)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 2ffe89601f7d8ff1b8b55a7a30ae4ae6
 
 -- query ITI rowsort join344
@@ -40277,7 +40269,7 @@ SELECT d8, x6, a7+a8
  WHERE (e8=947 OR e8=260 OR e8=64)
    AND 428=d6
    AND e7 in (248,98,290,979)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to 2ffe89601f7d8ff1b8b55a7a30ae4ae6
 
 -- query IIIIII rowsort join345
@@ -40289,7 +40281,7 @@ SELECT d4+a9, c3+a8, d6+419, d9*814, c8+d3, d5+582+c9
    AND 40=b4
    AND c5 in (443,989,299,261,672,489)
    AND a3 in (895,995,818,379,499)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 32256 values hashing to 60e2fc4d003583a14a24b20e474169a3
 
 -- query IIIIII rowsort join345
@@ -40301,7 +40293,7 @@ SELECT d4+a9, c3+a8, d6+419, d9*814, c8+d3, d5+582+c9
    AND e8 in (510,933,320,260,455,833,761,204)
    AND (d6=855 OR 463=d6 OR 911=d6 OR 600=d6)
    AND (b9=423 OR 868=b9 OR b9=77 OR 803=b9)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 32256 values hashing to 60e2fc4d003583a14a24b20e474169a3
 
 -- query IIIIII rowsort join345
@@ -40313,7 +40305,7 @@ SELECT d4+a9, c3+a8, d6+419, d9*814, c8+d3, d5+582+c9
    AND 40=b4
    AND (d6=855 OR 463=d6 OR 911=d6 OR 600=d6)
    AND (b9=423 OR 868=b9 OR b9=77 OR 803=b9)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 32256 values hashing to 60e2fc4d003583a14a24b20e474169a3
 
 -- query IIIIII rowsort join345
@@ -40325,7 +40317,7 @@ SELECT d4+a9, c3+a8, d6+419, d9*814, c8+d3, d5+582+c9
    AND c5 in (443,989,299,261,672,489)
    AND (b9=423 OR 868=b9 OR b9=77 OR 803=b9)
    AND a3 in (895,995,818,379,499)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 32256 values hashing to 60e2fc4d003583a14a24b20e474169a3
 
 -- query TIII rowsort join346
@@ -40335,7 +40327,7 @@ SELECT x5, b8+644, a9, c1+a5
    AND e9=854
    AND e8 in (729,476,859,180,431,175)
    AND a1 in (280,32,640,499,736,643,438)
-;
+ORDER BY 1,2,3,4;
 -- 2352 values hashing to da808d3e114be6896ee85fcfb35abb6b
 
 -- query TIII rowsort join346
@@ -40345,7 +40337,7 @@ SELECT x5, b8+644, a9, c1+a5
    AND c5 in (934,514,56,187,825,855)
    AND a1 in (280,32,640,499,736,643,438)
    AND e9=854
-;
+ORDER BY 1,2,3,4;
 -- 2352 values hashing to da808d3e114be6896ee85fcfb35abb6b
 
 -- query TIII rowsort join346
@@ -40355,7 +40347,7 @@ SELECT x5, b8+644, a9, c1+a5
    AND e8 in (729,476,859,180,431,175)
    AND a1 in (280,32,640,499,736,643,438)
    AND e9=854
-;
+ORDER BY 1,2,3,4;
 -- 2352 values hashing to da808d3e114be6896ee85fcfb35abb6b
 
 -- query TIII rowsort join346
@@ -40365,7 +40357,7 @@ SELECT x5, b8+644, a9, c1+a5
    AND e9=854
    AND c5 in (934,514,56,187,825,855)
    AND a1 in (280,32,640,499,736,643,438)
-;
+ORDER BY 1,2,3,4;
 -- 2352 values hashing to da808d3e114be6896ee85fcfb35abb6b
 
 -- query IITII rowsort join347
@@ -40376,7 +40368,7 @@ SELECT a9, c8+c6, x6, b5+896+e6, b3
    AND d6 in (924,147,991,797,197,734)
    AND e8 in (809,233,175,488,411)
    AND a3=c8
-;
+ORDER BY 1,2,3,4,5;
 -- 210 values hashing to 5d6d9bfea9de4e8bd37dce657e597370
 
 -- query IITII rowsort join347
@@ -40387,7 +40379,7 @@ SELECT a9, c8+c6, x6, b5+896+e6, b3
    AND c5 in (155,37,101,649,140,514)
    AND a3=c8
    AND d6 in (924,147,991,797,197,734)
-;
+ORDER BY 1,2,3,4,5;
 -- 210 values hashing to 5d6d9bfea9de4e8bd37dce657e597370
 
 -- query IITII rowsort join347
@@ -40398,7 +40390,7 @@ SELECT a9, c8+c6, x6, b5+896+e6, b3
    AND e8 in (809,233,175,488,411)
    AND d6 in (924,147,991,797,197,734)
    AND e9=251
-;
+ORDER BY 1,2,3,4,5;
 -- 210 values hashing to 5d6d9bfea9de4e8bd37dce657e597370
 
 -- query IITII rowsort join347
@@ -40409,7 +40401,7 @@ SELECT a9, c8+c6, x6, b5+896+e6, b3
    AND a3=c8
    AND d6 in (924,147,991,797,197,734)
    AND c5 in (155,37,101,649,140,514)
-;
+ORDER BY 1,2,3,4,5;
 -- 210 values hashing to 5d6d9bfea9de4e8bd37dce657e597370
 
 -- query IITIII rowsort join348
@@ -40421,7 +40413,7 @@ SELECT c6+e7, a4, x2, c5, c7, c1+454+c6
    AND e7 in (988,288,887,234,663)
    AND 628=c5
    AND 813=d2
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to 7278d0c9278216b4c88dc122f19086ca
 
 -- query IITIII rowsort join348
@@ -40433,7 +40425,7 @@ SELECT c6+e7, a4, x2, c5, c7, c1+454+c6
    AND d6 in (970,36,172)
    AND 628=c5
    AND 535=b4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to 7278d0c9278216b4c88dc122f19086ca
 
 -- query IITIII rowsort join348
@@ -40445,7 +40437,7 @@ SELECT c6+e7, a4, x2, c5, c7, c1+454+c6
    AND 813=d2
    AND 170=a1
    AND 535=b4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to 7278d0c9278216b4c88dc122f19086ca
 
 -- query IITIII rowsort join348
@@ -40457,7 +40449,7 @@ SELECT c6+e7, a4, x2, c5, c7, c1+454+c6
    AND 628=c5
    AND 535=b4
    AND e7 in (988,288,887,234,663)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 180 values hashing to 7278d0c9278216b4c88dc122f19086ca
 
 -- query IIT rowsort join349
@@ -40466,7 +40458,7 @@ SELECT c1+d4, a4, x9
  WHERE a1 in (477,395,280,637,294)
    AND b9 in (803,326,858,342,936,703,746,913)
    AND b4=c9
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to c46a49986394af78c9c87324f71edecd
 
 -- query IIT rowsort join349
@@ -40475,7 +40467,7 @@ SELECT c1+d4, a4, x9
  WHERE a1 in (477,395,280,637,294)
    AND b9 in (803,326,858,342,936,703,746,913)
    AND b4=c9
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to c46a49986394af78c9c87324f71edecd
 
 -- query IIT rowsort join349
@@ -40484,7 +40476,7 @@ SELECT c1+d4, a4, x9
  WHERE b9 in (803,326,858,342,936,703,746,913)
    AND a1 in (477,395,280,637,294)
    AND b4=c9
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to c46a49986394af78c9c87324f71edecd
 
 -- query IIT rowsort join349
@@ -40493,7 +40485,7 @@ SELECT c1+d4, a4, x9
  WHERE b4=c9
    AND a1 in (477,395,280,637,294)
    AND b9 in (803,326,858,342,936,703,746,913)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to c46a49986394af78c9c87324f71edecd
 
 -- query III rowsort join350
@@ -40502,7 +40494,7 @@ SELECT e8+879, d1, e2
  WHERE 640=a1
    AND e8=377
    AND d2=79
-;
+ORDER BY 1,2,3;
 -- 1256
 -- 481
 -- 428
@@ -40513,7 +40505,7 @@ SELECT e8+879, d1, e2
  WHERE d2=79
    AND 640=a1
    AND e8=377
-;
+ORDER BY 1,2,3;
 -- 1256
 -- 481
 -- 428
@@ -40524,7 +40516,7 @@ SELECT e8+879, d1, e2
  WHERE e8=377
    AND 640=a1
    AND d2=79
-;
+ORDER BY 1,2,3;
 -- 1256
 -- 481
 -- 428
@@ -40535,7 +40527,7 @@ SELECT e8+879, d1, e2
  WHERE d2=79
    AND 640=a1
    AND e8=377
-;
+ORDER BY 1,2,3;
 -- 1256
 -- 481
 -- 428
@@ -40546,7 +40538,7 @@ SELECT x2, e7, d4*932+c2
  WHERE d2=749
    AND e7=605
    AND b4 in (58,721,220,707)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 0645936d52b4c05e0c3339515693c2a8
 
 -- query TII rowsort join351
@@ -40555,7 +40547,7 @@ SELECT x2, e7, d4*932+c2
  WHERE e7=605
    AND d2=749
    AND b4 in (58,721,220,707)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 0645936d52b4c05e0c3339515693c2a8
 
 -- query TII rowsort join351
@@ -40564,7 +40556,7 @@ SELECT x2, e7, d4*932+c2
  WHERE e7=605
    AND d2=749
    AND b4 in (58,721,220,707)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 0645936d52b4c05e0c3339515693c2a8
 
 -- query TII rowsort join351
@@ -40573,7 +40565,7 @@ SELECT x2, e7, d4*932+c2
  WHERE b4 in (58,721,220,707)
    AND d2=749
    AND e7=605
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to 0645936d52b4c05e0c3339515693c2a8
 
 -- query IIIITII rowsort join352
@@ -40586,7 +40578,7 @@ SELECT e9, c3, a2*268, d1, x6, c8*783, a7*880
    AND 635=e8
    AND a9 in (5,69,685,251)
    AND a1=231
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 25200 values hashing to 6d886e27e2bd0d6f63a65e7f13dc3bb6
 
 -- query IIIITII rowsort join352
@@ -40599,7 +40591,7 @@ SELECT e9, c3, a2*268, d1, x6, c8*783, a7*880
    AND a3 in (865,303,895,98,515)
    AND 635=e8
    AND (e7=918 OR e7=282 OR e7=815 OR 976=e7)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 25200 values hashing to 6d886e27e2bd0d6f63a65e7f13dc3bb6
 
 -- query IIIITII rowsort join352
@@ -40612,7 +40604,7 @@ SELECT e9, c3, a2*268, d1, x6, c8*783, a7*880
    AND d2 in (334,833,152)
    AND a3 in (865,303,895,98,515)
    AND (e7=918 OR e7=282 OR e7=815 OR 976=e7)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 25200 values hashing to 6d886e27e2bd0d6f63a65e7f13dc3bb6
 
 -- query IIIITII rowsort join352
@@ -40625,7 +40617,7 @@ SELECT e9, c3, a2*268, d1, x6, c8*783, a7*880
    AND a9 in (5,69,685,251)
    AND d6 in (674,60,807,790)
    AND a1=231
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 25200 values hashing to 6d886e27e2bd0d6f63a65e7f13dc3bb6
 
 -- query IIIIII rowsort join353
@@ -40637,7 +40629,7 @@ SELECT e8, e6+952, d4, c2, a5, b9
    AND (843=d2 OR 555=d2)
    AND b4 in (86,94,532,387,498,68,627,319)
    AND d6 in (689,674,66,186,321,286)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 82944 values hashing to 4b2db6deb0b4b192aa3f4596ebc778bb
 
 -- query IIIIII rowsort join353
@@ -40649,7 +40641,7 @@ SELECT e8, e6+952, d4, c2, a5, b9
    AND d6 in (689,674,66,186,321,286)
    AND a9 in (297,891,962,41)
    AND e8 in (792,495,980,578,919,305)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 82944 values hashing to 4b2db6deb0b4b192aa3f4596ebc778bb
 
 -- query IIIIII rowsort join353
@@ -40661,7 +40653,7 @@ SELECT e8, e6+952, d4, c2, a5, b9
    AND d6 in (689,674,66,186,321,286)
    AND a9 in (297,891,962,41)
    AND e8 in (792,495,980,578,919,305)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 82944 values hashing to 4b2db6deb0b4b192aa3f4596ebc778bb
 
 -- query IIIIII rowsort join353
@@ -40673,7 +40665,7 @@ SELECT e8, e6+952, d4, c2, a5, b9
    AND (843=d2 OR 555=d2)
    AND c5 in (155,485,147,12,747)
    AND a9 in (297,891,962,41)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 82944 values hashing to 4b2db6deb0b4b192aa3f4596ebc778bb
 
 -- query IITI rowsort join354
@@ -40683,7 +40675,7 @@ SELECT a5, c3*670, x2, e4+899
    AND c5=570
    AND b2 in (113,549,796,634,819,628,519)
    AND 826=b4
-;
+ORDER BY 1,2,3,4;
 -- 252 values hashing to f81a646ece1a5bd4c3b5ddde7cdcb0cd
 
 -- query IITI rowsort join354
@@ -40693,7 +40685,7 @@ SELECT a5, c3*670, x2, e4+899
    AND a3 in (559,164,197,218,727,995,699)
    AND c5=570
    AND b2 in (113,549,796,634,819,628,519)
-;
+ORDER BY 1,2,3,4;
 -- 252 values hashing to f81a646ece1a5bd4c3b5ddde7cdcb0cd
 
 -- query IITI rowsort join354
@@ -40703,7 +40695,7 @@ SELECT a5, c3*670, x2, e4+899
    AND c5=570
    AND b2 in (113,549,796,634,819,628,519)
    AND a3 in (559,164,197,218,727,995,699)
-;
+ORDER BY 1,2,3,4;
 -- 252 values hashing to f81a646ece1a5bd4c3b5ddde7cdcb0cd
 
 -- query IITI rowsort join354
@@ -40713,7 +40705,7 @@ SELECT a5, c3*670, x2, e4+899
    AND 826=b4
    AND a3 in (559,164,197,218,727,995,699)
    AND c5=570
-;
+ORDER BY 1,2,3,4;
 -- 252 values hashing to f81a646ece1a5bd4c3b5ddde7cdcb0cd
 
 -- query TI rowsort join355
@@ -40721,7 +40713,7 @@ SELECT x2, a5*108+b2
   FROM t5, t2
  WHERE c5 in (527,723,634,941)
    AND b2 in (765,805,640,220,168,676,932,329)
-;
+ORDER BY 1,2;
 -- 80 values hashing to f84c93fb35b4905df13c7d0c744e8803
 
 -- query TI rowsort join355
@@ -40729,7 +40721,7 @@ SELECT x2, a5*108+b2
   FROM t2, t5
  WHERE b2 in (765,805,640,220,168,676,932,329)
    AND c5 in (527,723,634,941)
-;
+ORDER BY 1,2;
 -- 80 values hashing to f84c93fb35b4905df13c7d0c744e8803
 
 -- query TI rowsort join355
@@ -40737,7 +40729,7 @@ SELECT x2, a5*108+b2
   FROM t5, t2
  WHERE b2 in (765,805,640,220,168,676,932,329)
    AND c5 in (527,723,634,941)
-;
+ORDER BY 1,2;
 -- 80 values hashing to f84c93fb35b4905df13c7d0c744e8803
 
 -- query IIII rowsort join356
@@ -40747,7 +40739,7 @@ SELECT d4+462, e6, b2*783, e8*511
    AND d6 in (970,489,467,790)
    AND 535=b4
    AND e2=a6
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to b83ee4ccb37ee93a076d345cd32d11dc
 
 -- query IIII rowsort join356
@@ -40757,7 +40749,7 @@ SELECT d4+462, e6, b2*783, e8*511
    AND d6 in (970,489,467,790)
    AND e8 in (761,233,893,806,942,881,833)
    AND 535=b4
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to b83ee4ccb37ee93a076d345cd32d11dc
 
 -- query IIII rowsort join356
@@ -40767,7 +40759,7 @@ SELECT d4+462, e6, b2*783, e8*511
    AND e8 in (761,233,893,806,942,881,833)
    AND d6 in (970,489,467,790)
    AND 535=b4
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to b83ee4ccb37ee93a076d345cd32d11dc
 
 -- query IIII rowsort join356
@@ -40777,7 +40769,7 @@ SELECT d4+462, e6, b2*783, e8*511
    AND e8 in (761,233,893,806,942,881,833)
    AND 535=b4
    AND e2=a6
-;
+ORDER BY 1,2,3,4;
 -- 56 values hashing to b83ee4ccb37ee93a076d345cd32d11dc
 
 -- query II rowsort join357
@@ -40785,7 +40777,7 @@ SELECT e9*947, c1+d9
   FROM t9, t1
  WHERE a1 in (864,213,324,637,283,918,742)
    AND (732=c9 OR c9=935)
-;
+ORDER BY 1,2;
 -- 32 values hashing to a509ca0315e7b6bc3341cc3001b2a43b
 
 -- query II rowsort join357
@@ -40793,7 +40785,7 @@ SELECT e9*947, c1+d9
   FROM t1, t9
  WHERE (732=c9 OR c9=935)
    AND a1 in (864,213,324,637,283,918,742)
-;
+ORDER BY 1,2;
 -- 32 values hashing to a509ca0315e7b6bc3341cc3001b2a43b
 
 -- query II rowsort join357
@@ -40801,7 +40793,7 @@ SELECT e9*947, c1+d9
   FROM t9, t1
  WHERE (732=c9 OR c9=935)
    AND a1 in (864,213,324,637,283,918,742)
-;
+ORDER BY 1,2;
 -- 32 values hashing to a509ca0315e7b6bc3341cc3001b2a43b
 
 -- query TIII rowsort join358
@@ -40811,7 +40803,7 @@ SELECT x7, d3, d2+64+e7, c1
    AND 793=e7
    AND (314=a1 OR a1=584 OR 553=a1)
    AND (936=a2 OR 691=a2 OR 853=a2)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to a59134beac8aa371f6927cfa6e43b1fe
 
 -- query TIII rowsort join358
@@ -40821,7 +40813,7 @@ SELECT x7, d3, d2+64+e7, c1
    AND (314=a1 OR a1=584 OR 553=a1)
    AND (936=a2 OR 691=a2 OR 853=a2)
    AND 793=e7
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to a59134beac8aa371f6927cfa6e43b1fe
 
 -- query TIII rowsort join358
@@ -40831,7 +40823,7 @@ SELECT x7, d3, d2+64+e7, c1
    AND 181=a3
    AND 793=e7
    AND (314=a1 OR a1=584 OR 553=a1)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to a59134beac8aa371f6927cfa6e43b1fe
 
 -- query TIII rowsort join358
@@ -40841,7 +40833,7 @@ SELECT x7, d3, d2+64+e7, c1
    AND 181=a3
    AND 793=e7
    AND (936=a2 OR 691=a2 OR 853=a2)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to a59134beac8aa371f6927cfa6e43b1fe
 
 -- query III rowsort join359
@@ -40850,7 +40842,7 @@ SELECT e1+c1, e9+772, e7
  WHERE e7 in (904,562,462,144,976,301,503,970)
    AND (294=a1 OR 492=a1 OR 161=a1 OR 825=a1)
    AND 161=d9
-;
+ORDER BY 1,2,3;
 -- 264 values hashing to 10b954e28fd1bb75de733744e039dba9
 
 -- query III rowsort join359
@@ -40859,7 +40851,7 @@ SELECT e1+c1, e9+772, e7
  WHERE (294=a1 OR 492=a1 OR 161=a1 OR 825=a1)
    AND 161=d9
    AND e7 in (904,562,462,144,976,301,503,970)
-;
+ORDER BY 1,2,3;
 -- 264 values hashing to 10b954e28fd1bb75de733744e039dba9
 
 -- query III rowsort join359
@@ -40868,7 +40860,7 @@ SELECT e1+c1, e9+772, e7
  WHERE e7 in (904,562,462,144,976,301,503,970)
    AND 161=d9
    AND (294=a1 OR 492=a1 OR 161=a1 OR 825=a1)
-;
+ORDER BY 1,2,3;
 -- 264 values hashing to 10b954e28fd1bb75de733744e039dba9
 
 -- query III rowsort join359
@@ -40877,7 +40869,7 @@ SELECT e1+c1, e9+772, e7
  WHERE e7 in (904,562,462,144,976,301,503,970)
    AND (294=a1 OR 492=a1 OR 161=a1 OR 825=a1)
    AND 161=d9
-;
+ORDER BY 1,2,3;
 -- 264 values hashing to 10b954e28fd1bb75de733744e039dba9
 
 -- query IITITT rowsort join360
@@ -40889,7 +40881,7 @@ SELECT b8, a9, x2, a3*523, x5, x7
    AND a3 in (727,275,197,41,992)
    AND e9=426
    AND a2=d5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2688 values hashing to 1226d7e6cd12c7a0b492e8163bb31b36
 
 -- query IITITT rowsort join360
@@ -40901,7 +40893,7 @@ SELECT b8, a9, x2, a3*523, x5, x7
    AND a3 in (727,275,197,41,992)
    AND a2=d5
    AND e8 in (233,377,105,221,180,431,22)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2688 values hashing to 1226d7e6cd12c7a0b492e8163bb31b36
 
 -- query IITITT rowsort join360
@@ -40913,7 +40905,7 @@ SELECT b8, a9, x2, a3*523, x5, x7
    AND e8 in (233,377,105,221,180,431,22)
    AND a3 in (727,275,197,41,992)
    AND a2=d5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2688 values hashing to 1226d7e6cd12c7a0b492e8163bb31b36
 
 -- query IITITT rowsort join360
@@ -40925,7 +40917,7 @@ SELECT b8, a9, x2, a3*523, x5, x7
    AND e7 in (303,154,103,782,976,638)
    AND c5 in (756,799,18,485,649,158)
    AND a3 in (727,275,197,41,992)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 2688 values hashing to 1226d7e6cd12c7a0b492e8163bb31b36
 
 -- query IIII rowsort join361
@@ -40935,7 +40927,7 @@ SELECT b1, a4+d2, e2+a2, d9
    AND e9=801
    AND a2 in (283,139,76)
    AND b4 in (924,707,907,938,2,587,653)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 88ea4a6d1b37d5c1452055bb51a8d783
 
 -- query IIII rowsort join361
@@ -40945,7 +40937,7 @@ SELECT b1, a4+d2, e2+a2, d9
    AND a2 in (283,139,76)
    AND a1 in (866,438,853,88)
    AND b4 in (924,707,907,938,2,587,653)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 88ea4a6d1b37d5c1452055bb51a8d783
 
 -- query IIII rowsort join361
@@ -40955,7 +40947,7 @@ SELECT b1, a4+d2, e2+a2, d9
    AND a2 in (283,139,76)
    AND a1 in (866,438,853,88)
    AND b4 in (924,707,907,938,2,587,653)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 88ea4a6d1b37d5c1452055bb51a8d783
 
 -- query IIII rowsort join361
@@ -40965,7 +40957,7 @@ SELECT b1, a4+d2, e2+a2, d9
    AND b4 in (924,707,907,938,2,587,653)
    AND e9=801
    AND a2 in (283,139,76)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to 88ea4a6d1b37d5c1452055bb51a8d783
 
 -- query ITII rowsort join362
@@ -40975,7 +40967,7 @@ SELECT a6, x5, b2+a6, e4
    AND b4 in (434,267,535,407,331,2,921,469)
    AND (c2=728 OR 806=c2 OR 141=c2)
    AND c5=819
-;
+ORDER BY 1,2,3,4;
 -- 640 values hashing to 809c0ea2bb17e44a0decb0db8832e9db
 
 -- query ITII rowsort join362
@@ -40985,7 +40977,7 @@ SELECT a6, x5, b2+a6, e4
    AND c5=819
    AND d6 in (192,129,970,151)
    AND (c2=728 OR 806=c2 OR 141=c2)
-;
+ORDER BY 1,2,3,4;
 -- 640 values hashing to 809c0ea2bb17e44a0decb0db8832e9db
 
 -- query ITII rowsort join362
@@ -40995,7 +40987,7 @@ SELECT a6, x5, b2+a6, e4
    AND d6 in (192,129,970,151)
    AND c5=819
    AND b4 in (434,267,535,407,331,2,921,469)
-;
+ORDER BY 1,2,3,4;
 -- 640 values hashing to 809c0ea2bb17e44a0decb0db8832e9db
 
 -- query ITII rowsort join362
@@ -41005,7 +40997,7 @@ SELECT a6, x5, b2+a6, e4
    AND d6 in (192,129,970,151)
    AND b4 in (434,267,535,407,331,2,921,469)
    AND (c2=728 OR 806=c2 OR 141=c2)
-;
+ORDER BY 1,2,3,4;
 -- 640 values hashing to 809c0ea2bb17e44a0decb0db8832e9db
 
 -- query TII rowsort join363
@@ -41014,7 +41006,7 @@ SELECT x5, e9+217, c8
  WHERE e8=c9
    AND e9 in (107,995,549)
    AND 601=c5
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 5fe88066c15064708cd433604c913a2b
 
 -- query TII rowsort join363
@@ -41023,7 +41015,7 @@ SELECT x5, e9+217, c8
  WHERE 601=c5
    AND e9 in (107,995,549)
    AND e8=c9
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 5fe88066c15064708cd433604c913a2b
 
 -- query TII rowsort join363
@@ -41032,7 +41024,7 @@ SELECT x5, e9+217, c8
  WHERE 601=c5
    AND e8=c9
    AND e9 in (107,995,549)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 5fe88066c15064708cd433604c913a2b
 
 -- query TII rowsort join363
@@ -41041,7 +41033,7 @@ SELECT x5, e9+217, c8
  WHERE e8=c9
    AND e9 in (107,995,549)
    AND 601=c5
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 5fe88066c15064708cd433604c913a2b
 
 -- query TII rowsort join364
@@ -41050,7 +41042,7 @@ SELECT x7, c5, e3*723+c7
  WHERE a3 in (245,720,429,935)
    AND 384=c5
    AND e7 in (127,154,356,31,488,432,976)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 4efbb75863bdeb641e2d022f07aa42f3
 
 -- query TII rowsort join364
@@ -41059,7 +41051,7 @@ SELECT x7, c5, e3*723+c7
  WHERE e7 in (127,154,356,31,488,432,976)
    AND 384=c5
    AND a3 in (245,720,429,935)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 4efbb75863bdeb641e2d022f07aa42f3
 
 -- query TII rowsort join364
@@ -41068,7 +41060,7 @@ SELECT x7, c5, e3*723+c7
  WHERE 384=c5
    AND e7 in (127,154,356,31,488,432,976)
    AND a3 in (245,720,429,935)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 4efbb75863bdeb641e2d022f07aa42f3
 
 -- query TII rowsort join364
@@ -41077,7 +41069,7 @@ SELECT x7, c5, e3*723+c7
  WHERE a3 in (245,720,429,935)
    AND 384=c5
    AND e7 in (127,154,356,31,488,432,976)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 4efbb75863bdeb641e2d022f07aa42f3
 
 -- query ITI rowsort join365
@@ -41086,7 +41078,7 @@ SELECT c6+756, x3, e5
  WHERE a3=341
    AND d6=561
    AND 3=c5
-;
+ORDER BY 1,2,3;
 -- 1433
 -- table tn3 row 31
 -- 702
@@ -41097,7 +41089,7 @@ SELECT c6+756, x3, e5
  WHERE 3=c5
    AND d6=561
    AND a3=341
-;
+ORDER BY 1,2,3;
 -- 1433
 -- table tn3 row 31
 -- 702
@@ -41108,7 +41100,7 @@ SELECT c6+756, x3, e5
  WHERE a3=341
    AND 3=c5
    AND d6=561
-;
+ORDER BY 1,2,3;
 -- 1433
 -- table tn3 row 31
 -- 702
@@ -41119,7 +41111,7 @@ SELECT c6+756, x3, e5
  WHERE d6=561
    AND a3=341
    AND 3=c5
-;
+ORDER BY 1,2,3;
 -- 1433
 -- table tn3 row 31
 -- 702
@@ -41129,7 +41121,7 @@ SELECT d2, c8
   FROM t8, t2
  WHERE 233=e8
    AND b2 in (799,888,278,351,501)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 6d5753d1495b714b0026d3cb9c09d0c9
 
 -- query II rowsort join366
@@ -41137,7 +41129,7 @@ SELECT d2, c8
   FROM t8, t2
  WHERE b2 in (799,888,278,351,501)
    AND 233=e8
-;
+ORDER BY 1,2;
 -- 12 values hashing to 6d5753d1495b714b0026d3cb9c09d0c9
 
 -- query III rowsort join367
@@ -41146,7 +41138,7 @@ SELECT e9, d4+d4, e7
  WHERE b9=214
    AND (e7=89 OR e7=638 OR 280=e7 OR 234=e7)
    AND 847=b4
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 7bc95e747666ce91be6220f7933edf6c
 
 -- query III rowsort join367
@@ -41155,7 +41147,7 @@ SELECT e9, d4+d4, e7
  WHERE b9=214
    AND 847=b4
    AND (e7=89 OR e7=638 OR 280=e7 OR 234=e7)
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 7bc95e747666ce91be6220f7933edf6c
 
 -- query III rowsort join367
@@ -41164,7 +41156,7 @@ SELECT e9, d4+d4, e7
  WHERE (e7=89 OR e7=638 OR 280=e7 OR 234=e7)
    AND 847=b4
    AND b9=214
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 7bc95e747666ce91be6220f7933edf6c
 
 -- query III rowsort join367
@@ -41173,7 +41165,7 @@ SELECT e9, d4+d4, e7
  WHERE (e7=89 OR e7=638 OR 280=e7 OR 234=e7)
    AND b9=214
    AND 847=b4
-;
+ORDER BY 1,2,3;
 -- 24 values hashing to 7bc95e747666ce91be6220f7933edf6c
 
 -- query IIIII rowsort join368
@@ -41184,7 +41176,7 @@ SELECT a7+36, b5+337, c6, e8, b3*212
    AND a3 in (566,899,197,376,513,306,143)
    AND 553=e7
    AND e8 in (333,305,44,455,260,955,223,381)
-;
+ORDER BY 1,2,3,4,5;
 -- 1280 values hashing to e631225d44a685d272379b16ba1e9d4d
 
 -- query IIIII rowsort join368
@@ -41195,7 +41187,7 @@ SELECT a7+36, b5+337, c6, e8, b3*212
    AND a3 in (566,899,197,376,513,306,143)
    AND 553=e7
    AND c5=774
-;
+ORDER BY 1,2,3,4,5;
 -- 1280 values hashing to e631225d44a685d272379b16ba1e9d4d
 
 -- query IIIII rowsort join368
@@ -41206,7 +41198,7 @@ SELECT a7+36, b5+337, c6, e8, b3*212
    AND e8 in (333,305,44,455,260,955,223,381)
    AND c5=774
    AND 553=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 1280 values hashing to e631225d44a685d272379b16ba1e9d4d
 
 -- query IIIII rowsort join368
@@ -41217,7 +41209,7 @@ SELECT a7+36, b5+337, c6, e8, b3*212
    AND e8 in (333,305,44,455,260,955,223,381)
    AND (d6=613 OR 929=d6 OR d6=458 OR d6=186)
    AND 553=e7
-;
+ORDER BY 1,2,3,4,5;
 -- 1280 values hashing to e631225d44a685d272379b16ba1e9d4d
 
 -- query TI rowsort join369
@@ -41225,7 +41217,7 @@ SELECT x9, d3+634
   FROM t9, t3
  WHERE 197=e9
    AND a3=255
-;
+ORDER BY 1,2;
 -- table tn9 row 11
 -- 1363
 
@@ -41234,7 +41226,7 @@ SELECT x9, d3+634
   FROM t9, t3
  WHERE a3=255
    AND 197=e9
-;
+ORDER BY 1,2;
 -- table tn9 row 11
 -- 1363
 
@@ -41243,7 +41235,7 @@ SELECT x9, d3+634
   FROM t3, t9
  WHERE 197=e9
    AND a3=255
-;
+ORDER BY 1,2;
 -- table tn9 row 11
 -- 1363
 
@@ -41255,7 +41247,7 @@ SELECT b4+e4, e6*152+c8, c9+687, b8, c3+43
    AND a9 in (41,488,924)
    AND a3=699
    AND 220=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 2c322514f0919fde1e00ea7c7eb3b9ff
 
 -- query IIIII rowsort join370
@@ -41266,7 +41258,7 @@ SELECT b4+e4, e6*152+c8, c9+687, b8, c3+43
    AND 220=b4
    AND d6 in (974,21,790,355)
    AND e8 in (919,44,179,944,186,646,729,736)
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 2c322514f0919fde1e00ea7c7eb3b9ff
 
 -- query IIIII rowsort join370
@@ -41277,7 +41269,7 @@ SELECT b4+e4, e6*152+c8, c9+687, b8, c3+43
    AND a3=699
    AND 220=b4
    AND e8 in (919,44,179,944,186,646,729,736)
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 2c322514f0919fde1e00ea7c7eb3b9ff
 
 -- query IIIII rowsort join370
@@ -41288,7 +41280,7 @@ SELECT b4+e4, e6*152+c8, c9+687, b8, c3+43
    AND 220=b4
    AND a9 in (41,488,924)
    AND a3=699
-;
+ORDER BY 1,2,3,4,5;
 -- 720 values hashing to 2c322514f0919fde1e00ea7c7eb3b9ff
 
 -- query IIIII rowsort join371
@@ -41299,7 +41291,7 @@ SELECT a7+c7, b9+a5, b1+a9, b5, d6
    AND d6 in (970,72,473,600,463,974)
    AND 508=e7
    AND 13=b9
-;
+ORDER BY 1,2,3,4,5;
 -- 1120 values hashing to 02c195f0311c89c828b146dead7ac09f
 
 -- query IIIII rowsort join371
@@ -41310,7 +41302,7 @@ SELECT a7+c7, b9+a5, b1+a9, b5, d6
    AND d6 in (970,72,473,600,463,974)
    AND 508=e7
    AND (210=c5 OR c5=941 OR 844=c5)
-;
+ORDER BY 1,2,3,4,5;
 -- 1120 values hashing to 02c195f0311c89c828b146dead7ac09f
 
 -- query IIIII rowsort join371
@@ -41321,7 +41313,7 @@ SELECT a7+c7, b9+a5, b1+a9, b5, d6
    AND (210=c5 OR c5=941 OR 844=c5)
    AND 508=e7
    AND a1 in (866,61,492,609,810,829,544)
-;
+ORDER BY 1,2,3,4,5;
 -- 1120 values hashing to 02c195f0311c89c828b146dead7ac09f
 
 -- query IIIII rowsort join371
@@ -41332,7 +41324,7 @@ SELECT a7+c7, b9+a5, b1+a9, b5, d6
    AND d6 in (970,72,473,600,463,974)
    AND (210=c5 OR c5=941 OR 844=c5)
    AND 13=b9
-;
+ORDER BY 1,2,3,4,5;
 -- 1120 values hashing to 02c195f0311c89c828b146dead7ac09f
 
 -- query IIII rowsort join372
@@ -41342,7 +41334,7 @@ SELECT e4, c9, a2*705, d8+d2
    AND b4=c2
    AND a9 in (41,824,610,847,567,548,28)
    AND e8 in (272,980,431)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to cbc4907e6899b027d5d5a38f1ddff2e7
 
 -- query IIII rowsort join372
@@ -41352,7 +41344,7 @@ SELECT e4, c9, a2*705, d8+d2
    AND e8 in (272,980,431)
    AND a9 in (41,824,610,847,567,548,28)
    AND d2 in (654,345,80,873,790,152)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to cbc4907e6899b027d5d5a38f1ddff2e7
 
 -- query IIII rowsort join372
@@ -41362,7 +41354,7 @@ SELECT e4, c9, a2*705, d8+d2
    AND d2 in (654,345,80,873,790,152)
    AND b4=c2
    AND a9 in (41,824,610,847,567,548,28)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to cbc4907e6899b027d5d5a38f1ddff2e7
 
 -- query IIII rowsort join372
@@ -41372,7 +41364,7 @@ SELECT e4, c9, a2*705, d8+d2
    AND e8 in (272,980,431)
    AND b4=c2
    AND d2 in (654,345,80,873,790,152)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to cbc4907e6899b027d5d5a38f1ddff2e7
 
 -- query TIIII rowsort join373
@@ -41383,7 +41375,7 @@ SELECT x1, e8+154, a5+99, b2+70+e1, b9+656
    AND a1=23
    AND c5 in (734,471,442,799,222)
    AND b9 in (819,74,227,342,595)
-;
+ORDER BY 1,2,3,4,5;
 -- 4200 values hashing to 4ef899720c1b75866784404dfe8f819b
 
 -- query TIIII rowsort join373
@@ -41394,7 +41386,7 @@ SELECT x1, e8+154, a5+99, b2+70+e1, b9+656
    AND (c2=87 OR 992=c2 OR c2=793)
    AND e8 in (944,242,463,776,942,512)
    AND c5 in (734,471,442,799,222)
-;
+ORDER BY 1,2,3,4,5;
 -- 4200 values hashing to 4ef899720c1b75866784404dfe8f819b
 
 -- query TIIII rowsort join373
@@ -41405,7 +41397,7 @@ SELECT x1, e8+154, a5+99, b2+70+e1, b9+656
    AND c5 in (734,471,442,799,222)
    AND e8 in (944,242,463,776,942,512)
    AND a1=23
-;
+ORDER BY 1,2,3,4,5;
 -- 4200 values hashing to 4ef899720c1b75866784404dfe8f819b
 
 -- query TIIII rowsort join373
@@ -41416,7 +41408,7 @@ SELECT x1, e8+154, a5+99, b2+70+e1, b9+656
    AND c5 in (734,471,442,799,222)
    AND (c2=87 OR 992=c2 OR c2=793)
    AND e8 in (944,242,463,776,942,512)
-;
+ORDER BY 1,2,3,4,5;
 -- 4200 values hashing to 4ef899720c1b75866784404dfe8f819b
 
 -- query IIII rowsort join374
@@ -41426,7 +41418,7 @@ SELECT b9+d2, e2, a5, d6+318
    AND d9 in (86,283,808,226,463,909,25)
    AND d6 in (463,991,458)
    AND (c2=728 OR c2=24 OR 193=c2)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to fc4c3feec0fae964677eea767cfd2f4c
 
 -- query IIII rowsort join374
@@ -41436,7 +41428,7 @@ SELECT b9+d2, e2, a5, d6+318
    AND c5=152
    AND (c2=728 OR c2=24 OR 193=c2)
    AND d6 in (463,991,458)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to fc4c3feec0fae964677eea767cfd2f4c
 
 -- query IIII rowsort join374
@@ -41446,7 +41438,7 @@ SELECT b9+d2, e2, a5, d6+318
    AND c5=152
    AND d6 in (463,991,458)
    AND d9 in (86,283,808,226,463,909,25)
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to fc4c3feec0fae964677eea767cfd2f4c
 
 -- query IIII rowsort join374
@@ -41456,7 +41448,7 @@ SELECT b9+d2, e2, a5, d6+318
    AND d6 in (463,991,458)
    AND (c2=728 OR c2=24 OR 193=c2)
    AND c5=152
-;
+ORDER BY 1,2,3,4;
 -- 336 values hashing to fc4c3feec0fae964677eea767cfd2f4c
 
 -- query IIIT rowsort join375
@@ -41466,7 +41458,7 @@ SELECT c1, b5+68, b7+e1, x4
    AND c5=b4
    AND (e7=184 OR 503=e7)
    AND 544=a1
-;
+ORDER BY 1,2,3,4;
 -- 617
 -- 94
 -- 529
@@ -41483,7 +41475,7 @@ SELECT c1, b5+68, b7+e1, x4
    AND 544=a1
    AND (e7=184 OR 503=e7)
    AND c5=b4
-;
+ORDER BY 1,2,3,4;
 -- 617
 -- 94
 -- 529
@@ -41500,7 +41492,7 @@ SELECT c1, b5+68, b7+e1, x4
    AND 544=a1
    AND c5=b4
    AND (e7=184 OR 503=e7)
-;
+ORDER BY 1,2,3,4;
 -- 617
 -- 94
 -- 529
@@ -41517,7 +41509,7 @@ SELECT c1, b5+68, b7+e1, x4
    AND b4 in (606,593,579,107,907)
    AND c5=b4
    AND 544=a1
-;
+ORDER BY 1,2,3,4;
 -- 617
 -- 94
 -- 529
@@ -41535,7 +41527,7 @@ SELECT a6+315+d9, d3, c9, b1+659+b9, b5
    AND 293=c5
    AND c9=402
    AND a3 in (184,218,457,490,865,971)
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 8679c587b991b4e8b06cce1b0b616e00
 
 -- query IIIII rowsort join376
@@ -41546,7 +41538,7 @@ SELECT a6+315+d9, d3, c9, b1+659+b9, b5
    AND a1=c6
    AND 293=c5
    AND d6 in (223,376,2,956)
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 8679c587b991b4e8b06cce1b0b616e00
 
 -- query IIIII rowsort join376
@@ -41557,7 +41549,7 @@ SELECT a6+315+d9, d3, c9, b1+659+b9, b5
    AND c9=402
    AND 293=c5
    AND d6 in (223,376,2,956)
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 8679c587b991b4e8b06cce1b0b616e00
 
 -- query IIIII rowsort join376
@@ -41568,7 +41560,7 @@ SELECT a6+315+d9, d3, c9, b1+659+b9, b5
    AND a1=c6
    AND 293=c5
    AND d6 in (223,376,2,956)
-;
+ORDER BY 1,2,3,4,5;
 -- 30 values hashing to 8679c587b991b4e8b06cce1b0b616e00
 
 -- query ITITIITI rowsort join377
@@ -41582,7 +41574,7 @@ SELECT c5, x3, c6+765, x1, a9+d3, c4, x2, a7*520+a5
    AND c5 in (130,579,672,797,514,734)
    AND e7 in (201,562,455)
    AND 812=b2
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 61440 values hashing to c9111351e76730c4172835999f0f9539
 
 -- query ITITIITI rowsort join377
@@ -41596,7 +41588,7 @@ SELECT c5, x3, c6+765, x1, a9+d3, c4, x2, a7*520+a5
    AND 584=a1
    AND e7 in (201,562,455)
    AND 812=b2
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 61440 values hashing to c9111351e76730c4172835999f0f9539
 
 -- query ITITIITI rowsort join377
@@ -41610,7 +41602,7 @@ SELECT c5, x3, c6+765, x1, a9+d3, c4, x2, a7*520+a5
    AND e7 in (201,562,455)
    AND c5 in (130,579,672,797,514,734)
    AND 584=a1
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 61440 values hashing to c9111351e76730c4172835999f0f9539
 
 -- query ITITIITI rowsort join377
@@ -41624,7 +41616,7 @@ SELECT c5, x3, c6+765, x1, a9+d3, c4, x2, a7*520+a5
    AND c5 in (130,579,672,797,514,734)
    AND a3 in (720,34,429,335,615,644)
    AND 584=a1
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 61440 values hashing to c9111351e76730c4172835999f0f9539
 
 -- query II rowsort join378
@@ -41632,7 +41624,7 @@ SELECT d7, c5
   FROM t5, t7
  WHERE (e7=455 OR 561=e7 OR e7=89)
    AND 348=c5
-;
+ORDER BY 1,2;
 -- 526
 -- 348
 -- 547
@@ -41647,7 +41639,7 @@ SELECT d7, c5
   FROM t7, t5
  WHERE (e7=455 OR 561=e7 OR e7=89)
    AND 348=c5
-;
+ORDER BY 1,2;
 -- 526
 -- 348
 -- 547
@@ -41664,7 +41656,7 @@ SELECT e8+967+b4, b4, a6+767, c9+d8
    AND e8 in (586,377,792,548)
    AND d6 in (192,185,581,223)
    AND b4 in (260,243,749,331,107,267,653)
-;
+ORDER BY 1,2,3,4;
 -- 448 values hashing to c4270a8d78fc3f1500fbfd0d23d5128b
 
 -- query IIII rowsort join379
@@ -41674,7 +41666,7 @@ SELECT e8+967+b4, b4, a6+767, c9+d8
    AND e8 in (586,377,792,548)
    AND b4 in (260,243,749,331,107,267,653)
    AND d6 in (192,185,581,223)
-;
+ORDER BY 1,2,3,4;
 -- 448 values hashing to c4270a8d78fc3f1500fbfd0d23d5128b
 
 -- query IIII rowsort join379
@@ -41684,7 +41676,7 @@ SELECT e8+967+b4, b4, a6+767, c9+d8
    AND a9=776
    AND b4 in (260,243,749,331,107,267,653)
    AND d6 in (192,185,581,223)
-;
+ORDER BY 1,2,3,4;
 -- 448 values hashing to c4270a8d78fc3f1500fbfd0d23d5128b
 
 -- query IIII rowsort join379
@@ -41694,7 +41686,7 @@ SELECT e8+967+b4, b4, a6+767, c9+d8
    AND a9=776
    AND d6 in (192,185,581,223)
    AND b4 in (260,243,749,331,107,267,653)
-;
+ORDER BY 1,2,3,4;
 -- 448 values hashing to c4270a8d78fc3f1500fbfd0d23d5128b
 
 -- query II rowsort join380
@@ -41702,7 +41694,7 @@ SELECT e1, d6+d1
   FROM t1, t6
  WHERE (145=a1 OR a1=895 OR a1=460)
    AND d6=321
-;
+ORDER BY 1,2;
 -- 328
 -- 1139
 -- 523
@@ -41715,7 +41707,7 @@ SELECT e1, d6+d1
   FROM t6, t1
  WHERE (145=a1 OR a1=895 OR a1=460)
    AND d6=321
-;
+ORDER BY 1,2;
 -- 328
 -- 1139
 -- 523
@@ -41728,7 +41720,7 @@ SELECT e1, d6+d1
   FROM t6, t1
  WHERE d6=321
    AND (145=a1 OR a1=895 OR a1=460)
-;
+ORDER BY 1,2;
 -- 328
 -- 1139
 -- 523
@@ -41741,7 +41733,7 @@ SELECT e1, d6+d1
   FROM t1, t6
  WHERE d6=321
    AND (145=a1 OR a1=895 OR a1=460)
-;
+ORDER BY 1,2;
 -- 328
 -- 1139
 -- 523
@@ -41758,7 +41750,7 @@ SELECT x5, a1+845+a7, e7, c9*609, d4+c4, c6
    AND c5 in (625,12,443,915,723,485,628,196)
    AND d6=161
    AND b4=917
-;
+ORDER BY 1,2,3,4,5,6;
 -- 378 values hashing to a3850b1b3bc6404f92f2b46a137baa7b
 
 -- query TIIIII rowsort join381
@@ -41770,7 +41762,7 @@ SELECT x5, a1+845+a7, e7, c9*609, d4+c4, c6
    AND a1=a6
    AND a9 in (251,830,335,553,28,891,815)
    AND d6=161
-;
+ORDER BY 1,2,3,4,5,6;
 -- 378 values hashing to a3850b1b3bc6404f92f2b46a137baa7b
 
 -- query TIIIII rowsort join381
@@ -41782,7 +41774,7 @@ SELECT x5, a1+845+a7, e7, c9*609, d4+c4, c6
    AND e7=67
    AND b4=917
    AND c5 in (625,12,443,915,723,485,628,196)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 378 values hashing to a3850b1b3bc6404f92f2b46a137baa7b
 
 -- query TIIIII rowsort join381
@@ -41794,7 +41786,7 @@ SELECT x5, a1+845+a7, e7, c9*609, d4+c4, c6
    AND a9 in (251,830,335,553,28,891,815)
    AND e7=67
    AND c5 in (625,12,443,915,723,485,628,196)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 378 values hashing to a3850b1b3bc6404f92f2b46a137baa7b
 
 -- query IIII rowsort join382
@@ -41804,7 +41796,7 @@ SELECT c6+803+d4, b8+166, d4, c7+438
    AND (185=d6 OR d6=846 OR 647=d6)
    AND b4 in (810,707,860,749)
    AND 884=e7
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 2b943316faee26d9cce2edefa9ba6fd1
 
 -- query IIII rowsort join382
@@ -41814,7 +41806,7 @@ SELECT c6+803+d4, b8+166, d4, c7+438
    AND b4 in (810,707,860,749)
    AND 884=e7
    AND e8=381
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 2b943316faee26d9cce2edefa9ba6fd1
 
 -- query IIII rowsort join382
@@ -41824,7 +41816,7 @@ SELECT c6+803+d4, b8+166, d4, c7+438
    AND e8=381
    AND b4 in (810,707,860,749)
    AND 884=e7
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 2b943316faee26d9cce2edefa9ba6fd1
 
 -- query IIII rowsort join382
@@ -41834,7 +41826,7 @@ SELECT c6+803+d4, b8+166, d4, c7+438
    AND (185=d6 OR d6=846 OR 647=d6)
    AND e8=381
    AND b4 in (810,707,860,749)
-;
+ORDER BY 1,2,3,4;
 -- 48 values hashing to 2b943316faee26d9cce2edefa9ba6fd1
 
 -- query III rowsort join383
@@ -41843,7 +41835,7 @@ SELECT b5+d5, a4, a8
  WHERE c5=299
    AND 608=b4
    AND e8 in (56,586,881)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 25cfe5f15e83d585018eb46afd24d4b9
 
 -- query III rowsort join383
@@ -41852,7 +41844,7 @@ SELECT b5+d5, a4, a8
  WHERE 608=b4
    AND e8 in (56,586,881)
    AND c5=299
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 25cfe5f15e83d585018eb46afd24d4b9
 
 -- query III rowsort join383
@@ -41861,7 +41853,7 @@ SELECT b5+d5, a4, a8
  WHERE c5=299
    AND e8 in (56,586,881)
    AND 608=b4
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 25cfe5f15e83d585018eb46afd24d4b9
 
 -- query III rowsort join383
@@ -41870,7 +41862,7 @@ SELECT b5+d5, a4, a8
  WHERE 608=b4
    AND e8 in (56,586,881)
    AND c5=299
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 25cfe5f15e83d585018eb46afd24d4b9
 
 -- query ITIT rowsort join384
@@ -41880,7 +41872,7 @@ SELECT a5, x1, d9*807, x2
    AND a1=161
    AND 241=d2
    AND c5=485
-;
+ORDER BY 1,2,3,4;
 -- 180
 -- table tn1 row 56
 -- 547953
@@ -41893,7 +41885,7 @@ SELECT a5, x1, d9*807, x2
    AND 746=b9
    AND 241=d2
    AND a1=161
-;
+ORDER BY 1,2,3,4;
 -- 180
 -- table tn1 row 56
 -- 547953
@@ -41906,7 +41898,7 @@ SELECT a5, x1, d9*807, x2
    AND 746=b9
    AND c5=485
    AND 241=d2
-;
+ORDER BY 1,2,3,4;
 -- 180
 -- table tn1 row 56
 -- 547953
@@ -41919,7 +41911,7 @@ SELECT a5, x1, d9*807, x2
    AND 241=d2
    AND 746=b9
    AND c5=485
-;
+ORDER BY 1,2,3,4;
 -- 180
 -- table tn1 row 56
 -- 547953
@@ -41930,7 +41922,7 @@ SELECT x1, c9+b1
   FROM t1, t9
  WHERE e9 in (968,195,801,944,245)
    AND 746=a1
-;
+ORDER BY 1,2;
 -- 12 values hashing to f0ef13c775be4d6253762366a934a5f3
 
 -- query TI rowsort join385
@@ -41938,7 +41930,7 @@ SELECT x1, c9+b1
   FROM t9, t1
  WHERE e9 in (968,195,801,944,245)
    AND 746=a1
-;
+ORDER BY 1,2;
 -- 12 values hashing to f0ef13c775be4d6253762366a934a5f3
 
 -- query IIII rowsort join386
@@ -41948,7 +41940,7 @@ SELECT b9, c2, c1+43, a4+b1
    AND d9 in (226,388,665,420)
    AND 332=d2
    AND 23=b4
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to 58d3a75d2d8b59131b3c6b31a3df1a3a
 
 -- query IIII rowsort join386
@@ -41958,7 +41950,7 @@ SELECT b9, c2, c1+43, a4+b1
    AND 591=a1
    AND 332=d2
    AND d9 in (226,388,665,420)
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to 58d3a75d2d8b59131b3c6b31a3df1a3a
 
 -- query IIII rowsort join386
@@ -41968,7 +41960,7 @@ SELECT b9, c2, c1+43, a4+b1
    AND d9 in (226,388,665,420)
    AND 23=b4
    AND 591=a1
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to 58d3a75d2d8b59131b3c6b31a3df1a3a
 
 -- query IIII rowsort join386
@@ -41978,7 +41970,7 @@ SELECT b9, c2, c1+43, a4+b1
    AND d9 in (226,388,665,420)
    AND 591=a1
    AND 23=b4
-;
+ORDER BY 1,2,3,4;
 -- 16 values hashing to 58d3a75d2d8b59131b3c6b31a3df1a3a
 
 -- query IIT rowsort join387
@@ -41987,7 +41979,7 @@ SELECT e7, b5, x8
  WHERE (c5=734 OR c5=657)
    AND e8=b5
    AND e7=688
-;
+ORDER BY 1,2,3;
 -- 688
 -- 186
 -- table tn8 row 54
@@ -41998,7 +41990,7 @@ SELECT e7, b5, x8
  WHERE e7=688
    AND e8=b5
    AND (c5=734 OR c5=657)
-;
+ORDER BY 1,2,3;
 -- 688
 -- 186
 -- table tn8 row 54
@@ -42009,7 +42001,7 @@ SELECT e7, b5, x8
  WHERE e8=b5
    AND e7=688
    AND (c5=734 OR c5=657)
-;
+ORDER BY 1,2,3;
 -- 688
 -- 186
 -- table tn8 row 54
@@ -42023,7 +42015,7 @@ SELECT b9*320, b8, x5, e7, c3+758, b1
    AND e8=a9
    AND c5 in (668,348,799,437,820,697,613)
    AND e9 in (858,146,788)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1764 values hashing to f75d109aea514eaaf33441403a810f6b
 
 -- query IITIII rowsort join388
@@ -42035,7 +42027,7 @@ SELECT b9*320, b8, x5, e7, c3+758, b1
    AND e7 in (782,460,27,826)
    AND c5 in (668,348,799,437,820,697,613)
    AND 241=a1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1764 values hashing to f75d109aea514eaaf33441403a810f6b
 
 -- query IITIII rowsort join388
@@ -42047,7 +42039,7 @@ SELECT b9*320, b8, x5, e7, c3+758, b1
    AND e8=a9
    AND e9 in (858,146,788)
    AND e7 in (782,460,27,826)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1764 values hashing to f75d109aea514eaaf33441403a810f6b
 
 -- query IITIII rowsort join388
@@ -42059,7 +42051,7 @@ SELECT b9*320, b8, x5, e7, c3+758, b1
    AND c5 in (668,348,799,437,820,697,613)
    AND e7 in (782,460,27,826)
    AND e9 in (858,146,788)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1764 values hashing to f75d109aea514eaaf33441403a810f6b
 
 -- query II rowsort join389
@@ -42067,7 +42059,7 @@ SELECT c2, e3*855
   FROM t3, t2
  WHERE a3=135
    AND a2 in (457,315,760,505,936,35,651)
-;
+ORDER BY 1,2;
 -- 14 values hashing to 873b13e6cdf37653c6a49f687a2d03df
 
 -- query II rowsort join389
@@ -42075,7 +42067,7 @@ SELECT c2, e3*855
   FROM t3, t2
  WHERE a2 in (457,315,760,505,936,35,651)
    AND a3=135
-;
+ORDER BY 1,2;
 -- 14 values hashing to 873b13e6cdf37653c6a49f687a2d03df
 
 -- query II rowsort join389
@@ -42083,7 +42075,7 @@ SELECT c2, e3*855
   FROM t2, t3
  WHERE a2 in (457,315,760,505,936,35,651)
    AND a3=135
-;
+ORDER BY 1,2;
 -- 14 values hashing to 873b13e6cdf37653c6a49f687a2d03df
 
 -- query II rowsort join390
@@ -42091,7 +42083,7 @@ SELECT b8+b8, d4
   FROM t8, t4
  WHERE e8=463
    AND 802=b4
-;
+ORDER BY 1,2;
 -- 1046
 -- 901
 -- 600
@@ -42102,7 +42094,7 @@ SELECT b8+b8, d4
   FROM t4, t8
  WHERE 802=b4
    AND e8=463
-;
+ORDER BY 1,2;
 -- 1046
 -- 901
 -- 600
@@ -42113,7 +42105,7 @@ SELECT b8+b8, d4
   FROM t4, t8
  WHERE e8=463
    AND 802=b4
-;
+ORDER BY 1,2;
 -- 1046
 -- 901
 -- 600
@@ -42124,7 +42116,7 @@ SELECT b8+b8, d4
   FROM t8, t4
  WHERE 802=b4
    AND e8=463
-;
+ORDER BY 1,2;
 -- 1046
 -- 901
 -- 600
@@ -42137,7 +42129,7 @@ SELECT d8, d7, a4+b4, x2
    AND 782=e7
    AND e8=942
    AND 261=b4
-;
+ORDER BY 1,2,3,4;
 -- 40 values hashing to 994ab24fb5f5aa532aefa65ab0bab3cf
 
 -- query IIIT rowsort join391
@@ -42147,7 +42139,7 @@ SELECT d8, d7, a4+b4, x2
    AND 261=b4
    AND e8=942
    AND 782=e7
-;
+ORDER BY 1,2,3,4;
 -- 40 values hashing to 994ab24fb5f5aa532aefa65ab0bab3cf
 
 -- query IIIT rowsort join391
@@ -42157,7 +42149,7 @@ SELECT d8, d7, a4+b4, x2
    AND e8=942
    AND 261=b4
    AND b2 in (353,228,632,264,177)
-;
+ORDER BY 1,2,3,4;
 -- 40 values hashing to 994ab24fb5f5aa532aefa65ab0bab3cf
 
 -- query IIIT rowsort join391
@@ -42167,7 +42159,7 @@ SELECT d8, d7, a4+b4, x2
    AND 782=e7
    AND 261=b4
    AND b2 in (353,228,632,264,177)
-;
+ORDER BY 1,2,3,4;
 -- 40 values hashing to 994ab24fb5f5aa532aefa65ab0bab3cf
 
 -- query TII rowsort join392
@@ -42176,7 +42168,7 @@ SELECT x5, a8, b4*473
  WHERE e8=41
    AND 147=c5
    AND b4 in (387,271,33,608,40)
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to b2a458aee60555b02609bc4a64c8a52c
 
 -- query TII rowsort join392
@@ -42185,7 +42177,7 @@ SELECT x5, a8, b4*473
  WHERE b4 in (387,271,33,608,40)
    AND e8=41
    AND 147=c5
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to b2a458aee60555b02609bc4a64c8a52c
 
 -- query TII rowsort join392
@@ -42194,7 +42186,7 @@ SELECT x5, a8, b4*473
  WHERE b4 in (387,271,33,608,40)
    AND e8=41
    AND 147=c5
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to b2a458aee60555b02609bc4a64c8a52c
 
 -- query TII rowsort join392
@@ -42203,7 +42195,7 @@ SELECT x5, a8, b4*473
  WHERE b4 in (387,271,33,608,40)
    AND e8=41
    AND 147=c5
-;
+ORDER BY 1,2,3;
 -- 30 values hashing to b2a458aee60555b02609bc4a64c8a52c
 
 -- query TIII rowsort join393
@@ -42213,7 +42205,7 @@ SELECT x2, e7+896, b4, a1+359
    AND 395=a1
    AND b4=e1
    AND e7=971
-;
+ORDER BY 1,2,3,4;
 -- table tn2 row 9
 -- 1867
 -- 442
@@ -42226,7 +42218,7 @@ SELECT x2, e7+896, b4, a1+359
    AND e7=971
    AND 395=a1
    AND c2=251
-;
+ORDER BY 1,2,3,4;
 -- table tn2 row 9
 -- 1867
 -- 442
@@ -42239,7 +42231,7 @@ SELECT x2, e7+896, b4, a1+359
    AND e7=971
    AND b4=e1
    AND c2=251
-;
+ORDER BY 1,2,3,4;
 -- table tn2 row 9
 -- 1867
 -- 442
@@ -42252,7 +42244,7 @@ SELECT x2, e7+896, b4, a1+359
    AND 395=a1
    AND e7=971
    AND c2=251
-;
+ORDER BY 1,2,3,4;
 -- table tn2 row 9
 -- 1867
 -- 442
@@ -42267,7 +42259,7 @@ SELECT x9, a7*433+d3, d2+b2, e8+a7, d3*596, x6
    AND 637=a3
    AND d6=493
    AND (e7=89 OR e7=587 OR e7=282)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 360 values hashing to cb30ccc1176573ae3a9f629c74d61233
 
 -- query TIIIIT rowsort join394
@@ -42279,7 +42271,7 @@ SELECT x9, a7*433+d3, d2+b2, e8+a7, d3*596, x6
    AND (455=e8 OR 411=e8 OR e8=533)
    AND (e7=89 OR e7=587 OR e7=282)
    AND d2 in (813,8,873,416)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 360 values hashing to cb30ccc1176573ae3a9f629c74d61233
 
 -- query TIIIIT rowsort join394
@@ -42291,7 +42283,7 @@ SELECT x9, a7*433+d3, d2+b2, e8+a7, d3*596, x6
    AND d6=493
    AND (e7=89 OR e7=587 OR e7=282)
    AND d2 in (813,8,873,416)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 360 values hashing to cb30ccc1176573ae3a9f629c74d61233
 
 -- query TIIIIT rowsort join394
@@ -42303,7 +42295,7 @@ SELECT x9, a7*433+d3, d2+b2, e8+a7, d3*596, x6
    AND d2 in (813,8,873,416)
    AND (455=e8 OR 411=e8 OR e8=533)
    AND c9=639
-;
+ORDER BY 1,2,3,4,5,6;
 -- 360 values hashing to cb30ccc1176573ae3a9f629c74d61233
 
 -- query III rowsort join395
@@ -42312,7 +42304,7 @@ SELECT d7+808, c8*220, c5
  WHERE c5 in (809,721,31,489,56,601,924,625)
    AND e7=624
    AND (e8=106 OR e8=497 OR e8=811 OR e8=7)
-;
+ORDER BY 1,2,3;
 -- 96 values hashing to dde58f8a914cd7c3c782f13f287b79f1
 
 -- query III rowsort join395
@@ -42321,7 +42313,7 @@ SELECT d7+808, c8*220, c5
  WHERE (e8=106 OR e8=497 OR e8=811 OR e8=7)
    AND c5 in (809,721,31,489,56,601,924,625)
    AND e7=624
-;
+ORDER BY 1,2,3;
 -- 96 values hashing to dde58f8a914cd7c3c782f13f287b79f1
 
 -- query III rowsort join395
@@ -42330,7 +42322,7 @@ SELECT d7+808, c8*220, c5
  WHERE c5 in (809,721,31,489,56,601,924,625)
    AND e7=624
    AND (e8=106 OR e8=497 OR e8=811 OR e8=7)
-;
+ORDER BY 1,2,3;
 -- 96 values hashing to dde58f8a914cd7c3c782f13f287b79f1
 
 -- query III rowsort join395
@@ -42339,7 +42331,7 @@ SELECT d7+808, c8*220, c5
  WHERE e7=624
    AND c5 in (809,721,31,489,56,601,924,625)
    AND (e8=106 OR e8=497 OR e8=811 OR e8=7)
-;
+ORDER BY 1,2,3;
 -- 96 values hashing to dde58f8a914cd7c3c782f13f287b79f1
 
 -- query IIIIIII rowsort join396
@@ -42352,7 +42344,7 @@ SELECT c3+c7, e7+307, e6, d4+700+a8, b8+454, d5+733, a2
    AND b4 in (137,323,901,76)
    AND 162=a3
    AND c5 in (579,18,734,437)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 40320 values hashing to f40488907c22d15dd938605c53c84d6d
 
 -- query IIIIIII rowsort join396
@@ -42365,7 +42357,7 @@ SELECT c3+c7, e7+307, e6, d4+700+a8, b8+454, d5+733, a2
    AND e8 in (512,56,548,179,617,806)
    AND (553=e7 OR 156=e7 OR e7=201 OR e7=971)
    AND c5 in (579,18,734,437)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 40320 values hashing to f40488907c22d15dd938605c53c84d6d
 
 -- query IIIIIII rowsort join396
@@ -42378,7 +42370,7 @@ SELECT c3+c7, e7+307, e6, d4+700+a8, b8+454, d5+733, a2
    AND c5 in (579,18,734,437)
    AND d6=469
    AND (553=e7 OR 156=e7 OR e7=201 OR e7=971)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 40320 values hashing to f40488907c22d15dd938605c53c84d6d
 
 -- query IIIIIII rowsort join396
@@ -42391,7 +42383,7 @@ SELECT c3+c7, e7+307, e6, d4+700+a8, b8+454, d5+733, a2
    AND e8 in (512,56,548,179,617,806)
    AND 162=a3
    AND d6=469
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 40320 values hashing to f40488907c22d15dd938605c53c84d6d
 
 -- query IIIIT rowsort join397
@@ -42402,7 +42394,7 @@ SELECT c9+478, a8+620, c1, b3, x5
    AND c5 in (579,825,989,441)
    AND a3=378
    AND 996=a1
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 6998de577cc8a6db357eea8aba513042
 
 -- query IIIIT rowsort join397
@@ -42413,7 +42405,7 @@ SELECT c9+478, a8+620, c1, b3, x5
    AND 996=a1
    AND (d9=922 OR d9=795)
    AND c5 in (579,825,989,441)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 6998de577cc8a6db357eea8aba513042
 
 -- query IIIIT rowsort join397
@@ -42424,7 +42416,7 @@ SELECT c9+478, a8+620, c1, b3, x5
    AND a3=378
    AND 996=a1
    AND e8 in (510,381,463,874,893)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 6998de577cc8a6db357eea8aba513042
 
 -- query IIIIT rowsort join397
@@ -42435,7 +42427,7 @@ SELECT c9+478, a8+620, c1, b3, x5
    AND a3=378
    AND 996=a1
    AND e8 in (510,381,463,874,893)
-;
+ORDER BY 1,2,3,4,5;
 -- 240 values hashing to 6998de577cc8a6db357eea8aba513042
 
 -- query TI rowsort join398
@@ -42443,7 +42435,7 @@ SELECT x3, b9
   FROM t3, t9
  WHERE e9 in (619,383,291,452,197,704,230,368)
    AND a3 in (184,997,41,549)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 789cf15a1ceb7ea0ad040adef605afab
 
 -- query TI rowsort join398
@@ -42451,7 +42443,7 @@ SELECT x3, b9
   FROM t9, t3
  WHERE e9 in (619,383,291,452,197,704,230,368)
    AND a3 in (184,997,41,549)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 789cf15a1ceb7ea0ad040adef605afab
 
 -- query TI rowsort join398
@@ -42459,7 +42451,7 @@ SELECT x3, b9
   FROM t3, t9
  WHERE a3 in (184,997,41,549)
    AND e9 in (619,383,291,452,197,704,230,368)
-;
+ORDER BY 1,2;
 -- 72 values hashing to 789cf15a1ceb7ea0ad040adef605afab
 
 -- query III rowsort join399
@@ -42468,7 +42460,7 @@ SELECT b2*965, d5+d2, c4+883
  WHERE 12=c5
    AND b4=884
    AND d2 in (345,209,498,306,404)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 917a48228b221b268535b877c8f3bc53
 
 -- query III rowsort join399
@@ -42477,7 +42469,7 @@ SELECT b2*965, d5+d2, c4+883
  WHERE 12=c5
    AND d2 in (345,209,498,306,404)
    AND b4=884
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 917a48228b221b268535b877c8f3bc53
 
 -- query III rowsort join399
@@ -42486,7 +42478,7 @@ SELECT b2*965, d5+d2, c4+883
  WHERE d2 in (345,209,498,306,404)
    AND b4=884
    AND 12=c5
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 917a48228b221b268535b877c8f3bc53
 
 -- query III rowsort join399
@@ -42495,7 +42487,7 @@ SELECT b2*965, d5+d2, c4+883
  WHERE b4=884
    AND 12=c5
    AND d2 in (345,209,498,306,404)
-;
+ORDER BY 1,2,3;
 -- 18 values hashing to 917a48228b221b268535b877c8f3bc53
 
 -- query III rowsort join400
@@ -42504,7 +42496,7 @@ SELECT d8, c1+d1, e7
  WHERE a1=637
    AND 455=e7
    AND e8 in (296,510,792,579,980,199,310)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 2c0f0352356ea5efe992e38d253a86e5
 
 -- query III rowsort join400
@@ -42513,7 +42505,7 @@ SELECT d8, c1+d1, e7
  WHERE e8 in (296,510,792,579,980,199,310)
    AND 455=e7
    AND a1=637
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 2c0f0352356ea5efe992e38d253a86e5
 
 -- query III rowsort join400
@@ -42522,7 +42514,7 @@ SELECT d8, c1+d1, e7
  WHERE 455=e7
    AND a1=637
    AND e8 in (296,510,792,579,980,199,310)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 2c0f0352356ea5efe992e38d253a86e5
 
 -- query III rowsort join400
@@ -42531,7 +42523,7 @@ SELECT d8, c1+d1, e7
  WHERE a1=637
    AND 455=e7
    AND e8 in (296,510,792,579,980,199,310)
-;
+ORDER BY 1,2,3;
 -- 108 values hashing to 2c0f0352356ea5efe992e38d253a86e5
 
 -- query IIIIT rowsort join401
@@ -42542,7 +42534,7 @@ SELECT d8+b4, b4+353, a9, b3, x1
    AND a1=d9
    AND a3 in (959,70,611,41,591)
    AND e8 in (223,864,635)
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 27e1a7a77a47ef1698cff1f40e4aeec9
 
 -- query IIIIT rowsort join401
@@ -42553,7 +42545,7 @@ SELECT d8+b4, b4+353, a9, b3, x1
    AND a1=d9
    AND b4 in (402,2,538,721,407,749,849,678)
    AND b9 in (821,13,262,858)
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 27e1a7a77a47ef1698cff1f40e4aeec9
 
 -- query IIIIT rowsort join401
@@ -42564,7 +42556,7 @@ SELECT d8+b4, b4+353, a9, b3, x1
    AND e8 in (223,864,635)
    AND b9 in (821,13,262,858)
    AND a3 in (959,70,611,41,591)
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 27e1a7a77a47ef1698cff1f40e4aeec9
 
 -- query IIIIT rowsort join401
@@ -42575,7 +42567,7 @@ SELECT d8+b4, b4+353, a9, b3, x1
    AND a3 in (959,70,611,41,591)
    AND b4 in (402,2,538,721,407,749,849,678)
    AND a1=d9
-;
+ORDER BY 1,2,3,4,5;
 -- 675 values hashing to 27e1a7a77a47ef1698cff1f40e4aeec9
 
 -- query II rowsort join402
@@ -42583,7 +42575,7 @@ SELECT a4, e7
   FROM t7, t4
  WHERE e7 in (587,462,422,356)
    AND b4 in (357,295,261,442)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 83c6c3a302877b160b675dcd6b0966ac
 
 -- query II rowsort join402
@@ -42591,7 +42583,7 @@ SELECT a4, e7
   FROM t4, t7
  WHERE b4 in (357,295,261,442)
    AND e7 in (587,462,422,356)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 83c6c3a302877b160b675dcd6b0966ac
 
 -- query II rowsort join402
@@ -42599,7 +42591,7 @@ SELECT a4, e7
   FROM t7, t4
  WHERE b4 in (357,295,261,442)
    AND e7 in (587,462,422,356)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 83c6c3a302877b160b675dcd6b0966ac
 
 -- query III rowsort join403
@@ -42608,7 +42600,7 @@ SELECT d3+d3, a4+990, e7+833
  WHERE b4 in (721,826,407,634,589,644)
    AND a3=608
    AND 122=e7
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to fb11bef33a65795bd52b07568d5df577
 
 -- query III rowsort join403
@@ -42617,7 +42609,7 @@ SELECT d3+d3, a4+990, e7+833
  WHERE b4 in (721,826,407,634,589,644)
    AND 122=e7
    AND a3=608
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to fb11bef33a65795bd52b07568d5df577
 
 -- query III rowsort join403
@@ -42626,7 +42618,7 @@ SELECT d3+d3, a4+990, e7+833
  WHERE a3=608
    AND 122=e7
    AND b4 in (721,826,407,634,589,644)
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to fb11bef33a65795bd52b07568d5df577
 
 -- query III rowsort join403
@@ -42635,7 +42627,7 @@ SELECT d3+d3, a4+990, e7+833
  WHERE b4 in (721,826,407,634,589,644)
    AND a3=608
    AND 122=e7
-;
+ORDER BY 1,2,3;
 -- 21 values hashing to fb11bef33a65795bd52b07568d5df577
 
 -- query IIIIII rowsort join404
@@ -42647,7 +42639,7 @@ SELECT b7*604, d5*955, a8+60, e3+359, a9*588, e4*964
    AND 291=e7
    AND b4 in (68,634,924,644)
    AND c5=602
-;
+ORDER BY 1,2,3,4,5,6;
 -- 5184 values hashing to 53926dc36fb361e9bc1a785251f224a4
 
 -- query IIIIII rowsort join404
@@ -42659,7 +42651,7 @@ SELECT b7*604, d5*955, a8+60, e3+359, a9*588, e4*964
    AND b4 in (68,634,924,644)
    AND e8 in (310,510,846,423,242,792)
    AND c5=602
-;
+ORDER BY 1,2,3,4,5,6;
 -- 5184 values hashing to 53926dc36fb361e9bc1a785251f224a4
 
 -- query IIIIII rowsort join404
@@ -42671,7 +42663,7 @@ SELECT b7*604, d5*955, a8+60, e3+359, a9*588, e4*964
    AND b4 in (68,634,924,644)
    AND e9 in (255,942,15,788,987,263,218,723)
    AND c5=602
-;
+ORDER BY 1,2,3,4,5,6;
 -- 5184 values hashing to 53926dc36fb361e9bc1a785251f224a4
 
 -- query IIIIII rowsort join404
@@ -42683,7 +42675,7 @@ SELECT b7*604, d5*955, a8+60, e3+359, a9*588, e4*964
    AND (697=a3 OR 386=a3 OR 296=a3)
    AND c5=602
    AND b4 in (68,634,924,644)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 5184 values hashing to 53926dc36fb361e9bc1a785251f224a4
 
 -- query ITII rowsort join405
@@ -42693,7 +42685,7 @@ SELECT d1, x9, b6, b7+b9
    AND (c9=370 OR c9=171 OR 39=c9)
    AND 179=a1
    AND e7 in (6,168,290,663,929,782,428)
-;
+ORDER BY 1,2,3,4;
 -- 648 values hashing to 59e062302d882f8ea807185cd1a9bc87
 
 -- query ITII rowsort join405
@@ -42703,7 +42695,7 @@ SELECT d1, x9, b6, b7+b9
    AND (c9=370 OR c9=171 OR 39=c9)
    AND 179=a1
    AND d6 in (269,192,337,974)
-;
+ORDER BY 1,2,3,4;
 -- 648 values hashing to 59e062302d882f8ea807185cd1a9bc87
 
 -- query ITII rowsort join405
@@ -42713,7 +42705,7 @@ SELECT d1, x9, b6, b7+b9
    AND (c9=370 OR c9=171 OR 39=c9)
    AND 179=a1
    AND d6 in (269,192,337,974)
-;
+ORDER BY 1,2,3,4;
 -- 648 values hashing to 59e062302d882f8ea807185cd1a9bc87
 
 -- query ITII rowsort join405
@@ -42723,7 +42715,7 @@ SELECT d1, x9, b6, b7+b9
    AND e7 in (6,168,290,663,929,782,428)
    AND 179=a1
    AND d6 in (269,192,337,974)
-;
+ORDER BY 1,2,3,4;
 -- 648 values hashing to 59e062302d882f8ea807185cd1a9bc87
 
 -- query IIIIITI rowsort join406
@@ -42736,7 +42728,7 @@ SELECT d6, c7+c3, b9+a4, e1+748, e3+d3, x4, a8+b6
    AND a1 in (267,702,231,338)
    AND a3 in (591,181,515,560,559,532,935,376)
    AND e8 in (919,381,416,776,421,442,881,548)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 20160 values hashing to 9bc93f4a04737588c17da748f08e1f02
 
 -- query IIIIITI rowsort join406
@@ -42749,7 +42741,7 @@ SELECT d6, c7+c3, b9+a4, e1+748, e3+d3, x4, a8+b6
    AND e7=e6
    AND d6 in (428,846,929,901,185,647)
    AND e8 in (919,381,416,776,421,442,881,548)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 20160 values hashing to 9bc93f4a04737588c17da748f08e1f02
 
 -- query IIIIITI rowsort join406
@@ -42762,7 +42754,7 @@ SELECT d6, c7+c3, b9+a4, e1+748, e3+d3, x4, a8+b6
    AND e7=e6
    AND a3 in (591,181,515,560,559,532,935,376)
    AND a1 in (267,702,231,338)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 20160 values hashing to 9bc93f4a04737588c17da748f08e1f02
 
 -- query IIIIITI rowsort join406
@@ -42775,7 +42767,7 @@ SELECT d6, c7+c3, b9+a4, e1+748, e3+d3, x4, a8+b6
    AND e7=e6
    AND b4 in (660,634,708,938,748,607,892,167)
    AND a1 in (267,702,231,338)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 20160 values hashing to 9bc93f4a04737588c17da748f08e1f02
 
 -- query TII rowsort join407
@@ -42784,7 +42776,7 @@ SELECT x2, d8+d2, d3
  WHERE 457=a3
    AND 632=b2
    AND e8=46
-;
+ORDER BY 1,2,3;
 -- table tn2 row 85
 -- 758
 -- 355
@@ -42795,7 +42787,7 @@ SELECT x2, d8+d2, d3
  WHERE 632=b2
    AND 457=a3
    AND e8=46
-;
+ORDER BY 1,2,3;
 -- table tn2 row 85
 -- 758
 -- 355
@@ -42806,7 +42798,7 @@ SELECT x2, d8+d2, d3
  WHERE e8=46
    AND 457=a3
    AND 632=b2
-;
+ORDER BY 1,2,3;
 -- table tn2 row 85
 -- 758
 -- 355
@@ -42817,7 +42809,7 @@ SELECT x2, d8+d2, d3
  WHERE 632=b2
    AND e8=46
    AND 457=a3
-;
+ORDER BY 1,2,3;
 -- table tn2 row 85
 -- 758
 -- 355
@@ -42828,7 +42820,7 @@ SELECT a5, d8+463+d5, x4
  WHERE 2=b4
    AND (e8=881 OR e8=476)
    AND c5=818
-;
+ORDER BY 1,2,3;
 -- 675
 -- 1109
 -- table tn4 row 73
@@ -42842,7 +42834,7 @@ SELECT a5, d8+463+d5, x4
  WHERE 2=b4
    AND (e8=881 OR e8=476)
    AND c5=818
-;
+ORDER BY 1,2,3;
 -- 675
 -- 1109
 -- table tn4 row 73
@@ -42856,7 +42848,7 @@ SELECT a5, d8+463+d5, x4
  WHERE c5=818
    AND (e8=881 OR e8=476)
    AND 2=b4
-;
+ORDER BY 1,2,3;
 -- 675
 -- 1109
 -- table tn4 row 73
@@ -42870,7 +42862,7 @@ SELECT a5, d8+463+d5, x4
  WHERE 2=b4
    AND (e8=881 OR e8=476)
    AND c5=818
-;
+ORDER BY 1,2,3;
 -- 675
 -- 1109
 -- table tn4 row 73
@@ -42884,7 +42876,7 @@ SELECT x5, a3, a9+945
  WHERE 549=a3
    AND e9 in (291,245,619,383,737,230,968,267)
    AND c5 in (31,149,18,634)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 6252eca4d0608ddf4bc53cbbebf96163
 
 -- query TII rowsort join409
@@ -42893,7 +42885,7 @@ SELECT x5, a3, a9+945
  WHERE c5 in (31,149,18,634)
    AND e9 in (291,245,619,383,737,230,968,267)
    AND 549=a3
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 6252eca4d0608ddf4bc53cbbebf96163
 
 -- query TII rowsort join409
@@ -42902,7 +42894,7 @@ SELECT x5, a3, a9+945
  WHERE e9 in (291,245,619,383,737,230,968,267)
    AND c5 in (31,149,18,634)
    AND 549=a3
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 6252eca4d0608ddf4bc53cbbebf96163
 
 -- query TII rowsort join409
@@ -42911,7 +42903,7 @@ SELECT x5, a3, a9+945
  WHERE e9 in (291,245,619,383,737,230,968,267)
    AND c5 in (31,149,18,634)
    AND 549=a3
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to 6252eca4d0608ddf4bc53cbbebf96163
 
 -- query IITI rowsort join410
@@ -42921,7 +42913,7 @@ SELECT d4+a3, c1+833+d1, x3, e7+594
    AND b4 in (966,288,357,941,635,849,921,816)
    AND 186=a3
    AND 931=a1
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 193c3102dd9a8e9c6c51e20d14e37d18
 
 -- query IITI rowsort join410
@@ -42931,7 +42923,7 @@ SELECT d4+a3, c1+833+d1, x3, e7+594
    AND 186=a3
    AND e7=462
    AND 931=a1
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 193c3102dd9a8e9c6c51e20d14e37d18
 
 -- query IITI rowsort join410
@@ -42941,7 +42933,7 @@ SELECT d4+a3, c1+833+d1, x3, e7+594
    AND 931=a1
    AND e7=462
    AND b4 in (966,288,357,941,635,849,921,816)
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 193c3102dd9a8e9c6c51e20d14e37d18
 
 -- query IITI rowsort join410
@@ -42951,7 +42943,7 @@ SELECT d4+a3, c1+833+d1, x3, e7+594
    AND 931=a1
    AND b4 in (966,288,357,941,635,849,921,816)
    AND e7=462
-;
+ORDER BY 1,2,3,4;
 -- 96 values hashing to 193c3102dd9a8e9c6c51e20d14e37d18
 
 -- query III rowsort join411
@@ -42960,7 +42952,7 @@ SELECT a5, a9, e4+e9
  WHERE e9 in (968,804,251,873,936,452,837)
    AND c5=729
    AND (319=b4 OR 563=b4 OR 579=b4)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to d9f6fb6a61131a74e7f13615b7fecbba
 
 -- query III rowsort join411
@@ -42969,7 +42961,7 @@ SELECT a5, a9, e4+e9
  WHERE (319=b4 OR 563=b4 OR 579=b4)
    AND e9 in (968,804,251,873,936,452,837)
    AND c5=729
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to d9f6fb6a61131a74e7f13615b7fecbba
 
 -- query III rowsort join411
@@ -42978,7 +42970,7 @@ SELECT a5, a9, e4+e9
  WHERE c5=729
    AND (319=b4 OR 563=b4 OR 579=b4)
    AND e9 in (968,804,251,873,936,452,837)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to d9f6fb6a61131a74e7f13615b7fecbba
 
 -- query III rowsort join411
@@ -42987,7 +42979,7 @@ SELECT a5, a9, e4+e9
  WHERE e9 in (968,804,251,873,936,452,837)
    AND (319=b4 OR 563=b4 OR 579=b4)
    AND c5=729
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to d9f6fb6a61131a74e7f13615b7fecbba
 
 -- query TTIIIITI rowsort join412
@@ -43001,7 +42993,7 @@ SELECT x7, x8, c2*737+a9, b3+c3, a4, a9*262, x1, c5
    AND c5 in (734,27,774,12)
    AND b4 in (884,634,979,635)
    AND c9 in (87,60,992,935)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8000 values hashing to 273fffab740fd23ea1c219dcf2bb7e98
 
 -- query TTIIIITI rowsort join412
@@ -43015,7 +43007,7 @@ SELECT x7, x8, c2*737+a9, b3+c3, a4, a9*262, x1, c5
    AND c9 in (87,60,992,935)
    AND e7 in (92,103,282,7,988,372,970)
    AND c5 in (734,27,774,12)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8000 values hashing to 273fffab740fd23ea1c219dcf2bb7e98
 
 -- query TTIIIITI rowsort join412
@@ -43029,7 +43021,7 @@ SELECT x7, x8, c2*737+a9, b3+c3, a4, a9*262, x1, c5
    AND 947=a3
    AND a1=23
    AND c5 in (734,27,774,12)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8000 values hashing to 273fffab740fd23ea1c219dcf2bb7e98
 
 -- query TTIIIITI rowsort join412
@@ -43043,7 +43035,7 @@ SELECT x7, x8, c2*737+a9, b3+c3, a4, a9*262, x1, c5
    AND a1=23
    AND e7 in (92,103,282,7,988,372,970)
    AND e8 in (273,947,533,512,242)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8000 values hashing to 273fffab740fd23ea1c219dcf2bb7e98
 
 -- query TT rowsort join413
@@ -43051,7 +43043,7 @@ SELECT x9, x1
   FROM t1, t9
  WHERE 919=a9
    AND a1 in (746,707,280,338,324)
-;
+ORDER BY 1,2;
 -- 10 values hashing to 76b783656c6f871f20cb3269477909d4
 
 -- query TT rowsort join413
@@ -43059,7 +43051,7 @@ SELECT x9, x1
   FROM t9, t1
  WHERE 919=a9
    AND a1 in (746,707,280,338,324)
-;
+ORDER BY 1,2;
 -- 10 values hashing to 76b783656c6f871f20cb3269477909d4
 
 -- query IIITIT rowsort join414
@@ -43071,7 +43063,7 @@ SELECT e8+518+c1, a5+902, b4+b8, x1, c6*290+c4, x3
    AND a1 in (776,61,821,477,864,538,337)
    AND b4=139
    AND 797=c5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 336 values hashing to 457dd8f30401c6470259c8787746d783
 
 -- query IIITIT rowsort join414
@@ -43083,7 +43075,7 @@ SELECT e8+518+c1, a5+902, b4+b8, x1, c6*290+c4, x3
    AND a1 in (776,61,821,477,864,538,337)
    AND (696=a3 OR 275=a3)
    AND d6 in (822,223,469,36,750,185,667)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 336 values hashing to 457dd8f30401c6470259c8787746d783
 
 -- query IIITIT rowsort join414
@@ -43095,7 +43087,7 @@ SELECT e8+518+c1, a5+902, b4+b8, x1, c6*290+c4, x3
    AND (696=a3 OR 275=a3)
    AND 797=c5
    AND e8=e1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 336 values hashing to 457dd8f30401c6470259c8787746d783
 
 -- query IIITIT rowsort join414
@@ -43107,7 +43099,7 @@ SELECT e8+518+c1, a5+902, b4+b8, x1, c6*290+c4, x3
    AND a1 in (776,61,821,477,864,538,337)
    AND d6 in (822,223,469,36,750,185,667)
    AND 797=c5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 336 values hashing to 457dd8f30401c6470259c8787746d783
 
 -- query II rowsort join415
@@ -43115,7 +43107,7 @@ SELECT c6*425+a6, a8
   FROM t8, t6
  WHERE 533=e8
    AND d6=974
-;
+ORDER BY 1,2;
 -- 264329
 -- 341
 -- 5970
@@ -43128,7 +43120,7 @@ SELECT c6*425+a6, a8
   FROM t6, t8
  WHERE d6=974
    AND 533=e8
-;
+ORDER BY 1,2;
 -- 264329
 -- 341
 -- 5970
@@ -43141,7 +43133,7 @@ SELECT c6*425+a6, a8
   FROM t8, t6
  WHERE d6=974
    AND 533=e8
-;
+ORDER BY 1,2;
 -- 264329
 -- 341
 -- 5970
@@ -43154,7 +43146,7 @@ SELECT b4, a9*580
   FROM t4, t9
  WHERE b4 in (68,607,884,606,810,627)
    AND (410=b9 OR b9=703)
-;
+ORDER BY 1,2;
 -- 24 values hashing to f8fb7061fd6ca77804cc626660e5678a
 
 -- query II rowsort join416
@@ -43162,7 +43154,7 @@ SELECT b4, a9*580
   FROM t9, t4
  WHERE (410=b9 OR b9=703)
    AND b4 in (68,607,884,606,810,627)
-;
+ORDER BY 1,2;
 -- 24 values hashing to f8fb7061fd6ca77804cc626660e5678a
 
 -- query II rowsort join416
@@ -43170,7 +43162,7 @@ SELECT b4, a9*580
   FROM t4, t9
  WHERE (410=b9 OR b9=703)
    AND b4 in (68,607,884,606,810,627)
-;
+ORDER BY 1,2;
 -- 24 values hashing to f8fb7061fd6ca77804cc626660e5678a
 
 -- query IITIT rowsort join417
@@ -43181,7 +43173,7 @@ SELECT c9+e6, d4, x6, e8+18, x7
    AND a9=240
    AND d6 in (458,147,469,867,974,367,256)
    AND 86=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 363ab969e97cc0265966866692151df0
 
 -- query IITIT rowsort join417
@@ -43192,7 +43184,7 @@ SELECT c9+e6, d4, x6, e8+18, x7
    AND a9=240
    AND d6 in (458,147,469,867,974,367,256)
    AND 86=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 363ab969e97cc0265966866692151df0
 
 -- query IITIT rowsort join417
@@ -43203,7 +43195,7 @@ SELECT c9+e6, d4, x6, e8+18, x7
    AND a9=240
    AND e7=344
    AND 86=b4
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 363ab969e97cc0265966866692151df0
 
 -- query IITIT rowsort join417
@@ -43214,7 +43206,7 @@ SELECT c9+e6, d4, x6, e8+18, x7
    AND e7=344
    AND e8 in (349,495,966,833,463,14)
    AND d6 in (458,147,469,867,974,367,256)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to 363ab969e97cc0265966866692151df0
 
 -- query IIIIII rowsort join418
@@ -43226,7 +43218,7 @@ SELECT a8, d5, c3, d1+766, b4+b1, e9+450+d4
    AND a1=b5
    AND e8 in (175,846,881)
    AND d9=912
-;
+ORDER BY 1,2,3,4,5,6;
 -- 108 values hashing to c87f80de0452a7b9d849314f0bd9adff
 
 -- query IIIIII rowsort join418
@@ -43238,7 +43230,7 @@ SELECT a8, d5, c3, d1+766, b4+b1, e9+450+d4
    AND a1=b5
    AND d9=912
    AND a3 in (5,820,275,30,135,549)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 108 values hashing to c87f80de0452a7b9d849314f0bd9adff
 
 -- query IIIIII rowsort join418
@@ -43250,7 +43242,7 @@ SELECT a8, d5, c3, d1+766, b4+b1, e9+450+d4
    AND a3 in (5,820,275,30,135,549)
    AND c5 in (766,12,797)
    AND 784=b4
-;
+ORDER BY 1,2,3,4,5,6;
 -- 108 values hashing to c87f80de0452a7b9d849314f0bd9adff
 
 -- query IIIIII rowsort join418
@@ -43262,7 +43254,7 @@ SELECT a8, d5, c3, d1+766, b4+b1, e9+450+d4
    AND a3 in (5,820,275,30,135,549)
    AND a1=b5
    AND c5 in (766,12,797)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 108 values hashing to c87f80de0452a7b9d849314f0bd9adff
 
 -- query IIII rowsort join419
@@ -43272,7 +43264,7 @@ SELECT b7*279, c9, b3+577, e1+b3
    AND a3 in (743,892,959,710,971,478)
    AND d9 in (967,909,878)
    AND a1 in (779,678,674,853,591,829)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to e734f9049e58f94b164966969f32a4f1
 
 -- query IIII rowsort join419
@@ -43282,7 +43274,7 @@ SELECT b7*279, c9, b3+577, e1+b3
    AND a1 in (779,678,674,853,591,829)
    AND d9 in (967,909,878)
    AND (841=e7 OR 7=e7)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to e734f9049e58f94b164966969f32a4f1
 
 -- query IIII rowsort join419
@@ -43292,7 +43284,7 @@ SELECT b7*279, c9, b3+577, e1+b3
    AND d9 in (967,909,878)
    AND a3 in (743,892,959,710,971,478)
    AND a1 in (779,678,674,853,591,829)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to e734f9049e58f94b164966969f32a4f1
 
 -- query IIII rowsort join419
@@ -43302,7 +43294,7 @@ SELECT b7*279, c9, b3+577, e1+b3
    AND a1 in (779,678,674,853,591,829)
    AND d9 in (967,909,878)
    AND a3 in (743,892,959,710,971,478)
-;
+ORDER BY 1,2,3,4;
 -- 1152 values hashing to e734f9049e58f94b164966969f32a4f1
 
 -- query IITI rowsort join420
@@ -43312,7 +43304,7 @@ SELECT b6+b1, d1+88, x9, d7
    AND d9 in (495,389,681,347,142,258)
    AND e7 in (462,887,301,860,988)
    AND d6=321
-;
+ORDER BY 1,2,3,4;
 -- 980 values hashing to 5d56c2e9cc3382783173c8d8cdb0e940
 
 -- query IITI rowsort join420
@@ -43322,7 +43314,7 @@ SELECT b6+b1, d1+88, x9, d7
    AND d9 in (495,389,681,347,142,258)
    AND d6=321
    AND a1 in (754,283,363,880,963)
-;
+ORDER BY 1,2,3,4;
 -- 980 values hashing to 5d56c2e9cc3382783173c8d8cdb0e940
 
 -- query IITI rowsort join420
@@ -43332,7 +43324,7 @@ SELECT b6+b1, d1+88, x9, d7
    AND d9 in (495,389,681,347,142,258)
    AND a1 in (754,283,363,880,963)
    AND e7 in (462,887,301,860,988)
-;
+ORDER BY 1,2,3,4;
 -- 980 values hashing to 5d56c2e9cc3382783173c8d8cdb0e940
 
 -- query IITI rowsort join420
@@ -43342,7 +43334,7 @@ SELECT b6+b1, d1+88, x9, d7
    AND a1 in (754,283,363,880,963)
    AND e7 in (462,887,301,860,988)
    AND d6=321
-;
+ORDER BY 1,2,3,4;
 -- 980 values hashing to 5d56c2e9cc3382783173c8d8cdb0e940
 
 -- query IITII rowsort join421
@@ -43353,7 +43345,7 @@ SELECT b9+b5, e1+344, x5, a6, a8
    AND 313=c5
    AND a1 in (314,371,776,678)
    AND d6=790
-;
+ORDER BY 1,2,3,4,5;
 -- 160 values hashing to b935d57e2f76c3f093bfceedf842cfb7
 
 -- query IITII rowsort join421
@@ -43364,7 +43356,7 @@ SELECT b9+b5, e1+344, x5, a6, a8
    AND a9=549
    AND d6=790
    AND a1 in (314,371,776,678)
-;
+ORDER BY 1,2,3,4,5;
 -- 160 values hashing to b935d57e2f76c3f093bfceedf842cfb7
 
 -- query IITII rowsort join421
@@ -43375,7 +43367,7 @@ SELECT b9+b5, e1+344, x5, a6, a8
    AND d6=790
    AND e8 in (431,806,186,423,874,533,422,833)
    AND a1 in (314,371,776,678)
-;
+ORDER BY 1,2,3,4,5;
 -- 160 values hashing to b935d57e2f76c3f093bfceedf842cfb7
 
 -- query IITII rowsort join421
@@ -43386,7 +43378,7 @@ SELECT b9+b5, e1+344, x5, a6, a8
    AND d6=790
    AND 313=c5
    AND a9=549
-;
+ORDER BY 1,2,3,4,5;
 -- 160 values hashing to b935d57e2f76c3f093bfceedf842cfb7
 
 -- query II rowsort join422
@@ -43394,7 +43386,7 @@ SELECT a6*97+a6, b8*274
   FROM t8, t6
  WHERE d6 in (277,129,151,901,974)
    AND (e8=874 OR e8=833)
-;
+ORDER BY 1,2;
 -- 28 values hashing to bf08097369f6280faaa03bfc8866ce42
 
 -- query II rowsort join422
@@ -43402,7 +43394,7 @@ SELECT a6*97+a6, b8*274
   FROM t6, t8
  WHERE (e8=874 OR e8=833)
    AND d6 in (277,129,151,901,974)
-;
+ORDER BY 1,2;
 -- 28 values hashing to bf08097369f6280faaa03bfc8866ce42
 
 -- query II rowsort join422
@@ -43410,7 +43402,7 @@ SELECT a6*97+a6, b8*274
   FROM t8, t6
  WHERE (e8=874 OR e8=833)
    AND d6 in (277,129,151,901,974)
-;
+ORDER BY 1,2;
 -- 28 values hashing to bf08097369f6280faaa03bfc8866ce42
 
 -- query II rowsort join422
@@ -43418,7 +43410,7 @@ SELECT a6*97+a6, b8*274
   FROM t6, t8
  WHERE d6 in (277,129,151,901,974)
    AND (e8=874 OR e8=833)
-;
+ORDER BY 1,2;
 -- 28 values hashing to bf08097369f6280faaa03bfc8866ce42
 
 -- query III rowsort join423
@@ -43427,7 +43419,7 @@ SELECT a5+402+a5, b8, b6
  WHERE c5=729
    AND e8 in (736,487,233)
    AND d6 in (367,197,942,689,376,2)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to f09cd77fa0053c828146b2d1b10e011d
 
 -- query III rowsort join423
@@ -43436,7 +43428,7 @@ SELECT a5+402+a5, b8, b6
  WHERE c5=729
    AND e8 in (736,487,233)
    AND d6 in (367,197,942,689,376,2)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to f09cd77fa0053c828146b2d1b10e011d
 
 -- query III rowsort join423
@@ -43445,7 +43437,7 @@ SELECT a5+402+a5, b8, b6
  WHERE d6 in (367,197,942,689,376,2)
    AND e8 in (736,487,233)
    AND c5=729
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to f09cd77fa0053c828146b2d1b10e011d
 
 -- query III rowsort join423
@@ -43454,7 +43446,7 @@ SELECT a5+402+a5, b8, b6
  WHERE c5=729
    AND e8 in (736,487,233)
    AND d6 in (367,197,942,689,376,2)
-;
+ORDER BY 1,2,3;
 -- 72 values hashing to f09cd77fa0053c828146b2d1b10e011d
 
 -- query TI rowsort join424
@@ -43462,7 +43454,7 @@ SELECT x3, c4+e3
   FROM t4, t3
  WHERE a3 in (341,863,751,788,30,532)
    AND b4 in (434,847,267,372,810,408)
-;
+ORDER BY 1,2;
 -- 72 values hashing to d1d40bf55319838e368396c962e54a98
 
 -- query TI rowsort join424
@@ -43470,7 +43462,7 @@ SELECT x3, c4+e3
   FROM t3, t4
  WHERE b4 in (434,847,267,372,810,408)
    AND a3 in (341,863,751,788,30,532)
-;
+ORDER BY 1,2;
 -- 72 values hashing to d1d40bf55319838e368396c962e54a98
 
 -- query ITITITI rowsort join425
@@ -43483,7 +43475,7 @@ SELECT a6, x7, a4*223, x9, b1+681+d4, x5, a2*617
    AND a1=622
    AND d6=885
    AND e9 in (383,987,801,694,218,860)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 42 values hashing to 0f663f4cfca2ce865276c2fe9d4f3ef5
 
 -- query ITITITI rowsort join425
@@ -43496,7 +43488,7 @@ SELECT a6, x7, a4*223, x9, b1+681+d4, x5, a2*617
    AND e7=d5
    AND d6=885
    AND c5 in (936,18,923,12)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 42 values hashing to 0f663f4cfca2ce865276c2fe9d4f3ef5
 
 -- query ITITITI rowsort join425
@@ -43509,7 +43501,7 @@ SELECT a6, x7, a4*223, x9, b1+681+d4, x5, a2*617
    AND d6=885
    AND b4 in (442,644,829,76,295,114)
    AND d2=a9
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 42 values hashing to 0f663f4cfca2ce865276c2fe9d4f3ef5
 
 -- query ITITITI rowsort join425
@@ -43522,7 +43514,7 @@ SELECT a6, x7, a4*223, x9, b1+681+d4, x5, a2*617
    AND d2=a9
    AND e9 in (383,987,801,694,218,860)
    AND e7=d5
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 42 values hashing to 0f663f4cfca2ce865276c2fe9d4f3ef5
 
 -- query TII rowsort join426
@@ -43531,7 +43523,7 @@ SELECT x9, b1+e9, e5
  WHERE (c5=599 OR 544=c5 OR c5=147 OR 293=c5)
    AND b9=912
    AND a1=c5
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 801a9cb798b8b4363d639f0be2f17d4b
 
 -- query TII rowsort join426
@@ -43540,7 +43532,7 @@ SELECT x9, b1+e9, e5
  WHERE b9=912
    AND a1=c5
    AND (c5=599 OR 544=c5 OR c5=147 OR 293=c5)
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 801a9cb798b8b4363d639f0be2f17d4b
 
 -- query TII rowsort join426
@@ -43549,7 +43541,7 @@ SELECT x9, b1+e9, e5
  WHERE b9=912
    AND (c5=599 OR 544=c5 OR c5=147 OR 293=c5)
    AND a1=c5
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 801a9cb798b8b4363d639f0be2f17d4b
 
 -- query TII rowsort join426
@@ -43558,7 +43550,7 @@ SELECT x9, b1+e9, e5
  WHERE (c5=599 OR 544=c5 OR c5=147 OR 293=c5)
    AND b9=912
    AND a1=c5
-;
+ORDER BY 1,2,3;
 -- 9 values hashing to 801a9cb798b8b4363d639f0be2f17d4b
 
 -- query ITIII rowsort join427
@@ -43569,7 +43561,7 @@ SELECT a7*10+c8, x2, c8, d5+207, d6
    AND d6=d2
    AND (c5=422 OR 299=c5 OR c5=681 OR c5=820)
    AND e7 in (356,408,27,48,979,79,156,39)
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to dbcc769c4515bd4e7410e4c3f15784e8
 
 -- query ITIII rowsort join427
@@ -43580,7 +43572,7 @@ SELECT a7*10+c8, x2, c8, d5+207, d6
    AND (c5=422 OR 299=c5 OR c5=681 OR c5=820)
    AND e7 in (356,408,27,48,979,79,156,39)
    AND b2 in (888,8,846)
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to dbcc769c4515bd4e7410e4c3f15784e8
 
 -- query ITIII rowsort join427
@@ -43591,7 +43583,7 @@ SELECT a7*10+c8, x2, c8, d5+207, d6
    AND e8 in (199,223,463,329,381,729)
    AND b2 in (888,8,846)
    AND d6=d2
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to dbcc769c4515bd4e7410e4c3f15784e8
 
 -- query ITIII rowsort join427
@@ -43602,7 +43594,7 @@ SELECT a7*10+c8, x2, c8, d5+207, d6
    AND d6=d2
    AND e7 in (356,408,27,48,979,79,156,39)
    AND (c5=422 OR 299=c5 OR c5=681 OR c5=820)
-;
+ORDER BY 1,2,3,4,5;
 -- 1260 values hashing to dbcc769c4515bd4e7410e4c3f15784e8
 
 -- query TII rowsort join428
@@ -43611,7 +43603,7 @@ SELECT x3, b9+31, c2
  WHERE e2 in (463,981,777,228,73,769)
    AND a3 in (476,754,992)
    AND e9=307
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 8daa24f69442d3ff0c48e048b05c497f
 
 -- query TII rowsort join428
@@ -43620,7 +43612,7 @@ SELECT x3, b9+31, c2
  WHERE a3 in (476,754,992)
    AND e2 in (463,981,777,228,73,769)
    AND e9=307
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 8daa24f69442d3ff0c48e048b05c497f
 
 -- query TII rowsort join428
@@ -43629,7 +43621,7 @@ SELECT x3, b9+31, c2
  WHERE e9=307
    AND e2 in (463,981,777,228,73,769)
    AND a3 in (476,754,992)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 8daa24f69442d3ff0c48e048b05c497f
 
 -- query TII rowsort join428
@@ -43638,7 +43630,7 @@ SELECT x3, b9+31, c2
  WHERE e2 in (463,981,777,228,73,769)
    AND e9=307
    AND a3 in (476,754,992)
-;
+ORDER BY 1,2,3;
 -- 63 values hashing to 8daa24f69442d3ff0c48e048b05c497f
 
 -- query III rowsort join429
@@ -43647,7 +43639,7 @@ SELECT c2, e7, b5+245+c7
  WHERE d2=2
    AND c5 in (774,824,668,579,442,441,130)
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to ee7cfcfc536c39b729308b620357b7a1
 
 -- query III rowsort join429
@@ -43656,7 +43648,7 @@ SELECT c2, e7, b5+245+c7
  WHERE d2=2
    AND 455=e7
    AND c5 in (774,824,668,579,442,441,130)
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to ee7cfcfc536c39b729308b620357b7a1
 
 -- query III rowsort join429
@@ -43665,7 +43657,7 @@ SELECT c2, e7, b5+245+c7
  WHERE c5 in (774,824,668,579,442,441,130)
    AND d2=2
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to ee7cfcfc536c39b729308b620357b7a1
 
 -- query III rowsort join429
@@ -43674,7 +43666,7 @@ SELECT c2, e7, b5+245+c7
  WHERE d2=2
    AND c5 in (774,824,668,579,442,441,130)
    AND 455=e7
-;
+ORDER BY 1,2,3;
 -- 42 values hashing to ee7cfcfc536c39b729308b620357b7a1
 
 -- query III rowsort join430
@@ -43683,7 +43675,7 @@ SELECT c5*354, c7, c1+848
  WHERE e7=a1
    AND a1 in (544,862,879,936)
    AND 689=c5
-;
+ORDER BY 1,2,3;
 -- 243906
 -- 954
 -- 1120
@@ -43694,7 +43686,7 @@ SELECT c5*354, c7, c1+848
  WHERE a1 in (544,862,879,936)
    AND 689=c5
    AND e7=a1
-;
+ORDER BY 1,2,3;
 -- 243906
 -- 954
 -- 1120
@@ -43705,7 +43697,7 @@ SELECT c5*354, c7, c1+848
  WHERE 689=c5
    AND e7=a1
    AND a1 in (544,862,879,936)
-;
+ORDER BY 1,2,3;
 -- 243906
 -- 954
 -- 1120
@@ -43716,7 +43708,7 @@ SELECT c5*354, c7, c1+848
  WHERE a1 in (544,862,879,936)
    AND e7=a1
    AND 689=c5
-;
+ORDER BY 1,2,3;
 -- 243906
 -- 954
 -- 1120
@@ -43726,7 +43718,7 @@ SELECT e9+d9, d3+446
   FROM t3, t9
  WHERE a3=c9
    AND b9 in (15,912,848,19,245,269,125)
-;
+ORDER BY 1,2;
 -- 678
 -- 1430
 
@@ -43735,7 +43727,7 @@ SELECT e9+d9, d3+446
   FROM t9, t3
  WHERE a3=c9
    AND b9 in (15,912,848,19,245,269,125)
-;
+ORDER BY 1,2;
 -- 678
 -- 1430
 
@@ -43744,7 +43736,7 @@ SELECT e9+d9, d3+446
   FROM t9, t3
  WHERE b9 in (15,912,848,19,245,269,125)
    AND a3=c9
-;
+ORDER BY 1,2;
 -- 678
 -- 1430
 
@@ -43757,7 +43749,7 @@ SELECT c5+e8, d4+393, x9, b3, a8+e3, c6
    AND b4 in (442,538,23,587,288,76,660,802)
    AND b9 in (171,688,456,880)
    AND e8 in (586,578,333)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 54000 values hashing to 47537fee860a132a86a12a1eef2e26c9
 
 -- query IITIII rowsort join432
@@ -43769,7 +43761,7 @@ SELECT c5+e8, d4+393, x9, b3, a8+e3, c6
    AND b4 in (442,538,23,587,288,76,660,802)
    AND e8 in (586,578,333)
    AND (d6=2 OR d6=196 OR d6=424 OR 185=d6)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 54000 values hashing to 47537fee860a132a86a12a1eef2e26c9
 
 -- query IITIII rowsort join432
@@ -43781,7 +43773,7 @@ SELECT c5+e8, d4+393, x9, b3, a8+e3, c6
    AND b9 in (171,688,456,880)
    AND e8 in (586,578,333)
    AND (d6=2 OR d6=196 OR d6=424 OR 185=d6)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 54000 values hashing to 47537fee860a132a86a12a1eef2e26c9
 
 -- query IITIII rowsort join432
@@ -43793,7 +43785,7 @@ SELECT c5+e8, d4+393, x9, b3, a8+e3, c6
    AND e8 in (586,578,333)
    AND b9 in (171,688,456,880)
    AND b4 in (442,538,23,587,288,76,660,802)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 54000 values hashing to 47537fee860a132a86a12a1eef2e26c9
 
 -- query II rowsort join433
@@ -43801,7 +43793,7 @@ SELECT e6*25, d1+873
   FROM t1, t6
  WHERE a1 in (363,862,553,337,521)
    AND d6 in (151,885,321,974,489,991,924)
-;
+ORDER BY 1,2;
 -- 90 values hashing to 79f1a24f865a498de3c45a6851b325ef
 
 -- query II rowsort join433
@@ -43809,7 +43801,7 @@ SELECT e6*25, d1+873
   FROM t1, t6
  WHERE d6 in (151,885,321,974,489,991,924)
    AND a1 in (363,862,553,337,521)
-;
+ORDER BY 1,2;
 -- 90 values hashing to 79f1a24f865a498de3c45a6851b325ef
 
 -- query IIIITI rowsort join434
@@ -43821,7 +43813,7 @@ SELECT a3, c5, d6+a6, a9+72, x7, c1*559
    AND 338=a1
    AND d6 in (269,197,790,35,911,60,846)
    AND e7 in (356,127,929)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 384 values hashing to 327f0d4a98fc65d6edc95f14b59ee71e
 
 -- query IIIITI rowsort join434
@@ -43833,7 +43825,7 @@ SELECT a3, c5, d6+a6, a9+72, x7, c1*559
    AND 338=a1
    AND e7 in (356,127,929)
    AND e9=c5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 384 values hashing to 327f0d4a98fc65d6edc95f14b59ee71e
 
 -- query IIIITI rowsort join434
@@ -43845,7 +43837,7 @@ SELECT a3, c5, d6+a6, a9+72, x7, c1*559
    AND e7 in (356,127,929)
    AND e9=c5
    AND 338=a1
-;
+ORDER BY 1,2,3,4,5,6;
 -- 384 values hashing to 327f0d4a98fc65d6edc95f14b59ee71e
 
 -- query IIIITI rowsort join434
@@ -43857,7 +43849,7 @@ SELECT a3, c5, d6+a6, a9+72, x7, c1*559
    AND 338=a1
    AND e7 in (356,127,929)
    AND e9=c5
-;
+ORDER BY 1,2,3,4,5,6;
 -- 384 values hashing to 327f0d4a98fc65d6edc95f14b59ee71e
 
 -- query IIIIII rowsort join435
@@ -43869,7 +43861,7 @@ SELECT d3+439, e5, a9, e4+156+b3, b2, b7+564+b5
    AND b4 in (379,816,979,884,847)
    AND 6=e7
    AND (62=c9 OR c9=151 OR 688=c9 OR 547=c9)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1050 values hashing to f4714e2b2025269762dcacd2858b65e4
 
 -- query IIIIII rowsort join435
@@ -43881,7 +43873,7 @@ SELECT d3+439, e5, a9, e4+156+b3, b2, b7+564+b5
    AND c5=31
    AND (62=c9 OR c9=151 OR 688=c9 OR 547=c9)
    AND b4 in (379,816,979,884,847)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1050 values hashing to f4714e2b2025269762dcacd2858b65e4
 
 -- query IIIIII rowsort join435
@@ -43893,7 +43885,7 @@ SELECT d3+439, e5, a9, e4+156+b3, b2, b7+564+b5
    AND c5=31
    AND d2=498
    AND a3 in (863,105,70,386,879,476,822)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1050 values hashing to f4714e2b2025269762dcacd2858b65e4
 
 -- query IIIIII rowsort join435
@@ -43905,7 +43897,7 @@ SELECT d3+439, e5, a9, e4+156+b3, b2, b7+564+b5
    AND (62=c9 OR c9=151 OR 688=c9 OR 547=c9)
    AND d2=498
    AND a3 in (863,105,70,386,879,476,822)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1050 values hashing to f4714e2b2025269762dcacd2858b65e4
 
 -- query II rowsort join436
@@ -43913,7 +43905,7 @@ SELECT a4+b4, c1+c4
   FROM t1, t4
  WHERE a1 in (88,895,75,754,299,267,189)
    AND b4 in (608,408,979,816,577)
-;
+ORDER BY 1,2;
 -- 70 values hashing to b2f159d30f7215e7f51a7ce3223557c9
 
 -- query II rowsort join436
@@ -43921,7 +43913,7 @@ SELECT a4+b4, c1+c4
   FROM t1, t4
  WHERE b4 in (608,408,979,816,577)
    AND a1 in (88,895,75,754,299,267,189)
-;
+ORDER BY 1,2;
 -- 70 values hashing to b2f159d30f7215e7f51a7ce3223557c9
 
 -- query III rowsort join437
@@ -43930,7 +43922,7 @@ SELECT c8*557, e3, b4+d8
  WHERE e8 in (846,561,761,592,233)
    AND a3 in (560,776,611,499,364,863,184)
    AND b4 in (919,765,577,678,402)
-;
+ORDER BY 1,2,3;
 -- 810 values hashing to 3a4cfc5f18b24485c375cacc2a799c34
 
 -- query III rowsort join437
@@ -43939,7 +43931,7 @@ SELECT c8*557, e3, b4+d8
  WHERE b4 in (919,765,577,678,402)
    AND a3 in (560,776,611,499,364,863,184)
    AND e8 in (846,561,761,592,233)
-;
+ORDER BY 1,2,3;
 -- 810 values hashing to 3a4cfc5f18b24485c375cacc2a799c34
 
 -- query III rowsort join437
@@ -43948,7 +43940,7 @@ SELECT c8*557, e3, b4+d8
  WHERE b4 in (919,765,577,678,402)
    AND a3 in (560,776,611,499,364,863,184)
    AND e8 in (846,561,761,592,233)
-;
+ORDER BY 1,2,3;
 -- 810 values hashing to 3a4cfc5f18b24485c375cacc2a799c34
 
 -- query III rowsort join437
@@ -43957,7 +43949,7 @@ SELECT c8*557, e3, b4+d8
  WHERE b4 in (919,765,577,678,402)
    AND e8 in (846,561,761,592,233)
    AND a3 in (560,776,611,499,364,863,184)
-;
+ORDER BY 1,2,3;
 -- 810 values hashing to 3a4cfc5f18b24485c375cacc2a799c34
 
 -- query TIIIII rowsort join438
@@ -43969,7 +43961,7 @@ SELECT x4, b5, a9, c2, d7+78, a3
    AND b4 in (829,884,748,587,294)
    AND 692=e2
    AND a3 in (143,515,615,335,490)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 600 values hashing to 4961bdc587051e4b4375995a1bc7a88e
 
 -- query TIIIII rowsort join438
@@ -43981,7 +43973,7 @@ SELECT x4, b5, a9, c2, d7+78, a3
    AND c9=e3
    AND 692=e2
    AND c5 in (3,915,721,894,844)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 600 values hashing to 4961bdc587051e4b4375995a1bc7a88e
 
 -- query TIIIII rowsort join438
@@ -43993,7 +43985,7 @@ SELECT x4, b5, a9, c2, d7+78, a3
    AND e7=455
    AND 692=e2
    AND c5 in (3,915,721,894,844)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 600 values hashing to 4961bdc587051e4b4375995a1bc7a88e
 
 -- query TIIIII rowsort join438
@@ -44005,7 +43997,7 @@ SELECT x4, b5, a9, c2, d7+78, a3
    AND e7=455
    AND c5 in (3,915,721,894,844)
    AND a3 in (143,515,615,335,490)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 600 values hashing to 4961bdc587051e4b4375995a1bc7a88e
 
 -- query II rowsort join439
@@ -44013,7 +44005,7 @@ SELECT c9+a9, e6
   FROM t6, t9
  WHERE (548=a9 OR a9=251 OR a9=712 OR a9=776)
    AND (931=d6 OR 72=d6 OR d6=911 OR 613=d6)
-;
+ORDER BY 1,2;
 -- 32 values hashing to 625b838ebce74e7fe953c36bfe251586
 
 -- query II rowsort join439
@@ -44021,7 +44013,7 @@ SELECT c9+a9, e6
   FROM t6, t9
  WHERE (931=d6 OR 72=d6 OR d6=911 OR 613=d6)
    AND (548=a9 OR a9=251 OR a9=712 OR a9=776)
-;
+ORDER BY 1,2;
 -- 32 values hashing to 625b838ebce74e7fe953c36bfe251586
 
 -- query II rowsort join439
@@ -44029,7 +44021,7 @@ SELECT c9+a9, e6
   FROM t9, t6
  WHERE (931=d6 OR 72=d6 OR d6=911 OR 613=d6)
    AND (548=a9 OR a9=251 OR a9=712 OR a9=776)
-;
+ORDER BY 1,2;
 -- 32 values hashing to 625b838ebce74e7fe953c36bfe251586
 
 -- query II rowsort join440
@@ -44037,7 +44029,7 @@ SELECT d6+103+e6, a4
   FROM t6, t4
  WHERE b4 in (884,94,829,810,476,627,589)
    AND d6=223
-;
+ORDER BY 1,2;
 -- 14 values hashing to ae10551f441e39857442b6a0cd40938a
 
 -- query II rowsort join440
@@ -44045,7 +44037,7 @@ SELECT d6+103+e6, a4
   FROM t4, t6
  WHERE b4 in (884,94,829,810,476,627,589)
    AND d6=223
-;
+ORDER BY 1,2;
 -- 14 values hashing to ae10551f441e39857442b6a0cd40938a
 
 -- query ITIIIIII rowsort join441
@@ -44059,7 +44051,7 @@ SELECT d4*104+c5, x2, e7, a3+c5, b5, d1+522, a9, c6
    AND d9 in (790,926,283,439,668,450,142,467)
    AND a1 in (52,950,746)
    AND c2=d7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 7680 values hashing to fc6e04b62a94f662f93366dbb82c192a
 
 -- query ITIIIIII rowsort join441
@@ -44073,7 +44065,7 @@ SELECT d4*104+c5, x2, e7, a3+c5, b5, d1+522, a9, c6
    AND b4=802
    AND a1 in (52,950,746)
    AND c2=d7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 7680 values hashing to fc6e04b62a94f662f93366dbb82c192a
 
 -- query ITIIIIII rowsort join441
@@ -44087,7 +44079,7 @@ SELECT d4*104+c5, x2, e7, a3+c5, b5, d1+522, a9, c6
    AND a1 in (52,950,746)
    AND c5=527
    AND e7=638
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 7680 values hashing to fc6e04b62a94f662f93366dbb82c192a
 
 -- query ITIIIIII rowsort join441
@@ -44101,7 +44093,7 @@ SELECT d4*104+c5, x2, e7, a3+c5, b5, d1+522, a9, c6
    AND e7=638
    AND d9 in (790,926,283,439,668,450,142,467)
    AND b4=802
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 7680 values hashing to fc6e04b62a94f662f93366dbb82c192a
 
 -- query TII rowsort join442
@@ -44110,7 +44102,7 @@ SELECT x8, e9, a7+579
  WHERE 146=c9
    AND e7 in (48,103,439,372,841)
    AND e8=46
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to be3a9ead77837995f1efb4816a75a208
 
 -- query TII rowsort join442
@@ -44119,7 +44111,7 @@ SELECT x8, e9, a7+579
  WHERE 146=c9
    AND e7 in (48,103,439,372,841)
    AND e8=46
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to be3a9ead77837995f1efb4816a75a208
 
 -- query TII rowsort join442
@@ -44128,7 +44120,7 @@ SELECT x8, e9, a7+579
  WHERE e8=46
    AND 146=c9
    AND e7 in (48,103,439,372,841)
-;
+ORDER BY 1,2,3;
 -- 15 values hashing to be3a9ead77837995f1efb4816a75a208
 
 -- query III rowsort join443
@@ -44137,7 +44129,7 @@ SELECT c2, c4+b4, c8
  WHERE e8 in (561,485,463,578,46)
    AND 418=b2
    AND b4 in (407,184,372,907,86)
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to b29871b9075b3ae6100db8e00e49225a
 
 -- query III rowsort join443
@@ -44146,7 +44138,7 @@ SELECT c2, c4+b4, c8
  WHERE e8 in (561,485,463,578,46)
    AND b4 in (407,184,372,907,86)
    AND 418=b2
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to b29871b9075b3ae6100db8e00e49225a
 
 -- query III rowsort join443
@@ -44155,7 +44147,7 @@ SELECT c2, c4+b4, c8
  WHERE b4 in (407,184,372,907,86)
    AND e8 in (561,485,463,578,46)
    AND 418=b2
-;
+ORDER BY 1,2,3;
 -- 90 values hashing to b29871b9075b3ae6100db8e00e49225a
 
 -- query II rowsort join444
@@ -44163,7 +44155,7 @@ SELECT b1+793, e6*990
   FROM t6, t1
  WHERE 173=a1
    AND d6=689
-;
+ORDER BY 1,2;
 -- 1316
 -- 884070
 
@@ -44172,7 +44164,7 @@ SELECT b1+793, e6*990
   FROM t1, t6
  WHERE d6=689
    AND 173=a1
-;
+ORDER BY 1,2;
 -- 1316
 -- 884070
 
@@ -44181,7 +44173,7 @@ SELECT b1+793, e6*990
   FROM t6, t1
  WHERE d6=689
    AND 173=a1
-;
+ORDER BY 1,2;
 -- 1316
 -- 884070
 
@@ -44190,7 +44182,7 @@ SELECT b1+793, e6*990
   FROM t1, t6
  WHERE 173=a1
    AND d6=689
-;
+ORDER BY 1,2;
 -- 1316
 -- 884070
 
@@ -44199,7 +44191,7 @@ SELECT x3, a2
   FROM t3, t2
  WHERE (a3=499 OR 777=a3)
    AND d2 in (14,953,306,838,153,897,198)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 9d0d89101ebb1536e5a0ecc3bf374d17
 
 -- query TI rowsort join445
@@ -44207,7 +44199,7 @@ SELECT x3, a2
   FROM t3, t2
  WHERE d2 in (14,953,306,838,153,897,198)
    AND (a3=499 OR 777=a3)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 9d0d89101ebb1536e5a0ecc3bf374d17
 
 -- query TI rowsort join445
@@ -44215,7 +44207,7 @@ SELECT x3, a2
   FROM t2, t3
  WHERE d2 in (14,953,306,838,153,897,198)
    AND (a3=499 OR 777=a3)
-;
+ORDER BY 1,2;
 -- 48 values hashing to 9d0d89101ebb1536e5a0ecc3bf374d17
 
 -- query TI rowsort join446
@@ -44223,7 +44215,7 @@ SELECT x8, c9
   FROM t9, t8
  WHERE c9 in (98,253,601,531,347,64,349)
    AND e8=955
-;
+ORDER BY 1,2;
 -- 14 values hashing to 083195671288706388de83fb512ce9c4
 
 -- query TI rowsort join446
@@ -44231,7 +44223,7 @@ SELECT x8, c9
   FROM t9, t8
  WHERE e8=955
    AND c9 in (98,253,601,531,347,64,349)
-;
+ORDER BY 1,2;
 -- 14 values hashing to 083195671288706388de83fb512ce9c4
 
 -- query TI rowsort join446
@@ -44239,7 +44231,7 @@ SELECT x8, c9
   FROM t8, t9
  WHERE c9 in (98,253,601,531,347,64,349)
    AND e8=955
-;
+ORDER BY 1,2;
 -- 14 values hashing to 083195671288706388de83fb512ce9c4
 
 -- query III rowsort join447
@@ -44248,7 +44240,7 @@ SELECT d9, c4, b1
  WHERE b4=551
    AND (258=a9 OR a9=474)
    AND a1=314
-;
+ORDER BY 1,2,3;
 -- 268
 -- 178
 -- 572
@@ -44262,7 +44254,7 @@ SELECT d9, c4, b1
  WHERE b4=551
    AND a1=314
    AND (258=a9 OR a9=474)
-;
+ORDER BY 1,2,3;
 -- 268
 -- 178
 -- 572
@@ -44276,7 +44268,7 @@ SELECT d9, c4, b1
  WHERE (258=a9 OR a9=474)
    AND a1=314
    AND b4=551
-;
+ORDER BY 1,2,3;
 -- 268
 -- 178
 -- 572
@@ -44290,7 +44282,7 @@ SELECT d9, c4, b1
  WHERE b4=551
    AND a1=314
    AND (258=a9 OR a9=474)
-;
+ORDER BY 1,2,3;
 -- 268
 -- 178
 -- 572
@@ -44303,7 +44295,7 @@ SELECT a9+766+c9, e5+171
   FROM t9, t5
  WHERE c5 in (668,805,579)
    AND 439=d9
-;
+ORDER BY 1,2;
 -- 976
 -- 275
 -- 976
@@ -44316,7 +44308,7 @@ SELECT a9+766+c9, e5+171
   FROM t5, t9
  WHERE c5 in (668,805,579)
    AND 439=d9
-;
+ORDER BY 1,2;
 -- 976
 -- 275
 -- 976
@@ -44335,7 +44327,7 @@ SELECT e7+d1, c6*282, a9, b2, x1, d3, a5+c7, d4+990
    AND e7 in (456,234,844,301,168,983)
    AND a1=b6
    AND 914=d2
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 12960 values hashing to cce41c485ebcde34a5aea6242c5a4bf0
 
 -- query IIIITIII rowsort join449
@@ -44349,7 +44341,7 @@ SELECT e7+d1, c6*282, a9, b2, x1, d3, a5+c7, d4+990
    AND a1=b6
    AND 914=d2
    AND c9 in (531,457,587,39,240)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 12960 values hashing to cce41c485ebcde34a5aea6242c5a4bf0
 
 -- query IIIITIII rowsort join449
@@ -44363,7 +44355,7 @@ SELECT e7+d1, c6*282, a9, b2, x1, d3, a5+c7, d4+990
    AND c9 in (531,457,587,39,240)
    AND (41=a3 OR 822=a3 OR 929=a3 OR a3=929)
    AND (966=b4 OR 469=b4)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 12960 values hashing to cce41c485ebcde34a5aea6242c5a4bf0
 
 -- query IIIITIII rowsort join449
@@ -44377,7 +44369,7 @@ SELECT e7+d1, c6*282, a9, b2, x1, d3, a5+c7, d4+990
    AND c5 in (198,101,820,441,299,756,678,210)
    AND e7 in (456,234,844,301,168,983)
    AND a1=b6
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 12960 values hashing to cce41c485ebcde34a5aea6242c5a4bf0
 
 -- query IIIIITTI rowsort join450
@@ -44391,7 +44383,7 @@ SELECT d3, c8+499, d5, e9, d1*869+a7, x7, x2, c6+649
    AND e8=682
    AND 19=e9
    AND c5=657
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8192 values hashing to adbaf7a3b7076283e06afa44657352b1
 
 -- query IIIIITTI rowsort join450
@@ -44405,7 +44397,7 @@ SELECT d3, c8+499, d5, e9, d1*869+a7, x7, x2, c6+649
    AND a2 in (415,35,522,308)
    AND 231=a1
    AND (31=e7 OR 983=e7 OR e7=983 OR e7=590)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8192 values hashing to adbaf7a3b7076283e06afa44657352b1
 
 -- query IIIIITTI rowsort join450
@@ -44419,7 +44411,7 @@ SELECT d3, c8+499, d5, e9, d1*869+a7, x7, x2, c6+649
    AND a3 in (777,822,913,476,198,306,581,899)
    AND 19=e9
    AND a2 in (415,35,522,308)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8192 values hashing to adbaf7a3b7076283e06afa44657352b1
 
 -- query IIIIITTI rowsort join450
@@ -44433,7 +44425,7 @@ SELECT d3, c8+499, d5, e9, d1*869+a7, x7, x2, c6+649
    AND a3 in (777,822,913,476,198,306,581,899)
    AND 19=e9
    AND 231=a1
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 8192 values hashing to adbaf7a3b7076283e06afa44657352b1
 
 -- query TIIII rowsort join451
@@ -44444,7 +44436,7 @@ SELECT x4, c8+b2, a7+a4, a2+d8, c3
    AND (283=a2 OR 590=a2)
    AND (765=b4 OR b4=892)
    AND e7 in (689,122,67,904)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to b88f6131dc897e3830618b37ae5fbd9a
 
 -- query TIIII rowsort join451
@@ -44455,7 +44447,7 @@ SELECT x4, c8+b2, a7+a4, a2+d8, c3
    AND a3=525
    AND e7 in (689,122,67,904)
    AND (765=b4 OR b4=892)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to b88f6131dc897e3830618b37ae5fbd9a
 
 -- query TIIII rowsort join451
@@ -44466,7 +44458,7 @@ SELECT x4, c8+b2, a7+a4, a2+d8, c3
    AND 682=e8
    AND e7 in (689,122,67,904)
    AND a3=525
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to b88f6131dc897e3830618b37ae5fbd9a
 
 -- query TIIII rowsort join451
@@ -44477,7 +44469,7 @@ SELECT x4, c8+b2, a7+a4, a2+d8, c3
    AND a3=525
    AND (283=a2 OR 590=a2)
    AND (765=b4 OR b4=892)
-;
+ORDER BY 1,2,3,4,5;
 -- 120 values hashing to b88f6131dc897e3830618b37ae5fbd9a
 
 -- query ITI rowsort join452
@@ -44486,7 +44478,7 @@ SELECT d1, x7, a3
  WHERE a3=525
    AND a1 in (898,52,170,382,866,552)
    AND e7=a1
-;
+ORDER BY 1,2,3;
 -- 254
 -- table tn7 row 41
 -- 525
@@ -44497,7 +44489,7 @@ SELECT d1, x7, a3
  WHERE a1 in (898,52,170,382,866,552)
    AND e7=a1
    AND a3=525
-;
+ORDER BY 1,2,3;
 -- 254
 -- table tn7 row 41
 -- 525
@@ -44508,7 +44500,7 @@ SELECT d1, x7, a3
  WHERE a1 in (898,52,170,382,866,552)
    AND a3=525
    AND e7=a1
-;
+ORDER BY 1,2,3;
 -- 254
 -- table tn7 row 41
 -- 525
@@ -44519,7 +44511,7 @@ SELECT d1, x7, a3
  WHERE a3=525
    AND a1 in (898,52,170,382,866,552)
    AND e7=a1
-;
+ORDER BY 1,2,3;
 -- 254
 -- table tn7 row 41
 -- 525
@@ -44529,7 +44521,7 @@ SELECT x8, d1+332
   FROM t1, t8
  WHERE (e8=242 OR 944=e8 OR 22=e8)
    AND a1 in (604,552,591,380,640,505,213,637)
-;
+ORDER BY 1,2;
 -- 54 values hashing to fdad0807cd89f8c66e0779ca22f9d4ce
 
 -- query TI rowsort join453
@@ -44537,7 +44529,7 @@ SELECT x8, d1+332
   FROM t8, t1
  WHERE a1 in (604,552,591,380,640,505,213,637)
    AND (e8=242 OR 944=e8 OR 22=e8)
-;
+ORDER BY 1,2;
 -- 54 values hashing to fdad0807cd89f8c66e0779ca22f9d4ce
 
 -- query TI rowsort join453
@@ -44545,7 +44537,7 @@ SELECT x8, d1+332
   FROM t8, t1
  WHERE (e8=242 OR 944=e8 OR 22=e8)
    AND a1 in (604,552,591,380,640,505,213,637)
-;
+ORDER BY 1,2;
 -- 54 values hashing to fdad0807cd89f8c66e0779ca22f9d4ce
 
 -- query IIIII rowsort join454
@@ -44556,7 +44548,7 @@ SELECT c6+c2, e1*707, b5, d2, e7
    AND 196=d6
    AND a1 in (742,371,643,179)
    AND (647=e2 OR e2=945 OR e2=899 OR 564=e2)
-;
+ORDER BY 1,2,3,4,5;
 -- 200 values hashing to 99f56a1042502f6b2d76c03f16a52be0
 
 -- query IIIII rowsort join454
@@ -44567,7 +44559,7 @@ SELECT c6+c2, e1*707, b5, d2, e7
    AND c5=628
    AND a1 in (742,371,643,179)
    AND (456=e7 OR e7=89)
-;
+ORDER BY 1,2,3,4,5;
 -- 200 values hashing to 99f56a1042502f6b2d76c03f16a52be0
 
 -- query IIIII rowsort join454
@@ -44578,7 +44570,7 @@ SELECT c6+c2, e1*707, b5, d2, e7
    AND (647=e2 OR e2=945 OR e2=899 OR 564=e2)
    AND 196=d6
    AND c5=628
-;
+ORDER BY 1,2,3,4,5;
 -- 200 values hashing to 99f56a1042502f6b2d76c03f16a52be0
 
 -- query IIIII rowsort join454
@@ -44589,7 +44581,7 @@ SELECT c6+c2, e1*707, b5, d2, e7
    AND c5=628
    AND (456=e7 OR e7=89)
    AND a1 in (742,371,643,179)
-;
+ORDER BY 1,2,3,4,5;
 -- 200 values hashing to 99f56a1042502f6b2d76c03f16a52be0
 
 -- query IIIIII rowsort join455
@@ -44601,7 +44593,7 @@ SELECT b2, c3, a9*406+d9, d7+b3, d6, a8*346
    AND (b2=139 OR b2=501 OR 676=b2)
    AND (143=a3 OR a3=829 OR 376=a3)
    AND d6 in (956,446,560,790)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to 091c624d809f4be2d1c54921aaa072af
 
 -- query IIIIII rowsort join455
@@ -44613,7 +44605,7 @@ SELECT b2, c3, a9*406+d9, d7+b3, d6, a8*346
    AND e7 in (900,344,122,31,291,67)
    AND c9=b7
    AND d6 in (956,446,560,790)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to 091c624d809f4be2d1c54921aaa072af
 
 -- query IIIIII rowsort join455
@@ -44625,7 +44617,7 @@ SELECT b2, c3, a9*406+d9, d7+b3, d6, a8*346
    AND (143=a3 OR a3=829 OR 376=a3)
    AND e7 in (900,344,122,31,291,67)
    AND (b2=139 OR b2=501 OR 676=b2)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to 091c624d809f4be2d1c54921aaa072af
 
 -- query IIIIII rowsort join455
@@ -44637,7 +44629,7 @@ SELECT b2, c3, a9*406+d9, d7+b3, d6, a8*346
    AND d6 in (956,446,560,790)
    AND e8 in (260,384,561,63,392,44)
    AND e7 in (900,344,122,31,291,67)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 3456 values hashing to 091c624d809f4be2d1c54921aaa072af
 
 -- query TIIII rowsort join456
@@ -44648,7 +44640,7 @@ SELECT x3, a1*900, d2, e5, b8*149
    AND a1=c8
    AND c5 in (544,809,443)
    AND e8 in (199,295,377,383)
-;
+ORDER BY 1,2,3,4,5;
 -- 80 values hashing to c3400520f155be49038b9b7be7e6ffec
 
 -- query TIIII rowsort join456
@@ -44659,7 +44651,7 @@ SELECT x3, a1*900, d2, e5, b8*149
    AND a1=c8
    AND a3 in (549,41,964,306,162,591,5)
    AND e8 in (199,295,377,383)
-;
+ORDER BY 1,2,3,4,5;
 -- 80 values hashing to c3400520f155be49038b9b7be7e6ffec
 
 -- query TIIII rowsort join456
@@ -44670,7 +44662,7 @@ SELECT x3, a1*900, d2, e5, b8*149
    AND a3 in (549,41,964,306,162,591,5)
    AND c5 in (544,809,443)
    AND e2=e3
-;
+ORDER BY 1,2,3,4,5;
 -- 80 values hashing to c3400520f155be49038b9b7be7e6ffec
 
 -- query TIIII rowsort join456
@@ -44681,7 +44673,7 @@ SELECT x3, a1*900, d2, e5, b8*149
    AND a3 in (549,41,964,306,162,591,5)
    AND e2=e3
    AND e8 in (199,295,377,383)
-;
+ORDER BY 1,2,3,4,5;
 -- 80 values hashing to c3400520f155be49038b9b7be7e6ffec
 
 -- query ITII rowsort join457
@@ -44691,7 +44683,7 @@ SELECT a8, x7, c5, e6+d5
    AND e7=a8
    AND e8 in (329,476,7,180,431)
    AND c5 in (960,598,809,628,844,485,734)
-;
+ORDER BY 1,2,3,4;
 -- 672 values hashing to 6ccee85c8b1d565afb7f1851e92b925b
 
 -- query ITII rowsort join457
@@ -44701,7 +44693,7 @@ SELECT a8, x7, c5, e6+d5
    AND e7=a8
    AND d6 in (822,767,393,147,286,72,366)
    AND c5 in (960,598,809,628,844,485,734)
-;
+ORDER BY 1,2,3,4;
 -- 672 values hashing to 6ccee85c8b1d565afb7f1851e92b925b
 
 -- query ITII rowsort join457
@@ -44711,7 +44703,7 @@ SELECT a8, x7, c5, e6+d5
    AND e7=a8
    AND e8 in (329,476,7,180,431)
    AND c5 in (960,598,809,628,844,485,734)
-;
+ORDER BY 1,2,3,4;
 -- 672 values hashing to 6ccee85c8b1d565afb7f1851e92b925b
 
 -- query ITII rowsort join457
@@ -44721,7 +44713,7 @@ SELECT a8, x7, c5, e6+d5
    AND d6 in (822,767,393,147,286,72,366)
    AND e7=a8
    AND c5 in (960,598,809,628,844,485,734)
-;
+ORDER BY 1,2,3,4;
 -- 672 values hashing to 6ccee85c8b1d565afb7f1851e92b925b
 
 -- query II rowsort join458
@@ -44729,7 +44721,7 @@ SELECT b9, e8*764
   FROM t8, t9
  WHERE (761=e8 OR e8=431 OR e8=635 OR e8=864)
    AND c9=992
-;
+ORDER BY 1,2;
 -- 446
 -- 329284
 -- 446
@@ -44744,7 +44736,7 @@ SELECT b9, e8*764
   FROM t9, t8
  WHERE c9=992
    AND (761=e8 OR e8=431 OR e8=635 OR e8=864)
-;
+ORDER BY 1,2;
 -- 446
 -- 329284
 -- 446
@@ -44759,7 +44751,7 @@ SELECT b9, e8*764
   FROM t9, t8
  WHERE (761=e8 OR e8=431 OR e8=635 OR e8=864)
    AND c9=992
-;
+ORDER BY 1,2;
 -- 446
 -- 329284
 -- 446
@@ -44777,7 +44769,7 @@ SELECT d3+c5, x5, c2+88, c4+309, d1
    AND b2 in (35,177,714,21,812,846,217)
    AND (941=b4 OR b4=469)
    AND (500=a3 OR a3=697 OR 457=a3 OR a3=992)
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to abfd5fbe194beaf9e54c096d34f9b7f0
 
 -- query ITIII rowsort join459
@@ -44788,7 +44780,7 @@ SELECT d3+c5, x5, c2+88, c4+309, d1
    AND a1=e5
    AND c5 in (299,27,924,152,936)
    AND (500=a3 OR a3=697 OR 457=a3 OR a3=992)
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to abfd5fbe194beaf9e54c096d34f9b7f0
 
 -- query ITIII rowsort join459
@@ -44799,7 +44791,7 @@ SELECT d3+c5, x5, c2+88, c4+309, d1
    AND b2 in (35,177,714,21,812,846,217)
    AND (500=a3 OR a3=697 OR 457=a3 OR a3=992)
    AND a1=e5
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to abfd5fbe194beaf9e54c096d34f9b7f0
 
 -- query ITIII rowsort join459
@@ -44810,7 +44802,7 @@ SELECT d3+c5, x5, c2+88, c4+309, d1
    AND b2 in (35,177,714,21,812,846,217)
    AND c5 in (299,27,924,152,936)
    AND (941=b4 OR b4=469)
-;
+ORDER BY 1,2,3,4,5;
 -- 350 values hashing to abfd5fbe194beaf9e54c096d34f9b7f0
 
 -- query II rowsort join460
@@ -44818,7 +44810,7 @@ SELECT d8, e1
   FROM t8, t1
  WHERE a1=20
    AND e8=186
-;
+ORDER BY 1,2;
 -- 422
 -- 117
 
@@ -44827,7 +44819,7 @@ SELECT d8, e1
   FROM t1, t8
  WHERE e8=186
    AND a1=20
-;
+ORDER BY 1,2;
 -- 422
 -- 117
 
@@ -44836,7 +44828,7 @@ SELECT d8, e1
   FROM t8, t1
  WHERE e8=186
    AND a1=20
-;
+ORDER BY 1,2;
 -- 422
 -- 117
 
@@ -44847,7 +44839,7 @@ SELECT e9*687, e5, a3*107, c2
    AND c9 in (696,811,118,39,643,935,807,905)
    AND a3 in (754,197,376,181,296,608)
    AND c5 in (868,147,733)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to a4e3dd70937711d176b94062e0b72e58
 
 -- query IIII rowsort join461
@@ -44857,7 +44849,7 @@ SELECT e9*687, e5, a3*107, c2
    AND a2 in (775,279,922)
    AND c5 in (868,147,733)
    AND a3 in (754,197,376,181,296,608)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to a4e3dd70937711d176b94062e0b72e58
 
 -- query IIII rowsort join461
@@ -44867,7 +44859,7 @@ SELECT e9*687, e5, a3*107, c2
    AND c5 in (868,147,733)
    AND c9 in (696,811,118,39,643,935,807,905)
    AND a3 in (754,197,376,181,296,608)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to a4e3dd70937711d176b94062e0b72e58
 
 -- query IIII rowsort join461
@@ -44877,7 +44869,7 @@ SELECT e9*687, e5, a3*107, c2
    AND a2 in (775,279,922)
    AND c9 in (696,811,118,39,643,935,807,905)
    AND a3 in (754,197,376,181,296,608)
-;
+ORDER BY 1,2,3,4;
 -- 2688 values hashing to a4e3dd70937711d176b94062e0b72e58
 
 -- query IT rowsort join462
@@ -44885,7 +44877,7 @@ SELECT a4+b4, x8
   FROM t4, t8
  WHERE e8 in (221,776,809,881,186,893)
    AND b4=964
-;
+ORDER BY 1,2;
 -- 14 values hashing to e170fdd5955ae8c97423f7846c652899
 
 -- query IT rowsort join462
@@ -44893,7 +44885,7 @@ SELECT a4+b4, x8
   FROM t8, t4
  WHERE b4=964
    AND e8 in (221,776,809,881,186,893)
-;
+ORDER BY 1,2;
 -- 14 values hashing to e170fdd5955ae8c97423f7846c652899
 
 -- query IT rowsort join462
@@ -44901,7 +44893,7 @@ SELECT a4+b4, x8
   FROM t4, t8
  WHERE b4=964
    AND e8 in (221,776,809,881,186,893)
-;
+ORDER BY 1,2;
 -- 14 values hashing to e170fdd5955ae8c97423f7846c652899
 
 -- query IT rowsort join462
@@ -44909,7 +44901,7 @@ SELECT a4+b4, x8
   FROM t8, t4
  WHERE e8 in (221,776,809,881,186,893)
    AND b4=964
-;
+ORDER BY 1,2;
 -- 14 values hashing to e170fdd5955ae8c97423f7846c652899
 
 -- query II rowsort join463
@@ -44917,7 +44909,7 @@ SELECT d2+d2, a6
   FROM t6, t2
  WHERE 590=d6
    AND d2=241
-;
+ORDER BY 1,2;
 -- 482
 -- 877
 
@@ -44926,7 +44918,7 @@ SELECT d2+d2, a6
   FROM t6, t2
  WHERE d2=241
    AND 590=d6
-;
+ORDER BY 1,2;
 -- 482
 -- 877
 
@@ -44937,7 +44929,7 @@ SELECT x9, b6, d8, x5
    AND 678=e8
    AND (103=b9 OR b9=446 OR 149=b9 OR 549=b9)
    AND c5 in (855,489,545,351,756,598)
-;
+ORDER BY 1,2,3,4;
 -- 160 values hashing to a59e63316bba20af0562515b730f0644
 
 -- query TIIT rowsort join464
@@ -44947,7 +44939,7 @@ SELECT x9, b6, d8, x5
    AND d6=786
    AND (103=b9 OR b9=446 OR 149=b9 OR 549=b9)
    AND 678=e8
-;
+ORDER BY 1,2,3,4;
 -- 160 values hashing to a59e63316bba20af0562515b730f0644
 
 -- query TIIT rowsort join464
@@ -44957,7 +44949,7 @@ SELECT x9, b6, d8, x5
    AND 678=e8
    AND d6=786
    AND c5 in (855,489,545,351,756,598)
-;
+ORDER BY 1,2,3,4;
 -- 160 values hashing to a59e63316bba20af0562515b730f0644
 
 -- query TIIT rowsort join464
@@ -44967,7 +44959,7 @@ SELECT x9, b6, d8, x5
    AND 678=e8
    AND (103=b9 OR b9=446 OR 149=b9 OR 549=b9)
    AND d6=786
-;
+ORDER BY 1,2,3,4;
 -- 160 values hashing to a59e63316bba20af0562515b730f0644
 
 -- query IT rowsort join465
@@ -44975,7 +44967,7 @@ SELECT c6, x8
   FROM t6, t8
  WHERE 981=e8
    AND d6=750
-;
+ORDER BY 1,2;
 -- 491
 -- table tn8 row 74
 
@@ -44984,7 +44976,7 @@ SELECT c6, x8
   FROM t8, t6
  WHERE 981=e8
    AND d6=750
-;
+ORDER BY 1,2;
 -- 491
 -- table tn8 row 74
 
@@ -44993,7 +44985,7 @@ SELECT c6, x8
   FROM t8, t6
  WHERE d6=750
    AND 981=e8
-;
+ORDER BY 1,2;
 -- 491
 -- table tn8 row 74
 
@@ -45003,7 +44995,7 @@ SELECT d8+606, b7, c2+418
  WHERE (736=e8 OR e8=881 OR 349=e8)
    AND e7 in (976,844,782)
    AND e2 in (40,554,783)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to ccc2daef3ad8767156f3798c2a450b91
 
 -- query III rowsort join466
@@ -45012,7 +45004,7 @@ SELECT d8+606, b7, c2+418
  WHERE (736=e8 OR e8=881 OR 349=e8)
    AND e7 in (976,844,782)
    AND e2 in (40,554,783)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to ccc2daef3ad8767156f3798c2a450b91
 
 -- query III rowsort join466
@@ -45021,7 +45013,7 @@ SELECT d8+606, b7, c2+418
  WHERE e7 in (976,844,782)
    AND e2 in (40,554,783)
    AND (736=e8 OR e8=881 OR 349=e8)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to ccc2daef3ad8767156f3798c2a450b91
 
 -- query III rowsort join466
@@ -45030,7 +45022,7 @@ SELECT d8+606, b7, c2+418
  WHERE e2 in (40,554,783)
    AND e7 in (976,844,782)
    AND (736=e8 OR e8=881 OR 349=e8)
-;
+ORDER BY 1,2,3;
 -- 135 values hashing to ccc2daef3ad8767156f3798c2a450b91
 
 -- query TI rowsort join467
@@ -45038,7 +45030,7 @@ SELECT x4, a8*690+c4
   FROM t4, t8
  WHERE b4 in (387,267,276)
    AND e8=a4
-;
+ORDER BY 1,2;
 -- table tn4 row 5
 -- 400141
 
@@ -45047,7 +45039,7 @@ SELECT x4, a8*690+c4
   FROM t8, t4
  WHERE b4 in (387,267,276)
    AND e8=a4
-;
+ORDER BY 1,2;
 -- table tn4 row 5
 -- 400141
 
@@ -45056,7 +45048,7 @@ SELECT x4, a8*690+c4
   FROM t4, t8
  WHERE e8=a4
    AND b4 in (387,267,276)
-;
+ORDER BY 1,2;
 -- table tn4 row 5
 -- 400141
 
@@ -45067,7 +45059,7 @@ SELECT c3, a4+936+d4, c2+a2, e6
    AND b4=538
    AND 581=d6
    AND b2 in (313,674,605,329,353,38)
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 1b5d9ba36199a290e955965351ffa1be
 
 -- query IIII rowsort join468
@@ -45077,7 +45069,7 @@ SELECT c3, a4+936+d4, c2+a2, e6
    AND b4=538
    AND a3=379
    AND b2 in (313,674,605,329,353,38)
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 1b5d9ba36199a290e955965351ffa1be
 
 -- query IIII rowsort join468
@@ -45087,7 +45079,7 @@ SELECT c3, a4+936+d4, c2+a2, e6
    AND b4=538
    AND a3=379
    AND 581=d6
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 1b5d9ba36199a290e955965351ffa1be
 
 -- query IIII rowsort join468
@@ -45097,7 +45089,7 @@ SELECT c3, a4+936+d4, c2+a2, e6
    AND 581=d6
    AND a3=379
    AND b4=538
-;
+ORDER BY 1,2,3,4;
 -- 24 values hashing to 1b5d9ba36199a290e955965351ffa1be
 
 -- query IIIIIITT rowsort join469
@@ -45111,7 +45103,7 @@ SELECT d2, d8+d7, c4, b9, c5, b7, x3, x6
    AND (552=e7 OR 282=e7 OR e7=508 OR 280=e7)
    AND a3=c6
    AND b2=173
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1080 values hashing to ef85254681f950c2794874fa0ff80305
 
 -- query IIIIIITT rowsort join469
@@ -45125,7 +45117,7 @@ SELECT d2, d8+d7, c4, b9, c5, b7, x3, x6
    AND b4=535
    AND c5 in (855,797,163,734,293,960)
    AND c9=801
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1080 values hashing to ef85254681f950c2794874fa0ff80305
 
 -- query IIIIIITT rowsort join469
@@ -45139,7 +45131,7 @@ SELECT d2, d8+d7, c4, b9, c5, b7, x3, x6
    AND (552=e7 OR 282=e7 OR e7=508 OR 280=e7)
    AND b4=535
    AND d6=974
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1080 values hashing to ef85254681f950c2794874fa0ff80305
 
 -- query IIIIIITT rowsort join469
@@ -45153,7 +45145,7 @@ SELECT d2, d8+d7, c4, b9, c5, b7, x3, x6
    AND c9=801
    AND b4=535
    AND c5 in (855,797,163,734,293,960)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 1080 values hashing to ef85254681f950c2794874fa0ff80305
 
 -- query IITTI rowsort join470
@@ -45164,7 +45156,7 @@ SELECT a2+a2, e3, x5, x1, a4
    AND b4 in (35,924,784)
    AND (18=c5 OR c5=820 OR c5=855 OR c5=696)
    AND c2 in (788,374,274,160,575,711,625)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to eda87a4f142396a88420eeaeb563dd40
 
 -- query IITTI rowsort join470
@@ -45175,7 +45167,7 @@ SELECT a2+a2, e3, x5, x1, a4
    AND 754=a1
    AND 500=a3
    AND b4 in (35,924,784)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to eda87a4f142396a88420eeaeb563dd40
 
 -- query IITTI rowsort join470
@@ -45186,7 +45178,7 @@ SELECT a2+a2, e3, x5, x1, a4
    AND 500=a3
    AND 754=a1
    AND (18=c5 OR c5=820 OR c5=855 OR c5=696)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to eda87a4f142396a88420eeaeb563dd40
 
 -- query IITTI rowsort join470
@@ -45197,7 +45189,7 @@ SELECT a2+a2, e3, x5, x1, a4
    AND 754=a1
    AND c2 in (788,374,274,160,575,711,625)
    AND (18=c5 OR c5=820 OR c5=855 OR c5=696)
-;
+ORDER BY 1,2,3,4,5;
 -- 630 values hashing to eda87a4f142396a88420eeaeb563dd40
 
 -- query II rowsort join471
@@ -45205,7 +45197,7 @@ SELECT c1+d1, a6*559+e1
   FROM t1, t6
  WHERE 581=d6
    AND 829=a1
-;
+ORDER BY 1,2;
 -- 1143
 -- 440072
 
@@ -45214,7 +45206,7 @@ SELECT c1+d1, a6*559+e1
   FROM t1, t6
  WHERE 829=a1
    AND 581=d6
-;
+ORDER BY 1,2;
 -- 1143
 -- 440072
 
@@ -45223,7 +45215,7 @@ SELECT c1+d1, a6*559+e1
   FROM t6, t1
  WHERE 829=a1
    AND 581=d6
-;
+ORDER BY 1,2;
 -- 1143
 -- 440072
 
@@ -45236,7 +45228,7 @@ SELECT b2, c8*582, e4, b7+731, a3*232, a5+748
    AND c5=936
    AND e7=98
    AND b2 in (864,966,932,846)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1176 values hashing to 5b13486f4b7ff852a55fd647b05eddda
 
 -- query IIIIII rowsort join472
@@ -45248,7 +45240,7 @@ SELECT b2, c8*582, e4, b7+731, a3*232, a5+748
    AND b2 in (864,966,932,846)
    AND e8 in (431,421,579,617,242)
    AND e7=98
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1176 values hashing to 5b13486f4b7ff852a55fd647b05eddda
 
 -- query IIIIII rowsort join472
@@ -45260,7 +45252,7 @@ SELECT b2, c8*582, e4, b7+731, a3*232, a5+748
    AND c5=936
    AND b4=551
    AND a3 in (396,353,995,135,777,303,234)
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1176 values hashing to 5b13486f4b7ff852a55fd647b05eddda
 
 -- query IIIIII rowsort join472
@@ -45272,7 +45264,7 @@ SELECT b2, c8*582, e4, b7+731, a3*232, a5+748
    AND a3 in (396,353,995,135,777,303,234)
    AND b4=551
    AND e7=98
-;
+ORDER BY 1,2,3,4,5,6;
 -- 1176 values hashing to 5b13486f4b7ff852a55fd647b05eddda
 
 -- query TTII rowsort join473
@@ -45282,7 +45274,7 @@ SELECT x4, x1, c6, b2+948+d1
    AND b4 in (535,137,184,982,538,498)
    AND b2 in (676,966,501,173,504,90,985,276)
    AND a1 in (477,380,963)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to 6ac118afafaff33a0ef25b85aeb5e709
 
 -- query TTII rowsort join473
@@ -45292,7 +45284,7 @@ SELECT x4, x1, c6, b2+948+d1
    AND b2 in (676,966,501,173,504,90,985,276)
    AND b4 in (535,137,184,982,538,498)
    AND a1 in (477,380,963)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to 6ac118afafaff33a0ef25b85aeb5e709
 
 -- query TTII rowsort join473
@@ -45302,7 +45294,7 @@ SELECT x4, x1, c6, b2+948+d1
    AND b2 in (676,966,501,173,504,90,985,276)
    AND d6=c2
    AND b4 in (535,137,184,982,538,498)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to 6ac118afafaff33a0ef25b85aeb5e709
 
 -- query TTII rowsort join473
@@ -45312,7 +45304,7 @@ SELECT x4, x1, c6, b2+948+d1
    AND b4 in (535,137,184,982,538,498)
    AND a1 in (477,380,963)
    AND b2 in (676,966,501,173,504,90,985,276)
-;
+ORDER BY 1,2,3,4;
 -- 168 values hashing to 6ac118afafaff33a0ef25b85aeb5e709
 
 -- query ITII rowsort join474
@@ -45322,7 +45314,7 @@ SELECT b3*250+a7, x7, d8, d2*98
    AND e7=d2
    AND e8=b3
    AND a2 in (901,159,471,442,775,809,245)
-;
+ORDER BY 1,2,3,4;
 -- 51732
 -- table tn7 row 92
 -- 511
@@ -45335,7 +45327,7 @@ SELECT b3*250+a7, x7, d8, d2*98
    AND a2 in (901,159,471,442,775,809,245)
    AND e7=d2
    AND e8=b3
-;
+ORDER BY 1,2,3,4;
 -- 51732
 -- table tn7 row 92
 -- 511
@@ -45348,7 +45340,7 @@ SELECT b3*250+a7, x7, d8, d2*98
    AND (a3=393 OR 12=a3 OR a3=525 OR a3=164)
    AND a2 in (901,159,471,442,775,809,245)
    AND e8=b3
-;
+ORDER BY 1,2,3,4;
 -- 51732
 -- table tn7 row 92
 -- 511
@@ -45361,7 +45353,7 @@ SELECT b3*250+a7, x7, d8, d2*98
    AND a2 in (901,159,471,442,775,809,245)
    AND (a3=393 OR 12=a3 OR a3=525 OR a3=164)
    AND e7=d2
-;
+ORDER BY 1,2,3,4;
 -- 51732
 -- table tn7 row 92
 -- 511
@@ -45373,7 +45365,7 @@ SELECT d4*979+a5, x5, e8*323
  WHERE b4 in (961,765,882,220,607,107,700,735)
    AND (c5=158 OR 927=c5 OR c5=602 OR 855=c5)
    AND e8 in (41,792,919,678,806,866,811)
-;
+ORDER BY 1,2,3;
 -- 945 values hashing to 509aa32f9e15e5a34d2195fa98044fd0
 
 -- query ITI rowsort join475
@@ -45382,7 +45374,7 @@ SELECT d4*979+a5, x5, e8*323
  WHERE (c5=158 OR 927=c5 OR c5=602 OR 855=c5)
    AND e8 in (41,792,919,678,806,866,811)
    AND b4 in (961,765,882,220,607,107,700,735)
-;
+ORDER BY 1,2,3;
 -- 945 values hashing to 509aa32f9e15e5a34d2195fa98044fd0
 
 -- query ITI rowsort join475
@@ -45391,7 +45383,7 @@ SELECT d4*979+a5, x5, e8*323
  WHERE (c5=158 OR 927=c5 OR c5=602 OR 855=c5)
    AND e8 in (41,792,919,678,806,866,811)
    AND b4 in (961,765,882,220,607,107,700,735)
-;
+ORDER BY 1,2,3;
 -- 945 values hashing to 509aa32f9e15e5a34d2195fa98044fd0
 
 -- query ITI rowsort join475
@@ -45400,7 +45392,7 @@ SELECT d4*979+a5, x5, e8*323
  WHERE e8 in (41,792,919,678,806,866,811)
    AND (c5=158 OR 927=c5 OR c5=602 OR 855=c5)
    AND b4 in (961,765,882,220,607,107,700,735)
-;
+ORDER BY 1,2,3;
 -- 945 values hashing to 509aa32f9e15e5a34d2195fa98044fd0
 
 -- query II rowsort join476
@@ -45408,7 +45400,7 @@ SELECT a5, d1*442
   FROM t5, t1
  WHERE a1 in (524,992,864,931,477,754)
    AND c5=923
-;
+ORDER BY 1,2;
 -- 12 values hashing to 08729e91a8d1b5ca9040cee1a4a62029
 
 -- query II rowsort join476
@@ -45416,7 +45408,7 @@ SELECT a5, d1*442
   FROM t1, t5
  WHERE a1 in (524,992,864,931,477,754)
    AND c5=923
-;
+ORDER BY 1,2;
 -- 12 values hashing to 08729e91a8d1b5ca9040cee1a4a62029
 
 -- query II rowsort join476
@@ -45424,7 +45416,7 @@ SELECT a5, d1*442
   FROM t1, t5
  WHERE c5=923
    AND a1 in (524,992,864,931,477,754)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 08729e91a8d1b5ca9040cee1a4a62029
 
 -- query II rowsort join477
@@ -45432,7 +45424,7 @@ SELECT d8+a8, b5
   FROM t5, t8
  WHERE e8=487
    AND c5 in (147,158,915,941)
-;
+ORDER BY 1,2;
 -- 12 values hashing to 445f7bda60e52e64e3c5c95cd3359d29
 
 -- query II rowsort join477
@@ -45440,7 +45432,7 @@ SELECT d8+a8, b5
   FROM t8, t5
  WHERE c5 in (147,158,915,941)
    AND e8=487
-;
+ORDER BY 1,2;
 -- 12 values hashing to 445f7bda60e52e64e3c5c95cd3359d29
 
 -- query II rowsort join478
@@ -45448,7 +45440,7 @@ SELECT c1, b3+e1
   FROM t1, t3
  WHERE a3 in (979,347,244,135,255,145)
    AND a1=d3
-;
+ORDER BY 1,2;
 -- 12
 -- 498
 
@@ -45457,7 +45449,7 @@ SELECT c1, b3+e1
   FROM t3, t1
  WHERE a3 in (979,347,244,135,255,145)
    AND a1=d3
-;
+ORDER BY 1,2;
 -- 12
 -- 498
 
@@ -45466,7 +45458,7 @@ SELECT x6, a9+398+b6
   FROM t9, t6
  WHERE b9=804
    AND d6=256
-;
+ORDER BY 1,2;
 -- table tn6 row 34
 -- 1014
 
@@ -45475,7 +45467,7 @@ SELECT x6, a9+398+b6
   FROM t6, t9
  WHERE b9=804
    AND d6=256
-;
+ORDER BY 1,2;
 -- table tn6 row 34
 -- 1014
 
@@ -45489,7 +45481,7 @@ SELECT b9*198+b6, e4+15, x7, e6, b2*714, x3, x5
    AND (e7=815 OR 862=e7 OR 272=e7 OR 976=e7)
    AND c9 in (95,87,151,98,526)
    AND a3 in (720,829,98,892)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27440 values hashing to 5ae5f957dd7599d1d9518571b94d8614
 
 -- query IITIITT rowsort join480
@@ -45502,7 +45494,7 @@ SELECT b9*198+b6, e4+15, x7, e6, b2*714, x3, x5
    AND a3 in (720,829,98,892)
    AND c9 in (95,87,151,98,526)
    AND (e7=815 OR 862=e7 OR 272=e7 OR 976=e7)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27440 values hashing to 5ae5f957dd7599d1d9518571b94d8614
 
 -- query IITIITT rowsort join480
@@ -45515,7 +45507,7 @@ SELECT b9*198+b6, e4+15, x7, e6, b2*714, x3, x5
    AND (b4=986 OR 294=b4 OR b4=498 OR 961=b4)
    AND c9 in (95,87,151,98,526)
    AND 669=a2
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27440 values hashing to 5ae5f957dd7599d1d9518571b94d8614
 
 -- query IITIITT rowsort join480
@@ -45528,7 +45520,7 @@ SELECT b9*198+b6, e4+15, x7, e6, b2*714, x3, x5
    AND a3 in (720,829,98,892)
    AND (b4=986 OR 294=b4 OR b4=498 OR 961=b4)
    AND 669=a2
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 27440 values hashing to 5ae5f957dd7599d1d9518571b94d8614
 
 -- query III rowsort join481
@@ -45537,7 +45529,7 @@ SELECT b8+d6, c6, b9*347
  WHERE d6 in (424,2,473,647,151,600,855)
    AND e8 in (579,411,966,866,233,329,864,809)
    AND e9 in (621,19,150,687,255)
-;
+ORDER BY 1,2,3;
 -- 1440 values hashing to c0da6c5314d64664453ff84d69d2ef3b
 
 -- query III rowsort join481
@@ -45546,7 +45538,7 @@ SELECT b8+d6, c6, b9*347
  WHERE e8 in (579,411,966,866,233,329,864,809)
    AND d6 in (424,2,473,647,151,600,855)
    AND e9 in (621,19,150,687,255)
-;
+ORDER BY 1,2,3;
 -- 1440 values hashing to c0da6c5314d64664453ff84d69d2ef3b
 
 -- query III rowsort join481
@@ -45555,7 +45547,7 @@ SELECT b8+d6, c6, b9*347
  WHERE d6 in (424,2,473,647,151,600,855)
    AND e9 in (621,19,150,687,255)
    AND e8 in (579,411,966,866,233,329,864,809)
-;
+ORDER BY 1,2,3;
 -- 1440 values hashing to c0da6c5314d64664453ff84d69d2ef3b
 
 -- query ITTII rowsort join482
@@ -45566,7 +45558,7 @@ SELECT d7*724+c7, x9, x1, e6+c7, b5*993
    AND 36=d6
    AND c5 in (924,613,820,422,602)
    AND a1 in (963,445,810,524,268,829)
-;
+ORDER BY 1,2,3,4,5;
 -- 175 values hashing to 8f1e8196d270b420756a69732a87a200
 
 -- query ITTII rowsort join482
@@ -45577,7 +45569,7 @@ SELECT d7*724+c7, x9, x1, e6+c7, b5*993
    AND a1 in (963,445,810,524,268,829)
    AND c5 in (924,613,820,422,602)
    AND e7 in (408,918,862,663,499,827)
-;
+ORDER BY 1,2,3,4,5;
 -- 175 values hashing to 8f1e8196d270b420756a69732a87a200
 
 -- query ITTII rowsort join482
@@ -45588,7 +45580,7 @@ SELECT d7*724+c7, x9, x1, e6+c7, b5*993
    AND c9=d1
    AND e7 in (408,918,862,663,499,827)
    AND c5 in (924,613,820,422,602)
-;
+ORDER BY 1,2,3,4,5;
 -- 175 values hashing to 8f1e8196d270b420756a69732a87a200
 
 -- query ITTII rowsort join482
@@ -45599,7 +45591,7 @@ SELECT d7*724+c7, x9, x1, e6+c7, b5*993
    AND e7 in (408,918,862,663,499,827)
    AND a1 in (963,445,810,524,268,829)
    AND 36=d6
-;
+ORDER BY 1,2,3,4,5;
 -- 175 values hashing to 8f1e8196d270b420756a69732a87a200
 
 -- query IIIIIII rowsort join483
@@ -45612,7 +45604,7 @@ SELECT e5, a1, b8, e7, e3+629, b2, a4
    AND b4=372
    AND c5 in (18,747,261,185,799,130)
    AND e7 in (887,254,67,456,884,975,319,103)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 2450 values hashing to cfd0f0083e60f051d7dc330545a7e621
 
 -- query IIIIIII rowsort join483
@@ -45625,7 +45617,7 @@ SELECT e5, a1, b8, e7, e3+629, b2, a4
    AND c5 in (18,747,261,185,799,130)
    AND c2=496
    AND e7 in (887,254,67,456,884,975,319,103)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 2450 values hashing to cfd0f0083e60f051d7dc330545a7e621
 
 -- query IIIIIII rowsort join483
@@ -45638,7 +45630,7 @@ SELECT e5, a1, b8, e7, e3+629, b2, a4
    AND a3=b7
    AND a1 in (179,553,32,222,820)
    AND e8 in (310,495,561,806,488)
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 2450 values hashing to cfd0f0083e60f051d7dc330545a7e621
 
 -- query IIIIIII rowsort join483
@@ -45651,7 +45643,7 @@ SELECT e5, a1, b8, e7, e3+629, b2, a4
    AND c2=496
    AND a1 in (179,553,32,222,820)
    AND a3=b7
-;
+ORDER BY 1,2,3,4,5,6,7;
 -- 2450 values hashing to cfd0f0083e60f051d7dc330545a7e621
 
 -- query ITIII rowsort join484
@@ -45662,7 +45654,7 @@ SELECT d2, x3, a8, b1, b5
    AND e2 in (925,997,521,777,302,294,688,125)
    AND a3 in (499,198,929,959,306,145)
    AND a1 in (524,864,521,352,498)
-;
+ORDER BY 1,2,3,4,5;
 -- 8400 values hashing to ba1dc0b700e2914e1eb64aec80b2a9cf
 
 -- query ITIII rowsort join484
@@ -45673,7 +45665,7 @@ SELECT d2, x3, a8, b1, b5
    AND a3 in (499,198,929,959,306,145)
    AND e2 in (925,997,521,777,302,294,688,125)
    AND a1 in (524,864,521,352,498)
-;
+ORDER BY 1,2,3,4,5;
 -- 8400 values hashing to ba1dc0b700e2914e1eb64aec80b2a9cf
 
 -- query ITIII rowsort join484
@@ -45684,7 +45676,7 @@ SELECT d2, x3, a8, b1, b5
    AND 463=e8
    AND a3 in (499,198,929,959,306,145)
    AND a1 in (524,864,521,352,498)
-;
+ORDER BY 1,2,3,4,5;
 -- 8400 values hashing to ba1dc0b700e2914e1eb64aec80b2a9cf
 
 -- query ITIII rowsort join484
@@ -45695,7 +45687,7 @@ SELECT d2, x3, a8, b1, b5
    AND e2 in (925,997,521,777,302,294,688,125)
    AND a1 in (524,864,521,352,498)
    AND 463=e8
-;
+ORDER BY 1,2,3,4,5;
 -- 8400 values hashing to ba1dc0b700e2914e1eb64aec80b2a9cf
 
 -- query TI rowsort join485
@@ -45703,7 +45695,7 @@ SELECT x6, d9
   FROM t9, t6
  WHERE d6 in (458,929,36,2,970,807,561,129)
    AND a9 in (559,389,567,14,821,879,964,335)
-;
+ORDER BY 1,2;
 -- 144 values hashing to f2eae6e90ad5f0b52cff34185216637e
 
 -- query TI rowsort join485
@@ -45711,7 +45703,7 @@ SELECT x6, d9
   FROM t6, t9
  WHERE d6 in (458,929,36,2,970,807,561,129)
    AND a9 in (559,389,567,14,821,879,964,335)
-;
+ORDER BY 1,2;
 -- 144 values hashing to f2eae6e90ad5f0b52cff34185216637e
 
 -- query TI rowsort join485
@@ -45719,7 +45711,7 @@ SELECT x6, d9
   FROM t9, t6
  WHERE a9 in (559,389,567,14,821,879,964,335)
    AND d6 in (458,929,36,2,970,807,561,129)
-;
+ORDER BY 1,2;
 -- 144 values hashing to f2eae6e90ad5f0b52cff34185216637e
 
 -- query TI rowsort join485
@@ -45727,7 +45719,7 @@ SELECT x6, d9
   FROM t6, t9
  WHERE a9 in (559,389,567,14,821,879,964,335)
    AND d6 in (458,929,36,2,970,807,561,129)
-;
+ORDER BY 1,2;
 -- 144 values hashing to f2eae6e90ad5f0b52cff34185216637e
 
 -- query IIIIIT rowsort join486
@@ -45739,8 +45731,7 @@ SELECT e2, c5+766, e1, d9, d4+913+d2, x3
    AND d2 in (836,284,306,256,263,8,772,476)
    AND a1 in (604,707,746,445,767,337,76)
    AND b4=e3
- ORDER BY 1,2,3,4,5,6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 72576 values hashing to 63c3f901ed96bec880a825f47c5c5e99
 
 -- query IIIIIT rowsort join486
@@ -45752,8 +45743,7 @@ SELECT e2, c5+766, e1, d9, d4+913+d2, x3
    AND a3 in (335,608,992,282,576,818,347,952)
    AND b9 in (289,171,549,759,211,804,827)
    AND b4=e3
- ORDER BY 1,2,3,4,5,6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 72576 values hashing to 63c3f901ed96bec880a825f47c5c5e99
 
 -- query IIIIIT rowsort join486
@@ -45765,8 +45755,7 @@ SELECT e2, c5+766, e1, d9, d4+913+d2, x3
    AND d2 in (836,284,306,256,263,8,772,476)
    AND b4=e3
    AND a3 in (335,608,992,282,576,818,347,952)
- ORDER BY 1,2,3,4,5,6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 72576 values hashing to 63c3f901ed96bec880a825f47c5c5e99
 
 -- query IIIIIT rowsort join486
@@ -45778,8 +45767,7 @@ SELECT e2, c5+766, e1, d9, d4+913+d2, x3
    AND b4=e3
    AND a3 in (335,608,992,282,576,818,347,952)
    AND a1 in (604,707,746,445,767,337,76)
- ORDER BY 1,2,3,4,5,6
-;
+ORDER BY 1,2,3,4,5,6;
 -- 72576 values hashing to 63c3f901ed96bec880a825f47c5c5e99
 
 -- query III rowsort join487
@@ -45788,7 +45776,7 @@ SELECT a9*930+d6, c6, a3
  WHERE (a3=720 OR a3=16 OR 727=a3)
    AND e9 in (978,368,264)
    AND d6 in (970,993,35,974)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to 426ea393c7665ff2d7d290a9ca25633d
 
 -- query III rowsort join487
@@ -45797,7 +45785,7 @@ SELECT a9*930+d6, c6, a3
  WHERE e9 in (978,368,264)
    AND d6 in (970,993,35,974)
    AND (a3=720 OR a3=16 OR 727=a3)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to 426ea393c7665ff2d7d290a9ca25633d
 
 -- query III rowsort join487
@@ -45806,7 +45794,7 @@ SELECT a9*930+d6, c6, a3
  WHERE d6 in (970,993,35,974)
    AND e9 in (978,368,264)
    AND (a3=720 OR a3=16 OR 727=a3)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to 426ea393c7665ff2d7d290a9ca25633d
 
 -- query III rowsort join487
@@ -45815,7 +45803,7 @@ SELECT a9*930+d6, c6, a3
  WHERE e9 in (978,368,264)
    AND d6 in (970,993,35,974)
    AND (a3=720 OR a3=16 OR 727=a3)
-;
+ORDER BY 1,2,3;
 -- 216 values hashing to 426ea393c7665ff2d7d290a9ca25633d
 
 -- query ITIII rowsort join488
@@ -45826,7 +45814,7 @@ SELECT d6, x5, d2+d3, d3, c8+483
    AND c5=924
    AND d6=797
    AND 184=a3
-;
+ORDER BY 1,2,3,4,5;
 -- 25 values hashing to 689ff681f36c72334fc5dc0992a167f5
 
 -- query ITIII rowsort join488
@@ -45837,7 +45825,7 @@ SELECT d6, x5, d2+d3, d3, c8+483
    AND e8=533
    AND d6=797
    AND d2 in (682,2,749,555,209)
-;
+ORDER BY 1,2,3,4,5;
 -- 25 values hashing to 689ff681f36c72334fc5dc0992a167f5
 
 -- query ITIII rowsort join488
@@ -45848,7 +45836,7 @@ SELECT d6, x5, d2+d3, d3, c8+483
    AND e8=533
    AND c5=924
    AND d6=797
-;
+ORDER BY 1,2,3,4,5;
 -- 25 values hashing to 689ff681f36c72334fc5dc0992a167f5
 
 -- query ITIII rowsort join488
@@ -45859,7 +45847,7 @@ SELECT d6, x5, d2+d3, d3, c8+483
    AND d6=797
    AND e8=533
    AND c5=924
-;
+ORDER BY 1,2,3,4,5;
 -- 25 values hashing to 689ff681f36c72334fc5dc0992a167f5
 
 -- query III rowsort join489
@@ -45868,7 +45856,7 @@ SELECT a3+263, b2, d4*885
  WHERE d2 in (621,476,10)
    AND b4 in (707,40,635,713)
    AND a3=380
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to bd7bc6788f65877b2e857a07f0c56102
 
 -- query III rowsort join489
@@ -45877,7 +45865,7 @@ SELECT a3+263, b2, d4*885
  WHERE a3=380
    AND b4 in (707,40,635,713)
    AND d2 in (621,476,10)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to bd7bc6788f65877b2e857a07f0c56102
 
 -- query III rowsort join489
@@ -45886,7 +45874,7 @@ SELECT a3+263, b2, d4*885
  WHERE d2 in (621,476,10)
    AND a3=380
    AND b4 in (707,40,635,713)
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to bd7bc6788f65877b2e857a07f0c56102
 
 -- query III rowsort join489
@@ -45895,7 +45883,7 @@ SELECT a3+263, b2, d4*885
  WHERE b4 in (707,40,635,713)
    AND d2 in (621,476,10)
    AND a3=380
-;
+ORDER BY 1,2,3;
 -- 36 values hashing to bd7bc6788f65877b2e857a07f0c56102
 
 -- query III rowsort join490
@@ -45904,7 +45892,7 @@ SELECT d5*80, e4, e7
  WHERE 48=e7
    AND b4=407
    AND c5=696
-;
+ORDER BY 1,2,3;
 -- 35440
 -- 565
 -- 48
@@ -45915,7 +45903,7 @@ SELECT d5*80, e4, e7
  WHERE b4=407
    AND c5=696
    AND 48=e7
-;
+ORDER BY 1,2,3;
 -- 35440
 -- 565
 -- 48
@@ -45926,7 +45914,7 @@ SELECT d5*80, e4, e7
  WHERE 48=e7
    AND c5=696
    AND b4=407
-;
+ORDER BY 1,2,3;
 -- 35440
 -- 565
 -- 48
@@ -45937,7 +45925,7 @@ SELECT d5*80, e4, e7
  WHERE c5=696
    AND b4=407
    AND 48=e7
-;
+ORDER BY 1,2,3;
 -- 35440
 -- 565
 -- 48
@@ -45948,7 +45936,7 @@ SELECT d5, c9+e5, e1*535+b9
  WHERE c9 in (151,323,696,923,767,180)
    AND c5 in (86,130,797,978,210,147,649)
    AND a1=294
-;
+ORDER BY 1,2,3;
 -- 162 values hashing to ec046edd7675593ad9181c7ac7595c3d
 
 -- query III rowsort join491
@@ -45957,7 +45945,7 @@ SELECT d5, c9+e5, e1*535+b9
  WHERE c9 in (151,323,696,923,767,180)
    AND a1=294
    AND c5 in (86,130,797,978,210,147,649)
-;
+ORDER BY 1,2,3;
 -- 162 values hashing to ec046edd7675593ad9181c7ac7595c3d
 
 -- query III rowsort join491
@@ -45966,7 +45954,7 @@ SELECT d5, c9+e5, e1*535+b9
  WHERE c5 in (86,130,797,978,210,147,649)
    AND a1=294
    AND c9 in (151,323,696,923,767,180)
-;
+ORDER BY 1,2,3;
 -- 162 values hashing to ec046edd7675593ad9181c7ac7595c3d
 
 -- query III rowsort join491
@@ -45975,7 +45963,7 @@ SELECT d5, c9+e5, e1*535+b9
  WHERE c9 in (151,323,696,923,767,180)
    AND c5 in (86,130,797,978,210,147,649)
    AND a1=294
-;
+ORDER BY 1,2,3;
 -- 162 values hashing to ec046edd7675593ad9181c7ac7595c3d
 
 -- query II rowsort join492
@@ -45983,7 +45971,7 @@ SELECT c6*224, d7+a6
   FROM t7, t6
  WHERE d6=a7
    AND 975=e7
-;
+ORDER BY 1,2;
 -- 7616
 -- 492
 
@@ -45992,7 +45980,7 @@ SELECT c6*224, d7+a6
   FROM t6, t7
  WHERE 975=e7
    AND d6=a7
-;
+ORDER BY 1,2;
 -- 7616
 -- 492
 
@@ -46004,7 +45992,7 @@ SELECT e8, b4*993+c4, c2, e7, d6
    AND b2=145
    AND d6 in (578,674,929)
    AND b4 in (603,624,442)
-;
+ORDER BY 1,2,3,4,5;
 -- 1575 values hashing to a9a60570a8ae0da6c1b12fcfb0a9fddd
 
 -- query IIIII rowsort join493
@@ -46015,7 +46003,7 @@ SELECT e8, b4*993+c4, c2, e7, d6
    AND b4 in (603,624,442)
    AND e8 in (7,579,846,561,320)
    AND b2=145
-;
+ORDER BY 1,2,3,4,5;
 -- 1575 values hashing to a9a60570a8ae0da6c1b12fcfb0a9fddd
 
 -- query IIIII rowsort join493
@@ -46026,7 +46014,7 @@ SELECT e8, b4*993+c4, c2, e7, d6
    AND b2=145
    AND e7 in (168,460,290,436,456)
    AND b4 in (603,624,442)
-;
+ORDER BY 1,2,3,4,5;
 -- 1575 values hashing to a9a60570a8ae0da6c1b12fcfb0a9fddd
 
 -- query IIIII rowsort join493
@@ -46037,7 +46025,7 @@ SELECT e8, b4*993+c4, c2, e7, d6
    AND b4 in (603,624,442)
    AND d6 in (578,674,929)
    AND e8 in (7,579,846,561,320)
-;
+ORDER BY 1,2,3,4,5;
 -- 1575 values hashing to a9a60570a8ae0da6c1b12fcfb0a9fddd
 
 -- query II rowsort join494
@@ -46045,7 +46033,7 @@ SELECT d7*524, a1*755
   FROM t7, t1
  WHERE e7=975
    AND a1 in (222,477,866,825)
-;
+ORDER BY 1,2;
 -- 100608
 -- 167610
 -- 100608
@@ -46060,7 +46048,7 @@ SELECT d7*524, a1*755
   FROM t1, t7
  WHERE a1 in (222,477,866,825)
    AND e7=975
-;
+ORDER BY 1,2;
 -- 100608
 -- 167610
 -- 100608
@@ -46077,7 +46065,7 @@ SELECT x2, b8, d5*699, d3+b5
    AND e2 in (841,564,140,433)
    AND c5=b8
    AND 431=e8
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to c42ca85129bd88606a9d023a8ab3ddc0
 
 -- query TIII rowsort join495
@@ -46087,7 +46075,7 @@ SELECT x2, b8, d5*699, d3+b5
    AND e2 in (841,564,140,433)
    AND 431=e8
    AND c5=b8
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to c42ca85129bd88606a9d023a8ab3ddc0
 
 -- query TIII rowsort join495
@@ -46097,7 +46085,7 @@ SELECT x2, b8, d5*699, d3+b5
    AND 431=e8
    AND a3=863
    AND e2 in (841,564,140,433)
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to c42ca85129bd88606a9d023a8ab3ddc0
 
 -- query TIII rowsort join495
@@ -46107,7 +46095,7 @@ SELECT x2, b8, d5*699, d3+b5
    AND c5=b8
    AND 431=e8
    AND a3=863
-;
+ORDER BY 1,2,3,4;
 -- 20 values hashing to c42ca85129bd88606a9d023a8ab3ddc0
 
 -- query TITIIIII rowsort join496
@@ -46121,7 +46109,7 @@ SELECT x9, a8+113, x3, b5, a2, c1, e7+413, a4
    AND c2 in (161,758,511)
    AND c5 in (697,819,158,544,734,293)
    AND a3=d7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 24192 values hashing to ab2a4ad0435a7d9f5fb0ff71c7e2c802
 
 -- query TITIIIII rowsort join496
@@ -46135,7 +46123,7 @@ SELECT x9, a8+113, x3, b5, a2, c1, e7+413, a4
    AND d9 in (818,763,770)
    AND 782=e7
    AND c5 in (697,819,158,544,734,293)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 24192 values hashing to ab2a4ad0435a7d9f5fb0ff71c7e2c802
 
 -- query TITIIIII rowsort join496
@@ -46149,7 +46137,7 @@ SELECT x9, a8+113, x3, b5, a2, c1, e7+413, a4
    AND d9 in (818,763,770)
    AND a3=d7
    AND 782=e7
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 24192 values hashing to ab2a4ad0435a7d9f5fb0ff71c7e2c802
 
 -- query TITIIIII rowsort join496
@@ -46163,7 +46151,7 @@ SELECT x9, a8+113, x3, b5, a2, c1, e7+413, a4
    AND c5 in (697,819,158,544,734,293)
    AND d9 in (818,763,770)
    AND b4 in (402,888,408,829,2,986)
-;
+ORDER BY 1,2,3,4,5,6,7,8;
 -- 24192 values hashing to ab2a4ad0435a7d9f5fb0ff71c7e2c802
 
 -- query ITIII rowsort join497
@@ -46174,7 +46162,7 @@ SELECT b2+134+d9, x9, a3, a1, b4*742
    AND a1=324
    AND b4 in (40,476,925,271,606,408)
    AND c2 in (275,728,756,150)
-;
+ORDER BY 1,2,3,4,5;
 -- 300 values hashing to b1dc3ff369c84d43d5ba925edac019ac
 
 -- query ITIII rowsort join497
@@ -46185,7 +46173,7 @@ SELECT b2+134+d9, x9, a3, a1, b4*742
    AND a3=720
    AND b4 in (40,476,925,271,606,408)
    AND 240=a9
-;
+ORDER BY 1,2,3,4,5;
 -- 300 values hashing to b1dc3ff369c84d43d5ba925edac019ac
 
 -- query ITIII rowsort join497
@@ -46196,7 +46184,7 @@ SELECT b2+134+d9, x9, a3, a1, b4*742
    AND b4 in (40,476,925,271,606,408)
    AND 240=a9
    AND c2 in (275,728,756,150)
-;
+ORDER BY 1,2,3,4,5;
 -- 300 values hashing to b1dc3ff369c84d43d5ba925edac019ac
 
 -- query ITIII rowsort join497
@@ -46207,7 +46195,7 @@ SELECT b2+134+d9, x9, a3, a1, b4*742
    AND a1=324
    AND 240=a9
    AND a3=720
-;
+ORDER BY 1,2,3,4,5;
 -- 300 values hashing to b1dc3ff369c84d43d5ba925edac019ac
 
 -- query TI rowsort join498
@@ -46215,7 +46203,7 @@ SELECT x2, e8
   FROM t2, t8
  WHERE e2=151
    AND 761=e8
-;
+ORDER BY 1,2;
 -- table tn2 row 29
 -- 761
 
@@ -46224,7 +46212,7 @@ SELECT x2, e8
   FROM t2, t8
  WHERE 761=e8
    AND e2=151
-;
+ORDER BY 1,2;
 -- table tn2 row 29
 -- 761
 
@@ -46233,7 +46221,7 @@ SELECT x2, e8
   FROM t8, t2
  WHERE e2=151
    AND 761=e8
-;
+ORDER BY 1,2;
 -- table tn2 row 29
 -- 761
 
@@ -46242,7 +46230,7 @@ SELECT c6*856, x5
   FROM t6, t5
  WHERE c5 in (820,44,696,824,668,723,598)
    AND (d6=778 OR d6=867 OR d6=778)
-;
+ORDER BY 1,2;
 -- 28 values hashing to 8ceb8232c1e6c7b7f5d87ea5c54e08d0
 
 -- query IT rowsort join499
@@ -46250,7 +46238,7 @@ SELECT c6*856, x5
   FROM t6, t5
  WHERE (d6=778 OR d6=867 OR d6=778)
    AND c5 in (820,44,696,824,668,723,598)
-;
+ORDER BY 1,2;
 -- 28 values hashing to 8ceb8232c1e6c7b7f5d87ea5c54e08d0
 
 -- query IT rowsort join499
@@ -46258,7 +46246,7 @@ SELECT c6*856, x5
   FROM t5, t6
  WHERE (d6=778 OR d6=867 OR d6=778)
    AND c5 in (820,44,696,824,668,723,598)
-;
+ORDER BY 1,2;
 -- 28 values hashing to 8ceb8232c1e6c7b7f5d87ea5c54e08d0
 
 -- cleanup created tables
