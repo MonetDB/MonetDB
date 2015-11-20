@@ -85,7 +85,7 @@ FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 }
 
 str
-FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
+FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 {
 	BAT *b, *bn;
 	TP1 *p, *q;
@@ -151,7 +151,7 @@ FUN(bat,TP1,_dec2_,TP2) (int *res, const int *s1, const int *bid)
 }
 
 str
-FUN(bat,TP1,_dec2dec_,TP2) (int *res, const int *S1, const int *bid, const int *d2, const int *S2)
+FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -193,7 +193,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (int *res, const int *S1, const int *bid, const int *
 }
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (int *res, const int *bid, const int *d2, const int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
 	BATiter bi;

@@ -94,3 +94,7 @@ msqldump-merge-and-remote-tables.Bug-3774
 update_with_without_parenthesis.Bug-3838
 msqldump_generates_incorrect_syntax_ON_UPDATE_null.Bug-3839
 import-non-ascii.Bug-3864
+mserver-creates-but-not-accept-column-types-decimal19-decimal39.Bug-3863
+NOT_x_LIKE-triggers-too_many_nested_operators-error.Bug-3871
+foreignkey_over_schemas.Bug-3855
+mserver-crashes-under-specific-combination-of-JOIN-and-WHERE-conditions.Bug-3872

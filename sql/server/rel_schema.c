@@ -304,8 +304,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	case SQL_FOREIGN_KEY: {
 		dnode *n = s->data.lval->h;
+		char *rsname = qname_schema(n->data.lval);
 		char *rtname = qname_table(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val; 
+		sql_schema *rs;
 		sql_table *rt;
 		sql_fkey *fk;
 		list *cols;
@@ -318,7 +320,12 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			return res;
 		}
 */
-		rt = _bind_table(t, ss, cur_schema(sql), rtname);
+
+		if (rsname) 
+			rs = mvc_bind_schema(sql, rsname);
+		else 
+			rs = cur_schema(sql);
+		rt = _bind_table(t, ss, rs, rtname);
 		if (!rt) {
 			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
@@ -339,7 +346,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			rk = &rt->pkey->k;
 		}
 		if (!rk) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s\n", rtname);
+			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -469,11 +476,18 @@ static int
 table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	dnode *n = s->data.lval->h;
+	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_table(n->data.lval);
-	sql_table *ft = mvc_bind_table(sql, ss, rtname);
+	sql_schema *fs;
+	sql_table *ft;
 
+	if (rsname)
+		fs = mvc_bind_schema(sql, rsname);
+	else
+		fs = ss;
+	ft = mvc_bind_table(sql, fs, rtname);
 	/* self referenced table */
-	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0)
+	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
 		ft = t;
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
