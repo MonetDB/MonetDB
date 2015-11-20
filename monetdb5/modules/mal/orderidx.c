@@ -19,13 +19,9 @@
 str
 OIDXdropImplementation(Client cntxt, BAT *b)
 {
-	str msg = MAL_SUCCEED;
 	(void) cntxt;
-	(void) b;
-	if ( b->torderidx){
-		// drop the order index heap
-	}
-	return msg;
+	OIDXdestroy(b);
+	return MAL_SUCCEED;
 }
 
 str

@@ -1540,6 +1540,8 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
+gdk_export void OIDXdestroy(BAT *b);
+
 /*
  * @- Printing
  * @multitable @columnfractions 0.08 0.7
