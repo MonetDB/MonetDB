@@ -162,6 +162,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 					ADD_WITH_CHECK(TYPE1, x,	\
 						       TYPE2, sum,	\
 						       TYPE2, sum,	\
+						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
 				}					\
 			} else {					\
@@ -177,6 +178,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 						ADD_WITH_CHECK(TYPE1, x, \
 							       TYPE2, sum, \
 							       TYPE2, sum, \
+							       GDK_##TYPE2##_max, \
 							       goto overflow); \
 						seenval = 1;		\
 					}				\
@@ -209,6 +211,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 					ADD_WITH_CHECK(TYPE1, x,	\
 						       TYPE2, sum,	\
 						       TYPE2, sum,	\
+						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
 					seenval = 1;			\
 				}					\
@@ -246,6 +249,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
+								GDK_##TYPE2##_max, \
 								goto overflow); \
 						}			\
 					}				\
@@ -285,6 +289,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
+								GDK_##TYPE2##_max, \
 								goto overflow); \
 						}			\
 					}				\
@@ -710,6 +715,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 							TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
 							TYPE2, prods[gid], \
+							GDK_##TYPE2##_max, \
 							TYPE3,		\
 							goto overflow);	\
 					}				\
@@ -758,6 +764,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					HGEMUL_CHECK(TYPE, vals[i],	\
 						     hge, prods[gid],	\
 						     prods[gid],	\
+						     GDK_hge_max,	\
 						     goto overflow);	\
 				}					\
 			}						\
@@ -805,6 +812,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 							TYPE, vals[i],	\
 							lng, prods[gid], \
 							prods[gid],	\
+							GDK_lng_max,	\
 							goto overflow); \
 					}				\
 				}					\
@@ -1618,6 +1626,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			ADD_WITH_CHECK(TYPE, x,				\
 				       lng_hge, sum,			\
 				       lng_hge, sum,			\
+				       GDK_hge_max,			\
 				       goto overflow##TYPE);		\
 			/* don't count value until after overflow check */ \
 			n++;						\
