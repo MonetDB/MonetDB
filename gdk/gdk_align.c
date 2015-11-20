@@ -565,7 +565,7 @@ VIEWreset(BAT *b)
 	tp = VIEWtparent(b);
 	hvp = VIEWvhparent(b);
 	tvp = VIEWvtparent(b);
-	if (hp || tp) {
+	if (hp || tp || hvp || tvp) {
 		BAT *m;
 		BATstore *bs;
 		BUN cnt;
@@ -588,8 +588,8 @@ VIEWreset(BAT *b)
 		nmelen = nme ? strlen(nme) : 0;
 
 		assert(n->batCacheid > 0);
-		assert(hp || !b->htype);
-		assert(tp || !b->ttype);
+		assert(hp || hvp || !b->htype);
+		assert(tp || tvp || !b->ttype);
 
 		head.farmid = BBPselectfarm(n->batRole, n->htype, offheap);
 		tail.farmid = BBPselectfarm(n->batRole, n->ttype, offheap);
