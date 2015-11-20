@@ -3351,6 +3351,11 @@ typedef lng ptrdiff_t;
 # define __declspec(x)
 #endif
 
+/* work around problem compiling batxml.c with clang */
+#if defined(__GNUC__) && defined(__clang__)
+#define LIBXML_ATTR_ALLOC_SIZE(x)
+#endif
+
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
