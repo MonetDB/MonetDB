@@ -2408,11 +2408,27 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	}
 
 	if (BATcount(u_val)) {
-		BAT *o = BATsemijoin(u_id, s);
-		BAT *nu_id = BATproject(o, u_id);
-		BAT *nu_val = BATproject(o, u_val);
-
+		BAT *o, *nu_id, *nu_val;
+		if (BATsubsemijoin(&o, &nu_id, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
+		BBPunfix(nu_id->batCacheid);
+		nu_id = BATproject(o, u_id);
+		nu_val = BATproject(o, u_val);
 		BBPunfix(o->batCacheid);
+		if (nu_id == NULL || nu_val == NULL) {
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			if (nu_id)
+				BBPunfix(nu_id->batCacheid);
+			if (nu_val)
+				BBPunfix(nu_val->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		res = setwritable(res);
 		BATreplace(res, nu_id, nu_val, 0);
 		BBPunfix(nu_id->batCacheid);
