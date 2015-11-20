@@ -1626,7 +1626,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			ADD_WITH_CHECK(TYPE, x,				\
 				       lng_hge, sum,			\
 				       lng_hge, sum,			\
-				       GDK_hge_max,			\
+				       GDK_##lng_hge##_max,		\
 				       goto overflow##TYPE);		\
 			/* don't count value until after overflow check */ \
 			n++;						\
