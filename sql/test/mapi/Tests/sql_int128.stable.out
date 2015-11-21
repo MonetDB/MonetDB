@@ -59,10 +59,10 @@ Ready.
 % mal # name
 % clob # type
 % 89 # length
-function user.s2_1{autoCommit=true}(A0:hge):void;
-    X_7:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
-    X_3 := sql.mvc();
-    sql.setVariable(X_3,"a",A0);
+function user.s2_1(A0:hge):void;
+    X_6:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
+    X_2 := sql.mvc();
+    sql.setVariable(X_2,"a",A0);
     sql.exportOperation();
 end user.s2_1;
 #explain SET b = 10000000000;
@@ -70,10 +70,10 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 81 # length
-function user.s3_1{autoCommit=true}(A0:hge):void;
-    X_7:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
-    X_3 := sql.mvc();
-    sql.setVariable(X_3,"b",A0);
+function user.s3_1(A0:hge):void;
+    X_6:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
+    X_2 := sql.mvc();
+    sql.setVariable(X_2,"b",A0);
     sql.exportOperation();
 end user.s3_1;
 #explain SET c = a * b;
@@ -81,13 +81,13 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 76 # length
-function user.s4_1{autoCommit=true}():void;
-    X_11:void := querylog.define("explain set c = a * b;","default_pipe",9);
-    X_2 := sql.mvc();
-    X_5:hge  := sql.getVariable(X_2,"a");
-    X_7:hge  := sql.getVariable(X_2,"b");
-    X_8:hge := calc.*(X_5,X_7);
-    sql.setVariable(X_2,"c",X_8);
+function user.s4_1():void;
+    X_10:void := querylog.define("explain set c = a * b;","default_pipe",9);
+    X_1 := sql.mvc();
+    X_4:hge := sql.getVariable(X_1,"a");
+    X_6:hge := sql.getVariable(X_1,"b");
+    X_7:hge := calc.*(X_4,X_6);
+    sql.setVariable(X_1,"c",X_7);
     sql.exportOperation();
 end user.s4_1;
 #explain SET d = c * b;
@@ -95,13 +95,13 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 76 # length
-function user.s5_1{autoCommit=true}():void;
-    X_11:void := querylog.define("explain set d = c * b;","default_pipe",9);
-    X_2 := sql.mvc();
-    X_5:hge  := sql.getVariable(X_2,"c");
-    X_7:hge  := sql.getVariable(X_2,"b");
-    X_8:hge := calc.*(X_5,X_7);
-    sql.setVariable(X_2,"d",X_8);
+function user.s5_1():void;
+    X_10:void := querylog.define("explain set d = c * b;","default_pipe",9);
+    X_1 := sql.mvc();
+    X_4:hge := sql.getVariable(X_1,"c");
+    X_6:hge := sql.getVariable(X_1,"b");
+    X_7:hge := calc.*(X_4,X_6);
+    sql.setVariable(X_1,"d",X_7);
     sql.exportOperation();
 end user.s5_1;
 #explain SET e = d + a;
@@ -109,13 +109,13 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 76 # length
-function user.s6_1{autoCommit=true}():void;
-    X_11:void := querylog.define("explain set e = d + a;","default_pipe",9);
-    X_2 := sql.mvc();
-    X_5:hge  := sql.getVariable(X_2,"d");
-    X_7:hge  := sql.getVariable(X_2,"a");
-    X_8:hge := calc.+(X_5,X_7);
-    sql.setVariable(X_2,"e",X_8);
+function user.s6_1():void;
+    X_10:void := querylog.define("explain set e = d + a;","default_pipe",9);
+    X_1 := sql.mvc();
+    X_4:hge := sql.getVariable(X_1,"d");
+    X_6:hge := sql.getVariable(X_1,"a");
+    X_7:hge := calc.+(X_4,X_6);
+    sql.setVariable(X_1,"e",X_7);
     sql.exportOperation();
 end user.s6_1;
 #SET a = 1234567890987654321;

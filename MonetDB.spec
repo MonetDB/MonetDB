@@ -403,37 +403,12 @@ program.
 
 %files -n rubygem-monetdb-sql
 %defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
-%{gem_dir}/doc/ruby-monetdb-sql-0.1/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.1.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/gems/ruby-monetdb-sql-0.1
-%{gem_dir}/specifications/ruby-monetdb-sql-0.1.gemspec
-
-%package -n rubygem-activerecord-monetdb-adapter
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Requires: rubygem-activerecord
-Requires: rubygem-monetdb-sql
-BuildArch: noarch
-
-%description -n rubygem-activerecord-monetdb-adapter
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the activerecord adapter for MonetDB.
-
-%files -n rubygem-activerecord-monetdb-adapter
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
-%{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
-%{gem_dir}/cache/activerecord-monetdb-adapter-0.1.gem
-# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/gems/activerecord-monetdb-adapter-0.1
-%{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
+%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
+%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
+%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
+# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/gems/ruby-monetdb-sql-0.2
+%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
 %endif
 
 %package client-tests
@@ -995,6 +970,24 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.11-20151030
+- Rebuilt.
+- BZ#3828: Schema corruption after several ALTER TABLE statements and
+  server restart
+- BZ#3839: msqldump generates incorrect syntax ON UPDATE (null)
+
+* Mon Oct 26 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.9-20151026
+- Rebuilt.
+- BZ#3816: Server crashes when trying to convert timestamp to str with
+  incorrect format
+- BZ#3823: JDBC Connection to a schema - setSchema() error
+- BZ#3827: Certains comparisons between UUID produce a MAL error
+- BZ#3829: Certains simple WHERE clause cause MonetDB to segfault
+  without explanation
+- BZ#3830: Coalesce typing inconsistencies
+- BZ#3833: NULL literals refused at many places
+- BZ#3834: Date comparison returns incorrect results
+
 * Tue Oct 20 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.7-20151020
 - Rebuilt.
 - BZ#3789: Query on large string table fails on HEAPextend

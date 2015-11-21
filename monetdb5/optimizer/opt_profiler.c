@@ -54,13 +54,11 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i;
 	InstrPtr p;
 	char buf[BUFSIZ];
-	ValRecord val;
-	VarPtr v;
+	str v;
 
 	(void) pci;
 	(void) stk;
 	(void) cntxt;
-	val.vtype = TYPE_str;
 
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -74,32 +72,32 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getVarConstant(mb, getArg(p,p->retc +1)).val.sval,
 				getVarConstant(mb, getArg(p,p->retc +2)).val.sval,
 				getVarConstant(mb, getArg(p,p->retc +3)).val.sval);
-			varSetProp(mb, getArg(p,0), schematablecolumnProp, op_eq, VALset(&val,TYPE_str,GDKstrdup(buf)));
+				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== tidRef){
 			// we know the arguments are constant
 			snprintf(buf, BUFSIZ, "%s.%s", 
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.sval);
-			varSetProp(mb, getArg(p,0), schematablecolumnProp, op_eq, VALset(&val,TYPE_str,GDKstrdup(buf)));
+				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== projectdeltaRef){
 			// inherit property of first argument
-			v = varGetProp(mb,getArg(p,1), schematablecolumnProp);
+			v = getSTC(mb,getArg(p,1));
 			if(v != NULL)
-				varSetProp(mb, getArg(p,0), schematablecolumnProp, op_eq, VALset(&val,TYPE_str,GDKstrdup(buf)));
+				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== leftfetchjoinRef){
 			// inherit property of last argument
-			v = varGetProp(mb,getArg(p,p->argc-1), schematablecolumnProp);
+			v = getSTC(mb,getArg(p,p->argc-1));
 			if( v != NULL)
-				varSetProp(mb, getArg(p,0), schematablecolumnProp, op_eq, VALset(&val,TYPE_str,GDKstrdup(buf)));
+				setSTC(mb, getArg(p,0), GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== subjoinRef){
 			// inherit property of last argument
-			v = varGetProp(mb,getArg(p,p->argc-1), schematablecolumnProp);
+			v = getSTC(mb,getArg(p,p->argc-1) );
 			if( v != NULL)
-				varSetProp(mb, getArg(p,0), schematablecolumnProp, op_eq, VALset(&val,TYPE_str,GDKstrdup(buf)));
+				setSTC(mb, getArg(p,0), GDKstrdup(buf));
 		} 
 	}
 	return 1;

@@ -1286,13 +1286,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	if (getEndOfLife(mb, index))
 		mnstr_printf(f, " eolife=%d ", getEndOfLife(mb, index));
 	GDKfree(nme);
-	if (n->propc) {
-		nme = varGetPropStr(mb, index);
-		if (nme) {
-			mnstr_printf(f, "%s", nme);
-			GDKfree(nme);
-		}
-	}
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
@@ -1453,7 +1446,7 @@ debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 			snprintf(name, BUFSIZ, "%s ", getVar(mb, i)->name);
 		mnstr_printf(cntxt->fdout, "#%8s eolife=%4d range %4d - %4d  ",
 				name,
-				mb->var[i]->eolife,
+				getEndOfLife(mb,i),
 				getBeginLifespan(span, i),
 				getEndLifespan(span, i));
 		if (getLastUpdate(span, i))

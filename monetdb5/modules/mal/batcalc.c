@@ -1287,66 +1287,106 @@ batcalc_export str CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 str
 CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *b1, *b2, *bn;
-	int tp1, tp2;
+	BAT *b = NULL, *b1 = NULL, *b2 = NULL, *bn;
+	int tp0, tp1, tp2;
 	bat *ret;
+	BUN cnt = BUN_NONE;
 
 	(void) cntxt;
 	(void) mb;
 
-	ret = getArgReference_bat(stk, pci, 0);
-	b = BATdescriptor(* getArgReference_bat(stk, pci, 1));
-	if (b == NULL)
-		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
-	assert(BAThdense(b));
+	if (pci->argc != 4)
+		throw(MAL, "batcalc.ifthen", "Operation not supported.");
 
+	ret = getArgReference_bat(stk, pci, 0);
+	tp0 = stk->stk[getArg(pci, 1)].vtype;
 	tp1 = stk->stk[getArg(pci, 2)].vtype;
+	tp2 = stk->stk[getArg(pci, 3)].vtype;
+	if (tp0 == TYPE_bat || isaBatType(tp0)) {
+		b = BATdescriptor(* getArgReference_bat(stk, pci, 1));
+		if (b == NULL)
+			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
+		assert(BAThdense(b));
+		cnt = BATcount(b);
+	}
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		b1 = BATdescriptor(* getArgReference_bat(stk, pci, 2));
 		if (b1 == NULL) {
-			BBPunfix(b->batCacheid);
+			if (b)
+				BBPunfix(b->batCacheid);
 			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 		}
 		assert(BAThdense(b1));
-		if (pci->argc == 4) {
-			tp2 = stk->stk[getArg(pci, 3)].vtype;
-			if (tp2 == TYPE_bat || isaBatType(tp2)) {
-				b2 = BATdescriptor(* getArgReference_bat(stk, pci, 3));
-				if (b2 == NULL) {
-					BBPunfix(b->batCacheid);
-					BBPunfix(b1->batCacheid);
-					throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
-				}
-				assert(BAThdense(b2));
+		if (cnt == BUN_NONE)
+			cnt = BATcount(b1);
+		else if (BATcount(b1) != cnt) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
+		}
+	}
+	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+		b2 = BATdescriptor(* getArgReference_bat(stk, pci, 3));
+		if (b2 == NULL) {
+			if (b)
+				BBPunfix(b->batCacheid);
+			if (b1)
+				BBPunfix(b1->batCacheid);
+			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
+		}
+		assert(BAThdense(b2));
+		if (cnt == BUN_NONE)
+			cnt = BATcount(b2);
+		else if (BATcount(b2) != cnt) {
+			if (b)
+				BBPunfix(b->batCacheid);
+			if (b1)
+				BBPunfix(b1->batCacheid);
+			throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
+		}
+	}
+	if (b == NULL && b1 == NULL && b2 == NULL) {
+		/* at least one BAT required */
+		throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
+	}
+	if (b != NULL) {
+		if (b1 != NULL) {
+			if (b2 != NULL) {
 				bn = BATcalcifthenelse(b, b1, b2);
-				BBPunfix(b2->batCacheid);
 			} else {
 				bn = BATcalcifthenelsecst(b, b1, &stk->stk[getArg(pci, 3)]);
 			}
 		} else {
-			throw(MAL, "batcalc.ifthen", "Operation not supported.");
-		}
-		BBPunfix(b1->batCacheid);
-	} else {
-		if (pci->argc == 4) {
-			tp2 = stk->stk[getArg(pci, 3)].vtype;
-			if (tp2 == TYPE_bat || isaBatType(tp2)) {
-				b2 = BATdescriptor(* getArgReference_bat(stk, pci, 3));
-				if (b2 == NULL) {
-					BBPunfix(b->batCacheid);
-					throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
-				}
-				assert(BAThdense(b2));
+			if (b2 != NULL) {
 				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2);
-				BBPunfix(b2->batCacheid);
 			} else {
 				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
 			}
+		}
+	} else {
+		bit v = *getArgReference_bit(stk, pci, 1);
+		if (v ==  bit_nil) {
+			if (b1 != NULL)
+				bn = BATconst(b1, b1->ttype, ATOMnilptr(b1->ttype), TRANSIENT);
+			else
+				bn = BATconst(b2, b2->ttype, ATOMnilptr(b2->ttype), TRANSIENT);
+		} else if (v) {
+			if (b1 != NULL)
+				bn = BATcopy(b1, TYPE_void, b1->ttype, 0, TRANSIENT);
+			else
+				bn = BATconst(b2, b2->ttype, getArgReference(stk, pci, 2), TRANSIENT);
 		} else {
-			throw(MAL, "batcalc.ifthen", "Operation not supported.");
+			if (b2 != NULL)
+				bn = BATcopy(b2, TYPE_void, b2->ttype, 0, TRANSIENT);
+			else
+				bn = BATconst(b1, b1->ttype, getArgReference(stk, pci, 3), TRANSIENT);
 		}
 	}
-	BBPunfix(b->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (b1)
+		BBPunfix(b1->batCacheid);
+	if (b2)
+		BBPunfix(b2->batCacheid);
 	if (bn == NULL) {
 		return mythrow(MAL, "batcalc.ifthenelse", OPERATION_FAILED);
 	}

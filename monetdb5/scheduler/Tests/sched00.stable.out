@@ -26,22 +26,22 @@ function user.main():void;
 #shows self-modification in action 
 end user.main;
 function user.f():void;                 	#[0]  0 
-    i:int{runonce, rows>4} := 1:int;    	#[1]  1 <- 3 
+    i:int := 1:int;                     	#[1]  1 <- 2 
 # just properties                       
-    mdb.List();                         	#[3] MDBlistDetail 5 
-    io.print("start running\n":str);    	#[4] IOprint_val 6 <- 7 
-    scheduler.isolation();              	#[5] RUNisolation 8 
-    io.print("done\n":str);             	#[6] IOprint_val 9 <- 10 
-    mdb.List();                         	#[7] MDBlistDetail 11 
+    mdb.List();                         	#[3] MDBlistDetail 4 
+    io.print("start running\n":str);    	#[4] IOprint_val 5 <- 6 
+    scheduler.isolation();              	#[5] RUNisolation 7 
+    io.print("done\n":str);             	#[6] IOprint_val 8 <- 9 
+    mdb.List();                         	#[7] MDBlistDetail 10 
 end user.f;                             	#[8]  
 [ "start running\n" ]
 function user.f():void;                 	#[0]  0 
-    i:int{runonce, rows>4} := 1:int;    	#[1]  1 <- 3 
+    i:int := 1:int;                     	#[1]  1 <- 2 
 # just properties                       
-    mdb.List();                         	#[3] MDBlistDetail 5 
-    io.print("start running\n":str);    	#[4] IOprint_val 6 <- 7 
-    io.print("done\n":str);             	#[5] IOprint_val 9 <- 10 
-    mdb.List();                         	#[6] MDBlistDetail 11 
+    mdb.List();                         	#[3] MDBlistDetail 4 
+    io.print("start running\n":str);    	#[4] IOprint_val 5 <- 6 
+    io.print("done\n":str);             	#[5] IOprint_val 8 <- 9 
+    mdb.List();                         	#[6] MDBlistDetail 10 
 end user.f;                             	#[7]  
 
 # 23:28:18 >  

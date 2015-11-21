@@ -6,11 +6,12 @@
 
 # Models a MonetDB RecordSet
 require 'time'
+require 'date'
 require 'ostruct'
 
 require "bigdecimal"
 
-require 'MonetDBConnection'
+require_relative 'MonetDBConnection'
 
 require 'logger'
 
@@ -73,102 +74,87 @@ class MonetDBData
     @record_set.freeze  
   end
   
-  # Free memory used to store the record set
-  def free()
-    @connection = nil    
-    
-    @header = []
-    @query = {}
-
-    @record_set = []
-    @index = 0 # Position of the last returned record
-
-
-    @row_index = Integer(MonetDBConnection::REPLY_SIZE)
-    @row_count = 0
-    @row_offset = 10
-    
-  end
-  
   # Returns the record set entries hashed by column name orderd by column position
-  def fetch_all_hash()
+  def fetch_all_as_column_hash
      columns = {}
      @header["columns_name"].each do |col_name|
-       columns[col_name] = fetch_column_name(col_name)
+       columns[col_name] = fetch_by_column_name(col_name)
      end
 
      return columns
    end
 
-  def fetch_hash()
-     if @index >= @query['rows'].to_i 
-       return false
-     else
-       columns = {}
-       @header["columns_name"].each do |col_name|
-         position = @header["columns_order"].fetch(col_name)
-         row = parse_tuple(@record_set[@index])
-         columns[col_name] = row[position]
-       end
-       @index += 1
-       return columns
-     end
-   end
+  # returns a record hash (i.e: { id: 1, name: "John Doe", age: 42 } )
+  def fetch_hash
+    return false if @index >= @query['rows'].to_i 
+
+    record_hash = record_hash(parse_tuple(@record_set[@index]))
+    @index += 1
+    return record_hash
+  end
+
+  # loops through all the hashes of the records and yields them to a given block
+  def each_record_as_hash
+    @record_set.each do |record| 
+      parsed_record = parse_tuple(record)
+      yield(record_hash(parsed_record))
+    end
+  end
 
   # Returns the values for the column 'field'
-  def fetch_column_name(field="")
-     position = @header["columns_order"].fetch(field)
+  def fetch_by_column_name(column_name="")
+    position = @header["columns_order"].fetch(column_name)
 
-     col = Array.new
-     # Scan the record set by row
-     @record_set.each do |row|
-       col << parse_tuple(row)[position]
-     end
+    column_values = []
+    @record_set.each do |row|
+      column_values << parse_tuple(row)[position]
+    end
 
-     return col
-   end
+    return column_values
+  end
 
+  # fetches a single record, updates the iterator index
+  def fetch
+    return false if @index >= @query['rows'].to_i
 
-  def fetch()
-    result = ""
+    result = parse_tuple(@record_set[@index])
+    @index += 1
 
-     if @index >= @query['rows'].to_i
-       result = false
-     else
-       result = parse_tuple(@record_set[@index])
-       @index += 1
-     end
+    return result
+  end
 
-     return result
-   end
+  # resets the internal iterator index used by fetch and fetch_hash
+  def reset_index
+    @index = 0
+  end
 
-  # Cursor method that retrieves all the records present in a table and stores them in a cache.
-  def fetch_all()
-     if @query['type'] == MonetDBConnection::Q_TABLE 
-        rows = Array.new
-        @record_set.each do |row| 
-           rows << parse_tuple(row)
-        end
-        @index = Integer(rows.length)
-      else
-        raise MonetDBDataError, "There is no record set currently available"
-      end
+  # loops through all records and yields to a given block paramter
+  def each_record
+    raise MonetDBDataError, "There is no record set currently available" unless @query['type'] == MonetDBConnection::Q_TABLE 
+    @record_set.each { |record| yield(parse_tuple(record)) }
+  end
 
-      return rows
-   end
+  # Cursor method that returns all the records
+  def fetch_all
+    result = []
+    each_record do |record|
+      result.push(record)
+    end
+    return result
+  end
   
   # Returns the number of rows in the record set
-  def num_rows()
+  def num_rows
       return @query['rows'].to_i
    end
 
   # Returns the number of fields in the record set
-  def num_fields()
+  def num_fields
      return @query['columns'].to_i
    end
 
   # Returns the (ordered) name of the columns in the record set
-  def name_fields()
+  def name_fields
     return @header['columns_name']
   end
   
@@ -177,41 +163,53 @@ class MonetDBData
     return @header['columns_type']
   end
   
-  private
+  # ===================
+          private
+  # ===================
   
   # store block of data, parse it and store it.
   def receive_record_set(response)
     rows = ""
-    response.each_line do |row|   
-      if row[0].chr == MonetDBConnection::MSG_QUERY      
-        if row[1].chr == MonetDBConnection::Q_TABLE
-          @action = MonetDBConnection::Q_TABLE
-          @query = parse_header_query(row)
-          @query.freeze
-          @row_count = @query['rows'].to_i #total number of rows in table            
-        elsif row[1].chr == MonetDBConnection::Q_BLOCK
-          # strip the block header from data
-          @action = MonetDBConnection::Q_BLOCK
-          @block = parse_header_query(row)          
-        elsif row[1].chr == MonetDBConnection::Q_TRANSACTION
-          @action = MonetDBConnection::Q_TRANSACTION
-        elsif row[1].chr == MonetDBConnection::Q_CREATE
-          @action = MonetDBConnection::Q_CREATE
-        end
-      elsif row[0].chr == MonetDBConnection::MSG_INFO
-        raise MonetDBQueryError, row
-      elsif row[0].chr == MonetDBConnection::MSG_SCHEMA_HEADER
-        # process header data
-        @header << row
-      elsif row[0].chr == MonetDBConnection::MSG_TUPLE
-        rows += row
-      elsif row[0] == MonetDBConnection::MSG_PROMPT
-        return rows
+    response.each_line do |row|
+      case row[0]
+      when MonetDBConnection::MSG_QUERY then parse_query(row)
+      when MonetDBConnection::MSG_INFO then raise MonetDBQueryError, row
+      when MonetDBConnection::MSG_SCHEMA_HEADER then @header << row
+      when MonetDBConnection::MSG_TUPLE then rows += row
+      when MonetDBConnection::MSG_PROMPT then return rows
       end
-    end 
+    end
     return rows # return an array of unparsed tuples
   end
+
+  def parse_query(row)
+    case row[1]
+      when MonetDBConnection::Q_TABLE
+        @action = MonetDBConnection::Q_TABLE
+        @query = parse_header_query(row)
+        @query.freeze
+        @row_count = @query['rows'].to_i #total number of rows in table        
+      when MonetDBConnection::Q_BLOCK
+        @action = MonetDBConnection::Q_BLOCK # strip the block header from data
+        @block = parse_header_query(row)     
+      when MonetDBConnection::Q_TRANSACTION
+        @action = MonetDBConnection::Q_TRANSACTION
+      when MonetDBConnection::Q_CREATE
+        @action = MonetDBConnection::Q_CREATE
+    end
+  end
   
+  def record_hash(record)
+    result = {}
+
+    @header["columns_name"].each do |column_name|
+       position = @header["columns_order"].fetch(column_name)
+       result[column_name] = record[position]
+     end
+
+    return result
+  end
+
   def next_block
     if @row_index == @row_count
       return false
@@ -239,60 +237,32 @@ class MonetDBData
     end
   end
   
-  # Parses the data returned by the server and stores the content of header and record set 
-  # for a Q_TABLE query in two (immutable) arrays. The Q_TABLE instance is then reperesented
-  # by the OpenStruct variable @Q_TABLE_instance with separate fields for 'header' and 'record_set'.
-  #
-  #def parse_tuples(record_set)
-  #  processed_record_set = Array.new
-    
-  #  record_set.split("]\n").each do |row|
-      
-      # remove trailing and ending "[ ]"
-  #    row = row.gsub(/^\[\s+/,'')
-  #    row = row.gsub(/\t\]\n$/,'')
-    
-  #    row = row.split(/\t/)
-    
-  #    processed_row = Array.new
-    
-      # index the field position
-  #    position = 0
-  #    while position < row.length
-  #      field = row[position].gsub(/,$/, '')
-        
-  #      if @type_cast == true
-  #        if @header["columns_type"] != nil
-  #          name = @header["columns_name"][position]
-  #          if @header["columns_type"][name] != nil
-  #            type = @header["columns_type"].fetch(name)
-  #          end
-
-          #  field = self.type_cast(field, type)
-  #        field = type_cast(field, type)
-
-  #        end
-  #      end
-      
-  #      processed_row << field.gsub(/\\/, '').gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
-  #      position += 1
-  #    end
-  #    processed_record_set << processed_row
-  #  end
-  #  return processed_record_set
-  #end
-  
   # parse one tuple as returned from the server
   def parse_tuple(tuple)
-    fields = Array.new
+    fields = []
     # remove trailing  "["
     tuple = tuple.gsub(/^\[\s+/,'')
-    
-    tuple.split(/,\t/).each do |f|
-      fields << f.gsub(/\\/, '').gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
+    tuple.split(/,\t/).each_with_index do |field, index|
+      field_value = convert_type(field, index)
+      fields << field_value
     end
     
     return fields.freeze
+  end
+
+  # converts the given value the correct type
+  def convert_type(value, index)
+    return nil if "NULL" == value.upcase
+    return case type_fields.values[index]
+        when "int", "tinyint", "smallint", "bigint", "hugeint" then value.to_i
+        when "double", "real", "decimal" then value.to_f
+        when "boolean" then value.downcase == true
+        when "date" then Date.parse(value)
+        when "time" then Time.parse(value, Time.new("2000-01-01"))
+        when "timestamp" then DateTime.parse(value)
+        when "timestamptz" then DateTime.parse(value)
+        else value.gsub(/\\/, '').gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
+      end
   end
   
   # Parses a query header and returns information about the query.
@@ -353,96 +323,6 @@ class MonetDBData
         return {"table_name" => name_t, "columns_name" => name_cols, "columns_type" => type_cols, 
           "columns_length" => length_cols, "columns_order" => columns_order}.freeze
       end
-    end
-  end
-end
-
-# Overload the class string to convert monetdb to ruby types.
-class String
-  def getInt
-    self.to_i
-  end
-  
-  def getFloat
-    self.to_f
-  end
-  
-  def getString
-    #data = self.reverse
-    # parse the string starting from the end; 
-    #escape = false
-    #position = 0
-    #for i in data
-    #  if i == '\\' and escape == true
-    #      if data[position+1] == '\\' 
-    #      data[position+1] = ''
-    #      escape = true
-    #    else
-    #      escape = false
-    #    end
-    #  end
-    #  position += 1
-    #end
-    #data.reverse
-    self.gsub(/^"/,'').gsub(/"$/,'')
-  end
-  
-  def getBlob
-    # first strip trailing and leading " characters 
-    self.gsub(/^"/,'').gsub(/"$/,'')
-    
-    # convert from HEX to the origianl binary data.
-    blob = ""
-    self.scan(/../) { |tuple| blob += tuple.hex.chr }
-    return blob
-  end
-  
-  # ruby currently supports only time + date frommatted timestamps;
-  # treat TIME and DATE as strings.
-  def getTime
-    # HH:MM:SS
-    self.gsub(/^"/,'').gsub(/"$/,'')
-  end
-  
-  def getDate
-    self.gsub(/^"/,'').gsub(/"$/,'')
-  end
-  
-  def getDateTime
-    #YYYY-MM-DD HH:MM:SS
-    date = self.split(' ')[0].split('-')
-    time = self.split(' ')[1].split(':')
-    
-    Time.gm(date[0], date[1], date[2], time[0], time[1], time[2])
-  end
-  
-  def getChar
-    # ruby < 1.9 does not have a Char datatype
-    begin
-      c = self.ord
-    rescue
-      c = self
-    end
-    
-    return c 
-  end
-  
-  def getBool
-      if ['1', 'y', 't', 'true'].include?(self)
-        return true
-      elsif ['0','n','f', 'false'].include?(self)
-        return false
-      else 
-        # unknown
-        return nil
-      end
-  end
-  
-  def getNull
-    if self.upcase == 'NONE'
-      return nil
-    else
-      raise "Unknown value"
     end
   end
 end

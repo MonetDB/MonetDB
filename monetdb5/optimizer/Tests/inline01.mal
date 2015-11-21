@@ -1,4 +1,4 @@
-function help{inline}();
+inline function help();
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:int);
 z:int:= 1;
@@ -18,7 +18,7 @@ exit MALException;
 exit (x,y,z);
 end help;
 
-function user.qry1{inline}();
+inline function user.qry1();
 	user.help();
 end qry1;
 

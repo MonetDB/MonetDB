@@ -1,0 +1,79 @@
+module bam;
+
+
+# Bam loader related signatures
+
+pattern bam_loader_repos(bam_repos:str, dbschema:sht):void
+address bam_loader_repos
+comment "Read all bam files in the given bam_repos directory (non-recursive) and store them in the given dbschema";
+
+pattern bam_loader_files(bam_files:str, dbschema:sht):void
+address bam_loader_files
+comment "Read all bam files in the file list stored in the file bam_files (separated by a newline) and store them in the given dbschema";
+
+pattern bam_loader_file(bam_file:str, dbschema:sht):void
+address bam_loader_file
+comment "Read bam_file and store it in the given dbschema";
+
+pattern bam_drop_file(file_id:lng, dbschema:sht):void
+address bam_drop_file
+comment "Drop alignment tables and header data for the bam file with the given file_id"
+
+
+# Scalar signatures for bam_lib
+
+command bam_flag(flag:sht, name:str):bit
+address bam_flag
+comment "Get bam flag by name."
+
+command reverse_seq(seq:str):str
+address reverse_seq
+comment "Reverse a DNA sequence."
+
+command reverse_qual(qual:str):str
+address reverse_qual
+comment "Reverse a DNA Quality string."
+
+command seq_length(cigar:str):int
+address seq_length
+comment "Calculate the real length of a DNA sequence, given its CIGAR string."
+
+command seq_char(ref_pos:int, alg_seq:str, alg_pos:int, alg_cigar:str):str
+address seq_char
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string"
+
+
+# Export signatures
+
+pattern sam_export(output_path:str):void
+address sam_exportf
+comment "Export results in the bam.export table to a SAM file"
+
+pattern bam_export(output_path:str):void
+address bam_exportf
+comment "Export results in the bam.export table to a BAM file"
+
+
+# BAT signatures for bam_lib
+
+module batbam;
+
+command bam_flag(flags:bat[:oid,:sht], name:str):bat[:oid,:bit]
+address bam_flag_bat
+comment "Get bat of bam flags by name."
+
+command reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str]
+address reverse_seq_bat
+comment "Reverse a bat of DNA sequences."
+
+command reverse_qual(seqs:bat[:oid,:str]):bat[:oid,:str]
+address reverse_qual_bat
+comment "Reverse a bat of DNA Quality strings."
+
+command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
+address seq_length_bat
+comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
+
+command seq_char(ref_pos:int, alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
+address seq_char_bat
+comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)"

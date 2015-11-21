@@ -16,7 +16,6 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 #include "mal_listing.h"
-#include "mal_properties.h"
 
 /* 
  * Since MAL programs can be created on the fly by linked-in query
@@ -31,9 +30,7 @@
  * 
  * The protection against overflow is not tight.
 */
-
-// sometimes we advance without the check
-#define advance(X,B,L)  while(*(X) && B+L- 8 > X)(X)++;
+#define advance(X,B,L)  while(*(X) && B+L>X)(X)++;
 
 static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
@@ -42,7 +39,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	char *nme =0;
 	int nameused= 0;
 	size_t len = 0, maxlen = BUFSIZ;
-	str pstring =0;
 	ValRecord *val = 0;
 	char *cv =0;
 	str tpe;
@@ -70,7 +66,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			val = &stk->stk[varid];
 
 		VALformat(&cv, val);
-		assert(cv);
 		if (len + strlen(cv) >= maxlen)
 			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
@@ -81,6 +76,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		if( strcmp(cv,"nil") == 0){
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
+			if( cv) GDKfree(cv);
 			showtype =getColumnType(getVarType(mb,varid)) > TYPE_str || 
 				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
 		} else{
@@ -91,6 +87,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			}
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
+			if( cv) GDKfree(cv);
 
 			if( closequote ){
 				strcat(buf+len,"\"");
@@ -105,7 +102,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
 		}
-		GDKfree(cv);
 	}
 
 	// show the type when required or frozen by the user
@@ -118,13 +114,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		GDKfree(tpe);
 	}
 
-	// show the properties when required 
-	if ( (flg & LIST_MAL_PROPS) && (idx < p->retc || getInstrPtr(mb,0) == p)) {
-		pstring = varGetPropStr(mb,varid);
-		if( pstring)
-			len +=snprintf(buf+len,maxlen-len,"%s",pstring);
-		GDKfree(pstring);
-	}
 	if( len >= maxlen)
 		GDKerror("renderTerm:Value representation too large");
 	return buf;
@@ -140,18 +129,25 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
-	str arg = NULL, t, tpe= NULL, pstring= NULL;
+	str arg, t, tpe;
 
 	t = s;
-	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), operatorName(p->token));
+	snprintf(t,(len-(t-base)), "%s", (flg ? "" : "#") );
+	advance(t, base, len);
+	if( mb->inlineProp){
+		snprintf(t,(len-(t-base)), "inline ");
+		advance(t, base, len);
+	}
+	if( mb->unsafeProp){
+		snprintf(t,(len-(t-base)), "unsafe ");
+		advance(t, base, len);
+	}
+	snprintf(t,(len-(t-base)), "%s ",  operatorName(p->token));
 
 	advance(t, base, len);
 	snprintf(t, (len-(t-base)),  "%s.",  getModuleId(p)?getModuleId(p):"user");
 	advance(t, base, len);
-
-	pstring = varGetPropStr(mb,  getArg(p, 0));
-	snprintf(t, (len-(t-base)), "%s%s(",  getFunctionId(p), pstring?pstring:"");
-	GDKfree(pstring);
+	snprintf(t, (len-(t-base)), "%s(",  getFunctionId(p));
 	advance(t, base, len);
 
 	for (i = p->retc; i < p->argc; i++) {
@@ -236,9 +232,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	str arg;
 
 	base = s = GDKmalloc(len);
-	if ( base == NULL)
-		return base;
-	*s =0;
+	if ( s == NULL)
+		return s;
 	if (flg) {
 		if( p->token<0){
 			s[0] = '#';
@@ -390,7 +385,6 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	str s, nme;
 	BAT *b;
 	ValRecord *val;
-	VarPtr vr;
 	char *cv =0;
 	int varid = getArg(p,idx);
 
@@ -406,10 +400,8 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
-		vr = varGetProp(mb, varid, PropertyIndex("schematablecolumn"));
-		if( vr) 
-			nme = vr->value.val.sval;
-		else
+		nme = getSTC(mb, varid);
+		if( nme == NULL) 
 			nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);

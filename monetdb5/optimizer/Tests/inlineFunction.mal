@@ -1,4 +1,4 @@
-function my_case{inline}(Av:int):int;
+inline function my_case(Av:int):int;
     X3 := calc.==(Av,1);
 	res := 0;
 barrier X4 := X3;

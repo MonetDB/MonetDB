@@ -30,11 +30,11 @@ str arrayRef;
 str basketRef;
 str batcalcRef;
 str batRef;
-str boxRef;
 str batstrRef;
 str batmtimeRef;
 str batmmathRef;
 str batxmlRef;
+str batsqlRef;
 str bbpRef;
 str tidRef;
 str dateRef;
@@ -70,6 +70,7 @@ str defineRef;
 str deleteRef;
 str depositRef;
 str subdiffRef;
+str diffRef;
 str subinterRef;
 str mergecandRef;
 str mergepackRef;
@@ -110,7 +111,6 @@ str subantijoinRef;
 str subbandjoinRef;
 str subrangejoinRef;
 str subthetajoinRef;
-str kdifferenceRef;
 str languageRef;
 str leftfetchjoinRef;
 str leftfetchjoinPathRef;
@@ -176,6 +176,10 @@ str putRef;
 str querylogRef;
 str queryRef;
 str rapiRef;
+str batrapiRef;
+str subeval_aggrRef;
+str rankRef;
+str dense_rankRef;
 str reconnectRef;
 str recycleRef;
 str refineRef;
@@ -186,6 +190,7 @@ str replaceRef;
 str replicatorRef;
 str resultSetRef;
 str reuseRef;
+str row_numberRef;
 str rpcRef;
 str rsColumnRef;
 str schedulerRef;
@@ -225,24 +230,6 @@ str userRef;
 str vectorRef;
 str zero_or_oneRef;
 
-int sqlfunctionProp;
-int schematablecolumnProp;
-
-int inlineProp;
-int rowsProp;
-int fileProp;
-int runonceProp;
-int unsafeProp;
-int orderDependendProp;
-
-int hlbProp;
-int hubProp;
-int tlbProp;
-int tubProp;
-int horiginProp;		/* original oid source */
-int toriginProp;		/* original oid source */
-int mtProp;
-
 void optimizerInit(void)
 {
 	assert(batRef == NULL);
@@ -260,11 +247,11 @@ void optimizerInit(void)
 	arrayRef = putName("array",4);
 	batcalcRef = putName("batcalc",7);
 	basketRef = putName("basket",6);
-	boxRef = putName("box",3);
 	batstrRef = putName("batstr",6);
 	batmtimeRef = putName("batmtime",8);
 	batmmathRef = putName("batmmath",8);
 	batxmlRef = putName("batxml",6);
+	batsqlRef = putName("batsql",6);
 	bbpRef = putName("bbp",3);
 	tidRef = putName("tid",3);
 	deltaRef = putName("delta",5);
@@ -300,6 +287,7 @@ void optimizerInit(void)
 	deleteRef = putName("delete",6);
 	depositRef = putName("deposit",7);
 	subdiffRef = putName("subdiff",7);
+	diffRef = putName("diff",4);
 	subinterRef = putName("subinter",8);
 	mergecandRef= putName("mergecand",9);
 	mergepackRef= putName("mergepack",9);
@@ -340,7 +328,6 @@ void optimizerInit(void)
 	subrangejoinRef = putName("subrangejoin",12);
 	subthetajoinRef = putName("subthetajoin",12);
 	jsonRef = putName("json",4);
-	kdifferenceRef= putName("kdifference",11);
 	languageRef= putName("language",8);
 	leftfetchjoinRef = putName("leftfetchjoin",13);
 	leftfetchjoinPathRef = putName("leftfetchjoinPath",17);
@@ -402,7 +389,11 @@ void optimizerInit(void)
 	putRef = putName("put",3);
 	querylogRef = putName("querylog",8);
 	queryRef = putName("query",5);
-	rapiRef = putName("batrapi", 7);
+	rapiRef = putName("rapi", 4);
+	batrapiRef = putName("batrapi", 7);
+	subeval_aggrRef = putName("subeval_aggr", 12);
+	rankRef = putName("rank", 4);
+	dense_rankRef = putName("dense_rank", 10);
 	reconnectRef = putName("reconnect",9);
 	recycleRef = putName("recycle",7);
 	refineRef = putName("refine",6);
@@ -413,6 +404,7 @@ void optimizerInit(void)
 	replicatorRef = putName("replicator",10);
 	resultSetRef = putName("resultSet",9);
 	reuseRef = putName("reuse",5);
+	row_numberRef = putName("row_number",10);
 	rpcRef = putName("rpc",3);
 	rsColumnRef = putName("rsColumn",8);
 	schedulerRef = putName("scheduler",9);
@@ -455,18 +447,6 @@ void optimizerInit(void)
 	zero_or_oneRef = putName("zero_or_one",11);
 	userRef = putName("user",4);
 
-	fileProp = PropertyIndex("file");
-	inlineProp = PropertyIndex("inline");
-	rowsProp = PropertyIndex("rows");
-	runonceProp = PropertyIndex("runonce");
-	unsafeProp = PropertyIndex("unsafe");
-	orderDependendProp = PropertyIndex("orderdependend");
-	sqlfunctionProp = PropertyIndex("sqlfunction");
-	schematablecolumnProp = PropertyIndex("schematablecolumn");
-
-	horiginProp = PropertyIndex("horigin");
-	toriginProp = PropertyIndex("torigin");
-	mtProp = PropertyIndex("mergetable");
 	/*
 	 * Set the optimizer debugging flag
 	 */

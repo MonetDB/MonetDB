@@ -171,28 +171,34 @@ OPTremoveDep(Node *list, int lim)
 	GDKfree(list);
 }
 
-static void
+static int
 OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Node dep[], int *uselist)
 {
 	int i;
 	InstrPtr p;
 
 	if (pc > max)
-		return;
+		return 0;
 
 	p = old[pc];
 	if (p == NULL)
-		return;
+		return 0;
+
+	if (THRhighwater())
+		return -1;
 
 	for (i= p->retc; i< dep[pc]->cnt; i++)
-		OPTbreadthfirst(cntxt, mb, dep[pc]->stmt[i], max, old, dep, uselist);
+		if (OPTbreadthfirst(cntxt, mb, dep[pc]->stmt[i], max, old, dep, uselist) < 0)
+			return -1;
 	if (old[pc] != NULL) {
 		old[pc] = 0;
 		pushInstruction(mb, p);
 	}
 	if (getModuleId(p) == groupRef)
 		for (i = 0; i< dep[pc]->used; i++)
-			OPTbreadthfirst(cntxt, mb, uselist[dep[pc]->pos+i], max, old, dep, uselist);
+			if (OPTbreadthfirst(cntxt, mb, uselist[dep[pc]->pos+i], max, old, dep, uselist) < 0)
+				return -1;
+	return 0;
 }
 
 int
@@ -233,7 +239,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( p->token == ENDsymbol)
 			break;
 		if( hasSideEffects(p,FALSE) || isUnsafeFunction(p) || p->barrier ){
-			OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist);
+			if (OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist) < 0)
+				break;
 			/* remove last instruction and keep for later */
 			if (p == mb->stmt[mb->stop-1]) {
 				p= mb->stmt[mb->stop-1];
@@ -249,7 +256,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
 					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_DEBUG);
 				}
-				OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist);
+				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
+					i = limit;	/* cause break from outer loop */
+					break;
+				}
 			}
 			if (p)
 				pushInstruction(mb,p);

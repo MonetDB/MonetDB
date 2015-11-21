@@ -40,13 +40,6 @@ command unicode(wchar:int) :str
 address STRFromWChr
 comment "convert a unicode to a character.";
 
-command codeset() :str
-address STRcodeset
-comment "Return the locale's codeset";
-command iconv(org:str,fromCs:str,toCs:str):str
-address STRIconv
-comment "String codeset conversion";
-
 command startsWith(s:str,prefix:str):bit
 address STRPrefix
 comment "Prefix check.";

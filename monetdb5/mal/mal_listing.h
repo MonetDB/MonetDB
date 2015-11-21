@@ -12,7 +12,6 @@
 #include "mal_type.h"
 #include "mal_stack.h"
 #include "mal_instruction.h"
-#include "mal_properties.h"
 
 #define DEBUG_MAL_LIST
 

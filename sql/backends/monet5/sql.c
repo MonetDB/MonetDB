@@ -2611,7 +2611,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int */
+/* unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int */
 /* New result set rendering infrastructure */
 
 static str
@@ -2806,7 +2806,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int */
+/* unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int */
 str
 mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3292,7 +3292,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **b = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	str filename = NULL, cs;
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
 	unsigned char **T = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 1);
 	unsigned char **R = (unsigned char **) getArgReference_str(stk, pci, pci->retc + 2);
@@ -3306,7 +3305,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
-	str utf8 = "UTF-8";
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3349,26 +3347,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
-		/* convert UTF-8 encoded file name to the character set of our
-	 	 * own locale before passing it on to the system call */
-		if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
-			GDKfree(tsep);
-			GDKfree(rsep);
-			GDKfree(ssep);
-			GDKfree(ns);
-			return msg;
-		}
-		msg = STRIconv(&filename, fname, &utf8, &cs);
-		GDKfree(cs);
-		if (msg != MAL_SUCCEED) {
-			GDKfree(tsep);
-			GDKfree(rsep);
-			GDKfree(ssep);
-			GDKfree(ns);
-			return msg;
-		}
-
-		ss = open_rastream(filename);
+		ss = open_rastream(*fname);
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
 			if (ss)
@@ -3377,8 +3356,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			GDKfree(ssep);
 			GDKfree(ns);
-			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
-			GDKfree(filename);
+			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", *fname, strerror(errnr));
 			return msg;
 		}
 #if SIZEOF_VOID_P == 4
@@ -3395,7 +3373,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 			bstream_destroy(s);
 		}
-		GDKfree(filename);
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
@@ -4839,7 +4816,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
-								if (c->type != no_idx) {
+								if (idx_has_column(c->type)) {
 									BAT *bn = store_funcs.bind_idx(tr, c, RDONLY);
 									lng sz;
 
@@ -5058,7 +5035,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	int i, j;
+	int i;
 
 	for (i = start; i < mb->vtop;) {
 		if (glb) {
@@ -5073,14 +5050,6 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 		i++;
 	}
 	mb->vtop = start;
-	for (i = j = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].var <start) {
-			if (i > j)
-				mb->prps[j] = mb->prps[i];
-			j++;
-		}
-	}
-	mb->ptop = j;
 }
 
 /* if at least (2*SIZEOF_BUN), also store length (heaps are then

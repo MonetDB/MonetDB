@@ -126,7 +126,6 @@ scanner_init_keywords(void)
 
 	keywords_insert("INSERT", INSERT);
 	keywords_insert("UPDATE", UPDATE);
-	keywords_insert("DATABASE", DATABASE);
 	keywords_insert("DELETE", sqlDELETE);
 
 	keywords_insert("ACTION", ACTION);
@@ -1093,7 +1092,23 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 	token = sql_get_next_token(yylval, parm);
 	
-	if (token == UNION) {
+	if (token == NOT) {
+		int next = sqllex(yylval, parm);
+
+		if (next == NOT) {
+			return sqllex(yylval, parm);
+		} else if (next == BETWEEN) {
+			token = NOT_BETWEEN;
+		} else if (next == sqlIN) {
+			token = NOT_IN;
+		} else if (next == LIKE) {
+			token = NOT_LIKE;
+		} else if (next == ILIKE) {
+			token = NOT_ILIKE;
+		} else {
+			lc->yynext = next;
+		}
+	} else if (token == UNION) {
 		int next = sqllex(yylval, parm);
 
 		if (next == JOIN) {

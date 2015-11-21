@@ -1,0 +1,112 @@
+stderr of test 'drop_last_files` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:39 >  
+# 10:22:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:39 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32986
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16074/.s.monetdb.32986
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+# DROP TABLE bam.alignments_extra_5;
+# DROP TABLE bam.alignments_5;
+# DELETE FROM bam.pg WHERE file_id = 5;
+# DELETE FROM bam.rg WHERE file_id = 5;
+# DELETE FROM bam.sq WHERE file_id = 5;
+# DELETE FROM bam.files WHERE file_id = 5;
+# 
+# # DROP TABLE bam.alignments_extra_6;
+# DROP TABLE bam.alignments_6;
+# DELETE FROM bam.pg WHERE file_id = 6;
+# DELETE FROM bam.rg WHERE file_id = 6;
+# DELETE FROM bam.sq WHERE file_id = 6;
+# DELETE FROM bam.files WHERE file_id = 6;
+# 
+# # DROP TABLE bam.alignments_extra_7;
+# DROP VIEW bam.unpaired_all_alignments_7;
+# DROP VIEW bam.unpaired_secondary_alignments_7;
+# DROP VIEW bam.unpaired_primary_alignments_7;
+# DROP TABLE bam.paired_primary_alignments_7;
+# DROP TABLE bam.paired_secondary_alignments_7;
+# DROP TABLE bam.unpaired_alignments_7;
+# DELETE FROM bam.pg WHERE file_id = 7;
+# DELETE FROM bam.rg WHERE file_id = 7;
+# DELETE FROM bam.sq WHERE file_id = 7;
+# DELETE FROM bam.files WHERE file_id = 7;
+# 
+# # DROP TABLE bam.alignments_extra_8;
+# DROP VIEW bam.unpaired_all_alignments_8;
+# DROP VIEW bam.unpaired_secondary_alignments_8;
+# DROP VIEW bam.unpaired_primary_alignments_8;
+# DROP TABLE bam.paired_primary_alignments_8;
+# DROP TABLE bam.paired_secondary_alignments_8;
+# DROP TABLE bam.unpaired_alignments_8;
+# DELETE FROM bam.pg WHERE file_id = 8;
+# DELETE FROM bam.rg WHERE file_id = 8;
+# DELETE FROM bam.sq WHERE file_id = 8;
+# DELETE FROM bam.files WHERE file_id = 8;
+# 
+# # DROP TABLE bam.alignments_extra_9;
+# DROP TABLE bam.alignments_9;
+# DELETE FROM bam.pg WHERE file_id = 9;
+# DELETE FROM bam.rg WHERE file_id = 9;
+# DELETE FROM bam.sq WHERE file_id = 9;
+# DELETE FROM bam.files WHERE file_id = 9;
+# 
+# # DROP TABLE bam.alignments_extra_10;
+# DROP TABLE bam.alignments_10;
+# DELETE FROM bam.pg WHERE file_id = 10;
+# DELETE FROM bam.rg WHERE file_id = 10;
+# DELETE FROM bam.sq WHERE file_id = 10;
+# DELETE FROM bam.files WHERE file_id = 10;
+# 
+# # DROP TABLE bam.alignments_extra_11;
+# DROP VIEW bam.unpaired_all_alignments_11;
+# DROP VIEW bam.unpaired_secondary_alignments_11;
+# DROP VIEW bam.unpaired_primary_alignments_11;
+# DROP TABLE bam.paired_primary_alignments_11;
+# DROP TABLE bam.paired_secondary_alignments_11;
+# DROP TABLE bam.unpaired_alignments_11;
+# DELETE FROM bam.pg WHERE file_id = 11;
+# DELETE FROM bam.rg WHERE file_id = 11;
+# DELETE FROM bam.sq WHERE file_id = 11;
+# DELETE FROM bam.files WHERE file_id = 11;
+# 
+# # DROP TABLE bam.alignments_extra_12;
+# DROP VIEW bam.unpaired_all_alignments_12;
+# DROP VIEW bam.unpaired_secondary_alignments_12;
+# DROP VIEW bam.unpaired_primary_alignments_12;
+# DROP TABLE bam.paired_primary_alignments_12;
+# DROP TABLE bam.paired_secondary_alignments_12;
+# DROP TABLE bam.unpaired_alignments_12;
+# DELETE FROM bam.pg WHERE file_id = 12;
+# DELETE FROM bam.rg WHERE file_id = 12;
+# DELETE FROM bam.sq WHERE file_id = 12;
+# DELETE FROM bam.files WHERE file_id = 12;
+# 
+# 
+# 10:22:39 >  
+# 10:22:39 >  "/usr/bin/python2" "drop_last_files.SQL.py" "drop_last_files"
+# 10:22:39 >  
+
+
+# 10:22:39 >  
+# 10:22:39 >  "Done."
+# 10:22:39 >  
+

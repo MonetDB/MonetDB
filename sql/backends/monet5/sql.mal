@@ -43,7 +43,7 @@ pattern trans(type:int,chain:int,name:str):void
 address SQLtransaction
 comment "A transaction statement (type can be commit,release,rollback or start)";
 
-pattern transaction{unsafe}()
+unsafe pattern transaction()
 address SQLtransaction2
 comment "Start an autocommit transaction";
 
@@ -151,7 +151,7 @@ pattern getVariable(mvc:int, varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
-pattern logfile{unsafe}(filename:str):void 
+unsafe pattern logfile(filename:str):void 
 address mvc_logfile
 comment "Enable/disable saving the sql statement traces";
 
@@ -167,7 +167,7 @@ pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
-pattern restart{unsafe}( sname:str, sequence:str, start:lng ):lng
+unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
@@ -268,7 +268,7 @@ pattern update(mvc:int, sname:str, tname:str, cname:str, rids:any, upd:any):int
 address mvc_update_wrap
 comment "Update the values of the column tname.cname";
 
-pattern clear_table{unsafe}(sname:str, tname:str) :wrd
+unsafe pattern clear_table(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
@@ -279,44 +279,41 @@ pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid
 address SQLtid
 comment "Return the tables tid column.";
 
-pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
+unsafe pattern delete(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
 comment "delete from table";
 
-#pattern resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
-#address mvc_table_result_wrap
-#comment "Prepare a table result set";
-pattern resultSet{unsafe}(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
+unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
 comment "Prepare a table result set";
 
-pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
 address mvc_row_result_wrap
 comment "Prepare a table result set";
 
-pattern resultSet{unsafe}(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
 address mvc_table_result_wrap
 comment "Prepare a table result set for the client in default CSV format";
 
-pattern export_table{unsafe}(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
 address mvc_export_row_wrap
 comment "Prepare a table result set for the COPY INTO stream";
-pattern export_table{unsafe}(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
 
-pattern declaredTable{unsafe}( name:str ) :int 
+unsafe pattern declaredTable( name:str ) :int 
 address mvc_declared_table_wrap
 comment "Prepare a declared table"; 
 
-pattern dtColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
+unsafe pattern dtColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
 address mvc_declared_table_column_wrap;
 
-pattern dropDeclaredTable{unsafe}( name:str ) :void 
+unsafe pattern dropDeclaredTable( name:str ) :void 
 address mvc_drop_declared_table_wrap
 comment "drop a declared table"; 
 
-pattern dropDeclaredTables{unsafe}( nr:int ) :void 
+unsafe pattern dropDeclaredTables( nr:int ) :void 
 address mvc_drop_declared_tables_wrap
 comment "drop top n declared tables"; 
 
@@ -332,35 +329,31 @@ pattern create_view_upgrade_oct2014(sname:str,v:str) :int
 address UPGcreate_view
 comment "Create the view described by f, needed for the Oct2014 upgrade";
 
-pattern exportHead{unsafe}(s:streams, res_id:int) :void
+unsafe pattern exportHead(s:streams, res_id:int) :void
 address mvc_export_head_wrap
 comment "Export a result (in order) to stream s"; 
 
-pattern exportResult{unsafe}(s:streams, res_id:int) :void
+unsafe pattern exportResult(s:streams, res_id:int) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
 
-pattern exportChunk{unsafe}(s:streams, res_id:int) :void
+unsafe pattern exportChunk(s:streams, res_id:int) :void
 address mvc_export_chunk_wrap
 comment "Export a chunk of the result set (in order) to stream s"; 
 
-pattern exportChunk{unsafe}(s:streams, res_id:int, offset:int, nr:int) :void
+unsafe pattern exportChunk(s:streams, res_id:int, offset:int, nr:int) :void
 address mvc_export_chunk_wrap
 comment "Export a chunk of the result set (in order) to stream s"; 
 
-pattern exportOperation{unsafe}() :void
+unsafe pattern exportOperation() :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(mvc:int, nr:wrd) :int
+unsafe pattern affectedRows(mvc:int, nr:wrd) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
-#pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
-#address mvc_export_value_wrap 
-#comment "export a single value onto the stream s";
-
-pattern copy_from{unsafe}( t:ptr, 
+unsafe pattern copy_from( t:ptr, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int) (:bat[:oid,:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
@@ -373,7 +366,7 @@ comment "Import a table from bstream s with the
 pattern single(x:any_2):bat[:oid,:any_2]
 address CMDBATsingle;
 
-pattern importTable{unsafe}( sname:str, tname:str, fname:str... )(:bat[:oid,:any]...)
+unsafe pattern importTable( sname:str, tname:str, fname:str... )(:bat[:oid,:any]...)
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
@@ -381,7 +374,7 @@ command zero_or_one( col:bat[:oid,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
-function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
+inline function sql.subzero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
 	(g,e,h) := group.subgroup(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);

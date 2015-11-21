@@ -122,8 +122,9 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
+	mb->inlineProp = 0;
+	mb->unsafeProp = 0;
 	mb->ptop = mb->psize = 0;
-	mb->prps = NULL;
 	mb->replica = NULL;
 	mb->recycle = 0;
 	mb->recid = 0;
@@ -200,10 +201,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->stmt = 0;
 	GDKfree(mb->var);
 	mb->var = 0;
-	if (mb->prps)
-		GDKfree(mb->prps);
-	mb->ptop = mb->psize = 0;
-	mb->prps = NULL;
 
 	if (mb->history)
 		freeMalBlk(mb->history);
@@ -214,6 +211,8 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
+	mb->inlineProp = 0;
+	mb->unsafeProp = 0;
 	GDKfree(mb);
 }
 
@@ -285,18 +284,8 @@ copyMalBlk(MalBlkPtr old)
 	mb->optimize = old->optimize;
 	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
-
-	mb->ptop = mb->psize = 0;
-	mb->prps = NULL;
-	if (old->prps) {
-		mb->prps = (MalProp *) GDKzalloc(old->psize * sizeof(MalProp));
-		if( mb->prps == NULL)
-			GDKerror("copyMAL block, allocation of property table failed");
-		mb->psize = old->psize;
-		mb->ptop = old->ptop;
-		for (i = 0; i < old->ptop && mb->prps; i++)
-			mb->prps[i] = old->prps[i];
-	}
+	mb->inlineProp = old->inlineProp;
+	mb->unsafeProp = old->unsafeProp;
 	return mb;
 }
 
@@ -480,6 +469,7 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->recycle = 0;
 	p->argc = 1;
 	p->retc = 1;
+	p->mitosis = -1;
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
@@ -918,7 +908,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	}
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL){
-		getVar(mb, n) = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) );
 		if ( getVar(mb,n) == NULL) {
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
 			GDKfree(name);
@@ -926,9 +916,8 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		}
 	}
 	mb->var[n]->name = name;
-	mb->var[n]->propc = 0;
-	mb->var[n]->maxprop = MAXARG;
 
+	setRowCnt(mb,n,0);
 	setVarType(mb, n, type);
 	clrVarFixed(mb, n);
 	clrVarUsed(mb, n);
@@ -966,6 +955,8 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
+	if ( getSTC(mb,x) )
+		setSTC(mb,x, getSTC(mb,x));
 	return res;
 }
 
@@ -998,7 +989,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
 		return -1;
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL) {
-		getVar(mb, n) = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 		if (getVar(mb,n) == NULL){
 			GDKerror("newTmpVariable" MAL_MALLOC_FAIL);
 			return -1;
@@ -1006,8 +997,6 @@ newTmpVariable(MalBlkPtr mb, malType type)
 	}
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
-	mb->var[n]->propc = 0;
-	mb->var[n]->maxprop = MAXARG;
 	mb->vtop++;
 	return n;
 }
@@ -1046,49 +1035,20 @@ delVariable(MalBlkPtr mb, int varid)
 	}
 }
 
-void
-copyProperties(MalBlkPtr mb, int src, int dst)
-{
-    VarPtr w, v;
-    int i;
-
-    assert(src >=0 && src < mb->vtop);
-    assert(dst >=0 && dst < mb->vtop);
-    v = mb->var[src];
-    w = mb->var[dst];
-    if ( w->maxprop < v->maxprop){
-        w = (VarPtr) GDKrealloc(w, offsetof(VarRecord, prps) + v->maxprop * sizeof(int));
-		if ( w == NULL){
-			GDKerror("copyProperties" MAL_MALLOC_FAIL);
-			return;
-		}
-        mb->var[dst] = w;
-        w->maxprop = v->maxprop;
-    }
-    w->propc = v->propc;
-    for ( i= 0; i< v->propc; i++)
-        w->prps[i] = v->prps[i];
-}
 
 int
 copyVariable(MalBlkPtr dst, VarPtr v)
 {
-	int i;
 	VarPtr w;
 
-	assert(v->propc <= v->maxprop);
-	w = (VarPtr) GDKzalloc(offsetof(VarRecord, prps) + v->maxprop * sizeof(int));
+	w = (VarPtr) GDKzalloc(sizeof(VarRecord));
 	if( w == NULL)
 		return -1;
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
 	w->flags = v->flags;
 	w->tmpindex = v->tmpindex;
-	w->propc = v->propc;
-	w->maxprop = v->maxprop;
-	for (i = 0; i < v->propc; i++)
-		w->prps[i] = v->prps[i];
-
+	w->rowcnt = v->rowcnt;
 	VALcopy(&w->value, &v->value);
 	dst->var[dst->vtop] = w;
 	return 0;
@@ -1134,7 +1094,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->type = 0;
 	v->flags = 0;
 	v->tmpindex = 0;
-	v->propc = 0;
+	v->rowcnt = 0;
 	v->eolife = 0;
 }
 
@@ -1204,12 +1164,6 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 			for (j = 0; j < q->argc; j++)
 				getArg(q, j) = vars[getArg(q, j)];
 		}
-		for (i = 0; i < mb->ptop; i++) {
-			MalProp *p = mb->prps + i;
-
-			if (p->var)
-				p->var = vars[p->var];
-		}
 	}
 #ifdef DEBUG_REDUCE
 	mnstr_printf(GDKout, "After reduction \n");
@@ -1238,10 +1192,6 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 
 		for (j = 0; j < q->argc; j++)
 			used[getArg(q, j)] = 1;
-	}
-	for (i = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].var)
-			used[mb->prps[i].var] = 1;
 	}
 	trimMalVariables_(mb, used, stk);
 	GDKfree(used);
@@ -1818,154 +1768,3 @@ pushEndInstruction(MalBlkPtr mb)
 	pushInstruction(mb, p);
 }
 
-int
-newProperty(MalBlkPtr mb)
-{
-	if (mb->ptop >= mb->psize) {
-		mb->psize += MAXVARS;
-		mb->prps = (MalProp *) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
-		if (mb->prps == NULL) {
-			mb->errors++;
-			return -1;
-		}
-	}
-	return mb->ptop++;
-}
-
-void
-varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
-{
-	VarPtr v = getVar(mb, var), vnew;
-	int i, propid = -1, reset = 0, size;
-
-	for (i = 0; i < v->propc; i++) {
-		MalProp *p = mb->prps + v->prps[i];
-
-		if (p->idx == prop) {
-			propid = v->prps[i];
-			reset = 1;
-			break;
-		}
-	}
-	if (propid < 0 && (propid = newProperty(mb)) < 0) {
-		GDKerror("varSetProp"MAL_MALLOC_FAIL);
-		return;
-	}
-
-	mb->prps[propid].var = 0;
-	if (cst != NULL) {
-		mb->prps[propid].var = defConstant(mb, cst->vtype, cst);
-		/* beware, property constants should not be garbage collected */
-		setVarUsed(mb, mb->prps[propid].var);
-	}
-	mb->prps[propid].idx = prop;
-	mb->prps[propid].op = op;
-
-	/* here we need to add the new property to the variable */
-	assert(v->propc <= v->maxprop);
-	if (!reset) {
-		if (v->propc == v->maxprop) {
-			size = offsetof(VarRecord, prps) + v->maxprop * sizeof(int);
-			vnew = (VarPtr) GDKzalloc(size + MAXARG * sizeof(int));
-			if( vnew == NULL){
-				GDKerror("varSetProp"MAL_MALLOC_FAIL);
-				GDKfree(v);
-				return;
-			}
-			memcpy((char *) vnew, (char *) v, size);
-			vnew->maxprop += MAXARG;
-			mb->var[var] = vnew;
-			GDKfree(v);
-			v = getVar(mb, var);
-		}
-		v->prps[v->propc++] = propid;
-	}
-	assert(v->propc <= v->maxprop);
-}
-
-str
-varGetPropStr(MalBlkPtr mb, int var)
-{
-	char buf[BUFSIZ], *s = buf;
-	VarPtr v = getVar(mb, var);
-	int i, first = 1;
-
-	if (v->propc == 0)
-		return NULL;
-
-	for (i = 0; i < v->propc; i++) {
-		char *t = NULL;
-		MalProp *p = mb->prps + v->prps[i];
-		char *nme = PropertyName(p->idx);
-
-		if (!first) {
-			*s++ = ',';
-			*s++ = ' ';
-		} else
-			*s++ = '{';
-		if (p->var) {
-			VarPtr v = getVar(mb, p->var);
-			char *op = PropertyOperatorString((prop_op_t) p->op);
-
-			ATOMformat(v->type, VALptr(&v->value), &t);
-			switch (v->type) {
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				assert(0);
-				sprintf(s, "%s%s%s:hge", nme, op, t);
-				break;
-#endif
-			case TYPE_oid:
-				sprintf(s, "%s%s%s:oid", nme, op, t);
-				break;
-			case TYPE_lng:
-				sprintf(s, "%s%s%s:lng", nme, op, t);
-				break;
-			case TYPE_sht:
-				sprintf(s, "%s%s%s:sht", nme, op, t);
-				break;
-			default:
-				sprintf(s, "%s%s%s", nme, op, t);
-			}
-			if (t)
-				GDKfree(t);
-		} else {
-			sprintf(s, "%s", nme);
-		}
-		while (*s)
-			s++;
-		first = 0;
-	}
-	if( !first)
-		*s++ = '}';
-	*s = 0;
-	return GDKstrdup(buf);
-}
-
-static VarRecord varTrue;
-
-VarPtr
-varGetProp(MalBlkPtr mb, int var, int prop)
-{
-	VarPtr v;
-	int i;
-
-	if (mb->prps == NULL || var <0)
-		return NULL;
-	v = getVar(mb, var);
-	for (i = 0; i < v->propc; i++) {
-		MalProp *p = mb->prps + v->prps[i];
-
-		if (p->idx == prop) {
-			if (p->var) {
-				return getVar(mb, p->var);
-			} else {
-				bit t = TRUE;
-				VALset(&varTrue.value, TYPE_bit, &t);
-				varTrue.type = TYPE_bit;
-				return &varTrue;
-			}
-		}
-	}
-	return NULL;
-}

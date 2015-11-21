@@ -1,7 +1,0 @@
-function tst();
-  b:= bat.new(:oid,:int);
-  c{keep}:= bat.new(:oid,:int);
-  io.print(b);
-end tst;
-optimizer.garbageCollector("user","tst");
-mdb.List("user","tst");

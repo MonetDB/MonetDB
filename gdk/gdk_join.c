@@ -1173,6 +1173,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (sl)
 		r1->tdense = sl->tdense;
+	if (sr)
+		r2->tdense = sr->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (lscan == 0) {
 			/* always search r completely */
@@ -2884,6 +2886,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				SUB_WITH_CHECK(lng, *(const lng *)vr,
 					       lng, *(const lng *)c1,
 					       lng, v1,
+					       GDK_lng_max,
 					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(0));
 				if (*(const lng *)vl <= v1 &&
 				    (!li || *(const lng *)vl != v1))
@@ -2892,6 +2895,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				ADD_WITH_CHECK(lng, *(const lng *)vr,
 					       lng, *(const lng *)c2,
 					       lng, v2,
+					       GDK_lng_max,
 					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(0));
 				if (*(const lng *)vl >= v2 &&
 				    (!hi || *(const lng *)vl != v2))
@@ -2913,6 +2917,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				SUB_WITH_CHECK(hge, *(const hge *)vr,
 					       hge, *(const hge *)c1,
 					       hge, v1,
+					       GDK_hge_max,
 					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(0));
 				if (*(const hge *)vl <= v1 &&
 				    (!li || *(const hge *)vl != v1))
@@ -2921,6 +2926,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				ADD_WITH_CHECK(hge, *(const hge *)vr,
 					       hge, *(const hge *)c2,
 					       hge, v2,
+					       GDK_hge_max,
 					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(0));
 				if (*(const hge *)vl >= v2 &&
 				    (!hi || *(const hge *)vl != v2))
@@ -2956,6 +2962,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				SUB_WITH_CHECK(dbl, *(const dbl *)vr,
 					       dbl, *(const dbl *)c1,
 					       dbl, v1,
+					       GDK_dbl_max,
 					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(0));
 				if (*(const dbl *)vl <= v1 &&
 				    (!li || *(const dbl *)vl != v1))
@@ -2964,6 +2971,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				ADD_WITH_CHECK(dbl, *(const dbl *)vr,
 					       dbl, *(const dbl *)c2,
 					       dbl, v2,
+					       GDK_dbl_max,
 					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(0));
 				if (*(const dbl *)vl >= v2 &&
 				    (!hi || *(const dbl *)vl != v2))

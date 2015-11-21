@@ -1,0 +1,56 @@
+stdout of test 'query2.9` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:43 >  
+# 10:22:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:43 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:22:43 >  
+# 10:22:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
+# 10:22:43 >  
+
+#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
+#FROM bam.alignments_1
+#WHERE rname = 'chr22'
+#  AND 39996433 >= pos
+#  AND 39996433 < pos + bam.seq_length(cigar)
+#ORDER BY pos;
+% bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
+% qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 10,	3,	5,	8,	3,	21,	1,	8,	1,	100,	100 # length
+[ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+[ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+[ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+#SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
+#FROM bam.unpaired_all_alignments_3
+#WHERE rname = 'chr22'
+#  AND 39996433 >= pos
+#  AND 39996433 < pos + bam.seq_length(cigar)
+#ORDER BY pos;
+% .unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
+% qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 10,	3,	5,	8,	3,	21,	1,	8,	1,	100,	100 # length
+[ "sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+[ "sim_22_1_1",	339,	"chr22",	39996123,	0,	"4=1X1I10=307D46=1X37=",	"=",	39995910,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+[ "sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
+
+# 10:22:44 >  
+# 10:22:44 >  "Done."
+# 10:22:44 >  
+

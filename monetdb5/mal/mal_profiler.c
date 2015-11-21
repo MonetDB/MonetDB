@@ -78,7 +78,7 @@ static void logjsonInternal(char *logbuffer)
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
 		if( eventcounter == 0){
-			snprintf(buf,BUFSIZ,"%s\n",monetdb_characteristics);
+			snprintf(buf,BUFSIZ,"%s\n",monet_characteristics);
 			lenhdr = strlen(buf);
 			(void) mnstr_write(eventstream, buf, 1, lenhdr);
 		}

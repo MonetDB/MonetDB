@@ -48,7 +48,7 @@
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;
-mal_export char 	monetdb_characteristics[PATHLENGTH];
+mal_export char 	monet_characteristics[PATHLENGTH];
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 mal_export int		mal_trace;		/* enable profile events on console */
@@ -134,12 +134,6 @@ mal_export void mal_exit(void);
 typedef int malType;
 typedef str (*MALfcn) ();
 
-typedef struct MalProp {
-	bte idx;
-	bte op;
-	int var;
-} *MalPropPtr, MalProp;
-
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
@@ -156,8 +150,8 @@ typedef struct VARRECORD {
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
-	int propc, maxprop;			/* proc count and max number of properties */
-	int prps[FLEXIBLE_ARRAY_MEMBER]; /* property array */
+	str stc;					/* rendering schema.table.column */
+	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 
 /* For performance analysis we keep track of the number of calls and
@@ -178,6 +172,7 @@ typedef struct {
 	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
+	int mitosis;				/* old mtProp value */
 	/* inline statistics */
 	struct timeval clock;		/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */
@@ -205,7 +200,9 @@ typedef struct MALBLK {
 	InstrPtr *stmt;				/* Instruction location */
 	int ptop;					/* next free slot */
 	int psize;					/* byte size of arena */
-	MalProp *prps;				/* property table */
+	int inlineProp;				/* inline property */
+	int unsafeProp;				/* unsafe property */
+
 	int errors;					/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */
@@ -217,7 +214,6 @@ typedef struct MALBLK {
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */
 	lng recid;					/* Recycler identifier */
-	lng legid;					/* Octopus control */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */
