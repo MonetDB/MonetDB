@@ -1450,6 +1450,12 @@ SQLproducer(void *p)
 					break;
 			} else {
 				/* found an incomplete record, saved for next round */
+				if (s+partial < end) {
+					/* found a EOS in the input */
+					tablet_error(task, lng_nil, int_nil, "record too long (EOS found)", "");
+					ateof[cur] = 1;
+					goto reportlackofinput;
+				}
 				base = e;
 				break;
 			}
