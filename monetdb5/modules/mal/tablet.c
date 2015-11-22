@@ -1309,12 +1309,12 @@ SQLproducer(void *p)
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */
-			tablet_error(task, lng_nil, int_nil, msg, "SQLload_file, record too long");
+			tablet_error(task, lng_nil, int_nil, "", "SQLload_file, record too long");
 			ateof[cur] = 1;
 #ifdef _DEBUG_TABLET_CNTRL
 			mnstr_printf(GDKout, "#bailout on SQLload confronted with too large record\n");
 #endif
-			break;
+			goto reportlackofinput;
 		}
 		memcpy(end, task->b->buf + task->b->pos, task->b->len - task->b->pos);
 		end = end + task->b->len - task->b->pos;
