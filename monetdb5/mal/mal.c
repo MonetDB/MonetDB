@@ -153,12 +153,12 @@ void mal_exit(void){
 		GDKfree(mal_clients->bak);
 	if( mal_clients->fdin){
 		/* missing protection against closing stdin stream */
-		(void) mnstr_close(mal_clients->fdin->s);
-		(void) bstream_destroy(mal_clients->fdin);
+		mnstr_close(mal_clients->fdin->s);
+		bstream_destroy(mal_clients->fdin);
 	}
 	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {
-		(void) mnstr_close(mal_clients->fdout);
-		(void) mnstr_destroy(mal_clients->fdout);
+		mnstr_close(mal_clients->fdout);
+		mnstr_destroy(mal_clients->fdout);
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */

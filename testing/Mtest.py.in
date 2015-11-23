@@ -303,6 +303,7 @@ CONDITIONALS = {
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
+    'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
@@ -1805,7 +1806,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".R"
         CALL = "R"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".rb"):
+    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
         EXT = ".rb"
         CALL = "ruby"
         SERVER = "SQL"
@@ -2826,7 +2827,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
-            if CONDITIONALS['HAVE_LIBR']:
+            if CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3706,7 +3707,14 @@ def main(argv) :
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
     if CheckExec('ruby'):
-        CONDITIONALS['HAVE_RUBY'] = '#'
+        # also check ruby version; we require >= 1.9 for "require_relative"
+        proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
+        ruby_out, ruby_err = proc.communicate()
+        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_ver = ruby_reg.match(ruby_out)
+        if ruby_ver and \
+           100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
+            CONDITIONALS['HAVE_RUBY'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
@@ -3831,6 +3839,20 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
+    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
+       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
+        if os.environ.has_key('GEM_PATH'):
+            gem_path = os.environ['GEM_PATH']
+        else:
+            try:
+                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
+                gem_path, gem_err = proc.communicate()
+            except:
+                gem_path = ''
+        if gem_path:
+            gem_path = os.pathsep + gem_path
+        env['GEM_PATH'] = _configure(os.path.join('@QXprefix@', '@QXRUBY_DIR@')) + gem_path.strip()
+        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()
@@ -3844,12 +3866,16 @@ def main(argv) :
             os.environ[v] = env[v]
             if verbose:
                 print "%s = %s" % (v, env[v])
-    if verbose:
+    if verbose or testweb:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
         if os.environ.has_key('CLASSPATH'):
             print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
+    if testweb:
+        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+            if os.environ.has_key(v):
+                print "%s = %s" % (v, os.environ[v])
     STDOUT.flush()
 
     # add QUIET par to env

@@ -39,10 +39,10 @@
 #include "gdk_cand.h"
 
 /* dst = lft + rgt with overflow check */
-#define ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, on_overflow)	\
+#define ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
 	do {								\
 		if ((rgt) < 1) {					\
-			if (GDK_##TYPE3##_min - (rgt) >= (lft)) {	\
+			if (-(max) - (rgt) > (lft)) {			\
 				if (abort_on_error)			\
 					on_overflow;			\
 				(dst) = TYPE3##_nil;			\
@@ -51,7 +51,7 @@
 				(dst) = (TYPE3) (lft) + (rgt);		\
 			}						\
 		} else {						\
-			if (GDK_##TYPE3##_max - (rgt) < (lft)) {	\
+			if ((max) - (rgt) < (lft)) {			\
 				if (abort_on_error)			\
 					on_overflow;			\
 				(dst) = TYPE3##_nil;			\
@@ -63,10 +63,10 @@
 	} while (0)
 
 /* dst = lft - rgt with overflow check */
-#define SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, on_overflow)	\
+#define SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
 	do {								\
 		if ((rgt) < 1) {					\
-			if (GDK_##TYPE3##_max + (rgt) < (lft)) {	\
+			if ((max) + (rgt) < (lft)) {			\
 				if (abort_on_error)			\
 					on_overflow;			\
 				(dst) = TYPE3##_nil;			\
@@ -75,7 +75,7 @@
 				(dst) = (TYPE3) (lft) - (rgt);		\
 			}						\
 		} else {						\
-			if (GDK_##TYPE3##_min + (rgt) >= (lft)) {	\
+			if (-(max) + (rgt) > (lft)) {			\
 				if (abort_on_error)			\
 					on_overflow;			\
 				(dst) = TYPE3##_nil;			\
@@ -86,11 +86,11 @@
 		}							\
 	} while (0)
 
-#define MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, TYPE4, on_overflow) \
+#define MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	do {								\
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
-		if (c <= (TYPE4) GDK_##TYPE3##_min ||			\
-		    c > (TYPE4) GDK_##TYPE3##_max) {			\
+		if (c < (TYPE4) -(max) ||				\
+		    c > (TYPE4) (max)) {				\
 			if (abort_on_error)				\
 				on_overflow;				\
 			(dst) = TYPE3##_nil;				\
@@ -100,7 +100,7 @@
 		}							\
 	} while (0)
 
-#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, on_overflow)		\
+#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
 	do {								\
 		lng a = (lft), b = (rgt);				\
 		unsigned int a1, a2, b1, b2;				\
@@ -119,10 +119,11 @@
 		a2 = (unsigned int) a;					\
 		b1 = (unsigned int) (b >> 32);				\
 		b2 = (unsigned int) b;					\
-		/* result = (a1*b1<<64) + ((a1*b2+a2*b1)<<32) + a2*b2 */ \
+		/* result = (a1*b1<<64) + (a1*b2+a2*b1<<32) + a2*b2 */	\
 		if ((a1 == 0 || b1 == 0) &&				\
 		    ((c = (ulng) a1 * b2 + (ulng) a2 * b1) & (~(ulng)0 << 31)) == 0 && \
-		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0)) { \
+		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0 && \
+		     (c) <= (ulng) (max))) {				\
 			(dst) = sign * (lng) c;				\
 		} else {						\
 			if (abort_on_error)				\
@@ -133,10 +134,10 @@
 	} while (0)
 
 #ifdef HAVE_HGE
-#define HGEMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, on_overflow)		\
+#define HGEMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
 	do {								\
 		hge a = (lft), b = (rgt);				\
-		ulng a1, a2, b1, b2;				\
+		ulng a1, a2, b1, b2;					\
 		uhge c;							\
 		int sign = 1;						\
 									\
@@ -155,7 +156,8 @@
 		/* result = (a1*b1<<128) + ((a1*b2+a2*b1)<<64) + a2*b2 */ \
 		if ((a1 == 0 || b1 == 0) &&				\
 		    ((c = (uhge) a1 * b2 + (uhge) a2 * b1) & (~(uhge)0 << 63)) == 0 && \
-		    (((c = (c << 64) + (uhge) a2 * b2) & ((uhge) 1 << 127)) == 0)) { \
+		    (((c = (c << 64) + (uhge) a2 * b2) & ((uhge) 1 << 127)) == 0) && \
+		    (c) <= (uhge) (max)) {				\
 			(dst) = sign * (hge) c;				\
 		} else {						\
 			if (abort_on_error)				\

@@ -3373,7 +3373,9 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			/* add inplace empty select */
 			sql_rel *l = rel_select(sql->sa, rel->l, NULL);
 
-			l->exps = rel->exps;
+			if (!l->exps)
+				l->exps = sa_list(sql->sa);
+			(void)list_merge(l->exps, rel->exps, (fdup)NULL);
 			rel->exps = NULL;
 			rel->l = l;
 			(*changes)++;

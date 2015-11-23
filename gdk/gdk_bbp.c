@@ -684,7 +684,7 @@ fixoidheap(void)
  * BBPdir file.
  */
 static int
-heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, lng batid)
+heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, bat bid)
 {
 	int t;
 	char type[11];
@@ -725,7 +725,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
-		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT " LLFMT "\n", HT, batid);
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT %d\n", HT, (int) bid);
 	else if (var && t != 0 ?
 		 ATOMsize(t) < width ||
 		 (width != 1 && width != 2 && width != 4
@@ -738,7 +738,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		 && (t != TYPE_oid || oidsize == 0 || width != oidsize)
 #endif
 		)
-		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.size mismatch for BAT " LLFMT "\n", HT, batid);
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.size mismatch for BAT %d\n", HT, (int) bid);
 	col->type = t;
 	col->width = width;
 	col->varsized = var != 0;
@@ -770,6 +770,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		col->sorted = 0;
 		col->revsorted = 0;
 	}
+	if (col->heap.free > col->heap.size)
+		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
 	return n;
 }
 
@@ -800,6 +802,8 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 		col->vheap->dirty = 0;
 		col->vheap->parentid = bid;
 		col->vheap->farmid = BBPselectfarm(PERSISTENT, col->type, varheap);
+		if (col->vheap->free > col->vheap->size)
+			GDKfatal("BBPinit: \"free\" value larger than \"size\" in var heap of bat %d\n", (int) bid);
 	}
 	return n;
 }
@@ -890,8 +894,8 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.map_hheap = (char) map_hheap;
 		bs->S.map_theap = (char) map_theap;
 
-		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, batid);
-		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, batid);
+		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
+		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
 		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
