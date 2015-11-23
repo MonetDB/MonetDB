@@ -20,7 +20,6 @@
 - Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
 - Fixed a bug when dbWriteTable would not adhere to transactional semantics
 - Fixed != comparisions in dplyr (Thanks, David)
-- New "mclient" function to get a shell-like DB interface
 - Support for running MonetDB in embedded mode (MonetDBLite)
 - Support for monetdblite:/some/path URLs in dbConnect()
 - Fixed an off-by-one error in type conversion (Thanks, Kirill)
