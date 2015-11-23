@@ -24,6 +24,8 @@
 - Support for running MonetDB in embedded mode (MonetDBLite)
 - Support for monetdblite:/some/path URLs in dbConnect()
 - Fixed an off-by-one error in type conversion (Thanks, Kirill)
+- Not force-killing mserver when calling monetdb.server.stop on windows and wait support
+
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
