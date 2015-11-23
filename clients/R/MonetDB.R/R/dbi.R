@@ -429,6 +429,11 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
 
 setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
   append=FALSE, csvdump=FALSE, transaction=TRUE,...) {
+  if (is.character(value)) {
+    message("Treating character vector parameter as file name(s) for monetdb.read.csv()")
+    monetdb.read.csv(conn=conn, files=value, tablename=name, create=!append, ...)
+    return(invisible(TRUE))
+  }
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value, stringsAsFactors=F)
   if (length(value)<1) stop("value must have at least one column")
   if (is.null(names(value))) names(value) <- paste("V", 1:length(value), sep='')

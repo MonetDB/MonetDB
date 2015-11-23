@@ -93,23 +93,36 @@ stopifnot(identical(dbExistsTable(con,tname),FALSE))
 tf <- tempfile()
 write.table(iris,tf,sep=",",row.names=FALSE)
 tname2 <- "Need to quote this table name"
+tname3 <- "othermethod"
 monetdb.read.csv(con,tf,tname)
 monetdb.read.csv(con,tf,tname2)
+dbWriteTable(con, tname3, tf)
+
 ###
 dbListTables(con)
 
 unlink(tf)
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 stopifnot(identical(dbExistsTable(con,tname2),TRUE))
+stopifnot(identical(dbExistsTable(con,tname3),TRUE))
+
 iris3 <- dbReadTable(con,tname)
 iris4 <- dbReadTable(con,tname2)
+iris5 <- dbReadTable(con,tname3)
 stopifnot(identical(dim(iris),dim(iris3)))
 stopifnot(identical(dim(iris),dim(iris4)))
+stopifnot(identical(dim(iris),dim(iris5)))
 stopifnot(identical(dbListFields(con,tname),names(iris)))
 stopifnot(identical(dbListFields(con,tname2),names(iris)))
+stopifnot(identical(dbListFields(con,tname3),names(iris)))
+
 dbRemoveTable(con,tname)
 dbRemoveTable(con,tname2)
+dbRemoveTable(con,tname3)
+
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
+stopifnot(identical(dbExistsTable(con,tname2),FALSE))
+stopifnot(identical(dbExistsTable(con,tname3),FALSE))
 
 # test dbWriteTable
 tsize <- function(conn,tname) 

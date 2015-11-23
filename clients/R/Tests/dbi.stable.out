@@ -52,7 +52,10 @@ Ready.
 [1] TRUE
 [1] TRUE
 [1] TRUE
+[1] TRUE
 [1] "\"Need to quote this table name\"" "monetdbtest"                      
+[3] "othermethod"                      
+[1] TRUE
 [1] TRUE
 [1] TRUE
 [1] TRUE

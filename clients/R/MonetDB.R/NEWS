@@ -24,7 +24,7 @@
 - Support for monetdblite:/some/path URLs in dbConnect()
 - Fixed an off-by-one error in type conversion (Thanks, Kirill)
 - Not force-killing mserver when calling monetdb.server.stop on windows and wait support
-
+- dbWriteTable now invokes monetdb.read.csv when called with a character vector as value argument
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)
