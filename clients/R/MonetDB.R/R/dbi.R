@@ -597,9 +597,8 @@ setClass("MonetDBEmbeddedResult", representation("MonetDBResult", env="environme
 .CT_INT <- 0L
 .CT_NUM <- 1L
 .CT_CHR <- 2L
-.CT_CHRR <- 3L
-.CT_BOOL <- 4L
-.CT_RAW <- 5L
+.CT_BOOL <- 3L
+.CT_RAW <- 4L
 
 # type mapping matrix
 monetTypes <- rep(c("integer", "numeric", "character", "character", "logical", "raw"), c(5, 6, 4, 6, 1, 1))
@@ -689,7 +688,7 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   # if our tuple cache in res@env$data does not contain n rows, we fetch from server until it does
   while (length(res@env$data) < n) {
     cresp <- .mapiParseResponse(.mapiRequest(res@env$conn, paste0("Xexport ", .mapiLongInt(info$id), 
-                                                                  " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
+      " ", .mapiLongInt(info$index), " ", .mapiLongInt(n-length(res@env$data)))))
     stopifnot(cresp$type == Q_BLOCK && cresp$rows > 0)
     
     res@env$data <- c(res@env$data, cresp$tuples)
@@ -708,14 +707,11 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
       df[[j]] <- as.integer(parts[[j]])
     if (col == .CT_NUM) 
       df[[j]] <- as.numeric(parts[[j]])
-    if (col == .CT_CHRR) {
-      df[[j]] <- parts[[j]]
-      Encoding(df[[j]]) <- "UTF-8"
-    }
     if (col == .CT_BOOL) 
       df[[j]] <- parts[[j]]=="true"
     if (col == .CT_CHR) { 
       df[[j]] <- parts[[j]]
+      Encoding(df[[j]]) <- "UTF-8"
     }
     if (col == .CT_RAW) {
       df[[j]] <- lapply(parts[[j]], charToRaw)
