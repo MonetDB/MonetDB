@@ -77,7 +77,7 @@ db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
 db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
                                             ...) {
   tt_sql <- dplyr::build_sql("CREATE TEMPORARY TABLE ", dplyr::ident(name), " AS ",
-    sql, " WITH DATA", con = con)
+    sql, " WITH DATA ON COMMIT PRESERVE ROWS", con = con)
   dbGetQuery(con, tt_sql)
   name
 }

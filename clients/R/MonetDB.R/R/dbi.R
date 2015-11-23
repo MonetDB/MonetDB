@@ -750,6 +750,9 @@ setMethod("dbFetch", signature(res="MonetDBEmbeddedResult", n="numeric"), def=fu
   if (n == 0) {
     stop("Fetch 0 rows? Really?")
   }
+  if (res@env$info$type == Q_UPDATE) { 
+    return(data.frame())
+  }
   if (res@env$delivered < 0) {
     res@env$delivered <- 0
   }
