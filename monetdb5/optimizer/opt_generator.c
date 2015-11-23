@@ -107,7 +107,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetasubselectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
 		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef && series[getArg(p,2)]){
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));
 		} else
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && series[getArg(p,2)] ){

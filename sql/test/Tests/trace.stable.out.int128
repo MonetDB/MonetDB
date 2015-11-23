@@ -49,7 +49,7 @@ Ready.
 [ 8,	"(X_9=<tmp_2435>[0]:bat[:oid,:oid]{file=\"/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test/./bat/07/704\", rows=46, hlb>=0@0:oid, hub<46@0:oid},r1_9=<tmp_2225>[0]:bat[:oid,:int]) := sql.bind(X_2=0:int,\"sys\":str,\"types\":str,\"id\":str,2:int);"	]
 [ 3,	"X_12=<tmp_2225>[0]:bat[:oid,:int]{file=\"/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test/./bat/07/704\", hlb>=46@0:oid, hub<1048622@0:oid} := sql.bind(X_2=0:int,\"sys\":str,\"types\":str,\"id\":str,1:int);"	]
 [ 3,	"X_14=<tmp_704>[46]:bat[:oid,:int] := sql.delta(X_6=<tmp_704>[46]:bat[:oid,:int],X_9=<tmp_2435>[0]:bat[:oid,:oid],r1_9=<tmp_2225>[0]:bat[:oid,:int],X_12=<tmp_2225>[0]:bat[:oid,:int]);"	]
-[ 51,	"X_15=<tmp_3053>[46]:bat[:oid,:int] := algebra.leftfetchjoin(X_3=<tmp_3052>[46]:bat[:oid,:oid],X_14=<tmp_704>[46]:bat[:oid,:int]);"	]
+[ 51,	"X_15=<tmp_3053>[46]:bat[:oid,:int] := algebra.projection(X_3=<tmp_3052>[46]:bat[:oid,:oid],X_14=<tmp_704>[46]:bat[:oid,:int]);"	]
 [ 2,	"X_16=46:wrd := aggr.count(X_15=<tmp_3053>[46]:bat[:oid,:int]);"	]
 [ 7,	"sql.exportValue(1:int,\"sys.L1\":str,\"L1\":str,\"wrd\":str,64:int,0:int,7:int,X_16=46:wrd,\"\":str);"	]
 [ 0,	"end user.s2_1;"	]

@@ -174,27 +174,27 @@ pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, hi
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
-address VLTgenerator_leftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address VLTgenerator_projection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
-address VLTgenerator_leftfetchjoin
-comment "Overloaded leftfetchjoin operation";
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+address VLTgenerator_projection
+comment "Overloaded projection operation";
 
 pattern join(b:bat[:oid,:bte], gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address VLTgenerator_join;

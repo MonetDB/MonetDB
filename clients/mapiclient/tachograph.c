@@ -291,9 +291,9 @@ static struct{
 	int newl;
 	int mode;
 }mapping[]={
-	{"algebra.leftfetchjoinPath", 25, "join",4, 0},
+	{"algebra.projectionPath", 25, "join",4, 0},
 	{"algebra.thetasubselect", 22, "select",6, 0},
-	{"algebra.leftfetchjoin", 21, "join",4, 0},
+	{"algebra.projection", 21, "join",4, 0},
 	{"dataflow.language", 17,	"parallel", 8, 0},
 	{"algebra.subselect", 17, "select",6, 0},
 	{"sql.projectdelta", 16, "project",7, 0},
@@ -675,7 +675,7 @@ update(EventRecord *ev)
 		if ( strstr(ev->stmt,"sql.projectdelta") && *ev->stmt != '(' ){
 			addSourcePair(malvariables[0], malvariables[1]);
 		} else
-		if ( strstr(ev->stmt,"algebra.leftfetchjoin") && *ev->stmt != '(' ){
+		if ( strstr(ev->stmt,"algebra.projection") && *ev->stmt != '(' ){
 			addSourcePair(malvariables[0], malvariables[malvartop - 1]);
 		} else
 		if ( strstr(ev->stmt,"algebra.subjoin") && *ev->stmt != '(' ){

@@ -2393,7 +2393,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
-	/* leftfetchjoin(sub,col).union(leftfetchjoin(sub,i)) */
+	/* projection(sub,col).union(projection(sub,i)) */
 	res = c;
 	if (i && BATcount(i)) {
 		if (BATcount(c) == 0) {

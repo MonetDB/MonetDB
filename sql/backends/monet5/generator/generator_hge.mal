@@ -36,9 +36,9 @@ pattern subselect(b:bat[:oid,:hge], cand:bat[:oid,:oid], low:hge, high:hge, li:b
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
-address VLTgenerator_leftfetchjoin
-comment "Overloaded leftfetchjoin operation";
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
+address VLTgenerator_projection
+comment "Overloaded projection operation";
 
 pattern join(b:bat[:oid,:hge], gen:bat[:oid,:hge]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address VLTgenerator_join
