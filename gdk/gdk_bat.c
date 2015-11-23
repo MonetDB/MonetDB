@@ -1695,7 +1695,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
-	assert(b->batCount > (id -b->hseqbase));
+	assert(b->batCount > (id - b->hseqbase));
 
 	b->batInserted = 0;
 	p = BUNfndVOID(bm, &id);

@@ -208,7 +208,6 @@ VIEWhcreate(BAT *h)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -291,13 +290,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
 		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
-		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
