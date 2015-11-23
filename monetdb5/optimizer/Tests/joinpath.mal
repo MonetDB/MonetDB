@@ -2,8 +2,8 @@ function tst0();
 	a:= bat.new(:oid,:oid);
 	b:= bat.new(:oid,:oid);
 	c:= bat.new(:oid,:oid);
-	j1:= algebra.leftfetchjoin(a,b);
-	j2:= algebra.leftfetchjoin(c,j1);
+	j1:= algebra.projection(a,b);
+	j2:= algebra.projection(c,j1);
 	io.print(j2);
 end tst0;
 

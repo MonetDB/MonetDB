@@ -2839,10 +2839,6 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
@@ -2861,10 +2857,6 @@ command algebra.like(s:str,pat:str):bit
 address PCRElike2;
 command algebra.like(s:str,pat:str,esc:str):bit 
 address PCRElike3;
-command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
-address ALGleftfetchjoin;
-comment Hook directly into the left fetch join implementation.
-
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
@@ -2873,6 +2865,14 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
+pattern algebra.projectionPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+address ALGjoinPath;
+comment Routine to handle join paths.  The type analysis is rather tricky.
+
+command algebra.projection(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
+address ALGprojection;
+comment Hook directly into the left fetch join implementation.
+
 pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant
@@ -48874,32 +48874,32 @@ pattern generator.join(b:bat[:oid,:sht],gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:
 address VLTgenerator_join;
 pattern generator.join(b:bat[:oid,:bte],gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:hge]):bat[:oid,:hge] 
-address VLTgenerator_leftfetchjoin;
-comment Overloaded leftfetchjoin operation
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:hge]):bat[:oid,:hge] 
+address VLTgenerator_projection;
+comment Overloaded projection operation
 
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
-address VLTgenerator_leftfetchjoin;
-comment Overloaded leftfetchjoin operation
-
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
-address VLTgenerator_leftfetchjoin;
 pattern generator.parameters(first:hge,last:hge):bat[:oid,:hge] 
 address VLTgenerator_noop;
 pattern generator.parameters(first:hge,last:hge,step:hge):bat[:oid,:hge] 
 address VLTgenerator_noop;
 comment Retain the table definition, but don't materialize
 
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
+address VLTgenerator_projection;
+comment Overloaded projection operation
+
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
+address VLTgenerator_projection;
 pattern generator.parameters(first:dbl,last:dbl):bat[:oid,:dbl] 
 address VLTgenerator_noop;
 pattern generator.parameters(first:flt,last:flt):bat[:oid,:flt] 

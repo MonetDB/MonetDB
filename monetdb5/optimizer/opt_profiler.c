@@ -21,9 +21,9 @@ static struct{
     char *mod, *fcn;
     char *alias;
 }mapping[]={
-    {"algebra", "leftfetchjoinPath", "join"},
+    {"algebra", "projectionPath", "projection"},
     {"algebra", "thetasubselect", "select"},
-    {"algebra", "leftfetchjoin", "join"},
+    {"algebra", "projection", "projection"},
     {"dataflow", "language", "parallel"},
     {"algebra", "subselect", "select"},
     {"sql", "projectdelta", "project"},
@@ -87,7 +87,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if(v != NULL)
 				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
-		if( getModuleId(p)== algebraRef && getFunctionId(p)== leftfetchjoinRef){
+		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
 			// inherit property of last argument
 			v = getSTC(mb,getArg(p,p->argc-1));
 			if( v != NULL)

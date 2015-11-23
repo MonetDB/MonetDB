@@ -1521,7 +1521,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         input = '''\
                 c := mdb.modules();
                 modsid := algebra.subunique(c);
-                mods := algebra.leftfetchjoin(modsid,c);
+                mods := algebra.projection(modsid,c);
                 s := "\\nModules: ";
                 sep := "";
                 barrier (h:oid,t:str) := iterator.new(mods);

@@ -2393,7 +2393,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
-	/* leftfetchjoin(sub,col).union(leftfetchjoin(sub,i)) */
+	/* projection(sub,col).union(projection(sub,i)) */
 	res = c;
 	if (i && BATcount(i)) {
 		if (BATcount(c) == 0) {
@@ -2434,29 +2434,57 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 
 	if (BATcount(u_val)) {
 		BAT *o, *nu_id, *nu_val;
+		/* create subsets of u_id and u_val where the tail
+		 * values of u_id are also in s, and where those tail
+		 * values occur as head value in res */
 		if (BATsubsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
-			BBPunfix(u_id->batCacheid);
-			BBPunfix(res->batCacheid);
 			BBPunfix(s->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(u_val->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
 		nu_id = BATproject(o, u_id);
 		nu_val = BATproject(o, u_val);
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(u_val->batCacheid);
 		BBPunfix(o->batCacheid);
-		if (nu_id == NULL || nu_val == NULL) {
-			BBPunfix(u_id->batCacheid);
-			BBPunfix(res->batCacheid);
+		tres = VIEWcombine(res);
+		if (nu_id == NULL ||
+		    nu_val == NULL ||
+		    tres == NULL ||
+		    BATsubsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
-			if (nu_id)
-				BBPunfix(nu_id->batCacheid);
-			if (nu_val)
-				BBPunfix(nu_val->batCacheid);
-			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			BBPunfix(res->batCacheid);
+			BBPreclaim(nu_id);
+			BBPreclaim(nu_val);
+			BBPreclaim(tres);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL);
 		}
-		res = setwritable(res);
-		BATreplace(res, nu_id, nu_val, 0);
+		BBPunfix(tres->batCacheid);
+		u_id = BATproject(o, nu_id);
+		u_val = BATproject(o, nu_val);
 		BBPunfix(nu_id->batCacheid);
 		BBPunfix(nu_val->batCacheid);
+		BBPunfix(o->batCacheid);
+		if (u_id == NULL || u_val == NULL) {
+			BBPunfix(s->batCacheid);
+			BBPunfix(res->batCacheid);
+			BBPreclaim(u_id);
+			BBPreclaim(u_val);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL);
+		}
+		/* now update res with the subset of u_id and u_val we
+		 * calculated */
+		if ((res = setwritable(res)) == NULL ||
+		    BATreplace(res, u_id, u_val, 0) != GDK_SUCCEED) {
+			if (res)
+				BBPunfix(res->batCacheid);
+			BBPunfix(s->batCacheid);
+			BBPunfix(u_id->batCacheid);
+			BBPunfix(u_val->batCacheid);
+			throw(MAL, "sql.delta", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPunfix(s->batCacheid);
 	BBPunfix(u_id->batCacheid);
