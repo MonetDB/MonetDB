@@ -700,6 +700,14 @@ VIEWreset(BAT *b)
 		n->batSharecnt = 0;
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
+		if (v->H->heap.parentid == n->batCacheid) {
+			assert(hp == 0);
+			v->H->heap.parentid = 0;
+		}
+		if (v->T->heap.parentid == -n->batCacheid) {
+			assert(tp == 0);
+			v->T->heap.parentid = 0;
+		}
 
 		/* reset BOUND2KEY */
 		n->hkey = BAThkey(v);
