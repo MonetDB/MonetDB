@@ -10,7 +10,6 @@ find MonetDB.R -name ".DS_Store" -exec rm {} \;
 
 # for now, no profiler
 rm MonetDB.R/src/profiler*
-rm MonetDB.R/src/Makevars.win
 
 # binary leftovers
 rm MonetDB.R/src/*.o
