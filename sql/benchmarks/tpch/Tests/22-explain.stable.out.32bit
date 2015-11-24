@@ -85,7 +85,7 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     (C_29,r1_29) := sql.bind(X_22,"sys","customer","c_phone",2);
     X_32:bat[:oid,:str] := sql.bind(X_22,"sys","customer","c_phone",1);
     X_34 := sql.delta(X_26,C_29,r1_29,X_32);
-    X_35 := algebra.leftfetchjoin(C_23,X_34);
+    X_35 := algebra.projection(C_23,X_34);
     X_36:bat[:oid,:str] := batstr.substring(X_35,A2,A3);
     C_37 := algebra.subselect(X_36,A4,A4,true,false,false);
     C_40 := algebra.subselect(X_36,A5,A5,true,false,false);
@@ -104,14 +104,14 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     (C_54,r1_66) := sql.bind(X_22,"sys","customer","c_custkey",2);
     X_56:bat[:oid,:int] := sql.bind(X_22,"sys","customer","c_custkey",1);
     X_57 := sql.delta(X_52,C_54,r1_66,X_56);
-    X_58:bat[:oid,:int] := algebra.leftfetchjoinPath(X_51,C_23,X_57);
+    X_58:bat[:oid,:int] := algebra.projectionPath(X_51,C_23,X_57);
     X_59 := bat.mirror(X_58);
     X_60:bat[:oid,:lng] := sql.bind(X_22,"sys","customer","c_acctbal",0);
     (C_62,r1_75) := sql.bind(X_22,"sys","customer","c_acctbal",2);
     X_64:bat[:oid,:lng] := sql.bind(X_22,"sys","customer","c_acctbal",1);
     X_65 := sql.delta(X_60,C_62,r1_75,X_64);
-    X_66 := algebra.leftfetchjoin(C_23,X_65);
-    X_67 := algebra.leftfetchjoin(X_51,X_66);
+    X_66 := algebra.projection(C_23,X_65);
+    X_67 := algebra.projection(X_51,X_66);
     X_68:bat[:oid,:dbl] := batcalc.dbl(2,X_67);
     X_69:bat[:oid,:str] := batstr.substring(X_35,A12,A13);
     X_70 := calc.lng(1,A11,15,2);

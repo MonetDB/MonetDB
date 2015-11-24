@@ -163,7 +163,7 @@ pattern optimizer.joinPath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
+pattern algebra.projectionPath(l:bat[:oid,:any]...):bat[:oid,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 

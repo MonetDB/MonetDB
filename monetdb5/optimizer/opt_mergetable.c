@@ -250,7 +250,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
-	/* Handle like mat_leftfetchjoin, ie overlapping partitions */
+	/* Handle like mat_projection, ie overlapping partitions */
 	if (evar == 1 && mat[e].mi->argc != mat[m].mi->argc) {
 		int nr = 1;
 		for(k=1; k < mat[e].mi->argc; k++) {
@@ -488,7 +488,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 }
 
 static void
-mat_leftfetchjoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
+mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 {
 	int tpe = getArgType(mb,p, 0), k, j;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
@@ -843,7 +843,7 @@ group_by_ext(matlist_t *ml, int g)
 }
 
 /* In some cases we have non groupby attribute columns, these require 
- * gext.leftfetchjoin(mat.pack(per partition ext.leftfetchjoins(x))) 
+ * gext.projection(mat.pack(per partition ext.projections(x))) 
  */
 
 static void
@@ -965,7 +965,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		/* fetchjoin with groups */
  		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r, algebraRef);
-		setFunctionId(r, leftfetchjoinRef);
+		setFunctionId(r, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, tp2);
 		r = pushArgument(mb, r, mat[g].mv);
 		r = pushArgument(mb, r, getArg(w,0));
@@ -1049,7 +1049,7 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 
 /* 
  * foreach parent subgroup, do the 
- * 	e2.leftfetchjoin(grp.leftfetchjoin((ext.leftfetchjoin(b))) 
+ * 	e2.projection(grp.projection((ext.projection(b))) 
  * and one for the current group 
  */
 static void
@@ -1076,14 +1076,14 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 			InstrPtr q = newInstruction(mb, ASSIGNsymbol);
 
 			setModuleId(r, algebraRef);
-			setFunctionId(r, leftfetchjoinRef);
+			setFunctionId(r, projectionRef);
 			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_oid));
 			r = pushArgument(mb, r, getArg(cext,k));
 			r = pushArgument(mb, r, getArg(ml->v[ogrp].mi,k));
 			pushInstruction(mb,r);
 
 			setModuleId(q, algebraRef);
-			setFunctionId(q, leftfetchjoinRef);
+			setFunctionId(q, projectionRef);
 			getArg(q, 0) = newTmpVariable(mb, atp);
 			q = pushArgument(mb, q, getArg(r,0));
 			q = pushArgument(mb, q, getArg(ml->v[a].mi,k));
@@ -1149,7 +1149,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 
 		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r, algebraRef);
-		setFunctionId(r, leftfetchjoinRef);
+		setFunctionId(r, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
 
 		r = pushArgument(mb, r, getArg(q,1));
@@ -1233,7 +1233,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r, algebraRef);
-		setFunctionId(r, leftfetchjoinRef);
+		setFunctionId(r, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
 
 		r = pushArgument(mb, r, getArg(q,1));
@@ -1309,11 +1309,11 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 		setFunctionId(pck,packRef);
 		getArg(pck,0) = newTmpVariable(mb, tpe);
 
-		/* m.leftfetchjoin(attr); */
+		/* m.projection(attr); */
 		for(k=1; k < mat[attr].mi->argc; k++) {
 			InstrPtr q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
-			setFunctionId(q, leftfetchjoinRef);
+			setFunctionId(q, projectionRef);
 			getArg(q, 0) = newTmpVariable(mb, tpe);
 
 			q = pushArgument(mb, q, getArg(slc, k));
@@ -1612,9 +1612,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		/* Handle cases of ext.leftfetchjoin and .leftfetchjoin(grp) */
+		/* Handle cases of ext.projection and .projection(grp) */
 		if (match == 2 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == leftfetchjoinRef &&
+		    getFunctionId(p) == projectionRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_ext || ml.v[n].type == mat_grp)) {
@@ -1626,9 +1626,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* Handle cases of slice.leftfetchjoin */
+		/* Handle cases of slice.projection */
 		if (match == 2 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == leftfetchjoinRef &&
+		    getFunctionId(p) == projectionRef &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_slc)) {
@@ -1637,12 +1637,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* Handle leftfetchjoin */
+		/* Handle projection */
 		if (match > 0 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == leftfetchjoinRef && 
+		    getFunctionId(p) == projectionRef && 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
-			mat_leftfetchjoin(mb, p, &ml, m, n);
+			mat_projection(mb, p, &ml, m, n);
 			actions++;
 			continue;
 		}

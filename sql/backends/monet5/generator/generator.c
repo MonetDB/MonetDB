@@ -694,7 +694,7 @@ wrapup:
 	return msg;
 }
 
-#define VLTleftfetchjoin(TPE) {\
+#define VLTprojection(TPE) {\
 	TPE f,l,s, val;\
 	TPE *v;\
 	f = *getArgReference_##TPE(stk,p, 1);\
@@ -703,11 +703,11 @@ wrapup:
 		s = f<l? (TPE) 1: (TPE)-1;\
 	else s = * getArgReference_##TPE(stk, p, 3); \
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.leftfetchjoin","Illegal range");\
+		throw(MAL,"generator.projection","Illegal range");\
 	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPunfix(bid);\
-		throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.projection",MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,BUNfirst(bn));\
 	for(; cnt-- > 0; ol++, o++){\
@@ -719,7 +719,7 @@ wrapup:
 	}\
 }
 
-str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int c= 0, tpe;
 	bat bid = 0, *ret;
@@ -735,15 +735,15 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	ret = getArgReference_bat(stk,pci,0);
 	b = BATdescriptor(bid = *getArgReference_bat(stk,pci,1));
 	if( b == NULL)
-		throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"generator.projection",RUNTIME_OBJECT_MISSING);
 
-	// if it does not exist we should fall back to the ordinary leftfetchjoin to try
+	// if it does not exist we should fall back to the ordinary projection to try
 	// it might have been materialized already
 	if( p == NULL){
 		bn = BATdescriptor( *getArgReference_bat(stk,pci,2));
 		if( bn == NULL)
-			throw(MAL,"generator.leftfetchjoin",RUNTIME_OBJECT_MISSING);
-		msg = ALGleftfetchjoin(ret, &b->batCacheid, &bn->batCacheid);
+			throw(MAL,"generator.projection",RUNTIME_OBJECT_MISSING);
+		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
 		return msg;
 	}
 
@@ -753,17 +753,17 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	else
 		ol = (oid*) Tloc(b,BUNfirst(b));
 
-	/* the actual code to perform a leftfetchjoin over generators */
+	/* the actual code to perform a projection over generators */
 	switch( tpe = getArgType(mb,p,1)){
-	case TYPE_bte:  VLTleftfetchjoin(bte); break;
-	case TYPE_sht:  VLTleftfetchjoin(sht); break;
-	case TYPE_int:  VLTleftfetchjoin(int); break;
-	case TYPE_lng:  VLTleftfetchjoin(lng); break;
+	case TYPE_bte:  VLTprojection(bte); break;
+	case TYPE_sht:  VLTprojection(sht); break;
+	case TYPE_int:  VLTprojection(int); break;
+	case TYPE_lng:  VLTprojection(lng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge:  VLTleftfetchjoin(hge); break;
+	case TYPE_hge:  VLTprojection(hge); break;
 #endif
-	case TYPE_flt:  VLTleftfetchjoin(flt); break;
-	case TYPE_dbl:  VLTleftfetchjoin(dbl); break;
+	case TYPE_flt:  VLTprojection(flt); break;
+	case TYPE_dbl:  VLTprojection(dbl); break;
 	default:
 		if ( tpe == TYPE_timestamp){
 			timestamp f,l, val;
@@ -777,12 +777,12 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			if ( s == 0 ||
 				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
 				(s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) )
-				throw(MAL,"generator.leftfetchjoin","Illegal range");
+				throw(MAL,"generator.projection","Illegal range");
 
 			bn = BATnew(TYPE_void, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
 				BBPunfix(bid);
-				throw(MAL,"generator.leftfetchjoin",MAL_MALLOC_FAIL);
+				throw(MAL,"generator.projection",MAL_MALLOC_FAIL);
 			}
 
 			v = (timestamp*) Tloc(bn,BUNfirst(bn));
@@ -804,7 +804,7 @@ str VLTgenerator_leftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		}
 	}
 
-	/* adminstrative wrapup of the leftfetchjoin */
+	/* adminstrative wrapup of the projection */
 	BBPunfix(bid);
 	if( bn){
 		BATsetcount(bn,c);

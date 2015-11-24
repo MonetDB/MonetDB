@@ -101,7 +101,7 @@ function user.s6_1():void;
     (C_8,r1_8) := sql.bind(X_1,"sys","udf_reverse","x",2);
     X_11:bat[:oid,:str] := sql.bind(X_1,"sys","udf_reverse","x",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
-    X_14 := algebra.leftfetchjoin(C_2,X_13);
+    X_14 := algebra.projection(C_2,X_13);
     X_15:bat[:oid,:str] := batudf.reverse(X_14);
     sql.resultSet(X_25,X_27,X_29,X_31,X_32,X_15);
 end user.s6_1;

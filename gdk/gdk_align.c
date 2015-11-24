@@ -207,7 +207,6 @@ VIEWhcreate(BAT *h)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -290,13 +289,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
 		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
-		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
@@ -702,6 +699,14 @@ VIEWreset(BAT *b)
 		n->batSharecnt = 0;
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
+		if (v->H->heap.parentid == n->batCacheid) {
+			assert(hp == 0);
+			v->H->heap.parentid = 0;
+		}
+		if (v->T->heap.parentid == -n->batCacheid) {
+			assert(tp == 0);
+			v->T->heap.parentid = 0;
+		}
 
 		/* reset BOUND2KEY */
 		n->hkey = BAThkey(v);
