@@ -71,7 +71,7 @@ monetdb.server.start <-
 monetdb.server.stop <- function(correct.pid, wait=TRUE ){
   correct.pid <- as.integer(correct.pid)
   if (.Platform$OS.type == "windows")
-    system(paste0("taskkill /PID ", correct.pid))
+    system(paste0("taskkill /F /PID ", correct.pid))
   else
     system(paste0("kill ", correct.pid))
   waittime <- 2
