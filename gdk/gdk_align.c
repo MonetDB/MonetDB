@@ -575,10 +575,13 @@ VIEWreset(BAT *b)
 		memset(&hh, 0, sizeof(Heap));
 		memset(&th, 0, sizeof(Heap));
 
-		n = BATdescriptor(abs(b->batCacheid)); /* normalized */
-		if (n == NULL)
-			goto bailout;
-		m = BATmirror(n); /* mirror of normalized */
+		if (b->batCacheid > 0) {
+			n = b;
+			m = BATmirror(b);
+		} else {
+			n = BATmirror(b);
+			m = b;
+		}
 		bs = BBP_desc(n->batCacheid);
 		cnt = BATcount(n) + 1;
 		nme = BBP_physical(n->batCacheid);
@@ -694,17 +697,23 @@ VIEWreset(BAT *b)
 			n->T->vheap->parentid = n->batCacheid;
 		}
 
-		n->batSharecnt = 0;
-		n->batCopiedtodisk = 0;
-		n->batDirty = 1;
 		if (v->H->heap.parentid == n->batCacheid) {
 			assert(hp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
 			v->H->heap.parentid = 0;
 		}
 		if (v->T->heap.parentid == -n->batCacheid) {
 			assert(tp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
 			v->T->heap.parentid = 0;
 		}
+		n->batSharecnt = 0;
+		n->batCopiedtodisk = 0;
+		n->batDirty = 1;
 
 		/* reset BOUND2KEY */
 		n->hkey = BAThkey(v);
@@ -726,13 +735,10 @@ VIEWreset(BAT *b)
 		/* insert all of v in n, and quit */
 		BATins(n, m, FALSE);
 		BBPreclaim(v);
-		BBPunfix(n->batCacheid);
 	}
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	if (n != NULL)
-		BBPunfix(n->batCacheid);
 	HEAPfree(&head, 0);
 	HEAPfree(&tail, 0);
 	HEAPfree(&hh, 0);
