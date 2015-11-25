@@ -1,0 +1,124 @@
+stderr of test 'sam_export` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:22:39 >  
+# 10:22:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32986" "--set" "mapi_usock=/var/tmp/mtest-16074/.s.monetdb.32986" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0"
+# 10:22:39 >  
+
+# builtin opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32986
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16074/.s.monetdb.32986
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+# DELETE FROM bam.export;
+# # <bam_loader>: Loader started for 1 BAM file...
+# # <bam_loader> Retrieving next file id...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_sequential.sam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_sequential.sam'...
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_sequential.sam'...
+# # CREATE TABLE bam.alignments_13 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT alignments_13_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_13 ( 
+# 		tag						   CHAR(2)	 NOT NULL, 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		type						  CHAR(1)	 NOT NULL, 
+# 		value						 STRING, 
+# 		CONSTRAINT alignments_extra_13_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), 
+# 		CONSTRAINT alignments_extra_13_fkey_virtual_offset FOREIGN KEY (virtual_offset) 
+# 			REFERENCES bam.alignments_13 (virtual_offset) 
+# 	);
+# # <bam_loader> Creating reader threads...
+# # <bam_loader> Waiting for reader threads to finish...
+# # <Thread 0> Starting on next file...
+# # <Thread 0> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_sequential.sam' (file id 13)...
+# # <Thread 0> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_sequential.sam' (file id 13) processed!
+# # <Thread 0> Starting on next file...
+# # <Thread 0> No files left to work on; thread done
+# # <bam_loader> Copying data into DB...
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/13/files_0', 'bam_binaries/13/files_1', 'bam_binaries/13/files_2', 'bam_binaries/13/files_3', 'bam_binaries/13/files_4', 'bam_binaries/13/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/13/sq_0', 'bam_binaries/13/sq_1', 'bam_binaries/13/sq_2', 'bam_binaries/13/sq_3', 'bam_binaries/13/sq_4', 'bam_binaries/13/sq_5', 'bam_binaries/13/sq_6');
+# COPY BINARY INTO bam.alignments_13 FROM 	('bam_binaries/13/alignments_0', 'bam_binaries/13/alignments_1', 'bam_binaries/13/alignments_2', 'bam_binaries/13/alignments_3', 'bam_binaries/13/alignments_4', 'bam_binaries/13/alignments_5', 'bam_binaries/13/alignments_6', 'bam_binaries/13/alignments_7', 'bam_binaries/13/alignments_8', 'bam_binaries/13/alignments_9', 'bam_binaries/13/alignments_10', 'bam_binaries/13/alignments_11');
+# 
+# # <bam_loader>: Loader finished processing 1 BAM file...
+# # DELETE FROM bam.export;
+# # <bam_loader>: Loader started for 1 BAM file...
+# # <bam_loader> Retrieving next file id...
+# # <bam_loader> Initializing BAM wrapper for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_pairwise.sam'...
+# # <bam_loader> Parsing header for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_pairwise.sam'...
+# # <bam_loader> Creating alignment tables for file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_pairwise.sam'...
+# # CREATE TABLE bam.alignments_14 ( 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		qname						 STRING	  NOT NULL, 
+# 		flag						  SMALLINT	NOT NULL, 
+# 		rname						 STRING	  NOT NULL, 
+# 		pos						   INT		 NOT NULL, 
+# 		mapq						  SMALLINT	NOT NULL, 
+# 		cigar						 STRING	  NOT NULL, 
+# 		rnext						 STRING	  NOT NULL, 
+# 		pnext						 INT		 NOT NULL, 
+# 		tlen						  INT		 NOT NULL, 
+# 		seq						   STRING	  NOT NULL, 
+# 		qual						  STRING	  NOT NULL, 
+# 		CONSTRAINT alignments_14_pkey_virtual_offset PRIMARY KEY (virtual_offset) 
+# 	); 
+# 	
+# 	CREATE TABLE bam.alignments_extra_14 ( 
+# 		tag						   CHAR(2)	 NOT NULL, 
+# 		virtual_offset				BIGINT	  NOT NULL, 
+# 		type						  CHAR(1)	 NOT NULL, 
+# 		value						 STRING, 
+# 		CONSTRAINT alignments_extra_14_pkey_tag_virtual_offset PRIMARY KEY (tag, virtual_offset), 
+# 		CONSTRAINT alignments_extra_14_fkey_virtual_offset FOREIGN KEY (virtual_offset) 
+# 			REFERENCES bam.alignments_14 (virtual_offset) 
+# 	);
+# # <bam_loader> Creating reader threads...
+# # <bam_loader> Waiting for reader threads to finish...
+# # <Thread 0> Starting on next file...
+# # <Thread 0> Processing alignments of file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_pairwise.sam' (file id 14)...
+# # <Thread 0> All alignments in file '/home/robin/MonetDB/SOURCE/sql/backends/monet5/vaults/bam/Tests/files/out_pairwise.sam' (file id 14) processed!
+# # <Thread 0> Starting on next file...
+# # <Thread 0> No files left to work on; thread done
+# # <bam_loader> Copying data into DB...
+# # COPY BINARY INTO bam.files FROM ('bam_binaries/14/files_0', 'bam_binaries/14/files_1', 'bam_binaries/14/files_2', 'bam_binaries/14/files_3', 'bam_binaries/14/files_4', 'bam_binaries/14/files_5');
+# COPY BINARY INTO bam.sq	FROM ('bam_binaries/14/sq_0', 'bam_binaries/14/sq_1', 'bam_binaries/14/sq_2', 'bam_binaries/14/sq_3', 'bam_binaries/14/sq_4', 'bam_binaries/14/sq_5', 'bam_binaries/14/sq_6');
+# COPY BINARY INTO bam.alignments_14 FROM 	('bam_binaries/14/alignments_0', 'bam_binaries/14/alignments_1', 'bam_binaries/14/alignments_2', 'bam_binaries/14/alignments_3', 'bam_binaries/14/alignments_4', 'bam_binaries/14/alignments_5', 'bam_binaries/14/alignments_6', 'bam_binaries/14/alignments_7', 'bam_binaries/14/alignments_8', 'bam_binaries/14/alignments_9', 'bam_binaries/14/alignments_10', 'bam_binaries/14/alignments_11');
+# 
+# # <bam_loader>: Loader finished processing 1 BAM file...
+# 
+# 10:22:40 >  
+# 10:22:40 >  "/usr/bin/python2" "sam_export.SQL.py" "sam_export"
+# 10:22:40 >  
+
+
+# 10:22:40 >  
+# 10:22:40 >  "Done."
+# 10:22:40 >  
+

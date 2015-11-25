@@ -210,47 +210,47 @@ pattern thetasubselect(b:bat[:oid,:daytime], c:bat[:oid,:oid], low:daytime, oper
 address MOSthetasubselect
 comment "Overloaded selection routine";
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:bit]) :bat[:oid,:bit]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:bit]) :bat[:oid,:bit]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:oid]) :bat[:oid,:oid]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:oid]) :bat[:oid,:oid]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:str]) :bat[:oid,:str]
-address MOSleftfetchjoin;
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:str]) :bat[:oid,:str]
+address MOSprojection;
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
-address MOSleftfetchjoin
-comment "Overloaded leftfetchjoin operation";
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+address MOSprojection
+comment "Overloaded projection operation";
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:date]) :bat[:oid,:date]
-address MOSleftfetchjoin
-comment "Overloaded leftfetchjoin operation";
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:date]) :bat[:oid,:date]
+address MOSprojection
+comment "Overloaded projection operation";
 
-pattern leftfetchjoin(b:bat[:oid,:oid], cand:bat[:oid,:daytime]) :bat[:oid,:daytime]
-address MOSleftfetchjoin
-comment "Overloaded leftfetchjoin operation";
+pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:daytime]) :bat[:oid,:daytime]
+address MOSprojection
+comment "Overloaded projection operation";
 
 pattern join(b:bat[:oid,:any_1], gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address MOSjoin

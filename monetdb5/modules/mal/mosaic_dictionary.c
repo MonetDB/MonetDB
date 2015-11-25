@@ -917,7 +917,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_dictionary(TPE)\
+#define projection_dictionary(TPE)\
 {	TPE *v;\
 	TPE *dict= (TPE*) hdr->dict;\
 	base = (unsigned long*) (((char*) task->blk) + MosaicBlkSize);\
@@ -933,7 +933,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
+MOSprojection_dictionary(Client cntxt,  MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
@@ -947,14 +947,14 @@ MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_sht: leftfetchjoin_dictionary(sht); break;
-		case TYPE_lng: leftfetchjoin_dictionary(lng); break;
-		case TYPE_oid: leftfetchjoin_dictionary(oid); break;
-		case TYPE_wrd: leftfetchjoin_dictionary(wrd); break;
-		case TYPE_flt: leftfetchjoin_dictionary(flt); break;
-		case TYPE_dbl: leftfetchjoin_dictionary(dbl); break;
+		case TYPE_sht: projection_dictionary(sht); break;
+		case TYPE_lng: projection_dictionary(lng); break;
+		case TYPE_oid: projection_dictionary(oid); break;
+		case TYPE_wrd: projection_dictionary(wrd); break;
+		case TYPE_flt: projection_dictionary(flt); break;
+		case TYPE_dbl: projection_dictionary(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_dictionary(hge); break;
+		case TYPE_hge: projection_dictionary(hge); break;
 #endif
 		case TYPE_int:
 		{	int *v;

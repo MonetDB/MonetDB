@@ -327,7 +327,7 @@ BATattach(int tt, const char *heapfile, int role)
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n", NULL);
 	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
 	if (lstat(heapfile, &st) < 0) {
-		GDKerror("BATattach: cannot stat heapfile\n");
+		GDKsyserror("BATattach: cannot stat heapfile\n");
 		return NULL;
 	}
 	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n", NULL);
@@ -1129,7 +1129,9 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		if (BUNinplace(bm, p, t, h, force) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else {
+#ifndef STATIC_CODE_ANALYSIS
 		size_t hsize = 0, tsize = 0;
+#endif
 
 		p = BUNlast(b);	/* insert at end */
 		if (p == BUN_MAX || b->batCount == BUN_MAX) {
@@ -1138,16 +1140,17 @@ BUNins(BAT *b, const void *h, const void *t, bit force)
 		}
 
 		if (unshare_string_heap(b) != GDK_SUCCEED) {
-			GDKerror("BUNins: failed to unshare string heap\n");
 			return GDK_FAIL;
 		}
 
 		ALIGNins(b, "BUNins", force, GDK_FAIL);
 		b->batDirty = 1;
+#ifndef STATIC_CODE_ANALYSIS
 		if (b->H->hash && b->H->vheap)
 			hsize = b->H->vheap->size;
 		if (b->T->hash && b->T->vheap)
 			tsize = b->T->vheap->size;
+#endif
 
 		setcolprops(b, b->H, h);
 		setcolprops(b, b->T, t);
@@ -1261,7 +1264,6 @@ BUNappend(BAT *b, const void *t, bit force)
 	void_materialize(b, t);
 
 	if (unshare_string_heap(b) != GDK_SUCCEED) {
-		GDKerror("BUNappend: failed to unshare string heap\n");
 		return GDK_FAIL;
 	}
 
@@ -1628,7 +1630,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
-	assert(b->batCount > (id -b->hseqbase));
+	assert(b->batCount > (id - b->hseqbase));
 
 	b->batInserted = 0;
 	p = BUNfndVOID(bm, &id);
@@ -1840,6 +1842,7 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				(void) BAThash(BATmirror(v), 0);
 			if (dohash(v->T))
 				(void) BAThash(v, 0);
+			GDKclrerr(); /* not interested in BAThash failures */
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
 				BUN i;
@@ -2447,11 +2450,14 @@ backup_new(Heap *hp, int lockbat)
 	if (batret == 0 && bakret) {
 		/* no backup yet, so move the existing X.new there out
 		 * of the way */
-		ret = rename(batpath, bakpath);
+		if ((ret = rename(batpath, bakpath)) < 0)
+			GDKsyserror("backup_new: rename %s to %s failed\n",
+				    batpath, bakpath);
 		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
-		ret = unlink(batpath);
+		if ((ret = unlink(batpath)) < 0)
+			GDKsyserror("backup_new: unlink %s failed\n", batpath);
 		IODEBUG fprintf(stderr, "#unlink(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
@@ -2571,6 +2577,8 @@ BATsetaccess(BAT *b, int newmode)
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
+			GDKerror("BATsetaccess: %s has %d views\n",
+				 BATgetId(b), b->batSharecnt);
 			return GDK_FAIL;
 		}
 
@@ -2686,7 +2694,6 @@ BATmode(BAT *b, int mode)
 
 		if (mode == PERSISTENT && isVIEW(b)) {
 			if (VIEWreset(b) != GDK_SUCCEED) {
-				GDKerror("BATmode: cannot allocate memory.\n");
 				return GDK_FAIL;
 			}
 		}
@@ -2819,6 +2826,8 @@ BATassertHeadProps(BAT *b)
 	/* only linear atoms can be sorted */
 	assert(!b->hsorted || ATOMlinear(b->htype));
 	assert(!b->hrevsorted || ATOMlinear(b->htype));
+	/* var heaps must have sane sizes */
+	assert(b->H->vheap == NULL || b->H->vheap->free <= b->H->vheap->size);
 
 	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
 	    !b->H->nonil && !b->H->nil) {

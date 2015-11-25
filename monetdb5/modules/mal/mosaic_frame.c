@@ -940,7 +940,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_frame(TPE)\
+#define projection_frame(TPE)\
 {	TPE *v;\
 	TPE *dict= (TPE*) hdr->frame, frame;\
 	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
@@ -956,7 +956,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_frame(Client cntxt,  MOStask task)
+MOSprojection_frame(Client cntxt,  MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
@@ -970,14 +970,14 @@ MOSleftfetchjoin_frame(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_sht: leftfetchjoin_frame(sht); break;
-		case TYPE_lng: leftfetchjoin_frame(lng); break;
-		case TYPE_oid: leftfetchjoin_frame(oid); break;
-		case TYPE_wrd: leftfetchjoin_frame(wrd); break;
-		case TYPE_flt: leftfetchjoin_frame(flt); break;
-		case TYPE_dbl: leftfetchjoin_frame(dbl); break;
+		case TYPE_sht: projection_frame(sht); break;
+		case TYPE_lng: projection_frame(lng); break;
+		case TYPE_oid: projection_frame(oid); break;
+		case TYPE_wrd: projection_frame(wrd); break;
+		case TYPE_flt: projection_frame(flt); break;
+		case TYPE_dbl: projection_frame(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_frame(hge); break;
+		case TYPE_hge: projection_frame(hge); break;
 #endif
 		case TYPE_int:
 		{	int *v;

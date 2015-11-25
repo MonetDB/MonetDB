@@ -727,7 +727,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 		}
 	} else {
 		list_destroy(type_list);
-		if (create && !schema_privs(sql->role_id, s)) {
+		if (create && !mvc_schema_privs(sql, s)) {
 			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
 					"for user '%s' in schema '%s'", KF, F,
 					stack_get_string(sql, "current_user"), s->base.name);
@@ -1032,7 +1032,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 				new_name = n;
 		}
 	}
-	if (create && !schema_privs(sql->role_id, ss)) 
+	if (create && !mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	if (create && mvc_bind_trigger(sql, ss, tname) != NULL) 
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
@@ -1092,7 +1092,7 @@ drop_trigger(mvc *sql, dlist *qname)
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
-	if (!schema_privs(sql->role_id, ss)) 
+	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname);
 }

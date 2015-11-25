@@ -42,7 +42,7 @@ Ready.
 % mal # name
 % clob # type
 % 98 # length
-function user.s3_1{autoCommit=true}(A0:int):void;
+function user.s3_1(A0:int):void;
     X_35:void := querylog.define("explain select * from test where value = 1;","default_pipe",24);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.test");

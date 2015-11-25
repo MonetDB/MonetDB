@@ -1026,7 +1026,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *lid =0, *rid=0;
 	int part, nrofparts;
@@ -1045,21 +1045,21 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = getArgReference_bat(stk,pci,2);
 
 	if( !isCompressed(*rid))
-		return ALGleftfetchjoin(ret,lid,rid);
+		return ALGprojection(ret,lid,rid);
 
 	br = BATdescriptor(*rid);
 	if( br == NULL){
-		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"mosaic.projection",RUNTIME_OBJECT_MISSING);
 	}
 	if (isVIEWCOMBINE(br)){
 		BBPunfix(*rid);
-		throw(MAL,"mosaic.leftfetchjoin","compressed view");
+		throw(MAL,"mosaic.projection","compressed view");
 	}
 
 	bl = BATdescriptor(*lid);
 	if( bl == NULL){
 		BBPunfix(*rid);
-		throw(MAL,"mosaic.leftfetchjoin",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"mosaic.projection",RUNTIME_OBJECT_MISSING);
 	}
 
 	cnt = BATcount(bl);
@@ -1067,7 +1067,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( bn == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL,"mosaic.leftfetchjoin",MAL_MALLOC_FAIL);
+		throw(MAL,"mosaic.projection",MAL_MALLOC_FAIL);
 	}
 
 	if ( bl->ttype == TYPE_void)
@@ -1082,7 +1082,7 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		GDKfree(task);
-		throw(MAL, "mosaic.leftfetchjoin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.projection", RUNTIME_OBJECT_MISSING);
 	}
 	MOSinit(task,br);
 	task->src = (char*) Tloc(bn,BUNfirst(bn));
@@ -1120,31 +1120,31 @@ str MOSleftfetchjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start<task->stop )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSleftfetchjoin_runlength(cntxt, task);
+			MOSprojection_runlength(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSleftfetchjoin_dictionary(cntxt, task);
+			MOSprojection_dictionary(cntxt, task);
 			break;
 		case MOSAIC_FRAME:
-			MOSleftfetchjoin_frame(cntxt, task);
+			MOSprojection_frame(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
-			MOSleftfetchjoin_delta(cntxt, task);
+			MOSprojection_delta(cntxt, task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSleftfetchjoin_prefix(cntxt, task);
+			MOSprojection_prefix(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSleftfetchjoin_linear(cntxt, task);
+			MOSprojection_linear(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSleftfetchjoin_literal(cntxt, task);
+			MOSprojection_literal(cntxt, task);
 			break;
 		default:
 			assert(0);
 		}
 
-	/* adminstrative wrapup of the leftfetchjoin */
+	/* adminstrative wrapup of the projection */
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 

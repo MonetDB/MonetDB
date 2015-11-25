@@ -42,6 +42,6 @@ mosaic_export void MOScompress_dictionary(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_dictionary(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mosaic_export str MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_dictionary(Client cntxt,  MOStask task);
+mosaic_export str MOSprojection_dictionary(Client cntxt,  MOStask task);
 mosaic_export str MOSjoin_dictionary(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_DICT_ */

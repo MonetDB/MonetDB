@@ -1,0 +1,59 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 2008-2015 MonetDB B.V.
+
+INCLUDES = ../ \
+    ../../ \
+	../../../../include \
+	../../../../common \
+	../../../../storage \
+	../../../../server \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/kernel \
+	../../../../../monetdb5/mal \
+	../../../../../monetdb5/modules/mal \
+	../../../../../monetdb5/optimizer \
+	../../../../../clients/mapilib \
+	../../../../../common/options \
+	../../../../../common/stream \
+	../../../../../gdk \
+	../../../../../tools/merovingian \
+	../../../../../tools/merovingian/daemon \
+	$(SAMTOOLS_CFLAGS)
+
+lib__bam = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = bam_loader.c bam_loader.h \
+		  bam_wrapper.c bam_wrapper.h \
+		  bam_db_interface.c bam_db_interface.h \
+		  bam_globals.c bam_globals.h \
+		  bam_lib.c bam_lib.h \
+		  bam_export.c bam_export.h \
+		  mykstring.h
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+		   ../../../../../gdk/libbat \
+		   $(SAMTOOLS_LIBS)
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = bam.mal
+}
+
+headers_sql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 85_bam.sql
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 85_bam.mal
+}
+
+EXTRA_DIST_DIR = Tests

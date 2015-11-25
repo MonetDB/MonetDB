@@ -56,7 +56,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-		if ( getFunctionId(p) == leftfetchjoinPathRef)
+		if ( getFunctionId(p) == projectionPathRef)
 			for ( j= p->retc; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
@@ -86,13 +86,13 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	}
 
 	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
-		if( getFunctionId(p)== leftfetchjoinPathRef)
+		if( getFunctionId(p)== projectionPathRef)
 			for ( j= p->retc ; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
 						if ( candidate[k].p == 0 ) {
-							if ( candidate[k].fcn == leftfetchjoinPathRef)
-								q= newStmt(mb, algebraRef, leftfetchjoinRef);
+							if ( candidate[k].fcn == projectionPathRef)
+								q= newStmt(mb, algebraRef, projectionRef);
 							q= pushArgument(mb,q, candidate[k].lvar);
 							q= pushArgument(mb,q, candidate[k].rvar);
 							candidate[k].p = q;
@@ -100,8 +100,8 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 						delArgument(p,j);
 						getArg(p,j) = getArg(candidate[k].p,0);
 						if ( p->argc == 3 ){
-							if ( getFunctionId(p) == leftfetchjoinPathRef)
-								setFunctionId(p, leftfetchjoinRef);
+							if ( getFunctionId(p) == projectionPathRef)
+								setFunctionId(p, projectionRef);
 						}
 						actions ++;
 						OPTDEBUGjoinPath {
@@ -141,7 +141,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+	if ( mb->inlineProp)
 		return 0;
 
 	old= mb->stmt;
@@ -167,11 +167,11 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			varcnt[getArg(p,j)]++;
 	}
 
-	/* assume a single pass over the plan, and only consider projection sequences composed of leftfetchjoin
+	/* assume a single pass over the plan, and only consider projection sequences composed of projection
  	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( getModuleId(p)== algebraRef && getFunctionId(p) == leftfetchjoinRef && p->argc ==3){
+		if( getModuleId(p)== algebraRef && getFunctionId(p) == projectionRef && p->argc ==3){
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
@@ -182,7 +182,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				/*
 				 * Don't inject a pattern when it is used more than once.
-				 * For leftfetchjoin series we may benefitt
+				 * For projection series we may benefitt
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
@@ -197,8 +197,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
-				if ( getFunctionId(p) == leftfetchjoinRef){
-					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftfetchjoinRef  || getFunctionId(r)== leftfetchjoinPathRef) ){
+				if ( getFunctionId(p) == projectionRef){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
@@ -229,8 +229,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* fix the type */
 			setVarUDFtype(mb, getArg(q,0));
 			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
-			if ( getFunctionId(q) == leftfetchjoinRef )
-				setFunctionId(q,leftfetchjoinPathRef);
+			if ( getFunctionId(q) == projectionRef )
+				setFunctionId(q,projectionPathRef);
 			freeInstruction(p);
 			p= q;
 			actions++;

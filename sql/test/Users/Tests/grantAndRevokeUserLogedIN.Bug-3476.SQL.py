@@ -16,14 +16,22 @@ def connect(username, password):
 def query(conn, sql):
     print(sql)
     cur = conn.cursor()
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+    except monetdb.exceptions.OperationalError, e:
+        print e
+        return
     r = cur.fetchall()
     cur.close()
     print(r)
 
 def run(conn, sql):
     print(sql)
-    r = conn.execute(sql)
+    try:
+        r = conn.execute(sql)
+    except monetdb.exceptions.OperationalError, e:
+        print e
+        return
     print(r)
 
 c1 = connect('monetdb', 'monetdb')

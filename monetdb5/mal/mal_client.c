@@ -181,8 +181,8 @@ MCexitClient(Client c)
 	MPresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {
-			(void) mnstr_close(c->fdout);
-			(void) mnstr_destroy(c->fdout);
+			mnstr_close(c->fdout);
+			mnstr_destroy(c->fdout);
 		}
 		assert(c->bak == NULL);
 		if (c->fdin) {

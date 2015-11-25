@@ -38,6 +38,6 @@ mosaic_export void MOScompress_prefix(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_prefix(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mosaic_export str MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_prefix(Client cntxt,  MOStask task);
+mosaic_export str MOSprojection_prefix(Client cntxt,  MOStask task);
 mosaic_export str MOSjoin_prefix(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_PREFIX_ */

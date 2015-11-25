@@ -681,7 +681,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_linear(TYPE)\
+#define projection_linear(TYPE)\
 {TYPE *v;\
 	TYPE val = *(TYPE*) linear_base(blk) ;\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
@@ -695,7 +695,7 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
+MOSprojection_linear(Client cntxt,  MOStask task)
 {
 	BUN first,last;
 	MosaicBlk blk = task->blk;
@@ -706,16 +706,16 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
-		case TYPE_bit: leftfetchjoin_linear(bit); break;
-		case TYPE_bte: leftfetchjoin_linear(bte); break;
-		case TYPE_sht: leftfetchjoin_linear(sht); break;
-		case TYPE_oid: leftfetchjoin_linear(oid); break;
-		case TYPE_lng: leftfetchjoin_linear(lng); break;
-		case TYPE_wrd: leftfetchjoin_linear(wrd); break;
-		case TYPE_flt: leftfetchjoin_linear(flt); break;
-		case TYPE_dbl: leftfetchjoin_linear(dbl); break;
+		case TYPE_bit: projection_linear(bit); break;
+		case TYPE_bte: projection_linear(bte); break;
+		case TYPE_sht: projection_linear(sht); break;
+		case TYPE_oid: projection_linear(oid); break;
+		case TYPE_lng: projection_linear(lng); break;
+		case TYPE_wrd: projection_linear(wrd); break;
+		case TYPE_flt: projection_linear(flt); break;
+		case TYPE_dbl: projection_linear(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_linear(hge); break;
+		case TYPE_hge: projection_linear(hge); break;
 #endif
 		case TYPE_int:
 		{	int *v;
@@ -741,9 +741,9 @@ MOSleftfetchjoin_linear(Client cntxt,  MOStask task)
 		break;
 		default:
 			if( task->type == TYPE_daytime)
-				leftfetchjoin_linear(daytime); 
+				projection_linear(daytime); 
 			if( task->type == TYPE_date)
-				leftfetchjoin_linear(date); 
+				projection_linear(date); 
 			if( task->type == TYPE_timestamp)
 			{	lng *v;
 				lng val = *(lng*) linear_base(blk) ;

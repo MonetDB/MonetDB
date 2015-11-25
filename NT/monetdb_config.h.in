@@ -205,6 +205,9 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
 
+/* Define to 1 if you have the `_get_timezone' function. */
+#define HAVE__GET_TIMEZONE 1
+
 /* Define if you have the gsl library */
 /* #undef HAVE_GSL */
 
@@ -684,6 +687,9 @@
 
 /* Define if you have valgrind installed and want to use it */
 /* #undef HAVE_VALGRIND */
+
+/* Define to 1 if you have the `_wfopen' function. */
+#define HAVE__WFOPEN 1
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1

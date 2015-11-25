@@ -39,7 +39,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	char *nme;
 	int nameused= 0;
 	size_t len = 0, maxlen = BUFSIZ;
-	str pstring;
 	ValRecord *val = 0;
 	char *cv =0;
 	str tpe;
@@ -115,13 +114,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		GDKfree(tpe);
 	}
 
-	// show the properties when required 
-	if ( (flg & LIST_MAL_PROPS) && (idx < p->retc || getInstrPtr(mb,0) == p)) {
-		pstring = varGetPropStr(mb,varid);
-		if( pstring)
-			len +=snprintf(buf+len,maxlen-len,"%s",pstring);
-		GDKfree(pstring);
-	}
 	if( len >= maxlen)
 		GDKerror("renderTerm:Value representation too large");
 	return buf;
@@ -137,19 +129,25 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
-	str arg, t, tpe, pstring= NULL;
+	str arg, t, tpe;
 
 	t = s;
-	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), operatorName(p->token));
+	snprintf(t,(len-(t-base)), "%s", (flg ? "" : "#") );
+	advance(t, base, len);
+	if( mb->inlineProp){
+		snprintf(t,(len-(t-base)), "inline ");
+		advance(t, base, len);
+	}
+	if( mb->unsafeProp){
+		snprintf(t,(len-(t-base)), "unsafe ");
+		advance(t, base, len);
+	}
+	snprintf(t,(len-(t-base)), "%s ",  operatorName(p->token));
 
 	advance(t, base, len);
 	snprintf(t, (len-(t-base)),  "%s.",  getModuleId(p)?getModuleId(p):"user");
 	advance(t, base, len);
-
-	pstring = varGetPropStr(mb,  getArg(p, 0));
-	snprintf(t, (len-(t-base)), "%s%s(",  getFunctionId(p), pstring?pstring:"");
-	if( pstring ) 
-		GDKfree(pstring);
+	snprintf(t, (len-(t-base)), "%s(",  getFunctionId(p));
 	advance(t, base, len);
 
 	for (i = p->retc; i < p->argc; i++) {

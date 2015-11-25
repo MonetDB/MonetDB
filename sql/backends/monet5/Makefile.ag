@@ -4,7 +4,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST HAVE_GSL?gsl generator
+SUBDIRS = NOT_WIN32?vaults UDF LSST HAVE_GSL?gsl generator
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \

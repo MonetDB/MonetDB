@@ -304,8 +304,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	case SQL_FOREIGN_KEY: {
 		dnode *n = s->data.lval->h;
+		char *rsname = qname_schema(n->data.lval);
 		char *rtname = qname_table(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val; 
+		sql_schema *rs;
 		sql_table *rt;
 		sql_fkey *fk;
 		list *cols;
@@ -318,7 +320,12 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			return res;
 		}
 */
-		rt = _bind_table(t, ss, cur_schema(sql), rtname);
+
+		if (rsname) 
+			rs = mvc_bind_schema(sql, rsname);
+		else 
+			rs = cur_schema(sql);
+		rt = _bind_table(t, ss, rs, rtname);
 		if (!rt) {
 			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
@@ -339,7 +346,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			rk = &rt->pkey->k;
 		}
 		if (!rk) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s\n", rtname);
+			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -384,8 +391,26 @@ column_option(
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
-		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
+		symbol *sym = s->data.sym;
+		char *err = NULL, *r;
 
+		if (sym->token == SQL_COLUMN) {
+			sql_exp *e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
+			
+			if (e && is_atom(e->type)) {
+				atom *a = exp_value(e, sql->args, sql->argc);
+
+				if (atom_null(a)) {
+					mvc_default(sql, cs, NULL);
+					res = SQL_OK;
+					break;
+				}
+			}
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		}
+	       	r = symbol2string(sql, s->data.sym, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -399,6 +424,7 @@ column_option(
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) s;
 
+		assert(0);
 		if (!an || !an->a) {
 			mvc_default(sql, cs, NULL);
 		} else {
@@ -450,14 +476,24 @@ static int
 table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	dnode *n = s->data.lval->h;
+	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_table(n->data.lval);
-	sql_table *ft = mvc_bind_table(sql, ss, rtname);
+	sql_schema *fs;
+	sql_table *ft;
 
+	if (rsname)
+		fs = mvc_bind_schema(sql, rsname);
+	else
+		fs = ss;
+	ft = mvc_bind_table(sql, fs, rtname);
 	/* self referenced table */
-	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0)
+	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
 		ft = t;
 	if (!ft) {
 		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+		return SQL_ERR;
+	} else if (list_find_name(t->keys.set, name)) {
+		sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
@@ -857,7 +893,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	if (mvc_bind_table(sql, s, name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
-	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
@@ -928,7 +964,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
 		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
-	} else if (create && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
+	} else if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		sql_rel *sq = NULL;

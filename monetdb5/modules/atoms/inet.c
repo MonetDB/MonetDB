@@ -104,7 +104,7 @@ int
 INETfromString(const char *src, int *len, inet **retval)
 {
 	int i, last, type;
-	long parse;
+	long parse; /* type long returned by strtol() */
 	char *endptr;
 	char sep = '.';
 

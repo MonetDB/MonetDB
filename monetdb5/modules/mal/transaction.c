@@ -48,7 +48,8 @@ TRNglobal_sync(bit *ret)
 str
 TRNglobal_abort(bit *ret)
 {
-	*ret = TMabort() == GDK_SUCCEED;
+	TMabort();
+	*ret = TRUE;
 	return MAL_SUCCEED;
 }
 

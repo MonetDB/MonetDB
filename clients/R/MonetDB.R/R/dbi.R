@@ -155,7 +155,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 
 setMethod("dbListTables", "MonetDBConnection", def=function(conn, ..., sys_tables=F, schema_names=F) {
   q <- "select schemas.name as sn, tables.name as tn from sys.tables join sys.schemas on tables.schema_id=schemas.id"
-  if (!sys_tables) q <- paste0(q, " where tables.system=false")
+  if (!sys_tables) q <- paste0(q, " where tables.system=false order by sn, tn")
   df <- dbGetQuery(conn, q)
     df$tn <- quoteIfNeeded(conn, df$tn, warn=F)
   res <- df$tn
@@ -477,9 +477,13 @@ setMethod("dbFetch", signature(res="MonetDBResult", n="numeric"), def=function(r
   if (!dbIsValid(res)) {
     stop("Cannot fetch results from closed response.")
   }
-  
+
   # okay, so we arrive here with the tuples from the first result in res@env$data as a list
   info <- res@env$info
+  # apparently, one should be able to fetch results sets from ddl ops
+  if (info$type == Q_UPDATE) {
+    return(data.frame())
+  }
   if (res@env$delivered < 0) {
     res@env$delivered <- 0
   }

@@ -644,7 +644,7 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_runlength(TPE)\
+#define projection_runlength(TPE)\
 {	TPE val, *v;\
 	v= (TPE*) task->src;\
 	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
@@ -658,7 +658,7 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
+MOSprojection_runlength(Client cntxt,  MOStask task)
 {
 	BUN first,last;
 	(void) cntxt;
@@ -668,16 +668,16 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: leftfetchjoin_runlength(bit); break;
-		case TYPE_bte: leftfetchjoin_runlength(bte); break;
-		case TYPE_sht: leftfetchjoin_runlength(sht); break;
-		case TYPE_lng: leftfetchjoin_runlength(lng); break;
-		case TYPE_oid: leftfetchjoin_runlength(oid); break;
-		case TYPE_wrd: leftfetchjoin_runlength(wrd); break;
-		case TYPE_flt: leftfetchjoin_runlength(flt); break;
-		case TYPE_dbl: leftfetchjoin_runlength(dbl); break;
+		case TYPE_bit: projection_runlength(bit); break;
+		case TYPE_bte: projection_runlength(bte); break;
+		case TYPE_sht: projection_runlength(sht); break;
+		case TYPE_lng: projection_runlength(lng); break;
+		case TYPE_oid: projection_runlength(oid); break;
+		case TYPE_wrd: projection_runlength(wrd); break;
+		case TYPE_flt: projection_runlength(flt); break;
+		case TYPE_dbl: projection_runlength(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_runlength(hge); break;
+		case TYPE_hge: projection_runlength(hge); break;
 #endif
 		case TYPE_int:
 		{	int val, *v;
@@ -695,10 +695,10 @@ MOSleftfetchjoin_runlength(Client cntxt,  MOStask task)
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->T->width){
-		case 1: leftfetchjoin_runlength(bte); break;
-		case 2: leftfetchjoin_runlength(sht); break;
-		case 4: leftfetchjoin_runlength(int); break;
-		case 8: leftfetchjoin_runlength(lng); break;
+		case 1: projection_runlength(bte); break;
+		case 2: projection_runlength(sht); break;
+		case 4: projection_runlength(int); break;
+		case 8: projection_runlength(lng); break;
 		}
 		break;
 	}

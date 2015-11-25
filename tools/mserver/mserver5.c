@@ -36,6 +36,7 @@
 
 #ifdef _MSC_VER
 #include <Psapi.h>      /* for GetModuleFileName */
+#include <crtdbg.h>	/* for _CRT_ERROR, _CRT_ASSERT */
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -64,6 +65,26 @@ mserver_abort()
 	fprintf(stderr, "\n! mserver_abort() was called by terminate(). !\n");
 	fflush(stderr);
 	exit(0);
+}
+#endif
+
+#ifdef _MSC_VER
+static void
+mserver_invalid_parameter_handler(
+	const wchar_t *expression,
+	const wchar_t *function,
+	const wchar_t *file,
+	unsigned int line,
+	uintptr_t reserved)
+{
+	(void) expression;
+	(void) function;
+	(void) file;
+	(void) line;
+	(void) reserved;
+	/* the essential bit of this function is that it returns:
+	 * we don't want the server to quit when a function is called
+	 * with an invalid parameter */
 }
 #endif
 
@@ -260,6 +281,11 @@ main(int argc, char **av)
 
 #if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(mserver_abort);
+#endif
+#ifdef _MSC_VER
+	_CrtSetReportMode(_CRT_ERROR, 0);
+	_CrtSetReportMode(_CRT_ASSERT, 0);
+	_set_invalid_parameter_handler(mserver_invalid_parameter_handler);
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");

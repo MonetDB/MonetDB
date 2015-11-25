@@ -274,7 +274,7 @@ base_colors[NUM_COLORS] = {
 	/* reserve (base_)colors[0] for generic "*.*" */
 /* 99999 	{ 0, 0, "*", "*", 0 },*/
 /* arbitrarily ordered by descending frequency in TPCH SF-100 with 32 threads */
-/* 11054 */	{ 0, 0, "algebra", "leftfetchjoin", 0 },
+/* 11054 */	{ 0, 0, "algebra", "projection", 0 },
 /* 10355 */	{ 0, 0, "language", "pass", 0 },
 /*  5941 */	{ 0, 0, "sql", "bind", 0 },
 /*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
@@ -284,7 +284,7 @@ base_colors[NUM_COLORS] = {
 /*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
 /*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
 /*  1886 */	{ 0, 0, "sql", "bind_idxbat", 0 },
-/*  1881 */	{ 0, 0, "algebra", "leftfetchjoinPath", 0 },
+/*  1881 */	{ 0, 0, "algebra", "projectionPath", 0 },
 /* 		 */	{ 0, 0, "algebra", "tinter", 0 },
 /*  	 */	{ 0, 0, "algebra", "tdiff", 0 },
 /*  1013 */	{ 0, 0, "sql", "tid", 0 },
@@ -1172,7 +1172,7 @@ updatecolormap(int idx)
 	if (fnd == 0 && i < NUM_COLORS) {
 		/* not found, but still free slot: add new one */
 		fnd = i;
-		colors[fnd].mod = mod?strdup(mod): 0;
+		colors[fnd].mod = strdup(mod);
 		colors[fnd].fcn = strdup(fcn);
 		if( debug) 
 			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, mod, fcn);

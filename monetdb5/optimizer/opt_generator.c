@@ -32,15 +32,18 @@ pushInstruction(mb,P);
 			q= newStmt(mb,calcRef,TPE##Ref);\
 			setArgType(mb,q,0,TYPE_##TPE);\
 			pushArgument(mb,q,getArg(series[k],1));\
+			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			q= newStmt(mb,calcRef,TPE##Ref);\
 			setArgType(mb,q,0,TYPE_##TPE);\
 			pushArgument(mb,q,getArg(series[k],2));\
+			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
 				q= newStmt(mb,calcRef,TPE##Ref);\
 				setArgType(mb,q,0,TYPE_##TPE);\
 				pushArgument(mb,q,getArg(series[k],3));\
+				typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 				p = pushArgument(mb,p, getArg(q,0));\
 			}\
 			setModuleId(p,generatorRef);\
@@ -104,7 +107,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetasubselectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
 		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef && series[getArg(p,2)]){
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));
 		} else
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && series[getArg(p,2)] ){

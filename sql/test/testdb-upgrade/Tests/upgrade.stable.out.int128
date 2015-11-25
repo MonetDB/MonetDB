@@ -56,8 +56,8 @@ from sys.storagemodel() group by "schema","table";
 insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
-insert into sys.types values(7030, 'hge', 'hugeint', 128, 1, 2, 6, 0);
-insert into sys.types values(7031, 'hge', 'decimal', 39, 1, 10, 8, 0);
+insert into sys.types values(7031, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(7032, 'hge', 'decimal', 39, 1, 10, 8, 0);
 update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
 set schema "testschema";
 

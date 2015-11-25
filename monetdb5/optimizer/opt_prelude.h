@@ -28,11 +28,11 @@ opt_export  str arrayRef;
 opt_export  str basketRef;
 opt_export  str batcalcRef;
 opt_export  str batRef;
-opt_export  str boxRef;
 opt_export  str batstrRef;
 opt_export  str batmtimeRef;
 opt_export  str batmmathRef;
 opt_export  str batxmlRef;
+opt_export  str batsqlRef;
 opt_export  str bbpRef;
 opt_export  str tidRef;
 opt_export  str dateRef;
@@ -70,6 +70,7 @@ opt_export  str defineRef;
 opt_export  str deleteRef;
 opt_export  str depositRef;
 opt_export  str subdiffRef;
+opt_export  str diffRef;
 opt_export  str subinterRef;
 opt_export  str mergecandRef;
 opt_export  str mergepackRef;
@@ -110,19 +111,14 @@ opt_export  str subantijoinRef;
 opt_export  str subbandjoinRef;
 opt_export  str subrangejoinRef;
 opt_export  str subthetajoinRef;
-opt_export  str kdifferenceRef;
 opt_export  str languageRef;
-opt_export  str leftfetchjoinRef;
-opt_export  str leftfetchjoinPathRef;
+opt_export  str projectionRef;
+opt_export  str projectionPathRef;
 opt_export  str likeselectRef;
 opt_export  str ilikeselectRef;
 opt_export  str likeuselectRef;
 opt_export  str ilikeuselectRef;
 opt_export  str listRef;
-opt_export  str likeRef;
-opt_export  str ilikeRef;
-opt_export  str not_likeRef;
-opt_export  str not_ilikeRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
 opt_export  str malRef;
@@ -176,6 +172,10 @@ opt_export  str putRef;
 opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
+opt_export  str batrapiRef;
+opt_export  str subeval_aggrRef;
+opt_export  str rankRef;
+opt_export  str dense_rankRef;
 opt_export  str reconnectRef;
 opt_export  str recycleRef;
 opt_export  str refineRef;
@@ -186,6 +186,7 @@ opt_export  str replaceRef;
 opt_export  str replicatorRef;
 opt_export  str resultSetRef;
 opt_export  str reuseRef;
+opt_export  str row_numberRef;
 opt_export  str rpcRef;
 opt_export  str rsColumnRef;
 opt_export  str schedulerRef;
@@ -213,6 +214,7 @@ opt_export  str subsortRef;
 opt_export  str timestampRef;
 opt_export  str takeRef;
 opt_export  str not_uniqueRef;
+opt_export  str subuniqueRef;
 opt_export  str unpackRef;
 opt_export  str unpinRef;
 opt_export  str unlockRef;
@@ -220,40 +222,14 @@ opt_export  str updateRef;
 opt_export  str subselectRef;
 opt_export  str thetasubselectRef;
 opt_export  str likesubselectRef;
+opt_export  str likethetasubselectRef;
 opt_export  str ilikesubselectRef;
+opt_export  str ilikethetasubselectRef;
+opt_export  str likeRef;
+opt_export  str ilikeRef;
+opt_export  str not_likeRef;
+opt_export  str not_ilikeRef;
 opt_export  str userRef;
 opt_export  str vectorRef;
 opt_export  str zero_or_oneRef;
-
-opt_export int canBeCrackedProp;	/* binary */
-opt_export int canBeJoinselectProp;	/* binary */
-opt_export int sidewaysSelectProp;	/* int */
-opt_export int headProp;		/* int */
-opt_export int pivotProp;		/* int */
-opt_export int pivotDisjunctiveProp;	/* int */
-opt_export int removeProp;		/* int */
-opt_export int tableProp;	        /* str */
-opt_export int sqlfunctionProp;
-
-opt_export int inlineProp;		/* binary */
-opt_export int keepProp;		/* binary */
-opt_export int notnilProp;		/* binary */
-opt_export int rowsProp;		/* long */
-opt_export int fileProp;		/* str */
-opt_export int runonceProp;		/* binary */
-opt_export int unsafeProp;		/* binary */
-opt_export int orderDependendProp;	/* binary */
-
-opt_export int stableProp;		/* binary */
-opt_export int insertionsProp;		/* binary */
-opt_export int updatesProp;		/* binary */
-opt_export int deletesProp;		/* binary */
-
-opt_export int hlbProp;			/* any (head lower bound) */
-opt_export int hubProp;			/* any (head upper bound) */
-opt_export int tlbProp;			/* any (tail lower bound) */
-opt_export int tubProp;			/* any (tail upper bound) */
-opt_export int horiginProp;		/* original oid source */
-opt_export int toriginProp;		/* original oid source */
-opt_export int mtProp;			/* enclosing merge table (id) */
 #endif

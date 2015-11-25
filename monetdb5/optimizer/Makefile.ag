@@ -21,6 +21,7 @@ lib_optimizer = {
 		opt_aliases.c opt_aliases.h \
 		opt_coercion.c opt_coercion.h \
 		opt_commonTerms.c opt_commonTerms.h \
+		opt_candidates.c opt_candidates.h \
 		opt_constants.c opt_constants.h \
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \

@@ -6,15 +6,15 @@
 from util import sql_test_client
 
 sql_test_client('monetdb', 'monetdb', input = """\
-GRANT monetdb TO alice;
+GRANT sysadmin TO alice;
 """)
 
 
 sql_test_client('alice', 'alice', input = """\
-SET ROLE monetdb;
+SET ROLE sysadmin;
 CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;
 GRANT ALL ON orders TO april;
-GRANT monetdb TO april;
+GRANT sysadmin TO april;
 """)
 
 

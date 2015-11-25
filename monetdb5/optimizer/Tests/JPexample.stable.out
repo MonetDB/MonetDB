@@ -18,10 +18,10 @@ function user.main():void;
     a := bat.new(:oid,:oid);
     b := bat.new(:oid,:oid);
     c := bat.new(:oid,:str);
-    j1 := algebra.leftfetchjoin(a,b);
-    j2:bat[:oid,:str]  := algebra.leftfetchjoinPath(a,b,c);
-    j3 := algebra.leftfetchjoin(b,b);
-    j4:bat[:oid,:oid] := algebra.leftfetchjoinPath(b,b,b);
+    j1 := algebra.projection(a,b);
+    j2:bat[:oid,:str] := algebra.projectionPath(a,b,c);
+    j3 := algebra.projection(b,b);
+    j4:bat[:oid,:oid] := algebra.projectionPath(b,b,b);
     mdb.List();
 end user.main;
 function user.main():void;              	#[0]  0 
@@ -29,10 +29,10 @@ function user.main():void;              	#[0]  0
     a:bat[:oid,:oid] := bat.new(:oid,:oid);	#[2] CMDBATnew 2 <- 3 3 
     b:bat[:oid,:oid] := bat.new(:oid,:oid);	#[3] CMDBATnew 4 <- 3 3 
     c:bat[:oid,:str] := bat.new(:oid,:str);	#[4] CMDBATnew 5 <- 3 6 
-    j1:bat[:oid,:oid] := algebra.leftfetchjoin(a:bat[:oid,:oid],b:bat[:oid,:oid]);	#[5] ALGleftfetchjoin 7 <- 2 4 
-    j2:bat[:oid,:str] := algebra.leftfetchjoinPath(a:bat[:oid,:oid],b:bat[:oid,:oid],c:bat[:oid,:str]);	#[6] ALGjoinPath 8 <- 2 4 5 
-    j3:bat[:oid,:oid] := algebra.leftfetchjoin(b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[7] ALGleftfetchjoin 9 <- 4 4 
-    j4:bat[:oid,:oid] := algebra.leftfetchjoinPath(b:bat[:oid,:oid],b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[8] ALGjoinPath 10 <- 4 4 4 
+    j1:bat[:oid,:oid] := algebra.projection(a:bat[:oid,:oid],b:bat[:oid,:oid]);	#[5] ALGprojection 7 <- 2 4 
+    j2:bat[:oid,:str] := algebra.projectionPath(a:bat[:oid,:oid],b:bat[:oid,:oid],c:bat[:oid,:str]);	#[6] ALGjoinPath 8 <- 2 4 5 
+    j3:bat[:oid,:oid] := algebra.projection(b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[7] ALGprojection 9 <- 4 4 
+    j4:bat[:oid,:oid] := algebra.projectionPath(b:bat[:oid,:oid],b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[8] ALGjoinPath 10 <- 4 4 4 
     mdb.List();                         	#[9] MDBlistDetail 12 
 end user.main;                          	#[10]  
 

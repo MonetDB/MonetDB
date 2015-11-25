@@ -37,6 +37,6 @@ mosaic_export void MOScompress_linear(Client cntxt, MOStask task);
 mosaic_export void MOSdecompress_linear(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mosaic_export str MOSthetasubselect_linear(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSleftfetchjoin_linear(Client cntxt,  MOStask task);
+mosaic_export str MOSprojection_linear(Client cntxt,  MOStask task);
 mosaic_export str MOSjoin_linear(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_LINEAR_ */

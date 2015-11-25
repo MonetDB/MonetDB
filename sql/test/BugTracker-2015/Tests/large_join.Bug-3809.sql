@@ -703,6 +703,33 @@ INSERT INTO t64 VALUES(8,7,'table t64 row 8');
 INSERT INTO t64 VALUES(9,8,'table t64 row 9');
 INSERT INTO t64 VALUES(10,3,'table t64 row 10');
 
+plan
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t61,t55,t3,t38,t50,t30,t8
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
 
 SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
   FROM t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t61,t55,t3,t38,t50,t30,t8
@@ -730,6 +757,231 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a50=b63
    AND a8=b20
    AND a47=b37;
+
+-- variant of first query but moving t2 as the first table in the FROM clause
+plan
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t2,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t61,t55,t3,t38,t50,t30,t8
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t2,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t61,t55,t3,t38,t50,t30,t8
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+-- variant of first query but moving t61 as the first table in the FROM clause
+plan
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t61,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t55,t3,t38,t50,t30,t8
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t61,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t55,t3,t38,t50,t30,t8
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+-- variant of first query but with sorted (ascending) list of table names in the FROM clause
+plan
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t2,t3,t8,t9,t10,t12,t18,t20,t21,t22,t25,t29,t30,t32,t37,t38,t43,t47,t50,t52,t54,t55,t61,t63
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t2,t3,t8,t9,t10,t12,t18,t20,t21,t22,t25,t29,t30,t32,t37,t38,t43,t47,t50,t52,t54,t55,t61,t63
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+-- variant of first query but with sorted (decending) list of table names in the FROM clause
+plan
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t63,t61,t55,t54,t52,t50,t47,t43,t38,t37,t32,t30,t29,t25,t22,t21,t20,t18,t12,t10,t9,t8,t3,t2
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
+SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+  FROM t63,t61,t55,t54,t52,t50,t47,t43,t38,t37,t32,t30,t29,t25,t22,t21,t20,t18,t12,t10,t9,t8,t3,t2
+ WHERE b3=a18
+   AND a25=b38
+   AND a54=b8
+   AND a61=b47
+   AND a43=b29
+   AND b18=a12
+   AND b32=a30
+   AND a22=b43
+   AND a29=b21
+   AND a10=b25
+   AND a12=4
+   AND b22=a32
+   AND a20=b55
+   AND b30=a9
+   AND a2=b61
+   AND a38=b52
+   AND a55=b9
+   AND a21=b50
+   AND a37=b54
+   AND b10=a3
+   AND a52=b2
+   AND a50=b63
+   AND a8=b20
+   AND a47=b37;
+
 
 -- cleanup created tables
 DROP TABLE t1;

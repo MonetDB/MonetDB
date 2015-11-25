@@ -6,7 +6,7 @@
 
 module alarm;
 
-command alarm.sleep{unsafe}(secs:int):void
+unsafe command alarm.sleep(secs:int):void
 address ALARMsleep
 comment "Sleep a few seconds";
 
@@ -14,23 +14,23 @@ comment "Sleep a few seconds";
 #address ALARMsetalarm
 #comment "Execute a MAL action after a few secs. NYI";
 
-#command alarm.timers{unsafe}() (time:bat[:oid,:str],action:bat[:oid,:str])
+#unsafe command alarm.timers() (time:bat[:oid,:str],action:bat[:oid,:str])
 #address ALARMtimers
 #comment "Give the list of all active timers. NYI";
 
-command alarm.usec{unsafe}() :lng
+unsafe command alarm.usec() :lng
 address ALARMusec
 comment "Return time in microseconds.";
 
-command alarm.time{unsafe}() :int
+unsafe command alarm.time() :int
 address ALARMtime
 comment "Return time in milliseconds.";
 
-command alarm.epoch{unsafe}() :int
+unsafe command alarm.epoch() :int
 address ALARMepoch
 comment "Return the current time as UNIX epoch.";
 
-command alarm.ctime{unsafe}() :str
+unsafe command alarm.ctime() :str
 address ALARMctime
 comment "Return the current time as a C-time string.";
 

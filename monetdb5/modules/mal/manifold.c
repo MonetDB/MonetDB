@@ -231,7 +231,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
-		(q->blk && varGetProp( q->blk, getArg(getInstrPtr(q->blk,0), 0), PropertyIndex("unsafe") ) != NULL) )
+		(q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
 	else {
 		fcn = q->fcn;
@@ -358,10 +358,12 @@ wrapup:
 }
 
 // The old code
-str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    char buf[BUFSIZ];
+str
+MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
     (void) mb;
     (void) cntxt;
-    snprintf(buf,BUFSIZ,"Function '%s.%s' not defined", (char *) getArgReference(stk,p,p->retc), (char *) getArgReference(stk,p,p->retc+1));
-    throw(MAL, "opt.remap", "%s",buf);
+    throw(MAL, "opt.remap", "Function '%s.%s' not defined",
+		  *getArgReference_str(stk, p, p->retc),
+		  *getArgReference_str(stk, p, p->retc + 1));
 }

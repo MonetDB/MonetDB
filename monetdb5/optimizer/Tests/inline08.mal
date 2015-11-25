@@ -1,6 +1,6 @@
 
 # remapping inline functions
-function foo{inline}(a:str):str;
+inline function foo(a:str):str;
 	a:= str.replace(a,"A","");
 	a:= str.replace(a,"E","");
 	a:= str.replace(a,"I","");
@@ -10,7 +10,7 @@ function foo{inline}(a:str):str;
 	return foo:=a;
 end foo;
 
-function bar{inline}(a:str,b:str):str;
+inline function bar(a:str,b:str):str;
 	sa:= user.foo(a);
 	sb:= user.foo(b);
 	c:= sa+sb;

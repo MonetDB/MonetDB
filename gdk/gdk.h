@@ -2634,7 +2634,7 @@ BATmirror(register BAT *b)
  * needs the rollback mechanism).
  */
 gdk_export gdk_return TMcommit(void);
-gdk_export gdk_return TMabort(void);
+gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
 
@@ -2866,9 +2866,6 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloopvar
  * @tab
  *  (BAT *b; Hash *h, size_t idx; ptr value, BUN w)
- * @item SORTloop
- * @tab
- *  (BAT *b,p,q,tl,th,s)
  * @end multitable
  *
  * The @emph{BATloop()} looks like a function call, but is actually a
@@ -2996,25 +2993,6 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 #define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
 
 /*
- * @- loop over a BAT with ordered tail
- * Here we loop over a BAT with an ordered tail column. Again, 'p' and
- * 'q' are iteration variables, where 'p' points at the current
- * BUN. 'tl' and 'th' are pointers to atom corresponding to the
- * minimum (included) and maximum (included) bound in the selected
- * range of BUNs. A nil-value means that there is no bound.  The 's'
- * finally is an integer denoting the bunsize, used for speed.
- */
-#define SORTloop(b, p, q, tl, th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop: BAT not sorted.\n");		\
-	else for (p = (ATOMcmp((b)->ttype, tl, ATOMnilptr((b)->ttype)) ? \
-		       SORTfndfirst((b), tl) : BUNfirst(b)),		\
-		  q = (ATOMcmp((b)->ttype, th, ATOMnilptr((b)->ttype)) ? \
-		       SORTfndlast((b), th) : BUNlast(b));		\
-		  p < q;						\
-		  p++)
-
-/*
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
  *
@@ -3066,7 +3044,7 @@ gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT 
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export BAT *BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export gdk_return BATsubprojection(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
 gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);

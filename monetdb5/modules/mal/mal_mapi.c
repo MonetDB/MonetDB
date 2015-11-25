@@ -366,7 +366,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_flush(data->out);
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot fork new client thread");
-			free(data);
+			GDKfree(data);
 		}
 	} while (!ATOMIC_GET(serverexiting, atomicLock, "SERVERlistenThread") &&
 			 !GDKexiting());

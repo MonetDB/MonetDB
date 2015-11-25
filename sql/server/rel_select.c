@@ -2673,7 +2673,9 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 		return l;
 	}
 
-	if (l->op == r->op && ll == rl && l->r == r->r) {
+	if (l->op == r->op && 
+		((ll == rl && l->r == r->r) ||
+		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
@@ -2915,11 +2917,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		return NULL;
 	}
 	case SQL_LIKE:
+	case SQL_NOT_LIKE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
-		int anti = sc->data.lval->h->next->next->next->data.i_val;
+		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
@@ -3394,11 +3397,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel;
 	}
 	case SQL_LIKE:
+	case SQL_NOT_LIKE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
-		int anti = sc->data.lval->h->next->next->next->data.i_val;
+		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
@@ -4271,11 +4275,12 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 	list *conds = new_exp_list(sql->sa);
 	list *results = new_exp_list(sql->sa);
 	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL, rtype;
+	sql_subtype *restype = NULL, rtype, bt;
 	sql_exp *res = NULL, *else_exp = NULL;
 	node *n, *m;
 	exp_kind ek = {type_value, card_column, FALSE};
 
+	sql_find_subtype(&bt, "boolean", 0, 0);
 	if (dn) {
 		sql_exp *cond = NULL, *result = NULL;
 
@@ -4395,6 +4400,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		sql_exp *result = m->data;
 
 		if (!(result = rel_check_type(sql, restype, result, type_equal))) 
+			return NULL;
+
+		if (!(cond = rel_check_type(sql, &bt, cond, type_equal))) 
 			return NULL;
 
 		/* remove any null's in the condition */
@@ -4579,11 +4587,10 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	sql_exp *e = NULL;
 	dlist *l = column_r->data.lval;
 
-	if (column_r->type == type_int)
+	if (!r || !is_project(r->op) || column_r->type == type_int)
 		return NULL;
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
-	assert(is_project(r->op));
 	r = r->l;
 	if (!r)
 		return e;

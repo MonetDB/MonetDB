@@ -30,6 +30,9 @@ stderr of test 'grantPrivilegesNonDefaultRole.Bug-3365` in directory 'sql/test/U
 # 17:10:02 >  "/usr/bin/python2" "grantPrivilegesNonDefaultRole.Bug-3365.SQL.py" "grantPrivilegesNonDefaultRole.Bug-3365"
 # 17:10:02 >  
 
+MAPI  = (blake) /var/tmp/mtest-15247/.s.monetdb.36393
+QUERY = grant select on employees to clark;
+ERROR = !GRANT: grantor 'blake' is not allowed to grant privileges for table 'employees'
 
 # 17:10:02 >  
 # 17:10:02 >  "Done."

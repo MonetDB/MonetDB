@@ -207,7 +207,6 @@ VIEWhcreate(BAT *h)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -290,13 +289,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
 		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
-		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
@@ -568,7 +565,7 @@ VIEWreset(BAT *b)
 	tp = VIEWtparent(b);
 	hvp = VIEWvhparent(b);
 	tvp = VIEWvtparent(b);
-	if (hp || tp) {
+	if (hp || tp || hvp || tvp) {
 		BAT *m;
 		BATstore *bs;
 		BUN cnt;
@@ -591,8 +588,8 @@ VIEWreset(BAT *b)
 		nmelen = nme ? strlen(nme) : 0;
 
 		assert(n->batCacheid > 0);
-		assert(hp || !b->htype);
-		assert(tp || !b->ttype);
+		assert(hp || hvp || !b->htype);
+		assert(tp || tvp || !b->ttype);
 
 		head.farmid = BBPselectfarm(n->batRole, n->htype, offheap);
 		tail.farmid = BBPselectfarm(n->batRole, n->ttype, offheap);
@@ -703,6 +700,14 @@ VIEWreset(BAT *b)
 		n->batSharecnt = 0;
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
+		if (v->H->heap.parentid == n->batCacheid) {
+			assert(hp == 0);
+			v->H->heap.parentid = 0;
+		}
+		if (v->T->heap.parentid == -n->batCacheid) {
+			assert(tp == 0);
+			v->T->heap.parentid = 0;
+		}
 
 		/* reset BOUND2KEY */
 		n->hkey = BAThkey(v);
@@ -749,10 +754,8 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	BUN cnt;
 	BATiter bi = bat_iterator(b);
 
-	if (b == NULL || view == NULL) {
-		GDKerror("VIEWbounds: bat argument missing");
+	if (b == NULL || view == NULL)
 		return;
-	}
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)

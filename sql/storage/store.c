@@ -315,7 +315,8 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 			fk->rkey = uk;
 			if (!uk->keys)
 				uk->keys = list_new(tr->sa, NULL);
-			list_append(uk->keys, fk);
+			if (!list_find(uk->keys, &fk->k.base.id, (fcmp) &key_cmp))
+				list_append(uk->keys, fk);
 		}
 	} else {		/* could be a set of rkeys */
 		sql_ukey *uk = (sql_ukey *) nk;
@@ -334,7 +335,8 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 
 				if (!uk->keys)
 					uk->keys = list_new(tr->sa, NULL);
-				list_append(uk->keys, fk);
+				if (!list_find(uk->keys, &fk->k.base.id, (fcmp) &key_cmp))
+					list_append(uk->keys, fk);
 				fk->rkey = uk;
 			}
 		}
@@ -1796,7 +1798,8 @@ kc_dup(sql_trans *tr, int flag, sql_kc *kc, sql_table *t)
 static sql_key *
 key_dup_(sql_trans *tr, int flag, sql_key *k, sql_table *t, int copy)
 {
-	sql_allocator *sa = (flag == TR_NEW && !copy)?tr->parent->sa:tr->sa;
+	sql_trans *ltr = (flag == TR_NEW && !copy)?tr->parent:tr;
+	sql_allocator *sa = ltr->sa;
 	sql_key *nk = (k->type != fkey) ? (sql_key *) SA_ZNEW(sa, sql_ukey)
 	    : (sql_key *) SA_ZNEW(sa, sql_fkey);
 	node *n;
@@ -1839,18 +1842,24 @@ key_dup_(sql_trans *tr, int flag, sql_key *k, sql_table *t, int copy)
 	if (nk->type == fkey) {
 		sql_fkey *fk = (sql_fkey *) nk;
 		sql_fkey *ok = (sql_fkey *) k;
-		node *n;
+		node *n = NULL;
 
 		if (ok->rkey) {
-			n = list_find(t->s->keys, &ok->rkey->k.base.id, (fcmp) &key_cmp);
+			sql_schema *s;
 
+			if ((s=find_sql_schema_id(ltr, ok->rkey->k.t->s->base.id)) == NULL)
+		       		s = nk->t->s;
+			n = list_find(s->keys, &ok->rkey->k.base.id, (fcmp) &key_cmp);
 			if (n) {
 				sql_ukey *uk = n->data;
 	
 				fk->rkey = uk;
 				if (!uk->keys)
 					uk->keys = list_new(sa, NULL);
-				list_append(uk->keys, fk);
+				if (!list_find(uk->keys, &fk->k.base.id, (fcmp) &key_cmp))
+					list_append(uk->keys, fk);
+				else
+					assert(0);
 			}
 		}
 		fk->on_delete = ok->on_delete;
@@ -1862,24 +1871,27 @@ key_dup_(sql_trans *tr, int flag, sql_key *k, sql_table *t, int copy)
 
 		if (ok->keys)
 			for (m = ok->keys->h; m; m = m->next) {
+				sql_schema *s;
 				sql_fkey *ofk = m->data;
-				node *n = list_find(t->s->keys, &ofk->k.base.id, (fcmp) &key_cmp);
+				node *n = NULL;
 
+				if ((s=find_sql_schema_id(ltr, ofk->k.t->s->base.id)) == NULL)
+		       			s = nk->t->s;
+			       	n = list_find(s->keys, &ofk->k.base.id, (fcmp) &key_cmp);
 				if (n) {
 					sql_fkey *fk = n->data;
 
 					if (!uk->keys)
 						uk->keys = list_new(sa, NULL);
-					list_append(uk->keys, fk);
+					if (!list_find(uk->keys, &fk->k.base.id, (fcmp) &key_cmp))
+						list_append(uk->keys, fk);
 					fk->rkey = uk;
 				}
 			}
 	}
 	list_append(t->s->keys, nk);
-	if (!copy && flag == TR_NEW && tr->parent == gtrans) {
+	if (!copy && flag == TR_NEW && tr->parent == gtrans) 
 		k->base.flag = TR_OLD;
-		nk->base.flag = TR_OLD;
-	}
 	return nk;
 }
 
@@ -1905,6 +1917,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k )
 	if (nk->type == fkey) 
 		action = (fk->on_update<<8) + fk->on_delete;
 
+	assert( nk->type != fkey || ((sql_fkey*)nk)->rkey);
 	table_funcs.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action);
 
 	if (nk->type == fkey)
@@ -1950,10 +1963,8 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 		if (isTable(ni->t)) 
 			store_funcs.dup_idx(tr, i, ni);
 
-	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
-		ni->base.flag = TR_OLD;
-	}
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
@@ -2040,10 +2051,8 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 		list_append(nt->columns, kc_dup(tr, flag, okc, t));
 	}
 	list_append(t->s->triggers, nt);
-	if (flag == TR_NEW && tr->parent == gtrans) {
+	if (flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
-		nt->base.flag = TR_OLD;
-	}
 	return nt;
 }
 
@@ -2072,10 +2081,8 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	    (oc->base.allocated && tr->parent != gtrans))
 		if (isTable(c->t)) 
 			store_funcs.dup_col(tr, oc, c);
-	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
 		oc->base.flag = TR_OLD;
-		c->base.flag = TR_OLD;
-	}
 	return c;
 }
 
@@ -2294,10 +2301,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (tr->parent == gtrans)
 			ot->triggers.nelm = NULL;
 	}
-	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) {
+	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) 
 		ot->base.flag = TR_OLD;
-		t->base.flag = TR_OLD;
-	}
 	return t;
 }
 
@@ -2447,10 +2452,8 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		if (tr->parent == gtrans)
 			os->seqs.nelm = NULL;
 	}
-	if (flag == TR_NEW && tr->parent == gtrans) {
+	if (flag == TR_NEW && tr->parent == gtrans) 
 		os->base.flag = TR_OLD;
-		s->base.flag = TR_OLD;
-	}
 	return s;
 }
 
@@ -2603,6 +2606,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ok = LOG_ERR;
 						fb->flag = TR_OLD;
 					}
+					tb->flag = TR_OLD;
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
 				}
@@ -2734,7 +2738,7 @@ rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_col(tr, c) != LOG_OK) ||
 		    (p && mode == R_LOG && store_funcs.log_create_col(tr, c) != LOG_OK) ||
-		    (mode == R_APPLY &&  store_funcs.create_col(tr, c) != LOG_OK))
+		    (mode == R_APPLY && store_funcs.create_col(tr, c) != LOG_OK))
 		return NULL;
 	}
 	return c;
@@ -2860,7 +2864,6 @@ rollforward_drop_key(sql_trans *tr, sql_key *k, int mode)
 				fk->rkey = NULL;
 			}
 	}
-
 	return LOG_OK;
 }
 
@@ -3615,6 +3618,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	if (k->type == fkey) {
 		sql_fkey *fk = (sql_fkey *) k;
 		
+		assert(fk->rkey);
 		if (fk->rkey) {
 			n = list_find_name(fk->rkey->keys, fk->k.base.name);
 			list_remove_node(fk->rkey->keys, n);

@@ -584,7 +584,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_literal(TPE)\
+#define projection_literal(TPE)\
 {	TPE *val, *v;\
 	v= (TPE*) task->src;\
 	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
@@ -598,7 +598,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
+MOSprojection_literal(Client cntxt,  MOStask task)
 {
 	BUN first,last;
 	(void) cntxt;
@@ -607,16 +607,16 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: leftfetchjoin_literal(bit); break;
-		case TYPE_bte: leftfetchjoin_literal(bte); break;
-		case TYPE_sht: leftfetchjoin_literal(sht); break;
-		case TYPE_oid: leftfetchjoin_literal(oid); break;
-		case TYPE_lng: leftfetchjoin_literal(lng); break;
-		case TYPE_wrd: leftfetchjoin_literal(wrd); break;
-		case TYPE_flt: leftfetchjoin_literal(flt); break;
-		case TYPE_dbl: leftfetchjoin_literal(dbl); break;
+		case TYPE_bit: projection_literal(bit); break;
+		case TYPE_bte: projection_literal(bte); break;
+		case TYPE_sht: projection_literal(sht); break;
+		case TYPE_oid: projection_literal(oid); break;
+		case TYPE_lng: projection_literal(lng); break;
+		case TYPE_wrd: projection_literal(wrd); break;
+		case TYPE_flt: projection_literal(flt); break;
+		case TYPE_dbl: projection_literal(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_literal(hge); break;
+		case TYPE_hge: projection_literal(hge); break;
 #endif
 		case TYPE_int:
 		{	int *val, *v;
@@ -633,10 +633,10 @@ MOSleftfetchjoin_literal(Client cntxt,  MOStask task)
 	break;
 	case TYPE_str:
 		switch(task->bsrc->T->width){
-		case 1: leftfetchjoin_literal(bte); break ;
-		case 2: leftfetchjoin_literal(sht); break ;
-		case 4: leftfetchjoin_literal(int); break ;
-		case 8: leftfetchjoin_literal(lng); break ;
+		case 1: projection_literal(bte); break ;
+		case 2: projection_literal(sht); break ;
+		case 4: projection_literal(int); break ;
+		case 8: projection_literal(lng); break ;
 		}
 	}
 	MOSskip_literal(cntxt,task);

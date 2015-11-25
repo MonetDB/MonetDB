@@ -100,6 +100,17 @@ REVOKE SELECT ON new_schema_as_well.test FROM new_user
 &3
 
 UPDATE test SET x = -66 WHERE y = 66
+UPDATE: insufficient privileges for user 'new_user' to update table 'test'
+
+INSERT INTO test VALUES (66, 66)
+&2 1 -1
+
+DELETE FROM test WHERE y = -66
+DELETE FROM: insufficient privileges for user 'new_user' to delete from table 'test'
+
+SELECT * FROM test
+SELECT: access denied for new_user to table 'new_schema_as_well.test'
+
 
 # 10:44:34 >  
 # 10:44:34 >  "Done."

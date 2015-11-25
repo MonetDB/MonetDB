@@ -700,7 +700,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_delta(TPE)\
+#define projection_delta(TPE)\
 {	TPE val, *v;\
 	bte *delta;\
 	v= (TPE*) task->src;\
@@ -716,7 +716,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
+MOSprojection_delta(Client cntxt,  MOStask task)
 {
 	BUN first, last;
 	(void) cntxt;
@@ -726,12 +726,12 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(task->type){
-		case TYPE_sht: leftfetchjoin_delta(sht); break;
-		case TYPE_lng: leftfetchjoin_delta(lng); break;
-		case TYPE_oid: leftfetchjoin_delta(oid); break;
-		case TYPE_wrd: leftfetchjoin_delta(wrd); break;
+		case TYPE_sht: projection_delta(sht); break;
+		case TYPE_lng: projection_delta(lng); break;
+		case TYPE_oid: projection_delta(oid); break;
+		case TYPE_wrd: projection_delta(wrd); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_delta(hge); break;
+		case TYPE_hge: projection_delta(hge); break;
 #endif
 		case TYPE_int:
 		{	int val, *v;
@@ -751,18 +751,18 @@ MOSleftfetchjoin_delta(Client cntxt,  MOStask task)
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
 			switch(task->bsrc->T->width){
-			case 2: leftfetchjoin_delta(sht); break;
-			case 4: leftfetchjoin_delta(int); break;
-			case 8: leftfetchjoin_delta(lng); break;
+			case 2: projection_delta(sht); break;
+			case 4: projection_delta(int); break;
+			case 8: projection_delta(lng); break;
 			}
 		break;
 		default:
 			if (task->type == TYPE_daytime)
-				leftfetchjoin_delta(daytime); 
+				projection_delta(daytime); 
 			if (task->type == TYPE_date)
-				leftfetchjoin_delta(date); 
+				projection_delta(date); 
 			if (task->type == TYPE_timestamp)
-				leftfetchjoin_delta(lng); 
+				projection_delta(lng); 
 	}
 	MOSskip_delta(cntxt,task);
 	return MAL_SUCCEED;

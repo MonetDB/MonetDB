@@ -5,13 +5,23 @@ stdout of test 'inlineCst` in directory 'monetdb5/optimizer` itself:
 # 20:07:33 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33414 --set xrpc_port=46798 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inlineCst.mal
 # 20:07:33 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_src_optimizer'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.foo{inline}(b:int):int;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39909/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2983/.s.monetdb.39909
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+inline function user.foo(b:int):int;
     i := 213;
     return foo := i;
 end user.foo;
@@ -34,13 +44,13 @@ end user.main;
 [ 0@0,	  213	  ]
 [ 1@0,	  213	  ]
 [ 2@0,	  213	  ]
-function user.qry():void;               	#[0]  0 
+inline function user.qry():void;        	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
     bat.append(b:bat[:oid,:int],10:int);	#[3] BKCappend_val_wrap 6 <- 1 7 
     bat.append(b:bat[:oid,:int],20:int);	#[4] BKCappend_val_wrap 8 <- 1 9 
     X_16:int := 213:int;                	#[5]  16 <- 17 
-    r:bat[:oid,:int]{inline} := algebra.project(b:bat[:oid,:int],X_16:int);	#[6] ALGprojecttail 10 <- 1 16 
+    r:bat[:oid,:int] := algebra.project(b:bat[:oid,:int],X_16:int);	#[6] ALGprojecttail 10 <- 1 16 
     io.print(r:bat[:oid,:int]);         	#[7] IOprint_val 13 <- 10 
 end user.qry;                           	#[8]  
 

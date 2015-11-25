@@ -1058,7 +1058,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	return MAL_SUCCEED;
 }
 
-#define leftfetchjoin_prefix(TPE, TPE2)\
+#define projection_prefix(TPE, TPE2)\
 {	TPE *r;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++;\
@@ -1084,7 +1084,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 }
 
 str
-MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
+MOSprojection_prefix(Client cntxt,  MOStask task)
 {
 	BUN i=0, first,last;
 	MosaicBlk blk= task->blk;
@@ -1095,16 +1095,16 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMstorage(task->type)){
-		case TYPE_bit: leftfetchjoin_prefix(bit, unsigned char); break;
-		case TYPE_bte: leftfetchjoin_prefix(bte, unsigned char); break;
-		case TYPE_sht: leftfetchjoin_prefix(sht, unsigned short); break;
-		case TYPE_lng: leftfetchjoin_prefix(lng, unsigned long); break;
-		case TYPE_oid: leftfetchjoin_prefix(oid, unsigned long); break;
-		case TYPE_wrd: leftfetchjoin_prefix(wrd, unsigned long); break;
-		case TYPE_flt: leftfetchjoin_prefix(flt, unsigned int); break;
-		case TYPE_dbl: leftfetchjoin_prefix(dbl, unsigned long); break;
+		case TYPE_bit: projection_prefix(bit, unsigned char); break;
+		case TYPE_bte: projection_prefix(bte, unsigned char); break;
+		case TYPE_sht: projection_prefix(sht, unsigned short); break;
+		case TYPE_lng: projection_prefix(lng, unsigned long); break;
+		case TYPE_oid: projection_prefix(oid, unsigned long); break;
+		case TYPE_wrd: projection_prefix(wrd, unsigned long); break;
+		case TYPE_flt: projection_prefix(flt, unsigned int); break;
+		case TYPE_dbl: projection_prefix(dbl, unsigned long); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: leftfetchjoin_prefix(hge, unsigned long long); break;
+		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
 #endif
 		case TYPE_int:
 		{	int *r;
@@ -1134,10 +1134,10 @@ MOSleftfetchjoin_prefix(Client cntxt,  MOStask task)
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->T->width){
-		case 1: leftfetchjoin_prefix(bte, unsigned char); break;
-		case 2: leftfetchjoin_prefix(sht, unsigned short); break;
-		case 4: leftfetchjoin_prefix(int, unsigned int); break;
-		case 8: leftfetchjoin_prefix(lng, unsigned long); break;
+		case 1: projection_prefix(bte, unsigned char); break;
+		case 2: projection_prefix(sht, unsigned short); break;
+		case 4: projection_prefix(int, unsigned int); break;
+		case 8: projection_prefix(lng, unsigned long); break;
 		}
 		break;
 	}

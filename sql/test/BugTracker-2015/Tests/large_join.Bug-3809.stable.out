@@ -1373,8 +1373,639 @@ Ready.
 [ 1	]
 #INSERT INTO t64 VALUES(10,3,'table t64 row 10');
 [ 1	]
+#plan
 #SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
 #  FROM t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t61,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% .plan # table_name
+% rel # name
+% clob # type
+% 212 # length
+project (
+| join (
+| | join (
+| | | join (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.t18) [ t18.a18 NOT NULL HASHCOL , t18.b18, t18.x18 ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.t12) [ t12.a12 NOT NULL HASHCOL , t12.x12 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ t12.a12 NOT NULL HASHCOL  = int "4" ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ t18.b18 = t12.a12 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.t3) [ t3.a3 NOT NULL HASHCOL , t3.b3, t3.x3 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ t3.b3 = t18.a18 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.t10) [ t10.a10 NOT NULL HASHCOL , t10.b10, t10.x10 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ t10.b10 = t3.a3 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.t25) [ t25.a25 NOT NULL HASHCOL , t25.b25, t25.x25 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ t10.a10 NOT NULL HASHCOL  = t25.b25 ],
+| | | | | | | | | | | | | | | | | | | | table(sys.t38) [ t38.a38 NOT NULL HASHCOL , t38.b38, t38.x38 ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ t25.a25 NOT NULL HASHCOL  = t38.b38 ],
+| | | | | | | | | | | | | | | | | | | table(sys.t52) [ t52.a52 NOT NULL HASHCOL , t52.b52, t52.x52 ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ t38.a38 NOT NULL HASHCOL  = t52.b52 ],
+| | | | | | | | | | | | | | | | | | table(sys.t2) [ t2.a2 NOT NULL HASHCOL , t2.b2, t2.x2 ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ t52.a52 NOT NULL HASHCOL  = t2.b2 ],
+| | | | | | | | | | | | | | | | | table(sys.t61) [ t61.a61 NOT NULL HASHCOL , t61.b61, t61.x61 ] COUNT 
+| | | | | | | | | | | | | | | | ) [ t2.a2 NOT NULL HASHCOL  = t61.b61 ],
+| | | | | | | | | | | | | | | | table(sys.t47) [ t47.a47 NOT NULL HASHCOL , t47.b47, t47.x47 ] COUNT 
+| | | | | | | | | | | | | | | ) [ t61.a61 NOT NULL HASHCOL  = t47.b47 ],
+| | | | | | | | | | | | | | | table(sys.t37) [ t37.a37 NOT NULL HASHCOL , t37.b37, t37.x37 ] COUNT 
+| | | | | | | | | | | | | | ) [ t47.a47 NOT NULL HASHCOL  = t37.b37 ],
+| | | | | | | | | | | | | | table(sys.t54) [ t54.a54 NOT NULL HASHCOL , t54.b54, t54.x54 ] COUNT 
+| | | | | | | | | | | | | ) [ t37.a37 NOT NULL HASHCOL  = t54.b54 ],
+| | | | | | | | | | | | | table(sys.t8) [ t8.a8 NOT NULL HASHCOL , t8.b8, t8.x8 ] COUNT 
+| | | | | | | | | | | | ) [ t54.a54 NOT NULL HASHCOL  = t8.b8 ],
+| | | | | | | | | | | | table(sys.t20) [ t20.a20 NOT NULL HASHCOL , t20.b20, t20.x20 ] COUNT 
+| | | | | | | | | | | ) [ t8.a8 NOT NULL HASHCOL  = t20.b20 ],
+| | | | | | | | | | | table(sys.t55) [ t55.a55 NOT NULL HASHCOL , t55.b55, t55.x55 ] COUNT 
+| | | | | | | | | | ) [ t20.a20 NOT NULL HASHCOL  = t55.b55 ],
+| | | | | | | | | | table(sys.t9) [ t9.a9 NOT NULL HASHCOL , t9.b9, t9.x9 ] COUNT 
+| | | | | | | | | ) [ t55.a55 NOT NULL HASHCOL  = t9.b9 ],
+| | | | | | | | | table(sys.t30) [ t30.a30 NOT NULL HASHCOL , t30.b30, t30.x30 ] COUNT 
+| | | | | | | | ) [ t30.b30 = t9.a9 NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.t32) [ t32.a32 NOT NULL HASHCOL , t32.b32, t32.x32 ] COUNT 
+| | | | | | | ) [ t32.b32 = t30.a30 NOT NULL HASHCOL  ],
+| | | | | | | table(sys.t22) [ t22.a22 NOT NULL HASHCOL , t22.b22, t22.x22 ] COUNT 
+| | | | | | ) [ t22.b22 = t32.a32 NOT NULL HASHCOL  ],
+| | | | | | table(sys.t43) [ t43.a43 NOT NULL HASHCOL , t43.b43, t43.x43 ] COUNT 
+| | | | | ) [ t22.a22 NOT NULL HASHCOL  = t43.b43 ],
+| | | | | table(sys.t29) [ t29.a29 NOT NULL HASHCOL , t29.b29, t29.x29 ] COUNT 
+| | | | ) [ t43.a43 NOT NULL HASHCOL  = t29.b29 ],
+| | | | table(sys.t21) [ t21.a21 NOT NULL HASHCOL , t21.b21, t21.x21 ] COUNT 
+| | | ) [ t29.a29 NOT NULL HASHCOL  = t21.b21 ],
+| | | table(sys.t50) [ t50.a50 NOT NULL HASHCOL , t50.b50, t50.x50 ] COUNT 
+| | ) [ t21.a21 NOT NULL HASHCOL  = t50.b50 ],
+| | table(sys.t63) [ t63.b63, t63.x63 ] COUNT 
+| ) [ t50.a50 NOT NULL HASHCOL  = t63.b63 ]
+) [ t20.x20, t47.x47, t38.x38, t18.x18, t10.x10, t22.x22, t37.x37, t3.x3, t63.x63, t8.x8, t30.x30, t43.x43, t54.x54, t9.x9, t21.x21, t25.x25, t2.x2, t61.x61, t55.x55, t32.x32, t52.x52, t29.x29, t50.x50, t12.x12 ]
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t61,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% sys.t20,	sys.t47,	sys.t38,	sys.t18,	sys.t10,	sys.t22,	sys.t37,	sys.t3,	sys.t63,	sys.t8,	sys.t30,	sys.t43,	sys.t54,	sys.t9,	sys.t21,	sys.t25,	sys.t2,	sys.t61,	sys.t55,	sys.t32,	sys.t52,	sys.t29,	sys.t50,	sys.t12 # table_name
+% x20,	x47,	x38,	x18,	x10,	x22,	x37,	x3,	x63,	x8,	x30,	x43,	x54,	x9,	x21,	x25,	x2,	x61,	x55,	x32,	x52,	x29,	x50,	x12 # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 15,	16,	15,	16,	15,	15,	15,	14,	15,	14,	15,	15,	15,	14,	15,	15,	15,	15,	15,	15,	15,	16,	15,	15 # length
+[ "table t20 row 5",	"table t47 row 10",	"table t38 row 5",	"table t18 row 10",	"table t10 row 1",	"table t22 row 2",	"table t37 row 9",	"table t3 row 8",	"table t63 row 3",	"table t8 row 6",	"table t30 row 6",	"table t43 row 1",	"table t54 row 4",	"table t9 row 4",	"table t21 row 8",	"table t25 row 4",	"table t2 row 10",	"table t61 row 8",	"table t55 row 5",	"table t32 row 3",	"table t52 row 1",	"table t29 row 10",	"table t50 row 1",	"table t12 row 4"	]
+#plan
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t2,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t61,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% .plan # table_name
+% rel # name
+% clob # type
+% 212 # length
+project (
+| join (
+| | join (
+| | | join (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.t18) [ t18.a18 NOT NULL HASHCOL , t18.b18, t18.x18 ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.t12) [ t12.a12 NOT NULL HASHCOL , t12.x12 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ t12.a12 NOT NULL HASHCOL  = int "4" ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ t18.b18 = t12.a12 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.t3) [ t3.a3 NOT NULL HASHCOL , t3.b3, t3.x3 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ t3.b3 = t18.a18 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.t10) [ t10.a10 NOT NULL HASHCOL , t10.b10, t10.x10 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ t10.b10 = t3.a3 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.t25) [ t25.a25 NOT NULL HASHCOL , t25.b25, t25.x25 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ t10.a10 NOT NULL HASHCOL  = t25.b25 ],
+| | | | | | | | | | | | | | | | | | | | table(sys.t38) [ t38.a38 NOT NULL HASHCOL , t38.b38, t38.x38 ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ t25.a25 NOT NULL HASHCOL  = t38.b38 ],
+| | | | | | | | | | | | | | | | | | | table(sys.t52) [ t52.a52 NOT NULL HASHCOL , t52.b52, t52.x52 ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ t38.a38 NOT NULL HASHCOL  = t52.b52 ],
+| | | | | | | | | | | | | | | | | | table(sys.t2) [ t2.a2 NOT NULL HASHCOL , t2.b2, t2.x2 ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ t52.a52 NOT NULL HASHCOL  = t2.b2 ],
+| | | | | | | | | | | | | | | | | table(sys.t61) [ t61.a61 NOT NULL HASHCOL , t61.b61, t61.x61 ] COUNT 
+| | | | | | | | | | | | | | | | ) [ t2.a2 NOT NULL HASHCOL  = t61.b61 ],
+| | | | | | | | | | | | | | | | table(sys.t47) [ t47.a47 NOT NULL HASHCOL , t47.b47, t47.x47 ] COUNT 
+| | | | | | | | | | | | | | | ) [ t61.a61 NOT NULL HASHCOL  = t47.b47 ],
+| | | | | | | | | | | | | | | table(sys.t37) [ t37.a37 NOT NULL HASHCOL , t37.b37, t37.x37 ] COUNT 
+| | | | | | | | | | | | | | ) [ t47.a47 NOT NULL HASHCOL  = t37.b37 ],
+| | | | | | | | | | | | | | table(sys.t54) [ t54.a54 NOT NULL HASHCOL , t54.b54, t54.x54 ] COUNT 
+| | | | | | | | | | | | | ) [ t37.a37 NOT NULL HASHCOL  = t54.b54 ],
+| | | | | | | | | | | | | table(sys.t8) [ t8.a8 NOT NULL HASHCOL , t8.b8, t8.x8 ] COUNT 
+| | | | | | | | | | | | ) [ t54.a54 NOT NULL HASHCOL  = t8.b8 ],
+| | | | | | | | | | | | table(sys.t20) [ t20.a20 NOT NULL HASHCOL , t20.b20, t20.x20 ] COUNT 
+| | | | | | | | | | | ) [ t8.a8 NOT NULL HASHCOL  = t20.b20 ],
+| | | | | | | | | | | table(sys.t55) [ t55.a55 NOT NULL HASHCOL , t55.b55, t55.x55 ] COUNT 
+| | | | | | | | | | ) [ t20.a20 NOT NULL HASHCOL  = t55.b55 ],
+| | | | | | | | | | table(sys.t9) [ t9.a9 NOT NULL HASHCOL , t9.b9, t9.x9 ] COUNT 
+| | | | | | | | | ) [ t55.a55 NOT NULL HASHCOL  = t9.b9 ],
+| | | | | | | | | table(sys.t30) [ t30.a30 NOT NULL HASHCOL , t30.b30, t30.x30 ] COUNT 
+| | | | | | | | ) [ t30.b30 = t9.a9 NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.t32) [ t32.a32 NOT NULL HASHCOL , t32.b32, t32.x32 ] COUNT 
+| | | | | | | ) [ t32.b32 = t30.a30 NOT NULL HASHCOL  ],
+| | | | | | | table(sys.t22) [ t22.a22 NOT NULL HASHCOL , t22.b22, t22.x22 ] COUNT 
+| | | | | | ) [ t22.b22 = t32.a32 NOT NULL HASHCOL  ],
+| | | | | | table(sys.t43) [ t43.a43 NOT NULL HASHCOL , t43.b43, t43.x43 ] COUNT 
+| | | | | ) [ t22.a22 NOT NULL HASHCOL  = t43.b43 ],
+| | | | | table(sys.t29) [ t29.a29 NOT NULL HASHCOL , t29.b29, t29.x29 ] COUNT 
+| | | | ) [ t43.a43 NOT NULL HASHCOL  = t29.b29 ],
+| | | | table(sys.t21) [ t21.a21 NOT NULL HASHCOL , t21.b21, t21.x21 ] COUNT 
+| | | ) [ t29.a29 NOT NULL HASHCOL  = t21.b21 ],
+| | | table(sys.t50) [ t50.a50 NOT NULL HASHCOL , t50.b50, t50.x50 ] COUNT 
+| | ) [ t21.a21 NOT NULL HASHCOL  = t50.b50 ],
+| | table(sys.t63) [ t63.b63, t63.x63 ] COUNT 
+| ) [ t50.a50 NOT NULL HASHCOL  = t63.b63 ]
+) [ t20.x20, t47.x47, t38.x38, t18.x18, t10.x10, t22.x22, t37.x37, t3.x3, t63.x63, t8.x8, t30.x30, t43.x43, t54.x54, t9.x9, t21.x21, t25.x25, t2.x2, t61.x61, t55.x55, t32.x32, t52.x52, t29.x29, t50.x50, t12.x12 ]
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t2,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t61,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% sys.t20,	sys.t47,	sys.t38,	sys.t18,	sys.t10,	sys.t22,	sys.t37,	sys.t3,	sys.t63,	sys.t8,	sys.t30,	sys.t43,	sys.t54,	sys.t9,	sys.t21,	sys.t25,	sys.t2,	sys.t61,	sys.t55,	sys.t32,	sys.t52,	sys.t29,	sys.t50,	sys.t12 # table_name
+% x20,	x47,	x38,	x18,	x10,	x22,	x37,	x3,	x63,	x8,	x30,	x43,	x54,	x9,	x21,	x25,	x2,	x61,	x55,	x32,	x52,	x29,	x50,	x12 # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 15,	16,	15,	16,	15,	15,	15,	14,	15,	14,	15,	15,	15,	14,	15,	15,	15,	15,	15,	15,	15,	16,	15,	15 # length
+[ "table t20 row 5",	"table t47 row 10",	"table t38 row 5",	"table t18 row 10",	"table t10 row 1",	"table t22 row 2",	"table t37 row 9",	"table t3 row 8",	"table t63 row 3",	"table t8 row 6",	"table t30 row 6",	"table t43 row 1",	"table t54 row 4",	"table t9 row 4",	"table t21 row 8",	"table t25 row 4",	"table t2 row 10",	"table t61 row 8",	"table t55 row 5",	"table t32 row 3",	"table t52 row 1",	"table t29 row 10",	"table t50 row 1",	"table t12 row 4"	]
+#plan
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t61,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% .plan # table_name
+% rel # name
+% clob # type
+% 212 # length
+project (
+| join (
+| | join (
+| | | join (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.t18) [ t18.a18 NOT NULL HASHCOL , t18.b18, t18.x18 ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.t12) [ t12.a12 NOT NULL HASHCOL , t12.x12 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ t12.a12 NOT NULL HASHCOL  = int "4" ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ t18.b18 = t12.a12 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.t3) [ t3.a3 NOT NULL HASHCOL , t3.b3, t3.x3 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ t3.b3 = t18.a18 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.t10) [ t10.a10 NOT NULL HASHCOL , t10.b10, t10.x10 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ t10.b10 = t3.a3 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.t25) [ t25.a25 NOT NULL HASHCOL , t25.b25, t25.x25 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ t10.a10 NOT NULL HASHCOL  = t25.b25 ],
+| | | | | | | | | | | | | | | | | | | | table(sys.t38) [ t38.a38 NOT NULL HASHCOL , t38.b38, t38.x38 ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ t25.a25 NOT NULL HASHCOL  = t38.b38 ],
+| | | | | | | | | | | | | | | | | | | table(sys.t52) [ t52.a52 NOT NULL HASHCOL , t52.b52, t52.x52 ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ t38.a38 NOT NULL HASHCOL  = t52.b52 ],
+| | | | | | | | | | | | | | | | | | table(sys.t2) [ t2.a2 NOT NULL HASHCOL , t2.b2, t2.x2 ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ t52.a52 NOT NULL HASHCOL  = t2.b2 ],
+| | | | | | | | | | | | | | | | | table(sys.t61) [ t61.a61 NOT NULL HASHCOL , t61.b61, t61.x61 ] COUNT 
+| | | | | | | | | | | | | | | | ) [ t2.a2 NOT NULL HASHCOL  = t61.b61 ],
+| | | | | | | | | | | | | | | | table(sys.t47) [ t47.a47 NOT NULL HASHCOL , t47.b47, t47.x47 ] COUNT 
+| | | | | | | | | | | | | | | ) [ t61.a61 NOT NULL HASHCOL  = t47.b47 ],
+| | | | | | | | | | | | | | | table(sys.t37) [ t37.a37 NOT NULL HASHCOL , t37.b37, t37.x37 ] COUNT 
+| | | | | | | | | | | | | | ) [ t47.a47 NOT NULL HASHCOL  = t37.b37 ],
+| | | | | | | | | | | | | | table(sys.t54) [ t54.a54 NOT NULL HASHCOL , t54.b54, t54.x54 ] COUNT 
+| | | | | | | | | | | | | ) [ t37.a37 NOT NULL HASHCOL  = t54.b54 ],
+| | | | | | | | | | | | | table(sys.t8) [ t8.a8 NOT NULL HASHCOL , t8.b8, t8.x8 ] COUNT 
+| | | | | | | | | | | | ) [ t54.a54 NOT NULL HASHCOL  = t8.b8 ],
+| | | | | | | | | | | | table(sys.t20) [ t20.a20 NOT NULL HASHCOL , t20.b20, t20.x20 ] COUNT 
+| | | | | | | | | | | ) [ t8.a8 NOT NULL HASHCOL  = t20.b20 ],
+| | | | | | | | | | | table(sys.t55) [ t55.a55 NOT NULL HASHCOL , t55.b55, t55.x55 ] COUNT 
+| | | | | | | | | | ) [ t20.a20 NOT NULL HASHCOL  = t55.b55 ],
+| | | | | | | | | | table(sys.t9) [ t9.a9 NOT NULL HASHCOL , t9.b9, t9.x9 ] COUNT 
+| | | | | | | | | ) [ t55.a55 NOT NULL HASHCOL  = t9.b9 ],
+| | | | | | | | | table(sys.t30) [ t30.a30 NOT NULL HASHCOL , t30.b30, t30.x30 ] COUNT 
+| | | | | | | | ) [ t30.b30 = t9.a9 NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.t32) [ t32.a32 NOT NULL HASHCOL , t32.b32, t32.x32 ] COUNT 
+| | | | | | | ) [ t32.b32 = t30.a30 NOT NULL HASHCOL  ],
+| | | | | | | table(sys.t22) [ t22.a22 NOT NULL HASHCOL , t22.b22, t22.x22 ] COUNT 
+| | | | | | ) [ t22.b22 = t32.a32 NOT NULL HASHCOL  ],
+| | | | | | table(sys.t43) [ t43.a43 NOT NULL HASHCOL , t43.b43, t43.x43 ] COUNT 
+| | | | | ) [ t22.a22 NOT NULL HASHCOL  = t43.b43 ],
+| | | | | table(sys.t29) [ t29.a29 NOT NULL HASHCOL , t29.b29, t29.x29 ] COUNT 
+| | | | ) [ t43.a43 NOT NULL HASHCOL  = t29.b29 ],
+| | | | table(sys.t21) [ t21.a21 NOT NULL HASHCOL , t21.b21, t21.x21 ] COUNT 
+| | | ) [ t29.a29 NOT NULL HASHCOL  = t21.b21 ],
+| | | table(sys.t50) [ t50.a50 NOT NULL HASHCOL , t50.b50, t50.x50 ] COUNT 
+| | ) [ t21.a21 NOT NULL HASHCOL  = t50.b50 ],
+| | table(sys.t63) [ t63.b63, t63.x63 ] COUNT 
+| ) [ t50.a50 NOT NULL HASHCOL  = t63.b63 ]
+) [ t20.x20, t47.x47, t38.x38, t18.x18, t10.x10, t22.x22, t37.x37, t3.x3, t63.x63, t8.x8, t30.x30, t43.x43, t54.x54, t9.x9, t21.x21, t25.x25, t2.x2, t61.x61, t55.x55, t32.x32, t52.x52, t29.x29, t50.x50, t12.x12 ]
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t61,t9,t20,t63,t54,t32,t22,t52,t25,t47,t29,t12,t18,t10,t21,t43,t37,t2,t55,t3,t38,t50,t30,t8
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% sys.t20,	sys.t47,	sys.t38,	sys.t18,	sys.t10,	sys.t22,	sys.t37,	sys.t3,	sys.t63,	sys.t8,	sys.t30,	sys.t43,	sys.t54,	sys.t9,	sys.t21,	sys.t25,	sys.t2,	sys.t61,	sys.t55,	sys.t32,	sys.t52,	sys.t29,	sys.t50,	sys.t12 # table_name
+% x20,	x47,	x38,	x18,	x10,	x22,	x37,	x3,	x63,	x8,	x30,	x43,	x54,	x9,	x21,	x25,	x2,	x61,	x55,	x32,	x52,	x29,	x50,	x12 # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 15,	16,	15,	16,	15,	15,	15,	14,	15,	14,	15,	15,	15,	14,	15,	15,	15,	15,	15,	15,	15,	16,	15,	15 # length
+[ "table t20 row 5",	"table t47 row 10",	"table t38 row 5",	"table t18 row 10",	"table t10 row 1",	"table t22 row 2",	"table t37 row 9",	"table t3 row 8",	"table t63 row 3",	"table t8 row 6",	"table t30 row 6",	"table t43 row 1",	"table t54 row 4",	"table t9 row 4",	"table t21 row 8",	"table t25 row 4",	"table t2 row 10",	"table t61 row 8",	"table t55 row 5",	"table t32 row 3",	"table t52 row 1",	"table t29 row 10",	"table t50 row 1",	"table t12 row 4"	]
+#plan
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t2,t3,t8,t9,t10,t12,t18,t20,t21,t22,t25,t29,t30,t32,t37,t38,t43,t47,t50,t52,t54,t55,t61,t63
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% .plan # table_name
+% rel # name
+% clob # type
+% 212 # length
+project (
+| join (
+| | join (
+| | | join (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.t18) [ t18.a18 NOT NULL HASHCOL , t18.b18, t18.x18 ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.t12) [ t12.a12 NOT NULL HASHCOL , t12.x12 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ t12.a12 NOT NULL HASHCOL  = int "4" ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ t18.b18 = t12.a12 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.t3) [ t3.a3 NOT NULL HASHCOL , t3.b3, t3.x3 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ t3.b3 = t18.a18 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.t10) [ t10.a10 NOT NULL HASHCOL , t10.b10, t10.x10 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ t10.b10 = t3.a3 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.t25) [ t25.a25 NOT NULL HASHCOL , t25.b25, t25.x25 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ t10.a10 NOT NULL HASHCOL  = t25.b25 ],
+| | | | | | | | | | | | | | | | | | | | table(sys.t38) [ t38.a38 NOT NULL HASHCOL , t38.b38, t38.x38 ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ t25.a25 NOT NULL HASHCOL  = t38.b38 ],
+| | | | | | | | | | | | | | | | | | | table(sys.t52) [ t52.a52 NOT NULL HASHCOL , t52.b52, t52.x52 ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ t38.a38 NOT NULL HASHCOL  = t52.b52 ],
+| | | | | | | | | | | | | | | | | | table(sys.t2) [ t2.a2 NOT NULL HASHCOL , t2.b2, t2.x2 ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ t52.a52 NOT NULL HASHCOL  = t2.b2 ],
+| | | | | | | | | | | | | | | | | table(sys.t61) [ t61.a61 NOT NULL HASHCOL , t61.b61, t61.x61 ] COUNT 
+| | | | | | | | | | | | | | | | ) [ t2.a2 NOT NULL HASHCOL  = t61.b61 ],
+| | | | | | | | | | | | | | | | table(sys.t47) [ t47.a47 NOT NULL HASHCOL , t47.b47, t47.x47 ] COUNT 
+| | | | | | | | | | | | | | | ) [ t61.a61 NOT NULL HASHCOL  = t47.b47 ],
+| | | | | | | | | | | | | | | table(sys.t37) [ t37.a37 NOT NULL HASHCOL , t37.b37, t37.x37 ] COUNT 
+| | | | | | | | | | | | | | ) [ t47.a47 NOT NULL HASHCOL  = t37.b37 ],
+| | | | | | | | | | | | | | table(sys.t54) [ t54.a54 NOT NULL HASHCOL , t54.b54, t54.x54 ] COUNT 
+| | | | | | | | | | | | | ) [ t37.a37 NOT NULL HASHCOL  = t54.b54 ],
+| | | | | | | | | | | | | table(sys.t8) [ t8.a8 NOT NULL HASHCOL , t8.b8, t8.x8 ] COUNT 
+| | | | | | | | | | | | ) [ t54.a54 NOT NULL HASHCOL  = t8.b8 ],
+| | | | | | | | | | | | table(sys.t20) [ t20.a20 NOT NULL HASHCOL , t20.b20, t20.x20 ] COUNT 
+| | | | | | | | | | | ) [ t8.a8 NOT NULL HASHCOL  = t20.b20 ],
+| | | | | | | | | | | table(sys.t55) [ t55.a55 NOT NULL HASHCOL , t55.b55, t55.x55 ] COUNT 
+| | | | | | | | | | ) [ t20.a20 NOT NULL HASHCOL  = t55.b55 ],
+| | | | | | | | | | table(sys.t9) [ t9.a9 NOT NULL HASHCOL , t9.b9, t9.x9 ] COUNT 
+| | | | | | | | | ) [ t55.a55 NOT NULL HASHCOL  = t9.b9 ],
+| | | | | | | | | table(sys.t30) [ t30.a30 NOT NULL HASHCOL , t30.b30, t30.x30 ] COUNT 
+| | | | | | | | ) [ t30.b30 = t9.a9 NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.t32) [ t32.a32 NOT NULL HASHCOL , t32.b32, t32.x32 ] COUNT 
+| | | | | | | ) [ t32.b32 = t30.a30 NOT NULL HASHCOL  ],
+| | | | | | | table(sys.t22) [ t22.a22 NOT NULL HASHCOL , t22.b22, t22.x22 ] COUNT 
+| | | | | | ) [ t22.b22 = t32.a32 NOT NULL HASHCOL  ],
+| | | | | | table(sys.t43) [ t43.a43 NOT NULL HASHCOL , t43.b43, t43.x43 ] COUNT 
+| | | | | ) [ t22.a22 NOT NULL HASHCOL  = t43.b43 ],
+| | | | | table(sys.t29) [ t29.a29 NOT NULL HASHCOL , t29.b29, t29.x29 ] COUNT 
+| | | | ) [ t43.a43 NOT NULL HASHCOL  = t29.b29 ],
+| | | | table(sys.t21) [ t21.a21 NOT NULL HASHCOL , t21.b21, t21.x21 ] COUNT 
+| | | ) [ t29.a29 NOT NULL HASHCOL  = t21.b21 ],
+| | | table(sys.t50) [ t50.a50 NOT NULL HASHCOL , t50.b50, t50.x50 ] COUNT 
+| | ) [ t21.a21 NOT NULL HASHCOL  = t50.b50 ],
+| | table(sys.t63) [ t63.b63, t63.x63 ] COUNT 
+| ) [ t50.a50 NOT NULL HASHCOL  = t63.b63 ]
+) [ t20.x20, t47.x47, t38.x38, t18.x18, t10.x10, t22.x22, t37.x37, t3.x3, t63.x63, t8.x8, t30.x30, t43.x43, t54.x54, t9.x9, t21.x21, t25.x25, t2.x2, t61.x61, t55.x55, t32.x32, t52.x52, t29.x29, t50.x50, t12.x12 ]
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t2,t3,t8,t9,t10,t12,t18,t20,t21,t22,t25,t29,t30,t32,t37,t38,t43,t47,t50,t52,t54,t55,t61,t63
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% sys.t20,	sys.t47,	sys.t38,	sys.t18,	sys.t10,	sys.t22,	sys.t37,	sys.t3,	sys.t63,	sys.t8,	sys.t30,	sys.t43,	sys.t54,	sys.t9,	sys.t21,	sys.t25,	sys.t2,	sys.t61,	sys.t55,	sys.t32,	sys.t52,	sys.t29,	sys.t50,	sys.t12 # table_name
+% x20,	x47,	x38,	x18,	x10,	x22,	x37,	x3,	x63,	x8,	x30,	x43,	x54,	x9,	x21,	x25,	x2,	x61,	x55,	x32,	x52,	x29,	x50,	x12 # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
+% 15,	16,	15,	16,	15,	15,	15,	14,	15,	14,	15,	15,	15,	14,	15,	15,	15,	15,	15,	15,	15,	16,	15,	15 # length
+[ "table t20 row 5",	"table t47 row 10",	"table t38 row 5",	"table t18 row 10",	"table t10 row 1",	"table t22 row 2",	"table t37 row 9",	"table t3 row 8",	"table t63 row 3",	"table t8 row 6",	"table t30 row 6",	"table t43 row 1",	"table t54 row 4",	"table t9 row 4",	"table t21 row 8",	"table t25 row 4",	"table t2 row 10",	"table t61 row 8",	"table t55 row 5",	"table t32 row 3",	"table t52 row 1",	"table t29 row 10",	"table t50 row 1",	"table t12 row 4"	]
+#plan
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t63,t61,t55,t54,t52,t50,t47,t43,t38,t37,t32,t30,t29,t25,t22,t21,t20,t18,t12,t10,t9,t8,t3,t2
+# WHERE b3=a18
+#   AND a25=b38
+#   AND a54=b8
+#   AND a61=b47
+#   AND a43=b29
+#   AND b18=a12
+#   AND b32=a30
+#   AND a22=b43
+#   AND a29=b21
+#   AND a10=b25
+#   AND a12=4
+#   AND b22=a32
+#   AND a20=b55
+#   AND b30=a9
+#   AND a2=b61
+#   AND a38=b52
+#   AND a55=b9
+#   AND a21=b50
+#   AND a37=b54
+#   AND b10=a3
+#   AND a52=b2
+#   AND a50=b63
+% .plan # table_name
+% rel # name
+% clob # type
+% 212 # length
+project (
+| join (
+| | join (
+| | | join (
+| | | | join (
+| | | | | join (
+| | | | | | join (
+| | | | | | | join (
+| | | | | | | | join (
+| | | | | | | | | join (
+| | | | | | | | | | join (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.t18) [ t18.a18 NOT NULL HASHCOL , t18.b18, t18.x18 ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.t12) [ t12.a12 NOT NULL HASHCOL , t12.x12 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ t12.a12 NOT NULL HASHCOL  = int "4" ]
+| | | | | | | | | | | | | | | | | | | | | | | ) [ t18.b18 = t12.a12 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.t3) [ t3.a3 NOT NULL HASHCOL , t3.b3, t3.x3 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ t3.b3 = t18.a18 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.t10) [ t10.a10 NOT NULL HASHCOL , t10.b10, t10.x10 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ t10.b10 = t3.a3 NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.t25) [ t25.a25 NOT NULL HASHCOL , t25.b25, t25.x25 ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ t10.a10 NOT NULL HASHCOL  = t25.b25 ],
+| | | | | | | | | | | | | | | | | | | | table(sys.t38) [ t38.a38 NOT NULL HASHCOL , t38.b38, t38.x38 ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ t25.a25 NOT NULL HASHCOL  = t38.b38 ],
+| | | | | | | | | | | | | | | | | | | table(sys.t52) [ t52.a52 NOT NULL HASHCOL , t52.b52, t52.x52 ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ t38.a38 NOT NULL HASHCOL  = t52.b52 ],
+| | | | | | | | | | | | | | | | | | table(sys.t2) [ t2.a2 NOT NULL HASHCOL , t2.b2, t2.x2 ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ t52.a52 NOT NULL HASHCOL  = t2.b2 ],
+| | | | | | | | | | | | | | | | | table(sys.t61) [ t61.a61 NOT NULL HASHCOL , t61.b61, t61.x61 ] COUNT 
+| | | | | | | | | | | | | | | | ) [ t2.a2 NOT NULL HASHCOL  = t61.b61 ],
+| | | | | | | | | | | | | | | | table(sys.t47) [ t47.a47 NOT NULL HASHCOL , t47.b47, t47.x47 ] COUNT 
+| | | | | | | | | | | | | | | ) [ t61.a61 NOT NULL HASHCOL  = t47.b47 ],
+| | | | | | | | | | | | | | | table(sys.t37) [ t37.a37 NOT NULL HASHCOL , t37.b37, t37.x37 ] COUNT 
+| | | | | | | | | | | | | | ) [ t47.a47 NOT NULL HASHCOL  = t37.b37 ],
+| | | | | | | | | | | | | | table(sys.t54) [ t54.a54 NOT NULL HASHCOL , t54.b54, t54.x54 ] COUNT 
+| | | | | | | | | | | | | ) [ t37.a37 NOT NULL HASHCOL  = t54.b54 ],
+| | | | | | | | | | | | | table(sys.t8) [ t8.a8 NOT NULL HASHCOL , t8.b8, t8.x8 ] COUNT 
+| | | | | | | | | | | | ) [ t54.a54 NOT NULL HASHCOL  = t8.b8 ],
+| | | | | | | | | | | | table(sys.t20) [ t20.a20 NOT NULL HASHCOL , t20.b20, t20.x20 ] COUNT 
+| | | | | | | | | | | ) [ t8.a8 NOT NULL HASHCOL  = t20.b20 ],
+| | | | | | | | | | | table(sys.t55) [ t55.a55 NOT NULL HASHCOL , t55.b55, t55.x55 ] COUNT 
+| | | | | | | | | | ) [ t20.a20 NOT NULL HASHCOL  = t55.b55 ],
+| | | | | | | | | | table(sys.t9) [ t9.a9 NOT NULL HASHCOL , t9.b9, t9.x9 ] COUNT 
+| | | | | | | | | ) [ t55.a55 NOT NULL HASHCOL  = t9.b9 ],
+| | | | | | | | | table(sys.t30) [ t30.a30 NOT NULL HASHCOL , t30.b30, t30.x30 ] COUNT 
+| | | | | | | | ) [ t30.b30 = t9.a9 NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.t32) [ t32.a32 NOT NULL HASHCOL , t32.b32, t32.x32 ] COUNT 
+| | | | | | | ) [ t32.b32 = t30.a30 NOT NULL HASHCOL  ],
+| | | | | | | table(sys.t22) [ t22.a22 NOT NULL HASHCOL , t22.b22, t22.x22 ] COUNT 
+| | | | | | ) [ t22.b22 = t32.a32 NOT NULL HASHCOL  ],
+| | | | | | table(sys.t43) [ t43.a43 NOT NULL HASHCOL , t43.b43, t43.x43 ] COUNT 
+| | | | | ) [ t22.a22 NOT NULL HASHCOL  = t43.b43 ],
+| | | | | table(sys.t29) [ t29.a29 NOT NULL HASHCOL , t29.b29, t29.x29 ] COUNT 
+| | | | ) [ t43.a43 NOT NULL HASHCOL  = t29.b29 ],
+| | | | table(sys.t21) [ t21.a21 NOT NULL HASHCOL , t21.b21, t21.x21 ] COUNT 
+| | | ) [ t29.a29 NOT NULL HASHCOL  = t21.b21 ],
+| | | table(sys.t50) [ t50.a50 NOT NULL HASHCOL , t50.b50, t50.x50 ] COUNT 
+| | ) [ t21.a21 NOT NULL HASHCOL  = t50.b50 ],
+| | table(sys.t63) [ t63.b63, t63.x63 ] COUNT 
+| ) [ t50.a50 NOT NULL HASHCOL  = t63.b63 ]
+) [ t20.x20, t47.x47, t38.x38, t18.x18, t10.x10, t22.x22, t37.x37, t3.x3, t63.x63, t8.x8, t30.x30, t43.x43, t54.x54, t9.x9, t21.x21, t25.x25, t2.x2, t61.x61, t55.x55, t32.x32, t52.x52, t29.x29, t50.x50, t12.x12 ]
+#SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x32,x52,x29,x50,x12
+#  FROM t63,t61,t55,t54,t52,t50,t47,t43,t38,t37,t32,t30,t29,t25,t22,t21,t20,t18,t12,t10,t9,t8,t3,t2
 # WHERE b3=a18
 #   AND a25=b38
 #   AND a54=b8

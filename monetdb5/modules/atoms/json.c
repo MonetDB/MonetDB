@@ -600,6 +600,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		l = 3;
 	s = GDKzalloc(l + 3);
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
+	GDKfree(result);
 
 	for (l = 0; terms[l].token; l++)
 		if (terms[l].name)
