@@ -354,9 +354,12 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	case op_left:
 	case op_right:
 	case op_full:
+	case op_apply:
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
-		rexps = rel_projections(sql, rel->r, tname, settname, intern );
-		exps = list_merge( exps, rexps, (fdup)NULL);
+		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
+			rexps = rel_projections(sql, rel->r, tname, settname, intern );
+			exps = list_merge( exps, rexps, (fdup)NULL);
+		}
 		return exps;
 	case op_groupby:
 	case op_project:
@@ -393,7 +396,6 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 		}
 		return exps;
 	case op_ddl:
-	case op_apply:
 	case op_semi:
 	case op_anti:
 

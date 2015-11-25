@@ -92,13 +92,13 @@ Ready.
 #	WHERE datepoint.mydate >= B.startdate
 #	AND datepoint.mydate <= B.enddate
 #);
-[ 1	]
+[ 2	]
 #SELECT * FROM datepoint;
 % sys.datepoint,	sys.datepoint,	sys.datepoint # table_name
 % mydate,	insiderange,	rangename # name
 % date,	boolean,	char # type
 % 10,	5,	8 # length
-[ 2012-05-09,	false,	NULL	]
+[ 2012-05-09,	NULL,	NULL	]
 [ 2012-03-09,	true,	NULL	]
 #DROP TABLE datepoint;
 #DROP TABLE daterange;
@@ -126,7 +126,7 @@ Ready.
 % mydate,	insiderange,	rangename # name
 % date,	boolean,	char # type
 % 10,	5,	8 # length
-[ 2012-05-09,	false,	NULL	]
+[ 2012-05-09,	NULL,	NULL	]
 [ 2012-03-09,	true,	NULL	]
 #DROP TABLE datepoint;
 #DROP TABLE daterange;

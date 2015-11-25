@@ -7094,6 +7094,20 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	return rel;
 }
 
+static int
+exps_from_rel( list *exps, sql_rel *rel )
+{
+	node *n;
+
+	if (!rel || !exps)
+		return 0;
+	for (n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+		if (rel_find_exp(rel, e) )
+			return 1;
+	}
+	return 0;
+}
 
 /* push down apply until its gone */
 static sql_rel *
@@ -7137,6 +7151,31 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		le = rel_bind_column(sql, rel, ident->name, 0);
 
 		nrel = rel_crossproduct(sql->sa, rel_dup(nrel), rel, arel->flag==APPLY_EXISTS?op_semi:op_anti);
+		nrel->exps = new_exp_list(sql->sa);
+		le = exp_compare(sql->sa, ident, le, cmp_equal);
+		append(nrel->exps, le);
+
+		arel->flag = APPLY_JOIN;
+		(*changes)++;
+		return nrel;
+	}
+	if (rel->flag == APPLY_LOJ && r->op == op_project && exps_from_rel(r->exps, rel->l)) {
+		sql_exp *ident, *le = NULL;
+		sql_rel *nrel = rel_add_identity(sql, l, &ident), *arel = rel;
+
+		rel->l = nrel;
+		ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
+
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+
+		/* look up the identity column and label these */
+		le = exps_bind_column2(rel->exps, exp_relname(ident), exp_name(ident));
+		exp_label(sql->sa, le, ++sql->label);
+		/* zap rel->exps name hash tables as we changed names */
+		rel->exps->ht = NULL;
+		le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
+
+		nrel = rel_crossproduct(sql->sa, rel_dup(nrel), rel, op_left);
 		nrel->exps = new_exp_list(sql->sa);
 		le = exp_compare(sql->sa, ident, le, cmp_equal);
 		append(nrel->exps, le);
