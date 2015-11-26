@@ -129,10 +129,10 @@ static Client
 MCnewClient(void)
 {
 	Client c;
-	MT_lock_set(&mal_contextLock, "newClient");
+	MT_lock_set(&mal_contextLock);
 	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHCLIENT) {
 		/*system shutdown in progress */
-		MT_lock_unset(&mal_contextLock, "newClient");
+		MT_lock_unset(&mal_contextLock);
 		return NULL;
 	}
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
@@ -141,7 +141,7 @@ MCnewClient(void)
 			break;
 		}
 	}
-	MT_lock_unset(&mal_contextLock, "newClient");
+	MT_lock_unset(&mal_contextLock);
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
@@ -416,7 +416,7 @@ MCstopClients(Client cntxt)
 {
 	Client c = mal_clients;
 
-	MT_lock_set(&mal_contextLock,"stopClients");
+	MT_lock_set(&mal_contextLock);
 	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
 	if( cntxt != c){
 		if ( c->mode == RUNCLIENT)
@@ -425,7 +425,7 @@ MCstopClients(Client cntxt)
 			c->mode = BLOCKCLIENT;
 	}
 	shutdowninprogress =1;
-	MT_lock_unset(&mal_contextLock,"stopClients");
+	MT_lock_unset(&mal_contextLock);
 }
 
 int

@@ -58,7 +58,7 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 
 	if (!l)
 		return NULL;
-	MT_lock_set(&l->ht_lock, "list_find_column");
+	MT_lock_set(&l->ht_lock);
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
 
@@ -96,12 +96,12 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 				}
 			}
 		}
-		MT_lock_unset(&l->ht_lock, "list_find_column");
+		MT_lock_unset(&l->ht_lock);
 		if (!res)
 			return NULL;
 		return res;
 	}
-	MT_lock_unset(&l->ht_lock, "list_find_column");
+	MT_lock_unset(&l->ht_lock);
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
 			char *rnme = table_name(sa, n->data);

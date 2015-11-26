@@ -235,7 +235,7 @@ BATcheckhash(BAT *b)
 	lng t;
 
 	t = GDKusec();
-	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 	t = GDKusec() - t;
 // use or ignore a persistent hash
 #ifdef PERSISTENTHASH
@@ -288,7 +288,7 @@ BATcheckhash(BAT *b)
 					close(fd);
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %d\n", b->batCacheid);
-					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 					return 1;
 				}
 				GDKfree(h);
@@ -303,7 +303,7 @@ BATcheckhash(BAT *b)
 	}
 #endif
 	ret = b->T->hash != NULL;
-	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
 	return ret;
 }
@@ -326,7 +326,7 @@ BAThash(BAT *b, BUN masksize)
 		}
 		return GDK_SUCCEED;
 	}
-	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 	if (b->T->hash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
@@ -345,7 +345,7 @@ BAThash(BAT *b, BUN masksize)
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) == NULL) {
-			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 			GDKfree(hp);
 			return GDK_FAIL;
 		}
@@ -358,7 +358,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (b->ttype == TYPE_void) {
 			if (b->tseqbase == oid_nil) {
-				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -415,7 +415,7 @@ BAThash(BAT *b, BUN masksize)
 			/* create the hash structures */
 			if ((h = HASHnew(hp, ATOMtype(b->ttype), BATcapacity(b), mask, BATcount(b))) == NULL) {
 
-				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 				GDKfree(hp->filename);
 				GDKfree(hp);
 				return GDK_FAIL;
@@ -539,7 +539,7 @@ BAThash(BAT *b, BUN masksize)
 		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
 		ALGODEBUG HASHcollisions(b, b->T->hash);
 	}
-	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BAThash");
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 	if (o != NULL) {
 		o->T->hash = b->T->hash;
 		BBPunfix(b->batCacheid);

@@ -127,7 +127,7 @@ GDKlockstatistics(int what)
 {
 	MT_Lock *l;
 
-	if (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) {
+	if (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) {
 		fprintf(stderr, "#WARNING: GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
@@ -146,7 +146,7 @@ GDKlockstatistics(int what)
 	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
-	ATOMIC_CLEAR(GDKlocklistlock, dummy, "");
+	ATOMIC_CLEAR(GDKlocklistlock, dummy);
 }
 #endif
 

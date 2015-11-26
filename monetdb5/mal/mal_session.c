@@ -502,9 +502,9 @@ MALreader(Client c)
 			return MAL_SUCCEED;
 	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
-	MT_lock_set(&mal_contextLock, "MALreader");
+	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;
-	MT_lock_unset(&mal_contextLock, "MALreader");
+	MT_lock_unset(&mal_contextLock);
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else

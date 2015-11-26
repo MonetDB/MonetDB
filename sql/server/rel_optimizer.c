@@ -1724,9 +1724,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			rname = e2->rname;
 		exp_setname(sql->sa, e2, rname, e1->name );
 	}
-	MT_lock_set(&exps2->ht_lock, "rel_rename_exps");
+	MT_lock_set(&exps2->ht_lock);
 	exps2->ht = NULL;
-	MT_lock_unset(&exps2->ht_lock, "rel_rename_exps");
+	MT_lock_unset(&exps2->ht_lock);
 }
 
 static sql_rel *
@@ -6748,9 +6748,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						continue;
 					}
 
-					MT_lock_set(&prel->exps->ht_lock, "rel_merge_table_rewrite");
+					MT_lock_set(&prel->exps->ht_lock);
 					prel->exps->ht = NULL;
-					MT_lock_unset(&prel->exps->ht_lock, "rel_merge_table_rewrite");
+					MT_lock_unset(&prel->exps->ht_lock);
 					for (n = rel->exps->h, m = prel->exps->h, j=0; n && m && (!skip || first); n = n->next, m = m->next, j++) {
 						sql_exp *e = n->data;
 						sql_exp *ne = m->data;

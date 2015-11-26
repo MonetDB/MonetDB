@@ -982,9 +982,9 @@ static sqlid
 next_oid(void)
 {
 	int id = 0;
-	MT_lock_set(&bs_lock, "next_oid");
+	MT_lock_set(&bs_lock);
 	id = store_oid++;
-	MT_lock_unset(&bs_lock, "next_oid");
+	MT_lock_unset(&bs_lock);
 	return id;
 }
 
@@ -1334,7 +1334,7 @@ store_load(void) {
 	sqlid id = 0;
 
 	sa = sa_create();
-	MT_lock_unset(&bs_lock, "store_load");
+	MT_lock_unset(&bs_lock);
 	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
@@ -1543,7 +1543,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
 #endif
-	MT_lock_set(&bs_lock, "store_init");
+	MT_lock_set(&bs_lock);
 
 	/* check if all parameters for a shared log are set */
 	if (store_readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
@@ -1564,7 +1564,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	active_store_type = store;
 	if (!logger_funcs.create ||
 	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, keep_persisted_log_files) == LOG_ERR) {
-		MT_lock_unset(&bs_lock, "store_init");
+		MT_lock_unset(&bs_lock);
 		return -1;
 	}
 
@@ -1574,7 +1574,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	fprintf(stderr, "#store_init creating shared logger\n");
 #endif
 		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
-			MT_lock_unset(&bs_lock, "store_init");
+			MT_lock_unset(&bs_lock);
 			return -1;
 		}
 	}
@@ -1588,22 +1588,22 @@ static int logging = 0;
 void
 store_exit(void)
 {
-	MT_lock_set(&bs_lock, "store_exit");
+	MT_lock_set(&bs_lock);
 
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store exit locked\n");
 #endif
 	/* busy wait till the logmanager is ready */
 	while (logging) {
-		MT_lock_unset(&bs_lock, "store_exit");
+		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(100);
-		MT_lock_set(&bs_lock, "store_exit");
+		MT_lock_set(&bs_lock);
 	}
 
 	if (gtrans) {
-		MT_lock_unset(&bs_lock, "store_exit");
+		MT_lock_unset(&bs_lock);
 		sequences_exit();
-		MT_lock_set(&bs_lock, "store_exit");
+		MT_lock_set(&bs_lock);
 	}
 	if (spares > 0)
 		destroy_spare_transactions();
@@ -1625,7 +1625,7 @@ store_exit(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store exit unlocked\n");
 #endif
-	MT_lock_unset(&bs_lock, "store_exit");
+	MT_lock_unset(&bs_lock);
 }
 
 /* call locked ! */
@@ -1678,23 +1678,23 @@ store_manager(void)
 			}
 		}
 
-		MT_lock_set(&bs_lock, "store_manager");
+		MT_lock_set(&bs_lock);
         	if (GDKexiting() || (!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
-            		MT_lock_unset(&bs_lock, "store_manager");
+            		MT_lock_unset(&bs_lock);
             		continue;
         	}
 		need_flush = 0;
         	while (store_nr_active) { /* find a moment to flush */
-            		MT_lock_unset(&bs_lock, "store_manager");
+            		MT_lock_unset(&bs_lock);
             		MT_sleep_ms(50);
-            		MT_lock_set(&bs_lock, "store_manager");
+            		MT_lock_set(&bs_lock);
         	}
 
 		if (create_shared_logger) {
 			/* (re)load data from shared write-ahead log */
 			res = shared_logger_funcs.reload();
 			if (res != LOG_OK) {
-				MT_lock_unset(&bs_lock, "store_manager");
+				MT_lock_unset(&bs_lock);
 				GDKfatal("shared write-ahead log loading failure");
 			}
 			/* destroy all global transactions
@@ -1707,10 +1707,10 @@ store_manager(void)
 			/* reload the store and the global transactions */
 			res = store_load();
 			if (res < 0) {
-				MT_lock_unset(&bs_lock, "store_manager");
+				MT_lock_unset(&bs_lock);
 				GDKfatal("shared write-ahead log store re-load failure");
 			}
-			MT_lock_set(&bs_lock, "store_manager");
+			MT_lock_set(&bs_lock);
 		}
 
 		logging = 1;
@@ -1721,14 +1721,14 @@ store_manager(void)
 		}
 		res = logger_funcs.restart();
 
-		MT_lock_unset(&bs_lock, "store_manager");
+		MT_lock_unset(&bs_lock);
 		if (logging && res == LOG_OK) {
 			res = logger_funcs.cleanup(keep_persisted_log_files);
 		}
 
-		MT_lock_set(&bs_lock, "store_manager");
+		MT_lock_set(&bs_lock);
 		logging = 0;
-		MT_lock_unset(&bs_lock, "store_manager");
+		MT_lock_unset(&bs_lock);
 
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
@@ -1746,14 +1746,14 @@ minmax_manager(void)
 			if (GDKexiting())
 				return;
 		}
-		MT_lock_set(&bs_lock, "store_manager");
+		MT_lock_set(&bs_lock);
 		if (store_nr_active || GDKexiting()) {
-			MT_lock_unset(&bs_lock, "store_manager");
+			MT_lock_unset(&bs_lock);
 			continue;
 		}
 		if (store_funcs.gtrans_minmax)
 			store_funcs.gtrans_minmax(gtrans);
-		MT_lock_unset(&bs_lock, "store_manager");
+		MT_lock_unset(&bs_lock);
 	}
 }
 
@@ -1761,7 +1761,7 @@ minmax_manager(void)
 void
 store_lock(void)
 {
-	MT_lock_set(&bs_lock, "trans_lock");
+	MT_lock_set(&bs_lock);
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#locked\n");
 #endif
@@ -1773,7 +1773,7 @@ store_unlock(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#unlocked\n");
 #endif
-	MT_lock_unset(&bs_lock, "trans_unlock");
+	MT_lock_unset(&bs_lock);
 }
 
 static sql_kc *
