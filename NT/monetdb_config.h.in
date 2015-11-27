@@ -57,11 +57,7 @@
 
 #include <assert.h>
 
-#if _MSC_VER <= 1800
-/* From Visual Studio 2013, the compiler undetstands __func__, before
- * that we need __FUNCTION__ */
 #define __func__ __FUNCTION__
-#endif
 
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
