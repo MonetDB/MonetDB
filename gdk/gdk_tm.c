@@ -187,13 +187,13 @@ TMsubcommit_list(bat *subcommit, int cnt)
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
 		for (xx = 0; xx <= BBP_THREADMASK; xx++)
-			MT_lock_set(&GDKtrimLock(xx), "TMsubcommit");
+			MT_lock_set(&GDKtrimLock(xx));
 		if (BBPsync(cnt, subcommit) == GDK_SUCCEED) { /* write BBP.dir (++) */
 			epilogue(cnt, subcommit);
 			ret = GDK_SUCCEED;
 		}
 		for (xx = BBP_THREADMASK; xx >= 0; xx--)
-			MT_lock_unset(&GDKtrimLock(xx), "TMsubcommit");
+			MT_lock_unset(&GDKtrimLock(xx));
 	}
 	return ret;
 }

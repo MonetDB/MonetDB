@@ -79,7 +79,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(oids, 0);
     BATkey(oids, TRUE);
 
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< QRYqueue[i].tag; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);
@@ -121,7 +121,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(oids, &QRYqueue[i].mb->tag, FALSE);
 		BUNappend(progress, &prog, FALSE);
 	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
 	BBPkeepref( *u =user->batCacheid);
 	BBPkeepref( *s =started->batCacheid);
@@ -133,7 +133,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 	BBPunfix(tag->batCacheid);
 	BBPunfix(user->batCacheid);
 	BBPunfix(query->batCacheid);
@@ -166,13 +166,13 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		assert(0);
 	}
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
 	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 'p';
 		QRYqueue[i].status = "paused";
 	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
 
@@ -197,13 +197,13 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		assert(0);
 	}
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
 	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 0;
 		QRYqueue[i].status = "running";
 	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
 
@@ -228,12 +228,12 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		assert(0);
 	}
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
 	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
 		QRYqueue[i].stk->status = 'q';
 		QRYqueue[i].status = "stopping";
 	}
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }

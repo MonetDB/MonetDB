@@ -866,6 +866,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		getArg(q,1) = getArg(mat[e].mi,k);
 		getArg(q,2) = getArg(mat[a].mi,k);
 		pushInstruction(mb,q);
+		setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k);
 
 		/* pack the result into a mat */
 		ai1 = pushArgument(mb,ai1,getArg(q,0));
@@ -1141,6 +1142,9 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		getArg(q, 2) = newTmpVariable(mb, tp2);
 		getArg(q, 3) = getArg(ml->v[b].mi, i);
 		pushInstruction(mb, q);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i);
 
 		/* add result to mats */
 		r0 = pushArgument(mb,r0,getArg(q,0));
@@ -1151,9 +1155,9 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		setModuleId(r, algebraRef);
 		setFunctionId(r, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
-
 		r = pushArgument(mb, r, getArg(q,1));
 		r = pushArgument(mb, r, getArg(ml->v[b].mi,i));
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i);
 		pushInstruction(mb,r);
 
 		attr = pushArgument(mb, attr, getArg(r, 0)); 
@@ -1225,6 +1229,9 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		getArg(q,3) = getArg(ml->v[b].mi,i);
 		getArg(q,4) = getArg(ml->v[g].mi,i);
 		pushInstruction(mb,q);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i);
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i);
 	
 		/* add result to mats */
 		r0 = pushArgument(mb,r0,getArg(q,0));
@@ -1235,9 +1242,9 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		setModuleId(r, algebraRef);
 		setFunctionId(r, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
-
 		r = pushArgument(mb, r, getArg(q,1));
 		r = pushArgument(mb, r, getArg(ml->v[b].mi,i));
+		setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i);
 		pushInstruction(mb,r);
 
 		attr = pushArgument(mb, attr, getArg(r, 0)); 

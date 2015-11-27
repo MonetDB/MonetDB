@@ -83,7 +83,7 @@ CLKsignal(int nr)
 			/* monet_eval(timer[k].action, &restype); */
 			GDKfree(timer[k].action);
 		} else {
-			MT_sema_up(&timer[k].sema, "CLKsignal");
+			MT_sema_up(&timer[k].sema);
 		}
 		timerTop--;
 	}

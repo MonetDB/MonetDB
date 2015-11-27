@@ -161,10 +161,10 @@ q_enqueue(Queue *q, FlowEvent d)
 {
 	assert(q);
 	assert(d);
-	MT_lock_set(&q->l, "q_enqueue");
+	MT_lock_set(&q->l);
 	q_enqueue_(q, d);
-	MT_lock_unset(&q->l, "q_enqueue");
-	MT_sema_up(&q->s, "q_enqueue");
+	MT_lock_unset(&q->l);
+	MT_sema_up(&q->s);
 }
 
 /*
@@ -197,10 +197,10 @@ q_requeue(Queue *q, FlowEvent d)
 {
 	assert(q);
 	assert(d);
-	MT_lock_set(&q->l, "q_requeue");
+	MT_lock_set(&q->l);
 	q_requeue_(q, d);
-	MT_lock_unset(&q->l, "q_requeue");
-	MT_sema_up(&q->s, "q_requeue");
+	MT_lock_unset(&q->l);
+	MT_sema_up(&q->s);
 }
 #endif
 
@@ -211,10 +211,10 @@ q_dequeue(Queue *q, Client cntxt)
 	int i;
 
 	assert(q);
-	MT_sema_down(&q->s, "q_dequeue");
-	if (ATOMIC_GET(exiting, exitingLock, "q_dequeue"))
+	MT_sema_down(&q->s);
+	if (ATOMIC_GET(exiting, exitingLock))
 		return NULL;
-	MT_lock_set(&q->l, "q_dequeue");
+	MT_lock_set(&q->l);
 	if (cntxt) {
 		int i, minpc = -1;
 
@@ -241,12 +241,12 @@ q_dequeue(Queue *q, Client cntxt)
 			}
 		} else r = NULL;
 
-		MT_lock_unset(&q->l, "q_dequeue");
+		MT_lock_unset(&q->l);
 		return r;
 	}
 	if (q->exitcount > 0) {
 		q->exitcount--;
-		MT_lock_unset(&q->l, "q_dequeue");
+		MT_lock_unset(&q->l);
 		return NULL;
 	}
 	assert(q->last > 0);
@@ -276,7 +276,7 @@ q_dequeue(Queue *q, Client cntxt)
 	}
 	 */
 
-	MT_lock_unset(&q->l, "q_dequeue");
+	MT_lock_unset(&q->l);
 	assert(r);
 	return r;
 }
@@ -319,18 +319,18 @@ DFLOWworker(void *T)
 #endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
-	MT_lock_set(&dataflowLock, "DFLOWworker");
+	MT_lock_set(&dataflowLock);
 	cntxt = t->cntxt;
-	MT_lock_unset(&dataflowLock, "DFLOWworker");
+	MT_lock_unset(&dataflowLock);
 	if (cntxt) {
 		/* wait until we are allowed to start working */
-		MT_sema_down(&t->s, "DFLOWworker");
+		MT_sema_down(&t->s);
 	}
 	while (1) {
 		if (fnxt == 0) {
-			MT_lock_set(&dataflowLock, "DFLOWworker");
+			MT_lock_set(&dataflowLock);
 			cntxt = t->cntxt;
-			MT_lock_unset(&dataflowLock, "DFLOWworker");
+			MT_lock_unset(&dataflowLock);
 			fe = q_dequeue(todo, cntxt);
 			if (fe == NULL) {
 				if (cntxt) {
@@ -339,7 +339,7 @@ DFLOWworker(void *T)
 					 * and let the scheduler enter some more work, but
 					 * first compensate for the down we did in
 					 * dequeue */
-					MT_sema_up(&todo->s, "DFLOWworker");
+					MT_sema_up(&todo->s);
 					MT_sleep_ms(1);
 					continue;
 				}
@@ -348,7 +348,7 @@ DFLOWworker(void *T)
 			}
 		} else
 			fe = fnxt;
-		if (ATOMIC_GET(exiting, exitingLock, "DFLOWworker")) {
+		if (ATOMIC_GET(exiting, exitingLock)) {
 			break;
 		}
 		fnxt = 0;
@@ -357,13 +357,13 @@ DFLOWworker(void *T)
 		assert(flow);
 
 		/* whenever we have a (concurrent) error, skip it */
-		MT_lock_set(&flow->flowlock, "DFLOWworker");
+		MT_lock_set(&flow->flowlock);
 		if (flow->error) {
-			MT_lock_unset(&flow->flowlock, "DFLOWworker");
+			MT_lock_unset(&flow->flowlock);
 			q_enqueue(flow->done, fe);
 			continue;
 		}
-		MT_lock_unset(&flow->flowlock, "DFLOWworker");
+		MT_lock_unset(&flow->flowlock);
 
 #ifdef USE_MAL_ADMISSION
 		if (MALadmission(fe->argclaim, fe->hotclaim)) {
@@ -387,15 +387,15 @@ DFLOWworker(void *T)
 		for( i = 0; i < p->argc; i++)
 			flow->mb->var[getArg(p,i)]->worker = thr->tid;
 
-		MT_lock_set(&flow->flowlock, "DFLOWworker");
+		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;
-		MT_lock_unset(&flow->flowlock, "DFLOWworker");
+		MT_lock_unset(&flow->flowlock);
 		if (error) {
-			MT_lock_set(&flow->flowlock, "DFLOWworker");
+			MT_lock_set(&flow->flowlock);
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!flow->error)
 				flow->error = error;
-			MT_lock_unset(&flow->flowlock, "DFLOWworker");
+			MT_lock_unset(&flow->flowlock);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -423,7 +423,7 @@ DFLOWworker(void *T)
 		}
 	}
 #endif
-		MT_lock_set(&flow->flowlock, "DFLOWworker");
+		MT_lock_set(&flow->flowlock);
 
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending &&
@@ -437,14 +437,14 @@ DFLOWworker(void *T)
 				fnxt = flow->status + i;
 				break;
 			}
-		MT_lock_unset(&flow->flowlock, "DFLOWworker");
+		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
 		if ( fnxt == 0) {
 			int last;
-			MT_lock_set(&todo->l, "DFLOWworker");
+			MT_lock_set(&todo->l);
 			last = todo->last;
-			MT_lock_unset(&todo->l, "DFLOWworker");
+			MT_lock_unset(&todo->l);
 			if (last == 0)
 				profilerHeartbeatEvent("wait");
 		}
@@ -452,9 +452,9 @@ DFLOWworker(void *T)
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
 	THRdel(thr);
-	MT_lock_set(&dataflowLock, "DFLOWworker");
+	MT_lock_set(&dataflowLock);
 	t->flag = EXITED;
-	MT_lock_unset(&dataflowLock, "DFLOWworker");
+	MT_lock_unset(&dataflowLock);
 }
 
 /*
@@ -470,25 +470,25 @@ DFLOWinitialize(void)
 	int i, limit;
 	int created = 0;
 
-	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
+	MT_lock_set(&mal_contextLock);
 	if (todo) {
 		/* somebody else beat us to it */
-		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		MT_lock_unset(&mal_contextLock);
 		return 0;
 	}
 	todo = q_create(2048, "todo");
 	if (todo == NULL) {
-		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		MT_lock_unset(&mal_contextLock);
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++)
 		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(exitingLock, "exitingLock");
+	ATOMIC_INIT(exitingLock);
 	MT_lock_init(&dataflowLock, "dataflowLock");
 #endif
-	MT_lock_set(&dataflowLock, "DFLOWinitialize");
+	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
 		workers[i].cntxt = NULL;
@@ -497,15 +497,15 @@ DFLOWinitialize(void)
 		else
 			created++;
 	}
-	MT_lock_unset(&dataflowLock, "DFLOWinitialize");
+	MT_lock_unset(&dataflowLock);
 	if (created == 0) {
 		/* no threads created */
 		q_destroy(todo);
 		todo = NULL;
-		MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+		MT_lock_unset(&mal_contextLock);
 		return -1;
 	}
-	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+	MT_lock_unset(&mal_contextLock);
 	return 0;
 }
 
@@ -674,13 +674,13 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
-	MT_lock_set(&flow->flowlock, "DFLOWscheduler");
+	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
 #ifdef USE_MAL_ADMISSION
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
-				MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
+				MT_lock_unset(&flow->flowlock);
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			for (j = p->retc; j < p->argc; j++)
@@ -690,14 +690,14 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			flow->status[i].state = DFLOWrunning;
 			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
-	MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
-	MT_sema_up(&w->s, "DFLOWscheduler");
+	MT_lock_unset(&flow->flowlock);
+	MT_sema_up(&w->s);
 
 	PARDEBUG fprintf(stderr, "#run %d instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
-		if (ATOMIC_GET(exiting, exitingLock, "DFLOWscheduler"))
+		if (ATOMIC_GET(exiting, exitingLock))
 			break;
 		if (f == NULL)
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
@@ -708,7 +708,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 		 * drops to zero we can scheduler it we do it here instead of the scheduler
 		 */
 
-		MT_lock_set(&flow->flowlock, "DFLOWscheduler");
+		MT_lock_set(&flow->flowlock);
 		tasks++;
 		for (last = f->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending) {
@@ -722,13 +722,13 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 					flow->status[i].blocks--;
 				}
 			}
-		MT_lock_unset(&flow->flowlock, "DFLOWscheduler");
+		MT_lock_unset(&flow->flowlock);
 	}
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
-	MT_lock_set(&dataflowLock, "DFLOWscheduler");
+	MT_lock_set(&dataflowLock);
 	w->cntxt = NULL;
-	MT_lock_unset(&dataflowLock, "DFLOWscheduler");
+	MT_lock_unset(&dataflowLock);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if (flow->error ) {
@@ -791,7 +791,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	/* in addition, create one more worker that will only execute
 	 * tasks for the current client to compensate for our waiting
 	 * until all work is done */
-	MT_lock_set(&dataflowLock, "runMALdataflow");
+	MT_lock_set(&dataflowLock);
 	/* join with already exited threads */
 	{
 		int joined;
@@ -802,9 +802,9 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 					workers[i].flag = JOINING;
 					workers[i].cntxt = NULL;
 					joined = 1;
-					MT_lock_unset(&dataflowLock, "runMALdataflow");
+					MT_lock_unset(&dataflowLock);
 					MT_join_thread(workers[i].id);
-					MT_lock_set(&dataflowLock, "runMALdataflow");
+					MT_lock_set(&dataflowLock);
 					workers[i].flag = IDLE;
 				}
 			}
@@ -836,13 +836,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				/* cannot start new thread, run serially */
 				*ret = TRUE;
 				workers[i].flag = IDLE;
-				MT_lock_unset(&dataflowLock, "runMALdataflow");
+				MT_lock_unset(&dataflowLock);
 				return MAL_SUCCEED;
 			}
 			break;
 		}
 	}
-	MT_lock_unset(&dataflowLock, "runMALdataflow");
+	MT_lock_unset(&dataflowLock);
 	if (i == THREADS) {
 		/* no empty thread slots found, run serially */
 		*ret = TRUE;
@@ -909,10 +909,10 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */
-	MT_lock_set(&todo->l, "runMALdataflow");
+	MT_lock_set(&todo->l);
 	todo->exitcount++;
-	MT_lock_unset(&todo->l, "runMALdataflow");
-	MT_sema_up(&todo->s, "runMALdataflow");
+	MT_lock_unset(&todo->l);
+	MT_sema_up(&todo->s);
 
 	return msg;
 }
@@ -922,20 +922,20 @@ stopMALdataflow(void)
 {
 	int i;
 
-	ATOMIC_SET(exiting, 1, exitingLock, "q_dequeue");
+	ATOMIC_SET(exiting, 1, exitingLock);
 	if (todo) {
 		for (i = 0; i < THREADS; i++)
-			MT_sema_up(&todo->s, "stopMALdataflow");
-		MT_lock_set(&dataflowLock, "stopMALdataflow");
+			MT_sema_up(&todo->s);
+		MT_lock_set(&dataflowLock);
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag != IDLE && workers[i].flag != JOINING) {
 				workers[i].flag = JOINING;
-				MT_lock_unset(&dataflowLock, "stopMALdataflow");
+				MT_lock_unset(&dataflowLock);
 				MT_join_thread(workers[i].id);
-				MT_lock_set(&dataflowLock, "stopMALdataflow");
+				MT_lock_set(&dataflowLock);
 			}
 			workers[i].flag = IDLE;
 		}
-		MT_lock_unset(&dataflowLock, "stopMALdataflow");
+		MT_lock_unset(&dataflowLock);
 	}
 }
