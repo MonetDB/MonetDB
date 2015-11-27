@@ -782,9 +782,9 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 }
 
 str
-ALGleftfetchjoin(bat *result, const bat *lid, const bat *rid)
+ALGprojection(bat *result, const bat *lid, const bat *rid)
 {
-	return ALGbinary(result, lid, rid, BATproject, "algebra.leftfetchjoin");
+	return ALGbinary(result, lid, rid, BATproject, "algebra.projection");
 }
 
 str

@@ -96,7 +96,7 @@ static void logsend(char *logbuffer)
 {	int error=0;
 	int showsystem = 0;
 	if (eventstream) {
-		MT_lock_set(&mal_profileLock, "logsend");
+		MT_lock_set(&mal_profileLock);
 		if( eventcounter == 0){
 			offlineProfilerHeader();
 			showsystem++;
@@ -104,7 +104,7 @@ static void logsend(char *logbuffer)
 		eventcounter++;
 		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
 		error= mnstr_flush(eventstream);
-		MT_lock_unset(&mal_profileLock, "logsend");
+		MT_lock_unset(&mal_profileLock);
 		if( showsystem)
 			offlineProfilerEvent(0, 0, 0, 0, "system", monet_characteristics);
 		if ( error) stopProfiler();
@@ -263,9 +263,9 @@ str
 setLogFile(stream *fd, Module mod, const char *fname)
 {
 	(void)mod;      /* still unused */
-	MT_lock_set(&mal_profileLock, "setLogFile");
+	MT_lock_set(&mal_profileLock);
 	if (eventstream ) {
-		MT_lock_unset(&mal_profileLock, "setLogFile");
+		MT_lock_unset(&mal_profileLock);
 		throw(IO, "mal.profiler", "Log file already set");
 	}
 	if (strcmp(fname, "console") == 0)
@@ -275,10 +275,10 @@ setLogFile(stream *fd, Module mod, const char *fname)
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock, "setLogFile");
+		MT_lock_unset(&mal_profileLock);
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
-	MT_lock_unset(&mal_profileLock, "setLogFile");
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -286,13 +286,13 @@ str
 setLogStream(Module cntxt, const char *host, int port)
 {
 	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock, "setLogStream");
+	MT_lock_set(&mal_profileLock);
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
-		MT_lock_unset(&mal_profileLock, "setLogStream");
+		MT_lock_unset(&mal_profileLock);
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock, "setLogStream");
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -300,13 +300,13 @@ str
 setLogStreamStream(Module cntxt, stream *s)
 {
 	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock, "setLogStreamStream");
+	MT_lock_set(&mal_profileLock);
 	if ((eventstream = s) == NULL) {
-		MT_lock_unset(&mal_profileLock, "setLogStreamStream");
+		MT_lock_unset(&mal_profileLock);
 		throw(ILLARG, "mal.profiler", "stream must not be NULL");
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock, "setLogStreamStream");
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -351,7 +351,7 @@ startProfiler(oid usr, int mode, int beat)
 	if (myname == 0)
 		myname = putName("profiler", 8);
 
-	MT_lock_set(&mal_profileLock, "startProfiler");
+	MT_lock_set(&mal_profileLock);
 	if (eventstream != NULL) {
 		offlineProfiling = TRUE;
 	} else {
@@ -363,7 +363,7 @@ startProfiler(oid usr, int mode, int beat)
 	eventcounter = 0;
 	setHeartbeat(beat); 
 	user = usr;
-	MT_lock_unset(&mal_profileLock, "startProfiler");
+	MT_lock_unset(&mal_profileLock);
 
 	/* show all in progress instructions for stethoscope startup */
 	if( mode > 0){
@@ -383,14 +383,14 @@ startProfiler(oid usr, int mode, int beat)
 str
 stopProfiler(void)
 {
-	MT_lock_set(&mal_profileLock, "stopProfiler");
+	MT_lock_set(&mal_profileLock);
 	malProfileMode = 0;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	setHeartbeat(0); // stop heartbeat
 	closeProfilerStream();
 	user = 0;
-	MT_lock_unset(&mal_profileLock, "stopProfiler");
+	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
 
@@ -405,9 +405,9 @@ MPresetProfiler(stream *fdout)
 		return;
 	if (mal_trace) // already traced on console
 		return;
-	MT_lock_set(&mal_profileLock, "MPresetProfiler");
+	MT_lock_set(&mal_profileLock);
 	eventstream = 0;
-	MT_lock_unset(&mal_profileLock, "MPresetProfiler");
+	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -449,7 +449,7 @@ TRACEtable(BAT **r)
 {
 	if (initTrace())
 		return ;
-	MT_lock_set(&mal_profileLock, "TRACEtable");
+	MT_lock_set(&mal_profileLock);
 	r[0] = BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
 	r[1] = BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
 	r[2] = BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
@@ -463,7 +463,7 @@ TRACEtable(BAT **r)
 	r[10] = BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
 	r[11] = BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
 	r[12] = BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
-	MT_lock_unset(&mal_profileLock, "TRACEtable");
+	MT_lock_unset(&mal_profileLock);
 }
 
 static BAT *
@@ -553,18 +553,18 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;       /* already initialized */
-	MT_lock_set(&mal_contextLock, "initTrace");
+	MT_lock_set(&mal_contextLock);
 	_initTrace();
-	MT_lock_unset(&mal_contextLock, "initTrace");
+	MT_lock_unset(&mal_contextLock);
 	return TRACE_init ? 0 : -1;
 }
 
 str
 cleanupProfiler(void)
 {
-	MT_lock_set(&mal_contextLock, "cleanup");
+	MT_lock_set(&mal_contextLock);
 	_cleanupProfiler();
-	MT_lock_unset(&mal_contextLock, "cleanup");
+	MT_lock_unset(&mal_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -573,7 +573,7 @@ clearTrace(void)
 {
 	if (TRACE_init == 0)
 		return;     /* not initialized */
-	MT_lock_set(&mal_contextLock, "cleanup");
+	MT_lock_set(&mal_contextLock);
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
@@ -590,7 +590,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_stmt->batCacheid);
 	TRACE_init = 0;
 	_initTrace();
-	MT_lock_unset(&mal_contextLock, "cleanup");
+	MT_lock_unset(&mal_contextLock);
 }
 
 BAT *
@@ -724,7 +724,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	// keep it a short transaction
-	MT_lock_set(&mal_profileLock, "cachedProfilerEvent");
+	MT_lock_set(&mal_profileLock);
 	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_time, ct, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_pc, buf, FALSE) != GDK_SUCCEED;
@@ -740,7 +740,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
 	TRACE_event++;
 	eventcounter++;
-	MT_lock_unset(&mal_profileLock, "cachedProfilerEvent");
+	MT_lock_unset(&mal_profileLock);
 	if (stmt) GDKfree(stmt);
 }
 
@@ -918,7 +918,7 @@ static str getIOactivity(void){
 	if ( buf == NULL)
 		return 0;
 	buf[len++]='"';
-	//MT_lock_set(&GDKthreadLock, "profiler.io");
+	//MT_lock_set(&GDKthreadLock);
 	for (t = GDKthreads, s = t + THREADS; t < s; t++, i++)
 		if (t->pid ){
 			(void) snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
@@ -932,7 +932,7 @@ static str getIOactivity(void){
 			mnstr_printf(GDKout,"#got io stat:%s\n",buf);
 			(void)fclose (fd);
 		 }
-	//MT_lock_unset(&GDKthreadLock, "profiler.io");
+	//MT_lock_unset(&GDKthreadLock);
 	buf[len++]='"';
 	return buf;
 }
@@ -951,7 +951,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 void profilerHeartbeatEvent(char *alter)
 {
 	char cpuload[BUFSIZ];
-	if (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL)
+	if (ATOMIC_GET(hbdelay, hbLock) == 0 || eventstream  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -969,41 +969,41 @@ static void profilerHeartbeat(void *dummy)
 	int t;
 
 	(void) dummy;
-	while (ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat")) {
+	while (ATOMIC_GET(hbrunning, hbLock)) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent") == 0 || eventstream  == NULL) {
+		while (ATOMIC_GET(hbdelay, hbLock) == 0 || eventstream  == NULL) {
 			for (t = 1000; t > 0; t -= 25) {
 				MT_sleep_ms(25);
-				if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
+				if (!ATOMIC_GET(hbrunning, hbLock))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, hbLock, "profilerHeatbeatEvent"); t > 0; t -= 25) {
+		for (t = (int) ATOMIC_GET(hbdelay, hbLock); t > 0; t -= 25) {
 			MT_sleep_ms(t > 25 ? 25 : t);
-			if (!ATOMIC_GET(hbrunning, hbLock, "profilerHeartbeat"))
+			if (!ATOMIC_GET(hbrunning, hbLock))
 				return;
 		}
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(hbdelay, 0, hbLock, "profilerHeatbeat");
+	ATOMIC_SET(hbdelay, 0, hbLock);
 }
 
 void setHeartbeat(int delay)
 {
 	if (hbthread &&  delay < 0 ){
-		ATOMIC_SET(hbrunning, 0, hbLock, "stopHeartbeat");
+		ATOMIC_SET(hbrunning, 0, hbLock);
 		MT_join_thread(hbthread);
 		return;
 	}
 	if (delay <= 10)
 		hbdelay =10;
-	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, hbLock, "startHeatbeat");
+	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, hbLock);
 }
 
 void initHeartbeat(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(hbLock, "hbLock");
+	ATOMIC_INIT(hbLock);
 #endif
 	hbrunning = 1;
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {

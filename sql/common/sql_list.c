@@ -134,13 +134,13 @@ list_append(list *l, void *data)
 	}
 	l->t = n;
 	l->cnt++;
-	MT_lock_set(&l->ht_lock, "list_append");
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
 		hash_add(l->ht, key, data);
 	}
-	MT_lock_unset(&l->ht_lock, "list_append");
+	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -159,13 +159,13 @@ list_append_before(list *l, node *m, void *data)
 		p->next = n;
 	}
 	l->cnt++;
-	MT_lock_set(&l->ht_lock, "list_append_before");
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
 		hash_add(l->ht, key, data);
 	}
-	MT_lock_unset(&l->ht_lock, "list_append_before");
+	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -180,13 +180,13 @@ list_prepend(list *l, void *data)
 	n->next = l->h;
 	l->h = n;
 	l->cnt++;
-	MT_lock_set(&l->ht_lock, "list_prepend");
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
 		hash_add(l->ht, key, data);
 	}
-	MT_lock_unset(&l->ht_lock, "list_prepend");
+	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -226,10 +226,10 @@ list_remove_node(list *l, node *n)
 		l->t = p;
 	node_destroy(l, n);
 	l->cnt--;
-	MT_lock_set(&l->ht_lock, "list_remove_node");
+	MT_lock_set(&l->ht_lock);
 	if (l->ht && data)
 		hash_delete(l->ht, data);
-	MT_lock_unset(&l->ht_lock, "list_remove_node");
+	MT_lock_unset(&l->ht_lock);
 	return p;
 }
 
@@ -241,10 +241,10 @@ list_remove_data(list *s, void *data)
 	/* maybe use compare func */
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
-			MT_lock_set(&s->ht_lock, "list_remove_data");
+			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
-			MT_lock_unset(&s->ht_lock, "list_remove_data");
+			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;
 			list_remove_node(s, n);
 			break;
@@ -259,10 +259,10 @@ list_move_data(list *s, list *d, void *data)
 
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
-			MT_lock_set(&s->ht_lock, "list_move_data");
+			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
-			MT_lock_unset(&s->ht_lock, "list_move_data");
+			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;	/* make sure data isn't destroyed */
 			list_remove_node(s, n);
 			break;

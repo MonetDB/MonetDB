@@ -24,7 +24,7 @@ function user.q():void;
     s := bat.new(:oid,:int);
     x := bat.new(:oid,:oid);
     rs := algebra.subselect(s,x,1,1,true,true,false);
-    j := algebra.leftfetchjoin(rs,r);
+    j := algebra.projection(rs,r);
 end user.q;
 function user.main():void;
 # Cost model example 
@@ -37,7 +37,7 @@ function user.q():void;                 	#[0]  0
     s:bat[:oid,:int]{rows=1000} := bat.new(:oid,:int);	#[4] CMDBATnew 5 <- 3 9 
     x:bat[:oid,:oid]{rows=300} := bat.new(:oid,:oid);	#[5] CMDBATnew 10 <- 3 3 
     rs:bat[:oid,:oid]{rows=151} := algebra.subselect(s:bat[:oid,:int],x:bat[:oid,:oid],1:int,1:int,true:bit,true:bit,false:bit);	#[6] ALGsubselect2 12 <- 5 10 13 14 15 16 17 
-    j:bat[:oid,:int]{rows=100} := algebra.leftfetchjoin(rs:bat[:oid,:oid],r:bat[:oid,:int]);	#[7] ALGleftfetchjoin 18 <- 12 1 
+    j:bat[:oid,:int]{rows=100} := algebra.projection(rs:bat[:oid,:oid],r:bat[:oid,:int]);	#[7] ALGprojection 18 <- 12 1 
 end user.q;                             	#[8]  
 
 # 08:55:26 >  

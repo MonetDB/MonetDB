@@ -2328,10 +2328,6 @@ command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:
 address ALGjoin2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
 
-pattern algebra.leftfetchjoinPath(l:bat[:oid,:any]...):bat[:oid,:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
-
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
@@ -2350,10 +2346,6 @@ command algebra.like(s:str,pat:str):bit
 address PCRElike2;
 command algebra.like(s:str,pat:str,esc:str):bit 
 address PCRElike3;
-command algebra.leftfetchjoin(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
-address ALGleftfetchjoin;
-comment Hook directly into the left fetch join implementation.
-
 command algebra.not_ilike(s:str,pat:str):bit 
 address PCREnotilike2;
 command algebra.not_ilike(s:str,pat:str,esc:str):bit 
@@ -2363,6 +2355,14 @@ address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
 function algebra.orderidx(bv:bat[:oid,:any_1],reverse:bit,stable:bit):bat[:oid,:oid];
+pattern algebra.projectionPath(l:bat[:oid,:any]...):bat[:oid,:any] 
+address ALGjoinPath;
+comment Routine to handle join paths.  The type analysis is rather tricky.
+
+command algebra.projection(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
+address ALGprojection;
+comment Hook directly into the left fetch join implementation.
+
 pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
 comment Fill the tail with a constant

@@ -64,7 +64,43 @@ Ready.
 # 17:07:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21328" "--port=33620"
 # 17:07:09 >  
 
-! Correct / expected output still needs to be provided / approved !
+#CREATE TABLE part1 ( x double, y double, z double);
+#ALTER TABLE part1 ADD PRIMARY KEY (x);
+#COPY 2 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ','\n';
+#0.0 0.0 0.0
+#1.0 0.0 0.0 
+[ 2	]
+#CREATE TABLE part2 ( x double, y double, z double);
+#ALTER TABLE part2 ADD PRIMARY KEY (x);
+#COPY 2 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ','\n';
+#2.0 0.0 0.0
+#3.0 0.0 0.0 
+[ 2	]
+#CREATE MERGE TABLE complete ( x double, y double, z double);
+#ALTER TABLE complete ADD PRIMARY KEY (x);
+#ALTER TABLE complete ADD TABLE part1;
+#ALTER TABLE complete ADD TABLE part2;
+#SELECT * FROM COMPLETE;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 1,	0,	0	]
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+#SELECT * FROM complete;
+% .complete,	.complete,	.complete # table_name
+% x,	y,	z # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ 0,	0,	0	]
+[ 1,	0,	0	]
+[ 2,	0,	0	]
+[ 3,	0,	0	]
+#DROP TABLE complete;
+#DROP TABLE part1;
+#DROP TABLE part2;
 
 # 17:07:09 >  
 # 17:07:09 >  "Done."

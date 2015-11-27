@@ -207,7 +207,6 @@ VIEWhcreate(BAT *h)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -290,13 +289,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
 		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
-		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
@@ -562,7 +559,7 @@ gdk_return
 VIEWreset(BAT *b)
 {
 	bat hp, tp, hvp, tvp;
-	Heap head, tail, hh, th;
+	Heap head, tail, *hh = NULL, *th = NULL;
 	BAT *n = NULL, *v = NULL;
 
 	if (b == NULL)
@@ -571,7 +568,7 @@ VIEWreset(BAT *b)
 	tp = VIEWtparent(b);
 	hvp = VIEWvhparent(b);
 	tvp = VIEWvtparent(b);
-	if (hp || tp) {
+	if (hp || tp || hvp || tvp) {
 		BAT *m;
 		BATstore *bs;
 		BUN cnt;
@@ -581,21 +578,22 @@ VIEWreset(BAT *b)
 		/* alloc heaps */
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
-		memset(&hh, 0, sizeof(Heap));
-		memset(&th, 0, sizeof(Heap));
 
-		n = BATdescriptor(abs(b->batCacheid)); /* normalized */
-		if (n == NULL)
-			goto bailout;
-		m = BATmirror(n); /* mirror of normalized */
+		if (b->batCacheid > 0) {
+			n = b;
+			m = BATmirror(b);
+		} else {
+			n = BATmirror(b);
+			m = b;
+		}
 		bs = BBP_desc(n->batCacheid);
 		cnt = BATcount(n) + 1;
 		nme = BBP_physical(n->batCacheid);
 		nmelen = nme ? strlen(nme) : 0;
 
 		assert(n->batCacheid > 0);
-		assert(hp || !b->htype);
-		assert(tp || !b->ttype);
+		assert(hp || hvp || !b->htype);
+		assert(tp || tvp || !b->ttype);
 
 		head.farmid = BBPselectfarm(n->batRole, n->htype, offheap);
 		tail.farmid = BBPselectfarm(n->batRole, n->ttype, offheap);
@@ -616,21 +614,27 @@ VIEWreset(BAT *b)
 				goto bailout;
 		}
 		if (n->H->vheap) {
-			hh.farmid = BBPselectfarm(n->batRole, n->htype, varheap);
-			hh.filename = (str) GDKmalloc(nmelen + 12);
-			if (hh.filename == NULL)
+			hh = GDKzalloc(sizeof(Heap));
+			if (hh == NULL)
 				goto bailout;
-			snprintf(hh.filename, nmelen + 12, "%s.hheap", nme);
-			if (ATOMheap(n->htype, &hh, cnt) != GDK_SUCCEED)
+			hh->farmid = BBPselectfarm(n->batRole, n->htype, varheap);
+			hh->filename = (str) GDKmalloc(nmelen + 12);
+			if (hh->filename == NULL)
+				goto bailout;
+			snprintf(hh->filename, nmelen + 12, "%s.hheap", nme);
+			if (ATOMheap(n->htype, hh, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 		if (n->T->vheap) {
-			th.farmid = BBPselectfarm(n->batRole, n->ttype, varheap);
-			th.filename = (str) GDKmalloc(nmelen + 12);
-			if (th.filename == NULL)
+			th = GDKzalloc(sizeof(Heap));
+			if (th == NULL)
 				goto bailout;
-			snprintf(th.filename, nmelen + 12, "%s.theap", nme);
-			if (ATOMheap(n->ttype, &th, cnt) != GDK_SUCCEED)
+			th->farmid = BBPselectfarm(n->batRole, n->ttype, varheap);
+			th->filename = (str) GDKmalloc(nmelen + 12);
+			if (th->filename == NULL)
+				goto bailout;
+			snprintf(th->filename, nmelen + 12, "%s.theap", nme);
+			if (ATOMheap(n->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 
@@ -686,23 +690,33 @@ VIEWreset(BAT *b)
 		n->T->heap = tail;
 
 		/* unshare from parents heap */
-		if (hh.base) {
+		if (hh) {
 			assert(n->H->vheap == NULL);
-			n->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (n->H->vheap == NULL)
-				goto bailout;
-			*n->H->vheap = hh;
+			n->H->vheap = hh;
+			hh = NULL;
 			n->H->vheap->parentid = n->batCacheid;
 		}
-		if (th.base) {
+		if (th) {
 			assert(n->T->vheap == NULL);
-			n->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (n->T->vheap == NULL)
-				goto bailout;
-			*n->T->vheap = th;
+			n->T->vheap = th;
+			th = NULL;
 			n->T->vheap->parentid = n->batCacheid;
 		}
 
+		if (v->H->heap.parentid == n->batCacheid) {
+			assert(hp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
+			v->H->heap.parentid = 0;
+		}
+		if (v->T->heap.parentid == -n->batCacheid) {
+			assert(tp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
+			v->T->heap.parentid = 0;
+		}
 		n->batSharecnt = 0;
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
@@ -727,17 +741,14 @@ VIEWreset(BAT *b)
 		/* insert all of v in n, and quit */
 		BATins(n, m, FALSE);
 		BBPreclaim(v);
-		BBPunfix(n->batCacheid);
 	}
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	if (n != NULL)
-		BBPunfix(n->batCacheid);
 	HEAPfree(&head, 0);
 	HEAPfree(&tail, 0);
-	HEAPfree(&hh, 0);
-	HEAPfree(&th, 0);
+	GDKfree(hh);
+	GDKfree(th);
 	return GDK_FAIL;
 }
 

@@ -126,7 +126,7 @@ MALadmission(lng argclaim, lng hotclaim)
 	if (argclaim == 0)
 		return 0;
 
-	MT_lock_set(&admissionLock, "MALadmission");
+	MT_lock_set(&admissionLock);
 	if (memoryclaims < 0)
 		memoryclaims = 0;
 	if (memorypool <= 0 && memoryclaims == 0)
@@ -139,12 +139,12 @@ MALadmission(lng argclaim, lng hotclaim)
 			PARDEBUG
 			mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
 						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-			MT_lock_unset(&admissionLock, "MALadmission");
+			MT_lock_unset(&admissionLock);
 			return 0;
 		}
 		PARDEBUG
 		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
-		MT_lock_unset(&admissionLock, "MALadmission");
+		MT_lock_unset(&admissionLock);
 		return -1;
 	}
 	/* release memory claimed before */
@@ -153,7 +153,7 @@ MALadmission(lng argclaim, lng hotclaim)
 	PARDEBUG
 	mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
 				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-	MT_lock_unset(&admissionLock, "MALadmission");
+	MT_lock_unset(&admissionLock);
 	return 0;
 }
 #endif
@@ -193,7 +193,7 @@ MALresourceFairness(lng usec)
 
 	if ( clk > DELAYUNIT ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
-		(void) ATOMIC_DEC(running, runningLock, "MALresourceFairness");
+		(void) ATOMIC_DEC(running, runningLock);
 		/* always keep one running to avoid all waiting  */
 		while (clk > 0 && running >= 2 && delayed < MAX_DELAYS) {
 			/* speed up wake up when we have memory */
@@ -211,7 +211,7 @@ MALresourceFairness(lng usec)
 			} else break;
 			clk -= DELAYUNIT;
 		}
-		(void) ATOMIC_INC(running, runningLock, "MALresourceFairness");
+		(void) ATOMIC_INC(running, runningLock);
 	}
 }
 
@@ -219,7 +219,7 @@ void
 initResource(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(runningLock, "runningLock");
+	ATOMIC_INIT(runningLock);
 #ifdef USE_MAL_ADMISSION
 	MT_lock_init(&admissionLock, "admissionLock");
 #endif

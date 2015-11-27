@@ -718,7 +718,7 @@ int isDelta(InstrPtr p){
 int isFragmentGroup2(InstrPtr p){
 	return
 			(getModuleId(p)== algebraRef && (
-				getFunctionId(p)== leftfetchjoinRef
+				getFunctionId(p)== projectionRef
 			)) ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== mergecandRef || 

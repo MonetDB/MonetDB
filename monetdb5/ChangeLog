@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Nov 23 2015 Martin Kersten <mk@cwi.nl>
+- The MAL function 'leftfetchjoin' is renamed to its relational algebra
+  version 'projection'
+
 * Sat Nov  7 2015 Martin Kersten <mk@cwi.nl>
 - The generic property handling scheme has been removed. It was used in
   just a few places, for widely different purposes and contained cruft.
@@ -15,7 +19,7 @@
 
 * Wed Sep 16 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.leftjoin.  Use algebra.subleftjoin or
-  algebra.leftfetchjoin instead.
+  algebra.projection instead.
 - Removed algebra.tdiff and algebra.tinter.
 
 * Mon Sep 14 2015 Sjoerd Mullender <sjoerd@acm.org>

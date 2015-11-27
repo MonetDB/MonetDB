@@ -23,7 +23,7 @@
 
 #ifdef HAVE_SAMTOOLS_KSTRING_H
 #include <samtools/kstring.h>
-#elif HAVE_BAM_KSTRING_H
+#elif defined (HAVE_BAM_KSTRING_H)
 #include <bam/kstring.h>
 #else
 /* Ubuntu doesn't distribute samtools/kstring.h, so we need our own

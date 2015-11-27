@@ -69,7 +69,7 @@ Operation successful
 |     X_27 := bat.append(X_3,X_26,true);                                                           |
 |     C_28:bat[:oid,:oid] := sql.tid(X_2,"tmp","_tables");                                         |
 |     X_30:bat[:oid,:int] := sql.bind(X_2,"tmp","_tables","id",0);                                 |
-|     X_31 := algebra.leftfetchjoin(C_28,X_30);                                                    |
+|     X_31 := algebra.projection(C_28,X_30);                                                    |
 |     X_32 := aggr.count(X_31);                                                                    |
 |     X_33 := bat.append(X_27,X_32,true);                                                          |
 |     X_34:wrd := aggr.sum(X_33);                                                                  |

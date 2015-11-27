@@ -36,7 +36,7 @@
  *	normal equi-join
  * BATsubleftjoin
  *	normal equi-join, but the left output is sorted
- * BATsubleftfetchjoin
+ * BATsubprojection
  *	normal equi-join, but the left output is sorted, and all
  *	values in the left input must match at least one value in the
  *	right input
@@ -3117,10 +3117,10 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_m
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted).  All values in l must match at least one value in r. */
 gdk_return
-BATsubleftfetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATsubprojection(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 0, 0, 1, estimate, "BATsubleftfetchjoin");
+			   0, 0, 0, 1, estimate, "BATsubprojection");
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,

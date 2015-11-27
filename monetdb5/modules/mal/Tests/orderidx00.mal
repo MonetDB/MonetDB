@@ -20,7 +20,7 @@ ord := bat.getorderidx(bv);
 
 io.print(ord);
 
-seq := algebra.leftfetchjoin(ord,bv);
+seq := algebra.projection(ord,bv);
 
 io.print(seq);
 

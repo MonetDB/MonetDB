@@ -1780,7 +1780,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				q = newStmt1(mb, algebraRef, "leftfetchjoin");
+				q = newStmt1(mb, algebraRef, "projection");
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)

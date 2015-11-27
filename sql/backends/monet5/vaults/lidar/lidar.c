@@ -190,9 +190,9 @@ void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, in
             fprintf(file, "   User: '%s' - Description: '%s'\n", pszVLRUser, pszVLRDescription);
             fprintf(file, "   ID: %d Length: %d\n\n", nVLRRecordId, nVLRLength);
            
-            MT_lock_set(&mt_lidar_lock, "lidar.lock"); 
+            MT_lock_set(&mt_lidar_lock); 
             LASVLR_Destroy(pVLR);
-            MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+            MT_lock_unset(&mt_lidar_lock);
             pVLR = NULL;
             
             LASString_Free(pszVLRUser);
@@ -206,9 +206,9 @@ void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, in
     LASString_Free(pszSoftwareId);
     LASString_Free(pszProj4);
     LASString_Free(pszWKT);
-    MT_lock_set(&mt_lidar_lock, "lidar.lock");
+    MT_lock_set(&mt_lidar_lock);
     LASSRS_Destroy(pSRS);
-    MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+    MT_lock_unset(&mt_lidar_lock);
 }
 #endif
 
@@ -833,9 +833,9 @@ LIDARtest(int *res, str *fname)
 	LASHeaderH header;
 
 	LASError_Reset();
-	MT_lock_set(&mt_lidar_lock, "lidar.lock");
+	MT_lock_set(&mt_lidar_lock);
 	reader=LASReader_Create(*fname);
-	MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+	MT_lock_unset(&mt_lidar_lock);
 
 	if (LASError_GetErrorCount() != 0) {
 		msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
@@ -843,10 +843,10 @@ LIDARtest(int *res, str *fname)
 	} else 	{
 		header=LASReader_GetHeader(reader);
 		*res=LASHeader_GetPointRecordsCount(header);
-		MT_lock_set(&mt_lidar_lock, "lidar.lock");
+		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
-		MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+		MT_lock_unset(&mt_lidar_lock);
 		if (LASError_GetErrorCount() != 0) {
 			msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
 			*fname, LASError_GetLastErrorMsg());
@@ -893,10 +893,10 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* open the LAS/LAZ file */
-	MT_lock_set(&mt_lidar_lock, "lidar.lock");
+	MT_lock_set(&mt_lidar_lock);
         LASError_Reset();
         reader = LASReader_Create(fname);
-	MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
 		msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
@@ -929,10 +929,10 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, lidar_fl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
 	if (rid != oid_nil) {
-		MT_lock_set(&mt_lidar_lock, "lidar.lock");
+		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
-		MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+		MT_lock_unset(&mt_lidar_lock);
 		msg = createException(SQL, "lidar.attach", "File %s already attached\n", fname);
 		return msg;
 	}
@@ -964,10 +964,10 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* or as regular SQL table */
 	tbl = mvc_bind_table(m, sch, tname_low);
 	if (rid != oid_nil || tbl) {
-		MT_lock_set(&mt_lidar_lock, "lidar.lock");
+		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
-		MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+		MT_lock_unset(&mt_lidar_lock);
 		msg = createException(SQL, "lidar.attach", "Table %s already exists\n", tname_low);
 		return msg;
 	}
@@ -1092,10 +1092,10 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc_create_column_(m, tbl, "y", "double", 64);
 	mvc_create_column_(m, tbl, "z", "double", 64);
 
-	MT_lock_set(&mt_lidar_lock, "lidar.lock");
+	MT_lock_set(&mt_lidar_lock);
 	if (header != NULL) LASHeader_Destroy(header);
 	if (reader != NULL) LASReader_Destroy(reader);
-	MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+	MT_lock_unset(&mt_lidar_lock);
 
 	return MAL_SUCCEED;
 }
@@ -1188,10 +1188,10 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	/* open the LAS/LAZ file */
-	MT_lock_set(&mt_lidar_lock, "lidar.lock");
+	MT_lock_set(&mt_lidar_lock);
 	LASError_Reset();
 	reader = LASReader_Create(fname);
-	MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
 		msg = createException(MAL, "lidar.lidarload", "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
@@ -1224,11 +1224,11 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tpcode);
 		GDKfree(rep);
 		GDKfree(wid);
-		MT_lock_set(&mt_lidar_lock, "lidar.lock");
+		MT_lock_set(&mt_lidar_lock);
 		if (p != NULL) LASPoint_Destroy(p);
 		if (header != NULL) LASHeader_Destroy(header);
 		if (reader != NULL) LASReader_Destroy(reader);
-		MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+		MT_lock_unset(&mt_lidar_lock);
 		msg = createException(MAL, "lidar.lidarload", "Malloc failed");
 		return msg;
 	}
@@ -1325,11 +1325,11 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(rep);
 	GDKfree(wid);
 
-	MT_lock_set(&mt_lidar_lock, "lidar.lock");
+	MT_lock_set(&mt_lidar_lock);
 	if (p != NULL) LASPoint_Destroy(p);
 	if (header != NULL) LASHeader_Destroy(header);
 	if (reader != NULL) LASReader_Destroy(reader);
-	MT_lock_unset(&mt_lidar_lock, "lidar.lock");
+	MT_lock_unset(&mt_lidar_lock);
 
 	return msg;
 }

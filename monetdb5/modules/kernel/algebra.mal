@@ -23,8 +23,12 @@ command fetch(b:bat[:oid,:any_1], x:oid) :any_1
 address ALGfetchoid
 comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
-command leftfetchjoin ( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
-address ALGleftfetchjoin
+pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]
+address ALGprojecttail
+comment "Fill the tail with a constant";
+
+command projection( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
+address ALGprojection
 comment "Hook directly into the left fetch join implementation.";
 
 # BAT copying
@@ -240,10 +244,6 @@ address ALGsubinter
 comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 
 # @+ Projection operations
-pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]
-address ALGprojecttail
-comment "Fill the tail with a constant";
-
 pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B";

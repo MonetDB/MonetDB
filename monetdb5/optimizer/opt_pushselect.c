@@ -204,7 +204,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -240,7 +240,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -270,7 +270,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -401,11 +401,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* Leftfetchjoins involving rewriten table ids need to be flattend
-		 * l = leftfetchjoin(t, c); => l = c;
+		 * l = projection(t, c); => l = c;
 		 * and
-		 * l = leftfetchjoin(s, ntids); => l = s;
+		 * l = projection(s, ntids); => l = s;
 		 */
-		else if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef) {
+		else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
 			int var = getArg(p, 1);
 			
 			if (subselect_find_subselect(&subselects, var) > 0) {
@@ -435,7 +435,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					continue;
 				}
 				/* c = sql.delta(b,uid,uval,ins);
-		 		 * l = leftfetchjoin(x, c); 
+		 		 * l = projection(x, c); 
 		 		 * into
 		 		 * l = sql.projectdelta(x,b,uid,uval,ins);
 		 		 */
