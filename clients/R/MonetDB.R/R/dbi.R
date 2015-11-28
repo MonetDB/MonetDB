@@ -175,9 +175,10 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
   invisible(TRUE)
 })
 
-setMethod("dbDisconnect", "MonetDBEmbeddedConnection", def=function(conn, ...) {
+setMethod("dbDisconnect", "MonetDBEmbeddedConnection", def=function(conn, shutdown=FALSE, ...) {
   conn@connenv$open <- FALSE
   MonetDBLite::monetdb_embedded_disconnect(conn@connenv$conn)
+  if (shutdown) MonetDBLite::monetdb_embedded_shutdown()
   invisible(TRUE)
 })
 

@@ -23,7 +23,7 @@
 - Support for running MonetDB in embedded mode (MonetDBLite)
 - Support for monetdblite:/some/path URLs in dbConnect()
 - Fixed an off-by-one error in type conversion (Thanks, Kirill)
-- Not force-killing mserver when calling monetdb.server.stop on windows and wait support
+- Wait support for monetdb.server.stop on Windows 
 - dbWriteTable now invokes monetdb.read.csv when called with a character vector as value argument
 
 0.9.7

@@ -16,6 +16,8 @@ export(monetdb.server.start)
 export(monetdb.server.stop)
 export(monetdbd.liststatus)
 export(monetdb.liststatus)
+export(monetdb.server.shutdown)
+export(monetdb.server.getpid)
 
 # dplyr.R
 export(src_monetdb)
