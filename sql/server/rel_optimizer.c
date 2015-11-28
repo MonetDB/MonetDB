@@ -7077,7 +7077,7 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
+_rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
 	list *exps = rel_projections(sql, rel, NULL, 1, 1);
 	sql_exp *e;
@@ -7092,6 +7092,28 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
 	return rel;
+}
+
+static sql_exp *
+exps_find_identity(list *exps) 
+{
+	node *n;
+
+	for (n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (is_identity(e, NULL))
+			return e;
+	}
+	return NULL;
+}
+
+static sql_rel *
+rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
+{
+	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps)) != NULL) 
+		return rel;
+	return _rel_add_identity(sql, rel, exp);
 }
 
 static int
