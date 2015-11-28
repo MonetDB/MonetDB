@@ -404,7 +404,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
-		if( MOSheapAlloc(bsrc, BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL)
+		if( MOSalloc(bsrc) == GDK_FAIL)
 			throw(MAL,"mosaic.compress", "heap construction failes");
 	}
 	
@@ -435,7 +435,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		// default is to extend the non-compressed block with a single element
 		cand = MOSoptimizer(cntxt, task, typewidth);
 		if( task->dst >= bsrc->T->mosaic->base + bsrc->T->mosaic->size - 16 ){
-			MOSheapDestroy(bsrc);
+			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
 			task->hdr = 0;
 			goto finalize;

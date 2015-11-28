@@ -715,7 +715,7 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 		   &n) < 13)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
-	if (properties & ~0x1F81)
+	if (properties & ~0x0F81)
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
@@ -1229,7 +1229,7 @@ heap_entry(FILE *fp, COLrec *col)
 			   (((unsigned short) col->key & 0x01) << 8) |
 			   ((unsigned short) col->dense << 9) |
 			   ((unsigned short) col->nonil << 10) |
-			   ((unsigned short) col->nil << 11) ,
+			   ((unsigned short) col->nil << 11),
 		       col->nokey[0],
 		       col->nokey[1],
 		       col->nosorted,
@@ -3867,6 +3867,9 @@ BBPdiskscan(const char *parent)
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 		} else if (strncmp(p + 1, "timprints", 9) == 0) {
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+		} else if (strncmp(p + 1, "mosaic", 6) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 		} else if (strncmp(p + 1, "priv", 4) != 0 && strncmp(p + 1, "new", 3) != 0 && strncmp(p + 1, "head", 4) != 0 && strncmp(p + 1, "tail", 4) != 0) {

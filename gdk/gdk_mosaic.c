@@ -15,14 +15,15 @@
 #include "gdk_private.h"
 
 gdk_return
-MOSheapAlloc(BAT *bn, BUN cap)
+MOSalloc(BAT *bn)
 {
     const char *nme = BBP_physical(bn->batCacheid);
 
     if ( (bn->T->mosaic = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
         (bn->T->mosaic->filename = GDKfilepath(NOFARM, NULL, nme, "mosaic")) == NULL)
         return GDK_FAIL;
-    if( HEAPalloc(bn->T->mosaic, cap , Tsize(bn)) != GDK_SUCCEED)
+	
+    if( HEAPalloc(bn->T->mosaic, BATcapacity(bn) + 25*1024 , Tsize(bn)) != GDK_SUCCEED)
         return GDK_FAIL;
     bn->T->mosaic->parentid = bn->batCacheid;
     bn->T->mosaic->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap);
@@ -30,14 +31,14 @@ MOSheapAlloc(BAT *bn, BUN cap)
 }
 
 void
-MOSheapDestroy(BAT *bn)
+MOSdestroy(BAT *bn)
 {	Heap *h;
 	
 	if( bn && bn->T->mosaic && !VIEWtparent(bn)){
 		h= bn->T->mosaic;
 		bn->T->mosaic = NULL;
 		if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
-			IODEBUG fprintf(stderr,"#MOSheapDestroy (%s) failed", BATgetId(bn));
+			IODEBUG fprintf(stderr,"#MOSdestroy (%s) failed", BATgetId(bn));
 		bn->T->mosaic = NULL;
 		GDKfree(h);
 	}

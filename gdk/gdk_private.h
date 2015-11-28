@@ -20,7 +20,8 @@ enum heaptype {
 	offheap,
 	varheap,
 	hashheap,
-	imprintsheap
+	imprintsheap,
+	mosaicheap
 };
 
 /*
@@ -54,6 +55,10 @@ __hidden int BATcheckhash(BAT *b)
 __hidden int BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BATcheckmodes(BAT *b, int persistent)
+	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckmosaic(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BATstore *BATcreatedesc(int ht, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));

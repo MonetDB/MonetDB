@@ -326,6 +326,7 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	/* imprints are shared, but the check is dynamic */
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
+	bn->T->mosaic = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
@@ -436,7 +437,7 @@ BATmaterializet(BAT *b)
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
-	MOSheapDestroy(b);
+	MOSdestroy(b);
 
 	b->T->heap.filename = NULL;
 	if (HEAPalloc(&b->T->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
@@ -791,7 +792,7 @@ VIEWdestroy(BAT *b)
 	if (b->T->hash)
 		HASHremove(b);
 	IMPSdestroy(b);
-	MOSheapDestroy(b);
+	MOSdestroy(b);
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {

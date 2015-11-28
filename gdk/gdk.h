@@ -791,7 +791,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bit    hsorted;          // are head values currently ordered?
  *           bit    hvarsized;        // for speed: head type is varsized?
  *           bit    hnonil;           // head has no nils
- *           oid    halign;          // alignment OID for head.
+ *           oid    halign;           // alignment OID for head.
  *           // Head storage
  *           int    hloc;             // byte-offset in BUN for head elements
  *           Heap   *hheap;           // heap for varsized head values
@@ -810,6 +810,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
+ *           Heap   *mosaic;		  // compressed representation
  *  } BAT;
  * @end verbatim
  *
@@ -899,7 +900,6 @@ typedef struct {
 
 #define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
-#define GDKLIBRARY_NOCOMPRESS	061027	/* version without compression (mosaic) */
 #define GDKLIBRARY		061030
 
 typedef struct BAT {
@@ -958,6 +958,7 @@ typedef int (*GDKfcn) ();
 #define tident		T->id
 #define halign		H->align
 #define talign		T->align
+#define tmosaic T->mosaic
 
 #define batMaphead	S->map_head
 #define batMaptail	S->map_tail
@@ -2004,16 +2005,18 @@ gdk_export oid OIDnew(oid inc);
  *  BAThash (BAT *b, BUN masksize)
  * @end multitable
  *
- * The current BAT implementation supports two search accelerators:
- * hashing and imprints.  The routine BAThash makes sure that a hash
- * accelerator on the tail of the BAT exists. GDK_FAIL is returned
- * upon failure to create the supportive structures.
+ * The current BAT implementation supports three search/storage accelerators:
+ * hashing, imprints, and mosaic.
+ *
+ * The routine BAThash makes sure that a hash accelerator on the tail of the
+ * BAT exists. GDK_FAIL is returned upon failure to create the supportive
+ * structures.
  */
 gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 /* support routines for the mosaic approach */
-gdk_export gdk_return MOSheapAlloc(BAT *b, BUN cap);
-gdk_export void MOSheapDestroy(BAT *b);
+gdk_export gdk_return MOSalloc(BAT *b);
+gdk_export void MOSdestroy(BAT *b);
 
 /*
  * @- Column Imprints Functions

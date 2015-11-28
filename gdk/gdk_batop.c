@@ -690,7 +690,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
-	MOSheapDestroy(b);
+	MOSdestroy(b);
 	/* a hash is useless for void bats */
 	if (b->H->hash)
 		HASHremove(BATmirror(b));

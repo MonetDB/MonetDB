@@ -975,7 +975,7 @@ BATdelete(BAT *b)
 		b = loaded;
 		HASHdestroy(b);
 		IMPSdestroy(b);
-		MOSheapDestroy(b);
+		MOSdestroy(b);
 	}
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {
