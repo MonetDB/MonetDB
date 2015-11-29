@@ -4881,7 +4881,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
 
-								w = bn->tmosaic != NULL;
+								w = BATcheckmosaic(bn);
 								BUNappend(compressed, &w, FALSE);
 
 								BBPunfix(bn->batCacheid);
@@ -4961,7 +4961,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
-									w = bn->tmosaic != NULL;
+									w = BATcheckmosaic(bn);
 									BUNappend(compressed, &w, FALSE);
 									BBPunfix(bn->batCacheid);
 								}

@@ -33,8 +33,6 @@
 
 //#define _DEBUG_MOSAIC_
 
-#define MOSAIC_VERSION 20140808
-
 /* do not invest in compressing BATs smaller than this */
 #define MIN_INPUT_COUNT 1
 

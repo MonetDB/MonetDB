@@ -2015,8 +2015,10 @@ gdk_export oid OIDnew(oid inc);
 gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 
 /* support routines for the mosaic approach */
-gdk_export gdk_return MOSalloc(BAT *b);
+#define MOSAIC_VERSION 20140808
+gdk_export gdk_return MOSalloc(BAT *b, BUN cap);
 gdk_export void MOSdestroy(BAT *b);
+gdk_export int BATcheckmosaic(BAT *b);
 
 /*
  * @- Column Imprints Functions

@@ -45,7 +45,7 @@ MOSinit(MOStask task, BAT *b){
 	if( isVIEW(b))
 		b= BATdescriptor(VIEWtparent(b));
 	assert(b);
-	base = b->T->mosaic->base;
+	base = b->tmosaic->base;
 	assert(base);
 	task->type = b->ttype;
 	task->bsrc = b;
@@ -67,7 +67,7 @@ MOSdumpTask(Client cntxt,MOStask task)
 
 	mnstr_printf(cntxt->fdout,"# ");
 	mnstr_printf(cntxt->fdout,"clk "LLFMT"\tsizes "SZFMT"\t%3.0fx\t", 
-		task->timer, task->bsrc->T->mosaic->free, (flt) task->bsrc->T->heap.free/task->bsrc->T->mosaic->free);
+		task->timer, task->bsrc->tmosaic->free, (flt) task->bsrc->T->heap.free/task->bsrc->T->mosaic->free);
 	for ( i=0; i < MOSAIC_METHODS -1; i++)
 	if( task->filter[i])
 		mnstr_printf(cntxt->fdout, "%s["LLFMT ","LLFMT "]\t" , MOSfiltername[i], task->hdr->blks[i], task->hdr->elms[i]);
@@ -222,7 +222,7 @@ MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if  ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL,"mosaic.dump",INTERNAL_BAT_ACCESS);
-	if ( !b->T->mosaic){
+	if ( !b->tmosaic){
 		BBPunfix(bid);
 		return MAL_SUCCEED;
 	}
@@ -383,7 +383,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		return msg;
 	}
 
-	if ( isVIEWCOMBINE(bsrc) || BATcount(bsrc) < MIN_INPUT_COUNT ){
+	if ( isVIEWCOMBINE(bsrc) || BATcount(bsrc) < MIN_INPUT_COUNT  || BATcheckmosaic(bsrc)){
 		/* no need to compress */
 		BBPkeepref(*ret = bsrc->batCacheid);
 		return msg;
@@ -393,18 +393,13 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	mnstr_printf(cntxt->fdout,"#compress bat %d \n",*bid);
 #endif
 
-	if( bsrc->T->mosaic == NULL){
+	if( bsrc->tmosaic == NULL && MOSalloc(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
-		bsrc->T->mosaic = (Heap *) GDKzalloc(sizeof(Heap));
-		if( bsrc->T->mosaic == NULL)
-			throw(MAL,"mosaic.compress", MAL_MALLOC_FAIL);
-		// create the heap for the compressed data
 		// The final size should be smaller then the original
 		// It may, however, be the case that we mix a lot of LITERAL and, say, DELTA small blocks
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
-		if( MOSalloc(bsrc) == GDK_FAIL)
 			throw(MAL,"mosaic.compress", "heap construction failes");
 	}
 	
@@ -434,13 +429,13 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block with a single element
 		cand = MOSoptimizer(cntxt, task, typewidth);
-		if( task->dst >= bsrc->T->mosaic->base + bsrc->T->mosaic->size - 16 ){
+		if( task->dst >= bsrc->tmosaic->base + bsrc->T->mosaic->size - 16 ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
 			task->hdr = 0;
 			goto finalize;
 		}
-		assert (task->dst < bsrc->T->mosaic->base + bsrc->T->mosaic->size );
+		assert (task->dst < bsrc->tmosaic->base + bsrc->T->mosaic->size );
 
 		// wrapup previous block
 		switch(cand){
@@ -523,7 +518,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		MOSsetTag(task->blk,MOSAIC_EOL);
 	} else
 		task->dst = ((char*) task->blk)+ MosaicBlkSize;
-	task->bsrc->T->mosaic->free = (task->dst - (char*)task->hdr);
+	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
 	task->timer = GDKusec() - task->timer;
 	if(debug) 
 		MOSdumpTask(cntxt,task);
@@ -531,7 +526,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	// TODO
 
 	bsrc->batDirty = 1;
-	task->ratio = task->hdr->ratio = (flt)task->bsrc->T->heap.free/ task->bsrc->T->mosaic->free;
+	task->ratio = task->hdr->ratio = (flt)task->bsrc->T->heap.free/ task->bsrc->tmosaic->free;
 finalize:
 	MCexitMaintenance(cntxt);
 	*ret= bsrc->batCacheid;
@@ -590,7 +585,11 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 	if ((bsrc = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
-	if (!bsrc->T->mosaic) {
+	if (BATcheckmosaic(bsrc) == 0 ){
+		BBPunfix(bsrc->batCacheid);
+		throw(MAL, "mosaic.decompress", "mosaic file not available");
+	}
+	if (!bsrc->tmosaic) {
 		BBPkeepref(*ret = bsrc->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -599,7 +598,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		throw(MAL, "mosaic.decompress", "cannot decompress VIEWCOMBINE");
 	}
 
-	if (bsrc->T->mosaic && VIEWtparent(bsrc)) {
+	if (bsrc->tmosaic && VIEWtparent(bsrc)) {
 		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
@@ -720,7 +719,7 @@ isCompressed(bat bid)
 	if( bid == 0)
 		return 0;
 	b = BATdescriptor(bid);
-	r = b->T->mosaic != NULL;
+	r = BATcheckmosaic(b);
 	BBPunfix(bid);
 	return r;
 }
@@ -1196,7 +1195,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// we assume one compressed argument
-	if (bl->T->mosaic && br->T->mosaic){
+	if (bl->tmosaic && br->T->mosaic){
 		BBPunfix(bl->batCacheid);
 		BBPunfix(br->batCacheid);
 		throw(MAL,"mosaic.join","Join over generator pairs not supported");
@@ -1214,7 +1213,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.join",MAL_MALLOC_FAIL);
 	}
 
-	if ( bl->T->mosaic){
+	if ( bl->tmosaic){
 		MOSinit(task,bl);
 		//task->elm = BATcount(br);
 		//task->src= Tloc(br,BUNfirst(br));
@@ -1241,7 +1240,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
-	if ( bl->T->mosaic){
+	if ( bl->tmosaic){
 		task->elm = BATcount(br);
 		task->src= Tloc(br,BUNfirst(br));
 	} else {
@@ -1373,7 +1372,12 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 		BBPunfix(bid);
 		return 0;
 	}
-	if ( BATcount(b) < MIN_INPUT_COUNT ){
+	if ( BATcheckmosaic(b)){
+		mnstr_printf(cntxt->fdout,"#already compressed %d %s\n",bid, BBP_logical(bid));
+		BBPunfix(bid);
+		return 0;
+	}
+	if ( BATcount(b) < MIN_INPUT_COUNT  ){
 		mnstr_printf(cntxt->fdout,"#ignore small %d %s\n",bid, BBP_logical(bid));
 		BBPunfix(bid);
 		return 0;
@@ -1448,9 +1452,11 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		MOScompressInternal(cntxt, &ret, &bid, task, 0);
 		clk = GDKms() - clk;
 		
-		if( task->hdr == NULL)
+		if( task->hdr == NULL){
 			// aborted compression
+			MOSdestroy(BBPdescriptor(bid));
 			continue;
+		}
 		// analyse result to detect a new combination
 		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
 			if ( task->filter[j] && task->hdr->blks[j])
@@ -1460,13 +1466,17 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		for( j=0; j < i; j++)
 			if (pattern[j] == k )
 				break;
-		if( j<i)
+		if( j<i){
+			MOSdestroy(BBPdescriptor(bid));
 			continue;
+		}
 
 		xf[i]= task->ratio;
-		if( xf[i] == 0)
+		if( xf[i] == 0){
+			MOSdestroy(BBPdescriptor(bid));
 			continue;
-		xsize = (BUN) task->bsrc->T->mosaic->free;
+		}
+		xsize = (BUN) task->bsrc->tmosaic->free;
 		BUNappend(boutput,&xsize,FALSE);
 
 		t= technique;
@@ -1481,7 +1491,8 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		BUNappend(bratio,&ratio,FALSE);
 		BUNappend(brun,&clk,FALSE);
 
-		// get rid of temporary compressed BAT
+		// get rid of mosaic heap
+		MOSdestroy(BBPdescriptor(bid));
 		if( ret != bid)
 			BBPdecref(ret, TRUE);
 	}
@@ -1616,6 +1627,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			x+= MOSanalyseInternal(cntxt, threshold, task, bid);
 			xf[j]= task->hdr? task->ratio: 0;
 			if(xf[mx] < xf[j]) mx =j;
+			MOSdestroy(BBPdescriptor(bid));
 		}
 		if(x >1){
 			mnstr_printf(cntxt->fdout,"#all %d ",bid);
@@ -1641,6 +1653,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						task->factor[k] = 0.0;
 					}
 				x+= MOSanalyseInternal(cntxt, threshold, task, i);
+			MOSdestroy(BBPdescriptor(i));
 			xf[j]= task->hdr? task->ratio: 0;
 		}
 		if( x >1){
@@ -1718,6 +1731,7 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 		xf[i] = task->ratio;
+		MOSdestroy(BBPdescriptor(bid));
 		if( ret != bid)
 			BBPdecref(ret, TRUE);
 	}

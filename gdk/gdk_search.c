@@ -848,6 +848,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		}
 		break;
 	}
+
 	return cur;
 }
 
