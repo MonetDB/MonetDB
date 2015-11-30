@@ -8,11 +8,11 @@
 
 /* (c) M.L. Kersten
  * Performance tracing
- * The performance monitor has exclusive access to the event file, which
- * avoids concurrency conflicts amongst clients. It also avoid cluthered
- * event records on the event stream. Since this event stream is owned
- * by a client, we should ensure that the profiler is automatically be
- * reset once the owner leaves. The routine profilerReset() handles the case.
+ * The stethoscope/tachograph and tomograph performance monitors have exclusive access 
+ * to a single event stream, which avoids concurrency conflicts amongst clients. 
+ * It also avoid cluthered event records on the stream. Since this event stream is owned
+ * by a client, we should ensure that the profiler is automatically 
+ * reset once the owner leaves. 
  */
 #include "monetdb_config.h"
 #include "mal_function.h"
@@ -21,24 +21,33 @@
 #include "mal_runtime.h"
 #include "mal_debugger.h"
 
+static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 stream *eventstream = 0;
 
-static int offlineProfiling = FALSE;
-static int cachedProfiling = FALSE;
-static str myname = 0;
-static oid user = 0;
-
-static void offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc, int start, char *alter, char *msg);
-static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-static int initTrace(void);
-
-int malProfileMode = 0;     /* global flag to indicate profiling mode */
+static int sqlProfiling = FALSE;
+static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
+
+static int TRACE_init = 0;
+int malProfileMode = 0;     /* global flag to indicate profiling mode */
+
+static volatile ATOMIC_TYPE hbdelay = 0;
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
+
+static struct{
+	lng user, nice, system, idle, iowait;
+	double load;
+} corestat[256];
+
+/* the heartbeat process produces a ping event once every X milliseconds */
+//#ifdef ATOMIC_LOCK
+//static MT_Lock mal_beatLock MT_LOCK_INITIALIZER("beatLock");
+//#endif
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -46,101 +55,62 @@ static struct rusage prevUsage;
 #define logadd(...) {														\
 	do {																\
 		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
+		assert(loglen < LOGLEN); \
 	} while (0);}
 
-static void
-offlineProfilerHeader(void)
-{
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
 
-	if (eventstream == NULL) 
-		return ;
+// The heart beat events should be sent to all outstanding channels.
+static void logjsonInternal(char *logbuffer)
+{	
+	char buf[BUFSIZ], *s;
+	size_t len, lenhdr;
 
-	lognew();
-	logadd("# ");
-	logadd("event,\t");
-	logadd("time,\t");
-	logadd("pc,\t");
-	logadd("thread,\t");
-	logadd("state,\t");
-	logadd("usec,\t");
-	logadd("rssMB,\t");
-	logadd("tmpspace,\t");
-
-#ifdef NUMAprofiling
-		logadd("numa,\t");
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-	logadd("inblock,\t");
-	logadd("oublock,\t");
-	logadd("majflt,\t");
-	logadd("nswap,\t");
-	logadd("switch,\t");
-#endif
-	logadd("stmt,\t");
-	logadd("# name \n");
-	mnstr_printf(eventstream,"%s\n", logbuffer);
-	mnstr_flush(eventstream);
-}
-
-/*
- * Offline processing
- * The offline processing structure is the easiest. We merely have to
- * produce a correct tuple format for the front-end.
- * To avoid unnecessary locks we first build the event as a string
- * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
- */
-
-static void logsend(char *logbuffer)
-{	int error=0;
-	int showsystem = 0;
-	if (eventstream) {
-		MT_lock_set(&mal_profileLock);
-		if( eventcounter == 0){
-			offlineProfilerHeader();
-			showsystem++;
-		}
-		eventcounter++;
-		error= mnstr_printf(eventstream,"[ %d,\t%s", eventcounter, logbuffer);
-		error= mnstr_flush(eventstream);
-		MT_lock_unset(&mal_profileLock);
-		if( showsystem)
-			offlineProfilerEvent(0, 0, 0, 0, "system", monet_characteristics);
-		if ( error) stopProfiler();
-	}
-}
-
-#define flushLog() if (eventstream) mnstr_flush(eventstream);
-
-/*
- * Event dispatching
- * The profiler strategy is encapsulated here
- * Note that the profiler itself should lead to event generations.
- */
-void
-profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
-{
-	if( usr != user) return; // only trace your own commands
-	if (stk == NULL) return;
-	if (pci == NULL) return;
-	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
+	s = strchr(logbuffer,(int) ':');
+	if( s == NULL){
 		return;
-	if (offlineProfiling)
-		offlineProfilerEvent(mb, stk, pci, start,0,0);
-	if (cachedProfiling && !start )
-		cachedProfilerEvent(mb, stk, pci);
-	if ( start && pci->pc ==0)
-		profilerHeartbeatEvent("ping");
-	if ( !start && pci->token == ENDsymbol)
-		profilerHeartbeatEvent("ping");
+	}
+	len = strlen(logbuffer);
+
+	MT_lock_set(&mal_profileLock);
+	snprintf(buf,BUFSIZ,"%d",eventcounter);
+	strncpy(s+1, buf,strlen(buf));
+
+	if (eventstream) {
+	// upon request the log record is sent over the profile stream
+		if( eventcounter == 0){
+			snprintf(buf,BUFSIZ,"%s\n",monet_characteristics);
+			lenhdr = strlen(buf);
+			(void) mnstr_write(eventstream, buf, 1, lenhdr);
+		}
+		(void) mnstr_write(eventstream, logbuffer, 1, len);
+		(void) mnstr_flush(eventstream);
+	}
+	eventcounter++;
+	MT_lock_unset(&mal_profileLock);
 }
 
-/*
- * Unlike previous versions we issue a fixed record of performance information.
- */
-void
-offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char *alter, char *msg)
+/* JSON rendering method of performance data. 
+ * The eventparser may assume this layout for ease of parsing
+EXAMPLE:
+{
+"event":6        ,
+"time":"15:37:13.799706",
+"thread":3,
+"function":"user.s3_1",
+"pc":1,
+"tag":10397,
+"state":"start",
+"usec":0,
+"rss":215,
+"size":0,
+"oublock":8,
+"stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
+"short":"define( \"select count(*) from tables;\",\"default_pipe\",30 )",
+"prereq":[]
+}
+*/
+static void
+renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
@@ -149,11 +119,8 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	struct timeval clock;
 	str stmt, c;
 	char *tbuf;
-	char buf[BUFSIZ];
 	str stmtq;
 
-	if (eventstream == NULL)
-		return ;
 
 	if( start) // show when instruction was started
 		clock = pci->clock;
@@ -161,8 +128,9 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 		gettimeofday(&clock, NULL);
 	clk = clock.tv_sec;
 
-	/* make basic profile event tuple  */
+	/* make profile event tuple  */
 	lognew();
+	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
 
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
@@ -176,195 +144,317 @@ offlineProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, char 
 	tbuf[19]=0;
 	/* there should be less than 10^6 == 1M usecs in 1 sec */
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
-	logadd("\"%s.%06d\",\t", tbuf+11, (int) clock.tv_usec);
-	if( alter){
-		logadd("\"user.%s[0]0\",\t",alter);
-	} else {
-		snprintf(buf, BUFSIZ, "%s.%s[%d]%d",
-		getModuleId(getInstrPtr(mb, 0)),
-		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
-		logadd("\"%s\",\t", buf);
-	}
+	if( usrname)
+		logadd("\"user\":\"%s\",\n",usrname);
+	logadd("\"clk\":"LLFMT",\n",GDKusec());
+	logadd("\"ctime\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
+	logadd("\"thread\":%d,\n", THRgettid());
 
-	logadd("%d,\t", THRgettid());
-	if( alter) {
-		logadd("\"%s\",\t",alter);
-		logadd("0,\t");
-	} else 
+	logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
+	logadd("\"pc\":%d,\n", mb?getPC(mb,pci):0);
+	logadd("\"tag\":%d,\n", stk?stk->tag:0);
+
 	if( start){
-		logadd("\"start\",\t");
+		logadd("\"state\":\"start\",\n");
 		// determine the Estimated Time of Completion
 		if ( pci->calls){
-			logadd(LLFMT ",\t", pci->totticks/pci->calls);
+			logadd("\"usec\":"LLFMT",\n", pci->totticks/pci->calls);
 		} else{
-			logadd(LLFMT ",\t", pci->ticks);
+			logadd("\"usec\":"LLFMT",\n", pci->ticks);
 		}
 	} else {
-		logadd("\"done \",\t");
-		logadd(LLFMT ",\t", pci->ticks);
+		logadd("\"state\":\"done\",\n");
+		logadd("\"usec\":"LLFMT",\n", pci->ticks);
 	}
-	logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-	logadd(LLFMT ",\t", pci? pci->wbytes/1024/1024:0);
+	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
+	logadd("\"size\":"LLFMT ",\n", pci? pci->wbytes/1024/1024:0);	// result size
 
 #ifdef NUMAprofiling
-	if( alter){
-		logadd("\"\",\t");
-	} else {
-		logadd("\"");
+		logadd("\"numa\":[");
+		if(mb)
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
-			logadd("@%d", mb->var[getArg(pci,i)]->worker);
-		logadd("\",\t");
-	}
+			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
+		logadd("],\n");
 #endif
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
-	logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-	logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-	logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-	logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-	logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
+		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
+		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
+		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
+		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
+		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 	prevUsage = infoUsage;
-#else
-	logadd("0,\t0,\t0,\t0,\t0,\t");
 #endif
 
-	if ( msg){
-		logadd("\"%s\"",msg);
-	} else {
-		// TODO Obfusate instructions unless administrator calls for it.
-		
+	if( mb){
+		char prereq[BUFSIZ];
+		size_t len;
+		int i,j,k,comma;
+		InstrPtr q;
+
 		/* generate actual call statement */
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 		c = stmt;
 
 		while (c && *c && isspace((int)*c))
 			c++;
-		stmtq = mal_quote(c, strlen(c));
+		if( *c){
+			stmtq = mal_quote(c, strlen(c));
+			if (stmtq != NULL) {
+				logadd("\"stmt\":\"%s\",\n", stmtq);
+				//GDKfree(stmtq);
+			}
+		} 
+		//GDKfree(stmt);
+
+		// ship the beautified version as well
+
+		stmt = shortStmtRendering(mb, stk, pci);
+		stmtq = mal_quote(stmt, strlen(stmt));
 		if (stmtq != NULL) {
-			logadd(" \"%s\"", stmtq);
+			logadd("\"short\":\"%s\",\n", stmtq);
 			GDKfree(stmtq);
 		} 
 		GDKfree(stmt);
+
+
+		// collect the prerequisite pre-requisite statements
+		prereq[0]='[';
+		prereq[1]=0;
+		len = 1;
+		comma=0;
+		for(i= pci->retc; i < pci->argc; i++){
+			for( j = pci->pc-1; j > 0; j--){
+				q= getInstrPtr(mb,j);
+				for( k=0; k < q->retc; k++)
+					if( getArg(q,k) == getArg(pci,i))
+						break;
+				if( k < q->retc){
+					snprintf(prereq + len, BUFSIZ-len,"%s%d", (comma?",":""), j);
+					len = strlen(prereq);
+					comma++;
+					break;
+				}
+			}
+		}
+//#define MALARGUMENTDETAILS
+#ifdef MALARGUMENTDETAILS
+		logadd("\"prereq\":%s],\n", prereq);
+#else
+		logadd("\"prereq\":%s]\n", prereq);
+#endif
+		
+/* EXAMPLE MAL statement argument decomposition
+ * The eventparser may assume this layout for ease of parsing
+{
+... as above ...
+"result":{"index":0,"name":"X_41","value":"0@0","count":1,"type": "void" }
+...
+"argument":{"index":4,"value":"30","type": "int" }
+}
+ */
+#ifdef MALARGUMENTDETAILS
+		// Also show details of the arguments for modelling
+		for( j=0; j< pci->argc; j++){
+			int tpe = getVarType(mb, getArg(pci,j));
+			str tname = getTypeName(tpe), cv;
+
+			logadd("\"%s\":{", j< pci->retc?"result":"argument");
+			logadd("\"index\":\"%d\",", j);
+			if( !isVarConstant(mb, getArg(pci,j))){
+				logadd("\"name\":\"%s\",", getVarName(mb, getArg(pci,j)));
+			}
+			if( isaBatType(tpe) ){
+				BAT *d= BBPquickdesc(abs(stk->stk[getArg(pci,j)].val.ival),TRUE);
+				if( d)
+					logadd("\"count\":" BUNFMT",", BATcount(d));
+				GDKfree(tname);
+				tname = getTypeName(getColumnType(tpe));
+				logadd("\"type\":\"col[:%s]\"", tname);
+			} else{
+				cv = 0;
+				VALformat(&cv, &stk->stk[getArg(pci,j)]);
+				stmtq = mal_quote(cv, strlen(cv));
+				logadd("\"value\":\"%s\",", stmtq);
+				logadd("\"type\":\"%s\"", tname);
+				GDKfree(cv);
+				GDKfree(stmtq);
+			}
+			GDKfree(tname);
+			logadd("}%s\n", (j< pci->argc-1?",":""));
+		}
+#endif
 	}
+	logadd("}\n"); // end marker
+	logjsonInternal(logbuffer);
+}
+
+static int
+getCPULoad(char cpuload[BUFSIZ]){
+    int cpu, len = 0, i;
+	lng user, nice, system, idle, iowait;
+	size_t n;
+    char buf[BUFSIZ+1], *s;
+	static FILE *proc= NULL;
+	lng newload;
+
+	if ( proc == NULL || ferror(proc))
+		proc = fopen("/proc/stat","r");
+	else rewind(proc);
+	if ( proc == NULL) {
+		/* unexpected */
+		return -1;
+	}
+	/* read complete file to avoid concurrent write issues */
+	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
+		return -1;
+	buf[n] = 0;
+	for ( s= buf; *s; s++) {
+		if ( strncmp(s,"cpu",3)== 0){
+			s +=3;
+			if ( *s == ' ') {
+				s++;
+				cpu = 255; // the cpu totals stored here
+			}  else {
+				cpu = atoi(s);
+				if (cpu < 0 || cpu > 255)
+					cpu = 255;
+			}
+			s= strchr(s,' ');
+			if (s == NULL)		/* unexpected format of file */
+				break;
+
+			while( *s && isspace((int)*s)) s++;
+			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
+			if ( i != 5 )
+				goto skip;
+			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if (  newload)
+				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
+			corestat[cpu].user = user;
+			corestat[cpu].nice = nice;
+			corestat[cpu].system = system;
+			corestat[cpu].idle = idle;
+			corestat[cpu].iowait = iowait;
+		} 
+	  skip:
+		while (*s && *s != '\n')
+			s++;
+	}
+
+	if( cpuload == 0)
+		return 0;
+	// identify core processing
+	len += snprintf(cpuload, BUFSIZ, "[ ");
+	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
+		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
+	}
+	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
+	return 0;
+}
+
+void
+profilerHeartbeatEvent(char *alter)
+{
+	char cpuload[BUFSIZ];
+	char logbuffer[LOGLEN], *logbase;
+	int loglen;
+	char ctm[26];
+	time_t clk;
+	struct timeval clock;
+	char *tbuf;
+
+	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
+		return;
+
+	/* get CPU load on beat boundaries only */
+	if ( getCPULoad(cpuload) )
+		return;
+	gettimeofday(&clock, NULL);
+	clk = clock.tv_sec;
 	
-	logadd("\t]\n"); // end marker
-	logsend(logbuffer);
+	lognew();
+	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
+#ifdef HAVE_CTIME_R3
+	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
+#else
+#ifdef HAVE_CTIME_R
+	tbuf = ctime_r(&clk, ctm);
+#else
+	tbuf = ctime(&clk);
+#endif
+#endif
+	tbuf[19]=0;
+	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
+	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
+		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
+		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
+		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
+		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
+		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	prevUsage = infoUsage;
+#endif
+	logadd("\"state\":\"%s\",\n",alter);
+	logadd("\"cpuload\":\"%s\",\n",cpuload);
+	logadd("}\n"); // end marker
+	logjsonInternal(logbuffer);
 }
-/*
- * Postprocessing events
- * The events may be sent for offline processing through a
- * stream, including "stdout".
+
+void
+profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
+{
+	if (stk == NULL) return;
+	if (pci == NULL) return;
+	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
+		return;
+
+	if( sqlProfiling)
+		cachedProfilerEvent(mb, stk, pci);
+		
+	if( eventstream) {
+		renderProfilerEvent(mb, stk, pci, start, usrname);
+		if ( start && pci->pc ==0)
+			profilerHeartbeatEvent("ping");
+		if ( !start && pci->token == ENDsymbol)
+			profilerHeartbeatEvent("ping");
+	}
+}
+
+/* The first scheme dumps the events
+ * on a stream (and in the pool)
  */
-
-
 str
-setLogFile(stream *fd, Module mod, const char *fname)
+openProfilerStream(stream *fd, int mode)
 {
-	(void)mod;      /* still unused */
-	MT_lock_set(&mal_profileLock);
-	if (eventstream ) {
-		MT_lock_unset(&mal_profileLock);
-		throw(IO, "mal.profiler", "Log file already set");
-	}
-	if (strcmp(fname, "console") == 0)
-		eventstream = mal_clients[0].fdout;
-	else if (strcmp(fname, "stdout") == 0)
-		eventstream = fd;
-	else
-		eventstream = open_wastream(fname);
-	if (eventstream == NULL) {
-		MT_lock_unset(&mal_profileLock);
-		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
-	}
-	MT_lock_unset(&mal_profileLock);
-	return MAL_SUCCEED;
-}
-
-str
-setLogStream(Module cntxt, const char *host, int port)
-{
-	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock);
-	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
-		MT_lock_unset(&mal_profileLock);
-		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
-	}
-	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock);
-	return MAL_SUCCEED;
-}
-
-str
-setLogStreamStream(Module cntxt, stream *s)
-{
-	(void)cntxt;        /* still unused */
-	MT_lock_set(&mal_profileLock);
-	if ((eventstream = s) == NULL) {
-		MT_lock_unset(&mal_profileLock);
-		throw(ILLARG, "mal.profiler", "stream must not be NULL");
-	}
-	eventstream = wbstream(eventstream, BUFSIZ);
-	MT_lock_unset(&mal_profileLock);
-	return MAL_SUCCEED;
-}
-
-str
-openProfilerStream(stream *fd)
-{
-	malProfileMode = -1;
-	eventstream = fd;
-	return MAL_SUCCEED;
-}
-
-str
-closeProfilerStream(void)
-{
-	if (eventstream && eventstream != mal_clients[0].fdout && eventstream != GDKout && eventstream != GDKerr) {
-		mnstr_close(eventstream);
-		mnstr_destroy(eventstream);
-	}
-	eventstream = NULL;
-	malProfileMode = 0;
-	return MAL_SUCCEED;
-}
-
-/*
- * When you receive the message to start profiling, we
- * should wait for the next instruction the stream
- * is initiated. This is controlled by a delay-switch
- */
-static int TRACE_init = 0;
-
-str
-startProfiler(oid usr, int mode, int beat)
-{
-	Client c;
 	int i,j;
-	
+	Client c;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
-	if (myname == 0)
+	if (myname == 0){
 		myname = putName("profiler", 8);
-
-	MT_lock_set(&mal_profileLock);
-	if (eventstream != NULL) {
-		offlineProfiling = TRUE;
-	} else {
-		cachedProfiling = TRUE;
+		eventcounter = 0;
 	}
-	if (TRACE_init == 0)
-		_initTrace();
-	malProfileMode = mode;
-	eventcounter = 0;
-	setHeartbeat(beat); 
-	user = usr;
-	MT_lock_unset(&mal_profileLock);
-
+	if( eventstream)
+		closeProfilerStream();
+	malProfileMode = -1;
+	eventstream = fd;
 	/* show all in progress instructions for stethoscope startup */
 	if( mode > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
@@ -373,9 +463,39 @@ startProfiler(oid usr, int mode, int beat)
 				for(j = 0; j <THREADS; j++)
 				if( c->inprogress[j].mb)
 				/* show the event */
-					profilerEvent(i, c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1);
+					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
 		}
 	}
+	return MAL_SUCCEED;
+}
+
+str
+closeProfilerStream(void)
+{
+	eventstream = NULL;
+	malProfileMode = 0;
+	return MAL_SUCCEED;
+}
+
+/* the second scheme is to collect the profile
+ * events in a local table for direct SQL inspection
+ */
+str
+startProfiler(void)
+{
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+	prevUsage = infoUsage;
+#endif
+
+	MT_lock_set(&mal_profileLock );
+	if (myname == 0){
+		myname = putName("profiler", 8);
+		eventcounter = 0;
+	}
+	malProfileMode = 1;
+	sqlProfiling = TRUE;
+	MT_lock_unset(&mal_profileLock);
 
 	return MAL_SUCCEED;
 }
@@ -385,11 +505,8 @@ stopProfiler(void)
 {
 	MT_lock_set(&mal_profileLock);
 	malProfileMode = 0;
-	offlineProfiling = FALSE;
-	cachedProfiling = FALSE;
 	setHeartbeat(0); // stop heartbeat
 	closeProfilerStream();
-	user = 0;
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
@@ -408,15 +525,6 @@ MPresetProfiler(stream *fdout)
 	MT_lock_set(&mal_profileLock);
 	eventstream = 0;
 	MT_lock_unset(&mal_profileLock);
-}
-
-/*
- * Extern sources may dump information on the profiler stream
-*/
-stream *
-getProfilerStream(void)  
-{
-	return eventstream;
 }
 
 /*
@@ -444,11 +552,12 @@ static BAT *TRACE_id_majflt = 0;
 static BAT *TRACE_id_nvcsw = 0;
 static BAT *TRACE_id_stmt = 0;
 
+
 void
 TRACEtable(BAT **r)
 {
-	if (initTrace())
-		return ;
+	if (TRACE_init == 0)
+		return ;       /* not initialized */
 	MT_lock_set(&mal_profileLock);
 	r[0] = BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
 	r[1] = BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
@@ -464,6 +573,40 @@ TRACEtable(BAT **r)
 	r[11] = BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
 	r[12] = BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+}
+
+BAT *
+getTrace(const char *nme)
+{
+	if (TRACE_init == 0)
+		return NULL;
+	if (strcmp(nme, "event") == 0)
+		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "time") == 0)
+		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "pc") == 0)
+		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "thread") == 0)
+		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "usec") == 0)
+		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "rssMB") == 0)
+		return BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "tmpspace") == 0)
+		return BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "reads") == 0)
+		return BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "writes") == 0)
+		return BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "minflt") == 0)
+		return BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "majflt") == 0)
+		return BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "nvcsw") == 0)
+		return BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+	if (strcmp(nme, "stmt") == 0)
+		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	return NULL;
 }
 
 static BAT *
@@ -512,15 +655,22 @@ _cleanupProfiler(void)
 	TRACE_init = 0;
 }
 
-void
-_initTrace(void)
+int
+initTrace(void)
 {
+	int ret = -1;
+
+	if (TRACE_init)
+		return 0;       /* already initialized */
+	MT_lock_set(&mal_contextLock);
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
+	// TODO split pc into its components fcn,pc,tag
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_str);
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
-	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
+	TRACE_id_ticks = TRACEcreate("id", "usec", TYPE_lng);
 	TRACE_id_rssMB = TRACEcreate("id", "rssMB", TYPE_lng);
+	// rename to size
 	TRACE_id_tmpspace = TRACEcreate("id", "tmpspace", TYPE_lng);
 	TRACE_id_inblock = TRACEcreate("id", "read", TYPE_lng);
 	TRACE_id_oublock = TRACEcreate("id", "write", TYPE_lng);
@@ -541,26 +691,17 @@ _initTrace(void)
 		TRACE_id_majflt == NULL ||
 		TRACE_id_nvcsw == NULL ||
 		TRACE_id_thread == NULL 
-		) {
+	)
 		_cleanupProfiler();
-	} else {
+	else
 		TRACE_init = 1;
-	}
-}
-
-int
-initTrace(void)
-{
-	if (TRACE_init)
-		return 0;       /* already initialized */
-	MT_lock_set(&mal_contextLock);
-	_initTrace();
+	ret = TRACE_init;
 	MT_lock_unset(&mal_contextLock);
-	return TRACE_init ? 0 : -1;
+	return ret;
 }
 
 str
-cleanupProfiler(void)
+cleanupTraces(void)
 {
 	MT_lock_set(&mal_contextLock);
 	_cleanupProfiler();
@@ -589,66 +730,8 @@ clearTrace(void)
 	BBPclear(TRACE_id_nvcsw->batCacheid);
 	BBPclear(TRACE_id_stmt->batCacheid);
 	TRACE_init = 0;
-	_initTrace();
 	MT_lock_unset(&mal_contextLock);
-}
-
-BAT *
-getTrace(const char *nme)
-{
-	if (TRACE_init == 0)
-		return NULL;
-	if (strcmp(nme, "event") == 0)
-		return BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "time") == 0)
-		return BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "pc") == 0)
-		return BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "thread") == 0)
-		return BATcopy(TRACE_id_thread, TYPE_void, TRACE_id_thread->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "ticks") == 0)
-		return BATcopy(TRACE_id_ticks, TYPE_void, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "rssMB") == 0)
-		return BATcopy(TRACE_id_rssMB, TYPE_void, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "tmpspace") == 0)
-		return BATcopy(TRACE_id_tmpspace, TYPE_void, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "reads") == 0)
-		return BATcopy(TRACE_id_inblock, TYPE_void, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "writes") == 0)
-		return BATcopy(TRACE_id_oublock, TYPE_void, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "minflt") == 0)
-		return BATcopy(TRACE_id_minflt, TYPE_void, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "majflt") == 0)
-		return BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "nvcsw") == 0)
-		return BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "stmt") == 0)
-		return BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
-	return NULL;
-}
-
-int
-getTraceType(const char *nme)
-{
-	if (initTrace())
-		return TYPE_any;
-	if (strcmp(nme, "time") == 0)
-		return newColumnType( TYPE_str);
-	if (strcmp(nme, "ticks") == 0)
-		return newColumnType( TYPE_lng);
-	if (strcmp(nme, "pc") == 0)
-		return newColumnType( TYPE_str);
-	if (strcmp(nme, "thread") == 0)
-		return newColumnType( TYPE_int);
-	if (strcmp(nme, "stmt") == 0)
-		return newColumnType( TYPE_str);
-	if (strcmp(nme, "rssMB") == 0)
-		return newColumnType( TYPE_lng);
-	if (strcmp(nme, "tmpspace") == 0)
-		return newColumnType( TYPE_lng);
-	if (strcmp(nme, "reads") == 0 || strcmp(nme, "writes") == 0 || strcmp(nme,"minflt")==0 || strcmp(nme,"majflt")==0  || strcmp(nme,"nvcsw")==0  )
-		return newColumnType( TYPE_lng);
-	return TYPE_any;
+	initTrace();
 }
 
 void
@@ -671,7 +754,6 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	/* struct Mallinfo infoMalloc; */
-
 	gettimeofday(&clock, NULL);
 	clk= clock.tv_sec;
 #ifdef HAVE_TIMES
@@ -681,7 +763,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	if (initTrace() || TRACE_init == 0)
+	if (TRACE_init == 0)
 		return;
 
 	/* update the Trace tables */
@@ -741,7 +823,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TRACE_event++;
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
-	if (stmt) GDKfree(stmt);
+	GDKfree(stmt);
 }
 
 lng
@@ -820,88 +902,6 @@ getDiskSpace(void)
 	return size;
 }
 
-/* the heartbeat process produces a ping event once every X milliseconds */
-#ifdef ATOMIC_LOCK
-static MT_Lock hbLock MT_LOCK_INITIALIZER("hbLock");
-#endif
-static volatile ATOMIC_TYPE hbdelay = 0;
-
-/* the processor statistics are gathered in Linux settings from the proc files.
- * Given the parsing involved, it should be used sparingly */
-
-static struct{
-	lng user, nice, system, idle, iowait;
-	double load;
-} corestat[256];
-
-static int getCPULoad(char cpuload[BUFSIZ]){
-    int cpu, len = 0, i;
-	lng user, nice, system, idle, iowait;
-	size_t n;
-    char buf[BUFSIZ+1], *s;
-	static FILE *proc= NULL;
-	lng newload;
-
-	if ( proc == NULL || ferror(proc))
-		proc = fopen("/proc/stat","r");
-	else rewind(proc);
-	if ( proc == NULL) {
-		/* unexpected */
-		return -1;
-	}
-	/* read complete file to avoid concurrent write issues */
-	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
-		return -1;
-	buf[n] = 0;
-	for ( s= buf; *s; s++) {
-		if ( strncmp(s,"cpu",3)== 0){
-			s +=3;
-			if ( *s == ' ') {
-				s++;
-				cpu = 255; // the cpu totals stored here
-			}  else {
-				cpu = atoi(s);
-				if (cpu < 0 || cpu > 255)
-					cpu = 255;
-			}
-			s= strchr(s,' ');
-			if (s == NULL)		/* unexpected format of file */
-				break;
-
-			while( *s && isspace((int)*s)) s++;
-			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
-			if ( i != 5 )
-				goto skip;
-			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if (  newload)
-				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
-			corestat[cpu].user = user;
-			corestat[cpu].nice = nice;
-			corestat[cpu].system = system;
-			corestat[cpu].idle = idle;
-			corestat[cpu].iowait = iowait;
-		} 
-	  skip:
-		while (*s && *s != '\n')
-			s++;
-	}
-
-	if( cpuload == 0)
-		return 0;
-	// identify core processing
-	len += snprintf(cpuload, BUFSIZ, "[ ");
-	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
-	}
-	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
-	return 0;
-}
-
-// Give users the option to check for the system load between two heart beats
-double HeartbeatCPUload(void)
-{
-	return corestat[255].load;
-}
 //
 // Retrieve the io statistics for the complete process group
 // This information can only be obtained using root-permissions.
@@ -948,19 +948,6 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
-void profilerHeartbeatEvent(char *alter)
-{
-	char cpuload[BUFSIZ];
-	if (ATOMIC_GET(hbdelay, hbLock) == 0 || eventstream  == NULL)
-		return;
-
-	/* get CPU load on beat boundaries only */
-	if ( getCPULoad(cpuload) )
-		return;
-	
-	offlineProfilerEvent(0, 0, 0, 0, alter, cpuload);
-}
-
 static MT_Id hbthread;
 static volatile ATOMIC_TYPE hbrunning;
 
@@ -969,41 +956,41 @@ static void profilerHeartbeat(void *dummy)
 	int t;
 
 	(void) dummy;
-	while (ATOMIC_GET(hbrunning, hbLock)) {
+	while (ATOMIC_GET(hbrunning, mal_beatLock)) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, hbLock) == 0 || eventstream  == NULL) {
+		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL) {
 			for (t = 1000; t > 0; t -= 25) {
 				MT_sleep_ms(25);
-				if (!ATOMIC_GET(hbrunning, hbLock))
+				if (!ATOMIC_GET(hbrunning, mal_beatLock))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, hbLock); t > 0; t -= 25) {
+		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= 25) {
 			MT_sleep_ms(t > 25 ? 25 : t);
-			if (!ATOMIC_GET(hbrunning, hbLock))
+			if (!ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
 		}
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(hbdelay, 0, hbLock);
+	ATOMIC_SET(hbdelay, 0, mal_beatLock);
 }
 
 void setHeartbeat(int delay)
 {
 	if (hbthread &&  delay < 0 ){
-		ATOMIC_SET(hbrunning, 0, hbLock);
+		ATOMIC_SET(hbrunning, 0, mal_beatLock);
 		MT_join_thread(hbthread);
 		return;
 	}
 	if (delay <= 10)
 		hbdelay =10;
-	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, hbLock);
+	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
 }
 
 void initHeartbeat(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(hbLock);
+	ATOMIC_INIT(mal_beatLock, "beatLock");
 #endif
 	hbrunning = 1;
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
@@ -1012,3 +999,4 @@ void initHeartbeat(void)
 		hbrunning = 0;
 	}
 }
+

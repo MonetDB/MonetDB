@@ -40027,6 +40027,12 @@ pattern optimizer.prelude():void
 address optimizer_prelude;
 comment Initialize the optimizer
 
+pattern optimizer.profiler(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Collect properties for the profiler
+
+pattern optimizer.profiler():str 
+address OPTwrapper;
 pattern optimizer.querylog(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Collect SQL query statistics
@@ -40138,16 +40144,12 @@ address CMDcpustats;
 comment Extract cpu statistics from the kernel
 
 command profiler.cleanup():void 
-address CMDcleanup;
+address CMDcleanupTraces;
 comment Remove the temporary tables for profiling
 
-command profiler.closeStream():void 
+command profiler.closestream():void 
 address CMDcloseProfilerStream;
-comment Stop sending the event records
-
-command profiler.dumpTrace():void 
-address CMDdumpTrace;
-comment List the events collected
+comment Stop offline proviling
 
 command profiler.getSystemTime():lng 
 address CMDgetSystemTime;
@@ -40173,37 +40175,21 @@ command profiler.noop():void
 address CMDnoopProfiler;
 comment Fetch any pending performance events
 
-pattern profiler.openStream(host:str,port:int):void 
-address CMDsetProfilerStream;
-comment Send the log events to a stream 
-
-pattern profiler.openStream(fnme:str):void 
-address CMDsetProfilerFile;
-comment Send the log events to a file, stdout or console
-
-pattern profiler.openStream():void 
+pattern profiler.openstream(mode:int):void 
 address CMDopenProfilerStream;
-comment Send the events to output stream
+comment Start profiling the events, sent to output stream
 
-command profiler.reset():void 
-address CMDclearTrace;
-comment Clear the profiler traces
-
-command profiler.setHeartbeat(b:int):void 
+command profiler.setheartbeat(b:int):void 
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
 pattern profiler.stop():void 
 address CMDstopProfiler;
-comment Stop performance tracing
+comment Stop offline performance profiling
 
-pattern profiler.stethoscope(b:int):void 
-address CMDstethoscope;
-comment Start stethoscope profiling with heart beat
-
-pattern profiler.tomograph(b:int):void 
-address CMDtomograph;
-comment Start tomograph profiler with heart beat
+pattern profiler.start():void 
+address CMDstartProfiler;
+comment Start offline performance profiling
 
 pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;

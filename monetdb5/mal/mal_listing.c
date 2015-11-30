@@ -35,8 +35,8 @@
 static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
-	char *buf;
-	char *nme;
+	char *buf =0;
+	char *nme =0;
 	int nameused= 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
@@ -371,14 +371,143 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	/* we may accidentally overwrite */
 	if (t > s + len)
 		GDKfatal("instruction2str:");
+	return base;
+}
+
+/* the MAL beautifier is meant to simplify correlation of MAL variables and
+ * the columns in the underlying database.
+ * If the status is set, then we consider the instruction DONE and the result variables 
+ * should be shown as well.
+ */
+static str
+shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
+{
+	str s, nme;
+	BAT *b;
+	ValRecord *val;
+	char *cv =0;
+	int varid = getArg(p,idx);
+
+	s= GDKmalloc(BUFSIZ);
+	if( s == NULL)
+		return NULL;
+	*s = 0;
+
+	if( isVarConstant(mb,varid) ){
+		val =&getVarConstant(mb, varid);
+		VALformat(&cv, val);
+		snprintf(s,BUFSIZ,"%s",cv);
+	} else {
+		val = &stk->stk[varid];
+		VALformat(&cv, val);
+		nme = getSTC(mb, varid);
+		if( nme == NULL) 
+			nme = getVarName(mb, varid);
+		if ( isaBatType(getArgType(mb,p,idx))){
+			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
+		} else
+		if( cv)
+			snprintf(s,BUFSIZ,"%s=%s ",nme,cv);
+		else
+			snprintf(s,BUFSIZ,"%s ",nme);
+	}
+	GDKfree(cv);
 	return s;
+}
+
+str
+shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
+{
+	int i;
+	str base, s, t, nme;
+	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
+
+	base = s = GDKmalloc(len);
+	if ( s == NULL)
+		return s;
+	*s =0;
+	t=s;
+	if (p->token == REMsymbol) 
+		return base;
+	if (p->barrier == LEAVEsymbol || 
+		p->barrier == REDOsymbol || 
+		p->barrier == RETURNsymbol || 
+		p->barrier == YIELDsymbol || 
+		p->barrier == EXITsymbol || 
+		p->barrier == RAISEsymbol) {
+			snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
+			advance(t,base,len);
+		}
+	if( p->token == FUNCTIONsymbol) {
+			snprintf(t,(len-(t-base)), "function %s.", getModuleId(p));
+			advance(t,base,len);
+		}
+	if (p->token == ENDsymbol ){
+		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
+		return base;
+	}
+	// handle the result variables
+	for (i = 0; i < p->retc; i++)
+		if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+			break;
+
+	if (i == p->retc) // no result arguments
+		goto short_end;
+
+	/* display optional multi-assignment list */
+	if( getArgType(mb,p,0) != TYPE_void){
+		if (p->retc > 1){
+			*t++ = '(';
+			*t=0;
+		}
+
+		for (i = 0; i < p->retc; i++) {
+			nme = shortRenderingTerm(mb, stk, p,i);
+			snprintf(t,(len-(t-base)), "%s%s", (i?",":""), nme);
+			GDKfree(nme);
+			advance(t,base,len);
+		}
+		if (p->retc > 1)
+			*t++ = ')';
+		*t++ = ':';
+		*t++ = '=';
+		*t++ = ' ';
+	}
+	*t =0;
+
+	short_end:
+	advance(t,base,len);
+
+	// handle the instruction mapping
+	snprintf(t,  (len-(t-base)),"%s", (getFunctionId(p)?getFunctionId(p):""));
+	advance(t,base,len);
+
+	// handle the arguments, constants should  be shown including their non-default type
+	/* display optional multi-assignment list */
+	*t++ = '(';
+	for (i = p->retc; i < p->argc; i++) {
+		nme = shortRenderingTerm(mb, stk, p,i);
+		snprintf(t,(len-(t-base)), "%c%s", (i!= p->retc? ',':' '), nme);
+		GDKfree(nme);
+		advance(t,base,len);
+		if (i < p->retc - 1)
+			*t++ = ',';
+	}
+	*t++ = ' ';
+	*t++ = ')';
+	*t=0;
+
+	if (t >= s + len)
+		throw(MAL,"instruction2str:","instruction too long");
+	return base;
 }
 
 /* Remote execution of MAL calls for more type/property information to be exchanged */
 str
 mal2str(MalBlkPtr mb, int first, int last)
 {
-	str ps, *txt;
+	str ps = NULL, *txt;
 	int i, *len, totlen = 0;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
@@ -491,5 +620,5 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 		}
-		} 
+	}
 }

@@ -14,16 +14,19 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include <math.h>
-#include <unistd.h>
 #include "mprompt.h"
 #include "dotmonetdb.h"
 #include "eventparser.h"
@@ -36,19 +39,15 @@
 # endif
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
 #endif
-#ifdef NATIVE_WIN32
-#include <direct.h>
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
 #endif
+
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -67,20 +66,12 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *prefix = "tachograph";
-#ifdef NATIVE_WIN32
-static char *dirpath= "cache\\";
-#else
-static char *dirpath= "cache/";
-#endif
 static char *dbname;
-static int beat = 5000;
-static int delay = 0; // ms
 static Mapi dbh;
 static MapiHdl hdl = NULL;
-static int interactive = 1;
 static int capturing=0;
 static int lastpc;
+static int showonbar;
 static int pccount;
 
 #define RUNNING 1
@@ -89,10 +80,12 @@ typedef struct{
 	int state;
 	lng etc;
 	lng actual;
+	lng clkticks;
 	char *stmt;
 } Event;
 
 Event *events;
+static int maxevents;
 
 typedef struct {
 	char *varname;
@@ -101,61 +94,6 @@ typedef struct {
 Source *sources;	// original column name
 int srctop, srcmax;
 
-static void
-addSource(char *varname, char *sch, char *tbl, char *col)
-{
-	char buf[BUFSIZ];
-
-	if(srctop == srcmax){
-		if( srcmax == 0)
-			sources = (Source *) malloc(2048 * sizeof(Source));
-		else
-			sources = (Source *) realloc(sources, srcmax+2048);
-		srcmax+= 2048;
-	}
-	assert(sources);
-	sources[srctop].varname = strdup(varname);
-	snprintf(buf,BUFSIZ,"%s%s%s%s%s", (strcmp(sch,"sys")== 0? "": sch), (strcmp(sch,"sys")== 0? "": "."), tbl,(col?".":""),col?col:"");
-	sources[srctop].source = strdup(buf);
-	//fprintf(stderr,"addSource %s at %d  %s\n",varname, srctop, buf);
-	srctop++;
-}
-
-static void
-addSourcePair(char *varname, char *name)
-{
-	int i;
-
-	if( name ==0 ) return;
-	if( varname ==0 ) return;
-
-	if(srctop == srcmax){
-		if( srcmax == 0)
-			sources = (Source *) malloc(1024 * sizeof(Source));
-		else
-			sources = (Source *) realloc((void *)sources, (srcmax+1024) * sizeof(Source));
-		srcmax+= 1024;
-	}
-	for( i=0; i< srctop; i++)
-	if( strcmp(name, sources[i].varname)==0){
-		sources[srctop].varname = strdup(varname);
-		sources[srctop].source = strdup(sources[i].source);
-		srctop++;
-		return;
-	}
-}
-static char *
-fndSource(char *varname)
-{
-	int i;
-
-	if(debug)
-		fprintf(stderr,"fndSource %s\n",varname);
-	for( i=0; i< srctop; i++)
-	if( strcmp(varname, sources[i].varname)==0)
-		return strdup(sources[i].source);
-	return strdup(varname);
-}
 /*
  * Parsing the argument list of a MAL call to obtain un-quoted string values
  */
@@ -168,12 +106,6 @@ usageTachograph(void)
     fprintf(stderr, "  -u | --user=<user>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 5000)\n");
-	fprintf(stderr, "  -i | --interactive=<o | 1> show trace on stdout\n");
-    fprintf(stderr, "  -o | --output=<webfile>\n");
-    fprintf(stderr, "  -c | --cache=<query pool location>\n");
-    fprintf(stderr, "  -q | --queries=<query pool capacity>\n");
-    fprintf(stderr, "  -w | --wait=<delay time> in milliseconds\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }
@@ -195,14 +127,12 @@ stop_disconnect:
 }
 
 char *currentfunction= 0;
-char *currentquery= 0;
 int currenttag;		// to distinguish query invocations
 lng starttime = 0;
 lng finishtime = 0;
 lng duration =0;
-int malsize = 0;
 char *prevquery= 0;
-int prevprogress =0;
+int prevprogress =0;// pc of previous progress display
 int prevlevel =0; 
 size_t txtlength=0;
 
@@ -211,18 +141,13 @@ size_t txtlength=0;
 static int querypool = QUERYPOOL;
 int queryid= 0;
 
-static FILE *tachojson;
-static FILE *tachotrace;
-static FILE *tachomal;
-static FILE *tachostmt;
-
 static void resetTachograph(void){
 	int i;
 	if (debug)
 		fprintf(stderr, "RESET tachograph\n");
 	if( prevprogress)
 		printf("\n"); 
-	for(i=0; i < malsize; i++)
+	for(i=0; i < maxevents; i++)
 	if( events[i].stmt)
 		free(events[i].stmt);
 	for(i=0; i< srctop; i++){
@@ -231,25 +156,16 @@ static void resetTachograph(void){
 	}
 	capturing = 0;
 	srctop=0;
-	malsize= 0;
 	currentfunction = 0;
 	currenttag = 0;
-	currentquery = 0;
 	starttime = 0;
 	finishtime = 0;
 	duration =0;
-	fclose(tachojson);
-	tachojson = 0;
-	fclose(tachotrace);
-	tachotrace = 0;
-	fclose(tachomal);
-	tachomal = 0;
-	fclose(tachostmt);
-	tachostmt = 0;
 	prevprogress = 0;
 	txtlength =0;
 	prevlevel=0;
 	lastpc = 0;
+	showonbar = -1;
 	pccount = 0;
 	fflush(stdout);
 	events = 0;
@@ -278,194 +194,15 @@ rendertime(lng ticks, int flg)
 
 #define MSGLEN 100
 
-/*
- * Render the output of the stethoscope into a more user-friendly format.
- * This involves removal of MAL variables and possibly renaming the MAL functions
- * by more general alternatives.
- * If mode is set then we go for a minimal base-table related display
- */
-static struct{
-	char *name;
-	int length;
-	char *alias;
-	int newl;
-	int mode;
-}mapping[]={
-	{"algebra.projectionPath", 25, "join",4, 0},
-	{"algebra.thetasubselect", 22, "select",6, 0},
-	{"algebra.projection", 21, "join",4, 0},
-	{"dataflow.language", 17,	"parallel", 8, 0},
-	{"algebra.subselect", 17, "select",6, 0},
-	{"sql.projectdelta", 16, "project",7, 0},
-	{"algebra.subjoin", 15, "join",4, 0},
-	{"language.pass(nil)", 18,	"release", 7, 0},
-	{"mat.packIncrement", 17, "pack",4, 0},
-	{"language.pass", 13,	"release", 7, 0},
-	{"aggr.subcount", 13,	"count", 5, 0},
-	{"sql.subdelta", 12, "project",7, 0},
-	{"bat.append", 10,	"append", 6, 0},
-	{"aggr.subavg", 11,	"average", 7, 0},
-	{"aggr.subsum", 11,	"sum", 3, 0},
-	{"aggr.submin", 11,	"minimum", 7, 0},
-	{"aggr.submax", 11,	"maximum", 7, 0},
-	{"aggr.count", 10,	"count", 5, 0},
-	{"calc.lng", 8,	"long", 4, 0},
-	{"sql.bind", 8,	"bind", 4, 0},
-	{"batcalc.hge", 11, "hugeint", 7, 0},
-	{"batcalc.dbl", 11, "real", 4, 0},
-	{"batcalc.flt", 11, "real", 4, 0},
-	{"batcalc.lng", 11, "bigint",6, 0},
-	{"batcalc.", 8, "", 0, 0},
-	{"calc.", 5, "", 0, 0},
-	{"sql.", 4,	"", 0, 0},
-	{"bat.", 4,	"", 0, 0},
-	{"aggr.", 5,	"", 0, 0},
-	{"group.sub", 9,	"", 0, 0},
-	{"group.", 6,	"", 0, 0},
-	{"mtime.", 6,	"", 0, 0},
-	{0,0,0,0,0}};
-
-static void
-renderArgs(char *c,  char *l, size_t len)
-{
-	char varname[BUFSIZ]={0}, *v=0;
-	char *limit = l + len-1;
-	int i;
-
-	// we always start at a parameter list
-	for(; *c && *c !=')' && l < limit; ){
-		varname[0] = 0;
-		if( *c == ',')*l++ = *c++;
-		// take out the variable name
-		if(isalpha((int)*c) || *c == '_' ){ 
-			for( i = 0; i < BUFSIZ-1 && *c && (isalnum((int)*c) || *c=='_') ; i++)
-				varname[i] = *c++;
-			varname[i]=0;
-		}
-		// handle value part
-		if( *c == '=') c++;
-		// BAT result
-		if( *c == '<'){
-			while(*c && *c !='>') c++;
-			if(*c) c++;
-			if (varname[0]){
-				v= fndSource(varname);
-				l+= snprintf(l, limit - l-2,"%s",v);
-				free(v);
-			}
-			// copy the count
-			while(*c && *c !=']' && l < limit -2) *l++ = *c++;
-			while(*c && *c != ']') c++;
-			if( *c == ']' ) *l++ = *c++;
-			while(*c && *c != ':') c++;
-		} else
-		// string constant
-		if (*c == '"' ) {
-			*l++ = *c++;
-			while(*c && *c !='"' && *(c-1) !='\\' && l < limit-2 ) *l++ =*c++;
-			while(*c && *c !='"') c++;
-		}  else{
-		// all else
-			while(*c && *c !=':' && *c !=',' && l < limit-2) *l++ = *c++;
-			while(*c && *c !=':' && *c !=',' )  c++;
-		}
-		// skip type descriptor
-		if (*c == ':'){
-			if( strncmp(c,":bat",4)== 0){
-				while(*c && *c !=']') c++;
-				if( *c == ']') c++;
-			} 
-			while(*c && *c != ',' && *c != '{' && *c != ')') c++;
-		}
-
-		// copy the literals
-		if( strcmp(varname,"nil") == 0 || strcmp(varname,"true")==0 || strcmp(varname,"false")==0)
-			for(v = varname; *v; ) *l++ = *v++;
-		// drop the properties
-		if( *c == '{'){
-			while(*c && *c !='}') c++;
-			if(*c) c++;
-		}
-	}
-	if(*c) *l++ = *c;
-	*l=0;
-}
-
-static void
-renderCall(char *line, int len, char *stmt, int state, int mode)
-{
-	char *limit= line + len, *l = line, *c = stmt, *s;
-	int i;
-
-	(void) state;
-	// skip MAL keywords
-	if( strncmp(c,"function ",10) == 0 ) {
-		while( *c && l < limit -1) *l++ = *c++;
-		*l = 0;
-		return;
-	}
-	if( strncmp(c,"end ",4) == 0 ) {
-		while( *c && l < limit -1) *l++ = *c++;
-		*l = 0;
-		return;
-	}
-	if( strncmp(c,"barrier ",8) == 0 ) c +=8;
-	if( strncmp(c,"redo ",5) == 0 ) c +=5;
-	if( strncmp(c,"leave ",6) == 0 ) c +=6;
-	if( strncmp(c,"return ",7) == 0 ) c +=7;
-	if( strncmp(c,"yield ",6) == 0 ) c +=6;
-	if( strncmp(c,"catch ",6) == 0 ) c +=6;
-	if( strncmp(c,"raise ",6) == 0 ) c +=6;
-	stmt = c;
-	// look for assignment
-	c = strstr(c," :=");
-	if( c) {
-		if(state){
-			// for finished instructions show the result targets too
-			*c =0;
-			s = stmt;
-			while(*s && isspace((int) *s)) s++;
-			if( *s == '(') *l++ = *s++;
-			renderArgs(s, l, limit - l);
-			while(*l) l++;
-			sprintf(l," := ");
-			while(*l) l++;
-			*c=' ';
-		}
-		c+=3;
-	 } else c=stmt;
-
-	while ( *c && isspace((int) *c)) c++;
-	/* consider a function name remapping */
-	if( mode){
-		for(i=0; mapping[i].name; i++)
-			if( strncmp(c,mapping[i].name, mapping[i].length) == 0){
-				c+= mapping[i].length;
-				sprintf(l,"%s",  mapping[i].alias);
-				l += mapping[i].newl;
-				*l=0;
-				break;
-			}
-		if( strchr(c,'(') )
-			while(*c && *c !='(') *l++= *c++;
-	}  else{
-		if( strchr(c,'(') )
-			while(*c && *c !='(') *l++= *c++;
-	}
-	// handle argument list
-	if( *c == '(') *l++ = *c++;
-	renderArgs(c, l, limit- l);
-}
 
 static void
 showBar(int level, lng clk, char *stmt)
 {
 	lng i =0, nl;
 	size_t stamplen=0;
-	char line[BUFSIZ]={0};
 
 	nl = level/2-prevlevel/2;
-	if(nl == 0 ||  level/2 <= prevlevel/2)
+	if( level != 100 && (nl == 0 ||  level/2 <= prevlevel/2))
 		return;
 	assert(MSGLEN < BUFSIZ);
 	if(prevlevel == 0)
@@ -480,7 +217,7 @@ showBar(int level, lng clk, char *stmt)
 	putchar(level ==100?']':'>');
 	printf(" %3d%%",level);
 	if( level == 100 || duration == 0){
-		rendertime(clk,0);
+		rendertime(clk,1);
 		printf("  %s      ",stamp);
 		stamplen= strlen(stamp)+3;
 	} else
@@ -494,85 +231,24 @@ showBar(int level, lng clk, char *stmt)
 		printf(" +%s ETC  ",stamp);
 		stamplen= strlen(stamp)+3;
 	} 
-	renderCall(line,MSGLEN,(stmt?stmt:""),0,1);
-	printf("%s",line);
+	if( stmt)
+		printf("%s",stmt);
 	fflush(stdout);
-	txtlength = 11 + stamplen + strlen(line);
+	txtlength = 11 + stamplen + strlen(stmt?stmt:"");
 	prevlevel = level;
 }
-
-/* create the progressbar JSON file for pickup.
- * Keep the file in the pool, together with its original trace
- */
 
 static void
 initFiles(void)
 {
-	char buf[BUFSIZ];
-
-	snprintf(buf,BUFSIZ,"%s%s_%d.json", dirpath, prefix, queryid);
-	tachojson= fopen(buf,"w");
-	if( tachojson == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s_%d_mal.csv",dirpath, prefix, queryid);
-	tachomal= fopen(buf,"w");
-	if( tachomal == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s_%d_stmt.csv", dirpath, prefix, queryid);
-	tachostmt= fopen(buf,"w");
-	if( tachostmt == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s_%d.trace", dirpath, prefix, queryid);
-	tachotrace= fopen(buf,"w");
-	if( tachotrace == NULL){
-		fprintf(stderr,"Could not create %s\n",buf);
-		exit(-1);
-	}
-}
-
-static void
-progressBarInit(char *qry)
-{
-	char *s;
-	fprintf(tachojson,"{ \"tachograph\":0.1,\n");
-	fprintf(tachojson," \"system\":%s,\n",monetdb_characteristics);
-	fprintf(tachojson," \"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-	fprintf(tachojson," \"tag\":%d,\n",currenttag);
-
-	fprintf(tachojson," \"query\":\"");
-	for(s = qry; *s; s++)
-	switch(*s){
-	case '\n': fputs("\\n", tachojson); break;
-	case '\r': fputs("\\r", tachojson); break;
-	case '\t': fputs("\\t", tachojson); break;
-	case '\b': fputs("\\b", tachojson); break;
-	default: fputc((int) *s, tachojson);
-	}
-	fprintf(tachojson,"\",\n");
-
-	fprintf(tachojson," \"started\": "LLFMT",\n",starttime);
-	fprintf(tachojson," \"duration\":"LLFMT",\n",duration);
-	fprintf(tachojson," \"instructions\":%d\n",malsize);
-	fprintf(tachojson,"},\n");
-	fflush(tachojson);
 }
 
 static void
 update(EventRecord *ev)
 {
 	int progress=0;
-	int i,j,k;
-	char *v, *s;
+	int i;
 	int uid = 0,qid = 0;
-	char line[BUFSIZ];
-	char prereq[BUFSIZ]={0};
-	char number[BUFSIZ]={0};
  
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= MDB_PING ) {
@@ -607,14 +283,13 @@ update(EventRecord *ev)
 	/* monitor top level function brackets, we restrict ourselves to SQL queries */
 	if (ev->state == MDB_START && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if( capturing){
-			fprintf(stderr,"Input garbled or we lost some events\n");
-			eventdump();
+			//fprintf(stderr,"Input garbled or we lost some events\n");
 			resetTachograph();
 			capturing = 0;
 		}
 		if( (i = sscanf(ev->fcn + 9,"user.s%d_%d",&uid,&qid)) != 2){
 			if( debug)
-				fprintf(stderr,"Start phase parsing %d, uid %d qid %d\n",i,uid,qid);
+				fprintf(stderr,"Skip parsing %d, uid %d qid %d\n",i,uid,qid);
 			return;
 		}
 		if (capturing++ == 0){
@@ -636,178 +311,55 @@ update(EventRecord *ev)
 	if ( !capturing)
 		return;
 
+	if( ev->pc > lastpc)
+		lastpc = ev->pc;
+
 	/* start of instruction box */
 	if (ev->state == MDB_START ) {
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			// extract a string argument
-			currentquery = malarguments[malretc];
-			malsize = malarguments[malretc + 2]? atoi(malarguments[malretc + 2]): 2048;
-			events = (Event*) malloc(malsize * sizeof(Event));
-			memset((char*)events, 0, malsize * sizeof(Event));
+			// extract a string argument from a known MAL signature
+			maxevents = malsize;
+			events = (Event*) malloc(maxevents * sizeof(Event));
+			memset((char*)events, 0, maxevents * sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
-			currentquery = stripQuotes(malarguments[malretc]);
-			if( ! (prevquery && strcmp(currentquery,prevquery)== 0) && interactive )
-				printf("CACHE ID:%d\n%s\n",queryid, currentquery);
-			prevquery = currentquery;
-			progressBarInit(currentquery);
-		}
-		if( ev->tag != currenttag)
-			return;	// forget all except one query
-		assert(ev->pc < malsize);
-		events[ev->pc].state = RUNNING;
-		renderCall(line,BUFSIZ, ev->stmt,0,1);
-		events[ev->pc].stmt = strdup(ev->stmt);
-		events[ev->pc].etc = ev->ticks;
-		if( ev->pc > lastpc)
-			lastpc = ev->pc;
-		// keep track of sources, pick first variable only
-		// We should use the MAL semantics to pick to proper heritage path
-		if ( strstr(ev->stmt,"sql.tid") && *ev->stmt != '('){
-			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], 0);
-		} else 
-		if ( strstr(ev->stmt,"sql.bind") && *ev->stmt != '('){
-			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], malarguments[malretc + 3]);
-		} else
-		if ( strstr(ev->stmt,"sql.bind") && *ev->stmt == '('){
-			addSource(malvariables[0], malarguments[malretc + 1], malarguments[malretc + 2], 0);
-			addSource(malvariables[1], malarguments[malretc + 1], malarguments[malretc + 2], malarguments[malretc + 3]);
-		} else
-		if ( strstr(ev->stmt,"sql.projectdelta") && *ev->stmt != '(' ){
-			addSourcePair(malvariables[0], malvariables[1]);
-		} else
-		if ( strstr(ev->stmt,"algebra.projection") && *ev->stmt != '(' ){
-			addSourcePair(malvariables[0], malvariables[malvartop - 1]);
-		} else
-		if ( strstr(ev->stmt,"algebra.subjoin") && *ev->stmt != '(' ){
-			addSourcePair(malvariables[0], malvariables[malvartop - 1]);
-		} else 
-		if ( malvariables[0] ){
-			// update the source direction
-			char *v= fndSource(malvariables[0]);
-			//for( i=malretc; i< malvartop;i++)
-				addSourcePair(v, malvariables[malretc]);
-			free(v);
-		}
-		fprintf(tachojson,"{\n");
-		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachojson,"\"thread\":%d,\n",ev->thread);
-		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachojson,"\"status\": \"start\",\n");
-		fprintf(tachojson,"\"estimate\": "LLFMT",\n",ev->ticks);
-
-		fprintf(tachojson," \"stmt\":\"");
-		for(s = ev->stmt; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		fprintf(tachojson," \"beautystmt\":\"");
-		for(s = line; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
-
-		// collect all input producing PCs
-		fprintf(tachojson,"\"prereq\":[");
-		for( k=0, i=0; i < malvartop; i++){
-			// remove duplicates
-			for(j= ev->pc-1; j>=0;j --){
-				if(events[j].stmt && (v = strstr(events[j].stmt, malvariables[i])) && v < strstr(events[j].stmt,":=")){
-					snprintf(number,BUFSIZ," %d ",j);
-					//avoid duplicate prerequisites
-					if( strstr(prereq,number) == 0)
-						snprintf(prereq + strlen(prereq), BUFSIZ-1-strlen(prereq), "%s %d ",(k?", ":""), j);
-					k++;
-					break;
+			if(currentquery) {
+				if( prevquery && strcmp(currentquery,prevquery)){
+					printf("%s\n",currentquery);
+					free(prevquery);
+					prevquery = strdup(currentquery);
+				} else
+				if( prevquery == 0){
+					printf("%s\n",currentquery);
+					prevquery = strdup(currentquery);
 				}
 			}
 		}
-		fprintf(tachojson,"%s",prereq);
-		fprintf(tachojson,"]\n");
-		fprintf(tachojson,"},\n");
-		fflush(tachojson);
-
-		clearArguments();
-		return;
-	}
-	if( tachojson == NULL){
-		if( debug) fprintf(stderr,"No tachojson available\n");
+		if( ev->tag != currenttag)
+			return;	// forget all except one query
+		assert(ev->pc < maxevents);
+		events[ev->pc].state = RUNNING;
+		events[ev->pc].stmt = strdup(ev->beauty? ev->beauty:"");
+		events[ev->pc].etc = ev->ticks;
+		events[ev->pc].clkticks = ev->clkticks;
+		showonbar = ev->pc;
 		return;
 	}
 	/* end the instruction box */
 	if (ev->state == MDB_DONE ){
 			
+		events[ev->pc].state= FINISHED;
 		if( ev->tag != currenttag)
 			return;	// forget all except one query
-		fprintf(tachojson,"{\n");
-		fprintf(tachojson,"\"qid\":\"%s\",\n",currentfunction?currentfunction:"");
-		fprintf(tachojson,"\"tag\":%d,\n",ev->tag);
-		fprintf(tachojson,"\"pc\":%d,\n",ev->pc);
-		fprintf(tachojson,"\"time\": "LLFMT",\n",ev->clkticks);
-		fprintf(tachojson,"\"status\": \"done\",\n");
-		fprintf(tachojson,"\"ticks\": "LLFMT",\n",ev->ticks);
-		fprintf(tachojson,"\"stmt\":\"");
-		for(s = ev->stmt; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\",\n");
 
-		renderCall(line,BUFSIZ, ev->stmt,1,1);
-		fprintf(tachojson,"\"beautystmt\":\"");
-		for(s = line; *s; s++)
-		switch(*s){
-		case '\\': 
-			if( *(s+1) == '\\' ) s++;
-		default: fputc((int) *s, tachojson);
-		}
-		fprintf(tachojson,"\"\n");
-
-		fprintf(tachojson,"},\n");
-		fflush(tachojson);
-
-		events[ev->pc].state= FINISHED;
-
-		// collect MAL statistics
-		for(j=0; j < malargc; j++)
-			fprintf(tachomal,"%d\t%d\t%d\t%s\t%s\t%d\t%s\n", ev->tag, ev->pc, malpc[j], (ev->fcn?ev->fcn:""), maltypes[j], malcount[j],malarguments[j] );
-		// collect profile information for MonetDB as well
-		fprintf(tachostmt,"%d\t",ev->tag);
-		fprintf(tachostmt,"%d\t",ev->pc);
-		fprintf(tachostmt,"%d\t",ev->thread);
-		fprintf(tachostmt,LLFMT"\t",ev->clkticks);
-		fprintf(tachostmt,LLFMT"\t",ev->ticks);
-		fprintf(tachostmt,LLFMT"\t",ev->memory);
-		fprintf(tachostmt,LLFMT"\t",ev->tmpspace);
-		fprintf(tachostmt,LLFMT"\t",ev->inblock);
-		fprintf(tachostmt,LLFMT"\t",ev->oublock);
-
-		free(ev->stmt);
 		progress = (int)(pccount++ / (malsize/100.0));
-		if( progress > prevprogress ){
-			// pick up last unfinished instruction
-			for(i= lastpc; i >0; i--)
-				if( events[i].state == RUNNING && events[i].stmt)
-					break;
-			if( progress < prevprogress)
-				progress = prevprogress;
-			if( ev->clkticks >delay * 1000 && interactive){
-				showBar((progress>100.0?(int)100:(int)progress),ev->clkticks,events[i].stmt);
-				prevprogress = progress>100.0?100: (int)progress;
-			}
-		}
+		for(i = lastpc; i > 0; i--)
+			if( events[i].state == RUNNING )
+				break;
+
+		if( showonbar == ev->pc)
+			showonbar = i < 0  ?-1 : i;
+		showBar((progress>100.0?(int)100:progress), ev->clkticks, (showonbar >= 0 ? events[showonbar].stmt:NULL));
 		events[ev->pc].actual= ev->ticks;
-		clearArguments();
 	}
 	if (ev->state == MDB_DONE && ev->fcn && strncmp(ev->fcn, "function", 8) == 0) {
 		if (currentfunction && strcmp(currentfunction, ev->fcn+9) == 0) {
@@ -816,8 +368,7 @@ update(EventRecord *ev)
 				currentfunction = 0;
 			}
 			
-			if( ev->clkticks >delay * 1000 && interactive)
-				showBar(100,ev->clkticks, 0);
+			showBar(100,ev->clkticks, "\n");
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			resetTachograph();
@@ -837,10 +388,8 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
-	int i = 0;
-	FILE *trace = NULL;
+	int done = 0;
 	EventRecord event;
-	char *s;
 
 	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
@@ -849,11 +398,8 @@ main(int argc, char **argv)
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
-		{ "beat", 1, 0, 'b' },
-		{ "interactive", 1, 0, 'i' },
 		{ "output", 1, 0, 'o' },
 		{ "queries", 1, 0, 'q' },
-		{ "wait", 1, 0, 'w' },
 		{ "debug", 0, 0, 'D' },
 		{ 0, 0, 0, 0 }
 	};
@@ -863,20 +409,11 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:b:i:o:c:q:w:D",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:q:D",
 					long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
-		case 'i':
-			interactive = atoi(optarg ? optarg : "1") == 1;
-			break;
-		case 'b':
-			beat = atoi(optarg ? optarg : "5000");
-			break;
-		case 'w':
-			delay = atoi(optarg ? optarg : "5000");
-			break;
 		case 'D':
 			debug = 1;
 			break;
@@ -908,21 +445,6 @@ main(int argc, char **argv)
 		case 'h':
 			host = optarg;
 			break;
-		case 'o':
-			//store the output files in a specific place
-			prefix = strdup(optarg);
-#ifdef NATIVE_WIN32
-			s= strrchr(prefix, (int) '\\');
-#else
-			s= strrchr(prefix, (int) '/');
-#endif
-			if( s ){
-				dirpath= prefix;
-				prefix = strdup(prefix);
-				*(s+1) = 0;
-				prefix += s-dirpath;
-			} 
-			break;
 		case '?':
 			usageTachograph();
 			/* a bit of a hack: look at the option that the
@@ -935,8 +457,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if ( dbname == NULL){
-		fprintf(stderr,"Database name missing\n");
+	if( dbname == NULL){
 		usageTachograph();
 		exit(-1);
 	}
@@ -981,42 +502,15 @@ main(int argc, char **argv)
 	if(debug)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	for (portnr = 50010; portnr < 62010; portnr++) 
-		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
-			break;
-	
-	if ( conn == NULL) {
-		fprintf(stderr, "!! opening stream failed: no free ports available\n");
-		fflush(stderr);
-		goto stop_disconnect;
-	}
-
-	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
-	if( debug)
-		fprintf(stderr,"--%s\n",buf);
-	doQ(buf);
-
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
+	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(0);");
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
-#ifdef NATIVE_WIN32
-	if( _mkdir(dirpath) < 0 && errno != EEXIST){
-#else
-	if( mkdir(dirpath,0755)  < 0 && errno != EEXIST) {
-#endif
-		fprintf(stderr,"Failed to create '%s'\n",dirpath);
-		exit(-1);
-	}
-	snprintf(buf,BUFSIZ,"%s%s.trace", dirpath, prefix);
-	// keep a trace of the events received
-	trace = fopen(buf,"w");
-	if( trace == NULL){
-		fprintf(stderr,"Could not create trace file\n");
-		exit(-1);
-	}
+
+	snprintf(buf, BUFSIZ, " profiler.openstream(0);");
+	if( debug)
+		fprintf(stderr,"-- %s\n",buf);
+	doQ(buf);
 
 	len = 0;
 	buflen = BUFSIZ;
@@ -1025,24 +519,24 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len -1)) > 0) {
+	conn = mapi_get_from(dbh);
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			if(debug)
 				printf("%s\n", response);
-			i= eventparser(response, &event);
-			update(&event);
-			if (debug  )
-				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			if( trace && i >=0 && (capturing || event.state == MDB_SYSTEM)) 
-				fprintf(trace,"%s\n",response);
-			if( tachotrace && i >=0 && capturing) 
-				fprintf(tachotrace,"%s\n",response);
+			done= keyvalueparser(response, &event);
+			if( done == 1){
+				update(&event);
+			} else if( done == 0){
+				if (debug  )
+					fprintf(stderr, "PARSE %d:%s\n", done, response);
+			}
 			response = e + 1;
 		}
-		/* handle the case that the current line is too long to
+		/* handle the case that the line is too long to
 		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);

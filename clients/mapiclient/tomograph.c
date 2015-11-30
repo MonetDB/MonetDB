@@ -18,15 +18,18 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
 #include <stdio.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
 #include "eventparser.h"
@@ -82,7 +85,6 @@ static FILE *tracefd;
 static lng startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
-static char *query = 0;
 static int beat = 5000;
 static int cpus = 0;
 static int atlas= 32;
@@ -547,7 +549,6 @@ lng totalticks = 0;
 lng starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
-char *currentquery= 0;
 int object = 1;
 
 static void resetTomograph(void){
@@ -1400,7 +1401,6 @@ update(char *line, EventRecord *ev)
 {
 	int idx, i;
 	Box b;
-	char *s;
 	int uid = 0,qid = 0;
  
 	if (topbox == maxbox || maxbox < topbox) {
@@ -1444,17 +1444,14 @@ update(char *line, EventRecord *ev)
 		box[idx].thread = ev->thread;
 		//lastclk[thread] = clkticks-starttime;
 		box[idx].clkend = box[idx].clkstart = ev->clkticks-starttime;
-		box[idx].memend = box[idx].memstart = ev->memory;
-		box[idx].footstart = box[idx].tmpspace = ev->tmpspace;
+		box[idx].memend = box[idx].memstart = ev->rss;
+		box[idx].footstart = box[idx].tmpspace = ev->size;
 		box[idx].inblock = ev->inblock;
 		box[idx].oublock = ev->oublock;
 		box[idx].majflt = ev->majflt;
 		box[idx].nswap = ev->swaps;
 		box[idx].csw = ev->csw;
-		s = strchr(ev->stmt, ']');
-		if (s)
-			*s = 0;
-		box[idx].stmt = ev->stmt;
+		box[idx].stmt = strdup(ev->stmt);
 
 		if ( !capturing){
 			ping = idx;
@@ -1536,17 +1533,15 @@ update(char *line, EventRecord *ev)
 		box[idx].thread = ev->thread;
 		box[idx].clkstart = ev->clkticks? ev->clkticks:1;
 		box[idx].clkend = ev->clkticks;
-		box[idx].memstart = ev->memory;
-		box[idx].memend = ev->memory;
+		box[idx].memstart = ev->rss;
+		box[idx].memend = ev->rss;
 		box[idx].numa = ev->numa;
 		if(ev->numa) updateNumaHeatmap(ev->thread, ev->numa);
-		box[idx].footstart = ev->tmpspace;
-		box[idx].stmt = ev->stmt;
+		box[idx].footstart = ev->size;
+		box[idx].stmt = ev->beauty;
 		box[idx].fcn = ev->fcn ? strdup(ev->fcn) : strdup("");
-		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
-			currentquery = stripQuotes(malarguments[malretc]);
+		if(ev->fcn && strstr(ev->fcn,"querylog.define") )
 			fprintf(stderr,"-- page %d :%s\n",atlaspage, currentquery);
-		}
 		return;
 	}
 	/* end the instruction box */
@@ -1582,8 +1577,8 @@ update(char *line, EventRecord *ev)
 			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (ev->fcn?ev->fcn:""), ev->clkticks, (currentfunction?currentfunction:""), ev->thread,idx,topbox);
 		events++;
 		box[idx].clkend = ev->clkticks;
-		box[idx].memend = ev->memory;
-		box[idx].tmpspace = ev->tmpspace;
+		box[idx].memend = ev->rss;
+		box[idx].tmpspace = ev->size;
 		box[idx].ticks = ev->ticks;
 		box[idx].state = MDB_DONE;
 		box[idx].inblock = ev->inblock;
@@ -1641,7 +1636,6 @@ main(int argc, char **argv)
 		{ "title", 1, 0, 'T' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
-		{ "query", 1, 0, 'q' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
@@ -1659,7 +1653,7 @@ main(int argc, char **argv)
 	}
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:q:o:c:Db:A:m",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?T:i:r:s:o:c:Db:A:m",
 				    long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1678,10 +1672,6 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			prefix = dbname = optarg;
-			break;
-		case 'q':
-			query = optarg;
-			atlas = 1;
 			break;
 		case 'i':
 			inputfile = optarg;
@@ -1772,7 +1762,8 @@ main(int argc, char **argv)
 	}
 
 	/* reprocess an existing profiler trace, possibly producing the trace split   */
-	printf("-- Output directed towards %s%s_*\n", dirpath, prefix);
+	if( debug )
+		printf("-- Output directed towards %s%s_*\n", dirpath, prefix);
 	if (
 #ifdef NATIVE_WIN32
 	    _mkdir(dirpath) < 0
@@ -1821,8 +1812,9 @@ main(int argc, char **argv)
 			response = buf;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = eventparser(response, &event);
-				update(response, &event);
+				i = keyvalueparser(response, &event);
+				if( i == 1)
+					update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
@@ -1861,25 +1853,12 @@ main(int argc, char **argv)
 		if(debug)
 			fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-		for (portnr = 50010; portnr < 62010; portnr++) 
-			if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
-				break;
-		
-		if ( conn == NULL) {
-			fprintf(stderr, "!! opening stream failed: no free ports available\n");
-			fflush(stderr);
-			goto stop_disconnect;
-		}
-
-		fprintf(stderr,"-- Stop capturing with <cntrl-c> or after %d pages\n",atlas);
-
-		snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
+		snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
 		if( debug)
-			fprintf(stderr,"--%s\n",buf);
+			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
 
-		snprintf(buf,BUFSIZ-1,"profiler.tomograph(%d);", beat);
-
+		snprintf(buf,BUFSIZ,"profiler.openstream(0);");
 		if( debug)
 			fprintf(stderr,"-- %s\n",buf);
 		doQ(buf);
@@ -1890,12 +1869,6 @@ main(int argc, char **argv)
 		if( tracefd == NULL)
 			fprintf(stderr,"Could not create file '%s'\n",buf);
 
-		if(query){
-			// fork and execute mclient session (TODO)
-			snprintf(buf, BUFSIZ,"mclient -d %s -s \"%s\"",dbname,query);
-			fprintf(stderr,"%s\n",buf);
-			fprintf(stderr,"Not yet implemented\n");
-		}
 		len = 0;
 		buflen = BUFSIZ;
 		buffer = malloc(buflen);
@@ -1904,31 +1877,34 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 		resetTomograph();
-		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len - 1)) > 0) {
+		conn = mapi_get_from(dbh);
+		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {
 				*e = 0;
-				i = eventparser(response,&event);
-				update(response, &event);
+				i = keyvalueparser(response,&event);
+				if( i == 1)
+					update(response, &event);
 				if (debug  )
 					fprintf(stderr, "PARSE %d:%s\n", i, response);
 				response = e + 1;
 			}
-			/* handle the case that the current line is too long to
+			/* handle the case that the line is too long to
 			 * fit in the buffer */
 			if( response == buffer){
 				char *new = realloc(buffer, buflen + BUFSIZ);
 				if( new == NULL){
 					fprintf(stderr,"Could not extend input buffer\n");
-					exit(-1);
+					assert(0);
 				}
+				new[buflen] = 0;
 				buffer = new;
 				buflen += BUFSIZ;
 				len += m;
 			}
 			/* handle the case the buffer contains more than one
-                         * line, and the last line is not completely read yet.
+			 * line, and the last line is not completely read yet.
 			 * Copy the first part of the incomplete line to the
 			 * beginning of the buffer */
 			else if (*response) {

@@ -3410,7 +3410,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (fname && s == NULL)
 		throw(IO, "bstreams.create", "Failed to create block stream");
 	if (b == NULL)
-		throw(SQL, "importTable", "Failed to import table %s", be->mvc->errstr);
+		throw(SQL, "importTable", "Failed to import table %s", be->mvc->errstr? be->mvc->errstr:"");
 	bat2return(stk, pci, b);
 	GDKfree(b);
 	return msg;
@@ -4167,13 +4167,13 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[13];
+	bat id;
 
 	(void) cntxt;
 	(void) mb;
 	TRACEtable(t);
-	for (i = 0; i < 13; i++) {
-		bat id = t[i]->batCacheid;
-
+	for(i=0; i< 13; i++){
+		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
