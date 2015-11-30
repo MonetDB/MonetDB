@@ -816,6 +816,13 @@ setMethod("dbHasCompleted", "MonetDBResult", def = function(res, ...) {
   return(invisible(TRUE))
 }, valueClass = "logical")
 
+# compatibility with RSQLite
+if (is.null(getGeneric("isIdCurrent"))) setGeneric("isIdCurrent", function(dbObj, ...) standardGeneric("isIdCurrent"))
+setMethod("isIdCurrent", signature(dbObj="MonetDBResult"), def=function(dbObj, ...) {
+  .Deprecated("dbIsValid")
+   dbIsValid(dbObj)
+})
+
 setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...) {
   if (dbObj@env$info$type == Q_TABLE) {
     return(dbObj@env$open)

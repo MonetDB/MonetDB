@@ -62,6 +62,7 @@ stopifnot(identical(dim(iris),dim(iris2)))
 # then manually
 res <- dbSendQuery(con,"SELECT \"Species\", \"Sepal.Width\" FROM monetdbtest")
 stopifnot(dbIsValid(res))
+stopifnot(isIdCurrent(res))
 stopifnot(identical(class(res)[[1]],"MonetDBResult"))
 stopifnot(identical(res@env$success,TRUE))
 

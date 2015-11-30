@@ -1,3 +1,6 @@
+1.0.1
+- added isIdCurrent for improved compatibility with RSQLite
+
 1.0.0
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
 - Cleaned up SQL to R type mapping (we had this twice)
