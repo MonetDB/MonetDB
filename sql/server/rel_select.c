@@ -354,9 +354,12 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	case op_left:
 	case op_right:
 	case op_full:
+	case op_apply:
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
-		rexps = rel_projections(sql, rel->r, tname, settname, intern );
-		exps = list_merge( exps, rexps, (fdup)NULL);
+		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
+			rexps = rel_projections(sql, rel->r, tname, settname, intern );
+			exps = list_merge( exps, rexps, (fdup)NULL);
+		}
 		return exps;
 	case op_groupby:
 	case op_project:
@@ -393,7 +396,6 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 		}
 		return exps;
 	case op_ddl:
-	case op_apply:
 	case op_semi:
 	case op_anti:
 
@@ -784,9 +786,9 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	if (rel->op == op_project) {
-		MT_lock_set(&rel->exps->ht_lock, "rel_lastexp");
+		MT_lock_set(&rel->exps->ht_lock);
 		rel->exps->ht = NULL;
-		MT_lock_unset(&rel->exps->ht_lock, "rel_lastexp");
+		MT_lock_unset(&rel->exps->ht_lock);
 		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data);
 	}
 	assert(is_project(rel->op));
@@ -1191,9 +1193,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
 
-			MT_lock_set(&sq->exps->ht_lock, "rel_table_optname");
+			MT_lock_set(&sq->exps->ht_lock);
 			sq->exps->ht = NULL;
-			MT_lock_unset(&sq->exps->ht_lock, "rel_table_optname");
+			MT_lock_unset(&sq->exps->ht_lock);
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 

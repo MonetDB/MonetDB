@@ -714,7 +714,7 @@ static void
 tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
 {
 	if (task->cntxt->error_row != NULL) {
-		MT_lock_set(&errorlock, "tablet_error");
+		MT_lock_set(&errorlock);
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
 		BUNappend(task->cntxt->error_msg, msg, FALSE);
@@ -728,13 +728,13 @@ tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
 					 row, col, msg, fcn);
 #endif
 		task->errorcnt++;
-		MT_lock_unset(&errorlock, "tablet_error");
+		MT_lock_unset(&errorlock);
 	} else {
-		MT_lock_set(&errorlock, "tablet_error");
+		MT_lock_set(&errorlock);
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
 			task->as->error = M5OutOfMemory;
 		task->errorcnt++;
-		MT_lock_unset(&errorlock, "tablet_error");
+		MT_lock_unset(&errorlock);
 	}
 }
 
@@ -894,7 +894,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
 		err = SQLload_error(task, idx, task->as->nr_attrs);
 		if (task->rowerror) {
-			MT_lock_set(&errorlock, "insert_val");
+			MT_lock_set(&errorlock);
 			col++;
 			BUNappend(task->cntxt->error_row, &row, FALSE);
 			BUNappend(task->cntxt->error_fld, &col, FALSE);
@@ -906,7 +906,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				task->as->error = M5OutOfMemory;
 			task->rowerror[idx]++;
 			task->errorcnt++;
-			MT_lock_unset(&errorlock, "insert_val");
+			MT_lock_unset(&errorlock);
 		}
 		ret = -1 * (task->besteffort == 0);
 		GDKfree(err);
@@ -919,7 +919,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
   bunins_failed:
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
-		MT_lock_set(&errorlock, "insert_val");
+		MT_lock_set(&errorlock);
 		BUNappend(task->cntxt->error_row, &row, FALSE);
 		BUNappend(task->cntxt->error_fld, &col, FALSE);
 		BUNappend(task->cntxt->error_msg, "insert failed", FALSE);
@@ -928,7 +928,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		GDKfree(err);
 		task->rowerror[row - 1]++;
 		task->errorcnt++;
-		MT_lock_unset(&errorlock, "insert_val");
+		MT_lock_unset(&errorlock);
 	}
 	return -1;
 }
@@ -940,15 +940,15 @@ SQLworker_column(READERtask *task, int col)
 	Column *fmt = task->as->format;
 
 	/* watch out for concurrent threads */
-	MT_lock_set(&mal_copyLock, "tablet insert value");
+	MT_lock_set(&mal_copyLock);
 	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
 		if (BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->limit) != GDK_SUCCEED) {
 			tablet_error(task, lng_nil, col, "Failed to extend the BAT, perhaps disk full\n", "SQLworker_column");
-			MT_lock_unset(&mal_copyLock, "tablet insert value");
+			MT_lock_unset(&mal_copyLock);
 			return -1;
 		}
 	}
-	MT_lock_unset(&mal_copyLock, "tablet insert value");
+	MT_lock_unset(&mal_copyLock);
 
 	for (i = 0; i < task->top[task->cur]; i++) {
 		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0){
@@ -1115,7 +1115,7 @@ SQLworker(void *arg)
 	mnstr_printf(GDKout, "#SQLworker %d started\n", task->id);
 #endif
 	while (task->top[task->cur] >= 0) {
-		MT_sema_down(&task->sema, "SQLworker");
+		MT_sema_down(&task->sema);
 
 
 		/* stage one, break the lines spread the worker over the workers */
@@ -1166,18 +1166,18 @@ SQLworker(void *arg)
 				}
 			break;
 		case ENDOFCOPY:
-			MT_sema_up(&task->reply, "SQLworker");
+			MT_sema_up(&task->reply);
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout, "#SQLworker terminated\n");
 #endif
 			goto do_return;
 		}
-		MT_sema_up(&task->reply, "SQLworker");
+		MT_sema_up(&task->reply);
 	}
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#SQLworker exits\n");
 #endif
-	MT_sema_up(&task->reply, "SQLworker");
+	MT_sema_up(&task->reply);
 
   do_return:
 	GDKfree(GDKerrbuf);
@@ -1469,9 +1469,9 @@ SQLproducer(void *p)
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
 			/* tell consumer to go ahead */
-			MT_sema_up(&task->consumer, "SQLconsumer");
+			MT_sema_up(&task->consumer);
 			/* then wait until it is done */
-			MT_sema_down(&task->producer, "SQLproducer");
+			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
 				THRdel(thr);
 				return;
@@ -1484,7 +1484,7 @@ SQLproducer(void *p)
 				mnstr_printf(GDKout, "#wait for consumers to finish buffer %d\n",
 							 (cur + 1) % MAXBUFFERS);
 #endif
-				MT_sema_down(&task->producer, "SQLproducer");
+				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = 0;
 				if (task->state == ENDOFCOPY) {
 					THRdel(thr);
@@ -1501,14 +1501,14 @@ SQLproducer(void *p)
 			mnstr_printf(GDKout, "#SQL producer got buffer %d filled with %d records \n",
 						 cur, task->top[cur]);
 #endif
-			MT_sema_up(&task->consumer, "SQLconsumer");
+			MT_sema_up(&task->consumer);
 
 			cur = (cur + 1) % MAXBUFFERS;
 #ifdef _DEBUG_TABLET_CNTRL
 			mnstr_printf(GDKout, "#May continue with buffer %d\n", cur);
 #endif
 			if (cnt == task->maxrow) {
-				MT_sema_down(&task->producer, "SQLproducer");
+				MT_sema_down(&task->producer);
 #ifdef _DEBUG_TABLET_CNTRL
 				mnstr_printf(GDKout, "#Producer delivered all\n");
 #endif
@@ -1564,7 +1564,7 @@ SQLproducer(void *p)
 static void
 create_rejects_table(Client cntxt)
 {
-	MT_lock_set(&mal_contextLock, "copy.initialization");
+	MT_lock_set(&mal_contextLock);
 	if (cntxt->error_row == NULL) {
 		cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 		BATseqbase(cntxt->error_row, 0);
@@ -1590,7 +1590,7 @@ create_rejects_table(Client cntxt)
 			BBPkeepref(cntxt->error_input->batCacheid);
 		}
 	}
-	MT_lock_unset(&mal_contextLock, "copy.initialization");
+	MT_lock_unset(&mal_contextLock);
 }
 
 BUN
@@ -1745,7 +1745,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		// track how many elements are in the aggregated BATs
 		cntstart = BATcount(task->as->format[0].c);
 		/* block until the producer has data available */
-		MT_sema_down(&task->consumer, "SQLload_file");
+		MT_sema_down(&task->consumer);
 		cnt += task->top[task->cur];
 		if (task->ateof)
 			break;
@@ -1768,13 +1768,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				ptask[j].cnt = task->cnt;
 				ptask[j].cur = task->cur;
 				ptask[j].top[task->cur] = task->top[task->cur];
-				MT_sema_up(&ptask[j].sema, "SQLload_file");
+				MT_sema_up(&ptask[j].sema);
 			}
 		}
 		if (task->top[task->cur]) {
 			/* await completion of line break phase */
 			for (j = 0; j < threads; j++) {
-				MT_sema_down(&ptask[j].reply, "SQLload_file");
+				MT_sema_down(&ptask[j].reply);
 				if (ptask[j].error) {
 					res = -1;
 #ifdef _DEBUG_TABLET_
@@ -1798,7 +1798,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				for (j = 0; j < threads; j++) {
 					/* stage two, update the BATs */
 					ptask[j].state = UPDATEBAT;
-					MT_sema_up(&ptask[j].sema, "SQLload_file");
+					MT_sema_up(&ptask[j].sema);
 				}
 			}
 		}
@@ -1808,7 +1808,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		/* await completion of the BAT updates */
 		if (res == 0 && task->top[task->cur])
 			for (j = 0; j < threads; j++)
-				MT_sema_down(&ptask[j].reply, "SQLload_file");
+				MT_sema_down(&ptask[j].reply);
 
 		/* trim the BATs discarding error tuples */
 #define trimerrors(TYPE)												\
@@ -1880,7 +1880,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			task->errorcnt = 0;
 		}
 
-		MT_sema_up(&task->producer, "SQLload_file");
+		MT_sema_up(&task->producer);
 	}
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Enf of block stream eof=%d res=%d\n",
@@ -1916,30 +1916,30 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (j = 0; j < threads; j++) {
 		// stage three, update the BATs
 		ptask[j].state = SYNCBAT;
-		MT_sema_up(&ptask[j].sema, "SQLload_file");
+		MT_sema_up(&ptask[j].sema);
 	}
 
 	if (!task->ateof || cnt < task->maxrow) {
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#Shut down reader\n");
 #endif
-		MT_sema_up(&task->producer, "SQLload_file");
+		MT_sema_up(&task->producer);
 	}
 	MT_join_thread(task->tid);
 	// await completion of the BAT syncs
 	for (j = 0; j < threads; j++)
-		MT_sema_down(&ptask[j].reply, "SQLload_file");
+		MT_sema_down(&ptask[j].reply);
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Activate endofcopy\n");
 #endif
 	for (j = 0; j < threads; j++) {
 		ptask[j].state = ENDOFCOPY;
-		MT_sema_up(&ptask[j].sema, "SQLload_file");
+		MT_sema_up(&ptask[j].sema);
 	}
 	/* wait for their death */
 	for (j = 0; j < threads; j++)
-		MT_sema_down(&ptask[j].reply, "SQLload_file");
+		MT_sema_down(&ptask[j].reply);
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Kill the workers\n");
@@ -2035,12 +2035,12 @@ str
 COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	if (cntxt->error_row) {
-		MT_lock_set(&errorlock, "rejects_clear");
+		MT_lock_set(&errorlock);
 		BATclear(cntxt->error_row, TRUE);
 		BATclear(cntxt->error_fld, TRUE);
 		BATclear(cntxt->error_msg, TRUE);
 		BATclear(cntxt->error_input, TRUE);
-		MT_lock_unset(&errorlock, "rejects_clear");
+		MT_lock_unset(&errorlock);
 	}
 	(void) mb;
 	(void) stk;

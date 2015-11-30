@@ -124,18 +124,18 @@ typedef struct {
 		pthread_mutex_init(&(l)->lock, 0);	\
 	} while (0)
 #define MT_lock_destroy(l)	pthread_mutex_destroy(&(l)->lock)
-#define MT_lock_set(l, n)						\
+#define MT_lock_set(l)							\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: locking %s...\n",	\
-				 (n), (l)->name);			\
+				 __func__, (l)->name);			\
 		pthread_mutex_lock(&(l)->lock);				\
 		TEMDEBUG fprintf(stderr, "#%s: locking %s complete\n",	\
-				 (n), (l)->name);			\
+				 __func__, (l)->name);			\
 	} while (0)
-#define MT_lock_unset(l, n)						\
+#define MT_lock_unset(l)						\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: unlocking %s\n",		\
-				 (n), (l)->name);			\
+				 __func__, (l)->name);			\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
 
@@ -173,30 +173,30 @@ gdk_export ATOMIC_FLAG volatile GDKlocklistlock;
 gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
-#define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy, n)
+#define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy)
 #define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", \
 				 (l)->name, n);				\
-		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy, n);	\
+		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy);		\
 		(l)->contention++;					\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l, n)						\
 	do {								\
 		if (_spincnt == 1024)					\
-			(void) ATOMIC_INC(GDKlocksleepcnt, dummy, n);	\
+			(void) ATOMIC_INC(GDKlocksleepcnt, dummy);	\
 		(l)->sleep++;						\
 	} while (0)
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
 		(l)->count++;						\
 		if ((l)->next == (struct MT_Lock *) -1) {		\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
 		}							\
 	} while (0)
 #define _DBG_LOCK_INIT(l, n)						\
@@ -209,11 +209,11 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((n), "sa_", 3) != 0) {			\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
 		} else {						\
 			(l)->next = NULL;				\
 		}							\
@@ -229,7 +229,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			/* save a copy for statistical purposes */	\
 			_p = GDKmalloc(sizeof(MT_Lock));		\
 			memcpy(_p, l, sizeof(MT_Lock));			\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) \
+			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
 			_p->next = GDKlocklist;				\
 			GDKlocklist = _p;				\
@@ -238,7 +238,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 					_p->next = (l)->next;		\
 					break;				\
 				}					\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy, "");	\
+			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
 		}							\
 	} while (0)
 
@@ -256,32 +256,32 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 
 #endif
 
-#define MT_lock_set(l, n)						\
+#define MT_lock_set(l)							\
 	do {								\
-		_DBG_LOCK_COUNT_0(l, n);				\
-		if (ATOMIC_TAS((l)->lock, dummy, n) != 0) {		\
+		_DBG_LOCK_COUNT_0(l, __func__);				\
+		if (ATOMIC_TAS((l)->lock, dummy) != 0) {		\
 			/* we didn't get the lock */			\
 			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
-			_DBG_LOCK_CONTENTION(l, n);			\
+			_DBG_LOCK_CONTENTION(l, __func__);		\
 			do {						\
 				if (++_spincnt >= 1024) {		\
-					_DBG_LOCK_SLEEP(l, n);		\
+					_DBG_LOCK_SLEEP(l, __func__);	\
 					MT_sleep_ms(1);			\
 				}					\
-			} while (ATOMIC_TAS((l)->lock, dummy, n) != 0); \
+			} while (ATOMIC_TAS((l)->lock, dummy) != 0);	\
 		}							\
-		_DBG_LOCK_LOCKER(l, n);					\
+		_DBG_LOCK_LOCKER(l, __func__);				\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
-#define MT_lock_init(l, n)				\
-	do {						\
-		ATOMIC_CLEAR((l)->lock, dummy, n);	\
-		_DBG_LOCK_INIT(l, n);			\
+#define MT_lock_init(l, n)			\
+	do {					\
+		ATOMIC_CLEAR((l)->lock, dummy);	\
+		_DBG_LOCK_INIT(l, n);		\
 	} while (0)
-#define MT_lock_unset(l, n)					\
-		do {						\
-			_DBG_LOCK_LOCKER(l, n);			\
-			ATOMIC_CLEAR((l)->lock, dummy, n);	\
+#define MT_lock_unset(l)				\
+		do {					\
+			_DBG_LOCK_LOCKER(l, __func__);	\
+			ATOMIC_CLEAR((l)->lock, dummy);	\
 		} while (0)
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
 
@@ -332,19 +332,19 @@ typedef struct {
 		pthread_sema_init(&(s)->sema, 0, nr);	\
 	} while (0)
 #define MT_sema_destroy(s)	pthread_sema_destroy(&(s)->sema)
-#define MT_sema_up(s, n)					\
+#define MT_sema_up(s)						\
 	do {							\
 		TEMDEBUG fprintf(stderr, "#%s: sema %s up\n",	\
-				 (n), (s)->name);		\
+				 __func__, (s)->name);		\
 		pthread_sema_up(&(s)->sema);			\
 	} while (0)
-#define MT_sema_down(s, n)						\
+#define MT_sema_down(s)							\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: sema %s down...\n",	\
-				 (n), (s)->name);			\
+				 __func__, (s)->name);			\
 		pthread_sema_down(&(s)->sema);				\
 		TEMDEBUG fprintf(stderr, "#%s: sema %s down complete\n", \
-				 (n), (s)->name);			\
+				 __func__, (s)->name);			\
 	} while (0)
 
 gdk_export int MT_check_nr_cores(void);

@@ -155,7 +155,7 @@ getFreeScenario(void)
 	int i;
 	Scenario scen = NULL;
 
-	MT_lock_set(&scenarioLock, "getFreeScenario");
+	MT_lock_set(&scenarioLock);
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
 
@@ -164,7 +164,7 @@ getFreeScenario(void)
 	} else {
 		scen = scenarioRec + i;
 	}
-	MT_lock_unset(&scenarioLock, "getFreeScenario");
+	MT_lock_unset(&scenarioLock);
 
 	return scen;
 }
@@ -188,7 +188,7 @@ initScenario(Client c, Scenario s)
 	if (s->initSystemCmd)
 		return(fillScenario(c, s));
 	/* prepare for conclicts */
-	MT_lock_set(&mal_contextLock, "initScenario");
+	MT_lock_set(&mal_contextLock);
 	if (s->initSystem && s->initSystemCmd == 0) {
 		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->initSystem,1);
 		if (s->initSystemCmd) {
@@ -200,7 +200,7 @@ initScenario(Client c, Scenario s)
 		}
 	}
 	if (msg) {
-		MT_lock_unset(&mal_contextLock, "initScenario");
+		MT_lock_unset(&mal_contextLock);
 		return msg;
 	}
 
@@ -220,7 +220,7 @@ initScenario(Client c, Scenario s)
 		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, l, s->tactics,1);
 	if (s->engine && s->engineCmd == 0)
 		s->engineCmd = (MALfcn) getAddress(c->fdout, l, l, s->engine,1);
-	MT_lock_unset(&mal_contextLock, "initScenario");
+	MT_lock_unset(&mal_contextLock);
 	return(fillScenario(c, s));
 }
 

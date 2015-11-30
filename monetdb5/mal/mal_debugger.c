@@ -1002,15 +1002,15 @@ str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
 	printInstruction(mal_clients[0].fdout, mb, stk, p, LIST_MAL_DEBUG);
 	cntxt->itrace = 'W';
-	MT_lock_set(&mal_contextLock, "trapped procedure");
+	MT_lock_set(&mal_contextLock);
 	if (trapped_mb) {
 		mnstr_printf(mal_clients[0].fdout, "#registry not available\n");
 		mnstr_flush(cntxt->fdout);
 	}
 	while (trapped_mb && cnt-- > 0) {
-		MT_lock_unset(&mal_contextLock, "trapped procedure");
+		MT_lock_unset(&mal_contextLock);
 		MT_sleep_ms(500);
-		MT_lock_set(&mal_contextLock, "trapped procedure");
+		MT_lock_set(&mal_contextLock);
 	}
 	if (cnt > 0) {
 		trapped_cntxt = cntxt;
@@ -1018,7 +1018,7 @@ str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		trapped_stk = stk;
 		trapped_pc = pc;
 	} /* else give up */
-	MT_lock_unset(&mal_contextLock, "trapped procedure");
+	MT_lock_unset(&mal_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -1109,10 +1109,10 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1)
 	(void) pc1;
 
 	/* get hold of a suspended plan and run debugger */
-	MT_lock_set(&mal_contextLock, "trapped procedure");
+	MT_lock_set(&mal_contextLock);
 	if (trapped_mb == 0) {
 		mnstr_printf(cntxt->fdout, "#no trapped function\n");
-		MT_lock_unset(&mal_contextLock, "trapped procedure");
+		MT_lock_unset(&mal_contextLock);
 		return MAL_SUCCEED;
 	}
 	c = trapped_cntxt;
@@ -1123,7 +1123,7 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1)
 	trapped_mb = 0;
 	trapped_stk = 0;
 	trapped_pc = 0;
-	MT_lock_unset(&mal_contextLock, "trapped procedure");
+	MT_lock_unset(&mal_contextLock);
 	mnstr_printf(cntxt->fdout, "#Debugging trapped function\n");
 	mnstr_flush(cntxt->fdout);
 	sve = stk->cmd;

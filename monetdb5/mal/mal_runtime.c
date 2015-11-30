@@ -65,7 +65,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	int i;
 	str q;
 
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	if ( QRYqueue == 0)
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
 	else
@@ -73,7 +73,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
 	if ( QRYqueue == NULL){
 		GDKerror("runtimeProfileInit" MAL_MALLOC_FAIL);
-		MT_lock_unset(&mal_delayLock, "sysmon");
+		MT_lock_unset(&mal_delayLock);
 		return;
 	}
 	for( i = 0; i < qtop; i++)
@@ -95,7 +95,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	qtop += i == qtop;
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 }
 
 void
@@ -105,7 +105,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 
 	(void) cntxt;
 
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for( i=j=0; i< qtop; i++)
 	if ( QRYqueue[i].mb != mb)
 		QRYqueue[j++] = QRYqueue[i];
@@ -125,7 +125,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 	}
 
 	qtop = j;
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 }
 
 void
@@ -135,7 +135,7 @@ finishSessionProfiler(Client cntxt)
 
 	(void) cntxt;
 
-	MT_lock_set(&mal_delayLock, "sysmon");
+	MT_lock_set(&mal_delayLock);
 	for( i=j=0; i< qtop; i++)
 	if ( QRYqueue[i].cntxt != cntxt)
 		QRYqueue[j++] = QRYqueue[i];
@@ -151,7 +151,7 @@ finishSessionProfiler(Client cntxt)
 		QRYqueue[i].mb =0;
 	}
 	qtop = j;
-	MT_lock_unset(&mal_delayLock, "sysmon");
+	MT_lock_unset(&mal_delayLock);
 }
 
 void

@@ -106,7 +106,7 @@ static void RECYCLEspace(void)
 void RECYCLEinit(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&recycleLock,"recycleLock");
-	ATOMIC_INIT(statementsLock, "statementsLock");
+	ATOMIC_INIT(statementsLock);
 #endif
 	sqlRef = putName("sql",3);
 	bindRef = putName("bind",4);
@@ -704,7 +704,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
     bat bid= bat_nil, nbid= bat_nil;
     InstrPtr q;
 
-    MT_lock_set(&recycleLock, "recycle");
+    MT_lock_set(&recycleLock);
 
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
@@ -767,7 +767,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 			recycled++;
 /* TODO*/
 			recyclerSavings += recycleBlk->stmt[i]->ticks;
-			MT_lock_unset(&recycleLock, "recycle");
+			MT_lock_unset(&recycleLock);
 		return pc;
 		}
     }
@@ -799,13 +799,13 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
         p->recycle= k;
         stk->keepAlive= j;
         BBPdecref(bid, TRUE);
-        MT_lock_unset(&recycleLock, "recycle");
+        MT_lock_unset(&recycleLock);
         RECYCLEexit(cntxt, mb, stk, p, &prof);
         stk->stk[getArg(p,2)].val.bval = nbid;
         return pc;
     }
 
-    MT_lock_unset(&recycleLock, "recycle");
+    MT_lock_unset(&recycleLock);
 	if ( pc >= 0 ) 		/* successful multi-subsumption */
 		RECYCLEexit(cntxt,mb,stk,p, outerprof);
 	recycled++;
@@ -817,7 +817,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 {
 	int i=0;
 
-	(void) ATOMIC_INC(statements, statementsLock, "RECYCLEentry");
+	(void) ATOMIC_INC(statements, statementsLock);
 	if ( !RECYCLEinterest(p) )  /* don't scan RecyclerPool for non-monitored instructions */
 		return 0;
 	if ( recycleBlk == NULL ){
@@ -828,14 +828,14 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 	i = RECYCLEreuse(cntxt,mb,stk,p,prof);
 #ifdef _DEBUG_RECYCLE_
 	if ( i>=0 ){
-		MT_lock_set(&recycleLock, "recycle");
+		MT_lock_set(&recycleLock);
 		p = getInstrPtr(recycleBlk,i);
 		mnstr_printf(cntxt->fdout,"#REUSED  [%3d]  "LLFMT" (usec) ",i, recycleBlk->stmt[i]->ticks);
 		if ( p)
 			printInstruction(cntxt->fdout,recycleBlk,0, p, 0);
 		else
 			mnstr_printf(cntxt->fdout,"instruction already garbage collected\n");
-		MT_lock_unset(&recycleLock, "recycle");
+		MT_lock_unset(&recycleLock);
 	}
 #endif
 	return i>=0;
@@ -857,7 +857,7 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfil
 	if ( !RECYCLEinterest(p))
 		return;
 	assert(recyclerMemoryUsed >=0);
-	MT_lock_set(&recycleLock, "recycle");
+	MT_lock_set(&recycleLock);
 	clk = GDKusec();
 	if ( recyclerMemoryUsed >  (lng) (MEMORY_THRESHOLD )  || recycleBlk->stop >= recycleCacheLimit)
 		RECYCLEcleanCache(cntxt);
@@ -867,7 +867,7 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfil
 		(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
 	recycleSearchTime += GDKusec()-clk;
 	recycleSearchCalls++;
-	MT_lock_unset(&recycleLock, "recycle");
+	MT_lock_unset(&recycleLock);
 }
 
 /*
@@ -883,9 +883,9 @@ RECYCLEdrop(Client cntxt){
 	if( recycleBlk == NULL)
 		return ;
 
-	MT_lock_set(&recycleLock, "recycle");
+	MT_lock_set(&recycleLock);
 	if( recycleBlk == NULL){
-		MT_lock_unset(&recycleLock, "recycle");
+		MT_lock_unset(&recycleLock);
 		return ;
 	}
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
@@ -906,7 +906,7 @@ RECYCLEdrop(Client cntxt){
 	recycleSearchTime = 0;
 	recycleSearchCalls = 0;
 	recyclerMemoryUsed = 0;
-	MT_lock_unset(&recycleLock, "recycle");
+	MT_lock_unset(&recycleLock);
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i),used);
 	freeMalBlk(mb);
@@ -927,7 +927,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 	int limit;
 	ValRecord *v,vr;
 	
-	MT_lock_set(&recycleLock, "recycle");
+	MT_lock_set(&recycleLock);
 #ifdef _DEBUG_RESET_
 	//mnstr_printf(cntxt->fdout,"#POOL BEFORE CLEANUP\n");
 	//RECYCLEdumpInternal(cntxt->fdout);
@@ -964,13 +964,13 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 		j= release[getArg(p,0)]= 1;
 	}
 	if ( j ==0){ // Nothing found
-		MT_lock_unset(&recycleLock, "recycle");
+		MT_lock_unset(&recycleLock);
 		GDKfree(release);
 		return MAL_SUCCEED;
 	}
 
 	if( newMalBlkStmt(recycleBlk,recycleBlk->ssize) < 0){
-		MT_lock_unset(&recycleLock, "recycle");
+		MT_lock_unset(&recycleLock);
 		GDKfree(release);
 		throw(MAL,"recycler.reset",MAL_MALLOC_FAIL);
 	}
@@ -1001,7 +1001,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 	//mnstr_printf(cntxt->fdout,"#POOL AFTER CLEANUP\n");
 	//RECYCLEdumpInternal(cntxt->fdout);
 #endif
-	MT_lock_unset(&recycleLock, "recycle");
+	MT_lock_unset(&recycleLock);
 	GDKfree(release);
 	GDKfree(old);
 	return MAL_SUCCEED;
@@ -1016,7 +1016,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 	int limit;
 	ValRecord *v;
 	
-	MT_lock_set(&recycleLock, "recycle");
+	MT_lock_set(&recycleLock);
 #ifdef _DEBUG_RESET_
 	//mnstr_printf(cntxt->fdout,"#POOL RESET BAT %d\n",bid);
 	//RECYCLEdumpInternal(cntxt->fdout);
@@ -1029,7 +1029,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 	limit= recycleBlk->stop;
 	old= recycleBlk->stmt;
 	if( newMalBlkStmt(recycleBlk,recycleBlk->ssize) < 0){
-		MT_lock_unset(&recycleLock, "recycle");
+		MT_lock_unset(&recycleLock);
 		GDKfree(release);
 		throw(MAL,"recycler.reset",MAL_MALLOC_FAIL);
 	}
@@ -1071,7 +1071,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 #else
 	(void) actions;
 #endif
-	MT_lock_unset(&recycleLock, "recycle");
+	MT_lock_unset(&recycleLock);
 	GDKfree(release);
 	GDKfree(old);
 	return MAL_SUCCEED;
@@ -1086,7 +1086,7 @@ RECYCLEdumpInternal(stream *s)
 
     mnstr_printf(s,"#RECYCLER CATALOG cached %d instructions, ", recycleBlk->stop);
     mnstr_printf(s,"MAL recycled = "LLFMT" total MAL executed = "LLFMT" memory= "LLFMT" total searchtime=%5.2f(usec) savings="LLFMT"\n",
-				 recycled- recycleBlk->stop, (lng) ATOMIC_GET(statements, statementsLock, "RECYCLEdumpInternal"), recyclerMemoryUsed, ((double)recycleSearchTime)/recycleSearchCalls,  recyclerSavings);
+				 recycled- recycleBlk->stop, (lng) ATOMIC_GET(statements, statementsLock), recyclerMemoryUsed, ((double)recycleSearchTime)/recycleSearchCalls,  recyclerSavings);
 
 #ifdef _DEBUG_CACHE_
     /* and dump the statistics per instruction*/
@@ -1107,7 +1107,7 @@ RECYCLEdumpInternal(stream *s)
 void 
 RECYCLEdump(stream *s)
 {
-	MT_lock_set(&recycleLock, "recycle");
+	MT_lock_set(&recycleLock);
 	RECYCLEdumpInternal(s);
-	MT_lock_unset(&recycleLock, "recycle");
+	MT_lock_unset(&recycleLock);
 }
