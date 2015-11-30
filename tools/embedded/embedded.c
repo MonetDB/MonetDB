@@ -291,3 +291,8 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 
 	return msg;
 }
+
+void monetdb_shutdown() {
+	mal_exit();
+	monetdb_embedded_initialized = 0;
+}

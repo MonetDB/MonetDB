@@ -1241,10 +1241,12 @@ GDKexiting(void)
 void
 GDKexit(int status)
 {
+#ifndef HAVE_EMBEDDED
 	if (GDKlockFile == NULL) {
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
+#endif
 	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKexit") == 0) {
 		MT_Id pid = MT_getpid();
 		Thread t, s;
@@ -1290,7 +1292,9 @@ GDKexit(int status)
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
+#ifndef HAVE_EMBEDDED
 		MT_global_exit(status);
+#endif
 	}
 	MT_exit_thread(-1);
 }

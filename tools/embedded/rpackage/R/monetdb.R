@@ -28,7 +28,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 		res <- .Call("monetdb_startup_R", monetdb_embedded_env$install_dir, dir, quiet, PACKAGE="libmonetdb5")
 	} else {
 		if (dir != monetdb_embedded_env$started_dir) {
-			warning("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ").")
+			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", restart R).")
 		}
 		return(invisible(TRUE))
 	}
@@ -109,6 +109,11 @@ monetdb_embedded_disconnect <- function(conn) {
 		stop("Need a embedded monetdb connection as parameter")
 	}
 	.Call("monetdb_disconnect_R", conn,  PACKAGE="libmonetdb5")
+	return(invisible(TRUE))
+}
+
+monetdb_embedded_shutdown <- function() {
+	.Call("monetdb_shutdown_R", PACKAGE="libmonetdb5")
 	return(invisible(TRUE))
 }
 

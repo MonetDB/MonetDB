@@ -141,3 +141,8 @@ SEXP monetdb_disconnect_R(SEXP connsexp) {
 	R_ClearExternalPtr(connsexp);
 	return R_NilValue;
 }
+
+SEXP monetdb_shutdown_R() {
+	monetdb_shutdown();
+	return R_NilValue;
+}
