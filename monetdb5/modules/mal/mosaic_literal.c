@@ -53,7 +53,6 @@ MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binp
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned( MosaicBlkSize + sizeof(hge)* MOSgetCnt(blk),hge); break ;
 #endif
-	case TYPE_wrd: output = wordaligned( MosaicBlkSize + sizeof(wrd)* MOSgetCnt(blk),wrd); break ;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt); break ;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl); break;
 	case TYPE_str:
@@ -86,7 +85,6 @@ MOSadvance_literal(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(hge)* MOSgetCnt(blk),hge)); break ;
 #endif
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(wrd)* MOSgetCnt(blk),wrd)); break ;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt)); break ;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
 	case TYPE_str:
@@ -133,7 +131,6 @@ MOScompress_literal(Client cntxt, MOStask task)
 	case TYPE_sht: LITERALcompress(sht); break;
 	case TYPE_oid: LITERALcompress(oid); break;
 	case TYPE_lng: LITERALcompress(lng); break;
-	case TYPE_wrd: LITERALcompress(wrd); break;
 	case TYPE_flt: LITERALcompress(flt); break;
 	case TYPE_dbl: LITERALcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -185,7 +182,6 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	case TYPE_sht: LITERALdecompress(sht); break;
 	case TYPE_oid: LITERALdecompress(oid); break;
 	case TYPE_lng: LITERALdecompress(lng); break;
-	case TYPE_wrd: LITERALdecompress(wrd); break;
 	case TYPE_flt: LITERALdecompress(flt); break;
 	case TYPE_dbl: LITERALdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -302,7 +298,6 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 	case TYPE_sht: subselect_literal(sht); break;
 	case TYPE_oid: subselect_literal(oid); break;
 	case TYPE_lng: subselect_literal(lng); break;
-	case TYPE_wrd: subselect_literal(wrd); break;
 	case TYPE_flt: subselect_literal(flt); break;
 	case TYPE_dbl: subselect_literal(dbl); break;
 #ifdef HAVE_HGE
@@ -525,7 +520,6 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_literal(sht); break;
 	case TYPE_oid: thetasubselect_literal(oid); break;
 	case TYPE_lng: thetasubselect_literal(lng); break;
-	case TYPE_wrd: thetasubselect_literal(wrd); break;
 	case TYPE_flt: thetasubselect_literal(flt); break;
 	case TYPE_dbl: thetasubselect_literal(dbl); break;
 #ifdef HAVE_HGE
@@ -612,7 +606,6 @@ MOSprojection_literal(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_literal(sht); break;
 		case TYPE_oid: projection_literal(oid); break;
 		case TYPE_lng: projection_literal(lng); break;
-		case TYPE_wrd: projection_literal(wrd); break;
 		case TYPE_flt: projection_literal(flt); break;
 		case TYPE_dbl: projection_literal(dbl); break;
 #ifdef HAVE_HGE
@@ -672,7 +665,6 @@ MOSjoin_literal(Client cntxt,  MOStask task)
 		case TYPE_sht: join_literal(sht); break;
 		case TYPE_oid: join_literal(oid); break;
 		case TYPE_lng: join_literal(lng); break;
-		case TYPE_wrd: join_literal(wrd); break;
 		case TYPE_flt: join_literal(flt); break;
 		case TYPE_dbl: join_literal(dbl); break;
 #ifdef HAVE_HGE

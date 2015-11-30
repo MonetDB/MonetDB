@@ -371,7 +371,6 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	case TYPE_hge:
 #endif
 	case TYPE_oid:
-	case TYPE_wrd:
 	case TYPE_flt:
 	case TYPE_dbl:
 	case TYPE_str:
@@ -1389,7 +1388,6 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_lng:
-	case TYPE_wrd:
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
@@ -1399,6 +1397,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 	case TYPE_str:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 		MOScompressInternal(cntxt, &ret, &bid, task,TRUE);
+		MOSdestroy(BBPdescriptor(bid));
 		if( ret != b->batCacheid) 
 			BBPdecref(ret, TRUE);
 		break;
@@ -1406,6 +1405,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
 			MOScompressInternal(cntxt, &ret, &bid, task,TRUE);
+			MOSdestroy(BBPdescriptor(bid));
 			if( ret != b->batCacheid)
 				BBPdecref(ret, TRUE);
 		} else
@@ -1726,8 +1726,10 @@ MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( j=0; j < i; j++)
 			if (pattern[j] == k && task->ratio == xf[j])
 				break;
-		if( j<i)
+		if( j<i){
+			MOSdestroy(BBPdescriptor(bid));
 			continue;
+		}
 
 
 		xf[i] = task->ratio;

@@ -51,8 +51,6 @@ MOSdump_prefix(Client cntxt, MOStask task)
 	case  TYPE_hge:
 		mnstr_printf(cntxt->fdout,"hge %.40g", (dbl) *(hge*) val); break;
 #endif
-	case  TYPE_wrd:
-		mnstr_printf(cntxt->fdout,"wrd "SZFMT, *(wrd*) val); break;
 	case TYPE_flt:
 		mnstr_printf(cntxt->fdout,"flt  %f", *(flt*) val); break;
 	case TYPE_dbl:
@@ -792,7 +790,6 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case TYPE_sht: subselect_prefix(sht,unsigned int, 16); break;
 	case TYPE_lng: subselect_prefix(lng,unsigned long, 64); break;
 	case TYPE_oid: subselect_prefix(oid,unsigned long, 64); break;
-	case TYPE_wrd: subselect_prefix(wrd,unsigned long, 64); break;
 	case TYPE_flt: subselect_prefix(flt,unsigned int,  32); break;
 	case TYPE_dbl: subselect_prefix(dbl,unsigned long, 64); break;
 #ifdef HAVE_HGE
@@ -981,7 +978,6 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	case TYPE_sht: thetasubselect_prefix(sht, unsigned int, 16); break;
 	case TYPE_lng: thetasubselect_prefix(lng, unsigned long, 16); break;
 	case TYPE_oid: thetasubselect_prefix(oid, unsigned long, 64); break;
-	case TYPE_wrd: thetasubselect_prefix(wrd, unsigned long, 64); break;
 	case TYPE_flt: thetasubselect_prefix(flt, unsigned int, 32); break;
 	case TYPE_dbl: thetasubselect_prefix(dbl, unsigned long, 64); break;
 #ifdef HAVE_HGE
@@ -1100,7 +1096,6 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_prefix(sht, unsigned short); break;
 		case TYPE_lng: projection_prefix(lng, unsigned long); break;
 		case TYPE_oid: projection_prefix(oid, unsigned long); break;
-		case TYPE_wrd: projection_prefix(wrd, unsigned long); break;
 		case TYPE_flt: projection_prefix(flt, unsigned int); break;
 		case TYPE_dbl: projection_prefix(dbl, unsigned long); break;
 #ifdef HAVE_HGE
@@ -1189,7 +1184,6 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 		case TYPE_sht: join_prefix(sht,unsigned short); break;
 		case TYPE_lng: join_prefix(lng,unsigned long); break;
 		case TYPE_oid: join_prefix(oid,unsigned long); break;
-		case TYPE_wrd: join_prefix(wrd,unsigned long); break;
 		case TYPE_flt: join_prefix(flt,unsigned int); break;
 		case TYPE_dbl: join_prefix(dbl,unsigned long); break;
 #ifdef HAVE_HGE

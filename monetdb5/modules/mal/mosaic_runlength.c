@@ -49,8 +49,6 @@ MOSdump_runlength(Client cntxt, MOStask task)
 	case  TYPE_hge:
 		mnstr_printf(cntxt->fdout,"hge %.40g", (dbl) *(hge*) val); break;
 #endif
-	case  TYPE_wrd:
-		mnstr_printf(cntxt->fdout,"wrd "SZFMT, *(wrd*) val); break;
 	case TYPE_flt:
 		mnstr_printf(cntxt->fdout,"flt  %f", *(flt*) val); break;
 	case TYPE_dbl:
@@ -85,7 +83,6 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
 	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid),oid); break;
-	case TYPE_wrd: output = wordaligned( MosaicBlkSize + sizeof(wrd),wrd); break;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt),flt); break;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl),dbl); break;
 #ifdef HAVE_HGE
@@ -120,7 +117,6 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(lng),lng)); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(oid),oid)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(wrd),wrd)); break;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(flt),flt)); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl),dbl)); break;
 #ifdef HAVE_HGE
@@ -177,7 +173,6 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_oid: Estimate(oid); break;
 	case TYPE_lng: Estimate(lng); break;
-	case TYPE_wrd: Estimate(wrd); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
 #ifdef HAVE_HGE
@@ -249,7 +244,6 @@ MOScompress_runlength(Client cntxt, MOStask task)
 	case TYPE_sht: RLEcompress(sht); break;
 	case TYPE_lng: RLEcompress(lng); break;
 	case TYPE_oid: RLEcompress(oid); break;
-	case TYPE_wrd: RLEcompress(wrd); break;
 	case TYPE_flt: RLEcompress(flt); break;
 	case TYPE_dbl: RLEcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -308,7 +302,6 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 	case TYPE_sht: RLEdecompress(sht); break;
 	case TYPE_lng: RLEdecompress(lng); break;
 	case TYPE_oid: RLEdecompress(oid); break;
-	case TYPE_wrd: RLEdecompress(wrd); break;
 	case TYPE_flt: RLEdecompress(flt); break;
 	case TYPE_dbl: RLEdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -425,7 +418,6 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 	case TYPE_sht: subselect_runlength(sht); break;
 	case TYPE_lng: subselect_runlength(lng); break;
 	case TYPE_oid: subselect_runlength(oid); break;
-	case TYPE_wrd: subselect_runlength(wrd); break;
 	case TYPE_flt: subselect_runlength(flt); break;
 	case TYPE_dbl: subselect_runlength(dbl); break;
 #ifdef HAVE_HGE
@@ -583,7 +575,6 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_runlength(sht); break;
 	case TYPE_lng: thetasubselect_runlength(lng); break;
 	case TYPE_oid: thetasubselect_runlength(oid); break;
-	case TYPE_wrd: thetasubselect_runlength(wrd); break;
 	case TYPE_flt: thetasubselect_runlength(flt); break;
 	case TYPE_dbl: thetasubselect_runlength(dbl); break;
 #ifdef HAVE_HGE
@@ -673,7 +664,6 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_runlength(sht); break;
 		case TYPE_lng: projection_runlength(lng); break;
 		case TYPE_oid: projection_runlength(oid); break;
-		case TYPE_wrd: projection_runlength(wrd); break;
 		case TYPE_flt: projection_runlength(flt); break;
 		case TYPE_dbl: projection_runlength(dbl); break;
 #ifdef HAVE_HGE
@@ -735,7 +725,6 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 		case TYPE_sht: join_runlength(sht); break;
 		case TYPE_lng: join_runlength(lng); break;
 		case TYPE_oid: join_runlength(oid); break;
-		case TYPE_wrd: join_runlength(wrd); break;
 		case TYPE_flt: join_runlength(flt); break;
 		case TYPE_dbl: join_runlength(dbl); break;
 #ifdef HAVE_HGE

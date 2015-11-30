@@ -188,7 +188,7 @@ _initQlog(void)
 	QLOG_calls_start = QLOGcreate("calls","start",TYPE_timestamp);
 	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_timestamp);
 	QLOG_calls_arguments = QLOGcreate("calls","arguments",TYPE_str);
-	QLOG_calls_tuples = QLOGcreate("calls","tuples",TYPE_wrd);
+	QLOG_calls_tuples = QLOGcreate("calls","tuples",TYPE_lng);
 	QLOG_calls_exec = QLOGcreate("calls","exec",TYPE_lng);
 	QLOG_calls_result = QLOGcreate("calls","result",TYPE_lng);
 	QLOG_calls_cpuload = QLOGcreate("calls","cpuload",TYPE_int);

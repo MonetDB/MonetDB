@@ -41,13 +41,25 @@ Ready.
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 [ 86	]
-#alter table tmp3 set read only;
-#explain select * from tmp3;
+#alter table tmp3RLE set read only;
+#select sum(i) from tmp3RLE;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3RLE;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select * from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s5_1():void;
+function user.s7_1():void;
     X_56:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.tmp3rle");
@@ -85,7 +97,7 @@ function user.s5_1():void;
     X_15:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3rle","t",0);
     X_17 := mosaic.projection(C_2,X_15);
     sql.resultSet(X_49,X_50,X_51,X_53,X_55,X_8,X_11,X_14,X_17);
-end user.s5_1;
+end user.s7_1;
 #alter table tmp3RLE alter column i set storage 'runlength';
 #alter table tmp3RLE alter column b set storage 'runlength';
 #alter table tmp3RLE alter column f set storage 'runlength';
@@ -95,7 +107,7 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 88 # length
-function user.s10_1():void;
+function user.s12_1():void;
     X_26:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",18);
     X_10 := bat.new(nil:oid,nil:str);
     X_18 := bat.append(X_10,"sys.tmp3rle");
@@ -112,13 +124,13 @@ function user.s10_1():void;
     X_5:bat[:oid,:int] := sql.bind(X_1,"sys","tmp3rle","i",0);
     X_8 := mosaic.projection(C_2,X_5);
     sql.resultSet(X_18,X_20,X_21,X_23,X_25,X_8);
-end user.s10_1;
+end user.s12_1;
 #explain select b from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s11_1():void;
+function user.s13_1():void;
     X_26:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",18);
     X_10 := bat.new(nil:oid,nil:str);
     X_18 := bat.append(X_10,"sys.tmp3rle");
@@ -135,13 +147,13 @@ function user.s11_1():void;
     X_5:bat[:oid,:bit] := sql.bind(X_1,"sys","tmp3rle","b",0);
     X_8 := mosaic.projection(C_2,X_5);
     sql.resultSet(X_18,X_20,X_21,X_23,X_25,X_8);
-end user.s11_1;
-#explain select b from tmp3;
+end user.s13_1;
+#explain select f from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s12_1():void;
+function user.s14_1():void;
     X_26:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",18);
     X_10 := bat.new(nil:oid,nil:str);
     X_18 := bat.append(X_10,"sys.tmp3rle");
@@ -158,13 +170,13 @@ function user.s12_1():void;
     X_5:bat[:oid,:flt] := sql.bind(X_1,"sys","tmp3rle","f",0);
     X_8 := mosaic.projection(C_2,X_5);
     sql.resultSet(X_18,X_20,X_21,X_23,X_25,X_8);
-end user.s12_1;
-#explain select f from tmp3;
+end user.s14_1;
+#explain select t from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s13_1():void;
+function user.s15_1():void;
     X_26:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",18);
     X_10 := bat.new(nil:oid,nil:str);
     X_18 := bat.append(X_10,"sys.tmp3rle");
@@ -181,7 +193,7 @@ function user.s13_1():void;
     X_5:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3rle","t",0);
     X_8 := mosaic.projection(C_2,X_5);
     sql.resultSet(X_18,X_20,X_21,X_23,X_25,X_8);
-end user.s13_1;
+end user.s15_1;
 #select * from tmp3RLE;
 % sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name
@@ -273,6 +285,18 @@ end user.s13_1;
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
+#select sum(i) from tmp3RLE;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3RLE;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
 
 # 21:09:37 >  
 # 21:09:37 >  "Done."

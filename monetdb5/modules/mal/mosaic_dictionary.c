@@ -64,8 +64,6 @@ MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
 	case  TYPE_hge:
 		snprintf(buf,len,"%.40g",  (dbl) ((hge*) val)[i]); break;
 #endif
-	case  TYPE_wrd:
-		snprintf(buf,len,LLFMT,  (lng)((wrd*) val)[i]); break;
 	case TYPE_flt:
 		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
 	case TYPE_dbl:
@@ -219,7 +217,6 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	case TYPE_sht: makeDict(sht); break;
 	case TYPE_lng: makeDict(lng); break;
 	case TYPE_oid: makeDict(oid); break;
-	case TYPE_wrd: makeDict(wrd); break;
 	case TYPE_flt: makeDict(flt); break;
 	case TYPE_dbl: makeDict(dbl); break;
 #ifdef HAVE_HGE
@@ -284,7 +281,6 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	case TYPE_sht: estimateDict(sht); break;
 	case TYPE_lng: estimateDict(lng); break;
 	case TYPE_oid: estimateDict(oid); break;
-	case TYPE_wrd: estimateDict(wrd); break;
 	case TYPE_flt: estimateDict(flt); break;
 	case TYPE_dbl: estimateDict(dbl); break;
 #ifdef HAVE_HGE
@@ -379,7 +375,6 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	case TYPE_sht: DICTcompress(sht); break;
 	case TYPE_lng: DICTcompress(lng); break;
 	case TYPE_oid: DICTcompress(oid); break;
-	case TYPE_wrd: DICTcompress(wrd); break;
 	case TYPE_flt: DICTcompress(flt); break;
 	case TYPE_dbl: DICTcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -462,7 +457,6 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_lng: DICTdecompress(lng); break;
 	case TYPE_oid: DICTdecompress(oid); break;
-	case TYPE_wrd: DICTdecompress(wrd); break;
 	case TYPE_flt: DICTdecompress(flt); break;
 	case TYPE_dbl: DICTdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -594,7 +588,6 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 	case TYPE_sht: subselect_dictionary(sht); break;
 	case TYPE_lng: subselect_dictionary(lng); break;
 	case TYPE_oid: subselect_dictionary(oid); break;
-	case TYPE_wrd: subselect_dictionary(wrd); break;
 	case TYPE_flt: subselect_dictionary(flt); break;
 	case TYPE_dbl: subselect_dictionary(dbl); break;
 #ifdef HAVE_HGE
@@ -823,7 +816,6 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_dictionary(sht); break;
 	case TYPE_lng: thetasubselect_dictionary(lng); break;
 	case TYPE_oid: thetasubselect_dictionary(oid); break;
-	case TYPE_wrd: thetasubselect_dictionary(wrd); break;
 	case TYPE_flt: thetasubselect_dictionary(flt); break;
 	case TYPE_dbl: thetasubselect_dictionary(dbl); break;
 #ifdef HAVE_HGE
@@ -950,7 +942,6 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_dictionary(sht); break;
 		case TYPE_lng: projection_dictionary(lng); break;
 		case TYPE_oid: projection_dictionary(oid); break;
-		case TYPE_wrd: projection_dictionary(wrd); break;
 		case TYPE_flt: projection_dictionary(flt); break;
 		case TYPE_dbl: projection_dictionary(dbl); break;
 #ifdef HAVE_HGE
@@ -1009,7 +1000,6 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 		case TYPE_sht: join_dictionary(sht); break;
 		case TYPE_lng: join_dictionary(lng); break;
 		case TYPE_oid: join_dictionary(oid); break;
-		case TYPE_wrd: join_dictionary(wrd); break;
 		case TYPE_flt: join_dictionary(flt); break;
 		case TYPE_dbl: join_dictionary(dbl); break;
 #ifdef HAVE_HGE

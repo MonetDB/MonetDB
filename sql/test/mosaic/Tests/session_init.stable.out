@@ -136,6 +136,18 @@ Ready.
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
+#select sum(i) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
 
 # 16:53:28 >  
 # 16:53:28 >  "Done."

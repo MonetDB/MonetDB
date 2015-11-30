@@ -37,7 +37,6 @@ linear_step(MOStask task, MosaicBlk blk){
 	case TYPE_sht : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(sht));
 	case TYPE_int : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(int));
 	case TYPE_lng : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(lng));
-	case TYPE_wrd : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(wrd));
 	case TYPE_oid : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(oid));
 	case TYPE_flt : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(flt));
 	case TYPE_dbl : return (void*) ( ((char*)blk)+ MosaicBlkSize+ sizeof(dbl));
@@ -71,8 +70,6 @@ MOSdump_linear(Client cntxt, MOStask task)
 		mnstr_printf(cntxt->fdout,"int %d %d", *(int*) linear_base(blk), *(int*) linear_step(task,blk)); break;
 	case  TYPE_lng:
 		mnstr_printf(cntxt->fdout,"int "LLFMT" " LLFMT, *(lng*) linear_base(blk), *(lng*) linear_step(task,blk)); break;
-	case  TYPE_wrd:
-		mnstr_printf(cntxt->fdout,"int "SZFMT" " SZFMT, *(wrd*) linear_base(blk), *(wrd*) linear_step(task,blk)); break;
 	case TYPE_flt:
 		mnstr_printf(cntxt->fdout,"flt  %f %f", *(flt*) linear_base(blk), *(flt*) linear_step(task,blk)); break;
 	case TYPE_dbl:
@@ -104,7 +101,6 @@ MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case TYPE_int: output = wordaligned( MosaicBlkSize + 2 * sizeof(int),int); break;
 	case TYPE_oid: output = wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng); break;
-	case TYPE_wrd: output = wordaligned( MosaicBlkSize + 2 * sizeof(wrd),wrd); break;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + 2 * sizeof(flt),flt); break;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + 2 * sizeof(dbl),dbl); break;
 #ifdef HAVE_HGE
@@ -135,7 +131,6 @@ MOSadvance_linear(Client cntxt, MOStask task)
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(int),int)); break;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng)); break;
-	case TYPE_wrd: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(wrd),wrd)); break;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(flt),flt)); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(dbl),dbl)); break;
 #ifdef HAVE_HGE
@@ -193,7 +188,6 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_oid: Estimate(oid); break;
 	case TYPE_lng: Estimate(lng); break;
-	case TYPE_wrd: Estimate(wrd); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
 #ifdef HAVE_HGE
@@ -269,7 +263,6 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_sht: LINEARcompress(sht); break;
 	case TYPE_oid: LINEARcompress(oid); break;
 	case TYPE_lng: LINEARcompress(lng); break;
-	case TYPE_wrd: LINEARcompress(wrd); break;
 	case TYPE_flt: LINEARcompress(flt); break;
 	case TYPE_dbl: LINEARcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -331,7 +324,6 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_sht: LINEARdecompress(sht); break;
 	case TYPE_oid: LINEARdecompress(oid); break;
 	case TYPE_lng: LINEARdecompress(lng); break;
-	case TYPE_wrd: LINEARdecompress(wrd); break;
 	case TYPE_flt: LINEARdecompress(flt); break;
 	case TYPE_dbl: LINEARdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -451,7 +443,6 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case TYPE_sht: subselect_linear(sht); break;
 	case TYPE_oid: subselect_linear(oid); break;
 	case TYPE_lng: subselect_linear(lng); break;
-	case TYPE_wrd: subselect_linear(wrd); break;
 	case TYPE_flt: subselect_linear(flt); break;
 	case TYPE_dbl: subselect_linear(dbl); break;
 #ifdef HAVE_HGE
@@ -612,7 +603,6 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	case TYPE_sht: thetasubselect_linear(sht); break;
 	case TYPE_oid: thetasubselect_linear(oid); break;
 	case TYPE_lng: thetasubselect_linear(lng); break;
-	case TYPE_wrd: thetasubselect_linear(wrd); break;
 	case TYPE_flt: thetasubselect_linear(flt); break;
 	case TYPE_dbl: thetasubselect_linear(dbl); break;
 #ifdef HAVE_HGE
@@ -711,7 +701,6 @@ MOSprojection_linear(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_linear(sht); break;
 		case TYPE_oid: projection_linear(oid); break;
 		case TYPE_lng: projection_linear(lng); break;
-		case TYPE_wrd: projection_linear(wrd); break;
 		case TYPE_flt: projection_linear(flt); break;
 		case TYPE_dbl: projection_linear(dbl); break;
 #ifdef HAVE_HGE
@@ -795,7 +784,6 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_linear(hge); break;
 #endif
-		case TYPE_wrd: join_linear(wrd); break;
 		case TYPE_flt: join_linear(flt); break;
 		case TYPE_dbl: join_linear(dbl); break;
 		case TYPE_int:

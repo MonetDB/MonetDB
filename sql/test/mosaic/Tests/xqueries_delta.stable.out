@@ -96,21 +96,45 @@ end user.s6_1;
 % wrd # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage 'delta';
-#alter table tmp3 alter column b set storage 'delta';
-#alter table tmp3 alter column f set storage 'delta';
-#select count(*) from tmp3;
+#select sum(i) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#alter table dtmp3 alter column i set storage 'delta';
+#alter table dtmp3 alter column b set storage 'delta';
+#alter table dtmp3 alter column f set storage 'delta';
+#select count(*) from dtmp3;
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 2 # length
 [ 86	]
-#explain select count(*) from tmp3 where i <4;
+#select sum(i) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from dtmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 104 # length
-function user.s13_1(A0:int):void;
+function user.s17_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
@@ -119,7 +143,7 @@ function user.s13_1(A0:int):void;
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s13_1;
+end user.s17_1;
 #select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -131,7 +155,7 @@ end user.s13_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s14_1(A0:int):void;
+function user.s18_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
@@ -140,7 +164,7 @@ function user.s14_1(A0:int):void;
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s14_1;
+end user.s18_1;
 #select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
@@ -159,15 +183,27 @@ end user.s14_1;
 % wrd # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage NULL;
-#alter table tmp3 alter column b set storage NULL;
-#alter table tmp3 alter column f set storage NULL;
-#explain select count(*) from tmp3 where i <4;
+#alter table dtmp3 alter column i set storage NULL;
+#alter table dtmp3 alter column b set storage NULL;
+#alter table dtmp3 alter column f set storage NULL;
+#select sum(i) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from dtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from dtmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 104 # length
-function user.s20_1(A0:int):void;
+function user.s26_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
@@ -176,7 +212,7 @@ function user.s20_1(A0:int):void;
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s20_1;
+end user.s26_1;
 #select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -188,7 +224,7 @@ end user.s20_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s21_1(A0:int):void;
+function user.s27_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
@@ -197,7 +233,7 @@ function user.s21_1(A0:int):void;
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s21_1;
+end user.s27_1;
 #select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name

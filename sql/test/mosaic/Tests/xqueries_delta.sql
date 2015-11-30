@@ -97,12 +97,16 @@ explain select count(*) from dtmp3 where i = 7;
 select count(*) from dtmp3 where i = 7;
 select count(*) from dtmp3 where f <0.316;
 select count(*) from dtmp3 where b = true;
+select sum(i) from dtmp3;
+select sum(f) from dtmp3;
 
 alter table dtmp3 alter column i set storage 'delta';
 alter table dtmp3 alter column b set storage 'delta';
 alter table dtmp3 alter column f set storage 'delta';
 
 select count(*) from dtmp3;
+select sum(i) from dtmp3;
+select sum(f) from dtmp3;
 
 explain select count(*) from dtmp3 where i <4;
 select count(*) from dtmp3 where i <4;
@@ -115,6 +119,8 @@ select count(*) from dtmp3 where b = true;
 alter table dtmp3 alter column i set storage NULL;
 alter table dtmp3 alter column b set storage NULL;
 alter table dtmp3 alter column f set storage NULL;
+select sum(i) from dtmp3;
+select sum(f) from dtmp3;
 
 explain select count(*) from dtmp3 where i <4;
 select count(*) from dtmp3 where i <4;

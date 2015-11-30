@@ -69,8 +69,6 @@ MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 	case  TYPE_hge:
 		snprintf(buf,len,"%.40g", (dbl) ((hge*) val)[i]); break;
 #endif
-	case  TYPE_wrd:
-		snprintf(buf,len,LLFMT, (lng)((wrd*) val)[i]); break;
 	case TYPE_flt:
 		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
 	case TYPE_dbl:
@@ -224,7 +222,6 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 	case TYPE_sht: makeFrame(sht); break;
 	case TYPE_lng: makeFrame(lng); break;
 	case TYPE_oid: makeFrame(oid); break;
-	case TYPE_wrd: makeFrame(wrd); break;
 	case TYPE_flt: makeFrame(flt); break;
 	case TYPE_dbl: makeFrame(dbl); break;
 #ifdef HAVE_HGE
@@ -291,7 +288,6 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	case TYPE_sht: estimateFrame(sht); break;
 	case TYPE_lng: estimateFrame(lng); break;
 	case TYPE_oid: estimateFrame(oid); break;
-	case TYPE_wrd: estimateFrame(wrd); break;
 	case TYPE_flt: estimateFrame(flt); break;
 	case TYPE_dbl: estimateFrame(dbl); break;
 #ifdef HAVE_HGE
@@ -389,7 +385,6 @@ MOScompress_frame(Client cntxt, MOStask task)
 	case TYPE_sht: FRAMEcompress(sht); break;
 	case TYPE_lng: FRAMEcompress(lng); break;
 	case TYPE_oid: FRAMEcompress(oid); break;
-	case TYPE_wrd: FRAMEcompress(wrd); break;
 	case TYPE_flt: FRAMEcompress(flt); break;
 	case TYPE_dbl: FRAMEcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -478,7 +473,6 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 	case TYPE_sht: FRAMEdecompress(sht); break;
 	case TYPE_int: FRAMEdecompress(int); break;
 	case TYPE_oid: FRAMEdecompress(oid); break;
-	case TYPE_wrd: FRAMEdecompress(wrd); break;
 	case TYPE_flt: FRAMEdecompress(flt); break;
 	case TYPE_dbl: FRAMEdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -613,7 +607,6 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	case TYPE_sht: subselect_frame(sht); break;
 	case TYPE_lng: subselect_frame(lng); break;
 	case TYPE_oid: subselect_frame(oid); break;
-	case TYPE_wrd: subselect_frame(wrd); break;
 	case TYPE_flt: subselect_frame(flt); break;
 	case TYPE_dbl: subselect_frame(dbl); break;
 #ifdef HAVE_HGE
@@ -845,7 +838,6 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_sht: thetasubselect_frame(sht); break;
 	case TYPE_lng: thetasubselect_frame(lng); break;
 	case TYPE_oid: thetasubselect_frame(oid); break;
-	case TYPE_wrd: thetasubselect_frame(wrd); break;
 	case TYPE_flt: thetasubselect_frame(flt); break;
 	case TYPE_dbl: thetasubselect_frame(dbl); break;
 #ifdef HAVE_HGE
@@ -973,7 +965,6 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 		case TYPE_sht: projection_frame(sht); break;
 		case TYPE_lng: projection_frame(lng); break;
 		case TYPE_oid: projection_frame(oid); break;
-		case TYPE_wrd: projection_frame(wrd); break;
 		case TYPE_flt: projection_frame(flt); break;
 		case TYPE_dbl: projection_frame(dbl); break;
 #ifdef HAVE_HGE
@@ -1033,7 +1024,6 @@ MOSjoin_frame(Client cntxt,  MOStask task)
 		case TYPE_sht: join_frame(sht); break;
 		case TYPE_lng: join_frame(lng); break;
 		case TYPE_oid: join_frame(oid); break;
-		case TYPE_wrd: join_frame(wrd); break;
 		case TYPE_flt: join_frame(flt); break;
 		case TYPE_dbl: join_frame(dbl); break;
 #ifdef HAVE_HGE

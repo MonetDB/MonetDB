@@ -41,13 +41,25 @@ Ready.
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 [ 86	]
-#alter table tmp3 set read only;
-#explain select count(*) from tmp3 where i <4;
+#alter table xtmp3 set read only;
+#select sum(i) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from xtmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 104 # length
-function user.s5_1(A0:int):void;
+function user.s7_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -56,7 +68,7 @@ function user.s5_1(A0:int):void;
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s5_1;
+end user.s7_1;
 #select count(*) from xtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -68,7 +80,7 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s6_1(A0:int):void;
+function user.s8_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -77,7 +89,7 @@ function user.s6_1(A0:int):void;
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s6_1;
+end user.s8_1;
 #select count(*) from xtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
@@ -96,15 +108,27 @@ end user.s6_1;
 % wrd # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage 'rle';
-#alter table tmp3 alter column b set storage 'rle';
-#alter table tmp3 alter column f set storage 'rle';
-#explain select count(*) from tmp3 where i <4;
+#alter table xtmp3 alter column i set storage 'runlength';
+#alter table xtmp3 alter column b set storage 'runlength';
+#alter table xtmp3 alter column f set storage 'runlength';
+#select sum(i) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from xtmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 104 # length
-function user.s12_1(A0:int):void;
+function user.s16_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -113,7 +137,7 @@ function user.s12_1(A0:int):void;
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s12_1;
+end user.s16_1;
 #select count(*) from xtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -125,7 +149,7 @@ end user.s12_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s13_1(A0:int):void;
+function user.s17_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -134,7 +158,7 @@ function user.s13_1(A0:int):void;
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s13_1;
+end user.s17_1;
 #select count(*) from xtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
@@ -153,15 +177,27 @@ end user.s13_1;
 % wrd # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage NULL;
-#alter table tmp3 alter column b set storage NULL;
-#alter table tmp3 alter column f set storage NULL;
-#explain select count(*) from tmp3 where i <4;
+#alter table xtmp3 alter column i set storage NULL;
+#alter table xtmp3 alter column b set storage NULL;
+#alter table xtmp3 alter column f set storage NULL;
+#select sum(i) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from xtmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from xtmp3 where i <4;
 % .explain # table_name
 % mal # name
 % clob # type
 % 104 # length
-function user.s19_1(A0:int):void;
+function user.s25_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -170,7 +206,7 @@ function user.s19_1(A0:int):void;
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s19_1;
+end user.s25_1;
 #select count(*) from xtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -182,7 +218,7 @@ end user.s19_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s20_1(A0:int):void;
+function user.s26_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:oid,:int] := sql.bind(X_2,"sys","xtmp3","i",0);
@@ -191,7 +227,7 @@ function user.s20_1(A0:int):void;
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s20_1;
+end user.s26_1;
 #select count(*) from xtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name

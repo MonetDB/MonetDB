@@ -303,6 +303,18 @@ end user.s6_1;
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
+#select sum(i) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
 #select count(*) from tmp3;
 % sys.L1 # table_name
 % L1 # name
@@ -317,7 +329,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s11_1():void;
+function user.s13_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.tmp3");
@@ -355,7 +367,7 @@ function user.s11_1():void;
     X_15:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
     X_17 := mosaic.projection(C_2,X_15);
     sql.resultSet(X_49,X_50,X_51,X_53,X_55,X_8,X_11,X_14,X_17);
-end user.s11_1;
+end user.s13_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -447,6 +459,18 @@ end user.s11_1;
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
+#select sum(i) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
 #alter table tmp3 set read write;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
