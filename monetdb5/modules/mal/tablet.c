@@ -879,7 +879,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	const void *adt;
 	char buf[BUFSIZ];
 	char *s = task->fields[col][idx];
-	ptr key = 0;
 	char *err = NULL;
 	int ret = 0;
 
@@ -915,8 +914,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
 	}
-	/* key may be NULL but that's not a problem, as long as we have void */
-	bunfastins(fmt->c, key, adt);
+	bunfastapp(fmt->c, adt);
 	return ret;
   bunins_failed:
 	if (task->rowerror) {
