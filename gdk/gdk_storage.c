@@ -728,6 +728,7 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
+	CHECKDEBUG BATassertProps(b);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */

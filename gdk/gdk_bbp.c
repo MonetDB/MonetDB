@@ -2489,6 +2489,7 @@ getBBPdescriptor(bat i, int lock)
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
+		CHECKDEBUG BATassertProps(b);
 	}
 	return b;
 }
