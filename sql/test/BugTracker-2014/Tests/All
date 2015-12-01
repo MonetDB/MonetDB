@@ -69,3 +69,4 @@ combined_WHERE_conditions.Bug-3642
 copy-into.Bug-3481
 empty_intermediate_quantile.Bug-3611
 uppercaseboolean.Bug-3519
+null_in_string.Bug-2014
