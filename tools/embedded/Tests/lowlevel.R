@@ -11,7 +11,7 @@ test_that("db starts up", {
 	expect_error(monetdb_embedded_startup("/dev/null"))
 	dbdir <- tempdir()
 	expect_equal(monetdb_embedded_startup(dbdir), TRUE)
-	expect_warning(monetdb_embedded_startup("/tmp"))
+	expect_error(monetdb_embedded_startup("/tmp"))
 	expect_equal(monetdb_embedded_startup(dbdir), TRUE)
 })
 

@@ -1901,15 +1901,14 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	logger *lg;
 
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
+	if (!lg)
+			return NULL;
 	if (lg->debug & 1) {
 		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
 		fflush(stdout);
 	}
-	if (!lg)
-		return NULL;
 	if (logger_open(lg) == LOG_ERR) {
 		logger_destroy(lg);
-
 		return NULL;
 	}
 	if (lg->debug & 1) {

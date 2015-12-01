@@ -170,7 +170,9 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		return;
 	}
 	if (ATOMindex(name) >= 0) {
+#ifndef HAVE_EMBEDDED /* we can restart embedded MonetDB, making this an expected error */
 		showException(out, TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
+#endif
 		return;
 	}
 	if (tpe < 0 || tpe >= GDKatomcnt) {

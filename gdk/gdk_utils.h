@@ -86,9 +86,12 @@ gdk_export int GDKinit(opt *set, int setlen);
  * takes care of this.
  */
 gdk_export int GDKnr_threads;
-
+#ifndef HAVE_EMBEDDED
 __declspec(noreturn) gdk_export void GDKexit(int status)
 	__attribute__((__noreturn__));
+#else
+gdk_export void GDKexit(int status);
+#endif
 gdk_export int GDKexiting(void);
 
 gdk_export const char *GDKversion(void);

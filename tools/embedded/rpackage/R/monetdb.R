@@ -114,6 +114,8 @@ monetdb_embedded_disconnect <- function(conn) {
 
 monetdb_embedded_shutdown <- function() {
 	.Call("monetdb_shutdown_R", PACKAGE="libmonetdb5")
+	monetdb_embedded_env$is_started <- FALSE
+	monetdb_embedded_env$started_dir <- ""
 	return(invisible(TRUE))
 }
 

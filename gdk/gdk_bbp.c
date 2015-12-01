@@ -1024,13 +1024,25 @@ BBPaddfarm(const char *dirname, int rolemask)
 	}
 	for (i = 0; i < MAXFARMS; i++) {
 		if (BBPfarms[i].dirname == NULL) {
-			BBPfarms[i].dirname = strdup(dirname);
+			BBPfarms[i].dirname = GDKstrdup(dirname);
 			BBPfarms[i].roles = rolemask;
 			return;
 		}
 	}
 	GDKfatal("BBPaddfarm: too many farms\n");
 }
+
+gdk_export void BBPresetfarms() {
+	BBPexit();
+	BBPunlock("BBPexit");
+	BBPsize = 0;
+	if (BBPfarms[0].dirname != NULL) {
+		GDKfree((void*) BBPfarms[0].dirname);
+	}
+	BBPfarms[0].dirname = NULL;
+	BBPfarms[0].roles = 0;
+}
+
 
 void
 BBPinit(void)
@@ -1142,6 +1154,8 @@ BBPinit(void)
  * interference in a parallel session.
  */
 
+static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
+
 void
 BBPexit(void)
 {
@@ -1162,7 +1176,7 @@ BBPexit(void)
 						skipped = 1;
 						continue;
 					}
-					/* NIELS ?? Why reduce share count, it's done in VIEWdestroy !! */
+					/* NIELS ?? Why reduce share count, it's done in VIEWdestroy !!
 					if (isVIEW(b)) {
 						bat hp = VIEWhparent(b), tp = VIEWtparent(b);
 						bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
@@ -1182,7 +1196,7 @@ BBPexit(void)
 							BBP_cache(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
 						}
-					}
+					}*/
 					if (isVIEW(b))
 						VIEWdestroy(b);
 					else
@@ -1208,6 +1222,11 @@ BBPexit(void)
 	} while (skipped);
 	GDKfree(BBP_hash);
 	BBP_hash = 0;
+	// these need to be NULL, otherwise no new ones get created
+	backup_files = 0;
+	backup_dir = 0;
+	backup_subdir = 0;
+
 }
 
 /*
@@ -3264,7 +3283,6 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
  * backup_dir == 1 => BBP.dir saved in BACKUP/
  * backup_dir == 2 => BBP.dir saved in SUBCOMMIT/
  */
-static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
 
 static gdk_return
 BBPprepare(bit subcommit)

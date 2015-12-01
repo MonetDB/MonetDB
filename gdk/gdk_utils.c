@@ -1244,7 +1244,7 @@ GDKexit(int status)
 #ifndef HAVE_EMBEDDED
 	if (GDKlockFile == NULL) {
 		/* no database lock, so no threads, so exit now */
-		exit(status);
+		MT_global_exit(status);
 	}
 #endif
 	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKexit") == 0) {
@@ -1269,16 +1269,12 @@ GDKexit(int status)
 			MT_sleep_ms(CATNAP);
 		}
 		if (status == 0) {
-			/* they had there chance, now kill them */
+			/* they had their chance, now kill them */
 			MT_lock_set(&GDKthreadLock, "GDKexit");
 			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-				if (t->pid) {
-					MT_Id victim = t->pid;
-
-					if (t->pid != pid) {
-						fprintf(stderr, "#GDKexit: killing thread\n");
-						MT_kill_thread(victim);
-					}
+				if (t->pid && t->pid != pid) {
+					fprintf(stderr, "#GDKexit: killing thread\n");
+					MT_kill_thread(t->pid);
 				}
 			}
 			MT_lock_unset(&GDKthreadLock, "GDKexit");
@@ -1292,10 +1288,13 @@ GDKexit(int status)
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
-#ifndef HAVE_EMBEDDED
+#ifdef HAVE_EMBEDDED
+		return;
+#else
 		MT_global_exit(status);
 #endif
 	}
+	fprintf(stderr, "#GDKexit: killing thread -1\n");
 	MT_exit_thread(-1);
 }
 

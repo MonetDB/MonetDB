@@ -88,7 +88,9 @@ int mal_init(void){
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
+#ifndef HAVE_EMBEDDED
 	initHeartbeat();
+#endif
 	initResource();
 	RECYCLEinit();
 	if( malBootstrap() == 0)
@@ -171,5 +173,6 @@ void mal_exit(void){
 		fprintf(stderr, "!%s", err);
 		free(err);
 	}
+	MTIMEreset();
 	GDKexit(0); 	/* properly end GDK */
 }
