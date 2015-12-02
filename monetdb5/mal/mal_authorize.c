@@ -151,7 +151,11 @@ AUTHinitTables(str *passwd) {
 		BBPrename(BBPcacheid(user), "M5system_auth_user");
 		BATmode(user, PERSISTENT);
 	} else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		user = BATdescriptor(bid);
+		GDKdebug = dbg;
 		isNew = 0;
 	}
 	assert(user);
@@ -167,10 +171,45 @@ AUTHinitTables(str *passwd) {
 		BBPrename(BBPcacheid(pass), "M5system_auth_passwd_v2");
 		BATmode(pass, PERSISTENT);
 	} else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		pass = BATdescriptor(bid);
+		GDKdebug = dbg;
 		isNew = 0;
 	}
 	assert(pass);
+
+	if (user->htype == TYPE_oid) {
+		BAT *b;
+		char name[10];
+		bat blist[5];
+		assert(pass->htype == TYPE_oid);
+		blist[0] = 0;
+		b = BATcopy(user, TYPE_void, user->ttype, 1, PERSISTENT);
+		BATseqbase(b, 0);
+		BATmode(b, PERSISTENT);
+		BATmode(user, TRANSIENT);
+		snprintf(name, sizeof(name), "tmp_%o", user->batCacheid);
+		BBPrename(user->batCacheid, name);
+		BBPrename(b->batCacheid, "M5system_auth_user");
+		blist[1] = user->batCacheid;
+		blist[2] = b->batCacheid;
+		BBPunfix(user->batCacheid);
+		user = b;
+		b = BATcopy(pass, TYPE_void, pass->ttype, 1, PERSISTENT);
+		BATseqbase(b, 0);
+		BATmode(b, PERSISTENT);
+		BATmode(pass, TRANSIENT);
+		snprintf(name, sizeof(name), "tmp_%o", pass->batCacheid);
+		BBPrename(pass->batCacheid, name);
+		BBPrename(b->batCacheid, "M5system_auth_passwd_v2");
+		blist[3] = pass->batCacheid;
+		blist[4] = b->batCacheid;
+		BBPunfix(pass->batCacheid);
+		pass = b;
+		TMsubcommit_list(blist, 5);
+	}
 
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_deleted");

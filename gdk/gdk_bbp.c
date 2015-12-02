@@ -808,12 +808,13 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 	return n;
 }
 
-static void
+static int
 BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
 	BATstore *bs;
+	int needcommit = 0;
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -899,6 +900,21 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
+		if (bs->S.count > 1) {
+			/* fix result of bug in BATappend not clearing
+			 * revsorted property */
+			if (bs->H.type == TYPE_void && bs->H.seq != oid_nil && bs->H.revsorted) {
+				bs->H.revsorted = 0;
+				bs->S.descdirty = 1;
+				needcommit = 1;
+			}
+			if (bs->T.type == TYPE_void && bs->T.seq != oid_nil && bs->T.revsorted) {
+				bs->T.revsorted = 0;
+				bs->S.descdirty = 1;
+				needcommit = 1;
+			}
+		}
+
 		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 		if (buf[nread] == ' ')
@@ -931,6 +947,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
+	return needcommit;
 }
 
 #ifdef HAVE_HGE
@@ -1042,6 +1059,7 @@ BBPinit(void)
 	int bbpversion;
 	int oidsize;
 	oid BBPoid;
+	int needcommit;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1093,7 +1111,7 @@ BBPinit(void)
 	BBPextend(0, FALSE);		/* allocate BBP records */
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
 
-	BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
+	needcommit = BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
 
 	/* normalize saved LRU stamps */
@@ -1122,7 +1140,7 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
-	if (bbpversion < GDKLIBRARY)
+	if (bbpversion < GDKLIBRARY || needcommit)
 		TMcommit();
 
 	return;
@@ -2480,6 +2498,7 @@ getBBPdescriptor(bat i, int lock)
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
+		CHECKDEBUG BATassertProps(b);
 	}
 	return b;
 }
