@@ -2294,7 +2294,7 @@ log_abort(logger *lg)
 }
 
 static int
-log_sequence_(logger *lg, int seq, lng val)
+log_sequence_(logger *lg, int seq, lng val, int flush)
 {
 	logformat l;
 
@@ -2307,8 +2307,8 @@ log_sequence_(logger *lg, int seq, lng val)
 
 	if (log_write_format(lg, &l) == LOG_ERR ||
 	    !mnstr_writeLng(lg->log, val) ||
-	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log) ||
+	    (flush && mnstr_flush(lg->log)) ||
+	    (flush && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return LOG_ERR;
@@ -2330,7 +2330,13 @@ log_sequence_nrs(logger *lg)
 		oid pos = p;
 
 		if (BUNfnd(lg->dseqs, &pos) == BUN_NONE)
-			ok &= log_sequence_(lg, *id, *val);
+			ok |= log_sequence_(lg, *id, *val, 0);
+	}
+	if (ok != LOG_OK ||
+	    mnstr_flush(lg->log) ||
+	    mnstr_fsync(lg->log)) {
+		fprintf(stderr, "!ERROR: log_sequence_nrs: write failed\n");
+		return LOG_ERR;
 	}
 	return ok;
 }
@@ -2355,7 +2361,7 @@ log_sequence(logger *lg, int seq, lng val)
 		BUNappend(lg->seqs_id, &seq, FALSE);
 		BUNappend(lg->seqs_val, &val, FALSE);
 	}
-	return log_sequence_(lg, seq, val);
+	return log_sequence_(lg, seq, val, 1);
 }
 
 static int
