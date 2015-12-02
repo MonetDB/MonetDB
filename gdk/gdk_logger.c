@@ -823,6 +823,7 @@ static int
 logger_open(logger *lg)
 {
 	char filename[BUFSIZ];
+	bat bid;
 
 	snprintf(filename, sizeof(filename), "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
 
@@ -832,6 +833,19 @@ logger_open(logger *lg)
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) { 
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
 		return LOG_ERR;
+	}
+	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
+		BAT *b = BATdescriptor(bid);
+		BATmode(b, TRANSIENT);
+		logger_del_bat(lg, bid);
+		logbat_destroy(b);
+		bid = logger_find_bat(lg, "seqs_val");
+		b = BATdescriptor(bid);
+		BATmode(b, TRANSIENT);
+		logger_del_bat(lg, bid);
+		logbat_destroy(b);
+		if (bm_commit(lg) != LOG_OK)
+			return LOG_ERR;
 	}
 	return LOG_OK;
 }
@@ -1511,12 +1525,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			if (o_id == NULL || o_val == NULL)
 				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
 
-			BATseqbase(o_id, 0);
-			BATseqbase(o_val, 0);
 			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
+			BATseqbase(lg->seqs_id, 0);
+			BATseqbase(lg->seqs_val, 0);
 		} else {
 			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
