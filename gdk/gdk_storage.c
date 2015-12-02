@@ -18,7 +18,7 @@
  *
  * The current version assumes that all BATs are stored on a single
  * disk partition. This simplistic assumption should be replaced in
- * the near future by a multi-volume version. The intension is to use
+ * the near future by a multi-volume version. The intention is to use
  * several BAT home locations.  The files should be owned by the
  * database server. Otherwise, IO operations are likely to fail. This
  * is accomplished by setting the GID and UID upon system start.
@@ -728,6 +728,7 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
+	CHECKDEBUG BATassertProps(b);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */

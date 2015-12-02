@@ -879,7 +879,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	const void *adt;
 	char buf[BUFSIZ];
 	char *s = task->fields[col][idx];
-	ptr key = 0;
 	char *err = NULL;
 	int ret = 0;
 
@@ -915,8 +914,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
 	}
-	/* key may be NULL but that's not a problem, as long as we have void */
-	bunfastins(fmt->c, key, adt);
+	bunfastapp(fmt->c, adt);
 	return ret;
   bunins_failed:
 	if (task->rowerror) {
@@ -1960,8 +1958,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mnstr_printf(GDKout, "#leftover input:%.63s\n",
 				 task->b->buf + task->b->pos);
 #endif
-	for (i = 0; i < as->nr_attrs; i++)
+	for (i = 0; i < as->nr_attrs; i++) {
+		BAT *b = task->as->format[i].c;
+		BATsettrivprop(b);
 		GDKfree(task->fields[i]);
+	}
 	GDKfree(task->fields);
 	GDKfree(task->cols);
 	GDKfree(task->time);

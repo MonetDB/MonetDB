@@ -823,6 +823,7 @@ static int
 logger_open(logger *lg)
 {
 	char filename[BUFSIZ];
+	bat bid;
 
 	snprintf(filename, sizeof(filename), "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
 
@@ -832,6 +833,19 @@ logger_open(logger *lg)
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) { 
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
 		return LOG_ERR;
+	}
+	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
+		BAT *b = BATdescriptor(bid);
+		BATmode(b, TRANSIENT);
+		logger_del_bat(lg, bid);
+		logbat_destroy(b);
+		bid = logger_find_bat(lg, "seqs_val");
+		b = BATdescriptor(bid);
+		BATmode(b, TRANSIENT);
+		logger_del_bat(lg, bid);
+		logbat_destroy(b);
+		if (bm_commit(lg) != LOG_OK)
+			return LOG_ERR;
 	}
 	return LOG_OK;
 }
@@ -1452,6 +1466,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				BBPincref(bid, TRUE);
 		}
 	}
+	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
+	if (lg->freed == NULL)
+		logger_fatal("Logger_new: failed to create freed bat", 0, 0, 0);
+	snprintf(bak, sizeof(bak), "%s_freed", fn);
+	if (BBPrename(lg->freed->batCacheid, bak) < 0)
+		logger_fatal("Logger_new: BBPrename to %s failed",
+			     bak, 0, 0);
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid");
 	if (snapshots_bid == 0) {
 		lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1503,20 +1524,28 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		bat seqs_val = logger_find_bat(lg, "seqs_val");
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 		bat dsnapshots = logger_find_bat(lg, "dsnapshots");
+		int needcommit = 0;
+		int dbg = GDKdebug;
 
 		if (seqs_id) {
-			BAT *o_id = BATdescriptor(seqs_id);
-			BAT *o_val = BATdescriptor(seqs_val);
+			BAT *o_id;
+			BAT *o_val;
+
+			/* don't check these bats since they will be fixed */
+			GDKdebug &= ~CHECKMASK;
+			o_id = BATdescriptor(seqs_id);
+			o_val = BATdescriptor(seqs_val);
+			GDKdebug = dbg;
 
 			if (o_id == NULL || o_val == NULL)
 				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
 
-			BATseqbase(o_id, 0);
-			BATseqbase(o_val, 0);
 			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
+			BATseqbase(lg->seqs_id, 0);
+			BATseqbase(lg->seqs_val, 0);
 		} else {
 			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
@@ -1528,12 +1557,41 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("Logger_new: cannot create seqs bats",
 				     0, 0, 0);
 
+		GDKdebug &= ~CHECKMASK;
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist", 0, 0, 0);
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
 		if (lg->snapshots_tid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
+		GDKdebug = dbg;
+		if (lg->snapshots_bid->htype == TYPE_oid) {
+			BAT *b;
+			assert(lg->snapshots_tid->htype == TYPE_oid);
+			b = BATcopy(lg->snapshots_bid, TYPE_void, lg->snapshots_bid->ttype, 1, PERSISTENT);
+			BATseqbase(b, 0);
+			BATsetaccess(b, BAT_READ);
+			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
+			BBPrename(lg->snapshots_bid->batCacheid, bak);
+			BATmode(lg->snapshots_bid, TRANSIENT);
+			snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
+			BBPrename(b->batCacheid, bak);
+			logbat_destroy(lg->snapshots_bid);
+			lg->snapshots_bid = b;
+			logger_add_bat(lg, b, "snapshots_bid");
+			b = BATcopy(lg->snapshots_tid, TYPE_void, lg->snapshots_tid->ttype, 1, PERSISTENT);
+			BATseqbase(b, 0);
+			BATsetaccess(b, BAT_READ);
+			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
+			BBPrename(lg->snapshots_tid->batCacheid, bak);
+			BATmode(lg->snapshots_tid, TRANSIENT);
+			snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
+			BBPrename(b->batCacheid, bak);
+			logbat_destroy(lg->snapshots_tid);
+			lg->snapshots_tid = b;
+			logger_add_bat(lg, b, "snapshots_tid");
+			needcommit = 1;
+		}
 
 		if (dsnapshots) {
 			lg->dsnapshots = BATdescriptor(dsnapshots);
@@ -1545,18 +1603,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
-
-			if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
-				logger_fatal("Logger_new: commit failed", 0, 0, 0);
+			needcommit = 1;
 		}
+		GDKdebug &= ~CHECKMASK;
+		if (needcommit && bm_commit(lg) != LOG_OK)
+			logger_fatal("Logger_new: commit failed", 0, 0, 0);
+		GDKdebug = dbg;
 	}
-	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
-	if (lg->freed == NULL)
-		logger_fatal("Logger_new: failed to create freed bat", 0, 0, 0);
-	snprintf(bak, sizeof(bak), "%s_freed", fn);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0)
-		logger_fatal("Logger_new: BBPrename to %s failed",
-			     bak, 0, 0);
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
@@ -2280,7 +2333,7 @@ log_abort(logger *lg)
 }
 
 static int
-log_sequence_(logger *lg, int seq, lng val)
+log_sequence_(logger *lg, int seq, lng val, int flush)
 {
 	logformat l;
 
@@ -2293,8 +2346,8 @@ log_sequence_(logger *lg, int seq, lng val)
 
 	if (log_write_format(lg, &l) == LOG_ERR ||
 	    !mnstr_writeLng(lg->log, val) ||
-	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log) ||
+	    (flush && mnstr_flush(lg->log)) ||
+	    (flush && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return LOG_ERR;
@@ -2316,7 +2369,13 @@ log_sequence_nrs(logger *lg)
 		oid pos = p;
 
 		if (BUNfnd(lg->dseqs, &pos) == BUN_NONE)
-			ok &= log_sequence_(lg, *id, *val);
+			ok |= log_sequence_(lg, *id, *val, 0);
+	}
+	if (ok != LOG_OK ||
+	    mnstr_flush(lg->log) ||
+	    mnstr_fsync(lg->log)) {
+		fprintf(stderr, "!ERROR: log_sequence_nrs: write failed\n");
+		return LOG_ERR;
 	}
 	return ok;
 }
@@ -2341,7 +2400,7 @@ log_sequence(logger *lg, int seq, lng val)
 		BUNappend(lg->seqs_id, &seq, FALSE);
 		BUNappend(lg->seqs_val, &val, FALSE);
 	}
-	return log_sequence_(lg, seq, val);
+	return log_sequence_(lg, seq, val, 1);
 }
 
 static int
