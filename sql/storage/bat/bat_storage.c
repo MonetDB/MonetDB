@@ -2115,7 +2115,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				destroy_dbat(tr, b->next);
 				b->next = NULL;
 			}
-		} else if (ft->base.allocated) {
+		} else if (tt->data && ft->base.allocated) {
 			tr_update_dbat(tr, tt->data, ft->data, ft->cleared);
 		} else if (store_nr_active == 1 && !ft->base.allocated) {
 			tr_merge_dbat(tr, tt->data);
@@ -2150,7 +2150,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					destroy_bat(tr, b->next);
 					b->next = NULL;
 				}
-			} else if (cc->base.allocated) {
+			} else if (oc->data && cc->base.allocated) {
 				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 			} else if (store_nr_active == 1 && !cc->base.allocated) {
 				tr_merge_delta(tr, oc->data, oc->unique == 1);
@@ -2210,7 +2210,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						destroy_bat(tr, b->next);
 						b->next = NULL;
 					}
-				} else if (ci->base.allocated) {
+				} else if (oi->data && ci->base.allocated) {
 					tr_update_delta(tr, oi->data, ci->data, 0);
 				} else if (store_nr_active == 1 && !ci->base.allocated) {
 					tr_merge_delta(tr, oi->data, 0);
