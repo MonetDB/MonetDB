@@ -33,6 +33,7 @@ int store_nr_active = 0;
 store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
+int store_initialized = 0;
 
 store_functions store_funcs;
 table_functions table_funcs;
@@ -172,7 +173,7 @@ trans_drop_tmp(sql_trans *tr)
 	}
 }
 
-/*#define STORE_DEBUG 1*/ 
+/*#define STORE_DEBUG 1*/
 
 sql_trans *
 sql_trans_destroy(sql_trans *t)
@@ -1527,6 +1528,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 	/* load remaining schemas, tables, columns etc */
 	if (!first)
 		load_trans(gtrans, id);
+	store_initialized = 1;
 	return first;
 }
 

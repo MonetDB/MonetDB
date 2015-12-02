@@ -38,6 +38,7 @@ extern int store_nr_active;
 extern store_type active_store_type;
 extern int store_readonly;
 extern int store_singleuser;
+extern int store_initialized;
 
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);

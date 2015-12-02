@@ -53,10 +53,10 @@ delta_cands(sql_trans *tr, sql_table *t)
 		t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	d = t->data;
-	if (d->cached /*&& !tr->parent*/) 
+	if (!store_initialized && d->cached) 
 		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
-	if (!d->cached /*&& !tr->parent*/) /* only cache during catalog loading */
+	if (!store_initialized && !d->cached) /* only cache during catalog loading */
 		d->cached = temp_descriptor(tids->batCacheid);
 	return tids;
 }
@@ -104,7 +104,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		bat_destroy(uv); 
 	}
 	(void)c;
-	if (!bat->cached /*&& !tr->parent*/) 
+	if (!store_initialized && !bat->cached) 
 		bat->cached = b;
 	return b;
 }
@@ -112,7 +112,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 static BAT *
 delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 {
-	if (bat->cached /*&& !tr->parent*/) 
+	if (!store_initialized && bat->cached) 
 		return bat->cached;
 	return delta_full_bat_( tr, c, bat, temp);
 }
