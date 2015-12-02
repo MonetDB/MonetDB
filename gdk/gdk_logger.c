@@ -1466,6 +1466,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				BBPincref(bid, TRUE);
 		}
 	}
+	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
+	if (lg->freed == NULL)
+		logger_fatal("Logger_new: failed to create freed bat", 0, 0, 0);
+	snprintf(bak, sizeof(bak), "%s_freed", fn);
+	if (BBPrename(lg->freed->batCacheid, bak) < 0)
+		logger_fatal("Logger_new: BBPrename to %s failed",
+			     bak, 0, 0);
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid");
 	if (snapshots_bid == 0) {
 		lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1517,10 +1524,18 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		bat seqs_val = logger_find_bat(lg, "seqs_val");
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid");
 		bat dsnapshots = logger_find_bat(lg, "dsnapshots");
+		int needcommit = 0;
+		int dbg = GDKdebug;
 
 		if (seqs_id) {
-			BAT *o_id = BATdescriptor(seqs_id);
-			BAT *o_val = BATdescriptor(seqs_val);
+			BAT *o_id;
+			BAT *o_val;
+
+			/* don't check these bats since they will be fixed */
+			GDKdebug &= ~CHECKMASK;
+			o_id = BATdescriptor(seqs_id);
+			o_val = BATdescriptor(seqs_val);
+			GDKdebug = dbg;
 
 			if (o_id == NULL || o_val == NULL)
 				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
@@ -1542,12 +1557,41 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("Logger_new: cannot create seqs bats",
 				     0, 0, 0);
 
+		GDKdebug &= ~CHECKMASK;
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_bid does not exist", 0, 0, 0);
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
 		if (lg->snapshots_tid == 0)
 			logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
+		GDKdebug = dbg;
+		if (lg->snapshots_bid->htype == TYPE_oid) {
+			BAT *b;
+			assert(lg->snapshots_tid->htype == TYPE_oid);
+			b = BATcopy(lg->snapshots_bid, TYPE_void, lg->snapshots_bid->ttype, 1, PERSISTENT);
+			BATseqbase(b, 0);
+			BATsetaccess(b, BAT_READ);
+			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
+			BBPrename(lg->snapshots_bid->batCacheid, bak);
+			BATmode(lg->snapshots_bid, TRANSIENT);
+			snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
+			BBPrename(b->batCacheid, bak);
+			logbat_destroy(lg->snapshots_bid);
+			lg->snapshots_bid = b;
+			logger_add_bat(lg, b, "snapshots_bid");
+			b = BATcopy(lg->snapshots_tid, TYPE_void, lg->snapshots_tid->ttype, 1, PERSISTENT);
+			BATseqbase(b, 0);
+			BATsetaccess(b, BAT_READ);
+			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
+			BBPrename(lg->snapshots_tid->batCacheid, bak);
+			BATmode(lg->snapshots_tid, TRANSIENT);
+			snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
+			BBPrename(b->batCacheid, bak);
+			logbat_destroy(lg->snapshots_tid);
+			lg->snapshots_tid = b;
+			logger_add_bat(lg, b, "snapshots_tid");
+			needcommit = 1;
+		}
 
 		if (dsnapshots) {
 			lg->dsnapshots = BATdescriptor(dsnapshots);
@@ -1559,18 +1603,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
 			logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
-
-			if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
-				logger_fatal("Logger_new: commit failed", 0, 0, 0);
+			needcommit = 1;
 		}
+		GDKdebug &= ~CHECKMASK;
+		if (needcommit && bm_commit(lg) != LOG_OK)
+			logger_fatal("Logger_new: commit failed", 0, 0, 0);
+		GDKdebug = dbg;
 	}
-	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
-	if (lg->freed == NULL)
-		logger_fatal("Logger_new: failed to create freed bat", 0, 0, 0);
-	snprintf(bak, sizeof(bak), "%s_freed", fn);
-	if (BBPrename(lg->freed->batCacheid, bak) < 0)
-		logger_fatal("Logger_new: BBPrename to %s failed",
-			     bak, 0, 0);
 
 	if (fp != NULL) {
 #if SIZEOF_OID == 8
